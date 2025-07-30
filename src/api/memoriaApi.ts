@@ -3,6 +3,8 @@
 
 import axios, { AxiosError } from 'axios';
 import { supabase } from '../lib/supabaseClient';
+import api from './axios'; 
+
 
 /* -------------------------------------------------------------------------- */
 /*  Tipagens                                                                  */
@@ -43,22 +45,6 @@ function serializarParametrosTags(tags: string[], limite: number): string {
   search.set('limite', String(limite));
   return search.toString();
 }
-
-/* -------------------------------------------------------------------------- */
-/*  Axios com JWT automático                                                  */
-/* -------------------------------------------------------------------------- */
-const api = axios.create({ baseURL: '/api' });
-
-api.interceptors.request.use(async (config) => {
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    throw new Error('⚠️ Usuário não autenticado.');
-  }
-
-  config.headers.Authorization = `Bearer ${session.access_token}`;
-  return config;
-});
 
 /* -------------------------------------------------------------------------- */
 /*  Tratamento de erro padrão                                                 */

@@ -1,3 +1,5 @@
+// ChatPage.tsx — versão ajustada para integração com backend via axios baseURL
+
 /* -------------------------------------------------------------------------- */
 /*  ChatPage.tsx — versão com memórias semelhantes via embeddings             */
 /* -------------------------------------------------------------------------- */
@@ -27,7 +29,6 @@ import { differenceInDays } from 'date-fns';
 import { extrairTagsRelevantes } from '../utils/extrairTagsRelevantes';
 import mixpanel from '../lib/mixpanel';
 
-
 /* -------------------------------------------------------------------------- */
 /*  Componente                                                                */
 /* -------------------------------------------------------------------------- */
@@ -41,19 +42,16 @@ const ChatPage: React.FC = () => {
   const refFimMensagens = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-  if (!user) navigate('/login');
-  else {
-    mixpanel.track('Eco: Entrou no Chat', {
-      userId,
-      userName,
-      timestamp: new Date().toISOString(),
-    });
-  }
-}, [user, navigate]);
-
-  useEffect(() => {
     if (!user) navigate('/login');
+    else {
+      mixpanel.track('Eco: Entrou no Chat', {
+        userId,
+        userName,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }, [user, navigate]);
+
   if (!user) return null;
 
   const saudacao = new Date().getHours() < 12
@@ -81,13 +79,13 @@ const ChatPage: React.FC = () => {
 
     const userIdMsg = uuidv4();
     addMessage({ id: userIdMsg, text, sender: 'user' });
-    mixpanel.track('Eco: Mensagem Enviada', {
-  userId,
-  userName,
-  mensagem: text,
-  timestamp: new Date().toISOString(),
-});
 
+    mixpanel.track('Eco: Mensagem Enviada', {
+      userId,
+      userName,
+      mensagem: text,
+      timestamp: new Date().toISOString(),
+    });
 
     try {
       const saved = await salvarMensagem({
@@ -129,7 +127,7 @@ const ChatPage: React.FC = () => {
       const mensagensComContexto = [
         ...(retorno ? [{ role: 'system', content: retorno }] : []),
         ...(ctxMems ? [{ role: 'system', content: `Memórias recentes relevantes:\n${ctxMems}` }] : []),
-        ...history,(-3)
+        ...history.slice(-3),
       ];
 
       const formatted = mensagensComContexto.map((m) => ({
@@ -140,45 +138,38 @@ const ChatPage: React.FC = () => {
       const resposta = await enviarMensagemParaEco(formatted, userName, userId!);
       const textoEco = resposta.replace(/\{[\s\S]*?\}$/, '').trim();
       addMessage({ id: uuidv4(), text: textoEco, sender: 'eco' });
-      
-      // Regex para extrair o bloco técnico JSON da resposta
-const match = resposta.match(/\{[\s\S]*\}$/);
-if (match) {
-  try {
-    const bloco = JSON.parse(match[0]);
 
-    if (bloco.intensidade >= 7) {
-      mixpanel.track('Memória Registrada', {
-        intensidade: bloco.intensidade,
-        emocao_principal: bloco.emocao_principal || 'desconhecida',
-        modulo_ativado: bloco.modulo_ativado || 'não informado',
-        dominio_vida: bloco.dominio_vida || 'geral',
-        padrao_comportamental: bloco.padrao_comportamental || 'não identificado',
-      });
-    }
-  } catch (e) {
-    console.warn('Erro ao extrair bloco técnico para Mixpanel', e);
-  }
-}
+      const match = resposta.match(/\{[\s\S]*\}$/);
+      if (match) {
+        try {
+          const bloco = JSON.parse(match[0]);
 
-
+          if (bloco.intensidade >= 7) {
+            mixpanel.track('Memória Registrada', {
+              intensidade: bloco.intensidade,
+              emocao_principal: bloco.emocao_principal || 'desconhecida',
+              modulo_ativado: bloco.modulo_ativado || 'não informado',
+              dominio_vida: bloco.dominio_vida || 'geral',
+              padrao_comportamental: bloco.padrao_comportamental || 'não identificado',
+            });
+          }
+        } catch (e) {
+          console.warn('Erro ao extrair bloco técnico para Mixpanel', e);
+        }
+      }
     } catch (err: any) {
-  console.error('[ChatPage] erro:', err);
-  setErroApi(err.message || 'Falha ao enviar mensagem.');
-
-  mixpanel.track('Eco: Erro ao Enviar Mensagem', {
-    userId,
-    erro: err.message || 'desconhecido',
-    mensagem: text,
-    timestamp: new Date().toISOString(),
-  });
-} finally {
-  setDigitando(false);
-}
-
-    
+      console.error('[ChatPage] erro:', err);
+      setErroApi(err.message || 'Falha ao enviar mensagem.');
+      mixpanel.track('Eco: Erro ao Enviar Mensagem', {
+        userId,
+        erro: err.message || 'desconhecido',
+        mensagem: text,
+        timestamp: new Date().toISOString(),
+      });
+    } finally {
+      setDigitando(false);
+    }
   };
-  
 
   return (
     <div className="w-full h-full flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
@@ -195,7 +186,6 @@ if (match) {
 
       <div className="flex-1 flex overflow-y-auto p-4 pb-28 flex-col items-center">
         <div className="max-w-2xl w-full flex flex-col items-center">
-
           {messages.length === 0 && !erroApi && (
             <motion.div
               className="text-center text-gray-600 mb-20 mt-16"
@@ -239,14 +229,14 @@ if (match) {
       </div>
 
       <div className="fixed bottom-6 left-0 right-0 px-4 z-10">
-  <div className="max-w-2xl mx-auto">
-    <ChatInput
-      onSendMessage={handleSendMessage}
-      onMoreOptionSelected={(opt) => { if (opt === 'go_to_voice_page') navigate('/voice'); }}
-      onSendAudio={() => console.log('Áudio enviado')}
-    />
-  </div>
-</div>
+        <div className="max-w-2xl mx-auto">
+          <ChatInput
+            onSendMessage={handleSendMessage}
+            onMoreOptionSelected={(opt) => { if (opt === 'go_to_voice_page') navigate('/voice'); }}
+            onSendAudio={() => console.log('Áudio enviado')}
+          />
+        </div>
+      </div>
     </div>
   );
 };
