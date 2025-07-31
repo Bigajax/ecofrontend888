@@ -39,7 +39,7 @@ export const enviarMensagemParaEco = async (
     }
 
     const response = await api.post(
-      '/api/ask-eco',
+      '/ask-eco', // 🔧 Corrigido aqui
       {
         mensagens: mensagensValidas,
         nome_usuario: userName,
