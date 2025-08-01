@@ -13,16 +13,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
 
   return (
     <div
-      className={`flex mb-1 sm:mb-2 ${isUser ? 'justify-end' : 'justify-start'}`}
+      className={`flex mb-0.5 sm:mb-2 ${isUser ? 'justify-end' : 'justify-start'}`}
       role="listitem"
       aria-live="polite"
     >
       <div
         className={[
           // dimensões
-          'px-3 py-2 sm:px-4 sm:py-3 rounded-2xl shadow',
-          'max-w-[76vw] sm:max-w-[70ch]', // <— menor no mobile
-          'break-words break-anywhere',
+          'px-3 py-2 sm:px-4 sm:py-3 rounded-2xl shadow select-text',
+          'max-w-[76vw] sm:max-w-[70ch] whitespace-pre-wrap break-anywhere',
           // cores
           isUser
             ? 'bg-[#d8f1f5] text-gray-900 rounded-br-sm'
@@ -32,15 +31,24 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
         {isEcoTyping ? (
           <div className="flex items-end gap-1" aria-label="Eco está digitando">
             {/* respeita prefers-reduced-motion */}
-            <span className="w-2 h-2 bg-gray-400 rounded-full animate-wave-dot motion-reduce:animate-none" style={{ animationDelay: '0s' }} />
-            <span className="w-2 h-2 bg-gray-400 rounded-full animate-wave-dot motion-reduce:animate-none" style={{ animationDelay: '0.2s' }} />
-            <span className="w-2 h-2 bg-gray-400 rounded-full animate-wave-dot motion-reduce:animate-none" style={{ animationDelay: '0.4s' }} />
+            <span
+              className="w-2 h-2 bg-gray-400 rounded-full animate-wave-dot motion-reduce:animate-none"
+              style={{ animationDelay: '0s' }}
+            />
+            <span
+              className="w-2 h-2 bg-gray-400 rounded-full animate-wave-dot motion-reduce:animate-none"
+              style={{ animationDelay: '0.2s' }}
+            />
+            <span
+              className="w-2 h-2 bg-gray-400 rounded-full animate-wave-dot motion-reduce:animate-none"
+              style={{ animationDelay: '0.4s' }}
+            />
           </div>
         ) : (
           <div
             className={[
               'leading-relaxed',
-              'text-[14px] sm:text-sm md:text-base', // <— 1pt menor
+              'text-[14px] sm:text-sm md:text-base',
               isUser ? 'text-gray-900' : 'text-gray-800',
             ].join(' ')}
           >
@@ -52,7 +60,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
                 'prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5',
                 // links e imagens
                 'prose-a:break-words prose-a:underline',
-                'prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto', // <— limita imagens
+                'prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto',
                 // blocos de código
                 'prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-pre:rounded-lg',
                 'prose-pre:p-3 prose-code:before:content-[""] prose-code:after:content-[""]',

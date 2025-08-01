@@ -72,12 +72,17 @@ const ChatPage: React.FC = () => {
     refFimMensagens.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // *** ADD: aplica insets do teclado ao scroller
-  useKeyboardInsets({
+  // *** CHANGE: captura função de recompute do hook
+  const recomputeInsets = useKeyboardInsets({
     container: messagesScrollerRef.current,
     inputBar: inputBarRef.current,
     extra: 12,
   });
+
+  // *** ADD: recalcule quando mensagens mudarem ou estado de digitação mudar
+  useEffect(() => {
+    recomputeInsets && recomputeInsets();
+  }, [messages, digitando, recomputeInsets]);
 
   const gerarMensagemRetorno = (mem: any): string | null => {
     if (!mem) return null;
@@ -251,6 +256,8 @@ const ChatPage: React.FC = () => {
       <div
         ref={inputBarRef}
         className="sticky bottom-0 z-40 pb-[max(12px,env(safe-area-inset-bottom))]"
+        // *** ADD: recalcula assim que qualquer filho ganhar foco (iOS Safari)
+        onFocusCapture={() => setTimeout(() => recomputeInsets && recomputeInsets(), 0)}
       >
         <div className="max-w-2xl mx-auto px-4">
           <ChatInput

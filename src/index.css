@@ -1,4 +1,4 @@
-@tailwind base;
+@tailwind base; 
 @tailwind components;
 @tailwind utilities;
 
@@ -15,6 +15,9 @@ body {
   --rose-quartz: #F7CAC9;
   --bg-cream: #F8F5F0;
   --eco-bubble-gradient: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+  /* defaults usados antes do hook setar dinamicamente */
+  --vh: 1vh;
+  --inset-bottom: 0px;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -31,6 +34,17 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
 }
+
+/* Preferir 100dvh quando disponível (barras dinâmicas modernas) */
+@supports (height: 100dvh) {
+  .App { height: 100dvh; }
+}
+
+/* Evita zoom ao focar inputs no iOS */
+input, textarea { font-size: 16px; }
+
+/* Remove highlight azul no iOS */
+* { -webkit-tap-highlight-color: transparent; }
 
 /* Bolha de vidro (Eco) */
 .eco-glass-bubble {
@@ -93,14 +107,8 @@ h1, h2, h3, h4, h5, h6 {
   100% { transform: translateY(0); opacity: 0.4; }
 }
 
-.animate-gentle-pulse {
-  animation: gentlePulse 3s ease-in-out infinite;
-}
-
-.animate-wave-dot {
-  animation: typingWave 1.2s infinite ease-in-out;
-}
-
+.animate-gentle-pulse { animation: gentlePulse 3s ease-in-out infinite; }
+.animate-wave-dot { animation: typingWave 1.2s infinite ease-in-out; }
 .floating { animation: floating-animation 8s ease-in-out infinite; }
 .vibrating { animation: vibrating-animation 0.6s ease-in-out infinite; }
 .animate-pulse-dot { animation: pulse-dot 1.5s infinite ease-in-out; }
@@ -138,12 +146,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Scrollbar personalizado */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.1);
   border-radius: 10px;
