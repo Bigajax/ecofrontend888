@@ -72,11 +72,11 @@ const ChatPage: React.FC = () => {
     refFimMensagens.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // *** CHANGE: captura função de recompute do hook
+  // *** CHANGE: captura função de recompute do hook (extra mais compacto)
   const recomputeInsets = useKeyboardInsets({
     container: messagesScrollerRef.current,
     inputBar: inputBarRef.current,
-    extra: 12,
+    extra: 8, // <- antes 12; reduz o vão quando teclado fecha
   });
 
   // *** ADD: recalcule quando mensagens mudarem ou estado de digitação mudar
@@ -187,6 +187,8 @@ const ChatPage: React.FC = () => {
       });
     } finally {
       setDigitando(false);
+      // *** ADD: garante recálculo pós-envio (iOS Safari)
+      setTimeout(() => recomputeInsets && recomputeInsets(), 0);
     }
   };
 
@@ -207,7 +209,7 @@ const ChatPage: React.FC = () => {
       <div
         ref={messagesScrollerRef}
         className="flex-1 flex overflow-y-auto p-4 pt-2 flex-col items-center scroll-smooth overscroll-contain"
-        style={{ scrollPaddingBottom: '96px' }}
+        style={{ scrollPaddingBottom: '72px' }} // *** CHANGE: menor para reduzir “vão”
       >
         <div className="max-w-2xl w-full flex flex-col items-center">
           {messages.length === 0 && !erroApi && (
