@@ -18,6 +18,8 @@ body {
   /* defaults usados antes do hook setar dinamicamente */
   --vh: 1vh;
   --inset-bottom: 0px;
+  /* ADD: respeita notch/safe area */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -43,8 +45,8 @@ h1, h2, h3, h4, h5, h6 {
 /* Evita zoom ao focar inputs no iOS */
 input, textarea { font-size: 16px; }
 
-/* Remove highlight azul no iOS */
-* { -webkit-tap-highlight-color: transparent; }
+/* Remove highlight azul no iOS e reduz atraso de clique no mobile */
+* { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
 /* Bolha de vidro (Eco) */
 .eco-glass-bubble {
@@ -90,14 +92,8 @@ input, textarea { font-size: 16px; }
 }
 
 @keyframes gentlePulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.03);
-    opacity: 0.95;
-  }
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.03); opacity: 0.95; }
 }
 
 @keyframes typingWave {
@@ -148,10 +144,7 @@ input, textarea { font-size: 16px; }
 /* Scrollbar personalizado */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
-}
+::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.1); border-radius: 10px; }
 
 /* Gradientes para textos */
 .text-gradient-blue {
@@ -168,5 +161,18 @@ input, textarea { font-size: 16px; }
 /* ---- Ajustes para teclado iOS/Android ---- */
 html, body, #root { height: 100%; }
 
+/* Preferir 100dvh para o container raiz quando suportado */
+@supports (height: 100dvh) {
+  html, body, #root { height: 100dvh; }
+}
+
 /* Evita “puxar” a página quando o teclado abre */
 body.keyboard-open { overscroll-behavior-y: contain; }
+
+/* Respeita safe area no rodapé quando necessário (ex.: iPhone com notch) */
+body.keyboard-open { padding-bottom: var(--safe-bottom); }
+
+/* Acessibilidade: usuários com redução de movimento preferem menos animação */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

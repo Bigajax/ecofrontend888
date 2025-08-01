@@ -43,20 +43,20 @@ export function useKeyboardInsets({ container, inputBar, extra = 8 }: Opts) {
       container.style.paddingBottom = `${inset}px`;
       root.style.setProperty('--inset-bottom', `${inset}px`);
 
-      // rola pro fim de forma suave
+      // rola pro fim de forma suave (+1px evita falso "já no fim")
       Promise.resolve().then(() => {
         setTimeout(() => {
-          container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+          container.scrollTo({ top: container.scrollHeight + 1, behavior: 'smooth' });
         }, 10);
       });
 
       document.body.classList.toggle('keyboard-open', keyboard > 4);
     };
 
-    // throttle leve p/ eventos barulhentos do iOS
+    // throttle mais suave para iOS (80ms)
     const throttled = () => {
       const now = performance.now();
-      if (now - lastRunRef.current < 50) {
+      if (now - lastRunRef.current < 80) {
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
         rafRef.current = requestAnimationFrame(applyInset);
         return;
