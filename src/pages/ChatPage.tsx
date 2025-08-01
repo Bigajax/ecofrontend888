@@ -29,6 +29,9 @@ import { differenceInDays } from 'date-fns';
 import { extrairTagsRelevantes } from '../utils/extrairTagsRelevantes';
 import mixpanel from '../lib/mixpanel';
 
+// *** ADD: hook para lidar com teclado (iOS/Android)
+import { useKeyboardInsets } from '../hooks/useKeyboardInsets';
+
 /* -------------------------------------------------------------------------- */
 /*  Componente                                                                */
 /* -------------------------------------------------------------------------- */
@@ -40,6 +43,10 @@ const ChatPage: React.FC = () => {
   const [digitando, setDigitando] = useState(false);
   const [erroApi, setErroApi] = useState<string | null>(null);
   const refFimMensagens = useRef<HTMLDivElement>(null);
+
+  // *** ADD: refs para scroller e barra de input
+  const messagesScrollerRef = useRef<HTMLDivElement>(null);
+  const inputBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!user) navigate('/login');
@@ -64,6 +71,13 @@ const ChatPage: React.FC = () => {
   useEffect(() => {
     refFimMensagens.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // *** ADD: aplica insets do teclado ao scroller
+  useKeyboardInsets({
+    container: messagesScrollerRef.current,
+    inputBar: inputBarRef.current,
+    extra: 12,
+  });
 
   const gerarMensagemRetorno = (mem: any): string | null => {
     if (!mem) return null;
@@ -172,7 +186,7 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="w-full h-[calc(var(--vh,1vh)*100)] flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       <Header
         title="ECO"
         showBackButton={false}
@@ -184,7 +198,12 @@ const ChatPage: React.FC = () => {
         }}
       />
 
-      <div className="flex-1 flex overflow-y-auto p-4 pb-28 flex-col items-center">
+      {/* SCROLLER DAS MENSAGENS */}
+      <div
+        ref={messagesScrollerRef}
+        className="flex-1 flex overflow-y-auto p-4 pt-2 flex-col items-center scroll-smooth overscroll-contain"
+        style={{ scrollPaddingBottom: '96px' }}
+      >
         <div className="max-w-2xl w-full flex flex-col items-center">
           {messages.length === 0 && !erroApi && (
             <motion.div
@@ -228,8 +247,12 @@ const ChatPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="fixed bottom-6 left-0 right-0 px-4 z-10">
-        <div className="max-w-2xl mx-auto">
+      {/* BARRA DE INPUT "GRUDADA" AO TECLADO */}
+      <div
+        ref={inputBarRef}
+        className="sticky bottom-0 z-40 pb-[max(12px,env(safe-area-inset-bottom))]"
+      >
+        <div className="max-w-2xl mx-auto px-4">
           <ChatInput
             onSendMessage={handleSendMessage}
             onMoreOptionSelected={(opt) => { if (opt === 'go_to_voice_page') navigate('/voice'); }}

@@ -21,7 +21,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
         className={[
           // dimensões
           'px-3 py-2 sm:px-4 sm:py-3 rounded-2xl shadow',
-          'max-w-[80vw] sm:max-w-[70ch]',
+          'max-w-[76vw] sm:max-w-[70ch]', // <— menor no mobile
           'break-words break-anywhere',
           // cores
           isUser
@@ -40,7 +40,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
           <div
             className={[
               'leading-relaxed',
-              'text-[15px] sm:text-sm md:text-base',
+              'text-[14px] sm:text-sm md:text-base', // <— 1pt menor
               isUser ? 'text-gray-900' : 'text-gray-800',
             ].join(' ')}
           >
@@ -52,7 +52,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
                 'prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5',
                 // links e imagens
                 'prose-a:break-words prose-a:underline',
-                'prose-img:rounded-lg prose-img:max-h-64 prose-img:w-auto',
+                'prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto', // <— limita imagens
                 // blocos de código
                 'prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-pre:rounded-lg',
                 'prose-pre:p-3 prose-code:before:content-[""] prose-code:after:content-[""]',
