@@ -20,59 +20,68 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const handleMemoryClick = () => {
-    console.log('Cliquei no botão de memória');
-    if (onOpenMemoryHistory) {
-      onOpenMemoryHistory();
-    }
-  };
-
   return (
-    <header className="px-6 py-4 flex items-center border-b border-gray-100 justify-center relative z-10 bg-white/90 backdrop-blur-md shadow-sm">
-      <div className="flex items-center absolute left-6">
-        <button
-          onClick={handleMemoryClick}
-          className="mr-4 p-1 rounded-full hover:bg-gray-100 transition-colors"
-          aria-label="Ver histórico de memórias"
-          title="Ver Memórias"
-        >
-          <BookOpen size={24} strokeWidth={2} className="text-gray-700" />
-        </button>
-        {showBackButton && (
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 pt-[env(safe-area-inset-top)]">
+      <div className="grid grid-cols-3 items-center px-3 md:px-6 py-2.5">
+        {/* ESQUERDA */}
+        <div className="flex items-center gap-1.5">
           <button
-            onClick={() => navigate(-1)}
-            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-            aria-label="Voltar"
+            onClick={onOpenMemoryHistory}
+            className="p-1.5 rounded-full hover:bg-gray-100 active:bg-gray-200"
+            aria-label="Ver Memórias"
+            title="Ver Memórias"
           >
-            <ArrowLeft size={24} className="text-gray-700" />
+            <BookOpen className="h-5 w-5 md:h-5.5 md:w-5.5 text-gray-700" strokeWidth={2} />
           </button>
-        )}
-      </div>
-      <h1 className="text-2xl md:text-3xl font-light tracking-tight text-gray-483">Eco</h1>
-      <div className="flex items-center absolute right-6">
-        <AnimatePresence>
-          {mensagemDeSucesso && (
-            <motion.span
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-              className="ml-4 text-green-500 font-semibold"
+
+          {showBackButton && (
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 rounded-full hover:bg-gray-100 active:bg-gray-200"
+              aria-label="Voltar"
+              title="Voltar"
             >
-              {mensagemDeSucesso}
-            </motion.span>
+              <ArrowLeft className="h-5 w-5 md:h-5.5 md:w-5.5 text-gray-700" />
+            </button>
           )}
-        </AnimatePresence>
-        {onLogout && (
-          <button
-            onClick={onLogout}
-            className="ml-4 p-1 rounded-full hover:bg-gray-100 transition-colors"
-            aria-label="Sair da conta"
-            title="Sair da conta"
-          >
-            <LogOut size={24} className="text-gray-700" />
-          </button>
-        )}
+        </div>
+
+        {/* CENTRO */}
+        <h1
+          className="text-center font-normal tracking-tight text-lg md:text-xl text-gray-800 truncate"
+          title={title}
+        >
+          {title || 'Eco'}
+        </h1>
+
+        {/* DIREITA */}
+        <div className="flex items-center justify-end gap-2">
+          <AnimatePresence>
+            {mensagemDeSucesso && (
+              <motion.span
+                initial={{ opacity: 0, x: 12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -12 }}
+                transition={{ duration: 0.25 }}
+                className="text-xs md:text-sm text-green-600 font-medium truncate max-w-[40vw] text-right"
+                title={mensagemDeSucesso}
+              >
+                {mensagemDeSucesso}
+              </motion.span>
+            )}
+          </AnimatePresence>
+
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="p-1.5 rounded-full hover:bg-gray-100 active:bg-gray-200"
+              aria-label="Sair"
+              title="Sair"
+            >
+              <LogOut className="h-5 w-5 md:h-5.5 md:w-5.5 text-gray-700" />
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );
