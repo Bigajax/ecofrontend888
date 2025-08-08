@@ -11,24 +11,25 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
 
   const speechRecognitionRef = useRef(null);
   const plusButtonRef = useRef(null);
-  const popoverRef   = useRef(null);
+  const popoverRef = useRef(null);
   const textareaRef = useRef(null);
   const sendButtonRef = useRef<HTMLButtonElement>(null);
 
-  /* ────────────────────────────  WEB KIT SPEECH  ─────────────────────────── */
+  // Auto resize do textarea
   useEffect(() => {
-  if (textareaRef.current) {
-    textareaRef.current.style.height = 'auto';
-    textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-  }
-}, [inputMessage]);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [inputMessage]);
 
+  // Webkit Speech
   useEffect(() => {
     if ('webkitSpeechRecognition' in window) {
       const recognition = new window.webkitSpeechRecognition();
-      recognition.continuous     = true;
+      recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang           = 'pt-BR';
+      recognition.lang = 'pt-BR';
 
       recognition.onresult = (event) => {
         let finalTranscript = '';
@@ -49,15 +50,14 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
     }
   }, []);
 
-  /* ────────────────────────────  GRAVAÇÃO  ─────────────────────────── */
+  // Gravação
   const startRecording = async () => {
     setIsRecordingUI(true);
     setIsTranscribing(false);
-
     try {
-      const stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
-      const chunks   = [];
+      const chunks: BlobPart[] = [];
 
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
 
@@ -65,7 +65,6 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
         setIsTranscribing(true);
         const blob = new Blob(chunks, { type: 'audio/webm' });
         onSendAudio(blob);
-        // Aguarda ~1 s para “transcrição” e fecha UI
         setTimeout(() => setIsRecordingUI(false), 1200);
       };
 
@@ -87,37 +86,29 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
     if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
     mediaRecorder?.stream.getTracks().forEach((t) => t.stop());
     speechRecognitionRef.current?.abort();
-
     setInputMessage('');
     setIsRecordingUI(false);
     setIsTranscribing(false);
   };
 
-  /* ────────────────────────────  ENVIO TEXTO  ─────────────────────────── */
+  // Envio texto
   const handleSend = () => {
-  if (inputMessage.trim()) {
-    onSendMessage(inputMessage.trim());
-    setInputMessage('');
-
-    // Trigger visual animation
-    if (sendButtonRef.current) {
-      sendButtonRef.current.classList.add('scale-90');
-      setTimeout(() => {
-        sendButtonRef.current?.classList.remove('scale-90');
-      }, 120);
+    if (inputMessage.trim()) {
+      onSendMessage(inputMessage.trim());
+      setInputMessage('');
+      if (sendButtonRef.current) {
+        sendButtonRef.current.classList.add('scale-90');
+        setTimeout(() => {
+          sendButtonRef.current?.classList.remove('scale-90');
+        }, 120);
+      }
     }
+  };
 
-    // Som opcional
-    // new Audio('/sons/send.mp3').play();
-  }
-};
-
-
-  /* ────────────────────────────  UI DE GRAVAÇÃO  ─────────────────────────── */
+  // UI de gravação
   if (isRecordingUI) {
     return (
       <div className="relative bg-white border border-gray-200 rounded-2xl px-4 py-2 w-full max-w-2xl mx-auto">
-        {/* Faixa de status */}
         <div className="w-full h-10 mb-2 rounded-xl bg-gray-100 flex items-center justify-center">
           {isTranscribing ? (
             <div className="text-gray-400 text-sm flex items-center gap-2">
@@ -127,18 +118,16 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
           ) : (
             <div className="text-gray-500 text-sm flex items-center gap-2">
               <svg className="animate-pulse w-4 h-4" viewBox="0 0 24 24" fill="none">
-                <rect x="6"  y="8"  width="2" height="8"  fill="currentColor" />
-                <rect x="11" y="5"  width="2" height="14" fill="currentColor" />
-                <rect x="16" y="10" width="2" height="4"  fill="currentColor" />
+                <rect x="6" y="8" width="2" height="8" fill="currentColor" />
+                <rect x="11" y="5" width="2" height="14" fill="currentColor" />
+                <rect x="16" y="10" width="2" height="4" fill="currentColor" />
               </svg>
               Ouvindo
             </div>
           )}
         </div>
-
-        {/* Botões cancelar / confirmar */}
         <div className="flex justify-between items-center">
-          <Plus size={18} className="text-transparent select-none" />{/* placeholder */}
+          <Plus size={18} className="text-transparent select-none" />
           <div className="flex gap-2">
             <button
               onClick={cancelRecording}
@@ -160,20 +149,31 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
     );
   }
 
-  /* ────────────────────────────  UI PADRÃO  ─────────────────────────── */
+  // UI padrão
   return (
     <motion.form
-  onSubmit={(e) => {
-    e.preventDefault();
-    handleSend();
-  }}
-  className="relative bg-white rounded-xl px-3 py-1.5 border border-gray-100 w-full max-w-2xl mx-auto shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200"
-  initial={{ y: 50, opacity: 0 }}
-  animate={{ y: 0, opacity: 1 }}
-  transition={{ type: 'spring', stiffness: 120, damping: 14 }}
->
-      <div className="flex flex-col">
-        {/* Pop-over de opções extra */}
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSend();
+      }}
+      className="relative bg-white rounded-xl px-3 py-1.5 border border-gray-100 w-full max-w-2xl mx-auto shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200"
+      initial={{ y: 50, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 120, damping: 14 }}
+    >
+      <div className="flex items-center gap-2">
+        {/* Botão + */}
+        <button
+          type="button"
+          onClick={() => setShowMoreOptions((prev) => !prev)}
+          ref={plusButtonRef}
+          className="shrink-0 p-1.5 rounded-full text-gray-500 hover:bg-gray-100 focus:outline-none"
+          aria-label="Mais opções"
+        >
+          {showMoreOptions ? <X size={20} /> : <Plus size={20} />}
+        </button>
+
+        {/* Popover */}
         <AnimatePresence>
           {showMoreOptions && (
             <motion.div
@@ -204,62 +204,43 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
           )}
         </AnimatePresence>
 
-        {/* Caixa de entrada */}
-        <div className="flex items-center gap-2">
-  {/* Botão + */}
-  <button
-    type="button"
-    onClick={() => setShowMoreOptions((prev) => !prev)}
-    ref={plusButtonRef}
-    className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100 focus:outline-none"
-    aria-label="Mais opções"
-  >
-    {showMoreOptions ? <X size={20} /> : <Plus size={20} />}
-  </button>
+        {/* Textarea */}
+        <textarea
+          ref={textareaRef}
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          placeholder="Fale com a Eco"
+          rows={1}
+          className="min-w-0 flex-1 text-sm text-gray-800 placeholder:text-gray-400 bg-transparent border-none focus:outline-none resize-none leading-6 py-2 max-h-48 overflow-y-auto"
+        />
 
-  {/* Textarea */}
-  <textarea
-  ref={textareaRef}
-  value={inputMessage}
-  onChange={(e) => setInputMessage(e.target.value)}
-  onKeyDown={(e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }}
-  placeholder="Fale com a Eco"
-  rows={1}
-style={{ height: '3rem' }}
-className="h-12 flex-1 text-sm text-gray-800 placeholder:text-gray-400 bg-transparent border-none focus:outline-none resize-none leading-[1.5rem] py-3 overflow-hidden"
-/>
+        {/* Botões mic e send */}
+        <div className="flex gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={startRecording}
+            className="w-8 h-8 rounded-full bg-transparent border border-white hover:border-white shadow-sm flex items-center justify-center"
+            aria-label="Iniciar gravação"
+          >
+            <Mic size={16} className="text-[#1F2937]" />
+          </button>
 
-
-  {/* Botões mic e send */}
-  <div className="flex gap-1.5">
-    <button
-  type="button"
-  onClick={startRecording}
-  className="w-8 h-8 rounded-full bg-transparent border border-white hover:border-white shadow-sm transition-all duration-200 flex items-center justify-center"
-  aria-label="Iniciar gravação"
->
-  <Mic size={16} className="text-[#1F2937]" />
-</button>
-
-
-
-
-    <button
-  type="submit"
-  ref={sendButtonRef}
-  disabled={!inputMessage.trim()}
-  className="w-8 h-8 rounded-full bg-[#265F77] hover:bg-[#1f4c60] shadow-sm transition-all duration-200 flex items-center justify-center transition-transform"
-  aria-label="Enviar mensagem"
->
-      <Send size={16} className="text-white" strokeWidth={1.5} />
-    </button>
-  </div>
-</div>
+          <button
+            type="submit"
+            ref={sendButtonRef}
+            disabled={!inputMessage.trim()}
+            className="w-8 h-8 rounded-full bg-[#265F77] hover:bg-[#1f4c60] shadow-sm flex items-center justify-center transition-transform"
+            aria-label="Enviar mensagem"
+          >
+            <Send size={16} className="text-white" strokeWidth={1.5} />
+          </button>
+        </div>
       </div>
     </motion.form>
   );

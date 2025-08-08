@@ -1,7 +1,5 @@
-// ChatPage.tsx — versão ajustada para integração com backend via axios baseURL
-
 /* -------------------------------------------------------------------------- */
-/*  ChatPage.tsx — versão com memórias semelhantes via embeddings             */
+/*  ChatPage.tsx — versão ajustada para integração com backend via axios baseURL */
 /* -------------------------------------------------------------------------- */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -22,19 +20,14 @@ import {
 } from '../api/memoriaApi';
 
 import { useAuth } from '../contexts/AuthContext';
-import { useChat, Message } from '../contexts/ChatContext';
+import { useChat } from '../contexts/ChatContext';
 import { salvarMensagem } from '../api/mensagem';
 
 import { differenceInDays } from 'date-fns';
 import { extrairTagsRelevantes } from '../utils/extrairTagsRelevantes';
 import mixpanel from '../lib/mixpanel';
-
-// *** ADD: hook para lidar com teclado (iOS/Android)
 import { useKeyboardInsets } from '../hooks/useKeyboardInsets';
 
-/* -------------------------------------------------------------------------- */
-/*  Componente                                                                */
-/* -------------------------------------------------------------------------- */
 const ChatPage: React.FC = () => {
   const { messages, addMessage, clearMessages } = useChat();
   const { userId, userName = 'Usuário', signOut, user } = useAuth();
@@ -44,7 +37,6 @@ const ChatPage: React.FC = () => {
   const [erroApi, setErroApi] = useState<string | null>(null);
   const refFimMensagens = useRef<HTMLDivElement>(null);
 
-  // *** ADD: refs para scroller e barra de input
   const messagesScrollerRef = useRef<HTMLDivElement>(null);
   const inputBarRef = useRef<HTMLDivElement>(null);
 
@@ -68,18 +60,23 @@ const ChatPage: React.FC = () => {
     : 'Boa noite';
   const mensagemBoasVindas = `${saudacao}, ${userName}`;
 
+  // Scrolla quando chegam/são adicionadas mensagens
   useEffect(() => {
-    refFimMensagens.current?.scrollIntoView({ behavior: 'smooth' });
+    // timeout 0 garante que o layout já está pronto
+    const t = setTimeout(() => {
+      refFimMensagens.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 0);
+    return () => clearTimeout(t);
   }, [messages]);
 
-  // *** CHANGE: captura função de recompute do hook (extra mais compacto)
+  // Hook de teclado
   const recomputeInsets = useKeyboardInsets({
     container: messagesScrollerRef.current,
     inputBar: inputBarRef.current,
-    extra: 8, // <- antes 12; reduz o vão quando teclado fecha
+    extra: 8, // reduz o vão ao fechar teclado
   });
 
-  // *** ADD: recalcule quando mensagens mudarem ou estado de digitação mudar
+  // Recalcula insets quando muda algo visualmente relevante
   useEffect(() => {
     recomputeInsets && recomputeInsets();
   }, [messages, digitando, recomputeInsets]);
@@ -116,7 +113,6 @@ const ChatPage: React.FC = () => {
       const mensagemId = saved?.[0]?.id || userIdMsg;
 
       const history = [...messages, { id: mensagemId, role: 'user', content: text }];
-
       const tags = extrairTagsRelevantes(text);
       let mems: any[] = [];
 
@@ -162,7 +158,6 @@ const ChatPage: React.FC = () => {
       if (match) {
         try {
           const bloco = JSON.parse(match[0]);
-
           if (bloco.intensidade >= 7) {
             mixpanel.track('Memória Registrada', {
               intensidade: bloco.intensidade,
@@ -187,13 +182,16 @@ const ChatPage: React.FC = () => {
       });
     } finally {
       setDigitando(false);
-      // *** ADD: garante recálculo pós-envio (iOS Safari)
-      setTimeout(() => recomputeInsets && recomputeInsets(), 0);
+      // garante recálculo + scroll final (iOS Safari)
+      setTimeout(() => {
+        recomputeInsets && recomputeInsets();
+        refFimMensagens.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 0);
     }
   };
 
   return (
-    <div className="w-full h-[calc(var(--vh,1vh)*100)] flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="w-full min-h-[100svh] flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       <Header
         title="ECO"
         showBackButton={false}
@@ -209,9 +207,12 @@ const ChatPage: React.FC = () => {
       <div
         ref={messagesScrollerRef}
         className="flex-1 flex overflow-y-auto p-4 pt-2 flex-col items-center scroll-smooth overscroll-contain"
-        style={{ scrollPaddingBottom: '72px' }} // *** CHANGE: menor para reduzir “vão”
+        style={{
+          scrollPaddingBottom: '12px',
+          WebkitOverflowScrolling: 'touch',
+        }}
       >
-        <div className="max-w-2xl w-full flex flex-col items-center">
+        <div className="max-w-2xl w-full flex flex-col items-stretch">
           {messages.length === 0 && !erroApi && (
             <motion.div
               className="text-center text-gray-600 mb-20 mt-16"
@@ -254,11 +255,10 @@ const ChatPage: React.FC = () => {
         </div>
       </div>
 
-      {/* BARRA DE INPUT "GRUDADA" AO TECLADO */}
+      {/* BARRA DE INPUT */}
       <div
         ref={inputBarRef}
         className="sticky bottom-0 z-40 pb-[max(12px,env(safe-area-inset-bottom))]"
-        // *** ADD: recalcula assim que qualquer filho ganhar foco (iOS Safari)
         onFocusCapture={() => setTimeout(() => recomputeInsets && recomputeInsets(), 0)}
       >
         <div className="max-w-2xl mx-auto px-4">
