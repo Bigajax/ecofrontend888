@@ -17,15 +17,17 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
   const isUser = message.sender === 'user';
   const displayText = message.text ?? message.content ?? '';
 
-  const iconBase = 'text-gray-500 group-hover:text-gray-800';
-  const iconSize = 'h-[18px] w-[18px] sm:h-5 sm:w-5';
-  const iconClass = `${iconBase} ${iconSize}`;
+  // ——— estilo “iOS-like”: menor, leve, ghost ———
+  const BTN_SIZE = 'w-7 h-7 sm:w-8 sm:h-8';                 // botão pequeno (28→32px)
+  const ICON_SIZE = 'w-[14px] h-[14px] sm:w-4 sm:h-4';      // ícone 14→16px
+  const ICON_BASE = 'text-gray-500/80 group-hover:text-gray-800 transition-colors';
+  const ICON_CLASS = `${ICON_SIZE} ${ICON_BASE}`;
 
   const copiarTexto = async () => {
     try {
       await navigator.clipboard.writeText(displayText);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
+      setTimeout(() => setCopied(false), 1400);
     } catch (e) {
       console.warn('Falha ao copiar', e);
     }
@@ -45,6 +47,26 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     }
   };
 
+  // botão reutilizável (ghost, arredondado)
+  const GhostBtn: React.FC<
+    React.ButtonHTMLAttributes<HTMLButtonElement> & { children: React.ReactNode }
+  > = ({ children, className = '', ...rest }) => (
+    <button
+      {...rest}
+      className={[
+        'group rounded-xl',
+        BTN_SIZE,
+        'flex items-center justify-center',
+        'hover:bg-gray-100 active:bg-gray-200/80',
+        'focus:outline-none focus:ring-2 focus:ring-gray-300/50',
+        'transition-colors',
+        className,
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  );
+
   return (
     <>
       {/* Wrapper força o mesmo alinhamento da bolha e da barra de ações */}
@@ -57,53 +79,50 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
             className={[
               'mt-1 ml-2 flex items-center gap-1.5',
               'max-w-[min(720px,88vw)]',
-              // recuo levemente maior nas mensagens da Eco
-              isUser ? '' : 'pl-6'
+              isUser ? '' : 'pl-6', // pequeno recuo nas mensagens da Eco
             ].join(' ')}
           >
-            <button
+            <GhostBtn
               onClick={copiarTexto}
-              className="group p-1.5 rounded-md hover:bg-gray-100 active:bg-gray-200"
               aria-label="Copiar mensagem"
               title="Copiar"
             >
-              <ClipboardCopy className={iconClass} />
-            </button>
+              <ClipboardCopy className={ICON_CLASS} strokeWidth={1.5} />
+            </GhostBtn>
 
-            <button
-              className="group p-1.5 rounded-md hover:bg-gray-100 active:bg-gray-200"
+            <GhostBtn
+              onClick={() => {/* hook de feedback futuro */}}
               aria-label="Curtir resposta"
               title="Curtir"
-              onClick={() => {}}
             >
-              <ThumbsUp className={iconClass} />
-            </button>
+              <ThumbsUp className={ICON_CLASS} strokeWidth={1.5} />
+            </GhostBtn>
 
-            <button
-              className="group p-1.5 rounded-md hover:bg-gray-100 active:bg-gray-200"
+            <GhostBtn
+              onClick={() => {/* hook de feedback futuro */}}
               aria-label="Não curtir resposta"
               title="Não curtir"
-              onClick={() => {}}
             >
-              <ThumbsDown className={iconClass} />
-            </button>
+              <ThumbsDown className={ICON_CLASS} strokeWidth={1.5} />
+            </GhostBtn>
 
-            <button
+            <GhostBtn
               onClick={reproduzirAudio}
-              className="group p-1.5 rounded-md hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:pointer-events-none"
               aria-label={loadingAudio ? 'Gerando áudio...' : 'Ouvir em áudio'}
               title="Ouvir"
               disabled={loadingAudio}
+              className="disabled:opacity-50 disabled:pointer-events-none"
             >
               {loadingAudio ? (
-                <Loader2 className={`${iconClass} animate-spin`} />
+                <Loader2 className={`${ICON_CLASS} animate-spin`} strokeWidth={1.75} />
               ) : (
-                <Volume2 className={iconClass} />
+                <Volume2 className={ICON_CLASS} strokeWidth={1.5} />
               )}
-            </button>
+            </GhostBtn>
 
+            {/* toast inline */}
             <span
-              className={`text-[11px] sm:text-xs text-gray-400 ml-1 transition-opacity ${
+              className={`text-[10px] sm:text-xs text-gray-400 ml-1 transition-opacity ${
                 copied ? 'opacity-100' : 'opacity-0'
               }`}
               aria-live="polite"
