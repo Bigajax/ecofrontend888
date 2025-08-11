@@ -1,14 +1,6 @@
-import { supabase } from '../lib/supabaseClient';
-import axios from 'axios';
+import { supabase } from "../lib/supabaseClient";
+import api from "./axios";
 
-/* -------------------------------------------------------------------------- */
-/*  Configurações gerais                                                     */
-/* -------------------------------------------------------------------------- */
-const API_BASE = '/api/perfil-emocional';
-
-/* -------------------------------------------------------------------------- */
-/*  Tipagens                                                                  */
-/* -------------------------------------------------------------------------- */
 export interface PerfilEmocional {
   id: string;
   usuario_id: string;
@@ -19,59 +11,39 @@ export interface PerfilEmocional {
   updated_at?: string;
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Utilitário: Recupera cabeçalhos com JWT válido                           */
-/* -------------------------------------------------------------------------- */
 async function getAuthHeaders() {
-  const {
-    data: { session },
-    error
-  } = await supabase.auth.getSession();
-
-  if (error || !session?.access_token) {
-    throw new Error('⚠️ Sessão inválida ou usuário não autenticado.');
-  }
-
-  return {
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-    },
-  };
+  // (opcional) manter para chamadas sem interceptor; com o interceptor já funciona
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error("⚠️ Sessão inválida.");
+  return { headers: { Authorization: `Bearer ${session.access_token}` } };
 }
 
-/* -------------------------------------------------------------------------- */
-/*  API: Buscar perfil emocional completo                                    */
-/* -------------------------------------------------------------------------- */
-
-/**
- * 🔍 Recupera o perfil emocional do usuário por ID.
- * @param userId ID do usuário
- * @returns PerfilEmocional | null
- */
+// preferido: endpoint que resolve pelo token -> GET /perfil-emocional
+// fallback: backend legado -> GET /perfil-emocional/:userId
 export const buscarPerfilEmocional = async (
-  userId: string
+  userId?: string
 ): Promise<PerfilEmocional | null> => {
-  if (!userId) {
-    throw new Error('userId é obrigatório para buscar o perfil emocional.');
-  }
-
   try {
-    const config = await getAuthHeaders();
-    const url = `${API_BASE}/${userId}`;
-
-    const response = await axios.get<{ success: boolean; perfil: PerfilEmocional | null }>(
-      url,
-      config
-    );
-
-    if (!response.data?.perfil) {
-      console.info('[ℹ️ API] Nenhum perfil emocional encontrado.');
-      return null;
+    // 1) tenta sem :userId
+    try {
+      const { data } = await api.get<{ success?: boolean; perfil: PerfilEmocional | null }>(
+        "/perfil-emocional"
+      );
+      return data?.perfil ?? null;
+    } catch (e: any) {
+      const status = e?.response?.status;
+      const podeTentarFallback = status === 400 || status === 404 || status === 405;
+      if (!podeTentarFallback) throw e;
     }
 
-    return response.data.perfil;
+    // 2) fallback com :userId
+    if (!userId) return null;
+    const { data } = await api.get<{ success?: boolean; perfil: PerfilEmocional | null }>(
+      `/perfil-emocional/${encodeURIComponent(userId)}`
+    );
+    return data?.perfil ?? null;
   } catch (err: any) {
-    console.error('❌ Erro ao buscar perfil emocional:', err?.message || err);
+    console.error("❌ Erro ao buscar perfil emocional:", err?.response?.data || err?.message || err);
     return null;
   }
 };
