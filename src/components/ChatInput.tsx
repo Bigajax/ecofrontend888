@@ -2,50 +2,79 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Mic, Plus, X, BookOpen, Headphones } from 'lucide-react';
 
-const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
+type Props = {
+  onSendMessage: (t: string) => void;
+  onMoreOptionSelected: (k: 'save_memory' | 'go_to_voice_page') => void;
+  onSendAudio: (b: Blob) => void;
+};
+
+const ChatInput: React.FC<Props> = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [isRecordingUI, setIsRecordingUI] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
 
-  const speechRecognitionRef = useRef(null);
-  const plusButtonRef = useRef(null);
-  const popoverRef = useRef(null);
-  const textareaRef = useRef(null);
+  const speechRecognitionRef = useRef<any>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sendButtonRef = useRef<HTMLButtonElement>(null);
+  const wrapperRef = useRef<HTMLFormElement>(null);
 
-  // Auto resize do textarea
+  // ----- Ajuste de altura da barra (grava em --input-h) -----
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    const setH = () =>
+      document.documentElement.style.setProperty('--input-h', `${el.offsetHeight}px`);
+
+    setH();
+    const ro = new ResizeObserver(setH);
+    ro.observe(el);
+
+    // VisualViewport ajuda no iOS ao abrir teclado
+    const vv = (window as any).visualViewport as VisualViewport | undefined;
+    const handleVV = () => setTimeout(setH, 0);
+    vv?.addEventListener('resize', handleVV);
+    vv?.addEventListener('scroll', handleVV);
+
+    return () => {
+      ro.disconnect();
+      vv?.removeEventListener('resize', handleVV);
+      vv?.removeEventListener('scroll', handleVV);
+    };
+  }, []);
+
+  // Auto-resize do textarea
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = '0px';
+    ta.style.height = `${Math.min(192, ta.scrollHeight)}px`; // máx ~12 linhas
   }, [inputMessage]);
+
+  // Evita zoom ao focar e ativa classe p/ CSS tratar teclado
+  const onFocus = () => document.body.classList.add('keyboard-open');
+  const onBlur = () => document.body.classList.remove('keyboard-open');
 
   // Webkit Speech
   useEffect(() => {
     if ('webkitSpeechRecognition' in window) {
+      // @ts-ignore
       const recognition = new window.webkitSpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'pt-BR';
-
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: any) => {
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          }
+          if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
         }
         if (finalTranscript.trim()) {
           setInputMessage((prev) => (prev ? prev + ' ' : '') + finalTranscript);
         }
       };
-
-      recognition.onerror = (e) =>
-        console.error('Erro no reconhecimento de fala:', e.error);
-
+      recognition.onerror = (e: any) => console.error('Erro no reconhecimento de fala:', e.error);
       speechRecognitionRef.current = recognition;
     }
   }, []);
@@ -60,7 +89,6 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
       const chunks: BlobPart[] = [];
 
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-
       recorder.onstop = () => {
         setIsTranscribing(true);
         const blob = new Blob(chunks, { type: 'audio/webm' });
@@ -76,12 +104,10 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
       setIsRecordingUI(false);
     }
   };
-
   const stopRecording = () => {
     if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
     speechRecognitionRef.current?.stop();
   };
-
   const cancelRecording = () => {
     if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
     mediaRecorder?.stream.getTracks().forEach((t) => t.stop());
@@ -93,19 +119,14 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
 
   // Envio texto
   const handleSend = () => {
-    if (inputMessage.trim()) {
-      onSendMessage(inputMessage.trim());
-      setInputMessage('');
-      if (sendButtonRef.current) {
-        sendButtonRef.current.classList.add('scale-90');
-        setTimeout(() => {
-          sendButtonRef.current?.classList.remove('scale-90');
-        }, 120);
-      }
-    }
+    if (!inputMessage.trim()) return;
+    onSendMessage(inputMessage.trim());
+    setInputMessage('');
+    sendButtonRef.current?.classList.add('scale-90');
+    setTimeout(() => sendButtonRef.current?.classList.remove('scale-90'), 120);
   };
 
-  // UI de gravação
+  // ---------- UI de gravação ----------
   if (isRecordingUI) {
     return (
       <div className="relative bg-white border border-gray-200 rounded-2xl px-4 py-2 w-full max-w-2xl mx-auto">
@@ -149,9 +170,10 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
     );
   }
 
-  // UI padrão
+  // ---------- UI padrão ----------
   return (
     <motion.form
+      ref={wrapperRef}
       onSubmit={(e) => {
         e.preventDefault();
         handleSend();
@@ -166,18 +188,16 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
         <button
           type="button"
           onClick={() => setShowMoreOptions((prev) => !prev)}
-          ref={plusButtonRef}
           className="shrink-0 p-1.5 rounded-full text-gray-500 hover:bg-gray-100 focus:outline-none"
           aria-label="Mais opções"
         >
-          {showMoreOptions ? <X size={20} /> : <Plus size={20} />}
+          {showMoreOptions ? <X size={18} /> : <Plus size={18} />}
         </button>
 
         {/* Popover */}
         <AnimatePresence>
           {showMoreOptions && (
             <motion.div
-              ref={popoverRef}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
@@ -215,6 +235,8 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
               handleSend();
             }
           }}
+          onFocus={onFocus}
+          onBlur={onBlur}
           placeholder="Fale com a Eco"
           rows={1}
           className="min-w-0 flex-1 text-sm text-gray-800 placeholder:text-gray-400 bg-transparent border-none focus:outline-none resize-none leading-6 py-2 max-h-48 overflow-y-auto"
@@ -235,7 +257,7 @@ const ChatInput = ({ onSendMessage, onMoreOptionSelected, onSendAudio }) => {
             type="submit"
             ref={sendButtonRef}
             disabled={!inputMessage.trim()}
-            className="w-8 h-8 rounded-full bg-[#265F77] hover:bg-[#1f4c60] shadow-sm flex items-center justify-center transition-transform"
+            className="w-8 h-8 rounded-full bg-[#265F77] hover:bg-[#1f4c60] shadow-sm flex items-center justify-center transition-transform disabled:opacity-50"
             aria-label="Enviar mensagem"
           >
             <Send size={16} className="text-white" strokeWidth={1.5} />

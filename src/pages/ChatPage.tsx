@@ -1,5 +1,6 @@
 /* -------------------------------------------------------------------------- */
-/*  ChatPage.tsx — versão ajustada para integração com backend via axios baseURL */
+/*  ChatPage.tsx — versão ajustada p/ teclado mobile + scroll estável        */
+/*  Depende do ChatInput medir a própria altura e setar --input-h no <html>  */
 /* -------------------------------------------------------------------------- */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -26,7 +27,6 @@ import { salvarMensagem } from '../api/mensagem';
 import { differenceInDays } from 'date-fns';
 import { extrairTagsRelevantes } from '../utils/extrairTagsRelevantes';
 import mixpanel from '../lib/mixpanel';
-import { useKeyboardInsets } from '../hooks/useKeyboardInsets';
 
 const ChatPage: React.FC = () => {
   const { messages, addMessage, clearMessages } = useChat();
@@ -35,51 +35,64 @@ const ChatPage: React.FC = () => {
 
   const [digitando, setDigitando] = useState(false);
   const [erroApi, setErroApi] = useState<string | null>(null);
-  const refFimMensagens = useRef<HTMLDivElement>(null);
 
-  const messagesScrollerRef = useRef<HTMLDivElement>(null);
-  const inputBarRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
 
+  // Redireciona se não autenticado + track
   useEffect(() => {
-    if (!user) navigate('/login');
-    else {
-      mixpanel.track('Eco: Entrou no Chat', {
-        userId,
-        userName,
-        timestamp: new Date().toISOString(),
-      });
+    if (!user) {
+      navigate('/login');
+      return;
     }
-  }, [user, navigate]);
+    mixpanel.track('Eco: Entrou no Chat', {
+      userId,
+      userName,
+      timestamp: new Date().toISOString(),
+    });
+  }, [user, navigate, userId, userName]);
 
   if (!user) return null;
 
-  const saudacao = new Date().getHours() < 12
-    ? 'Bom dia'
-    : new Date().getHours() < 18
-    ? 'Boa tarde'
-    : 'Boa noite';
+  const saudacao =
+    new Date().getHours() < 12
+      ? 'Bom dia'
+      : new Date().getHours() < 18
+      ? 'Boa tarde'
+      : 'Boa noite';
   const mensagemBoasVindas = `${saudacao}, ${userName}`;
 
-  // Scrolla quando chegam/são adicionadas mensagens
+  // Mantém scroll no fim quando chegam mensagens
+  const scrollToBottom = (smooth = true) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const behavior = smooth ? 'smooth' : 'auto';
+    el.scrollTo({ top: el.scrollHeight, behavior });
+  };
+
   useEffect(() => {
-    // timeout 0 garante que o layout já está pronto
-    const t = setTimeout(() => {
-      refFimMensagens.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, 0);
+    // esperar layout “assentar” antes de rolar
+    const t = setTimeout(() => scrollToBottom(true), 0);
     return () => clearTimeout(t);
-  }, [messages]);
+  }, [messages, digitando]);
 
-  // Hook de teclado
-  const recomputeInsets = useKeyboardInsets({
-    container: messagesScrollerRef.current,
-    inputBar: inputBarRef.current,
-    extra: 8, // reduz o vão ao fechar teclado
-  });
-
-  // Recalcula insets quando muda algo visualmente relevante
+  // Ajuda extra no iOS: quando o teclado muda o viewport, rola pro fim
   useEffect(() => {
-    recomputeInsets && recomputeInsets();
-  }, [messages, digitando, recomputeInsets]);
+    const vv = (window as any).visualViewport as VisualViewport | undefined;
+    if (!vv) return;
+
+    const handleVV = () => {
+      // sem smooth p/ evitar “pulos” quando teclado abre/fecha
+      scrollToBottom(false);
+    };
+
+    vv.addEventListener('resize', handleVV);
+    vv.addEventListener('scroll', handleVV);
+    return () => {
+      vv.removeEventListener('resize', handleVV);
+      vv.removeEventListener('scroll', handleVV);
+    };
+  }, []);
 
   const gerarMensagemRetorno = (mem: any): string | null => {
     if (!mem) return null;
@@ -113,16 +126,16 @@ const ChatPage: React.FC = () => {
       const mensagemId = saved?.[0]?.id || userIdMsg;
 
       const history = [...messages, { id: mensagemId, role: 'user', content: text }];
-      const tags = extrairTagsRelevantes(text);
-      let mems: any[] = [];
 
+      const tags = extrairTagsRelevantes(text);
       const [similar, porTag] = await Promise.all([
         buscarMemoriasSimilares(text, 2).catch(() => []),
         tags.length ? buscarUltimasMemoriasComTags(userId!, tags, 2).catch(() => []) : [],
       ]);
 
+      // merge de memórias (sem duplicar)
       const vistos = new Set<string>();
-      mems = [...similar, ...porTag].filter((m) => {
+      const mems = [...similar, ...porTag].filter((m) => {
         if (vistos.has(m.id)) return false;
         vistos.add(m.id);
         return true;
@@ -140,25 +153,28 @@ const ChatPage: React.FC = () => {
       const retorno = gerarMensagemRetorno(memSignif);
 
       const mensagensComContexto = [
-        ...(retorno ? [{ role: 'system', content: retorno }] : []),
+        ...(retorno ? [{ role: 'system', content: retorno }] as any[] : []),
         ...(ctxMems ? [{ role: 'system', content: `Memórias recentes relevantes:\n${ctxMems}` }] : []),
         ...history.slice(-3),
       ];
 
-      const formatted = mensagensComContexto.map((m) => ({
+      const formatted = mensagensComContexto.map((m: any) => ({
         role: m.role || (m.sender === 'eco' ? 'assistant' : 'user'),
         content: m.text || m.content || '',
       }));
 
       const resposta = await enviarMensagemParaEco(formatted, userName, userId!);
+
+      // parte textual (sem JSON final, se houver)
       const textoEco = resposta.replace(/\{[\s\S]*?\}$/, '').trim();
       addMessage({ id: uuidv4(), text: textoEco, sender: 'eco' });
 
+      // bloco técnico para analytics (se veio junto no final)
       const match = resposta.match(/\{[\s\S]*\}$/);
       if (match) {
         try {
           const bloco = JSON.parse(match[0]);
-          if (bloco.intensidade >= 7) {
+          if (typeof bloco?.intensidade === 'number' && bloco.intensidade >= 7) {
             mixpanel.track('Memória Registrada', {
               intensidade: bloco.intensidade,
               emocao_principal: bloco.emocao_principal || 'desconhecida',
@@ -173,20 +189,17 @@ const ChatPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('[ChatPage] erro:', err);
-      setErroApi(err.message || 'Falha ao enviar mensagem.');
+      setErroApi(err?.message || 'Falha ao enviar mensagem.');
       mixpanel.track('Eco: Erro ao Enviar Mensagem', {
         userId,
-        erro: err.message || 'desconhecido',
+        erro: err?.message || 'desconhecido',
         mensagem: text,
         timestamp: new Date().toISOString(),
       });
     } finally {
       setDigitando(false);
-      // garante recálculo + scroll final (iOS Safari)
-      setTimeout(() => {
-        recomputeInsets && recomputeInsets();
-        refFimMensagens.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }, 0);
+      // força recálculo/scroll após o layout estabilizar (iOS Safari)
+      setTimeout(() => scrollToBottom(true), 0);
     }
   };
 
@@ -203,25 +216,30 @@ const ChatPage: React.FC = () => {
         }}
       />
 
-      {/* SCROLLER DAS MENSAGENS */}
+      {/* SCROLLER: padding-bottom reserva espaço p/ a barra de input (var --input-h) + safe area */}
       <div
-        ref={messagesScrollerRef}
-        className="flex-1 flex overflow-y-auto p-4 pt-2 flex-col items-center scroll-smooth overscroll-contain"
+        ref={scrollerRef}
+        className="flex-1 overflow-y-auto px-3 sm:px-6 pt-2"
         style={{
-          scrollPaddingBottom: '12px',
+          paddingBottom: 'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + 12px)',
           WebkitOverflowScrolling: 'touch',
+          scrollPaddingBottom: '12px',
         }}
       >
-        <div className="max-w-2xl w-full flex flex-col items-stretch">
+        <div className="max-w-2xl w-full mx-auto">
           {messages.length === 0 && !erroApi && (
             <motion.div
-              className="text-center text-gray-600 mb-20 mt-16"
+              className="text-center text-gray-600 mb-16 mt-12"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="text-3xl md:text-4xl font-light text-gray-600">{mensagemBoasVindas}</h2>
-              <p className="text-base md:text-lg font-light text-gray-400 mt-2">Aqui, você se escuta.</p>
+              <h2 className="text-3xl md:text-4xl font-light text-gray-600">
+                {mensagemBoasVindas}
+              </h2>
+              <p className="text-base md:text-lg font-light text-gray-400 mt-2">
+                Aqui, você se escuta.
+              </p>
             </motion.div>
           )}
 
@@ -235,36 +253,42 @@ const ChatPage: React.FC = () => {
                 key={m.id}
                 className={`flex items-start ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                {m.sender === 'eco' && <div className="mr-2"><EcoBubbleIcon /></div>}
-                {m.sender === 'eco'
-                  ? <EcoMessageWithAudio message={m as any} />
-                  : <ChatMessage message={m} />
-                }
+                {m.sender === 'eco' && (
+                  <div className="mr-2 mt-1.5">
+                    <EcoBubbleIcon />
+                  </div>
+                )}
+
+                {m.sender === 'eco' ? (
+                  <EcoMessageWithAudio message={m as any} />
+                ) : (
+                  <ChatMessage message={m} />
+                )}
               </div>
             ))}
 
             {digitando && (
               <div className="flex items-start justify-start">
-                <div className="mr-2"><EcoBubbleIcon /></div>
+                <div className="mr-2 mt-1.5">
+                  <EcoBubbleIcon />
+                </div>
                 <ChatMessage message={{ id: 'typing', text: '...', sender: 'eco' }} isEcoTyping />
               </div>
             )}
 
-            <div ref={refFimMensagens} />
+            <div ref={endRef} />
           </div>
         </div>
       </div>
 
-      {/* BARRA DE INPUT */}
-      <div
-        ref={inputBarRef}
-        className="sticky bottom-0 z-40 pb-[max(12px,env(safe-area-inset-bottom))]"
-        onFocusCapture={() => setTimeout(() => recomputeInsets && recomputeInsets(), 0)}
-      >
-        <div className="max-w-2xl mx-auto px-4">
+      {/* BARRA DE INPUT: sticky + safe-area. Não é fixed, então não “corta” o conteúdo. */}
+      <div className="sticky bottom-[max(env(safe-area-inset-bottom),0px)] z-40 px-3 sm:px-6 pb-2 pt-1 bg-gradient-to-t from-[rgba(248,245,240,0.92)] to-transparent backdrop-blur-sm">
+        <div className="max-w-2xl mx-auto">
           <ChatInput
             onSendMessage={handleSendMessage}
-            onMoreOptionSelected={(opt) => { if (opt === 'go_to_voice_page') navigate('/voice'); }}
+            onMoreOptionSelected={(opt) => {
+              if (opt === 'go_to_voice_page') navigate('/voice');
+            }}
             onSendAudio={() => console.log('Áudio enviado')}
           />
         </div>
