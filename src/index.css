@@ -1,6 +1,9 @@
-@tailwind base; 
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Evita o “font boosting” do iOS/Android em textos longos */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 body {
   font-family: 'Inter', sans-serif;
@@ -47,6 +50,17 @@ input, textarea { font-size: 16px; }
 
 /* Remove highlight azul no iOS e reduz atraso de clique no mobile */
 * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+/* ---------- Base compartilhada para bolhas de chat ---------- */
+.chat-bubble-base{
+  display:inline-block;
+  max-width:min(88%, 72ch);  /* % no mobile + limite por largura de texto no desktop */
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  hyphens:auto;
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
 
 /* Bolha de vidro (Eco) */
 .eco-glass-bubble {
@@ -109,14 +123,17 @@ input, textarea { font-size: 16px; }
 .vibrating { animation: vibrating-animation 0.6s ease-in-out infinite; }
 .animate-pulse-dot { animation: pulse-dot 1.5s infinite ease-in-out; }
 
-/* Mensagens estilo Apple */
+/* Mensagens estilo Apple (agora com limites consistentes e quebras seguras) */
 .message-eco {
   background-color: #ffffff;
   color: #333333;
   border-radius: 18px 18px 18px 4px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   padding: 10px 14px;
-  max-width: 75%;
+  max-width: min(88%, 72ch);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
   font-size: 0.95rem;
   transition: all 0.2s ease-in-out;
 }
@@ -127,7 +144,10 @@ input, textarea { font-size: 16px; }
   border-radius: 18px 18px 4px 18px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   padding: 10px 14px;
-  max-width: 75%;
+  max-width: min(88%, 72ch);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
   font-size: 0.95rem;
   transition: all 0.2s ease-in-out;
 }

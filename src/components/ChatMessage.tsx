@@ -19,18 +19,22 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
     >
       <div
         className={[
-          // dimensões
+          // dimensões + base responsiva consistente
           'px-3 py-2 sm:px-4 sm:py-3 rounded-2xl shadow select-text',
-          'max-w-[76vw] sm:max-w-[70ch] whitespace-pre-wrap break-anywhere',
+          'max-w-[88vw] md:max-w-[72ch] whitespace-pre-wrap',
+          // quebras seguras
+          'break-words overflow-hidden',
+          // usa a classe base do CSS para overflow-wrap:anywhere
+          'chat-bubble-base',
           // cores
           isUser
             ? 'bg-[#d8f1f5] text-gray-900 rounded-br-sm'
             : 'bg-white text-gray-900 rounded-bl-sm',
         ].join(' ')}
+        style={{ WebkitTextSizeAdjust: '100%', textSizeAdjust: '100%' }}
       >
         {isEcoTyping ? (
           <div className="flex items-end gap-1" aria-label="Eco está digitando">
-            {/* respeita prefers-reduced-motion */}
             <span
               className="w-2 h-2 bg-gray-400 rounded-full animate-wave-dot motion-reduce:animate-none"
               style={{ animationDelay: '0s' }}
@@ -47,30 +51,67 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
         ) : (
           <div
             className={[
-              'leading-relaxed',
-              'text-[14px] sm:text-sm md:text-base',
+              // fonte estável em todos os mobiles
+              'leading-[1.6]',
+              'text-[15px] sm:text-[15px] md:text-[16px]',
               isUser ? 'text-gray-900' : 'text-gray-800',
             ].join(' ')}
           >
-            <div
-              className={[
-                'prose prose-sm sm:prose-base max-w-none',
-                // títulos e listas mais sutis no chat
-                'prose-h1:text-lg prose-h2:text-base prose-h3:text-sm',
-                'prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5',
-                // links e imagens
-                'prose-a:break-words prose-a:underline',
-                'prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto',
-                // blocos de código
-                'prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-pre:rounded-lg',
-                'prose-pre:p-3 prose-code:before:content-[""] prose-code:after:content-[""]',
-              ].join(' ')}
+            {/* Markdown com estilos minimamente tipográficos, sem “encolher” */}
+            <ReactMarkdown
+              components={{
+                p: ({ node, ...props }) => (
+                  <p className="my-1.5">{props.children}</p>
+                ),
+                a: ({ node, ...props }) => (
+                  <a
+                    className="underline break-words"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    {...props}
+                  />
+                ),
+                ul: ({ node, ...props }) => (
+                  <ul className="list-disc pl-5 my-1.5 space-y-1">{props.children}</ul>
+                ),
+                ol: ({ node, ...props }) => (
+                  <ol className="list-decimal pl-5 my-1.5 space-y-1">{props.children}</ol>
+                ),
+                li: ({ node, ...props }) => <li className="pl-0.5">{props.children}</li>,
+                h1: ({ node, ...props }) => (
+                  <h1 className="text-[16px] font-semibold my-1.5">{props.children}</h1>
+                ),
+                h2: ({ node, ...props }) => (
+                  <h2 className="text-[15px] font-semibold my-1.5">{props.children}</h2>
+                ),
+                h3: ({ node, ...props }) => (
+                  <h3 className="text-[15px] font-medium my-1.5">{props.children}</h3>
+                ),
+                img: ({ node, ...props }) => (
+                  <img className="rounded-lg max-w-full h-auto my-2" {...props} />
+                ),
+                pre: ({ node, ...props }) => (
+                  <pre className="bg-gray-50 border border-gray-200 rounded-lg p-3 my-2 overflow-x-auto text-[13px]">
+                    {props.children}
+                  </pre>
+                ),
+                code: ({ inline, node, ...props }) =>
+                  inline ? (
+                    <code className="bg-gray-100 px-1 py-0.5 rounded text-[13px]">
+                      {props.children}
+                    </code>
+                  ) : (
+                    <code className="block">{props.children}</code>
+                  ),
+                table: ({ node, ...props }) => (
+                  <div className="overflow-x-auto -mx-1 my-2">
+                    <table className="min-w-[480px] text-left" {...props} />
+                  </div>
+                ),
+              }}
             >
-              {/* Permite rolagem horizontal em código/tabelas */}
-              <div className="overflow-x-auto">
-                <ReactMarkdown>{displayText}</ReactMarkdown>
-              </div>
-            </div>
+              {displayText}
+            </ReactMarkdown>
           </div>
         )}
       </div>

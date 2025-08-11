@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ChatMessage from './ChatMessage';
 import { ClipboardCopy, ThumbsUp, ThumbsDown, Volume2, Loader2 } from 'lucide-react';
 import AudioPlayerOverlay from './AudioPlayerOverlay';
@@ -9,21 +9,31 @@ interface EcoMessageWithAudioProps {
   message: Message;
 }
 
+const TAP = 32;      // área mínima de toque (px)
+const ICON = 16;     // tamanho do ícone
+
 const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) => {
   const [copied, setCopied] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [loadingAudio, setLoadingAudio] = useState(false);
 
   const iconBase = 'text-gray-500 group-hover:text-gray-800';
-  const iconSize = 'h-[18px] w-[18px] sm:h-5 sm:w-5';
-  const iconClass = `${iconBase} ${iconSize}`;
+  const iconClass = `${iconBase}`;
+
   const displayText = message.text ?? message.content ?? '';
+
+  // limpa o URL do áudio ao fechar/desmontar
+  useEffect(() => {
+    return () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+  }, [audioUrl]);
 
   const copiarTexto = async () => {
     try {
       await navigator.clipboard.writeText(displayText);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
+      setTimeout(() => setCopied(false), 1400);
     } catch (e) {
       console.warn('Falha ao copiar', e);
     }
@@ -43,62 +53,71 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     }
   };
 
+  const btnBase =
+    'group inline-flex items-center justify-center rounded-md hover:bg-gray-100 active:bg-gray-200 ' +
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 transition';
+  const btnStyle = { width: TAP, height: TAP };
+
   return (
     <>
       <div className="flex flex-col items-start">
-        {/* bolha da mensagem (usa o mesmo componente) */}
+        {/* bolha da mensagem */}
         <ChatMessage message={message} />
 
-        {/* barra de ações — acompanha a mesma largura da bolha */}
+        {/* barra de ações (compacta) */}
         <div
           className="
-            mt-1.5 ml-2
-            flex items-center gap-1.5
+            mt-1 ml-1.5
+            flex items-center gap-1
             max-w-[76vw] sm:max-w-[70ch]
           "
         >
           <button
             onClick={copiarTexto}
-            className="group p-1.5 rounded-md hover:bg-gray-100 active:bg-gray-200"
+            className={btnBase}
+            style={btnStyle}
             aria-label="Copiar mensagem"
             title="Copiar"
           >
-            <ClipboardCopy className={iconClass} />
+            <ClipboardCopy size={ICON} strokeWidth={1.75} className={iconClass} />
           </button>
 
           <button
-            className="group p-1.5 rounded-md hover:bg-gray-100 active:bg-gray-200"
+            className={btnBase}
+            style={btnStyle}
             aria-label="Curtir resposta"
             title="Curtir"
-            onClick={() => {/* hook de feedback futuro */}}
+            onClick={() => { /* futuro: enviar feedback +1 */ }}
           >
-            <ThumbsUp className={iconClass} />
+            <ThumbsUp size={ICON} strokeWidth={1.75} className={iconClass} />
           </button>
 
           <button
-            className="group p-1.5 rounded-md hover:bg-gray-100 active:bg-gray-200"
+            className={btnBase}
+            style={btnStyle}
             aria-label="Não curtir resposta"
             title="Não curtir"
-            onClick={() => {/* hook de feedback futuro */}}
+            onClick={() => { /* futuro: enviar feedback -1 */ }}
           >
-            <ThumbsDown className={iconClass} />
+            <ThumbsDown size={ICON} strokeWidth={1.75} className={iconClass} />
           </button>
 
           <button
             onClick={reproduzirAudio}
-            className="group p-1.5 rounded-md hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:pointer-events-none"
+            className={`${btnBase} disabled:opacity-50 disabled:pointer-events-none`}
+            style={btnStyle}
             aria-label={loadingAudio ? 'Gerando áudio...' : 'Ouvir em áudio'}
             title="Ouvir"
             disabled={loadingAudio}
           >
             {loadingAudio ? (
-              <Loader2 className={`${iconClass} animate-spin`} />
+              <Loader2 size={ICON} strokeWidth={1.75} className={`${iconClass} animate-spin`} />
             ) : (
-              <Volume2 className={iconClass} />
+              <Volume2 size={ICON} strokeWidth={1.75} className={iconClass} />
             )}
           </button>
 
-          {/* toast inline, sem deslocar layout */}
+          {/* toast inline */}
           <span
             className={`text-[11px] sm:text-xs text-gray-400 ml-1 transition-opacity ${
               copied ? 'opacity-100' : 'opacity-0'
@@ -111,7 +130,13 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
       </div>
 
       {audioUrl && (
-        <AudioPlayerOverlay audioUrl={audioUrl} onClose={() => setAudioUrl(null)} />
+        <AudioPlayerOverlay
+          audioUrl={audioUrl}
+          onClose={() => {
+            URL.revokeObjectURL(audioUrl);
+            setAudioUrl(null);
+          }}
+        />
       )}
     </>
   );
