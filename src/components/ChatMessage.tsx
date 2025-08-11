@@ -19,15 +19,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
     >
       <div
         className={[
-          // layout/tamanho
+          // container/bubble
           'px-3 py-2 sm:px-4 sm:py-3 rounded-2xl shadow select-text',
           'max-w-[min(720px,88vw)] whitespace-pre-wrap break-words',
           // cores
           isUser
             ? 'bg-[#d8f1f5] text-gray-900 rounded-br-sm'
             : 'bg-white text-gray-900 rounded-bl-sm',
-          // tipografia consistente (nada de serif aqui)
-          'font-sans'
         ].join(' ')}
       >
         {isEcoTyping ? (
@@ -46,77 +44,42 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
             />
           </div>
         ) : (
-          <div className={['leading-relaxed', 'text-[14px] sm:text-[15px]'].join(' ')}>
-            {/* Conteúdo Markdown com estilização manual (sem prose) */}
-            <div className="overflow-x-auto">
-              <ReactMarkdown
-                components={{
-                  p: ({ node, ...props }) => (
-                    <p className="mb-2 last:mb-0 font-normal" {...props} />
-                  ),
-                  em: ({ node, ...props }) => (
-                    // se quiser remover itálico, troque 'italic' por 'not-italic'
-                    <em className="italic font-medium" {...props} />
-                  ),
-                  strong: ({ node, ...props }) => (
-                    <strong className="font-semibold" {...props} />
-                  ),
-                  a: ({ node, ...props }) => (
-                    <a
-                      className="underline break-words text-gray-900"
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      {...props}
-                    />
-                  ),
-                  ul: ({ node, ...props }) => (
-                    <ul className="list-disc ml-5 my-2 space-y-1" {...props} />
-                  ),
-                  ol: ({ node, ...props }) => (
-                    <ol className="list-decimal ml-5 my-2 space-y-1" {...props} />
-                  ),
-                  li: ({ node, ...props }) => <li className="leading-relaxed" {...props} />,
-                  blockquote: ({ node, ...props }) => (
-                    <blockquote
-                      className="border-l-4 border-gray-200 pl-3 my-2 text-gray-800 italic"
-                      {...props}
-                    />
-                  ),
-                  code: ({ inline, className, children, ...props }) =>
-                    inline ? (
-                      <code
-                        className="bg-gray-100 rounded px-1 py-0.5 text-xs font-mono"
-                        {...props}
-                      >
-                        {children}
-                      </code>
-                    ) : (
-                      <code className="font-mono text-xs" {...props}>
-                        {children}
-                      </code>
+          <div
+            className={[
+              // força Inter/sans e tamanhos coerentes
+              'font-sans leading-relaxed text-[14px] sm:text-sm md:text-base',
+              isUser ? 'text-gray-900' : 'text-gray-800',
+            ].join(' ')}
+          >
+            <div
+              className={[
+                // Typography, mas herdando fonte sans
+                'prose prose-sm sm:prose-base max-w-none font-sans',
+                // neutraliza exageros de ênfase do plugin
+                'prose-p:font-normal prose-li:font-normal prose-strong:font-semibold prose-em:italic',
+                // títulos não mudam família/tamanho (parecem texto normal)
+                'prose-headings:font-semibold prose-headings:leading-snug prose-headings:text-[1em] prose-headings:font-sans',
+                // espaçamentos suaves
+                'prose-p:my-1.5 sm:prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5',
+                // links/código/imagens
+                'prose-a:break-words prose-a:underline',
+                'prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-pre:rounded-lg prose-pre:p-3',
+                'prose-code:before:content-[""] prose-code:after:content-[""]',
+                'prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto',
+              ].join(' ')}
+            >
+              {/* scroll horizontal seguro p/ código/tabelas */}
+              <div className="overflow-x-auto">
+                <ReactMarkdown
+                  components={{
+                    p: ({ node, ...props }) => (
+                      <p className="m-0 mb-2 last:mb-0" {...props} />
                     ),
-                  pre: ({ node, ...props }) => (
-                    <pre
-                      className="bg-gray-50 border border-gray-200 rounded-lg p-3 my-2 overflow-x-auto"
-                      {...props}
-                    />
-                  ),
-                  img: ({ node, ...props }) => (
-                    <img className="rounded-lg max-w-full h-auto my-2" {...props} />
-                  ),
-                  h1: ({ node, ...props }) => (
-                    <h1 className="text-base font-semibold mb-2" {...props} />
-                  ),
-                  h2: ({ node, ...props }) => (
-                    <h2 className="text-[15px] font-semibold mb-2" {...props} />
-                  ),
-                  h3: ({ node, ...props }) => (
-                    <h3 className="text-[14px] font-semibold mb-1.5" {...props} />
-                  )
-                }}
-              >
-                {displayText}
-              </ReactMarkdown>
+                  }}
+                >
+                  {displayText}
+                </ReactMarkdown>
+              </div>
             </div>
           </div>
         )}
