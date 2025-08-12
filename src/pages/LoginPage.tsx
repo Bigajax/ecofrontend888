@@ -8,19 +8,36 @@ import Input from '../components/Input';
 import TourInicial from '../components/TourInicial';
 import EcoTitle from '../components/EcoTitle';
 
+/* Bolha minimal com brilho sutil */
+const BubbleIcon: React.FC<{ className?: string }> = ({ className = 'h-3.5 w-3.5' }) => (
+  <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+    <defs>
+      <radialGradient id="b1" cx="35%" cy="30%" r="70%">
+        <stop offset="0%" stopColor="#ECFEFF"/>
+        <stop offset="45%" stopColor="#9AD1D4"/>
+        <stop offset="100%" stopColor="#A78BFA"/>
+      </radialGradient>
+    </defs>
+    <circle cx="32" cy="32" r="22" fill="url(#b1)"/>
+    <ellipse cx="24" cy="22" rx="9" ry="6" fill="#fff" opacity=".55"/>
+  </svg>
+);
+
 const LoginPage: React.FC = () => {
+  const { signIn, user } = useAuth();
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { signIn, user } = useAuth();
-  const navigate = useNavigate();
   const [isTourActive, setIsTourActive] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // habilita o botão apenas quando houver dados mínimos
+  const canSubmit = email.trim().length > 3 && password.length >= 6 && !loading;
+
   useEffect(() => {
-    if (user) {
-      navigate('/chat');
-    }
+    if (user) navigate('/chat');
   }, [user, navigate]);
 
   const handleIniciarTour = () => setIsTourActive(true);
@@ -28,13 +45,13 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canSubmit) return;
     setError('');
     setLoading(true);
-
     try {
-      await signIn(email, password);
+      await signIn(email.trim(), password);
     } catch (err: any) {
-      setError(err.message || 'Erro ao autenticar.');
+      setError(err?.message || 'Erro ao autenticar.');
     } finally {
       setLoading(false);
     }
@@ -42,13 +59,32 @@ const LoginPage: React.FC = () => {
 
   return (
     <PhoneFrame>
-      <div className="flex flex-col h-full px-6 py-8 justify-center items-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <div className="flex h-full items-center justify-center px-6 py-8
+                      bg-gradient-to-br from-[#F7F8FB] via-[#F9FAFB] to-[#F5F7FF]">
         {isTourActive && <TourInicial onClose={handleCloseTour} />}
 
-        <div className="bg-white/20 backdrop-blur-lg border border-white/30 shadow-xl rounded-2xl px-8 py-10 w-full max-w-sm space-y-6">
-          <EcoTitle />
+        <div className="w-full max-w-sm rounded-[28px] px-8 py-10 space-y-6
+                        bg-white/80 backdrop-blur-2xl
+                        border border-white/70 ring-1 ring-black/5
+                        shadow-[0_12px_30px_rgba(0,0,0,.06)]">
+          <div className="text-center space-y-3">
+            <EcoTitle />
+            {/* Pílula “Seu espelho interior” */}
+            <div className="relative mx-auto w-fit">
+              <div className="absolute -inset-[2px] rounded-full blur-[6px] opacity-40
+                              bg-[radial-gradient(70%_90%_at_50%_0%,#a78bfa_18%,transparent_55%)]"/>
+              <span className="relative inline-flex items-center gap-2 rounded-full
+                               px-3.5 py-1.5 text-sm font-medium tracking-tight
+                               bg-white/80 text-slate-900
+                               border border-white/70 ring-1 ring-black/5
+                               shadow-[0_1px_0_rgba(255,255,255,.7)_inset,0_6px_18px_rgba(2,6,23,.06)]">
+                <BubbleIcon />
+                <span>Seu espelho interior</span>
+              </span>
+            </div>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <Input
               type="email"
               placeholder="Email"
@@ -56,7 +92,12 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="rounded-lg border border-white/20 bg-white/10 backdrop-blur placeholder-white/50 text-gray-100 px-3 py-2 focus:ring-2 focus:ring-white/30 transition"
+              className="h-12 rounded-2xl px-4
+                         bg-white text-slate-900 placeholder-slate-400
+                         border border-black/10
+                         shadow-[inset_0_1px_0_rgba(255,255,255,.7)]
+                         focus:ring-[3px] focus:ring-sky-300/50 focus:border-transparent
+                         transition"
             />
 
             <Input
@@ -66,67 +107,62 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="rounded-lg border border-white/20 bg-white/10 backdrop-blur placeholder-white/50 text-gray-100 px-3 py-2 focus:ring-2 focus:ring-white/30 transition"
+              className="h-12 rounded-2xl px-4
+                         bg-white text-slate-900 placeholder-slate-400
+                         border border-black/10
+                         shadow-[inset_0_1px_0_rgba(255,255,255,.7)]
+                         focus:ring-[3px] focus:ring-sky-300/50 focus:border-transparent
+                         transition"
             />
 
             {error && (
               <motion.p
-                className="text-red-500 text-sm text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                className="text-rose-600 text-sm text-center"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               >
                 {error}
               </motion.p>
             )}
 
-            <div className="flex flex-col items-center space-y-3 w-full pt-2">
+            <div className="pt-2 space-y-3">
               <button
                 type="submit"
-                className="
-                  w-full bg-[#265F77] text-white
-                  hover:bg-[#2d6f8b]
-                  font-semibold py-2.5 rounded-lg shadow-md
-                  transition duration-300 ease-in-out
-                  hover:scale-[1.02] active:scale-[0.98]
-                "
-                disabled={loading}
+                disabled={!canSubmit}
+                className={`w-full h-12 rounded-2xl font-semibold tracking-tight
+                  transition will-change-transform
+                  ${canSubmit
+                    ? 'bg-[#265F77] text-white hover:bg-[#2b6e8a] active:translate-y-[1px] shadow-[0_1px_0_rgba(255,255,255,.3)_inset,0_10px_22px_rgba(2,6,23,.12)]'
+                    : 'bg-slate-300/70 text-slate-600 cursor-not-allowed'}`}
               >
-                {loading ? 'Entrando...' : 'Entrar'}
+                {loading ? 'Entrando…' : 'Entrar'}
               </button>
 
               <button
                 type="button"
-                className="
-                  w-full bg-white/30 backdrop-blur
-                  border border-white/40
-                  hover:bg-white/40
-                  text-gray-800 font-medium py-2.5 rounded-lg
-                  transform transition duration-300 ease-in-out
-                  hover:scale-[1.02] active:scale-[0.98]
-                  hover:brightness-105
-                "
                 onClick={() => navigate('/register')}
                 disabled={loading}
+                className="w-full h-11 rounded-2xl font-medium
+                           bg-white/80 text-slate-900
+                           border border-white/70 ring-1 ring-black/5
+                           transition hover:bg-white"
               >
                 Criar perfil
               </button>
 
-              <div className="border-b border-white/30 w-16 my-1" />
-              <span className="text-gray-300 text-sm">ou</span>
+              <div className="flex items-center gap-3 py-1 select-none">
+                <span className="flex-1 h-px bg-slate-200/80" />
+                <span className="text-slate-400 text-xs">ou</span>
+                <span className="flex-1 h-px bg-slate-200/80" />
+              </div>
 
               <button
                 type="button"
-                className="
-                  w-full bg-white/30 backdrop-blur
-                  border border-white/40
-                  hover:bg-white/40
-                  text-gray-800 font-medium py-2.5 rounded-lg
-                  transform transition duration-300 ease-in-out
-                  hover:scale-[1.02] active:scale-[0.98]
-                  hover:brightness-105
-                "
                 onClick={handleIniciarTour}
                 disabled={loading}
+                className="w-full h-11 rounded-2xl font-medium
+                           bg-white/70 text-slate-900
+                           border border-white/60 ring-1 ring-black/5
+                           transition hover:bg-white"
               >
                 Iniciar Tour
               </button>
