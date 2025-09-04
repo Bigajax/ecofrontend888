@@ -1,5 +1,5 @@
 // src/pages/MemoryPage.tsx
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -16,12 +16,15 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 const EMOTION_COLORS: Record<string, string> = {
   raiva: '#DB2777', irritado: '#EC4899', frustracao: '#BE185D', medo: '#DB2777', incerteza: '#BE185D',
   alegria: '#3B82F6', calmo: '#2563EB', surpresa: '#3B82F6', antecipacao: '#2563EB',
-  tristeza: '#A855F7', neutro: '#8B5CF6'
+  tristeza: '#A855F7', neutro: '#8B5CF6',
 };
-const normalizeEmotion = (s: string) =>
+const normalize = (s: string = '') =>
   s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+const normalizeEmotion = (s: string) => normalize(s);
 const hashStringToHue = (str: string) => {
-  let h = 0; for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
   return Math.abs(h) % 360;
 };
 const generateConsistentPastelColor = (str: string, o: any = {}) => {
@@ -29,7 +32,8 @@ const generateConsistentPastelColor = (str: string, o: any = {}) => {
   const { saturation = 25, lightness = 88 } = o;
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
-const getEmotionColor = (n: string) => EMOTION_COLORS[normalizeEmotion(n)] || generateConsistentPastelColor(n);
+const getEmotionColor = (n: string) =>
+  EMOTION_COLORS[normalizeEmotion(n)] || generateConsistentPastelColor(n);
 
 const CustomTooltip = ({ active, payload, label }: any) =>
   active && payload?.length ? (
@@ -51,7 +55,8 @@ const CustomTooltip = ({ active, payload, label }: any) =>
   ) : null;
 
 const humanDate = (raw: string) => {
-  const d = new Date(raw); if (isNaN(d.getTime())) return '';
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return '';
   const diff = Math.floor((Date.now() - d.getTime()) / 86400000);
   if (diff === 0) return 'Hoje';
   if (diff === 1) return 'Ontem';
@@ -59,77 +64,153 @@ const humanDate = (raw: string) => {
 };
 const clamp = (v: number, min = -1, max = 1) => Math.max(min, Math.min(max, v));
 
-/* ------------------- Cartão de memória ------------------- */
+/* -------- Agrupamento por período (Hoje/Ontem/Esta semana/Este mês/Antigas) -------- */
+const bucketLabelForDate = (iso: string) => {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return 'Antigas';
+  const now = new Date();
+
+  const msDay = 86400000;
+  const diffDays = Math.floor((+now - +d) / msDay);
+  if (diffDays === 0) return 'Hoje';
+  if (diffDays === 1) return 'Ontem';
+
+  // esta semana
+  const startOfWeek = new Date(now);
+  const day = startOfWeek.getDay(); // 0..6
+  const diffToMonday = (day + 6) % 7; // segunda como início
+  startOfWeek.setHours(0, 0, 0, 0);
+  startOfWeek.setDate(startOfWeek.getDate() - diffToMonday);
+  if (d >= startOfWeek) return 'Esta semana';
+
+  // este mês
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (d >= startOfMonth) return 'Este mês';
+
+  return 'Antigas';
+};
+
+type Grouped = Record<string, Memoria[]>;
+
+const groupMemories = (mems: Memoria[]): Grouped =>
+  mems.reduce((acc: Grouped, m) => {
+    const label = m.created_at ? bucketLabelForDate(m.created_at) : 'Antigas';
+    (acc[label] ||= []).push(m);
+    return acc;
+  }, {});
+
+/* ------------------- Cartão de memória (novo) ------------------- */
 const MemoryCard: React.FC<{ mem: Memoria }> = ({ mem }) => {
-  const [expanded, setExpanded] = useState(false);
-  const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
+  const [open, setOpen] = useState(false);
+  const cap = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
+  const color = getEmotionColor(mem.emocao_principal || 'neutro');
+  const when = mem.created_at ? humanDate(mem.created_at) : '';
+  const intensidade = Math.max(0, Math.min(10, Number((mem as any).intensidade ?? 0)));
+  const preview = (mem.analise_resumo || mem.contexto || '').trim();
 
   return (
-    <li className="glass-panel p-4 rounded-3xl transition-all">
-      {/* emoção */}
-      <div className="mb-2 text-center">
-        <span className="block text-lg font-semibold text-neutral-900 tracking-tight">
-          {mem.emocao_principal ? cap(mem.emocao_principal) : 'Emoção desconhecida'}
-        </span>
-      </div>
+    <li className="rounded-3xl border border-black/10 bg-white/70 backdrop-blur-md shadow-md p-4 transition-all">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full text-left"
+      >
+        <div className="flex items-center gap-3">
+          <span
+            className="h-9 w-9 rounded-full ring-2 ring-white/70 shadow-sm shrink-0"
+            style={{ background: color, boxShadow: 'inset 0 1px 0 rgba(255,255,255,.6)' }}
+            aria-hidden
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-[15px] font-semibold text-neutral-900 truncate">
+                {cap(mem.emocao_principal) || 'Emoção'}
+              </h3>
+              <span className="text-[12px] text-neutral-500 shrink-0">{when}</span>
+            </div>
 
-      {/* tags */}
-      {mem.tags?.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2 justify-center">
-          {mem.tags.map((tag, i) => (
-            <span
-              key={i}
-              className="text-xs px-3 py-1 rounded-full font-medium border shadow-sm"
-              style={{
-                color: '#0f172a',
-                background: getEmotionColor(tag),
-                borderColor: 'rgba(0,0,0,0.10)',
-              }}
-            >
-              {cap(tag)}
-            </span>
-          ))}
+            {preview && (
+              <p
+                className="text-sm text-neutral-700 mt-0.5"
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}
+              >
+                {preview}
+              </p>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* data */}
-      <div className="text-xs text-neutral-400 text-center">{mem.created_at ? humanDate(mem.created_at) : ''}</div>
+        <div className="mt-3 h-1.5 rounded-full bg-neutral-200/60 overflow-hidden">
+          <span
+            className="block h-full rounded-full"
+            style={{
+              width: `${(intensidade / 10) * 100}%`,
+              background: `linear-gradient(90deg, ${color}, rgba(0,0,0,0.08))`,
+            }}
+            aria-hidden
+          />
+        </div>
 
-      {/* toggle */}
-      <div className="mt-3 flex justify-end">
-        <button
-          className="text-xs font-medium text-sky-700 hover:opacity-80 transition"
-          onClick={() => setExpanded((v) => !v)}
+        {!!mem.tags?.length && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {mem.tags.map((tag, i) => (
+              <span
+                key={`${tag}-${i}`}
+                className="text-xs px-3 py-1 rounded-full font-medium border border-black/10 shadow-sm"
+                style={{
+                  background: generateConsistentPastelColor(tag),
+                  color: '#0f172a',
+                }}
+              >
+                {tag && tag[0].toUpperCase() + tag.slice(1)}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-3 flex justify-end">
+          <span className="text-xs font-medium text-sky-700">
+            {open ? 'Fechar ↑' : 'Ver mais ↓'}
+          </span>
+        </div>
+      </button>
+
+      {open && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4 mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700"
         >
-          {expanded ? 'Fechar ↑' : 'Ver mais ↓'}
-        </button>
-      </div>
-
-      {/* conteúdo expandido */}
-      {expanded && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700">
           {mem.analise_resumo && (
-            <div className="rounded-xl p-3 border border-neutral-200 bg-white/70 backdrop-blur shadow-sm">
+            <div className="rounded-xl p-3 bg-white/70 backdrop-blur border border-neutral-200 shadow-sm">
               <div className="font-semibold mb-1 text-neutral-900">Reflexão da Eco</div>
               <div>{mem.analise_resumo}</div>
             </div>
           )}
+
           {mem.contexto && (
-            <div className="rounded-xl p-3 border border-neutral-200 bg-white/70 backdrop-blur shadow-sm">
+            <div className="rounded-xl p-3 bg-white/70 backdrop-blur border border-neutral-200 shadow-sm">
               <div className="font-semibold mb-1 text-neutral-900">Seu pensamento</div>
               <div>{mem.contexto}</div>
             </div>
           )}
+
           {(mem.dominio_vida || mem.categoria) && (
             <div className="flex flex-col sm:flex-row gap-2">
               {mem.dominio_vida && (
-                <div className="flex-1 rounded-xl p-3 border border-neutral-200 bg-white/70 backdrop-blur shadow-sm">
+                <div className="flex-1 rounded-xl p-3 bg-white/70 backdrop-blur border border-neutral-200 shadow-sm">
                   <div className="font-semibold mb-1 text-neutral-900">Domínio</div>
                   <div>{mem.dominio_vida}</div>
                 </div>
               )}
               {mem.categoria && (
-                <div className="flex-1 rounded-xl p-3 border border-neutral-200 bg-white/70 backdrop-blur shadow-sm">
+                <div className="flex-1 rounded-xl p-3 bg-white/70 backdrop-blur border border-neutral-200 shadow-sm">
                   <div className="font-semibold mb-1 text-neutral-900">Categoria</div>
                   <div>{mem.categoria}</div>
                 </div>
@@ -146,12 +227,18 @@ const MemoryCard: React.FC<{ mem: Memoria }> = ({ mem }) => {
 const MemoryPage: React.FC = () => {
   const { userId } = useAuth();
   const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState<'memories' | 'profile' | 'report'>('memories');
   const [memories, setMemories] = useState<Memoria[]>([]);
   const [perfil, setPerfil] = useState<any>(null);
   const [relatorio, setRelatorio] = useState<RelatorioEmocional | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // filtros
+  const [emoFilter, setEmoFilter] = useState<string>('all');
+  const [query, setQuery] = useState<string>('');
+  const [minIntensity, setMinIntensity] = useState<number>(0);
 
   useEffect(() => {
     const carregar = async () => {
@@ -163,7 +250,9 @@ const MemoryPage: React.FC = () => {
           buscarPerfilEmocional(userId),
           buscarRelatorioEmocional(userId),
         ]);
-        setMemories(memData.filter((m) => m.salvar_memoria === true || m.salvar_memoria === 'true'));
+        setMemories(
+          memData.filter((m) => (m as any).salvar_memoria === true || (m as any).salvar_memoria === 'true')
+        );
         setPerfil(perfilData);
         setRelatorio(relatorioData);
       } catch {
@@ -174,6 +263,42 @@ const MemoryPage: React.FC = () => {
     };
     carregar();
   }, [userId]);
+
+  // emoções únicas para o seletor
+  const emotionOptions = useMemo(() => {
+    const set = new Set<string>();
+    memories.forEach((m) => m.emocao_principal && set.add(m.emocao_principal));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [memories]);
+
+  // aplica filtros
+  const filteredMemories = useMemo(() => {
+    const q = normalize(query);
+    return memories.filter((m) => {
+      // emoção
+      if (emoFilter !== 'all') {
+        if (normalize(m.emocao_principal || '') !== normalize(emoFilter)) return false;
+      }
+      // intensidade
+      const inten = Number((m as any).intensidade ?? 0);
+      if (!isNaN(minIntensity) && inten < minIntensity) return false;
+      // busca em tags/analise/contexto
+      if (q) {
+        const hay =
+          normalize(m.analise_resumo || '') +
+          ' ' +
+          normalize(m.contexto || '') +
+          ' ' +
+          (Array.isArray(m.tags) ? m.tags.map(normalize).join(' ') : '');
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [memories, emoFilter, minIntensity, query]);
+
+  // agrupamento
+  const grouped = useMemo(() => groupMemories(filteredMemories), [filteredMemories]);
+  const groupOrder = ['Hoje', 'Ontem', 'Esta semana', 'Este mês', 'Antigas'];
 
   const emotionChart = useMemo(() => {
     if (!perfil?.emocoes_frequentes) return [];
@@ -200,7 +325,9 @@ const MemoryPage: React.FC = () => {
         excitacaoNormalizada: clamp(typeof p.excitacao === 'number' ? p.excitacao : p.y ?? 0),
         cor: p.cor ?? undefined,
       }))
-      .filter((p: any) => typeof p.valenciaNormalizada === 'number' && typeof p.excitacaoNormalizada === 'number');
+      .filter(
+        (p: any) => typeof p.valenciaNormalizada === 'number' && typeof p.excitacaoNormalizada === 'number'
+      );
   }, [relatorio]);
 
   const ChartCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
@@ -210,6 +337,8 @@ const MemoryPage: React.FC = () => {
       {children}
     </motion.div>
   );
+
+  const filtersActive = emoFilter !== 'all' || !!query || minIntensity > 0;
 
   return (
     <PhoneFrame className="flex flex-col h-full bg-white">
@@ -280,22 +409,92 @@ const MemoryPage: React.FC = () => {
           <>
             {activeTab === 'memories' && (
               <>
-                {memories.length > 0 ? (
-                  <ul className="space-y-3">
-                    {memories.map((m) => (
-                      <MemoryCard key={m.id} mem={m} />
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="flex flex-col items-center text-center mt-20 text-neutral-500 px-6">
-                    <p className="text-lg font-medium mb-2 text-neutral-900">Você ainda não tem memórias salvas</p>
-                    <p className="text-sm mb-6 max-w-xs">Crie sua primeira agora mesmo.</p>
-                    <button
-                      onClick={() => navigate('/chat')}
-                      className="px-4 py-2 rounded-full text-sm font-medium border border-neutral-300 bg-white/60 backdrop-blur hover:bg-white transition text-neutral-900"
+                {/* filtros rápidos */}
+                <div className="glass-panel p-3 rounded-2xl mb-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <select
+                      value={emoFilter}
+                      onChange={(e) => setEmoFilter(e.target.value)}
+                      className="h-10 rounded-xl px-3 bg-white/80 border border-black/10 text-sm"
                     >
-                      + Nova memória
-                    </button>
+                      <option value="all">Todas as emoções</option>
+                      {emotionOptions.map((emo) => (
+                        <option key={emo} value={emo}>
+                          {emo[0].toUpperCase() + emo.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="text"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Buscar em tags, reflexão ou pensamento…"
+                      className="h-10 rounded-xl px-3 bg-white/80 border border-black/10 text-sm"
+                    />
+
+                    <div className="flex items-center gap-3">
+                      <label className="text-xs text-neutral-600 w-24">Intensidade ≥ {minIntensity}</label>
+                      <input
+                        type="range"
+                        min={0}
+                        max={10}
+                        step={1}
+                        value={minIntensity}
+                        onChange={(e) => setMinIntensity(Number(e.target.value))}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  {filtersActive && (
+                    <div className="mt-2 flex justify-end">
+                      <button
+                        onClick={() => {
+                          setEmoFilter('all');
+                          setQuery('');
+                          setMinIntensity(0);
+                        }}
+                        className="text-xs px-3 py-1 rounded-full border border-black/10 bg-white/70 hover:bg-white transition"
+                      >
+                        Limpar filtros
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* lista agrupada */}
+                {filteredMemories.length > 0 ? (
+                  <div className="space-y-6">
+                    {groupOrder
+                      .filter((bucket) => grouped[bucket]?.length)
+                      .map((bucket) => (
+                        <section key={bucket}>
+                          <h3 className="text-sm font-semibold text-neutral-500 mb-2">{bucket}</h3>
+                          <ul className="space-y-3">
+                            {grouped[bucket].map((m) => (
+                              <MemoryCard key={m.id} mem={m} />
+                            ))}
+                          </ul>
+                        </section>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center text-center mt-16 text-neutral-500 px-6">
+                    <p className="text-lg font-medium mb-2 text-neutral-900">
+                      {filtersActive ? 'Nenhuma memória coincide com os filtros' : 'Você ainda não tem memórias salvas'}
+                    </p>
+                    <p className="text-sm mb-6 max-w-xs">
+                      {filtersActive ? 'Ajuste os filtros para ver mais resultados.' : 'Crie sua primeira agora mesmo.'}
+                    </p>
+                    {!filtersActive && (
+                      <button
+                        onClick={() => navigate('/chat')}
+                        className="px-4 py-2 rounded-full text-sm font-medium border border-neutral-300 bg-white/60 backdrop-blur hover:bg-white transition text-neutral-900"
+                      >
+                        + Nova memória
+                      </button>
+                    )}
                   </div>
                 )}
               </>
@@ -308,7 +507,11 @@ const MemoryPage: React.FC = () => {
                     <ChartCard title="Emoções mais frequentes">
                       {emotionChart.length > 0 ? (
                         <ResponsiveContainer width="100%" height={230}>
-                          <BarChart data={emotionChart} margin={{ top: 20, right: 5, left: 5, bottom: 40 }} barCategoryGap="30%">
+                          <BarChart
+                            data={emotionChart}
+                            margin={{ top: 20, right: 5, left: 5, bottom: 40 }}
+                            barCategoryGap="30%"
+                          >
                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#111827', fontSize: 12 }} />
                             <YAxis domain={[0, 'dataMax + 5']} axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12 }} />
                             <Tooltip content={<CustomTooltip />} />
