@@ -30,10 +30,10 @@ import { extrairTagsRelevantes } from '../utils/extrairTagsRelevantes';
 import mixpanel from '../lib/mixpanel';
 
 /* ------------------------- Saudação/despedida regex ------------------------ */
-// Mesmo espírito do utils/respostaSaudacaoAutomatica.ts
+// Mesmo espírito do utils/respostaSaudacaoAutomatica.ts (com sufixo opcional “eco”, “@eco”, etc.)
 type Msg = { role?: string; content?: string; text?: string; sender?: 'user' | 'eco' };
 
-const MAX_LEN_FOR_GREETING = 48;
+const MAX_LEN_FOR_GREETING = 64;
 
 const normalize = (s: string) =>
   s
@@ -44,7 +44,7 @@ const normalize = (s: string) =>
     .trim();
 
 const GREET_RE =
-  /^(?:oi+|oie+|ola+|alo+|opa+|salve|e\s*a[ei]|eai|eae|fala(?:\s*ai)?|falae|hey+|hi+|hello+|yo+|sup|bom\s*dia+|boa\s*tarde+|boa\s*noite+|boa\s*madrugada+|good\s*(?:morning|afternoon|evening|night)|tudo\s*(?:bem|bom|certo)|td\s*bem|beleza|blz|suave|de\s*boa|tranq(?:s)?|tranquilo(?:\s*ai)?|como\s*(?:vai|vc\s*esta|voce\s*esta|ce\s*ta|c[eu]\s*ta))\s*[!?.…]*$/i;
+  /^(?:oi+|oie+|ola+|alo+|opa+|salve|e\s*a[ei]|eai|eae|fala(?:\s*ai)?|falae|hey+|hi+|hello+|yo+|sup|bom\s*dia+|boa\s*tarde+|boa\s*noite+|boa\s*madrugada+|good\s*(?:morning|afternoon|evening|night)|tudo\s*(?:bem|bom|certo)|td\s*bem|beleza|blz|suave|de\s*boa|tranq(?:s)?|tranquilo(?:\s*ai)?|como\s*(?:vai|vc\s*esta|voce\s*esta|ce\s*ta|c[eu]\s*ta))(?:[\s,]*(?:@?eco|eco|bot|assistente|ai|chat))?\s*[!?.…]*$/i;
 
 const FAREWELL_RE =
   /^(?:tchau+|ate\s+mais|ate\s+logo|valeu+|vlw+|obrigad[oa]+|brigad[oa]+|falou+|fui+|bom\s*descanso|boa\s*noite|durma\s*bem|ate\s*amanha|ate\s*breve|ate)\s*[!?.…]*$/i;
@@ -327,6 +327,7 @@ const ChatPage: React.FC = () => {
                 <div className="mr-2 mt-1.5">
                   <EcoBubbleIcon />
                 </div>
+                {/* bolha com indicador de digitação */}
                 <ChatMessage message={{ id: 'typing', text: '...', sender: 'eco' } as any} isEcoTyping />
               </div>
             )}

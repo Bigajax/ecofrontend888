@@ -9,7 +9,10 @@ interface ChatMessageProps {
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
   const isUser = message.sender === 'user';
-  const displayText = message.text ?? message.content ?? '';
+  const displayText = String(message.text ?? message.content ?? '');
+
+  // Só mostra indicador se for mensagem da Eco
+  const showTyping = !!isEcoTyping && !isUser;
 
   return (
     <div
@@ -26,22 +29,35 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
           isUser
             ? 'bg-[#d8f1f5] text-gray-900 rounded-br-sm'
             : 'bg-white text-gray-900 rounded-bl-sm',
+          // “respirar” levinho enquanto digita (respeita prefers-reduced-motion pelo CSS global)
+          showTyping ? 'animate-gentle-pulse' : '',
         ].join(' ')}
       >
-        {isEcoTyping ? (
-          <div className="flex items-end gap-1" aria-label="Eco está digitando">
-            <span
-              className="w-2 h-2 bg-gray-400 rounded-full animate-wave-dot motion-reduce:animate-none"
-              style={{ animationDelay: '0s' }}
-            />
-            <span
-              className="w-2 h-2 bg-gray-400 rounded-full animate-wave-dot motion-reduce:animate-none"
-              style={{ animationDelay: '0.2s' }}
-            />
-            <span
-              className="w-2 h-2 bg-gray-400 rounded-full animate-wave-dot motion-reduce:animate-none"
-              style={{ animationDelay: '0.4s' }}
-            />
+        {showTyping ? (
+          // Indicador “3 pontinhos” com onda e acessibilidade
+          <div
+            className="typing-indicator"
+            role="status"
+            aria-live="polite"
+            aria-label="ECO está digitando…"
+          >
+            <div className="typing-dots">
+              <span
+                className="animate-wave-dot w-2 h-2 rounded-full bg-gray-500 motion-reduce:animate-none"
+                style={{ animationDelay: '0s' }}
+                aria-hidden="true"
+              />
+              <span
+                className="animate-wave-dot w-2 h-2 rounded-full bg-gray-500 motion-reduce:animate-none"
+                style={{ animationDelay: '.2s' }}
+                aria-hidden="true"
+              />
+              <span
+                className="animate-wave-dot w-2 h-2 rounded-full bg-gray-500 motion-reduce:animate-none"
+                style={{ animationDelay: '.4s' }}
+                aria-hidden="true"
+              />
+            </div>
           </div>
         ) : (
           <div
@@ -53,11 +69,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
           >
             <div
               className={[
-                // Typography, mas herdando fonte sans
+                // Typography, herdando fonte sans
                 'prose prose-sm sm:prose-base max-w-none font-sans',
-                // neutraliza exageros de ênfase do plugin
+                // neutraliza exageros de ênfase
                 'prose-p:font-normal prose-li:font-normal prose-strong:font-semibold prose-em:italic',
-                // títulos não mudam família/tamanho (parecem texto normal)
+                // títulos não viram display
                 'prose-headings:font-semibold prose-headings:leading-snug prose-headings:text-[1em] prose-headings:font-sans',
                 // espaçamentos suaves
                 'prose-p:my-1.5 sm:prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5',
