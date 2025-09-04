@@ -2,6 +2,7 @@
 /*  ChatPage.tsx — versão ajustada p/ saudação limpa + teclado mobile         */
 /*  - Se msg for saudação/despedida curta, NÃO injeta memórias/systems        */
 /*  - Scroll estável em mobile (visualViewport + overscroll contain)          */
+/*  - Envia clientHour para o backend                                         */
 /* -------------------------------------------------------------------------- */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -216,7 +217,9 @@ const ChatPage: React.FC = () => {
         ];
       }
 
-      const resposta = await enviarMensagemParaEco(mensagensComContexto, userName, userId!);
+      // >>>>>>>>>>>>>>>>> ALTERAÇÃO: envia a hora local do cliente <<<<<<<<<<<<<<<<<
+      const clientHour = new Date().getHours();
+      const resposta = await enviarMensagemParaEco(mensagensComContexto, userName, userId!, clientHour);
 
       // parte textual (sem JSON final, se houver)
       const textoEco = (resposta || '').replace(/\{[\s\S]*?\}$/, '').trim();
@@ -278,7 +281,7 @@ const ChatPage: React.FC = () => {
           paddingBottom: 'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + 12px)',
           WebkitOverflowScrolling: 'touch',
           scrollPaddingBottom: '12px',
-          overscrollBehaviorY: 'contain', // evita “puxões” em mobile
+          overscrollBehaviorY: 'contain',
         }}
       >
         <div className="max-w-2xl w-full mx-auto">

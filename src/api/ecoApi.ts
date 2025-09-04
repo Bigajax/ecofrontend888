@@ -11,44 +11,50 @@ interface Message {
 export const enviarMensagemParaEco = async (
   userMessages: Message[],
   userName?: string,
-  userId?: string
+  userId?: string,
+  clientHour?: number   // ⬅️ Novo parâmetro opcional
 ): Promise<string | undefined> => {
   try {
     if (!userId) throw new Error('Usuário não autenticado. ID ausente.');
 
     const mensagensValidas: Message[] = userMessages
       .slice(-3)
-      .filter(msg =>
-        msg &&
-        typeof msg.role === 'string' &&
-        typeof msg.content === 'string' &&
-        msg.content.trim().length > 0
+      .filter(
+        msg =>
+          msg &&
+          typeof msg.role === 'string' &&
+          typeof msg.content === 'string' &&
+          msg.content.trim().length > 0
       )
       .map(msg => ({
         ...msg,
-        id: msg.id || uuidv4()
+        id: msg.id || uuidv4(),
       }));
 
     if (mensagensValidas.length === 0) {
       throw new Error('Nenhuma mensagem válida para enviar.');
     }
 
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const {
+      data: { session },
+      error: authError,
+    } = await supabase.auth.getSession();
     if (authError || !session?.access_token) {
       throw new Error('Token de acesso ausente. Faça login novamente.');
     }
 
     const response = await api.post(
-      '/ask-eco', // 🔧 Corrigido aqui
+      '/ask-eco',
       {
         mensagens: mensagensValidas,
         nome_usuario: userName,
-        usuario_id: userId
+        usuario_id: userId,
+        clientHour: clientHour ?? new Date().getHours(), // ⬅️ Envia a hora local
       },
       {
         headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
+          Authorization: `Bearer ${session.access_token}`,
+        },
       }
     );
 
@@ -61,7 +67,6 @@ export const enviarMensagemParaEco = async (
     }
 
     throw new Error(response.data?.error || 'Erro inesperado da API /ask-eco');
-
   } catch (error: any) {
     let mensagemErro = 'Erro ao obter resposta da Eco.';
 
