@@ -1,9 +1,10 @@
 /* -------------------------------------------------------------------------- */
-/*  ChatPage.tsx — versão white + saudação limpa + teclado mobile             */
-/*  - Saudações/despedidas curtas: sem memórias/systems                       */
+/*  ChatPage.tsx — white + saudação limpa + teclado mobile                    */
+/*  - Greeting/despedida curtas: sem memórias/systems                         */
 /*  - Scroll estável (visualViewport + overscroll contain)                    */
 /*  - Envia clientHour p/ backend                                             */
-/*  - Boas-vindas apenas como texto (sem card)                                */
+/*  - Boas-vindas apenas como texto                                           */
+/*  - Mede barra de input e seta --input-h                                    */
 /* -------------------------------------------------------------------------- */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -70,6 +71,7 @@ const ChatPage: React.FC = () => {
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const inputBarRef = useRef<HTMLDivElement>(null); // mede barra sticky
 
   useEffect(() => {
     if (!user) {
@@ -93,26 +95,68 @@ const ChatPage: React.FC = () => {
       : 'Boa noite';
   const mensagemBoasVindas = `${saudacao}, ${userName}`;
 
+  // scrollToBottom mais robusto (dois frames no iOS)
   const scrollToBottom = (smooth = true) => {
     const el = scrollerRef.current;
     if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+    const behavior: ScrollBehavior = smooth ? 'smooth' : 'auto';
+    el.scrollTo({ top: el.scrollHeight, behavior });
+    requestAnimationFrame(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior });
+    });
   };
 
+  // Reagir a mudanças de mensagens/estado de digitação
   useEffect(() => {
     const t = setTimeout(() => scrollToBottom(true), 0);
     return () => clearTimeout(t);
   }, [messages, digitando]);
 
+  // Medir a barra sticky e setar --input-h dinamicamente
+  useEffect(() => {
+    if (!inputBarRef.current) return;
+    const el = inputBarRef.current;
+
+    const update = () => {
+      const h = Math.ceil(el.getBoundingClientRect().height);
+      document.documentElement.style.setProperty('--input-h', `${h}px`);
+      // garantir que o fundo do chat respeite a nova altura
+      scrollToBottom(false);
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // iOS/Android teclado + visualViewport
   useEffect(() => {
     const vv = (window as any).visualViewport as VisualViewport | undefined;
-    if (!vv) return;
-    const handleVV = () => scrollToBottom(false);
-    vv.addEventListener('resize', handleVV);
-    vv.addEventListener('scroll', handleVV);
+
+    const handleFocusIn = () => document.body.classList.add('keyboard-open');
+    const handleFocusOut = () => document.body.classList.remove('keyboard-open');
+
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+
+    const onVVChange = () => {
+      // pequeno atraso evita "pulos" no Safari
+      setTimeout(() => scrollToBottom(false), 30);
+    };
+
+    if (vv) {
+      vv.addEventListener('resize', onVVChange);
+      vv.addEventListener('scroll', onVVChange);
+    }
+
     return () => {
-      vv.removeEventListener('resize', handleVV);
-      vv.removeEventListener('scroll', handleVV);
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
+      if (vv) {
+        vv.removeEventListener('resize', onVVChange);
+        vv.removeEventListener('scroll', onVVChange);
+      }
     };
   }, []);
 
@@ -225,7 +269,7 @@ const ChatPage: React.FC = () => {
               padrao_comportamental: bloco.padrao_comportamental || 'não identificado',
             });
           }
-        } catch {}
+        } catch { /* no-op */ }
       }
     } catch (err: any) {
       console.error('[ChatPage] erro:', err);
@@ -258,7 +302,7 @@ const ChatPage: React.FC = () => {
       {/* SCROLLER */}
       <div
         ref={scrollerRef}
-        className="flex-1 overflow-y-auto px-3 sm:px-6 pt-2"
+        className="chat-scroller flex-1 overflow-y-auto px-3 sm:px-6 pt-2"
         style={{
           paddingBottom: 'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + 12px)',
           WebkitOverflowScrolling: 'touch',
@@ -319,6 +363,7 @@ const ChatPage: React.FC = () => {
 
       {/* BARRA DE INPUT: sticky com hairline no topo */}
       <div
+        ref={inputBarRef}
         className="sticky bottom-[max(env(safe-area-inset-bottom),0px)] z-40 px-3 sm:px-6 pb-2 pt-2
                    bg-white/80 backdrop-blur-md border-t border-gray-200/80
                    supports-[backdrop-filter:blur(0)]:bg-white/95"

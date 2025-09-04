@@ -14,7 +14,7 @@ body {
   background-image: var(--app-vignette), var(--app-texture);
   background-repeat: no-repeat, repeat;
   background-size: cover, auto;
-  overflow: hidden;
+  overflow: hidden; /* scroll vive no container do chat */
 }
 
 :root {
@@ -36,7 +36,7 @@ body {
 
   --eco-bubble-gradient: linear-gradient(135deg, #a1c4fd, #c2e9fb);
 
-  /* defaults usados antes do hook setar dinamicamente */
+  /* defaults usados antes do script setar dinamicamente */
   --vh: 1vh;
   --inset-bottom: 0px;
 
@@ -126,7 +126,7 @@ body {
   color:#111827;
 }
 
-/* Tintas suaves para diferenciar usuário/Eco */
+/* Tintas suaves p/ diferenciar usuário/Eco */
 .tint-teal   { background: rgba(13,148,136,0.10); border-color: rgba(13,148,136,0.25); }
 .tint-violet { background: rgba(139,92,246,0.10); border-color: rgba(139,92,246,0.25); }
 .tint-gray   { background: rgba(255,255,255,0.10); border-color: rgba(0,0,0,0.06); }
@@ -302,7 +302,7 @@ input, textarea { font-size: 16px; }
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
 
-/* ---- Ajustes para teclado iOS/Android ---- */
+/* ---- Alturas e teclado (iOS/Android) ---- */
 html, body, #root { height: 100%; }
 @supports (height: 100dvh) { html, body, #root { height: 100dvh; } }
 
@@ -311,6 +311,18 @@ body.keyboard-open { overscroll-behavior-y: contain; }
 
 /* Respeita safe area no rodapé quando necessário (ex.: iPhone com notch) */
 body.keyboard-open { padding-bottom: var(--safe-bottom); }
+
+/* Container de rolagem do chat (suavidade no iOS + sem bounce excessivo) */
+.chat-scroller {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Safari: sticky com blur mais estável */
+.sticky { will-change: transform; }
+
+/* Atalho: quando houver suporte a backdrop-filter, empurra camada p/ GPU p/ reduzir flicker */
+.supports-backdrop .bg-white\/80 { transform: translateZ(0); }
 
 /* Acessibilidade: usuários com redução de movimento preferem menos animação */
 @media (prefers-reduced-motion: reduce) {
