@@ -1,8 +1,9 @@
 /* -------------------------------------------------------------------------- */
-/*  ChatPage.tsx — versão ajustada p/ saudação limpa + teclado mobile         */
-/*  - Se msg for saudação/despedida curta, NÃO injeta memórias/systems        */
-/*  - Scroll estável em mobile (visualViewport + overscroll contain)          */
-/*  - Envia clientHour para o backend                                         */
+/*  ChatPage.tsx — versão white + saudação limpa + teclado mobile             */
+/*  - Saudações/despedidas curtas: sem memórias/systems                       */
+/*  - Scroll estável (visualViewport + overscroll contain)                    */
+/*  - Envia clientHour p/ backend                                             */
+/*  - Boas-vindas apenas como texto (sem card)                                */
 /* -------------------------------------------------------------------------- */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -31,7 +32,6 @@ import { extrairTagsRelevantes } from '../utils/extrairTagsRelevantes';
 import mixpanel from '../lib/mixpanel';
 
 /* ------------------------- Saudação/despedida regex ------------------------ */
-// Mesmo espírito do utils/respostaSaudacaoAutomatica.ts (com sufixo opcional “eco”, “@eco”, etc.)
 type Msg = { role?: string; content?: string; text?: string; sender?: 'user' | 'eco' };
 
 const MAX_LEN_FOR_GREETING = 64;
@@ -71,7 +71,6 @@ const ChatPage: React.FC = () => {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  // Redireciona se não autenticado + track
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -94,12 +93,10 @@ const ChatPage: React.FC = () => {
       : 'Boa noite';
   const mensagemBoasVindas = `${saudacao}, ${userName}`;
 
-  // Mantém scroll no fim quando chegam mensagens
   const scrollToBottom = (smooth = true) => {
     const el = scrollerRef.current;
     if (!el) return;
-    const behavior: ScrollBehavior = smooth ? 'smooth' : 'auto';
-    el.scrollTo({ top: el.scrollHeight, behavior });
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
   };
 
   useEffect(() => {
@@ -107,7 +104,6 @@ const ChatPage: React.FC = () => {
     return () => clearTimeout(t);
   }, [messages, digitando]);
 
-  // Ajuda extra no iOS: quando o teclado muda o viewport, rola pro fim
   useEffect(() => {
     const vv = (window as any).visualViewport as VisualViewport | undefined;
     if (!vv) return;
@@ -131,9 +127,7 @@ const ChatPage: React.FC = () => {
   const handleSendMessage = async (text: string) => {
     const raw = text ?? '';
     const trimmed = raw.trim();
-
-    if (!trimmed) return;       // ignora vazio
-    if (digitando) return;      // evita requisições sobrepostas
+    if (!trimmed || digitando) return;
 
     setDigitando(true);
     setErroApi(null);
@@ -149,7 +143,6 @@ const ChatPage: React.FC = () => {
     });
 
     try {
-      // Salva no backend
       const saved = await salvarMensagem({
         usuarioId: userId!,
         conteudo: trimmed,
@@ -158,13 +151,11 @@ const ChatPage: React.FC = () => {
       });
       const mensagemId = saved?.[0]?.id || userLocalId;
 
-      // Histórico base com a última mensagem do usuário
       const baseHistory = [
-        ...messages, // pode estar um "tick" atrasado
+        ...messages,
         { id: mensagemId, role: 'user', content: trimmed },
       ];
 
-      // Se for saudação/despedida curta, NÃO injeta memórias/systems — deixa o fast-path do backend agir
       const greetingLike = isGreetingShort(trimmed) || isFarewellShort(trimmed);
 
       let mensagensComContexto: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
@@ -175,14 +166,12 @@ const ChatPage: React.FC = () => {
           content: m.content || m.text || '',
         }));
       } else {
-        // Contexto leve (memórias por similaridade e por tags)
         const tags = extrairTagsRelevantes(trimmed);
         const [similar, porTag] = await Promise.all([
           buscarMemoriasSimilares(trimmed, 2).catch(() => []),
           tags.length ? buscarUltimasMemoriasComTags(userId!, tags, 2).catch(() => []) : Promise.resolve([]),
         ]);
 
-        // merge de memórias (sem duplicar)
         const vistos = new Set<string>();
         const mems = [...(similar || []), ...(porTag || [])].filter((m: any) => {
           const key = m.id || `${m.created_at}-${m.resumo_eco}`;
@@ -217,17 +206,12 @@ const ChatPage: React.FC = () => {
         ];
       }
 
-      // >>>>>>>>>>>>>>>>> ALTERAÇÃO: envia a hora local do cliente <<<<<<<<<<<<<<<<<
       const clientHour = new Date().getHours();
       const resposta = await enviarMensagemParaEco(mensagensComContexto, userName, userId!, clientHour);
 
-      // parte textual (sem JSON final, se houver)
       const textoEco = (resposta || '').replace(/\{[\s\S]*?\}$/, '').trim();
-      if (textoEco) {
-        addMessage({ id: uuidv4(), text: textoEco, sender: 'eco' });
-      }
+      if (textoEco) addMessage({ id: uuidv4(), text: textoEco, sender: 'eco' });
 
-      // bloco técnico para analytics (se veio junto no final)
       const match = (resposta || '').match(/\{[\s\S]*\}$/);
       if (match) {
         try {
@@ -241,9 +225,7 @@ const ChatPage: React.FC = () => {
               padrao_comportamental: bloco.padrao_comportamental || 'não identificado',
             });
           }
-        } catch (e) {
-          console.warn('Erro ao extrair bloco técnico para Mixpanel', e);
-        }
+        } catch {}
       }
     } catch (err: any) {
       console.error('[ChatPage] erro:', err);
@@ -261,7 +243,7 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full min-h-[100svh] flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="w-full min-h-[100svh] flex flex-col bg-white">
       <Header
         title="ECO"
         showBackButton={false}
@@ -273,7 +255,7 @@ const ChatPage: React.FC = () => {
         }}
       />
 
-      {/* SCROLLER: padding-bottom reserva espaço p/ a barra de input (var --input-h) + safe area */}
+      {/* SCROLLER */}
       <div
         ref={scrollerRef}
         className="flex-1 overflow-y-auto px-3 sm:px-6 pt-2"
@@ -287,22 +269,18 @@ const ChatPage: React.FC = () => {
         <div className="max-w-2xl w-full mx-auto">
           {messages.length === 0 && !erroApi && (
             <motion.div
-              className="text-center text-gray-600 mb-16 mt-12"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
+              className="text-center mb-16 mt-12 px-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
             >
-              <h2 className="text-3xl md:text-4xl font-light text-gray-600">
-                {mensagemBoasVindas}
-              </h2>
-              <p className="text-base md:text-lg font-light text-gray-400 mt-2">
-                Aqui, você se escuta.
-              </p>
+              <h2 className="text-3xl md:text-4xl font-light text-gray-800">{mensagemBoasVindas}</h2>
+              <p className="text-base md:text-lg font-light text-gray-600 mt-2">Aqui, você se escuta.</p>
             </motion.div>
           )}
 
           {erroApi && (
-            <div className="text-red-500 text-center mb-4">Erro: {erroApi}</div>
+            <div className="glass-panel text-red-600 text-center mb-4 px-4 py-2">{erroApi}</div>
           )}
 
           <div className="w-full space-y-4">
@@ -330,7 +308,6 @@ const ChatPage: React.FC = () => {
                 <div className="mr-2 mt-1.5">
                   <EcoBubbleIcon />
                 </div>
-                {/* bolha com indicador de digitação */}
                 <ChatMessage message={{ id: 'typing', text: '...', sender: 'eco' } as any} isEcoTyping />
               </div>
             )}
@@ -340,8 +317,12 @@ const ChatPage: React.FC = () => {
         </div>
       </div>
 
-      {/* BARRA DE INPUT: sticky + safe-area. Não é fixed, então não “corta” o conteúdo. */}
-      <div className="sticky bottom-[max(env(safe-area-inset-bottom),0px)] z-40 px-3 sm:px-6 pb-2 pt-1 bg-gradient-to-t from-[rgba(248,245,240,0.92)] to-transparent backdrop-blur-sm">
+      {/* BARRA DE INPUT: sticky com hairline no topo */}
+      <div
+        className="sticky bottom-[max(env(safe-area-inset-bottom),0px)] z-40 px-3 sm:px-6 pb-2 pt-2
+                   bg-white/80 backdrop-blur-md border-t border-gray-200/80
+                   supports-[backdrop-filter:blur(0)]:bg-white/95"
+      >
         <div className="max-w-2xl mx-auto">
           <ChatInput
             onSendMessage={handleSendMessage}

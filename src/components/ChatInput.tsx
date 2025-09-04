@@ -5,8 +5,8 @@ import { Send, Mic, Plus, X, BookOpen, Headphones } from 'lucide-react';
 type Props = {
   onSendMessage: (t: string) => void;
   onMoreOptionSelected: (k: 'save_memory' | 'go_to_voice_page') => void;
-  onSendAudio?: (b: Blob) => void;         // opcional (default no-op)
-  disabled?: boolean;                      // controla UI durante envio
+  onSendAudio?: (b: Blob) => void;
+  disabled?: boolean;
 };
 
 const ChatInput: React.FC<Props> = ({
@@ -25,10 +25,11 @@ const ChatInput: React.FC<Props> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sendButtonRef = useRef<HTMLButtonElement>(null);
   const wrapperRef = useRef<HTMLFormElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   const safeOnSendAudio = onSendAudio ?? (() => {});
 
-  // ----- Ajuste de altura da barra (grava em --input-h) -----
+  // ----- Ajuste de altura (define --input-h) -----
   useEffect(() => {
     const el = wrapperRef.current;
     if (!el) return;
@@ -40,7 +41,6 @@ const ChatInput: React.FC<Props> = ({
     const ro = new ResizeObserver(setH);
     ro.observe(el);
 
-    // VisualViewport ajuda no iOS ao abrir teclado
     const vv = (window as any).visualViewport as VisualViewport | undefined;
     const handleVV = () => setTimeout(setH, 0);
     vv?.addEventListener('resize', handleVV);
@@ -53,19 +53,34 @@ const ChatInput: React.FC<Props> = ({
     };
   }, []);
 
+  // Fecha popover ao clicar fora
+  useEffect(() => {
+    if (!showMoreOptions) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (!popoverRef.current || !wrapperRef.current) return;
+      const t = e.target as Node;
+      if (
+        wrapperRef.current.contains(t) &&
+        popoverRef.current.contains(t)
+      ) return;
+      setShowMoreOptions(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [showMoreOptions]);
+
   // Auto-resize do textarea
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
     ta.style.height = '0px';
-    ta.style.height = `${Math.min(192, ta.scrollHeight)}px`; // máx ~12 linhas
+    ta.style.height = `${Math.min(192, ta.scrollHeight)}px`; // ~12 linhas máx
   }, [inputMessage]);
 
-  // Evita zoom ao focar e ativa classe p/ CSS tratar teclado
   const onFocus = () => document.body.classList.add('keyboard-open');
   const onBlur = () => document.body.classList.remove('keyboard-open');
 
-  // Webkit Speech
+  // WebKit Speech
   useEffect(() => {
     if ('webkitSpeechRecognition' in window) {
       // @ts-ignore
@@ -85,20 +100,14 @@ const ChatInput: React.FC<Props> = ({
       recognition.onerror = (e: any) => console.error('Erro no reconhecimento de fala:', e.error);
       speechRecognitionRef.current = recognition;
     }
-
-    // Cleanup: para qualquer captura ativa ao desmontar
     return () => {
-      try {
-        speechRecognitionRef.current?.abort?.();
-      } catch {}
+      try { speechRecognitionRef.current?.abort?.(); } catch {}
     };
   }, []);
 
   // Helpers de mídia
   const stopTracks = (rec: MediaRecorder | null) => {
-    try {
-      rec?.stream?.getTracks()?.forEach((t) => t.stop());
-    } catch {}
+    try { rec?.stream?.getTracks()?.forEach((t) => t.stop()); } catch {}
   };
 
   // Gravação
@@ -108,8 +117,6 @@ const ChatInput: React.FC<Props> = ({
     setIsTranscribing(false);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      // Escolhe tipo suportado
       const type =
         (window as any).MediaRecorder?.isTypeSupported?.('audio/webm')
           ? 'audio/webm'
@@ -117,7 +124,6 @@ const ChatInput: React.FC<Props> = ({
 
       const recorder = new MediaRecorder(stream, { mimeType: type });
       const chunks: BlobPart[] = [];
-
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       recorder.onstop = () => {
         setIsTranscribing(true);
@@ -131,13 +137,11 @@ const ChatInput: React.FC<Props> = ({
       recorder.start();
 
       try {
-        // evita start duplo
         if (speechRecognitionRef.current && speechRecognitionRef.current.continuous) {
           speechRecognitionRef.current.abort?.();
         }
         speechRecognitionRef.current?.start?.();
       } catch {}
-
     } catch (err) {
       console.error('Erro ao acessar microfone:', err);
       setIsRecordingUI(false);
@@ -157,52 +161,38 @@ const ChatInput: React.FC<Props> = ({
       stopTracks(mediaRecorder);
       speechRecognitionRef.current?.abort?.();
     } catch {}
-    // não zera o texto digitado; apenas fecha UI de gravação
     setIsRecordingUI(false);
     setIsTranscribing(false);
   };
 
-  // Cleanup de mídia ao desmontar
-  useEffect(() => {
-    return () => {
-      try {
-        if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
-        stopTracks(mediaRecorder);
-        speechRecognitionRef.current?.abort?.();
-      } catch {}
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Envio texto
   const handleSend = () => {
     if (disabled) return;
-    if (!inputMessage.trim()) return;
+    const msg = inputMessage.trim();
+    if (!msg) return;
 
-    onSendMessage(inputMessage.trim());
+    onSendMessage(msg);
     setInputMessage('');
     setShowMoreOptions(false);
 
-    // feedback leve
     sendButtonRef.current?.classList.add('scale-90');
     setTimeout(() => sendButtonRef.current?.classList.remove('scale-90'), 120);
 
-    // mantém foco no textarea (útil no desktop)
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
   // ---------- UI de gravação ----------
   if (isRecordingUI) {
     return (
-      <div className="relative bg-white border border-gray-200 rounded-2xl px-4 py-2 w-full max-w-2xl mx-auto">
-        <div className="w-full h-10 mb-2 rounded-xl bg-gray-100 flex items-center justify-center">
+      <div className="relative glass-panel w-full max-w-2xl mx-auto px-4 py-2" aria-live="polite">
+        <div className="w-full h-10 mb-2 rounded-xl bg-white/30 dark:bg-black/10 backdrop-blur-md border border-white/30 flex items-center justify-center">
           {isTranscribing ? (
-            <div className="text-gray-400 text-sm flex items-center gap-2">
-              <span className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full" />
+            <div className="text-gray-600 text-sm flex items-center gap-2">
+              <span className="animate-spin w-4 h-4 border-2 border-gray-500/60 border-t-transparent rounded-full" />
               Transcrevendo
             </div>
           ) : (
-            <div className="text-gray-500 text-sm flex items-center gap-2">
+            <div className="text-gray-700 text-sm flex items-center gap-2">
               <svg className="animate-pulse w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <rect x="6" y="8" width="2" height="8" fill="currentColor" />
                 <rect x="11" y="5" width="2" height="14" fill="currentColor" />
@@ -217,15 +207,17 @@ const ChatInput: React.FC<Props> = ({
           <div className="flex gap-2">
             <button
               onClick={cancelRecording}
-              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+              className="glass-button w-8 h-8 rounded-full flex items-center justify-center"
               aria-label="Cancelar"
+              type="button"
             >
-              <X size={18} className="text-gray-700" />
+              <X size={18} />
             </button>
             <button
               onClick={stopRecording}
-              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+              className="glass-button w-8 h-8 rounded-full flex items-center justify-center"
               aria-label="Confirmar"
+              type="button"
             >
               ✓
             </button>
@@ -243,18 +235,23 @@ const ChatInput: React.FC<Props> = ({
         e.preventDefault();
         handleSend();
       }}
-      className={`relative bg-white rounded-xl px-3 py-1.5 border border-gray-100 w-full max-w-2xl mx-auto shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200 ${disabled ? 'opacity-90' : ''}`}
+      className={`relative glass-panel w-full max-w-2xl mx-auto px-3 py-1.5 transition-all duration-200 ${
+        disabled ? 'opacity-90' : ''
+      }`}
       initial={{ y: 50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 120, damping: 14 }}
       aria-disabled={disabled}
+      role="group"
     >
       <div className="flex items-center gap-2">
         {/* Botão + */}
         <button
           type="button"
           onClick={() => setShowMoreOptions((prev) => !prev)}
-          className="shrink-0 p-1.5 rounded-full text-gray-500 hover:bg-gray-100 focus:outline-none disabled:opacity-50"
+          className="glass-button shrink-0 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50"
+          aria-expanded={showMoreOptions}
+          aria-controls="chatinput-popover"
           aria-label="Mais opções"
           disabled={disabled}
         >
@@ -265,11 +262,13 @@ const ChatInput: React.FC<Props> = ({
         <AnimatePresence>
           {showMoreOptions && !disabled && (
             <motion.div
+              ref={popoverRef}
+              id="chatinput-popover"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="absolute bottom-full mb-2 left-4 w-56 bg-white rounded-xl shadow-xl p-2 z-50"
+              className="glass-popover absolute bottom-full mb-2 left-4 w-56 z-50"
             >
               <button
                 type="button"
@@ -277,7 +276,7 @@ const ChatInput: React.FC<Props> = ({
                   onMoreOptionSelected('save_memory');
                   setShowMoreOptions(false);
                 }}
-                className="flex items-center p-2 text-gray-800 hover:bg-gray-100 rounded-lg w-full text-left"
+                className="flex items-center p-2 hover:bg-white/30 rounded-lg w-full text-left"
               >
                 <BookOpen size={20} className="mr-3" strokeWidth={1.5} />
                 Registro de memória
@@ -288,7 +287,7 @@ const ChatInput: React.FC<Props> = ({
                   onMoreOptionSelected('go_to_voice_page');
                   setShowMoreOptions(false);
                 }}
-                className="flex items-center p-2 text-gray-800 hover:bg-gray-100 rounded-lg mt-1 w-full text-left"
+                className="flex items-center p-2 hover:bg-white/30 rounded-lg mt-1 w-full text-left"
               >
                 <Headphones size={20} className="mr-3" strokeWidth={1.5} />
                 Modo de voz
@@ -304,7 +303,10 @@ const ChatInput: React.FC<Props> = ({
           onChange={(e) => setInputMessage(e.target.value)}
           onKeyDown={(e) => {
             if (disabled) return;
-            if (e.key === 'Enter' && !e.shiftKey) {
+            // evita enviar durante composição (IME) e só envia com Enter "seco"
+            // @ts-ignore
+            const composing = e.nativeEvent?.isComposing;
+            if (!composing && e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
               handleSend();
             }
@@ -318,7 +320,7 @@ const ChatInput: React.FC<Props> = ({
           maxLength={4000}
           readOnly={disabled}
           aria-disabled={disabled}
-          className="min-w-0 flex-1 text-sm text-gray-800 placeholder:text-gray-400 bg-transparent border-none focus:outline-none resize-none leading-6 py-2 max-h-48 overflow-y-auto"
+          className="glass-textarea min-w-0 flex-1 text-sm bg-transparent border-none focus:outline-none resize-none leading-6 py-2 max-h-48 overflow-y-auto placeholder:text-gray-500"
         />
 
         {/* Botões mic e send */}
@@ -327,20 +329,20 @@ const ChatInput: React.FC<Props> = ({
             type="button"
             onClick={startRecording}
             disabled={disabled}
-            className="w-8 h-8 rounded-full bg-transparent border border-white hover:border-white shadow-sm flex items-center justify-center disabled:opacity-50"
+            className="glass-button w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50"
             aria-label="Iniciar gravação"
           >
-            <Mic size={16} className="text-[#1F2937]" />
+            <Mic size={16} />
           </button>
 
           <button
             type="submit"
             ref={sendButtonRef}
             disabled={disabled || !inputMessage.trim()}
-            className="w-8 h-8 rounded-full bg-[#265F77] hover:bg-[#1f4c60] shadow-sm flex items-center justify-center transition-transform disabled:opacity-50"
+            className="glass-button-primary w-8 h-8 rounded-full flex items-center justify-center transition-transform disabled:opacity-50"
             aria-label="Enviar mensagem"
           >
-            <Send size={16} className="text-white" strokeWidth={1.5} />
+            <Send size={16} strokeWidth={1.5} />
           </button>
         </div>
       </div>

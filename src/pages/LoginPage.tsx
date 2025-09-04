@@ -33,12 +33,9 @@ const LoginPage: React.FC = () => {
   const [isTourActive, setIsTourActive] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // habilita o botão apenas quando houver dados mínimos
   const canSubmit = email.trim().length > 3 && password.length >= 6 && !loading;
 
-  useEffect(() => {
-    if (user) navigate('/chat');
-  }, [user, navigate]);
+  useEffect(() => { if (user) navigate('/chat'); }, [user, navigate]);
 
   const handleIniciarTour = () => setIsTourActive(true);
   const handleCloseTour = () => setIsTourActive(false);
@@ -48,27 +45,22 @@ const LoginPage: React.FC = () => {
     if (!canSubmit) return;
     setError('');
     setLoading(true);
-    try {
-      await signIn(email.trim(), password);
-    } catch (err: any) {
-      setError(err?.message || 'Erro ao autenticar.');
-    } finally {
-      setLoading(false);
-    }
+    try { await signIn(email.trim(), password); }
+    catch (err: any) { setError(err?.message || 'Erro ao autenticar.'); }
+    finally { setLoading(false); }
   };
 
   return (
     <PhoneFrame>
-      <div className="flex h-full items-center justify-center px-6 py-8
-                      bg-gradient-to-br from-[#F7F8FB] via-[#F9FAFB] to-[#F5F7FF]">
+      {/* fundo branco liso para combinar com o chat */}
+      <div className="flex h-full items-center justify-center px-6 py-10 bg-white">
         {isTourActive && <TourInicial onClose={handleCloseTour} />}
 
-        <div className="w-full max-w-sm rounded-[28px] px-8 py-10 space-y-6
-                        bg-white/80 backdrop-blur-2xl
-                        border border-white/70 ring-1 ring-black/5
-                        shadow-[0_12px_30px_rgba(0,0,0,.06)]">
+        {/* cartão principal com glassmorphism */}
+        <div className="glass-panel w-full max-w-sm rounded-[28px] p-8 md:p-10 space-y-7">
           <div className="text-center space-y-3">
             <EcoTitle />
+
             {/* Pílula “Seu espelho interior” */}
             <div className="relative mx-auto w-fit">
               <div className="absolute -inset-[2px] rounded-full blur-[6px] opacity-40
@@ -92,11 +84,12 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              autoFocus
               className="h-12 rounded-2xl px-4
-                         bg-white text-slate-900 placeholder-slate-400
+                         bg-white/85 backdrop-blur-sm text-slate-900 placeholder-slate-400
                          border border-black/10
                          shadow-[inset_0_1px_0_rgba(255,255,255,.7)]
-                         focus:ring-[3px] focus:ring-sky-300/50 focus:border-transparent
+                         focus:ring-[3px] focus:ring-sky-300/40 focus:border-transparent
                          transition"
             />
 
@@ -108,61 +101,52 @@ const LoginPage: React.FC = () => {
               required
               autoComplete="current-password"
               className="h-12 rounded-2xl px-4
-                         bg-white text-slate-900 placeholder-slate-400
+                         bg-white/85 backdrop-blur-sm text-slate-900 placeholder-slate-400
                          border border-black/10
                          shadow-[inset_0_1px_0_rgba(255,255,255,.7)]
-                         focus:ring-[3px] focus:ring-sky-300/50 focus:border-transparent
+                         focus:ring-[3px] focus:ring-sky-300/40 focus:border-transparent
                          transition"
             />
 
             {error && (
-              <motion.p
-                className="text-rose-600 text-sm text-center"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              >
+              <motion.p className="text-rose-600 text-sm text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 {error}
               </motion.p>
             )}
 
             <div className="pt-2 space-y-3">
+              {/* primário em glass escuro (mesmo do chat) */}
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className={`w-full h-12 rounded-2xl font-semibold tracking-tight
-                  transition will-change-transform
-                  ${canSubmit
-                    ? 'bg-[#265F77] text-white hover:bg-[#2b6e8a] active:translate-y-[1px] shadow-[0_1px_0_rgba(255,255,255,.3)_inset,0_10px_22px_rgba(2,6,23,.12)]'
-                    : 'bg-slate-300/70 text-slate-600 cursor-not-allowed'}`}
+                className={`glass-button-primary w-full h-12 rounded-2xl font-semibold tracking-tight
+                            transition will-change-transform
+                            ${!canSubmit ? 'opacity-60 cursor-not-allowed' : 'active:translate-y-[1px]'}`}
               >
                 {loading ? 'Entrando…' : 'Entrar'}
               </button>
 
+              {/* secundários em glass neutro */}
               <button
                 type="button"
                 onClick={() => navigate('/register')}
                 disabled={loading}
-                className="w-full h-11 rounded-2xl font-medium
-                           bg-white/80 text-slate-900
-                           border border-white/70 ring-1 ring-black/5
-                           transition hover:bg-white"
+                className="glass-button w-full h-11 rounded-2xl font-medium transition hover:bg-white/80"
               >
                 Criar perfil
               </button>
 
               <div className="flex items-center gap-3 py-1 select-none">
-                <span className="flex-1 h-px bg-slate-200/80" />
+                <span className="flex-1 h-px bg-black/10" />
                 <span className="text-slate-400 text-xs">ou</span>
-                <span className="flex-1 h-px bg-slate-200/80" />
+                <span className="flex-1 h-px bg-black/10" />
               </div>
 
               <button
                 type="button"
                 onClick={handleIniciarTour}
                 disabled={loading}
-                className="w-full h-11 rounded-2xl font-medium
-                           bg-white/70 text-slate-900
-                           border border-white/60 ring-1 ring-black/5
-                           transition hover:bg-white"
+                className="glass-button w-full h-11 rounded-2xl font-medium transition hover:bg-white/80"
               >
                 Iniciar Tour
               </button>
