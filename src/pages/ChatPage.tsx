@@ -2,7 +2,7 @@
 /*  ChatPage.tsx — white + saudação limpa + teclado mobile                    */
 /*  - Greeting/despedida curtas: sem memórias/systems                         */
 /*  - Scroll estável (visualViewport + overscroll contain)                    */
-/*  - Envia clientHour p/ backend                                             */
+/*  - Envia clientHour + clientTz p/ backend                                  */
 /*  - Boas-vindas apenas como texto                                           */
 /*  - Mede barra de input e seta --input-h                                    */
 /*  - 🔹 Feedback minimalista (glass) após 3 respostas da ECO                 */
@@ -53,8 +53,9 @@ const normalize = (s: string) =>
 const GREET_RE =
   /^(?:oi+|oie+|ola+|alo+|opa+|salve|e\s*a[ei]|eai|eae|fala(?:\s*ai)?|falae|hey+|hi+|hello+|yo+|sup|bom\s*dia+|boa\s*tarde+|boa\s*noite+|boa\s*madrugada+|good\s*(?:morning|afternoon|evening|night)|tudo\s*(?:bem|bom|certo)|td\s*bem|beleza|blz|suave|de\s*boa|tranq(?:s)?|tranquilo(?:\s*ai)?|como\s*(?:vai|vc\s*esta|voce\s*esta|ce\s*ta|c[eu]\s*ta))(?:[\s,]*(?:@?eco|eco|bot|assistente|ai|chat))?\s*[!?.…]*$/i;
 
+// "boa noite" removido da despedida para não conflitar com saudação noturna
 const FAREWELL_RE =
-  /^(?:tchau+|ate\s+mais|ate\s+logo|valeu+|vlw+|obrigad[oa]+|brigad[oa]+|falou+|fui+|bom\s*descanso|boa\s*noite|durma\s*bem|ate\s*amanha|ate\s*breve|ate)\s*[!?.…]*$/i;
+  /^(?:tchau+|ate\s+mais|ate\s+logo|valeu+|vlw+|obrigad[oa]+|brigad[oa]+|falou+|fui+|bom\s*descanso|durma\s*bem|ate\s*amanha|ate\s*breve|ate)\s*[!?.…]*$/i;
 
 const isGreetingShort = (raw: string) => {
   const t = normalize(raw);
@@ -68,6 +69,14 @@ const isFarewellShort = (raw: string) => {
 
 /* 🔹 CHAVE PARA NÃO REPETIR O FEEDBACK NA MESMA SESSÃO */
 const FEEDBACK_KEY = 'eco_feedback_given';
+
+/* 🔹 Saudação coerente com o backend */
+const saudacaoDoDiaFromHour = (h: number) => {
+  if (h < 6) return 'Boa noite';
+  if (h < 12) return 'Bom dia';
+  if (h < 18) return 'Boa tarde';
+  return 'Boa noite';
+};
 
 const ChatPage: React.FC = () => {
   const { messages, addMessage, clearMessages } = useChat();
@@ -103,12 +112,8 @@ const ChatPage: React.FC = () => {
 
   if (!user) return null;
 
-  const saudacao =
-    new Date().getHours() < 12
-      ? 'Bom dia'
-      : new Date().getHours() < 18
-      ? 'Boa tarde'
-      : 'Boa noite';
+  const clientHourNow = new Date().getHours();
+  const saudacao = saudacaoDoDiaFromHour(clientHourNow);
   const mensagemBoasVindas = `${saudacao}, ${userName}`;
 
   // scrollToBottom mais robusto (dois frames no iOS)
@@ -275,8 +280,17 @@ const ChatPage: React.FC = () => {
         ];
       }
 
+      // Hora + timezone do cliente
       const clientHour = new Date().getHours();
-      const resposta = await enviarMensagemParaEco(mensagensComContexto, userName, userId!, clientHour);
+      const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone; // ex.: "America/Sao_Paulo"
+
+      const resposta = await enviarMensagemParaEco(
+        mensagensComContexto,
+        userName,
+        userId!,
+        clientHour,
+        clientTz
+      );
 
       const textoEco = (resposta || '').replace(/\{[\s\S]*?\}$/, '').trim();
       if (textoEco) addMessage({ id: uuidv4(), text: textoEco, sender: 'eco' });

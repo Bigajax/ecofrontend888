@@ -12,7 +12,8 @@ export const enviarMensagemParaEco = async (
   userMessages: Message[],
   userName?: string,
   userId?: string,
-  clientHour?: number   // ⬅️ Novo parâmetro opcional
+  clientHour?: number,   // ⬅️ já existia
+  clientTz?: string      // ⬅️ NOVO
 ): Promise<string | undefined> => {
   try {
     if (!userId) throw new Error('Usuário não autenticado. ID ausente.');
@@ -43,13 +44,18 @@ export const enviarMensagemParaEco = async (
       throw new Error('Token de acesso ausente. Faça login novamente.');
     }
 
+    // Hora local (caso não venha do chamador) + timezone IANA
+    const hour = typeof clientHour === 'number' ? clientHour : new Date().getHours();
+    const tz = clientTz || Intl.DateTimeFormat().resolvedOptions().timeZone; // ex.: "America/Sao_Paulo"
+
     const response = await api.post(
       '/ask-eco',
       {
         mensagens: mensagensValidas,
         nome_usuario: userName,
         usuario_id: userId,
-        clientHour: clientHour ?? new Date().getHours(), // ⬅️ Envia a hora local
+        clientHour: hour, // ⬅️ envia hora local
+        clientTz: tz,     // ⬅️ envia timezone IANA
       },
       {
         headers: {
