@@ -5,6 +5,7 @@
 /*  - Envia clientHour p/ backend                                             */
 /*  - Boas-vindas apenas como texto                                           */
 /*  - Mede barra de input e seta --input-h                                    */
+/*  - 🔹 Feedback minimalista (glass) após 3 respostas da ECO                 */
 /* -------------------------------------------------------------------------- */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -31,6 +32,10 @@ import { salvarMensagem } from '../api/mensagem';
 import { differenceInDays } from 'date-fns';
 import { extrairTagsRelevantes } from '../utils/extrairTagsRelevantes';
 import mixpanel from '../lib/mixpanel';
+
+/* 🔹 IMPORTS DO FEEDBACK */
+import { FeedbackPrompt } from '../components/FeedbackPrompt';
+import { getOrCreateSessionId } from '../utils/session';
 
 /* ------------------------- Saudação/despedida regex ------------------------ */
 type Msg = { role?: string; content?: string; text?: string; sender?: 'user' | 'eco' };
@@ -61,6 +66,9 @@ const isFarewellShort = (raw: string) => {
 };
 /* -------------------------------------------------------------------------- */
 
+/* 🔹 CHAVE PARA NÃO REPETIR O FEEDBACK NA MESMA SESSÃO */
+const FEEDBACK_KEY = 'eco_feedback_given';
+
 const ChatPage: React.FC = () => {
   const { messages, addMessage, clearMessages } = useChat();
   const { userId, userName = 'Usuário', signOut, user } = useAuth();
@@ -72,6 +80,14 @@ const ChatPage: React.FC = () => {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const inputBarRef = useRef<HTMLDivElement>(null); // mede barra sticky
+
+  /* 🔹 ESTADO DO FEEDBACK + SESSION ID */
+  const [showFeedback, setShowFeedback] = useState(false);
+  const sessionId = getOrCreateSessionId();
+
+  /* 🔹 ÚLTIMA MENSAGEM DA ECO E CONTAGEM */
+  const aiMessages = (messages || []).filter((m: any) => m.sender === 'eco');
+  const lastAi = aiMessages[aiMessages.length - 1];
 
   useEffect(() => {
     if (!user) {
@@ -159,6 +175,15 @@ const ChatPage: React.FC = () => {
       }
     };
   }, []);
+
+  /* 🔹 MOSTRAR FEEDBACK APÓS 3 RESPOSTAS DA ECO (1x por sessão) */
+  useEffect(() => {
+    const already = sessionStorage.getItem(FEEDBACK_KEY);
+    if (!already && aiMessages.length >= 3) {
+      setShowFeedback(true);
+      mixpanel.track('Feedback Shown', { aiCount: aiMessages.length });
+    }
+  }, [aiMessages.length]);
 
   const gerarMensagemRetorno = (mem: any): string | null => {
     if (!mem) return null;
@@ -277,7 +302,7 @@ const ChatPage: React.FC = () => {
       mixpanel.track('Eco: Erro ao Enviar Mensagem', {
         userId,
         erro: err?.message || 'desconhecido',
-        mensagem: trimmed,
+        mensagem: (text || '').slice(0, 120),
         timestamp: new Date().toISOString(),
       });
     } finally {
@@ -285,6 +310,12 @@ const ChatPage: React.FC = () => {
       setTimeout(() => scrollToBottom(true), 0);
     }
   };
+
+  /* 🔹 CALLBACK QUANDO ENVIAR O FEEDBACK */
+  function handleFeedbackSubmitted() {
+    sessionStorage.setItem(FEEDBACK_KEY, '1');
+    setShowFeedback(false);
+  }
 
   return (
     <div className="w-full min-h-[100svh] flex flex-col bg-white">
@@ -353,6 +384,31 @@ const ChatPage: React.FC = () => {
                   <EcoBubbleIcon />
                 </div>
                 <ChatMessage message={{ id: 'typing', text: '...', sender: 'eco' } as any} isEcoTyping />
+              </div>
+            )}
+
+            {/* 🔹 BALÃO DE FEEDBACK (central, glass), aparece logo abaixo da ÚLTIMA resposta da ECO */}
+            {showFeedback && lastAi && (
+              <div className="flex justify-center">
+                <div
+                  className="
+                    w-full max-w-[560px] mx-auto
+                    rounded-2xl border border-gray-200/60
+                    bg-white/50 backdrop-blur-md shadow-sm
+                    px-4 py-3 mt-2
+                  "
+                >
+                  <FeedbackPrompt
+                    sessaoId={sessionId}
+                    usuarioId={userId || undefined}
+                    /* 🔧 Não enviamos mensagemId para evitar erro de FK enquanto a msg da ECO não estiver no banco */
+                    // mensagemId={(lastAi as any).id}
+                    /* opcional: meta extra com id de UI */
+                    // @ts-ignore - se seu componente aceitar extraMeta, ele usará isso
+                    extraMeta={{ ui_message_id: (lastAi as any).id }}
+                    onSubmitted={handleFeedbackSubmitted}
+                  />
+                </div>
               </div>
             )}
 
