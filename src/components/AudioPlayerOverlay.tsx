@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
 
 interface AudioPlayerOverlayProps {
+  // pode ser: data URL (data:audio/mpeg;base64,...) OU objectURL (URL.createObjectURL)
   audioUrl: string;
   onClose: () => void;
 }
@@ -12,43 +13,62 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
   const [currentTime, setCurrentTime] = useState(0);
 
   useEffect(() => {
-    const audio = new Audio(audioUrl);
+    // cria uma instância nova a cada audioUrl
+    const audio = new Audio();
     audioRef.current = audio;
-    audio.play();
+    audio.src = audioUrl;
+    audio.preload = "auto";
 
-    const interval = setInterval(() => {
-      if (audioRef.current) {
-        setCurrentTime(audioRef.current.currentTime);
-      }
-    }, 200);
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onEnded = () => setIsPlaying(false);
+    const onError = () => {
+      console.error("[AUDIO ERROR] falha ao carregar/tocar o áudio:", audio.error);
+      setIsPlaying(false);
+    };
 
-    audio.addEventListener('ended', () => setIsPlaying(false));
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("error", onError);
+
+    // tenta tocar automaticamente (já que o overlay normalmente abre por gesto do usuário)
+    audio.play().then(() => {
+      setIsPlaying(true);
+    }).catch((e) => {
+      console.warn("[AUDIO] autoplay bloqueado:", e?.message || e);
+      setIsPlaying(false);
+    });
 
     return () => {
-      clearInterval(interval);
       audio.pause();
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("error", onError);
+      audioRef.current = null;
     };
   }, [audioUrl]);
 
   const togglePlay = () => {
-    if (!audioRef.current) return;
-    isPlaying ? audioRef.current.pause() : audioRef.current.play();
-    setIsPlaying(!isPlaying);
-  };
-
-  const seek = (seconds: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime += seconds;
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      audio.play().then(() => setIsPlaying(true)).catch((e) => {
+        console.warn("[AUDIO] play() falhou:", e?.message || e);
+      });
     }
   };
 
+  const seek = (seconds: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = Math.max(0, audio.currentTime + seconds);
+  };
+
   const formatTime = (s: number) => {
-    const min = Math.floor(s / 60)
-      .toString()
-      .padStart(2, '0');
-    const sec = Math.floor(s % 60)
-      .toString()
-      .padStart(2, '0');
+    const min = Math.floor(s / 60).toString().padStart(2, "0");
+    const sec = Math.floor(s % 60).toString().padStart(2, "0");
     return `${min}:${sec}`;
   };
 
@@ -56,6 +76,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
     <button
       onClick={onClick}
       className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition"
+      aria-label="audio-control"
     >
       {children}
     </button>
@@ -69,19 +90,15 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
   );
 
   const PlayIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="black">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="black" aria-hidden="true">
       <path d="M8 5v14l11-7z" />
     </svg>
   );
 
-  const ArrowCircle = ({ direction }: { direction: 'left' | 'right' }) => (
+  const ArrowCircle = ({ direction }: { direction: "left" | "right" }) => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
-      {direction === 'left' ? (
-        <path d="M13 8l-4 4 4 4" />
-      ) : (
-        <path d="M11 8l4 4-4 4" />
-      )}
+      {direction === "left" ? <path d="M13 8l-4 4 4 4" /> : <path d="M11 8l4 4-4 4" />}
     </svg>
   );
 
