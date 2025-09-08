@@ -10,7 +10,7 @@ interface AudioPlayerOverlayProps {
 const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClose }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Web Audio (para leve boost de volume)
+  // Web Audio (boost leve de volume)
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
@@ -19,27 +19,24 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // true somente se veio como blob:
   const isBlobUrl = audioUrl.startsWith("blob:");
 
   useEffect(() => {
-    // cria player “fora do DOM”
     const audio = new Audio();
     audioRef.current = audio;
 
-    // ajustes de compatibilidade
+    // ajustes gerais + iOS
     audio.src = audioUrl;
     audio.preload = "auto";
-    audio.playsInline = true; // iOS
+    audio.playsInline = true;
     audio.autoplay = false;
     audio.muted = false;
     audio.volume = 1;
-    // Safari às vezes precisa do load() explícito para data URLs
     try { audio.load(); } catch {}
 
-    // --- Web Audio: boost leve de volume (~+3dB) ---
+    // --- Web Audio: +3~4 dB ---
     try {
-      // @ts-ignore - suporte webkit em iOS antigos
+      // @ts-ignore - suporte webkit
       const Ctx = window.AudioContext || (window as any).webkitAudioContext;
       if (Ctx) {
         const ctx: AudioContext = new Ctx();
@@ -50,11 +47,9 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
 
         const gain = ctx.createGain();
         gainRef.current = gain;
-        gain.gain.value = 1.4; // 1.0 = normal | 1.4 ~ +3dB
+        gain.gain.value = 1.4; // 1.0 = normal
 
         src.connect(gain).connect(ctx.destination);
-
-        // retoma o contexto após gesto do usuário (a abertura do overlay)
         ctx.resume().catch(() => {});
       }
     } catch {}
@@ -76,16 +71,11 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
     audio.addEventListener("ended", onEnded);
     audio.addEventListener("error", onError);
 
-    // tenta tocar automaticamente (após clique no botão “ouvir”)
-    audio.play()
+    audio
+      .play()
       .then(() => setIsPlaying(true))
-      .catch((e) => {
-        // em alguns navegadores o autoplay ainda é bloqueado
-        console.warn("[AUDIO] autoplay bloqueado:", e?.message || e);
-        setIsPlaying(false);
-      });
+      .catch(() => setIsPlaying(false));
 
-    // ESC para fechar
     const onEsc = (ev: KeyboardEvent) => {
       if (ev.key === "Escape") {
         try { audio.pause(); } catch {}
@@ -104,12 +94,10 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onError);
 
-      // libera objectURL caso tenha sido usado
       if (isBlobUrl) {
         try { URL.revokeObjectURL(audioUrl); } catch {}
       }
 
-      // desmonta grafo de áudio
       try {
         sourceRef.current?.disconnect();
         gainRef.current?.disconnect();
@@ -131,11 +119,11 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
       audio.pause();
       setIsPlaying(false);
     } else {
-      // retoma o contexto se estiver “suspended”
       if (audioCtxRef.current?.state === "suspended") {
         audioCtxRef.current.resume().catch(() => {});
       }
-      audio.play()
+      audio
+        .play()
         .then(() => setIsPlaying(true))
         .catch((e) => console.warn("[AUDIO] play() falhou:", e?.message || e));
     }
@@ -216,9 +204,11 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
     <div
       className="
         fixed left-1/2 -translate-x-1/2
-        top-[calc(env(safe-area-inset-top)+16px)]
-        bg-white border border-gray-200 rounded-full shadow-md
-        px-4 py-2 flex items-center gap-4 z-50 backdrop-blur-sm
+        top-[calc(env(safe-area-inset-top)+72px)]  /* abaixo do Header */
+        z-[80]                                     /* acima do Header (z-50) */
+        max-w-[92vw]
+        bg-white border border-gray-200 rounded-full shadow-lg
+        px-4 py-2 flex items-center gap-4 backdrop-blur-sm
       "
       role="dialog"
       aria-label="Reprodutor de áudio"
@@ -228,7 +218,6 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
       </IconBtn>
 
       <div className="flex items-center gap-3">
-        {/* Barra de progresso clicável */}
         <div
           className="relative w-40 h-2 rounded-full bg-gray-200 overflow-hidden cursor-pointer"
           onClick={onProgressClick}
@@ -241,10 +230,8 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
           <div className="absolute inset-y-0 left-0 bg-gray-800" style={{ width: `${progress}%` }} />
         </div>
 
-        {/* Tempo atual / total */}
         <span className="text-xs font-sans font-light text-black tracking-tight tabular-nums">
-          {formatTime(currentTime)}
-          {duration ? ` / ${formatTime(duration)}` : ""}
+          {formatTime(currentTime)}{duration ? ` / ${formatTime(duration)}` : ""}
         </span>
       </div>
 
