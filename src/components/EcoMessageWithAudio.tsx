@@ -9,14 +9,23 @@ interface EcoMessageWithAudioProps {
   message: Message;
 }
 
+/** 
+ * Define a voz padrão:
+ *  1) usa VITE_ELEVEN_VOICE_ID se existir (Vercel)
+ *  2) senão cai no ID pedido: Hgfor6xcJTM3hCSKmChL
+ */
+const DEFAULT_VOICE_ID =
+  (import.meta as any).env.VITE_ELEVEN_VOICE_ID?.trim() || 'Hgfor6xcJTM3hCSKmChL';
+
 const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) => {
   const [copied, setCopied] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null); // agora sempre Data URL
+  const [audioUrl, setAudioUrl] = useState<string | null>(null); // sempre Data URL
   const [loadingAudio, setLoadingAudio] = useState(false);
 
   const isUser = message.sender === 'user';
   const displayText = message.text ?? message.content ?? '';
 
+  // UI
   const BTN_SIZE = 'w-7 h-7 sm:w-8 sm:h-8';
   const ICON_SIZE = 'w-[14px] h-[14px] sm:w-4 sm:h-4';
   const ICON_BASE = 'text-gray-500/80 group-hover:text-gray-800 transition-colors';
@@ -32,13 +41,13 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     }
   };
 
-  // ✅ sem createObjectURL: gerarAudioDaMensagem já devolve Data URL
+  // ✅ gerarAudioDaMensagem já retorna Data URL (sem createObjectURL)
   const reproduzirAudio = async () => {
     if (loadingAudio) return;
     if (!displayText.trim()) return;
     setLoadingAudio(true);
     try {
-      const dataUrl = await gerarAudioDaMensagem(displayText); // <- string "data:audio/..."
+      const dataUrl = await gerarAudioDaMensagem(displayText, DEFAULT_VOICE_ID);
       setAudioUrl(dataUrl);
     } catch (err) {
       console.error('Erro ao gerar áudio:', err);
@@ -72,6 +81,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
         <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} w-full`}>
           <ChatMessage message={message} />
 
+          {/* barra de ações (alinhada à bolha) */}
           <div
             className={[
               'mt-1 ml-2 flex items-center gap-1.5',
