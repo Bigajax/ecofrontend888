@@ -228,7 +228,7 @@ const ChatPage: React.FC = () => {
 
   const handleSendMessage = async (text: string) => {
     const raw = text ?? '';
-const trimmed = raw.trim();
+    const trimmed = raw.trim();
     if (!trimmed || digitando) return;
 
     setDigitando(true);
@@ -463,8 +463,8 @@ const trimmed = raw.trim();
       <div
         ref={inputBarRef}
         className="sticky bottom-[max(env(safe-area-inset-bottom),0px)] z-40 px-3 sm:px-6 pb-2 pt-2
-                   bg-white/80 backdrop-blur-md border-t border-gray-200/80
-                   supports-[backdrop-filter:blur(0)]:bg-white/95"
+                   bg-white border-t border-gray-200/80
+                   supports-[backdrop-filter:blur(0)]:bg-white"
       >
         <div className="max-w-2xl mx-auto">
 
