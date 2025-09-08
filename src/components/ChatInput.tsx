@@ -7,6 +7,8 @@ type Props = {
   onMoreOptionSelected: (k: 'save_memory' | 'go_to_voice_page') => void;
   onSendAudio?: (b: Blob) => void;
   disabled?: boolean;
+  /* 🔹 NOVO: avisa o container (ChatPage) quando o texto muda */
+  onTextChange?: (text: string) => void;
 };
 
 const ChatInput: React.FC<Props> = ({
@@ -14,6 +16,7 @@ const ChatInput: React.FC<Props> = ({
   onMoreOptionSelected,
   onSendAudio,
   disabled = false,
+  onTextChange,
 }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [showMoreOptions, setShowMoreOptions] = useState(false);
@@ -59,10 +62,7 @@ const ChatInput: React.FC<Props> = ({
     const onDocClick = (e: MouseEvent) => {
       if (!popoverRef.current || !wrapperRef.current) return;
       const t = e.target as Node;
-      if (
-        wrapperRef.current.contains(t) &&
-        popoverRef.current.contains(t)
-      ) return;
+      if (wrapperRef.current.contains(t) && popoverRef.current.contains(t)) return;
       setShowMoreOptions(false);
     };
     document.addEventListener('mousedown', onDocClick);
@@ -94,7 +94,11 @@ const ChatInput: React.FC<Props> = ({
           if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
         }
         if (finalTranscript.trim()) {
-          setInputMessage((prev) => (prev ? prev + ' ' : '') + finalTranscript);
+          setInputMessage((prev) => {
+            const next = (prev ? prev + ' ' : '') + finalTranscript;
+            onTextChange?.(next);
+            return next;
+          });
         }
       };
       recognition.onerror = (e: any) => console.error('Erro no reconhecimento de fala:', e.error);
@@ -103,7 +107,7 @@ const ChatInput: React.FC<Props> = ({
     return () => {
       try { speechRecognitionRef.current?.abort?.(); } catch {}
     };
-  }, []);
+  }, [onTextChange]);
 
   // Helpers de mídia
   const stopTracks = (rec: MediaRecorder | null) => {
@@ -173,6 +177,7 @@ const ChatInput: React.FC<Props> = ({
 
     onSendMessage(msg);
     setInputMessage('');
+    onTextChange?.('');
     setShowMoreOptions(false);
 
     sendButtonRef.current?.classList.add('scale-90');
@@ -300,7 +305,11 @@ const ChatInput: React.FC<Props> = ({
         <textarea
           ref={textareaRef}
           value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setInputMessage(v);
+            onTextChange?.(v);
+          }}
           onKeyDown={(e) => {
             if (disabled) return;
             // evita enviar durante composição (IME) e só envia com Enter "seco"

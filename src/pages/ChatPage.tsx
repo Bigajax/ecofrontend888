@@ -18,6 +18,8 @@ import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import EcoBubbleIcon from '../components/EcoBubbleIcon';
 import EcoMessageWithAudio from '../components/EcoMessageWithAudio';
+/* 🔹 QUICK SUGGESTIONS */
+import QuickSuggestions from '../components/QuickSuggestions';
 
 import { enviarMensagemParaEco } from '../api/ecoApi';
 import {
@@ -97,6 +99,9 @@ const ChatPage: React.FC = () => {
   /* 🔹 ÚLTIMA MENSAGEM DA ECO E CONTAGEM */
   const aiMessages = (messages || []).filter((m: any) => m.sender === 'eco');
   const lastAi = aiMessages[aiMessages.length - 1];
+
+  /* 🔹 QUICK SUGGESTIONS: controla exibição */
+  const [showQuick, setShowQuick] = useState(true);
 
   useEffect(() => {
     if (!user) {
@@ -190,6 +195,29 @@ const ChatPage: React.FC = () => {
     }
   }, [aiMessages.length]);
 
+  /* 🔹 QUICK SUGGESTIONS: esconder quando houver mensagens ou usuário digitar */
+  useEffect(() => {
+    if ((messages?.length ?? 0) > 0) setShowQuick(false);
+  }, [messages]);
+
+  useEffect(() => {
+    const onUserTypes = (ev: Event) => {
+      const t = ev.target as HTMLElement | null;
+      if (!t) return;
+      const isTyping =
+        t.tagName === 'INPUT' ||
+        t.tagName === 'TEXTAREA' ||
+        t.getAttribute('contenteditable') === 'true';
+      if (isTyping) setShowQuick(false);
+    };
+    window.addEventListener('input', onUserTypes, { passive: true });
+    window.addEventListener('paste', onUserTypes, { passive: true });
+    return () => {
+      window.removeEventListener('input', onUserTypes);
+      window.removeEventListener('paste', onUserTypes);
+    };
+  }, []);
+
   const gerarMensagemRetorno = (mem: any): string | null => {
     if (!mem) return null;
     const dias = differenceInDays(new Date(), new Date(mem.created_at));
@@ -200,7 +228,7 @@ const ChatPage: React.FC = () => {
 
   const handleSendMessage = async (text: string) => {
     const raw = text ?? '';
-    const trimmed = raw.trim();
+const trimmed = raw.trim();
     if (!trimmed || digitando) return;
 
     setDigitando(true);
@@ -439,6 +467,17 @@ const ChatPage: React.FC = () => {
                    supports-[backdrop-filter:blur(0)]:bg-white/95"
       >
         <div className="max-w-2xl mx-auto">
+
+          {/* 🔹 QUICK SUGGESTIONS (apenas entrada; somem ao digitar/clicar) */}
+          <QuickSuggestions
+            visible={showQuick && messages.length === 0 && !digitando && !erroApi}
+            onPick={(text) => {
+              setShowQuick(false);
+              mixpanel.track('Eco: QuickSuggestion Click', { label: text });
+              handleSendMessage(text);
+            }}
+          />
+
           <ChatInput
             onSendMessage={handleSendMessage}
             onMoreOptionSelected={(opt) => {
