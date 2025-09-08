@@ -1,13 +1,21 @@
 // ✅ src/api/voiceApi.ts
 
+// Base da API: em produção (Vercel) use VITE_API_BASE apontando para o Render.
+// Ex.: VITE_API_BASE="https://seu-backend.onrender.com/api"
+const RAW_BASE = import.meta.env.VITE_API_BASE?.trim();
+const API_BASE = (RAW_BASE && RAW_BASE.replace(/\/+$/, "")) || "/api"; // fallback p/ dev com proxy
+
 async function parseBackendError(response: Response): Promise<never> {
-  // tenta ler JSON { error }, se não tiver, usa texto puro
+  // tenta JSON { error }, senão texto puro
+  let bodyText = "";
   try {
-    const data = await response.json();
+    const data = await response.clone().json();
     throw new Error(data?.error || `Falha ${response.status}`);
   } catch {
-    const text = await response.text().catch(() => "");
-    throw new Error(text || `Falha ${response.status}`);
+    try {
+      bodyText = await response.text();
+    } catch {}
+    throw new Error(bodyText || `Falha ${response.status}`);
   }
 }
 
@@ -20,14 +28,14 @@ function base64ToDataURL(base64: string, mime = "audio/mpeg"): string {
 }
 
 /**
- * Gera TTS direto (texto -> áudio) usando POST /api/voice/tts.
+ * Gera TTS direto (texto -> áudio) usando POST {API_BASE}/voice/tts.
  * Retorna uma URL tocável no <audio/>.
  */
 export async function gerarAudioDaMensagem(
   text: string,
   voiceId?: string
 ): Promise<string> {
-  const response = await fetch("/api/voice/tts", {
+  const response = await fetch(`${API_BASE}/voice/tts`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(voiceId ? { text, voice_id: voiceId } : { text }),
@@ -59,7 +67,7 @@ export async function sendVoiceMessage(
   formData.append("mensagens", JSON.stringify(messages));
   if (voiceId) formData.append("voice_id", voiceId);
 
-  const response = await fetch("/api/voice/transcribe-and-respond", {
+  const response = await fetch(`${API_BASE}/voice/transcribe-and-respond`, {
     method: "POST",
     body: formData,
   });
