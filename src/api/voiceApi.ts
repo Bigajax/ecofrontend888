@@ -1,26 +1,21 @@
-const API_BASE =
-  (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") || ""; // ex: https://eco-backend.onrender.com
+// src/api/voiceApi.ts
+const API_BASE = (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
 
-async function parseBackendError(response: Response): Promise<never> {
-  try {
-    const data = await response.json();
-    throw new Error(data?.error || `Falha ${response.status}`);
-  } catch {
-    const text = await response.text().catch(() => "");
-    throw new Error(text || `Falha ${response.status}`);
+function requireApiBase() {
+  if (!API_BASE) {
+    // Em produção, sem API_BASE não deve rodar
+    if (import.meta.env.PROD) {
+      throw new Error("VITE_BACKEND_URL ausente no front. Configure no Vercel.");
+    }
   }
 }
 
-function blobToObjectURL(blob: Blob) {
-  return URL.createObjectURL(blob);
-}
-function base64ToDataURL(base64: string, mime = "audio/mpeg") {
-  return `data:${mime};base64,${base64}`;
-}
+// ...helpers parseBackendError/blobToObjectURL/base64ToDataURL iguais
 
-/** Texto -> áudio (mp3) */
 export async function gerarAudioDaMensagem(text: string, voiceId?: string): Promise<string> {
+  requireApiBase();
   const url = `${API_BASE}/api/voice/tts`;
+  console.log("[TTS →]", url);
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "audio/mpeg" },
@@ -28,10 +23,9 @@ export async function gerarAudioDaMensagem(text: string, voiceId?: string): Prom
   });
   if (!response.ok) await parseBackendError(response);
   const audioBlob = await response.blob();
-  return blobToObjectURL(audioBlob);
+  return URL.createObjectURL(audioBlob);
 }
 
-/** Fluxo completo (áudio -> transcrição -> resposta -> TTS) */
 export async function sendVoiceMessage(
   audioBlob: Blob,
   messages: any[],
@@ -40,7 +34,10 @@ export async function sendVoiceMessage(
   accessToken: string,
   voiceId?: string
 ) {
+  requireApiBase();
   const url = `${API_BASE}/api/voice/transcribe-and-respond`;
+  console.log("[Full voice →]", url);
+
   const formData = new FormData();
   formData.append("audio", audioBlob, "gravacao.webm");
   formData.append("nome_usuario", userName);
@@ -51,13 +48,7 @@ export async function sendVoiceMessage(
 
   const response = await fetch(url, { method: "POST", body: formData });
   if (!response.ok) await parseBackendError(response);
-
   const data = await response.json();
   if (!data?.audioBase64) throw new Error("Resposta da IA não contém áudio.");
-
-  return {
-    userText: data.userText,
-    ecoText: data.ecoText,
-    audioUrl: base64ToDataURL(data.audioBase64, "audio/mpeg"),
-  };
+  return { userText: data.userText, ecoText: data.ecoText, audioUrl: `data:audio/mpeg;base64,${data.audioBase64}` };
 }
