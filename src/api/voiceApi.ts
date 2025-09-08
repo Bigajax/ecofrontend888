@@ -1,31 +1,60 @@
-// src/api/voiceApi.ts
-const API_BASE = (import.meta as any).env?.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
+// ✅ src/api/voiceApi.ts (robusto)
 
-function requireApiBase() {
-  if (!API_BASE) {
-    // Em produção, sem API_BASE não deve rodar
-    if (import.meta.env.PROD) {
-      throw new Error("VITE_BACKEND_URL ausente no front. Configure no Vercel.");
-    }
-  }
+const BACKEND_BASE =
+  (import.meta as any)?.env?.VITE_BACKEND_URL?.replace(/\/+$/, "") ||
+  window.location.origin; // fallback local/dev
+
+function base64ToDataURL(base64: string, mime = "audio/mpeg") {
+  return `data:${mime};base64,${base64}`;
 }
 
-// ...helpers parseBackendError/blobToObjectURL/base64ToDataURL iguais
+async function readError(r: Response): Promise<never> {
+  const ct = r.headers.get("content-type") || "";
+  let msg = `Falha ${r.status}`;
+  try {
+    if (ct.includes("application/json")) {
+      const j = await r.clone().json();
+      msg = j?.error || j?.message || msg;
+    } else {
+      const t = await r.clone().text();
+      msg = t || msg;
+    }
+  } catch {
+    /* ignore */
+  }
+  throw new Error(msg);
+}
 
+/**
+ * Texto -> Áudio (Eleven) via backend
+ * Retorna um ObjectURL apenas se o backend realmente devolveu áudio.
+ */
 export async function gerarAudioDaMensagem(text: string, voiceId?: string): Promise<string> {
-  requireApiBase();
-  const url = `${API_BASE}/api/voice/tts`;
-  console.log("[TTS →]", url);
-  const response = await fetch(url, {
+  const url = `${BACKEND_BASE}/api/voice/tts`;
+  const body = voiceId ? { text, voice_id: voiceId } : { text };
+
+  const resp = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "audio/mpeg" },
-    body: JSON.stringify(voiceId ? { text, voice_id: voiceId } : { text }),
+    body: JSON.stringify(body),
   });
-  if (!response.ok) await parseBackendError(response);
-  const audioBlob = await response.blob();
-  return URL.createObjectURL(audioBlob);
+
+  // se status não for 2xx, lê a mensagem de erro do backend e lança
+  if (!resp.ok) await readError(resp);
+
+  const ct = resp.headers.get("content-type") || "";
+  // se não veio áudio, tente ler mensagem e lançar
+  if (!/audio\//i.test(ct)) await readError(resp);
+
+  const blob = await resp.blob();
+  // alguns servers podem não setar type; força mpeg como fallback
+  const safeBlob = blob.type ? blob : new Blob([blob], { type: "audio/mpeg" });
+  return URL.createObjectURL(safeBlob);
 }
 
+/**
+ * Fluxo completo (gravação -> transcrição+resposta+tts)
+ */
 export async function sendVoiceMessage(
   audioBlob: Blob,
   messages: any[],
@@ -33,10 +62,8 @@ export async function sendVoiceMessage(
   userId: string,
   accessToken: string,
   voiceId?: string
-) {
-  requireApiBase();
-  const url = `${API_BASE}/api/voice/transcribe-and-respond`;
-  console.log("[Full voice →]", url);
+): Promise<{ userText: string; ecoText: string; audioUrl: string }> {
+  const url = `${BACKEND_BASE}/api/voice/transcribe-and-respond`;
 
   const formData = new FormData();
   formData.append("audio", audioBlob, "gravacao.webm");
@@ -46,9 +73,15 @@ export async function sendVoiceMessage(
   formData.append("mensagens", JSON.stringify(messages));
   if (voiceId) formData.append("voice_id", voiceId);
 
-  const response = await fetch(url, { method: "POST", body: formData });
-  if (!response.ok) await parseBackendError(response);
-  const data = await response.json();
-  if (!data?.audioBase64) throw new Error("Resposta da IA não contém áudio.");
-  return { userText: data.userText, ecoText: data.ecoText, audioUrl: `data:audio/mpeg;base64,${data.audioBase64}` };
+  const resp = await fetch(url, { method: "POST", body: formData });
+  if (!resp.ok) await readError(resp);
+
+  const data = await resp.json();
+  if (!data?.audioBase64) throw new Error("Backend não retornou áudio.");
+
+  return {
+    userText: data.userText,
+    ecoText: data.ecoText,
+    audioUrl: base64ToDataURL(data.audioBase64, "audio/mpeg"),
+  };
 }
