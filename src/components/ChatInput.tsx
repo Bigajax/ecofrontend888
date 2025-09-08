@@ -7,9 +7,10 @@ type Props = {
   onMoreOptionSelected: (k: 'save_memory' | 'go_to_voice_page') => void;
   onSendAudio?: (b: Blob) => void;
   disabled?: boolean;
-  /* 🔹 NOVO: avisa o container (ChatPage) quando o texto muda */
   onTextChange?: (text: string) => void;
 };
+
+const CTA_TEXT = 'Converse com a Eco…';
 
 const ChatInput: React.FC<Props> = ({
   onSendMessage,
@@ -312,7 +313,6 @@ const ChatInput: React.FC<Props> = ({
           }}
           onKeyDown={(e) => {
             if (disabled) return;
-            // evita enviar durante composição (IME) e só envia com Enter "seco"
             // @ts-ignore
             const composing = e.nativeEvent?.isComposing;
             if (!composing && e.key === 'Enter' && !e.shiftKey) {
@@ -322,14 +322,19 @@ const ChatInput: React.FC<Props> = ({
           }}
           onFocus={onFocus}
           onBlur={onBlur}
-          placeholder="Fale com a Eco"
+          placeholder={CTA_TEXT}
           rows={1}
           inputMode="text"
           enterKeyHint="send"
           maxLength={4000}
           readOnly={disabled}
           aria-disabled={disabled}
-          className="glass-textarea min-w-0 flex-1 text-sm bg-transparent border-none focus:outline-none resize-none leading-6 py-2 max-h-48 overflow-y-auto placeholder:text-gray-500"
+          className="
+            glass-textarea min-w-0 flex-1 bg-transparent border-none focus:outline-none resize-none
+            leading-6 py-2 max-h-48 overflow-y-auto
+            text-[15px] md:text-base text-slate-800
+            [&::placeholder]:text-slate-500 [&::placeholder]:font-light
+          "
         />
 
         {/* Botões mic e send */}
@@ -344,7 +349,7 @@ const ChatInput: React.FC<Props> = ({
             <Mic size={16} />
           </button>
 
-          <button
+        <button
             type="submit"
             ref={sendButtonRef}
             disabled={disabled || !inputMessage.trim()}

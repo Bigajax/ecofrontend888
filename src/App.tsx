@@ -8,18 +8,19 @@ import VoicePage from './pages/VoicePage';
 import MemoryPage from './pages/MemoryPage';
 import CreateProfilePage from './pages/CreateProfilePage';
 import ProtectedRoute from './components/ProtectedRoute';
-import mixpanel from './lib/mixpanel'; // 👈 importa o mixpanel
+import mixpanel from './lib/mixpanel';
+import MainLayout from './layouts/MainLayout';
 
 function App() {
   useEffect(() => {
     mixpanel.track('App iniciado', {
       origem: 'App.tsx',
-      data: new Date().toISOString()
+      data: new Date().toISOString(),
     });
   }, []);
 
   return (
-    <div className="h-screen w-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 font-sans flex flex-col">
+    <div className="min-h-screen w-screen bg-white font-sans flex flex-col">
       <AuthProvider>
         <ChatProvider>
           <Routes>
@@ -31,7 +32,9 @@ function App() {
               path="/chat"
               element={
                 <ProtectedRoute>
-                  <ChatPage />
+                  <MainLayout>
+                    <ChatPage />
+                  </MainLayout>
                 </ProtectedRoute>
               }
             />
@@ -40,7 +43,9 @@ function App() {
               path="/voice"
               element={
                 <ProtectedRoute>
-                  <VoicePage />
+                  <MainLayout>
+                    <VoicePage />
+                  </MainLayout>
                 </ProtectedRoute>
               }
             />
@@ -49,7 +54,9 @@ function App() {
               path="/memory"
               element={
                 <ProtectedRoute>
-                  <MemoryPage />
+                  <MainLayout>
+                    <MemoryPage />
+                  </MainLayout>
                 </ProtectedRoute>
               }
             />
