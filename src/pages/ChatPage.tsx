@@ -195,7 +195,7 @@ const ChatPage: React.FC = () => {
     }
   }, [aiMessages.length]);
 
-  /* 🔹 QUICK SUGGESTIONS: esconder quando houver mensagens ou usuário digitar */
+  /* 🔹 QUICK SUGGESTIONS: esconder quando houver mensagens */
   useEffect(() => {
     if ((messages?.length ?? 0) > 0) setShowQuick(false);
   }, [messages]);
@@ -310,7 +310,7 @@ const ChatPage: React.FC = () => {
 
       // Hora + timezone do cliente
       const clientHour = new Date().getHours();
-      const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone; // ex.: "America/Sao_Paulo"
+      const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       const resposta = await enviarMensagemParaEco(
         mensagensComContexto,
@@ -336,7 +336,7 @@ const ChatPage: React.FC = () => {
               padrao_comportamental: bloco.padrao_comportamental || 'não identificado',
             });
           }
-        } catch { /* no-op */ }
+        } catch {}
       }
     } catch (err: any) {
       console.error('[ChatPage] erro:', err);
@@ -429,7 +429,7 @@ const ChatPage: React.FC = () => {
               </div>
             )}
 
-            {/* 🔹 BALÃO DE FEEDBACK (central, glass), aparece logo abaixo da ÚLTIMA resposta da ECO */}
+            {/* 🔹 BALÃO DE FEEDBACK */}
             {showFeedback && lastAi && (
               <div className="flex justify-center">
                 <div
@@ -443,10 +443,8 @@ const ChatPage: React.FC = () => {
                   <FeedbackPrompt
                     sessaoId={sessionId}
                     usuarioId={userId || undefined}
-                    /* 🔧 Não enviamos mensagemId para evitar erro de FK enquanto a msg da ECO não estiver no banco */
                     // mensagemId={(lastAi as any).id}
-                    /* opcional: meta extra com id de UI */
-                    // @ts-ignore - se seu componente aceitar extraMeta, ele usará isso
+                    // @ts-ignore
                     extraMeta={{ ui_message_id: (lastAi as any).id }}
                     onSubmitted={handleFeedbackSubmitted}
                   />
@@ -463,12 +461,10 @@ const ChatPage: React.FC = () => {
       <div
         ref={inputBarRef}
         className="sticky bottom-[max(env(safe-area-inset-bottom),0px)] z-40 px-3 sm:px-6 pb-2 pt-2
-                   bg-white border-t border-gray-200/80
-                   supports-[backdrop-filter:blur(0)]:bg-white"
+                   bg-white border-t border-gray-200"
       >
         <div className="max-w-2xl mx-auto">
-
-          {/* 🔹 QUICK SUGGESTIONS (apenas entrada; somem ao digitar/clicar) */}
+          {/* 🔹 QUICK SUGGESTIONS (somem ao digitar/clicar) */}
           <QuickSuggestions
             visible={showQuick && messages.length === 0 && !digitando && !erroApi}
             onPick={(text) => {
@@ -485,6 +481,8 @@ const ChatPage: React.FC = () => {
             }}
             onSendAudio={() => console.log('Áudio enviado')}
             disabled={digitando}
+            /* 👇 NOVO: esconde sugestões enquanto digita */
+            onTextChange={(t) => setShowQuick(t.trim().length === 0)}
           />
         </div>
       </div>
