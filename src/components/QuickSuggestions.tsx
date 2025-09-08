@@ -23,16 +23,20 @@ export default function QuickSuggestions({
   return (
     <div
       className={
-        "w-full max-w-2xl mx-auto -mt-1 mb-2 " + className
+        // ocupa a largura toda no mobile (encosta nas bordas) e centraliza no md+
+        "relative w-full max-w-2xl mx-auto -mt-0.5 mb-2 " + className
       }
       aria-label="Atalhos de início"
     >
+      {/* trilho com scroll horizontal no mobile; quebra em linhas no md+ */}
       <div
         className="
-          flex md:flex-wrap md:justify-center items-center gap-2
-          overflow-x-auto md:overflow-visible pb-1
-          snap-x snap-mandatory
           hide-scrollbar
+          flex items-center gap-2
+          overflow-x-auto md:overflow-visible
+          md:flex-wrap md:justify-center
+          pb-1 px-2 -mx-2   /* encosta nas bordas no mobile */
+          snap-x snap-mandatory
         "
         style={{ WebkitOverflowScrolling: "touch" }}
       >
@@ -42,8 +46,10 @@ export default function QuickSuggestions({
             onClick={() => onPick(label)}
             className="
               snap-start
-              rounded-full px-3.5 py-2 text-sm md:text-[0.95rem]
-              bg-white/70 backdrop-blur
+              inline-flex items-center
+              rounded-full
+              px-3 py-1.5 text-[13px] leading-tight md:text-sm md:px-3.5 md:py-2
+              bg-white/75 backdrop-blur
               border border-gray-200 shadow-sm
               hover:bg-white hover:shadow
               focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400/50
@@ -58,6 +64,17 @@ export default function QuickSuggestions({
         ))}
       </div>
 
+      {/* fades nas bordas (apenas quando tem scroll) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-white to-transparent md:hidden"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white to-transparent md:hidden"
+      />
+
+      {/* util: esconder scrollbar em todos os browsers */}
       <style>{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
