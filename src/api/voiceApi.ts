@@ -1,7 +1,8 @@
 // ✅ src/api/voiceApi.ts
+
 const BACKEND_BASE =
   (import.meta as any).env.MODE === "development"
-    ? window.location.origin // dev: proxy local
+    ? window.location.origin
     : (import.meta as any).env.VITE_BACKEND_URL?.replace(/\/+$/, "");
 
 if (!BACKEND_BASE) {
@@ -27,20 +28,8 @@ async function readError(r: Response): Promise<never> {
   throw new Error(msg);
 }
 
-// --- helpers robustos p/ blob->URL ---
-function createObjectURLSafe(blob: Blob): string | null {
-  try {
-    const WURL = (window as any).URL || (window as any).webkitURL;
-    if (WURL?.createObjectURL && blob) {
-      return WURL.createObjectURL(blob);
-    }
-  } catch (e) {
-    console.warn("[voiceApi] createObjectURL falhou:", (e as Error)?.message || e);
-  }
-  return null;
-}
-
-function readBlobAsDataURL(blob: Blob): Promise<string> {
+// Converte Blob -> Data URL (sem createObjectURL)
+function blobToDataURL(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     try {
       const fr = new FileReader();
@@ -53,7 +42,10 @@ function readBlobAsDataURL(blob: Blob): Promise<string> {
   });
 }
 
-// Texto -> áudio (TTS direto)
+/**
+ * Texto -> áudio (POST /api/voice/tts)
+ * Retorna SEMPRE um Data URL (data:audio/mpeg;base64,...)
+ */
 export async function gerarAudioDaMensagem(text: string, voiceId?: string): Promise<string> {
   const url = `${BACKEND_BASE}/api/voice/tts`;
   const body = voiceId ? { text, voice_id: voiceId } : { text };
@@ -66,26 +58,23 @@ export async function gerarAudioDaMensagem(text: string, voiceId?: string): Prom
 
   if (!resp.ok) await readError(resp);
 
-  // pode vir sem content-type em alguns hosts — trate como áudio mesmo assim
+  // Em alguns hosts pode vir sem content-type; força audio/mpeg
   let blob = await resp.blob();
   if (!(blob instanceof Blob)) {
-    // fallback paranoico (não deve acontecer em browsers modernos)
     blob = new Blob([await resp.arrayBuffer()], { type: "audio/mpeg" });
   }
   if (!blob.type) {
-    // padroniza o mime
     blob = new Blob([blob], { type: "audio/mpeg" });
   }
 
-  // 1ª tentativa: blob: URL
-  const objUrl = createObjectURLSafe(blob);
-  if (objUrl) return objUrl;
-
-  // Fallback seguro: Data URL
-  return await readBlobAsDataURL(blob);
+  // 🔥 sem createObjectURL — sempre Data URL
+  return await blobToDataURL(blob);
 }
 
-// Fluxo completo (grava -> transcreve -> responde -> TTS)
+/**
+ * Fluxo completo (grava -> transcreve -> responde -> TTS)
+ * Já vem como Base64 do backend; converte para Data URL.
+ */
 export async function sendVoiceMessage(
   audioBlob: Blob,
   messages: any[],
@@ -108,9 +97,7 @@ export async function sendVoiceMessage(
   if (!resp.ok) await readError(resp);
 
   const data = await resp.json();
-  if (!data?.audioBase64) {
-    throw new Error("Backend não retornou áudio (audioBase64 ausente).");
-  }
+  if (!data?.audioBase64) throw new Error("Backend não retornou áudio (audioBase64 ausente).");
 
   return {
     userText: data.userText,
