@@ -1,11 +1,8 @@
 // ✅ src/api/voiceApi.ts
 
-// Detecta ambiente e resolve a BASE do backend
 const IS_DEV = (import.meta as any).env.MODE === "development";
 const ENV_BASE = (import.meta as any).env.VITE_BACKEND_URL?.replace(/\/+$/, "") || "";
-const BACKEND_BASE = IS_DEV
-  ? (ENV_BASE || window.location.origin.replace(/\/+$/, "")) // dev: usa VITE_BACKEND_URL se houver; senão mesma origem
-  : ENV_BASE;                                                // prod: exige VITE_BACKEND_URL
+const BACKEND_BASE = IS_DEV ? (ENV_BASE || window.location.origin.replace(/\/+$/, "")) : ENV_BASE;
 
 if (!BACKEND_BASE) {
   throw new Error("VITE_BACKEND_URL ausente no build do front.");
@@ -35,23 +32,19 @@ async function readError(resp: Response): Promise<never> {
   throw new Error(msg);
 }
 
-/** Tenta criar um ObjectURL; se falhar, retorna Data URL (compat global) */
-async function blobToPlayableURL(blob: Blob): Promise<string> {
-  try {
-    return URL.createObjectURL(blob);
-  } catch {
-    return await new Promise<string>((resolve, reject) => {
-      const fr = new FileReader();
-      fr.onload = () => resolve(fr.result as string);
-      fr.onerror = () => reject(fr.error || new Error("FileReader falhou"));
-      fr.readAsDataURL(blob);
-    });
-  }
+/** Converte Blob -> Data URL (sem createObjectURL) */
+function blobToDataURL(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result as string);
+    fr.onerror = () => reject(fr.error || new Error("FileReader falhou"));
+    fr.readAsDataURL(blob);
+  });
 }
 
 /* ------------------------------- APIs ----------------------------------- */
 
-/** Texto -> áudio (MP3) */
+/** Texto -> áudio (MP3) usando /api/voice/tts. Retorna **Data URL**. */
 export async function gerarAudioDaMensagem(text: string, voiceId?: string): Promise<string> {
   const url = apiUrl("/api/voice/tts");
   const body = voiceId ? { text, voice_id: voiceId } : { text };
@@ -67,15 +60,16 @@ export async function gerarAudioDaMensagem(text: string, voiceId?: string): Prom
 
   if (!resp.ok) await readError(resp);
 
-  // Alguns servidores retornam application/octet-stream – garantimos o tipo
+  // Garante Blob com MIME de áudio mesmo que o servidor mande octet-stream
   const buf = await resp.arrayBuffer();
   const ct = resp.headers.get("content-type") || "audio/mpeg";
   const blob = new Blob([buf], { type: /audio\//i.test(ct) ? ct : "audio/mpeg" });
 
-  return blobToPlayableURL(blob);
+  // ❌ NÃO usa createObjectURL; ✅ usa Data URL (compat Safari/iOS)
+  return blobToDataURL(blob);
 }
 
-/** Fluxo completo: grava (Blob) -> transcreve -> responde -> TTS */
+/** Fluxo completo: grava -> transcreve -> responde -> TTS. Retorna **Data URL**. */
 export async function sendVoiceMessage(
   audioBlob: Blob,
   messages: any[],
@@ -98,11 +92,8 @@ export async function sendVoiceMessage(
   if (!resp.ok) await readError(resp);
 
   const data = await resp.json();
-  if (!data?.audioBase64) {
-    throw new Error("Backend não retornou áudio (audioBase64 ausente).");
-  }
+  if (!data?.audioBase64) throw new Error("Backend não retornou áudio (audioBase64 ausente).");
 
-  // Retorna Data URL (ótimo para seu AudioPlayerOverlay)
   return {
     userText: data.userText,
     ecoText: data.ecoText,
