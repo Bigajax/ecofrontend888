@@ -3,24 +3,30 @@ import { useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { pathname } = useLocation();
-
+  const location = useLocation();
   const pageTitle =
-    pathname === '/chat'
+    location.pathname === '/chat'
       ? 'ECO'
-      : pathname === '/voice'
+      : location.pathname === '/voice'
       ? 'ECO — Voz'
-      : pathname === '/memory'
+      : location.pathname === '/memory'
       ? 'Memórias'
       : 'ECO';
 
-  // valor padrão caso a var ainda não tenha sido definida
-  const contentStyle: React.CSSProperties = { paddingLeft: 'var(--eco-sidebar-w, 240px)' };
-
   return (
     <>
-      <Header title={pageTitle} variant="left" />
-      <main className="min-h-screen bg-white text-gray-900" style={contentStyle}>
+      {/* AUTO = TopBar no mobile / Sidebar no desktop */}
+      <Header title={pageTitle} variant="auto" />
+
+      {/* No mobile: sem padding esquerdo. No desktop: usa a largura da sidebar */}
+      <main
+        className="
+          min-h-screen
+          transition-[padding] duration-200 ease-out
+          pl-0
+          md:pl-[var(--eco-sidebar-w,240px)]
+        "
+      >
         {children}
       </main>
     </>

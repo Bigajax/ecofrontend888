@@ -57,7 +57,7 @@ body {
   --bubble-shadow:  0 3px 10px rgba(15,23,42,0.06);
 }
 
-/* ---------- utilitários de glass (puros CSS com fallback) ---------- */
+/* ---------- utilitários de glass ---------- */
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(18px);
@@ -122,12 +122,19 @@ body {
   padding: .5rem;
 }
 
-/* Textarea dentro do painel (mantém traço/legibilidade) */
-.glass-textarea{
-  color:#111827;
+/* Textarea dentro do painel */
+.glass-textarea{ color:#111827; }
+
+/* Placeholder mais leve/fino (Inter 450 ~ semibold leve) */
+.glass-textarea::placeholder{
+  font-size: 0.95rem;           /* ~15.2px */
+  font-weight: 450;             /* Inter variável suporta */
+  letter-spacing: .01em;
+  color: #64748b;               /* slate-500 */
+  opacity: .95;
 }
 
-/* Tintas suaves p/ diferenciar usuário/Eco */
+/* Tintas suaves */
 .tint-teal   { background: rgba(13,148,136,0.10); border-color: rgba(13,148,136,0.25); }
 .tint-violet { background: rgba(139,92,246,0.10); border-color: rgba(139,92,246,0.25); }
 .tint-gray   { background: rgba(255,255,255,0.10); border-color: rgba(0,0,0,0.06); }
@@ -328,4 +335,21 @@ body.keyboard-open { padding-bottom: var(--safe-bottom); }
 /* Acessibilidade: usuários com redução de movimento preferem menos animação */
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
+}
+
+/* ----------------- RESPONSIVIDADE DA SIDEBAR ----------------- */
+/* Em telas < md, força a sidebar a 0px para não empurrar o conteúdo */
+@media (max-width: 767px) {
+  :root { --eco-sidebar-w: 0px !important; }
+}
+
+/* Foco visível coerente (iOS/Android/desktop) */
+:focus-visible {
+  outline: 2px solid rgba(148,163,184,.45); /* slate-400/45 */
+  outline-offset: 2px;
+}
+
+/* Seleção de texto mais sutil */
+::selection {
+  background: rgba(148,163,184,.25);
 }

@@ -1,49 +1,60 @@
-import { supabase } from "../lib/supabaseClient";
+// src/api/perfilApi.ts
 import api from "./axios";
 
 export interface PerfilEmocional {
-  id: string;
-  usuario_id: string;
-  resumo_geral_ia: string | null;
-  emocoes_frequentes: Record<string, number>;
-  temas_recorrentes: Record<string, number>;
-  ultima_interacao_sig: string | null;
+  id?: string;
+  usuario_id?: string;
+  resumo_geral_ia?: string | null;
+  emocoes_frequentes?: Record<string, number>;
+  temas_recorrentes?: Record<string, number>;
+  ultima_interacao_sig?: string | null;
   updated_at?: string;
 }
 
-async function getAuthHeaders() {
-  // (opcional) manter para chamadas sem interceptor; com o interceptor já funciona
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error("⚠️ Sessão inválida.");
-  return { headers: { Authorization: `Bearer ${session.access_token}` } };
+/** Aceita { perfil: {...} } | { data: {...} } | { ...obj } */
+function unwrapPerfil(payload: any): PerfilEmocional | null {
+  const raw = payload?.perfil ?? payload?.data ?? payload;
+  if (!raw || typeof raw !== "object") return null;
+
+  return {
+    id: raw.id,
+    usuario_id: raw.usuario_id ?? raw.user_id,
+    resumo_geral_ia: raw.resumo_geral_ia ?? null,
+    emocoes_frequentes: raw.emocoes_frequentes ?? {},
+    temas_recorrentes: raw.temas_recorrentes ?? {},
+    ultima_interacao_sig: raw.ultima_interacao_sig ?? null,
+    updated_at: raw.updated_at,
+  };
 }
 
-// preferido: endpoint que resolve pelo token -> GET /perfil-emocional
-// fallback: backend legado -> GET /perfil-emocional/:userId
-export const buscarPerfilEmocional = async (
+/**
+ * Busca o perfil emocional.
+ * 1) Tenta GET /perfil-emocional (autenticado via Bearer no interceptor)
+ * 2) Se 400/404/405, faz fallback para /perfil-emocional/:userId
+ */
+export async function buscarPerfilEmocional(
   userId?: string
-): Promise<PerfilEmocional | null> => {
+): Promise<PerfilEmocional | null> {
   try {
-    // 1) tenta sem :userId
+    // 1) via token (RLS no backend)
     try {
-      const { data } = await api.get<{ success?: boolean; perfil: PerfilEmocional | null }>(
-        "/perfil-emocional"
-      );
-      return data?.perfil ?? null;
+      const { data } = await api.get("/perfil-emocional");
+      return unwrapPerfil(data);
     } catch (e: any) {
       const status = e?.response?.status;
-      const podeTentarFallback = status === 400 || status === 404 || status === 405;
-      if (!podeTentarFallback) throw e;
+      const podeFallback = status === 400 || status === 404 || status === 405;
+      if (!podeFallback) throw e;
     }
 
-    // 2) fallback com :userId
+    // 2) fallback via :userId (para backend legado)
     if (!userId) return null;
-    const { data } = await api.get<{ success?: boolean; perfil: PerfilEmocional | null }>(
-      `/perfil-emocional/${encodeURIComponent(userId)}`
-    );
-    return data?.perfil ?? null;
+    const { data } = await api.get(`/perfil-emocional/${encodeURIComponent(userId)}`);
+    return unwrapPerfil(data);
   } catch (err: any) {
-    console.error("❌ Erro ao buscar perfil emocional:", err?.response?.data || err?.message || err);
+    console.error(
+      "❌ Erro ao buscar perfil emocional:",
+      err?.response?.data || err?.message || err
+    );
     return null;
   }
-};
+}

@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import PhoneFrame from '../components/PhoneFrame';
 import { useAuth } from '../contexts/AuthContext';
 import { buscarMemoriasPorUsuario, Memoria } from '../api/memoriaApi';
@@ -64,7 +64,7 @@ const humanDate = (raw: string) => {
 };
 const clamp = (v: number, min = -1, max = 1) => Math.max(min, Math.min(max, v));
 
-/* -------- Agrupamento por período (Hoje/Ontem/Esta semana/Este mês/Antigas) -------- */
+/* -------- Agrupamento por período -------- */
 const bucketLabelForDate = (iso: string) => {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return 'Antigas';
@@ -75,15 +75,13 @@ const bucketLabelForDate = (iso: string) => {
   if (diffDays === 0) return 'Hoje';
   if (diffDays === 1) return 'Ontem';
 
-  // esta semana
   const startOfWeek = new Date(now);
-  const day = startOfWeek.getDay(); // 0..6
-  const diffToMonday = (day + 6) % 7; // segunda como início
+  const day = startOfWeek.getDay();
+  const diffToMonday = (day + 6) % 7;
   startOfWeek.setHours(0, 0, 0, 0);
   startOfWeek.setDate(startOfWeek.getDate() - diffToMonday);
   if (d >= startOfWeek) return 'Esta semana';
 
-  // este mês
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   if (d >= startOfMonth) return 'Este mês';
 
@@ -91,7 +89,6 @@ const bucketLabelForDate = (iso: string) => {
 };
 
 type Grouped = Record<string, Memoria[]>;
-
 const groupMemories = (mems: Memoria[]): Grouped =>
   mems.reduce((acc: Grouped, m) => {
     const label = m.created_at ? bucketLabelForDate(m.created_at) : 'Antigas';
@@ -99,7 +96,7 @@ const groupMemories = (mems: Memoria[]): Grouped =>
     return acc;
   }, {});
 
-/* ------------------- Cartão de memória (novo) ------------------- */
+/* ------------------- Cartão de memória ------------------- */
 const MemoryCard: React.FC<{ mem: Memoria }> = ({ mem }) => {
   const [open, setOpen] = useState(false);
   const cap = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
@@ -110,12 +107,7 @@ const MemoryCard: React.FC<{ mem: Memoria }> = ({ mem }) => {
 
   return (
     <li className="rounded-3xl border border-black/10 bg-white/70 backdrop-blur-md shadow-md p-4 transition-all">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="w-full text-left"
-      >
+      <button type="button" onClick={() => setOpen(v => !v)} aria-expanded={open} className="w-full text-left">
         <div className="flex items-center gap-3">
           <span
             className="h-9 w-9 rounded-full ring-2 ring-white/70 shadow-sm shrink-0"
@@ -133,12 +125,7 @@ const MemoryCard: React.FC<{ mem: Memoria }> = ({ mem }) => {
             {preview && (
               <p
                 className="text-sm text-neutral-700 mt-0.5"
-                style={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}
+                style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
               >
                 {preview}
               </p>
@@ -163,10 +150,7 @@ const MemoryCard: React.FC<{ mem: Memoria }> = ({ mem }) => {
               <span
                 key={`${tag}-${i}`}
                 className="text-xs px-3 py-1 rounded-full font-medium border border-black/10 shadow-sm"
-                style={{
-                  background: generateConsistentPastelColor(tag),
-                  color: '#0f172a',
-                }}
+                style={{ background: generateConsistentPastelColor(tag), color: '#0f172a' }}
               >
                 {tag && tag[0].toUpperCase() + tag.slice(1)}
               </span>
@@ -175,18 +159,12 @@ const MemoryCard: React.FC<{ mem: Memoria }> = ({ mem }) => {
         )}
 
         <div className="mt-3 flex justify-end">
-          <span className="text-xs font-medium text-sky-700">
-            {open ? 'Fechar ↑' : 'Ver mais ↓'}
-          </span>
+          <span className="text-xs font-medium text-sky-700">{open ? 'Fechar ↑' : 'Ver mais ↓'}</span>
         </div>
       </button>
 
       {open && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4 mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700"
-        >
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700">
           {mem.analise_resumo && (
             <div className="rounded-xl p-3 bg-white/70 backdrop-blur border border-neutral-200 shadow-sm">
               <div className="font-semibold mb-1 text-neutral-900">Reflexão da Eco</div>
@@ -224,11 +202,26 @@ const MemoryCard: React.FC<{ mem: Memoria }> = ({ mem }) => {
 };
 
 /* ------------------- Página ------------------- */
+type TabKey = 'memories' | 'profile' | 'report';
+const normalizeTab = (t?: string): TabKey => (t === 'profile' ? 'profile' : t === 'report' ? 'report' : 'memories');
+
 const MemoryPage: React.FC = () => {
   const { userId } = useAuth();
   const navigate = useNavigate();
+  const { tab } = useParams<{ tab?: string }>();
 
-  const [activeTab, setActiveTab] = useState<'memories' | 'profile' | 'report'>('memories');
+  const [activeTab, setActiveTab] = useState<TabKey>(normalizeTab(tab));
+
+  // mantém estado em sincronia com a URL
+  useEffect(() => {
+    setActiveTab(normalizeTab(tab));
+  }, [tab]);
+
+  const goTab = (t: TabKey) => {
+    setActiveTab(t);
+    navigate(t === 'memories' ? '/memory' : `/memory/${t}`, { replace: true });
+  };
+
   const [memories, setMemories] = useState<Memoria[]>([]);
   const [perfil, setPerfil] = useState<any>(null);
   const [relatorio, setRelatorio] = useState<RelatorioEmocional | null>(null);
@@ -275,14 +268,11 @@ const MemoryPage: React.FC = () => {
   const filteredMemories = useMemo(() => {
     const q = normalize(query);
     return memories.filter((m) => {
-      // emoção
       if (emoFilter !== 'all') {
         if (normalize(m.emocao_principal || '') !== normalize(emoFilter)) return false;
       }
-      // intensidade
       const inten = Number((m as any).intensidade ?? 0);
       if (!isNaN(minIntensity) && inten < minIntensity) return false;
-      // busca em tags/analise/contexto
       if (q) {
         const hay =
           normalize(m.analise_resumo || '') +
@@ -344,58 +334,46 @@ const MemoryPage: React.FC = () => {
     <PhoneFrame className="flex flex-col h-full bg-white">
       {/* header sticky glass */}
       <div className="sticky top-0 z-10 px-4 pt-4 pb-3 bg-white/70 backdrop-blur-md border-b border-black/10">
-        <div className="relative flex items-center justify-center">
+        {/* Linha de cima: botão voltar + tabs compactas no canto ESQUERDO */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => navigate('/chat')}
-            className="absolute left-0 inline-flex items-center justify-center h-9 w-9 rounded-full border border-black/10 bg-white/70 backdrop-blur hover:bg-white transition"
+            className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-black/10 bg-white/70 backdrop-blur hover:bg-white transition"
             aria-label="Voltar"
           >
             <ArrowLeft size={20} className="text-neutral-700" />
           </button>
-          <div className="text-center">
-            <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight">
-              {{
-                memories: 'Minhas Memórias',
-                profile: 'Meu Perfil Emocional',
-                report: 'Relatório Emocional',
-              }[activeTab]}
-            </h1>
-            <p className="text-sm text-neutral-500 mt-1">
-              {{
-                memories: 'Registre e relembre seus sentimentos',
-                profile: 'Seu panorama emocional em destaque',
-                report: 'Análise aprofundada das suas memórias',
-              }[activeTab]}
-            </p>
-          </div>
-        </div>
 
-        {/* segmented control glass */}
-        <div className="mt-3 flex justify-center">
-          <div className="glass-panel p-1 rounded-full flex gap-1">
-            {(['memories', 'profile', 'report'] as const).map((tab) => {
-              const active = activeTab === tab;
+          {/* segmented compacto (navega alterando a URL) */}
+          <div className="glass-panel rounded-full p-1 flex gap-1">
+            {(['memories','profile','report'] as const).map(t => {
+              const active = activeTab === t;
               return (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  key={t}
+                  onClick={() => goTab(t)}
                   aria-pressed={active}
                   className={[
-                    'px-3 py-1.5 rounded-full text-sm font-medium transition',
-                    active
-                      ? 'bg-white text-neutral-900 shadow-sm border border-white/60'
-                      : 'text-neutral-700 hover:bg-white/40',
+                    'px-3 py-1.5 rounded-full text-[13px] font-medium transition',
+                    active ? 'bg-white text-neutral-900 shadow-sm border border-white/60'
+                           : 'text-neutral-700 hover:bg-white/40'
                   ].join(' ')}
                 >
-                  {{
-                    memories: 'Memórias',
-                    profile: 'Perfil Emocional',
-                    report: 'Relatório',
-                  }[tab]}
+                  {{ memories:'Memórias', profile:'Perfil Emocional', report:'Relatório' }[t]}
                 </button>
               );
             })}
           </div>
+        </div>
+
+        {/* Título e subtítulo centralizados (linha de baixo) */}
+        <div className="mt-2 text-center">
+          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight">
+            {{ memories: 'Minhas Memórias', profile: 'Meu Perfil Emocional', report: 'Relatório Emocional' }[activeTab]}
+          </h1>
+          <p className="text-sm text-neutral-500 mt-1">
+            {{ memories: 'Registre e relembre seus sentimentos', profile: 'Seu panorama emocional em destaque', report: 'Análise aprofundada das suas memórias' }[activeTab]}
+          </p>
         </div>
       </div>
 
@@ -507,18 +485,12 @@ const MemoryPage: React.FC = () => {
                     <ChartCard title="Emoções mais frequentes">
                       {emotionChart.length > 0 ? (
                         <ResponsiveContainer width="100%" height={230}>
-                          <BarChart
-                            data={emotionChart}
-                            margin={{ top: 20, right: 5, left: 5, bottom: 40 }}
-                            barCategoryGap="30%"
-                          >
+                          <BarChart data={emotionChart} margin={{ top: 20, right: 5, left: 5, bottom: 40 }} barCategoryGap="30%">
                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#111827', fontSize: 12 }} />
                             <YAxis domain={[0, 'dataMax + 5']} axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12 }} />
                             <Tooltip content={<CustomTooltip />} />
                             <Bar dataKey="value" barSize={37} radius={[6, 6, 0, 0]}>
-                              {emotionChart.map((e, i) => (
-                                <Cell key={i} fill={getEmotionColor(e.name)} />
-                              ))}
+                              {emotionChart.map((e, i) => <Cell key={i} fill={getEmotionColor(e.name)} />)}
                             </Bar>
                           </BarChart>
                         </ResponsiveContainer>
@@ -538,9 +510,7 @@ const MemoryPage: React.FC = () => {
                             <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12 }} />
                             <Tooltip content={<CustomTooltip />} />
                             <Bar dataKey="value" barSize={37} radius={[6, 6, 0, 0]}>
-                              {themeChart.map((e, i) => (
-                                <Cell key={i} fill={generateConsistentPastelColor(e.name)} />
-                              ))}
+                              {themeChart.map((e, i) => <Cell key={i} fill={generateConsistentPastelColor(e.name)} />)}
                             </Bar>
                           </BarChart>
                         </ResponsiveContainer>

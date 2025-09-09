@@ -19,7 +19,7 @@ export interface Memoria {
   dominio_vida?: string | null;
   padrao_comportamental?: string | null;
   categoria?: string | null;
-  salvar_memoria?: boolean | 'true' | 'false';
+  salvar_memoria?: boolean | 'true' | 'false' | 0 | 1;
   nivel_abertura?: number | null;
   analise_resumo?: string | null;
   tags?: string[];
@@ -38,7 +38,6 @@ export interface MemoriaSimilar {
 /*  Utilitários                                                               */
 /* -------------------------------------------------------------------------- */
 function serializeTagsAndLimit(tags: string[], limite: number): string {
-  // tags=tag1&tags=tag2&limite=5&limit=5
   const search = new URLSearchParams();
   tags.forEach((t) => search.append('tags', t));
   search.set('limite', String(limite));
@@ -46,8 +45,8 @@ function serializeTagsAndLimit(tags: string[], limite: number): string {
   return search.toString();
 }
 
+/** aceita success/sucesso/ok === true (mas não é obrigatório) */
 function isSuccessPayload(d: any): boolean {
-  // aceita success/sucesso/ok === true
   return Boolean(
     (typeof d?.success === 'boolean' && d.success) ||
       (typeof d?.sucesso === 'boolean' && d.sucesso) ||
@@ -55,8 +54,10 @@ function isSuccessPayload(d: any): boolean {
   );
 }
 
-function pickArray<T = any>(d: any, keys: string[]): T[] | null {
-  for (const k of keys) {
+/** tenta achar um array útil no payload (também aceita array "puro") */
+function pickArray<T = any>(d: any, keys: string[] = []): T[] | null {
+  if (Array.isArray(d)) return d as T[];
+  for (const k of ['memories', 'memorias', 'items', 'data', 'rows', 'records', ...keys]) {
     const v = d?.[k];
     if (Array.isArray(v)) return v as T[];
   }
@@ -80,20 +81,24 @@ function tratarErro(err: unknown, acao: string): never {
       body?.details ||
       null;
 
-    if (serverMsg) {
-      throw new Error(`Erro do servidor ao ${acao}: ${serverMsg}`);
-    }
-    if (status) {
-      throw new Error(`Erro HTTP ${status} ao ${acao}: ${statusText || 'Falha na requisição'}`);
-    }
-    if (e.request) {
-      throw new Error(`Erro de rede ao ${acao}: nenhuma resposta recebida`);
-    }
+    if (serverMsg) throw new Error(`Erro do servidor ao ${acao}: ${serverMsg}`);
+    if (status) throw new Error(`Erro HTTP ${status} ao ${acao}: ${statusText || 'Falha na requisição'}`);
+    if (e.request) throw new Error(`Erro de rede ao ${acao}: nenhuma resposta recebida`);
     throw new Error(`Erro ao ${acao}: ${e.message}`);
   }
-
   throw new Error(`Erro inesperado ao ${acao}: ${(err as any)?.message || String(err)}`);
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Helpers de domínio                                                        */
+/* -------------------------------------------------------------------------- */
+export const memoriaEhSalva = (m: Partial<Memoria>) => {
+  const v: any = m?.salvar_memoria;
+  if (v === undefined || v === null) return true; // sem flag -> considera salva
+  if (typeof v === 'string') return v.toLowerCase() === 'true' || v === '1';
+  if (typeof v === 'number') return v === 1;
+  return !!v;
+};
 
 /* -------------------------------------------------------------------------- */
 /*  API Pública                                                               */
@@ -116,23 +121,21 @@ export async function buscarUltimasMemoriasComTags(
       paramsSerializer: () => serializeTagsAndLimit(tags, limite),
     });
 
-    // aceita success/sucesso/ok e chaves memories/memorias/items
+    const list = pickArray<Memoria>(data) ?? [];
     const ok = isSuccessPayload(data);
-    const list =
-      pickArray<Memoria>(data, ['memories', 'memorias', 'items']) ?? [];
 
-    if (ok && list.length) {
+    // Se tem lista, retornamos — independente de "ok" existir
+    if (list.length) {
       return list
         .filter((m) => Array.isArray(m.tags) && m.tags.length > 0)
-        .sort(
-          (a, b) =>
-            new Date(b.created_at || 0).getTime() -
-            new Date(a.created_at || 0).getTime()
-        )
+        .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
         .slice(0, limite);
     }
 
-    if (process.env.NODE_ENV !== 'production') {
+    // Sem lista, mas payload diz success => apenas [].
+    if (ok) return [];
+
+    if (import.meta.env.DEV) {
       console.warn('[memoriaApi] Resposta inesperada em buscarUltimasMemoriasComTags:', data);
     }
     return [];
@@ -151,15 +154,13 @@ export async function buscarMemoriasPorUsuario(userId?: string): Promise<Memoria
       params: userId ? { usuario_id: userId } : undefined,
     });
 
-    const ok = isSuccessPayload(data);
-    const list =
-      pickArray<Memoria>(data, ['memories', 'memorias', 'items']) ?? [];
+    const list = pickArray<Memoria>(data) ?? [];
+    if (list.length) return list;
 
-    if (ok && list.length) {
-      return list;
-    }
+    // Mesmo sem array, se o servidor sinaliza OK, devolve []
+    if (isSuccessPayload(data)) return [];
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (import.meta.env.DEV) {
       console.warn('[memoriaApi] Resposta inesperada em buscarMemoriasPorUsuario:', data);
     }
     return [];
@@ -180,20 +181,17 @@ export async function buscarMemoriasSimilares(
   try {
     const { data } = await api.post('/memorias/similares', {
       texto,
-      query: texto,      // compat
+      query: texto,    // compat
       limite,
-      limit: limite,     // compat
+      limit: limite,   // compat
     });
 
-    const ok = isSuccessPayload(data);
-    const list =
-      pickArray<MemoriaSimilar>(data, ['similares', 'results', 'items']) ?? [];
+    const list = pickArray<MemoriaSimilar>(data) ?? [];
+    if (list.length) return list;
 
-    if (ok && list.length) {
-      return list;
-    }
+    if (isSuccessPayload(data)) return [];
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (import.meta.env.DEV) {
       console.warn('[memoriaApi] Resposta inesperada de similares:', data);
     }
     return [];

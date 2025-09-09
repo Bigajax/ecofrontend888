@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -5,18 +6,20 @@ import { ChatProvider } from './contexts/ChatContext';
 import LoginPage from './pages/LoginPage';
 import ChatPage from './pages/ChatPage';
 import VoicePage from './pages/VoicePage';
-import MemoryPage from './pages/MemoryPage';
 import CreateProfilePage from './pages/CreateProfilePage';
 import ProtectedRoute from './components/ProtectedRoute';
 import mixpanel from './lib/mixpanel';
 import MainLayout from './layouts/MainLayout';
 
+// NOVO
+import MemoryLayout from './pages/memory/MemoryLayout';
+import MemoriesSection from './pages/memory/MemoriesSection';
+import ProfileSection from './pages/memory/ProfileSection';
+import ReportSection from './pages/memory/ReportSection';
+
 function App() {
   useEffect(() => {
-    mixpanel.track('App iniciado', {
-      origem: 'App.tsx',
-      data: new Date().toISOString(),
-    });
+    mixpanel.track('App iniciado', { origem: 'App.tsx', data: new Date().toISOString() });
   }, []);
 
   return (
@@ -50,16 +53,22 @@ function App() {
               }
             />
 
+            {/* MEMÓRIAS — PAI COM * */}
             <Route
-              path="/memory"
+              path="/memory/*"
               element={
                 <ProtectedRoute>
                   <MainLayout>
-                    <MemoryPage />
+                    <MemoryLayout />
                   </MainLayout>
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<MemoriesSection />} />
+              <Route path="profile" element={<ProfileSection />} />
+              <Route path="report" element={<ReportSection />} />
+              <Route path="*" element={<Navigate to="/memory" replace />} />
+            </Route>
 
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
