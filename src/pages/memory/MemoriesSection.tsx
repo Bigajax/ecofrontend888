@@ -1,39 +1,61 @@
-// src/pages/memory/MemoriesSection.tsx
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 
-/* ------- helpers de cor / data ------- */
+/* ---------- Paleta, utilitários ---------- */
 const EMOTION_COLORS: Record<string, string> = {
-  raiva: '#DB2777',
-  irritado: '#EC4899',
-  frustracao: '#BE185D',
-  medo: '#DB2777',
-  incerteza: '#BE185D',
-  alegria: '#3B82F6',
-  calmo: '#2563EB',
-  surpresa: '#3B82F6',
-  antecipacao: '#2563EB',
-  tristeza: '#A855F7',
-  neutro: '#8B5CF6',
+  raiva: '#ef4444',
+  irritado: '#f97316',
+  frustracao: '#f43f5e',
+  medo: '#ea580c',
+  incerteza: '#f59e0b',
+  alegria: '#22c55e',
+  calmo: '#10b981',
+  surpresa: '#06b6d4',
+  antecipacao: '#3b82f6',
+  tristeza: '#8b5cf6',
+  neutro: '#94a3b8',
+};
+
+const EMOTION_ALIASES: Record<string, string> = {
+  calma: 'calmo',
+  'bem-estar': 'alegria',
+  'bem estar': 'alegria',
+  bemestar: 'alegria',
+  plenitude: 'alegria',
 };
 
 const normalize = (s = '') =>
   s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-const normalizeEmotion = (s: string) => normalize(s);
+
+const colorFor = (emo?: string) => {
+  const key = normalize(emo || '');
+  const mapped = EMOTION_ALIASES[key] || key;
+  return EMOTION_COLORS[mapped] ?? EMOTION_COLORS.neutro;
+};
 
 const hashStringToHue = (str: string) => {
   let h = 0;
   for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
   return Math.abs(h) % 360;
 };
-const generateConsistentPastelColor = (str: string, o: any = {}) =>
-  `hsl(${hashStringToHue(str)}, ${o.saturation ?? 25}%, ${o.lightness ?? 88}%)`;
 
-const getEmotionColor = (n: string) =>
-  EMOTION_COLORS[normalizeEmotion(n)] || generateConsistentPastelColor(n);
+const pastelVibrant = (seed: string) =>
+  `hsl(${hashStringToHue(seed)}, 70%, 90%)`;
+
+/** escurece/clareia um hex */
+function shade(hex: string, pct: number) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return hex;
+  const ch = (i: number) => {
+    const v = parseInt(m[i], 16);
+    const n = Math.max(0, Math.min(255, Math.round(v + (pct / 100) * 255)));
+    return n.toString(16).padStart(2, '0');
+  };
+  return `#${ch(1)}${ch(2)}${ch(3)}`;
+}
 
 const toDate = (raw?: string) => {
   const d = raw ? new Date(raw) : new Date('1970-01-01');
@@ -60,17 +82,13 @@ const bucketLabelForDate = (iso?: string) => {
   const diffDays = Math.floor((+now - +d) / msDay);
   if (diffDays === 0) return 'Hoje';
   if (diffDays === 1) return 'Ontem';
-
   const startOfWeek = new Date(now);
-  const day = startOfWeek.getDay();
-  const diffToMonday = (day + 6) % 7;
+  const diffToMonday = ((startOfWeek.getDay() + 6) % 7);
   startOfWeek.setHours(0, 0, 0, 0);
   startOfWeek.setDate(startOfWeek.getDate() - diffToMonday);
   if (d >= startOfWeek) return 'Esta semana';
-
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   if (d >= startOfMonth) return 'Este mês';
-
   return 'Antigas';
 };
 
@@ -82,93 +100,155 @@ const groupMemories = (mems: Memoria[]): Grouped =>
     return acc;
   }, {});
 
-/* ------- Card ------- */
+/* ---------- Subcomponentes ---------- */
+const Chip: React.FC<React.PropsWithChildren<{ title?: string }>> = ({ title, children }) => (
+  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white/85 text-[12px] leading-5 text-slate-700 max-w-full">
+    {title ? <span className="font-medium text-slate-900">{title}:</span> : null}
+    <span className="truncate">{children}</span>
+  </div>
+);
+
+const ChevronBtn: React.FC<{ open: boolean; onClick: () => void }> = ({ open, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-label={open ? 'Fechar detalhes' : 'Abrir detalhes'}
+    className="h-9 w-9 rounded-full border border-slate-200 bg-white/80 hover:bg-white transition grid place-items-center shadow-sm"
+  >
+    <svg viewBox="0 0 20 20" className={`h-4 w-4 text-slate-700 transition-transform ${open ? 'rotate-180' : ''}`}>
+      <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  </button>
+);
+
+/* ---------- Card Apple-like ---------- */
 const MemoryCard: React.FC<{ mem: Memoria }> = React.memo(({ mem }) => {
   const [open, setOpen] = useState(false);
-  const toggle = useCallback(() => setOpen((v) => !v), []);
+  const toggle = useCallback(() => setOpen(v => !v), []);
 
   const cap = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
-  const color = getEmotionColor(mem.emocao_principal || 'neutro');
+
+  const primaryColor = colorFor(mem.emocao_principal);
   const when = humanDate(mem.created_at);
   const intensidade = intensityOf(mem);
-  const preview = (mem.analise_resumo || mem.contexto || '').trim();
 
-  // tags podem vir como string simples, array ou undefined
+  // visíveis no card fechado
+  const domain = (mem as any).dominio_vida || (mem as any).dominio || (mem as any).domain || '';
+
+  // detalhes (expandido)
+  const padrao =
+    (mem as any).padrao_comportamento ||
+    (mem as any).padrao_comportamental ||
+    (mem as any).padrao ||
+    '';
+
   const tags: string[] = useMemo(() => {
     const raw = (Array.isArray(mem.tags) ? mem.tags : typeof mem.tags === 'string' ? mem.tags.split(/[;,]/) : [])
-      .map((t) => (t || '').trim())
+      .map(t => (t || '').trim())
       .filter(Boolean);
-    // remove duplicadas
     return Array.from(new Set(raw));
   }, [mem.tags]);
 
   return (
-    <li className="rounded-3xl border border-black/10 bg-white/70 backdrop-blur-md shadow-md p-4 transition-all">
-      <button type="button" onClick={toggle} aria-expanded={open} className="w-full text-left">
-        <div className="flex items-center gap-3">
-          <span
-            className="h-9 w-9 rounded-full ring-2 ring-white/70 shadow-sm shrink-0"
-            style={{ background: color, boxShadow: 'inset 0 1px 0 rgba(255,255,255,.6)' }}
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-[15px] font-semibold text-neutral-900 truncate">
-                {cap(mem.emocao_principal) || 'Emoção'}
-              </h3>
-              <span className="text-[12px] text-neutral-500 shrink-0">{when}</span>
+    <li className="w-full rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm shadow-[0_1px_0_rgba(255,255,255,.85),0_8px_28px_rgba(2,6,23,.06)] p-4 md:p-5">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        {/* Bolha glassmorphism */}
+        <span
+          aria-label={`Emoção: ${mem.emocao_principal || 'Neutro'}`}
+          className="h-10 w-10 rounded-full shrink-0"
+          style={{
+            background: `
+              radial-gradient(circle at 35% 30%, rgba(255,255,255,.95) 0%, rgba(255,255,255,.5) 30%, rgba(255,255,255,0) 34%),
+              radial-gradient(circle at 60% 65%, ${shade(primaryColor, -5)} 0%, ${shade(primaryColor, -15)} 60%, ${shade(primaryColor, -25)} 100%)`,
+            boxShadow: `inset 0 1px 0 rgba(255,255,255,.85), 0 6px 16px rgba(2,6,23,.10)`,
+            border: `1px solid ${shade(primaryColor, -35)}20`,
+          }}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="text-[18px] leading-6 font-semibold text-slate-900 truncate">
+              {cap(mem.emocao_principal) || 'Emoção'}
+            </h3>
+            <span className="text-[12px] leading-5 text-slate-500 shrink-0">{when}</span>
+          </div>
+
+          {domain && (
+            <div className="mt-1">
+              <Chip title="Domínio">{domain}</Chip>
             </div>
-            {preview && (
-              <p
-                className="text-sm text-neutral-700 mt-0.5"
-                style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-              >
-                {preview}
-              </p>
-            )}
-          </div>
+          )}
         </div>
+      </div>
 
-        <div className="mt-3 h-1.5 rounded-full bg-neutral-200/60 overflow-hidden" aria-label={`Intensidade ${intensidade}/10`}>
-          <span
-            className="block h-full rounded-full"
-            style={{ width: `${(intensidade / 10) * 100}%`, background: `linear-gradient(90deg, ${color}, rgba(0,0,0,0.08))` }}
-          />
+      {/* Intensidade */}
+      <div className="mt-3 h-[6px] rounded-full bg-slate-200/80 overflow-hidden" aria-label={`Intensidade ${intensidade}/10`}>
+        <span
+          className="block h-full rounded-full"
+          style={{ width: `${(intensidade / 10) * 100}%`, background: `linear-gradient(90deg, ${primaryColor}, ${shade(primaryColor, -25)})` }}
+        />
+      </div>
+
+      {/* Tags (máx 3, vibrantes) */}
+      {!!tags.length && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {tags.slice(0, 3).map((tag, i) => (
+            <span
+              key={`${tag}-${i}`}
+              className="text-[12px] leading-5 px-3 py-1 rounded-full font-medium border shadow-sm border-slate-200"
+              style={{ background: pastelVibrant(tag), color: '#0f172a' }}
+            >
+              {tag[0].toUpperCase() + tag.slice(1)}
+            </span>
+          ))}
         </div>
+      )}
 
-        {!!tags.length && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {tags.map((tag, i) => (
-              <span
-                key={`${tag}-${i}`}
-                className="text-xs px-3 py-1 rounded-full font-medium border border-black/10 shadow-sm"
-                style={{ background: generateConsistentPastelColor(tag), color: '#0f172a' }}
-              >
-                {tag[0].toUpperCase() + tag.slice(1)}
-              </span>
-            ))}
-          </div>
-        )}
+      {/* Chevron minimalista */}
+      <div className="mt-3 flex justify-end">
+        <ChevronBtn open={open} onClick={toggle} />
+      </div>
 
-        <div className="mt-3 flex justify-end">
-          <span className="text-xs font-medium text-sky-700">{open ? 'Fechar ↑' : 'Ver mais ↓'}</span>
-        </div>
-      </button>
-
+      {/* Detalhes */}
       {open && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-4 mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700"
+          className="space-y-4 mt-3 pt-3 border-t border-slate-200/70 text-[14px] leading-[1.6] text-slate-700"
         >
-          {mem.analise_resumo && (
-            <div className="rounded-xl p-3 bg-white/70 backdrop-blur border border-neutral-200 shadow-sm">
-              <div className="font-semibold mb-1 text-neutral-900">Reflexão da Eco</div>
-              <div>{mem.analise_resumo}</div>
+          {/* metadados (sem emoção e sem abertura) */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Chip title="Intensidade">{intensidade}/10</Chip>
+            {padrao && (
+              <div className="w-full sm:w-auto">
+                <div className="inline-flex items-start gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white/85 text-[12px] leading-5 text-slate-700 max-w-full">
+                  <span className="font-medium text-slate-900">Padrão:</span>
+                  <span className="whitespace-normal break-words">
+                    {padrao}
+                  </span>
+                </div>
+              </div>
+            )}
+            <Chip title="Criado em">{toDate(mem.created_at).toLocaleDateString()}</Chip>
+          </div>
+
+          {(mem as any).analise_resumo && (
+            <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
+              <div className="font-semibold mb-1 text-slate-900">Reflexão da Eco</div>
+              <div>{(mem as any).analise_resumo}</div>
             </div>
           )}
+
+          {!(mem as any).analise_resumo && (mem as any).resumo_eco && (
+            <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
+              <div className="font-semibold mb-1 text-slate-900">Reflexão da Eco</div>
+              <div>{(mem as any).resumo_eco}</div>
+            </div>
+          )}
+
           {mem.contexto && (
-            <div className="rounded-xl p-3 bg-white/70 backdrop-blur border border-neutral-200 shadow-sm">
-              <div className="font-semibold mb-1 text-neutral-900">Seu pensamento</div>
+            <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
+              <div className="font-semibold mb-1 text-slate-900">Seu pensamento</div>
               <div>{mem.contexto}</div>
             </div>
           )}
@@ -179,37 +259,33 @@ const MemoryCard: React.FC<{ mem: Memoria }> = React.memo(({ mem }) => {
 });
 MemoryCard.displayName = 'MemoryCard';
 
-/* ------- Seção ------- */
+/* ---------- Seção ---------- */
 const MemoriesSection: React.FC = () => {
   const { memories, loading, error } = useMemoryData();
   const navigate = useNavigate();
 
   const [emoFilter, setEmoFilter] = useState<'all' | string>('all');
   const [query, setQuery] = useState('');
-  const [minIntensity, setMinIntensity] = useState(0);
 
-  // opções únicas de emoção (ordenadas alfabeticamente)
   const emotionOptions = useMemo(() => {
     const set = new Set<string>();
     memories.forEach((m) => m.emocao_principal && set.add(m.emocao_principal));
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [memories]);
 
-  // aplica filtros + ordena por data desc ANTES de agrupar
   const filteredSorted = useMemo(() => {
     const q = normalize(query);
     return memories
       .filter((m) => {
         if (emoFilter !== 'all' && normalize(m.emocao_principal || '') !== normalize(emoFilter)) return false;
-        if (Number.isFinite(minIntensity)) {
-          const inten = intensityOf(m);
-          if (inten < minIntensity) return false;
-        }
         if (q) {
           const hay = [
-            m.analise_resumo || '',
+            (m as any).analise_resumo || '',
+            (m as any).resumo_eco || '',
             m.contexto || '',
             Array.isArray(m.tags) ? m.tags.join(' ') : typeof m.tags === 'string' ? m.tags : '',
+            (m as any).categoria || '',
+            (m as any).dominio_vida || '',
           ]
             .map(normalize)
             .join(' ');
@@ -218,89 +294,78 @@ const MemoriesSection: React.FC = () => {
         return true;
       })
       .sort((a, b) => toDate(b.created_at).getTime() - toDate(a.created_at).getTime());
-  }, [memories, emoFilter, minIntensity, query]);
+  }, [memories, emoFilter, query]);
 
   const grouped = useMemo(() => groupMemories(filteredSorted), [filteredSorted]);
-
   const groupOrder = ['Hoje', 'Ontem', 'Esta semana', 'Este mês', 'Antigas'] as const;
-  const filtersActive = emoFilter !== 'all' || !!query || minIntensity > 0;
+  const filtersActive = emoFilter !== 'all' || !!query;
 
-  if (loading) return <div className="flex justify-center items-center h-full text-neutral-500 text-sm">Carregando…</div>;
-  if (error)   return <div className="flex justify-center items-center h-full text-rose-500 text-sm">{error}</div>;
+  if (loading) return <div className="text-neutral-500 text-sm">Carregando…</div>;
+  if (error) return <div className="text-rose-500 text-sm">{error}</div>;
 
   return (
-    <>
-      {/* filtros rápidos */}
-      <div className="glass-panel p-3 rounded-2xl mb-3">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <label className="sr-only" htmlFor="emoSelect">Filtrar por emoção</label>
-          <select
-            id="emoSelect"
-            value={emoFilter}
-            onChange={(e) => setEmoFilter(e.target.value)}
-            className="h-10 rounded-xl px-3 bg-white/80 border border-black/10 text-sm"
-          >
-            <option value="all">Todas as emoções</option>
-            {emotionOptions.map((emo) => (
-              <option key={emo} value={emo}>
-                {emo[0].toUpperCase() + emo.slice(1)}
-              </option>
-            ))}
-          </select>
+    <div className="min-h-0 h-full max-h-[calc(100vh-96px)] overflow-y-auto pr-1 md:pr-2">
+      {/* Header Apple-like */}
+      <header className="max-w-[1100px] mx-auto px-2 md:px-0">
+        <h1 className="text-[40px] md:text-[52px] leading-[1.05] font-semibold text-slate-900 tracking-tight">
+          Memória Emocional
+        </h1>
+        <p className="mt-2 md:mt-3 text-[16px] md:text-[18px] leading-relaxed text-slate-700 max-w-3xl">
+          A Eco registra momentos marcantes com emoção presente, tags-chave, domínio da vida e uma análise sensível.
+          Cada memória se torna um reflexo do que te atravessa.
+        </p>
 
-          <label className="sr-only" htmlFor="searchInput">Buscar</label>
-          <input
-            id="searchInput"
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar em tags, reflexão ou pensamento…"
-            className="h-10 rounded-xl px-3 bg-white/80 border border-black/10 text-sm"
-          />
+        {/* Filtros compactos: emoção + busca (sem chips/tags e sem intensidade) */}
+        <div className="mt-4 p-3 rounded-2xl bg-white/70 border border-slate-200">
+          <div className="flex flex-wrap gap-2 items-stretch">
+            <div className="min-w-[220px]">
+              <select
+                value={emoFilter}
+                onChange={(e) => setEmoFilter(e.target.value)}
+                className="h-10 w-full rounded-xl px-3 bg-white/80 border border-slate-200 text-sm"
+                aria-label="Filtrar por emoção"
+              >
+                <option value="all">Todas as emoções</option>
+                {emotionOptions.map((emo) => (
+                  <option key={emo} value={emo}>
+                    {emo[0].toUpperCase() + emo.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="flex items-center gap-3">
-            <label className="text-xs text-neutral-600 w-24" htmlFor="intensityRange">
-              Intensidade ≥ {minIntensity}
-            </label>
-            <input
-              id="intensityRange"
-              type="range"
-              min={0}
-              max={10}
-              step={1}
-              value={minIntensity}
-              onChange={(e) => setMinIntensity(Number(e.target.value))}
-              className="flex-1"
-              aria-label={`Intensidade mínima ${minIntensity}`}
-            />
+            <div className="flex-1 min-w-[240px]">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar (tags, domínio, categoria, reflexão)…"
+                className="h-10 w-full rounded-xl px-3 bg-white/80 border border-slate-200 text-sm"
+                aria-label="Buscar"
+              />
+            </div>
+
+            {filtersActive && (
+              <button
+                onClick={() => { setEmoFilter('all'); setQuery(''); }}
+                className="h-10 px-3 rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-sm"
+              >
+                Limpar
+              </button>
+            )}
           </div>
         </div>
+      </header>
 
-        {filtersActive && (
-          <div className="mt-2 flex justify-end">
-            <button
-              onClick={() => {
-                setEmoFilter('all');
-                setQuery('');
-                setMinIntensity(0);
-              }}
-              className="text-xs px-3 py-1 rounded-full border border-black/10 bg-white/70 hover:bg-white transition"
-            >
-              Limpar filtros
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* lista */}
+      {/* Grupos em grid responsivo (auto-fill) */}
       {filteredSorted.length ? (
-        <div className="space-y-6">
+        <div className="space-y-8 max-w-[1100px] mx-auto mt-6 px-2 md:px-0">
           {groupOrder
             .filter((b) => grouped[b]?.length)
             .map((bucket) => (
               <section key={bucket}>
-                <h3 className="text-sm font-semibold text-neutral-500 mb-2">{bucket}</h3>
-                <ul className="space-y-3">
+                <h3 className="text-sm font-semibold text-neutral-500 mb-3">{bucket}</h3>
+                <ul className="grid [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] gap-4">
                   {grouped[bucket]!.map((m) => (
                     <MemoryCard key={m.id ?? `${m.created_at}-${m.emocao_principal}`} mem={m} />
                   ))}
@@ -311,7 +376,7 @@ const MemoriesSection: React.FC = () => {
       ) : (
         <div className="flex flex-col items-center text-center mt-16 text-neutral-500 px-6">
           <p className="text-lg font-medium mb-2 text-neutral-900">
-            {filtersActive ? 'Nenhuma memória coincide com os filtros' : 'Você ainda não tem memórias salvas'}
+            {filtersActive ? 'Nenhuma memória coincide com a busca' : 'Você ainda não tem memórias salvas'}
           </p>
           <p className="text-sm mb-6 max-w-xs">
             {filtersActive ? 'Ajuste os filtros para ver mais resultados.' : 'Crie sua primeira agora mesmo.'}
@@ -319,14 +384,14 @@ const MemoriesSection: React.FC = () => {
           {!filtersActive && (
             <button
               onClick={() => navigate('/chat')}
-              className="px-4 py-2 rounded-full text-sm font-medium border border-neutral-300 bg-white/60 backdrop-blur hover:bg-white transition text-neutral-900"
+              className="px-4 py-2 rounded-full text-sm font-medium border border-slate-200 bg-white/70 hover:bg-white transition text-slate-900"
             >
               + Nova memória
             </button>
           )}
         </div>
       )}
-    </>
+    </div>
   );
 };
 

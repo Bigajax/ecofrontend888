@@ -37,12 +37,45 @@ export interface MemoriaSimilar {
 /* -------------------------------------------------------------------------- */
 /*  Utilitários                                                               */
 /* -------------------------------------------------------------------------- */
-function serializeTagsAndLimit(tags: string[], limite: number): string {
-  const search = new URLSearchParams();
-  tags.forEach((t) => search.append('tags', t));
-  search.set('limite', String(limite));
-  search.set('limit', String(limite)); // compat
-  return search.toString();
+
+/** 404/405 permitem fallback para outra rota */
+const isFallbackStatus = (err: any) => {
+  const s = err?.response?.status;
+  return s === 404 || s === 405;
+};
+
+/** Normaliza uma memória crua do backend para o shape da interface */
+function normalizeMemoria(raw: any): Memoria {
+  const tags: string[] = Array.isArray(raw?.tags)
+    ? raw.tags
+    : typeof raw?.tags === 'string'
+      ? raw.tags.split(/[;,]/).map((t: string) => t.trim()).filter(Boolean)
+      : [];
+
+  // aliases
+  const padrao =
+    raw?.padrao_comportamental ??
+    raw?.padrao_comportamento ??
+    raw?.padrao ??
+    null;
+
+  return {
+    id: String(raw?.id ?? ''),
+    usuario_id: String(raw?.usuario_id ?? raw?.user_id ?? ''),
+    mensagem_id: raw?.mensagem_id ?? null,
+    resumo_eco: String(raw?.resumo_eco ?? raw?.analise_resumo ?? ''),
+    created_at: raw?.created_at ?? null,
+    emocao_principal: raw?.emocao_principal ?? null,
+    intensidade: typeof raw?.intensidade === 'number' ? raw.intensidade : raw?.intensity ?? null,
+    contexto: raw?.contexto ?? null,
+    dominio_vida: raw?.dominio_vida ?? raw?.dominio ?? raw?.domain ?? null,
+    padrao_comportamental: padrao,
+    categoria: raw?.categoria ?? null,
+    salvar_memoria: raw?.salvar_memoria,
+    nivel_abertura: raw?.nivel_abertura ?? null,
+    analise_resumo: raw?.analise_resumo ?? raw?.resumo_eco ?? null,
+    tags,
+  };
 }
 
 /** aceita success/sucesso/ok === true (mas não é obrigatório) */
@@ -61,7 +94,19 @@ function pickArray<T = any>(d: any, keys: string[] = []): T[] | null {
     const v = d?.[k];
     if (Array.isArray(v)) return v as T[];
   }
+  // alguns backends retornam { data: { data: [...] } }
+  if (Array.isArray(d?.data?.data)) return d.data.data as T[];
+  if (Array.isArray(d?.data)) return d.data as T[];
   return null;
+}
+
+/** Serializer para múltiplas tags + limit/limite */
+function serializeTagsAndLimit(tags: string[], limite: number): string {
+  const params = new URLSearchParams();
+  tags.forEach((t) => params.append('tags', t));
+  params.set('limite', String(limite));
+  params.set('limit', String(limite)); // compat
+  return params.toString();
 }
 
 /* -------------------------------------------------------------------------- */
@@ -101,12 +146,39 @@ export const memoriaEhSalva = (m: Partial<Memoria>) => {
 };
 
 /* -------------------------------------------------------------------------- */
+/*  Fallback de rotas                                                         */
+/* -------------------------------------------------------------------------- */
+async function getWithFallback(pathA: string, pathB: string | null, config?: any) {
+  try {
+    return await api.get(pathA, config);
+  } catch (e: any) {
+    if (pathB && isFallbackStatus(e)) {
+      return await api.get(pathB, config);
+    }
+    throw e;
+  }
+}
+
+async function postWithFallback(pathA: string, pathB: string | null, body?: any, config?: any) {
+  try {
+    return await api.post(pathA, body, config);
+  } catch (e: any) {
+    if (pathB && isFallbackStatus(e)) {
+      return await api.post(pathB, body, config);
+    }
+    throw e;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /*  API Pública                                                               */
 /* -------------------------------------------------------------------------- */
 
 /**
  * 🔍 Busca as últimas memórias do usuário que possuam *alguma* das tags pedidas.
- * Backend aceito: GET /memorias?tags=...&tags=...&limite=5 (ou limit=5)
+ * Backend aceito:
+ *   GET /memorias?tags=...&tags=...&limite=5 (ou limit=5)
+ * Fallback: /memories
  */
 export async function buscarUltimasMemoriasComTags(
   userId: string,
@@ -116,28 +188,25 @@ export async function buscarUltimasMemoriasComTags(
   try {
     if (!tags.length) return [];
 
-    const { data } = await api.get('/memorias', {
+    const config = {
       params: { tags, limite, limit: limite, usuario_id: userId },
       paramsSerializer: () => serializeTagsAndLimit(tags, limite),
-    });
+      timeout: 12000,
+    };
 
-    const list = pickArray<Memoria>(data) ?? [];
-    const ok = isSuccessPayload(data);
+    const { data } = await getWithFallback('/memorias', '/memories', config);
 
-    // Se tem lista, retornamos — independente de "ok" existir
-    if (list.length) {
-      return list
+    const raw = pickArray<any>(data) ?? [];
+    if (raw.length) {
+      return raw
+        .map(normalizeMemoria)
         .filter((m) => Array.isArray(m.tags) && m.tags.length > 0)
         .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
         .slice(0, limite);
     }
 
-    // Sem lista, mas payload diz success => apenas [].
-    if (ok) return [];
-
-    if (import.meta.env.DEV) {
-      console.warn('[memoriaApi] Resposta inesperada em buscarUltimasMemoriasComTags:', data);
-    }
+    if (isSuccessPayload(data)) return [];
+    if (import.meta.env.DEV) console.warn('[memoriaApi] Resposta inesperada em buscarUltimasMemoriasComTags:', data);
     return [];
   } catch (err) {
     tratarErro(err, 'buscar memórias com tags');
@@ -147,22 +216,26 @@ export async function buscarUltimasMemoriasComTags(
 /**
  * 📥 Busca todas as memórias do usuário (RLS via JWT; `usuario_id` é opcional).
  * Backend: GET /memorias?usuario_id=...
+ * Fallback: /memories
  */
 export async function buscarMemoriasPorUsuario(userId?: string): Promise<Memoria[]> {
   try {
-    const { data } = await api.get('/memorias', {
+    const config = {
       params: userId ? { usuario_id: userId } : undefined,
-    });
+      timeout: 12000,
+    };
 
-    const list = pickArray<Memoria>(data) ?? [];
-    if (list.length) return list;
+    const { data } = await getWithFallback('/memorias', '/memories', config);
 
-    // Mesmo sem array, se o servidor sinaliza OK, devolve []
-    if (isSuccessPayload(data)) return [];
-
-    if (import.meta.env.DEV) {
-      console.warn('[memoriaApi] Resposta inesperada em buscarMemoriasPorUsuario:', data);
+    const raw = pickArray<any>(data) ?? [];
+    if (raw.length) {
+      return raw
+        .map(normalizeMemoria)
+        .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
     }
+
+    if (isSuccessPayload(data)) return [];
+    if (import.meta.env.DEV) console.warn('[memoriaApi] Resposta inesperada em buscarMemoriasPorUsuario:', data);
     return [];
   } catch (err) {
     tratarErro(err, 'buscar memórias');
@@ -172,6 +245,7 @@ export async function buscarMemoriasPorUsuario(userId?: string): Promise<Memoria
 /**
  * 🧠 Busca memórias semanticamente parecidas com um texto.
  * Backend: POST /memorias/similares
+ * Fallback: /memories/similar
  * Aceita payload { texto, limite } OU { query, limit } (ambos enviados).
  */
 export async function buscarMemoriasSimilares(
@@ -179,23 +253,57 @@ export async function buscarMemoriasSimilares(
   limite = 3
 ): Promise<MemoriaSimilar[]> {
   try {
-    const { data } = await api.post('/memorias/similares', {
+    const body = {
       texto,
       query: texto,    // compat
       limite,
       limit: limite,   // compat
-    });
+    };
 
-    const list = pickArray<MemoriaSimilar>(data) ?? [];
-    if (list.length) return list;
+    const { data } = await postWithFallback('/memorias/similares', '/memories/similar', body, { timeout: 12000 });
+
+    const raw = pickArray<any>(data) ?? [];
+    if (raw.length) {
+      return raw.map((r) => {
+        const n = normalizeMemoria(r);
+        return {
+          id: n.id,
+          contexto: n.contexto ?? '',
+          resumo_eco: n.resumo_eco ?? '',
+          created_at: n.created_at ?? null,
+          tags: n.tags ?? [],
+          similaridade: Number(r?.similaridade ?? r?.score ?? 0),
+        };
+      });
+    }
 
     if (isSuccessPayload(data)) return [];
-
-    if (import.meta.env.DEV) {
-      console.warn('[memoriaApi] Resposta inesperada de similares:', data);
-    }
+    if (import.meta.env.DEV) console.warn('[memoriaApi] Resposta inesperada de similares:', data);
     return [];
   } catch (err) {
     tratarErro(err, 'buscar memórias semelhantes');
+  }
+}
+
+/**
+ * 📄 Lista básica para gráficos locais (campos mínimos).
+ * Usa GET /memorias (fallback /memories) e solicita apenas campos essenciais se o backend suportar.
+ */
+export async function listarMemoriasBasico(limit = 500): Promise<Memoria[]> {
+  try {
+    const { data } = await getWithFallback('/memorias', '/memories', {
+      params: {
+        limit,
+        limite: limit, // compat
+        // se o backend aceitar, economiza payload:
+        fields: 'id,created_at,emocao_principal,tags,categoria,dominio_vida,resumo_eco',
+      },
+      timeout: 12000,
+    });
+
+    const raw = pickArray<any>(data) ?? [];
+    return raw.map(normalizeMemoria);
+  } catch (err) {
+    tratarErro(err, 'listar memórias (básico)');
   }
 }
