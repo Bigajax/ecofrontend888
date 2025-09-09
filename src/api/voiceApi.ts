@@ -10,10 +10,6 @@ if (!BACKEND_BASE) {
   throw new Error("VITE_BACKEND_URL ausente no build do front.");
 }
 
-// Voz padrão (pode ser sobrescrita por parâmetro)
-const DEFAULT_VOICE_ID =
-  ((import.meta as any).env.VITE_ELEVEN_VOICE_ID as string | undefined)?.trim() || undefined;
-
 function base64ToDataURL(b64: string, mime = "audio/mpeg") {
   return `data:${mime};base64,${b64}`;
 }
@@ -57,15 +53,14 @@ async function fetchWithTimeout(input: RequestInfo, init: RequestInit = {}, ms =
 /**
  * Texto -> áudio (POST /api/voice/tts)
  * Retorna SEMPRE um Data URL (data:audio/mpeg;base64,...)
+ * Mantém o 2º parâmetro pra compatibilidade, mas IGNORA.
  */
-export async function gerarAudioDaMensagem(text: string, voiceId?: string): Promise<string> {
+export async function gerarAudioDaMensagem(text: string, _voiceId?: string): Promise<string> {
   const url = `${BACKEND_BASE}/api/voice/tts`;
-  const vid = (voiceId || DEFAULT_VOICE_ID)?.trim();
   const body: any = { text: String(text ?? "").trim() };
   if (!body.text) throw new Error("Texto vazio para TTS.");
 
-  if (vid) body.voice_id = vid;
-
+  // 👇 NÃO enviamos mais voice_id; o backend decide a voz
   const resp = await fetchWithTimeout(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "audio/mpeg" },
@@ -82,12 +77,16 @@ export async function gerarAudioDaMensagem(text: string, voiceId?: string): Prom
   }
   if (!blob.type) blob = new Blob([blob], { type: "audio/mpeg" });
 
+  // (Opcional) Inspecionar a voz usada enviada pelo servidor:
+  // console.debug("x-voice-id:", resp.headers.get("x-voice-id"));
+
   return await blobToDataURL(blob);
 }
 
 /**
  * Fluxo completo (grava -> transcreve -> responde -> TTS)
  * Já vem como Base64 do backend; converte para Data URL.
+ * Mantém o 6º parâmetro pra compatibilidade, mas IGNORA.
  */
 export async function sendVoiceMessage(
   audioBlob: Blob,
@@ -95,7 +94,7 @@ export async function sendVoiceMessage(
   userName: string,
   userId: string,
   accessToken: string,
-  voiceId?: string
+  _voiceId?: string
 ): Promise<{ userText: string; ecoText: string; audioUrl: string }> {
   const url = `${BACKEND_BASE}/api/voice/transcribe-and-respond`;
 
@@ -105,9 +104,8 @@ export async function sendVoiceMessage(
   fd.append("usuario_id", userId);
   fd.append("access_token", accessToken);
   fd.append("mensagens", JSON.stringify(messages || []));
-  const vid = (voiceId || DEFAULT_VOICE_ID)?.trim();
-  if (vid) fd.append("voice_id", vid);
 
+  // 👇 NÃO enviamos voice_id; o backend decide a voz
   const resp = await fetchWithTimeout(url, { method: "POST", body: fd });
 
   if (!resp.ok) await readError(resp);

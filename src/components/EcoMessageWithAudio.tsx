@@ -9,14 +9,6 @@ interface EcoMessageWithAudioProps {
   message: Message;
 }
 
-/**
- * Voz padrão:
- * 1) usa VITE_ELEVEN_VOICE_ID se existir
- * 2) senão cai para a voz indicada (Hgfor6xcJTM3hCSKmChL)
- */
-const DEFAULT_VOICE_ID =
-  (import.meta as any).env.VITE_ELEVEN_VOICE_ID?.trim() || "Hgfor6xcJTM3hCSKmChL";
-
 const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) => {
   const [copied, setCopied] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null); // sempre Data URL
@@ -46,11 +38,11 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
   const reproduzirAudio = async () => {
     if (!canSpeak || loadingAudio) return;
     setLoadingAudio(true);
-    // fecha overlay anterior, se houver
-    if (audioUrl) setAudioUrl(null);
+    if (audioUrl) setAudioUrl(null); // fecha overlay anterior
 
     try {
-      const dataUrl = await gerarAudioDaMensagem(displayText, DEFAULT_VOICE_ID);
+      // 👇 não passamos mais voiceId; o backend decide
+      const dataUrl = await gerarAudioDaMensagem(displayText);
       setAudioUrl(dataUrl);
     } catch (err) {
       console.error("Erro ao gerar áudio:", err);
