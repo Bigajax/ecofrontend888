@@ -19,9 +19,6 @@ export const enviarMensagemParaEco = async (
   clientHour?: number,
   clientTz?: string
 ): Promise<string> => {
-  // (opcional) se quiser forçar ter userId aqui, mantenha a validação
-  // if (!userId) throw new Error('Usuário não autenticado. ID ausente.');
-
   const mensagensValidas: Message[] = userMessages
     .slice(-3)
     .filter(
@@ -45,17 +42,17 @@ export const enviarMensagemParaEco = async (
   const tz = clientTz || Intl.DateTimeFormat().resolvedOptions().timeZone; // ex.: "America/Sao_Paulo"
 
   try {
-    // ✅ NÃO precisa setar Authorization aqui: o interceptor do axios já injeta
-    const { data, status } = await api.post<AskEcoResponse>('/ask-eco', {
+    // Chama a rota correta do backend (montada em app.use("/api", openrouterRoutes))
+    const { data, status } = await api.post<AskEcoResponse>('/api/ask-eco', {
       mensagens: mensagensValidas,
       nome_usuario: userName,
-      usuario_id: userId, // ok manter, mas o backend pode tirar do JWT
+      usuario_id: userId,
       clientHour: hour,
       clientTz: tz,
     });
 
     if (status < 200 || status >= 300) {
-      throw new Error('Erro inesperado da API /ask-eco');
+      throw new Error('Erro inesperado da API /api/ask-eco');
     }
 
     // Aceita variações do backend: message | resposta | data.message | data.resposta
@@ -71,7 +68,6 @@ export const enviarMensagemParaEco = async (
 
     throw new Error('Formato inválido na resposta da Eco.');
   } catch (error: any) {
-    // Normaliza erros do axios
     const status = error?.response?.status;
     const serverErr = error?.response?.data?.error || error?.response?.data?.message;
     const msg =
