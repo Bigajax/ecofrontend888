@@ -1,9 +1,34 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ResponsiveLine } from '@nivo/line';
-import { ResponsiveBar } from '@nivo/bar';
+import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
+
+/* ===== Lazy: Nivo ===== */
+const LazyResponsiveLine = React.lazy(async () => {
+  const mod = await import('@nivo/line');
+  return { default: mod.ResponsiveLine };
+});
+const LazyResponsiveBar = React.lazy(async () => {
+  const mod = await import('@nivo/bar');
+  return { default: mod.ResponsiveBar };
+});
+
+/* ===== Error Boundary ===== */
+class ChartErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props:any) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch() {/* log opcional */}
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">
+          Não foi possível renderizar o gráfico.
+        </div>
+      );
+    }
+    return this.props.children as any;
+  }
+}
 
 /* ---------- paleta ---------- */
 const EMOTION_COLORS: Record<string, string> = {
@@ -41,12 +66,10 @@ function countBy<T>(arr: T[], key: (x: T) => string | undefined | null) {
   }
   return map;
 }
-
 function buildLocalPerfil(memories: Memoria[]) {
   const emoMap = countBy(memories, (m) => (m.emocao_principal || '').toString());
   const emocoes_frequentes: Record<string, number> = {};
   emoMap.forEach((v, k) => (emocoes_frequentes[k] = v));
-
   const temas = new Map<string, number>();
   for (const m of memories) {
     const domain = (m as any).dominio_vida || (m as any).dominio || (m as any).domain || '';
@@ -81,11 +104,9 @@ function buildStats(memories: Memoria[], days: Period) {
   const emo = countBy(scoped, m => m.emocao_principal || null);
   const emoArr = [...emo.entries()].sort((a,b)=>b[1]-a[1]);
   const dominante = emoArr[0]?.[0] ?? null;
-
   const last28 = filterByDays(memories, 28);
   const totalPeriodo = scoped.length;
   const media28 = Math.round((last28.length / 28) * 10) / 10;
-
   return { totalPeriodo, media28, dominante };
 }
 function buildSparklineData(memories: Memoria[], days: Period) {
@@ -124,7 +145,7 @@ const ProfileSection: React.FC = () => {
   const [memLocal, setMemLocal] = useState<Memoria[] | null>(null);
   const [fetchingLocal, setFetchingLocal] = useState(false);
   const [period, setPeriod] = useState<Period>(7);
-  const [isClient, setIsClient] = useState(false);            // <- renderiza Nivo só no client
+  const [isClient, setIsClient] = useState(false); // só monta Nivo no client
 
   useEffect(() => { setIsClient(true); }, []);
 
@@ -184,6 +205,7 @@ const ProfileSection: React.FC = () => {
   const themesData   = themeChart.map(d => ({ name: d.name, value: d.value }));
 
   return (
+    // SCROLL habilitado aqui
     <div className="min-h-0 h-[calc(100vh-96px)] overflow-y-auto">
       <div className="mx-auto w-full max-w-[960px] px-4 md:px-6 py-4 md:py-6 space-y-10">
         {/* CARD 1 — Resumo */}
@@ -201,33 +223,37 @@ const ProfileSection: React.FC = () => {
           <div className="mt-4 border-t border-neutral-100/80 pt-4">
             <div className="h-[84px]">
               {isClient && hasLinePoints ? (
-                <ResponsiveLine
-                  data={lineData}
-                  margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
-                  xScale={{ type: 'time', format: '%Y-%m-%d', precision: 'day', useUTC: false }}
-                  xFormat="time:%d/%m"
-                  yScale={{ type: 'linear', min: 0, max: 'auto' }}
-                  axisBottom={null}
-                  axisLeft={null}
-                  enablePoints={false}
-                  enableArea={true}
-                  areaOpacity={0.15}
-                  useMesh={true}
-                  enableGridX={false}
-                  enableGridY={true}
-                  curve="monotoneX"
-                  colors={['#111827']}
-                  theme={{
-                    grid: { line: { stroke: '#F3F4F6' } },
-                    tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                  }}
-                  tooltip={({ point }) => (
-                    <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                      <div className="font-medium">{point.data.xFormatted as string}</div>
-                      <div>{String(point.data.y)} registro{Number(point.data.y) === 1 ? '' : 's'}</div>
-                    </div>
-                  )}
-                />
+                <ChartErrorBoundary>
+                  <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
+                    <LazyResponsiveLine
+                      data={lineData}
+                      margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
+                      xScale={{ type: 'time', format: '%Y-%m-%d', precision: 'day', useUTC: false }}
+                      xFormat="time:%d/%m"
+                      yScale={{ type: 'linear', min: 0, max: 'auto' }}
+                      axisBottom={null}
+                      axisLeft={null}
+                      enablePoints={false}
+                      enableArea={true}
+                      areaOpacity={0.15}
+                      useMesh={true}
+                      enableGridX={false}
+                      enableGridY={true}
+                      curve="monotoneX"
+                      colors={['#111827']}
+                      theme={{
+                        grid: { line: { stroke: '#F3F4F6' } },
+                        tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                      }}
+                      tooltip={({ point }) => (
+                        <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                          <div className="font-medium">{point.data.xFormatted as string}</div>
+                          <div>{String(point.data.y)} registro{Number(point.data.y) === 1 ? '' : 's'}</div>
+                        </div>
+                      )}
+                    />
+                  </Suspense>
+                </ChartErrorBoundary>
               ) : (
                 <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">
                   Sem dados no período
@@ -241,31 +267,35 @@ const ProfileSection: React.FC = () => {
         <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
           {isClient && emotionsData.length ? (
             <div className="h-[300px]">
-              <ResponsiveBar
-                data={emotionsData}
-                keys={['value']}
-                indexBy="name"
-                margin={{ top: 12, right: 12, bottom: 24, left: 36 }}
-                padding={0.26}
-                colors={(bar) => colorForEmotion(bar.data.name as string)}
-                borderRadius={12}
-                axisTop={null}
-                axisRight={null}
-                axisBottom={{ tickSize: 0, tickPadding: 6 }}
-                axisLeft={{ tickSize: 0, tickPadding: 6 }}
-                enableGridY={true}
-                labelSkipHeight={9999}
-                tooltip={({ indexValue, value }) => (
-                  <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                    <div className="font-medium">{indexValue as string}</div>
-                    <div>{String(value)}</div>
-                  </div>
-                )}
-                theme={{
-                  grid: { line: { stroke: '#F3F4F6' } },
-                  tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                }}
-              />
+              <ChartErrorBoundary>
+                <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
+                  <LazyResponsiveBar
+                    data={emotionsData}
+                    keys={['value']}
+                    indexBy="name"
+                    margin={{ top: 12, right: 12, bottom: 24, left: 36 }}
+                    padding={0.26}
+                    colors={(bar) => colorForEmotion(bar.data.name as string)}
+                    borderRadius={12}
+                    axisTop={null}
+                    axisRight={null}
+                    axisBottom={{ tickSize: 0, tickPadding: 6 }}
+                    axisLeft={{ tickSize: 0, tickPadding: 6 }}
+                    enableGridY={true}
+                    labelSkipHeight={9999}
+                    tooltip={({ indexValue, value }) => (
+                      <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                        <div className="font-medium">{indexValue as string}</div>
+                        <div>{String(value)}</div>
+                      </div>
+                    )}
+                    theme={{
+                      grid: { line: { stroke: '#F3F4F6' } },
+                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                    }}
+                  />
+                </Suspense>
+              </ChartErrorBoundary>
             </div>
           ) : (
             <div className="grid place-items-center text-neutral-500 h-[240px]">
@@ -281,32 +311,36 @@ const ProfileSection: React.FC = () => {
         <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
           {isClient && themesData.length ? (
             <div className="h-[300px]">
-              <ResponsiveBar
-                data={themesData}
-                keys={['value']}
-                indexBy="name"
-                layout="horizontal"
-                margin={{ top: 8, right: 16, bottom: 8, left: 140 }}
-                padding={0.3}
-                colors={(bar) => pastel(bar.data.name as string)}
-                borderRadius={12}
-                axisTop={null}
-                axisRight={null}
-                axisLeft={{ tickSize: 0, tickPadding: 6 }}
-                axisBottom={null}
-                enableGridX={true}
-                labelSkipWidth={9999}
-                tooltip={({ indexValue, value }) => (
-                  <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                    <div className="font-medium">{indexValue as string}</div>
-                    <div>{String(value)}</div>
-                  </div>
-                )}
-                theme={{
-                  grid: { line: { stroke: '#F3F4F6' } },
-                  tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                }}
-              />
+              <ChartErrorBoundary>
+                <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
+                  <LazyResponsiveBar
+                    data={themesData}
+                    keys={['value']}
+                    indexBy="name"
+                    layout="horizontal"
+                    margin={{ top: 8, right: 16, bottom: 8, left: 140 }}
+                    padding={0.3}
+                    colors={(bar) => pastel(bar.data.name as string)}
+                    borderRadius={12}
+                    axisTop={null}
+                    axisRight={null}
+                    axisLeft={{ tickSize: 0, tickPadding: 6 }}
+                    axisBottom={null}
+                    enableGridX={true}
+                    labelSkipWidth={9999}
+                    tooltip={({ indexValue, value }) => (
+                      <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                        <div className="font-medium">{indexValue as string}</div>
+                        <div>{String(value)}</div>
+                      </div>
+                    )}
+                    theme={{
+                      grid: { line: { stroke: '#F3F4F6' } },
+                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                    }}
+                  />
+                </Suspense>
+              </ChartErrorBoundary>
             </div>
           ) : (
             <div className="grid place-items-center text-neutral-500 h-[240px]">
