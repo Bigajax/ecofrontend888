@@ -30,6 +30,7 @@ const Card: React.FC<React.PropsWithChildren<{ title: string; subtitle?: string;
 /* ---------- helpers ---------- */
 const day = 24 * 60 * 60 * 1000;
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const toISOday = (t: number) => new Date(t).toISOString().slice(0, 10); // YYYY-MM-DD
 
 function countBy<T>(arr: T[], key: (x: T) => string | undefined | null) {
   const map = new Map<string, number>();
@@ -50,7 +51,11 @@ function buildLocalPerfil(memories: Memoria[]) {
   for (const m of memories) {
     const domain = (m as any).dominio_vida || (m as any).dominio || (m as any).domain || '';
     const categoria = (m as any).categoria || '';
-    const tags: string[] = Array.isArray(m.tags) ? (m.tags as string[]) : typeof (m as any).tags === 'string' ? (m as any).tags.split(/[;,]/) : [];
+    const tags: string[] = Array.isArray(m.tags)
+      ? (m.tags as string[])
+      : typeof (m as any).tags === 'string'
+      ? (m as any).tags.split(/[;,]/)
+      : [];
     const add = (t?: string) => { const k = (t || '').trim(); if (!k) return; temas.set(k, (temas.get(k) ?? 0) + 1); };
     add(domain); add(categoria); tags.forEach(add);
   }
@@ -71,30 +76,27 @@ function filterByDays(memories: Memoria[], days: Period) {
     return Number.isFinite(t) && t >= since;
   });
 }
-
 function buildStats(memories: Memoria[], days: Period) {
   const scoped = filterByDays(memories, days);
   const emo = countBy(scoped, m => m.emocao_principal || null);
   const emoArr = [...emo.entries()].sort((a,b)=>b[1]-a[1]);
   const dominante = emoArr[0]?.[0] ?? null;
+
   const last28 = filterByDays(memories, 28);
   const totalPeriodo = scoped.length;
   const media28 = Math.round((last28.length / 28) * 10) / 10;
+
   return { totalPeriodo, media28, dominante };
 }
-
 function buildSparklineData(memories: Memoria[], days: Period) {
   const now = startOfDay(new Date());
   const start = now.getTime() - days * day;
   const buckets = new Map<number, number>();
   for (let i = 0; i < days; i++) buckets.set(start + i * day, 0);
-
   memories.forEach(m => {
     const t = startOfDay(new Date(m.created_at || 0)).getTime();
     if (Number.isFinite(t) && t >= start) buckets.set(t, (buckets.get(t) ?? 0) + 1);
   });
-
-  // SANITIZAÇÃO: remove pontos fora do range e garante números válidos
   return [...buckets.entries()]
     .map(([t, v]) => ({ t, v: Number.isFinite(v) ? v : 0 }))
     .filter(d => Number.isFinite(d.t));
@@ -122,6 +124,9 @@ const ProfileSection: React.FC = () => {
   const [memLocal, setMemLocal] = useState<Memoria[] | null>(null);
   const [fetchingLocal, setFetchingLocal] = useState(false);
   const [period, setPeriod] = useState<Period>(7);
+  const [isClient, setIsClient] = useState(false);            // <- renderiza Nivo só no client
+
+  useEffect(() => { setIsClient(true); }, []);
 
   useEffect(() => {
     const needLocal = (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) && (!memories || memories.length === 0);
@@ -166,21 +171,19 @@ const ProfileSection: React.FC = () => {
     : null;
   const periodLabel = PERIOD_LABEL[period];
 
-  /* ==== Nivo data (com guards) ==== */
+  /* ==== Nivo data (strings YYYY-MM-DD + guards) ==== */
   const lineData = useMemo(() => {
     const serie = sparkData
-      .map(d => ({ x: new Date(d.t), y: d.v }))
-      .filter(pt => pt.x instanceof Date && !isNaN(+pt.x) && Number.isFinite(pt.y));
-
+      .map(d => ({ x: toISOday(d.t), y: d.v }))
+      .filter(pt => typeof pt.x === 'string' && Number.isFinite(pt.y));
     return [{ id: 'registros', data: serie }];
   }, [sparkData]);
-
   const hasLinePoints = lineData[0]?.data?.length > 0;
+
   const emotionsData = emotionChart.map(d => ({ name: d.name, value: d.value }));
   const themesData   = themeChart.map(d => ({ name: d.name, value: d.value }));
 
   return (
-    /* SCROLL garantido aqui */
     <div className="min-h-0 h-[calc(100vh-96px)] overflow-y-auto">
       <div className="mx-auto w-full max-w-[960px] px-4 md:px-6 py-4 md:py-6 space-y-10">
         {/* CARD 1 — Resumo */}
@@ -197,11 +200,11 @@ const ProfileSection: React.FC = () => {
 
           <div className="mt-4 border-t border-neutral-100/80 pt-4">
             <div className="h-[84px]">
-              {hasLinePoints ? (
+              {isClient && hasLinePoints ? (
                 <ResponsiveLine
                   data={lineData}
                   margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
-                  xScale={{ type: 'time', format: 'native', precision: 'day' }}
+                  xScale={{ type: 'time', format: '%Y-%m-%d', precision: 'day', useUTC: false }}
                   xFormat="time:%d/%m"
                   yScale={{ type: 'linear', min: 0, max: 'auto' }}
                   axisBottom={null}
@@ -220,9 +223,7 @@ const ProfileSection: React.FC = () => {
                   }}
                   tooltip={({ point }) => (
                     <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                      <div className="font-medium">
-                        {new Date(point.data.x as Date).toLocaleDateString()}
-                      </div>
+                      <div className="font-medium">{point.data.xFormatted as string}</div>
                       <div>{String(point.data.y)} registro{Number(point.data.y) === 1 ? '' : 's'}</div>
                     </div>
                   )}
@@ -238,7 +239,7 @@ const ProfileSection: React.FC = () => {
 
         {/* CARD 2 — Emoções mais frequentes */}
         <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
-          {emotionsData.length ? (
+          {isClient && emotionsData.length ? (
             <div className="h-[300px]">
               <ResponsiveBar
                 data={emotionsData}
@@ -278,7 +279,7 @@ const ProfileSection: React.FC = () => {
 
         {/* CARD 3 — Temas mais recorrentes */}
         <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
-          {themesData.length ? (
+          {isClient && themesData.length ? (
             <div className="h-[300px]">
               <ResponsiveBar
                 data={themesData}
