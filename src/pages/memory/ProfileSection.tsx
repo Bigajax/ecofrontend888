@@ -43,7 +43,12 @@ const pastel = (str: string) => `hsl(${hashHue(str)}, 40%, 82%)`;
 
 /* ---------- UI ---------- */
 const Card: React.FC<React.PropsWithChildren<{ title: string; subtitle?: string; id?: string }>> = ({ title, subtitle, id, children }) => (
-  <section id={id} className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.8),0_8px_28px_rgba(2,6,23,.05)] p-5 md:p-6" role="region" aria-label={title}>
+  <section
+    id={id}
+    className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.85),0_8px_28px_rgba(2,6,23,.05)] p-6 md:p-7"
+    role="region"
+    aria-label={title}
+  >
     <header className="mb-4">
       <h3 className="text-[20px] md:text-[22px] font-semibold text-neutral-900">{title}</h3>
       {subtitle && <p className="text-[13px] text-neutral-500 mt-0.5">{subtitle}</p>}
@@ -66,10 +71,12 @@ function countBy<T>(arr: T[], key: (x: T) => string | undefined | null) {
   }
   return map;
 }
+
 function buildLocalPerfil(memories: Memoria[]) {
   const emoMap = countBy(memories, (m) => (m.emocao_principal || '').toString());
   const emocoes_frequentes: Record<string, number> = {};
   emoMap.forEach((v, k) => (emocoes_frequentes[k] = v));
+
   const temas = new Map<string, number>();
   for (const m of memories) {
     const domain = (m as any).dominio_vida || (m as any).dominio || (m as any).domain || '';
@@ -84,6 +91,7 @@ function buildLocalPerfil(memories: Memoria[]) {
   }
   const temas_recorrentes: Record<string, number> = {};
   temas.forEach((v, k) => (temas_recorrentes[k] = v));
+
   return { emocoes_frequentes, temas_recorrentes };
 }
 
@@ -150,7 +158,9 @@ const ProfileSection: React.FC = () => {
   useEffect(() => { setIsClient(true); }, []);
 
   useEffect(() => {
-    const needLocal = (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) && (!memories || memories.length === 0);
+    const needLocal =
+      (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) &&
+      (!memories || memories.length === 0);
     if (!needLocal || fetchingLocal || memLocal) return;
     setFetchingLocal(true);
     listarMemoriasBasico(600).then(setMemLocal).finally(()=>setFetchingLocal(false));
@@ -205,23 +215,35 @@ const ProfileSection: React.FC = () => {
   const themesData   = themeChart.map(d => ({ name: d.name, value: d.value }));
 
   return (
-    // SCROLL habilitado aqui
+    // SCROLL da página
     <div className="min-h-0 h-[calc(100vh-96px)] overflow-y-auto">
-      <div className="mx-auto w-full max-w-[960px] px-4 md:px-6 py-4 md:py-6 space-y-10">
+      <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-10">
         {/* CARD 1 — Resumo */}
         <Card title="Resumo" id="resumo">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="pb-2">
               <p className="text-[15px] md:text-[16px] text-neutral-700">{insight}</p>
               {comp && <p className="mt-1 text-[13px] text-neutral-500">{comp}</p>}
+              {/* Métrica-destaque */}
+              <div className="mt-3">
+                <div className="text-[13px] text-neutral-500">Média diária (28d)</div>
+                <div className="text-[32px] leading-[1.1] font-semibold text-neutral-900">
+                  {media28?.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+                  <span className="ml-1 text-[14px] font-normal text-neutral-400">reg/dia</span>
+                </div>
+                <div className="mt-1 text-[13px] text-neutral-500">
+                  Período {PERIOD_LABEL[period]}: {totalPeriodo} registros
+                </div>
+              </div>
             </div>
             <div className="sticky top-2">
               <SegmentedControl value={period} onChange={setPeriod} />
             </div>
           </div>
 
+          {/* Sparkline Nivo */}
           <div className="mt-4 border-t border-neutral-100/80 pt-4">
-            <div className="h-[84px]">
+            <div className="h-[96px]">
               {isClient && hasLinePoints ? (
                 <ChartErrorBoundary>
                   <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
@@ -273,7 +295,7 @@ const ProfileSection: React.FC = () => {
                     data={emotionsData}
                     keys={['value']}
                     indexBy="name"
-                    margin={{ top: 12, right: 12, bottom: 24, left: 36 }}
+                    margin={{ top: 12, right: 12, bottom: 28, left: 40 }}
                     padding={0.26}
                     colors={(bar) => colorForEmotion(bar.data.name as string)}
                     borderRadius={12}
@@ -283,16 +305,16 @@ const ProfileSection: React.FC = () => {
                     axisLeft={{ tickSize: 0, tickPadding: 6 }}
                     enableGridY={true}
                     labelSkipHeight={9999}
+                    theme={{
+                      grid: { line: { stroke: '#F3F4F6' } },
+                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                    }}
                     tooltip={({ indexValue, value }) => (
                       <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
                         <div className="font-medium">{indexValue as string}</div>
                         <div>{String(value)}</div>
                       </div>
                     )}
-                    theme={{
-                      grid: { line: { stroke: '#F3F4F6' } },
-                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                    }}
                   />
                 </Suspense>
               </ChartErrorBoundary>
@@ -318,7 +340,7 @@ const ProfileSection: React.FC = () => {
                     keys={['value']}
                     indexBy="name"
                     layout="horizontal"
-                    margin={{ top: 8, right: 16, bottom: 8, left: 140 }}
+                    margin={{ top: 8, right: 16, bottom: 8, left: 160 }}
                     padding={0.3}
                     colors={(bar) => pastel(bar.data.name as string)}
                     borderRadius={12}
@@ -328,16 +350,16 @@ const ProfileSection: React.FC = () => {
                     axisBottom={null}
                     enableGridX={true}
                     labelSkipWidth={9999}
+                    theme={{
+                      grid: { line: { stroke: '#F3F4F6' } },
+                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                    }}
                     tooltip={({ indexValue, value }) => (
                       <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
                         <div className="font-medium">{indexValue as string}</div>
                         <div>{String(value)}</div>
                       </div>
                     )}
-                    theme={{
-                      grid: { line: { stroke: '#F3F4F6' } },
-                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                    }}
                   />
                 </Suspense>
               </ChartErrorBoundary>
