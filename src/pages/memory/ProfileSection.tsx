@@ -3,23 +3,18 @@ import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
 
-/* ===== Nivo (import direto: mais estável que React.lazy) ===== */
+/* ===== Nivo (import direto) ===== */
 import { ResponsiveLine } from '@nivo/line';
 import { ResponsiveBar } from '@nivo/bar';
 
-/* ===== Error Boundary (protege o app se o Nivo falhar) ===== */
+/* ===== Error Boundary ===== */
 type EBState = { hasError: boolean };
-class ChartErrorBoundary extends React.Component<
-  React.PropsWithChildren<{}>,
-  EBState
-> {
+class ChartErrorBoundary extends React.Component<React.PropsWithChildren<{}>, EBState> {
   constructor(props: React.PropsWithChildren<{}>) {
     super(props);
     this.state = { hasError: false };
   }
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
+  static getDerivedStateFromError() { return { hasError: true }; }
   render() {
     if (this.state.hasError) {
       return (
@@ -73,7 +68,6 @@ function countBy<T>(arr: T[], key: (x: T) => string | undefined | null) {
   }
   return map;
 }
-
 function buildLocalPerfil(memories: Memoria[]) {
   const emoMap = countBy(memories, (m) => (m.emocao_principal || '').toString());
   const emocoes_frequentes: Record<string, number> = {};
@@ -83,17 +77,13 @@ function buildLocalPerfil(memories: Memoria[]) {
   for (const m of memories) {
     const domain = (m as any).dominio_vida || (m as any).dominio || (m as any).domain || '';
     const categoria = (m as any).categoria || '';
-    const tags: string[] = Array.isArray(m.tags)
-      ? (m.tags as string[])
-      : typeof (m as any).tags === 'string'
-      ? (m as any).tags.split(/[;,]/)
-      : [];
+    const tags: string[] = Array.isArray(m.tags) ? (m.tags as string[])
+      : typeof (m as any).tags === 'string' ? (m as any).tags.split(/[;,]/) : [];
     const add = (t?: string) => { const k = (t || '').trim(); if (!k) return; temas.set(k, (temas.get(k) ?? 0) + 1); };
     add(domain); add(categoria); tags.forEach(add);
   }
   const temas_recorrentes: Record<string, number> = {};
   temas.forEach((v, k) => (temas_recorrentes[k] = v));
-
   return { emocoes_frequentes, temas_recorrentes };
 }
 
@@ -133,6 +123,12 @@ function buildSparklineData(memories: Memoria[], days: Period) {
     .filter(d => Number.isFinite(d.t));
 }
 
+/* === helpers de layout para barras horizontais === */
+const getLongestLen = (arr: { name: string }[]) =>
+  Math.max(6, ...arr.map(d => (d.name || '').length));
+const leftMarginFor = (len: number) =>
+  Math.min(220, 14 * len + 40); // 14px por char + folga
+
 /* toggle segmentado */
 const SegmentedControl: React.FC<{ value: Period; onChange: (p: Period)=>void }> = ({ value, onChange }) => {
   const base = 'px-4 h-9 rounded-full text-[14px] font-medium transition';
@@ -155,7 +151,7 @@ const ProfileSection: React.FC = () => {
   const [memLocal, setMemLocal] = useState<Memoria[] | null>(null);
   const [fetchingLocal, setFetchingLocal] = useState(false);
   const [period, setPeriod] = useState<Period>(7);
-  const [isClient, setIsClient] = useState(false); // só monta Nivo no client
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => { setIsClient(true); }, []);
 
@@ -167,13 +163,8 @@ const ProfileSection: React.FC = () => {
 
     setFetchingLocal(true);
     listarMemoriasBasico(600)
-      .then((arr) => {
-        setMemLocal(Array.isArray(arr) ? (arr.filter(Boolean) as Memoria[]) : []);
-      })
-      .catch((err) => {
-        console.warn('Fallback local falhou:', err);
-        setMemLocal([]); // não quebra a tela
-      })
+      .then((arr) => setMemLocal(Array.isArray(arr) ? (arr.filter(Boolean) as Memoria[]) : []))
+      .catch(() => setMemLocal([]))
       .finally(() => setFetchingLocal(false));
   }, [perfil, memories, fetchingLocal, memLocal]);
 
@@ -185,8 +176,7 @@ const ProfileSection: React.FC = () => {
     return Object.entries(data)
       .map(([name, value]) => ({ name, value: Number(value) }))
       .filter(d => Number.isFinite(d.value))
-      .sort((a,b)=>b.value-a.value)
-      .slice(0,5);
+      .sort((a,b)=>b.value-a.value);
   }, [memScoped]);
 
   const themeChart = useMemo(() => {
@@ -195,7 +185,7 @@ const ProfileSection: React.FC = () => {
       .map(([name, value]) => ({ name, value: Number(value) }))
       .filter(d => Number.isFinite(d.value))
       .sort((a,b)=>b.value-a.value)
-      .slice(0,5);
+      .slice(0,8);
   }, [memScoped]);
 
   const sparkData = useMemo(() => buildSparklineData(allMemories, period), [allMemories, period]);
@@ -223,25 +213,35 @@ const ProfileSection: React.FC = () => {
   }, [sparkData]);
   const hasLinePoints = !!lineData[0]?.data?.length;
 
-  const emotionsData = useMemo(
-    () => (emotionChart ?? [])
-      .map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 }))
-      .filter(d => d.name.length > 0),
-    [emotionChart]
-  );
+  /* === Emoções: Top 6 + "outros" e horizontal === */
+  const TOP_N = 6;
+  const emotionsSorted = useMemo(() => [...emotionChart].sort((a, b) => b.value - a.value), [emotionChart]);
+  const topEmotions = useMemo(() => {
+    const top = emotionsSorted.slice(0, TOP_N);
+    const rest = emotionsSorted.slice(TOP_N);
+    if (rest.length) {
+      top.push({
+        name: 'outros',
+        value: rest.reduce((s, d) => s + (Number(d.value) || 0), 0),
+      });
+    }
+    return top.map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 }))
+              .filter(d => d.name.length > 0);
+  }, [emotionsSorted]);
+  const emoLeftMargin = leftMarginFor(getLongestLen(topEmotions));
+
+  /* === Temas: horizontal com margem dinâmica === */
   const themesData = useMemo(
-    () => (themeChart ?? [])
-      .map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 }))
-      .filter(d => d.name.length > 0),
+    () => themeChart.map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 })),
     [themeChart]
   );
+  const themeLeftMargin = leftMarginFor(getLongestLen(themesData));
 
   const noRemoteData =
     (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) &&
     (allMemories.length === 0);
 
   return (
-    // SCROLL da página
     <div className="min-h-0 h-[calc(100vh-96px)] overflow-y-auto">
       {noRemoteData && (
         <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 pt-4">
@@ -258,7 +258,6 @@ const ProfileSection: React.FC = () => {
             <div className="pb-2">
               <p className="text-[15px] md:text-[16px] text-neutral-700">{insight}</p>
               {comp && <p className="mt-1 text-[13px] text-neutral-500">{comp}</p>}
-              {/* Métrica-destaque */}
               <div className="mt-3">
                 <div className="text-[13px] text-neutral-500">Média diária (28d)</div>
                 <div className="text-[32px] leading-[1.1] font-semibold text-neutral-900">
@@ -318,34 +317,44 @@ const ProfileSection: React.FC = () => {
           </div>
         </Card>
 
-        {/* CARD 2 — Emoções mais frequentes */}
+        {/* CARD 2 — Emoções mais frequentes (HORIZONTAL + labels + "outros") */}
         <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
-          {isClient && emotionsData.length ? (
-            <div className="h-[300px]">
+          {isClient && topEmotions.length ? (
+            <div className="h-[56px]" style={{ height: `${Math.max(6, topEmotions.length) * 44}px` }}>
               <ChartErrorBoundary>
                 <ResponsiveBar
                   key={`bar-emo-${period}`}
-                  data={emotionsData}
+                  data={topEmotions}
                   keys={['value']}
                   indexBy="name"
-                  margin={{ top: 12, right: 12, bottom: 28, left: 40 }}
-                  padding={0.26}
-                  colors={(bar: any) => colorForEmotion(bar.data.name as string)}
-                  borderRadius={12}
+                  layout="horizontal"
+                  margin={{ top: 8, right: 24, bottom: 8, left: emoLeftMargin }}
+                  padding={0.36}
+                  innerPadding={3}
+                  colors={(bar: any) => bar.data.name === 'outros' ? pastel('outros') : colorForEmotion(bar.data.name as string)}
+                  borderRadius={10}
                   axisTop={null}
                   axisRight={null}
-                  axisBottom={{ tickSize: 0, tickPadding: 6 }}
-                  axisLeft={{ tickSize: 0, tickPadding: 6 }}
-                  enableGridY={true}
-                  labelSkipHeight={9999}
+                  axisLeft={{ tickSize: 0, tickPadding: 8 }}
+                  axisBottom={null}
+                  enableGridX={true}
+                  enableGridY={false}
+                  label={(d: any) => String(d.value)}
+                  labelPosition="end"
+                  labelPadding={10}
+                  labelTextColor={{ from: 'color', modifiers: [['darker', 2.4]] }}
+                  valueFormat={(v: any) => Number(v).toLocaleString('pt-BR')}
                   theme={{
                     grid: { line: { stroke: '#F3F4F6' } },
+                    labels: { text: { fontSize: 12 } },
+                    axis: { ticks: { text: { fontSize: 12, fill: '#111827' } } },
                     tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
                   }}
+                  motionConfig="gentle"
                   tooltip={({ indexValue, value }: any) => (
                     <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
                       <div className="font-medium">{String(indexValue)}</div>
-                      <div>{String(value)}</div>
+                      <div>{Number(value).toLocaleString('pt-BR')}</div>
                     </div>
                   )}
                 />
@@ -361,10 +370,10 @@ const ProfileSection: React.FC = () => {
           )}
         </Card>
 
-        {/* CARD 3 — Temas mais recorrentes */}
+        {/* CARD 3 — Temas mais recorrentes (HORIZONTAL + margem dinâmica) */}
         <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
           {isClient && themesData.length ? (
-            <div className="h-[300px]">
+            <div className="h-[56px]" style={{ height: `${Math.max(6, themesData.length) * 44}px` }}>
               <ChartErrorBoundary>
                 <ResponsiveBar
                   key={`bar-theme-${period}`}
@@ -372,24 +381,33 @@ const ProfileSection: React.FC = () => {
                   keys={['value']}
                   indexBy="name"
                   layout="horizontal"
-                  margin={{ top: 8, right: 16, bottom: 8, left: 160 }}
-                  padding={0.3}
+                  margin={{ top: 8, right: 16, bottom: 8, left: themeLeftMargin }}
+                  padding={0.32}
+                  innerPadding={3}
                   colors={(bar: any) => pastel(bar.data.name as string)}
-                  borderRadius={12}
+                  borderRadius={10}
                   axisTop={null}
                   axisRight={null}
-                  axisLeft={{ tickSize: 0, tickPadding: 6 }}
+                  axisLeft={{ tickSize: 0, tickPadding: 8 }}
                   axisBottom={null}
                   enableGridX={true}
-                  labelSkipWidth={9999}
+                  enableGridY={false}
+                  label={(d: any) => String(d.value)}
+                  labelPosition="end"
+                  labelPadding={10}
+                  labelTextColor={{ from: 'color', modifiers: [['darker', 2.4]] }}
+                  valueFormat={(v: any) => Number(v).toLocaleString('pt-BR')}
                   theme={{
                     grid: { line: { stroke: '#F3F4F6' } },
+                    labels: { text: { fontSize: 12 } },
+                    axis: { ticks: { text: { fontSize: 12, fill: '#111827' } } },
                     tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
                   }}
+                  motionConfig="gentle"
                   tooltip={({ indexValue, value }: any) => (
                     <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
                       <div className="font-medium">{String(indexValue)}</div>
-                      <div>{String(value)}</div>
+                      <div>{Number(value).toLocaleString('pt-BR')}</div>
                     </div>
                   )}
                 />
