@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState, Suspense } from 'react';
+// src/pages/memory/ProfileSection.tsx
+import { useEffect, useMemo, useState, Suspense, lazy, Component } from 'react';
+import type { FC, PropsWithChildren, ReactNode } from 'react';
 import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
@@ -6,22 +8,19 @@ import { listarMemoriasBasico } from '../../api/memoriaApi';
 /* ===== Lazy: Nivo =====
    Nota: os casts para React.ComponentType<any> evitam ruído do TS
    porque @nivo/* não exporta default e o tipo genérico do lazy não é inferido. */
-const LazyResponsiveLine = React.lazy(async () => {
+const LazyResponsiveLine = lazy(async () => {
   const mod = await import('@nivo/line');
   return { default: mod.ResponsiveLine as unknown as React.ComponentType<any> };
 });
-const LazyResponsiveBar = React.lazy(async () => {
+const LazyResponsiveBar = lazy(async () => {
   const mod = await import('@nivo/bar');
   return { default: mod.ResponsiveBar as unknown as React.ComponentType<any> };
 });
 
 /* ===== Error Boundary ===== */
 type EBState = { hasError: boolean };
-class ChartErrorBoundary extends React.Component<
-  React.PropsWithChildren<{}>,
-  EBState
-> {
-  constructor(props: React.PropsWithChildren<{}>) {
+class ChartErrorBoundary extends Component<PropsWithChildren<{}>, EBState> {
+  constructor(props: PropsWithChildren<{}>) {
     super(props);
     this.state = { hasError: false };
   }
@@ -31,7 +30,7 @@ class ChartErrorBoundary extends React.Component<
   componentDidCatch() {
     // opcional: enviar para sentry/log
   }
-  render() {
+  render(): ReactNode {
     if (this.state.hasError) {
       return (
         <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">
@@ -39,7 +38,7 @@ class ChartErrorBoundary extends React.Component<
         </div>
       );
     }
-    return this.props.children as React.ReactNode;
+    return this.props.children as ReactNode;
   }
 }
 
@@ -55,7 +54,7 @@ const hashHue = (str: string) => { let h = 0; for (let i=0;i<str.length;i++) h =
 const pastel = (str: string) => `hsl(${hashHue(str)}, 40%, 82%)`;
 
 /* ---------- UI ---------- */
-const Card: React.FC<React.PropsWithChildren<{ title: string; subtitle?: string; id?: string }>> = ({ title, subtitle, id, children }) => (
+const Card: FC<PropsWithChildren<{ title: string; subtitle?: string; id?: string }>> = ({ title, subtitle, id, children }) => (
   <section
     id={id}
     className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.85),0_8px_28px_rgba(2,6,23,.05)] p-6 md:p-7"
@@ -145,7 +144,7 @@ function buildSparklineData(memories: Memoria[], days: Period) {
 }
 
 /* toggle segmentado */
-const SegmentedControl: React.FC<{ value: Period; onChange: (p: Period)=>void }> = ({ value, onChange }) => {
+const SegmentedControl: FC<{ value: Period; onChange: (p: Period)=>void }> = ({ value, onChange }) => {
   const base = 'px-4 h-9 rounded-full text-[14px] font-medium transition';
   const item = (p: Period) => `${base} ${value===p ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-700 hover:bg-neutral-100'}`;
   return (
@@ -160,7 +159,7 @@ const SegmentedControl: React.FC<{ value: Period; onChange: (p: Period)=>void }>
 };
 
 /* ---------- componente ---------- */
-const ProfileSection: React.FC = () => {
+const ProfileSection: FC = () => {
   const { perfil, memories, loading, error } = useMemoryData();
 
   const [memLocal, setMemLocal] = useState<Memoria[] | null>(null);
@@ -247,7 +246,6 @@ const ProfileSection: React.FC = () => {
     [themeChart]
   );
 
-  // opcional: aviso quando nada veio do backend
   const noRemoteData =
     (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) &&
     (allMemories.length === 0);
