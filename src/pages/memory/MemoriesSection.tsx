@@ -1,5 +1,6 @@
+// src/pages/memory/MemoriesSection.tsx
 import React, { useMemo, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
@@ -45,7 +46,6 @@ const hashStringToHue = (str: string) => {
 const pastelVibrant = (seed: string) =>
   `hsl(${hashStringToHue(seed)}, 70%, 90%)`;
 
-/** escurece/clareia um hex */
 function shade(hex: string, pct: number) {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!m) return hex;
@@ -57,8 +57,10 @@ function shade(hex: string, pct: number) {
   return `#${ch(1)}${ch(2)}${ch(3)}`;
 }
 
+/* datas mais tolerantes a formato */
 const toDate = (raw?: string) => {
-  const d = raw ? new Date(raw) : new Date('1970-01-01');
+  if (!raw) return new Date('1970-01-01');
+  const d = new Date(raw);
   return isNaN(d.getTime()) ? new Date('1970-01-01') : d;
 };
 
@@ -100,7 +102,25 @@ const groupMemories = (mems: Memoria[]): Grouped =>
     return acc;
   }, {});
 
-/* ---------- Subcomponentes ---------- */
+/* ---------- Peças Health-like ---------- */
+const AccentBubble: React.FC<{ color?: string; className?: string; 'aria-label'?: string }> = ({
+  color = '#ff3b30', className = '', ...rest
+}) => (
+  <span
+    {...rest}
+    className={`h-10 w-10 rounded-full shrink-0 ${className}`}
+    style={{
+      background: `
+        radial-gradient(circle at 35% 30%, rgba(255,255,255,.95) 0%, rgba(255,255,255,.5) 30%, rgba(255,255,255,0) 34%),
+        radial-gradient(circle at 60% 65%, ${color}33 0%, ${color}55 60%, ${color}88 100%)
+      `,
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,.9), 0 10px 30px rgba(2,6,23,.08)',
+      border: `1px solid ${color}22`,
+      backdropFilter: 'blur(4px)',
+    }}
+  />
+);
+
 const Chip: React.FC<React.PropsWithChildren<{ title?: string }>> = ({ title, children }) => (
   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white/85 text-[12px] leading-5 text-slate-700 max-w-full">
     {title ? <span className="font-medium text-slate-900">{title}:</span> : null}
@@ -108,10 +128,12 @@ const Chip: React.FC<React.PropsWithChildren<{ title?: string }>> = ({ title, ch
   </div>
 );
 
-const ChevronBtn: React.FC<{ open: boolean; onClick: () => void }> = ({ open, onClick }) => (
+const ChevronBtn: React.FC<{ open: boolean; onClick: () => void; controlsId: string }> = ({ open, onClick, controlsId }) => (
   <button
     type="button"
     onClick={onClick}
+    aria-expanded={open}
+    aria-controls={controlsId}
     aria-label={open ? 'Fechar detalhes' : 'Abrir detalhes'}
     className="h-9 w-9 rounded-full border border-slate-200 bg-white/80 hover:bg-white transition grid place-items-center shadow-sm"
   >
@@ -125,6 +147,7 @@ const ChevronBtn: React.FC<{ open: boolean; onClick: () => void }> = ({ open, on
 const MemoryCard: React.FC<{ mem: Memoria }> = React.memo(({ mem }) => {
   const [open, setOpen] = useState(false);
   const toggle = useCallback(() => setOpen(v => !v), []);
+  const detailsId = `mem-details-${mem.id ?? Math.random().toString(36).slice(2)}`;
 
   const cap = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
 
@@ -132,10 +155,8 @@ const MemoryCard: React.FC<{ mem: Memoria }> = React.memo(({ mem }) => {
   const when = humanDate(mem.created_at);
   const intensidade = intensityOf(mem);
 
-  // visíveis no card fechado
   const domain = (mem as any).dominio_vida || (mem as any).dominio || (mem as any).domain || '';
 
-  // detalhes (expandido)
   const padrao =
     (mem as any).padrao_comportamento ||
     (mem as any).padrao_comportamental ||
@@ -150,39 +171,29 @@ const MemoryCard: React.FC<{ mem: Memoria }> = React.memo(({ mem }) => {
   }, [mem.tags]);
 
   return (
-    <li className="w-full rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm shadow-[0_1px_0_rgba(255,255,255,.85),0_8px_28px_rgba(2,6,23,.06)] p-4 md:p-5">
-      {/* Header */}
+    <li className="w-full rounded-[22px] border border-black/10 bg-white/90 backdrop-blur shadow-[0_1px_0_rgba(255,255,255,.9),0_8px_28px_rgba(2,6,23,.06)] p-4 md:p-5">
+      {/* Header estilo Saúde */}
       <div className="flex items-start gap-3">
-        {/* Bolha glassmorphism */}
-        <span
-          aria-label={`Emoção: ${mem.emocao_principal || 'Neutro'}`}
-          className="h-10 w-10 rounded-full shrink-0"
-          style={{
-            background: `
-              radial-gradient(circle at 35% 30%, rgba(255,255,255,.95) 0%, rgba(255,255,255,.5) 30%, rgba(255,255,255,0) 34%),
-              radial-gradient(circle at 60% 65%, ${shade(primaryColor, -5)} 0%, ${shade(primaryColor, -15)} 60%, ${shade(primaryColor, -25)} 100%)`,
-            boxShadow: `inset 0 1px 0 rgba(255,255,255,.85), 0 6px 16px rgba(2,6,23,.10)`,
-            border: `1px solid ${shade(primaryColor, -35)}20`,
-          }}
-        />
+        <AccentBubble aria-label={`Emoção: ${mem.emocao_principal || 'Neutro'}`} color={primaryColor} />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-3">
-            <h3 className="text-[18px] leading-6 font-semibold text-slate-900 truncate">
-              {cap(mem.emocao_principal) || 'Emoção'}
+            <h3 className="text-[17px] md:text-[18px] leading-snug font-semibold text-slate-900 truncate">
+              {cap(mem.emocao_principal) || 'Emoção registrada'}
             </h3>
             <span className="text-[12px] leading-5 text-slate-500 shrink-0">{when}</span>
           </div>
 
           {domain && (
-            <div className="mt-1">
-              <Chip title="Domínio">{domain}</Chip>
+            <div className="mt-2">
+              <p className="text-[13px] font-medium text-slate-500">Domínio</p>
+              <div className="mt-1"><Chip>{domain}</Chip></div>
             </div>
           )}
         </div>
       </div>
 
       {/* Intensidade */}
-      <div className="mt-3 h-[6px] rounded-full bg-slate-200/80 overflow-hidden" aria-label={`Intensidade ${intensidade}/10`}>
+      <div className="mt-4 h-[6px] rounded-full bg-slate-200/80 overflow-hidden" aria-label={`Intensidade ${intensidade}/10`}>
         <span
           className="block h-full rounded-full"
           style={{ width: `${(intensidade / 10) * 100}%`, background: `linear-gradient(90deg, ${primaryColor}, ${shade(primaryColor, -25)})` }}
@@ -204,56 +215,60 @@ const MemoryCard: React.FC<{ mem: Memoria }> = React.memo(({ mem }) => {
         </div>
       )}
 
-      {/* Chevron minimalista */}
+      {/* Chevron */}
       <div className="mt-3 flex justify-end">
-        <ChevronBtn open={open} onClick={toggle} />
+        <ChevronBtn open={open} onClick={toggle} controlsId={detailsId} />
       </div>
 
-      {/* Detalhes */}
-      {open && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4 mt-3 pt-3 border-t border-slate-200/70 text-[14px] leading-[1.6] text-slate-700"
-        >
-          {/* metadados (sem emoção e sem abertura) */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Chip title="Intensidade">{intensidade}/10</Chip>
-            {padrao && (
-              <div className="w-full sm:w-auto">
-                <div className="inline-flex items-start gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white/85 text-[12px] leading-5 text-slate-700 max-w-full">
-                  <span className="font-medium text-slate-900">Padrão:</span>
-                  <span className="whitespace-normal break-words">
-                    {padrao}
-                  </span>
-                </div>
+      {/* Detalhes com AnimatePresence */}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            id={detailsId}
+            initial={{ opacity: 0, y: 10, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: 6, height: 0 }}
+            transition={{ duration: 0.18 }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-4 mt-3 pt-3 border-t border-slate-200/70 text-[14px] leading-[1.6] text-slate-700">
+              <div className="flex flex-wrap items-center gap-2">
+                <Chip title="Intensidade">{intensidade}/10</Chip>
+                {padrao && (
+                  <div className="w-full sm:w-auto">
+                    <div className="inline-flex items-start gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white/85 text-[12px] leading-5 text-slate-700 max-w-full">
+                      <span className="font-medium text-slate-900">Padrão:</span>
+                      <span className="whitespace-normal break-words">{padrao}</span>
+                    </div>
+                  </div>
+                )}
+                <Chip title="Criado em">{toDate(mem.created_at).toLocaleDateString('pt-BR')}</Chip>
               </div>
-            )}
-            <Chip title="Criado em">{toDate(mem.created_at).toLocaleDateString()}</Chip>
-          </div>
 
-          {(mem as any).analise_resumo && (
-            <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
-              <div className="font-semibold mb-1 text-slate-900">Reflexão da Eco</div>
-              <div>{(mem as any).analise_resumo}</div>
-            </div>
-          )}
+              {(mem as any).analise_resumo && (
+                <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
+                  <div className="font-semibold mb-1 text-slate-900">Reflexão da Eco</div>
+                  <div>{(mem as any).analise_resumo}</div>
+                </div>
+              )}
 
-          {!(mem as any).analise_resumo && (mem as any).resumo_eco && (
-            <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
-              <div className="font-semibold mb-1 text-slate-900">Reflexão da Eco</div>
-              <div>{(mem as any).resumo_eco}</div>
-            </div>
-          )}
+              {!(mem as any).analise_resumo && (mem as any).resumo_eco && (
+                <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
+                  <div className="font-semibold mb-1 text-slate-900">Reflexão da Eco</div>
+                  <div>{(mem as any).resumo_eco}</div>
+                </div>
+              )}
 
-          {mem.contexto && (
-            <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
-              <div className="font-semibold mb-1 text-slate-900">Seu pensamento</div>
-              <div>{mem.contexto}</div>
+              {mem.contexto && (
+                <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
+                  <div className="font-semibold mb-1 text-slate-900">Seu pensamento</div>
+                  <div>{mem.contexto}</div>
+                </div>
+              )}
             </div>
-          )}
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </li>
   );
 });
@@ -311,15 +326,16 @@ const MemoriesSection: React.FC = () => {
           Memória Emocional
         </h1>
         <p className="mt-2 md:mt-3 text-[16px] md:text-[18px] leading-relaxed text-slate-700 max-w-3xl">
-          A Eco registra momentos marcantes com emoção presente, tags-chave, domínio da vida e uma análise sensível.
-          Cada memória se torna um reflexo do que te atravessa.
+          Uma visão clara e gentil das suas memórias: emoção, domínio da vida, tags e reflexões.
         </p>
 
-        {/* Filtros compactos: emoção + busca (sem chips/tags e sem intensidade) */}
-        <div className="mt-4 p-3 rounded-2xl bg-white/70 border border-slate-200">
+        {/* Filtros compactos */}
+        <div className="mt-4 p-3 rounded-[22px] bg-white/70 border border-slate-200">
           <div className="flex flex-wrap gap-2 items-stretch">
             <div className="min-w-[220px]">
+              <label className="sr-only" htmlFor="f-emo">Filtrar por emoção</label>
               <select
+                id="f-emo"
                 value={emoFilter}
                 onChange={(e) => setEmoFilter(e.target.value)}
                 className="h-10 w-full rounded-xl px-3 bg-white/80 border border-slate-200 text-sm"
@@ -335,7 +351,9 @@ const MemoriesSection: React.FC = () => {
             </div>
 
             <div className="flex-1 min-w-[240px]">
+              <label className="sr-only" htmlFor="f-q">Buscar</label>
               <input
+                id="f-q"
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -367,7 +385,7 @@ const MemoriesSection: React.FC = () => {
                 <h3 className="text-sm font-semibold text-neutral-500 mb-3">{bucket}</h3>
                 <ul className="grid [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] gap-4">
                   {grouped[bucket]!.map((m) => (
-                    <MemoryCard key={m.id ?? `${m.created_at}-${m.emocao_principal}`} mem={m} />
+                    <MemoryCard key={m.id ?? `${m.created_at}-${m.emocao_principal}-${Math.random()}`} mem={m} />
                   ))}
                 </ul>
               </section>
