@@ -137,7 +137,6 @@ const SegmentedControl: FC<{ value: Period; onChange: (p: Period)=>void }> = ({ 
 
 /* ---------- componente ---------- */
 const ProfileSection: FC = () => {
-  /* hooks SEMPRE no topo, sem returns antes deles */
   const { perfil, memories, loading, error } = useMemoryData();
   const [memLocal, setMemLocal] = useState<Memoria[] | null>(null);
   const [fetchingLocal, setFetchingLocal] = useState(false);
@@ -204,7 +203,6 @@ const ProfileSection: FC = () => {
 
   const noRemoteData = (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) && (allMemories.length === 0);
 
-  /* ---- render SEM early-return ---- */
   return (
     <div className="min-h-0 h-[calc(100vh-96px)] overflow-y-auto">
       {noRemoteData && (
@@ -216,7 +214,6 @@ const ProfileSection: FC = () => {
       )}
 
       <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-10">
-        {/* estado de loading/erro sem mudar a ordem de hooks */}
         {(loading || fetchingLocal) && (
           <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-6 text-neutral-500 text-sm">Carregando…</div>
         )}
@@ -281,7 +278,7 @@ const ProfileSection: FC = () => {
           </div>
         </Card>
 
-        {/* CARD 2 — Emoções */}
+        {/* CARD 2 — Emoções (ATUALIZADO: sem labels no eixo/bares; nome só no hover) */}
         <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
           {isClient && emotionsData.length ? (
             <div className="h-[300px]">
@@ -292,19 +289,25 @@ const ProfileSection: FC = () => {
                     data={emotionsData}
                     keys={['value']}
                     indexBy="name"
-                    margin={{ top: 12, right: 12, bottom: 28, left: 40 }}
-                    padding={0.26}
+                    margin={{ top: 12, right: 12, bottom: 0, left: 40 }}  // sem rótulos embaixo
+                    padding={0.32}
                     colors={(bar: any) => colorForEmotion(bar.data.name as string)}
                     borderRadius={12}
                     axisTop={null}
                     axisRight={null}
-                    axisBottom={{ tickSize: 0, tickPadding: 6 }}
+                    axisBottom={null}            // <<< remove rótulos do eixo X
                     axisLeft={{ tickSize: 0, tickPadding: 6 }}
                     enableGridY
-                    labelSkipHeight={9999}
-                    theme={{ grid: { line: { stroke: '#F3F4F6' } }, tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } } }}
-                    tooltip={({ indexValue, value }: any) => (
-                      <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                    enableLabel={false}          // <<< sem labels nos bares
+                    theme={{
+                      grid: { line: { stroke: '#F3F4F6' } },
+                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                    }}
+                    tooltip={({ indexValue, value, color }: any) => (
+                      <div
+                        className="rounded-xl bg-white/95 border px-3 py-2 text-[12px]"
+                        style={{ borderColor: color }}
+                      >
                         <div className="font-medium">{String(indexValue)}</div>
                         <div>{String(value)}</div>
                       </div>
