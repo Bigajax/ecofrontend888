@@ -19,14 +19,15 @@ const hashHue = (str: string) => { let h = 0; for (let i=0;i<str.length;i++) h =
 const pastel = (str: string) => `hsl(${hashHue(str)}, 40%, 82%)`;
 
 /* ---------- UI ---------- */
-const Card: React.FC<React.PropsWithChildren<{ title: string; subtitle?: string }>> = ({ title, subtitle, children }) => (
+const Card: React.FC<React.PropsWithChildren<{ title: string; subtitle?: string; id?: string }>> = ({ title, subtitle, id, children }) => (
   <section
+    id={id}
     className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.8),0_8px_28px_rgba(2,6,23,.05)] p-5 md:p-6"
     role="region"
     aria-label={title}
   >
     <header className="mb-4">
-      <h3 className="text-[17px] md:text-[18px] font-semibold text-neutral-900">{title}</h3>
+      <h3 className="text-[20px] md:text-[22px] font-semibold text-neutral-900">{title}</h3>
       {subtitle && <p className="text-[13px] text-neutral-500 mt-0.5">{subtitle}</p>}
     </header>
     <div className="border-t border-neutral-100/80 pt-4">
@@ -111,8 +112,9 @@ function buildSparklineData(memories: Memoria[], days: Period) {
   return [...buckets.entries()].map(([t, v]) => ({ t, v }));
 }
 
+/* toggle segmentado */
 const SegmentedControl: React.FC<{ value: Period; onChange: (p: Period)=>void }> = ({ value, onChange }) => {
-  const base = 'px-3 md:px-4 h-9 rounded-full text-[13px] md:text-[14px] font-medium transition';
+  const base = 'px-4 h-9 rounded-full text-[14px] font-medium transition';
   const item = (p: Period) =>
     `${base} ${value===p ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-700 hover:bg-neutral-100'}`;
   return (
@@ -136,10 +138,8 @@ const SegmentedControl: React.FC<{ value: Period; onChange: (p: Period)=>void }>
 const ProfileSection: React.FC = () => {
   const { perfil, memories, loading, error } = useMemoryData();
 
-  // fallback
   const [memLocal, setMemLocal] = useState<Memoria[] | null>(null);
   const [fetchingLocal, setFetchingLocal] = useState(false);
-
   const [period, setPeriod] = useState<Period>(7);
 
   useEffect(() => {
@@ -180,21 +180,24 @@ const ProfileSection: React.FC = () => {
   const periodLabel = PERIOD_LABEL[period];
 
   return (
-    <div className="mx-auto w-full max-w-[960px] px-4 md:px-6 space-y-8">
-      {/* HEADER + TOGGLE */}
-      <section className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.8),0_8px_28px_rgba(2,6,23,.05)] p-5 md:p-6">
+    <div className="mx-auto w-full max-w-[960px] px-4 md:px-6 py-4 md:py-6 space-y-10">
+      {/* CARD 1 — Resumo */}
+      <Card title="Resumo" id="resumo">
         <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <h2 className="text-[clamp(20px,3.5vw,24px)] leading-tight font-semibold text-neutral-900">Resumo</h2>
-            <p className="mt-1 text-[15px] md:text-[16px] text-neutral-700">{insight}</p>
+          <div className="pb-2">
+            <p className="text-[15px] md:text-[16px] text-neutral-700">{insight}</p>
             {comp && <p className="mt-1 text-[13px] text-neutral-500">{comp}</p>}
           </div>
-          <SegmentedControl value={period} onChange={setPeriod} />
+
+          {/* sticky dentro do card, estilo Saúde */}
+          <div className="sticky top-2">
+            <SegmentedControl value={period} onChange={setPeriod} />
+          </div>
         </div>
 
         {/* sparkline com divisória */}
         <div className="mt-4 border-t border-neutral-100/80 pt-4">
-          <div className="h-[64px]">
+          <div className="h-[72px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={sparkData} margin={{ top: 0, right: 8, left: 8, bottom: 0 }}>
                 <CartesianGrid vertical={false} stroke="#F3F4F6" />
@@ -205,116 +208,113 @@ const ProfileSection: React.FC = () => {
             </ResponsiveContainer>
           </div>
         </div>
-      </section>
+      </Card>
 
-      {/* GRID COM RESPIRO */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* EMOÇÕES: colunas verticais */}
-        <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`}>
-          {emotionChart.length ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart
-                data={emotionChart}
-                margin={{ top: 12, right: 12, left: 12, bottom: 12 }}
-                barCategoryGap={22}
-                barGap={8}
+      {/* CARD 2 — Emoções mais frequentes */}
+      <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
+        {emotionChart.length ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={emotionChart}
+              margin={{ top: 12, right: 12, left: 12, bottom: 12 }}
+              barCategoryGap={22}
+              barGap={8}
+            >
+              <defs>
+                {emotionChart.map((e, i) => {
+                  const base = colorForEmotion(e.name);
+                  return (
+                    <linearGradient key={i} id={`g-emo-${i}`} x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor={base} stopOpacity={0.96} />
+                      <stop offset="100%" stopColor={base} stopOpacity={0.70} />
+                    </linearGradient>
+                  );
+                })}
+              </defs>
+
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                padding={{ left: 14, right: 14 }}
+                tick={{ fill: '#111827', fontSize: 12 }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                domain={[0, 'dataMax + 3']}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar
+                dataKey="value"
+                radius={[12, 12, 12, 12]}
+                barSize={Math.max(26, Math.min(44, Math.floor(260 / Math.max(1, emotionChart.length)) * 0.6))}
               >
-                <defs>
-                  {emotionChart.map((e, i) => {
-                    const base = colorForEmotion(e.name);
-                    return (
-                      <linearGradient key={i} id={`g-emo-${i}`} x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor={base} stopOpacity={0.96} />
-                        <stop offset="100%" stopColor={base} stopOpacity={0.70} />
-                      </linearGradient>
-                    );
-                  })}
-                </defs>
-
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  padding={{ left: 14, right: 14 }}
-                  tick={{ fill: '#111827', fontSize: 12 }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                  domain={[0, 'dataMax + 3']}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar
-                  dataKey="value"
-                  radius={[12, 12, 12, 12]}
-                  barSize={Math.max(26, Math.min(44, Math.floor(240 / Math.max(1, emotionChart.length)) * 0.6))}
-                >
-                  {emotionChart.map((e, i) => (
-                    <Cell key={i} fill={`url(#g-emo-${i})`} aria-label={`${e.name}: ${e.value}`} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="grid place-items-center text-neutral-500 h-[240px]">
-              <div className="text-center">
-                <p className="text-neutral-900 font-medium">Sem dados no período</p>
-                <p className="text-sm">Registre memórias para ver seu perfil aqui.</p>
-              </div>
+                {emotionChart.map((e, i) => (
+                  <Cell key={i} fill={`url(#g-emo-${i})`} aria-label={`${e.name}: ${e.value}`} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="grid place-items-center text-neutral-500 h-[240px]">
+            <div className="text-center">
+              <p className="text-neutral-900 font-medium">Sem dados no período</p>
+              <p className="text-sm">Registre memórias para ver seu perfil aqui.</p>
             </div>
-          )}
-        </Card>
+          </div>
+        )}
+      </Card>
 
-        {/* TEMAS: BARRAS HORIZONTAIS */}
-        <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`}>
-          {themeChart.length ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart
-                layout="vertical"
-                data={themeChart}
-                margin={{ top: 8, right: 16, left: 6, bottom: 8 }}
-                barCategoryGap={12}
-              >
-                <defs>
-                  {themeChart.map((e, i) => {
-                    const base = pastel(e.name);
-                    return (
-                      <linearGradient key={i} id={`g-theme-${i}`} x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor={base} stopOpacity={0.98} />
-                        <stop offset="100%" stopColor={base} stopOpacity={0.68} />
-                      </linearGradient>
-                    );
-                  })}
-                </defs>
+      {/* CARD 3 — Temas mais recorrentes */}
+      <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
+        {themeChart.length ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              layout="vertical"
+              data={themeChart}
+              margin={{ top: 8, right: 16, left: 6, bottom: 8 }}
+              barCategoryGap={12}
+            >
+              <defs>
+                {themeChart.map((e, i) => {
+                  const base = pastel(e.name);
+                  return (
+                    <linearGradient key={i} id={`g-theme-${i}`} x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor={base} stopOpacity={0.98} />
+                      <stop offset="100%" stopColor={base} stopOpacity={0.68} />
+                    </linearGradient>
+                  );
+                })}
+              </defs>
 
-                <XAxis type="number" hide domain={[0, 'dataMax + 5']} />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={110}
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#111827', fontSize: 12 }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="value" barSize={28} radius={[0, 12, 12, 0]}>
-                  {themeChart.map((e, i) => (
-                    <Cell key={i} fill={`url(#g-theme-${i})`} aria-label={`${e.name}: ${e.value}`} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="grid place-items-center text-neutral-500 h-[240px]">
-              <div className="text-center">
-                <p className="text-neutral-900 font-medium">Sem dados no período</p>
-                <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
-              </div>
+              <XAxis type="number" hide domain={[0, 'dataMax + 5']} />
+              <YAxis
+                type="category"
+                dataKey="name"
+                width={140}               // mais espaço para labels
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#111827', fontSize: 12 }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="value" barSize={28} radius={[0, 12, 12, 0]}>
+                {themeChart.map((e, i) => (
+                  <Cell key={i} fill={`url(#g-theme-${i})`} aria-label={`${e.name}: ${e.value}`} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="grid place-items-center text-neutral-500 h-[240px]">
+            <div className="text-center">
+              <p className="text-neutral-900 font-medium">Sem dados no período</p>
+              <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
             </div>
-          )}
-        </Card>
-      </div>
+          </div>
+        )}
+      </Card>
     </div>
   );
 };
