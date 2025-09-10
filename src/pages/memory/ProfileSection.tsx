@@ -5,9 +5,7 @@ import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
 
-/* ===== Lazy: Nivo =====
-   Nota: os casts para React.ComponentType<any> evitam ruído do TS
-   porque @nivo/* não exporta default e o tipo genérico do lazy não é inferido. */
+/* ===== Lazy Nivo (tipado) ===== */
 const LazyResponsiveLine = lazy(async () => {
   const mod = await import('@nivo/line');
   return { default: mod.ResponsiveLine as unknown as React.ComponentType<any> };
@@ -24,19 +22,10 @@ class ChartErrorBoundary extends Component<PropsWithChildren<{}>, EBState> {
     super(props);
     this.state = { hasError: false };
   }
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  componentDidCatch() {
-    // opcional: enviar para sentry/log
-  }
+  static getDerivedStateFromError() { return { hasError: true }; }
   render(): ReactNode {
     if (this.state.hasError) {
-      return (
-        <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">
-          Não foi possível renderizar o gráfico.
-        </div>
-      );
+      return <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Não foi possível renderizar o gráfico.</div>;
     }
     return this.props.children as ReactNode;
   }
@@ -55,12 +44,7 @@ const pastel = (str: string) => `hsl(${hashHue(str)}, 40%, 82%)`;
 
 /* ---------- UI ---------- */
 const Card: FC<PropsWithChildren<{ title: string; subtitle?: string; id?: string }>> = ({ title, subtitle, id, children }) => (
-  <section
-    id={id}
-    className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.85),0_8px_28px_rgba(2,6,23,.05)] p-6 md:p-7"
-    role="region"
-    aria-label={title}
-  >
+  <section id={id} className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.85),0_8px_28px_rgba(2,6,23,.05)] p-6 md:p-7" role="region" aria-label={title}>
     <header className="mb-4">
       <h3 className="text-[20px] md:text-[22px] font-semibold text-neutral-900">{title}</h3>
       {subtitle && <p className="text-[13px] text-neutral-500 mt-0.5">{subtitle}</p>}
@@ -72,7 +56,7 @@ const Card: FC<PropsWithChildren<{ title: string; subtitle?: string; id?: string
 /* ---------- helpers ---------- */
 const day = 24 * 60 * 60 * 1000;
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-const toISOday = (t: number) => new Date(t).toISOString().slice(0, 10); // YYYY-MM-DD
+const toISOday = (t: number) => new Date(t).toISOString().slice(0, 10);
 
 function countBy<T>(arr: T[], key: (x: T) => string | undefined | null) {
   const map = new Map<string, number>();
@@ -83,7 +67,6 @@ function countBy<T>(arr: T[], key: (x: T) => string | undefined | null) {
   }
   return map;
 }
-
 function buildLocalPerfil(memories: Memoria[]) {
   const emoMap = countBy(memories, (m) => (m.emocao_principal || '').toString());
   const emocoes_frequentes: Record<string, number> = {};
@@ -93,17 +76,13 @@ function buildLocalPerfil(memories: Memoria[]) {
   for (const m of memories) {
     const domain = (m as any).dominio_vida || (m as any).dominio || (m as any).domain || '';
     const categoria = (m as any).categoria || '';
-    const tags: string[] = Array.isArray(m.tags)
-      ? (m.tags as string[])
-      : typeof (m as any).tags === 'string'
-      ? (m as any).tags.split(/[;,]/)
-      : [];
+    const tags: string[] = Array.isArray(m.tags) ? (m.tags as string[]) :
+      typeof (m as any).tags === 'string' ? (m as any).tags.split(/[;,]/) : [];
     const add = (t?: string) => { const k = (t || '').trim(); if (!k) return; temas.set(k, (temas.get(k) ?? 0) + 1); };
     add(domain); add(categoria); tags.forEach(add);
   }
   const temas_recorrentes: Record<string, number> = {};
   temas.forEach((v, k) => (temas_recorrentes[k] = v));
-
   return { emocoes_frequentes, temas_recorrentes };
 }
 
@@ -138,9 +117,7 @@ function buildSparklineData(memories: Memoria[], days: Period) {
     const t = startOfDay(new Date(m.created_at || 0)).getTime();
     if (Number.isFinite(t) && t >= start) buckets.set(t, (buckets.get(t) ?? 0) + 1);
   });
-  return [...buckets.entries()]
-    .map(([t, v]) => ({ t, v: Number.isFinite(v) ? v : 0 }))
-    .filter(d => Number.isFinite(d.t));
+  return [...buckets.entries()].map(([t, v]) => ({ t, v: Number(v) || 0 })).filter(d => Number.isFinite(d.t));
 }
 
 /* toggle segmentado */
@@ -160,12 +137,12 @@ const SegmentedControl: FC<{ value: Period; onChange: (p: Period)=>void }> = ({ 
 
 /* ---------- componente ---------- */
 const ProfileSection: FC = () => {
+  /* hooks SEMPRE no topo, sem returns antes deles */
   const { perfil, memories, loading, error } = useMemoryData();
-
   const [memLocal, setMemLocal] = useState<Memoria[] | null>(null);
   const [fetchingLocal, setFetchingLocal] = useState(false);
   const [period, setPeriod] = useState<Period>(7);
-  const [isClient, setIsClient] = useState(false); // só monta Nivo no client
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => { setIsClient(true); }, []);
 
@@ -174,16 +151,10 @@ const ProfileSection: FC = () => {
       (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) &&
       (!memories || memories.length === 0);
     if (!needLocal || fetchingLocal || memLocal) return;
-
     setFetchingLocal(true);
     listarMemoriasBasico(600)
-      .then((arr) => {
-        setMemLocal(Array.isArray(arr) ? (arr.filter(Boolean) as Memoria[]) : []);
-      })
-      .catch((err) => {
-        console.warn('Fallback local falhou:', err);
-        setMemLocal([]); // não quebra a tela
-      })
+      .then((arr) => setMemLocal(Array.isArray(arr) ? (arr.filter(Boolean) as Memoria[]) : []))
+      .catch(() => setMemLocal([]))
       .finally(() => setFetchingLocal(false));
   }, [perfil, memories, fetchingLocal, memLocal]);
 
@@ -192,28 +163,18 @@ const ProfileSection: FC = () => {
 
   const emotionChart = useMemo(() => {
     const data = buildLocalPerfil(memScoped).emocoes_frequentes || {};
-    return Object.entries(data)
-      .map(([name, value]) => ({ name, value: Number(value) }))
-      .filter(d => Number.isFinite(d.value))
-      .sort((a,b)=>b.value-a.value)
-      .slice(0,5);
+    return Object.entries(data).map(([name, value]) => ({ name, value: Number(value) }))
+      .filter(d => Number.isFinite(d.value)).sort((a,b)=>b.value-a.value).slice(0,5);
   }, [memScoped]);
 
   const themeChart = useMemo(() => {
     const data = buildLocalPerfil(memScoped).temas_recorrentes || {};
-    return Object.entries(data)
-      .map(([name, value]) => ({ name, value: Number(value) }))
-      .filter(d => Number.isFinite(d.value))
-      .sort((a,b)=>b.value-a.value)
-      .slice(0,5);
+    return Object.entries(data).map(([name, value]) => ({ name, value: Number(value) }))
+      .filter(d => Number.isFinite(d.value)).sort((a,b)=>b.value-a.value).slice(0,5);
   }, [memScoped]);
 
   const sparkData = useMemo(() => buildSparklineData(allMemories, period), [allMemories, period]);
   const { totalPeriodo, media28, dominante } = useMemo(() => buildStats(allMemories, period), [allMemories, period]);
-
-  const stillLoading = loading || fetchingLocal;
-  if (stillLoading) return <div className="flex justify-center items-center h-full text-neutral-500 text-sm">Carregando…</div>;
-  if (error)        return <div className="flex justify-center items-center h-full text-rose-500 text-sm">{error}</div>;
 
   const insight = dominante
     ? `Você tem registrado mais ${dominante} que outras emoções nos últimos ${period} dias.`
@@ -223,69 +184,64 @@ const ProfileSection: FC = () => {
     : null;
   const periodLabel = PERIOD_LABEL[period];
 
-  /* ==== Nivo data (strings YYYY-MM-DD + guards) ==== */
   const lineData = useMemo(() => {
     const serie = (sparkData ?? [])
       .filter(d => Number.isFinite(d.t) && Number.isFinite(d.v))
       .map(d => ({ x: toISOday(d.t), y: Number(d.v) || 0 }))
-      .filter(pt => typeof pt.x === 'string' && pt.x.length > 0);
+      .filter(pt => pt.x.length > 0);
     return [{ id: 'registros', data: serie }];
   }, [sparkData]);
   const hasLinePoints = !!lineData[0]?.data?.length;
 
   const emotionsData = useMemo(
-    () => (emotionChart ?? [])
-      .map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 }))
-      .filter(d => d.name.length > 0),
+    () => (emotionChart ?? []).map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 })).filter(d => d.name.length > 0),
     [emotionChart]
   );
   const themesData = useMemo(
-    () => (themeChart ?? [])
-      .map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 }))
-      .filter(d => d.name.length > 0),
+    () => (themeChart ?? []).map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 })).filter(d => d.name.length > 0),
     [themeChart]
   );
 
-  const noRemoteData =
-    (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) &&
-    (allMemories.length === 0);
+  const noRemoteData = (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) && (allMemories.length === 0);
 
+  /* ---- render SEM early-return ---- */
   return (
-    // SCROLL da página
     <div className="min-h-0 h-[calc(100vh-96px)] overflow-y-auto">
       {noRemoteData && (
         <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 pt-4">
           <div className="rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm">
-            Não consegui carregar dados do servidor agora (offline/indisponível). A página continua funcional — quando voltar, os gráficos se atualizam.
+            Não consegui carregar dados do servidor agora (offline/indisponível). Quando voltar, os gráficos se atualizam.
           </div>
         </div>
       )}
 
       <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-10">
+        {/* estado de loading/erro sem mudar a ordem de hooks */}
+        {(loading || fetchingLocal) && (
+          <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-6 text-neutral-500 text-sm">Carregando…</div>
+        )}
+        {error && (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 text-sm">{error}</div>
+        )}
+
         {/* CARD 1 — Resumo */}
         <Card title="Resumo" id="resumo">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="pb-2">
               <p className="text-[15px] md:text-[16px] text-neutral-700">{insight}</p>
               {comp && <p className="mt-1 text-[13px] text-neutral-500">{comp}</p>}
-              {/* Métrica-destaque */}
               <div className="mt-3">
                 <div className="text-[13px] text-neutral-500">Média diária (28d)</div>
                 <div className="text-[32px] leading-[1.1] font-semibold text-neutral-900">
                   {media28?.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
                   <span className="ml-1 text-[14px] font-normal text-neutral-400">reg/dia</span>
                 </div>
-                <div className="mt-1 text-[13px] text-neutral-500">
-                  Período {periodLabel}: {totalPeriodo} registros
-                </div>
+                <div className="mt-1 text-[13px] text-neutral-500">Período {periodLabel}: {totalPeriodo} registros</div>
               </div>
             </div>
-            <div className="sticky top-2">
-              <SegmentedControl value={period} onChange={setPeriod} />
-            </div>
+            <div className="sticky top-2"><SegmentedControl value={period} onChange={setPeriod} /></div>
           </div>
 
-          {/* Sparkline Nivo */}
           <div className="mt-4 border-t border-neutral-100/80 pt-4">
             <div className="h-[96px]">
               {isClient && hasLinePoints ? (
@@ -301,17 +257,14 @@ const ProfileSection: FC = () => {
                       axisBottom={null}
                       axisLeft={null}
                       enablePoints={false}
-                      enableArea={true}
+                      enableArea
                       areaOpacity={0.15}
-                      useMesh={true}
+                      useMesh
                       enableGridX={false}
-                      enableGridY={true}
+                      enableGridY
                       curve="monotoneX"
                       colors={['#111827']}
-                      theme={{
-                        grid: { line: { stroke: '#F3F4F6' } },
-                        tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                      }}
+                      theme={{ grid: { line: { stroke: '#F3F4F6' } }, tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } } }}
                       tooltip={({ point }: any) => (
                         <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
                           <div className="font-medium">{String(point?.data?.xFormatted ?? '')}</div>
@@ -322,15 +275,13 @@ const ProfileSection: FC = () => {
                   </Suspense>
                 </ChartErrorBoundary>
               ) : (
-                <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">
-                  Sem dados no período
-                </div>
+                <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Sem dados no período</div>
               )}
             </div>
           </div>
         </Card>
 
-        {/* CARD 2 — Emoções mais frequentes */}
+        {/* CARD 2 — Emoções */}
         <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
           {isClient && emotionsData.length ? (
             <div className="h-[300px]">
@@ -349,12 +300,9 @@ const ProfileSection: FC = () => {
                     axisRight={null}
                     axisBottom={{ tickSize: 0, tickPadding: 6 }}
                     axisLeft={{ tickSize: 0, tickPadding: 6 }}
-                    enableGridY={true}
+                    enableGridY
                     labelSkipHeight={9999}
-                    theme={{
-                      grid: { line: { stroke: '#F3F4F6' } },
-                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                    }}
+                    theme={{ grid: { line: { stroke: '#F3F4F6' } }, tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } } }}
                     tooltip={({ indexValue, value }: any) => (
                       <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
                         <div className="font-medium">{String(indexValue)}</div>
@@ -366,16 +314,11 @@ const ProfileSection: FC = () => {
               </ChartErrorBoundary>
             </div>
           ) : (
-            <div className="grid place-items-center text-neutral-500 h-[240px]">
-              <div className="text-center">
-                <p className="text-neutral-900 font-medium">Sem dados no período</p>
-                <p className="text-sm">Registre memórias para ver seu perfil aqui.</p>
-              </div>
-            </div>
+            <div className="grid place-items-center text-neutral-500 h-[240px]"><div className="text-center"><p className="text-neutral-900 font-medium">Sem dados no período</p><p className="text-sm">Registre memórias para ver seu perfil aqui.</p></div></div>
           )}
         </Card>
 
-        {/* CARD 3 — Temas mais recorrentes */}
+        {/* CARD 3 — Temas */}
         <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
           {isClient && themesData.length ? (
             <div className="h-[300px]">
@@ -395,12 +338,9 @@ const ProfileSection: FC = () => {
                     axisRight={null}
                     axisLeft={{ tickSize: 0, tickPadding: 6 }}
                     axisBottom={null}
-                    enableGridX={true}
+                    enableGridX
                     labelSkipWidth={9999}
-                    theme={{
-                      grid: { line: { stroke: '#F3F4F6' } },
-                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                    }}
+                    theme={{ grid: { line: { stroke: '#F3F4F6' } }, tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } } }}
                     tooltip={({ indexValue, value }: any) => (
                       <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
                         <div className="font-medium">{String(indexValue)}</div>
@@ -412,12 +352,7 @@ const ProfileSection: FC = () => {
               </ChartErrorBoundary>
             </div>
           ) : (
-            <div className="grid place-items-center text-neutral-500 h-[240px]">
-              <div className="text-center">
-                <p className="text-neutral-900 font-medium">Sem dados no período</p>
-                <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
-              </div>
-            </div>
+            <div className="grid place-items-center text-neutral-500 h-[240px]"><div className="text-center"><p className="text-neutral-900 font-medium">Sem dados no período</p><p className="text-sm">Crie registros para descobrir seus principais temas.</p></div></div>
           )}
         </Card>
       </div>
