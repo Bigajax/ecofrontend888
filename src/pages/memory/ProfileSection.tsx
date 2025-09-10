@@ -2,30 +2,19 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
-
-/* ===== Nivo (import direto) ===== */
 import { ResponsiveLine } from '@nivo/line';
 import { ResponsiveBar } from '@nivo/bar';
 
-/* ===== Error Boundary ===== */
-type EBState = { hasError: boolean };
-class ChartErrorBoundary extends React.Component<React.PropsWithChildren<{}>, EBState> {
-  constructor(props: React.PropsWithChildren<{}>) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() { return { hasError: true }; }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">
-          Não foi possível renderizar o gráfico.
-        </div>
-      );
-    }
-    return this.props.children as React.ReactNode;
-  }
-}
+/* ---------- util visual ---------- */
+const Card: React.FC<React.PropsWithChildren<{ title: string; subtitle?: string; id?: string }>> = ({ title, subtitle, id, children }) => (
+  <section id={id} className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.85),0_8px_28px_rgba(2,6,23,.05)] p-6 md:p-7" role="region" aria-label={title}>
+    <header className="mb-4">
+      <h3 className="text-[20px] md:text-[22px] font-semibold text-neutral-900">{title}</h3>
+      {subtitle && <p className="text-[13px] text-neutral-500 mt-0.5">{subtitle}</p>}
+    </header>
+    <div className="border-t border-neutral-100/80 pt-4">{children}</div>
+  </section>
+);
 
 /* ---------- paleta ---------- */
 const EMOTION_COLORS: Record<string, string> = {
@@ -38,26 +27,10 @@ const colorForEmotion = (n: string) => EMOTION_COLORS[normalize(n)] || '#C7D2FE'
 const hashHue = (str: string) => { let h = 0; for (let i=0;i<str.length;i++) h = str.charCodeAt(i)+((h<<5)-h); return Math.abs(h)%360; };
 const pastel = (str: string) => `hsl(${hashHue(str)}, 40%, 82%)`;
 
-/* ---------- UI ---------- */
-const Card: React.FC<React.PropsWithChildren<{ title: string; subtitle?: string; id?: string }>> = ({ title, subtitle, id, children }) => (
-  <section
-    id={id}
-    className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.85),0_8px_28px_rgba(2,6,23,.05)] p-6 md:p-7"
-    role="region"
-    aria-label={title}
-  >
-    <header className="mb-4">
-      <h3 className="text-[20px] md:text-[22px] font-semibold text-neutral-900">{title}</h3>
-      {subtitle && <p className="text-[13px] text-neutral-500 mt-0.5">{subtitle}</p>}
-    </header>
-    <div className="border-t border-neutral-100/80 pt-4">{children}</div>
-  </section>
-);
-
 /* ---------- helpers ---------- */
 const day = 24 * 60 * 60 * 1000;
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-const toISOday = (t: number) => new Date(t).toISOString().slice(0, 10); // YYYY-MM-DD
+const toISOday = (t: number) => new Date(t).toISOString().slice(0, 10);
 
 function countBy<T>(arr: T[], key: (x: T) => string | undefined | null) {
   const map = new Map<string, number>();
@@ -86,11 +59,8 @@ function buildLocalPerfil(memories: Memoria[]) {
   temas.forEach((v, k) => (temas_recorrentes[k] = v));
   return { emocoes_frequentes, temas_recorrentes };
 }
-
-/* === Período === */
 type Period = 7 | 28 | 90;
 const PERIOD_LABEL: Record<Period, string> = { 7: '7d', 28: '28d', 90: '90d' };
-
 function filterByDays(memories: Memoria[], days: Period) {
   const now = startOfDay(new Date());
   const since = now.getTime() - days * day;
@@ -118,18 +88,10 @@ function buildSparklineData(memories: Memoria[], days: Period) {
     const t = startOfDay(new Date(m.created_at || 0)).getTime();
     if (Number.isFinite(t) && t >= start) buckets.set(t, (buckets.get(t) ?? 0) + 1);
   });
-  return [...buckets.entries()]
-    .map(([t, v]) => ({ t, v: Number.isFinite(v) ? v : 0 }))
-    .filter(d => Number.isFinite(d.t));
+  return [...buckets.entries()].map(([t, v]) => ({ t, v }));
 }
 
-/* === helpers de layout para barras horizontais === */
-const getLongestLen = (arr: { name: string }[]) =>
-  Math.max(6, ...arr.map(d => (d.name || '').length));
-const leftMarginFor = (len: number) =>
-  Math.min(220, 14 * len + 40); // 14px por char + folga
-
-/* toggle segmentado */
+/* ====== Subcomponente só para os gráficos ====== */
 const SegmentedControl: React.FC<{ value: Period; onChange: (p: Period)=>void }> = ({ value, onChange }) => {
   const base = 'px-4 h-9 rounded-full text-[14px] font-medium transition';
   const item = (p: Period) => `${base} ${value===p ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-700 hover:bg-neutral-100'}`;
@@ -144,10 +106,226 @@ const SegmentedControl: React.FC<{ value: Period; onChange: (p: Period)=>void }>
   );
 };
 
-/* ---------- componente ---------- */
+function getLongestLen(arr: { name: string }[]) {
+  return Math.max(6, ...arr.map(d => (d.name || '').length));
+}
+function leftMarginFor(len: number) {
+  return Math.min(220, 14 * len + 40);
+}
+
+const ChartsBody: React.FC<{
+  allMemories: Memoria[];
+  period: Period;
+  setPeriod: (p: Period)=>void;
+  perfilDominante: string|null;
+  totalPeriodo: number;
+  media28: number|undefined;
+}> = ({ allMemories, period, setPeriod, perfilDominante, totalPeriodo, media28 }) => {
+  const periodLabel = PERIOD_LABEL[period];
+
+  const memScoped = useMemo(() => filterByDays(allMemories, period), [allMemories, period]);
+
+  const emotionChart = useMemo(() => {
+    const data = buildLocalPerfil(memScoped).emocoes_frequentes || {};
+    return Object.entries(data)
+      .map(([name, value]) => ({ name, value: Number(value) }))
+      .filter(d => Number.isFinite(d.value))
+      .sort((a,b)=>b.value-a.value);
+  }, [memScoped]);
+
+  const themeChart = useMemo(() => {
+    const data = buildLocalPerfil(memScoped).temas_recorrentes || {};
+    return Object.entries(data)
+      .map(([name, value]) => ({ name, value: Number(value) }))
+      .filter(d => Number.isFinite(d.value))
+      .sort((a,b)=>b.value-a.value)
+      .slice(0,8);
+  }, [memScoped]);
+
+  const sparkData = useMemo(() => buildSparklineData(allMemories, period), [allMemories, period]);
+  const lineData = useMemo(() => {
+    const serie = (sparkData ?? [])
+      .filter(d => Number.isFinite(d.t) && Number.isFinite(d.v))
+      .map(d => ({ x: toISOday(d.t), y: Number(d.v) || 0 }))
+      .filter(pt => typeof pt.x === 'string' && pt.x.length > 0);
+    return [{ id: 'registros', data: serie }];
+  }, [sparkData]);
+  const hasLinePoints = !!lineData[0]?.data?.length;
+
+  const TOP_N = 6;
+  const emotionsSorted = useMemo(() => [...emotionChart].sort((a, b) => b.value - a.value), [emotionChart]);
+  const topEmotions = useMemo(() => {
+    const top = emotionsSorted.slice(0, TOP_N);
+    const rest = emotionsSorted.slice(TOP_N);
+    if (rest.length) top.push({ name: 'outros', value: rest.reduce((s, d) => s + (d.value || 0), 0) });
+    return top.map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 })).filter(d => d.name.length > 0);
+  }, [emotionsSorted]);
+  const emoLeftMargin = leftMarginFor(getLongestLen(topEmotions));
+
+  const themesData = useMemo(() => themeChart.map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 })), [themeChart]);
+  const themeLeftMargin = leftMarginFor(getLongestLen(themesData));
+
+  const insight = perfilDominante
+    ? `Você tem registrado mais ${perfilDominante} que outras emoções nos últimos ${period} dias.`
+    : `Você ainda não tem registros no período selecionado.`;
+  const comp = (totalPeriodo && media28 !== undefined)
+    ? `Últimos ${period} dias: ${totalPeriodo} registros • Média diária (28d): ${media28}`
+    : null;
+
+  return (
+    <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-10">
+      <Card title="Resumo" id="resumo">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="pb-2">
+            <p className="text-[15px] md:text-[16px] text-neutral-700">{insight}</p>
+            {comp && <p className="mt-1 text-[13px] text-neutral-500">{comp}</p>}
+            <div className="mt-3">
+              <div className="text-[13px] text-neutral-500">Média diária (28d)</div>
+              <div className="text-[32px] leading-[1.1] font-semibold text-neutral-900">
+                {media28?.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+                <span className="ml-1 text-[14px] font-normal text-neutral-400">reg/dia</span>
+              </div>
+              <div className="mt-1 text-[13px] text-neutral-500">
+                Período {periodLabel}: {totalPeriodo} registros
+              </div>
+            </div>
+          </div>
+          <div className="sticky top-2">
+            <SegmentedControl value={period} onChange={setPeriod} />
+          </div>
+        </div>
+
+        <div className="mt-4 border-t border-neutral-100/80 pt-4">
+          <div className="h-[96px]">
+            {hasLinePoints ? (
+              <ResponsiveLine
+                key={`line-${period}`}
+                data={lineData}
+                margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
+                xScale={{ type: 'time', format: '%Y-%m-%d', precision: 'day', useUTC: false }}
+                xFormat="time:%d/%m"
+                yScale={{ type: 'linear', min: 0, max: 'auto' }}
+                axisBottom={null}
+                axisLeft={null}
+                enablePoints={false}
+                enableArea={true}
+                areaOpacity={0.15}
+                useMesh={true}
+                enableGridX={false}
+                enableGridY={true}
+                curve="monotoneX"
+                colors={['#111827']}
+                theme={{ grid: { line: { stroke: '#F3F4F6' } } }}
+                tooltip={({ point }: any) => (
+                  <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                    <div className="font-medium">{String(point?.data?.xFormatted ?? '')}</div>
+                    <div>{String(point?.data?.y ?? '')} registro{Number(point?.data?.y) === 1 ? '' : 's'}</div>
+                  </div>
+                )}
+              />
+            ) : (
+              <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Sem dados no período</div>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
+        {topEmotions.length ? (
+          <div className="h-[56px]" style={{ height: `${Math.max(6, topEmotions.length) * 44}px` }}>
+            <ResponsiveBar
+              key={`bar-emo-${period}`}
+              data={topEmotions}
+              keys={['value']}
+              indexBy="name"
+              layout="horizontal"
+              margin={{ top: 8, right: 24, bottom: 8, left: emoLeftMargin }}
+              padding={0.36}
+              innerPadding={3}
+              colors={(bar: any) => bar.data.name === 'outros' ? pastel('outros') : colorForEmotion(bar.data.name as string)}
+              borderRadius={10}
+              axisTop={null}
+              axisRight={null}
+              axisLeft={{ tickSize: 0, tickPadding: 8 }}
+              axisBottom={null}
+              enableGridX={true}
+              enableGridY={false}
+              label={(d: any) => String(d.value)}
+              labelPosition="end"
+              labelPadding={10}
+              labelTextColor={{ from: 'color', modifiers: [['darker', 2.4]] }}
+              valueFormat={(v: any) => Number(v).toLocaleString('pt-BR')}
+              theme={{ grid: { line: { stroke: '#F3F4F6' } }, labels: { text: { fontSize: 12 } } }}
+              motionConfig="gentle"
+              tooltip={({ indexValue, value }: any) => (
+                <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                  <div className="font-medium">{String(indexValue)}</div>
+                  <div>{Number(value).toLocaleString('pt-BR')}</div>
+                </div>
+              )}
+            />
+          </div>
+        ) : (
+          <div className="grid place-items-center text-neutral-500 h-[240px]">
+            <div className="text-center">
+              <p className="text-neutral-900 font-medium">Sem dados no período</p>
+              <p className="text-sm">Registre memórias para ver seu perfil aqui.</p>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
+        {themesData.length ? (
+          <div className="h-[56px]" style={{ height: `${Math.max(6, themesData.length) * 44}px` }}>
+            <ResponsiveBar
+              key={`bar-theme-${period}`}
+              data={themesData}
+              keys={['value']}
+              indexBy="name"
+              layout="horizontal"
+              margin={{ top: 8, right: 16, bottom: 8, left: themeLeftMargin }}
+              padding={0.32}
+              innerPadding={3}
+              colors={(bar: any) => pastel(bar.data.name as string)}
+              borderRadius={10}
+              axisTop={null}
+              axisRight={null}
+              axisLeft={{ tickSize: 0, tickPadding: 8 }}
+              axisBottom={null}
+              enableGridX={true}
+              enableGridY={false}
+              label={(d: any) => String(d.value)}
+              labelPosition="end"
+              labelPadding={10}
+              labelTextColor={{ from: 'color', modifiers: [['darker', 2.4]] }}
+              valueFormat={(v: any) => Number(v).toLocaleString('pt-BR')}
+              theme={{ grid: { line: { stroke: '#F3F4F6' } }, labels: { text: { fontSize: 12 } } }}
+              motionConfig="gentle"
+              tooltip={({ indexValue, value }: any) => (
+                <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                  <div className="font-medium">{String(indexValue)}</div>
+                  <div>{Number(value).toLocaleString('pt-BR')}</div>
+                </div>
+              )}
+            />
+          </div>
+        ) : (
+          <div className="grid place-items-center text-neutral-500 h-[240px]">
+            <div className="text-center">
+              <p className="text-neutral-900 font-medium">Sem dados no período</p>
+              <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+};
+
+/* ============ Componente pai (básico, sem memos pesados) ============ */
 const ProfileSection: React.FC = () => {
   const { perfil, memories, loading, error } = useMemoryData();
-
   const [memLocal, setMemLocal] = useState<Memoria[] | null>(null);
   const [fetchingLocal, setFetchingLocal] = useState(false);
   const [period, setPeriod] = useState<Period>(7);
@@ -169,73 +347,13 @@ const ProfileSection: React.FC = () => {
   }, [perfil, memories, fetchingLocal, memLocal]);
 
   const allMemories: Memoria[] = (memories?.length ? memories : (memLocal || []));
-  const memScoped = useMemo(() => filterByDays(allMemories, period), [allMemories, period]);
 
-  const emotionChart = useMemo(() => {
-    const data = buildLocalPerfil(memScoped).emocoes_frequentes || {};
-    return Object.entries(data)
-      .map(([name, value]) => ({ name, value: Number(value) }))
-      .filter(d => Number.isFinite(d.value))
-      .sort((a,b)=>b.value-a.value);
-  }, [memScoped]);
-
-  const themeChart = useMemo(() => {
-    const data = buildLocalPerfil(memScoped).temas_recorrentes || {};
-    return Object.entries(data)
-      .map(([name, value]) => ({ name, value: Number(value) }))
-      .filter(d => Number.isFinite(d.value))
-      .sort((a,b)=>b.value-a.value)
-      .slice(0,8);
-  }, [memScoped]);
-
-  const sparkData = useMemo(() => buildSparklineData(allMemories, period), [allMemories, period]);
+  // estatística leve (sem Nivo) — seguro fazer aqui
   const { totalPeriodo, media28, dominante } = useMemo(() => buildStats(allMemories, period), [allMemories, period]);
 
-  const stillLoading = loading || fetchingLocal;
-  if (stillLoading) return <div className="flex justify-center items-center h-full text-neutral-500 text-sm">Carregando…</div>;
-  if (error)        return <div className="flex justify-center items-center h-full text-rose-500 text-sm">{error}</div>;
-
-  const insight = dominante
-    ? `Você tem registrado mais ${dominante} que outras emoções nos últimos ${period} dias.`
-    : `Você ainda não tem registros no período selecionado.`;
-  const comp = (totalPeriodo && media28 !== undefined)
-    ? `Últimos ${period} dias: ${totalPeriodo} registros • Média diária (28d): ${media28}`
-    : null;
-  const periodLabel = PERIOD_LABEL[period];
-
-  /* ==== Nivo data ==== */
-  const lineData = useMemo(() => {
-    const serie = (sparkData ?? [])
-      .filter(d => Number.isFinite(d.t) && Number.isFinite(d.v))
-      .map(d => ({ x: toISOday(d.t), y: Number(d.v) || 0 }))
-      .filter(pt => typeof pt.x === 'string' && pt.x.length > 0);
-    return [{ id: 'registros', data: serie }];
-  }, [sparkData]);
-  const hasLinePoints = !!lineData[0]?.data?.length;
-
-  /* === Emoções: Top 6 + "outros" e horizontal === */
-  const TOP_N = 6;
-  const emotionsSorted = useMemo(() => [...emotionChart].sort((a, b) => b.value - a.value), [emotionChart]);
-  const topEmotions = useMemo(() => {
-    const top = emotionsSorted.slice(0, TOP_N);
-    const rest = emotionsSorted.slice(TOP_N);
-    if (rest.length) {
-      top.push({
-        name: 'outros',
-        value: rest.reduce((s, d) => s + (Number(d.value) || 0), 0),
-      });
-    }
-    return top.map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 }))
-              .filter(d => d.name.length > 0);
-  }, [emotionsSorted]);
-  const emoLeftMargin = leftMarginFor(getLongestLen(topEmotions));
-
-  /* === Temas: horizontal com margem dinâmica === */
-  const themesData = useMemo(
-    () => themeChart.map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 })),
-    [themeChart]
-  );
-  const themeLeftMargin = leftMarginFor(getLongestLen(themesData));
+  if (loading || fetchingLocal) return <div className="flex justify-center items-center h-full text-neutral-500 text-sm">Carregando…</div>;
+  if (error) return <div className="flex justify-center items-center h-full text-rose-500 text-sm">{error}</div>;
+  if (!isClient) return <div className="flex justify-center items-center h-full text-neutral-500 text-sm">Carregando…</div>;
 
   const noRemoteData =
     (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) &&
@@ -250,179 +368,14 @@ const ProfileSection: React.FC = () => {
           </div>
         </div>
       )}
-
-      <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-10">
-        {/* CARD 1 — Resumo */}
-        <Card title="Resumo" id="resumo">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div className="pb-2">
-              <p className="text-[15px] md:text-[16px] text-neutral-700">{insight}</p>
-              {comp && <p className="mt-1 text-[13px] text-neutral-500">{comp}</p>}
-              <div className="mt-3">
-                <div className="text-[13px] text-neutral-500">Média diária (28d)</div>
-                <div className="text-[32px] leading-[1.1] font-semibold text-neutral-900">
-                  {media28?.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
-                  <span className="ml-1 text-[14px] font-normal text-neutral-400">reg/dia</span>
-                </div>
-                <div className="mt-1 text-[13px] text-neutral-500">
-                  Período {periodLabel}: {totalPeriodo} registros
-                </div>
-              </div>
-            </div>
-            <div className="sticky top-2">
-              <SegmentedControl value={period} onChange={setPeriod} />
-            </div>
-          </div>
-
-          {/* Sparkline Nivo */}
-          <div className="mt-4 border-t border-neutral-100/80 pt-4">
-            <div className="h-[96px]">
-              {isClient && hasLinePoints ? (
-                <ChartErrorBoundary>
-                  <ResponsiveLine
-                    key={`line-${period}`}
-                    data={lineData}
-                    margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
-                    xScale={{ type: 'time', format: '%Y-%m-%d', precision: 'day', useUTC: false }}
-                    xFormat="time:%d/%m"
-                    yScale={{ type: 'linear', min: 0, max: 'auto' }}
-                    axisBottom={null}
-                    axisLeft={null}
-                    enablePoints={false}
-                    enableArea={true}
-                    areaOpacity={0.15}
-                    useMesh={true}
-                    enableGridX={false}
-                    enableGridY={true}
-                    curve="monotoneX"
-                    colors={['#111827']}
-                    theme={{
-                      grid: { line: { stroke: '#F3F4F6' } },
-                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                    }}
-                    tooltip={({ point }: any) => (
-                      <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                        <div className="font-medium">{String(point?.data?.xFormatted ?? '')}</div>
-                        <div>{String(point?.data?.y ?? '')} registro{Number(point?.data?.y) === 1 ? '' : 's'}</div>
-                      </div>
-                    )}
-                  />
-                </ChartErrorBoundary>
-              ) : (
-                <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">
-                  Sem dados no período
-                </div>
-              )}
-            </div>
-          </div>
-        </Card>
-
-        {/* CARD 2 — Emoções mais frequentes (HORIZONTAL + labels + "outros") */}
-        <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
-          {isClient && topEmotions.length ? (
-            <div className="h-[56px]" style={{ height: `${Math.max(6, topEmotions.length) * 44}px` }}>
-              <ChartErrorBoundary>
-                <ResponsiveBar
-                  key={`bar-emo-${period}`}
-                  data={topEmotions}
-                  keys={['value']}
-                  indexBy="name"
-                  layout="horizontal"
-                  margin={{ top: 8, right: 24, bottom: 8, left: emoLeftMargin }}
-                  padding={0.36}
-                  innerPadding={3}
-                  colors={(bar: any) => bar.data.name === 'outros' ? pastel('outros') : colorForEmotion(bar.data.name as string)}
-                  borderRadius={10}
-                  axisTop={null}
-                  axisRight={null}
-                  axisLeft={{ tickSize: 0, tickPadding: 8 }}
-                  axisBottom={null}
-                  enableGridX={true}
-                  enableGridY={false}
-                  label={(d: any) => String(d.value)}
-                  labelPosition="end"
-                  labelPadding={10}
-                  labelTextColor={{ from: 'color', modifiers: [['darker', 2.4]] }}
-                  valueFormat={(v: any) => Number(v).toLocaleString('pt-BR')}
-                  theme={{
-                    grid: { line: { stroke: '#F3F4F6' } },
-                    labels: { text: { fontSize: 12 } },
-                    axis: { ticks: { text: { fontSize: 12, fill: '#111827' } } },
-                    tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                  }}
-                  motionConfig="gentle"
-                  tooltip={({ indexValue, value }: any) => (
-                    <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                      <div className="font-medium">{String(indexValue)}</div>
-                      <div>{Number(value).toLocaleString('pt-BR')}</div>
-                    </div>
-                  )}
-                />
-              </ChartErrorBoundary>
-            </div>
-          ) : (
-            <div className="grid place-items-center text-neutral-500 h-[240px]">
-              <div className="text-center">
-                <p className="text-neutral-900 font-medium">Sem dados no período</p>
-                <p className="text-sm">Registre memórias para ver seu perfil aqui.</p>
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* CARD 3 — Temas mais recorrentes (HORIZONTAL + margem dinâmica) */}
-        <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
-          {isClient && themesData.length ? (
-            <div className="h-[56px]" style={{ height: `${Math.max(6, themesData.length) * 44}px` }}>
-              <ChartErrorBoundary>
-                <ResponsiveBar
-                  key={`bar-theme-${period}`}
-                  data={themesData}
-                  keys={['value']}
-                  indexBy="name"
-                  layout="horizontal"
-                  margin={{ top: 8, right: 16, bottom: 8, left: themeLeftMargin }}
-                  padding={0.32}
-                  innerPadding={3}
-                  colors={(bar: any) => pastel(bar.data.name as string)}
-                  borderRadius={10}
-                  axisTop={null}
-                  axisRight={null}
-                  axisLeft={{ tickSize: 0, tickPadding: 8 }}
-                  axisBottom={null}
-                  enableGridX={true}
-                  enableGridY={false}
-                  label={(d: any) => String(d.value)}
-                  labelPosition="end"
-                  labelPadding={10}
-                  labelTextColor={{ from: 'color', modifiers: [['darker', 2.4]] }}
-                  valueFormat={(v: any) => Number(v).toLocaleString('pt-BR')}
-                  theme={{
-                    grid: { line: { stroke: '#F3F4F6' } },
-                    labels: { text: { fontSize: 12 } },
-                    axis: { ticks: { text: { fontSize: 12, fill: '#111827' } } },
-                    tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                  }}
-                  motionConfig="gentle"
-                  tooltip={({ indexValue, value }: any) => (
-                    <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                      <div className="font-medium">{String(indexValue)}</div>
-                      <div>{Number(value).toLocaleString('pt-BR')}</div>
-                    </div>
-                  )}
-                />
-              </ChartErrorBoundary>
-            </div>
-          ) : (
-            <div className="grid place-items-center text-neutral-500 h-[240px]">
-              <div className="text-center">
-                <p className="text-neutral-900 font-medium">Sem dados no período</p>
-                <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
-              </div>
-            </div>
-          )}
-        </Card>
-      </div>
+      <ChartsBody
+        allMemories={allMemories}
+        period={period}
+        setPeriod={setPeriod}
+        perfilDominante={dominante ?? null}
+        totalPeriodo={totalPeriodo}
+        media28={media28}
+      />
     </div>
   );
 };
