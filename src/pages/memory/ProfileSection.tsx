@@ -175,8 +175,17 @@ const ProfileSection: React.FC = () => {
       (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) &&
       (!memories || memories.length === 0);
     if (!needLocal || fetchingLocal || memLocal) return;
+
     setFetchingLocal(true);
-    listarMemoriasBasico(600).then(setMemLocal).finally(()=>setFetchingLocal(false));
+    listarMemoriasBasico(600)
+      .then((arr) => {
+        setMemLocal(Array.isArray(arr) ? (arr.filter(Boolean) as Memoria[]) : []);
+      })
+      .catch((err) => {
+        console.warn('Fallback local falhou:', err);
+        setMemLocal([]); // não quebra a tela
+      })
+      .finally(() => setFetchingLocal(false));
   }, [perfil, memories, fetchingLocal, memLocal]);
 
   const allMemories: Memoria[] = (memories?.length ? memories : (memLocal || []));
@@ -217,19 +226,43 @@ const ProfileSection: React.FC = () => {
 
   /* ==== Nivo data (strings YYYY-MM-DD + guards) ==== */
   const lineData = useMemo(() => {
-    const serie = sparkData
-      .map(d => ({ x: toISOday(d.t), y: d.v }))
-      .filter(pt => typeof pt.x === 'string' && Number.isFinite(pt.y));
+    const serie = (sparkData ?? [])
+      .filter(d => Number.isFinite(d.t) && Number.isFinite(d.v))
+      .map(d => ({ x: toISOday(d.t), y: Number(d.v) || 0 }))
+      .filter(pt => typeof pt.x === 'string' && pt.x.length > 0);
     return [{ id: 'registros', data: serie }];
   }, [sparkData]);
   const hasLinePoints = !!lineData[0]?.data?.length;
 
-  const emotionsData = emotionChart.map(d => ({ name: d.name, value: d.value }));
-  const themesData   = themeChart.map(d => ({ name: d.name, value: d.value }));
+  const emotionsData = useMemo(
+    () => (emotionChart ?? [])
+      .map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 }))
+      .filter(d => d.name.length > 0),
+    [emotionChart]
+  );
+  const themesData = useMemo(
+    () => (themeChart ?? [])
+      .map(d => ({ name: String(d.name ?? ''), value: Number(d.value) || 0 }))
+      .filter(d => d.name.length > 0),
+    [themeChart]
+  );
+
+  // opcional: aviso quando nada veio do backend
+  const noRemoteData =
+    (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) &&
+    (allMemories.length === 0);
 
   return (
     // SCROLL da página
     <div className="min-h-0 h-[calc(100vh-96px)] overflow-y-auto">
+      {noRemoteData && (
+        <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 pt-4">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm">
+            Não consegui carregar dados do servidor agora (offline/indisponível). A página continua funcional — quando voltar, os gráficos se atualizam.
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-10">
         {/* CARD 1 — Resumo */}
         <Card title="Resumo" id="resumo">
@@ -261,6 +294,7 @@ const ProfileSection: React.FC = () => {
                 <ChartErrorBoundary>
                   <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
                     <LazyResponsiveLine
+                      key={`line-${period}`}
                       data={lineData}
                       margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
                       xScale={{ type: 'time', format: '%Y-%m-%d', precision: 'day', useUTC: false }}
@@ -305,6 +339,7 @@ const ProfileSection: React.FC = () => {
               <ChartErrorBoundary>
                 <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
                   <LazyResponsiveBar
+                    key={`bar-emo-${period}`}
                     data={emotionsData}
                     keys={['value']}
                     indexBy="name"
@@ -349,6 +384,7 @@ const ProfileSection: React.FC = () => {
               <ChartErrorBoundary>
                 <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
                   <LazyResponsiveBar
+                    key={`bar-theme-${period}`}
                     data={themesData}
                     keys={['value']}
                     indexBy="name"
