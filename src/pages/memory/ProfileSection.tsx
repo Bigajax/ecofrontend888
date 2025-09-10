@@ -1,13 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
 
-/* ===== Nivo (import direto: mais estável que React.lazy) ===== */
-import { ResponsiveLine } from '@nivo/line';
-import { ResponsiveBar } from '@nivo/bar';
+/* ===== Lazy: Nivo =====
+   Nota: os casts para React.ComponentType<any> evitam ruído do TS
+   porque @nivo/* não exporta default e o tipo genérico do lazy não é inferido. */
+const LazyResponsiveLine = React.lazy(async () => {
+  const mod = await import('@nivo/line');
+  return { default: mod.ResponsiveLine as unknown as React.ComponentType<any> };
+});
+const LazyResponsiveBar = React.lazy(async () => {
+  const mod = await import('@nivo/bar');
+  return { default: mod.ResponsiveBar as unknown as React.ComponentType<any> };
+});
 
-/* ===== Error Boundary (protege o app se o Nivo falhar) ===== */
+/* ===== Error Boundary ===== */
 type EBState = { hasError: boolean };
 class ChartErrorBoundary extends React.Component<
   React.PropsWithChildren<{}>,
@@ -19,6 +27,9 @@ class ChartErrorBoundary extends React.Component<
   }
   static getDerivedStateFromError() {
     return { hasError: true };
+  }
+  componentDidCatch() {
+    // opcional: enviar para sentry/log
   }
   render() {
     if (this.state.hasError) {
@@ -213,7 +224,7 @@ const ProfileSection: React.FC = () => {
     : null;
   const periodLabel = PERIOD_LABEL[period];
 
-  /* ==== Nivo data ==== */
+  /* ==== Nivo data (strings YYYY-MM-DD + guards) ==== */
   const lineData = useMemo(() => {
     const serie = (sparkData ?? [])
       .filter(d => Number.isFinite(d.t) && Number.isFinite(d.v))
@@ -236,6 +247,7 @@ const ProfileSection: React.FC = () => {
     [themeChart]
   );
 
+  // opcional: aviso quando nada veio do backend
   const noRemoteData =
     (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) &&
     (allMemories.length === 0);
@@ -280,34 +292,36 @@ const ProfileSection: React.FC = () => {
             <div className="h-[96px]">
               {isClient && hasLinePoints ? (
                 <ChartErrorBoundary>
-                  <ResponsiveLine
-                    key={`line-${period}`}
-                    data={lineData}
-                    margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
-                    xScale={{ type: 'time', format: '%Y-%m-%d', precision: 'day', useUTC: false }}
-                    xFormat="time:%d/%m"
-                    yScale={{ type: 'linear', min: 0, max: 'auto' }}
-                    axisBottom={null}
-                    axisLeft={null}
-                    enablePoints={false}
-                    enableArea={true}
-                    areaOpacity={0.15}
-                    useMesh={true}
-                    enableGridX={false}
-                    enableGridY={true}
-                    curve="monotoneX"
-                    colors={['#111827']}
-                    theme={{
-                      grid: { line: { stroke: '#F3F4F6' } },
-                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                    }}
-                    tooltip={({ point }: any) => (
-                      <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                        <div className="font-medium">{String(point?.data?.xFormatted ?? '')}</div>
-                        <div>{String(point?.data?.y ?? '')} registro{Number(point?.data?.y) === 1 ? '' : 's'}</div>
-                      </div>
-                    )}
-                  />
+                  <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
+                    <LazyResponsiveLine
+                      key={`line-${period}`}
+                      data={lineData}
+                      margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
+                      xScale={{ type: 'time', format: '%Y-%m-%d', precision: 'day', useUTC: false }}
+                      xFormat="time:%d/%m"
+                      yScale={{ type: 'linear', min: 0, max: 'auto' }}
+                      axisBottom={null}
+                      axisLeft={null}
+                      enablePoints={false}
+                      enableArea={true}
+                      areaOpacity={0.15}
+                      useMesh={true}
+                      enableGridX={false}
+                      enableGridY={true}
+                      curve="monotoneX"
+                      colors={['#111827']}
+                      theme={{
+                        grid: { line: { stroke: '#F3F4F6' } },
+                        tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                      }}
+                      tooltip={({ point }: any) => (
+                        <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                          <div className="font-medium">{String(point?.data?.xFormatted ?? '')}</div>
+                          <div>{String(point?.data?.y ?? '')} registro{Number(point?.data?.y) === 1 ? '' : 's'}</div>
+                        </div>
+                      )}
+                    />
+                  </Suspense>
                 </ChartErrorBoundary>
               ) : (
                 <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">
@@ -323,32 +337,34 @@ const ProfileSection: React.FC = () => {
           {isClient && emotionsData.length ? (
             <div className="h-[300px]">
               <ChartErrorBoundary>
-                <ResponsiveBar
-                  key={`bar-emo-${period}`}
-                  data={emotionsData}
-                  keys={['value']}
-                  indexBy="name"
-                  margin={{ top: 12, right: 12, bottom: 28, left: 40 }}
-                  padding={0.26}
-                  colors={(bar: any) => colorForEmotion(bar.data.name as string)}
-                  borderRadius={12}
-                  axisTop={null}
-                  axisRight={null}
-                  axisBottom={{ tickSize: 0, tickPadding: 6 }}
-                  axisLeft={{ tickSize: 0, tickPadding: 6 }}
-                  enableGridY={true}
-                  labelSkipHeight={9999}
-                  theme={{
-                    grid: { line: { stroke: '#F3F4F6' } },
-                    tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                  }}
-                  tooltip={({ indexValue, value }: any) => (
-                    <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                      <div className="font-medium">{String(indexValue)}</div>
-                      <div>{String(value)}</div>
-                    </div>
-                  )}
-                />
+                <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
+                  <LazyResponsiveBar
+                    key={`bar-emo-${period}`}
+                    data={emotionsData}
+                    keys={['value']}
+                    indexBy="name"
+                    margin={{ top: 12, right: 12, bottom: 28, left: 40 }}
+                    padding={0.26}
+                    colors={(bar: any) => colorForEmotion(bar.data.name as string)}
+                    borderRadius={12}
+                    axisTop={null}
+                    axisRight={null}
+                    axisBottom={{ tickSize: 0, tickPadding: 6 }}
+                    axisLeft={{ tickSize: 0, tickPadding: 6 }}
+                    enableGridY={true}
+                    labelSkipHeight={9999}
+                    theme={{
+                      grid: { line: { stroke: '#F3F4F6' } },
+                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                    }}
+                    tooltip={({ indexValue, value }: any) => (
+                      <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                        <div className="font-medium">{String(indexValue)}</div>
+                        <div>{String(value)}</div>
+                      </div>
+                    )}
+                  />
+                </Suspense>
               </ChartErrorBoundary>
             </div>
           ) : (
@@ -366,33 +382,35 @@ const ProfileSection: React.FC = () => {
           {isClient && themesData.length ? (
             <div className="h-[300px]">
               <ChartErrorBoundary>
-                <ResponsiveBar
-                  key={`bar-theme-${period}`}
-                  data={themesData}
-                  keys={['value']}
-                  indexBy="name"
-                  layout="horizontal"
-                  margin={{ top: 8, right: 16, bottom: 8, left: 160 }}
-                  padding={0.3}
-                  colors={(bar: any) => pastel(bar.data.name as string)}
-                  borderRadius={12}
-                  axisTop={null}
-                  axisRight={null}
-                  axisLeft={{ tickSize: 0, tickPadding: 6 }}
-                  axisBottom={null}
-                  enableGridX={true}
-                  labelSkipWidth={9999}
-                  theme={{
-                    grid: { line: { stroke: '#F3F4F6' } },
-                    tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                  }}
-                  tooltip={({ indexValue, value }: any) => (
-                    <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                      <div className="font-medium">{String(indexValue)}</div>
-                      <div>{String(value)}</div>
-                    </div>
-                  )}
-                />
+                <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
+                  <LazyResponsiveBar
+                    key={`bar-theme-${period}`}
+                    data={themesData}
+                    keys={['value']}
+                    indexBy="name"
+                    layout="horizontal"
+                    margin={{ top: 8, right: 16, bottom: 8, left: 160 }}
+                    padding={0.3}
+                    colors={(bar: any) => pastel(bar.data.name as string)}
+                    borderRadius={12}
+                    axisTop={null}
+                    axisRight={null}
+                    axisLeft={{ tickSize: 0, tickPadding: 6 }}
+                    axisBottom={null}
+                    enableGridX={true}
+                    labelSkipWidth={9999}
+                    theme={{
+                      grid: { line: { stroke: '#F3F4F6' } },
+                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                    }}
+                    tooltip={({ indexValue, value }: any) => (
+                      <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                        <div className="font-medium">{String(indexValue)}</div>
+                        <div>{String(value)}</div>
+                      </div>
+                    )}
+                  />
+                </Suspense>
               </ChartErrorBoundary>
             </div>
           ) : (
