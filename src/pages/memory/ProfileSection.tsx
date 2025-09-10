@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
-  LineChart, Line, CartesianGrid
-} from 'recharts';
+import { ResponsiveLine } from '@nivo/line';
+import { ResponsiveBar } from '@nivo/bar';
 import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
@@ -35,14 +33,6 @@ const Card: React.FC<React.PropsWithChildren<{ title: string; subtitle?: string;
     </div>
   </section>
 );
-
-const CustomTooltip = ({ active, payload, label }: any) =>
-  active && payload?.length ? (
-    <div aria-live="polite" className="rounded-xl bg-white/90 border border-black/10 px-3 py-2 text-[13px] text-neutral-700 shadow-md">
-      <div className="font-medium">{label}</div>
-      <div>{payload[0].value}</div>
-    </div>
-  ) : null;
 
 /* ---------- helpers ---------- */
 const day = 24 * 60 * 60 * 1000;
@@ -179,142 +169,152 @@ const ProfileSection: React.FC = () => {
     : null;
   const periodLabel = PERIOD_LABEL[period];
 
+  /* ==== Nivo data ==== */
+  const lineData = useMemo(() => ([
+    { id: 'registros', data: sparkData.map(d => ({ x: new Date(d.t), y: d.v })) }
+  ]), [sparkData]);
+
+  const emotionsData = useMemo(() => (
+    emotionChart.map(d => ({ name: d.name, value: d.value }))
+  ), [emotionChart]);
+
+  const themesData = useMemo(() => (
+    themeChart.map(d => ({ name: d.name, value: d.value }))
+  ), [themeChart]);
+
   return (
-    <div className="mx-auto w-full max-w-[960px] px-4 md:px-6 py-4 md:py-6 space-y-10">
-      {/* CARD 1 — Resumo */}
-      <Card title="Resumo" id="resumo">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="pb-2">
-            <p className="text-[15px] md:text-[16px] text-neutral-700">{insight}</p>
-            {comp && <p className="mt-1 text-[13px] text-neutral-500">{comp}</p>}
-          </div>
-
-          {/* sticky dentro do card, estilo Saúde */}
-          <div className="sticky top-2">
-            <SegmentedControl value={period} onChange={setPeriod} />
-          </div>
-        </div>
-
-        {/* sparkline com divisória */}
-        <div className="mt-4 border-t border-neutral-100/80 pt-4">
-          <div className="h-[72px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={sparkData} margin={{ top: 0, right: 8, left: 8, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke="#F3F4F6" />
-                <XAxis dataKey="t" hide />
-                <YAxis hide domain={[0, 'dataMax + 1']} />
-                <Line type="monotone" dataKey="v" stroke="#111827" strokeOpacity={0.35} strokeWidth={2} dot={false} activeDot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </Card>
-
-      {/* CARD 2 — Emoções mais frequentes */}
-      <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
-        {emotionChart.length ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              data={emotionChart}
-              margin={{ top: 12, right: 12, left: 12, bottom: 12 }}
-              barCategoryGap={22}
-              barGap={8}
-            >
-              <defs>
-                {emotionChart.map((e, i) => {
-                  const base = colorForEmotion(e.name);
-                  return (
-                    <linearGradient key={i} id={`g-emo-${i}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor={base} stopOpacity={0.96} />
-                      <stop offset="100%" stopColor={base} stopOpacity={0.70} />
-                    </linearGradient>
-                  );
-                })}
-              </defs>
-
-              <XAxis
-                dataKey="name"
-                axisLine={false}
-                tickLine={false}
-                padding={{ left: 14, right: 14 }}
-                tick={{ fill: '#111827', fontSize: 12 }}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                domain={[0, 'dataMax + 3']}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar
-                dataKey="value"
-                radius={[12, 12, 12, 12]}
-                barSize={Math.max(26, Math.min(44, Math.floor(260 / Math.max(1, emotionChart.length)) * 0.6))}
-              >
-                {emotionChart.map((e, i) => (
-                  <Cell key={i} fill={`url(#g-emo-${i})`} aria-label={`${e.name}: ${e.value}`} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="grid place-items-center text-neutral-500 h-[240px]">
-            <div className="text-center">
-              <p className="text-neutral-900 font-medium">Sem dados no período</p>
-              <p className="text-sm">Registre memórias para ver seu perfil aqui.</p>
+    // SCROLL habilitado neste nível
+    <div className="min-h-0 h-[calc(100vh-96px)] overflow-y-auto">
+      <div className="mx-auto w-full max-w-[960px] px-4 md:px-6 py-4 md:py-6 space-y-10">
+        {/* CARD 1 — Resumo */}
+        <Card title="Resumo" id="resumo">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="pb-2">
+              <p className="text-[15px] md:text-[16px] text-neutral-700">{insight}</p>
+              {comp && <p className="mt-1 text-[13px] text-neutral-500">{comp}</p>}
+            </div>
+            <div className="sticky top-2">
+              <SegmentedControl value={period} onChange={setPeriod} />
             </div>
           </div>
-        )}
-      </Card>
 
-      {/* CARD 3 — Temas mais recorrentes */}
-      <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
-        {themeChart.length ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              layout="vertical"
-              data={themeChart}
-              margin={{ top: 8, right: 16, left: 6, bottom: 8 }}
-              barCategoryGap={12}
-            >
-              <defs>
-                {themeChart.map((e, i) => {
-                  const base = pastel(e.name);
-                  return (
-                    <linearGradient key={i} id={`g-theme-${i}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor={base} stopOpacity={0.98} />
-                      <stop offset="100%" stopColor={base} stopOpacity={0.68} />
-                    </linearGradient>
-                  );
-                })}
-              </defs>
-
-              <XAxis type="number" hide domain={[0, 'dataMax + 5']} />
-              <YAxis
-                type="category"
-                dataKey="name"
-                width={140}               // mais espaço para labels
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#111827', fontSize: 12 }}
+          {/* sparkline */}
+          <div className="mt-4 border-t border-neutral-100/80 pt-4">
+            <div className="h-[84px]">
+              <ResponsiveLine
+                data={lineData}
+                margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
+                xScale={{ type: 'time', format: 'native', precision: 'day' }}
+                xFormat="time:%d/%m"
+                yScale={{ type: 'linear', min: 0, max: 'auto' }}
+                axisBottom={null}
+                axisLeft={null}
+                enablePoints={false}
+                enableArea={true}
+                areaOpacity={0.15}
+                useMesh={true}
+                enableGridX={false}
+                enableGridY={true}
+                curve="monotoneX"
+                colors={['#111827']}
+                theme={{
+                  grid: { line: { stroke: '#F3F4F6' } },
+                  tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                }}
+                tooltip={({ point }) => (
+                  <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                    <div className="font-medium">
+                      {new Date(point.data.x as Date).toLocaleDateString()}
+                    </div>
+                    <div>{String(point.data.y)} registro{Number(point.data.y) === 1 ? '' : 's'}</div>
+                  </div>
+                )}
               />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="value" barSize={28} radius={[0, 12, 12, 0]}>
-                {themeChart.map((e, i) => (
-                  <Cell key={i} fill={`url(#g-theme-${i})`} aria-label={`${e.name}: ${e.value}`} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="grid place-items-center text-neutral-500 h-[240px]">
-            <div className="text-center">
-              <p className="text-neutral-900 font-medium">Sem dados no período</p>
-              <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
             </div>
           </div>
-        )}
-      </Card>
+        </Card>
+
+        {/* CARD 2 — Emoções mais frequentes (barras verticais) */}
+        <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
+          {emotionsData.length ? (
+            <div className="h-[300px]">
+              <ResponsiveBar
+                data={emotionsData}
+                keys={['value']}
+                indexBy="name"
+                margin={{ top: 12, right: 12, bottom: 24, left: 36 }}
+                padding={0.26}
+                colors={(bar) => colorForEmotion(bar.data.name as string)}
+                borderRadius={12}
+                axisTop={null}
+                axisRight={null}
+                axisBottom={{ tickSize: 0, tickPadding: 6 }}
+                axisLeft={{ tickSize: 0, tickPadding: 6 }}
+                enableGridY={true}
+                labelSkipHeight={9999}
+                tooltip={({ indexValue, value }) => (
+                  <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                    <div className="font-medium">{indexValue as string}</div>
+                    <div>{String(value)}</div>
+                  </div>
+                )}
+                theme={{
+                  grid: { line: { stroke: '#F3F4F6' } },
+                  tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                }}
+              />
+            </div>
+          ) : (
+            <div className="grid place-items-center text-neutral-500 h-[240px]">
+              <div className="text-center">
+                <p className="text-neutral-900 font-medium">Sem dados no período</p>
+                <p className="text-sm">Registre memórias para ver seu perfil aqui.</p>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* CARD 3 — Temas mais recorrentes (barras horizontais) */}
+        <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
+          {themesData.length ? (
+            <div className="h-[300px]">
+              <ResponsiveBar
+                data={themesData}
+                keys={['value']}
+                indexBy="name"
+                layout="horizontal"
+                margin={{ top: 8, right: 16, bottom: 8, left: 140 }}
+                padding={0.3}
+                colors={(bar) => pastel(bar.data.name as string)}
+                borderRadius={12}
+                axisTop={null}
+                axisRight={null}
+                axisLeft={{ tickSize: 0, tickPadding: 6 }}
+                axisBottom={null}
+                enableGridX={true}
+                labelSkipWidth={9999}
+                tooltip={({ indexValue, value }) => (
+                  <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                    <div className="font-medium">{indexValue as string}</div>
+                    <div>{String(value)}</div>
+                  </div>
+                )}
+                theme={{
+                  grid: { line: { stroke: '#F3F4F6' } },
+                  tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                }}
+              />
+            </div>
+          ) : (
+            <div className="grid place-items-center text-neutral-500 h-[240px]">
+              <div className="text-center">
+                <p className="text-neutral-900 font-medium">Sem dados no período</p>
+                <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 };

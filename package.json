@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "@google-cloud/language": "^7.0.2",
+    "@nivo/bar": "^0.99.0",
+    "@nivo/core": "^0.99.0",
+    "@nivo/line": "^0.99.0",
     "@react-three/drei": "^9.9.0",
     "@react-three/fiber": "^8.16.2",
     "@supabase/supabase-js": "^2.49.4",
