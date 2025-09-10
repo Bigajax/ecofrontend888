@@ -15,20 +15,23 @@ const EMOTION_COLORS: Record<string, string> = {
 };
 const normalize = (s = '') => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const colorForEmotion = (n: string) => EMOTION_COLORS[normalize(n)] || '#C7D2FE';
-
 const hashHue = (str: string) => { let h = 0; for (let i=0;i<str.length;i++) h = str.charCodeAt(i)+((h<<5)-h); return Math.abs(h)%360; };
 const pastel = (str: string) => `hsl(${hashHue(str)}, 40%, 82%)`;
 
 /* ---------- UI ---------- */
 const Card: React.FC<React.PropsWithChildren<{ title: string; subtitle?: string }>> = ({ title, subtitle, children }) => (
   <section
-    className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.8),0_8px_28px_rgba(2,6,23,.05)] p-4 md:p-5 mb-6"
+    className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.8),0_8px_28px_rgba(2,6,23,.05)] p-5 md:p-6"
     role="region"
     aria-label={title}
   >
-    <h3 className="text-[17px] md:text-[18px] font-semibold text-neutral-900">{title}</h3>
-    {subtitle && <p className="text-[13px] text-neutral-500 mt-0.5">{subtitle}</p>}
-    <div className="mt-3">{children}</div>
+    <header className="mb-4">
+      <h3 className="text-[17px] md:text-[18px] font-semibold text-neutral-900">{title}</h3>
+      {subtitle && <p className="text-[13px] text-neutral-500 mt-0.5">{subtitle}</p>}
+    </header>
+    <div className="border-t border-neutral-100/80 pt-4">
+      {children}
+    </div>
   </section>
 );
 
@@ -72,151 +75,181 @@ function buildLocalPerfil(memories: Memoria[]) {
   }
   const temas_recorrentes: Record<string, number> = {};
   temas.forEach((v, k) => (temas_recorrentes[k] = v));
-
   return { emocoes_frequentes, temas_recorrentes };
 }
 
-function buildStats(memories: Memoria[]) {
+/* === Período === */
+type Period = 7 | 28 | 90;
+const PERIOD_LABEL: Record<Period, string> = { 7: '7d', 28: '28d', 90: '90d' };
+
+function filterByDays(memories: Memoria[], days: Period) {
   const now = startOfDay(new Date());
-  const d7  = now.getTime() - 7  * day;
-  const d28 = now.getTime() - 28 * day;
+  const since = now.getTime() - days * day;
+  return memories.filter(m => new Date(m.created_at!).getTime() >= since);
+}
+function buildStats(memories: Memoria[], days: Period) {
+  const scoped = filterByDays(memories, days);
+  const emo = countBy(scoped, m => m.emocao_principal || null);
+  const emoArr = [...emo.entries()].sort((a,b)=>b[1]-a[1]);
+  const dominante = emoArr[0]?.[0] ?? null;
 
-  const last7  = memories.filter(m => new Date(m.created_at!).getTime() >= d7);
-  const last28 = memories.filter(m => new Date(m.created_at!).getTime() >= d28);
-
-  const emo7 = countBy(last7, m => m.emocao_principal || null);
-  const emo7Arr = [...emo7.entries()].sort((a,b)=>b[1]-a[1]);
-  const dominante7 = emo7Arr[0]?.[0];
-
-  const total7 = last7.length;
+  const last28 = filterByDays(memories, 28);
+  const totalPeriodo = scoped.length;
   const media28 = Math.round((last28.length / 28) * 10) / 10;
 
-  return { total7, media28, dominante7 };
+  return { totalPeriodo, media28, dominante };
 }
-
-// sparkline nos últimos 28 dias (contagem por dia)
-function buildSparklineData(memories: Memoria[]) {
+function buildSparklineData(memories: Memoria[], days: Period) {
   const now = startOfDay(new Date());
-  const dStart = now.getTime() - 28 * day;
-
+  const start = now.getTime() - days * day;
   const buckets = new Map<number, number>();
-  for (let i = 0; i < 28; i++) buckets.set(dStart + i * day, 0);
-
+  for (let i = 0; i < days; i++) buckets.set(start + i * day, 0);
   memories.forEach(m => {
     const t = startOfDay(new Date(m.created_at!)).getTime();
-    if (t >= dStart) buckets.set(t, (buckets.get(t) ?? 0) + 1);
+    if (t >= start) buckets.set(t, (buckets.get(t) ?? 0) + 1);
   });
-
   return [...buckets.entries()].map(([t, v]) => ({ t, v }));
 }
 
-const Sparkline: React.FC<{ data: { t: number; v: number }[] }> = ({ data }) => (
-  <div className="mt-3 h-[60px]">
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data} margin={{ top: 4, right: 6, left: 0, bottom: 0 }}>
-        <CartesianGrid vertical={false} stroke="#F3F4F6" />
-        <XAxis dataKey="t" hide />
-        <YAxis hide />
-        <Line
-          type="monotone"
-          dataKey="v"
-          stroke="#111827"
-          strokeOpacity={0.35}
-          strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 3 }}
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  </div>
-);
+const SegmentedControl: React.FC<{ value: Period; onChange: (p: Period)=>void }> = ({ value, onChange }) => {
+  const base = 'px-3 md:px-4 h-9 rounded-full text-[13px] md:text-[14px] font-medium transition';
+  const item = (p: Period) =>
+    `${base} ${value===p ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-700 hover:bg-neutral-100'}`;
+  return (
+    <div role="tablist" aria-label="Período" className="inline-flex p-1 rounded-full border border-black/10 bg-white shadow-sm gap-1">
+      {[7,28,90].map(p => (
+        <button
+          key={p}
+          role="tab"
+          aria-selected={value===p}
+          className={item(p as Period)}
+          onClick={()=>onChange(p as Period)}
+        >
+          {PERIOD_LABEL[p as Period]}
+        </button>
+      ))}
+    </div>
+  );
+};
 
 /* ---------- componente ---------- */
 const ProfileSection: React.FC = () => {
   const { perfil, memories, loading, error } = useMemoryData();
 
+  // fallback
   const [memLocal, setMemLocal] = useState<Memoria[] | null>(null);
   const [fetchingLocal, setFetchingLocal] = useState(false);
+
+  const [period, setPeriod] = useState<Period>(7);
 
   useEffect(() => {
     const needLocal = (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) && (!memories || memories.length === 0);
     if (!needLocal || fetchingLocal || memLocal) return;
     setFetchingLocal(true);
-    listarMemoriasBasico(600)
-      .then((arr) => setMemLocal(arr))
-      .finally(() => setFetchingLocal(false));
+    listarMemoriasBasico(600).then(setMemLocal).finally(()=>setFetchingLocal(false));
   }, [perfil, memories, fetchingLocal, memLocal]);
 
-  const sourceMemories: Memoria[] = (memories && memories.length > 0) ? memories : (memLocal || []);
-
-  const effectivePerfil = useMemo(() => {
-    if (perfil && (perfil.emocoes_frequentes || perfil.temas_recorrentes)) return perfil;
-    return buildLocalPerfil(sourceMemories);
-  }, [perfil, sourceMemories]);
+  const allMemories: Memoria[] = (memories?.length ? memories : (memLocal || []));
+  const memScoped = useMemo(() => filterByDays(allMemories, period), [allMemories, period]);
 
   const emotionChart = useMemo(() => {
-    const src = effectivePerfil?.emocoes_frequentes || {};
-    return Object.entries(src)
-      .map(([name, value]) => ({ name, value: Number(value) }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-  }, [effectivePerfil]);
+    const data = buildLocalPerfil(memScoped).emocoes_frequentes || {};
+    return Object.entries(data).map(([name, value]) => ({ name, value: Number(value) }))
+      .sort((a,b)=>b.value-a.value).slice(0,5);
+  }, [memScoped]);
 
   const themeChart = useMemo(() => {
-    const src = effectivePerfil?.temas_recorrentes || {};
-    return Object.entries(src)
-      .map(([name, value]) => ({ name, value: Number(value) }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-  }, [effectivePerfil]);
+    const data = buildLocalPerfil(memScoped).temas_recorrentes || {};
+    return Object.entries(data).map(([name, value]) => ({ name, value: Number(value) }))
+      .sort((a,b)=>b.value-a.value).slice(0,5);
+  }, [memScoped]);
 
-  const sparkData = useMemo(() => buildSparklineData(sourceMemories), [sourceMemories]);
-  const { total7, media28, dominante7 } = useMemo(() => buildStats(sourceMemories), [sourceMemories]);
+  const sparkData = useMemo(() => buildSparklineData(allMemories, period), [allMemories, period]);
+  const { totalPeriodo, media28, dominante } = useMemo(() => buildStats(allMemories, period), [allMemories, period]);
 
   const stillLoading = loading || fetchingLocal;
   if (stillLoading) return <div className="flex justify-center items-center h-full text-neutral-500 text-sm">Carregando…</div>;
   if (error)        return <div className="flex justify-center items-center h-full text-rose-500 text-sm">{error}</div>;
 
-  const insight =
-    dominante7
-      ? `Você tem registrado mais ${dominante7} que outras emoções nos últimos 7 dias.`
-      : `Você ainda não tem registros recentes.`;
-  const comp = (total7 && media28) ? `Últimos 7 dias: ${total7} registros • Média diária (28d): ${media28}` : null;
+  const insight = dominante
+    ? `Você tem registrado mais ${dominante} que outras emoções nos últimos ${period} dias.`
+    : `Você ainda não tem registros no período selecionado.`;
+  const comp = (totalPeriodo && media28 !== undefined)
+    ? `Últimos ${period} dias: ${totalPeriodo} registros • Média diária (28d): ${media28}`
+    : null;
+  const periodLabel = PERIOD_LABEL[period];
 
   return (
-    <>
-      {/* INSIGHT HEADER */}
-      <section className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.8),0_8px_28px_rgba(2,6,23,.05)] p-4 md:p-5 mb-6">
-        <h2 className="text-[clamp(20px,3.5vw,24px)] font-semibold text-neutral-900">Resumo</h2>
-        <p className="mt-1 text-[15px] md:text-[16px] text-neutral-700">{insight}</p>
-        {comp && <p className="mt-1 text-[13px] text-neutral-500">{comp}</p>}
-        <Sparkline data={sparkData} />
+    <div className="mx-auto w-full max-w-[960px] px-4 md:px-6 space-y-8">
+      {/* HEADER + TOGGLE */}
+      <section className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.8),0_8px_28px_rgba(2,6,23,.05)] p-5 md:p-6">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className="text-[clamp(20px,3.5vw,24px)] leading-tight font-semibold text-neutral-900">Resumo</h2>
+            <p className="mt-1 text-[15px] md:text-[16px] text-neutral-700">{insight}</p>
+            {comp && <p className="mt-1 text-[13px] text-neutral-500">{comp}</p>}
+          </div>
+          <SegmentedControl value={period} onChange={setPeriod} />
+        </div>
+
+        {/* sparkline com divisória */}
+        <div className="mt-4 border-t border-neutral-100/80 pt-4">
+          <div className="h-[64px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={sparkData} margin={{ top: 0, right: 8, left: 8, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke="#F3F4F6" />
+                <XAxis dataKey="t" hide />
+                <YAxis hide domain={[0, 'dataMax + 1']} />
+                <Line type="monotone" dataKey="v" stroke="#111827" strokeOpacity={0.35} strokeWidth={2} dot={false} activeDot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </section>
 
-      {/* GRID DE CHARTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title="Emoções mais frequentes" subtitle="Últimos registros">
+      {/* GRID COM RESPIRO */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* EMOÇÕES: colunas verticais */}
+        <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`}>
           {emotionChart.length ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={emotionChart} margin={{ top: 12, right: 8, left: 8, bottom: 20 }} barCategoryGap="28%">
-                {/* gradientes por barra */}
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart
+                data={emotionChart}
+                margin={{ top: 12, right: 12, left: 12, bottom: 12 }}
+                barCategoryGap={22}
+                barGap={8}
+              >
                 <defs>
                   {emotionChart.map((e, i) => {
                     const base = colorForEmotion(e.name);
                     return (
                       <linearGradient key={i} id={`g-emo-${i}`} x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor={base} stopOpacity={0.9} />
-                        <stop offset="100%" stopColor={base} stopOpacity={0.65} />
+                        <stop offset="0%" stopColor={base} stopOpacity={0.96} />
+                        <stop offset="100%" stopColor={base} stopOpacity={0.70} />
                       </linearGradient>
                     );
                   })}
                 </defs>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#111827', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  padding={{ left: 14, right: 14 }}
+                  tick={{ fill: '#111827', fontSize: 12 }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  domain={[0, 'dataMax + 3']}
+                />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="value" barSize={34} radius={[10,10,10,10]}>
-                  {/* label acima da barra */}
-                  <text />
+                <Bar
+                  dataKey="value"
+                  radius={[12, 12, 12, 12]}
+                  barSize={Math.max(26, Math.min(44, Math.floor(240 / Math.max(1, emotionChart.length)) * 0.6))}
+                >
                   {emotionChart.map((e, i) => (
                     <Cell key={i} fill={`url(#g-emo-${i})`} aria-label={`${e.name}: ${e.value}`} />
                   ))}
@@ -224,32 +257,48 @@ const ProfileSection: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="text-center text-neutral-500 py-8">
-              <p className="text-base text-neutral-900 mb-1">Nenhum dado emocional ainda</p>
-              <p className="text-sm">Registre suas memórias para ver seu perfil aqui.</p>
+            <div className="grid place-items-center text-neutral-500 h-[240px]">
+              <div className="text-center">
+                <p className="text-neutral-900 font-medium">Sem dados no período</p>
+                <p className="text-sm">Registre memórias para ver seu perfil aqui.</p>
+              </div>
             </div>
           )}
         </Card>
 
-        <Card title="Temas mais recorrentes" subtitle="Top 5 do período">
+        {/* TEMAS: BARRAS HORIZONTAIS */}
+        <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`}>
           {themeChart.length ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={themeChart} margin={{ top: 12, right: 12, left: 12, bottom: 20 }} barCategoryGap="28%">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart
+                layout="vertical"
+                data={themeChart}
+                margin={{ top: 8, right: 16, left: 6, bottom: 8 }}
+                barCategoryGap={12}
+              >
                 <defs>
                   {themeChart.map((e, i) => {
                     const base = pastel(e.name);
                     return (
                       <linearGradient key={i} id={`g-theme-${i}`} x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor={base} stopOpacity={0.95} />
-                        <stop offset="100%" stopColor={base} stopOpacity={0.65} />
+                        <stop offset="0%" stopColor={base} stopOpacity={0.98} />
+                        <stop offset="100%" stopColor={base} stopOpacity={0.68} />
                       </linearGradient>
                     );
                   })}
                 </defs>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#111827', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+
+                <XAxis type="number" hide domain={[0, 'dataMax + 5']} />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={110}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#111827', fontSize: 12 }}
+                />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="value" barSize={34} radius={[10,10,10,10]}>
+                <Bar dataKey="value" barSize={28} radius={[0, 12, 12, 0]}>
                   {themeChart.map((e, i) => (
                     <Cell key={i} fill={`url(#g-theme-${i})`} aria-label={`${e.name}: ${e.value}`} />
                   ))}
@@ -257,14 +306,16 @@ const ProfileSection: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="text-center text-neutral-500 py-8">
-              <p className="text-base text-neutral-900 mb-1">Nenhum tema ainda</p>
-              <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
+            <div className="grid place-items-center text-neutral-500 h-[240px]">
+              <div className="text-center">
+                <p className="text-neutral-900 font-medium">Sem dados no período</p>
+                <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
+              </div>
             </div>
           )}
         </Card>
       </div>
-    </>
+    </div>
   );
 };
 
