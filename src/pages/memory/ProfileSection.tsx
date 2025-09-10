@@ -18,19 +18,12 @@ const pastel = (str: string) => `hsl(${hashHue(str)}, 40%, 82%)`;
 
 /* ---------- UI ---------- */
 const Card: React.FC<React.PropsWithChildren<{ title: string; subtitle?: string; id?: string }>> = ({ title, subtitle, id, children }) => (
-  <section
-    id={id}
-    className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.8),0_8px_28px_rgba(2,6,23,.05)] p-5 md:p-6"
-    role="region"
-    aria-label={title}
-  >
+  <section id={id} className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.8),0_8px_28px_rgba(2,6,23,.05)] p-5 md:p-6" role="region" aria-label={title}>
     <header className="mb-4">
       <h3 className="text-[20px] md:text-[22px] font-semibold text-neutral-900">{title}</h3>
       {subtitle && <p className="text-[13px] text-neutral-500 mt-0.5">{subtitle}</p>}
     </header>
-    <div className="border-t border-neutral-100/80 pt-4">
-      {children}
-    </div>
+    <div className="border-t border-neutral-100/80 pt-4">{children}</div>
   </section>
 );
 
@@ -47,6 +40,7 @@ function countBy<T>(arr: T[], key: (x: T) => string | undefined | null) {
   }
   return map;
 }
+
 function buildLocalPerfil(memories: Memoria[]) {
   const emoMap = countBy(memories, (m) => (m.emocao_principal || '').toString());
   const emocoes_frequentes: Record<string, number> = {};
@@ -56,11 +50,7 @@ function buildLocalPerfil(memories: Memoria[]) {
   for (const m of memories) {
     const domain = (m as any).dominio_vida || (m as any).dominio || (m as any).domain || '';
     const categoria = (m as any).categoria || '';
-    const tags: string[] = Array.isArray(m.tags)
-      ? (m.tags as string[])
-      : typeof (m as any).tags === 'string'
-      ? (m as any).tags.split(/[;,]/)
-      : [];
+    const tags: string[] = Array.isArray(m.tags) ? (m.tags as string[]) : typeof (m as any).tags === 'string' ? (m as any).tags.split(/[;,]/) : [];
     const add = (t?: string) => { const k = (t || '').trim(); if (!k) return; temas.set(k, (temas.get(k) ?? 0) + 1); };
     add(domain); add(categoria); tags.forEach(add);
   }
@@ -76,47 +66,48 @@ const PERIOD_LABEL: Record<Period, string> = { 7: '7d', 28: '28d', 90: '90d' };
 function filterByDays(memories: Memoria[], days: Period) {
   const now = startOfDay(new Date());
   const since = now.getTime() - days * day;
-  return memories.filter(m => new Date(m.created_at!).getTime() >= since);
+  return memories.filter(m => {
+    const t = new Date(m.created_at || 0).getTime();
+    return Number.isFinite(t) && t >= since;
+  });
 }
+
 function buildStats(memories: Memoria[], days: Period) {
   const scoped = filterByDays(memories, days);
   const emo = countBy(scoped, m => m.emocao_principal || null);
   const emoArr = [...emo.entries()].sort((a,b)=>b[1]-a[1]);
   const dominante = emoArr[0]?.[0] ?? null;
-
   const last28 = filterByDays(memories, 28);
   const totalPeriodo = scoped.length;
   const media28 = Math.round((last28.length / 28) * 10) / 10;
-
   return { totalPeriodo, media28, dominante };
 }
+
 function buildSparklineData(memories: Memoria[], days: Period) {
   const now = startOfDay(new Date());
   const start = now.getTime() - days * day;
   const buckets = new Map<number, number>();
   for (let i = 0; i < days; i++) buckets.set(start + i * day, 0);
+
   memories.forEach(m => {
-    const t = startOfDay(new Date(m.created_at!)).getTime();
-    if (t >= start) buckets.set(t, (buckets.get(t) ?? 0) + 1);
+    const t = startOfDay(new Date(m.created_at || 0)).getTime();
+    if (Number.isFinite(t) && t >= start) buckets.set(t, (buckets.get(t) ?? 0) + 1);
   });
-  return [...buckets.entries()].map(([t, v]) => ({ t, v }));
+
+  // SANITIZAÇÃO: remove pontos fora do range e garante números válidos
+  return [...buckets.entries()]
+    .map(([t, v]) => ({ t, v: Number.isFinite(v) ? v : 0 }))
+    .filter(d => Number.isFinite(d.t));
 }
 
 /* toggle segmentado */
 const SegmentedControl: React.FC<{ value: Period; onChange: (p: Period)=>void }> = ({ value, onChange }) => {
   const base = 'px-4 h-9 rounded-full text-[14px] font-medium transition';
-  const item = (p: Period) =>
-    `${base} ${value===p ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-700 hover:bg-neutral-100'}`;
+  const item = (p: Period) => `${base} ${value===p ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-700 hover:bg-neutral-100'}`;
   return (
     <div role="tablist" aria-label="Período" className="inline-flex p-1 rounded-full border border-black/10 bg-white shadow-sm gap-1">
       {[7,28,90].map(p => (
-        <button
-          key={p}
-          role="tab"
-          aria-selected={value===p}
-          className={item(p as Period)}
-          onClick={()=>onChange(p as Period)}
-        >
+        <button key={p} role="tab" aria-selected={value===p} className={item(p as Period)} onClick={()=>onChange(p as Period)}>
           {PERIOD_LABEL[p as Period]}
         </button>
       ))}
@@ -144,14 +135,20 @@ const ProfileSection: React.FC = () => {
 
   const emotionChart = useMemo(() => {
     const data = buildLocalPerfil(memScoped).emocoes_frequentes || {};
-    return Object.entries(data).map(([name, value]) => ({ name, value: Number(value) }))
-      .sort((a,b)=>b.value-a.value).slice(0,5);
+    return Object.entries(data)
+      .map(([name, value]) => ({ name, value: Number(value) }))
+      .filter(d => Number.isFinite(d.value))
+      .sort((a,b)=>b.value-a.value)
+      .slice(0,5);
   }, [memScoped]);
 
   const themeChart = useMemo(() => {
     const data = buildLocalPerfil(memScoped).temas_recorrentes || {};
-    return Object.entries(data).map(([name, value]) => ({ name, value: Number(value) }))
-      .sort((a,b)=>b.value-a.value).slice(0,5);
+    return Object.entries(data)
+      .map(([name, value]) => ({ name, value: Number(value) }))
+      .filter(d => Number.isFinite(d.value))
+      .sort((a,b)=>b.value-a.value)
+      .slice(0,5);
   }, [memScoped]);
 
   const sparkData = useMemo(() => buildSparklineData(allMemories, period), [allMemories, period]);
@@ -169,21 +166,21 @@ const ProfileSection: React.FC = () => {
     : null;
   const periodLabel = PERIOD_LABEL[period];
 
-  /* ==== Nivo data ==== */
-  const lineData = useMemo(() => ([
-    { id: 'registros', data: sparkData.map(d => ({ x: new Date(d.t), y: d.v })) }
-  ]), [sparkData]);
+  /* ==== Nivo data (com guards) ==== */
+  const lineData = useMemo(() => {
+    const serie = sparkData
+      .map(d => ({ x: new Date(d.t), y: d.v }))
+      .filter(pt => pt.x instanceof Date && !isNaN(+pt.x) && Number.isFinite(pt.y));
 
-  const emotionsData = useMemo(() => (
-    emotionChart.map(d => ({ name: d.name, value: d.value }))
-  ), [emotionChart]);
+    return [{ id: 'registros', data: serie }];
+  }, [sparkData]);
 
-  const themesData = useMemo(() => (
-    themeChart.map(d => ({ name: d.name, value: d.value }))
-  ), [themeChart]);
+  const hasLinePoints = lineData[0]?.data?.length > 0;
+  const emotionsData = emotionChart.map(d => ({ name: d.name, value: d.value }));
+  const themesData   = themeChart.map(d => ({ name: d.name, value: d.value }));
 
   return (
-    // SCROLL habilitado neste nível
+    /* SCROLL garantido aqui */
     <div className="min-h-0 h-[calc(100vh-96px)] overflow-y-auto">
       <div className="mx-auto w-full max-w-[960px] px-4 md:px-6 py-4 md:py-6 space-y-10">
         {/* CARD 1 — Resumo */}
@@ -198,43 +195,48 @@ const ProfileSection: React.FC = () => {
             </div>
           </div>
 
-          {/* sparkline */}
           <div className="mt-4 border-t border-neutral-100/80 pt-4">
             <div className="h-[84px]">
-              <ResponsiveLine
-                data={lineData}
-                margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
-                xScale={{ type: 'time', format: 'native', precision: 'day' }}
-                xFormat="time:%d/%m"
-                yScale={{ type: 'linear', min: 0, max: 'auto' }}
-                axisBottom={null}
-                axisLeft={null}
-                enablePoints={false}
-                enableArea={true}
-                areaOpacity={0.15}
-                useMesh={true}
-                enableGridX={false}
-                enableGridY={true}
-                curve="monotoneX"
-                colors={['#111827']}
-                theme={{
-                  grid: { line: { stroke: '#F3F4F6' } },
-                  tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
-                }}
-                tooltip={({ point }) => (
-                  <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                    <div className="font-medium">
-                      {new Date(point.data.x as Date).toLocaleDateString()}
+              {hasLinePoints ? (
+                <ResponsiveLine
+                  data={lineData}
+                  margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
+                  xScale={{ type: 'time', format: 'native', precision: 'day' }}
+                  xFormat="time:%d/%m"
+                  yScale={{ type: 'linear', min: 0, max: 'auto' }}
+                  axisBottom={null}
+                  axisLeft={null}
+                  enablePoints={false}
+                  enableArea={true}
+                  areaOpacity={0.15}
+                  useMesh={true}
+                  enableGridX={false}
+                  enableGridY={true}
+                  curve="monotoneX"
+                  colors={['#111827']}
+                  theme={{
+                    grid: { line: { stroke: '#F3F4F6' } },
+                    tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                  }}
+                  tooltip={({ point }) => (
+                    <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                      <div className="font-medium">
+                        {new Date(point.data.x as Date).toLocaleDateString()}
+                      </div>
+                      <div>{String(point.data.y)} registro{Number(point.data.y) === 1 ? '' : 's'}</div>
                     </div>
-                    <div>{String(point.data.y)} registro{Number(point.data.y) === 1 ? '' : 's'}</div>
-                  </div>
-                )}
-              />
+                  )}
+                />
+              ) : (
+                <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">
+                  Sem dados no período
+                </div>
+              )}
             </div>
           </div>
         </Card>
 
-        {/* CARD 2 — Emoções mais frequentes (barras verticais) */}
+        {/* CARD 2 — Emoções mais frequentes */}
         <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
           {emotionsData.length ? (
             <div className="h-[300px]">
@@ -274,7 +276,7 @@ const ProfileSection: React.FC = () => {
           )}
         </Card>
 
-        {/* CARD 3 — Temas mais recorrentes (barras horizontais) */}
+        {/* CARD 3 — Temas mais recorrentes */}
         <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
           {themesData.length ? (
             <div className="h-[300px]">
