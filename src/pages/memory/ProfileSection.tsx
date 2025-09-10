@@ -3,21 +3,34 @@ import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
 
-/* ===== Lazy: Nivo ===== */
+/* ===== Lazy: Nivo =====
+   Nota: os casts para React.ComponentType<any> evitam ruído do TS
+   porque @nivo/* não exporta default e o tipo genérico do lazy não é inferido. */
 const LazyResponsiveLine = React.lazy(async () => {
   const mod = await import('@nivo/line');
-  return { default: mod.ResponsiveLine };
+  return { default: mod.ResponsiveLine as unknown as React.ComponentType<any> };
 });
 const LazyResponsiveBar = React.lazy(async () => {
   const mod = await import('@nivo/bar');
-  return { default: mod.ResponsiveBar };
+  return { default: mod.ResponsiveBar as unknown as React.ComponentType<any> };
 });
 
 /* ===== Error Boundary ===== */
-class ChartErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
-  constructor(props:any) { super(props); this.state = { hasError: false }; }
-  static getDerivedStateFromError() { return { hasError: true }; }
-  componentDidCatch() {/* log opcional */}
+type EBState = { hasError: boolean };
+class ChartErrorBoundary extends React.Component<
+  React.PropsWithChildren<{}>,
+  EBState
+> {
+  constructor(props: React.PropsWithChildren<{}>) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch() {
+    // opcional: enviar para sentry/log
+  }
   render() {
     if (this.state.hasError) {
       return (
@@ -26,7 +39,7 @@ class ChartErrorBoundary extends React.Component<{ children: React.ReactNode }, 
         </div>
       );
     }
-    return this.props.children as any;
+    return this.props.children as React.ReactNode;
   }
 }
 
@@ -209,7 +222,7 @@ const ProfileSection: React.FC = () => {
       .filter(pt => typeof pt.x === 'string' && Number.isFinite(pt.y));
     return [{ id: 'registros', data: serie }];
   }, [sparkData]);
-  const hasLinePoints = lineData[0]?.data?.length > 0;
+  const hasLinePoints = !!lineData[0]?.data?.length;
 
   const emotionsData = emotionChart.map(d => ({ name: d.name, value: d.value }));
   const themesData   = themeChart.map(d => ({ name: d.name, value: d.value }));
@@ -232,7 +245,7 @@ const ProfileSection: React.FC = () => {
                   <span className="ml-1 text-[14px] font-normal text-neutral-400">reg/dia</span>
                 </div>
                 <div className="mt-1 text-[13px] text-neutral-500">
-                  Período {PERIOD_LABEL[period]}: {totalPeriodo} registros
+                  Período {periodLabel}: {totalPeriodo} registros
                 </div>
               </div>
             </div>
@@ -267,10 +280,10 @@ const ProfileSection: React.FC = () => {
                         grid: { line: { stroke: '#F3F4F6' } },
                         tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
                       }}
-                      tooltip={({ point }) => (
+                      tooltip={({ point }: any) => (
                         <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                          <div className="font-medium">{point.data.xFormatted as string}</div>
-                          <div>{String(point.data.y)} registro{Number(point.data.y) === 1 ? '' : 's'}</div>
+                          <div className="font-medium">{String(point?.data?.xFormatted ?? '')}</div>
+                          <div>{String(point?.data?.y ?? '')} registro{Number(point?.data?.y) === 1 ? '' : 's'}</div>
                         </div>
                       )}
                     />
@@ -297,7 +310,7 @@ const ProfileSection: React.FC = () => {
                     indexBy="name"
                     margin={{ top: 12, right: 12, bottom: 28, left: 40 }}
                     padding={0.26}
-                    colors={(bar) => colorForEmotion(bar.data.name as string)}
+                    colors={(bar: any) => colorForEmotion(bar.data.name as string)}
                     borderRadius={12}
                     axisTop={null}
                     axisRight={null}
@@ -309,9 +322,9 @@ const ProfileSection: React.FC = () => {
                       grid: { line: { stroke: '#F3F4F6' } },
                       tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
                     }}
-                    tooltip={({ indexValue, value }) => (
+                    tooltip={({ indexValue, value }: any) => (
                       <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                        <div className="font-medium">{indexValue as string}</div>
+                        <div className="font-medium">{String(indexValue)}</div>
                         <div>{String(value)}</div>
                       </div>
                     )}
@@ -342,7 +355,7 @@ const ProfileSection: React.FC = () => {
                     layout="horizontal"
                     margin={{ top: 8, right: 16, bottom: 8, left: 160 }}
                     padding={0.3}
-                    colors={(bar) => pastel(bar.data.name as string)}
+                    colors={(bar: any) => pastel(bar.data.name as string)}
                     borderRadius={12}
                     axisTop={null}
                     axisRight={null}
@@ -354,9 +367,9 @@ const ProfileSection: React.FC = () => {
                       grid: { line: { stroke: '#F3F4F6' } },
                       tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
                     }}
-                    tooltip={({ indexValue, value }) => (
+                    tooltip={({ indexValue, value }: any) => (
                       <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
-                        <div className="font-medium">{indexValue as string}</div>
+                        <div className="font-medium">{String(indexValue)}</div>
                         <div>{String(value)}</div>
                       </div>
                     )}
