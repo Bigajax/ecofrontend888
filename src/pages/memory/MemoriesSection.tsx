@@ -1,5 +1,7 @@
-import React, { useMemo, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+// src/pages/memory/MemoriesSection.tsx
+import { useMemo, useState, useCallback, memo } from 'react';
+import type { FC, PropsWithChildren } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
@@ -41,9 +43,17 @@ const hashStringToHue = (str: string) => {
   for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
   return Math.abs(h) % 360;
 };
+const pastelVibrant = (seed: string) => `hsl(${hashStringToHue(seed)}, 70%, 90%)`;
 
-const pastelVibrant = (seed: string) =>
-  `hsl(${hashStringToHue(seed)}, 70%, 90%)`;
+function luminance(hex: string) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return 1;
+  const [r, g, b] = [1, 2, 3].map(i => parseInt(m[i], 16) / 255).map(v =>
+    v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+  );
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+const readableText = (bgHex: string) => (luminance(bgHex) > 0.6 ? '#0f172a' : 'white');
 
 /** escurece/clareia um hex */
 function shade(hex: string, pct: number) {
@@ -70,8 +80,8 @@ const humanDate = (raw?: string) => {
   return `${diff} dias atrás`;
 };
 
-const intensityOf = (m: any) => {
-  const v = Number(m?.intensidade ?? m?.intensity ?? 0);
+const intensityOf = (m: Partial<Memoria>) => {
+  const v = Number((m as any)?.intensidade ?? (m as any)?.intensity ?? 0);
   return Number.isFinite(v) ? Math.min(10, Math.max(0, v)) : 0;
 };
 
@@ -82,11 +92,14 @@ const bucketLabelForDate = (iso?: string) => {
   const diffDays = Math.floor((+now - +d) / msDay);
   if (diffDays === 0) return 'Hoje';
   if (diffDays === 1) return 'Ontem';
+
+  // início da semana (segunda)
   const startOfWeek = new Date(now);
   const diffToMonday = ((startOfWeek.getDay() + 6) % 7);
   startOfWeek.setHours(0, 0, 0, 0);
   startOfWeek.setDate(startOfWeek.getDate() - diffToMonday);
   if (d >= startOfWeek) return 'Esta semana';
+
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   if (d >= startOfMonth) return 'Este mês';
   return 'Antigas';
@@ -101,19 +114,20 @@ const groupMemories = (mems: Memoria[]): Grouped =>
   }, {});
 
 /* ---------- Subcomponentes ---------- */
-const Chip: React.FC<React.PropsWithChildren<{ title?: string }>> = ({ title, children }) => (
+const Chip: FC<PropsWithChildren<{ title?: string }>> = ({ title, children }) => (
   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white/85 text-[12px] leading-5 text-slate-700 max-w-full">
     {title ? <span className="font-medium text-slate-900">{title}:</span> : null}
     <span className="truncate">{children}</span>
   </div>
 );
 
-const ChevronBtn: React.FC<{ open: boolean; onClick: () => void }> = ({ open, onClick }) => (
+const ChevronBtn: FC<{ open: boolean; onClick: () => void }> = ({ open, onClick }) => (
   <button
     type="button"
     onClick={onClick}
     aria-label={open ? 'Fechar detalhes' : 'Abrir detalhes'}
-    className="h-9 w-9 rounded-full border border-slate-200 bg-white/80 hover:bg-white transition grid place-items-center shadow-sm"
+    aria-expanded={open}
+    className="h-9 w-9 rounded-full border border-slate-200 bg-white/80 hover:bg-white focus:outline-none focus:ring-2 focus:ring-slate-300/70 transition grid place-items-center shadow-sm"
   >
     <svg viewBox="0 0 20 20" className={`h-4 w-4 text-slate-700 transition-transform ${open ? 'rotate-180' : ''}`}>
       <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
@@ -122,8 +136,9 @@ const ChevronBtn: React.FC<{ open: boolean; onClick: () => void }> = ({ open, on
 );
 
 /* ---------- Card Apple-like ---------- */
-const MemoryCard: React.FC<{ mem: Memoria }> = React.memo(({ mem }) => {
+const MemoryCard: FC<{ mem: Memoria }> = memo(({ mem }) => {
   const [open, setOpen] = useState(false);
+  const reduce = useReducedMotion();
   const toggle = useCallback(() => setOpen(v => !v), []);
 
   const cap = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
@@ -132,10 +147,9 @@ const MemoryCard: React.FC<{ mem: Memoria }> = React.memo(({ mem }) => {
   const when = humanDate(mem.created_at);
   const intensidade = intensityOf(mem);
 
-  // visíveis no card fechado
-  const domain = (mem as any).dominio_vida || (mem as any).dominio || (mem as any).domain || '';
+  const domain =
+    (mem as any).dominio_vida || (mem as any).dominio || (mem as any).domain || '';
 
-  // detalhes (expandido)
   const padrao =
     (mem as any).padrao_comportamento ||
     (mem as any).padrao_comportamental ||
@@ -143,14 +157,17 @@ const MemoryCard: React.FC<{ mem: Memoria }> = React.memo(({ mem }) => {
     '';
 
   const tags: string[] = useMemo(() => {
-    const raw = (Array.isArray(mem.tags) ? mem.tags : typeof mem.tags === 'string' ? mem.tags.split(/[;,]/) : [])
-      .map(t => (t || '').trim())
-      .filter(Boolean);
-    return Array.from(new Set(raw));
+    const raw =
+      (Array.isArray(mem.tags) ? mem.tags : typeof mem.tags === 'string' ? mem.tags.split(/[;,]/) : [])
+        .map(t => (t || '').trim())
+        .filter(Boolean);
+    return Array.from(new Set(raw)).slice(0, 3);
   }, [mem.tags]);
 
   return (
-    <li className="w-full rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm shadow-[0_1px_0_rgba(255,255,255,.85),0_8px_28px_rgba(2,6,23,.06)] p-4 md:p-5">
+    <li
+      className="w-full rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm shadow-[0_1px_0_rgba(255,255,255,.85),0_8px_28px_rgba(2,6,23,.06)] p-4 md:p-5"
+    >
       {/* Header */}
       <div className="flex items-start gap-3">
         {/* Bolha glassmorphism */}
@@ -189,78 +206,81 @@ const MemoryCard: React.FC<{ mem: Memoria }> = React.memo(({ mem }) => {
         />
       </div>
 
-      {/* Tags (máx 3, vibrantes) */}
+      {/* Tags (máx 3) */}
       {!!tags.length && (
         <div className="mt-3 flex flex-wrap gap-2">
-          {tags.slice(0, 3).map((tag, i) => (
-            <span
-              key={`${tag}-${i}`}
-              className="text-[12px] leading-5 px-3 py-1 rounded-full font-medium border shadow-sm border-slate-200"
-              style={{ background: pastelVibrant(tag), color: '#0f172a' }}
-            >
-              {tag[0].toUpperCase() + tag.slice(1)}
-            </span>
-          ))}
+          {tags.map((tag) => {
+            const bg = pastelVibrant(tag);
+            return (
+              <span
+                key={tag}
+                className="text-[12px] leading-5 px-3 py-1 rounded-full font-medium border shadow-sm border-slate-200"
+                style={{ background: bg, color: readableText(bg as string) }}
+              >
+                {tag[0].toUpperCase() + tag.slice(1)}
+              </span>
+            );
+          })}
         </div>
       )}
 
-      {/* Chevron minimalista */}
+      {/* Chevron */}
       <div className="mt-3 flex justify-end">
         <ChevronBtn open={open} onClick={toggle} />
       </div>
 
       {/* Detalhes */}
-      {open && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4 mt-3 pt-3 border-t border-slate-200/70 text-[14px] leading-[1.6] text-slate-700"
-        >
-          {/* metadados (sem emoção e sem abertura) */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Chip title="Intensidade">{intensidade}/10</Chip>
-            {padrao && (
-              <div className="w-full sm:w-auto">
-                <div className="inline-flex items-start gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white/85 text-[12px] leading-5 text-slate-700 max-w-full">
-                  <span className="font-medium text-slate-900">Padrão:</span>
-                  <span className="whitespace-normal break-words">
-                    {padrao}
-                  </span>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="details"
+            initial={reduce ? false : { opacity: 0, y: 8 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: 8 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+            className="space-y-4 mt-3 pt-3 border-t border-slate-200/70 text-[14px] leading-[1.6] text-slate-700"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <Chip title="Intensidade">{intensidade}/10</Chip>
+              {padrao && (
+                <div className="w-full sm:w-auto">
+                  <div className="inline-flex items-start gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white/85 text-[12px] leading-5 text-slate-700 max-w-full">
+                    <span className="font-medium text-slate-900">Padrão:</span>
+                    <span className="whitespace-normal break-words">{padrao}</span>
+                  </div>
                 </div>
+              )}
+              <Chip title="Criado em">{toDate(mem.created_at).toLocaleDateString()}</Chip>
+            </div>
+
+            {(mem as any).analise_resumo && (
+              <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
+                <div className="font-semibold mb-1 text-slate-900">Reflexão da Eco</div>
+                <p className="text-slate-700">{(mem as any).analise_resumo}</p>
               </div>
             )}
-            <Chip title="Criado em">{toDate(mem.created_at).toLocaleDateString()}</Chip>
-          </div>
-
-          {(mem as any).analise_resumo && (
-            <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
-              <div className="font-semibold mb-1 text-slate-900">Reflexão da Eco</div>
-              <div>{(mem as any).analise_resumo}</div>
-            </div>
-          )}
-
-          {!(mem as any).analise_resumo && (mem as any).resumo_eco && (
-            <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
-              <div className="font-semibold mb-1 text-slate-900">Reflexão da Eco</div>
-              <div>{(mem as any).resumo_eco}</div>
-            </div>
-          )}
-
-          {mem.contexto && (
-            <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
-              <div className="font-semibold mb-1 text-slate-900">Seu pensamento</div>
-              <div>{mem.contexto}</div>
-            </div>
-          )}
-        </motion.div>
-      )}
+            {!(mem as any).analise_resumo && (mem as any).resumo_eco && (
+              <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
+                <div className="font-semibold mb-1 text-slate-900">Reflexão da Eco</div>
+                <p className="text-slate-700">{(mem as any).resumo_eco}</p>
+              </div>
+            )}
+            {mem.contexto && (
+              <div className="rounded-xl p-3 bg-white/85 backdrop-blur border border-slate-200 shadow-sm">
+                <div className="font-semibold mb-1 text-slate-900">Seu pensamento</div>
+                <p className="text-slate-700">{mem.contexto}</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </li>
   );
 });
 MemoryCard.displayName = 'MemoryCard';
 
 /* ---------- Seção ---------- */
-const MemoriesSection: React.FC = () => {
+const MemoriesSection: FC = () => {
   const { memories, loading, error } = useMemoryData();
   const navigate = useNavigate();
 
@@ -285,10 +305,8 @@ const MemoriesSection: React.FC = () => {
             m.contexto || '',
             Array.isArray(m.tags) ? m.tags.join(' ') : typeof m.tags === 'string' ? m.tags : '',
             (m as any).categoria || '',
-            (m as any).dominio_vida || '',
-          ]
-            .map(normalize)
-            .join(' ');
+            (m as any).dominio_vida || (m as any).dominio || '',
+          ].map(normalize).join(' ');
           if (!hay.includes(q)) return false;
         }
         return true;
@@ -300,7 +318,15 @@ const MemoriesSection: React.FC = () => {
   const groupOrder = ['Hoje', 'Ontem', 'Esta semana', 'Este mês', 'Antigas'] as const;
   const filtersActive = emoFilter !== 'all' || !!query;
 
-  if (loading) return <div className="text-neutral-500 text-sm">Carregando…</div>;
+  if (loading) {
+    return (
+      <div className="max-w-[1100px] mx-auto mt-6 px-2 md:px-0 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-40 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
   if (error) return <div className="text-rose-500 text-sm">{error}</div>;
 
   return (
@@ -315,7 +341,7 @@ const MemoriesSection: React.FC = () => {
           Cada memória se torna um reflexo do que te atravessa.
         </p>
 
-        {/* Filtros compactos: emoção + busca (sem chips/tags e sem intensidade) */}
+        {/* Filtros compactos */}
         <div className="mt-4 p-3 rounded-2xl bg-white/70 border border-slate-200">
           <div className="flex flex-wrap gap-2 items-stretch">
             <div className="min-w-[220px]">
@@ -357,7 +383,7 @@ const MemoriesSection: React.FC = () => {
         </div>
       </header>
 
-      {/* Grupos em grid responsivo (auto-fill) */}
+      {/* Grupos */}
       {filteredSorted.length ? (
         <div className="space-y-8 max-w-[1100px] mx-auto mt-6 px-2 md:px-0">
           {groupOrder
@@ -367,7 +393,7 @@ const MemoriesSection: React.FC = () => {
                 <h3 className="text-sm font-semibold text-neutral-500 mb-3">{bucket}</h3>
                 <ul className="grid [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] gap-4">
                   {grouped[bucket]!.map((m) => (
-                    <MemoryCard key={m.id ?? `${m.created_at}-${m.emocao_principal}`} mem={m} />
+                    <MemoryCard key={m.id ?? `${m.created_at}-${m.emocao_principal ?? 'x'}`} mem={m} />
                   ))}
                 </ul>
               </section>
