@@ -11,6 +11,8 @@ interface HeaderProps {
   variant?: 'top' | 'left' | 'auto';
 }
 
+const VERSION = '222'; // ← versão exibida ao lado do botão de sair
+
 const navItem = (active: boolean, collapsed: boolean) =>
   [
     'flex items-center gap-2 rounded-lg transition-colors duration-150',
@@ -104,6 +106,16 @@ const Header: React.FC<HeaderProps> = ({
               {mensagemDeSucesso}
             </span>
           )}
+
+          {/* versão minimalista à esquerda do botão sair */}
+          <span
+            className="text-[10px] leading-none text-slate-400 tabular-nums select-none"
+            aria-label={`Versão ${VERSION}`}
+            title={`Versão ${VERSION}`}
+          >
+            {VERSION}
+          </span>
+
           {onLogout && (
             <button
               onClick={onLogout}
@@ -119,7 +131,7 @@ const Header: React.FC<HeaderProps> = ({
     </header>
   );
 
-  /* ---------- LEFT SIDEBAR (itens independentes) ---------- */
+  /* ---------- LEFT SIDEBAR (desktop) ---------- */
   const LeftBar = (
     <aside
       className="fixed left-0 top-0 z-50 h-dvh bg-white border-r border-gray-100
@@ -187,16 +199,27 @@ const Header: React.FC<HeaderProps> = ({
           )}
         </nav>
 
-        <div className="mt-auto px-4 py-3 flex items-center justify-between gap-2">
+        {/* rodapé da sidebar */}
+        <div className="mt-auto px-4 py-3 flex items-center gap-2">
           {mensagemDeSucesso && !collapsed && (
             <span className="text-xs text-green-600 font-medium truncate max-w-[9.5rem]">
               {mensagemDeSucesso}
             </span>
           )}
+
+          {/* versão minimalista ao lado ESQUERDO do ícone de sair */}
+          <span
+            className={`text-[10px] leading-none text-slate-400 tabular-nums select-none ${collapsed ? 'mr-auto' : ''}`}
+            aria-label={`Versão ${VERSION}`}
+            title={`Versão ${VERSION}`}
+          >
+            {VERSION}
+          </span>
+
           {onLogout && (
             <button
               onClick={onLogout}
-              className="p-1.5 rounded-full hover:bg-gray-100 active:bg-gray-200 transition ml-auto
+              className="ml-auto p-1.5 rounded-full hover:bg-gray-100 active:bg-gray-200 transition
                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-200"
               aria-label="Sair" title="Sair"
             >
