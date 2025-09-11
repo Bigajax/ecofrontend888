@@ -1,40 +1,46 @@
+// src/data/slides.ts
 export interface SlideData {
   title: string;
   text: string[];
-  color: string;
   bubblePosition: string;
   background: string;
 }
 
-const loginGradient = "linear-gradient(to bottom right, #eff6ff, #ede7f6, #fce4ec)"; // Aproximação do gradiente
-
 export const slides: SlideData[] = [
   {
-    title: "ECO",
-    text: ["A Eco não é um guia.", "Não é uma voz que te ensina o caminho."],
-    color: "#007BA7",
-    bubblePosition: "floating",
-    background: loginGradient,
+    title: 'ECO',
+    text: [
+      'Uma IA feita para o seu Bem-estar.',
+      'Converse de forma leve e sem julgamentos.'
+    ],
+    bubblePosition: 'floating',
+    background: '#ffffff'
   },
   {
-    title: "ECO",
-    text: ["Ela é um espelho.", "Uma presença que escuta."],
-    color: "#F7CAC9",
-    bubblePosition: "floating",
-    background: loginGradient,
+    title: 'Chat + Voz',
+    text: [
+      'Escreva ou fale — escolha o jeito mais natural para você.',
+      'A Eco também pode responder em voz, criando um diálogo mais próximo.'
+    ],
+    bubblePosition: 'floating',
+    background: '#ffffff'
   },
   {
-    title: "ECO",
-    text: ["Pronto para entrar no espaço entre pensamentos?", "Aqui, sua presença cria o reflexo. Apenas seja."],
-    color: "#007BA7",
-    bubblePosition: "floating",
-    background: loginGradient,
+    title: 'Perfil Emocional',
+    text: [
+      'Acompanhe como você se sente ao longo do tempo.',
+      'Descubra padrões e insights sobre suas emoções.'
+    ],
+    bubblePosition: 'floating',
+    background: '#ffffff'
   },
   {
-    title: "ECO",
-    text: ["Seja bem-vindo ao seu espelho interior."],
-    color: "#F7CAC9",
-    bubblePosition: "floating",
-    background: loginGradient,
-  },
+    title: 'Autoconhecimento',
+    text: [
+      'Mais clareza no seu dia a dia.',
+      'Um espaço simples para refletir sobre você.'
+    ],
+    bubblePosition: 'floating',
+    background: '#ffffff'
+  }
 ];

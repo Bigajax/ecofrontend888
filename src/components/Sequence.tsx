@@ -1,125 +1,126 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import Slide from './Slide';
-import { slides } from "../data/slides";
-import { Transition } from 'react-transition-group';
-import { X, ArrowLeft, ArrowRight } from 'lucide-react';
+import { slides } from '../data/slides';
 
 interface SequenceProps {
-    currentStep: number; // Esta prop não está sendo usada, pode ser removida se não for necessária em outro lugar.
-    onClose: () => void;
+  onClose: () => void;
 }
 
-// Defina a cor padrão para todas as bolhas aqui
-const DEFAULT_BUBBLE_COLOR = '#4A90E2'; // Um tom de azul que se encaixa bem com um visual "glassmorphism".
-
 const Sequence: React.FC<SequenceProps> = ({ onClose }) => {
-    const [slideIndex, setSlideIndex] = useState(0);
-    const totalSlides = slides.length;
-    const navigate = useNavigate();
+  const [slideIndex, setSlideIndex] = useState(0);
+  const totalSlides = slides.length;
+  const navigate = useNavigate();
 
-    const handleNext = () => {
-        if (slideIndex < totalSlides - 1) {
-            setSlideIndex(prevIndex => prevIndex + 1);
-        } else {
-            navigate('/chat');
-        }
+  const handleNext = () => {
+    if (slideIndex < totalSlides - 1) setSlideIndex((i) => i + 1);
+    else navigate('/chat');
+  };
+  const handlePrev = () => { if (slideIndex > 0) setSlideIndex((i) => i - 1); };
+  const goToSlide = (i: number) => setSlideIndex(i);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') handleNext();
+      if (e.key === 'ArrowLeft') handlePrev();
+      if (e.key === 'Escape') onClose();
     };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slideIndex]);
 
-    const handlePrev = () => {
-        if (slideIndex > 0) {
-            setSlideIndex(prevIndex => prevIndex - 1);
-        }
-    };
+  const currentSlideData = slides[slideIndex];
 
-    const goToSlide = (index: number) => {
-        setSlideIndex(index);
-    };
+  return (
+    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-white">
+      {/* Fechar */}
+      <button
+        onClick={onClose}
+        aria-label="Fechar"
+        className="absolute right-3.5 top-3.5 inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100/70 hover:text-slate-700 transition z-10"
+      >
+        <X size={18} />
+      </button>
 
-    // Obtenha os dados do slide atual
-    const currentSlideData = slides[slideIndex];
+      {/* Slide com transição */}
+      <div className="relative w-full h-full flex items-center justify-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={slideIndex}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="absolute inset-0 flex items-center justify-center"
+          >
+            {currentSlideData && (
+              <Slide
+                title={currentSlideData.title}
+                text={currentSlideData.text}
+                bubblePosition={currentSlideData.bubblePosition}
+                background={currentSlideData.background}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-    return (
-        <div className="sequence-container w-full h-full flex flex-col items-center justify-center overflow-hidden">
-            <Transition
-                in={true}
-                timeout={300}
-                mountOnEnter
-                unmountOnExit
-                key={slideIndex}
-            >
-                {(state) => (
-                    <div className={`absolute inset-0 w-full h-full flex items-center justify-center ${state}`}>
-                        {currentSlideData && (
-                            <Slide
-                                title={currentSlideData.title}
-                                text={currentSlideData.text}
-                                color={DEFAULT_BUBBLE_COLOR} // AQUI: Passamos a cor padrão
-                                bubblePosition={currentSlideData.bubblePosition}
-                                background={currentSlideData.background}
-                                onNext={handleNext}
-                                onPrev={handlePrev}
-                                isFirst={slideIndex === 0}
-                                isLast={slideIndex === totalSlides - 1}
-                            />
-                        )}
-                    </div>
-                )}
-            </Transition>
+      {/* Controles (fixos no rodapé) */}
+      <div className="absolute bottom-5 md:bottom-6 left-0 right-0 flex items-center justify-center gap-4 z-10">
+        {slideIndex > 0 ? (
+          <button
+            onClick={handlePrev}
+            aria-label="Anterior"
+            className="btn-apple !h-10 !w-10 !p-0 rounded-full flex items-center justify-center"
+          >
+            <ArrowLeft size={18} />
+          </button>
+        ) : (
+          <div className="w-10" />
+        )}
 
-            {/* Container para setas e bolinhas */}
-            <div className="absolute bottom-12 flex justify-center items-center gap-4 z-10">
-                {slideIndex > 0 && (
-                    <button
-                        onClick={handlePrev}
-                        className="p-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/40 transition-all"
-                        aria-label="Previous slide"
-                    >
-                        <ArrowLeft size={20} className="text-gray-600 opacity-70" />
-                    </button>
-                )}
-
-                {/* Indicadores de bolinhas */}
-                <div className="flex gap-2">
-                    {slides.map((_, index) => (
-                        <button
-                            key={index}
-                            className={`rounded-full w-3 h-3 transition-colors duration-300 ${index === slideIndex ? 'bg-gray-600' : 'bg-gray-300 hover:bg-gray-400'
-                                }`}
-                            onClick={() => goToSlide(index)}
-                            aria-label={`Go to slide ${index + 1}`}
-                        />
-                    ))}
-                </div>
-
-                {slideIndex < totalSlides - 1 && (
-                    <button
-                        onClick={handleNext}
-                        className="p-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/40 transition-all"
-                        aria-label="Next slide"
-                    >
-                        <ArrowRight size={20} className="text-gray-600 opacity-70" />
-                    </button>
-                )}
-
-                {slideIndex === totalSlides - 1 && (
-                    <button
-                        onClick={handleNext}
-                        className="px-6 py-3 bg-white/20 text-black rounded-full hover:bg-white/30 transition-colors duration-300
-                                 border border-gray-300 shadow-md" // Estilo mais próximo do design da Apple
-                        aria-label="Go to Chat"
-                    >
-                        Ir para o Chat
-                    </button>
-                )}
-            </div>
-
-            {/* Botão de fechar (ícone de X) */}
-            <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-sm z-10">
-                <X size={20} />
-            </button>
+        {/* Dots */}
+        <div className="flex items-center gap-2.5">
+          {slides.map((_, i) => {
+            const active = i === slideIndex;
+            return (
+              <button
+                key={i}
+                onClick={() => goToSlide(i)}
+                aria-label={`Ir para o slide ${i + 1}`}
+                className={[
+                  'rounded-full transition-all duration-200',
+                  active
+                    ? 'w-2.5 h-2.5 bg-slate-900 ring-2 ring-slate-300/50 shadow-[0_0_0_1px_rgba(255,255,255,.8)_inset]'
+                    : 'w-2 h-2 bg-slate-300 hover:bg-slate-400',
+                ].join(' ')}
+              />
+            );
+          })}
         </div>
-    );
+
+        {slideIndex < totalSlides - 1 ? (
+          <button
+            onClick={handleNext}
+            aria-label="Próximo"
+            className="btn-apple !h-10 !w-10 !p-0 rounded-full flex items-center justify-center"
+          >
+            <ArrowRight size={18} />
+          </button>
+        ) : (
+          <button
+            onClick={handleNext}
+            className="btn-apple btn-apple-primary px-5 h-11 rounded-2xl"
+          >
+            Ir para o chat
+          </button>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default Sequence;
