@@ -184,7 +184,7 @@ const ChatPage: React.FC = () => {
     }
   }, [aiMessages.length]);
 
-  /* 🔹 QUICK SUGGESTIONS: esconder quando houver mensagens */
+  /* 🔹 QUICK SUGESTIONS: esconder quando houver mensagens */
   useEffect(() => {
     if ((messages?.length ?? 0) > 0) setShowQuick(false);
   }, [messages]);
@@ -336,17 +336,21 @@ const ChatPage: React.FC = () => {
   }
 
   return (
-    <div className="w-full min-h-[100svh] flex flex-col bg-white">
-      <Header
-        title="ECO"
-        showBackButton={false}
-        onOpenMemoryHistory={() => navigate('/memory')}
-        onLogout={async () => {
-          await signOut();
-          clearMessages();
-          navigate('/login');
-        }}
-      />
+    // ⬇️ altura fixa + permite que filhos possam encolher
+    <div className="w-full h-[100svh] min-h-0 flex flex-col bg-white">
+      {/* Header não deve encolher */}
+      <div className="flex-shrink-0">
+        <Header
+          title="ECO"
+          showBackButton={false}
+          onOpenMemoryHistory={() => navigate('/memory')}
+          onLogout={async () => {
+            await signOut();
+            clearMessages();
+            navigate('/login');
+          }}
+        />
+      </div>
 
       {/* SCROLLER */}
       <div
@@ -357,13 +361,14 @@ const ChatPage: React.FC = () => {
           setIsAtBottom(atBottom);
           setShowScrollBtn(!atBottom);
         }}
-        className="chat-scroller flex-1 overflow-y-auto px-3 sm:px-6 pt-2"
+        // ⬇️ min-h-0 aqui é o que libera o scroll no flex item
+        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 pt-2"
         style={{
           paddingBottom: 'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + 12px)',
           WebkitOverflowScrolling: 'touch',
           scrollPaddingBottom: '12px',
           overscrollBehaviorY: 'contain',
-          scrollBehavior: 'smooth',
+          // não force scroll-behavior aqui; o scrollTo controla a suavidade
         }}
       >
         <div className="max-w-2xl w-full mx-auto">
