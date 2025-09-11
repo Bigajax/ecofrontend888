@@ -1,110 +1,169 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+// src/components/MapaEmocional2D.tsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { hexbin as d3hexbin } from "d3-hexbin";
+import { scaleLinear } from "d3-scale";
+import { max as d3max } from "d3-array";
 
-interface PontoEmocional {
+type Ponto = {
   emocao: string;
-  valenciaNormalizada: number;
-  excitacaoNormalizada: number;
+  valenciaNormalizada: number; // X em [-1, 1]
+  excitacaoNormalizada: number; // Y em [-1, 1]
   cor?: string;
-}
-
-interface Props {
-  data: PontoEmocional[];
-}
-
-/**
- * 🔹 Cor pastel com mais contraste
- */
-const gerarCorPastel = (str: string) => {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 70%, 60%)`;
 };
 
-const MapaEmocional2D: React.FC<Props> = ({ data }) => {
-  if (!data || data.length === 0) {
-    return (
-      <div className="text-neutral-400 text-sm italic p-4 text-center">
-        Nenhum dado disponível para o mapa emocional 2D.
-      </div>
-    );
+type Props = {
+  data: Ponto[];
+  height?: number;
+  /** raio do hexágono em px */
+  radius?: number;
+};
+
+const clamp = (v: number, min = -1, max = 1) => Math.max(min, Math.min(max, v));
+
+/** cor base (teal) com alpha variável */
+const hexFill = (alpha: number) => `rgba(16,185,129,${alpha})`; // tailwind emerald-500 approx.
+
+const MapaEmocional2D: React.FC<Props> = ({ data, height = 320, radius = 14 }) => {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState<number>(480);
+
+  // medir largura do container (responsivo)
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0].contentRect.width;
+      setWidth(Math.max(260, Math.floor(w)));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  if (!data?.length) {
+    return <div className="text-sm text-neutral-400 italic text-center p-6">Sem pontos.</div>;
   }
 
-  const limitedData = data.reduce((acc, item) => {
-    const key = item.emocao;
-    if (!acc[key]) acc[key] = [];
-    if (acc[key].length < 30) acc[key].push(item);
-    return acc;
-  }, {} as Record<string, PontoEmocional[]>);
+  const margin = { top: 10, right: 10, bottom: 28, left: 32 };
+  const innerW = Math.max(1, width - margin.left - margin.right);
+  const innerH = Math.max(1, height - margin.top - margin.bottom);
 
-  const flattenedData = Object.values(limitedData).flat();
+  // escalas (−1..1 → área útil)
+  const x = useMemo(() => scaleLinear().domain([-1, 1]).range([0, innerW]), [innerW]);
+  const y = useMemo(() => scaleLinear().domain([-1, 1]).range([innerH, 0]), [innerH]);
+
+  // pontos normalizados
+  const pts = useMemo(
+    () =>
+      data.map((p) => ({
+        x: clamp(p.valenciaNormalizada),
+        y: clamp(p.excitacaoNormalizada),
+        emocao: p.emocao,
+      })),
+    [data]
+  );
+
+  // colmeia (hexbin)
+  const bins = useMemo(() => {
+    const hb = d3hexbin<{ x: number; y: number }>()
+      .x((d) => x(d.x))
+      .y((d) => y(d.y))
+      .radius(radius)
+      .extent([
+        [0, 0],
+        [innerW, innerH],
+      ]);
+    return hb(pts as any);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pts, innerW, innerH, radius]); // x/y mudam com innerW/H
+
+  const maxCount = useMemo(() => d3max(bins, (b) => b.length) ?? 1, [bins]);
+
+  const ticks = [-1, -0.5, 0, 0.5, 1];
 
   return (
-    <div className="flex flex-col items-center gap-3 w-full">
-      <div className="relative w-full h-[320px] sm:h-[380px] md:h-[420px] rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-sm">
-        {/* Grade / Eixos */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-full h-px bg-neutral-200" />
-          <div className="absolute inset-0 flex justify-center">
-            <div className="h-full w-px bg-neutral-200" />
-          </div>
-        </div>
+    <div ref={wrapRef} className="w-full" style={{ height }}>
+      <svg width={width} height={height} role="img" aria-label="Mapa emocional 2D (hexbin)">
+        <g transform={`translate(${margin.left},${margin.top})`}>
+          {/* grade leve */}
+          {ticks.map((t) => (
+            <line
+              key={`vx-${t}`}
+              x1={x(t)}
+              x2={x(t)}
+              y1={0}
+              y2={innerH}
+              stroke="#F3F4F6"
+              strokeWidth={1}
+            />
+          ))}
+          {ticks.map((t) => (
+            <line
+              key={`hy-${t}`}
+              x1={0}
+              x2={innerW}
+              y1={y(t)}
+              y2={y(t)}
+              stroke="#F3F4F6"
+              strokeWidth={1}
+            />
+          ))}
 
-        {/* Bolhas */}
-        {flattenedData.map((p, i) => {
-          const left = ((p.valenciaNormalizada + 1) / 2) * 100;
-          const top = (1 - ((p.excitacaoNormalizada + 1) / 2)) * 100;
-          const leftClamped = Math.max(5, Math.min(95, left));
-          const topClamped = Math.max(5, Math.min(95, top));
-          const cor = p.cor ?? gerarCorPastel(p.emocao);
-          const size = 22 + Math.floor(Math.random() * 8);
+          {/* eixos zero levemente mais fortes */}
+          <line x1={x(0)} x2={x(0)} y1={0} y2={innerH} stroke="#E5E7EB" strokeWidth={1.2} />
+          <line x1={0} x2={innerW} y1={y(0)} y2={y(0)} stroke="#E5E7EB" strokeWidth={1.2} />
 
-          return (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 0.85, scale: 1 }}
-              transition={{ duration: 0.6, delay: i * 0.01 }}
-              className="absolute group"
-              style={{
-                left: `${leftClamped}%`,
-                top: `${topClamped}%`,
-                transform: 'translate(-50%, -50%)',
-              }}
+          {/* rótulos dos ticks */}
+          {ticks.map((t) => (
+            <text
+              key={`tx-${t}`}
+              x={x(t)}
+              y={innerH + 18}
+              textAnchor="middle"
+              fontSize={10}
+              fill="#9CA3AF"
             >
-              <div
-                className="rounded-full shadow-sm backdrop-blur-sm border border-white/80"
-                style={{
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  backgroundColor: cor,
-                  opacity: 0.8,
-                }}
-              />
-              {/* Tooltip melhorado */}
-              <div className="absolute -top-[72px] left-1/2 -translate-x-1/2 text-[11px] bg-white rounded-xl border border-neutral-200 shadow-md px-3 py-2 opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
-                <div className="text-neutral-900 font-semibold text-[12px] mb-[2px]">{p.emocao}</div>
-                <div className="text-neutral-500 text-[10px]">Valência: {p.valenciaNormalizada.toFixed(2)}</div>
-                <div className="text-neutral-500 text-[10px]">Excitação: {p.excitacaoNormalizada.toFixed(2)}</div>
-              </div>
-            </motion.div>
-          );
-        })}
+              {t}
+            </text>
+          ))}
+          {ticks.map((t) => (
+            <text
+              key={`ty-${t}`}
+              x={-8}
+              y={y(t) + 3}
+              textAnchor="end"
+              fontSize={10}
+              fill="#9CA3AF"
+            >
+              {t}
+            </text>
+          ))}
 
-        {/* Label central */}
-        <div className="absolute inset-0 flex items-center justify-center text-[12px] text-neutral-400 pointer-events-none font-medium">
-          Eixo de Valência / Excitação
-        </div>
-      </div>
-
-      {/* Rodapé explicativo */}
-      <div className="text-[12px] text-neutral-500 text-center italic max-w-sm leading-snug px-2">
-        <span className="font-medium">Valência (Eixo X):</span> emoções negativas → positivas &nbsp;/&nbsp;
-        <span className="font-medium">Excitação (Eixo Y):</span> baixa → alta energia
-      </div>
+          {/* hexbins — alpha cresce com a densidade */}
+          {bins.map((b, i) => {
+            const alpha = 0.12 + 0.75 * (b.length / maxCount); // 0.12 → 0.87
+            return (
+              <path
+                key={i}
+                transform={`translate(${b.x},${b.y})`}
+                d={d3hexbin().radius(radius).hexagon()}
+                fill={hexFill(alpha)}
+                stroke={hexFill(0.25)}
+                strokeWidth={1}
+              >
+                {/* tooltip nativo do SVG */}
+                <title>
+                  {`${b.length} memória${b.length > 1 ? "s" : ""}\n`}
+                  {`Valência média: ${(
+                    b.map((d: any) => d.x).reduce((a: number, c: number) => a + c, 0) / b.length
+                  ).toFixed(2)} • Excitação média: ${(
+                    b.map((d: any) => d.y).reduce((a: number, c: number) => a + c, 0) / b.length
+                  ).toFixed(2)}`}
+                </title>
+              </path>
+            );
+          })}
+        </g>
+      </svg>
     </div>
   );
 };
