@@ -2,24 +2,44 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
 import PhoneFrame from '../components/PhoneFrame';
-import Input from '../components/Input';
+import { useAuth } from '../contexts/AuthContext';
 import TourInicial from '../components/TourInicial';
-import EcoTitle from '../components/EcoTitle';
 
-/* Bolha minimal com brilho sutil */
-const BubbleIcon: React.FC<{ className?: string }> = ({ className = 'h-3.5 w-3.5' }) => (
-  <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+/* Divisor minimal: hairline + “ou” micro, sem fundo */
+const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
+  <div className="relative my-4 select-none" aria-hidden="true">
+    <div className="h-px w-full bg-slate-200/70" />
+    <span
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                 text-[10px] tracking-[0.12em] text-slate-300"
+    >
+      {label}
+    </span>
+  </div>
+);
+
+/* Bolha glassmorphism 3D — única, discreta */
+const BubbleIcon: React.FC<{ className?: string }> = ({ className = 'h-5 w-5' }) => (
+  <svg viewBox="0 0 96 96" className={className} aria-hidden="true">
     <defs>
-      <radialGradient id="b1" cx="35%" cy="30%" r="70%">
-        <stop offset="0%" stopColor="#ECFEFF"/>
-        <stop offset="45%" stopColor="#9AD1D4"/>
-        <stop offset="100%" stopColor="#A78BFA"/>
+      <radialGradient id="bgCore" cx="38%" cy="32%" r="62%">
+        <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.95"/>
+        <stop offset="45%" stopColor="#CDE6F0" stopOpacity="0.9"/>
+        <stop offset="100%" stopColor="#B5A8FF" stopOpacity="0.95"/>
+      </radialGradient>
+      <radialGradient id="spec" cx="28%" cy="22%" r="20%">
+        <stop offset="0%" stopColor="#fff" stopOpacity="0.95"/>
+        <stop offset="100%" stopColor="#fff" stopOpacity="0"/>
       </radialGradient>
     </defs>
-    <circle cx="32" cy="32" r="22" fill="url(#b1)"/>
-    <ellipse cx="24" cy="22" rx="9" ry="6" fill="#fff" opacity=".55"/>
+    <g>
+      <circle cx="48" cy="48" r="30" fill="url(#bgCore)"/>
+      <circle cx="48" cy="48" r="30" fill="url(#spec)"/>
+      <circle cx="48" cy="48" r="30" fill="none" stroke="rgba(255,255,255,.8)" strokeWidth="1.4"/>
+      <circle cx="48" cy="48" r="30" fill="none" stroke="rgba(2,6,23,.22)" strokeWidth="0.8"/>
+      <ellipse cx="38" cy="34" rx="12" ry="8" fill="#fff" opacity=".55"/>
+    </g>
   </svg>
 );
 
@@ -37,9 +57,6 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => { if (user) navigate('/chat'); }, [user, navigate]);
 
-  const handleIniciarTour = () => setIsTourActive(true);
-  const handleCloseTour = () => setIsTourActive(false);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
@@ -52,32 +69,36 @@ const LoginPage: React.FC = () => {
 
   return (
     <PhoneFrame>
-      {/* fundo branco liso para combinar com o chat */}
       <div className="flex h-full items-center justify-center px-6 py-10 bg-white">
-        {isTourActive && <TourInicial onClose={handleCloseTour} />}
+        {isTourActive && <TourInicial onClose={() => setIsTourActive(false)} />}
 
-        {/* cartão principal com glassmorphism */}
-        <div className="glass-panel w-full max-w-sm rounded-[28px] p-8 md:p-10 space-y-7">
-          <div className="text-center space-y-3">
-            <EcoTitle />
+        {/* Cartão vítreo clean */}
+        <motion.div
+          initial={{ y: 6, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.28, ease: 'easeOut' }}
+          className="glass-card w-full max-w-sm p-8 md:p-10"
+        >
+          {/* Header */}
+          <div className="text-center space-y-4">
+            <h1 className="eco-wordmark text-[34px] leading-none font-semibold text-slate-900">ECO</h1>
 
-            {/* Pílula “Seu espelho interior” */}
-            <div className="relative mx-auto w-fit">
-              <div className="absolute -inset-[2px] rounded-full blur-[6px] opacity-40
-                              bg-[radial-gradient(70%_90%_at_50%_0%,#a78bfa_18%,transparent_55%)]"/>
-              <span className="relative inline-flex items-center gap-2 rounded-full
-                               px-3.5 py-1.5 text-sm font-medium tracking-tight
-                               bg-white/80 text-slate-900
-                               border border-white/70 ring-1 ring-black/5
-                               shadow-[0_1px_0_rgba(255,255,255,.7)_inset,0_6px_18px_rgba(2,6,23,.06)]">
+            {/* Pílula minimal com uma bolha */}
+            <div className="w-full flex justify-center">
+              <span className="pill-ambient">
                 <BubbleIcon />
-                <span>Seu espelho interior</span>
+                <span className="text-[15px] leading-none text-slate-800">
+                  Seu espelho emocional
+                </span>
               </span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="mt-7 space-y-4" noValidate>
+            <label className="sr-only" htmlFor="email">Email</label>
+            <input
+              id="email"
               type="email"
               placeholder="Email"
               value={email}
@@ -85,74 +106,66 @@ const LoginPage: React.FC = () => {
               required
               autoComplete="email"
               autoFocus
-              className="h-12 rounded-2xl px-4
-                         bg-white/85 backdrop-blur-sm text-slate-900 placeholder-slate-400
-                         border border-black/10
-                         shadow-[inset_0_1px_0_rgba(255,255,255,.7)]
-                         focus:ring-[3px] focus:ring-sky-300/40 focus:border-transparent
-                         transition"
+              className="input-glass"
             />
 
-            <Input
+            <label className="sr-only" htmlFor="password">Senha</label>
+            <input
+              id="password"
               type="password"
               placeholder="Senha"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="h-12 rounded-2xl px-4
-                         bg-white/85 backdrop-blur-sm text-slate-900 placeholder-slate-400
-                         border border-black/10
-                         shadow-[inset_0_1px_0_rgba(255,255,255,.7)]
-                         focus:ring-[3px] focus:ring-sky-300/40 focus:border-transparent
-                         transition"
+              className="input-glass"
             />
 
-            {error && (
-              <motion.p className="text-rose-600 text-sm text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                {error}
-              </motion.p>
-            )}
+            {/* Mensagem de erro acessível */}
+            <div role="status" aria-live="polite" className="min-h-[1rem]">
+              {error && (
+                <motion.p
+                  className="text-rose-600 text-sm text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  {error}
+                </motion.p>
+              )}
+            </div>
 
-            <div className="pt-2 space-y-3">
-              {/* primário em glass escuro (mesmo do chat) */}
+            {/* Actions — mais respiro entre botões */}
+            <div className="pt-1 space-y-4">
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className={`glass-button-primary w-full h-12 rounded-2xl font-semibold tracking-tight
-                            transition will-change-transform
-                            ${!canSubmit ? 'opacity-60 cursor-not-allowed' : 'active:translate-y-[1px]'}`}
+                className="btn-apple btn-apple-primary w-full"
               >
                 {loading ? 'Entrando…' : 'Entrar'}
               </button>
 
-              {/* secundários em glass neutro */}
               <button
                 type="button"
                 onClick={() => navigate('/register')}
                 disabled={loading}
-                className="glass-button w-full h-11 rounded-2xl font-medium transition hover:bg-white/80"
+                className="btn-apple w-full h-11"
               >
                 Criar perfil
               </button>
 
-              <div className="flex items-center gap-3 py-1 select-none">
-                <span className="flex-1 h-px bg-black/10" />
-                <span className="text-slate-400 text-xs">ou</span>
-                <span className="flex-1 h-px bg-black/10" />
-              </div>
+              <Divider />
 
               <button
                 type="button"
-                onClick={handleIniciarTour}
+                onClick={() => setIsTourActive(true)}
                 disabled={loading}
-                className="glass-button w-full h-11 rounded-2xl font-medium transition hover:bg-white/80"
+                className="btn-apple w-full h-11"
               >
                 Iniciar Tour
               </button>
             </div>
           </form>
-        </div>
+        </motion.div>
       </div>
     </PhoneFrame>
   );

@@ -6,20 +6,29 @@ import { useAuth } from '../contexts/AuthContext';
 import PhoneFrame from '../components/PhoneFrame';
 import Input from '../components/Input';
 import MaskedInput from '../components/MaskedInput';
-import { fbq } from '../lib/fbpixel'; // ✅ helper do Pixel
+import { fbq } from '../lib/fbpixel';
 
-/* bolha igual ao login */
-const BubbleIcon: React.FC<{ className?: string }> = ({ className = 'h-3.5 w-3.5' }) => (
-  <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+/* Bolha igual ao login (uma só) */
+const BubbleIcon: React.FC<{ className?: string }> = ({ className = 'h-5 w-5' }) => (
+  <svg viewBox="0 0 96 96" className={className} aria-hidden="true">
     <defs>
-      <radialGradient id="b1" cx="35%" cy="30%" r="70%">
-        <stop offset="0%" stopColor="#ECFEFF" />
-        <stop offset="45%" stopColor="#9AD1D4" />
-        <stop offset="100%" stopColor="#A78BFA" />
+      <radialGradient id="bgCore" cx="38%" cy="32%" r="62%">
+        <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.95"/>
+        <stop offset="45%" stopColor="#CDE6F0" stopOpacity="0.9"/>
+        <stop offset="100%" stopColor="#B5A8FF" stopOpacity="0.95"/>
+      </radialGradient>
+      <radialGradient id="spec" cx="28%" cy="22%" r="20%">
+        <stop offset="0%" stopColor="#fff" stopOpacity="0.95"/>
+        <stop offset="100%" stopColor="#fff" stopOpacity="0"/>
       </radialGradient>
     </defs>
-    <circle cx="32" cy="32" r="22" fill="url(#b1)" />
-    <ellipse cx="24" cy="22" rx="9" ry="6" fill="#fff" opacity=".55" />
+    <g>
+      <circle cx="48" cy="48" r="30" fill="url(#bgCore)"/>
+      <circle cx="48" cy="48" r="30" fill="url(#spec)"/>
+      <circle cx="48" cy="48" r="30" fill="none" stroke="rgba(255,255,255,.8)" strokeWidth="1.4"/>
+      <circle cx="48" cy="48" r="30" fill="none" stroke="rgba(2,6,23,.22)" strokeWidth="0.8"/>
+      <ellipse cx="38" cy="34" rx="12" ry="8" fill="#fff" opacity=".55"/>
+    </g>
   </svg>
 );
 
@@ -53,18 +62,9 @@ const CreateProfilePage: React.FC = () => {
     if (!canSubmit) return;
     setError('');
     setLoading(true);
-
     try {
-      // 💾 cria a conta no seu backend/Supabase
       await register(email.trim(), password, fullName.trim(), phoneClean);
-
-      // 📈 dispara a conversão do Meta Pixel (Registro completo)
-      fbq('CompleteRegistration', {
-        value: 1,
-        currency: 'BRL',
-      });
-
-      // ▶️ segue o fluxo normal da app
+      fbq('CompleteRegistration', { value: 1, currency: 'BRL' });
       navigate('/chat');
     } catch (err: any) {
       setError(err?.message || 'Falha ao criar conta. Tente novamente.');
@@ -75,28 +75,30 @@ const CreateProfilePage: React.FC = () => {
 
   return (
     <PhoneFrame>
-      <div className="flex h-full items-center justify-center px-6 py-8 bg-gradient-to-br from-[#F7F8FB] via-[#F9FAFB] to-[#F5F7FF]">
+      <div className="flex h-full items-center justify-center px-6 py-10 bg-white">
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-          className="w-full max-w-sm rounded-[28px] px-8 py-10 bg-white/80 backdrop-blur-2xl border border-white/70 ring-1 ring-black/5 shadow-[0_12px_30px_rgba(0,0,0,.06)]"
+          transition={{ duration: 0.28, ease: 'easeOut' }}
+          className="glass-card w-full max-w-sm p-8 md:p-10"
         >
-          {/* título + pill */}
-          <div className="text-center space-y-3 mb-6">
-            <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Criar Perfil</h1>
-
-            {/* Pílula mais discreta e com o mesmo texto do login */}
-            <div className="relative mx-auto w-fit">
-              <div className="absolute -inset-[2px] rounded-full blur-[6px] opacity-35 bg-[radial-gradient(70%_90%_at_50%_0%,#a78bfa_18%,transparent_55%)]" />
-              <span className="relative inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium tracking-tight bg-white/80 text-slate-900 border border-white/70 ring-1 ring-black/5 shadow-[0_1px_0_rgba(255,255,255,.7)_inset,0_6px_18px_rgba(2,6,23,.06)]">
+          {/* header atualizado */}
+          <div className="text-center space-y-4">
+            <h1 className="text-[28px] leading-none font-sans font-semibold text-slate-900">
+              Criar Perfil
+            </h1>
+            <div className="w-full flex justify-center">
+              <span className="pill-ambient">
                 <BubbleIcon />
-                <span>Seu espelho interior</span>
+                <span className="text-[15px] leading-none text-slate-800">
+                  Seu espelho emocional
+                </span>
               </span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          {/* formulário */}
+          <form onSubmit={handleSubmit} className="mt-7 space-y-4" noValidate>
             <Input
               type="text"
               placeholder="Nome completo"
@@ -104,7 +106,7 @@ const CreateProfilePage: React.FC = () => {
               onChange={(e) => setFullName(e.target.value)}
               required
               autoComplete="name"
-              className="h-12 rounded-2xl px-4 bg-white text-slate-900 placeholder-slate-400 border border-black/10 shadow-[inset_0_1px_0_rgba(255,255,255,.7)] focus:ring-[3px] focus:ring-sky-300/50 focus:border-transparent transition"
+              className="input-glass"
             />
 
             <Input
@@ -114,7 +116,7 @@ const CreateProfilePage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="h-12 rounded-2xl px-4 bg-white text-slate-900 placeholder-slate-400 border border-black/10 shadow-[inset_0_1px_0_rgba(255,255,255,.7)] focus:ring-[3px] focus:ring-sky-300/50 focus:border-transparent transition"
+              className="input-glass"
             />
 
             <MaskedInput
@@ -125,10 +127,10 @@ const CreateProfilePage: React.FC = () => {
               onChange={(e: any) => setPhone(e.target.value)}
               required
               autoComplete="tel"
-              className="h-12 rounded-2xl px-4 bg-white text-slate-900 placeholder-slate-400 border border-black/10 shadow-[inset_0_1px_0_rgba(255,255,255,.7)] focus:ring-[3px] focus:ring-sky-300/50 focus:border-transparent transition"
+              className="input-glass"
             />
 
-            {/* senha – toggle texto (sem ícones) */}
+            {/* senha */}
             <div className="relative">
               <input
                 type={showPwd ? 'text' : 'password'}
@@ -137,19 +139,18 @@ const CreateProfilePage: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="new-password"
-                className="h-12 w-full rounded-2xl px-4 pr-16 bg-white text-slate-900 placeholder-slate-400 border border-black/10 shadow-[inset_0_1px_0_rgba(255,255,255,.7)] focus:ring-[3px] focus:ring-sky-300/50 focus:border-transparent transition"
+                className="input-glass pr-16"
               />
               <button
                 type="button"
                 onClick={() => setShowPwd((s) => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-medium text-slate-600 hover:text-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-300/40"
-                aria-label={showPwd ? 'Ocultar senha' : 'Mostrar senha'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-medium text-slate-600 hover:text-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300/50"
               >
                 {showPwd ? 'Ocultar' : 'Mostrar'}
               </button>
             </div>
 
-            {/* confirmar senha – mesmo toggle texto */}
+            {/* confirmar senha */}
             <div className="relative">
               <input
                 type={showPwd2 ? 'text' : 'password'}
@@ -158,48 +159,42 @@ const CreateProfilePage: React.FC = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 autoComplete="new-password"
-                className="h-12 w-full rounded-2xl px-4 pr-16 bg-white text-slate-900 placeholder-slate-400 border border-black/10 shadow-[inset_0_1px_0_rgba(255,255,255,.7)] focus:ring-[3px] focus:ring-sky-300/50 focus:border-transparent transition"
+                className="input-glass pr-16"
               />
               <button
                 type="button"
                 onClick={() => setShowPwd2((s) => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-medium text-slate-600 hover:text-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-300/40"
-                aria-label={showPwd2 ? 'Ocultar senha' : 'Mostrar senha'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-medium text-slate-600 hover:text-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300/50"
               >
                 {showPwd2 ? 'Ocultar' : 'Mostrar'}
               </button>
             </div>
 
-            {/* erros */}
-            <div aria-live="polite">
+            {/* feedbacks */}
+            <div aria-live="polite" className="min-h-[1.1rem]">
               {error && (
                 <motion.p className="text-rose-600 text-sm text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   {error}
                 </motion.p>
               )}
-              {password && confirmPassword && password !== confirmPassword && !error && (
+              {!error && password && confirmPassword && password !== confirmPassword && (
                 <p className="text-amber-600 text-xs text-center">As senhas não coincidem.</p>
               )}
-              {phone && phoneClean.length !== 11 && !error && (
+              {!error && phone && phoneClean.length !== 11 && (
                 <p className="text-amber-600 text-xs text-center">Use o formato (99) 99999-9999.</p>
               )}
             </div>
 
-            {/* ação */}
             <button
               type="submit"
               disabled={!canSubmit}
-              className={`w-full h-12 rounded-2xl font-semibold tracking-tight transition ${
-                canSubmit
-                  ? 'bg-[#265F77] text-white hover:bg-[#2b6e8a] active:translate-y-[1px] shadow-[0_1px_0_rgba(255,255,255,.3)_inset,0_10px_22px_rgba(2,6,23,.12)]'
-                  : 'bg-slate-300/70 text-slate-600 cursor-not-allowed'
-              }`}
+              className="btn-apple btn-apple-primary w-full"
             >
-              {loading ? 'Criando…' : 'Criar Conta'}
+              {loading ? 'Criando…' : 'Criar conta'}
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-slate-500">
+          <div className="mt-5 text-center text-sm text-slate-500">
             Já possui uma conta?{' '}
             <button
               type="button"
