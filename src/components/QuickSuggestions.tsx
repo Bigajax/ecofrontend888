@@ -13,11 +13,11 @@ type QuickSuggestionsProps = {
   visible: boolean;
   className?: string;
 
-  /** NOVO: preferencial — recebe objetos ricos */
+  /** Preferencial — recebe objetos ricos */
   suggestions?: Suggestion[];
   onPickSuggestion?: (s: Suggestion) => void;
 
-  /** LEGADO: compat com sua implementação antiga */
+  /** Legado: compat com versão antiga */
   onPick?: (text: string) => void;
 };
 
@@ -81,30 +81,41 @@ export default function QuickSuggestions({
 
   return (
     <div
-      className={"w-full max-w-2xl mx-auto mb-2 " + className}
+      className={`w-full max-w-2xl mx-auto mb-2 ${className}`}
       aria-label="Atalhos de início"
+      role="region"
     >
-      {/* mobile: 2 colunas | md+: pílulas com wrap centralizado */}
-      <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:justify-center">
+      {/* Mobile: rolagem horizontal, compacto. Desktop: wrap centralizado. */}
+      <div
+        className="
+          flex gap-2 overflow-x-auto no-scrollbar py-1 px-0.5
+          whitespace-nowrap md:whitespace-normal
+          md:flex md:flex-wrap md:justify-center
+          [scrollbar-width:none] [-ms-overflow-style:none]
+        "
+      >
         {suggestions.map((s) => (
           <button
             key={s.id}
             onClick={() => handleClick(s)}
             className="
-              rounded-full w-full
-              text-[13px] md:text-sm px-3.5 py-2
-              bg-white border border-gray-200
+              shrink-0 md:shrink
+              h-9 md:h-10
+              rounded-full px-3 md:px-3.5
+              text-[13px] md:text-[13.5px]
+              bg-white/70 backdrop-blur-md
+              border border-gray-200/70
               shadow-sm hover:shadow focus:outline-none
-              focus-visible:ring-2 focus-visible:ring-gray-400/50
+              focus-visible:ring-2 focus-visible:ring-slate-300
               active:translate-y-[1px] transition
-              text-slate-800 flex items-center justify-center gap-2
+              text-slate-800 flex items-center gap-2
             "
             aria-label={`Sugerir: ${s.label}`}
             title={s.label}
             data-suggestion-id={s.id}
           >
-            {s.icon && <span className="text-base md:text-[17px]">{s.icon}</span>}
-            <span className="font-medium">{s.label}</span>
+            {s.icon && <span className="leading-none text-[15px] md:text-[17px]">{s.icon}</span>}
+            <span className="font-medium leading-none">{s.label}</span>
           </button>
         ))}
       </div>

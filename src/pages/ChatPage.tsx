@@ -88,7 +88,7 @@ const ChatPage: React.FC = () => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const isNearBottom = (el: HTMLDivElement) => {
-    const threshold = 120; // px de tolerância
+    const threshold = 120;
     return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
   };
 
@@ -109,7 +109,7 @@ const ChatPage: React.FC = () => {
   const clientHourNow = new Date().getHours();
   const saudacao = saudacaoDoDiaFromHour(clientHourNow);
 
-  // scrollToBottom mais robusto (dois frames no iOS) + marca estado
+  // scrollToBottom + marca estado
   const scrollToBottom = (smooth = true) => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -122,7 +122,6 @@ const ChatPage: React.FC = () => {
     });
   };
 
-  // Auto-scroll somente se usuário estiver no fundo
   useEffect(() => {
     if (isAtBottom) {
       const t = setTimeout(() => scrollToBottom(true), 0);
@@ -130,7 +129,7 @@ const ChatPage: React.FC = () => {
     }
   }, [messages, digitando, isAtBottom]);
 
-  // Medir a barra sticky e setar --input-h dinamicamente
+  // medir sticky input
   useEffect(() => {
     if (!inputBarRef.current) return;
     const el = inputBarRef.current;
@@ -220,7 +219,7 @@ const ChatPage: React.FC = () => {
     return `${mod}${tip}`.trim();
   };
 
-  /* ===== handleSendMessage agora aceita systemHint opcional ===== */
+  /* ===== handleSendMessage aceita systemHint opcional ===== */
   const handleSendMessage = async (text: string, systemHint?: string) => {
     const raw = text ?? '';
     const trimmed = raw.trim();
@@ -286,7 +285,7 @@ const ChatPage: React.FC = () => {
         const retorno = gerarMensagemRetorno(memSignif);
 
         const preSistema: any[] = [];
-        if (systemHint) preSistema.push({ role: 'system', content: systemHint }); // << injeta módulos/hint
+        if (systemHint) preSistema.push({ role: 'system', content: systemHint });
         if (retorno) preSistema.push({ role: 'system', content: retorno });
         if (ctxMems) preSistema.push({ role: 'system', content: `Memórias recentes relevantes:\n${ctxMems}` });
 
@@ -353,12 +352,9 @@ const ChatPage: React.FC = () => {
     await handleSendMessage(userText, hint);
   };
 
-  const mensagemBoasVindas = `${saudacao}, ${userName}`;
-
   return (
-    // ⬇️ altura fixa + permite que filhos possam encolher
     <div className="w-full h-[100svh] min-h-0 flex flex-col bg-white">
-      {/* Header não deve encolher */}
+      {/* Header */}
       <div className="flex-shrink-0">
         <Header
           title="ECO"
@@ -392,18 +388,21 @@ const ChatPage: React.FC = () => {
         <div className="max-w-2xl w-full mx-auto">
           {messages.length === 0 && !erroApi && (
             <motion.div
-              className="text-center mb-16 mt-12 px-4"
-              initial={{ opacity: 0, y: 10 }}
+              className="text-center mb-8 mt-8 px-4"
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35 }}
+              transition={{ duration: 0.28 }}
             >
-              {/* TÍTULO COM A BOLHA APÓS O NOME */}
-              <h2 className="text-3xl md:text-4xl font-light text-gray-800 flex items-center justify-center gap-2.5 leading-tight">
-                <span>{saudacao},</span>
-                <span className="ml-1">{userName}</span>
-                <EcoBubbleIcon size={26} className="ml-1 translate-y-[2px] md:scale-[1.28]" />
-              </h2>
-              <p className="text-base md:text-lg font-light text-gray-600 mt-2">
+              {/* Grupo simétrico: balão fantasma (esq.) + título + balão real (dir.) */}
+              <div className="flex items-center justify-center gap-2.5">
+                <EcoBubbleIcon size={26} className="opacity-0 pointer-events-none" />
+                <h2 className="text-3xl md:text-4xl font-light text-gray-800 leading-tight">
+                  {saudacao}, {userName}
+                </h2>
+                <EcoBubbleIcon size={26} className="translate-y-[2px] md:scale-[1.15]" />
+              </div>
+
+              <p className="text-base md:text-lg font-light text-slate-500 mt-2">
                 Comece sua sessão de Autoconhecimento.
               </p>
             </motion.div>
@@ -462,15 +461,15 @@ const ChatPage: React.FC = () => {
           </div>
         </div>
 
-        {/* BOTÃO “DESCER” (Apple-like) */}
+        {/* BOTÃO “DESCER” */}
         {showScrollBtn && (
           <button
             onClick={() => scrollToBottom(true)}
             className="
               fixed right-4 sm:right-8
-              bottom-[calc(var(--input-h,72px)+20px)]
-              z-40 h-10 w-10 rounded-full
-              backdrop-blur-md bg-white/70 hover:bg-white
+              bottom-[calc(var(--input-h,72px)+18px)]
+              z-40 h-9 w-9 rounded-full
+              backdrop-blur-md bg-white/75 hover:bg-white
               shadow-lg border border-gray-200/70
               flex items-center justify-center transition
             "
@@ -489,12 +488,14 @@ const ChatPage: React.FC = () => {
         className="sticky bottom-[max(env(safe-area-inset-bottom),0px)] z-40 px-3 sm:px-6 pb-2 pt-2 bg-white border-t border-gray-200"
       >
         <div className="max-w-2xl mx-auto">
+          {/* sugestões compactas com scroll horizontal */}
           <QuickSuggestions
             visible={showQuick && messages.length === 0 && !digitando && !erroApi}
             onPickSuggestion={handlePickSuggestion}
+            className="mt-1 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
           />
 
-          {/* mantém compat: ao digitar manualmente, vamos sem hint */}
+          {/* input */}
           <ChatInput
             onSendMessage={(t) => handleSendMessage(t)}
             onMoreOptionSelected={(opt) => {

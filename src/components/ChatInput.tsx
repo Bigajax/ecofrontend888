@@ -63,8 +63,8 @@ const ChatInput: React.FC<Props> = ({
     const onDocClick = (e: MouseEvent) => {
       if (!popoverRef.current || !wrapperRef.current) return;
       const t = e.target as Node;
-      if (wrapperRef.current.contains(t) && popoverRef.current.contains(t)) return;
-      setShowMoreOptions(false);
+      const clickedInsidePopover = popoverRef.current.contains(t);
+      if (!clickedInsidePopover) setShowMoreOptions(false);
     };
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
@@ -349,14 +349,21 @@ const ChatInput: React.FC<Props> = ({
             <Mic size={16} />
           </button>
 
-        <button
+          {/* SEND → branco glassmorphism */}
+          <button
             type="submit"
             ref={sendButtonRef}
             disabled={disabled || !inputMessage.trim()}
-            className="glass-button-primary w-8 h-8 rounded-full flex items-center justify-center transition-transform disabled:opacity-50"
+            className="
+              w-8 h-8 rounded-full
+              backdrop-blur-md bg-white/80 border border-white/60
+              shadow-sm hover:bg-white active:scale-[0.98]
+              transition disabled:opacity-50 disabled:cursor-not-allowed
+              text-slate-700
+            "
             aria-label="Enviar mensagem"
           >
-            <Send size={16} strokeWidth={1.5} />
+            <Send size={16} strokeWidth={1.6} />
           </button>
         </div>
       </div>
