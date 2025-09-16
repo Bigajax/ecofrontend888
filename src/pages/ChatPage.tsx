@@ -379,8 +379,19 @@ const ChatPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35 }}
             >
-              <h2 className="text-3xl md:text-4xl font-light text-gray-800">{mensagemBoasVindas}</h2>
-              <p className="text-base md:text-lg font-light text-gray-600 mt-2">Aqui, você se escuta.</p>
+              {/* TÍTULO COM A BOLHA APÓS O NOME */}
+              <h2 className="text-3xl md:text-4xl font-light text-gray-800 flex items-center justify-center gap-2.5 leading-tight">
+  <span>{saudacao},</span>
+  <span className="ml-1">{userName}</span>
+  {/* bolha com mais presença: 26px no mobile, ~33px no desktop via scale */}
+  <EcoBubbleIcon
+    size={26}
+    className="ml-1 translate-y-[2px] md:scale-[1.28]"
+  />
+</h2>
+              <p className="text-base md:text-lg font-light text-gray-600 mt-2">
+                Comece sua sessão de Autoconhecimento.
+              </p>
             </motion.div>
           )}
 
