@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, NavLink, Link } from 'react-router-dom';
-import { ArrowLeft, LogOut, BookOpen, HeartPulse, BarChart3, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, LogOut, BookOpen, Brain, BarChart3, ChevronLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
-import EcoBubbleIcon from './EcoBubbleIcon'; // <- usa a MESMA bolha do ChatMessage
+import EcoBubbleIcon from './EcoBubbleIcon';
 
 interface HeaderProps {
   title: string;
@@ -15,8 +15,8 @@ interface HeaderProps {
 const VERSION = '222';
 const STORAGE_KEY = 'eco.sidebar.collapsed';
 
-/* -------- estilos “apple-like” -------- */
-const iconCls = 'h-[22px] w-[22px] text-slate-700'; // ícone maior e mais refinado
+/* -------- estilo mais “Apple-like” -------- */
+const iconCls = 'h-[22px] w-[22px] text-slate-700'; // leve aumento + traço fino
 const navItem = (active: boolean, collapsed: boolean) =>
   [
     'flex items-center gap-2 rounded-xl transition-all duration-150',
@@ -51,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({
     if (typeof document !== 'undefined') {
       document.documentElement.style.setProperty(
         '--eco-sidebar-w',
-        isCollapsed ? '64px' : '256px' // leve aumento p/ presença
+        isCollapsed ? '64px' : '256px'
       );
     }
   };
@@ -82,14 +82,17 @@ const Header: React.FC<HeaderProps> = ({
           >
             <BookOpen className={iconCls} strokeWidth={1.75} />
           </NavLink>
+
+          {/* PERFIL EMOCIONAL → ícone de cérebro */}
           <NavLink
             to="/memory/profile"
             className={({ isActive }) => navItem(isActive, false)}
             aria-label="Perfil Emocional"
             title="Perfil Emocional"
           >
-            <HeartPulse className={iconCls} strokeWidth={1.75} />
+            <Brain className={iconCls} strokeWidth={1.75} />
           </NavLink>
+
           <NavLink
             to="/memory/report"
             className={({ isActive }) => navItem(isActive, false)}
@@ -112,13 +115,14 @@ const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Marca central com a MESMA bolha do chat */}
+        {/* Marca central com a mesma bolha do chat */}
         <Link
           to="/chat"
           title={title}
           className="flex items-center justify-center gap-2 select-none hover:opacity-95"
         >
-          <EcoBubbleIcon size={26} className="translate-y-[1px]" />
+          <EcoBubbleIcon size={28} className="translate-y-[1px]" />
+          {/* tipografia mais apple-like */}
           <span className="text-[18px] md:text-[20px] leading-none font-semibold tracking-[-0.01em] text-slate-900">
             {title || 'ECO'}
           </span>
@@ -131,7 +135,6 @@ const Header: React.FC<HeaderProps> = ({
             </span>
           )}
 
-          {/* versão à esquerda do botão sair */}
           <span
             className="text-[10px] leading-none text-slate-400 tabular-nums select-none"
             aria-label={`Versão ${VERSION}`}
@@ -166,14 +169,10 @@ const Header: React.FC<HeaderProps> = ({
       aria-label="Barra lateral"
     >
       <div className="relative flex h-full flex-col">
-        {/* topo da sidebar com bolha e tipografia mais apple */}
-        <div
-          className={`${
-            collapsed ? 'px-3 justify-center' : 'px-4 justify-between'
-          } pt-4 pb-2 flex items-center`}
-        >
+        {/* topo da sidebar com bolha e tipografia */}
+        <div className={`${collapsed ? 'px-3 justify-center' : 'px-4 justify-between'} pt-4 pb-2 flex items-center`}>
           <Link to="/chat" className="flex items-center gap-2 hover:opacity-95" title={title}>
-            <EcoBubbleIcon size={26} className="translate-y-[1px]" />
+            <EcoBubbleIcon size={28} className="translate-y-[1px]" />
             {!collapsed && (
               <span className="text-[19px] leading-none font-semibold tracking-[-0.01em] text-slate-900">
                 ECO
@@ -221,12 +220,13 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </NavLink>
 
+          {/* PERFIL EMOCIONAL → ícone de cérebro */}
           <NavLink
             to="/memory/profile"
             className={({ isActive }) => navItem(isActive, collapsed)}
             aria-label="Perfil Emocional"
           >
-            <HeartPulse className={iconCls} strokeWidth={1.75} />
+            <Brain className={iconCls} strokeWidth={1.75} />
             {!collapsed && (
               <span className="text-[15px] font-medium tracking-[-0.01em] text-slate-800 select-none">
                 Perfil Emocional

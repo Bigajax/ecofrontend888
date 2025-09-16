@@ -43,6 +43,9 @@ const BubbleIcon: React.FC<{ className?: string }> = ({ className = 'h-5 w-5' })
   </svg>
 );
 
+const TAGLINE = 'Reflexo do Agora';
+const SUBTAGLINE = 'Autoconhecimento guiado pelo presente.';
+
 const LoginPage: React.FC = () => {
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
@@ -80,18 +83,25 @@ const LoginPage: React.FC = () => {
           className="glass-card w-full max-w-sm p-8 md:p-10"
         >
           {/* Header */}
-          <div className="text-center space-y-4">
-            <h1 className="eco-wordmark text-[34px] leading-none font-semibold text-slate-900">ECO</h1>
+          <div className="text-center space-y-3">
+            <h1 className="eco-wordmark text-[34px] leading-none font-semibold tracking-[-0.02em] text-slate-900">
+              ECO
+            </h1>
 
-            {/* Pílula minimal com uma bolha */}
+            {/* Pílula minimal com uma bolha (novo bordão) */}
             <div className="w-full flex justify-center">
-              <span className="pill-ambient">
+              <span className="pill-ambient" aria-label={TAGLINE}>
                 <BubbleIcon />
-                <span className="text-[15px] leading-none text-slate-800">
-                  Seu espelho emocional
+                <span className="text-[14px] md:text-[15px] leading-none font-medium text-slate-800">
+                  {TAGLINE}
                 </span>
               </span>
             </div>
+
+            {/* Subtagline (Apple-like, calmo) */}
+            <p className="mt-1 text-[13px] md:text-[14px] text-slate-500 leading-snug">
+              {SUBTAGLINE}
+            </p>
           </div>
 
           {/* Form */}
