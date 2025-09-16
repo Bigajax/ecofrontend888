@@ -12,7 +12,7 @@ import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import EcoBubbleIcon from '../components/EcoBubbleIcon';
 import EcoMessageWithAudio from '../components/EcoMessageWithAudio';
-import QuickSuggestions from '../components/QuickSuggestions';
+import QuickSuggestions, { Suggestion } from '../components/QuickSuggestions';
 
 import { enviarMensagemParaEco } from '../api/ecoApi';
 import { buscarUltimasMemoriasComTags, buscarMemoriasSimilares } from '../api/memoriaApi';
@@ -108,7 +108,6 @@ const ChatPage: React.FC = () => {
 
   const clientHourNow = new Date().getHours();
   const saudacao = saudacaoDoDiaFromHour(clientHourNow);
-  const mensagemBoasVindas = `${saudacao}, ${userName}`;
 
   // scrollToBottom mais robusto (dois frames no iOS) + marca estado
   const scrollToBottom = (smooth = true) => {
@@ -213,7 +212,16 @@ const ChatPage: React.FC = () => {
     return `O usuário retorna após ${dias} dias. Na última interação significativa, compartilhou: “${resumo}”. Use isso para acolher o reencontro com sensibilidade.`;
   };
 
-  const handleSendMessage = async (text: string) => {
+  /* ===== helper para sugestões ricas ===== */
+  const buildModuleHint = (modules?: string[], extra?: string) => {
+    if (!modules?.length && !extra) return '';
+    const mod = modules?.length ? `Ative módulos: ${modules.join(', ')}.` : '';
+    const tip = extra ? ` ${extra}` : '';
+    return `${mod}${tip}`.trim();
+  };
+
+  /* ===== handleSendMessage agora aceita systemHint opcional ===== */
+  const handleSendMessage = async (text: string, systemHint?: string) => {
     const raw = text ?? '';
     const trimmed = raw.trim();
     if (!trimmed || digitando) return;
@@ -278,6 +286,7 @@ const ChatPage: React.FC = () => {
         const retorno = gerarMensagemRetorno(memSignif);
 
         const preSistema: any[] = [];
+        if (systemHint) preSistema.push({ role: 'system', content: systemHint }); // << injeta módulos/hint
         if (retorno) preSistema.push({ role: 'system', content: retorno });
         if (ctxMems) preSistema.push({ role: 'system', content: `Memórias recentes relevantes:\n${ctxMems}` });
 
@@ -335,6 +344,17 @@ const ChatPage: React.FC = () => {
     setShowFeedback(false);
   }
 
+  /* ===== quando o usuário toca numa sugestão ===== */
+  const handlePickSuggestion = async (s: Suggestion) => {
+    setShowQuick(false);
+    mixpanel.track('Eco: QuickSuggestion Click', { id: s.id, label: s.label, modules: s.modules });
+    const hint = buildModuleHint(s.modules, s.systemHint);
+    const userText = `${s.icon ? s.icon + ' ' : ''}${s.label}`;
+    await handleSendMessage(userText, hint);
+  };
+
+  const mensagemBoasVindas = `${saudacao}, ${userName}`;
+
   return (
     // ⬇️ altura fixa + permite que filhos possam encolher
     <div className="w-full h-[100svh] min-h-0 flex flex-col bg-white">
@@ -361,14 +381,12 @@ const ChatPage: React.FC = () => {
           setIsAtBottom(atBottom);
           setShowScrollBtn(!atBottom);
         }}
-        // ⬇️ min-h-0 aqui é o que libera o scroll no flex item
         className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 pt-2"
         style={{
           paddingBottom: 'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + 12px)',
           WebkitOverflowScrolling: 'touch',
           scrollPaddingBottom: '12px',
           overscrollBehaviorY: 'contain',
-          // não force scroll-behavior aqui; o scrollTo controla a suavidade
         }}
       >
         <div className="max-w-2xl w-full mx-auto">
@@ -381,14 +399,10 @@ const ChatPage: React.FC = () => {
             >
               {/* TÍTULO COM A BOLHA APÓS O NOME */}
               <h2 className="text-3xl md:text-4xl font-light text-gray-800 flex items-center justify-center gap-2.5 leading-tight">
-  <span>{saudacao},</span>
-  <span className="ml-1">{userName}</span>
-  {/* bolha com mais presença: 26px no mobile, ~33px no desktop via scale */}
-  <EcoBubbleIcon
-    size={26}
-    className="ml-1 translate-y-[2px] md:scale-[1.28]"
-  />
-</h2>
+                <span>{saudacao},</span>
+                <span className="ml-1">{userName}</span>
+                <EcoBubbleIcon size={26} className="ml-1 translate-y-[2px] md:scale-[1.28]" />
+              </h2>
               <p className="text-base md:text-lg font-light text-gray-600 mt-2">
                 Comece sua sessão de Autoconhecimento.
               </p>
@@ -463,7 +477,7 @@ const ChatPage: React.FC = () => {
             aria-label="Descer para a última mensagem"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5 text-gray-700">
-              <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         )}
@@ -477,15 +491,12 @@ const ChatPage: React.FC = () => {
         <div className="max-w-2xl mx-auto">
           <QuickSuggestions
             visible={showQuick && messages.length === 0 && !digitando && !erroApi}
-            onPick={(text) => {
-              setShowQuick(false);
-              mixpanel.track('Eco: QuickSuggestion Click', { label: text });
-              handleSendMessage(text);
-            }}
+            onPickSuggestion={handlePickSuggestion}
           />
 
+          {/* mantém compat: ao digitar manualmente, vamos sem hint */}
           <ChatInput
-            onSendMessage={handleSendMessage}
+            onSendMessage={(t) => handleSendMessage(t)}
             onMoreOptionSelected={(opt) => {
               if (opt === 'go_to_voice_page') navigate('/voice');
             }}
