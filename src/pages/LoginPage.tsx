@@ -5,46 +5,17 @@ import { motion } from 'framer-motion';
 import PhoneFrame from '../components/PhoneFrame';
 import { useAuth } from '../contexts/AuthContext';
 import TourInicial from '../components/TourInicial';
+import EcoBubbleIcon from '../components/EcoBubbleIcon';
 
 /* Divisor minimal: hairline + “ou” micro, sem fundo */
 const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
   <div className="relative my-4 select-none" aria-hidden="true">
     <div className="h-px w-full bg-slate-200/70" />
-    <span
-      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                 text-[10px] tracking-[0.12em] text-slate-300"
-    >
+    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] tracking-[0.12em] text-slate-300">
       {label}
     </span>
   </div>
 );
-
-/* Bolha glassmorphism 3D — única, discreta */
-const BubbleIcon: React.FC<{ className?: string }> = ({ className = 'h-5 w-5' }) => (
-  <svg viewBox="0 0 96 96" className={className} aria-hidden="true">
-    <defs>
-      <radialGradient id="bgCore" cx="38%" cy="32%" r="62%">
-        <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.95"/>
-        <stop offset="45%" stopColor="#CDE6F0" stopOpacity="0.9"/>
-        <stop offset="100%" stopColor="#B5A8FF" stopOpacity="0.95"/>
-      </radialGradient>
-      <radialGradient id="spec" cx="28%" cy="22%" r="20%">
-        <stop offset="0%" stopColor="#fff" stopOpacity="0.95"/>
-        <stop offset="100%" stopColor="#fff" stopOpacity="0"/>
-      </radialGradient>
-    </defs>
-    <g>
-      <circle cx="48" cy="48" r="30" fill="url(#bgCore)"/>
-      <circle cx="48" cy="48" r="30" fill="url(#spec)"/>
-      <circle cx="48" cy="48" r="30" fill="none" stroke="rgba(255,255,255,.8)" strokeWidth="1.4"/>
-      <circle cx="48" cy="48" r="30" fill="none" stroke="rgba(2,6,23,.22)" strokeWidth="0.8"/>
-      <ellipse cx="38" cy="34" rx="12" ry="8" fill="#fff" opacity=".55"/>
-    </g>
-  </svg>
-);
-
-const TAGLINE = 'Reflexo do Agora';
-const SUBTAGLINE = 'Autoconhecimento guiado pelo presente.';
 
 const LoginPage: React.FC = () => {
   const { signIn, user } = useAuth();
@@ -88,20 +59,15 @@ const LoginPage: React.FC = () => {
               ECO
             </h1>
 
-            {/* Pílula minimal com uma bolha (novo bordão) */}
+            {/* Pílula única: (bolha) Autoconhecimento guiado */}
             <div className="w-full flex justify-center">
-              <span className="pill-ambient" aria-label={TAGLINE}>
-                <BubbleIcon />
+              <span className="pill-ambient" aria-label="Autoconhecimento guiado">
+                <EcoBubbleIcon size={14} className="shrink-0" />
                 <span className="text-[14px] md:text-[15px] leading-none font-medium text-slate-800">
-                  {TAGLINE}
+                  Autoconhecimento guiado
                 </span>
               </span>
             </div>
-
-            {/* Subtagline (Apple-like, calmo) */}
-            <p className="mt-1 text-[13px] md:text-[14px] text-slate-500 leading-snug">
-              {SUBTAGLINE}
-            </p>
           </div>
 
           {/* Form */}
@@ -134,43 +100,25 @@ const LoginPage: React.FC = () => {
             {/* Mensagem de erro acessível */}
             <div role="status" aria-live="polite" className="min-h-[1rem]">
               {error && (
-                <motion.p
-                  className="text-rose-600 text-sm text-center"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
+                <motion.p className="text-rose-600 text-sm text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   {error}
                 </motion.p>
               )}
             </div>
 
-            {/* Actions — mais respiro entre botões */}
+            {/* Actions */}
             <div className="pt-1 space-y-4">
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="btn-apple btn-apple-primary w-full"
-              >
+              <button type="submit" disabled={!canSubmit} className="btn-apple btn-apple-primary w-full">
                 {loading ? 'Entrando…' : 'Entrar'}
               </button>
 
-              <button
-                type="button"
-                onClick={() => navigate('/register')}
-                disabled={loading}
-                className="btn-apple w-full h-11"
-              >
+              <button type="button" onClick={() => navigate('/register')} disabled={loading} className="btn-apple w-full h-11">
                 Criar perfil
               </button>
 
               <Divider />
 
-              <button
-                type="button"
-                onClick={() => setIsTourActive(true)}
-                disabled={loading}
-                className="btn-apple w-full h-11"
-              >
+              <button type="button" onClick={() => setIsTourActive(true)} disabled={loading} className="btn-apple w-full h-11">
                 Iniciar Tour
               </button>
             </div>
