@@ -1,4 +1,4 @@
-@tailwind base;
+@tailwind base; 
 @tailwind components;
 @tailwind utilities;
 
@@ -216,13 +216,31 @@ input, textarea { font-size: 16px; }
 .floating { animation: floating-animation 8s ease-in-out infinite; }
 .vibrating { animation: vibrating-animation .6s ease-in-out infinite; }
 
-/* ---------- Indicador de digitação ---------- */
-.typing-indicator { display: inline-flex; align-items: center; gap: 6px; }
+/* ---------- Indicador de digitação (robusto) ---------- */
+.typing-indicator { 
+  display: inline-flex; 
+  align-items: center; 
+  gap: 6px; 
+  min-width: 64px;            /* evita layout shift ao alternar */
+}
 .typing-dots { display: inline-flex; gap: 4px; }
-.typing-dots > span { width: 8px; height: 8px; border-radius: 9999px; background: #6b7280; }
-.typing-dots > span:nth-child(1) { animation-delay: 0s; }
-.typing-dots > span:nth-child(2) { animation-delay: .2s; }
-.typing-dots > span:nth-child(3) { animation-delay: .4s; }
+
+/* base: sempre visível mesmo sem animação */
+.typing-dots > span { 
+  width: 8px; 
+  height: 8px; 
+  border-radius: 9999px; 
+  background: #6b7280; 
+  opacity: .75;
+}
+
+/* anima apenas quando o usuário NÃO pede redução */
+@media (prefers-reduced-motion: no-preference) {
+  .typing-dots > span { animation: typingWave 1.2s ease-in-out infinite; }
+  .typing-dots > span:nth-child(1) { animation-delay: 0s; }
+  .typing-dots > span:nth-child(2) { animation-delay: .2s; }
+  .typing-dots > span:nth-child(3) { animation-delay: .4s; }
+}
 
 /* ---------- Mensagens (apple-like glass) ---------- */
 .message-eco,
@@ -332,9 +350,14 @@ body.keyboard-open { padding-bottom: var(--safe-bottom); }
 /* Atalho: quando houver suporte a backdrop-filter, empurra camada p/ GPU p/ reduzir flicker */
 .supports-backdrop .bg-white\/80 { transform: translateZ(0); }
 
-/* Acessibilidade: usuários com redução de movimento preferem menos animação */
+/* ---------- Redução de movimento (menos agressivo) ---------- */
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  /* reduz transições, sem matar tudo */
+  html * { transition: none !important; }
+  /* indicador fica estático e visível */
+  .typing-dots > span { animation: none !important; opacity: .75; }
+  /* se quiser desligar animações em uma área específica, envolva-a com .reduce-motion */
+  .reduce-motion * { animation: none !important; }
 }
 
 /* ----------------- RESPONSIVIDADE DA SIDEBAR ----------------- */
