@@ -318,14 +318,20 @@ input, textarea { font-size: 16px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.12); border-radius: 10px; }
 
-/* Gradientes para textos */
+/* Gradientes para textos – cross-browser */
+.text-gradient-blue,
+.text-gradient-rose {
+  display: inline-block;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
 .text-gradient-blue {
-  background: linear-gradient(90deg, var(--cerulean-blue), #5DA9C2);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(90deg, var(--cerulean-blue), #5DA9C2);
 }
 .text-gradient-rose {
-  background: linear-gradient(90deg, #E8A9A8, var(--rose-quartz));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(90deg, #E8A9A8, var(--rose-quartz));
 }
 
 /* ---- Alturas e teclado (iOS/Android) ---- */
