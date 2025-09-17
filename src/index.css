@@ -9,39 +9,24 @@ body {
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  /* 🔒 Fundo branco puro, sem imagens de fundo */
   background-color: #ffffff;
   background-image: none;
-
-  /* scroll vive no container do chat */
-  overflow: hidden;
+  overflow: hidden; /* scroll vive no container do chat */
 }
 
 :root {
   --cerulean-blue: #007BA7;
   --rose-quartz: #F7CAC9;
-
-  /* fundo branco puro */
   --bg-cream: #ffffff;
-
-  /* leve vinheta para dar profundidade no topo (não usada no body) */
   --app-vignette: radial-gradient(1200px 800px at 50% -10%, rgba(0,0,0,0.04), transparent 70%);
-
-  /* textura “paper subtle” (não usada no body) */
   --app-texture: url("data:image/svg+xml;utf8,\
     <svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill-opacity='0.03'>\
       <rect width='100' height='100' fill='white'/>\
       <circle cx='1' cy='1' r='1' fill='black'/>\
     </svg>");
-
   --eco-bubble-gradient: linear-gradient(135deg, #a1c4fd, #c2e9fb);
-
-  /* defaults usados antes do script setar dinamicamente */
   --vh: 1vh;
   --inset-bottom: 0px;
-
-  /* respeita notch/safe area */
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
   /* intensidades do vidro (ajustadas p/ fundo branco) */
@@ -124,14 +109,9 @@ body {
 
 /* Textarea dentro do painel */
 .glass-textarea{ color:#111827; }
-
-/* Placeholder mais leve/fino (Inter 450 ~ semibold leve) */
 .glass-textarea::placeholder{
-  font-size: 0.95rem;           /* ~15.2px */
-  font-weight: 450;             /* Inter variável suporta */
-  letter-spacing: .01em;
-  color: #64748b;               /* slate-500 */
-  opacity: .95;
+  font-size: 0.95rem; font-weight: 450; letter-spacing: .01em;
+  color: #64748b; opacity: .95;
 }
 
 /* Tintas suaves */
@@ -159,31 +139,24 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
 }
 
-/* Usa var(--vh) para corrigir o 100vh no iOS e funcionar bem com teclado */
+/* Usa var(--vh) p/ corrigir o 100vh no iOS */
 .App {
   width: 100%;
   height: calc(var(--vh, 1vh) * 100);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
 }
-
-/* Preferir 100dvh quando disponível (barras dinâmicas modernas) */
 @supports (height: 100dvh) { .App { height: 100dvh; } }
 
 /* Evita zoom ao focar inputs no iOS */
 input, textarea { font-size: 16px; }
-
 /* Remove highlight azul no iOS e reduz atraso de clique no mobile */
 * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
-/* ---------- Base compartilhada para bolhas de chat ---------- */
+/* ---------- Base compartilhada para bolhas ---------- */
 .chat-bubble-base {
   display: inline-block;
   max-width: min(720px, 88vw);
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  hyphens: auto;
+  overflow-wrap: anywhere; word-break: break-word; hyphens: auto;
   line-height: 1.55;
 }
 
@@ -194,12 +167,9 @@ input, textarea { font-size: 16px; }
 
 /* Bolha de vidro decorativa */
 .eco-glass-bubble {
-  width: 256px;
-  height: 256px;
-  border-radius: 9999px;
-  background-color: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  width: 256px; height: 256px; border-radius: 9999px;
+  background-color: rgba(255,255,255,0.25);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(0,0,0,0.06);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
@@ -212,35 +182,25 @@ input, textarea { font-size: 16px; }
 @keyframes typingWave { 0%{transform:translateY(0);opacity:.4} 25%{transform:translateY(-4px);opacity:1} 50%{transform:translateY(0);opacity:.4} 100%{transform:translateY(0);opacity:.4} }
 
 .animate-gentle-pulse { animation: gentlePulse 3s ease-in-out infinite; }
-.animate-wave-dot { animation: typingWave 1.2s infinite ease-in-out; }
 .floating { animation: floating-animation 8s ease-in-out infinite; }
 .vibrating { animation: vibrating-animation .6s ease-in-out infinite; }
 
-/* ---------- Indicador de digitação (robusto) ---------- */
-.typing-indicator { 
-  display: inline-flex; 
-  align-items: center; 
-  gap: 6px; 
-  min-width: 64px;            /* evita layout shift ao alternar */
+/* ---------- Indicador de digitação (sempre anima) ---------- */
+.typing-indicator{
+  display:inline-flex; align-items:center; gap:6px;
+  min-width:44px; min-height:22px; /* proporcional e sem “pulo” */
 }
-.typing-dots { display: inline-flex; gap: 4px; }
+.typing-dots{ display:inline-flex; gap:4px; }
+.typing-dots > span{
+  width:6px; height:6px; border-radius:9999px;
+  background:#6b7280; opacity:.85;
+  animation: typingWave 1.1s ease-in-out infinite;
+}
+.typing-dots > span:nth-child(2){ animation-delay:.18s; }
+.typing-dots > span:nth-child(3){ animation-delay:.36s; }
 
-/* base: sempre visível mesmo sem animação */
-.typing-dots > span { 
-  width: 8px; 
-  height: 8px; 
-  border-radius: 9999px; 
-  background: #6b7280; 
-  opacity: .75;
-}
-
-/* anima apenas quando o usuário NÃO pede redução */
-@media (prefers-reduced-motion: no-preference) {
-  .typing-dots > span { animation: typingWave 1.2s ease-in-out infinite; }
-  .typing-dots > span:nth-child(1) { animation-delay: 0s; }
-  .typing-dots > span:nth-child(2) { animation-delay: .2s; }
-  .typing-dots > span:nth-child(3) { animation-delay: .4s; }
-}
+/* Bolha mais compacta durante a digitação */
+.bubble-typing{ padding:6px 10px !important; border-radius:16px !important; }
 
 /* ---------- Mensagens (apple-like glass) ---------- */
 .message-eco,
@@ -250,45 +210,25 @@ input, textarea { font-size: 16px; }
   font-size: 0.95rem;
   line-height: 1.55;
   max-width: min(720px, 88vw);
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  hyphens: auto;
+  overflow-wrap: anywhere; word-break: break-word; hyphens: auto;
   transition: transform .15s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
-  position: relative;
-  will-change: transform;
+  position: relative; will-change: transform;
   -webkit-backdrop-filter: saturate(1.2) blur(14px);
   backdrop-filter: saturate(1.2) blur(14px);
   box-shadow: var(--bubble-shadow);
   border: 1px solid var(--bubble-border);
 }
-
-/* “rabo” das bolhas */
-.message-eco{
-  background: var(--bubble-eco-bg);
-  color:#0f172a;
-  border-bottom-left-radius: 6px;   /* rabo à esquerda */
-}
-.message-user{
-  background: var(--bubble-user-bg);
-  color:#0f172a;
-  border-bottom-right-radius: 6px;  /* rabo à direita */
-  border-color: rgba(13,148,136,.20);
-}
+.message-eco{ background: var(--bubble-eco-bg); color:#0f172a; border-bottom-left-radius: 6px; }
+.message-user{ background: var(--bubble-user-bg); color:#0f172a; border-bottom-right-radius: 6px; border-color: rgba(13,148,136,.20); }
 
 /* brilho interno sutil (efeito iMessage) */
-.message-eco::before,
-.message-user::before{
-  content:"";
-  position:absolute; inset:0;
-  border-radius: inherit;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
-  pointer-events:none;
+.message-eco::before, .message-user::before{
+  content:""; position:absolute; inset:0; border-radius: inherit;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.65); pointer-events:none;
 }
 
 /* Hover leve (desktop) */
-@media (hover:hover) {
-  .message-eco:hover, .message-user:hover { transform: translateY(-1px); }
-}
+@media (hover:hover) { .message-eco:hover, .message-user:hover { transform: translateY(-1px); } }
 
 /* Fallback sem backdrop-filter */
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
@@ -322,73 +262,46 @@ input, textarea { font-size: 16px; }
 .text-gradient-blue,
 .text-gradient-rose {
   display: inline-block;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
 }
-.text-gradient-blue {
-  background-image: linear-gradient(90deg, var(--cerulean-blue), #5DA9C2);
-}
-.text-gradient-rose {
-  background-image: linear-gradient(90deg, #E8A9A8, var(--rose-quartz));
-}
+.text-gradient-blue { background-image: linear-gradient(90deg, var(--cerulean-blue), #5DA9C2); }
+.text-gradient-rose { background-image: linear-gradient(90deg, #E8A9A8, var(--rose-quartz)); }
 
 /* ---- Alturas e teclado (iOS/Android) ---- */
 html, body, #root { height: 100%; }
 @supports (height: 100dvh) { html, body, #root { height: 100dvh; } }
+body.keyboard-open { overscroll-behavior-y: contain; padding-bottom: var(--safe-bottom); }
 
-/* Evita “puxar” a página quando o teclado abre */
-body.keyboard-open { overscroll-behavior-y: contain; }
-
-/* Respeita safe area no rodapé quando necessário (ex.: iPhone com notch) */
-body.keyboard-open { padding-bottom: var(--safe-bottom); }
-
-/* Container de rolagem do chat (suavidade no iOS + sem bounce excessivo) */
-.chat-scroller {
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-}
+/* Container de rolagem do chat */
+.chat-scroller { -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
 
 /* Safari: sticky com blur mais estável */
 .sticky { will-change: transform; }
 
-/* Atalho: quando houver suporte a backdrop-filter, empurra camada p/ GPU p/ reduzir flicker */
+/* Atalho: quando houver suporte a backdrop-filter, empurra camada p/ GPU */
 .supports-backdrop .bg-white\/80 { transform: translateZ(0); }
 
 /* ---------- Redução de movimento (menos agressivo) ---------- */
+/* Não desligamos a animação dos 3 pontos aqui */
 @media (prefers-reduced-motion: reduce) {
-  /* reduz transições, sem matar tudo */
   html * { transition: none !important; }
-  /* indicador fica estático e visível */
-  .typing-dots > span { animation: none !important; opacity: .75; }
-  /* se quiser desligar animações em uma área específica, envolva-a com .reduce-motion */
-  .reduce-motion * { animation: none !important; }
+  .reduce-motion * { animation: none !important; } /* use opt-in se precisar */
 }
 
 /* ----------------- RESPONSIVIDADE DA SIDEBAR ----------------- */
-/* Em telas < md, força a sidebar a 0px para não empurrar o conteúdo */
-@media (max-width: 767px) {
-  :root { --eco-sidebar-w: 0px !important; }
-}
+@media (max-width: 767px) { :root { --eco-sidebar-w: 0px !important; } }
 
-/* Foco visível coerente (iOS/Android/desktop) */
-:focus-visible {
-  outline: 2px solid rgba(148,163,184,.45); /* slate-400/45 */
-  outline-offset: 2px;
-}
+/* Foco visível */
+:focus-visible { outline: 2px solid rgba(148,163,184,.45); outline-offset: 2px; }
 
-/* Seleção de texto mais sutil */
-::selection {
-  background: rgba(148,163,184,.25);
-}
+/* Seleção de texto */
+::selection { background: rgba(148,163,184,.25); }
+
 /* ---- ECO minimal v2 ---- */
-
-/* Card mais limpo (menos blur, sombra longa suave) */
 .glass-card {
   background: rgba(255,255,255,.86);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   border: 1px solid rgba(2,6,23,.06);
   border-radius: 24px;
   box-shadow:
@@ -396,11 +309,8 @@ body.keyboard-open { padding-bottom: var(--safe-bottom); }
     0 20px 60px rgba(2,6,23,.08),
     0 8px 24px rgba(2,6,23,.06);
 }
-
-/* ECO wordmark */
 .eco-wordmark { letter-spacing:.08em; }
 
-/* Inputs com mais ar e menos contorno */
 .input-glass {
   height: 48px; width: 100%;
   border-radius: 14px; padding: 0 14px;
@@ -412,17 +322,15 @@ body.keyboard-open { padding-bottom: var(--safe-bottom); }
   outline: none; border-color: rgba(2,6,23,.08);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.7),
-    0 0 0 3px rgba(148,163,184,.22); /* slate-400/22 */
+    0 0 0 3px rgba(148,163,184,.22);
 }
 
-/* Botões Apple-like claros */
 .btn-apple {
   position: relative; isolation:isolate;
   height: 48px; border-radius: 14px;
   display:flex; align-items:center; justify-content:center;
   padding: 0 16px; font-weight:600;
-  background: #ffffff;
-  color:#0f172a;
+  background: #ffffff; color:#0f172a;
   border: 1px solid rgba(2,6,23,.08);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.85),
@@ -433,40 +341,27 @@ body.keyboard-open { padding-bottom: var(--safe-bottom); }
 .btn-apple:active { transform: translateY(1px); }
 .btn-apple[disabled]{ opacity:.6; cursor:not-allowed; transform:none; }
 
-/* Variante primária sutil (cinza-azulado muito leve) */
-.btn-apple-primary {
-  background: linear-gradient(180deg, #f3f6f8 0%, #e8eef2 100%);
-  color:#0f172a;
-  border: 1px solid rgba(2,6,23,.08);
-}
+.btn-apple-primary { background: linear-gradient(180deg, #f3f6f8 0%, #e8eef2 100%); color:#0f172a; border: 1px solid rgba(2,6,23,.08); }
 
-/* Divisor minimal */
 .divider-soft { display:flex; align-items:center; gap:12px; padding-top:2px; }
 .divider-soft > span { flex:1; height:1px; background: rgba(2,6,23,.08); }
 
-/* Pílula limpa (sem halo roxo) */
 .pill-ambient {
   display:inline-flex; align-items:center; gap:10px;
   padding: 8px 14px; border-radius: 9999px;
-  background:#ffffff;
-  border: 1px solid rgba(2,6,23,.08);
+  background:#ffffff; border: 1px solid rgba(2,6,23,.08);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.85),
     0 10px 30px rgba(2,6,23,.06);
 }
-.pill-ambient .mini-dot {
-  width:8px; height:8px; border-radius:9999px; background:#0284c7; /* sky-600 */
-}
+.pill-ambient .mini-dot { width:8px; height:8px; border-radius:9999px; background:#0284c7; }
 .pill-ambient .mini-bubble {
   width:24px; height:24px; border-radius:9999px;
-  background:
-    radial-gradient(38% 32% at 38% 32%, #fff 0%, #dfeffc 45%, #c6bfff 100%);
+  background: radial-gradient(38% 32% at 38% 32%, #fff 0%, #dfeffc 45%, #c6bfff 100%);
   border:1px solid rgba(255,255,255,.9);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.9),
-    0 1px 2px rgba(2,6,23,.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 1px 2px rgba(2,6,23,.16);
 }
 
-/* Espaçamentos verticais mais respirados */
-.stack-quiet > * + * { margin-top: .75rem; }           /* elementos próximos */
-.stack-roomy > * + * { margin-top: 1rem; }             /* blocos maiores */
+/* Espaçamentos verticais */
+.stack-quiet > * + * { margin-top: .75rem; }
+.stack-roomy > * + * { margin-top: 1rem; }
