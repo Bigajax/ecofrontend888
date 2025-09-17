@@ -10,6 +10,8 @@ interface ChatMessageProps {
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
   const isUser = message.sender === 'user';
   const showTyping = !!isEcoTyping && !isUser;
+
+  // evita renderizar texto enquanto mostra o indicador
   const displayText = showTyping ? '' : String(message.text ?? message.content ?? '');
 
   return (
@@ -23,7 +25,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
         className={[
           'chat-bubble-base px-3 py-2 sm:px-4 sm:py-3 rounded-2xl shadow-sm select-text',
           isUser ? 'glass-bubble-user rounded-br-sm' : 'glass-bubble-eco rounded-bl-sm',
-          showTyping ? 'bubble-typing' : '',
+          showTyping ? 'bubble-typing' : '',                          // <-- bolha compacta
           showTyping ? 'animate-gentle-pulse motion-safe:animate-gentle-pulse' : '',
         ].join(' ')}
         aria-busy={showTyping || undefined}
@@ -36,9 +38,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
             aria-label="ECO está digitando…"
           >
             <div className="typing-dots">
-              <span className="w-2 h-2 rounded-full bg-gray-600/80" aria-hidden="true" />
-              <span className="w-2 h-2 rounded-full bg-gray-600/80" aria-hidden="true" />
-              <span className="w-2 h-2 rounded-full bg-gray-600/80" aria-hidden="true" />
+              {/* tamanhos vêm do CSS (.typing-dots > span), sem w-/h- aqui */}
+              <span className="rounded-full bg-gray-600/80" aria-hidden="true" />
+              <span className="rounded-full bg-gray-600/80" aria-hidden="true" />
+              <span className="rounded-full bg-gray-600/80" aria-hidden="true" />
             </div>
           </div>
         ) : (
