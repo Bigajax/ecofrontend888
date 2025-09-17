@@ -61,6 +61,54 @@ const saudacaoDoDiaFromHour = (h: number) => {
   return 'Boa noite';
 };
 
+/* ====== Frases rotativas (ligadas aos módulos existentes) ====== */
+const ROTATING_ITEMS: Suggestion[] = [
+  {
+    id: 'rot_presenca_scan',
+    icon: '🌬️',
+    label: 'Vamos fazer um mini-scan de presença agora?',
+    modules: ['eco_observador_presente', 'eco_presenca_silenciosa', 'eco_corpo_emocao'],
+    systemHint:
+      'Conduza um body scan curto (2–3 minutos), com foco gentil em respiração, pontos de contato e 1 pensamento.',
+  },
+  {
+    id: 'rot_kahneman_check',
+    icon: '🧩',
+    label: 'Quero checar se caí em algum atalho mental hoje',
+    modules: [
+      'eco_heuristica_ancoragem',
+      'eco_heuristica_disponibilidade',
+      'eco_heuristica_excesso_confianca',
+    ],
+    systemHint:
+      'Explique heurísticas em linguagem simples, faça 1 pergunta diagnóstica e proponha 1 reframe prático.',
+  },
+  {
+    id: 'rot_vulnerabilidade',
+    icon: '💗',
+    label: 'Posso explorar coragem & vulnerabilidade em 1 situação',
+    modules: ['eco_vulnerabilidade_defesas', 'eco_vulnerabilidade_mitos', 'eco_emo_vergonha_combate'],
+    systemHint:
+      'Brené Brown: diferencie vulnerabilidade de exposição. Nomeie 1 defesa ativa e proponha 1 micro-ato de coragem.',
+  },
+  {
+    id: 'rot_estoico',
+    icon: '🏛️',
+    label: 'O que está sob meu controle hoje?',
+    modules: ['eco_presenca_racional', 'eco_identificacao_mente', 'eco_fim_do_sofrimento'],
+    systemHint:
+      'Marco Aurélio: conduza 3 perguntas (controle / julgamento / ação mínima) e feche com 1 compromisso simples.',
+  },
+  {
+    id: 'rot_regressao_media',
+    icon: '📉',
+    label: 'Talvez ontem foi exceção — quero revisar expectativas',
+    modules: ['eco_heuristica_regressao_media', 'eco_heuristica_certeza_emocional'],
+    systemHint:
+      'Explique regressão à média e convide a recalibrar expectativas com 1 evidência observável para hoje.',
+  },
+];
+
 const ChatPage: React.FC = () => {
   const { messages, addMessage, clearMessages } = useChat();
   const { userId, userName = 'Usuário', signOut, user } = useAuth();
@@ -303,7 +351,13 @@ const ChatPage: React.FC = () => {
       const clientHour = new Date().getHours();
       const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      const resposta = await enviarMensagemParaEco(mensagensComContexto, userName, userId!, clientHour, clientTz);
+      const resposta = await enviarMensagemParaEco(
+        mensagensComContexto,
+        userName,
+        userId!,
+        clientHour,
+        clientTz
+      );
 
       const textoEco = (resposta || '').replace(/\{[\s\S]*?\}$/, '').trim();
       if (textoEco) addMessage({ id: uuidv4(), text: textoEco, sender: 'eco' });
@@ -408,7 +462,9 @@ const ChatPage: React.FC = () => {
             </motion.div>
           )}
 
-          {erroApi && <div className="glass-panel text-red-600 text-center mb-4 px-4 py-2">{erroApi}</div>}
+          {erroApi && (
+            <div className="glass-panel text-red-600 text-center mb-4 px-4 py-2">{erroApi}</div>
+          )}
 
           <div className="w-full space-y-4">
             {messages.map((m) => (
@@ -422,7 +478,11 @@ const ChatPage: React.FC = () => {
                   </div>
                 )}
 
-                {m.sender === 'eco' ? <EcoMessageWithAudio message={m as any} /> : <ChatMessage message={m} />}
+                {m.sender === 'eco' ? (
+                  <EcoMessageWithAudio message={m as any} />
+                ) : (
+                  <ChatMessage message={m} />
+                )}
               </div>
             ))}
 
@@ -431,7 +491,10 @@ const ChatPage: React.FC = () => {
                 <div className="mr-2 mt-1.5">
                   <EcoBubbleIcon />
                 </div>
-                <ChatMessage message={{ id: 'typing', text: '...', sender: 'eco' } as any} isEcoTyping />
+                <ChatMessage
+                  message={{ id: 'typing', text: '...', sender: 'eco' } as any}
+                  isEcoTyping
+                />
               </div>
             )}
 
@@ -476,7 +539,14 @@ const ChatPage: React.FC = () => {
             aria-label="Descer para a última mensagem"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5 text-gray-700">
-              <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M6 9l6 6 6-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
         )}
@@ -488,10 +558,12 @@ const ChatPage: React.FC = () => {
         className="sticky bottom-[max(env(safe-area-inset-bottom),0px)] z-40 px-3 sm:px-6 pb-2 pt-2 bg-white border-t border-gray-200"
       >
         <div className="max-w-2xl mx-auto">
-          {/* sugestões compactas com scroll horizontal */}
+          {/* sugestões compactas + frases rotativas */}
           <QuickSuggestions
             visible={showQuick && messages.length === 0 && !digitando && !erroApi}
             onPickSuggestion={handlePickSuggestion}
+            rotatingItems={ROTATING_ITEMS}
+            rotationMs={5000}
             className="mt-1 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
           />
 
