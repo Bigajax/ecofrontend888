@@ -5,6 +5,9 @@ import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
 
+// ⬇️ Loader (bolha branca respirando)
+import EcoBubbleLoading from '../../components/EcoBubbleLoading';
+
 /* ===== Lazy Nivo (tipado) ===== */
 const LazyResponsiveLine = lazy(async () => {
   const mod = await import('@nivo/line');
@@ -215,7 +218,9 @@ const ProfileSection: FC = () => {
 
       <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-10">
         {(loading || fetchingLocal) && (
-          <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-6 text-neutral-500 text-sm">Carregando…</div>
+          <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-10 grid place-items-center">
+            <EcoBubbleLoading size={72} text="Carregando…" />
+          </div>
         )}
         {error && (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 text-sm">{error}</div>
@@ -243,7 +248,13 @@ const ProfileSection: FC = () => {
             <div className="h-[96px]">
               {isClient && hasLinePoints ? (
                 <ChartErrorBoundary>
-                  <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
+                  <Suspense
+                    fallback={
+                      <div className="w-full h-full grid place-items-center">
+                        <EcoBubbleLoading size={28} />
+                      </div>
+                    }
+                  >
                     <LazyResponsiveLine
                       key={`line-${period}`}
                       data={lineData}
@@ -278,27 +289,33 @@ const ProfileSection: FC = () => {
           </div>
         </Card>
 
-        {/* CARD 2 — Emoções (ATUALIZADO: sem labels no eixo/bares; nome só no hover) */}
+        {/* CARD 2 — Emoções */}
         <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
           {isClient && emotionsData.length ? (
             <div className="h-[300px]">
               <ChartErrorBoundary>
-                <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
+                <Suspense
+                  fallback={
+                    <div className="w-full h-full grid place-items-center">
+                      <EcoBubbleLoading size={32} />
+                    </div>
+                  }
+                >
                   <LazyResponsiveBar
                     key={`bar-emo-${period}`}
                     data={emotionsData}
                     keys={['value']}
                     indexBy="name"
-                    margin={{ top: 12, right: 12, bottom: 0, left: 40 }}  // sem rótulos embaixo
+                    margin={{ top: 12, right: 12, bottom: 0, left: 40 }}
                     padding={0.32}
                     colors={(bar: any) => colorForEmotion(bar.data.name as string)}
                     borderRadius={12}
                     axisTop={null}
                     axisRight={null}
-                    axisBottom={null}            // <<< remove rótulos do eixo X
+                    axisBottom={null}
                     axisLeft={{ tickSize: 0, tickPadding: 6 }}
                     enableGridY
-                    enableLabel={false}          // <<< sem labels nos bares
+                    enableLabel={false}
                     theme={{
                       grid: { line: { stroke: '#F3F4F6' } },
                       tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
@@ -317,7 +334,12 @@ const ProfileSection: FC = () => {
               </ChartErrorBoundary>
             </div>
           ) : (
-            <div className="grid place-items-center text-neutral-500 h-[240px]"><div className="text-center"><p className="text-neutral-900 font-medium">Sem dados no período</p><p className="text-sm">Registre memórias para ver seu perfil aqui.</p></div></div>
+            <div className="grid place-items-center text-neutral-500 h-[240px]">
+              <div className="text-center">
+                <p className="text-neutral-900 font-medium">Sem dados no período</p>
+                <p className="text-sm">Registre memórias para ver seu perfil aqui.</p>
+              </div>
+            </div>
           )}
         </Card>
 
@@ -326,7 +348,13 @@ const ProfileSection: FC = () => {
           {isClient && themesData.length ? (
             <div className="h-[300px]">
               <ChartErrorBoundary>
-                <Suspense fallback={<div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Carregando…</div>}>
+                <Suspense
+                  fallback={
+                    <div className="w-full h-full grid place-items-center">
+                      <EcoBubbleLoading size={32} />
+                    </div>
+                  }
+                >
                   <LazyResponsiveBar
                     key={`bar-theme-${period}`}
                     data={themesData}
@@ -355,7 +383,12 @@ const ProfileSection: FC = () => {
               </ChartErrorBoundary>
             </div>
           ) : (
-            <div className="grid place-items-center text-neutral-500 h-[240px]"><div className="text-center"><p className="text-neutral-900 font-medium">Sem dados no período</p><p className="text-sm">Crie registros para descobrir seus principais temas.</p></div></div>
+            <div className="grid place-items-center text-neutral-500 h-[240px]">
+              <div className="text-center">
+                <p className="text-neutral-900 font-medium">Sem dados no período</p>
+                <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
+              </div>
+            </div>
           )}
         </Card>
       </div>

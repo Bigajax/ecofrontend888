@@ -1,9 +1,13 @@
+// src/pages/memory/ReportSection.tsx
 import React, { useMemo, useState } from "react";
 import { useMemoryData } from "./memoryData";
 import MapaEmocional2D from "../../components/MapaEmocional2D";
 import LinhaDoTempoEmocional from "../../components/LinhaDoTempoEmocional";
 import StackedAreaSemanalEmocional from "../../components/StackedAreaSemanalEmocional";
 import DailyIntensityStrip from "../../components/DailyIntensityStrip";
+
+// ⬇️ Loader (bolha branca respirando)
+import EcoBubbleLoading from "../../components/EcoBubbleLoading";
 
 /**
  * Layout estilo Apple Saúde:
@@ -54,10 +58,6 @@ const Card: React.FC<{ title: string; right?: React.ReactNode; children: React.R
     </div>
     {children}
   </div>
-);
-
-const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
-  <div className={"animate-pulse rounded-xl bg-neutral-200/70 " + (className ?? "h-24")}></div>
 );
 
 const EmptyState: React.FC<{ title: string; desc?: string; icon?: string }> = ({
@@ -153,25 +153,29 @@ const ReportSection: React.FC = () => {
   }, [relatorio]);
 
   if (loading) {
+    // ⬇️ Estado de carregamento com a bolha “respirando”
     return (
-      <div className="space-y-4 max-h-[82vh] overflow-y-auto pr-1">
-        <SectionHeader title="Resumo" subtitle="Relatório Emocional" />
-        <div className="grid grid-cols-1 gap-4">
-          <div className="bg-white rounded-[28px] border border-black/10 shadow-sm p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Pill tone="blue">Estado Emocional</Pill>
-                <span className="text-[13px] text-neutral-500">Hoje</span>
-              </div>
-              <div className="text-neutral-300">•••</div>
-            </div>
-            <Skeleton className="h-40" />
-          </div>
-          <div className="bg-white rounded-[28px] border border-black/10 shadow-sm p-4">
-            <Skeleton className="h-56" />
+      <section className="space-y-4 max-h-[82vh] overflow-y-auto pr-1">
+        <div className="sticky top-0 z-20 -mx-1 px-1 py-2 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-neutral-100">
+          <div className="flex items-center justify-between">
+            <SectionHeader title="Resumo" subtitle="Relatório Emocional" />
           </div>
         </div>
-      </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          <Card title="Carregando análise…">
+            <div className="h-48 grid place-items-center">
+              <EcoBubbleLoading size={80} text="Preparando seu relatório..." />
+            </div>
+          </Card>
+
+          <Card title="Carregando visualizações…">
+            <div className="h-56 grid place-items-center">
+              <EcoBubbleLoading size={60} />
+            </div>
+          </Card>
+        </div>
+      </section>
     );
   }
 
