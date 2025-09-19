@@ -28,7 +28,11 @@ function App() {
         <ChatProvider>
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
+
+            {/* Login + rota amigável para abrir o Tour */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/login/tour" element={<LoginPage />} />
+
             <Route path="/register" element={<CreateProfilePage />} />
 
             <Route

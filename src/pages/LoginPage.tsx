@@ -1,6 +1,6 @@
 // src/pages/LoginPage.tsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useMatch } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PhoneFrame from '../components/PhoneFrame';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,6 +20,10 @@ const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
 const LoginPage: React.FC = () => {
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // também aceita /login/tour
+  const isTourPath = Boolean(useMatch('/login/tour'));
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +33,42 @@ const LoginPage: React.FC = () => {
 
   const canSubmit = email.trim().length > 3 && password.length >= 6 && !loading;
 
+  // Se já estiver logado, vai para o chat
   useEffect(() => { if (user) navigate('/chat'); }, [user, navigate]);
+
+  // Abre o tour automaticamente se vier com:
+  // ?tour=1  |  #tour  |  /login/tour  |  state.showTour
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const wantsTour =
+      params.get('tour') === '1' ||
+      location.hash?.toLowerCase() === '#tour' ||
+      isTourPath ||
+      Boolean((location.state as any)?.showTour);
+
+    if (wantsTour) setIsTourActive(true);
+  }, [location.search, location.hash, location.state, isTourPath]);
+
+  // Bloqueia/desbloqueia scroll do body quando o Tour está ativo
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = isTourActive ? 'hidden' : prev || '';
+    return () => { document.body.style.overflow = prev; };
+  }, [isTourActive]);
+
+  // Fecha o tour e limpa a URL para não reabrir ao atualizar
+  const closeTour = () => {
+    setIsTourActive(false);
+    // Se estiver em /login/tour, volta para /login
+    if (isTourPath) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    // Se vier por query/hash/state, também limpa
+    if (location.search || location.hash || (location.state as any)?.showTour) {
+      navigate('/login', { replace: true, state: {} });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +83,7 @@ const LoginPage: React.FC = () => {
   return (
     <PhoneFrame>
       <div className="flex h-full items-center justify-center px-6 py-10 bg-white">
-        {isTourActive && <TourInicial onClose={() => setIsTourActive(false)} />}
+        {isTourActive && <TourInicial onClose={closeTour} onFinish={closeTour} />}
 
         {/* Cartão vítreo clean */}
         <motion.div
@@ -112,13 +151,23 @@ const LoginPage: React.FC = () => {
                 {loading ? 'Entrando…' : 'Entrar'}
               </button>
 
-              <button type="button" onClick={() => navigate('/register')} disabled={loading} className="btn-apple w-full h-11">
+              <button
+                type="button"
+                onClick={() => navigate('/register')}
+                disabled={loading}
+                className="btn-apple w-full h-11"
+              >
                 Criar perfil
               </button>
 
               <Divider />
 
-              <button type="button" onClick={() => setIsTourActive(true)} disabled={loading} className="btn-apple w-full h-11">
+              <button
+                type="button"
+                onClick={() => setIsTourActive(true)}
+                disabled={loading}
+                className="btn-apple w-full h-11"
+              >
                 Iniciar Tour
               </button>
             </div>
