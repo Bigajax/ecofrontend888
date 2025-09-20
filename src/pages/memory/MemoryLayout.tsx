@@ -1,4 +1,3 @@
-// src/pages/memory/MemoryLayout.tsx
 import React, { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import PhoneFrame from '../../components/PhoneFrame';
@@ -7,8 +6,6 @@ import { buscarMemoriasPorUsuario } from '../../api/memoriaApi';
 import { buscarPerfilEmocional } from '../../api/perfilApi';
 import { buscarRelatorioEmocional } from '../../api/relatorioEmocionalApi';
 import { MemoryDataContext, type MemoryData } from './memoryData';
-
-// ⬇️ Loader (bolha branca respirando)
 import EcoBubbleLoading from '../../components/EcoBubbleLoading';
 
 const MemoryLayout: React.FC = () => {
@@ -26,7 +23,6 @@ const MemoryLayout: React.FC = () => {
     let alive = true;
 
     const load = async () => {
-      // Se não houver usuário, apenas marca como carregando (evita flicker)
       if (!userId) {
         setState((s) => ({ ...s, loading: true, error: null }));
         return;
@@ -77,17 +73,16 @@ const MemoryLayout: React.FC = () => {
 
   return (
     <MemoryDataContext.Provider value={state}>
+      {/* Sem paddings de header/side aqui — o MainLayout já aplica.
+          Mantemos a estrutura simples pra evitar “topo duplicado” em webviews */}
       <PhoneFrame className="flex flex-col h-full bg-white">
-        {/* conteúdo puro, sem header interno */}
         <div className="flex-1 overflow-y-auto px-4 py-4 relative">
-          {/* Erro acima do conteúdo */}
           {state.error && (
             <div className="mb-3 text-center text-xs text-rose-600">
               {state.error}
             </div>
           )}
 
-          {/* LOADING — bolha respirando centralizada */}
           {state.loading ? (
             <div className="h-[calc(100%-0px)] min-h-[320px] flex items-center justify-center">
               <EcoBubbleLoading size={120} text="Carregando dados..." />

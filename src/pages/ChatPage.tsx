@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { motion } from 'framer-motion';
 
-import Header from '../components/Header';
+// ❌ REMOVIDO: import Header from '../components/Header';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import EcoBubbleIcon from '../components/EcoBubbleIcon';
@@ -408,19 +408,7 @@ const ChatPage: React.FC = () => {
 
   return (
     <div className="w-full h-[100svh] min-h-0 flex flex-col bg-white">
-      {/* Header */}
-      <div className="flex-shrink-0">
-        <Header
-          title="ECO"
-          showBackButton={false}
-          onOpenMemoryHistory={() => navigate('/memory')}
-          onLogout={async () => {
-            await signOut();
-            clearMessages();
-            navigate('/login');
-          }}
-        />
-      </div>
+      {/* ❌ REMOVIDO: Header: agora só existe no MainLayout */}
 
       {/* SCROLLER */}
       <div
@@ -447,7 +435,6 @@ const ChatPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28 }}
             >
-              {/* Grupo simétrico: balão fantasma (esq.) + título + balão real (dir.) */}
               <div className="flex items-center justify-center gap-2.5">
                 <EcoBubbleIcon size={26} className="opacity-0 pointer-events-none" />
                 <h2 className="text-3xl md:text-4xl font-light text-gray-800 leading-tight">
@@ -498,7 +485,6 @@ const ChatPage: React.FC = () => {
               </div>
             )}
 
-            {/* 🔹 BALÃO DE FEEDBACK */}
             {showFeedback && lastAi && (
               <div className="flex justify-center">
                 <div
@@ -558,7 +544,6 @@ const ChatPage: React.FC = () => {
         className="sticky bottom-[max(env(safe-area-inset-bottom),0px)] z-40 px-3 sm:px-6 pb-2 pt-2 bg-white border-t border-gray-200"
       >
         <div className="max-w-2xl mx-auto">
-          {/* sugestões compactas + frases rotativas */}
           <QuickSuggestions
             visible={showQuick && messages.length === 0 && !digitando && !erroApi}
             onPickSuggestion={handlePickSuggestion}
@@ -567,7 +552,6 @@ const ChatPage: React.FC = () => {
             className="mt-1 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
           />
 
-          {/* input */}
           <ChatInput
             onSendMessage={(t) => handleSendMessage(t)}
             onMoreOptionSelected={(opt) => {
