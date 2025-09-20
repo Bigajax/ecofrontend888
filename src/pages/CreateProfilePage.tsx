@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PhoneFrame from '../components/PhoneFrame';
 import Input from '../components/Input';
@@ -31,6 +32,37 @@ const BubbleIcon: React.FC<{ className?: string }> = ({ className = 'h-5 w-5' })
     </g>
   </svg>
 );
+
+/* --- Tradução de erros comuns de cadastro (Supabase/Firebase) --- */
+function translateRegisterError(err: any): string {
+  const raw = [
+    err?.code,
+    err?.error?.message,
+    err?.error_description,
+    err?.data?.message,
+    err?.message,
+  ]
+    .filter(Boolean)
+    .join(' | ')
+    .toLowerCase();
+
+  if (/email.*already|already.*in.*use|duplicate.*email/.test(raw)) {
+    return 'Este email já está em uso.';
+  }
+  if (/invalid[-_\s]*email/.test(raw)) {
+    return 'Email inválido.';
+  }
+  if (/password.*weak|weak.*password|least.*6|minimum.*6/.test(raw)) {
+    return 'A senha deve ter pelo menos 6 caracteres.';
+  }
+  if (/rate.*limit|too.*many.*request/.test(raw)) {
+    return 'Muitas tentativas. Tente novamente em alguns minutos.';
+  }
+  if (/network|failed\s*to\s*fetch|timeout|net::/i.test(raw)) {
+    return 'Falha de rede. Verifique sua conexão.';
+  }
+  return 'Falha ao criar conta. Tente novamente.';
+}
 
 const CreateProfilePage: React.FC = () => {
   const { register } = useAuth();
@@ -67,7 +99,7 @@ const CreateProfilePage: React.FC = () => {
       fbq('CompleteRegistration', { value: 1, currency: 'BRL' });
       navigate('/chat');
     } catch (err: any) {
-      setError(err?.message || 'Falha ao criar conta. Tente novamente.');
+      setError(translateRegisterError(err));
     } finally {
       setLoading(false);
     }
@@ -82,7 +114,7 @@ const CreateProfilePage: React.FC = () => {
           transition={{ duration: 0.28, ease: 'easeOut' }}
           className="glass-card w-full max-w-sm p-8 md:p-10"
         >
-          {/* header atualizado */}
+          {/* header */}
           <div className="text-center space-y-4">
             <h1 className="text-[28px] leading-none font-sans font-semibold text-slate-900">
               Criar Perfil
@@ -99,7 +131,9 @@ const CreateProfilePage: React.FC = () => {
 
           {/* formulário */}
           <form onSubmit={handleSubmit} className="mt-7 space-y-4" noValidate>
+            <label className="sr-only" htmlFor="fullName">Nome completo</label>
             <Input
+              id="fullName"
               type="text"
               placeholder="Nome completo"
               value={fullName}
@@ -109,17 +143,24 @@ const CreateProfilePage: React.FC = () => {
               className="input-glass"
             />
 
+            <label className="sr-only" htmlFor="email">Email</label>
             <Input
+              id="email"
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              inputMode="email"
               className="input-glass"
             />
 
+            <label className="sr-only" htmlFor="phone">Celular (com DDD)</label>
             <MaskedInput
+              id="phone"
               type="tel"
               placeholder="Celular (com DDD)"
               mask="(99) 99999-9999"
@@ -131,49 +172,61 @@ const CreateProfilePage: React.FC = () => {
             />
 
             {/* senha */}
+            <label className="sr-only" htmlFor="password">Senha</label>
             <div className="relative">
               <input
+                id="password"
                 type={showPwd ? 'text' : 'password'}
                 placeholder="Senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="new-password"
-                className="input-glass pr-16"
+                className="input-glass pr-11"
               />
               <button
                 type="button"
                 onClick={() => setShowPwd((s) => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-medium text-slate-600 hover:text-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300/50"
+                className="absolute inset-y-0 right-1.5 my-1.5 px-2 flex items-center rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100/60 focus:outline-none"
+                aria-label={showPwd ? 'Ocultar senha' : 'Mostrar senha'}
+                title={showPwd ? 'Ocultar senha' : 'Mostrar senha'}
               >
-                {showPwd ? 'Ocultar' : 'Mostrar'}
+                {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
             {/* confirmar senha */}
+            <label className="sr-only" htmlFor="confirmPassword">Confirmar senha</label>
             <div className="relative">
               <input
+                id="confirmPassword"
                 type={showPwd2 ? 'text' : 'password'}
                 placeholder="Confirmar senha"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 autoComplete="new-password"
-                className="input-glass pr-16"
+                className="input-glass pr-11"
               />
               <button
                 type="button"
                 onClick={() => setShowPwd2((s) => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-medium text-slate-600 hover:text-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300/50"
+                className="absolute inset-y-0 right-1.5 my-1.5 px-2 flex items-center rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100/60 focus:outline-none"
+                aria-label={showPwd2 ? 'Ocultar senha' : 'Mostrar senha'}
+                title={showPwd2 ? 'Ocultar senha' : 'Mostrar senha'}
               >
-                {showPwd2 ? 'Ocultar' : 'Mostrar'}
+                {showPwd2 ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
             {/* feedbacks */}
             <div aria-live="polite" className="min-h-[1.1rem]">
               {error && (
-                <motion.p className="text-rose-600 text-sm text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <motion.p
+                  className="text-rose-600 text-sm text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
                   {error}
                 </motion.p>
               )}
@@ -199,7 +252,7 @@ const CreateProfilePage: React.FC = () => {
             <button
               type="button"
               className="text-slate-800 font-medium underline underline-offset-2 hover:text-slate-900"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/login')}
             >
               Entrar
             </button>

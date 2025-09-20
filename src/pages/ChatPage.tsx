@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { motion } from 'framer-motion';
 
-// ❌ REMOVIDO: import Header from '../components/Header';
+// ❌ Header é renderizado no MainLayout
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import EcoBubbleIcon from '../components/EcoBubbleIcon';
@@ -110,8 +110,8 @@ const ROTATING_ITEMS: Suggestion[] = [
 ];
 
 const ChatPage: React.FC = () => {
-  const { messages, addMessage, clearMessages } = useChat();
-  const { userId, userName = 'Usuário', signOut, user } = useAuth();
+  const { messages, addMessage } = useChat();
+  const { userId, userName = 'Usuário', user } = useAuth();
   const navigate = useNavigate();
 
   const [digitando, setDigitando] = useState(false);
@@ -407,9 +407,7 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-[100svh] min-h-0 flex flex-col bg-white">
-      {/* ❌ REMOVIDO: Header: agora só existe no MainLayout */}
-
+    <div className="w-full flex-1 min-h-0 flex flex-col bg-white">
       {/* SCROLLER */}
       <div
         ref={scrollerRef}
@@ -419,7 +417,7 @@ const ChatPage: React.FC = () => {
           setIsAtBottom(atBottom);
           setShowScrollBtn(!atBottom);
         }}
-        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 pt-2"
+        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 pt-2 [scrollbar-gutter:stable]"
         style={{
           paddingBottom: 'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + 12px)',
           WebkitOverflowScrolling: 'touch',

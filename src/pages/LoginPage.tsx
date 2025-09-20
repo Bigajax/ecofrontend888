@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useMatch } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Eye, EyeOff } from 'lucide-react';
 import PhoneFrame from '../components/PhoneFrame';
 import { useAuth } from '../contexts/AuthContext';
 import TourInicial from '../components/TourInicial';
 import EcoBubbleIcon from '../components/EcoBubbleIcon';
 
-/* Divisor minimal: hairline + “ou” micro, sem fundo */
+/* Divisor minimal */
 const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
   <div className="relative my-4 select-none" aria-hidden="true">
     <div className="h-px w-full bg-slate-200/70" />
@@ -16,6 +17,64 @@ const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
     </span>
   </div>
 );
+
+/* ---- Tradução das mensagens de erro para PT-BR (cobre Supabase/Firebase) ---- */
+function translateAuthError(err: any): string {
+  const raw = [
+    err?.code,
+    err?.error?.message,
+    err?.error_description,
+    err?.data?.message,
+    err?.message,
+  ]
+    .filter(Boolean)
+    .join(' | ')
+    .toLowerCase();
+
+  // Credenciais inválidas
+  if (
+    /invalid\s*login\s*credentials/.test(raw) || // Supabase
+    /invalid[-_\s]*credential/.test(raw) ||
+    /invalid[-_\s]*credentials/.test(raw) ||
+    /wrong[-_\s]*password/.test(raw) ||
+    /invalid\s*password/.test(raw)
+  ) {
+    return 'Email ou senha incorretos.';
+  }
+
+  // Email inválido
+  if (/invalid[-_\s]*email/.test(raw)) {
+    return 'Email inválido.';
+  }
+
+  // Usuário não encontrado
+  if (/user.*not.*found|no\s*user/.test(raw)) {
+    return 'Não encontramos uma conta com este email.';
+  }
+
+  // Muitas tentativas / rate limit
+  if (/too.*many.*request|rate.*limit/.test(raw)) {
+    return 'Muitas tentativas. Tente novamente em alguns minutos.';
+  }
+
+  // Problema de rede
+  if (/network|failed\s*to\s*fetch|timeout|net::/i.test(raw)) {
+    return 'Falha de rede. Verifique sua conexão.';
+  }
+
+  // Conta desativada
+  if (/user.*disabled|account.*disabled/.test(raw)) {
+    return 'Esta conta foi desativada.';
+  }
+
+  // Senha curta
+  if (/least.*6|minimum.*6|password.*short/.test(raw)) {
+    return 'A senha deve ter pelo menos 6 caracteres.';
+  }
+
+  // Fallback
+  return 'Não foi possível entrar. Tente novamente.';
+}
 
 const LoginPage: React.FC = () => {
   const { signIn, user } = useAuth();
@@ -27,6 +86,7 @@ const LoginPage: React.FC = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isTourActive, setIsTourActive] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -36,8 +96,7 @@ const LoginPage: React.FC = () => {
   // Se já estiver logado, vai para o chat
   useEffect(() => { if (user) navigate('/chat'); }, [user, navigate]);
 
-  // Abre o tour automaticamente se vier com:
-  // ?tour=1  |  #tour  |  /login/tour  |  state.showTour
+  // Abre o tour automaticamente por query/hash/rota/state
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const wantsTour =
@@ -49,7 +108,7 @@ const LoginPage: React.FC = () => {
     if (wantsTour) setIsTourActive(true);
   }, [location.search, location.hash, location.state, isTourPath]);
 
-  // Bloqueia/desbloqueia scroll do body quando o Tour está ativo
+  // Bloqueia scroll do body quando o Tour está ativo
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = isTourActive ? 'hidden' : prev || '';
@@ -59,12 +118,10 @@ const LoginPage: React.FC = () => {
   // Fecha o tour e limpa a URL para não reabrir ao atualizar
   const closeTour = () => {
     setIsTourActive(false);
-    // Se estiver em /login/tour, volta para /login
     if (isTourPath) {
       navigate('/login', { replace: true });
       return;
     }
-    // Se vier por query/hash/state, também limpa
     if (location.search || location.hash || (location.state as any)?.showTour) {
       navigate('/login', { replace: true, state: {} });
     }
@@ -75,9 +132,13 @@ const LoginPage: React.FC = () => {
     if (!canSubmit) return;
     setError('');
     setLoading(true);
-    try { await signIn(email.trim(), password); }
-    catch (err: any) { setError(err?.message || 'Erro ao autenticar.'); }
-    finally { setLoading(false); }
+    try {
+      await signIn(email.trim(), password);
+    } catch (err: any) {
+      setError(translateAuthError(err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -85,7 +146,6 @@ const LoginPage: React.FC = () => {
       <div className="flex h-full items-center justify-center px-6 py-10 bg-white">
         {isTourActive && <TourInicial onClose={closeTour} onFinish={closeTour} />}
 
-        {/* Cartão vítreo clean */}
         <motion.div
           initial={{ y: 6, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -98,7 +158,6 @@ const LoginPage: React.FC = () => {
               ECO
             </h1>
 
-            {/* Pílula única: (bolha) Autoconhecimento guiado */}
             <div className="w-full flex justify-center">
               <span className="pill-ambient" aria-label="Autoconhecimento guiado">
                 <EcoBubbleIcon size={14} className="shrink-0" />
@@ -120,26 +179,43 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              autoFocus
+              autoCapitalize="none"
+              autoCorrect="off"
+              inputMode="email"
               className="input-glass"
             />
 
             <label className="sr-only" htmlFor="password">Senha</label>
-            <input
-              id="password"
-              type="password"
-              placeholder="Senha"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              className="input-glass"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className="input-glass pr-11"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute inset-y-0 right-1.5 my-1.5 px-2 flex items-center rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100/60 focus:outline-none"
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
 
             {/* Mensagem de erro acessível */}
             <div role="status" aria-live="polite" className="min-h-[1rem]">
               {error && (
-                <motion.p className="text-rose-600 text-sm text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <motion.p
+                  className="text-rose-600 text-sm text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
                   {error}
                 </motion.p>
               )}
