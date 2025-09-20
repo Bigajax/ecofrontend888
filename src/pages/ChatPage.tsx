@@ -177,7 +177,7 @@ const ChatPage: React.FC = () => {
     }
   }, [messages, digitando, isAtBottom]);
 
-  // medir sticky input
+  // medir input fixo (altura total: quick suggestions + input)
   useEffect(() => {
     if (!inputBarRef.current) return;
     const el = inputBarRef.current;
@@ -536,10 +536,11 @@ const ChatPage: React.FC = () => {
         )}
       </div>
 
-      {/* BARRA DE INPUT */}
+      {/* BARRA DE INPUT — FIXA NO RODAPÉ */}
       <div
         ref={inputBarRef}
-        className="sticky bottom-[max(env(safe-area-inset-bottom),0px)] z-40 px-3 sm:px-6 pb-2 pt-2 bg-white border-t border-gray-200"
+        className="fixed left-0 right-0 bottom-[max(env(safe-area-inset-bottom),0px)]
+                   z-40 px-3 sm:px-6 pb-2 pt-2 bg-white/95 backdrop-blur border-t border-gray-200"
       >
         <div className="max-w-2xl mx-auto">
           <QuickSuggestions

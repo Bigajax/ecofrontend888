@@ -70,11 +70,11 @@ const ChatInput: React.FC<Props> = ({
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [showMoreOptions]);
 
-  // Auto-resize do textarea
+  // Auto-resize do textarea (sem “pular”)
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
-    ta.style.height = '0px';
+    ta.style.height = 'auto';
     ta.style.height = `${Math.min(192, ta.scrollHeight)}px`; // ~12 linhas máx
   }, [inputMessage]);
 
@@ -249,22 +249,26 @@ const ChatInput: React.FC<Props> = ({
       transition={{ type: 'spring', stiffness: 120, damping: 14 }}
       aria-disabled={disabled}
       role="group"
+      style={{ overflowAnchor: 'none' }}   // 👈 evita “scroll anchoring”
     >
-      <div className="flex items-center gap-2">
-        {/* Botão + */}
-        <button
-          type="button"
-          onClick={() => setShowMoreOptions((prev) => !prev)}
-          className="glass-button shrink-0 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50"
-          aria-expanded={showMoreOptions}
-          aria-controls="chatinput-popover"
-          aria-label="Mais opções"
-          disabled={disabled}
-        >
-          {showMoreOptions ? <X size={18} /> : <Plus size={18} />}
-        </button>
+      {/* ====== GRID SIMÉTRICO: [72px | 1fr | 72px] ====== */}
+      <div className="grid grid-cols-[72px,1fr,72px] items-center gap-2">
+        {/* ESQUERDA (72px) */}
+        <div className="flex items-center justify-start">
+          <button
+            type="button"
+            onClick={() => setShowMoreOptions((prev) => !prev)}
+            className="glass-button w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50"
+            aria-expanded={showMoreOptions}
+            aria-controls="chatinput-popover"
+            aria-label="Mais opções"
+            disabled={disabled}
+          >
+            {showMoreOptions ? <X size={18} /> : <Plus size={18} />}
+          </button>
+        </div>
 
-        {/* Popover */}
+        {/* Popover (ancorado ao wrapper) */}
         <AnimatePresence>
           {showMoreOptions && !disabled && (
             <motion.div
@@ -302,43 +306,45 @@ const ChatInput: React.FC<Props> = ({
           )}
         </AnimatePresence>
 
-        {/* Textarea */}
-        <textarea
-          ref={textareaRef}
-          value={inputMessage}
-          onChange={(e) => {
-            const v = e.target.value;
-            setInputMessage(v);
-            onTextChange?.(v);
-          }}
-          onKeyDown={(e) => {
-            if (disabled) return;
-            // @ts-ignore
-            const composing = e.nativeEvent?.isComposing;
-            if (!composing && e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          placeholder={CTA_TEXT}
-          rows={1}
-          inputMode="text"
-          enterKeyHint="send"
-          maxLength={4000}
-          readOnly={disabled}
-          aria-disabled={disabled}
-          className="
-            glass-textarea min-w-0 flex-1 bg-transparent border-none focus:outline-none resize-none
-            leading-6 py-2 max-h-48 overflow-y-auto
-            text-[15px] md:text-base text-slate-800
-            [&::placeholder]:text-slate-500 [&::placeholder]:font-light
-          "
-        />
+        {/* CENTRO (1fr) */}
+        <div className="flex items-center min-w-0">
+          <textarea
+            ref={textareaRef}
+            value={inputMessage}
+            onChange={(e) => {
+              const v = e.target.value;
+              setInputMessage(v);
+              onTextChange?.(v);
+            }}
+            onKeyDown={(e) => {
+              if (disabled) return;
+              // @ts-ignore
+              const composing = e.nativeEvent?.isComposing;
+              if (!composing && e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            placeholder={CTA_TEXT}
+            rows={1}
+            inputMode="text"
+            enterKeyHint="send"
+            maxLength={4000}
+            readOnly={disabled}
+            aria-disabled={disabled}
+            className="
+              w-full min-w-0 resize-none bg-transparent border-none focus:outline-none
+              glass-textarea leading-[1.35] py-2 max-h-48 overflow-y-auto
+              text-[15px] md:text-base text-slate-800
+              placeholder:text-slate-500 placeholder:font-light
+            "
+          />
+        </div>
 
-        {/* Botões mic e send */}
-        <div className="flex gap-1.5 shrink-0">
+        {/* DIREITA (72px) */}
+        <div className="flex items-center justify-end gap-1.5">
           <button
             type="button"
             onClick={startRecording}
@@ -349,7 +355,6 @@ const ChatInput: React.FC<Props> = ({
             <Mic size={16} />
           </button>
 
-          {/* SEND → branco glassmorphism */}
           <button
             type="submit"
             ref={sendButtonRef}
