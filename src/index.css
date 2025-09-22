@@ -1,4 +1,4 @@
-@tailwind base; 
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -41,6 +41,45 @@ body {
   --bubble-border:  rgba(15,23,42,0.10);
   --bubble-shadow:  0 3px 10px rgba(15,23,42,0.06);
 }
+
+/* ---------- layout raiz p/ o scroll funcionar ---------- */
+html, body, #root { height: 100%; min-height: 0; }
+@supports (height: 100dvh) { html, body, #root { height: 100dvh; } }
+
+/* Wrapper do app (pai da página) */
+.app-shell {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: row; /* sidebar + conteúdo */
+}
+
+/* Página do chat (coluna da direita) */
+.chat-page {
+  flex: 1 1 auto;
+  min-width: 0;         /* evita overflow horizontal */
+  height: 100%;
+  min-height: 0;        /* permite o filho rolar */
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+/* Contêiner de rolagem do chat */
+.chat-scroller {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  scroll-behavior: smooth; /* ajuda no scrollToBottom */
+}
+
+/* Safari: sticky com blur mais estável */
+.sticky { will-change: transform; }
+
+/* Atalho: quando houver suporte a backdrop-filter, empurra camada p/ GPU */
+.supports-backdrop .bg-white\/80 { transform: translateZ(0); }
 
 /* ---------- utilitários de glass ---------- */
 .glass {
@@ -191,9 +230,9 @@ input, textarea { font-size: 16px; }
   align-items:center;
   justify-content:center;
   gap:4px;
-  width: fit-content;   /* abraça o conteúdo */
+  width: fit-content;
   min-width: 0;
-  min-height: 18px;     /* mais baixo */
+  min-height: 18px;
 }
 .typing-dots{ display:inline-flex; gap:4px; }
 .typing-dots > span{
@@ -277,23 +316,12 @@ input, textarea { font-size: 16px; }
 .text-gradient-rose { background-image: linear-gradient(90deg, #E8A9A8, var(--rose-quartz)); }
 
 /* ---- Alturas e teclado (iOS/Android) ---- */
-html, body, #root { height: 100%; }
-@supports (height: 100dvh) { html, body, #root { height: 100dvh; } }
 body.keyboard-open { overscroll-behavior-y: contain; padding-bottom: var(--safe-bottom); }
-
-/* Container de rolagem do chat */
-.chat-scroller { -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
-
-/* Safari: sticky com blur mais estável */
-.sticky { will-change: transform; }
-
-/* Atalho: quando houver suporte a backdrop-filter, empurra camada p/ GPU */
-.supports-backdrop .bg-white\/80 { transform: translateZ(0); }
 
 /* ---------- Redução de movimento (menos agressivo) ---------- */
 @media (prefers-reduced-motion: reduce) {
   html * { transition: none !important; }
-  .reduce-motion * { animation: none !important; } /* use opt-in se precisar */
+  .reduce-motion * { animation: none !important; }
 }
 
 /* ----------------- RESPONSIVIDADE DA SIDEBAR ----------------- */
@@ -353,6 +381,7 @@ body.keyboard-open { overscroll-behavior-y: contain; padding-bottom: var(--safe-
 .divider-soft { display:flex; align-items:center; gap:12px; padding-top:2px; }
 .divider-soft > span { flex:1; height:1px; background: rgba(2,6,23,.08); }
 
+/* Pills “ambient” */
 .pill-ambient {
   display:inline-flex; align-items:center; gap:10px;
   padding: 8px 14px; border-radius: 9999px;

@@ -2,7 +2,7 @@
 /*  ChatPage.tsx — white + saudação limpa + teclado mobile + scroll button    */
 /* -------------------------------------------------------------------------- */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { motion } from 'framer-motion';
@@ -31,16 +31,17 @@ import { getOrCreateSessionId } from '../utils/session';
 /* ------------------------- Saudação/despedida regex ------------------------ */
 type Msg = { role?: string; content?: string; text?: string; sender?: 'user' | 'eco' };
 
-const MAX_LEN_FOR_GREETING = 64;
+const MAX_LEN_FOR_GREETING = 80;
 
 const normalize = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
 
+// ✅ versão enxuta (menos “robotizada”)
 const GREET_RE =
-  /^(?:oi+|oie+|ola+|alo+|opa+|salve|e\s*a[ei]|eai|eae|fala(?:\s*ai)?|falae|hey+|hi+|hello+|yo+|sup|bom\s*dia+|boa\s*tarde+|boa\s*noite+|boa\s*madrugada+|good\s*(?:morning|afternoon|evening|night)|tudo\s*(?:bem|bom|certo)|td\s*bem|beleza|blz|suave|de\s*boa|tranq(?:s)?|tranquilo(?:\s*ai)?|como\s*(?:vai|vc\s*esta|voce\s*esta|ce\s*ta|c[eu]\s*ta))(?:[\s,]*(?:@?eco|eco|bot|assistente|ai|chat))?\s*[!?.…]*$/i;
+  /^(oi+|oie+|ola+|al[oó]+|opa+|salve|eai|falae?|hey+|hi+|hello+|yo+|sup|bom dia|boa tarde|boa noite|tudo bem|td bem|beleza|blz|suave|tranq|tranquilo)([!?.…]*)$/i;
 
 const FAREWELL_RE =
-  /^(?:tchau+|ate\s+mais|ate\s+logo|valeu+|vlw+|obrigad[oa]+|brigad[oa]+|falou+|fui+|bom\s*descanso|durma\s*bem|ate\s*amanha|ate\s*breve|ate)\s*[!?.…]*$/i;
+  /^(tchau+|ate logo|ate mais|valeu+|vlw+|obrigad[oa]+|brigad[oa]+|falou+|fui+|bom descanso|durma bem|ate amanha)([!?.…]*)$/i;
 
 const isGreetingShort = (raw: string) => {
   const t = normalize(raw);
@@ -109,6 +110,15 @@ const ROTATING_ITEMS: Suggestion[] = [
   },
 ];
 
+/* ====== Variações de abertura (deixa menos “scripted”) ====== */
+const OPENING_VARIATIONS = [
+  'Pronto para começar?',
+  'O que está vivo em você agora?',
+  'Quer explorar algum pensamento ou emoção?',
+  'Vamos começar de onde você quiser.',
+  'Um passo de cada vez: por onde vamos?',
+];
+
 const ChatPage: React.FC = () => {
   const { messages, addMessage } = useChat();
   const { userId, userName = 'Usuário', user } = useAuth();
@@ -135,10 +145,9 @@ const ChatPage: React.FC = () => {
   /* 🔹 NOVO: controle de scroll/botão */
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
-  const isNearBottom = (el: HTMLDivElement) => {
-    const threshold = 120;
-    return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
-  };
+
+  const nearBottom = (el: HTMLDivElement, pad = 16) =>
+    el.scrollTop + el.clientHeight >= el.scrollHeight - pad;
 
   useEffect(() => {
     if (!user) {
@@ -157,25 +166,54 @@ const ChatPage: React.FC = () => {
   const clientHourNow = new Date().getHours();
   const saudacao = saudacaoDoDiaFromHour(clientHourNow);
 
-  // scrollToBottom + marca estado
+  /* ====================== SCROLL CORE ====================== */
+
+  // Anchor-based scroll (mais confiável em mobile)
   const scrollToBottom = (smooth = true) => {
     const el = scrollerRef.current;
-    if (!el) return;
+    const end = endRef.current;
+    if (!el || !end) return;
+
     const behavior: ScrollBehavior = smooth ? 'smooth' : 'auto';
-    el.scrollTo({ top: el.scrollHeight, behavior });
-    setIsAtBottom(true);
-    setShowScrollBtn(false);
+
+    // espera o DOM assentar antes de rolar
     requestAnimationFrame(() => {
-      el.scrollTo({ top: el.scrollHeight, behavior });
+      requestAnimationFrame(() => {
+        end.scrollIntoView({ behavior, block: 'end' });
+        const at = nearBottom(el, 8);
+        setIsAtBottom(at);
+        setShowScrollBtn(!at);
+      });
     });
   };
 
-  useEffect(() => {
-    if (isAtBottom) {
-      const t = setTimeout(() => scrollToBottom(true), 0);
-      return () => clearTimeout(t);
+  // Auto-scroll quando chegam novas msgs / muda "digitando"
+  useLayoutEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    if (nearBottom(el, 120)) {
+      scrollToBottom(true);
     }
-  }, [messages, digitando, isAtBottom]);
+  }, [messages, digitando]);
+
+  // Observer do fim para detectar se estamos no fundo
+  useEffect(() => {
+    const root = scrollerRef.current;
+    const end = endRef.current;
+    if (!root || !end) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((e) => e.isIntersecting);
+        setIsAtBottom(visible);
+        setShowScrollBtn(!visible);
+      },
+      { root, threshold: 0.98 }
+    );
+
+    io.observe(end);
+    return () => io.disconnect();
+  }, []);
 
   // medir input fixo (altura total: quick suggestions + input)
   useEffect(() => {
@@ -204,7 +242,7 @@ const ChatPage: React.FC = () => {
     window.addEventListener('focusin', handleFocusIn);
     window.addEventListener('focusout', handleFocusOut);
 
-    const onVVChange = () => setTimeout(() => scrollToBottom(false), 30);
+    const onVVChange = () => scrollToBottom(false);
 
     if (vv) {
       vv.addEventListener('resize', onVVChange);
@@ -220,6 +258,8 @@ const ChatPage: React.FC = () => {
       }
     };
   }, []);
+
+  /* ====================== LÓGICA DO CHAT ====================== */
 
   /* 🔹 FEEDBACK após 3 respostas da ECO (1x por sessão) */
   useEffect(() => {
@@ -388,7 +428,8 @@ const ChatPage: React.FC = () => {
       });
     } finally {
       setDigitando(false);
-      setTimeout(() => scrollToBottom(true), 0);
+      // garante que desce após a resposta/typing
+      scrollToBottom(true);
     }
   };
 
@@ -413,15 +454,14 @@ const ChatPage: React.FC = () => {
         ref={scrollerRef}
         onScroll={() => {
           const el = scrollerRef.current!;
-          const atBottom = isNearBottom(el);
-          setIsAtBottom(atBottom);
-          setShowScrollBtn(!atBottom);
+          const at = nearBottom(el, 16);
+          setIsAtBottom(at);
+          setShowScrollBtn(!at);
         }}
         className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 pt-2 [scrollbar-gutter:stable]"
         style={{
           paddingBottom: 'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + 12px)',
           WebkitOverflowScrolling: 'touch',
-          scrollPaddingBottom: '12px',
           overscrollBehaviorY: 'contain',
         }}
       >
@@ -442,7 +482,7 @@ const ChatPage: React.FC = () => {
               </div>
 
               <p className="text-base md:text-lg font-light text-slate-500 mt-2">
-                Comece sua sessão de Autoconhecimento.
+                {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
               </p>
             </motion.div>
           )}
@@ -504,6 +544,7 @@ const ChatPage: React.FC = () => {
               </div>
             )}
 
+            {/* âncora do fim */}
             <div ref={endRef} />
           </div>
         </div>
