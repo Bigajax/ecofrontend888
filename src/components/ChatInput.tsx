@@ -33,29 +33,10 @@ const ChatInput: React.FC<Props> = ({
 
   const safeOnSendAudio = onSendAudio ?? (() => {});
 
-  // ----- Ajuste de altura (define --input-h) -----
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-
-    const setH = () =>
-      document.documentElement.style.setProperty('--input-h', `${el.offsetHeight}px`);
-
-    setH();
-    const ro = new ResizeObserver(setH);
-    ro.observe(el);
-
-    const vv = (window as any).visualViewport as VisualViewport | undefined;
-    const handleVV = () => setTimeout(setH, 0);
-    vv?.addEventListener('resize', handleVV);
-    vv?.addEventListener('scroll', handleVV);
-
-    return () => {
-      ro.disconnect();
-      vv?.removeEventListener('resize', handleVV);
-      vv?.removeEventListener('scroll', handleVV);
-    };
-  }, []);
+  /* ------------------------------------------------------------------
+     🔧 IMPORTANTE: NÃO atualizamos --input-h aqui.
+     Quem mede a altura total (quick suggestions + input) é a ChatPage.
+     ------------------------------------------------------------------ */
 
   // Fecha popover ao clicar fora
   useEffect(() => {
@@ -63,8 +44,9 @@ const ChatInput: React.FC<Props> = ({
     const onDocClick = (e: MouseEvent) => {
       if (!popoverRef.current || !wrapperRef.current) return;
       const t = e.target as Node;
-      const clickedInsidePopover = popoverRef.current.contains(t);
-      if (!clickedInsidePopover) setShowMoreOptions(false);
+      if (!popoverRef.current.contains(t) && !wrapperRef.current.contains(t)) {
+        setShowMoreOptions(false);
+      }
     };
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
@@ -81,7 +63,7 @@ const ChatInput: React.FC<Props> = ({
   const onFocus = () => document.body.classList.add('keyboard-open');
   const onBlur = () => document.body.classList.remove('keyboard-open');
 
-  // WebKit Speech
+  // WebKit Speech (dictation)
   useEffect(() => {
     if ('webkitSpeechRecognition' in window) {
       // @ts-ignore
@@ -249,7 +231,7 @@ const ChatInput: React.FC<Props> = ({
       transition={{ type: 'spring', stiffness: 120, damping: 14 }}
       aria-disabled={disabled}
       role="group"
-      style={{ overflowAnchor: 'none' }}   // 👈 evita “scroll anchoring”
+      style={{ overflowAnchor: 'none' }} // evita “scroll anchoring”
     >
       {/* ====== GRID SIMÉTRICO: [72px | 1fr | 72px] ====== */}
       <div className="grid grid-cols-[72px,1fr,72px] items-center gap-2">
