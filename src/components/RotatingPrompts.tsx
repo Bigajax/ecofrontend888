@@ -1,83 +1,87 @@
-import React, { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+// src/components/RotatingPrompts.tsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Suggestion } from "./QuickSuggestions";
 
 type Props = {
   items: Suggestion[];
   onPick: (s: Suggestion) => void;
-  /** tempo entre trocas */
-  intervalMs?: number; // default 9000
+  /** intervalo de troca em ms (default 4500) */
+  intervalMs?: number;
   className?: string;
+  /** para manter a mesma tipografia do Drawer */
+  labelClassName?: string;
 };
 
-export default function RotatingPrompts({
+const defaultLabelCls =
+  "text-[15px] leading-[1.35] text-slate-900/95 font-normal tracking-[-0.005em] antialiased";
+
+const RotatingPrompts: React.FC<Props> = ({
   items,
   onPick,
-  intervalMs = 9000,
+  intervalMs = 4500,
   className = "",
-}: Props) {
-  const [idx, setIdx] = useState(0);
+  labelClassName = defaultLabelCls,
+}) => {
+  const safeItems = useMemo(() => (Array.isArray(items) ? items.filter(Boolean) : []), [items]);
+  const [idx, setIdx] = useState(() => (safeItems.length ? Math.floor(Math.random() * safeItems.length) : 0));
+  const pauseRef = useRef(false);
   const timerRef = useRef<number | null>(null);
 
-  const start = () => {
-    stop();
-    timerRef.current = window.setInterval(() => {
-      setIdx((i) => (i + 1) % items.length);
-    }, intervalMs);
-  };
-  const stop = () => {
-    if (timerRef.current) {
-      window.clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-
+  // troca automática
   useEffect(() => {
-    if (!items.length) return;
-    start();
-    return stop;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items.length, intervalMs]);
+    if (!safeItems.length) return;
+    if (timerRef.current) window.clearInterval(timerRef.current);
+    timerRef.current = window.setInterval(() => {
+      if (pauseRef.current) return;
+      setIdx((i) => (i + 1) % safeItems.length);
+    }, Math.max(1500, intervalMs));
+    return () => {
+      if (timerRef.current) window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    };
+  }, [safeItems.length, intervalMs]);
 
-  if (!items.length) return null;
-  const current = items[idx];
+  if (!safeItems.length) return null;
+  const s = safeItems[idx];
 
   return (
     <div
-      className={
-        "w-full flex justify-center select-none mt-2 " + (className || "")
-      }
-      onMouseEnter={stop}
-      onMouseLeave={start}
+      className={`flex justify-center ${className}`}
+      onMouseEnter={() => (pauseRef.current = true)}
+      onMouseLeave={() => (pauseRef.current = false)}
     >
       <button
-        onClick={() => onPick(current)}
+        type="button"
+        onClick={() => onPick(s)}
+        onFocus={() => (pauseRef.current = true)}
+        onBlur={() => (pauseRef.current = false)}
         className="
-          inline-flex items-center gap-2 rounded-full
-          bg-white/70 backdrop-blur border border-gray-200
-          shadow-sm hover:shadow transition px-3.5 py-2
-          text-[13px] md:text-sm text-slate-700
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300
+          group inline-flex items-center gap-2
+          h-10 px-3.5 rounded-full
+          bg-white/85 backdrop-blur-md
+          border border-black/10
+          shadow-[0_10px_28px_rgba(16,24,40,0.10)]
+          hover:bg-white focus:outline-none
+          focus-visible:ring-2 focus-visible:ring-black/10
+          active:translate-y-[1px] transition
         "
-        title="Sugerir um tema"
-        aria-label={`Sugerir: ${current.label}`}
+        aria-label={s.label}
       >
-        {current.icon && (
-          <span className="text-base md:text-[17px]">{current.icon}</span>
-        )}
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.span
-            key={current.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.25 }}
-            className="font-medium"
-          >
-            {current.label}
-          </motion.span>
-        </AnimatePresence>
+        {s.icon && <span className="text-[16px] leading-none" aria-hidden>{s.icon}</span>}
+        <span className={labelClassName}>{s.label}</span>
+
+        {/* indicador sutil de “rotativo” */}
+        <span
+          className="
+            ml-1 inline-block h-1.5 w-1.5 rounded-full bg-slate-400/70
+            group-hover:bg-slate-500/80
+            animate-[pulse_1.4s_ease-in-out_infinite]
+          "
+          aria-hidden
+        />
       </button>
     </div>
   );
-}
+};
+
+export default RotatingPrompts;

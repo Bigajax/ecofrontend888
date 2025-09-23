@@ -2,13 +2,13 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, NavLink, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, BarChart3, X, Menu } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, BarChart3, X, Menu, MessageSquare } from 'lucide-react'; // NEW: MessageSquare
 import { motion, AnimatePresence } from 'framer-motion';
 import EcoBubbleIcon from './EcoBubbleIcon';
 
 interface HeaderProps {
   title?: string;                 // opcional: pode forçar um título
-  showBackButton?: boolean;
+  showBackButton?: boolean;       // continua funcionando, mas agora há fallback automático
   onLogout?: () => void;
 }
 
@@ -48,6 +48,10 @@ const Header: React.FC<HeaderProps> = ({
   ];
   const autoTitle =
     routeTitleMap.find(([re]) => re.test(location.pathname))?.[1] || title || 'ECO';
+
+  // NEW: exibir botão Voltar automaticamente quando NÃO estiver no /chat
+  const isChat = /^\/chat\/?$/.test(location.pathname);
+  const shouldShowBack = showBackButton || !isChat;
 
   // lock scroll quando o drawer abre
   useEffect(() => {
@@ -108,13 +112,14 @@ const Header: React.FC<HeaderProps> = ({
           </span>
         </Link>
 
-        {/* Direita: voltar + SAIR (texto) */}
+        {/* Direita: voltar para o chat (automático) + SAIR */}
         <div className="flex items-center gap-2">
-          {showBackButton && (
+          {shouldShowBack && (
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/chat')} // NEW: volta direto ao chat (não depende do histórico)
               className="px-2 py-2 rounded-[18px] hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/[0.08]"
-              aria-label="Voltar"
+              aria-label="Voltar ao chat"
+              title="Voltar ao chat"
             >
               <ArrowLeft className="h-5 w-5 text-slate-900" />
             </button>
@@ -177,6 +182,17 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Navegação */}
             <nav className="px-3 py-3 flex flex-col gap-1.5">
+              {/* NEW: item Chat no topo */}
+              <NavLink
+                to="/chat"
+                end
+                className={({ isActive }) => navItem(isActive)}
+                onClick={() => setDrawerOpen(false)}
+              >
+                <MessageSquare className={iconCls} strokeWidth={1.75} />
+                <span className={labelCls}>Chat</span>
+              </NavLink>
+
               <NavLink to="/memory" end className={({ isActive }) => navItem(isActive)} onClick={() => setDrawerOpen(false)}>
                 <BookOpen className={iconCls} strokeWidth={1.75} />
                 <span className={labelCls}>Memórias</span>
@@ -190,6 +206,7 @@ const Header: React.FC<HeaderProps> = ({
                 <span className={labelCls}>Relatórios</span>
               </NavLink>
 
+              {/* Botão Voltar opcional (mantido) */}
               {showBackButton && (
                 <button
                   onClick={() => { setDrawerOpen(false); navigate(-1); }}

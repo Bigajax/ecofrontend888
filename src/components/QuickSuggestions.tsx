@@ -1,5 +1,5 @@
 import React from "react";
-import RotatingPrompts from "./RotatingPrompts"; // ⬅️ seu componente
+import RotatingPrompts from "./RotatingPrompts";
 
 /* --------- Tipo público para usar no ChatPage --------- */
 export type Suggestion = {
@@ -119,6 +119,10 @@ export const DEFAULT_ROTATING: Suggestion[] = [
   },
 ];
 
+/* === Tipografia igual ao Drawer (clean) === */
+const labelCls =
+  "text-[15px] leading-[1.35] text-slate-900/95 font-normal tracking-[-0.005em] antialiased";
+
 export default function QuickSuggestions({
   visible,
   className = "",
@@ -142,7 +146,7 @@ export default function QuickSuggestions({
       aria-label="Atalhos de início"
       role="region"
     >
-      {/* ⬆️ Frases rotativas (ocupam pouco espaço e “puxam” módulos) */}
+      {/* ⬆️ Frases rotativas */}
       {showRotating && (
         <div className="mb-1.5">
           <RotatingPrompts
@@ -150,11 +154,13 @@ export default function QuickSuggestions({
             onPick={emitPick}
             intervalMs={rotationMs}
             className="w-full"
+            // força a mesma tipografia no componente filho
+            labelClassName={labelCls}
           />
         </div>
       )}
 
-      {/* ⬇️ Pílulas compactas — mobile com rolagem horizontal, desktop com wrap */}
+      {/* ⬇️ Pílulas compactas */}
       <div
         className="
           flex gap-2 overflow-x-auto py-1 px-0.5
@@ -171,21 +177,25 @@ export default function QuickSuggestions({
             className="
               shrink-0 md:shrink
               h-9 md:h-10
-              rounded-full px-3 md:px-3.5
-              text-[13px] md:text-[13.5px]
+              rounded-full pl-2.5 pr-3 md:px-3.5
               bg-white/70 backdrop-blur-md
-              border border-gray-200/70
-              shadow-sm hover:shadow focus:outline-none
-              focus-visible:ring-2 focus-visible:ring-slate-300
+              border border-black/10
+              shadow-[0_8px_22px_rgba(16,24,40,0.08)]
+              hover:bg-white/85 hover:border-black/15
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-black/10
               active:translate-y-[1px] transition
-              text-slate-800 flex items-center gap-2
+              text-slate-900/95 inline-flex items-center gap-2
             "
             aria-label={`Sugerir: ${s.label}`}
             title={s.label}
             data-suggestion-id={s.id}
           >
-            {s.icon && <span className="leading-none text-[15px] md:text-[17px]">{s.icon}</span>}
-            <span className="font-medium leading-none">{s.label}</span>
+            {s.icon && (
+              <span className="leading-none text-[15px] md:text-[17px]" aria-hidden>
+                {s.icon}
+              </span>
+            )}
+            <span className={labelCls}>{s.label}</span>
           </button>
         ))}
       </div>

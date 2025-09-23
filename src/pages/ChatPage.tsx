@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { motion } from 'framer-motion';
 
-// ❌ Header é renderizado no MainLayout
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import EcoBubbleIcon from '../components/EcoBubbleIcon';
@@ -139,19 +138,16 @@ const ChatPage: React.FC = () => {
     });
   };
 
-  // garante ancorar quando montar
   useEffect(() => {
     scrollToBottom(false);
   }, []);
 
-  // Auto-scroll quando chegam novas msgs / muda "digitando"
   useLayoutEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
     if (nearBottom(el, 120)) scrollToBottom(true);
   }, [messages, digitando]);
 
-  // Observer do fim
   useEffect(() => {
     const root = scrollerRef.current;
     const end = endRef.current;
@@ -168,7 +164,6 @@ const ChatPage: React.FC = () => {
     return () => io.disconnect();
   }, []);
 
-  // medir input (quick + input)
   useEffect(() => {
     if (!inputBarRef.current) return;
     const el = inputBarRef.current;
@@ -183,7 +178,6 @@ const ChatPage: React.FC = () => {
     return () => ro.disconnect();
   }, []);
 
-  // iOS/Android teclado + visualViewport (corrige conteúdo escondido atrás do teclado)
   useEffect(() => {
     const vv = (window as any).visualViewport as VisualViewport | undefined;
 
@@ -275,7 +269,6 @@ const ChatPage: React.FC = () => {
     const userLocalId = uuidv4();
     addMessage({ id: userLocalId, text: trimmed, sender: 'user' });
 
-    // ancorar imediatamente após o usuário enviar
     requestAnimationFrame(() => scrollToBottom(true));
 
     mixpanel.track('Eco: Mensagem Enviada', {
@@ -423,7 +416,7 @@ const ChatPage: React.FC = () => {
           overscrollBehaviorY: 'contain',
         }}
       >
-        <div className="max-w-2xl w-full mx-auto">
+        <div className="w-full mx-auto max-w-[720px]">
           {messages.length === 0 && !erroApi && (
             <div
               className="
@@ -437,15 +430,15 @@ const ChatPage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.28 }}
               >
-                <div className="flex items-center justify-center gap-2.5">
-                  <EcoBubbleIcon size={26} className="opacity-0 pointer-events-none" />
-                  <h2 className="text-3xl md:text-4xl font-light text-gray-800 leading-tight">
+                {/* ======= SAUDAÇÃO CENTRAL ALINHADA À COLUNA ======= */}
+                <div className="grid grid-cols-[28px,1fr,28px] items-center">
+                  <div />
+                  <h2 className="col-start-2 text-center text-3xl md:text-4xl font-light text-gray-800 leading-tight">
                     {saudacao}, {userName}
                   </h2>
-                  <EcoBubbleIcon size={26} className="translate-y-[2px] md:scale-[1.15]" />
+                  <div />
                 </div>
-
-                <p className="text-base md:text-lg font-light text-slate-500 mt-2">
+                <p className="text-center text-base md:text-lg font-light text-slate-500 mt-2">
                   {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
                 </p>
               </motion.div>
@@ -458,33 +451,44 @@ const ChatPage: React.FC = () => {
 
           <div className="w-full space-y-4">
             {messages.map((m) => (
-              <div
-                key={m.id}
-                className={`flex items-start ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {m.sender === 'eco' && (
-                  <div className="mr-2 mt-1.5">
-                    <EcoBubbleIcon />
-                  </div>
-                )}
+              // GRID 28px | 1fr | 28px para alinhar a coluna do texto ao centro
+              <div key={m.id} className="grid grid-cols-[28px,1fr,28px] gap-2 items-start">
+                <div className="pt-1.5">
+                  {m.sender === 'eco' ? <EcoBubbleIcon /> : <div className="w-[28px] h-[28px]" />}
+                </div>
 
-                {m.sender === 'eco' ? (
-                  <EcoMessageWithAudio message={m as any} />
-                ) : (
-                  <ChatMessage message={m} />
-                )}
+                <div className={m.sender === 'user' ? 'justify-self-end' : 'justify-self-start'}>
+                  {m.sender === 'eco' ? (
+                    <EcoMessageWithAudio message={m as any} />
+                  ) : (
+                    <ChatMessage message={m} />
+                  )}
+                </div>
+
+                <div className="pt-1.5">
+                  {m.sender === 'user' ? (
+                    <EcoBubbleIcon className="opacity-0" />
+                  ) : (
+                    <div className="w-[28px] h-[28px]" />
+                  )}
+                </div>
               </div>
             ))}
 
             {digitando && (
-              <div className="flex items-start justify-start">
-                <div className="mr-2 mt-1.5">
+              <div className="grid grid-cols-[28px,1fr,28px] gap-2 items-start">
+                <div className="pt-1.5">
                   <EcoBubbleIcon />
                 </div>
-                <ChatMessage
-                  message={{ id: 'typing', text: '...', sender: 'eco' } as any}
-                  isEcoTyping
-                />
+                <div className="justify-self-start">
+                  <ChatMessage
+                    message={{ id: 'typing', text: '...', sender: 'eco' } as any}
+                    isEcoTyping
+                  />
+                </div>
+                <div className="pt-1.5">
+                  <div className="w-[28px] h-[28px]" />
+                </div>
               </div>
             )}
 
@@ -508,12 +512,10 @@ const ChatPage: React.FC = () => {
               </div>
             )}
 
-            {/* âncora do fim */}
             <div ref={endRef} />
           </div>
         </div>
 
-        {/* BOTÃO “DESCER” */}
         {showScrollBtn && (
           <button
             onClick={() => scrollToBottom(true)}
@@ -546,7 +548,7 @@ const ChatPage: React.FC = () => {
         className="fixed left-0 right-0 bottom-[calc(max(env(safe-area-inset-bottom),0px)+var(--kb,0px))]
                    z-40 px-3 sm:px-6 pb-2 pt-2 glass border-t-0"
       >
-        <div className="max-w-2xl mx-auto">
+        <div className="w-full mx-auto max-w-[720px]">
           <QuickSuggestions
             visible={showQuick && messages.length === 0 && !digitando && !erroApi}
             onPickSuggestion={handlePickSuggestion}
