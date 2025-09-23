@@ -11,7 +11,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
   const isUser = message.sender === 'user';
   const showTyping = !!isEcoTyping && !isUser;
 
-  // evita renderizar texto enquanto mostra o indicador
   const displayText = showTyping ? '' : String(message.text ?? message.content ?? '');
 
   return (
@@ -23,29 +22,39 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
     >
       <div
         className={[
-          'chat-bubble-base px-3 py-2 sm:px-4 sm:py-3 rounded-2xl shadow-sm select-text',
-          isUser ? 'glass-bubble-user rounded-br-sm' : 'glass-bubble-eco rounded-bl-sm',
-          showTyping ? 'bubble-typing' : '',                          // <-- bolha compacta
-          showTyping ? 'animate-gentle-pulse motion-safe:animate-gentle-pulse' : '',
+          // base da bolha
+          'max-w-[82%] md:max-w-[70%] px-3 py-2 sm:px-4 sm:py-3 rounded-3xl',
+          'shadow-[0_10px_30px_rgba(16,24,40,0.10)] border',
+          // estilos vidro (eco) x vidro levemente mais escuro (user)
+          isUser
+            ? 'bg-white/22 backdrop-blur-xl border-white/40 text-slate-900 rounded-br-xl'
+            : 'bg-white/45 backdrop-blur-2xl border-white/50 text-slate-900 rounded-bl-xl',
+          // micro interação
+          'transition-transform duration-150 will-change-transform',
+          showTyping ? 'scale-[0.99]' : 'hover:scale-[1.01]',
         ].join(' ')}
         aria-busy={showTyping || undefined}
       >
         {showTyping ? (
-          <div
-            className="typing-indicator"
-            role="status"
-            aria-live="polite"
-            aria-label="ECO está digitando…"
-          >
-            <div className="typing-dots">
-              {/* tamanhos vêm do CSS (.typing-dots > span), sem w-/h- aqui */}
-              <span className="rounded-full bg-gray-600/80" aria-hidden="true" />
-              <span className="rounded-full bg-gray-600/80" aria-hidden="true" />
-              <span className="rounded-full bg-gray-600/80" aria-hidden="true" />
-            </div>
+          <div className="flex items-center gap-1.5" role="status" aria-live="polite" aria-label="ECO está digitando…">
+            <span
+              className="h-1.5 w-1.5 rounded-full bg-gray-700/85 animate-bounce"
+              style={{ animationDelay: '0ms' }}
+              aria-hidden="true"
+            />
+            <span
+              className="h-1.5 w-1.5 rounded-full bg-gray-700/85 animate-bounce"
+              style={{ animationDelay: '120ms' }}
+              aria-hidden="true"
+            />
+            <span
+              className="h-1.5 w-1.5 rounded-full bg-gray-700/85 animate-bounce"
+              style={{ animationDelay: '240ms' }}
+              aria-hidden="true"
+            />
           </div>
         ) : (
-          <div className="font-sans leading-relaxed text-[14px] sm:text-sm md:text-base text-gray-900">
+          <div className="font-sans leading-relaxed text-[14px] sm:text-sm md:text-base">
             <div
               className={[
                 'prose prose-sm sm:prose-base max-w-none font-sans',
@@ -53,9 +62,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
                 'prose-headings:font-semibold prose-headings:leading-snug prose-headings:text-[1em] prose-headings:font-sans',
                 'prose-p:my-1.5 sm:prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5',
                 'prose-a:break-words prose-a:underline',
-                'prose-pre:bg-gray-50/70 prose-pre:border prose-pre:border-gray-200/60 prose-pre:rounded-lg prose-pre:p-3',
+                'prose-pre:bg-gray-50/70 prose-pre:border prose-pre:border-gray-200/60 prose-pre:rounded-xl prose-pre:p-3',
                 'prose-code:before:content-[""] prose-code:after:content-[""]',
-                'prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto',
+                'prose-img:rounded-xl prose-img:max-w-full prose-img:h-auto',
               ].join(' ')}
             >
               <div className="overflow-x-auto">

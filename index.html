@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="font-sans">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
@@ -10,7 +10,7 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"
     />
 
-    <!-- Aparência melhor integrada no iOS/Android -->
+    <!-- Aparência em apps móveis -->
     <meta name="theme-color" content="#ffffff" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -18,21 +18,20 @@
 
     <title>ECO - Espelho Emocional e Comportamental</title>
 
-    <!-- Fonts -->
+    <!--
+      Se quiser manter Inter como fallback via CDN, descomente abaixo.
+      A stack do Tailwind já inclui Inter; em macOS/iOS, SF Pro será usada.
+    -->
+    <!--
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Inter (como já usava) -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <!-- Playfair Display (você usa nos headings h1–h6) -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    -->
 
-    <!-- Ajuste de --vh p/ corrigir 100vh no iOS/Android + marca classe supports-backdrop -->
+    <!-- Helpers: --vh para 100vh e feature flag de backdrop-filter -->
     <script>
       (function () {
         function setVh() {
@@ -44,18 +43,33 @@
         if (window.visualViewport) {
           window.visualViewport.addEventListener('resize', setVh, { passive: true });
         }
-
         var supportsBackdrop =
           (window.CSS && CSS.supports && CSS.supports('backdrop-filter', 'blur(1px)')) ||
           (window.CSS && CSS.supports && CSS.supports('-webkit-backdrop-filter', 'blur(1px)'));
-        if (supportsBackdrop) {
-          document.documentElement.classList.add('supports-backdrop');
-        }
+        if (supportsBackdrop) document.documentElement.classList.add('supports-backdrop');
       })();
     </script>
+
+    <!-- Pequeno reset para cores de fundo e altura mínima -->
+    <style>
+      html, body, #root { height: 100%; }
+      body {
+        margin: 0;
+        /* usa sua util bg-eco-vibe também no body para evitar flash branco */
+        background:
+          radial-gradient(1200px 600px at 20% -10%, #E9E8FF, transparent 55%),
+          radial-gradient(900px 600px at 85% -5%, #FFE7E1, transparent 60%),
+          linear-gradient(120deg, #EEF3FF 0%, #FFF8F3 70%);
+        color: #0f172a; /* slate-900 */
+      }
+      /* fallback p/ browsers sem svh: 100*var(--vh) */
+      .min-h-viewport {
+        min-height: calc(var(--vh, 1vh) * 100);
+      }
+    </style>
   </head>
 
-  <body>
+  <body class="min-h-viewport">
     <div id="root"></div>
     <script type="module" src="./src/main.tsx"></script>
   </body>

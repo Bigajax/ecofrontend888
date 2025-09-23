@@ -16,13 +16,18 @@ const VERSION = '222';
 const STORAGE_KEY = 'eco.sidebar.collapsed';
 
 const iconCls = 'h-[22px] w-[22px] text-slate-700';
+
+/** Nav item com “vidro” + raio Apple */
 const navItem = (active: boolean, collapsed: boolean) =>
   [
-    'flex items-center gap-2 rounded-xl transition-all duration-150',
+    'flex items-center gap-2 transition-all duration-150',
     collapsed ? 'justify-center px-2 py-2' : 'px-3 py-2',
     'h-11 min-h-[44px]',
-    active ? 'bg-white shadow-sm ring-1 ring-gray-200' : 'hover:bg-slate-50 active:bg-slate-100',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-200',
+    'rounded-[18px]',
+    active
+      ? 'bg-white/22 backdrop-blur-xl border border-white/45 shadow-[0_8px_22px_rgba(16,24,40,0.10),inset_0_1px_0_rgba(255,255,255,0.50)]'
+      : 'hover:bg-white/16 hover:backdrop-blur-lg hover:border hover:border-white/30 active:bg-white/20',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
   ].join(' ');
 
 const readCollapsed = () => {
@@ -42,10 +47,10 @@ const Header: React.FC<HeaderProps> = ({
   /* Sidebar width var */
   const applySidebarWidth = (isCollapsed: boolean) => {
     if (typeof document !== 'undefined') {
-      document.documentElement.style.setProperty('--eco-sidebar-w', isCollapsed ? '64px' : '256px');
+      document.documentElement.style.setProperty('--eco-sidebar-w', isCollapsed ? '72px' : '264px');
     }
   };
-  useEffect(() => { applySidebarWidth(collapsed); }, []);
+  useEffect(() => { applySidebarWidth(collapsed); }, []); // mount
 
   const toggleCollapsed = () => {
     const next = !collapsed;
@@ -54,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({
     applySidebarWidth(next);
   };
 
-  /* Topbar height var (para MainLayout) */
+  /* Topbar height var */
   const topRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     document.documentElement.style.setProperty('--eco-topbar-h', '56px'); // fallback
@@ -69,14 +74,15 @@ const Header: React.FC<HeaderProps> = ({
     return () => ro.disconnect();
   }, []);
 
-  /* ---------- TOP BAR (mobile) — agora FIXED ---------- */
+  /* ---------- TOP BAR (mobile) - vidro arredondado ---------- */
   const TopBar = (
     <header
       ref={topRef}
       className="
         fixed top-0 left-0 right-0 z-[70]
-        bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80
-        border-b border-gray-100
+        bg-white/22 backdrop-blur-2xl border-b border-white/35
+        shadow-[0_10px_28px_rgba(16,24,40,0.08),inset_0_1px_0_rgba(255,255,255,0.50)]
+        rounded-b-[20px]
         pt-[env(safe-area-inset-top)]
       "
     >
@@ -96,7 +102,7 @@ const Header: React.FC<HeaderProps> = ({
           {showBackButton && (
             <button
               onClick={() => navigate(-1)}
-              className="ml-1 p-2 rounded-xl hover:bg-slate-50 active:bg-slate-100 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-200"
+              className="ml-1 px-2 py-2 rounded-[18px] hover:bg-white/16 hover:backdrop-blur-lg border border-transparent hover:border-white/30 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               aria-label="Voltar" title="Voltar"
             >
               <ArrowLeft className="h-5 w-5 text-slate-700" strokeWidth={1.75} />
@@ -114,13 +120,13 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* DIREITA */}
         <div className="flex items-center justify-end gap-2">
-          <span className="hidden sm:inline text-[10px] leading-none text-slate-400 tabular-nums select-none" aria-label={`Versão ${VERSION}`} title={`Versão ${VERSION}`}>
+          <span className="hidden sm:inline text-[10px] leading-none text-slate-500/90 tabular-nums select-none" aria-label={`Versão ${VERSION}`} title={`Versão ${VERSION}`}>
             {VERSION}
           </span>
           {onLogout && (
             <button
               onClick={onLogout}
-              className="p-2 rounded-xl hover:bg-slate-50 active:bg-slate-100 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-200"
+              className="p-2 rounded-[18px] hover:bg-white/16 hover:backdrop-blur-lg border border-transparent hover:border-white/30 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               aria-label="Sair" title="Sair"
             >
               <LogOut className="h-5 w-5 text-slate-700" strokeWidth={1.5} />
@@ -131,13 +137,21 @@ const Header: React.FC<HeaderProps> = ({
     </header>
   );
 
-  /* ---------- LEFT SIDEBAR (desktop) ---------- */
+  /* ---------- LEFT SIDEBAR (desktop) - vidro + canto arredondado ---------- */
   const LeftBar = (
     <aside
-      className="fixed left-0 top-0 z-50 h-dvh bg-white border-r border-gray-100
-                 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)]
-                 overflow-hidden transition-[width] duration-200 ease-out"
-      style={{ width: 'var(--eco-sidebar-w, 256px)' }}
+      className="
+        fixed left-0 top-0 z-50 h-svh
+        bg-white/14 backdrop-blur-2xl border-r border-white/30
+        shadow-[0_24px_60px_rgba(16,24,40,0.12),inset_0_1px_0_rgba(255,255,255,0.55)]
+        rounded-r-[28px] md:rounded-r-[32px]
+        pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)]
+        overflow-hidden transition-[width] duration-200 ease-out
+        before:content-[''] before:absolute before:top-0 before:-right-6 before:bottom-0 before:w-12
+        before:bg-[linear-gradient(90deg,rgba(255,255,255,0.22),transparent)]
+        before:pointer-events-none
+      "
+      style={{ width: 'var(--eco-sidebar-w, 264px)' }}
       aria-label="Barra lateral"
     >
       <div className="relative flex h-full flex-col">
@@ -156,16 +170,23 @@ const Header: React.FC<HeaderProps> = ({
           aria-expanded={!collapsed}
           aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
           title={collapsed ? 'Expandir' : 'Recolher'}
-          className="absolute top-2.5 right-2.5 h-9 w-9 rounded-full border border-gray-200 bg-white/95 backdrop-blur-sm shadow-sm hover:shadow-md transition hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center text-gray-600/90 hover:text-gray-800 z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-200"
+          className="
+            absolute top-2.5 right-2.5 h-9 w-9 rounded-full
+            border border-white/45 bg-white/24 backdrop-blur-xl
+            shadow-[0_8px_22px_rgba(16,24,40,0.10),inset_0_1px_0_rgba(255,255,255,0.55)]
+            hover:bg-white/28 transition hover:scale-[1.02] active:scale-[0.98]
+            flex items-center justify-center text-gray-700 z-20
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40
+          "
         >
           <motion.div animate={{ rotate: collapsed ? 180 : 0 }} transition={{ duration: 0.15 }}>
             <ChevronLeft className="h-4 w-4" />
           </motion.div>
         </button>
 
-        <div className="mx-4 h-px bg-gray-100" />
+        <div className="mx-5 h-px bg-white/30" />
 
-        <nav className={`mt-2 flex flex-col gap-1.5 ${collapsed ? 'px-1' : 'px-3'}`}>
+        <nav className={`mt-2 flex flex-col gap-1.5 ${collapsed ? 'px-1' : 'px-4'}`}>
           <NavLink to="/memory" end className={({ isActive }) => navItem(isActive, collapsed)} aria-label="Memórias">
             <BookOpen className={iconCls} strokeWidth={1.75} />
             {!collapsed && <span className="text-[15px] font-medium tracking-[-0.01em] text-slate-800 select-none">Memórias</span>}
@@ -182,10 +203,10 @@ const Header: React.FC<HeaderProps> = ({
           {showBackButton && (
             <button
               onClick={() => navigate(-1)}
-              className={`rounded-xl transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-200 ${
+              className={`transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
                 collapsed
-                  ? 'px-2 py-2 h-11 min-h-[44px] w-full flex items-center justify-center hover:bg-slate-50 active:bg-slate-100'
-                  : 'px-3 py-2 h-11 min-h-[44px] w-full flex items-center gap-2 hover:bg-slate-50 active:bg-slate-100'
+                  ? 'px-2 py-2 h-11 min-h-[44px] w-full flex items-center justify-center rounded-[18px] hover:bg-white/16 hover:backdrop-blur-lg border border-transparent hover:border-white/30'
+                  : 'px-3 py-2 h-11 min-h-[44px] w-full flex items-center gap-2 rounded-[18px] hover:bg-white/16 hover:backdrop-blur-lg border border-transparent hover:border-white/30'
               }`}
               aria-label="Voltar"
             >
@@ -195,17 +216,20 @@ const Header: React.FC<HeaderProps> = ({
           )}
         </nav>
 
-        <div className="mt-auto px-4 py-3 flex items-center gap-2">
+        <div className="mt-auto px-5 py-3 flex items-center gap-2">
           {mensagemDeSucesso && !collapsed && (
             <span className="text-xs text-emerald-600 font-medium truncate max-w-[9.5rem]">{mensagemDeSucesso}</span>
           )}
-          <span className={`text-[10px] leading-none text-slate-400 tabular-nums select-none ${collapsed ? 'mr-auto' : ''}`} aria-label={`Versão ${VERSION}`} title={`Versão ${VERSION}`}>
+          <span
+            className={`text-[10px] leading-none text-slate-500/90 tabular-nums select-none ${collapsed ? 'mr-auto' : ''}`}
+            aria-label={`Versão ${VERSION}`} title={`Versão ${VERSION}`}
+          >
             {VERSION}
           </span>
           {onLogout && (
             <button
               onClick={onLogout}
-              className="ml-auto p-2 rounded-xl hover:bg-slate-50 active:bg-slate-100 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-200"
+              className="ml-auto p-2 rounded-[18px] hover:bg-white/16 hover:backdrop-blur-lg border border-transparent hover:border-white/30 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               aria-label="Sair" title="Sair"
             >
               <LogOut className={iconCls} strokeWidth={1.75} />

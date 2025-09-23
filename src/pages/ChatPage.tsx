@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*  ChatPage.tsx — white + saudação limpa + teclado mobile + scroll button    */
+/*  ChatPage.tsx — eco-vibe + glass + saudação limpa + teclado + scroll btn   */
 /* -------------------------------------------------------------------------- */
 
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
@@ -448,7 +448,7 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col bg-white">
+    <div className="w-full flex-1 min-h-0 flex flex-col bg-eco-vibe">
       {/* SCROLLER */}
       <div
         ref={scrollerRef}
@@ -468,7 +468,7 @@ const ChatPage: React.FC = () => {
         <div className="max-w-2xl w-full mx-auto">
           {messages.length === 0 && !erroApi && (
             <motion.div
-              className="text-center mb-8 mt-8 px-4"
+              className="text-center mb-8 mt-[12svh] md:mt-[14svh] lg:mt-[16svh] px-4"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28 }}
@@ -488,7 +488,7 @@ const ChatPage: React.FC = () => {
           )}
 
           {erroApi && (
-            <div className="glass-panel text-red-600 text-center mb-4 px-4 py-2">{erroApi}</div>
+            <div className="glass rounded-xl text-red-600 text-center mb-4 px-4 py-2">{erroApi}</div>
           )}
 
           <div className="w-full space-y-4">
@@ -528,8 +528,7 @@ const ChatPage: React.FC = () => {
                 <div
                   className="
                     w-full max-w-[560px] mx-auto
-                    rounded-2xl border border-gray-200/60
-                    bg-white/50 backdrop-blur-md shadow-sm
+                    glass rounded-2xl
                     px-4 py-3 mt-2
                   "
                 >
@@ -557,8 +556,7 @@ const ChatPage: React.FC = () => {
               fixed right-4 sm:right-8
               bottom-[calc(var(--input-h,72px)+18px)]
               z-40 h-9 w-9 rounded-full
-              backdrop-blur-md bg-white/75 hover:bg-white
-              shadow-lg border border-gray-200/70
+              glass-soft hover:bg-white/24
               flex items-center justify-center transition
             "
             aria-label="Descer para a última mensagem"
@@ -581,7 +579,7 @@ const ChatPage: React.FC = () => {
       <div
         ref={inputBarRef}
         className="fixed left-0 right-0 bottom-[max(env(safe-area-inset-bottom),0px)]
-                   z-40 px-3 sm:px-6 pb-2 pt-2 bg-white/95 backdrop-blur border-t border-gray-200"
+                   z-40 px-3 sm:px-6 pb-2 pt-2 glass border-t-0"
       >
         <div className="max-w-2xl mx-auto">
           <QuickSuggestions

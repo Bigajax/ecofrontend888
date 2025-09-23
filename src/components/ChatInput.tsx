@@ -172,15 +172,22 @@ const ChatInput: React.FC<Props> = ({
   // ---------- UI de gravação ----------
   if (isRecordingUI) {
     return (
-      <div className="relative glass-panel w-full max-w-2xl mx-auto px-4 py-2" aria-live="polite">
-        <div className="w-full h-10 mb-2 rounded-xl bg-white/30 dark:bg-black/10 backdrop-blur-md border border-white/30 flex items-center justify-center">
+      <div className="relative w-full max-w-2xl mx-auto px-4 py-2">
+        <div
+          className="
+            w-full h-11 mb-2 rounded-3xl
+            bg-white/26 backdrop-blur-2xl border border-white/45
+            shadow-[0_16px_40px_rgba(16,24,40,0.10),inset_0_1px_0_rgba(255,255,255,0.45)]
+            flex items-center justify-center
+          "
+        >
           {isTranscribing ? (
-            <div className="text-gray-600 text-sm flex items-center gap-2">
+            <div className="text-gray-700 text-sm flex items-center gap-2">
               <span className="animate-spin w-4 h-4 border-2 border-gray-500/60 border-t-transparent rounded-full" />
               Transcrevendo
             </div>
           ) : (
-            <div className="text-gray-700 text-sm flex items-center gap-2">
+            <div className="text-gray-800 text-sm flex items-center gap-2">
               <svg className="animate-pulse w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <rect x="6" y="8" width="2" height="8" fill="currentColor" />
                 <rect x="11" y="5" width="2" height="14" fill="currentColor" />
@@ -190,12 +197,13 @@ const ChatInput: React.FC<Props> = ({
             </div>
           )}
         </div>
+
         <div className="flex justify-between items-center">
           <Plus size={18} className="text-transparent select-none" aria-hidden />
           <div className="flex gap-2">
             <button
               onClick={cancelRecording}
-              className="glass-button w-8 h-8 rounded-full flex items-center justify-center"
+              className="w-9 h-9 rounded-full border border-white/50 bg-white/30 backdrop-blur-xl shadow-sm flex items-center justify-center"
               aria-label="Cancelar"
               type="button"
             >
@@ -203,7 +211,7 @@ const ChatInput: React.FC<Props> = ({
             </button>
             <button
               onClick={stopRecording}
-              className="glass-button w-8 h-8 rounded-full flex items-center justify-center"
+              className="w-9 h-9 rounded-full border border-white/60 bg-white/80 backdrop-blur-xl shadow-sm flex items-center justify-center"
               aria-label="Confirmar"
               type="button"
             >
@@ -223,15 +231,18 @@ const ChatInput: React.FC<Props> = ({
         e.preventDefault();
         handleSend();
       }}
-      className={`relative glass-panel w-full max-w-2xl mx-auto px-3 py-1.5 transition-all duration-200 ${
-        disabled ? 'opacity-90' : ''
-      }`}
+      className={`
+        relative w-full max-w-2xl mx-auto px-3 py-1.5 rounded-3xl
+        border border-white/45 bg-white/55 backdrop-blur-2xl
+        shadow-[0_16px_46px_rgba(16,24,40,0.10),inset_0_1px_0_rgba(255,255,255,0.55)]
+        transition-all duration-200 ${disabled ? 'opacity-90' : ''}
+      `}
       initial={{ y: 50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 120, damping: 14 }}
       aria-disabled={disabled}
       role="group"
-      style={{ overflowAnchor: 'none' }} // evita “scroll anchoring”
+      style={{ overflowAnchor: 'none' }}
     >
       {/* ====== GRID SIMÉTRICO: [72px | 1fr | 72px] ====== */}
       <div className="grid grid-cols-[72px,1fr,72px] items-center gap-2">
@@ -240,7 +251,13 @@ const ChatInput: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => setShowMoreOptions((prev) => !prev)}
-            className="glass-button w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50"
+            className="
+              w-9 h-9 rounded-full
+              border border-white/45 bg-white/40 backdrop-blur-xl
+              shadow-sm flex items-center justify-center
+              hover:bg-white/55 active:scale-[0.98] transition
+              disabled:opacity-50
+            "
             aria-expanded={showMoreOptions}
             aria-controls="chatinput-popover"
             aria-label="Mais opções"
@@ -260,7 +277,12 @@ const ChatInput: React.FC<Props> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="glass-popover absolute bottom-full mb-2 left-4 w-56 z-50"
+              className="
+                absolute bottom-full mb-2 left-4 w-56 z-50
+                rounded-2xl border border-white/45 bg-white/70 backdrop-blur-2xl
+                shadow-[0_20px_50px_rgba(16,24,40,0.12),inset_0_1px_0_rgba(255,255,255,0.55)]
+                p-1.5
+              "
             >
               <button
                 type="button"
@@ -268,7 +290,7 @@ const ChatInput: React.FC<Props> = ({
                   onMoreOptionSelected('save_memory');
                   setShowMoreOptions(false);
                 }}
-                className="flex items-center p-2 hover:bg-white/30 rounded-lg w-full text-left"
+                className="flex items-center p-2 hover:bg-white/40 rounded-xl w-full text-left transition"
               >
                 <BookOpen size={20} className="mr-3" strokeWidth={1.5} />
                 Registro de memória
@@ -279,7 +301,7 @@ const ChatInput: React.FC<Props> = ({
                   onMoreOptionSelected('go_to_voice_page');
                   setShowMoreOptions(false);
                 }}
-                className="flex items-center p-2 hover:bg-white/30 rounded-lg mt-1 w-full text-left"
+                className="flex items-center p-2 hover:bg-white/40 rounded-xl mt-1 w-full text-left transition"
               >
                 <Headphones size={20} className="mr-3" strokeWidth={1.5} />
                 Modo de voz
@@ -318,9 +340,8 @@ const ChatInput: React.FC<Props> = ({
             aria-disabled={disabled}
             className="
               w-full min-w-0 resize-none bg-transparent border-none focus:outline-none
-              glass-textarea leading-[1.35] py-2 max-h-48 overflow-y-auto
-              text-[15px] md:text-base text-slate-800
-              placeholder:text-slate-500 placeholder:font-light
+              leading-[1.35] py-2 max-h-48 overflow-y-auto
+              text-[15px] md:text-base text-slate-800 placeholder:text-slate-500 placeholder:font-light
             "
           />
         </div>
@@ -331,7 +352,13 @@ const ChatInput: React.FC<Props> = ({
             type="button"
             onClick={startRecording}
             disabled={disabled}
-            className="glass-button w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50"
+            className="
+              w-9 h-9 rounded-full
+              border border-white/45 bg-white/40 backdrop-blur-xl
+              shadow-sm flex items-center justify-center
+              hover:bg-white/55 active:scale-[0.98] transition
+              disabled:opacity-50
+            "
             aria-label="Iniciar gravação"
           >
             <Mic size={16} />
@@ -342,8 +369,8 @@ const ChatInput: React.FC<Props> = ({
             ref={sendButtonRef}
             disabled={disabled || !inputMessage.trim()}
             className="
-              w-8 h-8 rounded-full
-              backdrop-blur-md bg-white/80 border border-white/60
+              w-9 h-9 rounded-full
+              backdrop-blur-xl bg-white/85 border border-white/60
               shadow-sm hover:bg-white active:scale-[0.98]
               transition disabled:opacity-50 disabled:cursor-not-allowed
               text-slate-700
