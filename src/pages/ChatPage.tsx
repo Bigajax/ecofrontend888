@@ -12,6 +12,7 @@ import ChatInput from '../components/ChatInput';
 import EcoBubbleIcon from '../components/EcoBubbleIcon';
 import EcoMessageWithAudio from '../components/EcoMessageWithAudio';
 import QuickSuggestions, { Suggestion } from '../components/QuickSuggestions';
+import TypingDots from '../components/TypingDots'; // 👈 novo
 
 import { enviarMensagemParaEco } from '../api/ecoApi';
 import { buscarUltimasMemoriasComTags, buscarMemoriasSimilares } from '../api/memoriaApi';
@@ -138,9 +139,7 @@ const ChatPage: React.FC = () => {
     });
   };
 
-  useEffect(() => {
-    scrollToBottom(false);
-  }, []);
+  useEffect(() => { scrollToBottom(false); }, []);
 
   useLayoutEffect(() => {
     const el = scrollerRef.current;
@@ -223,9 +222,7 @@ const ChatPage: React.FC = () => {
     }
   }, [aiMessages.length]);
 
-  useEffect(() => {
-    if ((messages?.length ?? 0) > 0) setShowQuick(false);
-  }, [messages]);
+  useEffect(() => { if ((messages?.length ?? 0) > 0) setShowQuick(false); }, [messages]);
 
   useEffect(() => {
     const onUserTypes = (ev: Event) => {
@@ -408,12 +405,13 @@ const ChatPage: React.FC = () => {
           setIsAtBottom(at);
           setShowScrollBtn(!at);
         }}
-        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 pt-2 [scrollbar-gutter:stable]"
+        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 pt-2"
         style={{
-          paddingBottom:
-            'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + var(--kb,0px) + 12px)',
+          // altura explícita do viewport menos topbar e menos input
+          height: 'calc(100svh - var(--eco-topbar-h,56px) - var(--input-h,72px) - var(--kb,0px))',
+          paddingBottom: '12px',
           WebkitOverflowScrolling: 'touch',
-          overscrollBehaviorY: 'contain',
+          // overscrollBehaviorY removido para não travar a rolagem
         }}
       >
         <div className="w-full mx-auto max-w-[720px]">
@@ -425,7 +423,7 @@ const ChatPage: React.FC = () => {
               "
             >
               <motion.div
-                className="text-center px-4"
+                className="px-4 w-full"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.28 }}
@@ -449,9 +447,9 @@ const ChatPage: React.FC = () => {
             <div className="glass rounded-xl text-red-600 text-center mb-4 px-4 py-2">{erroApi}</div>
           )}
 
-          <div className="w-full space-y-4">
+          {/* espaço vertical um pouco menor para não “esticar” */}
+          <div className="w-full space-y-3 md:space-y-4">
             {messages.map((m) => (
-              // GRID 28px | 1fr | 28px para alinhar a coluna do texto ao centro
               <div key={m.id} className="grid grid-cols-[28px,1fr,28px] gap-2 items-start">
                 <div className="pt-1.5">
                   {m.sender === 'eco' ? <EcoBubbleIcon /> : <div className="w-[28px] h-[28px]" />}
@@ -466,11 +464,7 @@ const ChatPage: React.FC = () => {
                 </div>
 
                 <div className="pt-1.5">
-                  {m.sender === 'user' ? (
-                    <EcoBubbleIcon className="opacity-0" />
-                  ) : (
-                    <div className="w-[28px] h-[28px]" />
-                  )}
+                  {m.sender === 'user' ? <EcoBubbleIcon className="opacity-0" /> : <div className="w-[28px] h-[28px]" />}
                 </div>
               </div>
             ))}
@@ -481,34 +475,9 @@ const ChatPage: React.FC = () => {
                   <EcoBubbleIcon />
                 </div>
                 <div className="justify-self-start">
-                  <ChatMessage
-                    message={{ id: 'typing', text: '...', sender: 'eco' } as any}
-                    isEcoTyping
-                  />
+                  <TypingDots /> {/* 👈 sem balão vazio no desktop */}
                 </div>
-                <div className="pt-1.5">
-                  <div className="w-[28px] h-[28px]" />
-                </div>
-              </div>
-            )}
-
-            {showFeedback && lastAi && (
-              <div className="flex justify-center">
-                <div
-                  className="
-                    w-full max-w-[560px] mx-auto
-                    glass rounded-2xl
-                    px-4 py-3 mt-2
-                  "
-                >
-                  <FeedbackPrompt
-                    sessaoId={sessionId}
-                    usuarioId={userId || undefined}
-                    // @ts-ignore
-                    extraMeta={{ ui_message_id: (lastAi as any).id }}
-                    onSubmitted={handleFeedbackSubmitted}
-                  />
-                </div>
+                <div />
               </div>
             )}
 
@@ -545,8 +514,7 @@ const ChatPage: React.FC = () => {
       {/* BARRA DE INPUT — FIXA NO RODAPÉ */}
       <div
         ref={inputBarRef}
-        className="fixed left-0 right-0 bottom-[calc(max(env(safe-area-inset-bottom),0px)+var(--kb,0px))]
-                   z-40 px-3 sm:px-6 pb-2 pt-2 glass border-t-0"
+        className="fixed left-0 right-0 bottom-[calc(max(env(safe-area-inset-bottom),0px)+var(--kb,0px))] z-40 px-3 sm:px-6 pb-2 pt-2 glass border-t-0"
       >
         <div className="w-full mx-auto max-w-[720px]">
           <QuickSuggestions
@@ -559,9 +527,7 @@ const ChatPage: React.FC = () => {
 
           <ChatInput
             onSendMessage={(t) => handleSendMessage(t)}
-            onMoreOptionSelected={(opt) => {
-              if (opt === 'go_to_voice_page') navigate('/voice');
-            }}
+            onMoreOptionSelected={(opt) => { if (opt === 'go_to_voice_page') navigate('/voice'); }}
             onSendAudio={() => console.log('Áudio enviado')}
             disabled={digitando}
             onTextChange={(t) => setShowQuick(t.trim().length === 0)}
