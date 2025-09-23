@@ -20,8 +20,8 @@ body {
 
 /* ---------------------------- Tokens ---------------------------- */
 :root {
-  --cerulean-blue: #007BA7;
-  --rose-quartz: #F7CAC9;
+  --cerulean-blue: #ffffff; /* ← agora branco */
+  --rose-quartz:   #ffffff; /* ← agora branco */
   --bg-cream: #ffffff;
 
   --app-vignette: radial-gradient(1200px 800px at 50% -10%, rgba(0,0,0,0.04), transparent 70%);
@@ -47,22 +47,22 @@ body {
   --glass-border: rgba(0,0,0,0.06);
   --glass-shadow: 0 8px 24px rgba(0,0,0,0.08);
 
-  /* bolhas “apple-like” */
-  --bubble-eco-bg:  rgba(255,255,255,0.55);
-  --bubble-user-bg: rgba(13,148,136,0.08);
+  /* bolhas (user agora neutra, sem verde) */
+  --bubble-eco-bg:  rgba(255,255,255,0.60);
+  --bubble-user-bg: rgba(255,255,255,0.55);
   --bubble-border:  rgba(15,23,42,0.10);
   --bubble-shadow:  0 3px 10px rgba(15,23,42,0.06);
 }
 
-/* Dark pronto (opcional; mantém seu visual claro por padrão) */
+/* Dark pronto (opcional) */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg-cream: #0b0f19;
     --glass-bg: rgba(18,22,34,.35);
     --glass-bg-strong: rgba(18,22,34,.55);
     --glass-border: rgba(255,255,255,.08);
-    --bubble-eco-bg: rgba(255,255,255,.08);
-    --bubble-user-bg: rgba(8,145,178,.18);
+    --bubble-eco-bg: rgba(255,255,255,.10);
+    --bubble-user-bg: rgba(255,255,255,.08);
     --bubble-border: rgba(255,255,255,.10);
   }
   body { background-color: var(--bg-cream); color: #e5e7eb; }
@@ -84,7 +84,6 @@ html, body, #root { height: 100%; min-height: 0; }
 @supports (height: 100svh) { html, body, #root { height: 100svh; } }
 @supports (height: 100dvh) { html, body, #root { height: 100dvh; } }
 
-/* Utilitários de viewport e safe-area */
 .fit-viewport { height: 100svh; }
 @supports (height: 100dvh) { .fit-viewport { height: 100dvh; } }
 .safe-pads { padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); }
@@ -94,15 +93,14 @@ html, body, #root { height: 100%; min-height: 0; }
   height: 100%;
   min-height: 0;
   display: flex;
-  flex-direction: row; /* sidebar + conteúdo */
+  flex-direction: row;
 }
 
-/* Página do chat (coluna da direita) */
 .chat-page {
   flex: 1 1 auto;
-  min-width: 0;         /* evita overflow horizontal */
+  min-width: 0;
   height: 100%;
-  min-height: 0;        /* permite o filho rolar */
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -115,21 +113,14 @@ html, body, #root { height: 100%; min-height: 0; }
   height: 100%;
   min-height: 0;
   overflow-y: auto;
-  /* usamos scrollIntoView no JS → mantenha auto */
-  scroll-behavior: auto;
-  /* evita reancoragem/pulos quando entram mensagens */
-  overflow-anchor: none;
-  /* gesto vertical suave no mobile */
+  scroll-behavior: auto;     /* usamos scrollIntoView no JS */
+  overflow-anchor: none;     /* evita “pulos” */
   touch-action: pan-y;
-  /* barra estável (sem “pulo”) */
   scrollbar-gutter: stable both-edges;
 }
-.anchor-end { overflow-anchor: auto; }   /* aplique em <div ref={endRef}/> */
+.anchor-end { overflow-anchor: auto; }
 
-/* Safari: sticky com blur mais estável */
 .sticky { will-change: transform; }
-
-/* Atalho: quando houver suporte a backdrop-filter, empurra camada p/ GPU */
 .supports-backdrop .bg-white\/80 { transform: translateZ(0); }
 
 /* ---------------------- Glass utilities ----------------------- */
@@ -176,7 +167,6 @@ html, body, #root { height: 100%; min-height: 0; }
 }
 .glass-button:hover{ background: rgba(255,255,255,0.7); }
 
-/* Ação primária (enviar) */
 .glass-button-primary{
   background: #265F77;
   color:#fff;
@@ -185,7 +175,6 @@ html, body, #root { height: 100%; min-height: 0; }
 }
 .glass-button-primary:hover{ filter: brightness(0.96); }
 
-/* Popover de opções extras */
 .glass-popover{
   background: rgba(255,255,255,0.7);
   backdrop-filter: blur(12px);
@@ -196,19 +185,16 @@ html, body, #root { height: 100%; min-height: 0; }
   padding: .5rem;
 }
 
-/* Textarea dentro do painel */
 .glass-textarea{ color:#111827; }
 .glass-textarea::placeholder{
   font-size: 0.95rem; font-weight: 450; letter-spacing: .01em;
   color: #64748b; opacity: .95;
 }
 
-/* Tintas suaves */
 .tint-teal   { background: rgba(13,148,136,0.10); border-color: rgba(13,148,136,0.25); }
 .tint-violet { background: rgba(139,92,246,0.10); border-color: rgba(139,92,246,0.25); }
 .tint-gray   { background: rgba(255,255,255,0.10); border-color: rgba(0,0,0,0.06); }
 
-/* Fallback quando não há suporte a backdrop-filter */
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   .glass, .glass-strong, .glass-panel, .glass-button, .glass-popover,
   .tint-teal, .tint-violet, .tint-gray,
@@ -236,9 +222,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 @supports (height: 100dvh) { .App { height: 100dvh; } }
 
-/* Evita zoom ao focar inputs no iOS */
+/* Inputs */
 input, textarea { font-size: 16px; }
-/* Remove highlight azul no iOS e reduz atraso de clique em interativos */
 * { -webkit-tap-highlight-color: transparent; }
 button, [role="button"], a { touch-action: manipulation; }
 
@@ -254,11 +239,13 @@ button, [role="button"], a { touch-action: manipulation; }
 }
 
 /* ------------------ Base p/ bolhas de chat -------------------- */
-.chat-bubble-base {
-  display: inline-block;
-  max-width: min(720px, 88vw);
-  overflow-wrap: anywhere; word-break: break-word; hyphens: auto;
-  line-height: 1.55;
+.chat-bubble-base{
+  display:inline-block;
+  max-width:min(720px, 88vw);
+  overflow-wrap: break-word;   /* evita quebrar “o|l|á” */
+  word-break: normal;
+  hyphens:auto;
+  line-height:1.55;
 }
 
 /* Força sans dentro da bolha */
@@ -305,11 +292,7 @@ button, [role="button"], a { touch-action: manipulation; }
 .typing-dots > span:nth-child(2){ animation-delay:.15s; }
 .typing-dots > span:nth-child(3){ animation-delay:.30s; }
 
-/* Bolha durante a digitação – compacta */
-.bubble-typing{
-  padding:6px 10px !important;
-  border-radius:14px !important;
-}
+.bubble-typing{ padding:6px 10px !important; border-radius:14px !important; }
 
 /* ------------------ Mensagens (glass style) ------------------- */
 .message-eco,
@@ -319,7 +302,9 @@ button, [role="button"], a { touch-action: manipulation; }
   font-size: 0.95rem;
   line-height: 1.55;
   max-width: min(720px, 88vw);
-  overflow-wrap: anywhere; word-break: break-word; hyphens: auto;
+  overflow-wrap: break-word;   /* consistente com .chat-bubble-base */
+  word-break: normal;
+  white-space: pre-wrap;       /* respeita \n do modelo */
   transition: transform .15s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
   position: relative;
   -webkit-backdrop-filter: saturate(1.2) blur(14px);
@@ -327,8 +312,8 @@ button, [role="button"], a { touch-action: manipulation; }
   box-shadow: var(--bubble-shadow);
   border: 1px solid var(--bubble-border);
 }
-.message-eco{ background: var(--bubble-eco-bg); color:#0f172a; border-bottom-left-radius: 6px; }
-.message-user{ background: var(--bubble-user-bg); color:#0f172a; border-bottom-right-radius: 6px; border-color: rgba(13,148,136,.20); }
+.message-eco { background: var(--bubble-eco-bg); color:#0f172a; border-bottom-left-radius: 6px; }
+.message-user{ background: var(--bubble-user-bg); color:#0f172a; border-bottom-right-radius: 6px; }
 
 /* brilho interno sutil (efeito iMessage) */
 .message-eco::before, .message-user::before{
@@ -336,7 +321,7 @@ button, [role="button"], a { touch-action: manipulation; }
   box-shadow: inset 0 1px 0 rgba(255,255,255,.65); pointer-events:none;
 }
 
-/* Hover leve (desktop) — limita will-change ao elemento realmente animado */
+/* Hover leve (desktop) */
 @media (hover:hover) {
   .message-eco:hover, .message-user:hover { transform: translateY(-1px); will-change: transform; }
 }
@@ -365,11 +350,9 @@ button, [role="button"], a { touch-action: manipulation; }
 }
 
 /* ----------------------- Scrollbar ---------------------------- */
-/* WebKit */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.12); border-radius: 10px; }
-/* Firefox */
 * { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.24) transparent; }
 
 /* -------------------- Textos com gradiente -------------------- */
@@ -379,13 +362,14 @@ button, [role="button"], a { touch-action: manipulation; }
   -webkit-background-clip: text; background-clip: text;
   color: transparent; -webkit-text-fill-color: transparent;
 }
-.text-gradient-blue { background-image: linear-gradient(90deg, var(--cerulean-blue), #5DA9C2); }
-.text-gradient-rose { background-image: linear-gradient(90deg, #E8A9A8, var(--rose-quartz)); }
+/* Agora o gradiente é branco -> branco translúcido */
+.text-gradient-blue { background-image: linear-gradient(90deg, var(--cerulean-blue), rgba(255,255,255,0.92)); }
+.text-gradient-rose { background-image: linear-gradient(90deg, var(--rose-quartz),   rgba(255,255,255,0.92)); }
 
 /* ---- Alturas e teclado (iOS/Android) ---- */
 body.keyboard-open { overscroll-behavior-y: contain; padding-bottom: var(--safe-bottom); }
 
-/* ---------- Redução de movimento (menos agressivo) ---------- */
+/* ---------- Redução de movimento ---------- */
 @media (prefers-reduced-motion: reduce) {
   html * { transition: none !important; }
   .reduce-motion * { animation: none !important; }
@@ -410,7 +394,7 @@ body.keyboard-open { overscroll-behavior-y: contain; padding-bottom: var(--safe-
     0 1px 0 rgba(255,255,255,.8) inset,
     0 20px 60px rgba(2,6,23,.08),
     0 8px 24px rgba(2,6,23,.06);
-  contain: paint; /* reduz repaints do resto da página */
+  contain: paint;
 }
 .eco-wordmark { letter-spacing:.08em; }
 
@@ -470,7 +454,7 @@ body.keyboard-open { overscroll-behavior-y: contain; padding-bottom: var(--safe-
 .stack-quiet > * + * { margin-top: .75rem; }
 .stack-roomy > * + * { margin-top: 1rem; }
 
-/* --------- Otimização mobile: reduzir blur alto --------- */
+/* Otimização mobile: reduzir blur alto */
 @media (max-width: 480px) {
   .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   .glass-strong { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
@@ -480,7 +464,7 @@ body.keyboard-open { overscroll-behavior-y: contain; padding-bottom: var(--safe-
   }
 }
 
-/* Em telas com pointer “coarse” (toque), também suavize blur */
+/* Em telas com pointer “coarse” (toque), suavize blur */
 @media (pointer: coarse) and (hover: none) {
   .glass, .glass-strong, .message-eco, .message-user {
     -webkit-backdrop-filter: blur(10px);
@@ -488,7 +472,7 @@ body.keyboard-open { overscroll-behavior-y: contain; padding-bottom: var(--safe-
   }
 }
 
-/* -------------------- Acessibilidade extra -------------------- */
+/* Acessibilidade extra */
 .visually-hidden {
   position: absolute !important;
   width: 1px; height: 1px;
