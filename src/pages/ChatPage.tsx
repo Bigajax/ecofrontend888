@@ -12,7 +12,7 @@ import ChatInput from '../components/ChatInput';
 import EcoBubbleIcon from '../components/EcoBubbleIcon';
 import EcoMessageWithAudio from '../components/EcoMessageWithAudio';
 import QuickSuggestions, { Suggestion } from '../components/QuickSuggestions';
-import TypingDots from '../components/TypingDots'; // 👈 novo
+import TypingDots from '../components/TypingDots';
 
 import { enviarMensagemParaEco } from '../api/ecoApi';
 import { buscarUltimasMemoriasComTags, buscarMemoriasSimilares } from '../api/memoriaApi';
@@ -34,7 +34,12 @@ type Msg = { role?: string; content?: string; text?: string; sender?: 'user' | '
 const MAX_LEN_FOR_GREETING = 80;
 
 const normalize = (s: string) =>
-  s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 const GREET_RE =
   /^(oi+|oie+|ola+|al[oó]+|opa+|salve|eai|falae?|hey+|hi+|hello+|yo+|sup|bom dia|boa tarde|boa noite|tudo bem|td bem|beleza|blz|suave|tranq|tranquilo)([!?.…]*)$/i;
@@ -63,11 +68,50 @@ const saudacaoDoDiaFromHour = (h: number) => {
 
 /* ====== Frases rotativas ====== */
 const ROTATING_ITEMS: Suggestion[] = [
-  { id: 'rot_presenca_scan', icon: '🌬️', label: 'Vamos fazer um mini-scan de presença agora?', modules: ['eco_observador_presente','eco_presenca_silenciosa','eco_corpo_emocao'], systemHint:'Conduza um body scan curto (2–3 minutos), com foco gentil em respiração, pontos de contato e 1 pensamento.' },
-  { id: 'rot_kahneman_check', icon: '🧩', label: 'Quero checar se caí em algum atalho mental hoje', modules: ['eco_heuristica_ancoragem','eco_heuristica_disponibilidade','eco_heuristica_excesso_confianca'], systemHint:'Explique heurísticas em linguagem simples, faça 1 pergunta diagnóstica e proponha 1 reframe prático.' },
-  { id: 'rot_vulnerabilidade', icon: '💗', label: 'Posso explorar coragem & vulnerabilidade em 1 situação', modules: ['eco_vulnerabilidade_defesas','eco_vulnerabilidade_mitos','eco_emo_vergonha_combate'], systemHint:'Brené Brown: diferencie vulnerabilidade de exposição. Nomeie 1 defesa ativa e proponha 1 micro-ato de coragem.' },
-  { id: 'rot_estoico', icon: '🏛️', label: 'O que está sob meu controle hoje?', modules: ['eco_presenca_racional','eco_identificacao_mente','eco_fim_do_sofrimento'], systemHint:'Marco Aurélio: conduza 3 perguntas (controle / julgamento / ação mínima) e feche com 1 compromisso simples.' },
-  { id: 'rot_regressao_media', icon: '📉', label: 'Talvez ontem foi exceção — quero revisar expectativas', modules: ['eco_heuristica_regressao_media','eco_heuristica_certeza_emocional'], systemHint:'Explique regressão à média e convide a recalibrar expectativas com 1 evidência observável para hoje.' },
+  {
+    id: 'rot_presenca_scan',
+    icon: '🌬️',
+    label: 'Vamos fazer um mini-scan de presença agora?',
+    modules: ['eco_observador_presente', 'eco_presenca_silenciosa', 'eco_corpo_emocao'],
+    systemHint:
+      'Conduza um body scan curto (2–3 minutos), com foco gentil em respiração, pontos de contato e 1 pensamento.',
+  },
+  {
+    id: 'rot_kahneman_check',
+    icon: '🧩',
+    label: 'Quero checar se caí em algum atalho mental hoje',
+    modules: [
+      'eco_heuristica_ancoragem',
+      'eco_heuristica_disponibilidade',
+      'eco_heuristica_excesso_confianca',
+    ],
+    systemHint:
+      'Explique heurísticas em linguagem simples, faça 1 pergunta diagnóstica e proponha 1 reframe prático.',
+  },
+  {
+    id: 'rot_vulnerabilidade',
+    icon: '💗',
+    label: 'Posso explorar coragem & vulnerabilidade em 1 situação',
+    modules: ['eco_vulnerabilidade_defesas', 'eco_vulnerabilidade_mitos', 'eco_emo_vergonha_combate'],
+    systemHint:
+      'Brené Brown: diferencie vulnerabilidade de exposição. Nomeie 1 defesa ativa e proponha 1 micro-ato de coragem.',
+  },
+  {
+    id: 'rot_estoico',
+    icon: '🏛️',
+    label: 'O que está sob meu controle hoje?',
+    modules: ['eco_presenca_racional', 'eco_identificacao_mente', 'eco_fim_do_sofrimento'],
+    systemHint:
+      'Marco Aurélio: conduza 3 perguntas (controle / julgamento / ação mínima) e feche com 1 compromisso simples.',
+  },
+  {
+    id: 'rot_regressao_media',
+    icon: '📉',
+    label: 'Talvez ontem foi exceção — quero revisar expectativas',
+    modules: ['eco_heuristica_regressao_media', 'eco_heuristica_certeza_emocional'],
+    systemHint:
+      'Explique regressão à média e convide a recalibrar expectativas com 1 evidência observável para hoje.',
+  },
 ];
 
 /* ====== Variações de abertura ====== */
@@ -139,7 +183,9 @@ const ChatPage: React.FC = () => {
     });
   };
 
-  useEffect(() => { scrollToBottom(false); }, []);
+  useEffect(() => {
+    scrollToBottom(false);
+  }, []);
 
   useLayoutEffect(() => {
     const el = scrollerRef.current;
@@ -222,14 +268,18 @@ const ChatPage: React.FC = () => {
     }
   }, [aiMessages.length]);
 
-  useEffect(() => { if ((messages?.length ?? 0) > 0) setShowQuick(false); }, [messages]);
+  useEffect(() => {
+    if ((messages?.length ?? 0) > 0) setShowQuick(false);
+  }, [messages]);
 
   useEffect(() => {
     const onUserTypes = (ev: Event) => {
       const t = ev.target as HTMLElement | null;
       if (!t) return;
       const isTyping =
-        t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.getAttribute('contenteditable') === 'true';
+        t.tagName === 'INPUT' ||
+        t.tagName === 'TEXTAREA' ||
+        t.getAttribute('contenteditable') === 'true';
       if (isTyping) setShowQuick(false);
     };
     window.addEventListener('input', onUserTypes, { passive: true });
@@ -405,13 +455,17 @@ const ChatPage: React.FC = () => {
           setIsAtBottom(at);
           setShowScrollBtn(!at);
         }}
-        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 pt-2"
+        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 [scrollbar-gutter:stable]"
         style={{
-          // altura explícita do viewport menos topbar e menos input
-          height: 'calc(100svh - var(--eco-topbar-h,56px) - var(--input-h,72px) - var(--kb,0px))',
-          paddingBottom: '12px',
+          /* empurra o conteúdo para baixo do header fixo */
+          paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
+          /* base do rodapé já calculada com input + teclado */
+          paddingBottom:
+            'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + var(--kb,0px) + 12px)',
           WebkitOverflowScrolling: 'touch',
-          // overscrollBehaviorY removido para não travar a rolagem
+          overscrollBehaviorY: 'contain',
+          /* faz scrollIntoView parar abaixo do header */
+          scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
         }}
       >
         <div className="w-full mx-auto max-w-[720px]">
@@ -447,15 +501,23 @@ const ChatPage: React.FC = () => {
             <div className="glass rounded-xl text-red-600 text-center mb-4 px-4 py-2">{erroApi}</div>
           )}
 
-          {/* espaço vertical um pouco menor para não “esticar” */}
+          {/* espaço vertical controlado */}
           <div className="w-full space-y-3 md:space-y-4">
             {messages.map((m) => (
-              <div key={m.id} className="grid grid-cols-[28px,1fr,28px] gap-2 items-start">
+              <div
+                key={m.id}
+                className="grid grid-cols-[28px,1fr,28px] gap-2 items-start min-w-0"
+              >
                 <div className="pt-1.5">
                   {m.sender === 'eco' ? <EcoBubbleIcon /> : <div className="w-[28px] h-[28px]" />}
                 </div>
 
-                <div className={m.sender === 'user' ? 'justify-self-end' : 'justify-self-start'}>
+                <div
+                  className={
+                    (m.sender === 'user' ? 'justify-self-end' : 'justify-self-start') +
+                    ' min-w-0 max-w-full'
+                  }
+                >
                   {m.sender === 'eco' ? (
                     <EcoMessageWithAudio message={m as any} />
                   ) : (
@@ -464,18 +526,22 @@ const ChatPage: React.FC = () => {
                 </div>
 
                 <div className="pt-1.5">
-                  {m.sender === 'user' ? <EcoBubbleIcon className="opacity-0" /> : <div className="w-[28px] h-[28px]" />}
+                  {m.sender === 'user' ? (
+                    <EcoBubbleIcon className="opacity-0" />
+                  ) : (
+                    <div className="w-[28px] h-[28px]" />
+                  )}
                 </div>
               </div>
             ))}
 
             {digitando && (
-              <div className="grid grid-cols-[28px,1fr,28px] gap-2 items-start">
+              <div className="grid grid-cols-[28px,1fr,28px] gap-2 items-start min-w-0">
                 <div className="pt-1.5">
                   <EcoBubbleIcon />
                 </div>
-                <div className="justify-self-start">
-                  <TypingDots /> {/* 👈 sem balão vazio no desktop */}
+                <div className="justify-self-start min-w-0 max-w-full">
+                  <TypingDots />
                 </div>
                 <div />
               </div>
@@ -527,7 +593,9 @@ const ChatPage: React.FC = () => {
 
           <ChatInput
             onSendMessage={(t) => handleSendMessage(t)}
-            onMoreOptionSelected={(opt) => { if (opt === 'go_to_voice_page') navigate('/voice'); }}
+            onMoreOptionSelected={(opt) => {
+              if (opt === 'go_to_voice_page') navigate('/voice');
+            }}
             onSendAudio={() => console.log('Áudio enviado')}
             disabled={digitando}
             onTextChange={(t) => setShowQuick(t.trim().length === 0)}

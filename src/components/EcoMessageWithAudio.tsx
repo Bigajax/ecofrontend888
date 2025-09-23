@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import ChatMessage from "./ChatMessage";
-import { ClipboardCopy, ThumbsUp, ThumbsDown, Volume2, Loader2 } from "lucide-react";
+import {
+  ClipboardCopy,
+  ThumbsUp,
+  ThumbsDown,
+  Volume2,
+  Loader2,
+} from "lucide-react";
 import AudioPlayerOverlay from "./AudioPlayerOverlay";
 import { gerarAudioDaMensagem } from "../api/voiceApi";
 import { Message } from "../contexts/ChatContext";
@@ -9,7 +15,9 @@ interface EcoMessageWithAudioProps {
   message: Message;
 }
 
-const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) => {
+const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
+  message,
+}) => {
   const [copied, setCopied] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null); // sempre Data URL
   const [loadingAudio, setLoadingAudio] = useState(false);
@@ -41,7 +49,6 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     if (audioUrl) setAudioUrl(null); // fecha overlay anterior
 
     try {
-      // 👇 não passamos mais voiceId; o backend decide
       const dataUrl = await gerarAudioDaMensagem(displayText);
       setAudioUrl(dataUrl);
     } catch (err) {
@@ -71,18 +78,24 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     </button>
   );
 
+  // padding lateral da barra de ações acompanha a bolha:
+  // - user (direita): um pequeno recuo à direita para não “colar” na borda
+  // - eco (esquerda): recuo para alinhar com o começo do texto (considerando a bolha com 16px internos)
+  const actionsPad = isUser ? "mr-2" : "ml-2 pl-6";
+
   return (
     <>
-      <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
-        <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} w-full`}>
+      {/* wrapper respeita a coluna central do grid (min-w-0 evita esmagar a “pílula”) */}
+      <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"} min-w-0`}>
+        <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} w-full min-w-0 max-w-full`}>
           <ChatMessage message={message} />
 
           {/* barra de ações (alinhada à bolha) */}
           <div
             className={[
-              "mt-1 ml-2 flex items-center gap-1.5",
-              "max-w-[min(720px,88vw)]",
-              isUser ? "" : "pl-6",
+              "mt-1 flex items-center gap-1.5",
+              "max-w-[min(720px,88vw)] min-w-0", // acompanha o mesmo limite da bolha
+              actionsPad,
             ].join(" ")}
           >
             <GhostBtn onClick={copiarTexto} aria-label="Copiar mensagem" title="Copiar">
