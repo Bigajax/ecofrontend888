@@ -26,35 +26,7 @@ import { extrairTagsRelevantes } from '../utils/extrairTagsRelevantes';
 import mixpanel from '../lib/mixpanel';
 
 import { FeedbackPrompt } from '../components/FeedbackPrompt';
-import { getOrCreateSessionId } from '../utils/session';
 
-/* ------------------------- Saudação/despedida regex ------------------------ */
-type Msg = { role?: string; content?: string; text?: string; sender?: 'user' | 'eco' };
-
-const MAX_LEN_FOR_GREETING = 80;
-
-const normalize = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-const GREET_RE =
-  /^(oi+|oie+|ola+|al[oó]+|opa+|salve|eai|falae?|hey+|hi+|hello+|yo+|sup|bom dia|boa tarde|boa noite|tudo bem|td bem|beleza|blz|suave|tranq|tranquilo)([!?.…]*)$/i;
-
-const FAREWELL_RE =
-  /^(tchau+|ate logo|ate mais|valeu+|vlw+|obrigad[oa]+|brigad[oa]+|falou+|fui+|bom descanso|durma bem|ate amanha)([!?.…]*)$/i;
-
-const isGreetingShort = (raw: string) => {
-  const t = normalize(raw);
-  return t.length <= MAX_LEN_FOR_GREETING && GREET_RE.test(t);
-};
-const isFarewellShort = (raw: string) => {
-  const t = normalize(raw);
-  return t.length <= MAX_LEN_FOR_GREETING && FAREWELL_RE.test(t);
-};
 /* -------------------------------------------------------------------------- */
 
 const FEEDBACK_KEY = 'eco_feedback_given';
@@ -136,10 +108,8 @@ const ChatPage: React.FC = () => {
   const inputBarRef = useRef<HTMLDivElement>(null);
 
   const [showFeedback, setShowFeedback] = useState(false);
-  const sessionId = getOrCreateSessionId();
 
   const aiMessages = (messages || []).filter((m: any) => m.sender === 'eco');
-  const lastAi = aiMessages[aiMessages.length - 1];
 
   const [showQuick, setShowQuick] = useState(true);
 
@@ -174,12 +144,10 @@ const ChatPage: React.FC = () => {
     if (!el || !end) return;
     const behavior: ScrollBehavior = smooth ? 'smooth' : 'auto';
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        end.scrollIntoView({ behavior, block: 'end' });
-        const at = nearBottom(el, 8);
-        setIsAtBottom(at);
-        setShowScrollBtn(!at);
-      });
+      end.scrollIntoView({ behavior, block: 'end' });
+      const at = nearBottom(el, 8);
+      setIsAtBottom(at);
+      setShowScrollBtn(!at);
     });
   };
 
@@ -223,38 +191,68 @@ const ChatPage: React.FC = () => {
     return () => ro.disconnect();
   }, []);
 
+  // ====================== iOS Keyboard / visualViewport ======================
   useEffect(() => {
     const vv = (window as any).visualViewport as VisualViewport | undefined;
 
-    const handleFocusIn = () => document.body.classList.add('keyboard-open');
+    const wasAtBottomRef = { current: true };
+
+    const handleFocusIn = () => {
+      document.body.classList.add('keyboard-open');
+      const el = scrollerRef.current;
+      wasAtBottomRef.current = !!el && nearBottom(el, 120);
+      scheduleMeasure();
+    };
+
     const handleFocusOut = () => {
       document.body.classList.remove('keyboard-open');
+      lastKb.current = 0;
       document.documentElement.style.setProperty('--kb', '0px');
     };
 
     window.addEventListener('focusin', handleFocusIn);
     window.addEventListener('focusout', handleFocusOut);
 
-    const applyVV = () => {
-      if (!vv) return;
-      const occluded = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      document.documentElement.style.setProperty('--kb', `${Math.ceil(occluded)}px`);
-      scrollToBottom(false);
+    if (!vv) {
+      return () => {
+        window.removeEventListener('focusin', handleFocusIn);
+        window.removeEventListener('focusout', handleFocusOut);
+      };
+    }
+
+    let raf = 0;
+    let scheduled = false;
+    const lastKb = { current: -1 };
+
+    const measure = () => {
+      scheduled = false;
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      if (Math.abs(kb - lastKb.current) < 2) return; // evita vibração
+      lastKb.current = kb;
+
+      document.documentElement.style.setProperty('--kb', `${Math.ceil(kb)}px`);
+
+      if (wasAtBottomRef.current) {
+        scrollToBottom(false);
+      }
     };
 
-    if (vv) {
-      vv.addEventListener('resize', applyVV);
-      vv.addEventListener('scroll', applyVV);
-      applyVV();
-    }
+    const scheduleMeasure = () => {
+      if (scheduled) return;
+      scheduled = true;
+      raf = requestAnimationFrame(measure);
+    };
+
+    vv.addEventListener('resize', scheduleMeasure);
+    vv.addEventListener('scroll', scheduleMeasure);
+    scheduleMeasure();
 
     return () => {
       window.removeEventListener('focusin', handleFocusIn);
       window.removeEventListener('focusout', handleFocusOut);
-      if (vv) {
-        vv.removeEventListener('resize', applyVV);
-        vv.removeEventListener('scroll', applyVV);
-      }
+      vv.removeEventListener('resize', scheduleMeasure);
+      vv.removeEventListener('scroll', scheduleMeasure);
+      if (raf) cancelAnimationFrame(raf);
     };
   }, []);
 
@@ -336,56 +334,46 @@ const ChatPage: React.FC = () => {
 
       const baseHistory = [...messages, { id: mensagemId, role: 'user', content: trimmed }];
 
-      const greetingLike = isGreetingShort(trimmed) || isFarewellShort(trimmed);
+      // ⚠️ Sem greeting/despedida no front: sempre montamos contexto normal
+      const tags = extrairTagsRelevantes(trimmed);
+      const [similar, porTag] = await Promise.all([
+        buscarMemoriasSimilares(trimmed, 2).catch(() => []),
+        tags.length ? buscarUltimasMemoriasComTags(userId!, tags, 2).catch(() => []) : Promise.resolve([]),
+      ]);
 
-      let mensagensComContexto: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+      const vistos = new Set<string>();
+      const mems = [...(similar || []), ...(porTag || [])].filter((m: any) => {
+        const key = m.id || `${m.created_at}-${m.resumo_eco}`;
+        if (vistos.has(key)) return false;
+        vistos.add(key);
+        return true;
+      });
 
-      if (greetingLike) {
-        mensagensComContexto = baseHistory.slice(-1).map((m: any) => ({
+      const ctxMems = (mems || [])
+        .map((m: any) => {
+          const data = new Date(m.created_at || '').toLocaleDateString();
+          const tgs = m.tags?.length ? ` [tags: ${m.tags.join(', ')}]` : '';
+          return `(${data}) ${m.resumo_eco}${tgs}`;
+        })
+        .join('\n');
+
+      const memSignif = (mems || []).find((m: any) => (m.intensidade ?? 0) >= 7);
+      const retorno = gerarMensagemRetorno(memSignif);
+
+      const preSistema: any[] = [];
+      if (systemHint) preSistema.push({ role: 'system', content: systemHint });
+      if (retorno) preSistema.push({ role: 'system', content: retorno });
+      if (ctxMems) preSistema.push({ role: 'system', content: `Memórias recentes relevantes:\n${ctxMems}` });
+
+      const janelaHistorico = baseHistory.slice(-3);
+
+      const mensagensComContexto = [
+        ...preSistema,
+        ...janelaHistorico.map((m: any) => ({
           role: (m.role as any) || (m.sender === 'eco' ? 'assistant' : 'user'),
           content: m.content || m.text || '',
-        }));
-      } else {
-        const tags = extrairTagsRelevantes(trimmed);
-        const [similar, porTag] = await Promise.all([
-          buscarMemoriasSimilares(trimmed, 2).catch(() => []),
-          tags.length ? buscarUltimasMemoriasComTags(userId!, tags, 2).catch(() => []) : Promise.resolve([]),
-        ]);
-
-        const vistos = new Set<string>();
-        const mems = [...(similar || []), ...(porTag || [])].filter((m: any) => {
-          const key = m.id || `${m.created_at}-${m.resumo_eco}`;
-          if (vistos.has(key)) return false;
-          vistos.add(key);
-          return true;
-        });
-
-        const ctxMems = (mems || [])
-          .map((m: any) => {
-            const data = new Date(m.created_at || '').toLocaleDateString();
-            const tgs = m.tags?.length ? ` [tags: ${m.tags.join(', ')}]` : '';
-            return `(${data}) ${m.resumo_eco}${tgs}`;
-          })
-          .join('\n');
-
-        const memSignif = (mems || []).find((m: any) => (m.intensidade ?? 0) >= 7);
-        const retorno = gerarMensagemRetorno(memSignif);
-
-        const preSistema: any[] = [];
-        if (systemHint) preSistema.push({ role: 'system', content: systemHint });
-        if (retorno) preSistema.push({ role: 'system', content: retorno });
-        if (ctxMems) preSistema.push({ role: 'system', content: `Memórias recentes relevantes:\n${ctxMems}` });
-
-        const janelaHistorico = baseHistory.slice(-3);
-
-        mensagensComContexto = [
-          ...preSistema,
-          ...janelaHistorico.map((m: any) => ({
-            role: (m.role as any) || (m.sender === 'eco' ? 'assistant' : 'user'),
-            content: m.content || m.text || '',
-          })),
-        ];
-      }
+        })),
+      ];
 
       const clientHour = new Date().getHours();
       const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -398,7 +386,8 @@ const ChatPage: React.FC = () => {
         clientTz
       );
 
-      const textoEco = (resposta || '').replace(/\{[\s\S]*?\}$/, '').trim();
+      // Remove bloco JSON apenas se vier após uma quebra de linha
+      const textoEco = (resposta || '').replace(/\n\{[\s\S]*\}\s*$/m, '').trim();
       if (textoEco) addMessage({ id: uuidv4(), text: textoEco, sender: 'eco' });
 
       const match = (resposta || '').match(/\{[\s\S]*\}$/);
@@ -457,15 +446,13 @@ const ChatPage: React.FC = () => {
         }}
         className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 [scrollbar-gutter:stable]"
         style={{
-          /* empurra o conteúdo para baixo do header fixo */
           paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
-          /* base do rodapé já calculada com input + teclado */
           paddingBottom:
             'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + var(--kb,0px) + 12px)',
           WebkitOverflowScrolling: 'touch',
           overscrollBehaviorY: 'contain',
-          /* faz scrollIntoView parar abaixo do header */
           scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
+          touchAction: 'pan-y',
         }}
       >
         <div className="w-full mx-auto max-w-[720px]">
@@ -484,15 +471,17 @@ const ChatPage: React.FC = () => {
               >
                 {/* ======= SAUDAÇÃO CENTRAL ALINHADA À COLUNA ======= */}
                 <div className="grid grid-cols-[28px,1fr,28px] items-center">
-                  <div />
-                  <h2 className="col-start-2 text-center text-3xl md:text-4xl font-light text-gray-800 leading-tight">
-                    {saudacao}, {userName}
-                  </h2>
-                  <div />
-                </div>
-                <p className="text-center text-base md:text-lg font-light text-slate-500 mt-2">
-                  {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
-                </p>
+  <div className="hidden sm:block" /> {/* mantém a guia de 28px na esquerda */}
+  <div className="col-start-2 justify-self-start text-center sm:text-left md:max-w-[680px]">
+    <h2 className="text-4xl md:text-5xl font-light text-gray-800 leading-tight">
+      {saudacao}, {userName}
+    </h2>
+    <p className="text-base md:text-lg font-light text-slate-500 mt-3">
+      {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
+    </p>
+  </div>
+  <div />
+</div>
               </motion.div>
             </div>
           )}
