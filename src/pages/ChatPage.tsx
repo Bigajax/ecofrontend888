@@ -36,7 +36,6 @@ const MAX_LEN_FOR_GREETING = 80;
 const normalize = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
 
-// ✅ versão enxuta (menos “robotizada”)
 const GREET_RE =
   /^(oi+|oie+|ola+|al[oó]+|opa+|salve|eai|falae?|hey+|hi+|hello+|yo+|sup|bom dia|boa tarde|boa noite|tudo bem|td bem|beleza|blz|suave|tranq|tranquilo)([!?.…]*)$/i;
 
@@ -62,55 +61,16 @@ const saudacaoDoDiaFromHour = (h: number) => {
   return 'Boa noite';
 };
 
-/* ====== Frases rotativas (ligadas aos módulos existentes) ====== */
+/* ====== Frases rotativas ====== */
 const ROTATING_ITEMS: Suggestion[] = [
-  {
-    id: 'rot_presenca_scan',
-    icon: '🌬️',
-    label: 'Vamos fazer um mini-scan de presença agora?',
-    modules: ['eco_observador_presente', 'eco_presenca_silenciosa', 'eco_corpo_emocao'],
-    systemHint:
-      'Conduza um body scan curto (2–3 minutos), com foco gentil em respiração, pontos de contato e 1 pensamento.',
-  },
-  {
-    id: 'rot_kahneman_check',
-    icon: '🧩',
-    label: 'Quero checar se caí em algum atalho mental hoje',
-    modules: [
-      'eco_heuristica_ancoragem',
-      'eco_heuristica_disponibilidade',
-      'eco_heuristica_excesso_confianca',
-    ],
-    systemHint:
-      'Explique heurísticas em linguagem simples, faça 1 pergunta diagnóstica e proponha 1 reframe prático.',
-  },
-  {
-    id: 'rot_vulnerabilidade',
-    icon: '💗',
-    label: 'Posso explorar coragem & vulnerabilidade em 1 situação',
-    modules: ['eco_vulnerabilidade_defesas', 'eco_vulnerabilidade_mitos', 'eco_emo_vergonha_combate'],
-    systemHint:
-      'Brené Brown: diferencie vulnerabilidade de exposição. Nomeie 1 defesa ativa e proponha 1 micro-ato de coragem.',
-  },
-  {
-    id: 'rot_estoico',
-    icon: '🏛️',
-    label: 'O que está sob meu controle hoje?',
-    modules: ['eco_presenca_racional', 'eco_identificacao_mente', 'eco_fim_do_sofrimento'],
-    systemHint:
-      'Marco Aurélio: conduza 3 perguntas (controle / julgamento / ação mínima) e feche com 1 compromisso simples.',
-  },
-  {
-    id: 'rot_regressao_media',
-    icon: '📉',
-    label: 'Talvez ontem foi exceção — quero revisar expectativas',
-    modules: ['eco_heuristica_regressao_media', 'eco_heuristica_certeza_emocional'],
-    systemHint:
-      'Explique regressão à média e convide a recalibrar expectativas com 1 evidência observável para hoje.',
-  },
+  { id: 'rot_presenca_scan', icon: '🌬️', label: 'Vamos fazer um mini-scan de presença agora?', modules: ['eco_observador_presente','eco_presenca_silenciosa','eco_corpo_emocao'], systemHint:'Conduza um body scan curto (2–3 minutos), com foco gentil em respiração, pontos de contato e 1 pensamento.' },
+  { id: 'rot_kahneman_check', icon: '🧩', label: 'Quero checar se caí em algum atalho mental hoje', modules: ['eco_heuristica_ancoragem','eco_heuristica_disponibilidade','eco_heuristica_excesso_confianca'], systemHint:'Explique heurísticas em linguagem simples, faça 1 pergunta diagnóstica e proponha 1 reframe prático.' },
+  { id: 'rot_vulnerabilidade', icon: '💗', label: 'Posso explorar coragem & vulnerabilidade em 1 situação', modules: ['eco_vulnerabilidade_defesas','eco_vulnerabilidade_mitos','eco_emo_vergonha_combate'], systemHint:'Brené Brown: diferencie vulnerabilidade de exposição. Nomeie 1 defesa ativa e proponha 1 micro-ato de coragem.' },
+  { id: 'rot_estoico', icon: '🏛️', label: 'O que está sob meu controle hoje?', modules: ['eco_presenca_racional','eco_identificacao_mente','eco_fim_do_sofrimento'], systemHint:'Marco Aurélio: conduza 3 perguntas (controle / julgamento / ação mínima) e feche com 1 compromisso simples.' },
+  { id: 'rot_regressao_media', icon: '📉', label: 'Talvez ontem foi exceção — quero revisar expectativas', modules: ['eco_heuristica_regressao_media','eco_heuristica_certeza_emocional'], systemHint:'Explique regressão à média e convide a recalibrar expectativas com 1 evidência observável para hoje.' },
 ];
 
-/* ====== Variações de abertura (deixa menos “scripted”) ====== */
+/* ====== Variações de abertura ====== */
 const OPENING_VARIATIONS = [
   'Pronto para começar?',
   'O que está vivo em você agora?',
@@ -131,18 +91,14 @@ const ChatPage: React.FC = () => {
   const endRef = useRef<HTMLDivElement>(null);
   const inputBarRef = useRef<HTMLDivElement>(null);
 
-  /* 🔹 ESTADO DO FEEDBACK + SESSION ID */
   const [showFeedback, setShowFeedback] = useState(false);
   const sessionId = getOrCreateSessionId();
 
-  /* 🔹 ÚLTIMA MENSAGEM DA ECO E CONTAGEM */
   const aiMessages = (messages || []).filter((m: any) => m.sender === 'eco');
   const lastAi = aiMessages[aiMessages.length - 1];
 
-  /* 🔹 QUICK SUGGESTIONS */
   const [showQuick, setShowQuick] = useState(true);
 
-  /* 🔹 NOVO: controle de scroll/botão */
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
@@ -168,15 +124,11 @@ const ChatPage: React.FC = () => {
 
   /* ====================== SCROLL CORE ====================== */
 
-  // Anchor-based scroll (mais confiável em mobile)
   const scrollToBottom = (smooth = true) => {
     const el = scrollerRef.current;
     const end = endRef.current;
     if (!el || !end) return;
-
     const behavior: ScrollBehavior = smooth ? 'smooth' : 'auto';
-
-    // espera o DOM assentar antes de rolar
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         end.scrollIntoView({ behavior, block: 'end' });
@@ -187,21 +139,23 @@ const ChatPage: React.FC = () => {
     });
   };
 
+  // garante ancorar quando montar
+  useEffect(() => {
+    scrollToBottom(false);
+  }, []);
+
   // Auto-scroll quando chegam novas msgs / muda "digitando"
   useLayoutEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
-    if (nearBottom(el, 120)) {
-      scrollToBottom(true);
-    }
+    if (nearBottom(el, 120)) scrollToBottom(true);
   }, [messages, digitando]);
 
-  // Observer do fim para detectar se estamos no fundo
+  // Observer do fim
   useEffect(() => {
     const root = scrollerRef.current;
     const end = endRef.current;
     if (!root || !end) return;
-
     const io = new IntersectionObserver(
       (entries) => {
         const visible = entries.some((e) => e.isIntersecting);
@@ -210,58 +164,63 @@ const ChatPage: React.FC = () => {
       },
       { root, threshold: 0.98 }
     );
-
     io.observe(end);
     return () => io.disconnect();
   }, []);
 
-  // medir input fixo (altura total: quick suggestions + input)
+  // medir input (quick + input)
   useEffect(() => {
     if (!inputBarRef.current) return;
     const el = inputBarRef.current;
-
     const update = () => {
       const h = Math.ceil(el.getBoundingClientRect().height);
       document.documentElement.style.setProperty('--input-h', `${h}px`);
       scrollToBottom(false);
     };
-
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  // iOS/Android teclado + visualViewport
+  // iOS/Android teclado + visualViewport (corrige conteúdo escondido atrás do teclado)
   useEffect(() => {
     const vv = (window as any).visualViewport as VisualViewport | undefined;
 
     const handleFocusIn = () => document.body.classList.add('keyboard-open');
-    const handleFocusOut = () => document.body.classList.remove('keyboard-open');
+    const handleFocusOut = () => {
+      document.body.classList.remove('keyboard-open');
+      document.documentElement.style.setProperty('--kb', '0px');
+    };
 
     window.addEventListener('focusin', handleFocusIn);
     window.addEventListener('focusout', handleFocusOut);
 
-    const onVVChange = () => scrollToBottom(false);
+    const applyVV = () => {
+      if (!vv) return;
+      const occluded = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty('--kb', `${Math.ceil(occluded)}px`);
+      scrollToBottom(false);
+    };
 
     if (vv) {
-      vv.addEventListener('resize', onVVChange);
-      vv.addEventListener('scroll', onVVChange);
+      vv.addEventListener('resize', applyVV);
+      vv.addEventListener('scroll', applyVV);
+      applyVV();
     }
 
     return () => {
       window.removeEventListener('focusin', handleFocusIn);
       window.removeEventListener('focusout', handleFocusOut);
       if (vv) {
-        vv.removeEventListener('resize', onVVChange);
-        vv.removeEventListener('scroll', onVVChange);
+        vv.removeEventListener('resize', applyVV);
+        vv.removeEventListener('scroll', applyVV);
       }
     };
   }, []);
 
   /* ====================== LÓGICA DO CHAT ====================== */
 
-  /* 🔹 FEEDBACK após 3 respostas da ECO (1x por sessão) */
   useEffect(() => {
     const already = sessionStorage.getItem(FEEDBACK_KEY);
     if (!already && aiMessages.length >= 3) {
@@ -270,7 +229,6 @@ const ChatPage: React.FC = () => {
     }
   }, [aiMessages.length]);
 
-  /* 🔹 QUICK SUGESTIONS: esconder quando houver mensagens */
   useEffect(() => {
     if ((messages?.length ?? 0) > 0) setShowQuick(false);
   }, [messages]);
@@ -299,7 +257,6 @@ const ChatPage: React.FC = () => {
     return `O usuário retorna após ${dias} dias. Na última interação significativa, compartilhou: “${resumo}”. Use isso para acolher o reencontro com sensibilidade.`;
   };
 
-  /* ===== helper para sugestões ricas ===== */
   const buildModuleHint = (modules?: string[], extra?: string) => {
     if (!modules?.length && !extra) return '';
     const mod = modules?.length ? `Ative módulos: ${modules.join(', ')}.` : '';
@@ -307,7 +264,6 @@ const ChatPage: React.FC = () => {
     return `${mod}${tip}`.trim();
   };
 
-  /* ===== handleSendMessage aceita systemHint opcional ===== */
   const handleSendMessage = async (text: string, systemHint?: string) => {
     const raw = text ?? '';
     const trimmed = raw.trim();
@@ -318,6 +274,9 @@ const ChatPage: React.FC = () => {
 
     const userLocalId = uuidv4();
     addMessage({ id: userLocalId, text: trimmed, sender: 'user' });
+
+    // ancorar imediatamente após o usuário enviar
+    requestAnimationFrame(() => scrollToBottom(true));
 
     mixpanel.track('Eco: Mensagem Enviada', {
       userId,
@@ -428,7 +387,6 @@ const ChatPage: React.FC = () => {
       });
     } finally {
       setDigitando(false);
-      // garante que desce após a resposta/typing
       scrollToBottom(true);
     }
   };
@@ -438,7 +396,6 @@ const ChatPage: React.FC = () => {
     setShowFeedback(false);
   }
 
-  /* ===== quando o usuário toca numa sugestão ===== */
   const handlePickSuggestion = async (s: Suggestion) => {
     setShowQuick(false);
     mixpanel.track('Eco: QuickSuggestion Click', { id: s.id, label: s.label, modules: s.modules });
@@ -460,31 +417,39 @@ const ChatPage: React.FC = () => {
         }}
         className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 pt-2 [scrollbar-gutter:stable]"
         style={{
-          paddingBottom: 'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + 12px)',
+          paddingBottom:
+            'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + var(--kb,0px) + 12px)',
           WebkitOverflowScrolling: 'touch',
           overscrollBehaviorY: 'contain',
         }}
       >
         <div className="max-w-2xl w-full mx-auto">
           {messages.length === 0 && !erroApi && (
-            <motion.div
-              className="text-center mb-8 mt-[12svh] md:mt-[14svh] lg:mt-[16svh] px-4"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.28 }}
+            <div
+              className="
+                min-h-[calc(100svh-var(--eco-topbar-h,56px)-var(--input-h,72px))]
+                flex items-center justify-center
+              "
             >
-              <div className="flex items-center justify-center gap-2.5">
-                <EcoBubbleIcon size={26} className="opacity-0 pointer-events-none" />
-                <h2 className="text-3xl md:text-4xl font-light text-gray-800 leading-tight">
-                  {saudacao}, {userName}
-                </h2>
-                <EcoBubbleIcon size={26} className="translate-y-[2px] md:scale-[1.15]" />
-              </div>
+              <motion.div
+                className="text-center px-4"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.28 }}
+              >
+                <div className="flex items-center justify-center gap-2.5">
+                  <EcoBubbleIcon size={26} className="opacity-0 pointer-events-none" />
+                  <h2 className="text-3xl md:text-4xl font-light text-gray-800 leading-tight">
+                    {saudacao}, {userName}
+                  </h2>
+                  <EcoBubbleIcon size={26} className="translate-y-[2px] md:scale-[1.15]" />
+                </div>
 
-              <p className="text-base md:text-lg font-light text-slate-500 mt-2">
-                {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
-              </p>
-            </motion.div>
+                <p className="text-base md:text-lg font-light text-slate-500 mt-2">
+                  {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
+                </p>
+              </motion.div>
+            </div>
           )}
 
           {erroApi && (
@@ -554,7 +519,7 @@ const ChatPage: React.FC = () => {
             onClick={() => scrollToBottom(true)}
             className="
               fixed right-4 sm:right-8
-              bottom-[calc(var(--input-h,72px)+18px)]
+              bottom-[calc(var(--input-h,72px)+var(--kb,0px)+18px)]
               z-40 h-9 w-9 rounded-full
               glass-soft hover:bg-white/24
               flex items-center justify-center transition
@@ -578,7 +543,7 @@ const ChatPage: React.FC = () => {
       {/* BARRA DE INPUT — FIXA NO RODAPÉ */}
       <div
         ref={inputBarRef}
-        className="fixed left-0 right-0 bottom-[max(env(safe-area-inset-bottom),0px)]
+        className="fixed left-0 right-0 bottom-[calc(max(env(safe-area-inset-bottom),0px)+var(--kb,0px))]
                    z-40 px-3 sm:px-6 pb-2 pt-2 glass border-t-0"
       >
         <div className="max-w-2xl mx-auto">

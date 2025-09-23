@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Mic, Plus, X, BookOpen, Headphones } from 'lucide-react';
+import { Send, Mic, Plus, X, Headphones } from 'lucide-react';
 
 type Props = {
   onSendMessage: (t: string) => void;
-  onMoreOptionSelected: (k: 'save_memory' | 'go_to_voice_page') => void;
+  onMoreOptionSelected: (k: 'go_to_voice_page') => void;
   onSendAudio?: (b: Blob) => void;
   disabled?: boolean;
   onTextChange?: (text: string) => void;
@@ -267,7 +267,7 @@ const ChatInput: React.FC<Props> = ({
           </button>
         </div>
 
-        {/* Popover (ancorado ao wrapper) */}
+        {/* Popover (apenas Modo de voz) */}
         <AnimatePresence>
           {showMoreOptions && !disabled && (
             <motion.div
@@ -287,21 +287,10 @@ const ChatInput: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => {
-                  onMoreOptionSelected('save_memory');
-                  setShowMoreOptions(false);
-                }}
-                className="flex items-center p-2 hover:bg-white/40 rounded-xl w-full text-left transition"
-              >
-                <BookOpen size={20} className="mr-3" strokeWidth={1.5} />
-                Registro de memória
-              </button>
-              <button
-                type="button"
-                onClick={() => {
                   onMoreOptionSelected('go_to_voice_page');
                   setShowMoreOptions(false);
                 }}
-                className="flex items-center p-2 hover:bg-white/40 rounded-xl mt-1 w-full text-left transition"
+                className="flex items-center p-2 hover:bg-white/40 rounded-xl w-full text-left transition"
               >
                 <Headphones size={20} className="mr-3" strokeWidth={1.5} />
                 Modo de voz

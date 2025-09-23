@@ -1,24 +1,15 @@
-// src/pages/memory/ReportSection.tsx
 import React, { useMemo, useState } from "react";
 import { useMemoryData } from "./memoryData";
 import MapaEmocional2D from "../../components/MapaEmocional2D";
 import LinhaDoTempoEmocional from "../../components/LinhaDoTempoEmocional";
 import StackedAreaSemanalEmocional from "../../components/StackedAreaSemanalEmocional";
 import DailyIntensityStrip from "../../components/DailyIntensityStrip";
-
-// ⬇️ Loader (bolha branca respirando)
 import EcoBubbleLoading from "../../components/EcoBubbleLoading";
 
-/**
- * Layout estilo Apple Saúde:
- * - Header sticky
- * - Cards arredondados
- * - Padrões de leitura simples
- */
+/* ---------- Helpers / UI ---------- */
 
 const clamp = (v: number, min = -1, max = 1) => Math.max(min, Math.min(max, v));
 
-/** UI PRIMITIVES **/
 const SectionHeader: React.FC<{ title: string; subtitle?: string }> = ({ title, subtitle }) => (
   <div className="mb-1">
     <div className="flex items-center gap-2 text-[28px] leading-tight font-semibold text-neutral-900">
@@ -84,7 +75,6 @@ const MetricRow: React.FC<{ label: string; value: React.ReactNode; hint?: string
   </div>
 );
 
-/** Disclosure simples **/
 const Disclosure: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => {
   const [open, setOpen] = useState(false);
   return (
@@ -124,7 +114,8 @@ const QuadrantLegend = () => (
   </div>
 );
 
-/** MAIN **/
+/* ---------- Main ---------- */
+
 const ReportSection: React.FC = () => {
   const { relatorio, loading, error } = useMemoryData();
   const [heatmapRange, setHeatmapRange] = useState<30 | 90 | 180 | undefined>(30);
@@ -153,7 +144,6 @@ const ReportSection: React.FC = () => {
   }, [relatorio]);
 
   if (loading) {
-    // ⬇️ Estado de carregamento com a bolha “respirando”
     return (
       <section className="space-y-4 max-h-[82vh] overflow-y-auto pr-1">
         <div className="sticky top-0 z-20 -mx-1 px-1 py-2 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-neutral-100">
@@ -188,7 +178,7 @@ const ReportSection: React.FC = () => {
   }
 
   const hasLT = !!relatorio?.linha_do_tempo_intensidade?.length;
-  const hasMapa = mapaEmocional2D.length > 0;
+  const hasMapa = (mapaEmocional2D.length ?? 0) > 0;
 
   const rangeLabel =
     heatmapRange === 30 ? "Últimos 30 dias" :
@@ -207,10 +197,9 @@ const ReportSection: React.FC = () => {
       <div className="h-2" />
 
       <div className="grid grid-cols-1 gap-4">
-        {/* 🔷 Intensidade por Dia – strip com rolagem */}
+        {/* 🔷 Intensidade por Dia */}
         {hasLT && (
           <Card title="Intensidade por Dia" right={<Pill tone="orange">{rangeLabel}</Pill>}>
-            {/* segmented control */}
             <div className="mb-2 flex gap-2">
               {([30, 90, 180] as const).map((v) => (
                 <button
@@ -257,7 +246,7 @@ const ReportSection: React.FC = () => {
           </Card>
         )}
 
-        {/* 🔶 Stacked Area Semanal (Volume por domínio) */}
+        {/* 🔶 Stacked Area Semanal */}
         {hasLT && (
           <Card title="Volume Semanal por Domínio" right={<Pill tone="orange">Semanas</Pill>}>
             <div className="rounded-2xl overflow-hidden ring-1 ring-neutral-100">
@@ -276,11 +265,10 @@ const ReportSection: React.FC = () => {
           </Card>
         )}
 
-        {/* 🟢 Mapa 2D (Hexbin) */}
+        {/* 🟢 Mapa 2D */}
         {hasMapa && (
           <Card title="Mapa Emocional 2D" right={<Pill tone="blue">Emoções</Pill>}>
             <div className="rounded-2xl overflow-hidden ring-1 ring-neutral-100">
-              {/* hexbin responsivo com visual “saúde” */}
               <MapaEmocional2D data={mapaEmocional2D} height={340} radius={14} />
             </div>
 
@@ -313,17 +301,28 @@ const ReportSection: React.FC = () => {
           </Card>
         )}
 
-        {/* Timeline (detalhe por domínio) — secundária */}
+        {/* 🚧 Detalhe por Domínio – temporariamente “fechado” */}
         {hasLT && (
           <Card title="Detalhe por Domínio" right={<Pill tone="orange">Linhas</Pill>}>
-            <div className="rounded-2xl overflow-hidden ring-1 ring-neutral-100">
-              <LinhaDoTempoEmocional data={relatorio!.linha_do_tempo_intensidade} yMax={10} />
+            <div className="relative rounded-2xl overflow-hidden ring-1 ring-neutral-100">
+              {/* Conteúdo “embaçado” */}
+              <div className="blur-[2px] select-none pointer-events-none">
+                <LinhaDoTempoEmocional data={relatorio!.linha_do_tempo_intensidade} yMax={10} />
+              </div>
+
+              {/* Véu turvo + selo Em construção */}
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                <div className="absolute inset-0 bg-white/60 backdrop-blur-sm" />
+                <div className="relative">
+                  <span className="px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-neutral-700 text-sm font-medium shadow-sm">
+                    Em construção
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="mt-2 text-[12px] text-neutral-600">
-              <p>
-                <span className="font-medium text-neutral-700">Dica:</span> compare como cada domínio
-                variou ao longo do período.
-              </p>
+
+            <div className="mt-2 text-[12px] text-neutral-500">
+              Esta visualização está passando por melhorias — em breve liberamos a versão completa.
             </div>
           </Card>
         )}
