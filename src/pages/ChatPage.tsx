@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*  ChatPage.tsx — eco-vibe + glass + saudação limpa + teclado + scroll btn   */
+/*  ChatPage.tsx — scroll estável + sem bolinha fantasma + saudação alinhada  */
 /* -------------------------------------------------------------------------- */
 
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
@@ -40,50 +40,11 @@ const saudacaoDoDiaFromHour = (h: number) => {
 
 /* ====== Frases rotativas ====== */
 const ROTATING_ITEMS: Suggestion[] = [
-  {
-    id: 'rot_presenca_scan',
-    icon: '🌬️',
-    label: 'Vamos fazer um mini-scan de presença agora?',
-    modules: ['eco_observador_presente', 'eco_presenca_silenciosa', 'eco_corpo_emocao'],
-    systemHint:
-      'Conduza um body scan curto (2–3 minutos), com foco gentil em respiração, pontos de contato e 1 pensamento.',
-  },
-  {
-    id: 'rot_kahneman_check',
-    icon: '🧩',
-    label: 'Quero checar se caí em algum atalho mental hoje',
-    modules: [
-      'eco_heuristica_ancoragem',
-      'eco_heuristica_disponibilidade',
-      'eco_heuristica_excesso_confianca',
-    ],
-    systemHint:
-      'Explique heurísticas em linguagem simples, faça 1 pergunta diagnóstica e proponha 1 reframe prático.',
-  },
-  {
-    id: 'rot_vulnerabilidade',
-    icon: '💗',
-    label: 'Posso explorar coragem & vulnerabilidade em 1 situação',
-    modules: ['eco_vulnerabilidade_defesas', 'eco_vulnerabilidade_mitos', 'eco_emo_vergonha_combate'],
-    systemHint:
-      'Brené Brown: diferencie vulnerabilidade de exposição. Nomeie 1 defesa ativa e proponha 1 micro-ato de coragem.',
-  },
-  {
-    id: 'rot_estoico',
-    icon: '🏛️',
-    label: 'O que está sob meu controle hoje?',
-    modules: ['eco_presenca_racional', 'eco_identificacao_mente', 'eco_fim_do_sofrimento'],
-    systemHint:
-      'Marco Aurélio: conduza 3 perguntas (controle / julgamento / ação mínima) e feche com 1 compromisso simples.',
-  },
-  {
-    id: 'rot_regressao_media',
-    icon: '📉',
-    label: 'Talvez ontem foi exceção — quero revisar expectativas',
-    modules: ['eco_heuristica_regressao_media', 'eco_heuristica_certeza_emocional'],
-    systemHint:
-      'Explique regressão à média e convide a recalibrar expectativas com 1 evidência observável para hoje.',
-  },
+  { id: 'rot_presenca_scan', icon: '🌬️', label: 'Vamos fazer um mini-scan de presença agora?', modules: ['eco_observador_presente', 'eco_presenca_silenciosa', 'eco_corpo_emocao'], systemHint: 'Conduza um body scan curto (2–3 minutos), com foco gentil em respiração, pontos de contato e 1 pensamento.' },
+  { id: 'rot_kahneman_check', icon: '🧩', label: 'Quero checar se caí em algum atalho mental hoje', modules: ['eco_heuristica_ancoragem','eco_heuristica_disponibilidade','eco_heuristica_excesso_confianca'], systemHint: 'Explique heurísticas em linguagem simples, faça 1 pergunta diagnóstica e proponha 1 reframe prático.' },
+  { id: 'rot_vulnerabilidade', icon: '💗', label: 'Posso explorar coragem & vulnerabilidade em 1 situação', modules: ['eco_vulnerabilidade_defesas','eco_vulnerabilidade_mitos','eco_emo_vergonha_combate'], systemHint: 'Brené Brown: diferencie vulnerabilidade de exposição. Nomeie 1 defesa ativa e proponha 1 micro-ato de coragem.' },
+  { id: 'rot_estoico', icon: '🏛️', label: 'O que está sob meu controle hoje?', modules: ['eco_presenca_racional','eco_identificacao_mente','eco_fim_do_sofrimento'], systemHint: 'Marco Aurélio: conduza 3 perguntas (controle / julgamento / ação mínima) e feche com 1 compromisso simples.' },
+  { id: 'rot_regressao_media', icon: '📉', label: 'Talvez ontem foi exceção — quero revisar expectativas', modules: ['eco_heuristica_regressao_media','eco_heuristica_certeza_emocional'], systemHint: 'Explique regressão à média e convide a recalibrar expectativas com 1 evidência observável para hoje.' },
 ];
 
 /* ====== Variações de abertura ====== */
@@ -108,11 +69,9 @@ const ChatPage: React.FC = () => {
   const inputBarRef = useRef<HTMLDivElement>(null);
 
   const [showFeedback, setShowFeedback] = useState(false);
-
   const aiMessages = (messages || []).filter((m: any) => m.sender === 'eco');
 
   const [showQuick, setShowQuick] = useState(true);
-
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
@@ -124,11 +83,7 @@ const ChatPage: React.FC = () => {
       navigate('/login');
       return;
     }
-    mixpanel.track('Eco: Entrou no Chat', {
-      userId,
-      userName,
-      timestamp: new Date().toISOString(),
-    });
+    mixpanel.track('Eco: Entrou no Chat', { userId, userName, timestamp: new Date().toISOString() });
   }, [user, navigate, userId, userName]);
 
   if (!user) return null;
@@ -136,54 +91,49 @@ const ChatPage: React.FC = () => {
   const clientHourNow = new Date().getHours();
   const saudacao = saudacaoDoDiaFromHour(clientHourNow);
 
-  /* ====================== SCROLL CORE ====================== */
+  /* ====================== SCROLL CORE (estável) ====================== */
 
   const scrollToBottom = (smooth = true) => {
     const el = scrollerRef.current;
-    const end = endRef.current;
-    if (!el || !end) return;
+    if (!el) return;
     const behavior: ScrollBehavior = smooth ? 'smooth' : 'auto';
+    // usar scrollTo é mais estável no iOS do que scrollIntoView
     requestAnimationFrame(() => {
-      end.scrollIntoView({ behavior, block: 'end' });
+      el.scrollTo({ top: el.scrollHeight, behavior });
       const at = nearBottom(el, 8);
       setIsAtBottom(at);
       setShowScrollBtn(!at);
     });
   };
 
+  // start no fundo
   useEffect(() => {
     scrollToBottom(false);
   }, []);
 
+  // quando chegam msgs novas (se já estava no fundo, mantemos no fundo)
   useLayoutEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
     if (nearBottom(el, 120)) scrollToBottom(true);
   }, [messages, digitando]);
 
-  useEffect(() => {
-    const root = scrollerRef.current;
-    const end = endRef.current;
-    if (!root || !end) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.some((e) => e.isIntersecting);
-        setIsAtBottom(visible);
-        setShowScrollBtn(!visible);
-      },
-      { root, threshold: 0.98 }
-    );
-    io.observe(end);
-    return () => io.disconnect();
-  }, []);
+  // só com o onScroll do container (sem IntersectionObserver)
+  const handleScroll = () => {
+    const el = scrollerRef.current!;
+    const at = nearBottom(el, 16);
+    setIsAtBottom(at);
+    setShowScrollBtn(!at);
+  };
 
+  // mede altura do input (quick + textarea) e atualiza padding do scroller
   useEffect(() => {
     if (!inputBarRef.current) return;
     const el = inputBarRef.current;
     const update = () => {
       const h = Math.ceil(el.getBoundingClientRect().height);
       document.documentElement.style.setProperty('--input-h', `${h}px`);
-      scrollToBottom(false);
+      // não força scroll aqui — evita “vibração”
     };
     update();
     const ro = new ResizeObserver(update);
@@ -191,19 +141,17 @@ const ChatPage: React.FC = () => {
     return () => ro.disconnect();
   }, []);
 
-  // ====================== iOS Keyboard / visualViewport ======================
+  // iOS keyboard / visualViewport — sem jitter
   useEffect(() => {
     const vv = (window as any).visualViewport as VisualViewport | undefined;
 
     const wasAtBottomRef = { current: true };
-
     const handleFocusIn = () => {
       document.body.classList.add('keyboard-open');
       const el = scrollerRef.current;
       wasAtBottomRef.current = !!el && nearBottom(el, 120);
       scheduleMeasure();
     };
-
     const handleFocusOut = () => {
       document.body.classList.remove('keyboard-open');
       lastKb.current = 0;
@@ -231,12 +179,8 @@ const ChatPage: React.FC = () => {
       lastKb.current = kb;
 
       document.documentElement.style.setProperty('--kb', `${Math.ceil(kb)}px`);
-
-      if (wasAtBottomRef.current) {
-        scrollToBottom(false);
-      }
+      if (wasAtBottomRef.current) scrollToBottom(false);
     };
-
     const scheduleMeasure = () => {
       if (scheduled) return;
       scheduled = true;
@@ -316,25 +260,14 @@ const ChatPage: React.FC = () => {
 
     requestAnimationFrame(() => scrollToBottom(true));
 
-    mixpanel.track('Eco: Mensagem Enviada', {
-      userId,
-      userName,
-      mensagem: trimmed,
-      timestamp: new Date().toISOString(),
-    });
+    mixpanel.track('Eco: Mensagem Enviada', { userId, userName, mensagem: trimmed, timestamp: new Date().toISOString() });
 
     try {
-      const saved = await salvarMensagem({
-        usuarioId: userId!,
-        conteudo: trimmed,
-        sentimento: '',
-        salvarMemoria: true,
-      });
+      const saved = await salvarMensagem({ usuarioId: userId!, conteudo: trimmed, sentimento: '', salvarMemoria: true });
       const mensagemId = saved?.[0]?.id || userLocalId;
 
       const baseHistory = [...messages, { id: mensagemId, role: 'user', content: trimmed }];
 
-      // ⚠️ Sem greeting/despedida no front: sempre montamos contexto normal
       const tags = extrairTagsRelevantes(trimmed);
       const [similar, porTag] = await Promise.all([
         buscarMemoriasSimilares(trimmed, 2).catch(() => []),
@@ -378,15 +311,9 @@ const ChatPage: React.FC = () => {
       const clientHour = new Date().getHours();
       const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      const resposta = await enviarMensagemParaEco(
-        mensagensComContexto,
-        userName,
-        userId!,
-        clientHour,
-        clientTz
-      );
+      const resposta = await enviarMensagemParaEco(mensagensComContexto, userName, userId!, clientHour, clientTz);
 
-      // Remove bloco JSON apenas se vier após uma quebra de linha
+      // Remove bloco JSON apenas se vier com quebra
       const textoEco = (resposta || '').replace(/\n\{[\s\S]*\}\s*$/m, '').trim();
       if (textoEco) addMessage({ id: uuidv4(), text: textoEco, sender: 'eco' });
 
@@ -420,15 +347,12 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  function handleFeedbackSubmitted() {
-    sessionStorage.setItem(FEEDBACK_KEY, '1');
-    setShowFeedback(false);
-  }
-
   const handlePickSuggestion = async (s: Suggestion) => {
     setShowQuick(false);
     mixpanel.track('Eco: QuickSuggestion Click', { id: s.id, label: s.label, modules: s.modules });
-    const hint = buildModuleHint(s.modules, s.systemHint);
+    const hint = (s.modules?.length || s.systemHint)
+      ? `${s.modules?.length ? `Ative módulos: ${s.modules.join(', ')}.` : ''}${s.systemHint ? ` ${s.systemHint}` : ''}`.trim()
+      : '';
     const userText = `${s.icon ? s.icon + ' ' : ''}${s.label}`;
     await handleSendMessage(userText, hint);
   };
@@ -438,17 +362,11 @@ const ChatPage: React.FC = () => {
       {/* SCROLLER */}
       <div
         ref={scrollerRef}
-        onScroll={() => {
-          const el = scrollerRef.current!;
-          const at = nearBottom(el, 16);
-          setIsAtBottom(at);
-          setShowScrollBtn(!at);
-        }}
+        onScroll={handleScroll}
         className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 [scrollbar-gutter:stable]"
         style={{
           paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
-          paddingBottom:
-            'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + var(--kb,0px) + 12px)',
+          paddingBottom: 'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + var(--kb,0px) + 12px)',
           WebkitOverflowScrolling: 'touch',
           overscrollBehaviorY: 'contain',
           scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
@@ -457,31 +375,21 @@ const ChatPage: React.FC = () => {
       >
         <div className="w-full mx-auto max-w-[720px]">
           {messages.length === 0 && !erroApi && (
-            <div
-              className="
-                min-h-[calc(100svh-var(--eco-topbar-h,56px)-var(--input-h,72px))]
-                flex items-center justify-center
-              "
-            >
-              <motion.div
-                className="px-4 w-full"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.28 }}
-              >
-                {/* ======= SAUDAÇÃO CENTRAL ALINHADA À COLUNA ======= */}
+            <div className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-var(--input-h,72px))] flex items-center justify-center">
+              <motion.div className="px-4 w-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
+                {/* SAUDAÇÃO (central col, mas fácil puxar p/ esquerda) */}
                 <div className="grid grid-cols-[28px,1fr,28px] items-center">
-  <div className="hidden sm:block" /> {/* mantém a guia de 28px na esquerda */}
-  <div className="col-start-2 justify-self-start text-center sm:text-left md:max-w-[680px]">
-    <h2 className="text-4xl md:text-5xl font-light text-gray-800 leading-tight">
-      {saudacao}, {userName}
-    </h2>
-    <p className="text-base md:text-lg font-light text-slate-500 mt-3">
-      {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
-    </p>
-  </div>
-  <div />
-</div>
+                  <div className="hidden sm:block" />
+                  <div className="col-start-2 justify-self-start text-center sm:text-left md:max-w-[680px]">
+                    <h2 className="text-4xl md:text-5xl font-light text-gray-800 leading-tight">
+                      {saudacao}, {userName}
+                    </h2>
+                    <p className="text-base md:text-lg font-light text-slate-500 mt-3">
+                      {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
+                    </p>
+                  </div>
+                  <div />
+                </div>
               </motion.div>
             </div>
           )}
@@ -490,49 +398,30 @@ const ChatPage: React.FC = () => {
             <div className="glass rounded-xl text-red-600 text-center mb-4 px-4 py-2">{erroApi}</div>
           )}
 
-          {/* espaço vertical controlado */}
           <div className="w-full space-y-3 md:space-y-4">
             {messages.map((m) => (
-              <div
-                key={m.id}
-                className="grid grid-cols-[28px,1fr,28px] gap-2 items-start min-w-0"
-              >
+              <div key={m.id} className="grid grid-cols-[28px,1fr,28px] gap-2 items-start min-w-0">
+                {/* ESQ: avatar só quando ECO */}
                 <div className="pt-1.5">
                   {m.sender === 'eco' ? <EcoBubbleIcon /> : <div className="w-[28px] h-[28px]" />}
                 </div>
 
-                <div
-                  className={
-                    (m.sender === 'user' ? 'justify-self-end' : 'justify-self-start') +
-                    ' min-w-0 max-w-full'
-                  }
-                >
-                  {m.sender === 'eco' ? (
-                    <EcoMessageWithAudio message={m as any} />
-                  ) : (
-                    <ChatMessage message={m} />
-                  )}
+                <div className={(m.sender === 'user' ? 'justify-self-end' : 'justify-self-start') + ' min-w-0 max-w-full'}>
+                  {m.sender === 'eco' ? <EcoMessageWithAudio message={m as any} /> : <ChatMessage message={m} />}
                 </div>
 
+                {/* DIR: placeholder SEM EcoBubbleIcon (corrige “bolinha” fantasma) */}
                 <div className="pt-1.5">
-                  {m.sender === 'user' ? (
-                    <EcoBubbleIcon className="opacity-0" />
-                  ) : (
-                    <div className="w-[28px] h-[28px]" />
-                  )}
+                  {m.sender === 'user' ? <div className="w-[28px] h-[28px]" /> : <div className="w-[28px] h-[28px]" />}
                 </div>
               </div>
             ))}
 
             {digitando && (
               <div className="grid grid-cols-[28px,1fr,28px] gap-2 items-start min-w-0">
-                <div className="pt-1.5">
-                  <EcoBubbleIcon />
-                </div>
-                <div className="justify-self-start min-w-0 max-w-full">
-                  <TypingDots />
-                </div>
-                <div />
+                <div className="pt-1.5"><EcoBubbleIcon /></div>
+                <div className="justify-self-start min-w-0 max-w-full"><TypingDots /></div>
+                <div className="pt-1.5"><div className="w-[28px] h-[28px]" /></div>
               </div>
             )}
 
@@ -543,30 +432,17 @@ const ChatPage: React.FC = () => {
         {showScrollBtn && (
           <button
             onClick={() => scrollToBottom(true)}
-            className="
-              fixed right-4 sm:right-8
-              bottom-[calc(var(--input-h,72px)+var(--kb,0px)+18px)]
-              z-40 h-9 w-9 rounded-full
-              glass-soft hover:bg-white/24
-              flex items-center justify-center transition
-            "
+            className="fixed right-4 sm:right-8 bottom-[calc(var(--input-h,72px)+var(--kb,0px)+18px)] z-40 h-9 w-9 rounded-full glass-soft hover:bg-white/24 flex items-center justify-center transition"
             aria-label="Descer para a última mensagem"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5 text-gray-700">
-              <path
-                d="M6 9l6 6 6-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         )}
       </div>
 
-      {/* BARRA DE INPUT — FIXA NO RODAPÉ */}
+      {/* BARRA DE INPUT */}
       <div
         ref={inputBarRef}
         className="fixed left-0 right-0 bottom-[calc(max(env(safe-area-inset-bottom),0px)+var(--kb,0px))] z-40 px-3 sm:px-6 pb-2 pt-2 glass border-t-0"
@@ -579,12 +455,9 @@ const ChatPage: React.FC = () => {
             rotationMs={5000}
             className="mt-1 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
           />
-
           <ChatInput
             onSendMessage={(t) => handleSendMessage(t)}
-            onMoreOptionSelected={(opt) => {
-              if (opt === 'go_to_voice_page') navigate('/voice');
-            }}
+            onMoreOptionSelected={(opt) => { if (opt === 'go_to_voice_page') navigate('/voice'); }}
             onSendAudio={() => console.log('Áudio enviado')}
             disabled={digitando}
             onTextChange={(t) => setShowQuick(t.trim().length === 0)}
