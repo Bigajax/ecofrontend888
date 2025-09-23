@@ -8,11 +8,11 @@ import { useAuth } from '../contexts/AuthContext';
 import TourInicial from '../components/TourInicial';
 import EcoBubbleIcon from '../components/EcoBubbleIcon';
 
-/* Divisor minimal */
+/* Divisor com traço mais marcado */
 const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
   <div className="relative my-4 select-none" aria-hidden="true">
-    <div className="h-px w-full bg-slate-200/70" />
-    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] tracking-[0.12em] text-slate-300">
+    <div className="h-px w-full bg-slate-300/70" />
+    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] tracking-[0.14em] text-slate-500">
       {label}
     </span>
   </div>
@@ -31,48 +31,24 @@ function translateAuthError(err: any): string {
     .join(' | ')
     .toLowerCase();
 
-  // Credenciais inválidas
   if (
-    /invalid\s*login\s*credentials/.test(raw) || // Supabase
+    /invalid\s*login\s*credentials/.test(raw) ||
     /invalid[-_\s]*credential/.test(raw) ||
     /invalid[-_\s]*credentials/.test(raw) ||
     /wrong[-_\s]*password/.test(raw) ||
     /invalid\s*password/.test(raw)
-  ) {
+  )
     return 'Email ou senha incorretos.';
-  }
 
-  // Email inválido
-  if (/invalid[-_\s]*email/.test(raw)) {
-    return 'Email inválido.';
-  }
-
-  // Usuário não encontrado
-  if (/user.*not.*found|no\s*user/.test(raw)) {
-    return 'Não encontramos uma conta com este email.';
-  }
-
-  // Muitas tentativas / rate limit
-  if (/too.*many.*request|rate.*limit/.test(raw)) {
+  if (/invalid[-_\s]*email/.test(raw)) return 'Email inválido.';
+  if (/user.*not.*found|no\s*user/.test(raw)) return 'Não encontramos uma conta com este email.';
+  if (/too.*many.*request|rate.*limit/.test(raw))
     return 'Muitas tentativas. Tente novamente em alguns minutos.';
-  }
-
-  // Problema de rede
-  if (/network|failed\s*to\s*fetch|timeout|net::/i.test(raw)) {
+  if (/network|failed\s*to\s*fetch|timeout|net::/i.test(raw))
     return 'Falha de rede. Verifique sua conexão.';
-  }
-
-  // Conta desativada
-  if (/user.*disabled|account.*disabled/.test(raw)) {
-    return 'Esta conta foi desativada.';
-  }
-
-  // Senha curta
-  if (/least.*6|minimum.*6|password.*short/.test(raw)) {
+  if (/user.*disabled|account.*disabled/.test(raw)) return 'Esta conta foi desativada.';
+  if (/least.*6|minimum.*6|password.*short/.test(raw))
     return 'A senha deve ter pelo menos 6 caracteres.';
-  }
-
-  // Fallback
   return 'Não foi possível entrar. Tente novamente.';
 }
 
@@ -81,7 +57,6 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // também aceita /login/tour
   const isTourPath = Boolean(useMatch('/login/tour'));
 
   const [email, setEmail] = useState('');
@@ -93,10 +68,10 @@ const LoginPage: React.FC = () => {
 
   const canSubmit = email.trim().length > 3 && password.length >= 6 && !loading;
 
-  // Se já estiver logado, vai para o chat
-  useEffect(() => { if (user) navigate('/chat'); }, [user, navigate]);
+  useEffect(() => {
+    if (user) navigate('/chat');
+  }, [user, navigate]);
 
-  // Abre o tour automaticamente por query/hash/rota/state
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const wantsTour =
@@ -108,14 +83,14 @@ const LoginPage: React.FC = () => {
     if (wantsTour) setIsTourActive(true);
   }, [location.search, location.hash, location.state, isTourPath]);
 
-  // Bloqueia scroll do body quando o Tour está ativo
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = isTourActive ? 'hidden' : prev || '';
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [isTourActive]);
 
-  // Fecha o tour e limpa a URL para não reabrir ao atualizar
   const closeTour = () => {
     setIsTourActive(false);
     if (isTourPath) {
@@ -143,25 +118,33 @@ const LoginPage: React.FC = () => {
 
   return (
     <PhoneFrame>
-      <div className="flex h-full items-center justify-center px-6 py-10 bg-white">
+      {/* fundo leve para evidenciar o glass */}
+      <div className="flex h-full items-center justify-center px-6 py-10 bg-gradient-to-br from-slate-50 via-white to-slate-100">
         {isTourActive && <TourInicial onClose={closeTour} onFinish={closeTour} />}
 
         <motion.div
           initial={{ y: 6, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.28, ease: 'easeOut' }}
-          className="glass-card w-full max-w-sm p-8 md:p-10"
+          className={[
+            // GLASSMORPHISM CARD 💎 (mais marcado)
+            'w-full max-w-sm rounded-[28px] p-8 md:p-10',
+            'bg-white/35 backdrop-blur-2xl',
+            'border border-white/70 ring-1 ring-slate-900/10',
+            'shadow-[0_24px_80px_rgba(2,6,23,0.18)]',
+          ].join(' ')}
         >
           {/* Header */}
           <div className="text-center space-y-3">
-            <h1 className="eco-wordmark text-[34px] leading-none font-semibold tracking-[-0.02em] text-slate-900">
+            <h1 className="text-4xl md:text-[38px] leading-none font-semibold tracking-[-0.03em] text-slate-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.65)]">
               ECO
             </h1>
 
             <div className="w-full flex justify-center">
-              <span className="pill-ambient" aria-label="Autoconhecimento guiado">
+              {/* Pílula mais “Apple” e com traço forte */}
+              <span className="inline-flex items-center gap-2 rounded-full pl-2.5 pr-3 py-1.5 bg-white/75 backdrop-blur-xl border border-white/80 ring-1 ring-slate-900/5 shadow-[0_8px_24px_rgba(2,6,23,0.12)]">
                 <EcoBubbleIcon size={14} className="shrink-0" />
-                <span className="text-[14px] md:text-[15px] leading-none font-medium text-slate-800">
+                <span className="text-[14px] md:text-[15px] leading-none font-semibold text-slate-800">
                   Autoconhecimento guiado
                 </span>
               </span>
@@ -170,7 +153,9 @@ const LoginPage: React.FC = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="mt-7 space-y-4" noValidate>
-            <label className="sr-only" htmlFor="email">Email</label>
+            <label className="sr-only" htmlFor="email">
+              Email
+            </label>
             <input
               id="email"
               type="email"
@@ -182,10 +167,19 @@ const LoginPage: React.FC = () => {
               autoCapitalize="none"
               autoCorrect="off"
               inputMode="email"
-              className="input-glass"
+              className={[
+                'w-full h-12 rounded-2xl px-4',
+                'bg-white/70 backdrop-blur-xl',
+                'border border-white/80 ring-1 ring-slate-900/5',
+                'text-slate-900 placeholder:text-slate-400',
+                'shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]',
+                'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
+              ].join(' ')}
             />
 
-            <label className="sr-only" htmlFor="password">Senha</label>
+            <label className="sr-only" htmlFor="password">
+              Senha
+            </label>
             <div className="relative">
               <input
                 id="password"
@@ -195,12 +189,19 @@ const LoginPage: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="input-glass pr-11"
+                className={[
+                  'w-full h-12 rounded-2xl px-4 pr-11',
+                  'bg-white/70 backdrop-blur-xl',
+                  'border border-white/80 ring-1 ring-slate-900/5',
+                  'text-slate-900 placeholder:text-slate-400',
+                  'shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]',
+                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
+                ].join(' ')}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-1.5 my-1.5 px-2 flex items-center rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100/60 focus:outline-none"
+                className="absolute inset-y-0 right-1.5 my-1.5 px-2 flex items-center rounded-xl text-slate-700 hover:text-slate-900 hover:bg-white/70 focus:outline-none focus:ring-2 focus:ring-slate-700/10"
                 aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                 title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
               >
@@ -223,7 +224,18 @@ const LoginPage: React.FC = () => {
 
             {/* Actions */}
             <div className="pt-1 space-y-4">
-              <button type="submit" disabled={!canSubmit} className="btn-apple btn-apple-primary w-full">
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className={[
+                  'w-full h-11 rounded-2xl font-semibold',
+                  'bg-gradient-to-b from-white/85 to-white/65',
+                  'border border-white/80 ring-1 ring-slate-900/5',
+                  'text-slate-900 shadow-[0_10px_28px_rgba(2,6,23,0.12)]',
+                  'disabled:opacity-50 hover:to-white/75 active:translate-y-[0.5px]',
+                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
+                ].join(' ')}
+              >
                 {loading ? 'Entrando…' : 'Entrar'}
               </button>
 
@@ -231,7 +243,14 @@ const LoginPage: React.FC = () => {
                 type="button"
                 onClick={() => navigate('/register')}
                 disabled={loading}
-                className="btn-apple w-full h-11"
+                className={[
+                  'w-full h-11 rounded-2xl font-semibold',
+                  'bg-white/70 backdrop-blur-xl',
+                  'border border-white/80 ring-1 ring-slate-900/5',
+                  'text-slate-900 shadow-[0_10px_28px_rgba(2,6,23,0.10)]',
+                  'hover:bg-white/80 active:translate-y-[0.5px]',
+                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
+                ].join(' ')}
               >
                 Criar perfil
               </button>
@@ -242,7 +261,14 @@ const LoginPage: React.FC = () => {
                 type="button"
                 onClick={() => setIsTourActive(true)}
                 disabled={loading}
-                className="btn-apple w-full h-11"
+                className={[
+                  'w-full h-11 rounded-2xl font-semibold',
+                  'bg-white/70 backdrop-blur-xl',
+                  'border border-white/80 ring-1 ring-slate-900/5',
+                  'text-slate-900 shadow-[0_10px_28px_rgba(2,6,23,0.10)]',
+                  'hover:bg-white/80 active:translate-y-[0.5px]',
+                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
+                ].join(' ')}
               >
                 Iniciar Tour
               </button>
