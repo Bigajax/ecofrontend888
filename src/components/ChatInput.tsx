@@ -33,12 +33,7 @@ const ChatInput: React.FC<Props> = ({
 
   const safeOnSendAudio = onSendAudio ?? (() => {});
 
-  /* ------------------------------------------------------------------
-     🔧 IMPORTANTE: NÃO atualizamos --input-h aqui.
-     Quem mede a altura total (quick suggestions + input) é a ChatPage.
-     ------------------------------------------------------------------ */
-
-  // Fecha popover ao clicar fora
+  // --- outside click para o popover
   useEffect(() => {
     if (!showMoreOptions) return;
     const onDocClick = (e: MouseEvent) => {
@@ -52,7 +47,7 @@ const ChatInput: React.FC<Props> = ({
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [showMoreOptions]);
 
-  // Auto-resize do textarea (sem “pular”)
+  // auto-resize do textarea
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -92,12 +87,12 @@ const ChatInput: React.FC<Props> = ({
     };
   }, [onTextChange]);
 
-  // Helpers de mídia
+  // helpers
   const stopTracks = (rec: MediaRecorder | null) => {
     try { rec?.stream?.getTracks()?.forEach((t) => t.stop()); } catch {}
   };
 
-  // Gravação
+  // gravação
   const startRecording = async () => {
     if (disabled || isTranscribing || isRecordingUI) return;
     setIsRecordingUI(true);
@@ -152,7 +147,7 @@ const ChatInput: React.FC<Props> = ({
     setIsTranscribing(false);
   };
 
-  // Envio texto
+  // envio texto
   const handleSend = () => {
     if (disabled) return;
     const msg = inputMessage.trim();
@@ -165,14 +160,13 @@ const ChatInput: React.FC<Props> = ({
 
     sendButtonRef.current?.classList.add('scale-90');
     setTimeout(() => sendButtonRef.current?.classList.remove('scale-90'), 120);
-
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
-  // ---------- UI de gravação ----------
+  // --- UI de gravação (fluida, sem max-width)
   if (isRecordingUI) {
     return (
-      <div className="relative w-full max-w-2xl mx-auto px-4 py-2">
+      <div className="relative w-full px-2 py-2">
         <div
           className="
             w-full h-11 mb-2 rounded-3xl
@@ -223,7 +217,7 @@ const ChatInput: React.FC<Props> = ({
     );
   }
 
-  // ---------- UI padrão ----------
+  // --- UI padrão (alinhada ao feed)
   return (
     <motion.form
       ref={wrapperRef}
@@ -232,7 +226,7 @@ const ChatInput: React.FC<Props> = ({
         handleSend();
       }}
       className={`
-        relative w-full max-w-2xl mx-auto px-3 py-1.5 rounded-3xl
+        relative w-full px-3 py-1.5 rounded-3xl
         border border-white/45 bg-white/55 backdrop-blur-2xl
         shadow-[0_16px_46px_rgba(16,24,40,0.10),inset_0_1px_0_rgba(255,255,255,0.55)]
         transition-all duration-200 ${disabled ? 'opacity-90' : ''}
@@ -244,9 +238,9 @@ const ChatInput: React.FC<Props> = ({
       role="group"
       style={{ overflowAnchor: 'none' }}
     >
-      {/* ====== GRID SIMÉTRICO: [72px | 1fr | 72px] ====== */}
-      <div className="grid grid-cols-[72px,1fr,72px] items-center gap-2">
-        {/* ESQUERDA (72px) */}
+      {/* === Grid alinhada ao feed: [28px | 1fr | 28px] === */}
+      <div className="grid grid-cols-[28px,1fr,28px] items-center gap-2">
+        {/* esquerda (28px) */}
         <div className="flex items-center justify-start">
           <button
             type="button"
@@ -267,7 +261,7 @@ const ChatInput: React.FC<Props> = ({
           </button>
         </div>
 
-        {/* Popover (apenas Modo de voz) */}
+        {/* Popover */}
         <AnimatePresence>
           {showMoreOptions && !disabled && (
             <motion.div
@@ -278,7 +272,7 @@ const ChatInput: React.FC<Props> = ({
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
               className="
-                absolute bottom-full mb-2 left-4 w-56 z-50
+                absolute bottom-full mb-2 left-2 w-56 z-50
                 rounded-2xl border border-white/45 bg-white/70 backdrop-blur-2xl
                 shadow-[0_20px_50px_rgba(16,24,40,0.12),inset_0_1px_0_rgba(255,255,255,0.55)]
                 p-1.5
@@ -299,7 +293,7 @@ const ChatInput: React.FC<Props> = ({
           )}
         </AnimatePresence>
 
-        {/* CENTRO (1fr) */}
+        {/* centro (1fr) */}
         <div className="flex items-center min-w-0">
           <textarea
             ref={textareaRef}
@@ -327,6 +321,7 @@ const ChatInput: React.FC<Props> = ({
             maxLength={4000}
             readOnly={disabled}
             aria-disabled={disabled}
+            aria-label="Escreva sua mensagem"
             className="
               w-full min-w-0 resize-none bg-transparent border-none focus:outline-none
               leading-[1.35] py-2 max-h-48 overflow-y-auto
@@ -335,7 +330,7 @@ const ChatInput: React.FC<Props> = ({
           />
         </div>
 
-        {/* DIREITA (72px) */}
+        {/* direita (28px) */}
         <div className="flex items-center justify-end gap-1.5">
           <button
             type="button"

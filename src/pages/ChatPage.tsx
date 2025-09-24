@@ -27,8 +27,6 @@ import mixpanel from '../lib/mixpanel';
 
 import { FeedbackPrompt } from '../components/FeedbackPrompt';
 
-/* -------------------------------------------------------------------------- */
-
 const FEEDBACK_KEY = 'eco_feedback_given';
 
 const saudacaoDoDiaFromHour = (h: number) => {
@@ -97,7 +95,6 @@ const ChatPage: React.FC = () => {
     const el = scrollerRef.current;
     if (!el) return;
     const behavior: ScrollBehavior = smooth ? 'smooth' : 'auto';
-    // usar scrollTo é mais estável no iOS do que scrollIntoView
     requestAnimationFrame(() => {
       el.scrollTo({ top: el.scrollHeight, behavior });
       const at = nearBottom(el, 8);
@@ -106,19 +103,18 @@ const ChatPage: React.FC = () => {
     });
   };
 
-  // start no fundo
+  // início no fundo
   useEffect(() => {
     scrollToBottom(false);
   }, []);
 
-  // quando chegam msgs novas (se já estava no fundo, mantemos no fundo)
+  // se já estava perto do fundo, mantenha no fundo ao chegar msg nova / estado de digitação mudar
   useLayoutEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
     if (nearBottom(el, 120)) scrollToBottom(true);
   }, [messages, digitando]);
 
-  // só com o onScroll do container (sem IntersectionObserver)
   const handleScroll = () => {
     const el = scrollerRef.current!;
     const at = nearBottom(el, 16);
@@ -133,7 +129,6 @@ const ChatPage: React.FC = () => {
     const update = () => {
       const h = Math.ceil(el.getBoundingClientRect().height);
       document.documentElement.style.setProperty('--input-h', `${h}px`);
-      // não força scroll aqui — evita “vibração”
     };
     update();
     const ro = new ResizeObserver(update);
@@ -240,13 +235,6 @@ const ChatPage: React.FC = () => {
     return `O usuário retorna após ${dias} dias. Na última interação significativa, compartilhou: “${resumo}”. Use isso para acolher o reencontro com sensibilidade.`;
   };
 
-  const buildModuleHint = (modules?: string[], extra?: string) => {
-    if (!modules?.length && !extra) return '';
-    const mod = modules?.length ? `Ative módulos: ${modules.join(', ')}.` : '';
-    const tip = extra ? ` ${extra}` : '';
-    return `${mod}${tip}`.trim();
-  };
-
   const handleSendMessage = async (text: string, systemHint?: string) => {
     const raw = text ?? '';
     const trimmed = raw.trim();
@@ -313,7 +301,6 @@ const ChatPage: React.FC = () => {
 
       const resposta = await enviarMensagemParaEco(mensagensComContexto, userName, userId!, clientHour, clientTz);
 
-      // Remove bloco JSON apenas se vier com quebra
       const textoEco = (resposta || '').replace(/\n\{[\s\S]*\}\s*$/m, '').trim();
       if (textoEco) addMessage({ id: uuidv4(), text: textoEco, sender: 'eco' });
 
@@ -350,9 +337,10 @@ const ChatPage: React.FC = () => {
   const handlePickSuggestion = async (s: Suggestion) => {
     setShowQuick(false);
     mixpanel.track('Eco: QuickSuggestion Click', { id: s.id, label: s.label, modules: s.modules });
-    const hint = (s.modules?.length || s.systemHint)
-      ? `${s.modules?.length ? `Ative módulos: ${s.modules.join(', ')}.` : ''}${s.systemHint ? ` ${s.systemHint}` : ''}`.trim()
-      : '';
+    const hint =
+      (s.modules?.length || s.systemHint)
+        ? `${s.modules?.length ? `Ative módulos: ${s.modules.join(', ')}.` : ''}${s.systemHint ? ` ${s.systemHint}` : ''}`.trim()
+        : '';
     const userText = `${s.icon ? s.icon + ' ' : ''}${s.label}`;
     await handleSendMessage(userText, hint);
   };
@@ -363,6 +351,8 @@ const ChatPage: React.FC = () => {
       <div
         ref={scrollerRef}
         onScroll={handleScroll}
+        role="feed"
+        aria-busy={digitando}
         className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 [scrollbar-gutter:stable]"
         style={{
           paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
@@ -377,7 +367,7 @@ const ChatPage: React.FC = () => {
           {messages.length === 0 && !erroApi && (
             <div className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-var(--input-h,72px))] flex items-center justify-center">
               <motion.div className="px-4 w-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
-                {/* SAUDAÇÃO (central col, mas fácil puxar p/ esquerda) */}
+                {/* Saudação no mesmo grid das mensagens */}
                 <div className="grid grid-cols-[28px,1fr,28px] items-center">
                   <div className="hidden sm:block" />
                   <div className="col-start-2 justify-self-start text-center sm:text-left md:max-w-[680px]">
@@ -410,9 +400,9 @@ const ChatPage: React.FC = () => {
                   {m.sender === 'eco' ? <EcoMessageWithAudio message={m as any} /> : <ChatMessage message={m} />}
                 </div>
 
-                {/* DIR: placeholder SEM EcoBubbleIcon (corrige “bolinha” fantasma) */}
+                {/* DIR: placeholder (evita “bolinha” fantasma) */}
                 <div className="pt-1.5">
-                  {m.sender === 'user' ? <div className="w-[28px] h-[28px]" /> : <div className="w-[28px] h-[28px]" />}
+                  <div className="w-[28px] h-[28px]" />
                 </div>
               </div>
             ))}
@@ -425,7 +415,8 @@ const ChatPage: React.FC = () => {
               </div>
             )}
 
-            <div ref={endRef} />
+            {/* Âncora explícita para reancoragem do scroll */}
+            <div ref={endRef} className="anchor-end h-px" />
           </div>
         </div>
 
