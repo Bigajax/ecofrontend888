@@ -5,7 +5,6 @@ import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
 
-// ⬇️ Loader (bolha branca respirando)
 import EcoBubbleLoading from '../../components/EcoBubbleLoading';
 
 /* ===== Lazy Nivo (tipado) ===== */
@@ -21,14 +20,13 @@ const LazyResponsiveBar = lazy(async () => {
 /* ===== Error Boundary ===== */
 type EBState = { hasError: boolean };
 class ChartErrorBoundary extends Component<PropsWithChildren<{}>, EBState> {
-  constructor(props: PropsWithChildren<{}>) {
-    super(props);
-    this.state = { hasError: false };
-  }
+  constructor(props: PropsWithChildren<{}>) { super(props); this.state = { hasError: false }; }
   static getDerivedStateFromError() { return { hasError: true }; }
   render(): ReactNode {
     if (this.state.hasError) {
-      return <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Não foi possível renderizar o gráfico.</div>;
+      return <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">
+        Não foi possível renderizar o gráfico.
+      </div>;
     }
     return this.props.children as ReactNode;
   }
@@ -61,6 +59,15 @@ const day = 24 * 60 * 60 * 1000;
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const toISOday = (t: number) => new Date(t).toISOString().slice(0, 10);
 
+// 👉 util: cópia profunda e mutável (evita objetos "frozen" do Redux/Immer)
+const deepClone = <T,>(v: T): T => {
+  try {
+    // @ts-ignore - runtime check
+    if (typeof structuredClone === 'function') return structuredClone(v);
+  } catch {}
+  return JSON.parse(JSON.stringify(v));
+};
+
 function countBy<T>(arr: T[], key: (x: T) => string | undefined | null) {
   const map = new Map<string, number>();
   for (const item of arr) {
@@ -79,8 +86,8 @@ function buildLocalPerfil(memories: Memoria[]) {
   for (const m of memories) {
     const domain = (m as any).dominio_vida || (m as any).dominio || (m as any).domain || '';
     const categoria = (m as any).categoria || '';
-    const tags: string[] = Array.isArray(m.tags) ? (m.tags as string[]) :
-      typeof (m as any).tags === 'string' ? (m as any).tags.split(/[;,]/) : [];
+    const tags: string[] = Array.isArray(m.tags) ? (m.tags as string[])
+      : typeof (m as any).tags === 'string' ? (m as any).tags.split(/[;,]/) : [];
     const add = (t?: string) => { const k = (t || '').trim(); if (!k) return; temas.set(k, (temas.get(k) ?? 0) + 1); };
     add(domain); add(categoria); tags.forEach(add);
   }
@@ -204,6 +211,11 @@ const ProfileSection: FC = () => {
     [themeChart]
   );
 
+  // 👇 cópias mutáveis (evita "Cannot add property ref, object is not extensible")
+  const emotionsDataSafe = useMemo(() => deepClone(emotionsData), [emotionsData]);
+  const themesDataSafe   = useMemo(() => deepClone(themesData),   [themesData]);
+  const lineDataSafe     = useMemo(() => deepClone(lineData),     [lineData]);
+
   const noRemoteData = (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) && (allMemories.length === 0);
 
   return (
@@ -248,16 +260,11 @@ const ProfileSection: FC = () => {
             <div className="h-[96px]">
               {isClient && hasLinePoints ? (
                 <ChartErrorBoundary>
-                  <Suspense
-                    fallback={
-                      <div className="w-full h-full grid place-items-center">
-                        <EcoBubbleLoading size={28} />
-                      </div>
-                    }
-                  >
+                  <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={28} /></div>}>
+                    {/* usa cópia mutável */}
                     <LazyResponsiveLine
                       key={`line-${period}`}
-                      data={lineData}
+                      data={lineDataSafe}
                       margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
                       xScale={{ type: 'time', format: '%Y-%m-%d', precision: 'day', useUTC: false }}
                       xFormat="time:%d/%m"
@@ -291,19 +298,14 @@ const ProfileSection: FC = () => {
 
         {/* CARD 2 — Emoções */}
         <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
-          {isClient && emotionsData.length ? (
+          {isClient && emotionsDataSafe.length ? (
             <div className="h-[300px]">
               <ChartErrorBoundary>
-                <Suspense
-                  fallback={
-                    <div className="w-full h-full grid place-items-center">
-                      <EcoBubbleLoading size={32} />
-                    </div>
-                  }
-                >
+                <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={32} /></div>}>
+                  {/* usa cópia mutável */}
                   <LazyResponsiveBar
                     key={`bar-emo-${period}`}
-                    data={emotionsData}
+                    data={emotionsDataSafe}
                     keys={['value']}
                     indexBy="name"
                     margin={{ top: 12, right: 12, bottom: 0, left: 40 }}
@@ -321,10 +323,7 @@ const ProfileSection: FC = () => {
                       tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
                     }}
                     tooltip={({ indexValue, value, color }: any) => (
-                      <div
-                        className="rounded-xl bg-white/95 border px-3 py-2 text-[12px]"
-                        style={{ borderColor: color }}
-                      >
+                      <div className="rounded-xl bg-white/95 border px-3 py-2 text-[12px]" style={{ borderColor: color }}>
                         <div className="font-medium">{String(indexValue)}</div>
                         <div>{String(value)}</div>
                       </div>
@@ -345,19 +344,14 @@ const ProfileSection: FC = () => {
 
         {/* CARD 3 — Temas */}
         <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
-          {isClient && themesData.length ? (
+          {isClient && themesDataSafe.length ? (
             <div className="h-[300px]">
               <ChartErrorBoundary>
-                <Suspense
-                  fallback={
-                    <div className="w-full h-full grid place-items-center">
-                      <EcoBubbleLoading size={32} />
-                    </div>
-                  }
-                >
+                <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={32} /></div>}>
+                  {/* usa cópia mutável */}
                   <LazyResponsiveBar
                     key={`bar-theme-${period}`}
-                    data={themesData}
+                    data={themesDataSafe}
                     keys={['value']}
                     indexBy="name"
                     layout="horizontal"

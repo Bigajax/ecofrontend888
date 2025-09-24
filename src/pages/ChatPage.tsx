@@ -122,65 +122,30 @@ const ChatPage: React.FC = () => {
     setShowScrollBtn(!at);
   };
 
-  // mede altura do input (quick + textarea) e atualiza padding do scroller
-  useEffect(() => {
-    if (!inputBarRef.current) return;
-    const el = inputBarRef.current;
-    const update = () => {
-      const h = Math.ceil(el.getBoundingClientRect().height);
-      document.documentElement.style.setProperty('--input-h', `${h}px`);
-    };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  // iOS keyboard / visualViewport — sem jitter
+  // iOS keyboard / visualViewport — sem jitter (opcional manter)
   useEffect(() => {
     const vv = (window as any).visualViewport as VisualViewport | undefined;
-
     const wasAtBottomRef = { current: true };
+
     const handleFocusIn = () => {
       document.body.classList.add('keyboard-open');
       const el = scrollerRef.current;
       wasAtBottomRef.current = !!el && nearBottom(el, 120);
-      scheduleMeasure();
     };
     const handleFocusOut = () => {
       document.body.classList.remove('keyboard-open');
-      lastKb.current = 0;
-      document.documentElement.style.setProperty('--kb', '0px');
     };
-
     window.addEventListener('focusin', handleFocusIn);
     window.addEventListener('focusout', handleFocusOut);
 
-    if (!vv) {
-      return () => {
-        window.removeEventListener('focusin', handleFocusIn);
-        window.removeEventListener('focusout', handleFocusOut);
-      };
-    }
-
-    let raf = 0;
-    let scheduled = false;
-    const lastKb = { current: -1 };
-
-    const measure = () => {
-      scheduled = false;
-      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      if (Math.abs(kb - lastKb.current) < 2) return; // evita vibração
-      lastKb.current = kb;
-
-      document.documentElement.style.setProperty('--kb', `${Math.ceil(kb)}px`);
-      if (wasAtBottomRef.current) scrollToBottom(false);
+    if (!vv) return () => {
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
     };
-    const scheduleMeasure = () => {
-      if (scheduled) return;
-      scheduled = true;
-      raf = requestAnimationFrame(measure);
-    };
+
+    let raf = 0; let scheduled = false;
+    const measure = () => { scheduled = false; if (wasAtBottomRef.current) scrollToBottom(false); };
+    const scheduleMeasure = () => { if (!scheduled) { scheduled = true; raf = requestAnimationFrame(measure); } };
 
     vv.addEventListener('resize', scheduleMeasure);
     vv.addEventListener('scroll', scheduleMeasure);
@@ -346,7 +311,7 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col bg-eco-vibe">
+    <div className="w-full h-[calc(100dvh-var(--eco-topbar-h,56px))] flex flex-col overflow-hidden bg-eco-vibe">
       {/* SCROLLER */}
       <div
         ref={scrollerRef}
@@ -356,7 +321,6 @@ const ChatPage: React.FC = () => {
         className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 [scrollbar-gutter:stable]"
         style={{
           paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
-          paddingBottom: 'calc(var(--input-h,72px) + env(safe-area-inset-bottom) + var(--kb,0px) + 12px)',
           WebkitOverflowScrolling: 'touch',
           overscrollBehaviorY: 'contain',
           scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
@@ -365,7 +329,7 @@ const ChatPage: React.FC = () => {
       >
         <div className="w-full mx-auto max-w-[720px]">
           {messages.length === 0 && !erroApi && (
-            <div className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-var(--input-h,72px))] flex items-center justify-center">
+            <div className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex items-center justify-center">
               <motion.div className="px-4 w-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
                 {/* Saudação no mesmo grid das mensagens */}
                 <div className="grid grid-cols-[28px,1fr,28px] items-center">
@@ -421,22 +385,24 @@ const ChatPage: React.FC = () => {
         </div>
 
         {showScrollBtn && (
-          <button
-            onClick={() => scrollToBottom(true)}
-            className="fixed right-4 sm:right-8 bottom-[calc(var(--input-h,72px)+var(--kb,0px)+18px)] z-40 h-9 w-9 rounded-full glass-soft hover:bg-white/24 flex items-center justify-center transition"
-            aria-label="Descer para a última mensagem"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5 text-gray-700">
-              <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+          <div className="sticky bottom-24 z-30 flex justify-end pr-2 sm:pr-6">
+            <button
+              onClick={() => scrollToBottom(true)}
+              className="h-9 w-9 rounded-full glass-soft hover:bg-white/24 flex items-center justify-center transition"
+              aria-label="Descer para a última mensagem"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5 text-gray-700">
+                <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
         )}
-      </div>
+      </div> {/* <- fecha o scroller */}
 
       {/* BARRA DE INPUT */}
       <div
         ref={inputBarRef}
-        className="fixed left-0 right-0 bottom-[calc(max(env(safe-area-inset-bottom),0px)+var(--kb,0px))] z-40 px-3 sm:px-6 pb-2 pt-2 glass border-t-0"
+        className="sticky bottom-0 z-40 px-3 sm:px-6 pb-2 pt-2 glass border-t-0"
       >
         <div className="w-full mx-auto max-w-[720px]">
           <QuickSuggestions
