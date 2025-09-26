@@ -316,14 +316,20 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-[calc(100dvh-var(--eco-topbar-h,56px))] flex flex-col overflow-hidden bg-eco-vibe">
+    <div
+      className="relative flex h-[calc(100dvh-var(--eco-topbar-h,56px))] w-full flex-col overflow-hidden bg-white"
+      style={{
+        backgroundImage:
+          'radial-gradient(140% 100% at 50% 0%, rgba(236,240,255,0.65), transparent 55%), linear-gradient(180deg, #ffffff 0%, #f6f8ff 100%)',
+      }}
+    >
       {/* SCROLLER */}
       <div
         ref={scrollerRef}
         onScroll={handleScroll}
         role="feed"
         aria-busy={digitando}
-        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 [scrollbar-gutter:stable]"
+        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-10 pb-6 [scrollbar-gutter:stable]"
         style={{
           paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
           WebkitOverflowScrolling: 'touch',
@@ -332,22 +338,18 @@ const ChatPage: React.FC = () => {
           touchAction: 'pan-y',
         }}
       >
-        <div className="w-full mx-auto max-w-[720px]">
+        <div className="w-full mx-auto max-w-3xl">
           {messages.length === 0 && !erroApi && (
             <div className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex items-center justify-center">
               <motion.div className="px-4 w-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
-                {/* Saudação no mesmo grid das mensagens */}
-                <div className="grid grid-cols-[28px,1fr,28px] items-center">
-                  <div className="hidden sm:block" />
-                  <div className="col-start-2 justify-self-start text-center sm:text-left md:max-w-[680px]">
-                    <h2 className="text-4xl md:text-5xl font-light text-gray-800 leading-tight">
-                      {saudacao}, {userName}
-                    </h2>
-                    <p className="text-base md:text-lg font-light text-slate-500 mt-3">
-                      {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
-                    </p>
-                  </div>
-                  <div />
+                {/* Saudação centralizada */}
+                <div className="flex flex-col items-center gap-3 text-center md:gap-4">
+                  <h2 className="text-[32px] font-light leading-tight text-slate-800 md:text-[40px]">
+                    {saudacao}, {userName}
+                  </h2>
+                  <p className="max-w-xl text-base font-light text-slate-500 md:text-lg">
+                    {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
+                  </p>
                 </div>
               </motion.div>
             </div>
@@ -359,28 +361,35 @@ const ChatPage: React.FC = () => {
 
           <div className="w-full space-y-3 md:space-y-4">
             {messages.map((m) => (
-              <div key={m.id} className="grid grid-cols-[28px,1fr,28px] gap-2 items-start min-w-0">
+              <div
+                key={m.id}
+                className="grid grid-cols-[auto,1fr] items-start gap-3 min-w-0 md:grid-cols-[32px,1fr,32px]"
+              >
                 {/* ESQ: avatar só quando ECO */}
                 <div className="pt-1.5">
-                  {m.sender === 'eco' ? <EcoBubbleIcon /> : <div className="w-[28px] h-[28px]" />}
+                  {m.sender === 'eco' ? <EcoBubbleIcon /> : <div className="hidden h-[28px] w-[28px] md:block" />}
                 </div>
 
-                <div className={(m.sender === 'user' ? 'justify-self-end' : 'justify-self-start') + ' min-w-0 max-w-full'}>
+                <div
+                  className={`min-w-0 max-w-full ${
+                    m.sender === 'user' ? 'justify-self-end' : 'justify-self-start'
+                  }`}
+                >
                   {m.sender === 'eco' ? <EcoMessageWithAudio message={m as any} /> : <ChatMessage message={m} />}
                 </div>
 
                 {/* DIR: placeholder (evita “bolinha” fantasma) */}
-                <div className="pt-1.5">
-                  <div className="w-[28px] h-[28px]" />
+                <div className="hidden pt-1.5 md:block">
+                  <div className="h-[28px] w-[28px]" />
                 </div>
               </div>
             ))}
 
             {digitando && (
-              <div className="grid grid-cols-[28px,1fr,28px] gap-2 items-start min-w-0">
+              <div className="grid grid-cols-[auto,1fr] items-start gap-3 min-w-0 md:grid-cols-[32px,1fr,32px]">
                 <div className="pt-1.5"><EcoBubbleIcon /></div>
-                <div className="justify-self-start min-w-0 max-w-full"><TypingDots /></div>
-                <div className="pt-1.5"><div className="w-[28px] h-[28px]" /></div>
+                <div className="min-w-0 max-w-full justify-self-start"><TypingDots /></div>
+                <div className="hidden pt-1.5 md:block"><div className="h-[28px] w-[28px]" /></div>
               </div>
             )}
 
@@ -405,11 +414,8 @@ const ChatPage: React.FC = () => {
       </div> {/* <- fecha o scroller */}
 
       {/* BARRA DE INPUT */}
-      <div
-        ref={inputBarRef}
-        className="sticky bottom-0 z-40 px-3 sm:px-6 pb-2 pt-2 glass border-t-0"
-      >
-        <div className="w-full mx-auto max-w-[720px]">
+      <div ref={inputBarRef} className="sticky bottom-0 z-40 bg-gradient-to-t from-white via-white/95 to-white/80 px-4 pb-3 pt-3 sm:px-6 lg:px-10">
+        <div className="w-full mx-auto max-w-3xl">
           <QuickSuggestions
             visible={showQuick && messages.length === 0 && !digitando && !erroApi}
             onPickSuggestion={handlePickSuggestion}

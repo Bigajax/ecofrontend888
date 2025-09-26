@@ -226,10 +226,10 @@ const ChatInput: React.FC<Props> = ({
         handleSend();
       }}
       className={`
-        relative w-full px-3 py-1.5 rounded-3xl
-        border border-white/45 bg-white/55 backdrop-blur-2xl
-        shadow-[0_16px_46px_rgba(16,24,40,0.10),inset_0_1px_0_rgba(255,255,255,0.55)]
-        transition-all duration-200 ${disabled ? 'opacity-90' : ''}
+        relative w-full px-3 py-1.5 md:px-4 md:py-2 rounded-[28px]
+        border border-white/60 bg-white/80 backdrop-blur-2xl
+        shadow-[0_18px_48px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.6)]
+        ring-1 ring-white/40 transition-all duration-200 ${disabled ? 'opacity-90' : ''}
       `}
       initial={{ y: 50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -246,11 +246,10 @@ const ChatInput: React.FC<Props> = ({
             type="button"
             onClick={() => setShowMoreOptions((prev) => !prev)}
             className="
-              w-9 h-9 rounded-full
-              border border-white/45 bg-white/40 backdrop-blur-xl
-              shadow-sm flex items-center justify-center
-              hover:bg-white/55 active:scale-[0.98] transition
-              disabled:opacity-50
+              flex h-9 w-9 items-center justify-center rounded-full
+              border border-white/60 bg-white/75 backdrop-blur-xl
+              shadow-[0_6px_16px_rgba(15,23,42,0.08)] transition
+              hover:bg-white active:scale-[0.98] disabled:opacity-50
             "
             aria-expanded={showMoreOptions}
             aria-controls="chatinput-popover"
@@ -272,9 +271,9 @@ const ChatInput: React.FC<Props> = ({
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
               className="
-                absolute bottom-full mb-2 left-2 w-56 z-50
-                rounded-2xl border border-white/45 bg-white/70 backdrop-blur-2xl
-                shadow-[0_20px_50px_rgba(16,24,40,0.12),inset_0_1px_0_rgba(255,255,255,0.55)]
+                absolute bottom-full left-2 z-50 mb-2 w-56
+                rounded-2xl border border-white/60 bg-white/80 backdrop-blur-2xl
+                shadow-[0_24px_60px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.6)]
                 p-1.5
               "
             >
@@ -323,9 +322,8 @@ const ChatInput: React.FC<Props> = ({
             aria-disabled={disabled}
             aria-label="Escreva sua mensagem"
             className="
-              w-full min-w-0 resize-none bg-transparent border-none focus:outline-none
-              leading-[1.35] py-2 max-h-48 overflow-y-auto
-              text-[15px] md:text-base text-slate-800 placeholder:text-slate-500 placeholder:font-light
+              w-full min-w-0 max-h-48 resize-none overflow-y-auto border-none bg-transparent py-2 leading-[1.42] tracking-tight
+              text-[15px] md:text-base text-slate-800 placeholder:text-slate-400 placeholder:font-light focus:outline-none
             "
           />
         </div>
@@ -337,11 +335,10 @@ const ChatInput: React.FC<Props> = ({
             onClick={startRecording}
             disabled={disabled}
             className="
-              w-9 h-9 rounded-full
-              border border-white/45 bg-white/40 backdrop-blur-xl
-              shadow-sm flex items-center justify-center
-              hover:bg-white/55 active:scale-[0.98] transition
-              disabled:opacity-50
+              flex h-9 w-9 items-center justify-center rounded-full
+              border border-white/60 bg-white/75 backdrop-blur-xl
+              shadow-[0_6px_16px_rgba(15,23,42,0.08)] transition
+              hover:bg-white active:scale-[0.98] disabled:opacity-50
             "
             aria-label="Iniciar gravação"
           >
@@ -353,11 +350,10 @@ const ChatInput: React.FC<Props> = ({
             ref={sendButtonRef}
             disabled={disabled || !inputMessage.trim()}
             className="
-              w-9 h-9 rounded-full
-              backdrop-blur-xl bg-white/85 border border-white/60
-              shadow-sm hover:bg-white active:scale-[0.98]
-              transition disabled:opacity-50 disabled:cursor-not-allowed
-              text-slate-700
+              flex h-9 w-9 items-center justify-center rounded-full text-slate-700
+              border border-white/70 bg-white/90 backdrop-blur-xl
+              shadow-[0_8px_22px_rgba(15,23,42,0.12)] transition
+              hover:bg-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50
             "
             aria-label="Enviar mensagem"
           >

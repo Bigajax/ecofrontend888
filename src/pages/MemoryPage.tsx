@@ -87,117 +87,122 @@ const MemoryPage: React.FC = () => {
   } = useMemoryPageData(userId);
 
   return (
-    <PhoneFrame className="flex flex-col h-full bg-white">
-      <div className="sticky top-0 z-10 px-4 pt-4 pb-3 bg-white/70 backdrop-blur-md border-b border-black/10">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate('/chat')}
-            className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-black/10 bg-white/70 backdrop-blur hover:bg-white transition"
-            aria-label="Voltar"
-          >
-            <ArrowLeft size={20} className="text-neutral-700" />
-          </button>
+    <PhoneFrame className="flex h-full flex-col bg-white">
+      <div className="sticky top-0 z-10 border-b border-black/5 bg-white/80 px-4 pb-3 pt-4 backdrop-blur-xl sm:px-6">
+        <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-3">
+          <div className="flex w-full items-center justify-between gap-3">
+            <button
+              onClick={() => navigate('/chat')}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 bg-white/80 backdrop-blur hover:bg-white transition"
+              aria-label="Voltar"
+            >
+              <ArrowLeft size={20} className="text-neutral-700" />
+            </button>
 
-          <div className="glass-panel rounded-full p-1 flex gap-1">
-            {(['memories', 'profile', 'report'] as const).map((t) => {
-              const active = activeTab === t;
-              return (
-                <button
-                  key={t}
-                  onClick={() => goTab(t)}
-                  aria-pressed={active}
-                  className={[
-                    'px-3 py-1.5 rounded-full text-[13px] font-medium transition',
-                    active
-                      ? 'bg-white text-neutral-900 shadow-sm border border-white/60'
-                      : 'text-neutral-700 hover:bg-white/40',
-                  ].join(' ')}
-                >
-                  {{ memories: 'Memórias', profile: 'Perfil Emocional', report: 'Relatório' }[t]}
-                </button>
-              );
-            })}
+            <div className="glass-panel flex items-center gap-1 rounded-full p-1">
+              {(['memories', 'profile', 'report'] as const).map((t) => {
+                const active = activeTab === t;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => goTab(t)}
+                    aria-pressed={active}
+                    className={[
+                      'px-3 py-1.5 text-[13px] font-medium transition rounded-full',
+                      active
+                        ? 'bg-white text-neutral-900 shadow-sm ring-1 ring-white/60'
+                        : 'text-neutral-700 hover:bg-white/40',
+                    ].join(' ')}
+                  >
+                    {{ memories: 'Memórias', profile: 'Perfil Emocional', report: 'Relatório' }[t]}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="hidden h-9 w-9 sm:block" aria-hidden />
           </div>
-        </div>
 
-        <div className="mt-2 text-center">
-          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight">
-            {{
-              memories: 'Minhas Memórias',
-              profile: 'Meu Perfil Emocional',
-              report: 'Relatório Emocional',
-            }[activeTab]}
-          </h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            {{
-              memories: 'Registre e relembre seus sentimentos',
-              profile: 'Seu panorama emocional em destaque',
-              report: 'Análise aprofundada das suas memórias',
-            }[activeTab]}
-          </p>
+          <div className="text-center">
+            <h1 className="text-[22px] font-semibold tracking-tight text-neutral-900">
+              {{
+                memories: 'Minhas Memórias',
+                profile: 'Meu Perfil Emocional',
+                report: 'Relatório Emocional',
+              }[activeTab]}
+            </h1>
+            <p className="mt-1 text-sm text-neutral-500">
+              {{
+                memories: 'Registre e relembre seus sentimentos',
+                profile: 'Seu panorama emocional em destaque',
+                report: 'Análise aprofundada das suas memórias',
+              }[activeTab]}
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-6">
-        {loading ? (
-          <div className="flex justify-center items-center h-full text-neutral-500 text-sm">Carregando…</div>
-        ) : error ? (
-          <div className="flex justify-center items-center h-full text-rose-500 text-sm">{error}</div>
-        ) : (
-          <>
-            {activeTab === 'memories' && (
-              <>
-                <div className="glass-panel p-3 rounded-2xl mb-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <select
-                      value={emoFilter}
-                      onChange={(event) => setEmoFilter(event.target.value)}
-                      className="h-10 rounded-xl px-3 bg-white/80 border border-black/10 text-sm"
-                    >
-                      <option value="all">Todas as emoções</option>
-                      {emotionOptions.map((emo) => (
-                        <option key={emo} value={emo}>
-                          {emo[0].toUpperCase() + emo.slice(1)}
-                        </option>
-                      ))}
-                    </select>
+      <div className="flex-1 overflow-y-auto px-4 pb-6 sm:px-6">
+        <div className="mx-auto flex h-full w-full max-w-4xl flex-col">
+          {loading ? (
+            <div className="flex flex-1 items-center justify-center text-sm text-neutral-500">Carregando…</div>
+          ) : error ? (
+            <div className="flex flex-1 items-center justify-center text-sm text-rose-500">{error}</div>
+          ) : (
+            <div className="flex-1 space-y-6 pb-4">
+              {activeTab === 'memories' && (
+                <>
+                  <div className="glass-panel mb-3 rounded-2xl p-3 sm:p-4">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+                      <select
+                        value={emoFilter}
+                        onChange={(event) => setEmoFilter(event.target.value)}
+                        className="h-11 rounded-xl border border-black/10 bg-white/80 px-3 text-sm"
+                      >
+                        <option value="all">Todas as emoções</option>
+                        {emotionOptions.map((emo) => (
+                          <option key={emo} value={emo}>
+                            {emo[0].toUpperCase() + emo.slice(1)}
+                          </option>
+                        ))}
+                      </select>
 
-                    <input
-                      type="text"
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                      placeholder="Buscar em tags, reflexão ou pensamento…"
-                      className="h-10 rounded-xl px-3 bg-white/80 border border-black/10 text-sm"
-                    />
-
-                    <div className="flex items-center gap-3">
-                      <label className="text-xs text-neutral-600 w-24">Intensidade ≥ {minIntensity}</label>
                       <input
-                        type="range"
-                        min={0}
-                        max={10}
-                        step={1}
-                        value={minIntensity}
-                        onChange={(event) => setMinIntensity(Number(event.target.value))}
-                        className="flex-1"
+                        type="text"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Buscar em tags, reflexão ou pensamento…"
+                        className="h-11 rounded-xl border border-black/10 bg-white/80 px-3 text-sm"
                       />
+
+                      <div className="flex items-center gap-3 rounded-xl border border-black/5 bg-white/60 px-3 py-1.5">
+                        <label className="w-24 text-xs text-neutral-600">Intensidade ≥ {minIntensity}</label>
+                        <input
+                          type="range"
+                          min={0}
+                          max={10}
+                          step={1}
+                          value={minIntensity}
+                          onChange={(event) => setMinIntensity(Number(event.target.value))}
+                          className="flex-1"
+                        />
+                      </div>
                     </div>
+
+                    {filtersActive && (
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          onClick={resetFilters}
+                          className="rounded-full border border-black/10 bg-white/80 px-3 py-1 text-xs transition hover:bg-white"
+                        >
+                          Limpar filtros
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  {filtersActive && (
-                    <div className="mt-2 flex justify-end">
-                      <button
-                        onClick={resetFilters}
-                        className="text-xs px-3 py-1 rounded-full border border-black/10 bg-white/70 hover:bg-white transition"
-                      >
-                        Limpar filtros
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {filteredMemories.length > 0 ? (
-                  <div className="space-y-6">
+                  {filteredMemories.length > 0 ? (
+                    <div className="space-y-6">
                     {groupOrder
                       .filter((bucket) => groupedMemories[bucket]?.length)
                       .map((bucket) => (
