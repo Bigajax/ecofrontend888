@@ -17,7 +17,8 @@ export const enviarMensagemParaEco = async (
   userName?: string,
   userId?: string,
   clientHour?: number,
-  clientTz?: string
+  clientTz?: string,
+  options?: { signal?: AbortSignal }
 ): Promise<string> => {
   const mensagensValidas: Message[] = userMessages
     .slice(-3)
@@ -31,13 +32,17 @@ export const enviarMensagemParaEco = async (
 
   try {
     // 👇 sem /api aqui!
-    const { data, status } = await api.post<AskEcoResponse>("/ask-eco", {
-      mensagens: mensagensValidas,      // o backend normaliza (messages | mensagens | mensagem)
-      nome_usuario: userName,
-      usuario_id: userId,
-      clientHour: hour,
-      clientTz: tz,
-    });
+    const { data, status } = await api.post<AskEcoResponse>(
+      "/ask-eco",
+      {
+        mensagens: mensagensValidas, // o backend normaliza (messages | mensagens | mensagem)
+        nome_usuario: userName,
+        usuario_id: userId,
+        clientHour: hour,
+        clientTz: tz,
+      },
+      { signal: options?.signal }
+    );
 
     if (status < 200 || status >= 300) throw new Error("Erro inesperado da API /ask-eco");
 
@@ -48,6 +53,9 @@ export const enviarMensagemParaEco = async (
 
     throw new Error("Formato inválido na resposta da Eco.");
   } catch (error: any) {
+    if (options?.signal?.aborted || error?.code === 'ERR_CANCELED') {
+      throw error;
+    }
     const status = error?.response?.status;
     const serverErr = error?.response?.data?.error || error?.response?.data?.message;
     const msg =
@@ -55,6 +63,6 @@ export const enviarMensagemParaEco = async (
       (status ? `Erro HTTP ${status}: ${error?.response?.statusText || "Falha na requisição"}` : "") ||
       (error?.message ?? "Erro ao obter resposta da Eco.");
     console.error("❌ [ECO API] Erro ao enviar mensagem:", msg);
-    throw new Error(msg);
+    throw Object.assign(new Error(msg), { status });
   }
 };

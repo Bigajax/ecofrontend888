@@ -18,18 +18,10 @@
 
     <title>ECO - Espelho Emocional e Comportamental</title>
 
-    <!--
-      Se quiser manter Inter como fallback via CDN, descomente abaixo.
-      A stack do Tailwind já inclui Inter; em macOS/iOS, SF Pro será usada.
-    -->
-    <!--
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    -->
+    <link rel="preconnect" href="https://ecobackend888.onrender.com" crossorigin />
+    <link rel="dns-prefetch" href="https://ecobackend888.onrender.com" />
+    <link rel="preconnect" href="https://supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://supabase.co" />
 
     <!-- Helpers: --vh para 100vh e feature flag de backdrop-filter -->
     <script>
@@ -55,14 +47,9 @@
       html, body, #root { height: 100%; }
       body {
         margin: 0;
-        /* usa sua util bg-eco-vibe também no body para evitar flash branco */
-        background:
-          radial-gradient(1200px 600px at 20% -10%, #E9E8FF, transparent 55%),
-          radial-gradient(900px 600px at 85% -5%, #FFE7E1, transparent 60%),
-          linear-gradient(120deg, #EEF3FF 0%, #FFF8F3 70%);
-        color: #0f172a; /* slate-900 */
+        background: #ffffff;
+        color: #0f172a;
       }
-      /* fallback p/ browsers sem svh: 100*var(--vh) */
       .min-h-viewport {
         min-height: calc(var(--vh, 1vh) * 100);
       }
