@@ -8,19 +8,32 @@ type Props = {
 const EcoBubbleIcon: React.FC<Props> = ({ size = 24, className }) => {
   return (
     <div
-      className={`rounded-full shadow-md ring-1 ring-[rgba(200,220,255,0.45)] ${className || ''}`}
+      className={`relative rounded-full ${className || ''}`}
       style={{
         width: size,
         height: size,
         background:
-          'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.88), rgba(240,240,255,0.45))',
-        border: '1px solid rgba(200, 220, 255, 0.45)',
-        boxShadow: '0 6px 18px rgba(0, 0, 0, 0.10)', // presença um pouco maior
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+          'radial-gradient(115% 115% at 30% 25%, rgba(255,255,255,0.95), rgba(228,237,255,0.45))',
+        border: '1px solid rgba(168, 196, 255, 0.55)',
+        boxShadow:
+          '0 10px 26px rgba(43, 63, 122, 0.16), inset 0 0 12px rgba(255,255,255,0.35)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
       }}
       aria-hidden
-    />
+    >
+      <span
+        className="absolute inset-0 rounded-full"
+        style={{
+          background:
+            'radial-gradient(80% 80% at 70% 30%, rgba(134,173,255,0.28), transparent)',
+          filter: 'blur(6px)',
+          opacity: 0.9,
+          pointerEvents: 'none',
+        }}
+        aria-hidden
+      />
+    </div>
   );
 };
 

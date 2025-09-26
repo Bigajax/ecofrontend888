@@ -10,9 +10,9 @@ type Props = {
 };
 
 const SIZES = {
-  sm: { dot: 6, gap: 6, padX: 8, padY: 6, radius: "rounded-xl" },
-  md: { dot: 8, gap: 8, padX: 12, padY: 8, radius: "rounded-2xl" },
-  lg: { dot: 10, gap: 10, padX: 14, padY: 10, radius: "rounded-3xl" },
+  sm: { dot: 7, gap: 8, padX: 10, padY: 7, radius: "rounded-xl" },
+  md: { dot: 9, gap: 11, padX: 14, padY: 9, radius: "rounded-2xl" },
+  lg: { dot: 11, gap: 14, padX: 18, padY: 11, radius: "rounded-3xl" },
 };
 
 const dotTransition = {
@@ -36,7 +36,7 @@ const TypingDots: React.FC<Props> = ({
           role="presentation"
           className="inline-block rounded-full bg-slate-400/70 dark:bg-slate-300/70"
           style={{ width: s.dot, height: s.dot }}
-          animate={{ y: [0, -3, 0], opacity: [0.7, 1, 0.7] }}
+          animate={{ y: [0, -3, 0], opacity: [0.68, 1, 0.68] }}
           transition={{ ...dotTransition, delay }}
         />
       ))}
