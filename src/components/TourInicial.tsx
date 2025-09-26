@@ -1,5 +1,6 @@
 // src/components/TourInicial.tsx
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import GlassBubble from './GlassBubble';
@@ -30,7 +31,7 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose }) => {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  return (
+  const modalContent = (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: '#ffffff' }} // 🔒 fundo branco puro
@@ -97,6 +98,12 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose }) => {
       </motion.div>
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return modalContent;
+  }
+
+  return createPortal(modalContent, document.body);
 };
 
 export default TourInicial;
