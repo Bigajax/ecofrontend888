@@ -3,22 +3,23 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useMatch } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
+
 import PhoneFrame from '../components/PhoneFrame';
 import { useAuth } from '../contexts/AuthContext';
 import TourInicial from '../components/TourInicial';
 import EcoBubbleIcon from '../components/EcoBubbleIcon';
+import { Chip, GlassButton, InputField, SurfaceCard } from '../components/ui/Primitives';
 
-/* Divisor com traço mais marcado */
 const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
-  <div className="relative my-4 select-none" aria-hidden="true">
-    <div className="h-px w-full bg-slate-300/70" />
-    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] tracking-[0.14em] text-slate-500">
+  <div className="relative my-5 flex items-center justify-center text-[11px] font-medium uppercase tracking-[0.18em] text-muted">
+    <span className="h-px flex-1 bg-[rgba(15,23,42,0.08)]" aria-hidden />
+    <span className="px-3" aria-hidden>
       {label}
     </span>
+    <span className="h-px flex-1 bg-[rgba(15,23,42,0.08)]" aria-hidden />
   </div>
 );
 
-/* ---- Tradução das mensagens de erro para PT-BR (cobre Supabase/Firebase) ---- */
 function translateAuthError(err: any): string {
   const raw = [
     err?.code,
@@ -118,163 +119,129 @@ const LoginPage: React.FC = () => {
 
   return (
     <PhoneFrame>
-      {/* fundo leve para evidenciar o glass */}
-      <div className="flex h-full items-center justify-center px-6 py-10 bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div className="relative flex h-full flex-col justify-center bg-[radial-gradient(120%_120%_at_10%_0%,rgba(226,232,240,0.32),transparent_60%),radial-gradient(140%_140%_at_90%_-10%,rgba(148,163,184,0.25),transparent_70%),var(--bg)] px-6 py-12 sm:px-8">
         {isTourActive && <TourInicial onClose={closeTour} onFinish={closeTour} />}
 
-        <motion.div
-          initial={{ y: 6, opacity: 0 }}
+        <motion.section
+          initial={{ y: 8, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.28, ease: 'easeOut' }}
-          className={[
-            // GLASSMORPHISM CARD 💎 (mais marcado)
-            'w-full max-w-sm rounded-[28px] p-8 md:p-10',
-            'bg-white/35 backdrop-blur-2xl',
-            'border border-white/70 ring-1 ring-slate-900/10',
-            'shadow-[0_24px_80px_rgba(2,6,23,0.18)]',
-          ].join(' ')}
+          transition={{ duration: 0.32, ease: 'easeOut' }}
+          className="mx-auto w-full max-w-md"
         >
-          {/* Header */}
-          <div className="text-center space-y-3">
-            <h1 className="text-4xl md:text-[38px] leading-none font-semibold tracking-[-0.03em] text-slate-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.65)]">
-              ECO
-            </h1>
+          <SurfaceCard className="noise-overlay gap-8 p-8 md:p-10">
+            <header className="flex flex-col items-center gap-4 text-center">
+              <Chip className="tracking-[0.18em] text-[11px] uppercase text-muted">
+                <EcoBubbleIcon size={16} className="shrink-0" />
+                Autoconhecimento guiado
+              </Chip>
+              <div className="space-y-2">
+                <h1 className="text-3xl font-semibold tracking-[-0.02em] text-[color:var(--ink)] sm:text-[2.4rem]">
+                  Bem-vindo de volta
+                </h1>
+                <p className="text-sm text-muted sm:text-base">
+                  Entre com sua conta ECO para continuar a conversa.
+                </p>
+              </div>
+            </header>
 
-            <div className="w-full flex justify-center">
-              {/* Pílula mais “Apple” e com traço forte */}
-              <span className="inline-flex items-center gap-2 rounded-full pl-2.5 pr-3 py-1.5 bg-white/75 backdrop-blur-xl border border-white/80 ring-1 ring-slate-900/5 shadow-[0_8px_24px_rgba(2,6,23,0.12)]">
-                <EcoBubbleIcon size={14} className="shrink-0" />
-                <span className="text-[14px] md:text-[15px] leading-none font-semibold text-slate-800">
-                  Autoconhecimento guiado
-                </span>
-              </span>
-            </div>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="mt-7 space-y-4" noValidate>
-            <label className="sr-only" htmlFor="email">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              autoCapitalize="none"
-              autoCorrect="off"
-              inputMode="email"
-              className={[
-                'w-full h-12 rounded-2xl px-4',
-                'bg-white/70 backdrop-blur-xl',
-                'border border-white/80 ring-1 ring-slate-900/5',
-                'text-slate-900 placeholder:text-slate-400',
-                'shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]',
-                'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
-              ].join(' ')}
-            />
-
-            <label className="sr-only" htmlFor="password">
-              Senha
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                className={[
-                  'w-full h-12 rounded-2xl px-4 pr-11',
-                  'bg-white/70 backdrop-blur-xl',
-                  'border border-white/80 ring-1 ring-slate-900/5',
-                  'text-slate-900 placeholder:text-slate-400',
-                  'shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]',
-                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
-                ].join(' ')}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-1.5 my-1.5 px-2 flex items-center rounded-xl text-slate-700 hover:text-slate-900 hover:bg-white/70 focus:outline-none focus:ring-2 focus:ring-slate-700/10"
-                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-
-            {/* Mensagem de erro acessível */}
-            <div role="status" aria-live="polite" className="min-h-[1rem]">
-              {error && (
-                <motion.p
-                  className="text-rose-600 text-sm text-center"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+              <div className="space-y-2">
+                <label
+                  htmlFor="email"
+                  className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted"
                 >
-                  {error}
-                </motion.p>
-              )}
-            </div>
+                  Email
+                </label>
+                <InputField
+                  id="email"
+                  type="email"
+                  placeholder="seuemail@exemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  inputMode="email"
+                />
+              </div>
 
-            {/* Actions */}
-            <div className="pt-1 space-y-4">
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className={[
-                  'w-full h-11 rounded-2xl font-semibold',
-                  'bg-gradient-to-b from-white/85 to-white/65',
-                  'border border-white/80 ring-1 ring-slate-900/5',
-                  'text-slate-900 shadow-[0_10px_28px_rgba(2,6,23,0.12)]',
-                  'disabled:opacity-50 hover:to-white/75 active:translate-y-[0.5px]',
-                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
-                ].join(' ')}
-              >
-                {loading ? 'Entrando…' : 'Entrar'}
-              </button>
+              <div className="space-y-2">
+                <label
+                  htmlFor="password"
+                  className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted"
+                >
+                  Senha
+                </label>
+                <div className="relative">
+                  <InputField
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    className="pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute inset-y-0 right-2 flex items-center rounded-full px-2 text-muted transition-colors duration-200 ease-out hover:text-[color:var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(59,130,246,0.24)]"
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => navigate('/register')}
-                disabled={loading}
-                className={[
-                  'w-full h-11 rounded-2xl font-semibold',
-                  'bg-white/70 backdrop-blur-xl',
-                  'border border-white/80 ring-1 ring-slate-900/5',
-                  'text-slate-900 shadow-[0_10px_28px_rgba(2,6,23,0.10)]',
-                  'hover:bg-white/80 active:translate-y-[0.5px]',
-                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
-                ].join(' ')}
-              >
-                Criar perfil
-              </button>
+              <div role="status" aria-live="polite" className="min-h-[1.25rem] text-center">
+                {error && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-sm font-medium text-rose-500"
+                  >
+                    {error}
+                  </motion.p>
+                )}
+              </div>
 
-              <Divider />
+              <div className="space-y-4 pt-2">
+                <GlassButton
+                  type="submit"
+                  disabled={!canSubmit}
+                  className="h-12 w-full justify-center text-base"
+                >
+                  {loading ? 'Entrando…' : 'Entrar'}
+                </GlassButton>
 
-              <button
-                type="button"
-                onClick={() => setIsTourActive(true)}
-                disabled={loading}
-                className={[
-                  'w-full h-11 rounded-2xl font-semibold',
-                  'bg-white/70 backdrop-blur-xl',
-                  'border border-white/80 ring-1 ring-slate-900/5',
-                  'text-slate-900 shadow-[0_10px_28px_rgba(2,6,23,0.10)]',
-                  'hover:bg-white/80 active:translate-y-[0.5px]',
-                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
-                ].join(' ')}
-              >
-                Iniciar Tour
-              </button>
-            </div>
-          </form>
-        </motion.div>
+                <GlassButton
+                  type="button"
+                  variant="subtle"
+                  disabled={loading}
+                  onClick={() => navigate('/register')}
+                  className="h-12 w-full justify-center text-base"
+                >
+                  Criar perfil
+                </GlassButton>
+
+                <Divider />
+
+                <GlassButton
+                  type="button"
+                  variant="subtle"
+                  disabled={loading}
+                  onClick={() => setIsTourActive(true)}
+                  className="h-12 w-full justify-center text-base"
+                >
+                  Fazer tour guiado
+                </GlassButton>
+              </div>
+            </form>
+          </SurfaceCard>
+        </motion.section>
       </div>
     </PhoneFrame>
   );

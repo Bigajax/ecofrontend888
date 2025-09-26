@@ -1,90 +1,66 @@
-import React from "react";
-import ReactMarkdown from "react-markdown";
-import TypingDots from "../components/TypingDots"; // ⬅️ importe o componente
-import { Message } from "../contexts/ChatContext";
+import React, { memo, useMemo } from 'react';
+import clsx from 'clsx';
+import ReactMarkdown from 'react-markdown';
 
-interface ChatMessageProps {
+import TypingDots from './TypingDots';
+import { Message } from '../contexts/ChatContext';
+
+type ChatMessageProps = {
   message: Message;
   isEcoTyping?: boolean;
-}
+};
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
-  const isUser = message.sender === "user";
-  const showTyping = !!isEcoTyping && !isUser;
+const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
+  const isUser = message.sender === 'user';
+  const showTyping = Boolean(isEcoTyping && !isUser);
 
-  const text = showTyping ? "" : String(message.text ?? message.content ?? "").trim();
-
-  // Balão: mede pela largura do conteúdo, com mínimo em ch para não “afinar”
-  const bubbleClass = [
-    isUser ? "message-user rounded-br-xl" : "message-eco rounded-bl-xl",
-    "chat-bubble-base",
-    "w-fit",
-    "min-w-[10ch] sm:min-w-[12ch]",
-    "max-w-[82%] md:max-w-[70%]",
-    "break-words whitespace-pre-wrap",
-    "select-text",
-  ].join(" ");
+  const content = useMemo(() => {
+    if (showTyping) return '';
+    const raw = (message.text ?? message.content ?? '') as string;
+    const fragments = Array.isArray((message as any).fragments)
+      ? (message as any).fragments.join('')
+      : '';
+    const joined = `${fragments}${raw}`;
+    return joined.trim();
+  }, [message, showTyping]);
 
   if (showTyping) {
     return (
-      <div
-        className={`w-full flex ${isUser ? "justify-end" : "justify-start"} min-w-0 mb-1 sm:mb-2`}
-        role="status"
-        aria-live="polite"
-        aria-label="ECO está digitando…"
-      >
-        {/* Bolha de digitação no estilo Apple-like (vidro suave) */}
-        <div
-          className={[
-            "message-eco",
-            "w-fit max-w-[70%]",
-            "px-3 py-2 rounded-2xl",
-            "bg-white/65 dark:bg-white/10 backdrop-blur-md",
-            "border border-white/40 dark:border-white/15",
-            "shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_24px_rgba(0,0,0,0.06)]",
-          ].join(" ")}
-        >
-          {/* variante inline fica perfeita “dentro” da bolha */}
-          <TypingDots variant="inline" size="md" />
-        </div>
+      <div className="typing-bubble" role="status" aria-live="polite" aria-label="ECO está digitando…">
+        <TypingDots variant="inline" size="md" />
       </div>
     );
   }
 
   return (
     <div
-      className={`w-full flex ${isUser ? "justify-end" : "justify-start"} min-w-0 mb-1 sm:mb-2`}
+      className={clsx('message-bubble message-markdown', isUser ? 'justify-self-end' : 'justify-self-start')}
+      data-role={isUser ? 'user' : 'eco'}
       role="listitem"
-      aria-live="polite"
-      aria-atomic="false"
+      dir="auto"
     >
-      <div className={bubbleClass} dir="auto">
-        {text ? (
-          <div className="font-sans text-[14px] sm:text-sm md:text-base leading-relaxed">
-            <div
-              className="prose prose-sm sm:prose-base max-w-none font-sans
-                         prose-p:my-1.5 sm:prose-p:my-2 prose-li:my-0.5
-                         prose-strong:font-semibold prose-em:italic
-                         prose-headings:font-semibold prose-headings:text-[1em] prose-headings:leading-snug
-                         prose-a:underline prose-a:break-words
-                         prose-pre:bg-gray-50/70 prose-pre:border prose-pre:border-gray-200/60 prose-pre:rounded-xl prose-pre:p-3
-                         prose-code:before:content-[''] prose-code:after:content-['']"
-            >
-              <ReactMarkdown
-                components={{
-                  p: ({ node, ...props }) => <p className="m-0 mb-2 last:mb-0" {...props} />,
-                }}
-              >
-                {text}
-              </ReactMarkdown>
-            </div>
-          </div>
-        ) : (
-          <span>&nbsp;</span>
-        )}
-      </div>
+      {content ? (
+        <ReactMarkdown
+          className="prose prose-sm sm:prose-base max-w-none font-sans leading-relaxed text-[0.96rem]"
+          components={{
+            p: ({ node, ...props }) => <p className="my-2 first:mt-0 last:mb-0" {...props} />,
+            strong: ({ node, ...props }) => <strong className="font-semibold" {...props} />,
+            em: ({ node, ...props }) => <em className="italic" {...props} />,
+            ul: ({ node, ...props }) => <ul className="my-2 ml-4 list-disc space-y-1" {...props} />,
+            ol: ({ node, ...props }) => <ol className="my-2 ml-4 list-decimal space-y-1" {...props} />,
+            li: ({ node, ...props }) => <li className="leading-relaxed" {...props} />,
+            a: ({ node, ...props }) => (
+              <a className="underline underline-offset-2" target="_blank" rel="noreferrer" {...props} />
+            ),
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      ) : (
+        <span aria-hidden>&nbsp;</span>
+      )}
     </div>
   );
 };
 
-export default ChatMessage;
+export default memo(ChatMessageComponent);
