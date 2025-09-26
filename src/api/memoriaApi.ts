@@ -1,5 +1,4 @@
-/* src/api/memoriaApi.ts
-   — funções de acesso ao backend de memórias — */
+/* src/api/memoriaApi.ts — funções de acesso ao backend de memórias */
 
 import axios, { AxiosError } from 'axios';
 import api from './axios';
@@ -31,7 +30,9 @@ export interface MemoriaSimilar {
   resumo_eco: string;
   created_at?: string | null;
   tags?: string[];
-  similaridade: number;
+  /** 0–1 (normalizado). Mantemos similaridade para compat. */
+  similarity: number;
+  similaridade?: number;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -66,7 +67,10 @@ function normalizeMemoria(raw: any): Memoria {
     resumo_eco: String(raw?.resumo_eco ?? raw?.analise_resumo ?? ''),
     created_at: raw?.created_at ?? null,
     emocao_principal: raw?.emocao_principal ?? null,
-    intensidade: typeof raw?.intensidade === 'number' ? raw.intensidade : raw?.intensity ?? null,
+    intensidade:
+      typeof raw?.intensidade === 'number'
+        ? raw.intensidade
+        : (typeof raw?.intensity === 'number' ? raw.intensity : null),
     contexto: raw?.contexto ?? null,
     dominio_vida: raw?.dominio_vida ?? raw?.dominio ?? raw?.domain ?? null,
     padrao_comportamental: padrao,
@@ -94,7 +98,6 @@ function pickArray<T = any>(d: any, keys: string[] = []): T[] | null {
     const v = d?.[k];
     if (Array.isArray(v)) return v as T[];
   }
-  // alguns backends retornam { data: { data: [...] } }
   if (Array.isArray(d?.data?.data)) return d.data.data as T[];
   if (Array.isArray(d?.data)) return d.data as T[];
   return null;
@@ -107,6 +110,27 @@ function serializeTagsAndLimit(tags: string[], limite: number): string {
   params.set('limite', String(limite));
   params.set('limit', String(limite)); // compat
   return params.toString();
+}
+
+/** Normaliza campo de similaridade: aceita similarity/similaridade/score/distancia */
+function normalizeSimilarity(raw: any): number {
+  // tentamos 0–1 primeiro
+  let s =
+    raw?.similarity ??
+    raw?.similaridade ??
+    raw?.score ??
+    null;
+
+  if (s == null && typeof raw?.distancia === 'number') {
+    // alguns backends retornam distância (quanto menor melhor). Converte para ~similaridade.
+    const d = raw.distancia;
+    s = d <= 0 ? 1 : 1 / (1 + d);
+  }
+
+  const n = Number(s);
+  if (!Number.isFinite(n)) return 0;
+  // se veio >1 (p.ex. score cosine * 100), normaliza para 0–1
+  return n > 1 ? Math.min(1, n / 100) : Math.max(0, n);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -139,7 +163,7 @@ function tratarErro(err: unknown, acao: string): never {
 /* -------------------------------------------------------------------------- */
 export const memoriaEhSalva = (m: Partial<Memoria>) => {
   const v: any = m?.salvar_memoria;
-  if (v === undefined || v === null) return true; // sem flag -> considera salva
+  if (v === undefined || v === null) return true;
   if (typeof v === 'string') return v.toLowerCase() === 'true' || v === '1';
   if (typeof v === 'number') return v === 1;
   return !!v;
@@ -176,9 +200,6 @@ async function postWithFallback(pathA: string, pathB: string | null, body?: any,
 
 /**
  * 🔍 Busca as últimas memórias do usuário que possuam *alguma* das tags pedidas.
- * Backend aceito:
- *   GET /memorias?tags=...&tags=...&limite=5 (ou limit=5)
- * Fallback: /memories
  */
 export async function buscarUltimasMemoriasComTags(
   userId: string,
@@ -214,9 +235,7 @@ export async function buscarUltimasMemoriasComTags(
 }
 
 /**
- * 📥 Busca todas as memórias do usuário (RLS via JWT; `usuario_id` é opcional).
- * Backend: GET /memorias?usuario_id=...
- * Fallback: /memories
+ * 📥 Lista todas as memórias do usuário (RLS via JWT; `usuario_id` é opcional).
  */
 export async function buscarMemoriasPorUsuario(userId?: string): Promise<Memoria[]> {
   try {
@@ -243,36 +262,60 @@ export async function buscarMemoriasPorUsuario(userId?: string): Promise<Memoria
 }
 
 /**
- * 🧠 Busca memórias semanticamente parecidas com um texto.
- * Backend: POST /memorias/similares
- * Fallback: /memories/similar
- * Aceita payload { texto, limite } OU { query, limit } (ambos enviados).
+ * 🧠 v2 preferencial — memórias semanticamente parecidas (suporta k/threshold/usuario_id).
+ * Tenta /memorias/similares_v2 e cai para v1 se necessário.
  */
-export async function buscarMemoriasSimilares(
+export async function buscarMemoriasSemelhantesV2(
   texto: string,
-  limite = 3
+  {
+    k = 3,
+    threshold = 0.12,
+    usuario_id,
+  }: { k?: number; threshold?: number; usuario_id?: string } = {}
 ): Promise<MemoriaSimilar[]> {
   try {
-    const body = {
-      texto,
-      query: texto,    // compat
-      limite,
-      limit: limite,   // compat
-    };
+    // tenta v2
+    try {
+      const bodyV2 = { texto, query: texto, k, limit: k, limite: k, threshold, usuario_id };
+      const { data } = await postWithFallback('/memorias/similares_v2', '/memories/similar_v2', bodyV2, { timeout: 12000 });
+      const raw = pickArray<any>(data) ?? [];
+      if (raw.length) {
+        return raw.map((r) => {
+          const n = normalizeMemoria(r);
+          const sim = normalizeSimilarity(r);
+          return {
+            id: n.id,
+            contexto: n.contexto ?? '',
+            resumo_eco: n.resumo_eco ?? '',
+            created_at: n.created_at ?? null,
+            tags: n.tags ?? [],
+            similarity: sim,
+            similaridade: sim, // compat
+          };
+        });
+      }
+      if (isSuccessPayload(data)) return [];
+    } catch (e) {
+      // se não existir, cai para v1
+      if (!isFallbackStatus(e)) throw e;
+    }
 
-    const { data } = await postWithFallback('/memorias/similares', '/memories/similar', body, { timeout: 12000 });
-
+    // v1 (compat)
+    const bodyV1 = { texto, query: texto, limite: k, limit: k };
+    const { data } = await postWithFallback('/memorias/similares', '/memories/similar', bodyV1, { timeout: 12000 });
     const raw = pickArray<any>(data) ?? [];
     if (raw.length) {
       return raw.map((r) => {
         const n = normalizeMemoria(r);
+        const sim = normalizeSimilarity(r);
         return {
           id: n.id,
           contexto: n.contexto ?? '',
           resumo_eco: n.resumo_eco ?? '',
           created_at: n.created_at ?? null,
           tags: n.tags ?? [],
-          similaridade: Number(r?.similaridade ?? r?.score ?? 0),
+          similarity: sim,
+          similaridade: sim,
         };
       });
     }
@@ -287,15 +330,13 @@ export async function buscarMemoriasSimilares(
 
 /**
  * 📄 Lista básica para gráficos locais (campos mínimos).
- * Usa GET /memorias (fallback /memories) e solicita apenas campos essenciais se o backend suportar.
  */
 export async function listarMemoriasBasico(limit = 500): Promise<Memoria[]> {
   try {
     const { data } = await getWithFallback('/memorias', '/memories', {
       params: {
         limit,
-        limite: limit, // compat
-        // se o backend aceitar, economiza payload:
+        limite: limit,
         fields: 'id,created_at,emocao_principal,tags,categoria,dominio_vida,resumo_eco',
       },
       timeout: 12000,

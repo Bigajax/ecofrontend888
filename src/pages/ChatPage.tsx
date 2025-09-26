@@ -15,7 +15,7 @@ import QuickSuggestions, { Suggestion } from '../components/QuickSuggestions';
 import TypingDots from '../components/TypingDots';
 
 import { enviarMensagemParaEco } from '../api/ecoApi';
-import { buscarUltimasMemoriasComTags, buscarMemoriasSimilares } from '../api/memoriaApi';
+import { buscarUltimasMemoriasComTags, buscarMemoriasSemelhantesV2 } from '../api/memoriaApi';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
@@ -223,10 +223,12 @@ const ChatPage: React.FC = () => {
 
       const tags = extrairTagsRelevantes(trimmed);
       const [similar, porTag] = await Promise.all([
-        buscarMemoriasSimilares(trimmed, 2).catch(() => []),
+        // ⇩ usa v2 com k/threshold/usuario_id
+        buscarMemoriasSemelhantesV2(trimmed, { k: 3, threshold: 0.12, usuario_id: userId! }).catch(() => []),
         tags.length ? buscarUltimasMemoriasComTags(userId!, tags, 2).catch(() => []) : Promise.resolve([]),
       ]);
 
+      // mescla e deduplica (por id ou hash simples de data+resumo)
       const vistos = new Set<string>();
       const mems = [...(similar || []), ...(porTag || [])].filter((m: any) => {
         const key = m.id || `${m.created_at}-${m.resumo_eco}`;
@@ -239,7 +241,9 @@ const ChatPage: React.FC = () => {
         .map((m: any) => {
           const data = new Date(m.created_at || '').toLocaleDateString();
           const tgs = m.tags?.length ? ` [tags: ${m.tags.join(', ')}]` : '';
-          return `(${data}) ${m.resumo_eco}${tgs}`;
+          // inclui similaridade quando disponível (0–1 → %)
+          const sim = typeof m.similarity === 'number' ? ` ~${Math.round(m.similarity * 100)}%` : '';
+          return `(${data}) ${m.resumo_eco}${tgs}${sim}`;
         })
         .join('\n');
 
@@ -251,6 +255,7 @@ const ChatPage: React.FC = () => {
       if (retorno) preSistema.push({ role: 'system', content: retorno });
       if (ctxMems) preSistema.push({ role: 'system', content: `Memórias recentes relevantes:\n${ctxMems}` });
 
+      // reduz histórico enviado (mantém comportamento estável)
       const janelaHistorico = baseHistory.slice(-3);
 
       const mensagensComContexto = [
