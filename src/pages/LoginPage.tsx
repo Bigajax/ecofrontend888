@@ -174,7 +174,9 @@ const LoginPage: React.FC = () => {
   return (
     <PhoneFrame>
       {/* fundo leve para evidenciar o glass */}
-      <div className="flex h-full items-center justify-center px-6 py-10 bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div
+        className="flex h-full items-center justify-center px-6 py-10 bg-[radial-gradient(120%_160%_at_50%_0%,#d0dcff_0%,#e6d1ff_45%,#f9f1ff_100%)]"
+      >
         {isTourActive && <TourInicial onClose={closeTour} onFinish={closeTour} />}
 
         <motion.div
@@ -184,9 +186,9 @@ const LoginPage: React.FC = () => {
           className={[
             // GLASSMORPHISM CARD 💎 (mais marcado)
             'w-full max-w-sm rounded-[28px] p-8 md:p-10',
-            'bg-white/35 backdrop-blur-2xl',
-            'border border-white/70 ring-1 ring-slate-900/10',
-            'shadow-[0_24px_80px_rgba(2,6,23,0.18)]',
+            'bg-white/45 backdrop-blur-2xl',
+            'border border-white/90 ring-1 ring-[#aab8ff]/40',
+            'shadow-[0_32px_90px_rgba(99,102,241,0.35)]',
           ].join(' ')}
         >
           {/* Header */}
