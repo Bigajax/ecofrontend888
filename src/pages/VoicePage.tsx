@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { sendVoiceMessage } from "../api/voiceApi";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
+import EcoBubbleOneEye from "../components/EcoBubbleOneEye";
 
 /** Mude para false quando quiser liberar a gravação */
 const UNDER_CONSTRUCTION = true;
@@ -18,6 +19,9 @@ const VoicePage: React.FC = () => {
   const ecoAudioURLRef = useRef<string | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const bubbleState: 'idle' | 'listening' | 'speaking' | 'thinking' | 'focus' =
+    isProcessing ? 'thinking' : isListening ? 'listening' : ecoAudioURL ? 'speaking' : 'focus';
 
   const navigate = useNavigate();
   const goToMemoryPage = () => navigate("/memory");
@@ -142,33 +146,15 @@ const VoicePage: React.FC = () => {
         </span>
       </div>
 
-      {/* Orb central com anéis — estilo Apple */}
-      <div className="mt-10 mb-10 relative">
-        {/* anel externo suave */}
-        <motion.div
-          className="absolute inset-[-28px] rounded-full bg-white/30 blur-2xl"
-          animate={{ opacity: [0.5, 0.9, 0.5] }}
-          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-        />
-        {/* orb */}
-        <motion.div
-          className="
-            relative w-[260px] h-[260px] rounded-full
-            bg-white/65 backdrop-blur-xl
-            border border-white/60
-            shadow-[0_40px_70px_-20px_rgba(16,24,40,0.15),inset_0_1px_0_rgba(255,255,255,0.9)]
-          "
-          initial={{ scale: 0.96, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        />
-        {/* ring pulsante */}
-        <motion.div
-          className="absolute inset-0 rounded-full ring-2 ring-white/60"
-          animate={{ scale: [1, 1.08, 1], opacity: [0.7, 0.25, 0.7] }}
-          transition={{ duration: 2.4, repeat: Infinity }}
-        />
-      </div>
+      {/* Eco bolha unificada */}
+      <motion.div
+        className="mt-10 mb-10 relative flex items-center justify-center"
+        initial={{ scale: 0.96, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        <EcoBubbleOneEye variant="voice" state={bubbleState} />
+      </motion.div>
 
       {/* Mensagem/erro sutil */}
       {error && (

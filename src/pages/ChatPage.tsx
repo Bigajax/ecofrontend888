@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
-import EcoBubbleIcon from '../components/EcoBubbleIcon';
+import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
 import EcoMessageWithAudio from '../components/EcoMessageWithAudio';
 import QuickSuggestions, { Suggestion } from '../components/QuickSuggestions';
 import TypingDots from '../components/TypingDots';
@@ -355,35 +355,25 @@ const ChatPage: React.FC = () => {
 
           <div className="w-full space-y-3 md:space-y-4">
             {messages.map((m) => (
-              <div
-                key={m.id}
-                className="grid grid-cols-[auto,1fr] items-start gap-3 min-w-0 md:grid-cols-[32px,1fr,32px]"
-              >
-                {/* ESQ: avatar só quando ECO */}
-                <div className="pt-1.5">
-                  {m.sender === 'eco' ? <EcoBubbleIcon /> : <div className="hidden h-[28px] w-[28px] md:block" />}
-                </div>
-
-                <div
-                  className={`min-w-0 max-w-full ${
-                    m.sender === 'user' ? 'justify-self-end' : 'justify-self-start'
-                  }`}
-                >
-                  {m.sender === 'eco' ? <EcoMessageWithAudio message={m as any} /> : <ChatMessage message={m} />}
-                </div>
-
-                {/* DIR: placeholder (evita “bolinha” fantasma) */}
-                <div className="hidden pt-1.5 md:block">
-                  <div className="h-[28px] w-[28px]" />
-                </div>
+              <div key={m.id} className="w-full">
+                {m.sender === 'eco' ? (
+                  <EcoMessageWithAudio message={m as any} />
+                ) : (
+                  <ChatMessage message={m} />
+                )}
               </div>
             ))}
 
             {digitando && (
-              <div className="grid grid-cols-[auto,1fr] items-start gap-3 min-w-0 md:grid-cols-[32px,1fr,32px]">
-                <div className="pt-1.5"><EcoBubbleIcon /></div>
-                <div className="min-w-0 max-w-full justify-self-start"><TypingDots /></div>
-                <div className="hidden pt-1.5 md:block"><div className="h-[28px] w-[28px]" /></div>
+              <div className="w-full flex justify-start">
+                <div className="max-w-3xl w-full min-w-0 flex items-start gap-3">
+                  <div className="flex-shrink-0 translate-y-[2px]">
+                    <EcoBubbleOneEye variant="message" state="thinking" size={30} />
+                  </div>
+                  <div className="min-w-0">
+                    <TypingDots variant="bubble" size="md" />
+                  </div>
+                </div>
               </div>
             )}
 

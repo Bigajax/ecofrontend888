@@ -6,7 +6,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import PhoneFrame from '../components/PhoneFrame';
 import { useAuth } from '../contexts/AuthContext';
 import TourInicial from '../components/TourInicial';
-import EcoBubbleIcon from '../components/EcoBubbleIcon';
+import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
 import { supabase } from '@/lib/supabase';
 
 /* Divisor com traço mais marcado */
@@ -198,7 +198,7 @@ const LoginPage: React.FC = () => {
             <div className="w-full flex justify-center">
               {/* Pílula mais “Apple” e com traço forte */}
               <span className="inline-flex items-center gap-2 rounded-full pl-2.5 pr-3 py-1.5 bg-white/75 backdrop-blur-xl border border-white/80 ring-1 ring-slate-900/5 shadow-[0_8px_24px_rgba(2,6,23,0.12)]">
-                <EcoBubbleIcon size={14} className="shrink-0" />
+                <span className="shrink-0 inline-flex"><EcoBubbleOneEye variant="icon" size={16} state="focus" /></span>
                 <span className="text-[14px] md:text-[15px] leading-none font-semibold text-slate-800">
                   Autoconhecimento guiado
                 </span>
