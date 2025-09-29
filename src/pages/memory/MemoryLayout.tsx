@@ -15,8 +15,12 @@ const MemoryLayout: React.FC = () => {
     memories: [],
     perfil: null,
     relatorio: null,
-    loading: true,
-    error: null,
+    memoriesLoading: true,
+    perfilLoading: true,
+    relatorioLoading: true,
+    memoriesError: null,
+    perfilError: null,
+    relatorioError: null,
   });
 
   useEffect(() => {
@@ -24,45 +28,100 @@ const MemoryLayout: React.FC = () => {
 
     const load = async () => {
       if (!userId) {
-        setState((s) => ({ ...s, loading: true, error: null }));
-        return;
-      }
-
-      setState((s) => ({ ...s, loading: true, error: null }));
-
-      const results = await Promise.allSettled([
-        buscarMemoriasPorUsuario(userId),
-        buscarPerfilEmocional(userId),
-        buscarRelatorioEmocional(userId),
-      ]);
-
-      if (!alive) return;
-
-      const [memsRes, perfilRes, relRes] = results;
-
-      const memories =
-        memsRes.status === 'fulfilled'
-          ? memsRes.value.filter(
-              (m: any) => m?.salvar_memoria === true || m?.salvar_memoria === 'true'
-            )
-          : [];
-
-      const perfil = perfilRes.status === 'fulfilled' ? perfilRes.value : null;
-      const relatorio = relRes.status === 'fulfilled' ? relRes.value : null;
-
-      const allFailed = results.every((r) => r.status === 'rejected');
-
-      if (allFailed) {
         setState({
           memories: [],
           perfil: null,
           relatorio: null,
-          loading: false,
-          error: 'Erro ao carregar dados.',
+          memoriesLoading: true,
+          perfilLoading: true,
+          relatorioLoading: true,
+          memoriesError: null,
+          perfilError: null,
+          relatorioError: null,
         });
-      } else {
-        setState({ memories, perfil, relatorio, loading: false, error: null });
+        return;
       }
+
+      setState({
+        memories: [],
+        perfil: null,
+        relatorio: null,
+        memoriesLoading: true,
+        perfilLoading: true,
+        relatorioLoading: true,
+        memoriesError: null,
+        perfilError: null,
+        relatorioError: null,
+      });
+
+      const fetchMemories = async () => {
+        try {
+          const response = await buscarMemoriasPorUsuario(userId);
+          if (!alive) return;
+
+          const filtered = response.filter(
+            (m: any) => m?.salvar_memoria === true || m?.salvar_memoria === 'true'
+          );
+
+          setState((s) => ({
+            ...s,
+            memories: filtered,
+            memoriesLoading: false,
+          }));
+        } catch (err) {
+          if (!alive) return;
+          setState((s) => ({
+            ...s,
+            memories: [],
+            memoriesLoading: false,
+            memoriesError: 'Não foi possível carregar memórias.',
+          }));
+        }
+      };
+
+      const fetchPerfil = async () => {
+        try {
+          const response = await buscarPerfilEmocional(userId);
+          if (!alive) return;
+          setState((s) => ({
+            ...s,
+            perfil: response,
+            perfilLoading: false,
+          }));
+        } catch (err) {
+          if (!alive) return;
+          setState((s) => ({
+            ...s,
+            perfil: null,
+            perfilLoading: false,
+            perfilError: 'Não foi possível carregar o perfil emocional.',
+          }));
+        }
+      };
+
+      const fetchRelatorio = async () => {
+        try {
+          const response = await buscarRelatorioEmocional(userId);
+          if (!alive) return;
+          setState((s) => ({
+            ...s,
+            relatorio: response,
+            relatorioLoading: false,
+          }));
+        } catch (err) {
+          if (!alive) return;
+          setState((s) => ({
+            ...s,
+            relatorio: null,
+            relatorioLoading: false,
+            relatorioError: 'Não foi possível carregar o relatório emocional.',
+          }));
+        }
+      };
+
+      void fetchMemories();
+      void fetchPerfil();
+      void fetchRelatorio();
     };
 
     load();
@@ -71,19 +130,35 @@ const MemoryLayout: React.FC = () => {
     };
   }, [userId]);
 
+  useEffect(() => {
+    void import('./ProfileSection');
+    void import('./ReportSection');
+  }, []);
+
   return (
     <MemoryDataContext.Provider value={state}>
       {/* Sem paddings de header/side aqui — o MainLayout já aplica.
           Mantemos a estrutura simples pra evitar “topo duplicado” em webviews */}
       <PhoneFrame className="flex flex-col h-full bg-white">
         <div className="flex-1 overflow-y-auto px-4 py-4 relative">
-          {state.error && (
-            <div className="mb-3 text-center text-xs text-rose-600">
-              {state.error}
-            </div>
-          )}
+          {(() => {
+            const messages = [
+              state.memoriesError,
+              state.perfilError,
+              state.relatorioError,
+            ].filter(Boolean) as string[];
+            const uniqueMessages = Array.from(new Set(messages));
+            if (!uniqueMessages.length) return null;
+            return (
+              <div className="mb-3 space-y-1 text-center text-xs text-rose-600">
+                {uniqueMessages.map((message, index) => (
+                  <div key={`${message}-${index}`}>{message}</div>
+                ))}
+              </div>
+            );
+          })()}
 
-          {state.loading ? (
+          {state.memoriesLoading && state.perfilLoading && state.relatorioLoading ? (
             <div className="h-[calc(100%-0px)] min-h-[320px] flex items-center justify-center">
               <EcoBubbleLoading size={120} text="Carregando dados..." />
             </div>

@@ -6,16 +6,24 @@ export type MemoryData = {
   memories: Memoria[];
   perfil: any | null;
   relatorio: RelatorioEmocional | null;
-  loading: boolean;
-  error: string | null;
+  memoriesLoading: boolean;
+  perfilLoading: boolean;
+  relatorioLoading: boolean;
+  memoriesError: string | null;
+  perfilError: string | null;
+  relatorioError: string | null;
 };
 
 const defaultValue: MemoryData = {
   memories: [],
   perfil: null,
   relatorio: null,
-  loading: true,
-  error: null,
+  memoriesLoading: true,
+  perfilLoading: true,
+  relatorioLoading: true,
+  memoriesError: null,
+  perfilError: null,
+  relatorioError: null,
 };
 
 export const MemoryDataContext = createContext<MemoryData>(defaultValue);

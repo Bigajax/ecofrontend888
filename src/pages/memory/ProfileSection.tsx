@@ -147,7 +147,14 @@ const SegmentedControl: FC<{ value: Period; onChange: (p: Period)=>void }> = ({ 
 
 /* ---------- componente ---------- */
 const ProfileSection: FC = () => {
-  const { perfil, memories, loading, error } = useMemoryData();
+  const {
+    perfil,
+    memories,
+    perfilLoading,
+    memoriesLoading,
+    perfilError,
+    memoriesError,
+  } = useMemoryData();
   const [memLocal, setMemLocal] = useState<Memoria[] | null>(null);
   const [fetchingLocal, setFetchingLocal] = useState(false);
   const [period, setPeriod] = useState<Period>(7);
@@ -229,14 +236,22 @@ const ProfileSection: FC = () => {
       )}
 
       <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-10">
-        {(loading || fetchingLocal) && (
+        {(perfilLoading || memoriesLoading || fetchingLocal) && (
           <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-10 grid place-items-center">
             <EcoBubbleLoading size={72} text="Carregando…" />
           </div>
         )}
-        {error && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 text-sm">{error}</div>
-        )}
+        {(() => {
+          const messages = [perfilError, memoriesError].filter(Boolean) as string[];
+          if (!messages.length) return null;
+          return (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 text-sm space-y-1">
+              {messages.map((message, index) => (
+                <div key={`${message}-${index}`}>{message}</div>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* CARD 1 — Resumo */}
         <Card title="Resumo" id="resumo">

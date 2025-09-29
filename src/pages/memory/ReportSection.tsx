@@ -117,7 +117,7 @@ const QuadrantLegend = () => (
 /* ---------- Main ---------- */
 
 const ReportSection: React.FC = () => {
-  const { relatorio, loading, error } = useMemoryData();
+  const { relatorio, relatorioLoading, relatorioError } = useMemoryData();
   const [heatmapRange, setHeatmapRange] = useState<30 | 90 | 180 | undefined>(30);
 
   const mapaEmocional2D = useMemo(() => {
@@ -143,7 +143,7 @@ const ReportSection: React.FC = () => {
       );
   }, [relatorio]);
 
-  if (loading) {
+  if (relatorioLoading) {
     return (
       <section className="space-y-4 max-h-[82vh] overflow-y-auto pr-1">
         <div className="sticky top-0 z-20 -mx-1 px-1 py-2 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-neutral-100">
@@ -169,10 +169,10 @@ const ReportSection: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (relatorioError) {
     return (
       <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700 text-sm">
-        {error}
+        {relatorioError}
       </div>
     );
   }

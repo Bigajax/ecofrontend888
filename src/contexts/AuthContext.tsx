@@ -1,6 +1,7 @@
 // src/contexts/AuthContext.tsx
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { ensureProfile } from '../lib/ensureProfile';
 import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -10,6 +11,7 @@ interface AuthContextType {
   userId?: string;
   userName?: string;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   register: (email: string, password: string, nome: string, telefone: string) => Promise<void>;
 }
@@ -67,6 +69,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      if (session?.user) {
+        ensureProfile(session.user).catch((err) =>
+          console.error('Erro ao garantir perfil durante getSession:', err),
+        );
+      }
     };
 
     getSession();
@@ -80,6 +88,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Se o logout ocorrer em outra aba/expirar, garantimos a limpeza local
         if (event === 'SIGNED_OUT') {
           clearClientState();
+          return;
+        }
+
+        if (event === 'SIGNED_IN') {
+          supabase.auth
+            .getUser()
+            .then(({ data }) => ensureProfile(data.user).catch((err) => {
+              console.error('Erro ao garantir perfil após OAuth:', err);
+            }))
+            .catch((err) => {
+              console.error('Erro ao obter usuário após OAuth:', err);
+            });
+        } else if (session?.user) {
+          ensureProfile(session.user).catch((err) =>
+            console.error('Erro ao garantir perfil após mudança de sessão:', err),
+          );
         }
       }
     );
@@ -97,6 +121,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    try {
+      const envAppUrl = import.meta.env.VITE_APP_URL;
+      const fallbackOrigin =
+        typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
+      const baseUrl = (envAppUrl || fallbackOrigin).replace(/\/+$/, '');
+
+      if (!baseUrl) {
+        throw new Error('URL de redirecionamento inválida. Configure VITE_APP_URL.');
+      }
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${baseUrl}/app` },
+      });
+
+      if (error) throw error;
+    } catch (err) {
+      setLoading(false);
+      throw err;
     }
   };
 
@@ -150,6 +198,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         userId: user?.id,
         userName: user?.user_metadata?.full_name || user?.user_metadata?.name,
         signIn,
+        signInWithGoogle,
         signOut,
         register,
       }}
