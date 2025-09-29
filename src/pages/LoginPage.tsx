@@ -133,10 +133,17 @@ const LoginPage: React.FC = () => {
     setForgotLoading(true);
 
     try {
+      const envAppUrl = import.meta.env.VITE_APP_URL;
+      const fallbackOrigin =
+        typeof window !== 'undefined' && window.location?.origin
+          ? window.location.origin
+          : '';
+      const baseUrl = (envAppUrl || fallbackOrigin).replace(/\/+$/, '');
+
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         trimmedEmail,
         {
-          redirectTo: `${import.meta.env.VITE_APP_URL}/reset-senha`,
+          redirectTo: `${baseUrl}/reset-senha`,
         },
       );
 
