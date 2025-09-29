@@ -14,7 +14,6 @@ type QuickSuggestionsProps = {
   visible: boolean;
   className?: string;
 
-  /** Preferencial — recebe objetos ricos */
   suggestions?: Suggestion[];
   onPickSuggestion?: (s: Suggestion) => void;
 
@@ -27,95 +26,83 @@ type QuickSuggestionsProps = {
   rotationMs?: number;             // default: 4500ms
 };
 
-/* --------- Pílulas padrão (Kahneman / Tolle / Brené / Estoicos) --------- */
+/* --------- Pílulas fixas (as 5 que você definiu) --------- */
 export const DEFAULT_SUGGESTIONS: Suggestion[] = [
   {
-    id: "bias_check",
-    icon: "🧠",
-    label: "Checar meus vieses de hoje",
+    id: "memories_review",
+    icon: "🔄",
+    label: "Revisitar um momento marcante",
+    modules: ["eco_memoria_revisitar_passado", "eco_observador_presente", "eco_corpo_emocao"],
+    systemHint:
+      "Puxe 1–3 memórias relevantes (intensidade ≥ 7 e proximidade semântica). " +
+      "Espelhe padrões e proponha 1 micro-ação integrada ao presente.",
+  },
+  {
+    id: "bias_today",
+    icon: "🧩",
+    label: "Onde posso estar me enganando hoje?",
     modules: [
       "eco_heuristica_ancoragem",
       "eco_heuristica_disponibilidade",
-      "eco_heuristica_regressao_media",
       "eco_heuristica_excesso_confianca",
+      "eco_heuristica_ilusao_validade",
+      "eco_heuristica_regressao_media",
     ],
     systemHint:
-      "Contexto: usuário quer revisar possíveis vieses cognitivos nas percepções do dia. " +
-      "Abordagem: explique cada viés de forma simples, faça 1 pergunta prática e proponha 1 micro-checagem.",
+      "Explique vieses de forma simples. Faça 1 pergunta diagnóstica e proponha 1 reframe prático.",
   },
   {
-    id: "presence_now",
-    icon: "🌿",
-    label: "Praticar presença (3 min)",
-    modules: ["eco_observador_presente", "eco_presenca_silenciosa", "eco_corpo_emocao"],
-    systemHint:
-      "Conduza um exercício de presença curto (3 minutos). Passo-a-passo, tom calmo e concreto. " +
-      "Convide a notar corpo, respiração e um pensamento; finalize com 1 insight simples.",
-  },
-  {
-    id: "vulnerability",
-    icon: "🫶",
-    label: "Coragem & vulnerabilidade",
-    modules: ["eco_vulnerabilidade_defesas", "eco_vulnerabilidade_mitos", "eco_emo_vergonha_combate"],
-    systemHint:
-      "Traga a perspectiva de Brené Brown: diferença entre vulnerabilidade e exposição. " +
-      "Ajude a identificar 1 defesa ativa e ofereça 1 gesto prático de coragem.",
-  },
-  {
-    id: "stoic_reflection",
-    icon: "🏛️",
-    label: "Reflexão estoica do dia",
+    id: "stoic_reflection_now",
+    icon: "🪞",
+    label: "Quero ver um reflexo estoico agora",
     modules: ["eco_presenca_racional", "eco_identificacao_mente", "eco_fim_do_sofrimento"],
     systemHint:
-      "Use Marco Aurélio: distinguir o que depende de si. Conduza 3 perguntas: controle, julgamento, ação mínima.",
+      "Aplicação estoica: 3 perguntas — controle, julgamento, ação mínima. Tom direto e calmo.",
+  },
+  {
+    id: "courage_exposure",
+    icon: "💬",
+    label: "Quero coragem para me expor mais",
+    modules: ["eco_vulnerabilidade_defesas", "eco_vulnerabilidade_mitos", "eco_emo_vergonha_combate"],
+    systemHint:
+      "Traga Brené Brown: diferencie vulnerabilidade de exposição. Ajude a nomear 1 defesa ativa e 1 micro-ato de coragem.",
+  },
+  {
+    id: "strong_past_emotion",
+    icon: "🌊",
+    label: "Revisar uma emoção forte do passado",
+    modules: ["eco_memoria_revisitar_passado", "eco_observador_presente", "eco_corpo_emocao"],
+    systemHint:
+      "Resgate 1 memória intensa (≥ 7). Espelhe a emoção e proponha 1 nova interpretação prática.",
   },
 ];
 
-/* --------- Frases rotativas que já acionam módulos --------- */
+/* --------- Frases rotativas (3 perguntas diretas) --------- */
 export const DEFAULT_ROTATING: Suggestion[] = [
   {
-    id: "rot_presenca_scan",
-    icon: "🌬️",
-    label: "Vamos fazer um mini-scan de presença agora?",
-    modules: ["eco_observador_presente", "eco_presenca_silenciosa", "eco_corpo_emocao"],
+    id: "rot_memoria_pergunta",
+    icon: "🧭",
+    label: "Quer revisitar uma lembrança que ainda mexe com você?",
+    modules: ["eco_memoria_revisitar_passado", "eco_observador_presente", "eco_corpo_emocao"],
     systemHint:
-      "Conduza um body scan curto (2–3 minutos), com foco gentil em respiração, pontos de contato e 1 pensamento.",
+      "Convide o usuário a escolher uma memória marcante (priorize intensidade ≥ 7). " +
+      "Espelhe padrões, acolha a emoção e proponha 1 micro-ação no presente.",
   },
   {
-    id: "rot_kahneman_check",
-    icon: "🧩",
-    label: "Quero checar se caí em algum atalho mental hoje",
-    modules: [
-      "eco_heuristica_ancoragem",
-      "eco_heuristica_disponibilidade",
-      "eco_heuristica_excesso_confianca",
-    ],
-    systemHint:
-      "Explique cada heurística em linguagem simples, faça 1 pergunta diagnóstica e proponha 1 reframe.",
-  },
-  {
-    id: "rot_vulnerabilidade",
-    icon: "💗",
-    label: "Posso explorar coragem & vulnerabilidade em 1 situação",
-    modules: ["eco_vulnerabilidade_defesas", "eco_vulnerabilidade_mitos", "eco_emo_vergonha_combate"],
-    systemHint:
-      "Brené Brown: diferencie vulnerabilidade de exposição. Ajude a nomear 1 defesa e 1 micro-ato de coragem.",
-  },
-  {
-    id: "rot_estoico",
+    id: "rot_estoico_pergunta",
     icon: "🏛️",
-    label: "O que está sob meu controle hoje?",
-    modules: ["eco_presenca_racional", "eco_identificacao_mente", "eco_fim_do_sofrimento"],
+    label: "Prefere começar refletindo sobre o que realmente está no seu controle hoje?",
+    modules: ["eco_presenca_racional", "eco_identificacao_mente"],
     systemHint:
-      "Marco Aurélio: conduza 3 perguntas (controle/julgamento/ação mínima) e conclua com 1 compromisso simples.",
+      "Aplique estoicismo com 3 passos: o que depende de si, qual julgamento está ativo, qual a menor ação virtuosa agora.",
   },
   {
-    id: "rot_regressao_media",
-    icon: "📉",
-    label: "Talvez ontem foi exceção — quero revisar expectativas",
-    modules: ["eco_heuristica_regressao_media", "eco_heuristica_certeza_emocional"],
+    id: "rot_vieses_pergunta",
+    icon: "🔍",
+    label: "Topa explorar se algum viés pode estar influenciando sua visão agora?",
+    modules: ["eco_heuristica_excesso_confianca", "eco_heuristica_ancoragem", "eco_heuristica_regressao_media"],
     systemHint:
-      "Explique regressão à média em tom acessível. Convide a recalibrar expectativas e registrar 1 evidência concreta.",
+      "Faça 1 checklist curto de vieses comuns, proponha 1 checagem objetiva e 1 reframe prático.",
   },
 ];
 
@@ -154,7 +141,6 @@ export default function QuickSuggestions({
             onPick={emitPick}
             intervalMs={rotationMs}
             className="w-full"
-            // força a mesma tipografia no componente filho
             labelClassName={labelCls}
           />
         </div>

@@ -1,4 +1,4 @@
-/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */ 
 /*  ChatPage.tsx — scroll estável + sem bolinha fantasma + saudação alinhada  */
 /* -------------------------------------------------------------------------- */
 
@@ -36,13 +36,33 @@ const saudacaoDoDiaFromHour = (h: number) => {
   return 'Boa noite';
 };
 
-/* ====== Frases rotativas ====== */
+/* ====== Frases rotativas (3 perguntas diretas) ====== */
 const ROTATING_ITEMS: Suggestion[] = [
-  { id: 'rot_presenca_scan', icon: '🌬️', label: 'Vamos fazer um mini-scan de presença agora?', modules: ['eco_observador_presente', 'eco_presenca_silenciosa', 'eco_corpo_emocao'], systemHint: 'Conduza um body scan curto (2–3 minutos), com foco gentil em respiração, pontos de contato e 1 pensamento.' },
-  { id: 'rot_kahneman_check', icon: '🧩', label: 'Quero checar se caí em algum atalho mental hoje', modules: ['eco_heuristica_ancoragem','eco_heuristica_disponibilidade','eco_heuristica_excesso_confianca'], systemHint: 'Explique heurísticas em linguagem simples, faça 1 pergunta diagnóstica e proponha 1 reframe prático.' },
-  { id: 'rot_vulnerabilidade', icon: '💗', label: 'Posso explorar coragem & vulnerabilidade em 1 situação', modules: ['eco_vulnerabilidade_defesas','eco_vulnerabilidade_mitos','eco_emo_vergonha_combate'], systemHint: 'Brené Brown: diferencie vulnerabilidade de exposição. Nomeie 1 defesa ativa e proponha 1 micro-ato de coragem.' },
-  { id: 'rot_estoico', icon: '🏛️', label: 'O que está sob meu controle hoje?', modules: ['eco_presenca_racional','eco_identificacao_mente','eco_fim_do_sofrimento'], systemHint: 'Marco Aurélio: conduza 3 perguntas (controle / julgamento / ação mínima) e feche com 1 compromisso simples.' },
-  { id: 'rot_regressao_media', icon: '📉', label: 'Talvez ontem foi exceção — quero revisar expectativas', modules: ['eco_heuristica_regressao_media','eco_heuristica_certeza_emocional'], systemHint: 'Explique regressão à média e convide a recalibrar expectativas com 1 evidência observável para hoje.' },
+  {
+    id: 'rot_memoria_pergunta',
+    icon: '🧭',
+    label: 'Quer revisitar uma lembrança que ainda mexe com você?',
+    modules: ['eco_memoria_revisitar_passado', 'eco_observador_presente', 'eco_corpo_emocao'],
+    systemHint:
+      'Convide o usuário a escolher uma memória marcante (priorize intensidade ≥ 7 e proximidade semântica). ' +
+      'Espelhe padrões, acolha a emoção e proponha 1 micro-ação no presente.',
+  },
+  {
+    id: 'rot_estoico_pergunta',
+    icon: '🏛️',
+    label: 'Prefere começar refletindo sobre o que realmente está no seu controle hoje?',
+    modules: ['eco_presenca_racional', 'eco_identificacao_mente'],
+    systemHint:
+      'Aplique estoicismo com 3 passos: o que depende de si, qual julgamento está ativo, qual a menor ação virtuosa agora.',
+  },
+  {
+    id: 'rot_vieses_pergunta',
+    icon: '🔍',
+    label: 'Topa explorar se algum viés pode estar influenciando sua visão agora?',
+    modules: ['eco_heuristica_excesso_confianca', 'eco_heuristica_ancoragem', 'eco_heuristica_regressao_media'],
+    systemHint:
+      'Faça 1 checklist curto de vieses comuns, proponha 1 checagem objetiva e 1 reframe prático.',
+  },
 ];
 
 /* ====== Variações de abertura ====== */
@@ -223,12 +243,10 @@ const ChatPage: React.FC = () => {
 
       const tags = extrairTagsRelevantes(trimmed);
       const [similar, porTag] = await Promise.all([
-        // ⇩ usa v2 com k/threshold/usuario_id
         buscarMemoriasSemelhantesV2(trimmed, { k: 3, threshold: 0.12, usuario_id: userId! }).catch(() => []),
         tags.length ? buscarUltimasMemoriasComTags(userId!, tags, 2).catch(() => []) : Promise.resolve([]),
       ]);
 
-      // mescla e deduplica (por id ou hash simples de data+resumo)
       const vistos = new Set<string>();
       const mems = [...(similar || []), ...(porTag || [])].filter((m: any) => {
         const key = m.id || `${m.created_at}-${m.resumo_eco}`;
@@ -241,7 +259,6 @@ const ChatPage: React.FC = () => {
         .map((m: any) => {
           const data = new Date(m.created_at || '').toLocaleDateString();
           const tgs = m.tags?.length ? ` [tags: ${m.tags.join(', ')}]` : '';
-          // inclui similaridade quando disponível (0–1 → %)
           const sim = typeof m.similarity === 'number' ? ` ~${Math.round(m.similarity * 100)}%` : '';
           return `(${data}) ${m.resumo_eco}${tgs}${sim}`;
         })
@@ -255,7 +272,6 @@ const ChatPage: React.FC = () => {
       if (retorno) preSistema.push({ role: 'system', content: retorno });
       if (ctxMems) preSistema.push({ role: 'system', content: `Memórias recentes relevantes:\n${ctxMems}` });
 
-      // reduz histórico enviado (mantém comportamento estável)
       const janelaHistorico = baseHistory.slice(-3);
 
       const mensagensComContexto = [
@@ -315,39 +331,6 @@ const ChatPage: React.FC = () => {
     await handleSendMessage(userText, hint);
   };
 
-  return (
-    <div className="relative flex h-[calc(100dvh-var(--eco-topbar-h,56px))] w-full flex-col overflow-hidden bg-white">
-      {/* SCROLLER */}
-      <div
-        ref={scrollerRef}
-        onScroll={handleScroll}
-        role="feed"
-        aria-busy={digitando}
-        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-10 pb-6 [scrollbar-gutter:stable]"
-        style={{
-          paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
-          WebkitOverflowScrolling: 'touch',
-          overscrollBehaviorY: 'contain',
-          scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
-          touchAction: 'pan-y',
-        }}
-      >
-        <div className="w-full mx-auto max-w-3xl">
-          {messages.length === 0 && !erroApi && (
-            <div className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex items-center justify-center">
-              <motion.div className="px-4 w-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
-                {/* Saudação centralizada */}
-                <div className="flex flex-col items-center gap-3 text-center md:gap-4">
-                  <h2 className="text-[32px] font-light leading-tight text-slate-800 md:text-[40px]">
-                    {saudacao}, {userName}
-                  </h2>
-                  <p className="max-w-xl text-base font-light text-slate-500 md:text-lg">
-                    {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
-                  </p>
-                </div>
-              </motion.div>
-            </div>
-          )}
 
           {erroApi && (
             <div className="glass rounded-xl text-red-600 text-center mb-4 px-4 py-2">{erroApi}</div>
@@ -365,11 +348,13 @@ const ChatPage: React.FC = () => {
                 </div>
 
                 <div
-                  className={`min-w-0 max-w-full ${
-                    m.sender === 'user' ? 'justify-self-end' : 'justify-self-start'
-                  }`}
+                  className={`min-w-0 max-w-full ${m.sender === 'user' ? 'justify-self-end' : 'justify-self-start'}`}
                 >
-                  {m.sender === 'eco' ? <EcoMessageWithAudio message={m as any} /> : <ChatMessage message={m} />}
+                  {m.sender === 'eco' ? (
+                    <EcoMessageWithAudio message={m as any} />
+                  ) : (
+                    <ChatMessage message={m} />
+                  )}
                 </div>
 
                 {/* DIR: placeholder (evita “bolinha” fantasma) */}
@@ -381,9 +366,15 @@ const ChatPage: React.FC = () => {
 
             {digitando && (
               <div className="grid grid-cols-[auto,1fr] items-start gap-3 min-w-0 md:grid-cols-[32px,1fr,32px]">
-                <div className="pt-1.5"><EcoBubbleIcon /></div>
-                <div className="min-w-0 max-w-full justify-self-start"><TypingDots /></div>
-                <div className="hidden pt-1.5 md:block"><div className="h-[28px] w-[28px]" /></div>
+                <div className="pt-1.5">
+                  <EcoBubbleIcon />
+                </div>
+                <div className="min-w-0 max-w-full justify-self-start">
+                  <TypingDots />
+                </div>
+                <div className="hidden pt-1.5 md:block">
+                  <div className="h-[28px] w-[28px]" />
+                </div>
               </div>
             )}
 
@@ -400,15 +391,25 @@ const ChatPage: React.FC = () => {
               aria-label="Descer para a última mensagem"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 text-gray-700">
-                <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M6 9l6 6 6-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </button>
           </div>
         )}
-      </div> {/* <- fecha o scroller */}
+      </div>
 
       {/* BARRA DE INPUT */}
-      <div ref={inputBarRef} className="sticky bottom-0 z-40 bg-gradient-to-t from-white via-white/95 to-white/80 px-4 pb-3 pt-3 sm:px-6 lg:px-10">
+      <div
+        ref={inputBarRef}
+        className="sticky bottom-0 z-40 bg-gradient-to-t from-white via-white/95 to-white/80 px-4 pb-3 pt-3 sm:px-6 lg:px-10"
+      >
         <div className="w-full mx-auto max-w-3xl">
           <QuickSuggestions
             visible={showQuick && messages.length === 0 && !digitando && !erroApi}
@@ -419,7 +420,9 @@ const ChatPage: React.FC = () => {
           />
           <ChatInput
             onSendMessage={(t) => handleSendMessage(t)}
-            onMoreOptionSelected={(opt) => { if (opt === 'go_to_voice_page') navigate('/voice'); }}
+            onMoreOptionSelected={(opt) => {
+              if (opt === 'go_to_voice_page') navigate('/voice');
+            }}
             onSendAudio={() => console.log('Áudio enviado')}
             disabled={digitando}
             onTextChange={(t) => setShowQuick(t.trim().length === 0)}
