@@ -12,7 +12,7 @@ import { getCreatedAt, getEmotion, Memoria } from './utils';
 const BUCKET_ORDER = ['Hoje', 'Ontem', 'Esta semana', 'Este mês', 'Anteriores'] as const;
 
 const MemoriesSection: React.FC = () => {
-  const { memories, loading, error } = useMemoryData();
+  const { memories, memoriesLoading, memoriesError } = useMemoryData();
 
   const {
     emotionOptions,
@@ -25,7 +25,7 @@ const MemoriesSection: React.FC = () => {
     resetFilters,
   } = useMemoriesFilters(memories as Memoria[]);
 
-  if (loading) {
+  if (memoriesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <EcoBubbleLoading size={120} text="Carregando memórias..." breathingSec={2} />
@@ -33,10 +33,10 @@ const MemoriesSection: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (memoriesError) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-500 text-[15px]">{error}</div>
+        <div className="text-red-500 text-[15px]">{memoriesError}</div>
       </div>
     );
   }
