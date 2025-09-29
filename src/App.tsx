@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
 
 import LoginPage from './pages/LoginPage';
+import ResetSenha from './pages/ResetSenha';
 import ChatPage from './pages/ChatPage';
 import VoicePage from './pages/VoicePage';
 import CreateProfilePage from './pages/CreateProfilePage';
@@ -39,6 +40,7 @@ function AppInner() {
         <Route path="/login/tour" element={<LoginPage />} />
 
         <Route path="/register" element={<CreateProfilePage />} />
+        <Route path="/reset-senha" element={<ResetSenha />} />
 
         <Route
           path="/chat"
