@@ -331,50 +331,6 @@ const ChatPage: React.FC = () => {
     await handleSendMessage(userText, hint);
   };
 
-  return (
-    <div
-      className="relative flex h-[calc(100dvh-var(--eco-topbar-h,56px))] w-full flex-col overflow-hidden bg-white"
-      style={{
-        backgroundImage:
-          'radial-gradient(140% 100% at 50% 0%, rgba(236,240,255,0.65), transparent 55%), linear-gradient(180deg, #ffffff 0%, #f6f8ff 100%)',
-      }}
-    >
-      {/* SCROLLER */}
-      <div
-        ref={scrollerRef}
-        onScroll={handleScroll}
-        role="feed"
-        aria-busy={digitando}
-        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-10 pb-6 [scrollbar-gutter:stable]"
-        style={{
-          paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
-          WebkitOverflowScrolling: 'touch',
-          overscrollBehaviorY: 'contain',
-          scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
-          touchAction: 'pan-y',
-        }}
-      >
-        <div className="w-full mx-auto max-w-3xl">
-          {messages.length === 0 && !erroApi && (
-            <div className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex items-center justify-center">
-              <motion.div
-                className="px-4 w-full"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.28 }}
-              >
-                {/* Saudação centralizada */}
-                <div className="flex flex-col items-center gap-3 text-center md:gap-4">
-                  <h2 className="text-[32px] font-light leading-tight text-slate-800 md:text-[40px]">
-                    {saudacao}, {userName}
-                  </h2>
-                  <p className="max-w-xl text-base font-light text-slate-500 md:text-lg">
-                    {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
-                  </p>
-                </div>
-              </motion.div>
-            </div>
-          )}
 
           {erroApi && (
             <div className="glass rounded-xl text-red-600 text-center mb-4 px-4 py-2">{erroApi}</div>

@@ -124,6 +124,14 @@ const Header: React.FC<HeaderProps> = ({
               <ArrowLeft className="h-5 w-5 text-slate-900" />
             </button>
           )}
+          <a
+            href="https://feedback777.vercel.app"
+            target="_blank"
+            rel="noreferrer"
+            className="px-3 py-1.5 rounded-[14px] bg-black/[0.04] hover:bg-black/[0.06] border border-black/[0.08] text-slate-900 text-sm"
+          >
+            Feedback
+          </a>
           {onLogout && (
             <button
               onClick={onLogout}

@@ -1,22 +1,30 @@
 // src/App.tsx
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
 
 import LoginPage from './pages/LoginPage';
+import ResetSenha from './pages/ResetSenha';
 import ChatPage from './pages/ChatPage';
 import VoicePage from './pages/VoicePage';
 import CreateProfilePage from './pages/CreateProfilePage';
 import ProtectedRoute from './components/ProtectedRoute';
 import mixpanel from './lib/mixpanel';
 import MainLayout from './layouts/MainLayout';
+import EcoBubbleLoading from './components/EcoBubbleLoading';
 
 // MEMÓRIAS
-import MemoryLayout from './pages/memory/MemoryLayout';
-import MemoriesSection from './pages/memory/MemoriesSection';
-import ProfileSection from './pages/memory/ProfileSection';
-import ReportSection from './pages/memory/ReportSection';
+const MemoryLayout = React.lazy(() => import('./pages/memory/MemoryLayout'));
+const MemoriesSection = React.lazy(() => import('./pages/memory/MemoriesSection'));
+const ProfileSection = React.lazy(() => import('./pages/memory/ProfileSection'));
+const ReportSection = React.lazy(() => import('./pages/memory/ReportSection'));
+
+const memorySuspenseFallback = (
+  <div className="flex min-h-[320px] items-center justify-center py-10">
+    <EcoBubbleLoading size={120} text="Carregando memórias..." />
+  </div>
+);
 
 /** Wrapper para dar key por usuário ao ChatProvider */
 function ChatProviderWithKey({ children }: { children: React.ReactNode }) {
@@ -39,6 +47,18 @@ function AppInner() {
         <Route path="/login/tour" element={<LoginPage />} />
 
         <Route path="/register" element={<CreateProfilePage />} />
+        <Route path="/reset-senha" element={<ResetSenha />} />
+
+        <Route
+          path="/app"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <ChatPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/chat"
@@ -68,14 +88,37 @@ function AppInner() {
           element={
             <ProtectedRoute>
               <MainLayout>
-                <MemoryLayout />
+                <Suspense fallback={memorySuspenseFallback}>
+                  <MemoryLayout />
+                </Suspense>
               </MainLayout>
             </ProtectedRoute>
           }
         >
-          <Route index element={<MemoriesSection />} />
-          <Route path="profile" element={<ProfileSection />} />
-          <Route path="report" element={<ReportSection />} />
+          <Route
+            index
+            element={
+              <Suspense fallback={memorySuspenseFallback}>
+                <MemoriesSection />
+              </Suspense>
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <Suspense fallback={memorySuspenseFallback}>
+                <ProfileSection />
+              </Suspense>
+            }
+          />
+          <Route
+            path="report"
+            element={
+              <Suspense fallback={memorySuspenseFallback}>
+                <ReportSection />
+              </Suspense>
+            }
+          />
           <Route path="*" element={<Navigate to="/memory" replace />} />
         </Route>
 

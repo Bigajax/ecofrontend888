@@ -15,6 +15,7 @@ const VoicePage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [ecoAudioURL, setEcoAudioURL] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const ecoAudioURLRef = useRef<string | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,11 +23,19 @@ const VoicePage: React.FC = () => {
   const goToMemoryPage = () => navigate("/memory");
   const goToChatPage = () => navigate("/chat");
 
+  const revokeEcoAudioURL = () => {
+    if (ecoAudioURLRef.current) {
+      URL.revokeObjectURL(ecoAudioURLRef.current);
+      ecoAudioURLRef.current = null;
+    }
+    setEcoAudioURL(null);
+  };
+
   const handleError = (msg: string) => {
     setError(msg);
     setIsListening(false);
     setIsProcessing(false);
-    setEcoAudioURL(null);
+    revokeEcoAudioURL();
     mediaRecorderRef.current?.stream.getTracks().forEach((t) => t.stop());
   };
 
@@ -58,7 +67,7 @@ const VoicePage: React.FC = () => {
         }
 
         setIsProcessing(true);
-        setEcoAudioURL(null);
+        revokeEcoAudioURL();
 
         try {
           const session = await supabase.auth.getSession();
@@ -69,6 +78,7 @@ const VoicePage: React.FC = () => {
           console.log("[🧠 Eco disse]:", ecoTextoLimpo);
 
           const audioURL = URL.createObjectURL(response.audioBlob);
+          ecoAudioURLRef.current = audioURL;
           setEcoAudioURL(audioURL);
           const ecoAudio = new Audio(audioURL);
           await ecoAudio.play();
@@ -108,6 +118,7 @@ const VoicePage: React.FC = () => {
     return () => {
       if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
       mediaRecorderRef.current?.stream.getTracks().forEach((t) => t.stop());
+      revokeEcoAudioURL();
     };
   }, []);
 
