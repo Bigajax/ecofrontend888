@@ -62,19 +62,22 @@ const MapaEmocional2D: React.FC<Props> = ({ data, height = 320, radius = 14 }) =
     [data]
   );
 
-  // colmeia (hexbin)
-  const bins = useMemo(() => {
-    const hb = d3hexbin<{ x: number; y: number }>()
-      .x((d) => x(d.x))
-      .y((d) => y(d.y))
-      .radius(radius)
-      .extent([
-        [0, 0],
-        [innerW, innerH],
-      ]);
-    return hb(pts as any);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pts, innerW, innerH, radius]); // x/y mudam com innerW/H
+  const hb = useMemo(
+    () =>
+      d3hexbin<{ x: number; y: number }>()
+        .x((d) => x(d.x))
+        .y((d) => y(d.y))
+        .radius(radius)
+        .extent([
+          [0, 0],
+          [innerW, innerH],
+        ]),
+    [x, y, radius, innerW, innerH]
+  );
+
+  const bins = useMemo(() => hb(pts as any), [hb, pts]);
+
+  const hexagonPath = useMemo(() => hb.hexagon(), [hb]);
 
   const maxCount = useMemo(() => d3max(bins, (b) => b.length) ?? 1, [bins]);
 
@@ -145,7 +148,7 @@ const MapaEmocional2D: React.FC<Props> = ({ data, height = 320, radius = 14 }) =
               <path
                 key={i}
                 transform={`translate(${b.x},${b.y})`}
-                d={d3hexbin().radius(radius).hexagon()}
+                d={hexagonPath}
                 fill={hexFill(alpha)}
                 stroke={hexFill(0.25)}
                 strokeWidth={1}
