@@ -81,7 +81,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   // padding lateral da barra de ações acompanha a bolha:
   // - user (direita): um pequeno recuo à direita para não “colar” na borda
   // - eco (esquerda): recuo para alinhar com o começo do texto (considerando a bolha com 16px internos)
-  const actionsPad = isUser ? "mr-2" : "ml-2 pl-6";
+  const actionsPad = isUser ? "mr-2" : "ml-[42px] sm:ml-[50px]";
 
   return (
     <>

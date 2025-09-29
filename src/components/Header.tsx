@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, NavLink, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Brain, BarChart3, X, Menu, MessageSquare } from 'lucide-react'; // NEW: MessageSquare
 import { motion, AnimatePresence } from 'framer-motion';
-import EcoBubbleIcon from './EcoBubbleIcon';
+import EcoBubbleOneEye from './EcoBubbleOneEye';
 
 interface HeaderProps {
   title?: string;                 // opcional: pode forçar um título
@@ -106,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Centro — título com a mesma tipografia do drawer */}
         <Link to="/chat" className="flex items-center gap-2 select-none hover:opacity-95">
-          <EcoBubbleIcon size={20} className="translate-y-[1px]" />
+          <span className="translate-y-[1px] inline-flex"><EcoBubbleOneEye variant="icon" size={20} state="focus" /></span>
           <span className={`${labelCls} text-[16px] md:text-[17px]`}>
             {autoTitle}
           </span>
@@ -178,7 +178,7 @@ const Header: React.FC<HeaderProps> = ({
           >
             {/* Cabeçalho: só a bolha + X */}
             <div className="sticky top-0 z-10 bg-white px-4 py-3 border-b border-black/[0.06] flex items-center justify-between">
-              <EcoBubbleIcon size={24} />
+              <EcoBubbleOneEye variant="icon" size={24} state="focus" />
               <button
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Fechar menu"
