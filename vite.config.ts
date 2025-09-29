@@ -1,4 +1,5 @@
 import { defineConfig, loadEnv } from 'vite';
+import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import string from 'vite-plugin-string';
 
@@ -26,6 +27,9 @@ export default defineConfig(({ mode }) => {
     },
 
     resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
       extensions: ['.js', '.ts', '.jsx', '.tsx', '.json', '.txt'],
     },
 
