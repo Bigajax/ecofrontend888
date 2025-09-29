@@ -1,6 +1,6 @@
 // src/api/axios.ts
 import axios from "axios";
-import { supabase } from "../lib/supabaseClient"; // ajuste o path se preciso
+import { supabase } from "../lib/supabase"; // ajuste o path se preciso
 
 const API_BASE =
   import.meta.env.VITE_API_BASE?.replace(/\/+$/, "") ||
