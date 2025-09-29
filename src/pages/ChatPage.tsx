@@ -316,13 +316,7 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div
-      className="relative flex h-[calc(100dvh-var(--eco-topbar-h,56px))] w-full flex-col overflow-hidden bg-white"
-      style={{
-        backgroundImage:
-          'radial-gradient(140% 100% at 50% 0%, rgba(236,240,255,0.65), transparent 55%), linear-gradient(180deg, #ffffff 0%, #f6f8ff 100%)',
-      }}
-    >
+    <div className="relative flex h-[calc(100dvh-var(--eco-topbar-h,56px))] w-full flex-col overflow-hidden bg-white">
       {/* SCROLLER */}
       <div
         ref={scrollerRef}
