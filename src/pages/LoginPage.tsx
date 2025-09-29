@@ -54,7 +54,7 @@ function translateAuthError(err: any): string {
 }
 
 const LoginPage: React.FC = () => {
-  const { signIn, user } = useAuth();
+  const { signIn, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -73,7 +73,8 @@ const LoginPage: React.FC = () => {
   const canSubmit = email.trim().length > 3 && password.length >= 6 && !loading;
 
   useEffect(() => {
-    if (user) navigate('/chat');
+    if (!user) return;
+    navigate('/app');
   }, [user, navigate]);
 
   useEffect(() => {
@@ -117,6 +118,17 @@ const LoginPage: React.FC = () => {
       setError(translateAuthError(err));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err: any) {
+      setLoading(false);
+      setError(translateAuthError(err));
     }
   };
 
@@ -267,6 +279,22 @@ const LoginPage: React.FC = () => {
 
             {/* Actions */}
             <div className="pt-1 space-y-4">
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                className={[
+                  'w-full h-11 rounded-2xl font-semibold',
+                  'bg-white/70 backdrop-blur-xl',
+                  'border border-white/80 ring-1 ring-slate-900/5',
+                  'text-slate-900 shadow-[0_10px_28px_rgba(2,6,23,0.10)]',
+                  'hover:bg-white/80 active:translate-y-[0.5px]',
+                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
+                ].join(' ')}
+              >
+                Continuar com Google
+              </button>
+
               <button
                 type="submit"
                 disabled={!canSubmit}

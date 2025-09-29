@@ -43,6 +43,17 @@ function AppInner() {
         <Route path="/reset-senha" element={<ResetSenha />} />
 
         <Route
+          path="/app"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <ChatPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/chat"
           element={
             <ProtectedRoute>
