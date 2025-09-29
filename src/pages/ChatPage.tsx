@@ -72,6 +72,7 @@ const ChatPage: React.FC = () => {
   const [showQuick, setShowQuick] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [inputBarHeight, setInputBarHeight] = useState(0);
 
   const nearBottom = (el: HTMLDivElement, pad = 16) =>
     el.scrollTop + el.clientHeight >= el.scrollHeight - pad;
@@ -88,6 +89,15 @@ const ChatPage: React.FC = () => {
 
   const clientHourNow = new Date().getHours();
   const saudacao = saudacaoDoDiaFromHour(clientHourNow);
+
+  const quickSuggestionsVisible = showQuick && messages.length === 0 && !digitando && !erroApi;
+
+  const measuredFooterHeight = Math.max(0, Math.round(inputBarHeight)) || 120;
+  const footerInset = Math.round(Math.min(Math.max(4, measuredFooterHeight * 0.05), 12));
+  const scrollerBottomPadding = `calc(${measuredFooterHeight}px + ${footerInset}px)`;
+  const dynamicTopInset = Math.min(40, Math.max(12, measuredFooterHeight * 0.2));
+  const scrollerTopPadding = `calc(var(--eco-topbar-h,56px) + ${dynamicTopInset}px)`;
+  const emptyStateMinHeight = `calc(100svh - var(--eco-topbar-h,56px) - ${measuredFooterHeight}px)`;
 
   /* ====================== SCROLL CORE (estável) ====================== */
 
@@ -114,6 +124,38 @@ const ChatPage: React.FC = () => {
     if (!el) return;
     if (nearBottom(el, 120)) scrollToBottom(true);
   }, [messages, digitando]);
+
+  useLayoutEffect(() => {
+    const el = inputBarRef.current;
+    if (!el) return;
+
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const height = el.offsetHeight;
+      setInputBarHeight((prev) => {
+        const next = Math.round(height);
+        return prev === next ? prev : next;
+      });
+    };
+
+    measure();
+
+    const handleResize = () => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    };
+
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(handleResize) : null;
+    if (observer) observer.observe(el);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      if (observer) observer.disconnect();
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [quickSuggestionsVisible]);
 
   const handleScroll = () => {
     const el = scrollerRef.current!;
@@ -323,18 +365,23 @@ const ChatPage: React.FC = () => {
         onScroll={handleScroll}
         role="feed"
         aria-busy={digitando}
-        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-10 pb-6 [scrollbar-gutter:stable]"
+        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-10 [scrollbar-gutter:stable]"
         style={{
-          paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
+          paddingTop: scrollerTopPadding,
+          paddingBottom: scrollerBottomPadding,
           WebkitOverflowScrolling: 'touch',
           overscrollBehaviorY: 'contain',
-          scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
+          scrollPaddingTop: scrollerTopPadding,
+          scrollPaddingBottom: scrollerBottomPadding,
           touchAction: 'pan-y',
         }}
       >
         <div className="w-full mx-auto max-w-3xl">
           {messages.length === 0 && !erroApi && (
-            <div className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex items-center justify-center">
+            <div
+              className="flex items-center justify-center"
+              style={{ minHeight: emptyStateMinHeight }}
+            >
               <motion.div className="px-4 w-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
                 {/* Saudação centralizada */}
                 <div className="flex flex-col items-center gap-3 text-center md:gap-4">
@@ -408,10 +455,16 @@ const ChatPage: React.FC = () => {
       </div> {/* <- fecha o scroller */}
 
       {/* BARRA DE INPUT */}
-      <div ref={inputBarRef} className="sticky bottom-0 z-40 bg-gradient-to-t from-white via-white/95 to-white/80 px-4 pb-3 pt-3 sm:px-6 lg:px-10">
+      <div
+        ref={inputBarRef}
+        className="sticky bottom-0 z-40 bg-gradient-to-t from-white via-white/95 to-white/80 px-4 pt-3 sm:px-6 lg:px-10"
+        style={{
+          paddingBottom: `calc(var(--safe-bottom, 0px) + ${footerInset}px)`,
+        }}
+      >
         <div className="w-full mx-auto max-w-3xl">
           <QuickSuggestions
-            visible={showQuick && messages.length === 0 && !digitando && !erroApi}
+            visible={quickSuggestionsVisible}
             onPickSuggestion={handlePickSuggestion}
             rotatingItems={ROTATING_ITEMS}
             rotationMs={5000}
