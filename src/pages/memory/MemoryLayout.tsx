@@ -130,6 +130,11 @@ const MemoryLayout: React.FC = () => {
     };
   }, [userId]);
 
+  useEffect(() => {
+    void import('./ProfileSection');
+    void import('./ReportSection');
+  }, []);
+
   return (
     <MemoryDataContext.Provider value={state}>
       {/* Sem paddings de header/side aqui — o MainLayout já aplica.
