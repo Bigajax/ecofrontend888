@@ -4,7 +4,7 @@ import { Mic, StopCircle, Loader, BookOpen, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { sendVoiceMessage } from "../api/voiceApi";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../lib/supabase";
 
 /** Mude para false quando quiser liberar a gravação */
 const UNDER_CONSTRUCTION = true;

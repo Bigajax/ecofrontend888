@@ -1,5 +1,5 @@
 // src/api/usuario.ts
-import { supabase } from '../lib/supabaseClient'
+import { supabase } from '../lib/supabase'
 
 export async function criarUsuario({
   nome,
