@@ -7,6 +7,7 @@ import PhoneFrame from '../components/PhoneFrame';
 import { useAuth } from '../contexts/AuthContext';
 import TourInicial from '../components/TourInicial';
 import EcoBubbleIcon from '../components/EcoBubbleIcon';
+import { supabase } from '@/lib/supabase';
 
 /* Divisor com traço mais marcado */
 const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
@@ -65,6 +66,9 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [isTourActive, setIsTourActive] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState('');
+  const [forgotError, setForgotError] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const canSubmit = email.trim().length > 3 && password.length >= 6 && !loading;
 
@@ -113,6 +117,38 @@ const LoginPage: React.FC = () => {
       setError(translateAuthError(err));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setForgotMessage('');
+      setForgotError('Digite seu e-mail');
+      return;
+    }
+
+    setForgotMessage('');
+    setForgotError('');
+    setForgotLoading(true);
+
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        trimmedEmail,
+        {
+          redirectTo: `${import.meta.env.VITE_APP_URL}/reset-senha`,
+        },
+      );
+
+      if (resetError) {
+        throw resetError;
+      }
+
+      setForgotMessage('Enviamos um link para redefinir sua senha. Confira seu e-mail.');
+    } catch (err: any) {
+      setForgotError(translateAuthError(err));
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -272,6 +308,44 @@ const LoginPage: React.FC = () => {
               >
                 Iniciar Tour
               </button>
+
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={forgotLoading}
+                className={[
+                  'w-full h-11 rounded-2xl font-medium',
+                  'bg-white/55 backdrop-blur-xl',
+                  'border border-white/80 ring-1 ring-slate-900/5',
+                  'text-slate-700 shadow-[0_10px_26px_rgba(2,6,23,0.08)]',
+                  'hover:bg-white/70 hover:text-slate-900 active:translate-y-[0.5px]',
+                  'disabled:opacity-60',
+                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
+                ].join(' ')}
+              >
+                {forgotLoading ? 'Enviando…' : 'Esqueci minha senha'}
+              </button>
+
+              <div role="status" aria-live="polite" className="min-h-[1.25rem] text-center">
+                {forgotMessage && (
+                  <motion.p
+                    className="text-emerald-600 text-sm"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    {forgotMessage}
+                  </motion.p>
+                )}
+                {forgotError && !forgotMessage && (
+                  <motion.p
+                    className="text-rose-600 text-sm"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    {forgotError}
+                  </motion.p>
+                )}
+              </div>
             </div>
           </form>
         </motion.div>
