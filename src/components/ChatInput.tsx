@@ -226,10 +226,12 @@ const ChatInput: React.FC<Props> = ({
         handleSend();
       }}
       className={`
-        relative w-full px-3 py-1.5 md:px-4 md:py-2 rounded-[28px]
-        border border-white/60 bg-white/80 backdrop-blur-2xl
-        shadow-[0_18px_48px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.6)]
-        ring-1 ring-white/40 transition-all duration-200 ${disabled ? 'opacity-90' : ''}
+        relative w-full h-auto min-h-[64px] px-5 md:px-6 rounded-[32px]
+        bg-gradient-to-br from-white/90 to-white/60 backdrop-blur-2xl
+        ring-1 ring-slate-200/70 shadow-[0_18px_48px_rgba(15,23,42,0.12)]
+        transition-all duration-200 ${disabled ? 'opacity-90' : ''}
+        hover:ring-slate-300 hover:drop-shadow-[0_14px_34px_rgba(15,23,42,0.12)]
+        focus-within:ring-slate-300 focus-within:drop-shadow-[0_18px_40px_rgba(15,23,42,0.14)]
       `}
       initial={{ y: 50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -239,7 +241,7 @@ const ChatInput: React.FC<Props> = ({
       style={{ overflowAnchor: 'none' }}
     >
       {/* === Grid alinhada ao feed: [28px | 1fr | 28px] === */}
-      <div className="grid grid-cols-[28px,1fr,28px] items-center gap-2">
+      <div className="grid h-full grid-cols-[28px,1fr,28px] items-center gap-2">
         {/* esquerda (28px) */}
         <div className="flex items-center justify-start">
           <button
@@ -322,8 +324,8 @@ const ChatInput: React.FC<Props> = ({
             aria-disabled={disabled}
             aria-label="Escreva sua mensagem"
             className="
-              w-full min-w-0 max-h-48 resize-none overflow-y-auto border-none bg-transparent py-2 leading-[1.42] tracking-tight
-              text-[15px] md:text-base text-slate-800 placeholder:text-slate-400 placeholder:font-light focus:outline-none
+              w-full min-w-0 max-h-48 resize-none overflow-y-auto border-none bg-transparent py-3 leading-[1.5] tracking-tight
+              text-base text-slate-800 placeholder:text-slate-500/80 placeholder:font-light focus:outline-none
             "
           />
         </div>
