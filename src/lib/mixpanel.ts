@@ -5,6 +5,8 @@ mixpanel.init(import.meta.env.VITE_MIXPANEL_TOKEN || '', {
   api_host: 'https://api-eu.mixpanel.com'
 });
 
-console.log('MIXPANEL TOKEN:', import.meta.env.VITE_MIXPANEL_TOKEN); // ✅ Adicione aqui
+if (!import.meta.env.VITE_MIXPANEL_TOKEN) {
+  console.warn('Mixpanel token is not configured.');
+}
 
 export default mixpanel;
