@@ -12,6 +12,18 @@ type Props = {
 
 const CTA_TEXT = 'Converse com a Eco…';
 
+const LIQUID_GLASS_BASE =
+  "relative overflow-hidden backdrop-blur-2xl border border-white/40 before:content-[''] before:absolute before:inset-[1px] before:rounded-[inherit] before:border before:border-white/45 before:bg-white/25 before:opacity-80 before:pointer-events-none after:content-[''] after:absolute after:rounded-[inherit] after:bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.28),transparent)] after:opacity-60 after:pointer-events-none after:-z-10";
+const LIQUID_GLASS_GRADIENT = 'bg-gradient-to-br from-white/85 via-white/40 to-sky-100/30';
+const LIQUID_GLASS_FORM_SHADOW =
+  'ring-1 ring-sky-200/45 shadow-[0_20px_60px_rgba(30,64,175,0.2)] hover:shadow-[0_24px_70px_rgba(30,64,175,0.24)]';
+const LIQUID_GLASS_BUTTON_GRADIENT = 'bg-gradient-to-br from-white/90 via-sky-50/60 to-white/20';
+const LIQUID_GLASS_BUTTON_SHADOW =
+  'ring-1 ring-sky-200/35 shadow-[0_12px_30px_rgba(15,23,42,0.12)] hover:shadow-[0_16px_36px_rgba(15,23,42,0.16)]';
+const LIQUID_GLASS_SEND_GRADIENT = 'bg-gradient-to-br from-sky-500/90 via-sky-400/85 to-sky-500/80';
+const LIQUID_GLASS_PANEL_SHADOW =
+  'ring-1 ring-sky-200/40 shadow-[0_18px_44px_rgba(30,64,175,0.18)]';
+
 const ChatInput: React.FC<Props> = ({
   onSendMessage,
   onMoreOptionSelected,
@@ -226,10 +238,10 @@ const ChatInput: React.FC<Props> = ({
         handleSend();
       }}
       className={`
-        relative w-full px-3 py-1.5 md:px-4 md:py-2 rounded-[28px]
-        border border-white/60 bg-white/80 backdrop-blur-2xl
-        shadow-[0_18px_48px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.6)]
-        ring-1 ring-white/40 transition-all duration-200 ${disabled ? 'opacity-90' : ''}
+        ${LIQUID_GLASS_BASE} ${LIQUID_GLASS_GRADIENT} ${LIQUID_GLASS_FORM_SHADOW} after:-inset-4
+        w-full px-3 py-1.5 md:px-4 md:py-2 rounded-[28px]
+        transition-all duration-200 focus-within:ring-2 focus-within:ring-sky-300/60 focus-within:shadow-[0_24px_68px_rgba(30,64,175,0.22)]
+        ${disabled ? 'opacity-90' : ''}
       `}
       initial={{ y: 50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -239,24 +251,29 @@ const ChatInput: React.FC<Props> = ({
       style={{ overflowAnchor: 'none' }}
     >
       {/* === Grid alinhada ao feed: [28px | 1fr | 28px] === */}
-      <div className="grid grid-cols-[28px,1fr,28px] items-center gap-2">
+      <div className="relative z-[1] grid grid-cols-[28px,1fr,28px] items-center gap-2">
         {/* esquerda (28px) */}
         <div className="flex items-center justify-start">
           <button
             type="button"
             onClick={() => setShowMoreOptions((prev) => !prev)}
-            className="
-              flex h-9 w-9 items-center justify-center rounded-full
-              border border-white/60 bg-white/75 backdrop-blur-xl
-              shadow-[0_6px_16px_rgba(15,23,42,0.08)] transition
-              hover:bg-white active:scale-[0.98] disabled:opacity-50
-            "
+            className={`
+              ${LIQUID_GLASS_BASE} ${LIQUID_GLASS_BUTTON_GRADIENT} ${LIQUID_GLASS_BUTTON_SHADOW} after:-inset-2
+              flex h-9 w-9 items-center justify-center rounded-full text-slate-700
+              transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent
+              disabled:cursor-not-allowed disabled:opacity-50
+            `}
             aria-expanded={showMoreOptions}
             aria-controls="chatinput-popover"
             aria-label="Mais opções"
             disabled={disabled}
           >
-            {showMoreOptions ? <X size={18} /> : <Plus size={18} />}
+            {showMoreOptions ? (
+              <X size={18} className="relative z-[1]" />
+            ) : (
+              <Plus size={18} className="relative z-[1]" />
+            )}
           </button>
         </div>
 
@@ -270,12 +287,11 @@ const ChatInput: React.FC<Props> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="
-                absolute bottom-full left-2 z-50 mb-2 w-56
-                rounded-2xl border border-white/60 bg-white/80 backdrop-blur-2xl
-                shadow-[0_24px_60px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.6)]
-                p-1.5
-              "
+              className={`
+                ${LIQUID_GLASS_BASE} ${LIQUID_GLASS_GRADIENT} ${LIQUID_GLASS_PANEL_SHADOW} after:-inset-3
+                absolute bottom-full left-2 z-50 mb-2 w-56 rounded-2xl p-1.5
+                text-slate-700
+              `}
             >
               <button
                 type="button"
@@ -283,10 +299,10 @@ const ChatInput: React.FC<Props> = ({
                   onMoreOptionSelected('go_to_voice_page');
                   setShowMoreOptions(false);
                 }}
-                className="flex items-center p-2 hover:bg-white/40 rounded-xl w-full text-left transition"
+                className="relative z-[1] flex items-center w-full rounded-xl p-2 text-left transition-colors text-slate-700 hover:bg-white/40 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/40"
               >
-                <Headphones size={20} className="mr-3" strokeWidth={1.5} />
-                Modo de voz
+                <Headphones size={20} className="mr-3 text-slate-600" strokeWidth={1.5} />
+                <span className="font-medium text-slate-700">Modo de voz</span>
               </button>
             </motion.div>
           )}
@@ -334,30 +350,32 @@ const ChatInput: React.FC<Props> = ({
             type="button"
             onClick={startRecording}
             disabled={disabled}
-            className="
-              flex h-9 w-9 items-center justify-center rounded-full
-              border border-white/60 bg-white/75 backdrop-blur-xl
-              shadow-[0_6px_16px_rgba(15,23,42,0.08)] transition
-              hover:bg-white active:scale-[0.98] disabled:opacity-50
-            "
+            className={`
+              ${LIQUID_GLASS_BASE} ${LIQUID_GLASS_BUTTON_GRADIENT} ${LIQUID_GLASS_BUTTON_SHADOW} after:-inset-2
+              flex h-9 w-9 items-center justify-center rounded-full text-slate-700
+              transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent
+              disabled:cursor-not-allowed disabled:opacity-50
+            `}
             aria-label="Iniciar gravação"
           >
-            <Mic size={16} />
+            <Mic size={16} className="relative z-[1]" />
           </button>
 
           <button
             type="submit"
             ref={sendButtonRef}
             disabled={disabled || !inputMessage.trim()}
-            className="
-              flex h-9 w-9 items-center justify-center rounded-full text-slate-700
-              border border-white/70 bg-white/90 backdrop-blur-xl
-              shadow-[0_8px_22px_rgba(15,23,42,0.12)] transition
-              hover:bg-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50
-            "
+            className={`
+              ${LIQUID_GLASS_BASE} ${LIQUID_GLASS_SEND_GRADIENT} ${LIQUID_GLASS_BUTTON_SHADOW} after:-inset-2 border-white/50 before:bg-white/20 before:opacity-90
+              flex h-9 w-9 items-center justify-center rounded-full text-white font-medium
+              transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent
+              disabled:cursor-not-allowed disabled:opacity-60
+            `}
             aria-label="Enviar mensagem"
           >
-            <Send size={16} strokeWidth={1.6} />
+            <Send size={16} strokeWidth={1.6} className="relative z-[1]" />
           </button>
         </div>
       </div>
