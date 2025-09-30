@@ -246,10 +246,13 @@ const ChatInput: React.FC<Props> = ({
             type="button"
             onClick={() => setShowMoreOptions((prev) => !prev)}
             className="
-              flex h-9 w-9 items-center justify-center rounded-full
-              border border-white/60 bg-white/75 backdrop-blur-xl
-              shadow-[0_6px_16px_rgba(15,23,42,0.08)] transition
-              hover:bg-white active:scale-[0.98] disabled:opacity-50
+              flex h-9 w-9 items-center justify-center rounded-full text-slate-500
+              border border-slate-200/70 bg-white bg-gradient-to-b from-white to-slate-100
+              shadow-[0_6px_20px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all duration-200
+              hover:from-white hover:to-slate-50 hover:scale-[1.04]
+              active:scale-95 active:from-white active:to-slate-50
+              focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200/90
+              disabled:opacity-50 disabled:shadow-none
             "
             aria-expanded={showMoreOptions}
             aria-controls="chatinput-popover"
@@ -335,10 +338,13 @@ const ChatInput: React.FC<Props> = ({
             onClick={startRecording}
             disabled={disabled}
             className="
-              flex h-9 w-9 items-center justify-center rounded-full
-              border border-white/60 bg-white/75 backdrop-blur-xl
-              shadow-[0_6px_16px_rgba(15,23,42,0.08)] transition
-              hover:bg-white active:scale-[0.98] disabled:opacity-50
+              flex h-9 w-9 items-center justify-center rounded-full text-slate-500
+              border border-slate-200/70 bg-white bg-gradient-to-b from-white to-slate-100
+              shadow-[0_6px_20px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all duration-200
+              hover:from-white hover:to-slate-50 hover:scale-[1.04]
+              active:scale-95 active:from-white active:to-slate-50
+              focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200/90
+              disabled:opacity-50 disabled:shadow-none
             "
             aria-label="Iniciar gravação"
           >
@@ -350,14 +356,17 @@ const ChatInput: React.FC<Props> = ({
             ref={sendButtonRef}
             disabled={disabled || !inputMessage.trim()}
             className="
-              flex h-9 w-9 items-center justify-center rounded-full text-slate-700
-              border border-white/70 bg-white/90 backdrop-blur-xl
-              shadow-[0_8px_22px_rgba(15,23,42,0.12)] transition
-              hover:bg-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50
+              flex h-9 w-9 items-center justify-center rounded-full text-slate-500
+              border border-slate-200/70 bg-white bg-gradient-to-b from-white/95 via-violet-100/60 to-slate-100/70
+              shadow-[0_6px_20px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all duration-200
+              hover:from-white hover:via-violet-100/60 hover:to-violet-100/70 hover:scale-[1.05]
+              active:scale-95 active:from-white active:via-violet-50/70 active:to-slate-50/60
+              focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-200
+              disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none
             "
             aria-label="Enviar mensagem"
           >
-            <Send size={16} strokeWidth={1.6} />
+            <Send size={16} strokeWidth={1.4} />
           </button>
         </div>
       </div>
