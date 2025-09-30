@@ -1,5 +1,6 @@
 // src/components/FeedbackPrompt.tsx
 import { useState } from "react";
+import mixpanel from "../lib/mixpanel";
 
 type Props = {
   sessaoId: string;
@@ -49,8 +50,28 @@ export function FeedbackPrompt({
         }),
       });
       if (!res.ok) throw new Error("fail");
+      mixpanel.track("Front-end: Feedback Enviado", {
+        rating,
+        reason,
+        sessaoId,
+        usuarioId,
+        mensagemId,
+      });
       setMode("done");
-      onSubmitted?.();
+      if (onSubmitted) {
+        mixpanel.track("Front-end: Feedback Encerrado", {
+          sessaoId,
+          usuarioId,
+          mensagemId,
+        });
+        onSubmitted();
+      }
+    } catch (err: unknown) {
+      mixpanel.track("Front-end: Feedback Falhou", {
+        error: err instanceof Error ? err.message : String(err),
+        rating,
+        reason,
+      });
     } finally {
       setLoading(false);
     }
@@ -119,7 +140,15 @@ export function FeedbackPrompt({
         <button
           aria-label="Gostei"
           disabled={loading}
-          onClick={() => send(1)}
+          onClick={() => {
+            mixpanel.track("Front-end: Feedback Interação", {
+              rating: "positive",
+              sessaoId,
+              usuarioId,
+              mensagemId,
+            });
+            send(1);
+          }}
           className="
             inline-flex items-center justify-center
             px-2 py-1 text-sm rounded-xl border
@@ -133,7 +162,14 @@ export function FeedbackPrompt({
         <button
           aria-label="Não gostei"
           disabled={loading}
-          onClick={() => setMode("reasons")}
+          onClick={() => {
+            mixpanel.track("Front-end: Feedback Motivos Abertos", {
+              sessaoId,
+              usuarioId,
+              mensagemId,
+            });
+            setMode("reasons");
+          }}
           className="
             inline-flex items-center justify-center
             px-2 py-1 text-sm rounded-xl border
