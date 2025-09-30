@@ -7,6 +7,8 @@ import React, {
   useEffect,
   useRef,
   ReactNode,
+  Dispatch,
+  SetStateAction,
 } from 'react';
 import { useAuth } from './AuthContext';
 
@@ -16,6 +18,7 @@ export interface Message {
   content?: string;
   sender: 'user' | 'eco';
   role?: 'user' | 'assistant' | 'system';
+  deepQuestion?: boolean;
 }
 
 interface ChatContextType {
@@ -23,7 +26,7 @@ interface ChatContextType {
   addMessage: (message: Message) => void;
   clearMessages: () => void;
   updateMessage: (messageId: string, newText: string) => void;
-  setMessages: (messages: Message[]) => void;
+  setMessages: Dispatch<SetStateAction<Message[]>>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);

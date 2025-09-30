@@ -51,6 +51,64 @@ const saudacaoDoDiaFromHour = (h: number) => {
   return 'Boa noite';
 };
 
+const isTruthyDeepFlag = (value: unknown): boolean => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    return ['true', 'sim', 'yes', '1', 'ativa', 'ativada'].includes(normalized);
+  }
+  if (typeof value === 'number') return value === 1;
+  return false;
+};
+
+const detectDeepQuestionInObject = (payload: unknown): boolean => {
+  if (!payload || typeof payload !== 'object') return false;
+  if (Array.isArray(payload)) {
+    return payload.some((item) => detectDeepQuestionInObject(item));
+  }
+  for (const [key, value] of Object.entries(payload as Record<string, unknown>)) {
+    const normalizedKey = key.toLowerCase().replace(/[^a-z]/g, '');
+    if (
+      normalizedKey.includes('perguntaprofunda') ||
+      normalizedKey.includes('deepquestion')
+    ) {
+      if (isTruthyDeepFlag(value)) return true;
+    }
+    if (typeof value === 'object' && value !== null) {
+      if (detectDeepQuestionInObject(value)) return true;
+    }
+  }
+  return false;
+};
+
+const detectDeepQuestionInText = (text?: string | null): boolean => {
+  if (!text) return false;
+  const normalized = text.toLowerCase();
+  if (normalized.includes('#pergunta_profunda') || normalized.includes('#perguntaprofunda')) return true;
+  if (normalized.includes('[pergunta_profunda]') || normalized.includes('[perguntaprofunda]')) return true;
+  if (/pergunta[_\s-]?profunda\s*[:=]\s*(true|sim|yes|1|ativa|ativada)/.test(normalized)) return true;
+  if (/deep[_\s-]?question\s*[:=]\s*(true|yes|1)/.test(normalized)) return true;
+  if (/"pergunta_profunda"\s*:\s*(true|"true"|"sim"|1)/.test(normalized)) return true;
+  if (/"deep_question"\s*:\s*(true|"true"|1)/.test(normalized)) return true;
+  if (normalized.includes('flag:pergunta_profunda') || normalized.includes('flag:perguntaprofunda')) return true;
+  return false;
+};
+
+const extractDeepQuestionFlag = ({
+  block,
+  responseText,
+  messageText,
+}: {
+  block?: unknown;
+  responseText?: string | null;
+  messageText?: string | null;
+}): boolean => {
+  if (detectDeepQuestionInObject(block)) return true;
+  if (detectDeepQuestionInText(responseText)) return true;
+  if (detectDeepQuestionInText(messageText)) return true;
+  return false;
+};
+
 /* ====== Frases rotativas ====== */
 const ROTATING_ITEMS: Suggestion[] = [
   { id: 'rot_presenca_scan', icon: '🌬️', label: 'Vamos fazer um mini-scan de presença agora?', modules: ['eco_observador_presente', 'eco_presenca_silenciosa', 'eco_corpo_emocao'], systemHint: 'Conduza um body scan curto (2–3 minutos), com foco gentil em respiração, pontos de contato e 1 pensamento.' },
@@ -70,7 +128,7 @@ const OPENING_VARIATIONS = [
 ];
 
 const ChatPage: React.FC = () => {
-  const { messages, addMessage } = useChat();
+  const { messages, addMessage, setMessages } = useChat();
   const { userId, userName = 'Usuário', user } = useAuth();
   const navigate = useNavigate();
 
@@ -83,7 +141,10 @@ const ChatPage: React.FC = () => {
 
   const [showFeedback, setShowFeedback] = useState(false);
   const [sessaoId] = useState(() => ensureSessionId());
-  const aiMessages = (messages || []).filter((m: any) => m.sender === 'eco');
+  const aiMessages = useMemo(
+    () => (messages || []).filter((m): m is ChatMessageType => m.sender === 'eco'),
+    [messages]
+  );
 
   const lastEcoInfo = useMemo<{ index: number; message?: ChatMessageType }>(() => {
     for (let i = messages.length - 1; i >= 0; i -= 1) {
@@ -190,11 +251,31 @@ const ChatPage: React.FC = () => {
 
   useEffect(() => {
     const already = sessionStorage.getItem(FEEDBACK_KEY);
-    if (!already && aiMessages.length >= 3) {
+    if (already || showFeedback) return;
+
+    const lastEco = aiMessages[aiMessages.length - 1];
+    if (!lastEco?.deepQuestion) return;
+
+    if (aiMessages.length >= 3) {
       setShowFeedback(true);
       mixpanel.track('Feedback Shown', { aiCount: aiMessages.length });
     }
-  }, [aiMessages.length]);
+  }, [aiMessages, showFeedback]);
+
+  const clearLastEcoDeepQuestion = useCallback(() => {
+    setMessages((prev) => {
+      for (let i = prev.length - 1; i >= 0; i -= 1) {
+        const current = prev[i];
+        if (current.sender === 'eco') {
+          if (!current.deepQuestion) return prev;
+          const updated = [...prev];
+          updated[i] = { ...current, deepQuestion: false };
+          return updated;
+        }
+      }
+      return prev;
+    });
+  }, [setMessages]);
 
   const handleFeedbackSubmitted = useCallback(() => {
     try {
@@ -202,8 +283,9 @@ const ChatPage: React.FC = () => {
         window.sessionStorage.setItem(FEEDBACK_KEY, '1');
       }
     } catch {}
+    clearLastEcoDeepQuestion();
     setShowFeedback(false);
-  }, [setShowFeedback]);
+  }, [clearLastEcoDeepQuestion, setShowFeedback]);
 
   useEffect(() => {
     if ((messages?.length ?? 0) > 0) setShowQuick(false);
@@ -306,23 +388,37 @@ const ChatPage: React.FC = () => {
 
       const resposta = await enviarMensagemParaEco(mensagensComContexto, userName, userId!, clientHour, clientTz);
 
-      const textoEco = (resposta || '').replace(/\n\{[\s\S]*\}\s*$/m, '').trim();
-      if (textoEco) addMessage({ id: uuidv4(), text: textoEco, sender: 'eco' });
-
       const match = (resposta || '').match(/\{[\s\S]*\}$/);
+      let bloco: any;
       if (match) {
         try {
-          const bloco = JSON.parse(match[0]);
-          if (typeof bloco?.intensidade === 'number' && bloco.intensidade >= 7) {
-            mixpanel.track('Memória Registrada', {
-              intensidade: bloco.intensidade,
-              emocao_principal: bloco.emocao_principal || 'desconhecida',
-              modulo_ativado: bloco.modulo_ativado || 'não informado',
-              dominio_vida: bloco.dominio_vida || 'geral',
-              padrao_comportamental: bloco.padrao_comportamental || 'não identificado',
-            });
-          }
-        } catch {}
+          bloco = JSON.parse(match[0]);
+        } catch (err) {
+          console.warn('Falha ao interpretar bloco JSON da resposta da Eco', err);
+        }
+      }
+
+      const textoEco = (resposta || '').replace(/\n\{[\s\S]*\}\s*$/m, '').trim();
+      const deepQuestionFlag = extractDeepQuestionFlag({
+        block: bloco,
+        responseText: resposta,
+        messageText: textoEco,
+      });
+
+      if (textoEco) {
+        const ecoMessage: ChatMessageType = { id: uuidv4(), text: textoEco, sender: 'eco' };
+        if (deepQuestionFlag) ecoMessage.deepQuestion = true;
+        addMessage(ecoMessage);
+      }
+
+      if (bloco && typeof bloco?.intensidade === 'number' && bloco.intensidade >= 7) {
+        mixpanel.track('Memória Registrada', {
+          intensidade: bloco.intensidade,
+          emocao_principal: bloco.emocao_principal || 'desconhecida',
+          modulo_ativado: bloco.modulo_ativado || 'não informado',
+          dominio_vida: bloco.dominio_vida || 'geral',
+          padrao_comportamental: bloco.padrao_comportamental || 'não identificado',
+        });
       }
     } catch (err: any) {
       console.error('[ChatPage] erro:', err);
