@@ -1,5 +1,5 @@
 // src/contexts/AuthContext.tsx
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { ensureProfile } from '../lib/ensureProfile';
 import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
@@ -109,7 +109,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Se o logout ocorrer em outra aba/expirar, garantimos a limpeza local
         if (event === 'SIGNED_OUT') {
           clearClientState();
+          if (typeof mixpanel.unregister_all === 'function') {
+            mixpanel.unregister_all();
+          }
+          mixpanel.reset();
           return;
+        }
+
+        if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+          syncMixpanelIdentity(session.user);
         }
 
         if (event === 'SIGNED_IN') {
@@ -188,10 +196,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const lastIdentitySignatureRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (user) {
-      syncMixpanelIdentity(user);
+    if (!user) {
+      lastIdentitySignatureRef.current = null;
+      return;
     }
+
+    const signature = [
+      user.id ?? '',
+      user.email ?? '',
+      user.user_metadata?.full_name ?? '',
+      user.user_metadata?.name ?? '',
+    ].join('|');
+
+    if (lastIdentitySignatureRef.current === signature) {
+      return;
+    }
+
+    lastIdentitySignatureRef.current = signature;
+    syncMixpanelIdentity(user);
   }, [user?.id, user?.email, user?.user_metadata?.full_name, user?.user_metadata?.name]);
 
   const register = async (email: string, password: string, nome: string, telefone: string) => {
