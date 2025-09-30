@@ -160,7 +160,11 @@ const MemoryLayout: React.FC = () => {
 
           {state.memoriesLoading && state.perfilLoading && state.relatorioLoading ? (
             <div className="h-[calc(100%-0px)] min-h-[320px] flex items-center justify-center">
-              <EcoBubbleLoading size={120} text="Carregando dados..." />
+              <EcoBubbleLoading
+                variant="memories"
+                size={120}
+                text="Carregando dados..."
+              />
             </div>
           ) : (
             <Outlet />

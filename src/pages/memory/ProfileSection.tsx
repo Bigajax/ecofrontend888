@@ -233,7 +233,7 @@ const ProfileSection: FC = () => {
       <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-10">
         {(perfilLoading || memoriesLoading || fetchingLocal) && (
           <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-10 grid place-items-center">
-            <EcoBubbleLoading size={72} text="Carregando…" />
+            <EcoBubbleLoading variant="memories" size={72} text="Carregando…" />
           </div>
         )}
         {(() => {
@@ -270,7 +270,13 @@ const ProfileSection: FC = () => {
             <div className="h-[96px]">
               {isClient && hasLinePoints ? (
                 <ChartErrorBoundary>
-                  <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={28} /></div>}>
+                <Suspense
+                  fallback={
+                    <div className="w-full h-full grid place-items-center">
+                      <EcoBubbleLoading variant="memories" size={28} />
+                    </div>
+                  }
+                >
                     {/* usa cópia mutável */}
                     <LazyResponsiveLine
                       key={`line-${period}`}
@@ -311,7 +317,13 @@ const ProfileSection: FC = () => {
           {isClient && emotionsDataSafe.length ? (
             <div className="h-[300px]">
               <ChartErrorBoundary>
-                <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={32} /></div>}>
+                <Suspense
+                  fallback={
+                    <div className="w-full h-full grid place-items-center">
+                      <EcoBubbleLoading variant="memories" size={32} />
+                    </div>
+                  }
+                >
                   {/* usa cópia mutável */}
                   <LazyResponsiveBar
                     key={`bar-emo-${period}`}
@@ -357,7 +369,13 @@ const ProfileSection: FC = () => {
           {isClient && themesDataSafe.length ? (
             <div className="h-[300px]">
               <ChartErrorBoundary>
-                <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={32} /></div>}>
+                <Suspense
+                  fallback={
+                    <div className="w-full h-full grid place-items-center">
+                      <EcoBubbleLoading variant="memories" size={32} />
+                    </div>
+                  }
+                >
                   {/* usa cópia mutável */}
                   <LazyResponsiveBar
                     key={`bar-theme-${period}`}

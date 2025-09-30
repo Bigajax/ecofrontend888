@@ -28,7 +28,12 @@ const MemoriesSection: React.FC = () => {
   if (memoriesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <EcoBubbleLoading size={120} text="Carregando memórias..." breathingSec={2} />
+        <EcoBubbleLoading
+          variant="memories"
+          size={120}
+          text="Carregando memórias..."
+          breathingSec={2}
+        />
       </div>
     );
   }
