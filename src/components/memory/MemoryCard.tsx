@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import EmotionBubble from './EmotionBubble';
@@ -23,6 +23,17 @@ type MemoryCardProps = {
   mem: Memoria;
 };
 
+const toRgb = (hex?: string) => {
+  if (!hex) return null;
+  const sanitized = hex.replace('#', '');
+  if (sanitized.length !== 6) return null;
+  const bigint = Number.parseInt(sanitized, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return { r, g, b };
+};
+
 const MemoryCardComponent: React.FC<MemoryCardProps> = ({ mem }) => {
   const [open, setOpen] = useState(false);
   const toggle = useCallback(() => setOpen((value) => !value), []);
@@ -31,6 +42,7 @@ const MemoryCardComponent: React.FC<MemoryCardProps> = ({ mem }) => {
   const emotionName = getEmotion(mem);
   const token = getEmotionToken(emotionName);
   const primaryColor = token.accent;
+  const primaryRgb = useMemo(() => toRgb(primaryColor), [primaryColor]);
   const when = humanDate(getCreatedAt(mem));
   const intensidade = intensityOf(mem);
 
@@ -38,52 +50,83 @@ const MemoryCardComponent: React.FC<MemoryCardProps> = ({ mem }) => {
   const padrao = getPattern(mem);
   const tags = getTags(mem);
 
+  const accentShadow = primaryRgb
+    ? `0 18px 46px rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.24)`
+    : '0 18px 46px rgba(15, 23, 42, 0.16)';
+
   return (
     <motion.li
       layout
-      className="w-full max-w-full rounded-2xl bg-white/95 backdrop-blur-sm border border-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_8px_32px_rgba(0,0,0,0.04)] p-5 transition-all duration-200 hover:shadow-[0_1px_2px_rgba(0,0,0,0.08),0_12px_40px_rgba(0,0,0,0.06)] hover:border-black/[0.12]"
+      className="group relative w-full max-w-full overflow-hidden rounded-[28px] border border-white/60 bg-white/80 px-6 py-6 backdrop-blur-2xl transition-shadow duration-300"
+      style={{
+        boxShadow: `${accentShadow}, 0 12px 30px rgba(15, 23, 42, 0.08)`,
+      }}
     >
-      <div className="flex items-start gap-4">
-        <EmotionBubble emotion={emotionName} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <h3 className="text-[17px] leading-[1.35] font-semibold text-gray-900 truncate mb-0.5">
-                {capitalize(getEmotion(mem)) || 'Registro emocional'}
-              </h3>
-              <p className="text-[13px] leading-[1.4] text-gray-500 font-medium">{when}</p>
-            </div>
-            <ExpandButton open={open} onClick={toggle} controlsId={detailsId} />
-          </div>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[28px] opacity-70"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.25))',
+        }}
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -inset-px rounded-[30px] opacity-0 transition duration-500 ease-[cubic-bezier(0.22,0.61,0.36,1)] group-hover:opacity-60"
+        style={{
+          background: primaryRgb
+            ? `radial-gradient(140% 140% at 85% 15%, rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.24), transparent 65%)`
+            : 'radial-gradient(140% 140% at 85% 15%, rgba(79, 70, 229, 0.2), transparent 65%)',
+        }}
+      />
 
-          <div className="mt-3 mb-4">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[12px] font-medium text-gray-600">Intensidade</span>
-              <span className="text-[12px] font-semibold text-gray-800">{intensidade}/10</span>
+      <div className="relative flex flex-col gap-5">
+        <div className="flex items-start gap-5">
+          <EmotionBubble emotion={emotionName} size={56} />
+          <div className="min-w-0 flex-1 pt-1">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h3 className="mb-0.5 truncate text-[18px] font-semibold leading-[1.35] text-gray-900">
+                  {capitalize(getEmotion(mem)) || 'Registro emocional'}
+                </h3>
+                <p className="text-[13px] font-medium leading-[1.4] text-gray-500">{when}</p>
+              </div>
+              <ExpandButton open={open} onClick={toggle} controlsId={detailsId} />
             </div>
-            <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(intensidade / 10) * 100}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-                className="h-full rounded-full"
-                style={{ background: `linear-gradient(90deg, ${primaryColor}, ${appleShade(primaryColor, -0.2)})` }}
-              />
-            </div>
-          </div>
 
-          {domain && (
-            <div className="mb-3">
-              <Chip variant="colorful" seedColor={domain}>
-                {domain}
-              </Chip>
+            <div className="mt-4 mb-4">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[12px] font-medium text-gray-600">Intensidade</span>
+                <span className="text-[12px] font-semibold text-gray-800">{intensidade}/10</span>
+              </div>
+              <div className="relative h-2 rounded-full bg-gray-100/80">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(intensidade / 10) * 100}%` }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                  className="absolute inset-y-0 rounded-full"
+                  style={{
+                    background: `linear-gradient(90deg, ${primaryColor}, ${appleShade(primaryColor, -0.2)})`,
+                    boxShadow: primaryRgb
+                      ? `0 8px 16px rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.24)`
+                      : undefined,
+                  }}
+                />
+              </div>
             </div>
-          )}
+
+            {domain && (
+              <div className="mb-3">
+                <Chip variant="colorful" seedColor={domain}>
+                  {domain}
+                </Chip>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {!!tags.length && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           {tags.slice(0, 3).map((tag, index) => (
             <Chip key={`${tag}-${index}`} variant="colorful" seedColor={tag}>
               {tag}
