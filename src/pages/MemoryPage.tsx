@@ -1,5 +1,5 @@
 // src/pages/MemoryPage.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -9,6 +9,7 @@ import MapaEmocional2D from '../components/MapaEmocional2D';
 import LinhaDoTempoEmocional from '../components/LinhaDoTempoEmocional';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import MemoryCard from './memory/components/MemoryCard';
+import mixpanel from '../lib/mixpanel';
 import {
   chartColorForEmotion,
   chartColorForTheme,
@@ -55,12 +56,25 @@ const MemoryPage: React.FC = () => {
   const { tab } = useParams<{ tab?: string }>();
 
   const [activeTab, setActiveTab] = useState<TabKey>(normalizeTab(tab));
+  const hasTrackedReportOpenRef = useRef(false);
+  const reportTimingActiveRef = useRef(false);
+
+  const startReportTiming = () => {
+    if (!reportTimingActiveRef.current) {
+      mixpanel.time_event('Front-end: Relatório Carregado');
+      reportTimingActiveRef.current = true;
+    }
+  };
 
   useEffect(() => {
     setActiveTab(normalizeTab(tab));
   }, [tab]);
 
   const goTab = (target: TabKey) => {
+    mixpanel.track('Front-end: Memory Tab', { target, previous: activeTab });
+    if (target === 'report') {
+      startReportTiming();
+    }
     setActiveTab(target);
     navigate(target === 'memories' ? '/memory' : `/memory/${target}`, { replace: true });
   };
@@ -85,6 +99,25 @@ const MemoryPage: React.FC = () => {
     minIntensity,
     setMinIntensity,
   } = useMemoryPageData(userId);
+
+  useEffect(() => {
+    if (activeTab === 'report') {
+      startReportTiming();
+
+      if (!loading && !hasTrackedReportOpenRef.current) {
+        mixpanel.track('Front-end: Relatório Aberto', { hasData: Boolean(relatorio) });
+        hasTrackedReportOpenRef.current = true;
+      }
+
+      if (!loading && reportTimingActiveRef.current) {
+        mixpanel.track('Front-end: Relatório Carregado', { hasData: Boolean(relatorio) });
+        reportTimingActiveRef.current = false;
+      }
+    } else {
+      hasTrackedReportOpenRef.current = false;
+      reportTimingActiveRef.current = false;
+    }
+  }, [activeTab, loading, relatorio]);
 
   return (
     <PhoneFrame className="flex h-full flex-col bg-white">
