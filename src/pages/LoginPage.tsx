@@ -7,6 +7,7 @@ import PhoneFrame from '../components/PhoneFrame';
 import { useAuth } from '../contexts/AuthContext';
 import TourInicial from '../components/TourInicial';
 import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
+import mixpanel from '../lib/mixpanel';
 import { supabase } from '@/lib/supabase';
 
 /* Divisor com traço mais marcado */
@@ -113,9 +114,18 @@ const LoginPage: React.FC = () => {
     setError('');
     setLoading(true);
     try {
+      mixpanel.track('Front-end: Login Iniciado', {
+        method: 'password',
+        email: email.trim(),
+      });
       await signIn(email.trim(), password);
+      mixpanel.track('Front-end: Login Concluído', { method: 'password' });
     } catch (err: any) {
       setError(translateAuthError(err));
+      mixpanel.track('Front-end: Login Falhou', {
+        method: 'password',
+        reason: translateAuthError(err),
+      });
     } finally {
       setLoading(false);
     }
@@ -125,10 +135,16 @@ const LoginPage: React.FC = () => {
     setError('');
     setLoading(true);
     try {
+      mixpanel.track('Front-end: Login Iniciado', { method: 'google' });
       await signInWithGoogle();
+      mixpanel.track('Front-end: Login Concluído', { method: 'google' });
     } catch (err: any) {
       setLoading(false);
       setError(translateAuthError(err));
+      mixpanel.track('Front-end: Login Falhou', {
+        method: 'google',
+        reason: translateAuthError(err),
+      });
     }
   };
 
