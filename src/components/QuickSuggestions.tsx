@@ -10,13 +10,18 @@ export type Suggestion = {
   systemHint?: string;    // dica extra para a IA ajustar o tom
 };
 
+export type SuggestionPickMeta = {
+  source: "rotating" | "pill";
+  index: number;
+};
+
 type QuickSuggestionsProps = {
   visible: boolean;
   className?: string;
 
   /** Preferencial — recebe objetos ricos */
   suggestions?: Suggestion[];
-  onPickSuggestion?: (s: Suggestion) => void;
+  onPickSuggestion?: (s: Suggestion, meta?: SuggestionPickMeta) => void;
 
   /** Legado: compat com versão antiga (texto direto) */
   onPick?: (text: string) => void;
@@ -135,8 +140,8 @@ export default function QuickSuggestions({
 }: QuickSuggestionsProps) {
   if (!visible) return null;
 
-  const emitPick = (s: Suggestion) => {
-    if (onPickSuggestion) return onPickSuggestion(s);
+  const emitPick = (s: Suggestion, meta?: SuggestionPickMeta) => {
+    if (onPickSuggestion) return onPickSuggestion(s, meta);
     if (onPick) return onPick(`${s.icon ? s.icon + " " : ""}${s.label}`);
   };
 
@@ -170,10 +175,10 @@ export default function QuickSuggestions({
           [&::-webkit-scrollbar]:hidden
         "
       >
-        {suggestions.map((s) => (
+        {suggestions.map((s, index) => (
           <button
             key={s.id}
-            onClick={() => emitPick(s)}
+            onClick={() => emitPick(s, { source: "pill", index })}
             className="
               shrink-0 md:shrink
               h-9 md:h-10

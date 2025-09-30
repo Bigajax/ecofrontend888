@@ -11,7 +11,7 @@ import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
 import EcoMessageWithAudio from '../components/EcoMessageWithAudio';
-import QuickSuggestions, { Suggestion } from '../components/QuickSuggestions';
+import QuickSuggestions, { Suggestion, SuggestionPickMeta } from '../components/QuickSuggestions';
 import TypingDots from '../components/TypingDots';
 
 import { enviarMensagemParaEco } from '../api/ecoApi';
@@ -304,9 +304,15 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const handlePickSuggestion = async (s: Suggestion) => {
+  const handlePickSuggestion = async (s: Suggestion, meta?: SuggestionPickMeta) => {
     setShowQuick(false);
-    mixpanel.track('Eco: QuickSuggestion Click', { id: s.id, label: s.label, modules: s.modules });
+    mixpanel.track('Front-end: Quick Suggestion', {
+      id: s.id,
+      label: s.label,
+      source: meta?.source,
+      index: meta?.index,
+      modules: s.modules,
+    });
     const hint =
       (s.modules?.length || s.systemHint)
         ? `${s.modules?.length ? `Ative módulos: ${s.modules.join(', ')}.` : ''}${s.systemHint ? ` ${s.systemHint}` : ''}`.trim()

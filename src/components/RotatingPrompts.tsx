@@ -1,10 +1,10 @@
 // src/components/RotatingPrompts.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { Suggestion } from "./QuickSuggestions";
+import type { Suggestion, SuggestionPickMeta } from "./QuickSuggestions";
 
 type Props = {
   items: Suggestion[];
-  onPick: (s: Suggestion) => void;
+  onPick: (s: Suggestion, meta?: SuggestionPickMeta) => void;
   /** intervalo de troca em ms (default 4500) */
   intervalMs?: number;
   className?: string;
@@ -52,7 +52,7 @@ const RotatingPrompts: React.FC<Props> = ({
     >
       <button
         type="button"
-        onClick={() => onPick(s)}
+        onClick={() => onPick(s, { source: "rotating", index: idx })}
         onFocus={() => (pauseRef.current = true)}
         onBlur={() => (pauseRef.current = false)}
         className="
