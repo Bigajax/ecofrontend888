@@ -33,7 +33,7 @@ describe('memory utils', () => {
     const pastel = generateConsistentPastelColor('empolgado');
     expect(pastel.startsWith('hsl(')).toBe(true);
     expect(getEmotionColor('empolgado')).toBe(pastel);
-    expect(getEmotionColor('Alegria')).toBe('#3B82F6');
+    expect(getEmotionColor('Alegria')).toBe('#4FD2A7');
   });
 
   it('formats human readable dates', () => {

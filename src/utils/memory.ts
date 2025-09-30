@@ -1,18 +1,5 @@
 import { Memoria } from '../api/memoriaApi';
-
-export const EMOTION_COLORS: Record<string, string> = {
-  raiva: '#DB2777',
-  irritado: '#EC4899',
-  frustracao: '#BE185D',
-  medo: '#DB2777',
-  incerteza: '#BE185D',
-  alegria: '#3B82F6',
-  calmo: '#2563EB',
-  surpresa: '#3B82F6',
-  antecipacao: '#2563EB',
-  tristeza: '#A855F7',
-  neutro: '#8B5CF6',
-};
+import { emotionAliases, emotionTokens } from '../pages/memory/emotionTokens';
 
 export const normalize = (value: string = ''): string =>
   value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -36,7 +23,12 @@ export const generateConsistentPastelColor = (
 
 export const getEmotionColor = (emotionName: string): string => {
   const normalized = normalize(emotionName);
-  return EMOTION_COLORS[normalized] || generateConsistentPastelColor(emotionName);
+  const mapped = emotionAliases[normalized];
+  const key = mapped ?? normalized;
+  if ((emotionTokens as Record<string, { accent: string }>)[key]) {
+    return (emotionTokens as Record<string, { accent: string }>)[key].accent;
+  }
+  return generateConsistentPastelColor(emotionName);
 };
 
 export const humanDate = (raw: string): string => {

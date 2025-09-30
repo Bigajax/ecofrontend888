@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
+import EyeBubbleBase, { EyeBubbleToken, MotionConfig } from './EyeBubbleBase';
+
 type EcoState = 'idle' | 'listening' | 'speaking' | 'thinking' | 'focus';
 type EcoVariant = 'icon' | 'avatar' | 'message' | 'voice';
 
@@ -23,11 +25,6 @@ const DEFAULT_SIZES: Record<EcoVariant, number> = {
   avatar: 40,
   message: 30,
   voice: 240,
-};
-
-type MotionConfig = {
-  animate: any;
-  transition?: any;
 };
 
 const STATIC_BUBBLE: MotionConfig = {
@@ -127,6 +124,19 @@ const getPupilMotion = (state: EcoState, reduceMotion: boolean): MotionConfig =>
   }
 };
 
+const BASE_EYE_TOKEN: Omit<EyeBubbleToken, 'microMotion'> & { microMotion: EyeBubbleToken['microMotion'] } = {
+  gradient: ['rgba(238, 244, 255, 0.95)', 'rgba(192, 212, 255, 0.55)'],
+  highlight: ['rgba(255,255,255,0.75)', 'rgba(255,255,255,0.08)'],
+  irisGradient: ['rgba(158, 189, 255, 0.85)', 'rgba(74, 110, 196, 0.65)'],
+  irisHighlight: ['rgba(255,255,255,0.85)', 'rgba(255,255,255,0.15)'],
+  pupilColor: 'radial-gradient(120% 120% at 30% 30%, rgba(20,27,45,0.95), rgba(2,5,12,0.65))',
+  irisScale: 0.4,
+  pupilScale: 0.45,
+  eyelidOffset: 0.05,
+  blinkCadence: 3.6,
+  microMotion: 'breathing',
+};
+
 const EcoBubbleOneEye: React.FC<EcoBubbleOneEyeProps> = ({
   state = 'idle',
   variant = 'icon',
@@ -134,13 +144,8 @@ const EcoBubbleOneEye: React.FC<EcoBubbleOneEyeProps> = ({
 }) => {
   const reduceMotion = useReducedMotion();
   const dimension = size ?? DEFAULT_SIZES[variant];
-  const irisScale = variant === 'voice' ? 0.44 : variant === 'avatar' ? 0.42 : variant === 'message' ? 0.4 : 0.38;
-  const irisSize = dimension * irisScale;
-  const pupilSize = irisSize * 0.45;
-
-  const bubbleMotion = getBubbleMotion(state, reduceMotion);
-  const eyeMotion = getEyeMotion(state, reduceMotion);
-  const pupilMotion = getPupilMotion(state, reduceMotion);
+  const irisScale =
+    variant === 'voice' ? 0.44 : variant === 'avatar' ? 0.42 : variant === 'message' ? 0.4 : 0.38;
 
   const label = STATE_LABELS[state] || 'ECO';
   const haloSize = dimension * (variant === 'voice' ? 1.4 : 1.2);
@@ -148,6 +153,18 @@ const EcoBubbleOneEye: React.FC<EcoBubbleOneEyeProps> = ({
 
   const showListeningHalo = state === 'listening';
   const showFocusGlow = state === 'focus';
+
+  const token: EyeBubbleToken = {
+    ...BASE_EYE_TOKEN,
+    irisScale,
+    blinkCadence: state === 'idle' ? 3.4 : 0,
+    eyelidOffset: state === 'focus' ? 0.08 : BASE_EYE_TOKEN.eyelidOffset,
+    animations: {
+      bubble: ({ reduceMotion: shouldReduce }) => getBubbleMotion(state, shouldReduce),
+      iris: ({ reduceMotion: shouldReduce }) => getEyeMotion(state, shouldReduce),
+      pupil: ({ reduceMotion: shouldReduce }) => getPupilMotion(state, shouldReduce),
+    },
+  };
 
   return (
     <div
@@ -190,72 +207,7 @@ const EcoBubbleOneEye: React.FC<EcoBubbleOneEyeProps> = ({
         />
       )}
 
-      <motion.div
-        role="img"
-        aria-label={label}
-        className="relative flex items-center justify-center rounded-full"
-        style={{
-          width: dimension,
-          height: dimension,
-          background:
-            'radial-gradient(135% 135% at 32% 20%, rgba(255,255,255,0.96), rgba(208,222,255,0.4))',
-          border: '1px solid rgba(140, 174, 255, 0.45)',
-          boxShadow:
-            '0 18px 38px rgba(15, 23, 42, 0.16), inset 0 0 18px rgba(255,255,255,0.45)',
-          backdropFilter: 'blur(18px)',
-          WebkitBackdropFilter: 'blur(18px)',
-        }}
-        animate={bubbleMotion.animate}
-        transition={bubbleMotion.transition}
-      >
-        <span
-          aria-hidden
-          className="absolute inset-[18%] rounded-full"
-          style={{
-            background:
-              'radial-gradient(120% 120% at 75% 20%, rgba(255,255,255,0.6), rgba(182, 206, 255, 0.25))',
-          }}
-        />
-
-        <motion.div
-          aria-hidden
-          className="relative flex items-center justify-center rounded-full"
-          style={{
-            width: irisSize,
-            height: irisSize,
-            background:
-              'radial-gradient(120% 120% at 30% 25%, rgba(158, 189, 255, 0.85), rgba(74, 110, 196, 0.65))',
-            boxShadow:
-              'inset 0 0 12px rgba(32, 54, 120, 0.45), inset 0 2px 8px rgba(255,255,255,0.45)',
-          }}
-          animate={eyeMotion.animate}
-          transition={eyeMotion.transition}
-        >
-          <motion.span
-            aria-hidden
-            className="block rounded-full"
-            style={{
-              width: pupilSize,
-              height: pupilSize,
-              background:
-                'radial-gradient(120% 120% at 30% 30%, rgba(20,27,45,0.95), rgba(2,5,12,0.65))',
-              boxShadow: '0 4px 8px rgba(4, 10, 24, 0.45)',
-            }}
-            animate={pupilMotion.animate}
-            transition={pupilMotion.transition}
-          />
-          <span
-            aria-hidden
-            className="absolute -top-[18%] left-[18%] h-[35%] w-[35%] rounded-full"
-            style={{
-              background:
-                'radial-gradient(60% 60% at 50% 45%, rgba(255,255,255,0.85), rgba(255,255,255,0.1))',
-              filter: 'blur(0.4px)',
-              opacity: 0.8,
-            }}
-          />
-        </motion.div>
-      </motion.div>
+      <EyeBubbleBase token={token} size={dimension} label={label} reduceMotion={reduceMotion} />
     </div>
   );
 };
