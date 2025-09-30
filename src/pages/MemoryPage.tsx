@@ -100,6 +100,48 @@ const MemoryPage: React.FC = () => {
     setMinIntensity,
   } = useMemoryPageData(userId);
 
+  const handleEmoFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value;
+    mixpanel.track('Front-end: UI Interação', {
+      control: 'emotion-filter',
+      value,
+      activeTab,
+      filteredCount: filteredMemories.length,
+    });
+    setEmoFilter(value);
+  };
+
+  const handleQueryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    mixpanel.track('Front-end: UI Interação', {
+      control: 'memory-search',
+      value,
+      activeTab,
+      filteredCount: filteredMemories.length,
+    });
+    setQuery(value);
+  };
+
+  const handleIntensityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(event.target.value);
+    mixpanel.track('Front-end: UI Interação', {
+      control: 'intensity-filter',
+      value,
+      activeTab,
+      filteredCount: filteredMemories.length,
+    });
+    setMinIntensity(value);
+  };
+
+  const handleResetFilters = () => {
+    mixpanel.track('Front-end: UI Interação', {
+      control: 'reset-filters',
+      activeTab,
+      filteredCount: filteredMemories.length,
+    });
+    resetFilters();
+  };
+
   useEffect(() => {
     if (activeTab === 'report') {
       startReportTiming();
@@ -189,7 +231,7 @@ const MemoryPage: React.FC = () => {
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                       <select
                         value={emoFilter}
-                        onChange={(event) => setEmoFilter(event.target.value)}
+                        onChange={handleEmoFilterChange}
                         className="h-11 rounded-xl border border-black/10 bg-white/80 px-3 text-sm"
                       >
                         <option value="all">Todas as emoções</option>
@@ -203,7 +245,7 @@ const MemoryPage: React.FC = () => {
                       <input
                         type="text"
                         value={query}
-                        onChange={(event) => setQuery(event.target.value)}
+                        onChange={handleQueryChange}
                         placeholder="Buscar em tags, reflexão ou pensamento…"
                         className="h-11 rounded-xl border border-black/10 bg-white/80 px-3 text-sm"
                       />
@@ -216,7 +258,7 @@ const MemoryPage: React.FC = () => {
                           max={10}
                           step={1}
                           value={minIntensity}
-                          onChange={(event) => setMinIntensity(Number(event.target.value))}
+                          onChange={handleIntensityChange}
                           className="flex-1"
                         />
                       </div>
@@ -225,7 +267,7 @@ const MemoryPage: React.FC = () => {
                     {filtersActive && (
                       <div className="mt-3 flex justify-end">
                         <button
-                          onClick={resetFilters}
+                          onClick={handleResetFilters}
                           className="rounded-full border border-black/10 bg-white/80 px-3 py-1 text-xs transition hover:bg-white"
                         >
                           Limpar filtros
