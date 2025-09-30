@@ -2,7 +2,7 @@
 /*  ChatPage.tsx — scroll estável + sem bolinha fantasma + saudação alinhada  */
 /* -------------------------------------------------------------------------- */
 
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { motion } from 'framer-motion';
@@ -19,6 +19,7 @@ import { buscarUltimasMemoriasComTags, buscarMemoriasSemelhantesV2 } from '../ap
 
 import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
+import type { Message as ChatMessageType } from '../contexts/ChatContext';
 import { salvarMensagem } from '../api/mensagem';
 
 import { differenceInDays } from 'date-fns';
@@ -28,6 +29,20 @@ import mixpanel from '../lib/mixpanel';
 import { FeedbackPrompt } from '../components/FeedbackPrompt';
 
 const FEEDBACK_KEY = 'eco_feedback_given';
+const SESSION_STORAGE_KEY = 'eco.session';
+
+const ensureSessionId = () => {
+  const generated = `sess_${uuidv4()}`;
+  if (typeof window === 'undefined') return generated;
+  try {
+    const stored = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (stored) return stored;
+    window.sessionStorage.setItem(SESSION_STORAGE_KEY, generated);
+    return generated;
+  } catch {
+    return generated;
+  }
+};
 
 const saudacaoDoDiaFromHour = (h: number) => {
   if (h < 6) return 'Boa noite';
@@ -67,7 +82,18 @@ const ChatPage: React.FC = () => {
   const inputBarRef = useRef<HTMLDivElement>(null);
 
   const [showFeedback, setShowFeedback] = useState(false);
+  const [sessaoId] = useState(() => ensureSessionId());
   const aiMessages = (messages || []).filter((m: any) => m.sender === 'eco');
+
+  const lastEcoInfo = useMemo<{ index: number; message?: ChatMessageType }>(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const current = messages[i];
+      if (current.sender === 'eco') {
+        return { index: i, message: current };
+      }
+    }
+    return { index: -1 };
+  }, [messages]);
 
   const [showQuick, setShowQuick] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -169,6 +195,15 @@ const ChatPage: React.FC = () => {
       mixpanel.track('Feedback Shown', { aiCount: aiMessages.length });
     }
   }, [aiMessages.length]);
+
+  const handleFeedbackSubmitted = useCallback(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem(FEEDBACK_KEY, '1');
+      }
+    } catch {}
+    setShowFeedback(false);
+  }, [setShowFeedback]);
 
   useEffect(() => {
     if ((messages?.length ?? 0) > 0) setShowQuick(false);
@@ -369,6 +404,23 @@ const ChatPage: React.FC = () => {
                 )}
               </div>
             ))}
+
+            {showFeedback && lastEcoInfo.message && (
+              <div className="flex justify-center pt-3">
+                <div className="mx-auto flex max-w-xl items-center justify-center rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
+                  <FeedbackPrompt
+                    sessaoId={sessaoId}
+                    usuarioId={userId}
+                    mensagemId={lastEcoInfo.message.id}
+                    extraMeta={{
+                      ecoMessageIndex: lastEcoInfo.index,
+                      uiMessageId: lastEcoInfo.message.id,
+                    }}
+                    onSubmitted={handleFeedbackSubmitted}
+                  />
+                </div>
+              </div>
+            )}
 
             {digitando && (
               <div className="w-full flex justify-start">
