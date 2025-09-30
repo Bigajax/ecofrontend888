@@ -155,13 +155,13 @@ const ReportSection: React.FC = () => {
         <div className="grid grid-cols-1 gap-4">
           <Card title="Carregando análise…">
             <div className="h-48 grid place-items-center">
-              <EcoBubbleLoading size={80} text="Preparando seu relatório..." />
+              <EcoBubbleLoading variant="memories" size={80} text="Preparando seu relatório..." />
             </div>
           </Card>
 
           <Card title="Carregando visualizações…">
             <div className="h-56 grid place-items-center">
-              <EcoBubbleLoading size={60} />
+              <EcoBubbleLoading variant="memories" size={60} />
             </div>
           </Card>
         </div>

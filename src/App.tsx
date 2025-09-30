@@ -22,7 +22,7 @@ const ReportSection = React.lazy(() => import('./pages/memory/ReportSection'));
 
 const memorySuspenseFallback = (
   <div className="flex min-h-[320px] items-center justify-center py-10">
-    <EcoBubbleLoading size={120} text="Carregando memórias..." />
+    <EcoBubbleLoading variant="memories" size={120} text="Carregando memórias..." />
   </div>
 );
 
