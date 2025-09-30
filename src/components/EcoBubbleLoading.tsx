@@ -1,6 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 
+import EcoBubbleOneEye from "./EcoBubbleOneEye";
+
 type Props = {
   size?: number;       // px (default 64)
   className?: string;  // classes extras
@@ -16,8 +18,8 @@ const EcoBubbleLoading: React.FC<Props> = ({
 }) => {
   return (
     <div className={`flex flex-col items-center justify-center ${className || ""}`}>
-      <motion.div
-        className="rounded-full shadow-md ring-1 ring-[rgba(200,220,255,0.45)]"
+      <div
+        className="relative flex items-center justify-center rounded-full shadow-md ring-1 ring-[rgba(200,220,255,0.45)]"
         style={{
           width: size,
           height: size,
@@ -28,10 +30,16 @@ const EcoBubbleLoading: React.FC<Props> = ({
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
         }}
-        animate={{ scale: [1, 1.1, 1] }}
-        transition={{ duration: breathingSec, repeat: Infinity, ease: "easeInOut" }}
         aria-hidden
-      />
+      >
+        <motion.div
+          className="flex h-full w-full items-center justify-center"
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ duration: breathingSec, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <EcoBubbleOneEye variant="avatar" size={size * 0.72} state="thinking" />
+        </motion.div>
+      </div>
       {text && (
         <span className="mt-4 text-sm text-gray-500 select-none">{text}</span>
       )}
