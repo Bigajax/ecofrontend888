@@ -1,11 +1,12 @@
 // src/components/TourInicial.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import GlassBubble from './GlassBubble';
 import Sequence from './Sequence';
 import { X, ArrowRight } from 'lucide-react';
+import mixpanel from '../lib/mixpanel';
 
 interface TourInicialProps {
   onClose: () => void;
@@ -15,9 +16,24 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose }) => {
   const navigate = useNavigate();
   const [showSequence, setShowSequence] = useState(false);
 
-  const handleIniciarSequence = () => setShowSequence(true);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      mixpanel.track('Front-end: Tour Aberto', { entry: window.location.href });
+    }
+  }, []);
+
+  const handleIniciarSequence = () => {
+    mixpanel.track('Front-end: Tour Sequência Iniciada');
+    setShowSequence(true);
+  };
+
+  const handleClose = useCallback(() => {
+    mixpanel.track('Front-end: Tour Fechado', { step: showSequence ? 'sequence' : 'intro' });
+    onClose();
+  }, [onClose, showSequence]);
 
   const handleSequenceClosed = () => {
+    mixpanel.track('Front-end: Tour Concluído');
     onClose();
     navigate('/chat');
   };
@@ -25,17 +41,17 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose }) => {
   // Fechar com Esc
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [handleClose]);
 
   const modalContent = (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: '#ffffff' }} // 🔒 fundo branco puro
-      onClick={onClose}                 // fechar clicando no backdrop
+      onClick={handleClose}             // fechar clicando no backdrop
       role="dialog"
       aria-modal="true"
       aria-label="Tour inicial"
@@ -53,7 +69,7 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose }) => {
           <div className="flex h-full flex-col items-center justify-center px-8 text-center pb-6">
             {/* Fechar */}
             <button
-              onClick={onClose}
+              onClick={handleClose}
               aria-label="Fechar"
               className="absolute right-3.5 top-3.5 inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100/70 hover:text-slate-700 transition z-10"
             >
@@ -82,12 +98,12 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose }) => {
           <>
             {/* Sequence usa 100% da altura do card */}
             <div className="absolute inset-0">
-              <Sequence onClose={handleSequenceClosed} />
+              <Sequence onClose={handleClose} onComplete={handleSequenceClosed} />
             </div>
 
             {/* botão de fechar também na sequência */}
             <button
-              onClick={onClose}
+              onClick={handleClose}
               aria-label="Fechar"
               className="absolute right-3.5 top-3.5 inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100/70 hover:text-slate-700 transition z-10"
             >

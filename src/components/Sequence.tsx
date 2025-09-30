@@ -1,22 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import Slide from './Slide';
 import { slides } from '../data/slides';
+import mixpanel from '../lib/mixpanel';
 
 interface SequenceProps {
   onClose: () => void;
+  onComplete: () => void;
 }
 
-const Sequence: React.FC<SequenceProps> = ({ onClose }) => {
+const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   const [slideIndex, setSlideIndex] = useState(0);
   const totalSlides = slides.length;
-  const navigate = useNavigate();
+  const currentSlideData = slides[slideIndex];
+
+  useEffect(() => {
+    mixpanel.track('Front-end: Tour Slide', {
+      index: slideIndex,
+      title: currentSlideData?.title,
+    });
+  }, [slideIndex, currentSlideData?.title]);
 
   const handleNext = () => {
     if (slideIndex < totalSlides - 1) setSlideIndex((i) => i + 1);
-    else navigate('/chat');
+    else onComplete();
   };
   const handlePrev = () => { if (slideIndex > 0) setSlideIndex((i) => i - 1); };
   const goToSlide = (i: number) => setSlideIndex(i);
@@ -31,8 +39,6 @@ const Sequence: React.FC<SequenceProps> = ({ onClose }) => {
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIndex]);
-
-  const currentSlideData = slides[slideIndex];
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-white">
