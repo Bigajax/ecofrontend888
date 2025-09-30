@@ -16,7 +16,8 @@ import {
   intensityOf,
   toDate,
 } from '../../pages/memory/utils';
-import { appleShade, getEmotionColor } from '../../pages/memory/palette';
+import { appleShade } from '../../pages/memory/palette';
+import { getEmotionToken } from '../../pages/memory/emotionTokens';
 
 type MemoryCardProps = {
   mem: Memoria;
@@ -27,7 +28,9 @@ const MemoryCardComponent: React.FC<MemoryCardProps> = ({ mem }) => {
   const toggle = useCallback(() => setOpen((value) => !value), []);
   const detailsId = `mem-details-${mem.id ?? Math.random().toString(36).slice(2)}`;
 
-  const primaryColor = getEmotionColor(getEmotion(mem));
+  const emotionName = getEmotion(mem);
+  const token = getEmotionToken(emotionName);
+  const primaryColor = token.accent;
   const when = humanDate(getCreatedAt(mem));
   const intensidade = intensityOf(mem);
 
@@ -41,7 +44,7 @@ const MemoryCardComponent: React.FC<MemoryCardProps> = ({ mem }) => {
       className="w-full max-w-full rounded-2xl bg-white/95 backdrop-blur-sm border border-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_8px_32px_rgba(0,0,0,0.04)] p-5 transition-all duration-200 hover:shadow-[0_1px_2px_rgba(0,0,0,0.08),0_12px_40px_rgba(0,0,0,0.06)] hover:border-black/[0.12]"
     >
       <div className="flex items-start gap-4">
-        <EmotionBubble aria-label={`Emoção: ${getEmotion(mem) || 'Neutro'}`} color={primaryColor} />
+        <EmotionBubble emotion={emotionName} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">

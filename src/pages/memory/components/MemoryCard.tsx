@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import type { Memoria } from '../../../api/memoriaApi';
-import {
-  generateConsistentPastelColor,
-  getEmotionColor,
-  humanDate,
-} from '../../../utils/memory';
 import { motion } from 'framer-motion';
+
+import type { Memoria } from '../../../api/memoriaApi';
+import EmotionBubble from '../../../components/memory/EmotionBubble';
+import { getEmotionToken } from '../emotionTokens';
+import { generateConsistentPastelColor, humanDate } from '../../../utils/memory';
 
 type Props = {
   mem: Memoria;
@@ -17,7 +16,9 @@ const capitalize = (value?: string | null) =>
 const MemoryCard: React.FC<Props> = ({ mem }) => {
   const [open, setOpen] = useState(false);
 
-  const color = getEmotionColor(mem.emocao_principal || 'neutro');
+  const emotionName = mem.emocao_principal || mem.emocao || 'neutro';
+  const token = getEmotionToken(emotionName);
+  const color = token.accent;
   const when = mem.created_at ? humanDate(mem.created_at) : '';
   const intensidade = Math.max(0, Math.min(10, Number((mem as any).intensidade ?? 0)));
   const preview = (mem.analise_resumo || mem.contexto || '').trim();
@@ -31,11 +32,7 @@ const MemoryCard: React.FC<Props> = ({ mem }) => {
         className="w-full text-left"
       >
         <div className="flex items-center gap-3">
-          <span
-            className="h-9 w-9 rounded-full ring-2 ring-white/70 shadow-sm shrink-0"
-            style={{ background: color, boxShadow: 'inset 0 1px 0 rgba(255,255,255,.6)' }}
-            aria-hidden
-          />
+          <EmotionBubble emotion={emotionName} size={36} className="shrink-0 ring-2 ring-white/70 shadow-sm" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-[15px] font-semibold text-neutral-900 truncate">

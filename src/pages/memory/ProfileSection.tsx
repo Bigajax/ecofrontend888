@@ -4,6 +4,7 @@ import type { FC, PropsWithChildren, ReactNode } from 'react';
 import { useMemoryData } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
+import { emotionPalette, resolveEmotionKey } from './emotionTokens';
 
 import EcoBubbleLoading from '../../components/EcoBubbleLoading';
 
@@ -33,13 +34,7 @@ class ChartErrorBoundary extends Component<PropsWithChildren<{}>, EBState> {
 }
 
 /* ---------- paleta ---------- */
-const EMOTION_COLORS: Record<string, string> = {
-  raiva: '#DB2777', irritado: '#EC4899', frustracao: '#BE185D', medo: '#DB2777', incerteza: '#BE185D',
-  alegria: '#3B82F6', calmo: '#2563EB', surpresa: '#06B6D4', antecipacao: '#2563EB',
-  tristeza: '#8B5CF6', neutro: '#94A3B8',
-};
-const normalize = (s = '') => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-const colorForEmotion = (n: string) => EMOTION_COLORS[normalize(n)] || '#C7D2FE';
+const colorForEmotion = (n: string) => emotionPalette[resolveEmotionKey(n)] || '#C7D2FE';
 const hashHue = (str: string) => { let h = 0; for (let i=0;i<str.length;i++) h = str.charCodeAt(i)+((h<<5)-h); return Math.abs(h)%360; };
 const pastel = (str: string) => `hsl(${hashHue(str)}, 40%, 82%)`;
 

@@ -20,6 +20,7 @@ describe('MemoryCard', () => {
   it('renders collapsed card with emotion, preview and tags', () => {
     render(<MemoryCard mem={baseMemory} />);
 
+    expect(screen.getByRole('img', { name: /emoção: alegria/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /alegria/i })).toBeInTheDocument();
     expect(screen.getByText('Resumo analítico')).toBeInTheDocument();
     expect(screen.getByText(/trabalho/i)).toBeInTheDocument();

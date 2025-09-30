@@ -1,32 +1,6 @@
-import { normalizeText } from './utils';
+import { getEmotionToken } from './emotionTokens';
 
-const EMOTION_COLORS: Record<string, string> = {
-  raiva: '#ff453a',
-  irritado: '#ff9f0a',
-  frustracao: '#ff375f',
-  medo: '#ff9f0a',
-  incerteza: '#ffd60a',
-  alegria: '#32d74b',
-  calmo: '#5ac8fa',
-  surpresa: '#007aff',
-  antecipacao: '#af52de',
-  tristeza: '#bf5af2',
-  neutro: '#98989d',
-};
-
-const EMOTION_ALIASES: Record<string, string> = {
-  calma: 'calmo',
-  'bem-estar': 'alegria',
-  'bem estar': 'alegria',
-  bemestar: 'alegria',
-  plenitude: 'alegria',
-};
-
-export const getEmotionColor = (emotion?: string) => {
-  const key = normalizeText(emotion ?? '');
-  const mapped = EMOTION_ALIASES[key] ?? key;
-  return EMOTION_COLORS[mapped] ?? EMOTION_COLORS.neutro;
-};
+export const getEmotionColor = (emotion?: string) => getEmotionToken(emotion).accent;
 
 const hashStringToHue = (str: string) => {
   let h = 0;

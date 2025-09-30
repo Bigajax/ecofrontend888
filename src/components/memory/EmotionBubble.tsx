@@ -1,31 +1,50 @@
-import React from 'react';
-import { appleShade } from '../../pages/memory/palette';
+import React, { useMemo } from 'react';
+import { useReducedMotion } from 'framer-motion';
+
+import EyeBubbleBase, { EyeBubbleToken } from '../EyeBubbleBase';
+import { emotionEyelidSurface, getEmotionToken } from '../../pages/memory/emotionTokens';
 
 type EmotionBubbleProps = {
-  color?: string;
+  emotion?: string;
   className?: string;
+  size?: number;
   'aria-label'?: string;
 };
 
-const EmotionBubble: React.FC<EmotionBubbleProps> = ({ color = '#007aff', className = '', ...rest }) => (
-  <div
-    {...rest}
-    className={`h-11 w-11 rounded-full shrink-0 relative ${className}`}
-    style={{
-      background: `linear-gradient(135deg, ${color} 0%, ${appleShade(color, -0.15)} 100%)`,
-      boxShadow: `
-        0 0 0 0.5px rgba(0,0,0,0.04),
-        0 1px 2px rgba(0,0,0,0.06),
-        0 8px 16px ${color}25,
-        inset 0 0.5px 1px rgba(255,255,255,0.4)
-      `,
-    }}
-  >
-    <div
-      className="absolute inset-1 rounded-full"
-      style={{ background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.5) 0%, transparent 60%)' }}
+const EmotionBubble: React.FC<EmotionBubbleProps> = ({
+  emotion,
+  size = 44,
+  className = '',
+  'aria-label': ariaLabel,
+}) => {
+  const reduceMotion = useReducedMotion();
+  const data = useMemo(() => getEmotionToken(emotion), [emotion]);
+
+  const token: EyeBubbleToken = {
+    gradient: data.gradient,
+    highlight: data.highlight,
+    irisGradient: data.irisGradient,
+    irisHighlight: data.irisHighlight,
+    pupilColor: data.pupilColor,
+    irisScale: data.irisScale,
+    pupilScale: data.pupilScale,
+    eyelidOffset: data.eyelidOffset,
+    blinkCadence: data.blinkCadence,
+    microMotion: data.microMotion,
+    eyelidSurface: emotionEyelidSurface,
+  };
+
+  const label = ariaLabel ?? `Emoção: ${data.label}`;
+
+  return (
+    <EyeBubbleBase
+      className={className}
+      token={token}
+      size={size}
+      reduceMotion={reduceMotion}
+      label={label}
     />
-  </div>
-);
+  );
+};
 
 export default EmotionBubble;
