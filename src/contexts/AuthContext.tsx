@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { ensureProfile } from '../lib/ensureProfile';
+import mixpanel from '../lib/mixpanel';
 import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -68,6 +69,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) console.error('Erro ao obter sessão:', error.message);
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        mixpanel.identify(session.user.id);
+        const fullName =
+          session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+        const userData: Record<string, string> = {};
+        if (fullName) userData.$name = fullName;
+        if (session.user.email) userData.$email = session.user.email;
+        if (Object.keys(userData).length > 0) {
+          if (mixpanel.people && typeof mixpanel.people.set === 'function') {
+            mixpanel.people.set(userData);
+          } else {
+            mixpanel.register(userData);
+          }
+        }
+      }
       setLoading(false);
 
       if (session?.user) {
@@ -84,6 +100,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!mounted) return;
         setSession(session ?? null);
         setUser(session?.user ?? null);
+        if (session?.user) {
+          mixpanel.identify(session.user.id);
+          const fullName =
+            session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+          const userData: Record<string, string> = {};
+          if (fullName) userData.$name = fullName;
+          if (session.user.email) userData.$email = session.user.email;
+          if (Object.keys(userData).length > 0) {
+            if (mixpanel.people && typeof mixpanel.people.set === 'function') {
+              mixpanel.people.set(userData);
+            } else {
+              mixpanel.register(userData);
+            }
+          }
+        }
 
         // Se o logout ocorrer em outra aba/expirar, garantimos a limpeza local
         if (event === 'SIGNED_OUT') {
