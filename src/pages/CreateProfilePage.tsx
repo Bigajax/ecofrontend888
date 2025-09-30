@@ -8,6 +8,8 @@ import PhoneFrame from '../components/PhoneFrame';
 import Input from '../components/Input';
 import MaskedInput from '../components/MaskedInput';
 import { fbq } from '../lib/fbpixel';
+import mixpanel from '../lib/mixpanel';
+import { supabase as supabaseClient } from '../lib/supabaseClient';
 
 /* Bolha igual ao login (uma só) */
 const BubbleIcon: React.FC<{ className?: string }> = ({ className = 'h-5 w-5' }) => (
@@ -95,11 +97,18 @@ const CreateProfilePage: React.FC = () => {
     setError('');
     setLoading(true);
     try {
+      mixpanel.track('Front-end: Cadastro Iniciado', { email: email.trim() });
       await register(email.trim(), password, fullName.trim(), phoneClean);
+      const supabase = await supabaseClient.auth.getUser();
+      mixpanel.track('Front-end: Cadastro Concluído', {
+        userId: supabase?.user?.id ?? 'pending',
+      });
       fbq('CompleteRegistration', { value: 1, currency: 'BRL' });
       navigate('/chat');
     } catch (err: any) {
-      setError(translateRegisterError(err));
+      const translatedError = translateRegisterError(err);
+      mixpanel.track('Front-end: Cadastro Falhou', { reason: translatedError });
+      setError(translatedError);
     } finally {
       setLoading(false);
     }
