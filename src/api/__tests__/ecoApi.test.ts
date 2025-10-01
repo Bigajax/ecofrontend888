@@ -1,12 +1,23 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { postMock } = vi.hoisted(() => ({
-  postMock: vi.fn(),
+const { fetchMock, getSessionMock } = vi.hoisted(() => ({
+  fetchMock: vi.fn(),
+  getSessionMock: vi.fn().mockResolvedValue({ data: { session: { access_token: "token-mock" } } }),
 }));
+
+vi.stubGlobal("fetch", fetchMock);
 
 vi.mock("../axios", () => ({
   default: {
-    post: postMock,
+    defaults: { baseURL: "https://eco.test/api" },
+  },
+}));
+
+vi.mock("../lib/supabaseClient", () => ({
+  supabase: {
+    auth: {
+      getSession: getSessionMock,
+    },
   },
 }));
 
@@ -22,62 +33,91 @@ const mensagens = [
   { role: "user", content: "Tudo bem?" },
 ];
 
+const createSseResponse = (events: unknown[]) => {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const event of events) {
+        const chunk = `data: ${JSON.stringify(event)}\n\n`;
+        controller.enqueue(encoder.encode(chunk));
+      }
+      controller.close();
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: { "Content-Type": "text/event-stream" },
+  });
+};
+
 describe("enviarMensagemParaEco", () => {
   beforeEach(() => {
-    postMock.mockReset();
+    fetchMock.mockReset();
+    getSessionMock.mockClear();
   });
 
   const callApi = async () => enviarMensagemParaEco(mensagens);
 
-  it("extrai texto de strings simples", async () => {
-    postMock.mockResolvedValue({ data: { message: "Resposta direta" }, status: 200 });
+  it("concatena deltas e retorna metadata do evento done", async () => {
+    fetchMock.mockResolvedValue(
+      createSseResponse([
+        { type: "chunk", payload: { type: "chunk", delta: { content: "Olá" } } },
+        { type: "chunk", payload: { type: "chunk", delta: { content: " mundo" } } },
+        { type: "done", payload: { type: "done", metadata: { intensidade: 8 } } },
+      ])
+    );
 
-    await expect(callApi()).resolves.toBe("Resposta direta");
+    const resposta = await callApi();
+
+    expect(resposta.text).toBe("Olá mundo");
+    expect(resposta.metadata).toEqual({ intensidade: 8 });
+    expect(resposta.done).toEqual({ type: "done", metadata: { intensidade: 8 } });
   });
 
-  it("extrai texto de objetos com content", async () => {
-    postMock.mockResolvedValue({ data: { message: { content: "Texto interno" } }, status: 200 });
-
-    await expect(callApi()).resolves.toBe("Texto interno");
-  });
-
-  it("extrai texto de objetos com texto", async () => {
-    postMock.mockResolvedValue({ data: { resposta: { texto: "Texto em português" } }, status: 200 });
-
-    await expect(callApi()).resolves.toBe("Texto em português");
-  });
-
-  it("concatena itens de arrays quando necessário", async () => {
-    postMock.mockResolvedValue({ data: { message: ["Parte 1", "Parte 2"] }, status: 200 });
-
-    await expect(callApi()).resolves.toBe("Parte 1\n\nParte 2");
-  });
-
-  it("extrai texto de estruturas compatíveis com OpenAI", async () => {
-    postMock.mockResolvedValue({
-      data: {
-        choices: [
-          {
-            message: {
-              content: "Resposta da assistente",
-            },
+  it("ignora eventos auxiliares e processa conteúdo estruturado", async () => {
+    fetchMock.mockResolvedValue(
+      createSseResponse([
+        { type: "latency", payload: { type: "latency", value: 123 } },
+        {
+          type: "chunk",
+          payload: {
+            type: "chunk",
+            delta: { content: [{ text: "Parte 1" }, { text: " + Parte 2" }] },
           },
-        ],
-      },
-      status: 200,
-    });
+        },
+        {
+          type: "done",
+          payload: {
+            type: "done",
+            response: { mensagem: { texto: "Parte 1 + Parte 2" } },
+          },
+        },
+      ])
+    );
 
-    await expect(callApi()).resolves.toBe("Resposta da assistente");
+    const resposta = await callApi();
+
+    expect(resposta.text).toBe("Parte 1 + Parte 2");
+    expect(resposta.metadata).toEqual({ mensagem: { texto: "Parte 1 + Parte 2" } });
   });
 
-  it("lança erro quando não há conteúdo textual", async () => {
-    postMock.mockResolvedValue({ data: { vazio: true }, status: 200 });
+  it('lança erro quando o stream termina sem evento "done"', async () => {
+    fetchMock.mockResolvedValue(
+      createSseResponse([
+        { type: "chunk", payload: { type: "chunk", delta: { content: "Olá" } } },
+      ])
+    );
 
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    await expect(callApi()).rejects.toThrow("Formato inválido na resposta da Eco.");
+    await expect(callApi()).rejects.toThrow('Fluxo SSE encerrado sem evento "done".');
 
     errorSpy.mockRestore();
   });
+});
+
+afterAll(() => {
+  vi.unstubAllGlobals();
 });
 
