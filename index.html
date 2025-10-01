@@ -2,7 +2,11 @@
 <html lang="pt-BR" class="font-sans">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+
+    <!-- Favicons -->
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
 
     <!-- Viewport robusto p/ iOS + safe areas + evitar zoom em inputs -->
     <meta
@@ -52,7 +56,11 @@
 
     <!-- Pequeno reset para cores de fundo e altura mínima -->
     <style>
-      html, body, #root { height: 100%; }
+      html,
+      body,
+      #root {
+        height: 100%;
+      }
       body {
         margin: 0;
         /* usa sua util bg-eco-vibe também no body para evitar flash branco */
