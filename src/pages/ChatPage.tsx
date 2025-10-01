@@ -332,11 +332,35 @@ const ChatPage: React.FC = () => {
 
     mixpanel.track('Eco: Mensagem Enviada', { userId, userName, mensagem: trimmed, timestamp: new Date().toISOString() });
 
-    try {
-      const saved = await salvarMensagem({ usuarioId: userId!, conteudo: trimmed, sentimento: '', salvarMemoria: true });
-      const mensagemId = saved?.[0]?.id || userLocalId;
+    const savePromise = salvarMensagem({
+      usuarioId: userId!,
+      conteudo: trimmed,
+      sentimento: '',
+      salvarMemoria: true,
+    })
+      .then((saved) => {
+        const persistedId = saved?.[0]?.id;
+        if (persistedId && persistedId !== userLocalId) {
+          setMessages((prev) =>
+            prev.map((msg) => (msg.id === userLocalId ? { ...msg, id: persistedId } : msg))
+          );
+        }
+        return saved;
+      })
+      .catch((err) => {
+        console.error('[ChatPage] erro ao salvar mensagem:', err);
+        setErroApi((prev) => prev ?? 'Não foi possível salvar sua mensagem. Tente novamente mais tarde.');
+        mixpanel.track('Eco: Erro ao Salvar Mensagem', {
+          userId,
+          erro: err?.message || 'desconhecido',
+          mensagem: trimmed.slice(0, 120),
+          timestamp: new Date().toISOString(),
+        });
+        return null;
+      });
 
-      const baseHistory = [...messages, { id: mensagemId, role: 'user', content: trimmed }];
+    try {
+      const baseHistory = [...messages, { id: userLocalId, role: 'user', content: trimmed }];
 
       const tags = extrairTagsRelevantes(trimmed);
       const [similar, porTag] = await Promise.all([
@@ -433,6 +457,8 @@ const ChatPage: React.FC = () => {
       setDigitando(false);
       scrollToBottom(true);
     }
+
+    await savePromise;
   };
 
   const handlePickSuggestion = async (s: Suggestion, meta?: SuggestionPickMeta) => {
