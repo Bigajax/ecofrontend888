@@ -30,6 +30,7 @@ import { FeedbackPrompt } from '../components/FeedbackPrompt';
 
 const FEEDBACK_KEY = 'eco_feedback_given';
 const SESSION_STORAGE_KEY = 'eco.session';
+const isDev = Boolean((import.meta as any)?.env?.DEV);
 
 const ensureSessionId = () => {
   const generated = `sess_${uuidv4()}`;
@@ -386,22 +387,31 @@ const ChatPage: React.FC = () => {
       const clientHour = new Date().getHours();
       const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      const resposta = await enviarMensagemParaEco(mensagensComContexto, userName, userId!, clientHour, clientTz);
+      const resposta = await enviarMensagemParaEco(
+        mensagensComContexto,
+        userName,
+        userId!,
+        clientHour,
+        clientTz
+      );
 
-      const match = (resposta || '').match(/\{[\s\S]*\}$/);
-      let bloco: any;
-      if (match) {
-        try {
-          bloco = JSON.parse(match[0]);
-        } catch (err) {
-          console.warn('Falha ao interpretar bloco JSON da resposta da Eco', err);
-        }
+      const textoEco = (resposta?.text || '').trim();
+      const bloco =
+        (resposta?.metadata && typeof resposta.metadata === 'object' ? resposta.metadata : undefined) ||
+        (resposta?.done && typeof resposta.done === 'object' ? resposta.done : undefined);
+
+      if (!bloco && isDev) {
+        console.debug('[ChatPage] Resposta da Eco sem metadata estruturada', resposta?.metadata);
       }
 
-      const textoEco = (resposta || '').replace(/\n\{[\s\S]*\}\s*$/m, '').trim();
       const deepQuestionFlag = extractDeepQuestionFlag({
         block: bloco,
-        responseText: resposta,
+        responseText:
+          typeof resposta?.metadata === 'string'
+            ? resposta.metadata
+            : bloco
+              ? JSON.stringify(bloco)
+              : undefined,
         messageText: textoEco,
       });
 
@@ -411,13 +421,13 @@ const ChatPage: React.FC = () => {
         addMessage(ecoMessage);
       }
 
-      if (bloco && typeof bloco?.intensidade === 'number' && bloco.intensidade >= 7) {
+      if (bloco && typeof (bloco as any)?.intensidade === 'number' && (bloco as any).intensidade >= 7) {
         mixpanel.track('Memória Registrada', {
-          intensidade: bloco.intensidade,
-          emocao_principal: bloco.emocao_principal || 'desconhecida',
-          modulo_ativado: bloco.modulo_ativado || 'não informado',
-          dominio_vida: bloco.dominio_vida || 'geral',
-          padrao_comportamental: bloco.padrao_comportamental || 'não identificado',
+          intensidade: (bloco as any).intensidade,
+          emocao_principal: (bloco as any).emocao_principal || 'desconhecida',
+          modulo_ativado: (bloco as any).modulo_ativado || 'não informado',
+          dominio_vida: (bloco as any).dominio_vida || 'geral',
+          padrao_comportamental: (bloco as any).padrao_comportamental || 'não identificado',
         });
       }
     } catch (err: any) {
