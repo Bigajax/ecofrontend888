@@ -34,12 +34,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         onLogout={handleLogout}   // <<<<<< essencial para o botão aparecer
       />
 
-      {/* Espaçamento controlado pelas CSS vars definidas no Header */}
+      {/* Espaçamento controlado pelas CSS vars definidas no Header. */}
+      {/* Variantes com sidebar devem definir explicitamente --eco-sidebar-w quando existirem. */}
       <main
         className="
           min-h-[100svh] md:min-h-[100dvh]
           pt-[var(--eco-topbar-h,56px)] md:pt-0
-          pl-0 md:pl-[var(--eco-sidebar-w,256px)]
+          pl-0 md:pl-[var(--eco-sidebar-w,0px)]
           transition-[padding] duration-200 ease-out
           bg-white
         "
