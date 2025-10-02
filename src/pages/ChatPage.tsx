@@ -24,6 +24,7 @@ import { salvarMensagem } from '../api/mensagem';
 
 import { differenceInDays } from 'date-fns';
 import { extrairTagsRelevantes } from '../utils/extrairTagsRelevantes';
+import celebrateFirstMemory from '../utils/celebrateFirstMemory';
 import mixpanel from '../lib/mixpanel';
 
 import { FeedbackPrompt } from '../components/FeedbackPrompt';
@@ -394,6 +395,10 @@ const ChatPage: React.FC = () => {
         clientHour,
         clientTz
       );
+
+      if (resposta?.primeiraMemoriaSignificativa) {
+        celebrateFirstMemory();
+      }
 
       const textoEco = (resposta?.text || '').trim();
       const bloco =
