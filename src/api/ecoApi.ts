@@ -45,6 +45,7 @@ export interface EcoStreamResult {
   text: string;
   metadata?: unknown;
   done?: unknown;
+  primeiraMemoriaSignificativa?: boolean; // 👈 adicionada
 }
 
 const isDev = Boolean((import.meta as any)?.env?.DEV);
@@ -55,10 +56,7 @@ const NESTED_KEYS = ["message", "resposta", "mensagem", "data", "value", "delta"
 
 const collectTexts = (value: unknown, visited = new WeakSet<object>()): string[] => {
   if (typeof value === "string") return [value];
-
-  if (Array.isArray(value)) {
-    return value.flatMap((item) => collectTexts(item, visited));
-  }
+  if (Array.isArray(value)) return value.flatMap((item) => collectTexts(item, visited));
 
   if (value && typeof value === "object") {
     if (visited.has(value as object)) return [];
@@ -68,15 +66,11 @@ const collectTexts = (value: unknown, visited = new WeakSet<object>()): string[]
     const results: string[] = [];
 
     TEXTUAL_KEYS.forEach((key) => {
-      if (key in obj) {
-        results.push(...collectTexts(obj[key], visited));
-      }
+      if (key in obj) results.push(...collectTexts(obj[key], visited));
     });
 
     NESTED_KEYS.forEach((key) => {
-      if (key in obj) {
-        results.push(...collectTexts(obj[key], visited));
-      }
+      if (key in obj) results.push(...collectTexts(obj[key], visited));
     });
 
     if (Array.isArray(obj.choices)) {
@@ -85,7 +79,6 @@ const collectTexts = (value: unknown, visited = new WeakSet<object>()): string[]
 
     return results;
   }
-
   return [];
 };
 
@@ -106,9 +99,7 @@ const parseSseEvent = (eventBlock: string): unknown | undefined => {
   try {
     return JSON.parse(payload);
   } catch (error) {
-    if (isDev) {
-      console.warn("⚠️ [ECO API] Evento SSE inválido:", payload, error);
-    }
+    if (isDev) console.warn("⚠️ [ECO API] Evento SSE inválido:", payload, error);
     return undefined;
   }
 };
@@ -116,15 +107,9 @@ const parseSseEvent = (eventBlock: string): unknown | undefined => {
 const normalizeAskEcoResponse = (payload: AskEcoResponse): string | undefined => {
   const texts = collectTexts(payload);
   const unique = Array.from(
-    new Set(
-      texts
-        .map((text) => text.trim())
-        .filter((text) => text.length > 0)
-    )
+    new Set(texts.map((text) => text.trim()).filter((text) => text.length > 0))
   );
-
   if (unique.length === 0) return undefined;
-
   return unique.join("\n\n");
 };
 
@@ -146,9 +131,7 @@ export const enviarMensagemParaEco = async (
   const tz = clientTz || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const controller = new AbortController();
-  const timeoutId: ReturnType<typeof setTimeout> = setTimeout(() => {
-    controller.abort();
-  }, SSE_TIMEOUT_MS);
+  const timeoutId: ReturnType<typeof setTimeout> = setTimeout(() => controller.abort(), SSE_TIMEOUT_MS);
 
   try {
     const baseUrl = api.defaults?.baseURL?.replace(/\/+$/, "");
@@ -177,27 +160,19 @@ export const enviarMensagemParaEco = async (
 
     if (!response.ok) {
       let serverErr: string | undefined;
-      const contentType = response.headers.get("content-type") || "";
       try {
+        const contentType = response.headers.get("content-type") || "";
         if (contentType.includes("application/json")) {
           const errJson = await response.json();
           serverErr = errJson?.error || errJson?.message;
         } else {
           serverErr = await response.text();
         }
-      } catch {
-        // ignora falhas ao ler corpo de erro
-      }
-
-      const msg =
-        (serverErr && typeof serverErr === "string" && serverErr.trim()) ||
-        `Erro HTTP ${response.status}: ${response.statusText || "Falha na requisição"}`;
-      throw new Error(msg);
+      } catch {}
+      throw new Error(serverErr?.trim() || `Erro HTTP ${response.status}: ${response.statusText || "Falha na requisição"}`);
     }
 
-    if (!response.body) {
-      throw new Error("Resposta da Eco não suportou streaming SSE.");
-    }
+    if (!response.body) throw new Error("Resposta da Eco não suportou streaming SSE.");
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -205,8 +180,9 @@ export const enviarMensagemParaEco = async (
     let doneReceived = false;
     let streamError: Error | null = null;
     const aggregatedParts: string[] = [];
-    let donePayload: unknown;
+    let donePayload: any;
     let metadata: unknown;
+    let primeiraMemoriaSignificativa = false; // 👈 nova flag
 
     const handleEvent = (eventData: unknown) => {
       if (!eventData || typeof eventData !== "object") return;
@@ -220,9 +196,7 @@ export const enviarMensagemParaEco = async (
       if (payloadType === "chunk") {
         const source = payload.delta ?? payload.content ?? payload.message ?? payload;
         const texts = collectTexts(source);
-        if (texts.length > 0) {
-          aggregatedParts.push(texts.join(""));
-        }
+        if (texts.length > 0) aggregatedParts.push(texts.join(""));
         return;
       }
 
@@ -230,43 +204,37 @@ export const enviarMensagemParaEco = async (
         doneReceived = true;
         donePayload = payload;
         metadata = payload?.response ?? payload?.metadata ?? payload;
+
+        // 👇 se o backend mandou a flag, guardamos
+        if (payload?.primeiraMemoriaSignificativa || payload?.primeira) {
+          primeiraMemoriaSignificativa = true;
+        }
         return;
       }
 
       if (payloadType === "error" || payload?.status === "error") {
-        const errMessage =
-          payload?.error?.message ||
-          payload?.error ||
-          payload?.message ||
-          "Erro na stream SSE da Eco.";
+        const errMessage = payload?.error?.message || payload?.error || payload?.message || "Erro na stream SSE da Eco.";
         streamError = new Error(String(errMessage));
         return;
       }
 
-      if (isDev) {
-        console.debug("ℹ️ [ECO API] Evento SSE ignorado:", eventData);
-      }
+      if (isDev) console.debug("ℹ️ [ECO API] Evento SSE ignorado:", eventData);
     };
 
     const flushBuffer = (final = false) => {
-      let separatorIndex = buffer.indexOf("\n\n");
-      while (separatorIndex !== -1) {
-        const segment = buffer.slice(0, separatorIndex);
-        buffer = buffer.slice(separatorIndex + 2);
+      let idx = buffer.indexOf("\n\n");
+      while (idx !== -1) {
+        const segment = buffer.slice(0, idx);
+        buffer = buffer.slice(idx + 2);
         const parsed = parseSseEvent(segment);
-        if (parsed !== undefined) {
-          handleEvent(parsed);
-        }
-        separatorIndex = buffer.indexOf("\n\n");
+        if (parsed !== undefined) handleEvent(parsed);
+        idx = buffer.indexOf("\n\n");
       }
-
       if (final) {
         const remainder = buffer.trim();
         if (remainder.length > 0) {
           const parsed = parseSseEvent(buffer);
-          if (parsed !== undefined) {
-            handleEvent(parsed);
-          }
+          if (parsed !== undefined) handleEvent(parsed);
         }
         buffer = "";
       }
@@ -278,50 +246,27 @@ export const enviarMensagemParaEco = async (
       buffer += decoder.decode(value, { stream: true });
       flushBuffer();
     }
-
     if (!streamError) {
       buffer += decoder.decode();
       flushBuffer(true);
     }
-
     if (streamError) throw streamError;
-
-    if (!doneReceived) {
-      throw new Error('Fluxo SSE encerrado sem evento "done".');
-    }
+    if (!doneReceived) throw new Error('Fluxo SSE encerrado sem evento "done".');
 
     let texto = aggregatedParts.join("").trim();
-
     if (!texto && donePayload) {
       const fallback = normalizeAskEcoResponse(donePayload as AskEcoResponse);
       if (fallback) texto = fallback;
     }
+    if (!texto) throw new Error("Formato inválido na resposta da Eco.");
 
-    if (!texto) {
-      if (isDev) {
-        console.warn("⚠️ [ECO API] Resposta SSE sem conteúdo textual:", donePayload);
-      }
-      throw new Error("Formato inválido na resposta da Eco.");
-    }
-
-    return { text: texto, metadata, done: donePayload };
+    return { text: texto, metadata, done: donePayload, primeiraMemoriaSignificativa };
   } catch (error: any) {
     let message: string;
-
-    if (error?.name === "AbortError") {
-      message = "A requisição à Eco expirou. Tente novamente.";
-    } else if (typeof error?.message === "string" && error.message.trim().length > 0) {
-      message = error.message;
-    } else {
-      message = "Erro ao obter resposta da Eco.";
-    }
-
-    if (isDev) {
-      console.error("❌ [ECO API] Erro ao enviar mensagem:", message, error);
-    } else {
-      console.error("❌ [ECO API] Erro ao enviar mensagem:", message);
-    }
-
+    if (error?.name === "AbortError") message = "A requisição à Eco expirou. Tente novamente.";
+    else if (typeof error?.message === "string" && error.message.trim().length > 0) message = error.message;
+    else message = "Erro ao obter resposta da Eco.";
+    console.error("❌ [ECO API]", message, error);
     throw new Error(message);
   } finally {
     clearTimeout(timeoutId);
