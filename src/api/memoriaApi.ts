@@ -35,6 +35,17 @@ export interface MemoriaSimilar {
   similaridade?: number;
 }
 
+export interface RegistrarMemoriaPayload extends Partial<Memoria> {
+  /** obrigatório para a RPC no backend */
+  usuario_id: string;
+}
+
+export interface RegistrarMemoriaResult {
+  memoria: Memoria;
+  /** true quando for a 1ª memória com intensidade >= 7 do usuário */
+  primeiraMemoriaSignificativa: boolean;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Utilitários                                                               */
 /* -------------------------------------------------------------------------- */
@@ -346,5 +357,48 @@ export async function listarMemoriasBasico(limit = 500): Promise<Memoria[]> {
     return raw.map(normalizeMemoria);
   } catch (err) {
     tratarErro(err, 'listar memórias (básico)');
+  }
+}
+
+/**
+ * 📝 Registra uma nova memória (POST). O backend chama a RPC registrar_memoria.
+ * Retorna a memória normalizada e a flag `primeiraMemoriaSignificativa`.
+ */
+export async function registrarMemoria(payload: RegistrarMemoriaPayload): Promise<RegistrarMemoriaResult> {
+  try {
+    // Envia exatamente o que o backend espera (ele mapeia para a RPC internamente)
+    const { data } = await postWithFallback('/memorias/registrar', '/memories/registrar', payload, {
+      timeout: 12000,
+    });
+
+    // Possíveis formatos de resposta:
+    // A) { memoria: {...}, primeiraMemoriaSignificativa: true }
+    // B) { ...camposDaMemoria, primeira: true }
+    // C) [ {...} ]
+    const rawMem =
+      data?.memoria ??
+      data?.memory ??
+      (Array.isArray(data) ? data[0] : data);
+
+    if (!rawMem) {
+      // se o backend respondeu só { ok: true } ou algo assim
+      throw new Error('Resposta do servidor não contém dados de memória.');
+    }
+
+    const memoria = normalizeMemoria(rawMem);
+
+    const primeira =
+      Boolean(
+        data?.primeiraMemoriaSignificativa ??
+        data?.primeira ??
+        rawMem?.primeira
+      );
+
+    return {
+      memoria,
+      primeiraMemoriaSignificativa: primeira,
+    };
+  } catch (err) {
+    tratarErro(err, 'registrar memória');
   }
 }
