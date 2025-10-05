@@ -399,6 +399,89 @@ const ChatPage: React.FC = () => {
       let latencyFromStream: number | undefined;
       let firstContentReceived = false;
 
+      const getNow = () =>
+        typeof performance !== 'undefined' && typeof performance.now === 'function'
+          ? performance.now()
+          : Date.now();
+
+      const requestStartedAt = getNow();
+      let promptReadyAt: number | undefined;
+      let firstTokenAt: number | undefined;
+      let doneAt: number | undefined;
+      let metricsReported = false;
+
+      const logAndSendStreamMetrics = (
+        outcome: 'success' | 'error',
+        extra: Record<string, unknown> = {},
+      ) => {
+        if (metricsReported) return;
+        metricsReported = true;
+
+        const markers = {
+          eco_prompt_ready_at: promptReadyAt ?? null,
+          eco_first_token_at: firstTokenAt ?? null,
+          eco_done_at: doneAt ?? null,
+        };
+
+        const latencySource =
+          typeof latencyFromStream === 'number' ? 'server' : 'client';
+
+        const ttfbRaw =
+          typeof latencyFromStream === 'number'
+            ? latencyFromStream
+            : typeof firstTokenAt === 'number'
+            ? firstTokenAt - requestStartedAt
+            : undefined;
+        const ttfbMs =
+          typeof ttfbRaw === 'number' ? Math.max(Math.round(ttfbRaw), 0) : null;
+
+        const firstTokenLatencyRaw =
+          typeof promptReadyAt === 'number' && typeof firstTokenAt === 'number'
+            ? firstTokenAt - promptReadyAt
+            : undefined;
+        const firstTokenLatencyMs =
+          typeof firstTokenLatencyRaw === 'number'
+            ? Math.max(Math.round(firstTokenLatencyRaw), 0)
+            : null;
+
+        const basePayload = {
+          ...markers,
+          userId,
+          sessionId: sessaoId,
+          outcome,
+          latency_from_stream_ms:
+            typeof latencyFromStream === 'number' ? latencyFromStream : null,
+          latency_source: latencySource,
+          ...extra,
+        };
+
+        console.log('[ChatPage] Eco stream markers', {
+          ...basePayload,
+          request_started_at: requestStartedAt,
+        });
+
+        mixpanel.track('Eco: Stream TTFB', {
+          ...basePayload,
+          ttfb_ms: ttfbMs,
+        });
+
+        mixpanel.track('Eco: Stream First Token Latency', {
+          ...basePayload,
+          first_token_latency_ms: firstTokenLatencyMs,
+        });
+
+        const mixpanelAny = mixpanel as any;
+        if (ttfbMs !== null && typeof mixpanelAny?.people?.set === 'function') {
+          mixpanelAny.people.set({ eco_ttfb_ms: ttfbMs });
+        }
+        if (
+          firstTokenLatencyMs !== null &&
+          typeof mixpanelAny?.people?.set === 'function'
+        ) {
+          mixpanelAny.people.set({ eco_first_token_latency_ms: firstTokenLatencyMs });
+        }
+      };
+
       const ensureEcoMessage = () => {
         if (ecoMessageId) return;
         ecoMessageId = uuidv4();
@@ -434,6 +517,9 @@ const ChatPage: React.FC = () => {
 
       const handlers: EcoEventHandlers = {
         onPromptReady: () => {
+          if (promptReadyAt === undefined) {
+            promptReadyAt = getNow();
+          }
           ensureEcoMessage();
           patchEcoMessage({ text: ' ' });
           syncScroll();
@@ -446,6 +532,9 @@ const ChatPage: React.FC = () => {
           }
         },
         onFirstToken: (event) => {
+          if (firstTokenAt === undefined) {
+            firstTokenAt = getNow();
+          }
           ensureEcoMessage();
           const texto = event.text ?? '';
           aggregatedEcoText = texto;
@@ -492,6 +581,9 @@ const ChatPage: React.FC = () => {
           trackMemoryIfSignificant(memoria);
         },
         onDone: (event) => {
+          if (doneAt === undefined) {
+            doneAt = getNow();
+          }
           donePayload = event.payload;
           const meta = event.metadata ?? latestMetadata ?? pendingMetadata ?? event.payload?.response ?? event.payload?.metadata;
           if (meta !== undefined) {
@@ -512,9 +604,28 @@ const ChatPage: React.FC = () => {
           }
           setDigitando(false);
           syncScroll();
+          logAndSendStreamMetrics('success', { stage: 'on_done' });
         },
-        onError: () => {
+        onError: (error) => {
+          if (doneAt === undefined) {
+            doneAt = getNow();
+          }
           setDigitando(false);
+          const message =
+            typeof error?.message === 'string' ? error.message : undefined;
+          const normalizedMessage = message?.toLowerCase() ?? '';
+          const reason =
+            error?.name === 'AbortError'
+              ? 'aborted'
+              : normalizedMessage.includes('expirou')
+              ? 'timeout'
+              : 'error';
+          logAndSendStreamMetrics('error', {
+            stage: 'stream_error',
+            error_name: error?.name ?? 'Error',
+            error_message: message ?? 'Erro desconhecido na stream.',
+            error_reason: reason,
+          });
         },
       };
 
@@ -593,6 +704,13 @@ const ChatPage: React.FC = () => {
 
       const memoriaParaTracking = memoryFromStream || bloco;
       trackMemoryIfSignificant(memoriaParaTracking);
+
+      if (!metricsReported) {
+        if (doneAt === undefined) {
+          doneAt = getNow();
+        }
+        logAndSendStreamMetrics('success', { stage: 'post_stream' });
+      }
     } catch (err: any) {
       console.error('[ChatPage] erro:', err);
       setErroApi(err?.message || 'Falha ao enviar mensagem.');
@@ -602,6 +720,18 @@ const ChatPage: React.FC = () => {
         mensagem: (text || '').slice(0, 120),
         timestamp: new Date().toISOString(),
       });
+      if (!metricsReported) {
+        if (doneAt === undefined) {
+          doneAt = getNow();
+        }
+        const reason = err?.name === 'AbortError' ? 'aborted' : 'error';
+        logAndSendStreamMetrics('error', {
+          stage: 'request_catch',
+          error_name: err?.name ?? 'Error',
+          error_message: err?.message ?? 'Erro desconhecido ao enviar mensagem.',
+          error_reason: reason,
+        });
+      }
     } finally {
       setDigitando(false);
       scrollToBottom(true);
