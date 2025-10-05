@@ -84,6 +84,9 @@ vi.mock('../../lib/mixpanel', () => ({
   __esModule: true,
   default: {
     track: vi.fn(),
+    people: {
+      set: vi.fn(),
+    },
   },
 }));
 
@@ -111,6 +114,7 @@ vi.mock('../../api/ecoApi', () => ({
 import ChatPage from '../ChatPage';
 import { ChatProvider } from '../../contexts/ChatContext';
 import { enviarMensagemParaEco } from '../../api/ecoApi';
+import mixpanel from '../../lib/mixpanel';
 
 const originalScrollTo = window.HTMLElement.prototype.scrollTo;
 const originalRaf = window.requestAnimationFrame;
@@ -185,5 +189,104 @@ describe('ChatPage typing indicator', () => {
       resolveResponse?.({ text: 'Resposta da Eco' });
       await inflightPromise;
     });
+  });
+
+  test('tracks stream timing markers and mixpanel metrics on success', async () => {
+    const user = userEvent.setup();
+    const mixpanelMock = mixpanel as unknown as {
+      track: vi.Mock;
+      people: { set: vi.Mock };
+    };
+
+    const nowSequence = [1000, 1200, 1500, 1900, 2100];
+    const nowSpy = vi.spyOn(performance, 'now').mockImplementation(() => {
+      const next = nowSequence.shift();
+      return typeof next === 'number' ? next : 2500;
+    });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    render(
+      <ChatProvider>
+        <ChatPage />
+      </ChatProvider>,
+    );
+
+    const input = await screen.findByPlaceholderText('Converse com a Eco…');
+    await user.type(input, 'Olá{enter}');
+
+    expect(handlersRef.current).toBeDefined();
+
+    act(() => {
+      handlersRef.current?.onLatency?.({ latencyMs: 345 } as any);
+    });
+
+    act(() => {
+      handlersRef.current?.onPromptReady?.({} as any);
+    });
+
+    act(() => {
+      handlersRef.current?.onFirstToken?.({ text: 'Eco responde' } as any);
+    });
+
+    await act(async () => {
+      handlersRef.current?.onDone?.({ text: 'Eco responde' } as any);
+      resolveResponse?.({ text: 'Eco responde' });
+      await inflightPromise;
+    });
+
+    nowSpy.mockRestore();
+    const logCalls = [...logSpy.mock.calls];
+    logSpy.mockRestore();
+
+    const ttfbCalls = (mixpanelMock.track as any).mock.calls.filter(
+      ([eventName]: [string]) => eventName === 'Eco: Stream TTFB',
+    );
+    expect(ttfbCalls).toHaveLength(1);
+    const ttfbPayload = ttfbCalls[0][1];
+    expect(ttfbPayload).toMatchObject({
+      ttfb_ms: 345,
+      outcome: 'success',
+      latency_source: 'server',
+      latency_from_stream_ms: 345,
+      stage: 'on_done',
+    });
+    expect(typeof ttfbPayload.eco_prompt_ready_at).toBe('number');
+    expect(typeof ttfbPayload.eco_first_token_at).toBe('number');
+    expect(typeof ttfbPayload.eco_done_at).toBe('number');
+    expect(ttfbPayload.eco_prompt_ready_at).toBeLessThanOrEqual(
+      ttfbPayload.eco_first_token_at,
+    );
+    expect(ttfbPayload.eco_first_token_at).toBeLessThanOrEqual(
+      ttfbPayload.eco_done_at,
+    );
+
+    const firstTokenCalls = (mixpanelMock.track as any).mock.calls.filter(
+      ([eventName]: [string]) => eventName === 'Eco: Stream First Token Latency',
+    );
+    expect(firstTokenCalls).toHaveLength(1);
+    const firstTokenPayload = firstTokenCalls[0][1];
+    expect(firstTokenPayload).toMatchObject({ outcome: 'success' });
+    expect(typeof firstTokenPayload.first_token_latency_ms).toBe('number');
+
+    expect(mixpanelMock.people.set).toHaveBeenCalledWith(
+      expect.objectContaining({ eco_ttfb_ms: 345 }),
+    );
+    expect(mixpanelMock.people.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eco_first_token_latency_ms: expect.any(Number),
+      }),
+    );
+
+    const logArgs = logCalls.find(
+      ([label]) => label === '[ChatPage] Eco stream markers',
+    );
+    expect(logArgs).toBeDefined();
+    expect(logArgs?.[1]).toMatchObject({
+      outcome: 'success',
+      latency_from_stream_ms: 345,
+    });
+    expect(typeof logArgs?.[1]?.eco_prompt_ready_at).toBe('number');
+    expect(typeof logArgs?.[1]?.eco_first_token_at).toBe('number');
+    expect(typeof logArgs?.[1]?.eco_done_at).toBe('number');
   });
 });
