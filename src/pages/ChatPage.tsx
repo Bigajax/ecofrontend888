@@ -449,9 +449,12 @@ const ChatPage: React.FC = () => {
           ensureEcoMessage();
           const texto = event.text ?? '';
           aggregatedEcoText = texto;
-          firstContentReceived = texto.trim().length > 0;
+          const hasSubstantiveContent = texto.trim().length > 0;
+          firstContentReceived = hasSubstantiveContent;
           patchEcoMessage({ text: texto.length > 0 ? texto : ' ' });
-          setDigitando(false);
+          if (hasSubstantiveContent) {
+            setDigitando(false);
+          }
           syncScroll();
         },
         onChunk: (event) => {
