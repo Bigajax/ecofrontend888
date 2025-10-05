@@ -47,11 +47,11 @@ body {
   --glass-border: rgba(0,0,0,0.06);
   --glass-shadow: 0 8px 24px rgba(0,0,0,0.08);
 
-  /* bolhas (user agora neutra, sem verde) */
-  --bubble-eco-bg:  rgba(255,255,255,0.60);
-  --bubble-user-bg: rgba(255,255,255,0.55);
-  --bubble-border:  rgba(15,23,42,0.10);
-  --bubble-shadow:  0 3px 10px rgba(15,23,42,0.06);
+  /* bolhas (paleta sólida minimalista) */
+  --bubble-eco-bg:  #f3f4f6;
+  --bubble-user-bg: #007aff;
+  --bubble-border:  rgba(15,23,42,0.12);
+  --bubble-shadow:  0 3px 9px rgba(15,23,42,0.12);
 }
 
 /* Dark pronto (opcional) */
@@ -61,21 +61,40 @@ body {
     --glass-bg: rgba(18,22,34,.35);
     --glass-bg-strong: rgba(18,22,34,.55);
     --glass-border: rgba(255,255,255,.08);
-    --bubble-eco-bg: rgba(255,255,255,.10);
-    --bubble-user-bg: rgba(255,255,255,.08);
-    --bubble-border: rgba(255,255,255,.10);
+    --bubble-eco-bg: rgba(30,41,59,.85);
+    --bubble-user-bg: #3b82f6;
+    --bubble-border: rgba(148,163,184,.28);
   }
   body { background-color: var(--bg-cream); color: #e5e7eb; }
 }
 
 /* Alto contraste / menos transparência */
 @media (prefers-contrast: more) {
-  .glass, .glass-strong, .glass-panel,
-  .message-bubble {
+  .glass, .glass-strong, .glass-panel {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background: #ffffff !important;
     border-color: rgba(0,0,0,.18) !important;
+  }
+
+  .message-bubble {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .message-bubble[data-sender="user"] {
+    background: var(--bubble-user-bg) !important;
+    color: #ffffff !important;
+    border-color: #0056c8 !important;
+    box-shadow: 0 4px 10px rgba(0, 86, 200, 0.32) !important;
+  }
+
+  .message-bubble[data-sender="eco"],
+  .message-bubble:not([data-sender]) {
+    background: var(--bubble-eco-bg) !important;
+    color: #0f172a !important;
+    border-color: var(--bubble-border) !important;
+    box-shadow: var(--bubble-shadow) !important;
   }
 }
 
@@ -197,13 +216,32 @@ html, body, #root { height: 100%; min-height: 0; }
 
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   .glass, .glass-strong, .glass-panel, .glass-button, .glass-popover,
-  .tint-teal, .tint-violet, .tint-gray,
-  .message-bubble {
+  .tint-teal, .tint-violet, .tint-gray {
     background: rgba(255,255,255,0.92) !important;
     border-color: rgba(0,0,0,0.06) !important;
     box-shadow: 0 6px 16px rgba(0,0,0,0.06) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
+  }
+
+  .message-bubble {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .message-bubble[data-sender="user"] {
+    background: var(--bubble-user-bg) !important;
+    color: #ffffff !important;
+    border-color: #0064d2 !important;
+    box-shadow: 0 4px 10px rgba(0, 98, 204, 0.28) !important;
+  }
+
+  .message-bubble[data-sender="eco"],
+  .message-bubble:not([data-sender]) {
+    background: var(--bubble-eco-bg) !important;
+    color: #0f172a !important;
+    border-color: var(--bubble-border) !important;
+    box-shadow: var(--bubble-shadow) !important;
   }
 }
 
@@ -387,14 +425,14 @@ body.keyboard-open { overscroll-behavior-y: contain; padding-bottom: var(--safe-
   .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   .glass-strong { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
   .message-bubble {
-    -webkit-backdrop-filter: saturate(1.1) blur(12px);
-    backdrop-filter: saturate(1.1) blur(12px);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
 /* Em telas com pointer “coarse” (toque), suavize blur */
 @media (pointer: coarse) and (hover: none) {
-  .glass, .glass-strong, .message-bubble {
+  .glass, .glass-strong {
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
   }

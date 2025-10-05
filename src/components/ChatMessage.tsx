@@ -45,13 +45,18 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
   ].join(" ");
 
   const bubbleStyle: React.CSSProperties = {
-    backgroundColor: isUser ? "#F5F7FA" : "#007AFF",
-    color: isUser ? "#0F172A" : "#FFFFFF",
-    borderColor: isUser ? "#E2E8F0" : "#0064DA",
-    borderRadius: 20,
+    backgroundColor: isUser ? "#007AFF" : "#F3F4F6",
+    color: isUser ? "#FFFFFF" : "#0F172A",
+    borderColor: isUser ? "#0064D2" : "#D0D5DD",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: isUser ? 20 : 12,
+    borderBottomRightRadius: isUser ? 12 : 20,
     boxShadow: isUser
-      ? "0 8px 20px rgba(15, 23, 42, 0.08)"
-      : "0 12px 28px rgba(0, 122, 255, 0.28)",
+      ? "0 4px 10px rgba(0, 98, 204, 0.28)"
+      : "0 3px 9px rgba(15, 23, 42, 0.12)",
+    backdropFilter: "none",
+    WebkitBackdropFilter: "none",
   };
 
   const markdownClassName = [
@@ -62,7 +67,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
     "prose-a:underline prose-a:break-words",
     "prose-pre:bg-gray-50/70 prose-pre:border prose-pre:border-gray-200/60 prose-pre:rounded-xl prose-pre:p-3",
     "prose-code:before:content-[''] prose-code:after:content-['']",
-    !isUser ? "prose-invert" : "",
+    isUser ? "prose-invert" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -97,7 +102,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
                 <div className={markdownClassName}>
                   <ReactMarkdown
                     components={{
-                      p: ({ node, ...props }) => <p className="m-0 mb-2 last:mb-0" {...props} />,
+                      p: ({ node: _node, ...props }) => (
+                        <p className="m-0 mb-2 last:mb-0" {...props} />
+                      ),
                     }}
                   >
                     {text}
