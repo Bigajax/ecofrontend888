@@ -48,6 +48,28 @@ export interface EcoStreamResult {
   primeiraMemoriaSignificativa?: boolean; // 👈 adicionada
 }
 
+export interface EcoSseEvent<TPayload = Record<string, any>> {
+  type: string;
+  payload: TPayload;
+  raw: unknown;
+  text?: string;
+  metadata?: unknown;
+  memory?: unknown;
+  latencyMs?: number;
+}
+
+export interface EcoEventHandlers {
+  onPromptReady?: (event: EcoSseEvent) => void;
+  onFirstToken?: (event: EcoSseEvent) => void;
+  onChunk?: (event: EcoSseEvent) => void;
+  onDone?: (event: EcoSseEvent) => void;
+  onMeta?: (event: EcoSseEvent) => void;
+  onMetaPending?: (event: EcoSseEvent) => void;
+  onMemorySaved?: (event: EcoSseEvent) => void;
+  onLatency?: (event: EcoSseEvent) => void;
+  onError?: (error: Error) => void;
+}
+
 const isDev = Boolean((import.meta as any)?.env?.DEV);
 const SSE_TIMEOUT_MS = 60_000;
 
@@ -118,7 +140,8 @@ export const enviarMensagemParaEco = async (
   userName?: string,
   userId?: string,
   clientHour?: number,
-  clientTz?: string
+  clientTz?: string,
+  handlers: EcoEventHandlers = {}
 ): Promise<EcoStreamResult> => {
   const mensagensValidas: Message[] = userMessages
     .slice(-3)
@@ -184,37 +207,149 @@ export const enviarMensagemParaEco = async (
     let metadata: unknown;
     let primeiraMemoriaSignificativa = false; // 👈 nova flag
 
+    const safeInvoke = (cb: ((event: EcoSseEvent) => void) | undefined, event: EcoSseEvent) => {
+      if (!cb) return;
+      try {
+        cb(event);
+      } catch (err) {
+        console.error("❌ [ECO API] Falha ao executar callback de stream", err);
+      }
+    };
+
+    const safeInvokeError = (cb: ((error: Error) => void) | undefined, error: Error) => {
+      if (!cb) return;
+      try {
+        cb(error);
+      } catch (err) {
+        console.error("❌ [ECO API] Falha ao executar callback de erro da stream", err);
+      }
+    };
+
     const handleEvent = (eventData: unknown) => {
       if (!eventData || typeof eventData !== "object") return;
 
       const baseEvent = eventData as Record<string, any>;
       const topType = typeof baseEvent.type === "string" ? baseEvent.type : undefined;
-      const eventPayloadRaw = baseEvent.payload && typeof baseEvent.payload === "object" ? baseEvent.payload : baseEvent;
+      const eventPayloadRaw =
+        baseEvent.payload && typeof baseEvent.payload === "object"
+          ? (baseEvent.payload as Record<string, any>)
+          : baseEvent;
       const payload = eventPayloadRaw as Record<string, any>;
       const payloadType = typeof payload.type === "string" ? payload.type : topType;
+      const type = payloadType ?? topType;
 
-      if (payloadType === "chunk") {
-        const source = payload.delta ?? payload.content ?? payload.message ?? payload;
-        const texts = collectTexts(source);
-        if (texts.length > 0) aggregatedParts.push(texts.join(""));
+      if (!type) {
+        if (isDev) console.debug("ℹ️ [ECO API] Evento SSE sem tipo reconhecido:", eventData);
         return;
       }
 
-      if (payloadType === "done") {
-        doneReceived = true;
-        donePayload = payload;
-        metadata = payload?.response ?? payload?.metadata ?? payload;
+      const baseEventInfo: EcoSseEvent = {
+        type,
+        payload,
+        raw: eventData,
+      };
 
-        // 👇 se o backend mandou a flag, guardamos
+      if (type === "error" || payload?.status === "error") {
+        const errMessage =
+          payload?.error?.message || payload?.error || payload?.message || "Erro na stream SSE da Eco.";
+        streamError = new Error(String(errMessage));
+        safeInvokeError(handlers.onError, streamError);
+        return;
+      }
+
+      if (type === "prompt_ready") {
+        safeInvoke(handlers.onPromptReady, baseEventInfo);
+        return;
+      }
+
+      if (type === "latency") {
+        const latencyValue = typeof payload?.value === "number" ? payload.value : undefined;
+        const eventWithLatency: EcoSseEvent = {
+          ...baseEventInfo,
+          latencyMs: latencyValue,
+        };
+        safeInvoke(handlers.onLatency, eventWithLatency);
+        return;
+      }
+
+      if (type === "first_token") {
+        const source = payload.delta ?? payload.content ?? payload.message ?? payload;
+        const texts = collectTexts(source);
+        const chunkText = texts.join("");
+        if (chunkText.length > 0) {
+          aggregatedParts.push(chunkText);
+        }
+        const eventWithText: EcoSseEvent = {
+          ...baseEventInfo,
+          text: chunkText,
+        };
+        safeInvoke(handlers.onFirstToken, eventWithText);
+        return;
+      }
+
+      if (type === "chunk") {
+        const source = payload.delta ?? payload.content ?? payload.message ?? payload;
+        const texts = collectTexts(source);
+        const chunkText = texts.join("");
+        if (chunkText.length > 0) {
+          aggregatedParts.push(chunkText);
+        }
+        const eventWithText: EcoSseEvent = {
+          ...baseEventInfo,
+          text: chunkText,
+        };
+        safeInvoke(handlers.onChunk, eventWithText);
+        return;
+      }
+
+      if (type === "meta" || type === "meta_pending" || type === "meta-pending") {
+        const metaPayload = payload?.metadata ?? payload;
+        const eventWithMeta: EcoSseEvent = {
+          ...baseEventInfo,
+          metadata: metaPayload,
+        };
+        metadata = metaPayload ?? metadata;
+        if (type === "meta") safeInvoke(handlers.onMeta, eventWithMeta);
+        else safeInvoke(handlers.onMetaPending, eventWithMeta);
+        return;
+      }
+
+      if (type === "memory_saved") {
+        const memoryPayload = payload?.memory ?? payload?.memoria ?? payload;
+        const eventWithMemory: EcoSseEvent = {
+          ...baseEventInfo,
+          memory: memoryPayload,
+        };
         if (payload?.primeiraMemoriaSignificativa || payload?.primeira) {
           primeiraMemoriaSignificativa = true;
         }
+        safeInvoke(handlers.onMemorySaved, eventWithMemory);
         return;
       }
 
-      if (payloadType === "error" || payload?.status === "error") {
-        const errMessage = payload?.error?.message || payload?.error || payload?.message || "Erro na stream SSE da Eco.";
-        streamError = new Error(String(errMessage));
+      if (type === "done") {
+        doneReceived = true;
+        donePayload = payload;
+        const responseMetadata = payload?.response ?? payload?.metadata ?? payload;
+        metadata = responseMetadata ?? metadata;
+
+        if (payload?.primeiraMemoriaSignificativa || payload?.primeira) {
+          primeiraMemoriaSignificativa = true;
+        }
+
+        const source = payload.delta ?? payload.content ?? payload.message ?? payload.response;
+        const texts = collectTexts(source);
+        const doneText = texts.join("");
+        if (doneText.length > 0 && aggregatedParts.length === 0) {
+          aggregatedParts.push(doneText);
+        }
+
+        const eventWithMeta: EcoSseEvent = {
+          ...baseEventInfo,
+          metadata: responseMetadata,
+          text: doneText.length > 0 ? doneText : undefined,
+        };
+        safeInvoke(handlers.onDone, eventWithMeta);
         return;
       }
 
