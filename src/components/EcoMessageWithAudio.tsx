@@ -78,10 +78,10 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
     </button>
   );
 
-  // padding lateral da barra de ações acompanha a bolha:
-  // - user (direita): um pequeno recuo à direita para não “colar” na borda
-  // - eco (esquerda): recuo para alinhar com o começo do texto (considerando a bolha com 16px internos)
-  const actionsPad = isUser ? "mr-2" : "ml-[42px] sm:ml-[50px]";
+  // padding/margem da barra acompanha a bolha:
+  // - user (direita): padding à direita espelha o padding interno da bolha
+  // - eco (esquerda): margem soma avatar (30px), gap (12px) e padding interno
+  const actionsPad = isUser ? "pr-4 sm:pr-5" : "ml-[58px] sm:ml-[62px]";
 
   return (
     <>
@@ -96,7 +96,10 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
               "mt-1 flex items-center gap-1.5",
               "max-w-[min(720px,88vw)] min-w-0", // acompanha o mesmo limite da bolha
               actionsPad,
-            ].join(" ")}
+              isUser ? "self-end" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
             <GhostBtn onClick={copiarTexto} aria-label="Copiar mensagem" title="Copiar">
               <ClipboardCopy className={ICON_CLASS} strokeWidth={1.5} />
