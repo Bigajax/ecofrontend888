@@ -335,60 +335,48 @@ const ChatPage: React.FC = () => {
     mixpanel.track('Eco: Mensagem Enviada', { userId, userName, mensagem: trimmed, timestamp: new Date().toISOString() });
 
     try {
-      const salvarMensagemPromise = (async () => {
-        try {
-          const saved = await salvarMensagem({
-            usuarioId: userId!,
-            conteudo: trimmed,
-            sentimento: '',
-            salvarMemoria: true,
-          });
-          return saved?.[0]?.id ?? null;
-        } catch {
-          return null;
-        }
-      })();
-
       const tags = extrairTagsRelevantes(trimmed);
 
-      const buscarSimilaresPromise = (async () => {
-        try {
-          // ⇩ usa v2 com k/threshold/usuario_id
-          return await buscarMemoriasSemelhantesV2(trimmed, {
-            k: 3,
-            threshold: 0.12,
-            usuario_id: userId!,
-          });
-        } catch {
-          return [];
-        }
-      })();
+      let persistedMensagemId = userLocalId;
+
+      const salvarMensagemPromise = salvarMensagem({
+        usuarioId: userId!,
+        conteudo: trimmed,
+        sentimento: '',
+        salvarMemoria: true,
+      })
+        .then((saved) => saved?.[0]?.id ?? null)
+        .catch(() => null);
+
+      const mensagemIdPromise = salvarMensagemPromise
+        .then((savedMensagemId) => {
+          if (savedMensagemId && savedMensagemId !== userLocalId) {
+            persistedMensagemId = savedMensagemId;
+            setMessages((prev) =>
+              prev.map((m) => (m.id === userLocalId ? { ...m, id: savedMensagemId } : m))
+            );
+            return savedMensagemId;
+          }
+          return userLocalId;
+        })
+        .catch(() => userLocalId);
+
+      const buscarSimilaresPromise = buscarMemoriasSemelhantesV2(trimmed, {
+        k: 3,
+        threshold: 0.12,
+        usuario_id: userId!,
+      }).catch(() => []);
 
       const buscarPorTagPromise = tags.length
-        ? (async () => {
-            try {
-              return await buscarUltimasMemoriasComTags(userId!, tags, 2);
-            } catch {
-              return [];
-            }
-          })()
+        ? buscarUltimasMemoriasComTags(userId!, tags, 2).catch(() => [])
         : Promise.resolve([]);
 
-      const [savedMensagemId, similar, porTag] = await Promise.all([
-        salvarMensagemPromise,
+      const [similar, porTag] = await Promise.all([
         buscarSimilaresPromise,
         buscarPorTagPromise,
       ]);
 
-      const mensagemId = savedMensagemId || userLocalId;
-
-      if (mensagemId !== userLocalId) {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === userLocalId ? { ...m, id: mensagemId } : m))
-        );
-      }
-
-      const baseHistory = [...messages, { id: mensagemId, role: 'user', content: trimmed }];
+      const baseHistory = [...messages, { id: userLocalId, role: 'user', content: trimmed }];
 
       // mescla e deduplica (por id ou hash simples de data+resumo)
       const vistos = new Set<string>();
@@ -495,6 +483,8 @@ const ChatPage: React.FC = () => {
           userId,
           sessionId: sessaoId,
           outcome,
+          mensagem_id: persistedMensagemId,
+          mensagem_local_id: userLocalId,
           latency_from_stream_ms:
             typeof latencyFromStream === 'number' ? latencyFromStream : null,
           latency_source: latencySource,
@@ -687,7 +677,11 @@ const ChatPage: React.FC = () => {
           }
           setDigitando(false);
           syncScroll();
-          logAndSendStreamMetrics('success', { stage: 'on_done' });
+          const metricsExtra: Record<string, unknown> = { stage: 'on_done' };
+          if (meta !== undefined) {
+            metricsExtra.final_metadata = meta;
+          }
+          logAndSendStreamMetrics('success', metricsExtra);
           resetEcoMessageTracking();
         },
         onError: (error) => {
@@ -794,6 +788,33 @@ const ChatPage: React.FC = () => {
 
       const memoriaParaTracking = memoryFromStream || bloco;
       trackMemoryIfSignificant(memoriaParaTracking);
+
+      const finalMixpanelMetadata =
+        finalMetadata !== undefined
+          ? finalMetadata
+          : pendingMetadata !== undefined
+          ? pendingMetadata
+          : donePayload;
+
+      if (finalMixpanelMetadata !== undefined) {
+        mensagemIdPromise
+          .then((mensagemIdFinal) => {
+            mixpanel.track('Eco: Resposta Metadata', {
+              userId,
+              sessionId: sessaoId,
+              mensagemId: mensagemIdFinal,
+              metadata: finalMixpanelMetadata,
+            });
+          })
+          .catch(() => {
+            mixpanel.track('Eco: Resposta Metadata', {
+              userId,
+              sessionId: sessaoId,
+              mensagemId: userLocalId,
+              metadata: finalMixpanelMetadata,
+            });
+          });
+      }
 
       if (!metricsReported) {
         if (doneAt === undefined) {
