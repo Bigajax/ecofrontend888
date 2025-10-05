@@ -25,7 +25,7 @@ vi.mock("uuid", () => ({
   v4: () => "uuid-mock",
 }));
 
-import { enviarMensagemParaEco } from "../ecoApi";
+import { enviarMensagemParaEco, EcoEventHandlers } from "../ecoApi";
 
 const mensagens = [
   { role: "user", content: "Olá" },
@@ -114,6 +114,99 @@ describe("enviarMensagemParaEco", () => {
     await expect(callApi()).rejects.toThrow('Fluxo SSE encerrado sem evento "done".');
 
     errorSpy.mockRestore();
+  });
+
+  it("dispara callbacks incrementais conforme eventos SSE chegam", async () => {
+    const events = [
+      { type: "prompt_ready", payload: { type: "prompt_ready" } },
+      { type: "latency", payload: { type: "latency", value: 321 } },
+      {
+        type: "first_token",
+        payload: { type: "first_token", delta: { content: "Olá" } },
+      },
+      { type: "chunk", payload: { type: "chunk", delta: { content: " Eco" } } },
+      {
+        type: "meta_pending",
+        payload: { type: "meta_pending", metadata: { status: "pending" } },
+      },
+      { type: "meta", payload: { type: "meta", metadata: { intensidade: 6 } } },
+      {
+        type: "memory_saved",
+        payload: {
+          type: "memory_saved",
+          memoria: { intensidade: 8 },
+          primeiraMemoriaSignificativa: true,
+        },
+      },
+      {
+        type: "done",
+        payload: { type: "done", metadata: { intensidade: 9 } },
+      },
+    ];
+
+    fetchMock.mockResolvedValue(createSseResponse(events));
+
+    const ordem: string[] = [];
+    let texto = "";
+    const metas: unknown[] = [];
+    const memorias: unknown[] = [];
+    let latencia: number | undefined;
+
+    const handlers: EcoEventHandlers = {
+      onPromptReady: (event) => ordem.push(event.type),
+      onLatency: (event) => {
+        ordem.push(event.type);
+        latencia = event.latencyMs;
+      },
+      onFirstToken: (event) => {
+        ordem.push(event.type);
+        texto += event.text ?? "";
+      },
+      onChunk: (event) => {
+        ordem.push(event.type);
+        texto += event.text ?? "";
+      },
+      onMetaPending: (event) => {
+        ordem.push(event.type);
+        metas.push(event.metadata);
+      },
+      onMeta: (event) => {
+        ordem.push(event.type);
+        metas.push(event.metadata);
+      },
+      onMemorySaved: (event) => {
+        ordem.push(event.type);
+        memorias.push(event.memory);
+      },
+      onDone: (event) => ordem.push(event.type),
+    };
+
+    const resposta = await enviarMensagemParaEco(
+      mensagens,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      handlers
+    );
+
+    expect(ordem).toEqual([
+      "prompt_ready",
+      "latency",
+      "first_token",
+      "chunk",
+      "meta_pending",
+      "meta",
+      "memory_saved",
+      "done",
+    ]);
+    expect(texto).toBe("Olá Eco");
+    expect(latencia).toBe(321);
+    expect(metas).toEqual([{ status: "pending" }, { intensidade: 6 }]);
+    expect(memorias).toEqual([{ intensidade: 8 }]);
+    expect(resposta.text).toBe("Olá Eco");
+    expect(resposta.metadata).toEqual({ intensidade: 9 });
+    expect(resposta.primeiraMemoriaSignificativa).toBe(true);
   });
 });
 

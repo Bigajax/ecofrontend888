@@ -19,6 +19,10 @@ export interface Message {
   sender: 'user' | 'eco';
   role?: 'user' | 'assistant' | 'system';
   deepQuestion?: boolean;
+  metadata?: unknown;
+  memory?: unknown;
+  donePayload?: unknown;
+  latencyMs?: number;
 }
 
 interface ChatContextType {
