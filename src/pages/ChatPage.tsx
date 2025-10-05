@@ -389,6 +389,9 @@ const ChatPage: React.FC = () => {
       const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       let ecoMessageId: string | null = null;
+      let ecoMessageIndex: number | null = null;
+      let resolvedEcoMessageId: string | null = null;
+      let resolvedEcoMessageIndex: number | null = null;
       let aggregatedEcoText = '';
       let latestMetadata: unknown;
       let pendingMetadata: unknown;
@@ -484,14 +487,51 @@ const ChatPage: React.FC = () => {
 
       const ensureEcoMessage = () => {
         if (ecoMessageId) return;
-        ecoMessageId = uuidv4();
-        const placeholder: ChatMessageType = { id: ecoMessageId, sender: 'eco', text: ' ' };
-        setMessages((prev) => [...prev, placeholder]);
+        const newId = uuidv4();
+        ecoMessageId = newId;
+        resolvedEcoMessageId = newId;
+        setMessages((prev) => {
+          const index = prev.length;
+          const placeholder: ChatMessageType = { id: newId, sender: 'eco', text: ' ' };
+          ecoMessageIndex = index;
+          resolvedEcoMessageIndex = index;
+          return [...prev, placeholder];
+        });
       };
 
       const patchEcoMessage = (patch: Partial<ChatMessageType>) => {
-        if (!ecoMessageId) return;
-        setMessages((prev) => prev.map((m) => (m.id === ecoMessageId ? { ...m, ...patch } : m)));
+        const targetId = ecoMessageId ?? resolvedEcoMessageId;
+        if (!targetId) return;
+        if (Object.keys(patch).length === 0) return;
+        setMessages((prev) => {
+          const cachedIndex = ecoMessageIndex ?? resolvedEcoMessageIndex;
+          let index = cachedIndex ?? prev.findIndex((m) => m.id === targetId);
+          if (index < 0) return prev;
+          const existing = prev[index];
+          if (!existing) return prev;
+          if (ecoMessageId && ecoMessageIndex === null) {
+            ecoMessageIndex = index;
+          }
+          resolvedEcoMessageId = targetId;
+          resolvedEcoMessageIndex = index;
+          let changed = false;
+          for (const [key, value] of Object.entries(patch)) {
+            if ((existing as any)[key] !== value) {
+              changed = true;
+              break;
+            }
+          }
+          if (!changed) return prev;
+          const updated = { ...existing, ...patch };
+          const next = [...prev];
+          next[index] = updated;
+          return next;
+        });
+      };
+
+      const resetEcoMessageTracking = () => {
+        ecoMessageId = null;
+        ecoMessageIndex = null;
       };
 
       const syncScroll = () => {
@@ -605,6 +645,7 @@ const ChatPage: React.FC = () => {
           setDigitando(false);
           syncScroll();
           logAndSendStreamMetrics('success', { stage: 'on_done' });
+          resetEcoMessageTracking();
         },
         onError: (error) => {
           if (doneAt === undefined) {
@@ -626,6 +667,7 @@ const ChatPage: React.FC = () => {
             error_message: message ?? 'Erro desconhecido na stream.',
             error_reason: reason,
           });
+          resetEcoMessageTracking();
         },
       };
 
@@ -645,11 +687,12 @@ const ChatPage: React.FC = () => {
         (resposta?.metadata && typeof resposta.metadata === 'object' ? resposta.metadata : undefined) ||
         (resposta?.done && typeof resposta.done === 'object' ? resposta.done : undefined);
 
-      if (!ecoMessageId) {
+      if (!resolvedEcoMessageId) {
         if (finalText) {
-          ecoMessageId = uuidv4();
+          const newId = uuidv4();
+          resolvedEcoMessageId = newId;
           const ecoMessage: ChatMessageType = {
-            id: ecoMessageId,
+            id: newId,
             text: finalText,
             sender: 'eco',
             ...(finalMetadata !== undefined ? { metadata: finalMetadata } : {}),
@@ -657,7 +700,11 @@ const ChatPage: React.FC = () => {
             ...(memoryFromStream ? { memory: memoryFromStream } : {}),
             ...(typeof latencyFromStream === 'number' ? { latencyMs: latencyFromStream } : {}),
           };
-          addMessage(ecoMessage);
+          setMessages((prev) => {
+            const index = prev.length;
+            resolvedEcoMessageIndex = index;
+            return [...prev, ecoMessage];
+          });
         }
       } else {
         if (finalText) {
@@ -694,7 +741,7 @@ const ChatPage: React.FC = () => {
         messageText: finalText,
       });
 
-      if (ecoMessageId && deepQuestionFlag) {
+      if (resolvedEcoMessageId && deepQuestionFlag) {
         patchEcoMessage({ deepQuestion: true });
       }
 
@@ -720,6 +767,7 @@ const ChatPage: React.FC = () => {
         mensagem: (text || '').slice(0, 120),
         timestamp: new Date().toISOString(),
       });
+      resetEcoMessageTracking();
       if (!metricsReported) {
         if (doneAt === undefined) {
           doneAt = getNow();
