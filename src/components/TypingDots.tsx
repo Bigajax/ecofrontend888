@@ -1,6 +1,6 @@
 // TypingDots.tsx
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 type Variant = "pill" | "bubble" | "inline";
 type Tone = "auto" | "light" | "dark";
@@ -18,30 +18,22 @@ const SIZES = {
   lg: { dot: 11, gap: 14, padX: 18, padY: 11, radius: "rounded-3xl" },
 } as const;
 
-const dotTransition = {
-  repeat: Infinity,
-  ease: [0.22, 1, 0.36, 1], // iOS-like
-  duration: 1.2,
-};
-
 const toneTokens = {
   light: {
-    dot: "rgba(0, 122, 255, 0.85)",
-    dotDim: "rgba(27, 79, 255, 0.55)",
-    container: "rgba(0, 122, 255, 0.14)",
-    bubble: "rgba(0, 122, 255, 0.18)",
-    border: "rgba(0, 122, 255, 0.36)",
-    halo: "rgba(0, 122, 255, 0.18)",
-    shadow: "0 4px 10px rgba(0, 76, 167, 0.14)",
+    dot: "#007AFF",
+    dotDim: "rgba(0, 122, 255, 0.55)",
+    container: "rgba(15, 23, 42, 0.05)",
+    bubble: "rgba(15, 23, 42, 0.06)",
+    border: "rgba(148, 163, 184, 0.28)",
+    shadow: "0 1px 2px rgba(15, 23, 42, 0.12)",
   },
   dark: {
-    dot: "rgba(118, 160, 255, 0.94)",
-    dotDim: "rgba(91, 153, 255, 0.72)",
-    container: "rgba(27, 79, 255, 0.22)",
-    bubble: "rgba(27, 79, 255, 0.27)",
-    border: "rgba(118, 160, 255, 0.42)",
-    halo: "rgba(27, 79, 255, 0.26)",
-    shadow: "0 4px 12px rgba(4, 20, 70, 0.32)",
+    dot: "#5FA9FF",
+    dotDim: "rgba(95, 169, 255, 0.55)",
+    container: "rgba(148, 163, 184, 0.16)",
+    bubble: "rgba(148, 163, 184, 0.22)",
+    border: "rgba(148, 163, 184, 0.35)",
+    shadow: "0 1px 3px rgba(15, 23, 42, 0.55)",
   },
 } as const;
 
@@ -86,10 +78,19 @@ const TypingDots: React.FC<Props> = ({
 
   const s = SIZES[size];
   const tokens = toneTokens[resolvedTone];
+  const prefersReducedMotion = useReducedMotion();
+
+  const dotTransition = prefersReducedMotion
+    ? undefined
+    : {
+        repeat: Infinity,
+        ease: "linear" as const,
+        duration: 1.4,
+      };
 
   const baseDots = (
     <>
-      {[0, 0.2, 0.4].map((delay, i) => (
+      {[0, 0.18, 0.36].map((delay, i) => (
         <motion.span
           key={i}
           role="presentation"
@@ -97,13 +98,20 @@ const TypingDots: React.FC<Props> = ({
           style={{
             width: s.dot,
             height: s.dot,
-            backgroundColor: tokens.dotDim,
+            backgroundColor: prefersReducedMotion ? tokens.dot : tokens.dotDim,
           }}
-          animate={{
-            y: [0, -3, 0],
-            backgroundColor: [tokens.dotDim, tokens.dot, tokens.dotDim],
-          }}
-          transition={{ ...dotTransition, delay }}
+          animate={
+            prefersReducedMotion
+              ? undefined
+              : {
+                  y: [0, -2, 0],
+                  backgroundColor: [tokens.dotDim, tokens.dot, tokens.dotDim],
+                }
+          }
+          transition=
+            dotTransition && delay
+              ? { ...dotTransition, delay }
+              : dotTransition || undefined
         />
       ))}
     </>
@@ -139,16 +147,6 @@ const TypingDots: React.FC<Props> = ({
           boxShadow: tokens.shadow,
         };
 
-  // Halo suave (apenas para pill e bubble)
-  const Halo = () =>
-    variant === "inline" ? null : (
-      <span
-        aria-hidden
-        className="absolute inset-0 -z-10 rounded-[inherit]"
-        style={{ backgroundColor: tokens.halo }}
-      />
-    );
-
   return (
     <div
       className={`relative ${containers[variant]} ${className}`}
@@ -157,9 +155,7 @@ const TypingDots: React.FC<Props> = ({
       aria-label="Eco está digitando"
       role="status"
     >
-      <Halo />
-      {/* reduz animação para quem prefere menos movimento */}
-      <div className="motion-reduce:animate-none motion-reduce:[&_*]:transition-none flex items-center gap-[inherit]">
+      <div className="flex items-center gap-[inherit]">
         {baseDots}
       </div>
     </div>
