@@ -335,17 +335,60 @@ const ChatPage: React.FC = () => {
     mixpanel.track('Eco: Mensagem Enviada', { userId, userName, mensagem: trimmed, timestamp: new Date().toISOString() });
 
     try {
-      const saved = await salvarMensagem({ usuarioId: userId!, conteudo: trimmed, sentimento: '', salvarMemoria: true });
-      const mensagemId = saved?.[0]?.id || userLocalId;
-
-      const baseHistory = [...messages, { id: mensagemId, role: 'user', content: trimmed }];
+      const salvarMensagemPromise = (async () => {
+        try {
+          const saved = await salvarMensagem({
+            usuarioId: userId!,
+            conteudo: trimmed,
+            sentimento: '',
+            salvarMemoria: true,
+          });
+          return saved?.[0]?.id ?? null;
+        } catch {
+          return null;
+        }
+      })();
 
       const tags = extrairTagsRelevantes(trimmed);
-      const [similar, porTag] = await Promise.all([
-        // ⇩ usa v2 com k/threshold/usuario_id
-        buscarMemoriasSemelhantesV2(trimmed, { k: 3, threshold: 0.12, usuario_id: userId! }).catch(() => []),
-        tags.length ? buscarUltimasMemoriasComTags(userId!, tags, 2).catch(() => []) : Promise.resolve([]),
+
+      const buscarSimilaresPromise = (async () => {
+        try {
+          // ⇩ usa v2 com k/threshold/usuario_id
+          return await buscarMemoriasSemelhantesV2(trimmed, {
+            k: 3,
+            threshold: 0.12,
+            usuario_id: userId!,
+          });
+        } catch {
+          return [];
+        }
+      })();
+
+      const buscarPorTagPromise = tags.length
+        ? (async () => {
+            try {
+              return await buscarUltimasMemoriasComTags(userId!, tags, 2);
+            } catch {
+              return [];
+            }
+          })()
+        : Promise.resolve([]);
+
+      const [savedMensagemId, similar, porTag] = await Promise.all([
+        salvarMensagemPromise,
+        buscarSimilaresPromise,
+        buscarPorTagPromise,
       ]);
+
+      const mensagemId = savedMensagemId || userLocalId;
+
+      if (mensagemId !== userLocalId) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === userLocalId ? { ...m, id: mensagemId } : m))
+        );
+      }
+
+      const baseHistory = [...messages, { id: mensagemId, role: 'user', content: trimmed }];
 
       // mescla e deduplica (por id ou hash simples de data+resumo)
       const vistos = new Set<string>();
