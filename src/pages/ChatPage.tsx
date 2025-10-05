@@ -14,7 +14,7 @@ import EcoMessageWithAudio from '../components/EcoMessageWithAudio';
 import QuickSuggestions, { Suggestion, SuggestionPickMeta } from '../components/QuickSuggestions';
 import TypingDots from '../components/TypingDots';
 
-import { enviarMensagemParaEco } from '../api/ecoApi';
+import { enviarMensagemParaEco, EcoEventHandlers } from '../api/ecoApi';
 import { buscarUltimasMemoriasComTags, buscarMemoriasSemelhantesV2 } from '../api/memoriaApi';
 
 import { useAuth } from '../contexts/AuthContext';
@@ -388,22 +388,182 @@ const ChatPage: React.FC = () => {
       const clientHour = new Date().getHours();
       const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+      let ecoMessageId: string | null = null;
+      let aggregatedEcoText = '';
+      let latestMetadata: unknown;
+      let pendingMetadata: unknown;
+      let donePayload: unknown;
+      let memoryFromStream: unknown;
+      let primeiraMemoriaFlag = false;
+      let trackedMemory = false;
+      let latencyFromStream: number | undefined;
+      let firstContentReceived = false;
+
+      const ensureEcoMessage = () => {
+        if (ecoMessageId) return;
+        ecoMessageId = uuidv4();
+        const placeholder: ChatMessageType = { id: ecoMessageId, sender: 'eco', text: ' ' };
+        setMessages((prev) => [...prev, placeholder]);
+      };
+
+      const patchEcoMessage = (patch: Partial<ChatMessageType>) => {
+        if (!ecoMessageId) return;
+        setMessages((prev) => prev.map((m) => (m.id === ecoMessageId ? { ...m, ...patch } : m)));
+      };
+
+      const syncScroll = () => {
+        if (isAtBottom) {
+          requestAnimationFrame(() => scrollToBottom(true));
+        }
+      };
+
+      const trackMemoryIfSignificant = (bloco: any) => {
+        if (trackedMemory || !bloco || typeof bloco !== 'object') return;
+        const intensidade = (bloco as any).intensidade;
+        if (typeof intensidade === 'number' && intensidade >= 7) {
+          trackedMemory = true;
+          mixpanel.track('Memória Registrada', {
+            intensidade,
+            emocao_principal: (bloco as any).emocao_principal || 'desconhecida',
+            modulo_ativado: (bloco as any).modulo_ativado || 'não informado',
+            dominio_vida: (bloco as any).dominio_vida || 'geral',
+            padrao_comportamental: (bloco as any).padrao_comportamental || 'não identificado',
+          });
+        }
+      };
+
+      const handlers: EcoEventHandlers = {
+        onPromptReady: () => {
+          ensureEcoMessage();
+          patchEcoMessage({ text: ' ' });
+          syncScroll();
+        },
+        onLatency: (event) => {
+          if (typeof event.latencyMs === 'number') {
+            latencyFromStream = event.latencyMs;
+            ensureEcoMessage();
+            patchEcoMessage({ latencyMs: event.latencyMs });
+          }
+        },
+        onFirstToken: (event) => {
+          ensureEcoMessage();
+          const texto = event.text ?? '';
+          aggregatedEcoText = texto;
+          firstContentReceived = texto.trim().length > 0;
+          patchEcoMessage({ text: texto.length > 0 ? texto : ' ' });
+          setDigitando(false);
+          syncScroll();
+        },
+        onChunk: (event) => {
+          if (!event.text) return;
+          ensureEcoMessage();
+          aggregatedEcoText += event.text;
+          if (!firstContentReceived && aggregatedEcoText.trim().length > 0) {
+            firstContentReceived = true;
+            setDigitando(false);
+          }
+          patchEcoMessage({ text: aggregatedEcoText });
+          syncScroll();
+        },
+        onMetaPending: (event) => {
+          const meta = event.metadata ?? event.payload;
+          pendingMetadata = meta;
+          ensureEcoMessage();
+          patchEcoMessage({ metadata: meta });
+        },
+        onMeta: (event) => {
+          const meta = event.metadata ?? event.payload;
+          latestMetadata = meta;
+          ensureEcoMessage();
+          patchEcoMessage({ metadata: meta });
+          trackMemoryIfSignificant(meta);
+        },
+        onMemorySaved: (event) => {
+          const memoria = event.memory ?? (event.payload as any)?.memory ?? (event.payload as any)?.memoria ?? event.payload;
+          memoryFromStream = memoria;
+          if ((event.payload as any)?.primeiraMemoriaSignificativa || (event.payload as any)?.primeira) {
+            primeiraMemoriaFlag = true;
+          }
+          ensureEcoMessage();
+          patchEcoMessage({ memory: memoria });
+          trackMemoryIfSignificant(memoria);
+        },
+        onDone: (event) => {
+          donePayload = event.payload;
+          const meta = event.metadata ?? latestMetadata ?? pendingMetadata ?? event.payload?.response ?? event.payload?.metadata;
+          if (meta !== undefined) {
+            latestMetadata = meta;
+            ensureEcoMessage();
+            patchEcoMessage({ metadata: meta, donePayload: event.payload });
+            trackMemoryIfSignificant(meta);
+          } else {
+            ensureEcoMessage();
+            patchEcoMessage({ donePayload: event.payload });
+          }
+          if (event.text && aggregatedEcoText.length === 0) {
+            aggregatedEcoText = event.text;
+            patchEcoMessage({ text: aggregatedEcoText });
+          }
+          if (event.payload?.primeiraMemoriaSignificativa || event.payload?.primeira) {
+            primeiraMemoriaFlag = true;
+          }
+          setDigitando(false);
+          syncScroll();
+        },
+        onError: () => {
+          setDigitando(false);
+        },
+      };
+
       const resposta = await enviarMensagemParaEco(
         mensagensComContexto,
         userName,
         userId!,
         clientHour,
-        clientTz
+        clientTz,
+        handlers
       );
 
-      if (resposta?.primeiraMemoriaSignificativa) {
-        celebrateFirstMemory();
-      }
-
-      const textoEco = (resposta?.text || '').trim();
-      const bloco =
+      const finalText = (resposta?.text || aggregatedEcoText || '').trim();
+      const finalMetadata =
+        latestMetadata ||
+        pendingMetadata ||
         (resposta?.metadata && typeof resposta.metadata === 'object' ? resposta.metadata : undefined) ||
         (resposta?.done && typeof resposta.done === 'object' ? resposta.done : undefined);
+
+      if (!ecoMessageId) {
+        if (finalText) {
+          ecoMessageId = uuidv4();
+          const ecoMessage: ChatMessageType = {
+            id: ecoMessageId,
+            text: finalText,
+            sender: 'eco',
+            ...(finalMetadata !== undefined ? { metadata: finalMetadata } : {}),
+            ...(resposta?.done ? { donePayload: resposta.done } : {}),
+            ...(memoryFromStream ? { memory: memoryFromStream } : {}),
+            ...(typeof latencyFromStream === 'number' ? { latencyMs: latencyFromStream } : {}),
+          };
+          addMessage(ecoMessage);
+        }
+      } else {
+        if (finalText) {
+          patchEcoMessage({ text: finalText });
+        }
+        const patch: Partial<ChatMessageType> = {};
+        if (finalMetadata !== undefined) patch.metadata = finalMetadata;
+        if (resposta?.done) patch.donePayload = resposta.done;
+        if (memoryFromStream) patch.memory = memoryFromStream;
+        if (typeof latencyFromStream === 'number') patch.latencyMs = latencyFromStream;
+        if (Object.keys(patch).length > 0) {
+          patchEcoMessage(patch);
+        }
+      }
+
+      donePayload = donePayload || resposta?.done;
+
+      const bloco =
+        (finalMetadata && typeof finalMetadata === 'object' ? finalMetadata : undefined) ||
+        (donePayload && typeof donePayload === 'object' ? donePayload : undefined);
 
       if (!bloco && isDev) {
         console.debug('[ChatPage] Resposta da Eco sem metadata estruturada', resposta?.metadata);
@@ -412,29 +572,24 @@ const ChatPage: React.FC = () => {
       const deepQuestionFlag = extractDeepQuestionFlag({
         block: bloco,
         responseText:
-          typeof resposta?.metadata === 'string'
-            ? resposta.metadata
+          typeof finalMetadata === 'string'
+            ? (finalMetadata as string)
             : bloco
               ? JSON.stringify(bloco)
               : undefined,
-        messageText: textoEco,
+        messageText: finalText,
       });
 
-      if (textoEco) {
-        const ecoMessage: ChatMessageType = { id: uuidv4(), text: textoEco, sender: 'eco' };
-        if (deepQuestionFlag) ecoMessage.deepQuestion = true;
-        addMessage(ecoMessage);
+      if (ecoMessageId && deepQuestionFlag) {
+        patchEcoMessage({ deepQuestion: true });
       }
 
-      if (bloco && typeof (bloco as any)?.intensidade === 'number' && (bloco as any).intensidade >= 7) {
-        mixpanel.track('Memória Registrada', {
-          intensidade: (bloco as any).intensidade,
-          emocao_principal: (bloco as any).emocao_principal || 'desconhecida',
-          modulo_ativado: (bloco as any).modulo_ativado || 'não informado',
-          dominio_vida: (bloco as any).dominio_vida || 'geral',
-          padrao_comportamental: (bloco as any).padrao_comportamental || 'não identificado',
-        });
+      if (resposta?.primeiraMemoriaSignificativa || primeiraMemoriaFlag) {
+        celebrateFirstMemory();
       }
+
+      const memoriaParaTracking = memoryFromStream || bloco;
+      trackMemoryIfSignificant(memoriaParaTracking);
     } catch (err: any) {
       console.error('[ChatPage] erro:', err);
       setErroApi(err?.message || 'Falha ao enviar mensagem.');
