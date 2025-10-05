@@ -35,30 +35,37 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
     "message-bubble",
     "relative",
     "px-4 py-3 sm:px-5 sm:py-3.5",
-    "rounded-[24px]",
+    "rounded-[20px]",
     "w-fit min-w-[10ch] sm:min-w-[12ch]",
     "max-w-[min(720px,88vw)]",
     "break-words whitespace-pre-wrap",
-    "shadow-[0_18px_36px_rgba(15,23,42,0.08)]",
     "border",
-    "border-transparent",
-    "backdrop-blur-[18px] backdrop-saturate-150",
     "transition-transform duration-200 ease-out",
-    "text-slate-900",
     "overflow-hidden",
   ].join(" ");
 
   const bubbleStyle: React.CSSProperties = {
-    background: isUser
-      ? "radial-gradient(120% 120% at 70% 30%, rgba(255,255,255,0.95), rgba(244,246,255,0.62))"
-      : "radial-gradient(120% 120% at 30% 20%, rgba(255,255,255,0.97), rgba(220,232,255,0.65))",
-    color: "#0f172a",
-    borderColor: isUser ? "rgba(148, 163, 184, 0.24)" : "rgba(120, 162, 255, 0.24)",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderBottomLeftRadius: isUser ? 24 : 10,
-    borderBottomRightRadius: isUser ? 10 : 24,
+    backgroundColor: isUser ? "#F5F7FA" : "#007AFF",
+    color: isUser ? "#0F172A" : "#FFFFFF",
+    borderColor: isUser ? "#E2E8F0" : "#0064DA",
+    borderRadius: 20,
+    boxShadow: isUser
+      ? "0 8px 20px rgba(15, 23, 42, 0.08)"
+      : "0 12px 28px rgba(0, 122, 255, 0.28)",
   };
+
+  const markdownClassName = [
+    "prose prose-sm sm:prose-base max-w-none font-sans",
+    "prose-p:my-1.5 sm:prose-p:my-2 prose-li:my-0.5",
+    "prose-strong:font-semibold prose-em:italic",
+    "prose-headings:font-semibold prose-headings:text-[1em] prose-headings:leading-snug",
+    "prose-a:underline prose-a:break-words",
+    "prose-pre:bg-gray-50/70 prose-pre:border prose-pre:border-gray-200/60 prose-pre:rounded-xl prose-pre:p-3",
+    "prose-code:before:content-[''] prose-code:after:content-['']",
+    !isUser ? "prose-invert" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div
@@ -79,18 +86,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
         )}
 
         <div className="min-w-0 max-w-full">
-          <div className={bubbleClass} style={bubbleStyle}>
-            <span
-              aria-hidden
-              className="absolute inset-0 pointer-events-none rounded-[inherit]"
-              style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.62)" }}
-            />
-
+          <div
+            className={bubbleClass}
+            style={bubbleStyle}
+            data-sender={message.sender}
+            data-deep-question={message.deepQuestion}
+          >
             {text ? (
               <div className="relative z-10 font-sans text-[14px] sm:text-sm md:text-base leading-relaxed">
-                <div
-                  className="prose prose-sm sm:prose-base max-w-none font-sans prose-p:my-1.5 sm:prose-p:my-2 prose-li:my-0.5 prose-strong:font-semibold prose-em:italic prose-headings:font-semibold prose-headings:text-[1em] prose-headings:leading-snug prose-a:underline prose-a:break-words prose-pre:bg-gray-50/70 prose-pre:border prose-pre:border-gray-200/60 prose-pre:rounded-xl prose-pre:p-3 prose-code:before:content-[''] prose-code:after:content-['']"
-                >
+                <div className={markdownClassName}>
                   <ReactMarkdown
                     components={{
                       p: ({ node, ...props }) => <p className="m-0 mb-2 last:mb-0" {...props} />,
