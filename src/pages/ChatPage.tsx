@@ -24,7 +24,7 @@ import { salvarMensagem } from '../api/mensagem';
 
 import { differenceInDays } from 'date-fns';
 import { extrairTagsRelevantes } from '../utils/extrairTagsRelevantes';
-import celebrateFirstMemory from '../utils/celebrateFirstMemory';
+import { celebrateFirstMemory } from '../utils/celebrateFirstMemory';
 import mixpanel from '../lib/mixpanel';
 
 import { FeedbackPrompt } from '../components/FeedbackPrompt';
