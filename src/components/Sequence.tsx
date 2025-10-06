@@ -17,8 +17,9 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   const currentSlideData = slides[slideIndex];
   const prefersReducedMotion = useReducedMotion();
 
+  // evita avanço duplo
   const navLockRef = useRef(false);
-  const navUnlock = () => setTimeout(() => { navLockRef.current = false; }, 180);
+  const navUnlock = () => setTimeout(() => (navLockRef.current = false), 180);
 
   useEffect(() => {
     mixpanel.track('Front-end: Tour Slide', {
@@ -30,10 +31,9 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   const handleNext = () => {
     if (navLockRef.current) return;
     navLockRef.current = true;
-
     if (slideIndex < totalSlides - 1) {
       mixpanel.track('Front-end: Tour Next', { from: slideIndex, to: slideIndex + 1 });
-      setSlideIndex(i => i + 1);
+      setSlideIndex((i) => i + 1);
       navUnlock();
     } else {
       mixpanel.track('Front-end: Tour CTA Final Click');
@@ -46,7 +46,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     if (slideIndex > 0) {
       navLockRef.current = true;
       mixpanel.track('Front-end: Tour Prev', { from: slideIndex, to: slideIndex - 1 });
-      setSlideIndex(i => i - 1);
+      setSlideIndex((i) => i - 1);
       navUnlock();
     }
   };
@@ -59,7 +59,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
 
   const handleSkip = () => {
     mixpanel.track('Front-end: Tour Skip', { at: slideIndex, title: currentSlideData?.title });
-    onComplete(); // se preferir apenas fechar, troque por onClose();
+    onComplete(); // ou onClose() se preferir apenas fechar
   };
 
   useEffect(() => {
@@ -83,7 +83,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
         onClick={onClose}
         aria-label="Fechar"
         className="absolute right-3.5 top-3.5 inline-flex h-9 w-9 items-center justify-center rounded-xl
-                   text-slate-500 hover:bg-slate-100/70 hover:text-slate-700 transition z-10"
+                   text-slate-500 hover:bg-slate-100/70 hover:text-slate-700 transition z-20"
       >
         <X size={18} />
       </button>
@@ -113,72 +113,73 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
         </AnimatePresence>
       </div>
 
-      {/* Pular tour — canto inferior esquerdo (minimalista) */}
-      <button
-        onClick={handleSkip}
-        aria-label="Pular tour e ir para o chat"
-        className="absolute left-3.5 bottom-5 md:bottom-6 z-10
-                   text-sm font-medium text-slate-600 hover:text-slate-900
-                   px-1.5 py-1 rounded-md hover:bg-slate-100/70
-                   focus:outline-none focus:ring-2 focus:ring-slate-700/10"
-      >
-        Pular tour
-      </button>
-
-      {/* Controles (rodapé, centralizados) */}
+      {/* Rodapé único: skip à esquerda, controles centralizados, CTA/Próximo à direita */}
       <div
-        className="absolute bottom-5 md:bottom-6 left-0 right-0 flex items-center justify-center gap-4 z-10"
-        role="navigation"
-        aria-label="Controles do tour"
+        className="absolute bottom-5 md:bottom-6 left-0 right-0 z-30 px-3
+                   flex items-center"
       >
-        {slideIndex > 0 ? (
-          <button
-            onClick={handlePrev}
-            aria-label="Anterior"
-            className="btn-apple !h-10 !w-10 !p-0 rounded-full flex items-center justify-center"
-          >
-            <ArrowLeft size={18} />
-          </button>
-        ) : (
-          <div className="w-10" aria-hidden="true" />
-        )}
+        {/* Pular tour (clicável, fora do cluster) */}
+        <button
+          onClick={handleSkip}
+          aria-label="Pular tour e ir para o chat"
+          className="text-sm font-medium text-slate-600 hover:text-slate-900
+                     px-1.5 py-1 rounded-md hover:bg-slate-100/70
+                     focus:outline-none focus:ring-2 focus:ring-slate-700/10"
+        >
+          Pular tour
+        </button>
 
-        <div className="flex items-center gap-2.5" role="tablist" aria-label="Slides do tour">
-          {slides.map((s, i) => {
-            const active = i === slideIndex;
-            return (
-              <button
-                key={s.title + i}
-                onClick={() => goToSlide(i)}
-                aria-label={`Ir para o slide ${i + 1}: ${s.title}`}
-                aria-current={active ? 'page' : undefined}
-                className={[
-                  'rounded-full transition-all duration-200',
-                  active
-                    ? 'w-2.5 h-2.5 bg-slate-900 ring-2 ring-slate-300/50 shadow-[0_0_0_1px_rgba(255,255,255,.8)_inset]'
-                    : 'w-2 h-2 bg-slate-300 hover:bg-slate-400',
-                ].join(' ')}
-              />
-            );
-          })}
+        {/* Cluster central */}
+        <div className="mx-auto flex items-center justify-center gap-4" role="navigation" aria-label="Controles do tour">
+          {slideIndex > 0 ? (
+            <button
+              onClick={handlePrev}
+              aria-label="Anterior"
+              className="btn-apple !h-10 !w-10 !p-0 rounded-full flex items-center justify-center"
+            >
+              <ArrowLeft size={18} />
+            </button>
+          ) : (
+            <div className="w-10" aria-hidden="true" />
+          )}
+
+          <div className="flex items-center gap-2.5" role="tablist" aria-label="Slides do tour">
+            {slides.map((s, i) => {
+              const active = i === slideIndex;
+              return (
+                <button
+                  key={s.title + i}
+                  onClick={() => goToSlide(i)}
+                  aria-label={`Ir para o slide ${i + 1}: ${s.title}`}
+                  aria-current={active ? 'page' : undefined}
+                  className={[
+                    'rounded-full transition-all duration-200',
+                    active
+                      ? 'w-2.5 h-2.5 bg-slate-900 ring-2 ring-slate-300/50 shadow-[0_0_0_1px_rgba(255,255,255,.8)_inset]'
+                      : 'w-2 h-2 bg-slate-300 hover:bg-slate-400',
+                  ].join(' ')}
+                />
+              );
+            })}
+          </div>
+
+          {slideIndex < totalSlides - 1 ? (
+            <button
+              onClick={handleNext}
+              aria-label="Próximo"
+              className="btn-apple !h-10 !w-10 !p-0 rounded-full flex items-center justify-center"
+            >
+              <ArrowRight size={18} />
+            </button>
+          ) : (
+            <button
+              onClick={handleNext}
+              className="btn-apple btn-apple-primary px-5 h-11 rounded-2xl"
+            >
+              Começar agora
+            </button>
+          )}
         </div>
-
-        {slideIndex < totalSlides - 1 ? (
-          <button
-            onClick={handleNext}
-            aria-label="Próximo"
-            className="btn-apple !h-10 !w-10 !p-0 rounded-full flex items-center justify-center"
-          >
-            <ArrowRight size={18} />
-          </button>
-        ) : (
-          <button
-            onClick={handleNext}
-            className="btn-apple btn-apple-primary px-5 h-11 rounded-2xl"
-          >
-            Começar agora
-          </button>
-        )}
       </div>
     </div>
   );
