@@ -124,7 +124,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
                   </ReactMarkdown>
                 </div>
               </div>
-            ) : (
+            )}
+            {!hasDisplayText && (
               <span className="relative z-10">&nbsp;</span>
             )}
           </div>
