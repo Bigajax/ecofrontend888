@@ -108,10 +108,11 @@ const TypingDots: React.FC<Props> = ({
                   backgroundColor: [tokens.dotDim, tokens.dot, tokens.dotDim],
                 }
           }
-          transition=
+          transition={
             dotTransition && delay
               ? { ...dotTransition, delay }
               : dotTransition || undefined
+          }
         />
       ))}
     </>
