@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import Slide from './Slide';
 import { slides } from '../data/slides';
@@ -14,6 +14,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   const [slideIndex, setSlideIndex] = useState(0);
   const totalSlides = slides.length;
   const currentSlideData = slides[slideIndex];
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     mixpanel.track('Front-end: Tour Slide', {
@@ -39,6 +40,9 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIndex]);
+
+  // Anima só no primeiro slide; demais ficam “atentos” porém estáticos
+  const eyeState: 'idle' | 'thinking' = slideIndex === 0 && !prefersReducedMotion ? 'thinking' : 'idle';
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-white">
@@ -68,6 +72,8 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
                 text={currentSlideData.text}
                 bubblePosition={currentSlideData.bubblePosition}
                 background={currentSlideData.background}
+                // 👇 ativa a bolha com olho nas telas da sequência
+                eyeBubble={{ enabled: true, state: eyeState, size: 240 }}
               />
             )}
           </motion.div>
