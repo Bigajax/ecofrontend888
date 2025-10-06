@@ -13,7 +13,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
   const isUser = message.sender === "user";
   const showTyping = !!isEcoTyping && !isUser;
 
-  const text = showTyping ? "" : String(message.text ?? message.content ?? "").trim();
+  const rawText = showTyping
+    ? ""
+    : String(message.text ?? message.content ?? "");
+  const trimmedText = rawText.trim();
+  const isStreamingPlaceholder =
+    !isUser && !showTyping && trimmedText.length === 0 && rawText.length > 0;
+  const text = isStreamingPlaceholder ? "" : trimmedText;
 
   if (showTyping) {
     return (
@@ -45,15 +51,25 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
   ].join(" ");
 
   const bubbleStyle: React.CSSProperties = {
-    backgroundColor: isUser ? "#007AFF" : "#F3F4F6",
+    backgroundColor: isUser
+      ? "#007AFF"
+      : isStreamingPlaceholder
+      ? "rgba(226, 232, 240, 0.75)"
+      : "#F3F4F6",
     color: isUser ? "#FFFFFF" : "#0F172A",
-    borderColor: isUser ? "#0064D2" : "#D0D5DD",
+    borderColor: isUser
+      ? "#0064D2"
+      : isStreamingPlaceholder
+      ? "rgba(148, 163, 184, 0.5)"
+      : "#D0D5DD",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderBottomLeftRadius: isUser ? 20 : 12,
     borderBottomRightRadius: isUser ? 12 : 20,
     boxShadow: isUser
       ? "0 4px 10px rgba(0, 98, 204, 0.28)"
+      : isStreamingPlaceholder
+      ? "0 6px 18px rgba(148, 163, 184, 0.22)"
       : "0 3px 9px rgba(15, 23, 42, 0.12)",
     backdropFilter: "none",
     WebkitBackdropFilter: "none",
@@ -97,7 +113,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
             data-sender={message.sender}
             data-deep-question={message.deepQuestion}
           >
-            {text ? (
+            {isStreamingPlaceholder ? (
+              <div className="relative z-10 flex min-h-[28px] items-center gap-2 text-[13px] font-medium text-slate-500 sm:text-sm">
+                <TypingDots variant="inline" size="sm" tone="light" />
+                <span className="tracking-tight text-slate-500/80">Eco está respondendo…</span>
+              </div>
+            ) : text ? (
               <div className="relative z-10 font-sans text-[14px] sm:text-sm md:text-base leading-relaxed">
                 <div className={markdownClassName}>
                   <ReactMarkdown
