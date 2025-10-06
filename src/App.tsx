@@ -13,6 +13,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import mixpanel from './lib/mixpanel';
 import MainLayout from './layouts/MainLayout';
 import EcoBubbleLoading from './components/EcoBubbleLoading';
+import WelcomePage from './pages/WelcomePage'; // ✅ NOVO
 
 // MEMÓRIAS
 const MemoryLayout = React.lazy(() => import('./pages/memory/MemoryLayout'));
@@ -32,6 +33,17 @@ function ChatProviderWithKey({ children }: { children: React.ReactNode }) {
   return <ChatProvider key={userId || 'anon'}>{children}</ChatProvider>;
 }
 
+/** Redireciona "/" para /welcome quando há fbclid/utm_* ou ?tour=1; senão vai para /login */
+function RootRedirect() {
+  const search = typeof window !== 'undefined' ? window.location.search : '';
+  const fromAdsOrTour = /(\bfbclid=|\butm_|tour=1)/.test(search);
+  return fromAdsOrTour ? (
+    <Navigate to={`/welcome${search}`} replace />
+  ) : (
+    <Navigate to="/login" replace />
+  );
+}
+
 function AppInner() {
   useEffect(() => {
     mixpanel.track('App iniciado', { origem: 'App.tsx', data: new Date().toISOString() });
@@ -40,15 +52,19 @@ function AppInner() {
   return (
     <div className="min-h-screen w-screen bg-white font-sans flex flex-col">
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* Raiz inteligente → /welcome (ads/tour) ou /login */}
+        <Route path="/" element={<RootRedirect />} />
 
-        {/* Login + rota amigável para abrir o Tour */}
+        {/* Rotas públicas */}
+        <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/login/tour" element={<LoginPage />} />
+        {/* Atalho para forçar tour via /login/tour */}
+        <Route path="/login/tour" element={<Navigate to="/welcome?tour=1" replace />} />
 
         <Route path="/register" element={<CreateProfilePage />} />
         <Route path="/reset-senha" element={<ResetSenha />} />
 
+        {/* Rotas protegidas */}
         <Route
           path="/app"
           element={
