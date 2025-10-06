@@ -7,6 +7,7 @@ import { Message } from "../contexts/ChatContext";
 interface ChatMessageProps {
   message: Message;
   isEcoTyping?: boolean;
+  isEcoActive?: boolean;
 }
 
 const extractMessageText = (message: Message) => {
@@ -15,10 +16,21 @@ const extractMessageText = (message: Message) => {
   return "";
 };
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({
+  message,
+  isEcoTyping,
+  isEcoActive,
+}) => {
   const isUser = message.sender === "user";
   const rawText = extractMessageText(message);
   const trimmedText = rawText.trim();
+  const hasDisplayText = trimmedText.length > 0;
+  const displayText = hasDisplayText ? rawText : "";
+  const isStreamingPlaceholder = !hasDisplayText && rawText.length > 0;
+  const showTyping = Boolean(
+    isEcoTyping && !hasDisplayText && message.sender === "eco"
+  );
+
   if (showTyping) {
     return (
       <div
@@ -110,7 +122,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
             style={bubbleStyle}
             data-sender={message.sender}
             data-deep-question={message.deepQuestion}
+            data-eco-active={isEcoActive ? "true" : undefined}
           >
+            {hasDisplayText && (
               <div className="relative z-10 font-sans text-[14px] sm:text-sm md:text-base leading-relaxed">
                 <div className={markdownClassName}>
                   <ReactMarkdown
