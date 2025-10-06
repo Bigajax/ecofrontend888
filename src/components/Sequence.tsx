@@ -11,16 +11,38 @@ interface SequenceProps {
   onComplete: () => void;
 }
 
+const SWIPE_THRESHOLD = 40; // px
+
 const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   const [slideIndex, setSlideIndex] = useState(0);
   const totalSlides = slides.length;
   const currentSlideData = slides[slideIndex];
   const prefersReducedMotion = useReducedMotion();
 
-  // lock rápido para evitar múltiplos avanços por keydown/click
+  // Evita múltiplos avanços por keydown/click
   const navLockRef = useRef(false);
-  const navUnlock = () => setTimeout(() => { navLockRef.current = false; }, 180);
+  const lock = () => (navLockRef.current = true);
+  const unlock = () => setTimeout(() => (navLockRef.current = false), 180);
 
+  // Gestos (swipe)
+  const startXRef = useRef<number | null>(null);
+  const draggingRef = useRef(false);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    startXRef.current = e.clientX;
+    draggingRef.current = true;
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!draggingRef.current || startXRef.current == null) return;
+    const delta = e.clientX - startXRef.current;
+    draggingRef.current = false;
+    startXRef.current = null;
+    if (Math.abs(delta) < SWIPE_THRESHOLD) return;
+    if (delta < 0) handleNext(); // arrastou para esquerda
+    else handlePrev(); // arrastou para direita
+  };
+
+  // Track
   useEffect(() => {
     mixpanel.track('Front-end: Tour Slide', {
       index: slideIndex,
@@ -30,12 +52,11 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
 
   const handleNext = () => {
     if (navLockRef.current) return;
-    navLockRef.current = true;
-
+    lock();
     if (slideIndex < totalSlides - 1) {
       mixpanel.track('Front-end: Tour Next', { from: slideIndex, to: slideIndex + 1 });
       setSlideIndex((i) => i + 1);
-      navUnlock();
+      unlock();
     } else {
       mixpanel.track('Front-end: Tour CTA Final Click');
       onComplete();
@@ -45,10 +66,10 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   const handlePrev = () => {
     if (navLockRef.current) return;
     if (slideIndex > 0) {
-      navLockRef.current = true;
+      lock();
       mixpanel.track('Front-end: Tour Prev', { from: slideIndex, to: slideIndex - 1 });
       setSlideIndex((i) => i - 1);
-      navUnlock();
+      unlock();
     }
   };
 
@@ -58,7 +79,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     setSlideIndex(i);
   };
 
-  // atalhos de teclado
+  // Atalhos de teclado
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') handleNext();
@@ -70,12 +91,16 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIndex]);
 
-  // anima só no primeiro slide
+  // Anima só no primeiro slide
   const eyeState: 'idle' | 'thinking' =
     slideIndex === 0 && !prefersReducedMotion ? 'thinking' : 'idle';
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-white">
+    <div
+      className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-white"
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+    >
       {/* Fechar */}
       <button
         onClick={onClose}
@@ -85,14 +110,25 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
         <X size={18} />
       </button>
 
+      {/* Pular tour */}
+      <button
+        onClick={() => {
+          mixpanel.track('Front-end: Tour Skip');
+          onClose();
+        }}
+        className="absolute left-3.5 top-3.5 h-9 px-3 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition z-10"
+      >
+        Pular tour
+      </button>
+
       {/* Slide com transição */}
       <div className="relative w-full h-full flex items-center justify-center">
         <AnimatePresence mode="wait">
           <motion.div
             key={slideIndex}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
+            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+            animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
             className="absolute inset-0 flex items-center justify-center"
           >
@@ -128,14 +164,19 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
           <div className="w-10" aria-hidden="true" />
         )}
 
-        {/* Dots */}
+        {/* Dots + contador invisível */}
         <div className="flex items-center gap-2.5" role="tablist" aria-label="Slides do tour">
+          <span className="sr-only" aria-live="polite">
+            Slide {slideIndex + 1} de {totalSlides}
+          </span>
           {slides.map((s, i) => {
             const active = i === slideIndex;
             return (
               <button
                 key={s.title + i}
                 onClick={() => goToSlide(i)}
+                role="tab"
+                aria-selected={active}
                 aria-label={`Ir para o slide ${i + 1}: ${s.title}`}
                 aria-current={active ? 'page' : undefined}
                 className={[
