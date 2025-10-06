@@ -24,9 +24,14 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   }, [slideIndex, currentSlideData?.title]);
 
   const handleNext = () => {
-    if (slideIndex < totalSlides - 1) setSlideIndex((i) => i + 1);
-    else onComplete();
+    if (slideIndex < totalSlides - 1) {
+      setSlideIndex((i) => i + 1);
+    } else {
+      mixpanel.track('Front-end: Tour CTA Final Click');
+      onComplete();
+    }
   };
+
   const handlePrev = () => { if (slideIndex > 0) setSlideIndex((i) => i - 1); };
   const goToSlide = (i: number) => setSlideIndex(i);
 
@@ -72,7 +77,6 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
                 text={currentSlideData.text}
                 bubblePosition={currentSlideData.bubblePosition}
                 background={currentSlideData.background}
-                // 👇 ativa a bolha com olho nas telas da sequência
                 eyeBubble={{ enabled: true, state: eyeState, size: 240 }}
               />
             )}
@@ -127,7 +131,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
             onClick={handleNext}
             className="btn-apple btn-apple-primary px-5 h-11 rounded-2xl"
           >
-            Ir para o chat
+            Começar agora
           </button>
         )}
       </div>
