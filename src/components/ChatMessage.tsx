@@ -9,11 +9,22 @@ interface ChatMessageProps {
   isEcoTyping?: boolean;
 }
 
+const extractMessageText = (message: Message) => {
+  if (typeof message.text === "string") return message.text;
+  if (typeof message.content === "string") return message.content;
+  return "";
+};
+
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
   const isUser = message.sender === "user";
-  const showTyping = !!isEcoTyping && !isUser;
+  const rawText = extractMessageText(message);
+  const trimmedText = rawText.trim();
 
-  const text = showTyping ? "" : String(message.text ?? message.content ?? "").trim();
+  const isStreamingPlaceholder = !isUser && trimmedText.length === 0;
+  const showTyping = !isUser && (Boolean(isEcoTyping) || isStreamingPlaceholder);
+
+  const displayText = showTyping ? "" : trimmedText;
+  const hasDisplayText = displayText.length > 0;
 
   if (showTyping) {
     return (
@@ -97,7 +108,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
             data-sender={message.sender}
             data-deep-question={message.deepQuestion}
           >
-            {text ? (
+            {hasDisplayText && (
               <div className="relative z-10 font-sans text-[14px] sm:text-sm md:text-base leading-relaxed">
                 <div className={markdownClassName}>
                   <ReactMarkdown
@@ -107,11 +118,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
                       ),
                     }}
                   >
-                    {text}
+                    {displayText}
                   </ReactMarkdown>
                 </div>
               </div>
-            ) : (
+            )}
+            {!hasDisplayText && (
               <span className="relative z-10">&nbsp;</span>
             )}
           </div>
