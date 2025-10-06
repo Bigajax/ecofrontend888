@@ -19,10 +19,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
   const isUser = message.sender === "user";
   const rawText = extractMessageText(message);
   const trimmedText = rawText.trim();
-
-  const isStreamingPlaceholder = !isUser && trimmedText.length === 0;
-  const showTyping = !isUser && (Boolean(isEcoTyping) || isStreamingPlaceholder);
-
   if (showTyping) {
     return (
       <div
@@ -115,12 +111,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
             data-sender={message.sender}
             data-deep-question={message.deepQuestion}
           >
-            {isStreamingPlaceholder ? (
-              <div className="relative z-10 flex min-h-[28px] items-center gap-2 text-[13px] font-medium text-slate-500 sm:text-sm">
-                <TypingDots variant="inline" size="sm" tone="light" />
-                <span className="tracking-tight text-slate-500/80">Eco está respondendo…</span>
-              </div>
-            ) : text ? (
               <div className="relative z-10 font-sans text-[14px] sm:text-sm md:text-base leading-relaxed">
                 <div className={markdownClassName}>
                   <ReactMarkdown
@@ -130,7 +120,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
                       ),
                     }}
                   >
-                    {text}
+                    {displayText}
                   </ReactMarkdown>
                 </div>
               </div>
