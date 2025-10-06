@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+// src/components/Sequence.tsx
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import Slide from './Slide';
@@ -16,6 +17,10 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   const currentSlideData = slides[slideIndex];
   const prefersReducedMotion = useReducedMotion();
 
+  // lock rápido para evitar múltiplos avanços por keydown/click
+  const navLockRef = useRef(false);
+  const navUnlock = () => setTimeout(() => { navLockRef.current = false; }, 180);
+
   useEffect(() => {
     mixpanel.track('Front-end: Tour Slide', {
       index: slideIndex,
@@ -24,17 +29,36 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   }, [slideIndex, currentSlideData?.title]);
 
   const handleNext = () => {
+    if (navLockRef.current) return;
+    navLockRef.current = true;
+
     if (slideIndex < totalSlides - 1) {
+      mixpanel.track('Front-end: Tour Next', { from: slideIndex, to: slideIndex + 1 });
       setSlideIndex((i) => i + 1);
+      navUnlock();
     } else {
       mixpanel.track('Front-end: Tour CTA Final Click');
       onComplete();
     }
   };
 
-  const handlePrev = () => { if (slideIndex > 0) setSlideIndex((i) => i - 1); };
-  const goToSlide = (i: number) => setSlideIndex(i);
+  const handlePrev = () => {
+    if (navLockRef.current) return;
+    if (slideIndex > 0) {
+      navLockRef.current = true;
+      mixpanel.track('Front-end: Tour Prev', { from: slideIndex, to: slideIndex - 1 });
+      setSlideIndex((i) => i - 1);
+      navUnlock();
+    }
+  };
 
+  const goToSlide = (i: number) => {
+    if (i === slideIndex) return;
+    mixpanel.track('Front-end: Tour Dot Click', { from: slideIndex, to: i });
+    setSlideIndex(i);
+  };
+
+  // atalhos de teclado
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') handleNext();
@@ -46,8 +70,9 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIndex]);
 
-  // Anima só no primeiro slide; demais ficam “atentos” porém estáticos
-  const eyeState: 'idle' | 'thinking' = slideIndex === 0 && !prefersReducedMotion ? 'thinking' : 'idle';
+  // anima só no primeiro slide
+  const eyeState: 'idle' | 'thinking' =
+    slideIndex === 0 && !prefersReducedMotion ? 'thinking' : 'idle';
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-white">
@@ -75,8 +100,9 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
               <Slide
                 title={currentSlideData.title}
                 text={currentSlideData.text}
-                bubblePosition={currentSlideData.bubblePosition}
+                bubblePosition={currentSlideData.bubblePosition as any}
                 background={currentSlideData.background}
+                pills={(currentSlideData as any).pills}
                 eyeBubble={{ enabled: true, state: eyeState, size: 240 }}
               />
             )}
@@ -85,7 +111,11 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
       </div>
 
       {/* Controles (fixos no rodapé) */}
-      <div className="absolute bottom-5 md:bottom-6 left-0 right-0 flex items-center justify-center gap-4 z-10">
+      <div
+        className="absolute bottom-5 md:bottom-6 left-0 right-0 flex items-center justify-center gap-4 z-10"
+        role="navigation"
+        aria-label="Controles do tour"
+      >
         {slideIndex > 0 ? (
           <button
             onClick={handlePrev}
@@ -95,18 +125,19 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
             <ArrowLeft size={18} />
           </button>
         ) : (
-          <div className="w-10" />
+          <div className="w-10" aria-hidden="true" />
         )}
 
         {/* Dots */}
-        <div className="flex items-center gap-2.5">
-          {slides.map((_, i) => {
+        <div className="flex items-center gap-2.5" role="tablist" aria-label="Slides do tour">
+          {slides.map((s, i) => {
             const active = i === slideIndex;
             return (
               <button
-                key={i}
+                key={s.title + i}
                 onClick={() => goToSlide(i)}
-                aria-label={`Ir para o slide ${i + 1}`}
+                aria-label={`Ir para o slide ${i + 1}: ${s.title}`}
+                aria-current={active ? 'page' : undefined}
                 className={[
                   'rounded-full transition-all duration-200',
                   active

@@ -4,6 +4,7 @@ export interface SlideData {
   text: string[];
   bubblePosition: string;
   background: string;
+  pills?: string[];
 }
 
 export const slides: SlideData[] = [
@@ -13,6 +14,7 @@ export const slides: SlideData[] = [
       'Uma IA reflexiva para o seu bem-estar.',
       'Ela não julga nem dá respostas prontas — ajuda você a perceber o que sente.'
     ],
+    pills: ['Beta gratuito', '7 min/dia', 'Privado'],
     bubblePosition: 'floating',
     background: '#ffffff'
   },
@@ -40,6 +42,7 @@ export const slides: SlideData[] = [
       'Suas conversas são privadas e ficam guardadas com segurança.',
       'Não é terapia nem promessa mágica — é um exercício diário de autoconhecimento.'
     ],
+    pills: ['Criptografado', 'Sem julgamentos'],
     bubblePosition: 'floating',
     background: '#ffffff'
   },
@@ -49,6 +52,7 @@ export const slides: SlideData[] = [
       'Reserve alguns minutos para se ouvir hoje.',
       'A Eco vai estar aqui quando você quiser voltar.'
     ],
+    pills: ['Leve', 'Sem pressão'],
     bubblePosition: 'floating',
     background: '#ffffff'
   }
