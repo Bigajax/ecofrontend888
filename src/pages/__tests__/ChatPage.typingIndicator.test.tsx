@@ -50,15 +50,27 @@ vi.mock('../../contexts/ChatContext', () => {
 });
 
 vi.mock('../../components/ChatMessage', () => ({
-  default: ({ message }: { message: any }) => (
-    <div data-testid={`chat-${message.id}`}>{message.text}</div>
-  ),
+  default: ({ message }: { message: any }) => {
+    const text = typeof message.text === 'string' ? message.text : '';
+    const trimmed = text.trim();
+    return (
+      <div data-testid={`chat-${message.id}`}>
+        {trimmed.length > 0 ? text : <div data-testid="typing-dots">digitando…</div>}
+      </div>
+    );
+  },
 }));
 
 vi.mock('../../components/EcoMessageWithAudio', () => ({
-  default: ({ message }: { message: any }) => (
-    <div data-testid={`eco-${message.id}`}>{message.text}</div>
-  ),
+  default: ({ message }: { message: any }) => {
+    const text = typeof message.text === 'string' ? message.text : '';
+    const trimmed = text.trim();
+    return (
+      <div data-testid={`eco-${message.id}`}>
+        {trimmed.length > 0 ? text : <div data-testid="typing-dots">digitando…</div>}
+      </div>
+    );
+  },
 }));
 
 vi.mock('../../components/QuickSuggestions', () => ({

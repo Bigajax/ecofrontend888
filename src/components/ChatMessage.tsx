@@ -9,17 +9,19 @@ interface ChatMessageProps {
   isEcoTyping?: boolean;
 }
 
+const extractMessageText = (message: Message) => {
+  if (typeof message.text === "string") return message.text;
+  if (typeof message.content === "string") return message.content;
+  return "";
+};
+
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping }) => {
   const isUser = message.sender === "user";
-  const showTyping = !!isEcoTyping && !isUser;
-
-  const rawText = showTyping
-    ? ""
-    : String(message.text ?? message.content ?? "");
+  const rawText = extractMessageText(message);
   const trimmedText = rawText.trim();
-  const isStreamingPlaceholder =
-    !isUser && !showTyping && trimmedText.length === 0 && rawText.length > 0;
-  const text = isStreamingPlaceholder ? "" : trimmedText;
+
+  const isStreamingPlaceholder = !isUser && trimmedText.length === 0;
+  const showTyping = !isUser && (Boolean(isEcoTyping) || isStreamingPlaceholder);
 
   if (showTyping) {
     return (
