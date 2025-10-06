@@ -262,15 +262,16 @@ const LoginPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Link Esqueci minha senha (sem botão) */}
-            <div className="flex justify-end -mt-1">
+            {/* Redefinir senha (link centralizado) */}
+            <div className="flex justify-center mt-1">
               <button
                 type="button"
                 onClick={handleForgotPassword}
                 disabled={forgotLoading}
-                className="text-[13px] font-medium text-slate-600 hover:text-slate-900 underline underline-offset-2 disabled:opacity-60"
+                title="Enviaremos um link para o seu e-mail"
+                className="px-2 py-1 text-[13px] font-medium text-slate-600 hover:text-slate-900 underline underline-offset-2 disabled:opacity-60"
               >
-                {forgotLoading ? 'Enviando…' : 'Esqueci minha senha'}
+                {forgotLoading ? 'Enviando…' : 'Redefinir senha'}
               </button>
             </div>
 
@@ -355,7 +356,7 @@ const LoginPage: React.FC = () => {
                 Iniciar Tour
               </button>
 
-              {/* feedback do “esqueci minha senha” */}
+              {/* feedback do “Redefinir senha” */}
               <div role="status" aria-live="polite" className="min-h-[1.25rem] text-center">
                 {forgotMessage && (
                   <motion.p className="text-emerald-600 text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
