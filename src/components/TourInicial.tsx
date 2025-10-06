@@ -51,8 +51,8 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose }) => {
   const modalContent = (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: '#ffffff' }} // 🔒 fundo branco puro
-      onClick={handleClose}             // fechar clicando no backdrop
+      style={{ background: '#ffffff' }}
+      onClick={handleClose}
       role="dialog"
       aria-modal="true"
       aria-label="Tour inicial"
@@ -63,7 +63,7 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose }) => {
         exit={{ opacity: 0, scale: 0.96 }}
         transition={{ duration: 0.24, ease: 'easeOut' }}
         className="glass-card relative w-[min(92vw,420px)] h-[560px] sm:h-[580px] rounded-3xl overflow-hidden shadow-[0_24px_90px_rgba(2,6,23,.10)] bg-white"
-        onClick={(e) => e.stopPropagation()} // não fecha ao clicar dentro
+        onClick={(e) => e.stopPropagation()}
       >
         {!showSequence ? (
           <div className="flex h-full flex-col items-center justify-center px-8 text-center pb-6">
@@ -76,27 +76,38 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose }) => {
               <X size={18} />
             </button>
 
+            {/* Copy ajustada */}
             <h2 className="text-[26px] leading-none font-semibold text-slate-900 mb-2">
-              Bem-vindo à <span className="eco-wordmark">Eco</span>!
+              Seja bem-vindo à sua pausa com a <span className="eco-wordmark">Eco</span>.
             </h2>
-            <p className="text-slate-600 mb-6">Explore uma breve introdução.</p>
+            <p className="text-slate-600 mb-6">
+              Um pequeno tour para sentir como ela funciona.
+            </p>
 
             {/* Bolha com olho */}
             <motion.div
               className="mb-5"
               animate={prefersReducedMotion ? undefined : { scale: [1, 1.04, 1] }}
-              transition={prefersReducedMotion ? undefined : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              transition={
+                prefersReducedMotion
+                  ? undefined
+                  : { duration: 3, repeat: Infinity, ease: 'easeInOut' }
+              }
             >
               <EcoBubbleOneEye variant="voice" state="thinking" size={240} />
             </motion.div>
 
+            {/* CTA + microcopy */}
             <button
               onClick={handleIniciarSequence}
               className="btn-apple btn-apple-primary inline-flex h-12 items-center gap-2 rounded-2xl px-6"
             >
-              Próximo
+              Começar
               <ArrowRight size={16} />
             </button>
+            <span className="mt-2 text-xs text-slate-400 select-none">
+              Dura menos de 1 minuto.
+            </span>
           </div>
         ) : (
           <>
