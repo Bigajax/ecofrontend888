@@ -1,7 +1,7 @@
 // src/components/Sequence.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, X, ChevronsRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import Slide from './Slide';
 import { slides } from '../data/slides';
 import mixpanel from '../lib/mixpanel';
@@ -17,7 +17,6 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   const currentSlideData = slides[slideIndex];
   const prefersReducedMotion = useReducedMotion();
 
-  // lock para evitar múltiplos avanços
   const navLockRef = useRef(false);
   const navUnlock = () => setTimeout(() => { navLockRef.current = false; }, 180);
 
@@ -34,7 +33,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
 
     if (slideIndex < totalSlides - 1) {
       mixpanel.track('Front-end: Tour Next', { from: slideIndex, to: slideIndex + 1 });
-      setSlideIndex((i) => i + 1);
+      setSlideIndex(i => i + 1);
       navUnlock();
     } else {
       mixpanel.track('Front-end: Tour CTA Final Click');
@@ -47,7 +46,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     if (slideIndex > 0) {
       navLockRef.current = true;
       mixpanel.track('Front-end: Tour Prev', { from: slideIndex, to: slideIndex - 1 });
-      setSlideIndex((i) => i - 1);
+      setSlideIndex(i => i - 1);
       navUnlock();
     }
   };
@@ -59,14 +58,10 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   };
 
   const handleSkip = () => {
-    mixpanel.track('Front-end: Tour Skip', {
-      at: slideIndex,
-      title: currentSlideData?.title,
-    });
-    onComplete();
+    mixpanel.track('Front-end: Tour Skip', { at: slideIndex, title: currentSlideData?.title });
+    onComplete(); // se preferir apenas fechar, troque por onClose();
   };
 
-  // atalhos de teclado
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') handleNext();
@@ -78,25 +73,11 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIndex]);
 
-  // anima a bolha só no primeiro slide
   const eyeState: 'idle' | 'thinking' =
     slideIndex === 0 && !prefersReducedMotion ? 'thinking' : 'idle';
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-white">
-      {/* Pular tour (top-left) */}
-      <button
-        onClick={handleSkip}
-        aria-label="Pular tour e ir para o chat"
-        className="absolute left-3.5 top-3.5 z-10 inline-flex items-center gap-1.5 h-9 pl-3 pr-3.5 rounded-full
-                   text-slate-700 bg-white/85 backdrop-blur border border-white/80 ring-1 ring-slate-900/5
-                   shadow-[0_4px_14px_rgba(2,6,23,.08)] hover:bg-white focus:outline-none
-                   focus:ring-2 focus:ring-slate-700/10"
-      >
-        <ChevronsRight size={16} className="-ml-0.5" />
-        <span className="text-sm font-medium">Pular tour</span>
-      </button>
-
       {/* Fechar (top-right) */}
       <button
         onClick={onClose}
@@ -132,7 +113,19 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
         </AnimatePresence>
       </div>
 
-      {/* Controles (rodapé) */}
+      {/* Pular tour — canto inferior esquerdo (minimalista) */}
+      <button
+        onClick={handleSkip}
+        aria-label="Pular tour e ir para o chat"
+        className="absolute left-3.5 bottom-5 md:bottom-6 z-10
+                   text-sm font-medium text-slate-600 hover:text-slate-900
+                   px-1.5 py-1 rounded-md hover:bg-slate-100/70
+                   focus:outline-none focus:ring-2 focus:ring-slate-700/10"
+      >
+        Pular tour
+      </button>
+
+      {/* Controles (rodapé, centralizados) */}
       <div
         className="absolute bottom-5 md:bottom-6 left-0 right-0 flex items-center justify-center gap-4 z-10"
         role="navigation"
