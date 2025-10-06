@@ -2,26 +2,23 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, NavLink, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, BarChart3, X, Menu, MessageSquare } from 'lucide-react'; // NEW: MessageSquare
+import { ArrowLeft, BookOpen, Brain, BarChart3, X, Menu, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EcoBubbleOneEye from './EcoBubbleOneEye';
 
 interface HeaderProps {
-  title?: string;                 // opcional: pode forçar um título
-  showBackButton?: boolean;       // continua funcionando, mas agora há fallback automático
+  title?: string;
+  showBackButton?: boolean;
   onLogout?: () => void;
 }
 
 const VERSION = '222';
+const IOS_BLUE = '#007AFF'; // 💙 iOS System Blue
 
-// Ícones mais suaves
 const iconCls = 'h-[22px] w-[22px] text-slate-800';
-
-// Tipografia “clean” – igual ao drawer/“Sair”
 const labelCls =
   'text-[15px] leading-[1.35] text-slate-900/95 font-normal tracking-[-0.005em] antialiased';
 
-// Item de navegação com hover discreto
 const navItem = (active: boolean) =>
   [
     'flex items-center gap-2 px-3 py-2 h-11 min-h-[44px]',
@@ -30,16 +27,11 @@ const navItem = (active: boolean) =>
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/[0.08]',
   ].join(' ');
 
-const Header: React.FC<HeaderProps> = ({
-  title,
-  showBackButton = false,
-  onLogout,
-}) => {
+const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // --------- Título dinâmico por rota (fallback: prop title ou "ECO")
   const routeTitleMap: Array<[RegExp, string]> = [
     [/^\/memory\/?$/, 'Memórias'],
     [/^\/memory\/profile\/?$/, 'Perfil Emocional'],
@@ -49,32 +41,39 @@ const Header: React.FC<HeaderProps> = ({
   const autoTitle =
     routeTitleMap.find(([re]) => re.test(location.pathname))?.[1] || title || 'ECO';
 
-  // NEW: exibir botão Voltar automaticamente quando NÃO estiver no /chat
   const isChat = /^\/chat\/?$/.test(location.pathname);
   const shouldShowBack = showBackButton || !isChat;
 
-  // lock scroll quando o drawer abre
   useEffect(() => {
     if (!drawerOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [drawerOpen]);
 
-  // fechar por ESC
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrawerOpen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDrawerOpen(false);
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // swipe-left para fechar
   const touchStartX = useRef<number | null>(null);
-  const onTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => { touchStartX.current = e.touches[0].clientX; };
-  const onTouchMove: React.TouchEventHandler<HTMLDivElement> = (e) => { if (touchStartX.current !== null) e.preventDefault(); };
+  const onTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const onTouchMove: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    if (touchStartX.current !== null) e.preventDefault();
+  };
   const onTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    const start = touchStartX.current; touchStartX.current = null; if (start === null) return;
-    const dx = e.changedTouches[0].clientX - start; if (dx < -60) setDrawerOpen(false);
+    const start = touchStartX.current;
+    touchStartX.current = null;
+    if (start === null) return;
+    const dx = e.changedTouches[0].clientX - start;
+    if (dx < -60) setDrawerOpen(false);
   };
 
   /* ================= AppBar “pill” ================= */
@@ -104,19 +103,19 @@ const Header: React.FC<HeaderProps> = ({
           <Menu className="h-5 w-5 text-slate-900" />
         </button>
 
-        {/* Centro — título com a mesma tipografia do drawer */}
+        {/* Centro — título */}
         <Link to="/chat" className="flex items-center gap-2 select-none hover:opacity-95">
-          <span className="translate-y-[1px] inline-flex"><EcoBubbleOneEye variant="icon" size={20} state="focus" /></span>
-          <span className={`${labelCls} text-[16px] md:text-[17px]`}>
-            {autoTitle}
+          <span className="translate-y-[1px] inline-flex">
+            <EcoBubbleOneEye variant="icon" size={20} state="focus" />
           </span>
+          <span className={`${labelCls} text-[16px] md:text-[17px]`}>{autoTitle}</span>
         </Link>
 
-        {/* Direita: voltar para o chat (automático) + SAIR */}
+        {/* Direita: voltar + Feedback (iOS Blue) + Sair */}
         <div className="flex items-center gap-2">
           {shouldShowBack && (
             <button
-              onClick={() => navigate('/chat')} // NEW: volta direto ao chat (não depende do histórico)
+              onClick={() => navigate('/chat')}
               className="px-2 py-2 rounded-[18px] hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/[0.08]"
               aria-label="Voltar ao chat"
               title="Voltar ao chat"
@@ -124,18 +123,38 @@ const Header: React.FC<HeaderProps> = ({
               <ArrowLeft className="h-5 w-5 text-slate-900" />
             </button>
           )}
+
+          {/* 🔵 Feedback no iOS Blue */}
           <a
             href="https://feedback777.vercel.app"
             target="_blank"
             rel="noreferrer"
-            className="px-3 py-1.5 rounded-[14px] bg-black/[0.04] hover:bg-black/[0.06] border border-black/[0.08] text-slate-900 text-sm"
+            className="
+              px-3 py-1.5 rounded-[14px]
+              text-white text-sm
+              bg-[#007AFF]
+              hover:opacity-95 active:opacity-90
+              border border-transparent
+              shadow-[0_1px_0_rgba(0,0,0,0.04)]
+              transition
+              focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-[#007AFF]/40
+            "
+            style={{ backgroundColor: IOS_BLUE }}
           >
             Feedback
           </a>
+
           {onLogout && (
             <button
               onClick={onLogout}
-              className="px-3 py-1.5 rounded-[14px] bg-black/[0.04] hover:bg-black/[0.06] border border-black/[0.08] text-slate-900 text-sm"
+              className="
+                px-3 py-1.5 rounded-[14px]
+                bg-black/[0.04] hover:bg-black/[0.06]
+                border border-black/[0.08]
+                text-slate-900 text-sm
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/[0.08]
+              "
             >
               Sair
             </button>
@@ -150,16 +169,15 @@ const Header: React.FC<HeaderProps> = ({
     <AnimatePresence>
       {drawerOpen && (
         <>
-          {/* Backdrop */}
           <motion.button
             key="backdrop"
             aria-label="Fechar menu"
             onClick={() => setDrawerOpen(false)}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-[79] bg-black/30"
           />
-
-          {/* Painel */}
           <motion.aside
             key="panel"
             initial={{ x: -360, opacity: 1 }}
@@ -174,9 +192,10 @@ const Header: React.FC<HeaderProps> = ({
               pt-[env(safe-area-inset-top)] overflow-y-auto
               flex flex-col
             "
-            onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
           >
-            {/* Cabeçalho: só a bolha + X */}
             <div className="sticky top-0 z-10 bg-white px-4 py-3 border-b border-black/[0.06] flex items-center justify-between">
               <EcoBubbleOneEye variant="icon" size={24} state="focus" />
               <button
@@ -188,9 +207,7 @@ const Header: React.FC<HeaderProps> = ({
               </button>
             </div>
 
-            {/* Navegação */}
             <nav className="px-3 py-3 flex flex-col gap-1.5">
-              {/* NEW: item Chat no topo */}
               <NavLink
                 to="/chat"
                 end
@@ -214,25 +231,29 @@ const Header: React.FC<HeaderProps> = ({
                 <span className={labelCls}>Relatórios</span>
               </NavLink>
 
-              {/* Botão Voltar opcional (mantido) */}
               {showBackButton && (
-                <button
-                  onClick={() => { setDrawerOpen(false); navigate(-1); }}
-                  className={navItem(false)}
-                >
+                <button onClick={() => { setDrawerOpen(false); navigate(-1); }} className={navItem(false)}>
                   <ArrowLeft className={iconCls} strokeWidth={1.75} />
                   <span className={labelCls}>Voltar</span>
                 </button>
               )}
             </nav>
 
-            {/* Rodapé: 222 + Sair */}
             <div className="mt-auto px-4 py-4 flex items-center justify-between border-t border-black/[0.06]">
               <span className="text-[10px] leading-none text-slate-600 tabular-nums select-none">{VERSION}</span>
               {onLogout && (
                 <button
-                  onClick={() => { setDrawerOpen(false); onLogout(); }}
-                  className="px-3 py-1.5 rounded-[14px] bg-black/[0.04] hover:bg-black/[0.06] border border-black/[0.08] text-slate-900 text-sm"
+                  onClick={() => {
+                    setDrawerOpen(false);
+                    onLogout();
+                  }}
+                  className="
+                    px-3 py-1.5 rounded-[14px]
+                    bg-black/[0.04] hover:bg-black/[0.06]
+                    border border-black/[0.08]
+                    text-slate-900 text-sm
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/[0.08]
+                  "
                 >
                   Sair
                 </button>
