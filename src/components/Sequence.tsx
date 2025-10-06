@@ -1,7 +1,7 @@
 // src/components/Sequence.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, X, ChevronsRight } from 'lucide-react';
 import Slide from './Slide';
 import { slides } from '../data/slides';
 import mixpanel from '../lib/mixpanel';
@@ -11,38 +11,16 @@ interface SequenceProps {
   onComplete: () => void;
 }
 
-const SWIPE_THRESHOLD = 40; // px
-
 const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   const [slideIndex, setSlideIndex] = useState(0);
   const totalSlides = slides.length;
   const currentSlideData = slides[slideIndex];
   const prefersReducedMotion = useReducedMotion();
 
-  // Evita múltiplos avanços por keydown/click
+  // lock para evitar múltiplos avanços
   const navLockRef = useRef(false);
-  const lock = () => (navLockRef.current = true);
-  const unlock = () => setTimeout(() => (navLockRef.current = false), 180);
+  const navUnlock = () => setTimeout(() => { navLockRef.current = false; }, 180);
 
-  // Gestos (swipe)
-  const startXRef = useRef<number | null>(null);
-  const draggingRef = useRef(false);
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    startXRef.current = e.clientX;
-    draggingRef.current = true;
-  };
-  const onPointerUp = (e: React.PointerEvent) => {
-    if (!draggingRef.current || startXRef.current == null) return;
-    const delta = e.clientX - startXRef.current;
-    draggingRef.current = false;
-    startXRef.current = null;
-    if (Math.abs(delta) < SWIPE_THRESHOLD) return;
-    if (delta < 0) handleNext(); // arrastou para esquerda
-    else handlePrev(); // arrastou para direita
-  };
-
-  // Track
   useEffect(() => {
     mixpanel.track('Front-end: Tour Slide', {
       index: slideIndex,
@@ -52,11 +30,12 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
 
   const handleNext = () => {
     if (navLockRef.current) return;
-    lock();
+    navLockRef.current = true;
+
     if (slideIndex < totalSlides - 1) {
       mixpanel.track('Front-end: Tour Next', { from: slideIndex, to: slideIndex + 1 });
       setSlideIndex((i) => i + 1);
-      unlock();
+      navUnlock();
     } else {
       mixpanel.track('Front-end: Tour CTA Final Click');
       onComplete();
@@ -66,10 +45,10 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   const handlePrev = () => {
     if (navLockRef.current) return;
     if (slideIndex > 0) {
-      lock();
+      navLockRef.current = true;
       mixpanel.track('Front-end: Tour Prev', { from: slideIndex, to: slideIndex - 1 });
       setSlideIndex((i) => i - 1);
-      unlock();
+      navUnlock();
     }
   };
 
@@ -79,7 +58,15 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     setSlideIndex(i);
   };
 
-  // Atalhos de teclado
+  const handleSkip = () => {
+    mixpanel.track('Front-end: Tour Skip', {
+      at: slideIndex,
+      title: currentSlideData?.title,
+    });
+    onComplete();
+  };
+
+  // atalhos de teclado
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') handleNext();
@@ -91,34 +78,33 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIndex]);
 
-  // Anima só no primeiro slide
+  // anima a bolha só no primeiro slide
   const eyeState: 'idle' | 'thinking' =
     slideIndex === 0 && !prefersReducedMotion ? 'thinking' : 'idle';
 
   return (
-    <div
-      className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-white"
-      onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
-    >
-      {/* Fechar */}
+    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-white">
+      {/* Pular tour (top-left) */}
+      <button
+        onClick={handleSkip}
+        aria-label="Pular tour e ir para o chat"
+        className="absolute left-3.5 top-3.5 z-10 inline-flex items-center gap-1.5 h-9 pl-3 pr-3.5 rounded-full
+                   text-slate-700 bg-white/85 backdrop-blur border border-white/80 ring-1 ring-slate-900/5
+                   shadow-[0_4px_14px_rgba(2,6,23,.08)] hover:bg-white focus:outline-none
+                   focus:ring-2 focus:ring-slate-700/10"
+      >
+        <ChevronsRight size={16} className="-ml-0.5" />
+        <span className="text-sm font-medium">Pular tour</span>
+      </button>
+
+      {/* Fechar (top-right) */}
       <button
         onClick={onClose}
         aria-label="Fechar"
-        className="absolute right-3.5 top-3.5 inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100/70 hover:text-slate-700 transition z-10"
+        className="absolute right-3.5 top-3.5 inline-flex h-9 w-9 items-center justify-center rounded-xl
+                   text-slate-500 hover:bg-slate-100/70 hover:text-slate-700 transition z-10"
       >
         <X size={18} />
-      </button>
-
-      {/* Pular tour */}
-      <button
-        onClick={() => {
-          mixpanel.track('Front-end: Tour Skip');
-          onClose();
-        }}
-        className="absolute left-3.5 top-3.5 h-9 px-3 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition z-10"
-      >
-        Pular tour
       </button>
 
       {/* Slide com transição */}
@@ -126,9 +112,9 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
         <AnimatePresence mode="wait">
           <motion.div
             key={slideIndex}
-            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
-            animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
             className="absolute inset-0 flex items-center justify-center"
           >
@@ -146,7 +132,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
         </AnimatePresence>
       </div>
 
-      {/* Controles (fixos no rodapé) */}
+      {/* Controles (rodapé) */}
       <div
         className="absolute bottom-5 md:bottom-6 left-0 right-0 flex items-center justify-center gap-4 z-10"
         role="navigation"
@@ -164,19 +150,13 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
           <div className="w-10" aria-hidden="true" />
         )}
 
-        {/* Dots + contador invisível */}
         <div className="flex items-center gap-2.5" role="tablist" aria-label="Slides do tour">
-          <span className="sr-only" aria-live="polite">
-            Slide {slideIndex + 1} de {totalSlides}
-          </span>
           {slides.map((s, i) => {
             const active = i === slideIndex;
             return (
               <button
                 key={s.title + i}
                 onClick={() => goToSlide(i)}
-                role="tab"
-                aria-selected={active}
                 aria-label={`Ir para o slide ${i + 1}: ${s.title}`}
                 aria-current={active ? 'page' : undefined}
                 className={[

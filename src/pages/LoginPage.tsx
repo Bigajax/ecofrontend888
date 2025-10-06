@@ -202,7 +202,7 @@ const LoginPage: React.FC = () => {
                   <EcoBubbleOneEye variant="icon" size={16} state="focus" />
                 </span>
                 <span className="text-[14px] md:text-[15px] leading-none font-semibold text-slate-800">
-                  Autoconhecimento guiado
+                  Autoconhecimento Guiado
                 </span>
               </span>
             </div>
