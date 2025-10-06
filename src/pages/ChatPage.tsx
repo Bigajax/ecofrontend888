@@ -335,17 +335,48 @@ const ChatPage: React.FC = () => {
     mixpanel.track('Eco: Mensagem Enviada', { userId, userName, mensagem: trimmed, timestamp: new Date().toISOString() });
 
     try {
-      const saved = await salvarMensagem({ usuarioId: userId!, conteudo: trimmed, sentimento: '', salvarMemoria: true });
-      const mensagemId = saved?.[0]?.id || userLocalId;
-
-      const baseHistory = [...messages, { id: mensagemId, role: 'user', content: trimmed }];
-
       const tags = extrairTagsRelevantes(trimmed);
+
+      let persistedMensagemId = userLocalId;
+
+      const salvarMensagemPromise = salvarMensagem({
+        usuarioId: userId!,
+        conteudo: trimmed,
+        sentimento: '',
+        salvarMemoria: true,
+      })
+        .then((saved) => saved?.[0]?.id ?? null)
+        .catch(() => null);
+
+      const mensagemIdPromise = salvarMensagemPromise
+        .then((savedMensagemId) => {
+          if (savedMensagemId && savedMensagemId !== userLocalId) {
+            persistedMensagemId = savedMensagemId;
+            setMessages((prev) =>
+              prev.map((m) => (m.id === userLocalId ? { ...m, id: savedMensagemId } : m))
+            );
+            return savedMensagemId;
+          }
+          return userLocalId;
+        })
+        .catch(() => userLocalId);
+
+      const buscarSimilaresPromise = buscarMemoriasSemelhantesV2(trimmed, {
+        k: 3,
+        threshold: 0.12,
+        usuario_id: userId!,
+      }).catch(() => []);
+
+      const buscarPorTagPromise = tags.length
+        ? buscarUltimasMemoriasComTags(userId!, tags, 2).catch(() => [])
+        : Promise.resolve([]);
+
       const [similar, porTag] = await Promise.all([
-        // ⇩ usa v2 com k/threshold/usuario_id
-        buscarMemoriasSemelhantesV2(trimmed, { k: 3, threshold: 0.12, usuario_id: userId! }).catch(() => []),
-        tags.length ? buscarUltimasMemoriasComTags(userId!, tags, 2).catch(() => []) : Promise.resolve([]),
+        buscarSimilaresPromise,
+        buscarPorTagPromise,
       ]);
+
+      const baseHistory = [...messages, { id: userLocalId, role: 'user', content: trimmed }];
 
       // mescla e deduplica (por id ou hash simples de data+resumo)
       const vistos = new Set<string>();
@@ -389,6 +420,9 @@ const ChatPage: React.FC = () => {
       const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       let ecoMessageId: string | null = null;
+      let ecoMessageIndex: number | null = null;
+      let resolvedEcoMessageId: string | null = null;
+      let resolvedEcoMessageIndex: number | null = null;
       let aggregatedEcoText = '';
       let latestMetadata: unknown;
       let pendingMetadata: unknown;
@@ -399,16 +433,138 @@ const ChatPage: React.FC = () => {
       let latencyFromStream: number | undefined;
       let firstContentReceived = false;
 
+      const getNow = () =>
+        typeof performance !== 'undefined' && typeof performance.now === 'function'
+          ? performance.now()
+          : Date.now();
+
+      const requestStartedAt = getNow();
+      let promptReadyAt: number | undefined;
+      let firstTokenAt: number | undefined;
+      let doneAt: number | undefined;
+      let metricsReported = false;
+
+      const logAndSendStreamMetrics = (
+        outcome: 'success' | 'error',
+        extra: Record<string, unknown> = {},
+      ) => {
+        if (metricsReported) return;
+        metricsReported = true;
+
+        const markers = {
+          eco_prompt_ready_at: promptReadyAt ?? null,
+          eco_first_token_at: firstTokenAt ?? null,
+          eco_done_at: doneAt ?? null,
+        };
+
+        const latencySource =
+          typeof latencyFromStream === 'number' ? 'server' : 'client';
+
+        const ttfbRaw =
+          typeof latencyFromStream === 'number'
+            ? latencyFromStream
+            : typeof firstTokenAt === 'number'
+            ? firstTokenAt - requestStartedAt
+            : undefined;
+        const ttfbMs =
+          typeof ttfbRaw === 'number' ? Math.max(Math.round(ttfbRaw), 0) : null;
+
+        const firstTokenLatencyRaw =
+          typeof promptReadyAt === 'number' && typeof firstTokenAt === 'number'
+            ? firstTokenAt - promptReadyAt
+            : undefined;
+        const firstTokenLatencyMs =
+          typeof firstTokenLatencyRaw === 'number'
+            ? Math.max(Math.round(firstTokenLatencyRaw), 0)
+            : null;
+
+        const basePayload = {
+          ...markers,
+          userId,
+          sessionId: sessaoId,
+          outcome,
+          mensagem_id: persistedMensagemId,
+          mensagem_local_id: userLocalId,
+          latency_from_stream_ms:
+            typeof latencyFromStream === 'number' ? latencyFromStream : null,
+          latency_source: latencySource,
+          ...extra,
+        };
+
+        console.log('[ChatPage] Eco stream markers', {
+          ...basePayload,
+          request_started_at: requestStartedAt,
+        });
+
+        mixpanel.track('Eco: Stream TTFB', {
+          ...basePayload,
+          ttfb_ms: ttfbMs,
+        });
+
+        mixpanel.track('Eco: Stream First Token Latency', {
+          ...basePayload,
+          first_token_latency_ms: firstTokenLatencyMs,
+        });
+
+        const mixpanelAny = mixpanel as any;
+        if (ttfbMs !== null && typeof mixpanelAny?.people?.set === 'function') {
+          mixpanelAny.people.set({ eco_ttfb_ms: ttfbMs });
+        }
+        if (
+          firstTokenLatencyMs !== null &&
+          typeof mixpanelAny?.people?.set === 'function'
+        ) {
+          mixpanelAny.people.set({ eco_first_token_latency_ms: firstTokenLatencyMs });
+        }
+      };
+
       const ensureEcoMessage = () => {
         if (ecoMessageId) return;
-        ecoMessageId = uuidv4();
-        const placeholder: ChatMessageType = { id: ecoMessageId, sender: 'eco', text: ' ' };
-        setMessages((prev) => [...prev, placeholder]);
+        const newId = uuidv4();
+        ecoMessageId = newId;
+        resolvedEcoMessageId = newId;
+        setMessages((prev) => {
+          const index = prev.length;
+          const placeholder: ChatMessageType = { id: newId, sender: 'eco', text: ' ' };
+          ecoMessageIndex = index;
+          resolvedEcoMessageIndex = index;
+          return [...prev, placeholder];
+        });
       };
 
       const patchEcoMessage = (patch: Partial<ChatMessageType>) => {
-        if (!ecoMessageId) return;
-        setMessages((prev) => prev.map((m) => (m.id === ecoMessageId ? { ...m, ...patch } : m)));
+        const targetId = ecoMessageId ?? resolvedEcoMessageId;
+        if (!targetId) return;
+        if (Object.keys(patch).length === 0) return;
+        setMessages((prev) => {
+          const cachedIndex = ecoMessageIndex ?? resolvedEcoMessageIndex;
+          let index = cachedIndex ?? prev.findIndex((m) => m.id === targetId);
+          if (index < 0) return prev;
+          const existing = prev[index];
+          if (!existing) return prev;
+          if (ecoMessageId && ecoMessageIndex === null) {
+            ecoMessageIndex = index;
+          }
+          resolvedEcoMessageId = targetId;
+          resolvedEcoMessageIndex = index;
+          let changed = false;
+          for (const [key, value] of Object.entries(patch)) {
+            if ((existing as any)[key] !== value) {
+              changed = true;
+              break;
+            }
+          }
+          if (!changed) return prev;
+          const updated = { ...existing, ...patch };
+          const next = [...prev];
+          next[index] = updated;
+          return next;
+        });
+      };
+
+      const resetEcoMessageTracking = () => {
+        ecoMessageId = null;
+        ecoMessageIndex = null;
       };
 
       const syncScroll = () => {
@@ -434,6 +590,9 @@ const ChatPage: React.FC = () => {
 
       const handlers: EcoEventHandlers = {
         onPromptReady: () => {
+          if (promptReadyAt === undefined) {
+            promptReadyAt = getNow();
+          }
           ensureEcoMessage();
           patchEcoMessage({ text: ' ' });
           syncScroll();
@@ -446,6 +605,9 @@ const ChatPage: React.FC = () => {
           }
         },
         onFirstToken: (event) => {
+          if (firstTokenAt === undefined) {
+            firstTokenAt = getNow();
+          }
           ensureEcoMessage();
           const texto = event.text ?? '';
           aggregatedEcoText = texto;
@@ -492,6 +654,9 @@ const ChatPage: React.FC = () => {
           trackMemoryIfSignificant(memoria);
         },
         onDone: (event) => {
+          if (doneAt === undefined) {
+            doneAt = getNow();
+          }
           donePayload = event.payload;
           const meta = event.metadata ?? latestMetadata ?? pendingMetadata ?? event.payload?.response ?? event.payload?.metadata;
           if (meta !== undefined) {
@@ -512,9 +677,34 @@ const ChatPage: React.FC = () => {
           }
           setDigitando(false);
           syncScroll();
+          const metricsExtra: Record<string, unknown> = { stage: 'on_done' };
+          if (meta !== undefined) {
+            metricsExtra.final_metadata = meta;
+          }
+          logAndSendStreamMetrics('success', metricsExtra);
+          resetEcoMessageTracking();
         },
-        onError: () => {
+        onError: (error) => {
+          if (doneAt === undefined) {
+            doneAt = getNow();
+          }
           setDigitando(false);
+          const message =
+            typeof error?.message === 'string' ? error.message : undefined;
+          const normalizedMessage = message?.toLowerCase() ?? '';
+          const reason =
+            error?.name === 'AbortError'
+              ? 'aborted'
+              : normalizedMessage.includes('expirou')
+              ? 'timeout'
+              : 'error';
+          logAndSendStreamMetrics('error', {
+            stage: 'stream_error',
+            error_name: error?.name ?? 'Error',
+            error_message: message ?? 'Erro desconhecido na stream.',
+            error_reason: reason,
+          });
+          resetEcoMessageTracking();
         },
       };
 
@@ -534,11 +724,12 @@ const ChatPage: React.FC = () => {
         (resposta?.metadata && typeof resposta.metadata === 'object' ? resposta.metadata : undefined) ||
         (resposta?.done && typeof resposta.done === 'object' ? resposta.done : undefined);
 
-      if (!ecoMessageId) {
+      if (!resolvedEcoMessageId) {
         if (finalText) {
-          ecoMessageId = uuidv4();
+          const newId = uuidv4();
+          resolvedEcoMessageId = newId;
           const ecoMessage: ChatMessageType = {
-            id: ecoMessageId,
+            id: newId,
             text: finalText,
             sender: 'eco',
             ...(finalMetadata !== undefined ? { metadata: finalMetadata } : {}),
@@ -546,7 +737,11 @@ const ChatPage: React.FC = () => {
             ...(memoryFromStream ? { memory: memoryFromStream } : {}),
             ...(typeof latencyFromStream === 'number' ? { latencyMs: latencyFromStream } : {}),
           };
-          addMessage(ecoMessage);
+          setMessages((prev) => {
+            const index = prev.length;
+            resolvedEcoMessageIndex = index;
+            return [...prev, ecoMessage];
+          });
         }
       } else {
         if (finalText) {
@@ -583,7 +778,7 @@ const ChatPage: React.FC = () => {
         messageText: finalText,
       });
 
-      if (ecoMessageId && deepQuestionFlag) {
+      if (resolvedEcoMessageId && deepQuestionFlag) {
         patchEcoMessage({ deepQuestion: true });
       }
 
@@ -593,6 +788,40 @@ const ChatPage: React.FC = () => {
 
       const memoriaParaTracking = memoryFromStream || bloco;
       trackMemoryIfSignificant(memoriaParaTracking);
+
+      const finalMixpanelMetadata =
+        finalMetadata !== undefined
+          ? finalMetadata
+          : pendingMetadata !== undefined
+          ? pendingMetadata
+          : donePayload;
+
+      if (finalMixpanelMetadata !== undefined) {
+        mensagemIdPromise
+          .then((mensagemIdFinal) => {
+            mixpanel.track('Eco: Resposta Metadata', {
+              userId,
+              sessionId: sessaoId,
+              mensagemId: mensagemIdFinal,
+              metadata: finalMixpanelMetadata,
+            });
+          })
+          .catch(() => {
+            mixpanel.track('Eco: Resposta Metadata', {
+              userId,
+              sessionId: sessaoId,
+              mensagemId: userLocalId,
+              metadata: finalMixpanelMetadata,
+            });
+          });
+      }
+
+      if (!metricsReported) {
+        if (doneAt === undefined) {
+          doneAt = getNow();
+        }
+        logAndSendStreamMetrics('success', { stage: 'post_stream' });
+      }
     } catch (err: any) {
       console.error('[ChatPage] erro:', err);
       setErroApi(err?.message || 'Falha ao enviar mensagem.');
@@ -602,6 +831,19 @@ const ChatPage: React.FC = () => {
         mensagem: (text || '').slice(0, 120),
         timestamp: new Date().toISOString(),
       });
+      resetEcoMessageTracking();
+      if (!metricsReported) {
+        if (doneAt === undefined) {
+          doneAt = getNow();
+        }
+        const reason = err?.name === 'AbortError' ? 'aborted' : 'error';
+        logAndSendStreamMetrics('error', {
+          stage: 'request_catch',
+          error_name: err?.name ?? 'Error',
+          error_message: err?.message ?? 'Erro desconhecido ao enviar mensagem.',
+          error_reason: reason,
+        });
+      }
     } finally {
       setDigitando(false);
       scrollToBottom(true);

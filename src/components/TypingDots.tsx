@@ -1,43 +1,118 @@
 // TypingDots.tsx
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 type Variant = "pill" | "bubble" | "inline";
+type Tone = "auto" | "light" | "dark";
+
 type Props = {
   variant?: Variant;
   size?: "sm" | "md" | "lg";
   className?: string;
+  tone?: Tone;
 };
 
 const SIZES = {
   sm: { dot: 7, gap: 8, padX: 10, padY: 7, radius: "rounded-xl" },
   md: { dot: 9, gap: 11, padX: 14, padY: 9, radius: "rounded-2xl" },
   lg: { dot: 11, gap: 14, padX: 18, padY: 11, radius: "rounded-3xl" },
-};
+} as const;
 
-const dotTransition = {
-  repeat: Infinity,
-  ease: [0.22, 1, 0.36, 1], // iOS-like
-  duration: 1.2,
-};
+const toneTokens = {
+  light: {
+    dot: "#007AFF",
+    dotDim: "rgba(0, 122, 255, 0.55)",
+    container: "rgba(15, 23, 42, 0.05)",
+    bubble: "rgba(15, 23, 42, 0.06)",
+    border: "rgba(148, 163, 184, 0.28)",
+    shadow: "0 1px 2px rgba(15, 23, 42, 0.12)",
+  },
+  dark: {
+    dot: "#5FA9FF",
+    dotDim: "rgba(95, 169, 255, 0.55)",
+    container: "rgba(148, 163, 184, 0.16)",
+    bubble: "rgba(148, 163, 184, 0.22)",
+    border: "rgba(148, 163, 184, 0.35)",
+    shadow: "0 1px 3px rgba(15, 23, 42, 0.55)",
+  },
+} as const;
+
+const explicitTone = (tone: Exclude<Tone, "auto">): "light" | "dark" =>
+  tone === "dark" ? "dark" : "light";
 
 const TypingDots: React.FC<Props> = ({
   variant = "pill",
   size = "md",
   className = "",
+  tone = "auto",
 }) => {
+  const [resolvedTone, setResolvedTone] = React.useState<"light" | "dark">(
+    tone === "auto" ? "light" : explicitTone(tone)
+  );
+
+  React.useEffect(() => {
+    if (tone === "auto") {
+      if (typeof window === "undefined" || !window.matchMedia) {
+        setResolvedTone("light");
+        return;
+      }
+
+      const media = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleChange = (event: MediaQueryListEvent) => {
+        setResolvedTone(event.matches ? "dark" : "light");
+      };
+
+      setResolvedTone(media.matches ? "dark" : "light");
+
+      if (typeof media.addEventListener === "function") {
+        media.addEventListener("change", handleChange);
+        return () => media.removeEventListener("change", handleChange);
+      }
+
+      media.addListener(handleChange);
+      return () => media.removeListener(handleChange);
+    }
+
+    setResolvedTone(explicitTone(tone));
+  }, [tone]);
+
   const s = SIZES[size];
+  const tokens = toneTokens[resolvedTone];
+  const prefersReducedMotion = useReducedMotion();
+
+  const dotTransition = prefersReducedMotion
+    ? undefined
+    : {
+        repeat: Infinity,
+        ease: "linear" as const,
+        duration: 1.4,
+      };
 
   const baseDots = (
     <>
-      {[0, 0.2, 0.4].map((delay, i) => (
+      {[0, 0.18, 0.36].map((delay, i) => (
         <motion.span
           key={i}
           role="presentation"
-          className="inline-block rounded-full bg-slate-400/70 dark:bg-slate-300/70"
-          style={{ width: s.dot, height: s.dot }}
-          animate={{ y: [0, -3, 0], opacity: [0.68, 1, 0.68] }}
-          transition={{ ...dotTransition, delay }}
+          className="inline-block rounded-full"
+          style={{
+            width: s.dot,
+            height: s.dot,
+            backgroundColor: prefersReducedMotion ? tokens.dot : tokens.dotDim,
+          }}
+          animate={
+            prefersReducedMotion
+              ? undefined
+              : {
+                  y: [0, -2, 0],
+                  backgroundColor: [tokens.dotDim, tokens.dot, tokens.dotDim],
+                }
+          }
+          transition={
+            dotTransition && delay
+              ? { ...dotTransition, delay }
+              : dotTransition || undefined
+          }
         />
       ))}
     </>
@@ -49,21 +124,13 @@ const TypingDots: React.FC<Props> = ({
       inline-flex items-center
       px-[${s.padX}px] py-[${s.padY}px] ${s.radius}
       gap-[${s.gap}px]
-      bg-white/65 dark:bg-white/10
-      backdrop-blur-md
-      border border-white/40 dark:border-white/15
-      shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_24px_rgba(0,0,0,0.06)]
+      border
     `,
     bubble: `
       inline-flex items-center
       px-[${s.padX}px] py-[${s.padY}px] rounded-full
       gap-[${s.gap}px]
-      bg-[radial-gradient(120%_120%_at_30%_30%,rgba(255,255,255,0.9),rgba(255,255,255,0.55))]
-      dark:bg-[radial-gradient(120%_120%_at_30%_30%,rgba(255,255,255,0.15),rgba(255,255,255,0.06))]
-      backdrop-blur-xl
-      border border-white/50 dark:border-white/10
-      shadow-[0_10px_30px_rgba(0,0,0,0.08)]
-      ring-1 ring-black/5
+      border
     `,
     inline: `
       inline-flex items-center gap-[${s.gap}px]
@@ -71,26 +138,25 @@ const TypingDots: React.FC<Props> = ({
     `,
   };
 
-  // Halo suave (apenas para pill e bubble)
-  const Halo = () =>
-    variant === "inline" ? null : (
-      <span
-        aria-hidden
-        className="absolute inset-0 -z-10 rounded-[inherit] blur-xl opacity-50
-                   bg-[radial-gradient(60%_60%_at_50%_10%,#EEF2FF,transparent_70%)] dark:opacity-20"
-      />
-    );
+  const containerStyle =
+    variant === "inline"
+      ? undefined
+      : {
+          backgroundColor:
+            variant === "bubble" ? tokens.bubble : tokens.container,
+          borderColor: tokens.border,
+          boxShadow: tokens.shadow,
+        };
 
   return (
     <div
       className={`relative ${containers[variant]} ${className}`}
+      style={containerStyle}
       aria-live="polite"
       aria-label="Eco está digitando"
       role="status"
     >
-      <Halo />
-      {/* reduz animação para quem prefere menos movimento */}
-      <div className="motion-reduce:animate-none motion-reduce:[&_*]:transition-none flex items-center gap-[inherit]">
+      <div className="flex items-center gap-[inherit]">
         {baseDots}
       </div>
     </div>
