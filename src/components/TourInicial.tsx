@@ -2,9 +2,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import GlassBubble from './GlassBubble';
+import { motion, useReducedMotion } from 'framer-motion';
 import Sequence from './Sequence';
+import EcoBubbleOneEye from './EcoBubbleOneEye';
 import { X, ArrowRight } from 'lucide-react';
 import mixpanel from '../lib/mixpanel';
 
@@ -15,6 +15,7 @@ interface TourInicialProps {
 const TourInicial: React.FC<TourInicialProps> = ({ onClose }) => {
   const navigate = useNavigate();
   const [showSequence, setShowSequence] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -61,8 +62,7 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose }) => {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
         transition={{ duration: 0.24, ease: 'easeOut' }}
-        // ⬇️ largura e altura estáveis + um pouco maiores para não cortar a bolha
-        className="glass-card relative w-[min(92vw,420px)] h-[560px] sm:h-[580px] rounded-3xl overflow-hidden shadow-[0_24px_90px_rgba(2,6,23,.10)]"
+        className="glass-card relative w-[min(92vw,420px)] h-[560px] sm:h-[580px] rounded-3xl overflow-hidden shadow-[0_24px_90px_rgba(2,6,23,.10)] bg-white"
         onClick={(e) => e.stopPropagation()} // não fecha ao clicar dentro
       >
         {!showSequence ? (
@@ -77,14 +77,18 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose }) => {
             </button>
 
             <h2 className="text-[26px] leading-none font-semibold text-slate-900 mb-2">
-              Bem-vindo ao <span className="eco-wordmark">ECO</span>!
+              Bem-vindo à <span className="eco-wordmark">Eco</span>!
             </h2>
             <p className="text-slate-600 mb-6">Explore uma breve introdução.</p>
 
-            {/* Bolha translúcida branca */}
-            <div className="mb-5">
-              <GlassBubble color="#ffffff" size="15rem" />
-            </div>
+            {/* Bolha com olho */}
+            <motion.div
+              className="mb-5"
+              animate={prefersReducedMotion ? undefined : { scale: [1, 1.04, 1] }}
+              transition={prefersReducedMotion ? undefined : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <EcoBubbleOneEye variant="voice" state="thinking" size={240} />
+            </motion.div>
 
             <button
               onClick={handleIniciarSequence}
