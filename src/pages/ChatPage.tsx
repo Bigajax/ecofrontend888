@@ -867,6 +867,15 @@ const ChatPage: React.FC = () => {
     await handleSendMessage(userText, hint);
   };
 
+  const lastMessage = messages[messages.length - 1];
+  const lastEcoMessageIsPlaceholder =
+    !!lastMessage &&
+    lastMessage.sender === 'eco' &&
+    ((typeof lastMessage.text === 'string' && lastMessage.text.trim().length === 0)
+      || (typeof lastMessage.content === 'string' && lastMessage.content.trim().length === 0));
+
+  const shouldShowGlobalTyping = digitando && !lastEcoMessageIsPlaceholder;
+
   return (
     <div className="relative flex h-[calc(100dvh-var(--eco-topbar-h,56px))] w-full flex-col overflow-hidden bg-white">
       {/* SCROLLER */}
@@ -933,7 +942,7 @@ const ChatPage: React.FC = () => {
               </div>
             )}
 
-            {digitando && (
+            {shouldShowGlobalTyping && (
               <div className="w-full flex justify-start">
                 <div className="max-w-3xl w-full min-w-0 flex items-start gap-3">
                   <div className="flex-shrink-0 translate-y-[2px]">
