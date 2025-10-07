@@ -10,6 +10,7 @@ import { extractDeepQuestionFlag } from '../utils/chat/deepQuestion';
 import { gerarMensagemRetorno } from '../utils/chat/memory';
 import type { Message as ChatMessageType } from '../contexts/ChatContext';
 import mixpanel from '../lib/mixpanel';
+import { useLLMSettings } from '../contexts/LLMSettingsContext';
 
 interface UseEcoStreamOptions {
   messages: ChatMessageType[];
@@ -77,6 +78,7 @@ export const useEcoStream = ({
 
   const messagesRef = useRef(messages);
   const isAtBottomRef = useRef(isAtBottom);
+  const { autonomy } = useLLMSettings();
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -532,7 +534,8 @@ export const useEcoStream = ({
           userId!,
           clientHour,
           clientTz,
-          handlers
+          handlers,
+          { autonomy }
         );
 
         const finalText = (resposta?.text || aggregatedEcoText || '').trim();
@@ -671,7 +674,17 @@ export const useEcoStream = ({
         scrollToBottom(true);
       }
     },
-    [addMessage, digitando, isAtBottom, scrollToBottom, setMessages, sessionId, userId, userName]
+    [
+      addMessage,
+      digitando,
+      isAtBottom,
+      scrollToBottom,
+      setMessages,
+      sessionId,
+      userId,
+      userName,
+      autonomy,
+    ]
   );
 
   return { handleSendMessage, digitando, erroApi, setErroApi } as const;

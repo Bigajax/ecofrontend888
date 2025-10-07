@@ -3,6 +3,7 @@ import React, { Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
+import { LLMSettingsProvider } from './contexts/LLMSettingsContext';
 
 import LoginPage from './pages/LoginPage';
 import ResetSenha from './pages/ResetSenha';
@@ -147,9 +148,11 @@ function AppInner() {
 export default function App() {
   return (
     <AuthProvider>
-      <ChatProviderWithKey>
-        <AppInner />
-      </ChatProviderWithKey>
+      <LLMSettingsProvider>
+        <ChatProviderWithKey>
+          <AppInner />
+        </ChatProviderWithKey>
+      </LLMSettingsProvider>
     </AuthProvider>
   );
 }
