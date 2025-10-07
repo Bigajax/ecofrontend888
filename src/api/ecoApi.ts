@@ -141,7 +141,8 @@ export const enviarMensagemParaEco = async (
   userId?: string,
   clientHour?: number,
   clientTz?: string,
-  handlers: EcoEventHandlers = {}
+  handlers: EcoEventHandlers = {},
+  options: { guestId?: string; isGuest?: boolean } = {}
 ): Promise<EcoStreamResult> => {
   const mensagensValidas: Message[] = userMessages
     .slice(-3)
@@ -163,21 +164,31 @@ export const enviarMensagemParaEco = async (
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
 
+    const { guestId: guestIdOption, isGuest = false } = options;
+
     const response = await fetch(`${baseUrl}/ask-eco`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "text/event-stream",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(isGuest && guestIdOption ? { "x-guest-id": guestIdOption } : {}),
       },
       credentials: "include",
-      body: JSON.stringify({
-        mensagens: mensagensValidas,
-        nome_usuario: userName,
-        usuario_id: userId,
-        clientHour: hour,
-        clientTz: tz,
-      }),
+      body: (() => {
+        const payload: Record<string, unknown> = {
+          mensagens: mensagensValidas,
+          nome_usuario: userName,
+          clientHour: hour,
+          clientTz: tz,
+        };
+        if (userId) payload.usuario_id = userId;
+        if (isGuest) {
+          payload.isGuest = true;
+          if (guestIdOption) payload.guestId = guestIdOption;
+        }
+        return JSON.stringify(payload);
+      })(),
       signal: controller.signal,
     });
 

@@ -2,13 +2,13 @@
 import axios from "axios";
 import { supabase } from "../lib/supabaseClient"; // ajuste o path se preciso
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE?.replace(/\/+$/, "") ||
-  "https://ecobackend888.onrender.com";
+const envBase = import.meta.env.VITE_API_BASE;
+const normalizedBase = typeof envBase === "string" ? envBase.replace(/\/+$/, "") : "";
 
-// baseURL termina em /api
+const baseURL = normalizedBase ? `${normalizedBase}/api` : "/api";
+
 const api = axios.create({
-  baseURL: `${API_BASE}/api`,
+  baseURL,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
