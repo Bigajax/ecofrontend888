@@ -22,7 +22,45 @@ interface UseEcoStreamOptions {
   isAtBottom: boolean;
 }
 
+type BuscarSimilaresResult = Awaited<ReturnType<typeof buscarMemoriasSemelhantesV2>>;
+type BuscarPorTagResult = Awaited<ReturnType<typeof buscarUltimasMemoriasComTags>>;
+
 const isDev = Boolean((import.meta as any)?.env?.DEV);
+const CONTEXT_FETCH_TIMEOUT_MS = 1500;
+
+const getNow = () =>
+  typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? performance.now()
+    : Date.now();
+
+const withTimeout = <T>(
+  promise: Promise<T>,
+  ms: number,
+  onTimeout: () => T | PromiseLike<T>,
+): Promise<T> => {
+  return new Promise<T>((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve(onTimeout());
+    }, ms);
+
+    promise
+      .then((value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch(() => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(onTimeout());
+      });
+  });
+};
 
 export const useEcoStream = ({
   messages,
@@ -106,20 +144,57 @@ export const useEcoStream = ({
           })
           .catch(() => userLocalId);
 
-        const buscarSimilaresPromise = buscarMemoriasSemelhantesV2(trimmed, {
-          k: 3,
-          threshold: 0.12,
-          usuario_id: userId!,
-        }).catch(() => []);
+        const contextFetchStartedAt = getNow();
+        let contextFetchDurationMs: number | null = null;
+        let similaresTimedOut = false;
+        let tagsTimedOut = false;
+
+        const buscarSimilaresPromise = withTimeout<BuscarSimilaresResult>(
+          buscarMemoriasSemelhantesV2(trimmed, {
+            k: 3,
+            threshold: 0.12,
+            usuario_id: userId!,
+          }).catch(() => [] as BuscarSimilaresResult),
+          CONTEXT_FETCH_TIMEOUT_MS,
+          () => {
+            similaresTimedOut = true;
+            if (isDev) {
+              console.warn(
+                `[ChatPage] Timeout de ${CONTEXT_FETCH_TIMEOUT_MS}ms ao buscar memórias semelhantes`,
+              );
+            }
+            return [];
+          },
+        );
 
         const buscarPorTagPromise = tags.length
-          ? buscarUltimasMemoriasComTags(userId!, tags, 2).catch(() => [])
-          : Promise.resolve([]);
+          ? withTimeout<BuscarPorTagResult>(
+              buscarUltimasMemoriasComTags(userId!, tags, 2).catch(
+                () => [] as BuscarPorTagResult,
+              ),
+              CONTEXT_FETCH_TIMEOUT_MS,
+              () => {
+                tagsTimedOut = true;
+                if (isDev) {
+                  console.warn(
+                    `[ChatPage] Timeout de ${CONTEXT_FETCH_TIMEOUT_MS}ms ao buscar memórias por tag`,
+                  );
+                }
+                return [];
+              },
+            )
+          : Promise.resolve<BuscarPorTagResult>([]);
 
         const [similar, porTag] = await Promise.all([
           buscarSimilaresPromise,
           buscarPorTagPromise,
         ]);
+
+        contextFetchDurationMs = Math.max(
+          Math.round(getNow() - contextFetchStartedAt),
+          0,
+        );
+        const contextTimedOut = similaresTimedOut || tagsTimedOut;
 
         const baseHistory = [...messagesSnapshot, { id: userLocalId, role: 'user', content: trimmed }];
 
@@ -175,11 +250,6 @@ export const useEcoStream = ({
         let latencyFromStream: number | undefined;
         let firstContentReceived = false;
 
-        const getNow = () =>
-          typeof performance !== 'undefined' && typeof performance.now === 'function'
-            ? performance.now()
-            : Date.now();
-
         const requestStartedAt = getNow();
         let promptReadyAt: number | undefined;
         let firstTokenAt: number | undefined;
@@ -230,6 +300,12 @@ export const useEcoStream = ({
             latency_from_stream_ms:
               typeof latencyFromStream === 'number' ? latencyFromStream : null,
             latency_source: latencySource,
+            ...(contextFetchDurationMs !== null
+              ? { context_fetch_duration_ms: contextFetchDurationMs }
+              : {}),
+            ...(contextTimedOut ? { context_fetch_timed_out: true } : {}),
+            ...(similaresTimedOut ? { context_fetch_similares_timed_out: true } : {}),
+            ...(tagsTimedOut ? { context_fetch_tags_timed_out: true } : {}),
             ...extra,
           };
 
