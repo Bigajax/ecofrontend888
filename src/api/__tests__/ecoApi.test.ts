@@ -208,6 +208,31 @@ describe("enviarMensagemParaEco", () => {
     expect(resposta.metadata).toEqual({ intensidade: 9 });
     expect(resposta.primeiraMemoriaSignificativa).toBe(true);
   });
+
+  it("inclui cabeçalho e payload de convidado quando isGuest é informado", async () => {
+    fetchMock.mockResolvedValue(
+      createSseResponse([
+        { type: "done", payload: { type: "done", message: { content: "oi" } } },
+      ])
+    );
+
+    await enviarMensagemParaEco(
+      mensagens,
+      "Convidado",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { guestId: "guest-123", isGuest: true }
+    );
+
+    const [, init] = fetchMock.mock.calls.at(-1) ?? [];
+    expect(init?.headers).toMatchObject({ "x-guest-id": "guest-123" });
+    const body = init?.body ? JSON.parse(init.body as string) : {};
+    expect(body.isGuest).toBe(true);
+    expect(body.guestId).toBe("guest-123");
+    expect(body.usuario_id).toBeUndefined();
+  });
 });
 
 afterAll(() => {

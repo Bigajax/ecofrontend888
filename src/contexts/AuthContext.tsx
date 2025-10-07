@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { ensureProfile } from '../lib/ensureProfile';
 import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import mixpanel from '../lib/mixpanel';
+import { clearGuestStorage } from '../hooks/useGuestGate';
 
 interface AuthContextType {
   user: User | null;
@@ -92,6 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
 
       if (session?.user) {
+        clearGuestStorage();
         ensureProfile(session.user).catch((err) =>
           console.error('Erro ao garantir perfil durante getSession:', err),
         );
@@ -117,6 +119,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+          clearGuestStorage();
           syncMixpanelIdentity(session.user);
         }
 
