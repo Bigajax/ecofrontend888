@@ -15,11 +15,13 @@ interface UseEcoStreamOptions {
   messages: ChatMessageType[];
   addMessage: (message: ChatMessageType) => void;
   setMessages: Dispatch<SetStateAction<ChatMessageType[]>>;
-  userId: string;
+  userId?: string;
   userName: string;
   sessionId: string;
   scrollToBottom: (smooth?: boolean) => void;
   isAtBottom: boolean;
+  guestId?: string;
+  isGuest?: boolean;
 }
 
 type BuscarSimilaresResult = Awaited<ReturnType<typeof buscarMemoriasSemelhantesV2>>;
@@ -71,6 +73,8 @@ export const useEcoStream = ({
   sessionId,
   scrollToBottom,
   isAtBottom,
+  guestId,
+  isGuest = false,
 }: UseEcoStreamOptions) => {
   const [digitando, setDigitando] = useState(false);
   const [erroApi, setErroApi] = useState<string | null>(null);
@@ -92,6 +96,9 @@ export const useEcoStream = ({
       const trimmed = raw.trim();
       if (!trimmed || digitando) return;
 
+      const analyticsUserId = userId ?? guestId ?? 'guest';
+      const shouldPersist = Boolean(userId && !isGuest);
+
       setDigitando(true);
       setErroApi(null);
 
@@ -101,10 +108,12 @@ export const useEcoStream = ({
       requestAnimationFrame(() => scrollToBottom(true));
 
       mixpanel.track('Eco: Mensagem Enviada', {
-        userId,
+        userId: analyticsUserId,
         userName,
         mensagem: trimmed,
         timestamp: new Date().toISOString(),
+        ...(isGuest ? { guestId } : {}),
+        isGuest,
       });
 
       const messagesSnapshot = messagesRef.current;
@@ -122,54 +131,60 @@ export const useEcoStream = ({
 
         let persistedMensagemId = userLocalId;
 
-        const salvarMensagemPromise = salvarMensagem({
-          usuarioId: userId!,
-          conteudo: trimmed,
-          sentimento: '',
-          salvarMemoria: true,
-        })
-          .then((saved) => saved?.[0]?.id ?? null)
-          .catch(() => null);
+        const salvarMensagemPromise = shouldPersist
+          ? salvarMensagem({
+              usuarioId: userId as string,
+              conteudo: trimmed,
+              sentimento: '',
+              salvarMemoria: true,
+            })
+              .then((saved) => saved?.[0]?.id ?? null)
+              .catch(() => null)
+          : Promise.resolve(null);
 
-        const mensagemIdPromise = salvarMensagemPromise
-          .then((savedMensagemId) => {
-            if (savedMensagemId && savedMensagemId !== userLocalId) {
-              persistedMensagemId = savedMensagemId;
-              setMessages((prev) =>
-                prev.map((m) => (m.id === userLocalId ? { ...m, id: savedMensagemId } : m))
-              );
-              return savedMensagemId;
-            }
-            return userLocalId;
-          })
-          .catch(() => userLocalId);
+        const mensagemIdPromise = shouldPersist
+          ? salvarMensagemPromise
+              .then((savedMensagemId) => {
+                if (savedMensagemId && savedMensagemId !== userLocalId) {
+                  persistedMensagemId = savedMensagemId;
+                  setMessages((prev) =>
+                    prev.map((m) => (m.id === userLocalId ? { ...m, id: savedMensagemId } : m))
+                  );
+                  return savedMensagemId;
+                }
+                return userLocalId;
+              })
+              .catch(() => userLocalId)
+          : Promise.resolve(userLocalId);
 
         const contextFetchStartedAt = getNow();
         let contextFetchDurationMs: number | null = null;
         let similaresTimedOut = false;
         let tagsTimedOut = false;
 
-        const buscarSimilaresPromise = withTimeout<BuscarSimilaresResult>(
-          buscarMemoriasSemelhantesV2(trimmed, {
-            k: 3,
-            threshold: 0.12,
-            usuario_id: userId!,
-          }).catch(() => [] as BuscarSimilaresResult),
-          CONTEXT_FETCH_TIMEOUT_MS,
-          () => {
-            similaresTimedOut = true;
-            if (isDev) {
-              console.warn(
-                `[ChatPage] Timeout de ${CONTEXT_FETCH_TIMEOUT_MS}ms ao buscar memórias semelhantes`,
-              );
-            }
-            return [];
-          },
-        );
+        const buscarSimilaresPromise = shouldPersist
+          ? withTimeout<BuscarSimilaresResult>(
+              buscarMemoriasSemelhantesV2(trimmed, {
+                k: 3,
+                threshold: 0.12,
+                usuario_id: userId as string,
+              }).catch(() => [] as BuscarSimilaresResult),
+              CONTEXT_FETCH_TIMEOUT_MS,
+              () => {
+                similaresTimedOut = true;
+                if (isDev) {
+                  console.warn(
+                    `[ChatPage] Timeout de ${CONTEXT_FETCH_TIMEOUT_MS}ms ao buscar memórias semelhantes`,
+                  );
+                }
+                return [];
+              },
+            )
+          : Promise.resolve<BuscarSimilaresResult>([]);
 
-        const buscarPorTagPromise = tags.length
+        const buscarPorTagPromise = shouldPersist && tags.length
           ? withTimeout<BuscarPorTagResult>(
-              buscarUltimasMemoriasComTags(userId!, tags, 2).catch(
+              buscarUltimasMemoriasComTags(userId as string, tags, 2).catch(
                 () => [] as BuscarPorTagResult,
               ),
               CONTEXT_FETCH_TIMEOUT_MS,
@@ -292,7 +307,7 @@ export const useEcoStream = ({
 
           const basePayload = {
             ...markers,
-            userId,
+            userId: analyticsUserId,
             sessionId,
             outcome,
             mensagem_id: persistedMensagemId,
@@ -306,6 +321,8 @@ export const useEcoStream = ({
             ...(contextTimedOut ? { context_fetch_timed_out: true } : {}),
             ...(similaresTimedOut ? { context_fetch_similares_timed_out: true } : {}),
             ...(tagsTimedOut ? { context_fetch_tags_timed_out: true } : {}),
+            isGuest,
+            ...(isGuest ? { guestId } : {}),
             ...extra,
           };
 
@@ -529,10 +546,11 @@ export const useEcoStream = ({
         const resposta = await enviarMensagemParaEco(
           mensagensComContexto,
           userName,
-          userId!,
+          shouldPersist ? (userId as string) : undefined,
           clientHour,
           clientTz,
-          handlers
+          handlers,
+          { guestId, isGuest }
         );
 
         const finalText = (resposta?.text || aggregatedEcoText || '').trim();
@@ -618,18 +636,22 @@ export const useEcoStream = ({
           mensagemIdPromise
             .then((mensagemIdFinal) => {
               mixpanel.track('Eco: Resposta Metadata', {
-                userId,
+                userId: analyticsUserId,
                 sessionId,
                 mensagemId: mensagemIdFinal,
                 metadata: finalMixpanelMetadata,
+                isGuest,
+                ...(isGuest ? { guestId } : {}),
               });
             })
             .catch(() => {
               mixpanel.track('Eco: Resposta Metadata', {
-                userId,
+                userId: analyticsUserId,
                 sessionId,
                 mensagemId: userLocalId,
                 metadata: finalMixpanelMetadata,
+                isGuest,
+                ...(isGuest ? { guestId } : {}),
               });
             });
         }
@@ -644,10 +666,12 @@ export const useEcoStream = ({
         console.error('[ChatPage] erro:', err);
         setErroApi(err?.message || 'Falha ao enviar mensagem.');
         mixpanel.track('Eco: Erro ao Enviar Mensagem', {
-          userId,
+          userId: analyticsUserId,
           erro: err?.message || 'desconhecido',
           mensagem: (text || '').slice(0, 120),
           timestamp: new Date().toISOString(),
+          isGuest,
+          ...(isGuest ? { guestId } : {}),
         });
         resetEcoMessageTracking();
         if (!metricsReported) {
@@ -671,7 +695,18 @@ export const useEcoStream = ({
         scrollToBottom(true);
       }
     },
-    [addMessage, digitando, isAtBottom, scrollToBottom, setMessages, sessionId, userId, userName]
+    [
+      addMessage,
+      digitando,
+      guestId,
+      isAtBottom,
+      isGuest,
+      scrollToBottom,
+      setMessages,
+      sessionId,
+      userId,
+      userName,
+    ]
   );
 
   return { handleSendMessage, digitando, erroApi, setErroApi } as const;

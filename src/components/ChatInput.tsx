@@ -8,6 +8,7 @@ type Props = {
   onSendAudio?: (b: Blob) => void;
   disabled?: boolean;
   onTextChange?: (text: string) => void;
+  placeholder?: string;
 };
 
 const CTA_TEXT = 'Converse com a Eco…';
@@ -18,6 +19,7 @@ const ChatInput: React.FC<Props> = ({
   onSendAudio,
   disabled = false,
   onTextChange,
+  placeholder = CTA_TEXT,
 }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [showMoreOptions, setShowMoreOptions] = useState(false);
@@ -313,7 +315,7 @@ const ChatInput: React.FC<Props> = ({
             }}
             onFocus={onFocus}
             onBlur={onBlur}
-            placeholder={CTA_TEXT}
+            placeholder={placeholder}
             rows={1}
             inputMode="text"
             enterKeyHint="send"
