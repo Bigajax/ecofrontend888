@@ -7,7 +7,10 @@ export class EcoApiError extends Error {
   status?: number;
   details?: unknown;
 
-  constructor(message: string, options: { status?: number; details?: unknown } = {}) {
+  constructor(
+    message: string,
+    options: { status?: number; details?: unknown } = {}
+  ) {
     super(message);
     this.name = "EcoApiError";
     this.status = options.status;
@@ -57,7 +60,7 @@ export interface EcoStreamResult {
   text: string;
   metadata?: unknown;
   done?: unknown;
-  primeiraMemoriaSignificativa?: boolean; // 👈 adicionada
+  primeiraMemoriaSignificativa?: boolean;
 }
 
 export interface EcoSseEvent<TPayload = Record<string, any>> {
@@ -158,49 +161,77 @@ export const enviarMensagemParaEco = async (
 ): Promise<EcoStreamResult> => {
   const mensagensValidas: Message[] = userMessages
     .slice(-3)
-    .filter((m) => m && typeof m.role === "string" && typeof m.content === "string" && m.content.trim().length > 0)
+    .filter(
+      (m) =>
+        m &&
+        typeof m.role === "string" &&
+        typeof m.content === "string" &&
+        m.content.trim().length > 0
+    )
     .map((m) => ({ ...m, id: m.id || uuidv4() }));
 
-  if (mensagensValidas.length === 0) throw new Error("Nenhuma mensagem válida para enviar.");
+  if (mensagensValidas.length === 0)
+    throw new Error("Nenhuma mensagem válida para enviar.");
 
   const hour = typeof clientHour === "number" ? clientHour : new Date().getHours();
   const tz = clientTz || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const controller = new AbortController();
-  const timeoutId: ReturnType<typeof setTimeout> = setTimeout(() => controller.abort(), SSE_TIMEOUT_MS);
+  const timeoutId: ReturnType<typeof setTimeout> = setTimeout(
+    () => controller.abort(),
+    SSE_TIMEOUT_MS
+  );
 
   try {
     const baseUrl = api.defaults?.baseURL?.replace(/\/+$/, "");
     if (!baseUrl) throw new Error("Configuração de baseURL ausente para a Eco.");
 
+    // --- sessão do supabase (pode não existir) ---
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
 
-    const { guestId: guestIdOption, isGuest = false } = options;
+    // --- guest id persistente (fallback automático quando não há token) ---
+    const persistedGuestId =
+      localStorage.getItem("eco_guest_id") ||
+      (() => {
+        const id = `guest_${crypto.randomUUID()}`;
+        localStorage.setItem("eco_guest_id", id);
+        return id;
+      })();
+
+    const userWantsGuest = options?.isGuest === true;
+    const isGuest = userWantsGuest || !token;
+    const guestId = options?.guestId || persistedGuestId;
+
+    // --- headers ---
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "text/event-stream",
+    };
+    if (!isGuest && token) {
+      headers.Authorization = `Bearer ${token}`;
+    } else {
+      headers["X-Guest-Id"] = guestId;
+    }
+
+    // --- body ---
+    const bodyPayload: Record<string, unknown> = {
+      mensagens: mensagensValidas,
+      nome_usuario: userName,
+      clientHour: hour,
+      clientTz: tz,
+    };
+    if (!isGuest && userId) bodyPayload.usuario_id = userId;
+    if (isGuest) {
+      bodyPayload.isGuest = true;
+      bodyPayload.guestId = guestId;
+    }
 
     const response = await fetch(`${baseUrl}/ask-eco`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "text/event-stream",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(isGuest && guestIdOption ? { "x-guest-id": guestIdOption } : {}),
-      },
+      headers,
       credentials: "include",
-      body: (() => {
-        const payload: Record<string, unknown> = {
-          mensagens: mensagensValidas,
-          nome_usuario: userName,
-          clientHour: hour,
-          clientTz: tz,
-        };
-        if (userId) payload.usuario_id = userId;
-        if (isGuest) {
-          payload.isGuest = true;
-          if (guestIdOption) payload.guestId = guestIdOption;
-        }
-        return JSON.stringify(payload);
-      })(),
+      body: JSON.stringify(bodyPayload),
       signal: controller.signal,
     });
 
@@ -220,11 +251,14 @@ export const enviarMensagemParaEco = async (
         }
       } catch {}
 
-      const message = serverErr?.trim() || `Erro HTTP ${response.status}: ${response.statusText || "Falha na requisição"}`;
+      const message =
+        serverErr?.trim() ||
+        `Erro HTTP ${response.status}: ${response.statusText || "Falha na requisição"}`;
       throw new EcoApiError(message, { status: response.status, details });
     }
 
-    if (!response.body) throw new Error("Resposta da Eco não suportou streaming SSE.");
+    if (!response.body)
+      throw new Error("Resposta da Eco não suportou streaming SSE.");
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -234,9 +268,12 @@ export const enviarMensagemParaEco = async (
     const aggregatedParts: string[] = [];
     let donePayload: any;
     let metadata: unknown;
-    let primeiraMemoriaSignificativa = false; // 👈 nova flag
+    let primeiraMemoriaSignificativa = false;
 
-    const safeInvoke = (cb: ((event: EcoSseEvent) => void) | undefined, event: EcoSseEvent) => {
+    const safeInvoke = (
+      cb: ((event: EcoSseEvent) => void) | undefined,
+      event: EcoSseEvent
+    ) => {
       if (!cb) return;
       try {
         cb(event);
@@ -258,17 +295,20 @@ export const enviarMensagemParaEco = async (
       if (!eventData || typeof eventData !== "object") return;
 
       const baseEvent = eventData as Record<string, any>;
-      const topType = typeof baseEvent.type === "string" ? baseEvent.type : undefined;
+      const topType =
+        typeof baseEvent.type === "string" ? baseEvent.type : undefined;
       const eventPayloadRaw =
         baseEvent.payload && typeof baseEvent.payload === "object"
           ? (baseEvent.payload as Record<string, any>)
           : baseEvent;
       const payload = eventPayloadRaw as Record<string, any>;
-      const payloadType = typeof payload.type === "string" ? payload.type : topType;
+      const payloadType =
+        typeof payload.type === "string" ? payload.type : topType;
       const type = payloadType ?? topType;
 
       if (!type) {
-        if (isDev) console.debug("ℹ️ [ECO API] Evento SSE sem tipo reconhecido:", eventData);
+        if (isDev)
+          console.debug("ℹ️ [ECO API] Evento SSE sem tipo reconhecido:", eventData);
         return;
       }
 
@@ -278,9 +318,12 @@ export const enviarMensagemParaEco = async (
         raw: eventData,
       };
 
-      if (type === "error" || payload?.status === "error") {
+      if (type === "error" || (payload as any)?.status === "error") {
         const errMessage =
-          payload?.error?.message || payload?.error || payload?.message || "Erro na stream SSE da Eco.";
+          (payload as any)?.error?.message ||
+          (payload as any)?.error ||
+          (payload as any)?.message ||
+          "Erro na stream SSE da Eco.";
         streamError = new Error(String(errMessage));
         safeInvokeError(handlers.onError, streamError);
         return;
@@ -292,7 +335,10 @@ export const enviarMensagemParaEco = async (
       }
 
       if (type === "latency") {
-        const latencyValue = typeof payload?.value === "number" ? payload.value : undefined;
+        const latencyValue =
+          typeof (payload as any)?.value === "number"
+            ? (payload as any).value
+            : undefined;
         const eventWithLatency: EcoSseEvent = {
           ...baseEventInfo,
           latencyMs: latencyValue,
@@ -302,37 +348,35 @@ export const enviarMensagemParaEco = async (
       }
 
       if (type === "first_token") {
-        const source = payload.delta ?? payload.content ?? payload.message ?? payload;
+        const source =
+          (payload as any).delta ??
+          (payload as any).content ??
+          (payload as any).message ??
+          payload;
         const texts = collectTexts(source);
         const chunkText = texts.join("");
-        if (chunkText.length > 0) {
-          aggregatedParts.push(chunkText);
-        }
-        const eventWithText: EcoSseEvent = {
-          ...baseEventInfo,
-          text: chunkText,
-        };
+        if (chunkText.length > 0) aggregatedParts.push(chunkText);
+        const eventWithText: EcoSseEvent = { ...baseEventInfo, text: chunkText };
         safeInvoke(handlers.onFirstToken, eventWithText);
         return;
       }
 
       if (type === "chunk") {
-        const source = payload.delta ?? payload.content ?? payload.message ?? payload;
+        const source =
+          (payload as any).delta ??
+          (payload as any).content ??
+          (payload as any).message ??
+          payload;
         const texts = collectTexts(source);
         const chunkText = texts.join("");
-        if (chunkText.length > 0) {
-          aggregatedParts.push(chunkText);
-        }
-        const eventWithText: EcoSseEvent = {
-          ...baseEventInfo,
-          text: chunkText,
-        };
+        if (chunkText.length > 0) aggregatedParts.push(chunkText);
+        const eventWithText: EcoSseEvent = { ...baseEventInfo, text: chunkText };
         safeInvoke(handlers.onChunk, eventWithText);
         return;
       }
 
       if (type === "meta" || type === "meta_pending" || type === "meta-pending") {
-        const metaPayload = payload?.metadata ?? payload;
+        const metaPayload = (payload as any)?.metadata ?? payload;
         const eventWithMeta: EcoSseEvent = {
           ...baseEventInfo,
           metadata: metaPayload,
@@ -344,12 +388,12 @@ export const enviarMensagemParaEco = async (
       }
 
       if (type === "memory_saved") {
-        const memoryPayload = payload?.memory ?? payload?.memoria ?? payload;
+        const memoryPayload = (payload as any)?.memory ?? (payload as any)?.memoria ?? payload;
         const eventWithMemory: EcoSseEvent = {
           ...baseEventInfo,
           memory: memoryPayload,
         };
-        if (payload?.primeiraMemoriaSignificativa || payload?.primeira) {
+        if ((payload as any)?.primeiraMemoriaSignificativa || (payload as any)?.primeira) {
           primeiraMemoriaSignificativa = true;
         }
         safeInvoke(handlers.onMemorySaved, eventWithMemory);
@@ -359,14 +403,19 @@ export const enviarMensagemParaEco = async (
       if (type === "done") {
         doneReceived = true;
         donePayload = payload;
-        const responseMetadata = payload?.response ?? payload?.metadata ?? payload;
+        const responseMetadata =
+          (payload as any)?.response ?? (payload as any)?.metadata ?? payload;
         metadata = responseMetadata ?? metadata;
 
-        if (payload?.primeiraMemoriaSignificativa || payload?.primeira) {
+        if ((payload as any)?.primeiraMemoriaSignificativa || (payload as any)?.primeira) {
           primeiraMemoriaSignificativa = true;
         }
 
-        const source = payload.delta ?? payload.content ?? payload.message ?? payload.response;
+        const source =
+          (payload as any).delta ??
+          (payload as any).content ??
+          (payload as any).message ??
+          (payload as any).response;
         const texts = collectTexts(source);
         const doneText = texts.join("");
         if (doneText.length > 0 && aggregatedParts.length === 0) {
@@ -424,11 +473,18 @@ export const enviarMensagemParaEco = async (
     }
     if (!texto) throw new Error("Formato inválido na resposta da Eco.");
 
-    return { text: texto, metadata, done: donePayload, primeiraMemoriaSignificativa };
+    return {
+      text: texto,
+      metadata,
+      done: donePayload,
+      primeiraMemoriaSignificativa,
+    };
   } catch (error: any) {
     let message: string;
-    if (error?.name === "AbortError") message = "A requisição à Eco expirou. Tente novamente.";
-    else if (typeof error?.message === "string" && error.message.trim().length > 0) message = error.message;
+    if (error?.name === "AbortError")
+      message = "A requisição à Eco expirou. Tente novamente.";
+    else if (typeof error?.message === "string" && error.message.trim().length > 0)
+      message = error.message;
     else message = "Erro ao obter resposta da Eco.";
     console.error("❌ [ECO API]", message, error);
     throw new Error(message);
