@@ -3,6 +3,18 @@ import api from "./axios";
 import { supabase } from "../lib/supabaseClient";
 import { v4 as uuidv4 } from "uuid";
 
+export class EcoApiError extends Error {
+  status?: number;
+  details?: unknown;
+
+  constructor(message: string, options: { status?: number; details?: unknown } = {}) {
+    super(message);
+    this.name = "EcoApiError";
+    this.status = options.status;
+    this.details = options.details;
+  }
+}
+
 interface Message {
   id?: string;
   role: string;
@@ -194,16 +206,22 @@ export const enviarMensagemParaEco = async (
 
     if (!response.ok) {
       let serverErr: string | undefined;
+      let details: unknown;
       try {
         const contentType = response.headers.get("content-type") || "";
         if (contentType.includes("application/json")) {
           const errJson = await response.json();
           serverErr = errJson?.error || errJson?.message;
+          details = errJson;
         } else {
-          serverErr = await response.text();
+          const errText = await response.text();
+          serverErr = errText;
+          details = errText;
         }
       } catch {}
-      throw new Error(serverErr?.trim() || `Erro HTTP ${response.status}: ${response.statusText || "Falha na requisição"}`);
+
+      const message = serverErr?.trim() || `Erro HTTP ${response.status}: ${response.statusText || "Falha na requisição"}`;
+      throw new EcoApiError(message, { status: response.status, details });
     }
 
     if (!response.body) throw new Error("Resposta da Eco não suportou streaming SSE.");

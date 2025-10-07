@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-import { enviarMensagemParaEco, EcoEventHandlers } from '../api/ecoApi';
+import { enviarMensagemParaEco, EcoEventHandlers, EcoApiError } from '../api/ecoApi';
 import { buscarUltimasMemoriasComTags, buscarMemoriasSemelhantesV2 } from '../api/memoriaApi';
 import { salvarMensagem } from '../api/mensagem';
 import { celebrateFirstMemory } from '../utils/celebrateFirstMemory';
@@ -22,6 +22,7 @@ interface UseEcoStreamOptions {
   isAtBottom: boolean;
   guestId?: string;
   isGuest?: boolean;
+  onUnauthorized?: () => void;
 }
 
 type BuscarSimilaresResult = Awaited<ReturnType<typeof buscarMemoriasSemelhantesV2>>;
@@ -75,6 +76,7 @@ export const useEcoStream = ({
   isAtBottom,
   guestId,
   isGuest = false,
+  onUnauthorized,
 }: UseEcoStreamOptions) => {
   const [digitando, setDigitando] = useState(false);
   const [erroApi, setErroApi] = useState<string | null>(null);
@@ -664,7 +666,23 @@ export const useEcoStream = ({
         }
       } catch (err: any) {
         console.error('[ChatPage] erro:', err);
-        setErroApi(err?.message || 'Falha ao enviar mensagem.');
+
+        let displayMessage = err?.message || 'Falha ao enviar mensagem.';
+
+        if (err instanceof EcoApiError && err.status === 401) {
+          displayMessage = 'Faça login para continuar a conversa com a Eco.';
+          if (onUnauthorized) {
+            try {
+              onUnauthorized();
+            } catch (callbackError) {
+              if (isDev) {
+                console.warn('[ChatPage] onUnauthorized falhou', callbackError);
+              }
+            }
+          }
+        }
+
+        setErroApi(displayMessage);
         mixpanel.track('Eco: Erro ao Enviar Mensagem', {
           userId: analyticsUserId,
           erro: err?.message || 'desconhecido',
@@ -695,17 +713,18 @@ export const useEcoStream = ({
         scrollToBottom(true);
       }
     },
-    [
-      addMessage,
-      digitando,
-      guestId,
-      isAtBottom,
-      isGuest,
-      scrollToBottom,
-      setMessages,
-      sessionId,
-      userId,
-      userName,
+      [
+        addMessage,
+        digitando,
+        guestId,
+        isAtBottom,
+        isGuest,
+        onUnauthorized,
+        scrollToBottom,
+        setMessages,
+        sessionId,
+        userId,
+        userName,
     ]
   );
 
