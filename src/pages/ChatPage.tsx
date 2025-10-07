@@ -90,6 +90,9 @@ const ChatPage: React.FC = () => {
     isAtBottom,
     isGuest,
     guestId: guestGate.guestId || undefined,
+    onUnauthorized: () => {
+      setLoginGateOpen(true);
+    },
   });
 
   const handleSendMessage = useCallback(
