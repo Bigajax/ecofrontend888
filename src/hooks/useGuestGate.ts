@@ -52,8 +52,6 @@ export function useGuestGate(enabled: boolean) {
   const [guestId, setGuestId] = useState<string | null>(null);
   const [count, setCount] = useState(0);
   const [inputDisabled, setInputDisabled] = useState(false);
-  const [isReady, setIsReady] = useState(!enabled);
-  const [initNonce, bumpInitNonce] = useState(0);
 
   const reachedLimit = count >= LIMIT;
   const guestIdRef = useRef<string | null>(null);
@@ -65,13 +63,6 @@ export function useGuestGate(enabled: boolean) {
       setCount(0);
       setInputDisabled(false);
       gateTrackedRef.current = false;
-      guestIdRef.current = null;
-      setIsReady(true);
-      return;
-    }
-
-    setIsReady(false);
-
     let id = safeGetItem(GUEST_ID_KEY);
     if (!id) {
       id = uuid();
@@ -90,9 +81,6 @@ export function useGuestGate(enabled: boolean) {
     setInputDisabled(disabled || validCount >= LIMIT);
 
     gateTrackedRef.current = safeGetItem(GUEST_GATE_TRACKED_KEY) === '1' || disabled || validCount >= LIMIT;
-    setIsReady(true);
-  }, [enabled, initNonce]);
-
   useEffect(() => {
     if (!enabled) return;
     safeSetItem(GUEST_INTERACTION_COUNT_KEY, String(count));
@@ -138,8 +126,7 @@ export function useGuestGate(enabled: boolean) {
     setGuestId(null);
     setCount(0);
     setInputDisabled(false);
-    setIsReady(false);
-    bumpInitNonce((nonce) => nonce + 1);
+
   }, []);
 
   return useMemo(
@@ -151,8 +138,5 @@ export function useGuestGate(enabled: boolean) {
       reachedLimit,
       registerUserInteraction,
       resetGuest,
-      isReady,
-    }),
-    [count, guestId, inputDisabled, isReady, reachedLimit, registerUserInteraction, resetGuest],
   );
 }

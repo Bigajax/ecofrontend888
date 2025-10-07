@@ -95,10 +95,6 @@ const ChatPage: React.FC = () => {
   const handleSendMessage = useCallback(
     async (text: string, systemHint?: string) => {
       if (isGuest) {
-        if (!guestGate.isReady || !guestGate.guestId) {
-          console.warn('[ChatPage] Guest data not ready, ignoring send.');
-          return;
-        }
         if (guestGate.inputDisabled || guestGate.count >= guestGate.limit) {
           setLoginGateOpen(true);
           return;
@@ -260,15 +256,6 @@ const ChatPage: React.FC = () => {
               if (opt === 'go_to_voice_page') navigate('/voice');
             }}
             onSendAudio={() => console.log('Áudio enviado')}
-            disabled={
-              digitando || (isGuest && (guestGate.inputDisabled || !guestGate.isReady))
-            }
-            placeholder={
-              isGuest && guestGate.inputDisabled
-                ? 'Crie sua conta para continuar…'
-                : isGuest && !guestGate.isReady
-                  ? 'Carregando modo convidado…'
-                  : undefined
             }
             onTextChange={handleTextChange}
           />
