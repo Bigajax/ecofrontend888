@@ -79,11 +79,9 @@ function AppInner() {
         <Route
           path="/chat"
           element={
-            <ProtectedRoute>
-              <MainLayout>
-                <ChatPage />
-              </MainLayout>
-            </ProtectedRoute>
+            <MainLayout>
+              <ChatPage />
+            </MainLayout>
           }
         />
 

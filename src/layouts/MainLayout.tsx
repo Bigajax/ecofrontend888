@@ -8,7 +8,7 @@ import { useChat } from '../contexts/ChatContext';
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { clearMessages } = useChat();
 
   const pageTitle =
@@ -31,7 +31,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <Header
         title={pageTitle}
         variant="auto"
-        onLogout={handleLogout}   // <<<<<< essencial para o botão aparecer
+        onLogout={user ? handleLogout : undefined}
       />
 
       {/* Espaçamento controlado pelas CSS vars definidas no Header. */}

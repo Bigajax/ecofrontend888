@@ -2,12 +2,13 @@
 /*  ChatPage.tsx — scroll estável + sem bolinha fantasma + saudação alinhada  */
 /* -------------------------------------------------------------------------- */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
+import LoginGateModal from '../components/LoginGateModal';
 import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
 import EcoMessageWithAudio from '../components/EcoMessageWithAudio';
 import QuickSuggestions, { Suggestion, SuggestionPickMeta } from '../components/QuickSuggestions';
@@ -25,6 +26,7 @@ import { saudacaoDoDiaFromHour } from '../utils/chat/greetings';
 import { ROTATING_ITEMS, OPENING_VARIATIONS } from '../constants/chat';
 import mixpanel from '../lib/mixpanel';
 import { FeedbackPrompt } from '../components/FeedbackPrompt';
+import { useGuestGate } from '../hooks/useGuestGate';
 
 const ChatPage: React.FC = () => {
   const { messages, addMessage, setMessages } = useChat();
@@ -32,20 +34,28 @@ const ChatPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [sessaoId] = useState(() => ensureSessionId());
+  const isGuest = !user;
+  const guestGate = useGuestGate(isGuest);
+  const [loginGateOpen, setLoginGateOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
+    if (!user) return;
     mixpanel.track('Eco: Entrou no Chat', {
       userId,
       userName,
       timestamp: new Date().toISOString(),
     });
-  }, [user, navigate, userId, userName]);
+  }, [user, userId, userName]);
 
-  if (!user) return null;
+  useEffect(() => {
+    if (!isGuest) {
+      setLoginGateOpen(false);
+      return;
+    }
+    if (guestGate.reachedLimit) {
+      setLoginGateOpen(true);
+    }
+  }, [guestGate.reachedLimit, isGuest]);
 
   const saudacao = useMemo(() => saudacaoDoDiaFromHour(new Date().getHours()), []);
 
@@ -65,16 +75,36 @@ const ChatPage: React.FC = () => {
     setMessages
   );
 
-  const { handleSendMessage, digitando, erroApi } = useEcoStream({
+  const {
+    handleSendMessage: streamSendMessage,
+    digitando,
+    erroApi,
+  } = useEcoStream({
     messages,
     addMessage,
     setMessages,
-    userId: userId!,
+    userId: userId || undefined,
     userName,
     sessionId: sessaoId,
     scrollToBottom,
     isAtBottom,
+    isGuest,
+    guestId: guestGate.guestId || undefined,
   });
+
+  const handleSendMessage = useCallback(
+    async (text: string, systemHint?: string) => {
+      if (isGuest) {
+        if (guestGate.inputDisabled || guestGate.count >= guestGate.limit) {
+          setLoginGateOpen(true);
+          return;
+        }
+        guestGate.registerUserInteraction();
+      }
+      await streamSendMessage(text, systemHint);
+    },
+    [guestGate, isGuest, streamSendMessage],
+  );
 
   useEffect(() => {
     if ((messages?.length ?? 0) > 0) hideQuickSuggestions();
@@ -226,8 +256,26 @@ const ChatPage: React.FC = () => {
               if (opt === 'go_to_voice_page') navigate('/voice');
             }}
             onSendAudio={() => console.log('Áudio enviado')}
-            disabled={digitando}
+            disabled={digitando || (isGuest && guestGate.inputDisabled)}
+            placeholder={
+              isGuest && guestGate.inputDisabled
+                ? 'Crie sua conta para continuar…'
+                : undefined
+            }
             onTextChange={handleTextChange}
+          />
+          <LoginGateModal
+            open={loginGateOpen}
+            onClose={() => setLoginGateOpen(false)}
+            onSignup={() => {
+              if (guestGate.guestId) {
+                mixpanel.track('signup_clicked', { guestId: guestGate.guestId });
+              }
+              setLoginGateOpen(false);
+              window.location.href = '/login?returnTo=/chat';
+            }}
+            count={guestGate.count}
+            limit={guestGate.limit}
           />
         </div>
       </div>
