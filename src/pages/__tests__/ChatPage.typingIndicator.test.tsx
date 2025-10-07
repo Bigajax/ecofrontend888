@@ -127,6 +127,7 @@ import ChatPage from '../ChatPage';
 import { ChatProvider } from '../../contexts/ChatContext';
 import { enviarMensagemParaEco } from '../../api/ecoApi';
 import mixpanel from '../../lib/mixpanel';
+import { LLMSettingsProvider } from '../../contexts/LLMSettingsContext';
 
 const originalScrollTo = window.HTMLElement.prototype.scrollTo;
 const originalRaf = window.requestAnimationFrame;
@@ -135,6 +136,7 @@ describe('ChatPage typing indicator', () => {
   const handlersRef: { current?: EcoEventHandlers } = {};
   let resolveResponse: ((result: EcoStreamResult) => void) | undefined;
   let inflightPromise: Promise<EcoStreamResult> | undefined;
+  let enviarMensagemParaEcoMock: vi.Mock;
 
   beforeEach(() => {
     window.HTMLElement.prototype.scrollTo = vi.fn();
@@ -147,7 +149,7 @@ describe('ChatPage typing indicator', () => {
     resolveResponse = undefined;
     inflightPromise = undefined;
 
-    const enviarMensagemParaEcoMock = enviarMensagemParaEco as unknown as vi.Mock;
+    enviarMensagemParaEcoMock = enviarMensagemParaEco as unknown as vi.Mock;
     enviarMensagemParaEcoMock.mockImplementation((...args: any[]) => {
       inflightPromise = new Promise<EcoStreamResult>((resolve) => {
         handlersRef.current = args[5];
@@ -167,13 +169,20 @@ describe('ChatPage typing indicator', () => {
     const user = userEvent.setup();
 
     render(
-      <ChatProvider>
-        <ChatPage />
-      </ChatProvider>,
+      <LLMSettingsProvider>
+        <ChatProvider>
+          <ChatPage />
+        </ChatProvider>
+      </LLMSettingsProvider>,
     );
 
     const input = await screen.findByPlaceholderText('Converse com a Eco…');
     await user.type(input, 'Oi{enter}');
+
+    expect(enviarMensagemParaEcoMock).toHaveBeenCalled();
+    expect(enviarMensagemParaEcoMock.mock.calls[0][6]).toEqual(
+      expect.objectContaining({ autonomy: 0.5 })
+    );
 
     await screen.findByTestId('typing-dots');
     expect(handlersRef.current).toBeDefined();
@@ -218,9 +227,11 @@ describe('ChatPage typing indicator', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     render(
-      <ChatProvider>
-        <ChatPage />
-      </ChatProvider>,
+      <LLMSettingsProvider>
+        <ChatProvider>
+          <ChatPage />
+        </ChatProvider>
+      </LLMSettingsProvider>,
     );
 
     const input = await screen.findByPlaceholderText('Converse com a Eco…');

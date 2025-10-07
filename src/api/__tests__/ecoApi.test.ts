@@ -208,6 +208,33 @@ describe("enviarMensagemParaEco", () => {
     expect(resposta.metadata).toEqual({ intensidade: 9 });
     expect(resposta.primeiraMemoriaSignificativa).toBe(true);
   });
+
+  it("envia a autonomia normalizada quando informada", async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const body = init?.body;
+      expect(typeof body).toBe("string");
+      const parsed = typeof body === "string" ? JSON.parse(body) : {};
+      expect(parsed.llmAutonomy).toBe(0.82);
+      return Promise.resolve(
+        createSseResponse([
+          { type: "chunk", payload: { type: "chunk", delta: { content: "Olá" } } },
+          { type: "done", payload: { type: "done", metadata: { intensidade: 5 } } },
+        ])
+      );
+    });
+
+    const resposta = await enviarMensagemParaEco(
+      mensagens,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { autonomy: 0.82 }
+    );
+
+    expect(resposta.metadata).toEqual({ intensidade: 5 });
+  });
 });
 
 afterAll(() => {

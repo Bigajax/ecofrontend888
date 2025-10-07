@@ -12,6 +12,7 @@ import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
 import EcoMessageWithAudio from '../components/EcoMessageWithAudio';
 import QuickSuggestions, { Suggestion, SuggestionPickMeta } from '../components/QuickSuggestions';
 import TypingDots from '../components/TypingDots';
+import LLMAutonomyControl from '../components/LLMAutonomyControl';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
@@ -220,6 +221,7 @@ const ChatPage: React.FC = () => {
             rotationMs={5000}
             className="mt-1 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
           />
+          <LLMAutonomyControl className="mt-3 mb-3" />
           <ChatInput
             onSendMessage={(t) => handleSendMessage(t)}
             onMoreOptionSelected={(opt) => {

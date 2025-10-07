@@ -70,6 +70,10 @@ export interface EcoEventHandlers {
   onError?: (error: Error) => void;
 }
 
+export interface EnviarMensagemParaEcoOptions {
+  autonomy?: number;
+}
+
 const isDev = Boolean((import.meta as any)?.env?.DEV);
 const SSE_TIMEOUT_MS = 60_000;
 
@@ -135,13 +139,20 @@ const normalizeAskEcoResponse = (payload: AskEcoResponse): string | undefined =>
   return unique.join("\n\n");
 };
 
+const normalizeAutonomy = (value?: number): number | undefined => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  const clamped = Math.min(Math.max(value, 0), 1);
+  return Number.isFinite(clamped) ? Number(clamped.toFixed(3)) : undefined;
+};
+
 export const enviarMensagemParaEco = async (
   userMessages: Message[],
   userName?: string,
   userId?: string,
   clientHour?: number,
   clientTz?: string,
-  handlers: EcoEventHandlers = {}
+  handlers: EcoEventHandlers = {},
+  options: EnviarMensagemParaEcoOptions = {}
 ): Promise<EcoStreamResult> => {
   const mensagensValidas: Message[] = userMessages
     .slice(-3)
@@ -163,6 +174,20 @@ export const enviarMensagemParaEco = async (
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
 
+    const llmAutonomy = normalizeAutonomy(options.autonomy);
+
+    const requestBody: Record<string, unknown> = {
+      mensagens: mensagensValidas,
+      nome_usuario: userName,
+      usuario_id: userId,
+      clientHour: hour,
+      clientTz: tz,
+    };
+
+    if (llmAutonomy !== undefined) {
+      requestBody.llmAutonomy = llmAutonomy;
+    }
+
     const response = await fetch(`${baseUrl}/ask-eco`, {
       method: "POST",
       headers: {
@@ -171,13 +196,7 @@ export const enviarMensagemParaEco = async (
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       credentials: "include",
-      body: JSON.stringify({
-        mensagens: mensagensValidas,
-        nome_usuario: userName,
-        usuario_id: userId,
-        clientHour: hour,
-        clientTz: tz,
-      }),
+      body: JSON.stringify(requestBody),
       signal: controller.signal,
     });
 
