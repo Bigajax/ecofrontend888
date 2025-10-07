@@ -86,7 +86,7 @@ export interface EcoEventHandlers {
 }
 
 const isDev = Boolean((import.meta as any)?.env?.DEV);
-const SSE_TIMEOUT_MS = 60_000;
+const SSE_INACTIVITY_TIMEOUT_MS = 120_000;
 
 const TEXTUAL_KEYS = ["content", "texto", "text"] as const;
 const NESTED_KEYS = ["message", "resposta", "mensagem", "data", "value", "delta"] as const;
@@ -177,10 +177,12 @@ export const enviarMensagemParaEco = async (
   const tz = clientTz || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const controller = new AbortController();
-  const timeoutId: ReturnType<typeof setTimeout> = setTimeout(
-    () => controller.abort(),
-    SSE_TIMEOUT_MS
-  );
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  const resetTimeout = () => {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => controller.abort(), SSE_INACTIVITY_TIMEOUT_MS);
+  };
+  resetTimeout();
 
   try {
     const baseUrl = api.defaults?.baseURL?.replace(/\/+$/, "");
@@ -456,6 +458,7 @@ export const enviarMensagemParaEco = async (
     while (!doneReceived && !streamError) {
       const { value, done } = await reader.read();
       if (done) break;
+      resetTimeout();
       buffer += decoder.decode(value, { stream: true });
       flushBuffer();
     }
@@ -489,6 +492,6 @@ export const enviarMensagemParaEco = async (
     console.error("❌ [ECO API]", message, error);
     throw new Error(message);
   } finally {
-    clearTimeout(timeoutId);
+    if (timeoutId) clearTimeout(timeoutId);
   }
 };
