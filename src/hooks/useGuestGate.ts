@@ -3,7 +3,8 @@ import { v4 as uuid } from 'uuid';
 
 import mixpanel from '../lib/mixpanel';
 
-export const GUEST_ID_KEY = 'eco.guest.id';
+export const GUEST_ID_KEY = 'eco_guest_id';
+const LEGACY_GUEST_ID_KEY = 'eco.guest.id';
 export const GUEST_INTERACTION_COUNT_KEY = 'eco.guest.interactionCount';
 export const GUEST_INPUT_DISABLED_KEY = 'eco.guest.inputDisabled';
 const GUEST_GATE_TRACKED_KEY = 'eco.guest.gateTracked';
@@ -42,6 +43,7 @@ const safeRemoveItem = (key: string) => {
 export function clearGuestStorage() {
   [
     GUEST_ID_KEY,
+    LEGACY_GUEST_ID_KEY,
     GUEST_INTERACTION_COUNT_KEY,
     GUEST_INPUT_DISABLED_KEY,
     GUEST_GATE_TRACKED_KEY,
@@ -67,8 +69,18 @@ export function useGuestGate(enabled: boolean) {
     }
 
     let id = safeGetItem(GUEST_ID_KEY);
+
     if (!id) {
-      id = uuid();
+      const legacyId = safeGetItem(LEGACY_GUEST_ID_KEY);
+      if (legacyId) {
+        id = legacyId;
+        safeSetItem(GUEST_ID_KEY, id);
+        safeRemoveItem(LEGACY_GUEST_ID_KEY);
+      }
+    }
+
+    if (!id) {
+      id = `guest_${uuid()}`;
       safeSetItem(GUEST_ID_KEY, id);
       mixpanel.track('guest_start', { guestId: id });
     }
