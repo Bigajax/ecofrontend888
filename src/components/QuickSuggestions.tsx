@@ -32,12 +32,12 @@ type QuickSuggestionsProps = {
   rotationMs?: number;             // default: 4500ms
 };
 
-/* --------- Pílulas padrão (Kahneman / Tolle / Brené / Estoicos) --------- */
+/* --------- Pílulas padrão (Eco convida) --------- */
 export const DEFAULT_SUGGESTIONS: Suggestion[] = [
   {
     id: "bias_check",
     icon: "🧠",
-    label: "Checar meus vieses de hoje",
+    label: "Quer checar possíveis vieses hoje?",
     modules: [
       "eco_heuristica_ancoragem",
       "eco_heuristica_disponibilidade",
@@ -45,82 +45,79 @@ export const DEFAULT_SUGGESTIONS: Suggestion[] = [
       "eco_heuristica_excesso_confianca",
     ],
     systemHint:
-      "Contexto: usuário quer revisar possíveis vieses cognitivos nas percepções do dia. " +
-      "Abordagem: explique cada viés de forma simples, faça 1 pergunta prática e proponha 1 micro-checagem.",
+      "Tom: curioso, gentil e não-julgador. Convide o usuário a revisar vieses comuns do dia (ancoragem, disponibilidade, excesso de confiança e regressão à média) com linguagem simples. Faça 1 pergunta prática e proponha 1 micro-checagem aplicável agora.",
   },
   {
     id: "presence_now",
     icon: "🌿",
-    label: "Praticar presença (3 min)",
+    label: "Praticar presença por 3 min?",
     modules: ["eco_observador_presente", "eco_presenca_silenciosa", "eco_corpo_emocao"],
     systemHint:
-      "Conduza um exercício de presença curto (3 minutos). Passo-a-passo, tom calmo e concreto. " +
-      "Convide a notar corpo, respiração e um pensamento; finalize com 1 insight simples.",
+      "Conduza um exercício breve de presença (≈3 min), passo a passo, com foco em corpo e respiração. Tom calmo, direto e gentil. Finalize com 1 pergunta simples sobre como a pessoa se sente agora.",
   },
   {
     id: "vulnerability",
     icon: "🫶",
-    label: "Coragem & vulnerabilidade",
+    label: "Explorar coragem & vulnerabilidade?",
     modules: ["eco_vulnerabilidade_defesas", "eco_vulnerabilidade_mitos", "eco_emo_vergonha_combate"],
     systemHint:
-      "Traga a perspectiva de Brené Brown: diferença entre vulnerabilidade e exposição. " +
-      "Ajude a identificar 1 defesa ativa e ofereça 1 gesto prático de coragem.",
+      "Inspire-se em Brené Brown. Diferencie vulnerabilidade de exposição. Ajude a reconhecer 1 defesa ativa e convide para 1 gesto pequeno e autêntico, mantendo o tom acolhedor e sem prescrever.",
   },
   {
     id: "stoic_reflection",
     icon: "🏛️",
-    label: "Reflexão estoica do dia",
+    label: "Reflexão estoica — o que depende de você?",
     modules: ["eco_presenca_racional", "eco_identificacao_mente", "eco_fim_do_sofrimento"],
     systemHint:
-      "Use Marco Aurélio: distinguir o que depende de si. Conduza 3 perguntas: controle, julgamento, ação mínima.",
+      "Use o olhar estoico para distinguir o que depende ou não de si. Conduza 3 perguntas curtas (controle, julgamento, ação mínima) e encerre com um compromisso simples e realista.",
   },
 ];
 
-/* --------- Frases rotativas que já acionam módulos --------- */
+/* --------- Frases rotativas (convites da ECO) --------- */
 export const DEFAULT_ROTATING: Suggestion[] = [
   {
     id: "rot_presenca_scan",
     icon: "🌬️",
-    label: "Vamos fazer um mini-scan de presença agora?",
+    label: "Vamos fazer um mini exercício de presença agora?",
     modules: ["eco_observador_presente", "eco_presenca_silenciosa", "eco_corpo_emocao"],
     systemHint:
-      "Conduza um body scan curto (2–3 minutos), com foco gentil em respiração, pontos de contato e 1 pensamento.",
+      "Guie um body scan curto (2–3 min). Fale em tom calmo, direto e gentil. Oriente atenção à respiração, pontos de contato do corpo e sons ao redor. Feche com 1 pergunta simples sobre a sensação do momento.",
   },
   {
     id: "rot_kahneman_check",
     icon: "🧩",
-    label: "Quero checar se caí em algum atalho mental hoje",
+    label: "Quer explorar se sua mente criou algum atalho hoje?",
     modules: [
       "eco_heuristica_ancoragem",
       "eco_heuristica_disponibilidade",
       "eco_heuristica_excesso_confianca",
     ],
     systemHint:
-      "Explique cada heurística em linguagem simples, faça 1 pergunta diagnóstica e proponha 1 reframe.",
+      "Convite leve para examinar heurísticas (ancoragem, disponibilidade, excesso de confiança). Explique de forma acessível, faça 1 pergunta diagnóstica e ofereça 1 reframe prático. Sem tom prescritivo.",
   },
   {
     id: "rot_vulnerabilidade",
     icon: "💗",
-    label: "Posso explorar coragem & vulnerabilidade em 1 situação",
+    label: "Falamos um pouco sobre coragem e vulnerabilidade?",
     modules: ["eco_vulnerabilidade_defesas", "eco_vulnerabilidade_mitos", "eco_emo_vergonha_combate"],
     systemHint:
-      "Brené Brown: diferencie vulnerabilidade de exposição. Ajude a nomear 1 defesa e 1 micro-ato de coragem.",
+      "Traga a perspectiva de Brené Brown. Ajude a diferenciar vulnerabilidade de exposição. Convide a pessoa a nomear 1 defesa e imaginar 1 gesto pequeno de autenticidade no contexto atual.",
   },
   {
     id: "rot_estoico",
     icon: "🏛️",
-    label: "O que está sob meu controle hoje?",
+    label: "Vamos olhar juntos o que está sob seu controle hoje?",
     modules: ["eco_presenca_racional", "eco_identificacao_mente", "eco_fim_do_sofrimento"],
     systemHint:
-      "Marco Aurélio: conduza 3 perguntas (controle/julgamento/ação mínima) e conclua com 1 compromisso simples.",
+      "Aplique a lente estoica: controle, julgamento e ação mínima possível. Conduza 3 perguntas curtas e finalize com 1 passo simples, mantendo humor apropriado e acolhimento.",
   },
   {
     id: "rot_regressao_media",
     icon: "📉",
-    label: "Talvez ontem foi exceção — quero revisar expectativas",
+    label: "Quer revisar suas expectativas com mais leveza hoje?",
     modules: ["eco_heuristica_regressao_media", "eco_heuristica_certeza_emocional"],
     systemHint:
-      "Explique regressão à média em tom acessível. Convide a recalibrar expectativas e registrar 1 evidência concreta.",
+      "Explique regressão à média em linguagem simples. Convide a recalibrar expectativas após picos (bons/ruins). Proponha 1 evidência concreta a observar esta semana, com tom gentil e não-julgador.",
   },
 ];
 

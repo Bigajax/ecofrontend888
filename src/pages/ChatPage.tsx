@@ -219,7 +219,8 @@ const ChatPage: React.FC = () => {
                     <EcoBubbleOneEye variant="message" state="thinking" size={30} />
                   </div>
                   <div className="min-w-0">
-                    <TypingDots variant="bubble" size="md" />
+                    {/* TypingDots novo, com tom automático */}
+                    <TypingDots variant="bubble" size="md" tone="auto" />
                   </div>
                 </div>
               </div>
