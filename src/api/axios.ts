@@ -2,8 +2,13 @@
 import axios from "axios";
 import { supabase } from "../lib/supabaseClient"; // ajuste o path se preciso
 
-const envBase = import.meta.env.VITE_API_BASE;
-const normalizedBase = typeof envBase === "string" ? envBase.replace(/\/+$/, "") : "";
+const apiBaseEnv =
+  import.meta.env.VITE_API_BASE ??
+  import.meta.env.VITE_API_URL ??
+  import.meta.env.VITE_BACKEND_URL;
+
+const normalizedBase =
+  typeof apiBaseEnv === "string" ? apiBaseEnv.trim().replace(/\/+$/, "") : "";
 
 const baseURL = normalizedBase ? `${normalizedBase}/api` : "/api";
 
