@@ -259,11 +259,6 @@ const ChatPage: React.FC = () => {
               if (opt === 'go_to_voice_page') navigate('/voice');
             }}
             onSendAudio={() => console.log('Áudio enviado')}
-            disabled={digitando || (isGuest && guestGate.inputDisabled)}
-            placeholder={
-              isGuest && guestGate.inputDisabled
-                ? 'Crie sua conta para continuar…'
-                : undefined
             }
             onTextChange={handleTextChange}
           />

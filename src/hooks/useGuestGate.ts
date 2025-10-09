@@ -65,9 +65,6 @@ export function useGuestGate(enabled: boolean) {
       setCount(0);
       setInputDisabled(false);
       gateTrackedRef.current = false;
-      return;
-    }
-
     let id = safeGetItem(GUEST_ID_KEY);
 
     if (!id) {
@@ -96,8 +93,6 @@ export function useGuestGate(enabled: boolean) {
     setInputDisabled(disabled || validCount >= LIMIT);
 
     gateTrackedRef.current = safeGetItem(GUEST_GATE_TRACKED_KEY) === '1' || disabled || validCount >= LIMIT;
-  }, [enabled]);
-
   useEffect(() => {
     if (!enabled) return;
     safeSetItem(GUEST_INTERACTION_COUNT_KEY, String(count));
@@ -143,6 +138,7 @@ export function useGuestGate(enabled: boolean) {
     setGuestId(null);
     setCount(0);
     setInputDisabled(false);
+
   }, []);
 
   return useMemo(
@@ -154,7 +150,5 @@ export function useGuestGate(enabled: boolean) {
       reachedLimit,
       registerUserInteraction,
       resetGuest,
-    }),
-    [count, guestId, inputDisabled, reachedLimit, registerUserInteraction, resetGuest],
   );
 }
