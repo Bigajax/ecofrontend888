@@ -1,8 +1,0 @@
----
-id: ESCALA_INTENSIDADE_0a10
-order: 70
-dedupe_key: intensidade
-inject_as: body
----
-Considere que a intensidade emocional percebida é {{DEC.intensity}} em uma escala de 0 a 10. Ajuste a profundidade do apoio para combinar com esse nível.
-Quando for alta (>=7), traga mais ancoragem somática e lembre a pessoa de recursos imediatos.
