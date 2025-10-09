@@ -87,6 +87,7 @@ export interface EcoEventHandlers {
 
 const isDev = Boolean((import.meta as any)?.env?.DEV);
 const SSE_INACTIVITY_TIMEOUT_MS = 120_000;
+const SSE_GUEST_INACTIVITY_TIMEOUT_MS = 300_000;
 
 const TEXTUAL_KEYS = ["content", "texto", "text"] as const;
 const NESTED_KEYS = ["message", "resposta", "mensagem", "data", "value", "delta"] as const;
@@ -178,11 +179,11 @@ export const enviarMensagemParaEco = async (
 
   const controller = new AbortController();
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let inactivityTimeoutMs = SSE_INACTIVITY_TIMEOUT_MS;
   const resetTimeout = () => {
     if (timeoutId) clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => controller.abort(), SSE_INACTIVITY_TIMEOUT_MS);
+    timeoutId = setTimeout(() => controller.abort(), inactivityTimeoutMs);
   };
-  resetTimeout();
 
   try {
     const baseUrl = api.defaults?.baseURL?.replace(/\/+$/, "");
@@ -203,6 +204,10 @@ export const enviarMensagemParaEco = async (
 
     const userWantsGuest = options?.isGuest === true;
     const isGuest = userWantsGuest || !token;
+    inactivityTimeoutMs = isGuest
+      ? SSE_GUEST_INACTIVITY_TIMEOUT_MS
+      : SSE_INACTIVITY_TIMEOUT_MS;
+    resetTimeout();
     const guestId = options?.guestId || persistedGuestId;
 
     // --- headers ---
@@ -213,7 +218,7 @@ export const enviarMensagemParaEco = async (
     if (!isGuest && token) {
       headers.Authorization = `Bearer ${token}`;
     } else {
-      headers["X-Guest-Id"] = guestId;
+      headers["x-guest-id"] = guestId;
     }
 
     // --- body ---
