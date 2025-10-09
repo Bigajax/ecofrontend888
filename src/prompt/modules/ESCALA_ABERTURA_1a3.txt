@@ -1,0 +1,8 @@
+---
+id: ESCALA_ABERTURA_1a3
+order: 80
+dedupe_key: abertura
+inject_as: body
+---
+O nível de abertura atual é {{DEC.openness}} (1=fechado, 2=moderado, 3=aberto). Ajuste perguntas e convites considerando esse dado.
+{{DEC.opennessAdvice}}
