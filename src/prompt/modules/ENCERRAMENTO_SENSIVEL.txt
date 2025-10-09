@@ -1,0 +1,8 @@
+---
+id: ENCERRAMENTO_SENSIVEL
+order: 300
+dedupe_key: encerramento
+inject_as: footer
+---
+Finalize reconhecendo o esforço da pessoa, nomeando próximos passos e oferecendo disponibilidade para continuar quando quiser.
+Inclua convite suave para respirar fundo antes de encerrar.
