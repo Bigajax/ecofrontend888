@@ -89,6 +89,41 @@ const isDev = Boolean((import.meta as any)?.env?.DEV);
 const SSE_INACTIVITY_TIMEOUT_MS = 120_000;
 const SSE_GUEST_INACTIVITY_TIMEOUT_MS = 300_000;
 
+const hasWindow = () => typeof window !== "undefined";
+
+const safeLocalStorageGet = (key: string) => {
+  if (!hasWindow()) return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch (error) {
+    if (isDev) console.warn(`⚠️ [ECO API] Falha ao ler localStorage (${key})`, error);
+    return null;
+  }
+};
+
+const safeLocalStorageSet = (key: string, value: string) => {
+  if (!hasWindow()) return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (error) {
+    if (isDev) console.warn(`⚠️ [ECO API] Falha ao salvar localStorage (${key})`, error);
+  }
+};
+
+const generateGuestId = () => {
+  if (hasWindow()) {
+    const { crypto } = window;
+    if (crypto && typeof crypto.randomUUID === "function") {
+      try {
+        return `guest_${crypto.randomUUID()}`;
+      } catch (error) {
+        if (isDev) console.warn("⚠️ [ECO API] Falha ao gerar guestId com crypto.randomUUID", error);
+      }
+    }
+  }
+  return `guest_${uuidv4()}`;
+};
+
 const TEXTUAL_KEYS = ["content", "texto", "text"] as const;
 const NESTED_KEYS = ["message", "resposta", "mensagem", "data", "value", "delta"] as const;
 
@@ -195,10 +230,10 @@ export const enviarMensagemParaEco = async (
 
     // --- guest id persistente (fallback automático quando não há token) ---
     const persistedGuestId =
-      localStorage.getItem("eco_guest_id") ||
+      safeLocalStorageGet("eco_guest_id") ||
       (() => {
-        const id = `guest_${crypto.randomUUID()}`;
-        localStorage.setItem("eco_guest_id", id);
+        const id = generateGuestId();
+        safeLocalStorageSet("eco_guest_id", id);
         return id;
       })();
 
