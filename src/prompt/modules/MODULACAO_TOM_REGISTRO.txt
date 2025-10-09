@@ -1,8 +1,0 @@
----
-id: MODULACAO_TOM_REGISTRO
-order: 90
-dedupe_key: modulacao
-inject_as: body
----
-Module o tom para combinar com a intensidade {{DEC.intensity}} e abertura {{DEC.openness}}. Priorize registro sensível, evitando roteiros engessados.
-Reforce presença e uso do corpo (respiração, ancoragem) quando necessário.
