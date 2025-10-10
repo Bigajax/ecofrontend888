@@ -159,20 +159,7 @@ const TEXTUAL_KEYS = [
   "reply",
   "fala",
   "speech",
-  "conteudo",
-  "conteudoFinal",
-  "conteudo_final",
-  "final_text",
-  "finalText",
-  "final_answer",
-  "finalAnswer",
-  "result_text",
-  "resultText",
-  "mensagemFinal",
-  "mensagem_final",
-  "response_text",
-  "responseText",
-  "body",
+
 ] as const;
 const NESTED_KEYS = [
   "message",
