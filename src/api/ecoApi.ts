@@ -31,11 +31,26 @@ type AskEcoTextValue =
       content?: AskEcoTextValue;
       texto?: AskEcoTextValue;
       text?: AskEcoTextValue;
+      output_text?: AskEcoTextValue;
+      outputText?: AskEcoTextValue;
+      output?: AskEcoTextValue;
+      answer?: AskEcoTextValue;
+      resposta?: AskEcoTextValue;
+      respostaFinal?: AskEcoTextValue;
+      reply?: AskEcoTextValue;
+      fala?: AskEcoTextValue;
+      speech?: AskEcoTextValue;
     };
 
 interface AskEcoChoiceMessage {
   content?: AskEcoTextValue;
   texto?: AskEcoTextValue;
+  text?: AskEcoTextValue;
+  output_text?: AskEcoTextValue;
+  outputText?: AskEcoTextValue;
+  output?: AskEcoTextValue;
+  answer?: AskEcoTextValue;
+  reply?: AskEcoTextValue;
 }
 
 interface AskEcoChoice {
@@ -51,6 +66,9 @@ type AskEcoPayload =
       resposta?: AskEcoPayload;
       mensagem?: AskEcoPayload;
       data?: AskEcoPayload;
+      response?: AskEcoPayload;
+      result?: AskEcoPayload;
+      payload?: AskEcoPayload;
       choices?: AskEcoChoice[];
     };
 
@@ -128,8 +146,31 @@ const generateGuestId = () => {
   return `guest_${uuidv4()}`;
 };
 
-const TEXTUAL_KEYS = ["content", "texto", "text"] as const;
-const NESTED_KEYS = ["message", "resposta", "mensagem", "data", "value", "delta"] as const;
+const TEXTUAL_KEYS = [
+  "content",
+  "texto",
+  "text",
+  "output_text",
+  "outputText",
+  "output",
+  "answer",
+  "resposta",
+  "respostaFinal",
+  "reply",
+  "fala",
+  "speech",
+] as const;
+const NESTED_KEYS = [
+  "message",
+  "resposta",
+  "mensagem",
+  "data",
+  "value",
+  "delta",
+  "response",
+  "result",
+  "payload",
+] as const;
 
 const collectTexts = (value: unknown, visited = new WeakSet<object>()): string[] => {
   if (typeof value === "string") return [value];
