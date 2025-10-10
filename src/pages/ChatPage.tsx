@@ -133,11 +133,14 @@ const ChatPage: React.FC = () => {
   };
 
   const lastMessage = messages[messages.length - 1];
+  const lastEcoMessageContent =
+    typeof lastMessage?.content === 'string'
+      ? lastMessage.content.trim()
+      : typeof lastMessage?.text === 'string'
+      ? lastMessage.text.trim()
+      : '';
   const lastEcoMessageIsPlaceholder =
-    !!lastMessage &&
-    lastMessage.sender === 'eco' &&
-    ((typeof lastMessage.text === 'string' && lastMessage.text.trim().length === 0) ||
-      (typeof lastMessage.content === 'string' && lastMessage.content.trim().length === 0));
+    !!lastMessage && lastMessage.sender === 'eco' && lastEcoMessageContent.length === 0;
 
   const shouldShowGlobalTyping = digitando && !lastEcoMessageIsPlaceholder;
 

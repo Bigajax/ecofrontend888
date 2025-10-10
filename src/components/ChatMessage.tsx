@@ -10,9 +10,81 @@ interface ChatMessageProps {
   isEcoActive?: boolean;
 }
 
-const extractMessageText = (message: Message) => {
-  if (typeof message.text === "string") return message.text;
-  if (typeof message.content === "string") return message.content;
+const TEXTUAL_KEYS = [
+  "content",
+  "texto",
+  "text",
+  "output_text",
+  "outputText",
+  "output",
+  "answer",
+  "resposta",
+  "reply",
+  "fala",
+  "speech",
+  "response",
+  "final",
+  "resultText",
+  "value",
+] as const;
+
+const NESTED_KEYS = [
+  "message",
+  "messages",
+  "mensagem",
+  "resposta",
+  "response",
+  "data",
+  "delta",
+  "result",
+  "payload",
+  "choices",
+] as const;
+
+const normalizeMessageContent = (
+  value: unknown,
+  visited: WeakSet<object> = new WeakSet(),
+): string => {
+  if (value == null) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (typeof value === "object") {
+    if (visited.has(value as object)) return "";
+    visited.add(value as object);
+
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => normalizeMessageContent(item, visited))
+        .join("");
+    }
+
+    const obj = value as Record<string, unknown> & { choices?: unknown };
+    let aggregated = "";
+
+    for (const key of TEXTUAL_KEYS) {
+      if (key in obj) {
+        aggregated += normalizeMessageContent(obj[key], visited);
+      }
+    }
+
+    for (const key of NESTED_KEYS) {
+      if (key in obj) {
+        aggregated += normalizeMessageContent(obj[key], visited);
+      }
+    }
+
+    if (Array.isArray(obj.choices)) {
+      aggregated += obj.choices
+        .map((choice) => normalizeMessageContent(choice, visited))
+        .join("");
+    }
+
+    return aggregated;
+  }
+
   return "";
 };
 
@@ -22,14 +94,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   isEcoActive,
 }) => {
   const isUser = message.sender === "user";
-  const rawText = extractMessageText(message);
+  const rawText = normalizeMessageContent([message.content, message.text]);
   const trimmedText = rawText.trim();
-  const hasDisplayText = trimmedText.length > 0;
-  const displayText = hasDisplayText ? rawText : "";
-  const isStreamingPlaceholder = !hasDisplayText && rawText.length > 0;
-  const showTyping = Boolean(
-    isEcoTyping && !hasDisplayText && message.sender === "eco"
-  );
+  const isEcoMessage = message.sender === "eco";
+  const showPlaceholder = isEcoMessage && trimmedText.length === 0;
+  const displayText = showPlaceholder ? "…" : rawText;
+  const hasMarkdownText = !showPlaceholder && trimmedText.length > 0;
+  const isStreamingPlaceholder = showPlaceholder;
+  const showTyping = Boolean(isEcoTyping && showPlaceholder);
 
   if (showTyping) {
     return (
@@ -124,7 +196,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             data-deep-question={message.deepQuestion}
             data-eco-active={isEcoActive ? "true" : undefined}
           >
-            {hasDisplayText && (
+            {hasMarkdownText && (
               <div className="relative z-10 font-sans text-[14px] sm:text-sm md:text-base leading-relaxed">
                 <div className={markdownClassName}>
                   <ReactMarkdown
@@ -139,7 +211,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 </div>
               </div>
             )}
-            {!hasDisplayText && (
+            {showPlaceholder && (
+              <span className="relative z-10 text-slate-500">…</span>
+            )}
+            {!hasMarkdownText && !showPlaceholder && (
               <span className="relative z-10">&nbsp;</span>
             )}
           </div>

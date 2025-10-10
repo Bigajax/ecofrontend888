@@ -394,7 +394,7 @@ export const enviarMensagemParaEco = async (
       method: "POST",
       headers,
       mode: "cors",
-      credentials: "omit",
+      credentials: "include",
       body: JSON.stringify(bodyPayload),
       signal: controller.signal,
     });
@@ -425,10 +425,52 @@ export const enviarMensagemParaEco = async (
       throw new EcoApiError(message, { status: response.status, details });
     }
 
-    if (!response.body)
-      throw new Error("Resposta da Eco não suportou streaming SSE.");
+    const contentType = response.headers.get("content-type") || "";
+    const isEventStream = /text\/event-stream/i.test(contentType);
 
-    const reader = response.body.getReader();
+    if (!response.body || !isEventStream) {
+      let fallbackRaw: string = "";
+      try {
+        fallbackRaw = await response.text();
+      } catch (err) {
+        if (isDev)
+          console.warn("⚠️ [ECO API] Falha ao ler resposta não-SSE da Eco", err);
+      }
+
+      let parsedPayload: any = undefined;
+      if (fallbackRaw) {
+        try {
+          parsedPayload = JSON.parse(fallbackRaw);
+        } catch {
+          parsedPayload = fallbackRaw;
+        }
+      }
+
+      const normalizedText =
+        typeof parsedPayload === "string"
+          ? parsedPayload
+          : normalizeAskEcoResponse(parsedPayload as AskEcoResponse);
+
+      return {
+        text: (normalizedText || "").trim(),
+        metadata:
+          typeof parsedPayload === "object" && parsedPayload
+            ? (parsedPayload.metadata ?? parsedPayload.response ?? undefined)
+            : undefined,
+        done:
+          typeof parsedPayload === "object" && parsedPayload
+            ? parsedPayload.done ?? parsedPayload.response ?? undefined
+            : undefined,
+        primeiraMemoriaSignificativa:
+          typeof parsedPayload === "object" && parsedPayload
+            ? Boolean(parsedPayload.primeiraMemoriaSignificativa || parsedPayload.primeira)
+            : false,
+      };
+    }
+
+    let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+
+    reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
     let doneReceived = false;
@@ -552,6 +594,13 @@ export const enviarMensagemParaEco = async (
         normalizeAskEcoResponse(payload as AskEcoResponse);
 
       if (type === "first_token") {
+        const deltaSource =
+          (unwrappedPayload as any)?.delta ??
+          (payload as any)?.delta ??
+          undefined;
+        if (deltaSource !== undefined) {
+          console.log("delta", deltaSource);
+        }
         const source =
           (unwrappedPayload as any)?.delta ??
           (unwrappedPayload as any)?.content ??
@@ -570,6 +619,13 @@ export const enviarMensagemParaEco = async (
       }
 
       if (type === "chunk") {
+        const deltaSource =
+          (unwrappedPayload as any)?.delta ??
+          (payload as any)?.delta ??
+          undefined;
+        if (deltaSource !== undefined) {
+          console.log("delta", deltaSource);
+        }
         const source =
           (unwrappedPayload as any)?.delta ??
           (unwrappedPayload as any)?.content ??
@@ -735,5 +791,10 @@ export const enviarMensagemParaEco = async (
     throw new Error(message);
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
+    try {
+      if (reader) {
+        reader.releaseLock();
+      }
+    } catch {}
   }
 };
