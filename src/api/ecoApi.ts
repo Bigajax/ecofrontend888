@@ -31,11 +31,26 @@ type AskEcoTextValue =
       content?: AskEcoTextValue;
       texto?: AskEcoTextValue;
       text?: AskEcoTextValue;
+      output_text?: AskEcoTextValue;
+      outputText?: AskEcoTextValue;
+      output?: AskEcoTextValue;
+      answer?: AskEcoTextValue;
+      resposta?: AskEcoTextValue;
+      respostaFinal?: AskEcoTextValue;
+      reply?: AskEcoTextValue;
+      fala?: AskEcoTextValue;
+      speech?: AskEcoTextValue;
     };
 
 interface AskEcoChoiceMessage {
   content?: AskEcoTextValue;
   texto?: AskEcoTextValue;
+  text?: AskEcoTextValue;
+  output_text?: AskEcoTextValue;
+  outputText?: AskEcoTextValue;
+  output?: AskEcoTextValue;
+  answer?: AskEcoTextValue;
+  reply?: AskEcoTextValue;
 }
 
 interface AskEcoChoice {
@@ -51,6 +66,9 @@ type AskEcoPayload =
       resposta?: AskEcoPayload;
       mensagem?: AskEcoPayload;
       data?: AskEcoPayload;
+      response?: AskEcoPayload;
+      result?: AskEcoPayload;
+      payload?: AskEcoPayload;
       choices?: AskEcoChoice[];
     };
 
@@ -128,8 +146,45 @@ const generateGuestId = () => {
   return `guest_${uuidv4()}`;
 };
 
-const TEXTUAL_KEYS = ["content", "texto", "text"] as const;
-const NESTED_KEYS = ["message", "resposta", "mensagem", "data", "value", "delta"] as const;
+const TEXTUAL_KEYS = [
+  "content",
+  "texto",
+  "text",
+  "output_text",
+  "outputText",
+  "output",
+  "answer",
+  "resposta",
+  "respostaFinal",
+  "reply",
+  "fala",
+  "speech",
+  "conteudo",
+  "conteudoFinal",
+  "conteudo_final",
+  "final_text",
+  "finalText",
+  "final_answer",
+  "finalAnswer",
+  "result_text",
+  "resultText",
+  "mensagemFinal",
+  "mensagem_final",
+  "response_text",
+  "responseText",
+  "body",
+] as const;
+const NESTED_KEYS = [
+  "message",
+  "resposta",
+  "mensagem",
+  "data",
+  "value",
+  "delta",
+  "response",
+  "result",
+  "payload",
+] as const;
 
 const collectTexts = (value: unknown, visited = new WeakSet<object>()): string[] => {
   if (typeof value === "string") return [value];
@@ -373,6 +428,21 @@ export const enviarMensagemParaEco = async (
     let metadata: unknown;
     let primeiraMemoriaSignificativa = false;
     let gotAnyToken = false;
+    let lastNonEmptyText: string | undefined;
+
+    const rememberText = (text: string | undefined) => {
+      if (typeof text !== "string") return;
+      const trimmed = text.trim();
+      if (trimmed.length === 0) return;
+      lastNonEmptyText = trimmed;
+      gotAnyToken = true;
+    };
+
+    const pushAggregatedPart = (text: string | undefined) => {
+      if (typeof text !== "string") return;
+      aggregatedParts.push(text);
+      rememberText(text);
+    };
 
     const safeInvoke = (
       cb: ((event: EcoSseEvent) => void) | undefined,
@@ -402,9 +472,10 @@ export const enviarMensagemParaEco = async (
       const parsed = eventData as { type?: string; payload?: any; rawData?: string } & Record<string, any>;
 
       const hintedType = typeof parsed.type === "string" ? parsed.type : undefined;
-      const payload = (parsed.payload && typeof parsed.payload === "object")
-        ? (parsed.payload as Record<string, any>)
-        : (parsed as Record<string, any>);
+      const payload =
+        parsed.payload && typeof parsed.payload === "object"
+          ? (parsed.payload as Record<string, any>)
+          : (parsed as Record<string, any>);
 
       const payloadType = typeof payload.type === "string" ? payload.type : undefined;
       let type = payloadType ?? hintedType;
@@ -461,6 +532,8 @@ export const enviarMensagemParaEco = async (
         return;
       }
 
+      const fallbackText = normalizeAskEcoResponse(payload as AskEcoResponse);
+
       if (type === "first_token") {
         const source =
           (payload as any).delta ??
@@ -469,9 +542,12 @@ export const enviarMensagemParaEco = async (
           payload;
         const texts = collectTexts(source);
         const chunkText = texts.join("");
-        if (chunkText.length > 0) aggregatedParts.push(chunkText);
-        const eventWithText: EcoSseEvent = { ...baseEventInfo, text: chunkText };
-        gotAnyToken = gotAnyToken || chunkText.length > 0;
+        if (chunkText.length > 0) pushAggregatedPart(chunkText);
+        else if (!chunkText && fallbackText) pushAggregatedPart(fallbackText);
+        const eventWithText: EcoSseEvent = {
+          ...baseEventInfo,
+          text: chunkText.length > 0 ? chunkText : fallbackText,
+        };
         safeInvoke(handlers.onFirstToken, eventWithText);
         return;
       }
@@ -484,9 +560,12 @@ export const enviarMensagemParaEco = async (
           payload;
         const texts = collectTexts(source);
         const chunkText = texts.join("");
-        if (chunkText.length > 0) aggregatedParts.push(chunkText);
-        const eventWithText: EcoSseEvent = { ...baseEventInfo, text: chunkText };
-        gotAnyToken = gotAnyToken || chunkText.length > 0;
+        if (chunkText.length > 0) pushAggregatedPart(chunkText);
+        else if (!chunkText && fallbackText) pushAggregatedPart(fallbackText);
+        const eventWithText: EcoSseEvent = {
+          ...baseEventInfo,
+          text: chunkText.length > 0 ? chunkText : fallbackText,
+        };
         safeInvoke(handlers.onChunk, eventWithText);
         return;
       }
@@ -535,15 +614,24 @@ export const enviarMensagemParaEco = async (
         const texts = collectTexts(source);
         const doneText = texts.join("");
         if (doneText.length > 0 && aggregatedParts.length === 0) {
-          aggregatedParts.push(doneText);
+          pushAggregatedPart(doneText);
+        } else if ((!doneText || doneText.length === 0) && fallbackText) {
+          pushAggregatedPart(fallbackText);
         }
 
         const eventWithMeta: EcoSseEvent = {
           ...baseEventInfo,
           metadata: responseMetadata,
-          text: doneText.length > 0 ? doneText : undefined,
+          text: doneText.length > 0 ? doneText : fallbackText,
         };
         safeInvoke(handlers.onDone, eventWithMeta);
+        return;
+      }
+
+      if (fallbackText) {
+        pushAggregatedPart(fallbackText);
+        const eventWithText: EcoSseEvent = { ...baseEventInfo, text: fallbackText };
+        safeInvoke(handlers.onChunk, eventWithText);
         return;
       }
 
@@ -588,7 +676,12 @@ export const enviarMensagemParaEco = async (
       throw new Error('Fluxo SSE encerrado sem evento "done".');
     }
 
-    let texto = aggregatedParts.join("").trim();
+    let texto = aggregatedParts.join("");
+    if (!texto.trim() && lastNonEmptyText) {
+      texto = lastNonEmptyText;
+    }
+    texto = texto.trim();
+
     if (!texto && donePayload) {
       const fallback = normalizeAskEcoResponse(donePayload as AskEcoResponse);
       if (fallback) texto = fallback;
