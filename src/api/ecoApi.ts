@@ -40,6 +40,9 @@ type AskEcoTextValue =
       reply?: AskEcoTextValue;
       fala?: AskEcoTextValue;
       speech?: AskEcoTextValue;
+      response?: AskEcoTextValue;
+      final?: AskEcoTextValue;
+      resultText?: AskEcoTextValue;
     };
 
 interface AskEcoChoiceMessage {
@@ -51,6 +54,7 @@ interface AskEcoChoiceMessage {
   output?: AskEcoTextValue;
   answer?: AskEcoTextValue;
   reply?: AskEcoTextValue;
+  response?: AskEcoTextValue;
 }
 
 interface AskEcoChoice {
@@ -159,16 +163,19 @@ const TEXTUAL_KEYS = [
   "reply",
   "fala",
   "speech",
-
+  "response",
+  "final",
+  "resultText",
 ] as const;
+
 const NESTED_KEYS = [
   "message",
-  "resposta",
   "mensagem",
+  "resposta",
+  "response",
   "data",
   "value",
   "delta",
-  "response",
   "result",
   "payload",
 ] as const;
@@ -203,10 +210,10 @@ const collectTexts = (value: unknown, visited = new WeakSet<object>()): string[]
 
 /**
  * Parser SSE robusto:
- * - Suporta "event: <nome>" + "data: ..."
- * - Suporta "data: [DONE]" (não-JSON)
- * - Suporta payloads JSON com/sem campo "type"
- * - Retorna um objeto com { type?, payload?, rawData? }
+ * - Suporta "event: <nome>" + "data: ...";
+ * - Suporta "data: [DONE]" (não-JSON);
+ * - Suporta payloads JSON com/sem campo "type";
+ * - Retorna { type?, payload?, rawData? }.
  */
 const parseSseEvent = (
   eventBlock: string
@@ -227,7 +234,6 @@ const parseSseEvent = (
     } else if (line.startsWith("data:")) {
       dataParts.push(line.slice(5).trimStart());
     } else {
-      // linha sem prefixo, trata como parte de dados
       dataParts.push(line);
     }
   }
@@ -243,7 +249,6 @@ const parseSseEvent = (
     const parsed = JSON.parse(dataStr);
     return { type: eventName, payload: parsed, rawData: dataStr };
   } catch {
-    // não é JSON: devolve como texto cru
     return { type: eventName, payload: { text: dataStr }, rawData: dataStr };
   }
 };
@@ -260,8 +265,6 @@ const normalizeAskEcoResponse = (payload: AskEcoResponse): string | undefined =>
 };
 
 // -------- baseURL resolvida e normalizada --------
-// pega axios.defaults.baseURL -> VITE_API_URL -> window.origin
-// remove / no final e remove um /api acidental; o endpoint já adiciona /api
 const resolveBaseUrl = (): string => {
   const fromAxios = (api as any)?.defaults?.baseURL;
   const fromEnv = (import.meta as any)?.env?.VITE_API_URL;
@@ -323,7 +326,7 @@ export const enviarMensagemParaEco = async (
       };
     const token = sessionData?.session?.access_token ?? null;
 
-    // --- guest id persistente (fallback automático quando não há token) ---
+    // --- guest id persistente ---
     const persistedGuestId =
       normalizeGuestIdFormat(safeLocalStorageGet("eco_guest_id")) ||
       (() => {
@@ -370,13 +373,12 @@ export const enviarMensagemParaEco = async (
       method: "POST",
       headers,
       mode: "cors",
-      // você usa Bearer token; não precisa enviar cookies
       credentials: "omit",
       body: JSON.stringify(bodyPayload),
       signal: controller.signal,
     });
 
-    // capture e persista o guest-id que o backend pode ter gerado/normalizado
+    // persiste o guest-id que o backend pode enviar/normalizar
     const serverGuestId = normalizeGuestIdFormat(response.headers.get("x-guest-id"));
     if (serverGuestId) safeLocalStorageSet("eco_guest_id", serverGuestId);
 
@@ -455,7 +457,7 @@ export const enviarMensagemParaEco = async (
     const handleEvent = (eventData: unknown) => {
       if (!eventData || typeof eventData !== "object") return;
 
-      // Nosso parser pode ter { type?, payload?, rawData? }
+      // Pode vir { type?, payload?, rawData? }
       const parsed = eventData as { type?: string; payload?: any; rawData?: string } & Record<string, any>;
 
       const hintedType = typeof parsed.type === "string" ? parsed.type : undefined;
@@ -467,20 +469,19 @@ export const enviarMensagemParaEco = async (
       const payloadType = typeof payload.type === "string" ? payload.type : undefined;
       let type = payloadType ?? hintedType;
 
-      // Reconhecimento de "done" em formatos não-JSON
+      // Reconhece "done" quando vier como [DONE] ou { done: true }
       const rawData = parsed.rawData;
       const looksLikeDone =
         (typeof rawData === "string" && rawData === "[DONE]") ||
-        (payload && (payload.done === true || payload.DONE === true));
+        (payload && (payload.done === true || (payload as any).DONE === true));
 
       if (!type && looksLikeDone) type = "done";
 
-      // Fallback: se só veio texto cru, trate como chunk
+      // Fallback: se só veio texto cru
       if (!type && typeof payload?.text === "string") type = "chunk";
 
       if (!type) {
-        if (isDev)
-          console.debug("ℹ️ [ECO API] Evento SSE sem tipo reconhecido:", eventData);
+        if (isDev) console.debug("ℹ️ [ECO API] Evento SSE sem tipo reconhecido:", eventData);
         return;
       }
 
@@ -511,10 +512,7 @@ export const enviarMensagemParaEco = async (
           typeof (payload as any)?.value === "number"
             ? (payload as any).value
             : undefined;
-        const eventWithLatency: EcoSseEvent = {
-          ...baseEventInfo,
-          latencyMs: latencyValue,
-        };
+        const eventWithLatency: EcoSseEvent = { ...baseEventInfo, latencyMs: latencyValue };
         safeInvoke(handlers.onLatency, eventWithLatency);
         return;
       }
@@ -531,10 +529,7 @@ export const enviarMensagemParaEco = async (
         const chunkText = texts.join("");
         if (chunkText.length > 0) pushAggregatedPart(chunkText);
         else if (!chunkText && fallbackText) pushAggregatedPart(fallbackText);
-        const eventWithText: EcoSseEvent = {
-          ...baseEventInfo,
-          text: chunkText.length > 0 ? chunkText : fallbackText,
-        };
+        const eventWithText: EcoSseEvent = { ...baseEventInfo, text: chunkText.length > 0 ? chunkText : fallbackText };
         safeInvoke(handlers.onFirstToken, eventWithText);
         return;
       }
@@ -549,20 +544,14 @@ export const enviarMensagemParaEco = async (
         const chunkText = texts.join("");
         if (chunkText.length > 0) pushAggregatedPart(chunkText);
         else if (!chunkText && fallbackText) pushAggregatedPart(fallbackText);
-        const eventWithText: EcoSseEvent = {
-          ...baseEventInfo,
-          text: chunkText.length > 0 ? chunkText : fallbackText,
-        };
+        const eventWithText: EcoSseEvent = { ...baseEventInfo, text: chunkText.length > 0 ? chunkText : fallbackText };
         safeInvoke(handlers.onChunk, eventWithText);
         return;
       }
 
       if (type === "meta" || type === "meta_pending" || type === "meta-pending") {
         const metaPayload = (payload as any)?.metadata ?? payload;
-        const eventWithMeta: EcoSseEvent = {
-          ...baseEventInfo,
-          metadata: metaPayload,
-        };
+        const eventWithMeta: EcoSseEvent = { ...baseEventInfo, metadata: metaPayload };
         metadata = metaPayload ?? metadata;
         if (type === "meta") safeInvoke(handlers.onMeta, eventWithMeta);
         else safeInvoke(handlers.onMetaPending, eventWithMeta);
@@ -571,10 +560,7 @@ export const enviarMensagemParaEco = async (
 
       if (type === "memory_saved") {
         const memoryPayload = (payload as any)?.memory ?? (payload as any)?.memoria ?? payload;
-        const eventWithMemory: EcoSseEvent = {
-          ...baseEventInfo,
-          memory: memoryPayload,
-        };
+        const eventWithMemory: EcoSseEvent = { ...baseEventInfo, memory: memoryPayload };
         if ((payload as any)?.primeiraMemoriaSignificativa || (payload as any)?.primeira) {
           primeiraMemoriaSignificativa = true;
         }
@@ -615,6 +601,7 @@ export const enviarMensagemParaEco = async (
         return;
       }
 
+      // último recurso: se deu para extrair algo, não descarte
       if (fallbackText) {
         pushAggregatedPart(fallbackText);
         const eventWithText: EcoSseEvent = { ...baseEventInfo, text: fallbackText };
@@ -663,6 +650,7 @@ export const enviarMensagemParaEco = async (
       throw new Error('Fluxo SSE encerrado sem evento "done".');
     }
 
+    // ====== AGREGAÇÃO FINAL (tolerante) ======
     let texto = aggregatedParts.join("");
     if (!texto.trim() && lastNonEmptyText) {
       texto = lastNonEmptyText;
@@ -673,7 +661,9 @@ export const enviarMensagemParaEco = async (
       const fallback = normalizeAskEcoResponse(donePayload as AskEcoResponse);
       if (fallback) texto = fallback;
     }
-    if (!texto) throw new Error("Formato inválido na resposta da Eco.");
+
+    // ⚠️ NÃO lance erro aqui — retorne string vazia se não houver texto
+    if (!texto) texto = "";
 
     return {
       text: texto,
