@@ -190,6 +190,17 @@ const normalizeAskEcoResponse = (payload: AskEcoResponse): string | undefined =>
   return unique.join("\n\n");
 };
 
+// resolve baseURL: axios.defaults.baseURL -> VITE_API_URL -> window.origin
+const resolveBaseUrl = (): string => {
+  const fromAxios = (api as any)?.defaults?.baseURL;
+  const fromEnv = (import.meta as any)?.env?.VITE_API_URL;
+  const fromWindow = hasWindow() ? window.location.origin : "";
+  const raw = fromAxios || fromEnv || fromWindow;
+  const base = String(raw || "").replace(/\/+$/, "");
+  if (!base) throw new Error("Configuração de baseURL ausente para a Eco.");
+  return base;
+};
+
 export const enviarMensagemParaEco = async (
   userMessages: Message[],
   userName?: string,
@@ -225,12 +236,14 @@ export const enviarMensagemParaEco = async (
   };
 
   try {
-    const baseUrl = api.defaults?.baseURL?.replace(/\/+$/, "");
-    if (!baseUrl) throw new Error("Configuração de baseURL ausente para a Eco.");
+    const baseUrl = resolveBaseUrl();
 
     // --- sessão do supabase (pode não existir) ---
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const { data: sessionData } =
+      (await supabase.auth.getSession().catch(() => ({ data: { session: null } as any }))) || {
+        data: { session: null },
+      };
+    const token = sessionData?.session?.access_token ?? null;
 
     // --- guest id persistente (fallback automático quando não há token) ---
     const persistedGuestId =
@@ -278,7 +291,9 @@ export const enviarMensagemParaEco = async (
     const response = await fetch(`${baseUrl}/ask-eco`, {
       method: "POST",
       headers,
-      credentials: "include",
+      // IMPORTANTE: se sua rota NÃO usa cookies, mantenha 'omit'.
+      // Se usa cookies, troque para 'include' e ajuste CORS no backend.
+      credentials: "omit",
       body: JSON.stringify(bodyPayload),
       signal: controller.signal,
     });
