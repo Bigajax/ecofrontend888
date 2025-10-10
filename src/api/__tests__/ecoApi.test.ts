@@ -33,12 +33,12 @@ const mensagens = [
   { role: "user", content: "Tudo bem?" },
 ];
 
-const createSseResponse = (events: unknown[]) => {
+const createSseResponse = (events: unknown[], newline = "\n") => {
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       for (const event of events) {
-        const chunk = `data: ${JSON.stringify(event)}\n\n`;
+        const chunk = `data: ${JSON.stringify(event)}${newline}${newline}`;
         controller.enqueue(encoder.encode(chunk));
       }
       controller.close();
@@ -75,6 +75,24 @@ describe("enviarMensagemParaEco", () => {
     expect(resposta.done).toEqual({ type: "done", metadata: { intensidade: 8 } });
   });
 
+  it("processa eventos SSE separados por CRLF", async () => {
+    fetchMock.mockResolvedValue(
+      createSseResponse(
+        [
+          { type: "chunk", payload: { type: "chunk", delta: { content: "Olá" } } },
+          { type: "chunk", payload: { type: "chunk", delta: { content: " mundo" } } },
+          { type: "done", payload: { type: "done", metadata: { intensidade: 5 } } },
+        ],
+        "\r\n"
+      )
+    );
+
+    const resposta = await callApi();
+
+    expect(resposta.text).toBe("Olá mundo");
+    expect(resposta.metadata).toEqual({ intensidade: 5 });
+  });
+
   it("ignora eventos auxiliares e processa conteúdo estruturado", async () => {
     fetchMock.mockResolvedValue(
       createSseResponse([
@@ -102,18 +120,17 @@ describe("enviarMensagemParaEco", () => {
     expect(resposta.metadata).toEqual({ mensagem: { texto: "Parte 1 + Parte 2" } });
   });
 
-  it('lança erro quando o stream termina sem evento "done"', async () => {
+  it('tolera stream encerrado sem evento "done" quando já recebeu conteúdo', async () => {
     fetchMock.mockResolvedValue(
       createSseResponse([
         { type: "chunk", payload: { type: "chunk", delta: { content: "Olá" } } },
       ])
     );
 
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const resposta = await callApi();
 
-    await expect(callApi()).rejects.toThrow('Fluxo SSE encerrado sem evento "done".');
-
-    errorSpy.mockRestore();
+    expect(resposta.text).toBe("Olá");
+    expect(resposta.done).toBeUndefined();
   });
 
   it("dispara callbacks incrementais conforme eventos SSE chegam", async () => {
@@ -227,10 +244,10 @@ describe("enviarMensagemParaEco", () => {
     );
 
     const [, init] = fetchMock.mock.calls.at(-1) ?? [];
-    expect(init?.headers).toMatchObject({ "x-guest-id": "guest-123" });
+    expect(init?.headers).toMatchObject({ "x-guest-id": "guest_123" });
     const body = init?.body ? JSON.parse(init.body as string) : {};
     expect(body.isGuest).toBe(true);
-    expect(body.guestId).toBe("guest-123");
+    expect(body.guestId).toBe("guest_123");
     expect(body.usuario_id).toBeUndefined();
   });
 });
