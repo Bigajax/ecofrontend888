@@ -190,16 +190,25 @@ const normalizeAskEcoResponse = (payload: AskEcoResponse): string | undefined =>
   return unique.join("\n\n");
 };
 
-// resolve baseURL: axios.defaults.baseURL -> VITE_API_URL -> window.origin
+// -------- baseURL resolvida e normalizada --------
+// pega axios.defaults.baseURL -> VITE_API_URL -> window.origin
+// remove / no final e remove um /api acidental; o endpoint já adiciona /api
 const resolveBaseUrl = (): string => {
   const fromAxios = (api as any)?.defaults?.baseURL;
   const fromEnv = (import.meta as any)?.env?.VITE_API_URL;
   const fromWindow = hasWindow() ? window.location.origin : "";
-  const raw = fromAxios || fromEnv || fromWindow;
-  const base = String(raw || "").replace(/\/+$/, "");
-  if (!base) throw new Error("Configuração de baseURL ausente para a Eco.");
-  return base;
+  const raw = String(fromAxios || fromEnv || fromWindow || "").trim();
+
+  if (!raw) throw new Error("Configuração de baseURL ausente para a Eco.");
+
+  const noSlash = raw.replace(/\/+$/, "");
+  const noApi = noSlash.replace(/\/api$/i, "");
+  return noApi; // raiz do backend (ex.: https://ecobackend888.onrender.com)
 };
+
+const ASK_ENDPOINT = "/api/ask-eco";
+
+// -------------------------------------------------
 
 export const enviarMensagemParaEco = async (
   userMessages: Message[],
@@ -288,11 +297,11 @@ export const enviarMensagemParaEco = async (
       bodyPayload.guestId = guestId;
     }
 
-    const response = await fetch(`${baseUrl}/ask-eco`, {
+    const response = await fetch(`${baseUrl}${ASK_ENDPOINT}`, {
       method: "POST",
       headers,
-      // IMPORTANTE: se sua rota NÃO usa cookies, mantenha 'omit'.
-      // Se usa cookies, troque para 'include' e ajuste CORS no backend.
+      mode: "cors",
+      // você usa Bearer token; não precisa enviar cookies
       credentials: "omit",
       body: JSON.stringify(bodyPayload),
       signal: controller.signal,
