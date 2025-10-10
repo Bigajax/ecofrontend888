@@ -264,6 +264,27 @@ const normalizeAskEcoResponse = (payload: AskEcoResponse): string | undefined =>
   return unique.join("\n\n");
 };
 
+const unwrapPayload = <TPayload>(payload: TPayload): TPayload => {
+  if (!payload || typeof payload !== "object") return payload;
+
+  const visited = new Set<object>();
+  let current: any = payload;
+
+  while (
+    current &&
+    typeof current === "object" &&
+    "payload" in current &&
+    current.payload &&
+    typeof current.payload === "object" &&
+    !visited.has(current.payload as object)
+  ) {
+    visited.add(current.payload as object);
+    current = current.payload;
+  }
+
+  return current as TPayload;
+};
+
 // -------- baseURL resolvida e normalizada --------
 const resolveBaseUrl = (): string => {
   const fromAxios = (api as any)?.defaults?.baseURL;
@@ -466,8 +487,14 @@ export const enviarMensagemParaEco = async (
           ? (parsed.payload as Record<string, any>)
           : (parsed as Record<string, any>);
 
+      const unwrappedPayload = unwrapPayload(payload);
+
       const payloadType = typeof payload.type === "string" ? payload.type : undefined;
-      let type = payloadType ?? hintedType;
+      const unwrappedType =
+        typeof (unwrappedPayload as any)?.type === "string"
+          ? ((unwrappedPayload as any).type as string)
+          : undefined;
+      let type = payloadType ?? unwrappedType ?? hintedType;
 
       // Reconhece "done" quando vier como [DONE] ou { done: true }
       const rawData = parsed.rawData;
@@ -487,7 +514,7 @@ export const enviarMensagemParaEco = async (
 
       const baseEventInfo: EcoSseEvent = {
         type,
-        payload,
+        payload: unwrappedPayload,
         raw: eventData,
       };
 
@@ -508,60 +535,80 @@ export const enviarMensagemParaEco = async (
       }
 
       if (type === "latency") {
+        const latencyPayload = unwrapPayload(payload);
         const latencyValue =
-          typeof (payload as any)?.value === "number"
-            ? (payload as any).value
+          typeof (latencyPayload as any)?.value === "number"
+            ? (latencyPayload as any).value
+            : typeof (latencyPayload as any)?.latency === "number"
+            ? (latencyPayload as any).latency
             : undefined;
         const eventWithLatency: EcoSseEvent = { ...baseEventInfo, latencyMs: latencyValue };
         safeInvoke(handlers.onLatency, eventWithLatency);
         return;
       }
 
-      const fallbackText = normalizeAskEcoResponse(payload as AskEcoResponse);
+      const fallbackText =
+        normalizeAskEcoResponse(unwrappedPayload as AskEcoResponse) ||
+        normalizeAskEcoResponse(payload as AskEcoResponse);
 
       if (type === "first_token") {
         const source =
-          (payload as any).delta ??
-          (payload as any).content ??
-          (payload as any).message ??
-          payload;
+          (unwrappedPayload as any)?.delta ??
+          (unwrappedPayload as any)?.content ??
+          (unwrappedPayload as any)?.message ??
+          unwrappedPayload;
         const texts = collectTexts(source);
         const chunkText = texts.join("");
         if (chunkText.length > 0) pushAggregatedPart(chunkText);
         else if (!chunkText && fallbackText) pushAggregatedPart(fallbackText);
-        const eventWithText: EcoSseEvent = { ...baseEventInfo, text: chunkText.length > 0 ? chunkText : fallbackText };
+        const eventWithText: EcoSseEvent = {
+          ...baseEventInfo,
+          text: chunkText.length > 0 ? chunkText : fallbackText,
+        };
         safeInvoke(handlers.onFirstToken, eventWithText);
         return;
       }
 
       if (type === "chunk") {
         const source =
-          (payload as any).delta ??
-          (payload as any).content ??
-          (payload as any).message ??
-          payload;
+          (unwrappedPayload as any)?.delta ??
+          (unwrappedPayload as any)?.content ??
+          (unwrappedPayload as any)?.message ??
+          unwrappedPayload;
         const texts = collectTexts(source);
         const chunkText = texts.join("");
         if (chunkText.length > 0) pushAggregatedPart(chunkText);
         else if (!chunkText && fallbackText) pushAggregatedPart(fallbackText);
-        const eventWithText: EcoSseEvent = { ...baseEventInfo, text: chunkText.length > 0 ? chunkText : fallbackText };
+        const eventWithText: EcoSseEvent = {
+          ...baseEventInfo,
+          text: chunkText.length > 0 ? chunkText : fallbackText,
+        };
         safeInvoke(handlers.onChunk, eventWithText);
         return;
       }
 
       if (type === "meta" || type === "meta_pending" || type === "meta-pending") {
-        const metaPayload = (payload as any)?.metadata ?? payload;
-        const eventWithMeta: EcoSseEvent = { ...baseEventInfo, metadata: metaPayload };
-        metadata = metaPayload ?? metadata;
+        const metaSource =
+          (unwrappedPayload as any)?.metadata ??
+          (unwrappedPayload as any)?.response ??
+          unwrappedPayload;
+        const eventWithMeta: EcoSseEvent = { ...baseEventInfo, metadata: metaSource };
+        metadata = metaSource ?? metadata;
         if (type === "meta") safeInvoke(handlers.onMeta, eventWithMeta);
         else safeInvoke(handlers.onMetaPending, eventWithMeta);
         return;
       }
 
       if (type === "memory_saved") {
-        const memoryPayload = (payload as any)?.memory ?? (payload as any)?.memoria ?? payload;
+        const memoryPayload =
+          (unwrappedPayload as any)?.memory ??
+          (unwrappedPayload as any)?.memoria ??
+          unwrappedPayload;
         const eventWithMemory: EcoSseEvent = { ...baseEventInfo, memory: memoryPayload };
-        if ((payload as any)?.primeiraMemoriaSignificativa || (payload as any)?.primeira) {
+        if (
+          (unwrappedPayload as any)?.primeiraMemoriaSignificativa ||
+          (unwrappedPayload as any)?.primeira
+        ) {
           primeiraMemoriaSignificativa = true;
         }
         safeInvoke(handlers.onMemorySaved, eventWithMemory);
@@ -570,30 +617,36 @@ export const enviarMensagemParaEco = async (
 
       if (type === "done") {
         doneReceived = true;
-        donePayload = payload;
+        donePayload = unwrappedPayload;
         const responseMetadata =
-          (payload as any)?.response ?? (payload as any)?.metadata ?? payload;
+          (unwrappedPayload as any)?.response ??
+          (unwrappedPayload as any)?.metadata ??
+          unwrappedPayload;
         metadata = responseMetadata ?? metadata;
 
-        if ((payload as any)?.primeiraMemoriaSignificativa || (payload as any)?.primeira) {
+        if (
+          (unwrappedPayload as any)?.primeiraMemoriaSignificativa ||
+          (unwrappedPayload as any)?.primeira
+        ) {
           primeiraMemoriaSignificativa = true;
         }
 
         const source =
-          (payload as any).delta ??
-          (payload as any).content ??
-          (payload as any).message ??
-          (payload as any).response;
+          (unwrappedPayload as any)?.delta ??
+          (unwrappedPayload as any)?.content ??
+          (unwrappedPayload as any)?.message ??
+          (unwrappedPayload as any)?.response;
         const texts = collectTexts(source);
         const doneText = texts.join("");
         if (doneText.length > 0 && aggregatedParts.length === 0) {
           pushAggregatedPart(doneText);
-        } else if ((!doneText || doneText.length === 0) && fallbackText) {
+        } else if (!doneText && fallbackText && aggregatedParts.length === 0) {
           pushAggregatedPart(fallbackText);
         }
 
         const eventWithMeta: EcoSseEvent = {
           ...baseEventInfo,
+          payload: unwrappedPayload,
           metadata: responseMetadata,
           text: doneText.length > 0 ? doneText : fallbackText,
         };
