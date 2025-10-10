@@ -91,6 +91,10 @@ const SSE_GUEST_INACTIVITY_TIMEOUT_MS = 300_000;
 
 const hasWindow = () => typeof window !== "undefined";
 
+// normaliza formatos antigos: "guest:uuid" | "guest-uuid" → "guest_uuid"
+const normalizeGuestIdFormat = (id: string | null | undefined) =>
+  (id ?? "").replace(/^guest[:\-]/i, "guest_");
+
 const safeLocalStorageGet = (key: string) => {
   if (!hasWindow()) return null;
   try {
@@ -230,7 +234,7 @@ export const enviarMensagemParaEco = async (
 
     // --- guest id persistente (fallback automático quando não há token) ---
     const persistedGuestId =
-      safeLocalStorageGet("eco_guest_id") ||
+      normalizeGuestIdFormat(safeLocalStorageGet("eco_guest_id")) ||
       (() => {
         const id = generateGuestId();
         safeLocalStorageSet("eco_guest_id", id);
@@ -243,7 +247,8 @@ export const enviarMensagemParaEco = async (
       ? SSE_GUEST_INACTIVITY_TIMEOUT_MS
       : SSE_INACTIVITY_TIMEOUT_MS;
     resetTimeout();
-    const guestId = options?.guestId || persistedGuestId;
+
+    const guestId = normalizeGuestIdFormat(options?.guestId || persistedGuestId);
 
     // --- headers ---
     const headers: Record<string, string> = {
@@ -253,6 +258,7 @@ export const enviarMensagemParaEco = async (
     if (!isGuest && token) {
       headers.Authorization = `Bearer ${token}`;
     } else {
+      headers["x-guest-mode"] = "1";
       headers["x-guest-id"] = guestId;
     }
 
@@ -276,6 +282,10 @@ export const enviarMensagemParaEco = async (
       body: JSON.stringify(bodyPayload),
       signal: controller.signal,
     });
+
+    // capture e persista o guest-id que o backend pode ter gerado/normalizado
+    const serverGuestId = normalizeGuestIdFormat(response.headers.get("x-guest-id"));
+    if (serverGuestId) safeLocalStorageSet("eco_guest_id", serverGuestId);
 
     if (!response.ok) {
       let serverErr: string | undefined;
@@ -311,6 +321,7 @@ export const enviarMensagemParaEco = async (
     let donePayload: any;
     let metadata: unknown;
     let primeiraMemoriaSignificativa = false;
+    let gotAnyToken = false;
 
     const safeInvoke = (
       cb: ((event: EcoSseEvent) => void) | undefined,
@@ -399,6 +410,7 @@ export const enviarMensagemParaEco = async (
         const chunkText = texts.join("");
         if (chunkText.length > 0) aggregatedParts.push(chunkText);
         const eventWithText: EcoSseEvent = { ...baseEventInfo, text: chunkText };
+        gotAnyToken = gotAnyToken || chunkText.length > 0;
         safeInvoke(handlers.onFirstToken, eventWithText);
         return;
       }
@@ -413,6 +425,7 @@ export const enviarMensagemParaEco = async (
         const chunkText = texts.join("");
         if (chunkText.length > 0) aggregatedParts.push(chunkText);
         const eventWithText: EcoSseEvent = { ...baseEventInfo, text: chunkText };
+        gotAnyToken = gotAnyToken || chunkText.length > 0;
         safeInvoke(handlers.onChunk, eventWithText);
         return;
       }
@@ -507,7 +520,11 @@ export const enviarMensagemParaEco = async (
       flushBuffer(true);
     }
     if (streamError) throw streamError;
-    if (!doneReceived) throw new Error('Fluxo SSE encerrado sem evento "done".');
+
+    // tolera término sem "done" se já recebemos conteúdo
+    if (!doneReceived && !gotAnyToken) {
+      throw new Error('Fluxo SSE encerrado sem evento "done".');
+    }
 
     let texto = aggregatedParts.join("").trim();
     if (!texto && donePayload) {

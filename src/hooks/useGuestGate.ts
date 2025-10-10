@@ -50,6 +50,36 @@ export function clearGuestStorage() {
   ].forEach((key) => safeRemoveItem(key));
 }
 
+/* ---------------- Normalização de guestId ---------------- */
+
+const UUID_V4_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** Converte qualquer variação para o canônico "guest_<uuid>" */
+function toCanonicalGuestId(input: string | null | undefined): string | null {
+  if (!input) return null;
+  const raw = String(input).trim();
+  if (!raw) return null;
+
+  const lower = raw.toLowerCase();
+
+  // uuid puro → guest_uuid
+  if (UUID_V4_REGEX.test(lower)) return `guest_${lower}`;
+
+  // guest_ / guest: / guest- + uuid → guest_uuid
+  const prefixes = ['guest_', 'guest:', 'guest-'];
+  for (const p of prefixes) {
+    if (lower.startsWith(p)) {
+      const candidate = lower.slice(p.length);
+      if (UUID_V4_REGEX.test(candidate)) return `guest_${candidate}`;
+    }
+  }
+
+  return null;
+}
+
+/* ---------------- Hook ---------------- */
+
 export function useGuestGate(enabled: boolean) {
   const [guestId, setGuestId] = useState<string | null>(null);
   const [count, setCount] = useState(0);
@@ -68,25 +98,30 @@ export function useGuestGate(enabled: boolean) {
       return;
     }
 
+    // 1) ler eco_guest_id (ou legado) e normalizar
     let id = safeGetItem(GUEST_ID_KEY);
-
     if (!id) {
       const legacyId = safeGetItem(LEGACY_GUEST_ID_KEY);
       if (legacyId) {
         id = legacyId;
-        safeSetItem(GUEST_ID_KEY, id);
         safeRemoveItem(LEGACY_GUEST_ID_KEY);
       }
     }
 
-    if (!id) {
-      id = `guest_${uuid()}`;
-      safeSetItem(GUEST_ID_KEY, id);
-      mixpanel.track('guest_start', { guestId: id });
-    }
-    setGuestId(id);
-    guestIdRef.current = id;
+    let canonical = toCanonicalGuestId(id);
 
+    // gerar se ausente/ilegível
+    if (!canonical) {
+      canonical = `guest_${uuid()}`;
+    }
+
+    // persistir o canônico (corrige formatos antigos automaticamente)
+    safeSetItem(GUEST_ID_KEY, canonical);
+
+    setGuestId(canonical);
+    guestIdRef.current = canonical;
+
+    // 2) recuperar contadores/flags
     const storedCountRaw = safeGetItem(GUEST_INTERACTION_COUNT_KEY);
     const storedCount = storedCountRaw ? Number(storedCountRaw) : 0;
     const validCount = Number.isFinite(storedCount) ? Math.max(0, Math.floor(storedCount)) : 0;
@@ -95,7 +130,13 @@ export function useGuestGate(enabled: boolean) {
     const disabled = safeGetItem(GUEST_INPUT_DISABLED_KEY) === '1';
     setInputDisabled(disabled || validCount >= LIMIT);
 
-    gateTrackedRef.current = safeGetItem(GUEST_GATE_TRACKED_KEY) === '1' || disabled || validCount >= LIMIT;
+    gateTrackedRef.current =
+      safeGetItem(GUEST_GATE_TRACKED_KEY) === '1' || disabled || validCount >= LIMIT;
+
+    // evento de início apenas quando realmente criamos um novo
+    if (!id) {
+      mixpanel.track('guest_start', { guestId: canonical });
+    }
   }, [enabled]);
 
   useEffect(() => {
