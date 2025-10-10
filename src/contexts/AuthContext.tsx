@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.tsx
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { ensureProfile } from '../lib/ensureProfile';
@@ -93,6 +92,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
 
       if (session?.user) {
+        // logou => zera dados do modo guest
         clearGuestStorage();
         ensureProfile(session.user).catch((err) =>
           console.error('Erro ao garantir perfil durante getSession:', err),
@@ -108,9 +108,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session ?? null);
         setUser(session?.user ?? null);
 
-        // Se o logout ocorrer em outra aba/expirar, garantimos a limpeza local
+        // Logout em outra aba/expiração da sessão
         if (event === 'SIGNED_OUT') {
           clearClientState();
+          clearGuestStorage(); // <— garante limpeza do modo guest
           if (typeof mixpanel.unregister_all === 'function') {
             mixpanel.unregister_all();
           }
@@ -119,16 +120,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-          clearGuestStorage();
+          clearGuestStorage(); // <— ao logar, limpa storage de guest
           syncMixpanelIdentity(session.user);
         }
 
         if (event === 'SIGNED_IN') {
           supabase.auth
             .getUser()
-            .then(({ data }) => ensureProfile(data.user).catch((err) => {
-              console.error('Erro ao garantir perfil após OAuth:', err);
-            }))
+            .then(({ data }) =>
+              ensureProfile(data.user).catch((err) => {
+                console.error('Erro ao garantir perfil após OAuth:', err);
+              }),
+            )
             .catch((err) => {
               console.error('Erro ao obter usuário após OAuth:', err);
             });
@@ -189,6 +192,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       // Zera estado local SEMPRE, independente do retorno do supabase
       clearClientState();
+      clearGuestStorage(); // <— limpa ID/contadores do guest ao sair
       if (typeof mixpanel.unregister_all === 'function') {
         mixpanel.unregister_all();
       }
