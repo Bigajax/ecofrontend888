@@ -181,6 +181,8 @@ const parseSseEvent = (eventBlock: string): unknown | undefined => {
   }
 };
 
+const normalizeSseNewlines = (value: string): string => value.replace(/\r\n?/g, "\n");
+
 const normalizeAskEcoResponse = (payload: AskEcoResponse): string | undefined => {
   const texts = collectTexts(payload);
   const unique = Array.from(
@@ -514,6 +516,7 @@ export const enviarMensagemParaEco = async (
     };
 
     const flushBuffer = (final = false) => {
+      buffer = normalizeSseNewlines(buffer);
       let idx = buffer.indexOf("\n\n");
       while (idx !== -1) {
         const segment = buffer.slice(0, idx);
@@ -525,7 +528,7 @@ export const enviarMensagemParaEco = async (
       if (final) {
         const remainder = buffer.trim();
         if (remainder.length > 0) {
-          const parsed = parseSseEvent(buffer);
+          const parsed = parseSseEvent(remainder);
           if (parsed !== undefined) handleEvent(parsed);
         }
         buffer = "";
