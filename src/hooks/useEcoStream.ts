@@ -105,7 +105,7 @@ export const useEcoStream = ({
       setErroApi(null);
 
       const userLocalId = uuidv4();
-      addMessage({ id: userLocalId, text: trimmed, sender: 'user' });
+      addMessage({ id: userLocalId, text: trimmed, content: trimmed, sender: 'user' });
 
       requestAnimationFrame(() => scrollToBottom(true));
 
@@ -362,7 +362,12 @@ export const useEcoStream = ({
           resolvedEcoMessageId = newId;
           setMessages((prev) => {
             const index = prev.length;
-            const placeholder: ChatMessageType = { id: newId, sender: 'eco', text: ' ' };
+            const placeholder: ChatMessageType = {
+              id: newId,
+              sender: 'eco',
+              text: ' ',
+              content: '',
+            };
             ecoMessageIndex = index;
             resolvedEcoMessageIndex = index;
             return [...prev, placeholder];
@@ -431,7 +436,7 @@ export const useEcoStream = ({
               promptReadyAt = getNow();
             }
             ensureEcoMessage();
-            patchEcoMessage({ text: ' ' });
+            patchEcoMessage({ text: ' ', content: '' });
             syncScroll();
           },
           onLatency: (event) => {
@@ -450,7 +455,10 @@ export const useEcoStream = ({
             aggregatedEcoText = texto;
             const hasSubstantiveContent = texto.trim().length > 0;
             firstContentReceived = hasSubstantiveContent;
-            patchEcoMessage({ text: texto.length > 0 ? texto : ' ' });
+            patchEcoMessage({
+              text: texto.length > 0 ? texto : ' ',
+              content: texto,
+            });
             if (hasSubstantiveContent) {
               setDigitando(false);
             }
@@ -464,7 +472,7 @@ export const useEcoStream = ({
               firstContentReceived = true;
               setDigitando(false);
             }
-            patchEcoMessage({ text: aggregatedEcoText });
+            patchEcoMessage({ text: aggregatedEcoText, content: aggregatedEcoText });
             syncScroll();
           },
           onMetaPending: (event) => {
@@ -507,7 +515,10 @@ export const useEcoStream = ({
             }
             if (event.text && aggregatedEcoText.length === 0) {
               aggregatedEcoText = event.text;
-              patchEcoMessage({ text: aggregatedEcoText });
+              patchEcoMessage({
+                text: aggregatedEcoText,
+                content: aggregatedEcoText,
+              });
             }
             if (event.payload?.primeiraMemoriaSignificativa || event.payload?.primeira) {
               primeiraMemoriaFlag = true;
@@ -569,6 +580,7 @@ export const useEcoStream = ({
             const ecoMessage: ChatMessageType = {
               id: newId,
               text: finalText,
+              content: finalText,
               sender: 'eco',
               ...(finalMetadata !== undefined ? { metadata: finalMetadata } : {}),
               ...(resposta?.done ? { donePayload: resposta.done } : {}),
@@ -583,7 +595,7 @@ export const useEcoStream = ({
           }
         } else {
           if (finalText) {
-            patchEcoMessage({ text: finalText });
+            patchEcoMessage({ text: finalText, content: finalText });
           }
           const patch: Partial<ChatMessageType> = {};
           if (finalMetadata !== undefined) patch.metadata = finalMetadata;
