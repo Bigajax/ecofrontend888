@@ -159,7 +159,16 @@ const collectTexts = (value: unknown, visited = new WeakSet<object>()): string[]
   return [];
 };
 
-const parseSseEvent = (eventBlock: string): unknown | undefined => {
+/**
+ * Parser SSE robusto:
+ * - Suporta "event: <nome>" + "data: ..."
+ * - Suporta "data: [DONE]" (não-JSON)
+ * - Suporta payloads JSON com/sem campo "type"
+ * - Retorna um objeto com { type?, payload?, rawData? }
+ */
+const parseSseEvent = (
+  eventBlock: string
+): { type?: string; payload?: any; rawData?: string } | undefined => {
   const lines = eventBlock
     .split("\n")
     .map((line) => line.trim())
@@ -167,17 +176,33 @@ const parseSseEvent = (eventBlock: string): unknown | undefined => {
 
   if (lines.length === 0) return undefined;
 
-  const payload = lines
-    .map((line) => (line.startsWith("data:") ? line.slice(5).trimStart() : line))
-    .join("\n");
+  let eventName: string | undefined;
+  const dataParts: string[] = [];
 
-  if (!payload) return undefined;
+  for (const line of lines) {
+    if (line.startsWith("event:")) {
+      eventName = line.slice(6).trim();
+    } else if (line.startsWith("data:")) {
+      dataParts.push(line.slice(5).trimStart());
+    } else {
+      // linha sem prefixo, trata como parte de dados
+      dataParts.push(line);
+    }
+  }
+
+  const dataStr = dataParts.join("\n").trim();
+  if (!dataStr) return { type: eventName, payload: undefined };
+
+  if (dataStr === "[DONE]") {
+    return { type: eventName ?? "done", payload: { done: true }, rawData: dataStr };
+  }
 
   try {
-    return JSON.parse(payload);
-  } catch (error) {
-    if (isDev) console.warn("⚠️ [ECO API] Evento SSE inválido:", payload, error);
-    return undefined;
+    const parsed = JSON.parse(dataStr);
+    return { type: eventName, payload: parsed, rawData: dataStr };
+  } catch {
+    // não é JSON: devolve como texto cru
+    return { type: eventName, payload: { text: dataStr }, rawData: dataStr };
   }
 };
 
@@ -373,17 +398,27 @@ export const enviarMensagemParaEco = async (
     const handleEvent = (eventData: unknown) => {
       if (!eventData || typeof eventData !== "object") return;
 
-      const baseEvent = eventData as Record<string, any>;
-      const topType =
-        typeof baseEvent.type === "string" ? baseEvent.type : undefined;
-      const eventPayloadRaw =
-        baseEvent.payload && typeof baseEvent.payload === "object"
-          ? (baseEvent.payload as Record<string, any>)
-          : baseEvent;
-      const payload = eventPayloadRaw as Record<string, any>;
-      const payloadType =
-        typeof payload.type === "string" ? payload.type : topType;
-      const type = payloadType ?? topType;
+      // Nosso parser pode ter { type?, payload?, rawData? }
+      const parsed = eventData as { type?: string; payload?: any; rawData?: string } & Record<string, any>;
+
+      const hintedType = typeof parsed.type === "string" ? parsed.type : undefined;
+      const payload = (parsed.payload && typeof parsed.payload === "object")
+        ? (parsed.payload as Record<string, any>)
+        : (parsed as Record<string, any>);
+
+      const payloadType = typeof payload.type === "string" ? payload.type : undefined;
+      let type = payloadType ?? hintedType;
+
+      // Reconhecimento de "done" em formatos não-JSON
+      const rawData = parsed.rawData;
+      const looksLikeDone =
+        (typeof rawData === "string" && rawData === "[DONE]") ||
+        (payload && (payload.done === true || payload.DONE === true));
+
+      if (!type && looksLikeDone) type = "done";
+
+      // Fallback: se só veio texto cru, trate como chunk
+      if (!type && typeof payload?.text === "string") type = "chunk";
 
       if (!type) {
         if (isDev)
