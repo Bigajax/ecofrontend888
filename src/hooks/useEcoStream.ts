@@ -172,7 +172,6 @@ export const useEcoStream = ({
 
         const salvarMensagemPromise: Promise<string | null> = shouldPersist
           ? salvarMensagem({
-              usuario_id: authUserId as string,
               conteudo: trimmed,
               sentimento: '',
               salvar_memoria: true,
