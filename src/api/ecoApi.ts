@@ -113,9 +113,6 @@ export interface EcoEventHandlers {
 }
 
 const isDev = Boolean((import.meta as any)?.env?.DEV);
-const SSE_INACTIVITY_TIMEOUT_MS = 120_000;
-const SSE_GUEST_INACTIVITY_TIMEOUT_MS = 300_000;
-
 const hasWindow = () => typeof window !== "undefined";
 
 // normaliza formatos antigos: "guest:uuid" | "guest-uuid" → "guest_uuid"
@@ -334,14 +331,6 @@ export const enviarMensagemParaEco = async (
   const hour = typeof clientHour === "number" ? clientHour : new Date().getHours();
   const tz = clientTz || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  const controller = new AbortController();
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  let inactivityTimeoutMs = SSE_INACTIVITY_TIMEOUT_MS;
-  const resetTimeout = () => {
-    if (timeoutId) clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => controller.abort(), inactivityTimeoutMs);
-  };
-
   try {
     const baseUrl = resolveBaseUrl();
 
@@ -363,11 +352,6 @@ export const enviarMensagemParaEco = async (
 
     const userWantsGuest = options?.isGuest === true;
     const isGuest = userWantsGuest || !token;
-    inactivityTimeoutMs = isGuest
-      ? SSE_GUEST_INACTIVITY_TIMEOUT_MS
-      : SSE_INACTIVITY_TIMEOUT_MS;
-    resetTimeout();
-
     const guestId = normalizeGuestIdFormat(options?.guestId || persistedGuestId);
 
     // --- headers ---
@@ -379,8 +363,8 @@ export const enviarMensagemParaEco = async (
       headers.Authorization = `Bearer ${token}`;
     } else {
       headers["x-guest-mode"] = "1";
-      headers["x-guest-id"] = guestId;
     }
+    headers["X-Guest-Id"] = guestId;
 
     // --- body ---
     const bodyPayload: Record<string, unknown> = {
@@ -401,7 +385,6 @@ export const enviarMensagemParaEco = async (
       mode: "cors",
       credentials: "include",
       body: JSON.stringify(bodyPayload),
-      signal: controller.signal,
     });
 
     // persiste o guest-id que o backend pode enviar/normalizar
@@ -476,7 +459,7 @@ export const enviarMensagemParaEco = async (
     let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
 
     reader = response.body.getReader();
-    const decoder = new TextDecoder();
+    const decoder = new TextDecoder("utf-8");
     let buffer = "";
     let doneReceived = false;
     let streamError: Error | null = null;
@@ -755,7 +738,6 @@ export const enviarMensagemParaEco = async (
     while (!doneReceived && !streamError) {
       const { value, done } = await reader.read();
       if (done) break;
-      resetTimeout();
       buffer += decoder.decode(value, { stream: true });
       flushBuffer();
     }
@@ -812,7 +794,6 @@ export const enviarMensagemParaEco = async (
     console.error("❌ [ECO API]", message, error);
     throw new Error(message);
   } finally {
-    if (timeoutId) clearTimeout(timeoutId);
     try {
       if (reader) {
         reader.releaseLock();
