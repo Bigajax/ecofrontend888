@@ -26,6 +26,7 @@ const ChatInput: React.FC<Props> = ({
   const [isRecordingUI, setIsRecordingUI] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [isSending, setIsSending] = useState(false);
 
   const speechRecognitionRef = useRef<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -150,25 +151,26 @@ const ChatInput: React.FC<Props> = ({
   };
 
   // envio texto
-  const handleSend = () => {
-    if (disabled) return;
+  const handleSend = async () => {
+    if (disabled || isSending) return;
     const msg = inputMessage.trim();
     if (!msg) return;
 
+    setIsSending(true);
     try {
-      Promise.resolve(onSendMessage(msg)).catch((err) =>
-        console.error('Erro ao enviar mensagem:', err)
-      );
+      await onSendMessage(msg);
+      setInputMessage('');
+      onTextChange?.('');
+      setShowMoreOptions(false);
+
+      sendButtonRef.current?.classList.add('scale-90');
+      setTimeout(() => sendButtonRef.current?.classList.remove('scale-90'), 120);
+      requestAnimationFrame(() => textareaRef.current?.focus());
     } catch (err) {
       console.error('Erro ao enviar mensagem:', err);
+    } finally {
+      setIsSending(false);
     }
-    setInputMessage('');
-    onTextChange?.('');
-    setShowMoreOptions(false);
-
-    sendButtonRef.current?.classList.add('scale-90');
-    setTimeout(() => sendButtonRef.current?.classList.remove('scale-90'), 120);
-    requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
   // --- UI de gravação (fluida, sem max-width)
@@ -231,7 +233,7 @@ const ChatInput: React.FC<Props> = ({
       ref={wrapperRef}
       onSubmit={(e) => {
         e.preventDefault();
-        handleSend();
+        void handleSend();
       }}
       className={`
         relative w-full px-3 py-1.5 md:px-4 md:py-2 rounded-[28px]
@@ -311,12 +313,12 @@ const ChatInput: React.FC<Props> = ({
               onTextChange?.(v);
             }}
             onKeyDown={(e) => {
-              if (disabled) return;
+              if (disabled || isSending) return;
               // @ts-ignore
               const composing = e.nativeEvent?.isComposing;
               if (!composing && e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                e.currentTarget.form?.requestSubmit();
+                void handleSend();
               }
             }}
             onFocus={onFocus}
@@ -354,9 +356,9 @@ const ChatInput: React.FC<Props> = ({
           </button>
 
           <button
-            type="submit"
+            type="button"
             ref={sendButtonRef}
-            disabled={disabled || !inputMessage.trim()}
+            disabled={disabled || isSending || !inputMessage.trim()}
             className="
               flex h-9 w-9 items-center justify-center rounded-full text-slate-700
               border border-white/70 bg-white/90 backdrop-blur-xl
@@ -364,6 +366,7 @@ const ChatInput: React.FC<Props> = ({
               hover:bg-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50
             "
             aria-label="Enviar mensagem"
+            onClick={() => void handleSend()}
           >
             <Send size={16} strokeWidth={1.6} />
           </button>
