@@ -1,28 +1,37 @@
 // src/api/mensagem.ts
-import { supabase } from '../lib/supabaseClient'
+import { supabase } from "../lib/supabaseClient";
 
-export async function salvarMensagem({
-  usuarioId,
-  conteudo,
-  sentimento,
-  salvarMemoria = false,
-}: {
-  usuarioId: string
-  conteudo: string
-  sentimento?: string
-  salvarMemoria?: boolean
-}) {
+export type MensagemRow = {
+  id: string;
+  conteudo: string;
+  usuario_id: string;
+  sentimento?: string | null;
+  salvar_memoria?: boolean | null;
+  created_at?: string;
+  updated_at?: string | null;
+};
+
+export type NovaMensagemPayload = Partial<Omit<MensagemRow, "id">> & {
+  conteudo: string;
+  usuario_id: string;
+};
+
+export async function salvarMensagem(
+  payload: NovaMensagemPayload,
+): Promise<MensagemRow> {
   const { data, error } = await supabase
-    .from('mensagem')
-    .insert([
-      {
-        usuario_id: usuarioId,
-        conteudo,
-        sentimento,
-        salvar_memoria: salvarMemoria,
-      },
-    ])
+    .from("mensagens")
+    .insert(payload)
+    .select("*")
+    .single();
 
-  if (error) throw new Error(error.message)
-  return data
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error("Nenhuma mensagem retornada pelo Supabase.");
+  }
+
+  return data as MensagemRow;
 }
