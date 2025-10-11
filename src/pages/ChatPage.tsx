@@ -79,6 +79,7 @@ const ChatPage: React.FC = () => {
     handleSendMessage: streamSendMessage,
     digitando,
     erroApi,
+    pending,
   } = useEcoStream({
     messages,
     addMessage,
@@ -97,6 +98,7 @@ const ChatPage: React.FC = () => {
 
   const handleSendMessage = useCallback(
     async (text: string, systemHint?: string) => {
+      if (pending) return;
       if (isGuest) {
         if (guestGate.inputDisabled || guestGate.count >= guestGate.limit) {
           setLoginGateOpen(true);
@@ -106,7 +108,7 @@ const ChatPage: React.FC = () => {
       }
       await streamSendMessage(text, systemHint);
     },
-    [guestGate, isGuest, streamSendMessage],
+    [guestGate, isGuest, pending, streamSendMessage],
   );
 
   useEffect(() => {
@@ -251,7 +253,13 @@ const ChatPage: React.FC = () => {
       <div className="sticky bottom-0 z-40 bg-gradient-to-t from-white via-white/95 to-white/80 px-4 pb-3 pt-3 sm:px-6 lg:px-10">
         <div className="w-full mx-auto max-w-3xl">
           <QuickSuggestions
-            visible={showQuick && messages.length === 0 && !digitando && !erroApi}
+            visible={
+              showQuick &&
+              messages.length === 0 &&
+              !digitando &&
+              !pending &&
+              !erroApi
+            }
             onPickSuggestion={handlePickSuggestion}
             rotatingItems={ROTATING_ITEMS}
             rotationMs={5000}
@@ -263,7 +271,7 @@ const ChatPage: React.FC = () => {
               if (opt === 'go_to_voice_page') navigate('/voice');
             }}
             onSendAudio={() => console.log('Áudio enviado')}
-            disabled={digitando || (isGuest && guestGate.inputDisabled)}
+            disabled={pending || (isGuest && guestGate.inputDisabled)}
             placeholder={
               isGuest && guestGate.inputDisabled
                 ? 'Crie sua conta para continuar…'
