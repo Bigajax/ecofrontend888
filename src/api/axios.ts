@@ -15,7 +15,8 @@ const normalizedBase =
     ? apiBaseEnv.trim().replace(/\/+$/, "") // remove barra final
     : "";
 
-const baseURL = normalizedBase || window.location.origin;
+const baseURL =
+  normalizedBase || (typeof window !== "undefined" ? window.location.origin : "");
 
 // ==========================
 // Cria instância Axios
