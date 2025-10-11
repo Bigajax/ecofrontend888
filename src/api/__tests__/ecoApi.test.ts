@@ -131,6 +131,22 @@ describe("enviarMensagemParaEco", () => {
 
     expect(resposta.text).toBe("Olá");
     expect(resposta.done).toBeUndefined();
+    expect(resposta.noTextReceived).toBeFalsy();
+  });
+
+  it("marca quando nenhum texto é recebido antes do done", async () => {
+    fetchMock.mockResolvedValue(
+      createSseResponse([
+        { type: "prompt_ready", payload: { type: "prompt_ready" } },
+        { type: "done", payload: { type: "done" } },
+      ])
+    );
+
+    const resposta = await callApi();
+
+    expect(resposta.text).toBe("");
+    expect(resposta.done).toEqual({ type: "done" });
+    expect(resposta.noTextReceived).toBe(true);
   });
 
   it("dispara callbacks incrementais conforme eventos SSE chegam", async () => {
