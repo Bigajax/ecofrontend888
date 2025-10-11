@@ -26,51 +26,12 @@ function ensureGuestId(): string {
   }
 }
 
-function formatRequestUrl(config: { baseURL?: string; url?: string }): string {
-  const base = config.baseURL || api.defaults.baseURL || "";
-  const url = config.url || "";
-
-  if (/^https?:/i.test(url)) {
-    return url;
-  }
-
-  if (!base) {
-    return url;
-  }
-
-  if (!url) {
-    return base;
-  }
-
-  const normalizedBase = String(base).replace(/\/+$/, "");
-  const normalizedPath = String(url).replace(/^\/+/, "");
-  return `${normalizedBase}/${normalizedPath}`;
-}
-
-api.interceptors.request.use(async (config) => {
-  try {
-    const headers =
-      config.headers instanceof AxiosHeaders
-        ? config.headers
-        : new AxiosHeaders(config.headers ?? {});
-
-    config.headers = headers;
 
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token;
 
     if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
-      headers.delete("X-Guest-Id");
-    } else {
-      headers.set("X-Guest-Id", ensureGuestId());
-      headers.delete("Authorization");
-    }
 
-    const fullUrl = formatRequestUrl(config);
-
-    console.log(
-      `➡️ [Axios] ${config.method?.toUpperCase()} ${fullUrl} | Auth: ${
         token ? "Bearer" : "Guest"
       }`
     );
@@ -83,18 +44,13 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => {
-    const fullUrl = formatRequestUrl(response.config);
 
-    console.log(
-      `✅ [Axios] ${response.config.method?.toUpperCase()} ${fullUrl} -> ${response.status}`
     );
     return response;
   },
   (error) => {
     const { config, response } = error;
-    const fullUrl = config ? formatRequestUrl(config) : "<unknown>";
-    console.error(
-      `❌ [Axios] ${config?.method?.toUpperCase()} ${fullUrl} -> ${
+
         response?.status || "NO_RESPONSE"
       }`
     );
