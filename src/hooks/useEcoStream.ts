@@ -30,6 +30,8 @@ type BuscarPorTagResult = Awaited<ReturnType<typeof buscarUltimasMemoriasComTags
 
 const isDev = Boolean((import.meta as any)?.env?.DEV);
 const CONTEXT_FETCH_TIMEOUT_MS = 1500;
+const NO_TEXT_WARNING = '⚠️ Nenhum texto recebido do servidor.';
+const NO_TEXT_ALERT_MESSAGE = 'Nenhum texto recebido do servidor. Tente novamente.';
 
 const getNow = () =>
   typeof performance !== 'undefined' && typeof performance.now === 'function'
@@ -572,6 +574,7 @@ export const useEcoStream = ({
         );
 
         const finalText = (resposta?.text || aggregatedEcoText || '').trim();
+        const noTextFromStream = resposta?.noTextReceived === true;
         const finalMetadata =
           latestMetadata ||
           pendingMetadata ||
@@ -579,13 +582,13 @@ export const useEcoStream = ({
           (resposta?.done && typeof resposta.done === 'object' ? resposta.done : undefined);
 
         if (!resolvedEcoMessageId) {
-          if (finalText) {
+          if (finalText || noTextFromStream) {
             const newId = uuidv4();
             resolvedEcoMessageId = newId;
             const ecoMessage: ChatMessageType = {
               id: newId,
-              text: finalText,
-              content: finalText,
+              text: finalText || NO_TEXT_WARNING,
+              content: finalText || NO_TEXT_WARNING,
               sender: 'eco',
               ...(finalMetadata !== undefined ? { metadata: finalMetadata } : {}),
               ...(resposta?.done ? { donePayload: resposta.done } : {}),
@@ -599,8 +602,11 @@ export const useEcoStream = ({
             });
           }
         } else {
-          if (finalText) {
-            patchEcoMessage({ text: finalText, content: finalText });
+          if (finalText || noTextFromStream) {
+            patchEcoMessage({
+              text: finalText || NO_TEXT_WARNING,
+              content: finalText || NO_TEXT_WARNING,
+            });
           }
           const patch: Partial<ChatMessageType> = {};
           if (finalMetadata !== undefined) patch.metadata = finalMetadata;
@@ -673,6 +679,14 @@ export const useEcoStream = ({
                 ...(isGuest ? { guestId } : {}),
               });
             });
+        }
+
+        if (noTextFromStream) {
+          console.warn('[ChatPage] Fluxo SSE finalizado sem texto recebido do servidor.');
+          if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+            window.alert(NO_TEXT_ALERT_MESSAGE);
+          }
+          setErroApi(NO_TEXT_ALERT_MESSAGE);
         }
 
         if (!metricsReported) {

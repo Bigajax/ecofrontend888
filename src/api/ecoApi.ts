@@ -83,6 +83,11 @@ export interface EcoStreamResult {
   metadata?: unknown;
   done?: unknown;
   primeiraMemoriaSignificativa?: boolean;
+  /**
+   * Indica que recebemos "prompt_ready" e/ou "done", porém nenhum token de texto.
+   * Útil para alertar o front que o backend encerrou a stream sem conteúdo.
+   */
+  noTextReceived?: boolean;
 }
 
 export interface EcoSseEvent<TPayload = Record<string, any>> {
@@ -481,6 +486,8 @@ export const enviarMensagemParaEco = async (
     let primeiraMemoriaSignificativa = false;
     let gotAnyToken = false;
     let lastNonEmptyText: string | undefined;
+    let promptReadyReceived = false;
+    let doneWithoutText = false;
 
     const rememberText = (text: string | undefined) => {
       if (typeof text !== "string") return;
@@ -572,6 +579,7 @@ export const enviarMensagemParaEco = async (
       }
 
       if (type === "prompt_ready") {
+        promptReadyReceived = true;
         safeInvoke(handlers.onPromptReady, baseEventInfo);
         return;
       }
@@ -707,6 +715,9 @@ export const enviarMensagemParaEco = async (
           text: doneText.length > 0 ? doneText : fallbackText,
         };
         safeInvoke(handlers.onDone, eventWithMeta);
+        if (!gotAnyToken) {
+          doneWithoutText = true;
+        }
         return;
       }
 
@@ -774,11 +785,22 @@ export const enviarMensagemParaEco = async (
     // ⚠️ NÃO lance erro aqui — retorne string vazia se não houver texto
     if (!texto) texto = "";
 
+    const noTextReceived = (!gotAnyToken && doneReceived) || (doneWithoutText && promptReadyReceived);
+    if (noTextReceived) {
+      console.warn("⚠️ [ECO API] Stream encerrada sem nenhum texto recebido.", {
+        promptReadyReceived,
+        doneReceived,
+        aggregatedPartsCount: aggregatedParts.length,
+        donePayload,
+      });
+    }
+
     return {
       text: texto,
       metadata,
       done: donePayload,
       primeiraMemoriaSignificativa,
+      ...(noTextReceived ? { noTextReceived: true } : {}),
     };
   } catch (error: any) {
     let message: string;
