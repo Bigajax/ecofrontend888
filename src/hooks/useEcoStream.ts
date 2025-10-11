@@ -10,6 +10,7 @@ import { extractDeepQuestionFlag } from '../utils/chat/deepQuestion';
 import { gerarMensagemRetorno } from '../utils/chat/memory';
 import type { Message as ChatMessageType } from '../contexts/ChatContext';
 import mixpanel from '../lib/mixpanel';
+import { supabase } from '../lib/supabaseClient';
 
 interface UseEcoStreamOptions {
   messages: ChatMessageType[];
@@ -29,7 +30,7 @@ type BuscarSimilaresResult = Awaited<ReturnType<typeof buscarMemoriasSemelhantes
 type BuscarPorTagResult = Awaited<ReturnType<typeof buscarUltimasMemoriasComTags>>;
 
 const isDev = Boolean((import.meta as any)?.env?.DEV);
-const CONTEXT_FETCH_TIMEOUT_MS = 1500;
+const CONTEXT_FETCH_TIMEOUT_MS = 3000;
 const NO_TEXT_WARNING = '⚠️ Nenhum texto recebido do servidor.';
 const NO_TEXT_ALERT_MESSAGE = 'Nenhum texto recebido do servidor. Tente novamente.';
 
@@ -37,6 +38,15 @@ const getNow = () =>
   typeof performance !== 'undefined' && typeof performance.now === 'function'
     ? performance.now()
     : Date.now();
+
+const showToast = (title: string, description?: string) => {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent('toast', {
+      detail: { title, description },
+    }),
+  );
+};
 
 const withTimeout = <T>(
   promise: Promise<T>,
@@ -81,12 +91,13 @@ export const useEcoStream = ({
   onUnauthorized,
 }: UseEcoStreamOptions) => {
   const [digitando, setDigitando] = useState(false);
-  const [pending, setPending] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [erroApi, setErroApi] = useState<string | null>(null);
 
   const messagesRef = useRef(messages);
   const isAtBottomRef = useRef(isAtBottom);
   const inFlightRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -96,19 +107,38 @@ export const useEcoStream = ({
     isAtBottomRef.current = isAtBottom;
   }, [isAtBottom]);
 
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
   const handleSendMessage = useCallback(
     async (text: string, systemHint?: string) => {
       const raw = text ?? '';
       const trimmed = raw.trim();
       if (!trimmed) return;
-      if (pending || inFlightRef.current) return;
-
-      const analyticsUserId = userId ?? guestId ?? 'guest';
-      const shouldPersist = Boolean(userId && !isGuest);
+      if (isSending || inFlightRef.current) return;
 
       setDigitando(true);
-      setPending(true);
+      setIsSending(true);
       setErroApi(null);
+
+      const {
+        data: sessionData,
+      } = await supabase
+        .auth
+        .getSession()
+        .catch(() => ({ data: { session: null } }));
+      const session = sessionData?.session ?? null;
+      const authUserId = session?.user?.id ?? undefined;
+      const isAuthenticated = Boolean(authUserId);
+      const analyticsUserId = authUserId ?? userId ?? guestId ?? 'guest';
+      const shouldPersist = isAuthenticated && !isGuest;
+
+      const controller = new AbortController();
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = controller;
 
       const userMsgId = uuidv4();
       inFlightRef.current = userMsgId;
@@ -142,7 +172,6 @@ export const useEcoStream = ({
 
         const salvarMensagemPromise: Promise<string | null> = shouldPersist
           ? salvarMensagem({
-              usuario_id: userId as string,
               conteudo: trimmed,
               sentimento: '',
               salvar_memoria: true,
@@ -185,7 +214,7 @@ export const useEcoStream = ({
               buscarMemoriasSemelhantesV2(trimmed, {
                 k: 3,
                 threshold: 0.12,
-                usuario_id: userId as string,
+                usuario_id: authUserId as string,
               }).catch(() => [] as BuscarSimilaresResult),
               CONTEXT_FETCH_TIMEOUT_MS,
               () => {
@@ -202,7 +231,7 @@ export const useEcoStream = ({
 
         const buscarPorTagPromise = shouldPersist && tags.length
           ? withTimeout<BuscarPorTagResult>(
-              buscarUltimasMemoriasComTags(userId as string, tags, 2).catch(
+              buscarUltimasMemoriasComTags(authUserId as string, tags, 2).catch(
                 () => [] as BuscarPorTagResult,
               ),
               CONTEXT_FETCH_TIMEOUT_MS,
@@ -545,7 +574,33 @@ export const useEcoStream = ({
             if (meta !== undefined) {
               metricsExtra.final_metadata = meta;
             }
+            const usage =
+              (event.payload as any)?.usage ??
+              (meta && typeof meta === 'object' ? (meta as any).usage : undefined);
+            const completionTokens =
+              usage && typeof usage === 'object'
+                ? typeof (usage as any).completion_tokens === 'number'
+                  ? (usage as any).completion_tokens
+                  : typeof (usage as any).output_tokens === 'number'
+                  ? (usage as any).output_tokens
+                  : undefined
+                : undefined;
+            const latencyMs = Math.max(Math.round(getNow() - requestStartedAt), 0);
+            metricsExtra.persisted_id = persistedMensagemId ?? null;
+            metricsExtra.authenticated = isAuthenticated;
+            metricsExtra.latency_ms = latencyMs;
+            if (typeof completionTokens === 'number') {
+              metricsExtra.sse_tokens = completionTokens;
+            }
             logAndSendStreamMetrics('success', metricsExtra);
+            mixpanel.track('Eco: Mensagem Concluída', {
+              mensagem_id: persistedMensagemId ?? userMsgId,
+              auth: isAuthenticated,
+              latency_ms: latencyMs,
+              sse_tokens: completionTokens ?? 0,
+              isGuest,
+              ...(isGuest ? { guestId } : {}),
+            });
             resetEcoMessageTracking();
           },
           onError: (error) => {
@@ -575,12 +630,17 @@ export const useEcoStream = ({
         const resposta = await enviarMensagemParaEco(
           mensagensComContexto,
           userName,
-          shouldPersist ? (userId as string) : undefined,
+          shouldPersist ? (authUserId as string) : undefined,
           clientHour,
           clientTz,
           handlers,
-          { guestId, isGuest }
+          { guestId, isGuest, signal: controller.signal }
         );
+
+        if (resposta?.aborted) {
+          resetEcoMessageTracking();
+          return;
+        }
 
         const finalText = (resposta?.text || aggregatedEcoText || '').trim();
         const noTextFromStream = resposta?.noTextReceived === true;
@@ -692,9 +752,7 @@ export const useEcoStream = ({
 
         if (noTextFromStream) {
           console.warn('[ChatPage] Fluxo SSE finalizado sem texto recebido do servidor.');
-          if (typeof window !== 'undefined' && typeof window.alert === 'function') {
-            window.alert(NO_TEXT_ALERT_MESSAGE);
-          }
+          showToast('Sem resposta da Eco', NO_TEXT_ALERT_MESSAGE);
           setErroApi(NO_TEXT_ALERT_MESSAGE);
         }
 
@@ -707,31 +765,45 @@ export const useEcoStream = ({
       } catch (err: any) {
         console.error('[ChatPage] erro:', err);
 
-        let displayMessage = err?.message || 'Falha ao enviar mensagem.';
+        const isAbortError = err?.name === 'AbortError';
 
-        if (err instanceof EcoApiError && err.status === 401) {
-          displayMessage = 'Faça login para continuar a conversa com a Eco.';
-          if (onUnauthorized) {
-            try {
-              onUnauthorized();
-            } catch (callbackError) {
-              if (isDev) {
-                console.warn('[ChatPage] onUnauthorized falhou', callbackError);
+        if (!isAbortError) {
+          let displayMessage = err?.message || 'Falha ao enviar mensagem.';
+
+          if (err instanceof EcoApiError) {
+            if (err.status === 401) {
+              displayMessage = 'Faça login para continuar a conversa com a Eco.';
+              showToast('Faça login para salvar suas conversas', 'Entre para manter o histórico com a Eco.');
+              if (onUnauthorized) {
+                try {
+                  onUnauthorized();
+                } catch (callbackError) {
+                  if (isDev) {
+                    console.warn('[ChatPage] onUnauthorized falhou', callbackError);
+                  }
+                }
               }
+            } else if (err.status === 429) {
+              displayMessage = 'Muitas requisições. Aguarde alguns segundos e tente novamente.';
+              showToast('Calma aí 🙂', 'Aguarde alguns segundos antes de enviar outra mensagem.');
+            } else if (err.status && err.status >= 500) {
+              displayMessage = 'A Eco está instável no momento. Tente novamente em instantes.';
             }
           }
+
+          setErroApi(displayMessage);
+          mixpanel.track('Eco: Erro ao Enviar Mensagem', {
+            userId: analyticsUserId,
+            erro: err?.message || 'desconhecido',
+            mensagem: (text || '').slice(0, 120),
+            timestamp: new Date().toISOString(),
+            isGuest,
+            ...(isGuest ? { guestId } : {}),
+          });
         }
 
-        setErroApi(displayMessage);
-        mixpanel.track('Eco: Erro ao Enviar Mensagem', {
-          userId: analyticsUserId,
-          erro: err?.message || 'desconhecido',
-          mensagem: (text || '').slice(0, 120),
-          timestamp: new Date().toISOString(),
-          isGuest,
-          ...(isGuest ? { guestId } : {}),
-        });
         resetEcoMessageTracking();
+
         if (!metricsReported) {
           const now =
             typeof performance !== 'undefined' && typeof performance.now === 'function'
@@ -740,17 +812,23 @@ export const useEcoStream = ({
           if (doneAt === undefined) {
             doneAt = now;
           }
-          const reason = err?.name === 'AbortError' ? 'aborted' : 'error';
+          const reason = isAbortError ? 'aborted' : 'error';
           logAndSendStreamMetrics('error', {
             stage: 'request_catch',
             error_name: err?.name ?? 'Error',
             error_message: err?.message ?? 'Erro desconhecido ao enviar mensagem.',
             error_reason: reason,
+            ...(err instanceof EcoApiError && typeof err.status === 'number'
+              ? { status: err.status }
+              : {}),
           });
         }
       } finally {
+        if (abortControllerRef.current === controller) {
+          abortControllerRef.current = null;
+        }
         inFlightRef.current = null;
-        setPending(false);
+        setIsSending(false);
         setDigitando(false);
         scrollToBottom(true);
       }
@@ -761,7 +839,7 @@ export const useEcoStream = ({
         isAtBottom,
         isGuest,
         onUnauthorized,
-        pending,
+        isSending,
         scrollToBottom,
         setMessages,
         sessionId,
@@ -770,5 +848,5 @@ export const useEcoStream = ({
     ]
   );
 
-  return { handleSendMessage, digitando, erroApi, setErroApi, pending } as const;
+  return { handleSendMessage, digitando, erroApi, setErroApi, pending: isSending } as const;
 };
