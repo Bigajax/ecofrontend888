@@ -77,6 +77,87 @@ const withTimeout = <T>(
   });
 };
 
+const flattenToString = (value: unknown): string => {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value.map((item) => flattenToString(item)).join('');
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return Object.prototype.toString.call(value);
+    }
+  }
+  return String(value);
+};
+
+const collectErrorMessages = (error: unknown, acc: Set<string> = new Set()): Set<string> => {
+  if (!error) return acc;
+
+  const push = (text: unknown) => {
+    const str = typeof text === 'string' ? text : flattenToString(text);
+    if (str && str.trim().length > 0) {
+      acc.add(str.trim());
+    }
+  };
+
+  if (typeof error === 'string') {
+    push(error);
+    return acc;
+  }
+
+  if (error instanceof Error) {
+    push(error.message);
+    if ((error as any).cause) {
+      collectErrorMessages((error as any).cause, acc);
+    }
+  }
+
+  if (typeof error === 'object' && error !== null) {
+    const maybeMessage = (error as any).message;
+    if (typeof maybeMessage === 'string') push(maybeMessage);
+
+    const maybeDetails = (error as any).details;
+    if (maybeDetails && maybeDetails !== error) {
+      collectErrorMessages(maybeDetails, acc);
+    }
+
+    const maybeReason = (error as any).reason;
+    if (typeof maybeReason === 'string') push(maybeReason);
+  }
+
+  return acc;
+};
+
+const resolveFriendlyNetworkError = (error: unknown) => {
+  const texts = Array.from(collectErrorMessages(error));
+  if (texts.length === 0) return { type: 'other' as const, message: '' };
+
+  const combined = texts.join(' | ').toLowerCase();
+  if (combined.includes('cors') || combined.includes('preflight')) {
+    return {
+      type: 'cors' as const,
+      message: 'O servidor recusou a origem. Atualize e tente novamente.',
+    };
+  }
+
+  if (
+    combined.includes('failed to fetch') ||
+    combined.includes('networkerror') ||
+    combined.includes('net::err') ||
+    combined.includes('err_connection')
+  ) {
+    return {
+      type: 'network' as const,
+      message:
+        'Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.',
+    };
+  }
+
+  return { type: 'other' as const, message: '' };
+};
+
 export const useEcoStream = ({
   messages,
   addMessage,
@@ -163,9 +244,48 @@ export const useEcoStream = ({
         outcome: 'success' | 'error',
         extra?: Record<string, unknown>
       ) => void = () => {};
-      let resetEcoMessageTracking = () => {};
+      let resetEcoMessageTracking: (options?: { removeIfEmpty?: boolean }) => void = () => {};
+      let markStreamDone = () => {};
+
+      let ecoMessageId: string | null = null;
+      let ecoMessageIndex: number | null = null;
+      let resolvedEcoMessageId: string | null = null;
+      let resolvedEcoMessageIndex: number | null = null;
+      let aggregatedEcoText = '';
+      let latestMetadata: unknown;
+      let pendingMetadata: unknown;
+      let donePayload: unknown;
+      let memoryFromStream: unknown;
+      let primeiraMemoriaFlag = false;
+      let trackedMemory = false;
+      let latencyFromStream: number | undefined;
+      let firstContentReceived = false;
+      let streamDoneLogged = false;
 
       try {
+        const placeholderId = uuidv4();
+        ecoMessageId = placeholderId;
+        resolvedEcoMessageId = placeholderId;
+        setMessages((prev) => {
+          const index = prev.length;
+          ecoMessageIndex = index;
+          resolvedEcoMessageIndex = index;
+          const placeholder: ChatMessageType = {
+            id: placeholderId,
+            sender: 'eco',
+            text: ' ',
+            content: '',
+            streaming: true,
+          };
+          return [...prev, placeholder];
+        });
+
+        markStreamDone = () => {
+          if (streamDoneLogged) return;
+          streamDoneLogged = true;
+          console.count('STREAM_DONE');
+        };
+
         const tags = extrairTagsRelevantes(trimmed);
 
         let persistedMensagemId: string | undefined;
@@ -299,20 +419,6 @@ export const useEcoStream = ({
         const clientHour = new Date().getHours();
         const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-        let ecoMessageId: string | null = null;
-        let ecoMessageIndex: number | null = null;
-        let resolvedEcoMessageId: string | null = null;
-        let resolvedEcoMessageIndex: number | null = null;
-        let aggregatedEcoText = '';
-        let latestMetadata: unknown;
-        let pendingMetadata: unknown;
-        let donePayload: unknown;
-        let memoryFromStream: unknown;
-        let primeiraMemoriaFlag = false;
-        let trackedMemory = false;
-        let latencyFromStream: number | undefined;
-        let firstContentReceived = false;
-
         const requestStartedAt = getNow();
         let promptReadyAt: number | undefined;
         let firstTokenAt: number | undefined;
@@ -413,6 +519,7 @@ export const useEcoStream = ({
               sender: 'eco',
               text: ' ',
               content: '',
+              streaming: true,
             };
             ecoMessageIndex = index;
             resolvedEcoMessageIndex = index;
@@ -423,7 +530,18 @@ export const useEcoStream = ({
         const patchEcoMessage = (patch: Partial<ChatMessageType>) => {
           const targetId = ecoMessageId ?? resolvedEcoMessageId;
           if (!targetId) return;
-          if (Object.keys(patch).length === 0) return;
+          const normalizedPatch: Partial<ChatMessageType> = {};
+          for (const [key, value] of Object.entries(patch)) {
+            if (key === 'text') {
+              const stringValue = flattenToString(value);
+              normalizedPatch.text = stringValue.length > 0 ? stringValue : ' ';
+            } else if (key === 'content') {
+              normalizedPatch.content = flattenToString(value);
+            } else {
+              (normalizedPatch as any)[key] = value;
+            }
+          }
+          if (Object.keys(normalizedPatch).length === 0) return;
           setMessages((prev) => {
             const cachedIndex = ecoMessageIndex ?? resolvedEcoMessageIndex;
             let index = cachedIndex ?? prev.findIndex((m) => m.id === targetId);
@@ -436,23 +554,46 @@ export const useEcoStream = ({
             resolvedEcoMessageId = targetId;
             resolvedEcoMessageIndex = index;
             let changed = false;
-            for (const [key, value] of Object.entries(patch)) {
+            for (const [key, value] of Object.entries(normalizedPatch)) {
               if ((existing as any)[key] !== value) {
                 changed = true;
                 break;
               }
             }
             if (!changed) return prev;
-            const updated = { ...existing, ...patch };
+            const updated = { ...existing, ...normalizedPatch };
             const next = [...prev];
             next[index] = updated;
             return next;
           });
         };
 
-        resetEcoMessageTracking = () => {
+        const removeStreamingMessageIfEmpty = () => {
+          const targetId = ecoMessageId ?? resolvedEcoMessageId;
+          if (!targetId) return;
+          setMessages((prev) => {
+            const index = prev.findIndex((m) => m.id === targetId);
+            if (index < 0) return prev;
+            const existing = prev[index];
+            const textValue = flattenToString(
+              (existing?.content as string | undefined) ?? existing?.text ?? ''
+            );
+            if (textValue.trim().length > 0) return prev;
+            const next = [...prev];
+            next.splice(index, 1);
+            return next;
+          });
+        };
+
+        resetEcoMessageTracking = ({ removeIfEmpty = false } = {}) => {
+          if (removeIfEmpty) {
+            removeStreamingMessageIfEmpty();
+          }
           ecoMessageId = null;
           ecoMessageIndex = null;
+          resolvedEcoMessageId = null;
+          resolvedEcoMessageIndex = null;
+          aggregatedEcoText = '';
         };
 
         const syncScroll = () => {
@@ -482,14 +623,14 @@ export const useEcoStream = ({
               promptReadyAt = getNow();
             }
             ensureEcoMessage();
-            patchEcoMessage({ text: ' ', content: '' });
+            patchEcoMessage({ text: ' ', content: '', streaming: true });
             syncScroll();
           },
           onLatency: (event) => {
             if (typeof event.latencyMs === 'number') {
               latencyFromStream = event.latencyMs;
               ensureEcoMessage();
-              patchEcoMessage({ latencyMs: event.latencyMs });
+              patchEcoMessage({ latencyMs: event.latencyMs, streaming: true });
             }
           },
           onFirstToken: (event) => {
@@ -497,13 +638,14 @@ export const useEcoStream = ({
               firstTokenAt = getNow();
             }
             ensureEcoMessage();
-            const texto = event.text ?? '';
+            const texto = flattenToString(event.text ?? '');
             aggregatedEcoText = texto;
             const hasSubstantiveContent = texto.trim().length > 0;
             firstContentReceived = hasSubstantiveContent;
             patchEcoMessage({
-              text: texto.length > 0 ? texto : ' ',
+              text: texto,
               content: texto,
+              streaming: true,
             });
             if (hasSubstantiveContent) {
               setDigitando(false);
@@ -511,14 +653,19 @@ export const useEcoStream = ({
             syncScroll();
           },
           onChunk: (event) => {
-            if (!event.text) return;
+            const chunkText = flattenToString(event.text ?? '');
+            if (!chunkText) return;
             ensureEcoMessage();
-            aggregatedEcoText += event.text;
+            aggregatedEcoText += chunkText;
             if (!firstContentReceived && aggregatedEcoText.trim().length > 0) {
               firstContentReceived = true;
               setDigitando(false);
             }
-            patchEcoMessage({ text: aggregatedEcoText, content: aggregatedEcoText });
+            patchEcoMessage({
+              text: aggregatedEcoText,
+              content: aggregatedEcoText,
+              streaming: true,
+            });
             syncScroll();
           },
           onMetaPending: (event) => {
@@ -549,21 +696,23 @@ export const useEcoStream = ({
               doneAt = getNow();
             }
             donePayload = event.payload;
+            markStreamDone();
             const meta = event.metadata ?? latestMetadata ?? pendingMetadata ?? event.payload?.response ?? event.payload?.metadata;
             if (meta !== undefined) {
               latestMetadata = meta;
               ensureEcoMessage();
-              patchEcoMessage({ metadata: meta, donePayload: event.payload });
+              patchEcoMessage({ metadata: meta, donePayload: event.payload, streaming: false });
               trackMemoryIfSignificant(meta);
             } else {
               ensureEcoMessage();
-              patchEcoMessage({ donePayload: event.payload });
+              patchEcoMessage({ donePayload: event.payload, streaming: false });
             }
             if (event.text && aggregatedEcoText.length === 0) {
-              aggregatedEcoText = event.text;
+              aggregatedEcoText = flattenToString(event.text);
               patchEcoMessage({
                 text: aggregatedEcoText,
                 content: aggregatedEcoText,
+                streaming: false,
               });
             }
             if (event.payload?.primeiraMemoriaSignificativa || event.payload?.primeira) {
@@ -571,6 +720,7 @@ export const useEcoStream = ({
             }
             setDigitando(false);
             syncScroll();
+            patchEcoMessage({ streaming: false });
             const metricsExtra: Record<string, unknown> = { stage: 'on_done' };
             if (meta !== undefined) {
               metricsExtra.final_metadata = meta;
@@ -609,6 +759,7 @@ export const useEcoStream = ({
               doneAt = getNow();
             }
             setDigitando(false);
+            markStreamDone();
             const message =
               typeof error?.message === 'string' ? error.message : undefined;
             const normalizedMessage = message?.toLowerCase() ?? '';
@@ -624,7 +775,7 @@ export const useEcoStream = ({
               error_message: message ?? 'Erro desconhecido na stream.',
               error_reason: reason,
             });
-            resetEcoMessageTracking();
+            resetEcoMessageTracking({ removeIfEmpty: aggregatedEcoText.trim().length === 0 });
           },
         };
 
@@ -639,17 +790,20 @@ export const useEcoStream = ({
         );
 
         if (resposta?.aborted) {
-          resetEcoMessageTracking();
+          markStreamDone();
+          resetEcoMessageTracking({ removeIfEmpty: aggregatedEcoText.trim().length === 0 });
           return;
         }
 
-        const finalText = (resposta?.text || aggregatedEcoText || '').trim();
+        const finalText = flattenToString(resposta?.text ?? aggregatedEcoText ?? '').trim();
         const noTextFromStream = resposta?.noTextReceived === true;
         const finalMetadata =
           latestMetadata ||
           pendingMetadata ||
           (resposta?.metadata && typeof resposta.metadata === 'object' ? resposta.metadata : undefined) ||
           (resposta?.done && typeof resposta.done === 'object' ? resposta.done : undefined);
+
+        markStreamDone();
 
         if (!resolvedEcoMessageId) {
           if (finalText || noTextFromStream) {
@@ -660,6 +814,7 @@ export const useEcoStream = ({
               text: finalText || NO_TEXT_WARNING,
               content: finalText || NO_TEXT_WARNING,
               sender: 'eco',
+              streaming: false,
               ...(finalMetadata !== undefined ? { metadata: finalMetadata } : {}),
               ...(resposta?.done ? { donePayload: resposta.done } : {}),
               ...(memoryFromStream ? { memory: memoryFromStream } : {}),
@@ -676,6 +831,7 @@ export const useEcoStream = ({
             patchEcoMessage({
               text: finalText || NO_TEXT_WARNING,
               content: finalText || NO_TEXT_WARNING,
+              streaming: false,
             });
           }
           const patch: Partial<ChatMessageType> = {};
@@ -683,10 +839,15 @@ export const useEcoStream = ({
           if (resposta?.done) patch.donePayload = resposta.done;
           if (memoryFromStream) patch.memory = memoryFromStream;
           if (typeof latencyFromStream === 'number') patch.latencyMs = latencyFromStream;
+          if (!('streaming' in patch)) {
+            patch.streaming = false;
+          }
           if (Object.keys(patch).length > 0) {
             patchEcoMessage(patch);
           }
         }
+
+        resetEcoMessageTracking();
 
         donePayload = donePayload || resposta?.done;
 
@@ -770,8 +931,11 @@ export const useEcoStream = ({
 
         if (!isAbortError) {
           let displayMessage = err?.message || 'Falha ao enviar mensagem.';
+          const friendly = resolveFriendlyNetworkError(err);
 
-          if (err instanceof EcoApiError) {
+          if (friendly.type !== 'other' && friendly.message) {
+            displayMessage = friendly.message;
+          } else if (err instanceof EcoApiError) {
             if (err.status === 401) {
               displayMessage = 'Faça login para continuar a conversa com a Eco.';
               showToast('Faça login para salvar suas conversas', 'Entre para manter o histórico com a Eco.');
@@ -803,7 +967,8 @@ export const useEcoStream = ({
           });
         }
 
-        resetEcoMessageTracking();
+        markStreamDone();
+        resetEcoMessageTracking({ removeIfEmpty: aggregatedEcoText.trim().length === 0 });
 
         if (!metricsReported) {
           const now =

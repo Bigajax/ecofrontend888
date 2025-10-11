@@ -10,6 +10,7 @@ type Props = {
   className?: string;
   /** para manter a mesma tipografia do Drawer */
   labelClassName?: string;
+  disabled?: boolean;
 };
 
 const defaultLabelCls =
@@ -21,6 +22,7 @@ const RotatingPrompts = ({
   intervalMs = 4500,
   className = "",
   labelClassName = defaultLabelCls,
+  disabled = false,
 }: Props) => {
   const safeItems = useMemo(() => (Array.isArray(items) ? items.filter(Boolean) : []), [items]);
 
@@ -73,7 +75,10 @@ const RotatingPrompts = ({
     >
       <button
         type="button"
-        onClick={() => onPick(s, { source: "rotating", index: idx })}
+        onClick={() => {
+          if (disabled) return;
+          onPick(s, { source: "rotating", index: idx });
+        }}
         onFocus={() => (pauseRef.current = true)}
         onBlur={() => (pauseRef.current = false)}
         className="
@@ -87,6 +92,7 @@ const RotatingPrompts = ({
           active:translate-y-[1px] transition
         "
         aria-label={s.label}
+        disabled={disabled}
       >
         {s.icon && (
           <span className="text-[16px] leading-none" aria-hidden>

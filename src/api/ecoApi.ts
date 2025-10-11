@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import api from "./axios";
 import { supabase } from "../lib/supabaseClient";
+import { resolveApiUrl } from "../constants/api";
 
 import { EcoApiError } from "./errors";
 import {
@@ -11,7 +12,6 @@ import {
   safeLocalStorageGet,
   safeLocalStorageSet,
 } from "./guestIdentity";
-import { hasWindow } from "./environment";
 import {
   EcoEventHandlers,
   EcoSseEvent,
@@ -28,19 +28,6 @@ interface Message {
   role: string;
   content: string;
 }
-
-const resolveBaseUrl = (): string => {
-  const fromAxios = (api as any)?.defaults?.baseURL;
-  const fromEnv = (import.meta as any)?.env?.VITE_API_URL;
-  const fromWindow = hasWindow() ? window.location.origin : "";
-  const raw = String(fromAxios || fromEnv || fromWindow || "").trim();
-
-  if (!raw) throw new Error("Configuração de baseURL ausente para a Eco.");
-
-  const noSlash = raw.replace(/\/+$/, "");
-  const noApi = noSlash.replace(/\/api$/i, "");
-  return noApi;
-};
 
 const ASK_ENDPOINT = "/api/ask-eco";
 
@@ -166,8 +153,6 @@ export const enviarMensagemParaEco = async (
   const tz = clientTz || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   try {
-    const baseUrl = resolveBaseUrl();
-
     const { data: sessionData } =
       (await supabase.auth.getSession().catch(() => ({ data: { session: null } as any }))) || {
         data: { session: null },
@@ -186,7 +171,7 @@ export const enviarMensagemParaEco = async (
       token
     );
 
-    const response = await fetch(`${baseUrl}${ASK_ENDPOINT}`, {
+    const response = await fetch(resolveApiUrl(ASK_ENDPOINT), {
       ...requestInit,
       signal: options.signal,
     });

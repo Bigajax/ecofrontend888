@@ -1,10 +1,10 @@
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "../lib/supabaseClient";
+import { API_BASE_URL } from "../constants/api";
 
 const api = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_BASE_URL || "https://ecobackend888.onrender.com",
+  baseURL: API_BASE_URL,
   withCredentials: true,
   timeout: 60000,
 });

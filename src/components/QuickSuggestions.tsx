@@ -30,6 +30,7 @@ type QuickSuggestionsProps = {
   showRotating?: boolean;          // default: true
   rotatingItems?: Suggestion[];    // opcional — se não vier, usa DEFAULT_ROTATING
   rotationMs?: number;             // default: 4500ms
+  disabled?: boolean;
 };
 
 /* --------- Pílulas padrão (Eco convida) --------- */
@@ -134,10 +135,12 @@ export default function QuickSuggestions({
   showRotating = true,
   rotatingItems = DEFAULT_ROTATING,
   rotationMs = 4500,
+  disabled = false,
 }: QuickSuggestionsProps) {
   if (!visible) return null;
 
   const emitPick = (s: Suggestion, meta?: SuggestionPickMeta) => {
+    if (disabled) return;
     if (onPickSuggestion) return onPickSuggestion(s, meta);
     if (onPick) return onPick(`${s.icon ? s.icon + " " : ""}${s.label}`);
   };
@@ -158,6 +161,7 @@ export default function QuickSuggestions({
             className="w-full"
             // força a mesma tipografia no componente filho
             labelClassName={labelCls}
+            disabled={disabled}
           />
         </div>
       )}
@@ -191,6 +195,8 @@ export default function QuickSuggestions({
             aria-label={`Sugerir: ${s.label}`}
             title={s.label}
             data-suggestion-id={s.id}
+            type="button"
+            disabled={disabled}
           >
             {s.icon && (
               <span className="leading-none text-[15px] md:text-[17px]" aria-hidden>
