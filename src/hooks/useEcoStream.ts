@@ -175,6 +175,7 @@ export const useEcoStream = ({
               conteudo: trimmed,
               sentimento: '',
               salvar_memoria: true,
+              usuario_id: authUserId as string,
             })
               .then((saved) => saved.id)
               .catch((err) => {
