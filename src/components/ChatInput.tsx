@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Mic, Plus, X, Headphones } from 'lucide-react';
 
 type Props = {
-  onSendMessage: (t: string) => void;
+  onSendMessage: (t: string) => void | Promise<void>;
   onMoreOptionSelected: (k: 'go_to_voice_page') => void;
   onSendAudio?: (b: Blob) => void;
   disabled?: boolean;
@@ -155,7 +155,13 @@ const ChatInput: React.FC<Props> = ({
     const msg = inputMessage.trim();
     if (!msg) return;
 
-    onSendMessage(msg);
+    try {
+      Promise.resolve(onSendMessage(msg)).catch((err) =>
+        console.error('Erro ao enviar mensagem:', err)
+      );
+    } catch (err) {
+      console.error('Erro ao enviar mensagem:', err);
+    }
     setInputMessage('');
     onTextChange?.('');
     setShowMoreOptions(false);
@@ -310,7 +316,7 @@ const ChatInput: React.FC<Props> = ({
               const composing = e.nativeEvent?.isComposing;
               if (!composing && e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSend();
+                e.currentTarget.form?.requestSubmit();
               }
             }}
             onFocus={onFocus}

@@ -79,10 +79,12 @@ export const useEcoStream = ({
   onUnauthorized,
 }: UseEcoStreamOptions) => {
   const [digitando, setDigitando] = useState(false);
+  const [pending, setPending] = useState(false);
   const [erroApi, setErroApi] = useState<string | null>(null);
 
   const messagesRef = useRef(messages);
   const isAtBottomRef = useRef(isAtBottom);
+  const inFlightRef = useRef<string | null>(null);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -96,16 +98,19 @@ export const useEcoStream = ({
     async (text: string, systemHint?: string) => {
       const raw = text ?? '';
       const trimmed = raw.trim();
-      if (!trimmed || digitando) return;
+      if (!trimmed) return;
+      if (pending || inFlightRef.current) return;
 
       const analyticsUserId = userId ?? guestId ?? 'guest';
       const shouldPersist = Boolean(userId && !isGuest);
 
       setDigitando(true);
+      setPending(true);
       setErroApi(null);
 
-      const userLocalId = uuidv4();
-      addMessage({ id: userLocalId, text: trimmed, content: trimmed, sender: 'user' });
+      const userMsgId = uuidv4();
+      inFlightRef.current = userMsgId;
+      addMessage({ id: userMsgId, text: trimmed, content: trimmed, sender: 'user' });
 
       requestAnimationFrame(() => scrollToBottom(true));
 
@@ -131,7 +136,7 @@ export const useEcoStream = ({
       try {
         const tags = extrairTagsRelevantes(trimmed);
 
-        let persistedMensagemId = userLocalId;
+        let persistedMensagemId = userMsgId;
 
         const salvarMensagemPromise = shouldPersist
           ? salvarMensagem({
@@ -147,17 +152,17 @@ export const useEcoStream = ({
         const mensagemIdPromise = shouldPersist
           ? salvarMensagemPromise
               .then((savedMensagemId) => {
-                if (savedMensagemId && savedMensagemId !== userLocalId) {
+                if (savedMensagemId && savedMensagemId !== userMsgId) {
                   persistedMensagemId = savedMensagemId;
                   setMessages((prev) =>
-                    prev.map((m) => (m.id === userLocalId ? { ...m, id: savedMensagemId } : m))
+                    prev.map((m) => (m.id === userMsgId ? { ...m, id: savedMensagemId } : m))
                   );
                   return savedMensagemId;
                 }
-                return userLocalId;
+                return userMsgId;
               })
-              .catch(() => userLocalId)
-          : Promise.resolve(userLocalId);
+              .catch(() => userMsgId)
+          : Promise.resolve(userMsgId);
 
         const contextFetchStartedAt = getNow();
         let contextFetchDurationMs: number | null = null;
@@ -213,7 +218,7 @@ export const useEcoStream = ({
         );
         const contextTimedOut = similaresTimedOut || tagsTimedOut;
 
-        const baseHistory = [...messagesSnapshot, { id: userLocalId, role: 'user', content: trimmed }];
+        const baseHistory = [...messagesSnapshot, { id: userMsgId, role: 'user', content: trimmed }];
 
         const vistos = new Set<string>();
         const mems = [...(similar || []), ...(porTag || [])].filter((m: any) => {
@@ -313,7 +318,7 @@ export const useEcoStream = ({
             sessionId,
             outcome,
             mensagem_id: persistedMensagemId,
-            mensagem_local_id: userLocalId,
+            mensagem_local_id: userMsgId,
             latency_from_stream_ms:
               typeof latencyFromStream === 'number' ? latencyFromStream : null,
             latency_source: latencySource,
@@ -662,7 +667,7 @@ export const useEcoStream = ({
               mixpanel.track('Eco: Resposta Metadata', {
                 userId: analyticsUserId,
                 sessionId,
-                mensagemId: userLocalId,
+                mensagemId: userMsgId,
                 metadata: finalMixpanelMetadata,
                 isGuest,
                 ...(isGuest ? { guestId } : {}),
@@ -721,17 +726,19 @@ export const useEcoStream = ({
           });
         }
       } finally {
+        inFlightRef.current = null;
+        setPending(false);
         setDigitando(false);
         scrollToBottom(true);
       }
     },
       [
         addMessage,
-        digitando,
         guestId,
         isAtBottom,
         isGuest,
         onUnauthorized,
+        pending,
         scrollToBottom,
         setMessages,
         sessionId,
@@ -740,5 +747,5 @@ export const useEcoStream = ({
     ]
   );
 
-  return { handleSendMessage, digitando, erroApi, setErroApi } as const;
+  return { handleSendMessage, digitando, erroApi, setErroApi, pending } as const;
 };
