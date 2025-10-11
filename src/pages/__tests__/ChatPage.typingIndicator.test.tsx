@@ -108,7 +108,11 @@ vi.mock('../../api/memoriaApi', () => ({
 }));
 
 vi.mock('../../api/mensagem', () => ({
-  salvarMensagem: vi.fn().mockResolvedValue([{ id: 'saved-id' }]),
+  salvarMensagem: vi.fn().mockResolvedValue({
+    id: 'saved-id',
+    conteudo: 'olá',
+    usuario_id: 'user-123',
+  }),
 }));
 
 vi.mock('../../utils/extrairTagsRelevantes', () => ({

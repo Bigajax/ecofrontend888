@@ -138,33 +138,42 @@ export const useEcoStream = ({
       try {
         const tags = extrairTagsRelevantes(trimmed);
 
-        let persistedMensagemId = userMsgId;
+        let persistedMensagemId: string | undefined;
 
-        const salvarMensagemPromise = shouldPersist
+        const salvarMensagemPromise: Promise<string | null> = shouldPersist
           ? salvarMensagem({
-              usuarioId: userId as string,
+              usuario_id: userId as string,
               conteudo: trimmed,
               sentimento: '',
-              salvarMemoria: true,
+              salvar_memoria: true,
             })
-              .then((saved) => saved?.[0]?.id ?? null)
-              .catch(() => null)
+              .then((saved) => saved.id)
+              .catch((err) => {
+                if (isDev) {
+                  console.warn('[ChatPage] Falha ao persistir mensagem no Supabase', err);
+                }
+                return null;
+              })
           : Promise.resolve(null);
 
-        const mensagemIdPromise = shouldPersist
-          ? salvarMensagemPromise
-              .then((savedMensagemId) => {
-                if (savedMensagemId && savedMensagemId !== userMsgId) {
-                  persistedMensagemId = savedMensagemId;
-                  setMessages((prev) =>
-                    prev.map((m) => (m.id === userMsgId ? { ...m, id: savedMensagemId } : m))
-                  );
-                  return savedMensagemId;
-                }
-                return userMsgId;
-              })
-              .catch(() => userMsgId)
-          : Promise.resolve(userMsgId);
+        const mensagemIdPromise = salvarMensagemPromise
+          .then((savedMensagemId) => {
+            if (savedMensagemId && savedMensagemId !== userMsgId) {
+              persistedMensagemId = savedMensagemId;
+              setMessages((prev) =>
+                prev.map((m) => (m.id === userMsgId ? { ...m, id: savedMensagemId } : m)),
+              );
+              return savedMensagemId;
+            }
+
+            return userMsgId;
+          })
+          .catch((err) => {
+            if (isDev) {
+              console.warn('[ChatPage] Erro ao recuperar ID persistido', err);
+            }
+            return userMsgId;
+          });
 
         const contextFetchStartedAt = getNow();
         let contextFetchDurationMs: number | null = null;
@@ -319,7 +328,7 @@ export const useEcoStream = ({
             userId: analyticsUserId,
             sessionId,
             outcome,
-            mensagem_id: persistedMensagemId,
+            mensagem_id: persistedMensagemId ?? null,
             mensagem_local_id: userMsgId,
             latency_from_stream_ms:
               typeof latencyFromStream === 'number' ? latencyFromStream : null,
