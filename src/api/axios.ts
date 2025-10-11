@@ -1,47 +1,47 @@
-// src/api/axios.ts
 import axios from "axios";
-import { supabase } from "../lib/supabaseClient"; // ajuste o path se preciso
+import { v4 as uuidv4 } from "uuid";
 
-// ==========================
-// Resolve baseURL de forma segura
-// ==========================
-const apiBaseEnv =
-  import.meta.env.VITE_API_URL ??
-  import.meta.env.VITE_API_BASE ??
-  import.meta.env.VITE_BACKEND_URL;
+import { supabase } from "../lib/supabaseClient";
 
-const normalizedBase =
-  typeof apiBaseEnv === "string"
-    ? apiBaseEnv.trim().replace(/\/+$/, "") // remove barra final
-    : "";
-
-const baseURL =
-  normalizedBase || (typeof window !== "undefined" ? window.location.origin : "");
-
-// ==========================
-// Cria instância Axios
-// ==========================
 const api = axios.create({
-  baseURL,
-  headers: { "Content-Type": "application/json" },
-  // Importante: omit para evitar conflito de CORS
-  withCredentials: false,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
+  withCredentials: true,
 });
 
-// ==========================
-// Injeta o token Supabase automaticamente
-// ==========================
+const GUEST_STORAGE_KEY = "eco_guest_id";
+
+function ensureGuestId(): string {
+  try {
+    const stored = localStorage.getItem(GUEST_STORAGE_KEY);
+    if (stored) {
+      return stored;
+    }
+
+    const generated = `guest_${uuidv4()}`;
+    localStorage.setItem(GUEST_STORAGE_KEY, generated);
+    return generated;
+  } catch {
+    return `guest_${uuidv4()}`;
+  }
+}
+
 api.interceptors.request.use(async (config) => {
   try {
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token;
+    const headers = (config.headers ??= {} as Record<string, string>);
+
     if (token) {
-      config.headers = config.headers || {};
-      (config.headers as any).Authorization = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${token}`;
+      delete headers["X-Guest-Id"];
+    } else {
+      delete headers.Authorization;
+      headers["X-Guest-Id"] = ensureGuestId();
     }
   } catch (err) {
-    console.warn("⚠️ [Axios] Falha ao obter sessão do Supabase:", err);
+    console.warn("⚠️ [Axios] Falha ao preparar cabeçalhos de autenticação:", err);
   }
+
   return config;
 });
 

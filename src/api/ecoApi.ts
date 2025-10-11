@@ -44,6 +44,19 @@ const resolveBaseUrl = (): string => {
 
 const ASK_ENDPOINT = "/api/ask-eco";
 
+const mapStatusToFriendlyMessage = (status: number, fallback: string) => {
+  if (status === 401) {
+    return "Faça login para continuar a conversa com a Eco.";
+  }
+  if (status === 429) {
+    return "Muitas requisições. Aguarde alguns segundos antes de tentar novamente.";
+  }
+  if (status >= 500) {
+    return "A Eco está indisponível no momento. Tente novamente em instantes.";
+  }
+  return fallback;
+};
+
 const createMessageId = () => {
   const globalCrypto: Crypto | undefined =
     typeof globalThis !== "undefined" ? (globalThis as any).crypto : undefined;
@@ -131,6 +144,12 @@ const buildRequestInit = (
   } satisfies RequestInit;
 };
 
+type EnviarMensagemOptions = {
+  guestId?: string;
+  isGuest?: boolean;
+  signal?: AbortSignal;
+};
+
 export const enviarMensagemParaEco = async (
   userMessages: Message[],
   userName?: string,
@@ -138,7 +157,7 @@ export const enviarMensagemParaEco = async (
   clientHour?: number,
   clientTz?: string,
   handlers: EcoEventHandlers = {},
-  options: { guestId?: string; isGuest?: boolean } = {}
+  options: EnviarMensagemOptions = {}
 ): Promise<EcoStreamResult> => {
   const mensagensValidas = collectValidMessages(userMessages);
   if (mensagensValidas.length === 0) throw new Error("Nenhuma mensagem válida para enviar.");
@@ -167,7 +186,10 @@ export const enviarMensagemParaEco = async (
       token
     );
 
-    const response = await fetch(`${baseUrl}${ASK_ENDPOINT}`, requestInit);
+    const response = await fetch(`${baseUrl}${ASK_ENDPOINT}`, {
+      ...requestInit,
+      signal: options.signal,
+    });
 
     const serverGuestId = normalizeGuestIdFormat(response.headers.get("x-guest-id"));
     if (serverGuestId) safeLocalStorageSet("eco_guest_id", serverGuestId);
@@ -188,10 +210,18 @@ export const enviarMensagemParaEco = async (
         }
       } catch {}
 
-      const message =
-        serverErr?.trim() ||
-        `Erro HTTP ${response.status}: ${response.statusText || "Falha na requisição"}`;
-      throw new EcoApiError(message, { status: response.status, details });
+      const baseMessage = `Erro HTTP ${response.status}: ${
+        response.statusText || "Falha na requisição"
+      }`;
+      const friendly = mapStatusToFriendlyMessage(response.status, baseMessage);
+      const message = serverErr?.trim() || friendly;
+      const retryAfter = response.headers.get("retry-after") || undefined;
+      const errorDetails = {
+        statusText: response.statusText,
+        body: details,
+        ...(retryAfter ? { retryAfter } : {}),
+      };
+      throw new EcoApiError(message, { status: response.status, details: errorDetails });
     }
 
     const contentType = response.headers.get("content-type") || "";
@@ -201,15 +231,21 @@ export const enviarMensagemParaEco = async (
       return parseNonStreamResponse(response);
     }
 
-    return await processEventStream(response, handlers);
+    return await processEventStream(response, handlers, { signal: options.signal });
   } catch (error: any) {
-    let message: string;
-    if (error?.name === "AbortError")
-      message = "A requisição à Eco expirou. Tente novamente.";
-    else if (typeof error?.message === "string" && error.message.trim().length > 0)
-      message = error.message;
-    else message = "Erro ao obter resposta da Eco.";
+    if (error?.name === "AbortError" || options.signal?.aborted) {
+      return { text: "", aborted: true, noTextReceived: true };
+    }
+
+    if (error instanceof EcoApiError) {
+      throw error;
+    }
+
+    const message =
+      typeof error?.message === "string" && error.message.trim().length > 0
+        ? error.message
+        : "Erro ao obter resposta da Eco.";
     console.error("❌ [ECO API]", message, error);
-    throw new Error(message);
+    throw new EcoApiError(message, { details: error });
   }
 };

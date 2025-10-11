@@ -11,6 +11,8 @@ export interface EcoStreamResult {
    * Útil para alertar o front que o backend encerrou a stream sem conteúdo.
    */
   noTextReceived?: boolean;
+  aborted?: boolean;
+  status?: number;
 }
 
 export interface EcoSseEvent<TPayload = Record<string, any>> {
@@ -98,7 +100,8 @@ const safeInvokeError = (cb: ((error: Error) => void) | undefined, error: Error)
 
 export const processEventStream = async (
   response: Response,
-  handlers: EcoEventHandlers = {}
+  handlers: EcoEventHandlers = {},
+  options: { signal?: AbortSignal } = {}
 ): Promise<EcoStreamResult> => {
   const reader = response.body?.getReader();
   if (!reader) throw new Error("Fluxo SSE indisponível na resposta da Eco.");
@@ -129,6 +132,25 @@ export const processEventStream = async (
     aggregatedParts.push(text);
     rememberText(text);
   };
+
+  const { signal } = options;
+  let aborted = false;
+
+  const handleAbort = () => {
+    if (aborted) return;
+    aborted = true;
+    try {
+      void reader.cancel();
+    } catch {}
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      handleAbort();
+      throw new DOMException("Aborted", "AbortError");
+    }
+    signal.addEventListener("abort", handleAbort, { once: true });
+  }
 
   const handleEvent = (eventData: unknown) => {
     if (!eventData || typeof eventData !== "object") return;
@@ -344,12 +366,34 @@ export const processEventStream = async (
   };
 
   try {
-    while (!doneReceived && !streamError) {
-      const { value, done } = await reader.read();
+    while (!doneReceived && !streamError && !aborted) {
+      if (signal?.aborted) {
+        handleAbort();
+        break;
+      }
+
+      let chunk: ReadableStreamReadResult<Uint8Array>;
+      try {
+        chunk = await reader.read();
+      } catch (error: any) {
+        if (signal?.aborted || error?.name === "AbortError") {
+          handleAbort();
+          break;
+        }
+        throw error;
+      }
+
+      const { value, done } = chunk;
       if (done) break;
+      if (!value) continue;
       buffer += decoder.decode(value, { stream: true });
       flushBuffer();
     }
+
+    if (aborted) {
+      throw new DOMException("A leitura do stream foi abortada.", "AbortError");
+    }
+
     if (!streamError) {
       buffer += decoder.decode();
       flushBuffer(true);
@@ -391,6 +435,9 @@ export const processEventStream = async (
       ...(noTextReceived ? { noTextReceived: true } : {}),
     };
   } finally {
+    if (signal) {
+      signal.removeEventListener("abort", handleAbort);
+    }
     try {
       reader.releaseLock();
     } catch {}
