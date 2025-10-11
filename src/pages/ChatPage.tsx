@@ -28,6 +28,11 @@ import mixpanel from '../lib/mixpanel';
 import { FeedbackPrompt } from '../components/FeedbackPrompt';
 import { useGuestGate } from '../hooks/useGuestGate';
 
+const NETWORK_ERROR_MESSAGE =
+  'Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.';
+const CORS_ERROR_MESSAGE =
+  'O servidor recusou a origem. Atualize e tente novamente.';
+
 const ChatPage: React.FC = () => {
   const { messages, addMessage, setMessages } = useChat();
   const { userId, userName = 'Usuário', user } = useAuth();
@@ -37,6 +42,8 @@ const ChatPage: React.FC = () => {
   const isGuest = !user;
   const guestGate = useGuestGate(isGuest);
   const [loginGateOpen, setLoginGateOpen] = useState(false);
+  const [isComposerSending, setIsComposerSending] = useState(false);
+  const [lastAttempt, setLastAttempt] = useState<{ text: string; hint?: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -96,7 +103,7 @@ const ChatPage: React.FC = () => {
     },
   });
 
-  const handleSendMessage = useCallback(
+  const streamAndPersist = useCallback(
     async (text: string, systemHint?: string) => {
       if (pending) return;
       if (isGuest) {
@@ -111,11 +118,30 @@ const ChatPage: React.FC = () => {
     [guestGate, isGuest, pending, streamSendMessage],
   );
 
+  const sendWithGuards = useCallback(
+    async (text: string, systemHint?: string) => {
+      const trimmed = (text ?? '').trim();
+      if (!trimmed) return;
+      if (isComposerSending || pending) return;
+      console.count('HANDLE_SEND');
+      setIsComposerSending(true);
+      setLastAttempt({ text: trimmed, hint: systemHint });
+      try {
+        await streamAndPersist(trimmed, systemHint);
+        setLastAttempt(null);
+      } finally {
+        setIsComposerSending(false);
+      }
+    },
+    [isComposerSending, pending, streamAndPersist],
+  );
+
   useEffect(() => {
     if ((messages?.length ?? 0) > 0) hideQuickSuggestions();
   }, [messages, hideQuickSuggestions]);
 
   const handlePickSuggestion = async (s: Suggestion, meta?: SuggestionPickMeta) => {
+    if (isComposerSending || pending) return;
     hideQuickSuggestions();
     mixpanel.track('Front-end: Quick Suggestion', {
       id: s.id,
@@ -131,8 +157,13 @@ const ChatPage: React.FC = () => {
           }`.trim()
         : '';
     const userText = `${s.icon ? s.icon + ' ' : ''}${s.label}`;
-    await handleSendMessage(userText, hint);
+    await sendWithGuards(userText, hint);
   };
+
+  const handleRetry = useCallback(() => {
+    if (!lastAttempt) return;
+    void sendWithGuards(lastAttempt.text, lastAttempt.hint);
+  }, [lastAttempt, sendWithGuards]);
 
   const lastMessage = messages[messages.length - 1];
   const lastEcoMessageContent =
@@ -145,6 +176,12 @@ const ChatPage: React.FC = () => {
     !!lastMessage && lastMessage.sender === 'eco' && lastEcoMessageContent.length === 0;
 
   const shouldShowGlobalTyping = digitando && !lastEcoMessageIsPlaceholder;
+  const composerPending = pending || isComposerSending;
+  const canRetry = Boolean(
+    lastAttempt &&
+    erroApi &&
+    (erroApi === NETWORK_ERROR_MESSAGE || erroApi === CORS_ERROR_MESSAGE)
+  );
 
   return (
     <div className="relative flex h-[calc(100dvh-var(--eco-topbar-h,56px))] w-full flex-col overflow-hidden bg-white">
@@ -186,7 +223,19 @@ const ChatPage: React.FC = () => {
           )}
 
           {erroApi && (
-            <div className="glass rounded-xl text-red-600 text-center mb-4 px-4 py-2">{erroApi}</div>
+            <div className="glass rounded-xl text-red-600 text-center mb-4 px-4 py-2 flex flex-col items-center gap-2">
+              <span>{erroApi}</span>
+              {canRetry && (
+                <button
+                  type="button"
+                  onClick={handleRetry}
+                  disabled={composerPending}
+                  className="text-sm font-medium text-red-700 hover:text-red-600 disabled:opacity-60 disabled:cursor-not-allowed underline underline-offset-4"
+                >
+                  Tentar novamente
+                </button>
+              )}
+            </div>
           )}
 
           <div className="w-full space-y-3 md:space-y-4">
@@ -257,27 +306,29 @@ const ChatPage: React.FC = () => {
               showQuick &&
               messages.length === 0 &&
               !digitando &&
-              !pending &&
+              !composerPending &&
               !erroApi
             }
             onPickSuggestion={handlePickSuggestion}
             rotatingItems={ROTATING_ITEMS}
             rotationMs={5000}
             className="mt-1 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
+            disabled={composerPending}
           />
           <ChatInput
-            onSendMessage={(t) => handleSendMessage(t)}
+            onSendMessage={(t) => sendWithGuards(t)}
             onMoreOptionSelected={(opt) => {
               if (opt === 'go_to_voice_page') navigate('/voice');
             }}
             onSendAudio={() => console.log('Áudio enviado')}
-            disabled={pending || (isGuest && guestGate.inputDisabled)}
+            disabled={composerPending || (isGuest && guestGate.inputDisabled)}
             placeholder={
               isGuest && guestGate.inputDisabled
                 ? 'Crie sua conta para continuar…'
                 : undefined
             }
             onTextChange={handleTextChange}
+            isSending={composerPending}
           />
           <LoginGateModal
             open={loginGateOpen}

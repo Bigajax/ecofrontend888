@@ -23,6 +23,7 @@ export interface Message {
   memory?: unknown;
   donePayload?: unknown;
   latencyMs?: number;
+  streaming?: boolean;
 }
 
 interface ChatContextType {

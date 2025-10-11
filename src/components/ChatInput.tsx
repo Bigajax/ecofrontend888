@@ -9,6 +9,7 @@ type Props = {
   disabled?: boolean;
   onTextChange?: (text: string) => void;
   placeholder?: string;
+  isSending: boolean;
 };
 
 const CTA_TEXT = 'Converse com a Eco…';
@@ -20,13 +21,13 @@ const ChatInput: React.FC<Props> = ({
   disabled = false,
   onTextChange,
   placeholder = CTA_TEXT,
+  isSending,
 }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [isRecordingUI, setIsRecordingUI] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [isSending, setIsSending] = useState(false);
 
   const speechRecognitionRef = useRef<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -97,7 +98,7 @@ const ChatInput: React.FC<Props> = ({
 
   // gravação
   const startRecording = async () => {
-    if (disabled || isTranscribing || isRecordingUI) return;
+    if (disabled || isTranscribing || isRecordingUI || isSending) return;
     setIsRecordingUI(true);
     setIsTranscribing(false);
     try {
@@ -156,7 +157,6 @@ const ChatInput: React.FC<Props> = ({
     const msg = inputMessage.trim();
     if (!msg) return;
 
-    setIsSending(true);
     try {
       await onSendMessage(msg);
       setInputMessage('');
@@ -168,8 +168,15 @@ const ChatInput: React.FC<Props> = ({
       requestAnimationFrame(() => textareaRef.current?.focus());
     } catch (err) {
       console.error('Erro ao enviar mensagem:', err);
-    } finally {
-      setIsSending(false);
+    }
+  };
+
+  const submitForm = () => {
+    if (isSending || disabled) return;
+    if (wrapperRef.current && typeof wrapperRef.current.requestSubmit === 'function') {
+      wrapperRef.current.requestSubmit();
+    } else {
+      void handleSend();
     }
   };
 
@@ -233,6 +240,7 @@ const ChatInput: React.FC<Props> = ({
       ref={wrapperRef}
       onSubmit={(e) => {
         e.preventDefault();
+        if (isSending) return;
         void handleSend();
       }}
       className={`
@@ -254,7 +262,10 @@ const ChatInput: React.FC<Props> = ({
         <div className="flex items-center justify-start">
           <button
             type="button"
-            onClick={() => setShowMoreOptions((prev) => !prev)}
+            onClick={() => {
+              if (isSending) return;
+              setShowMoreOptions((prev) => !prev);
+            }}
             className="
               flex h-9 w-9 items-center justify-center rounded-full
               border border-white/60 bg-white/75 backdrop-blur-xl
@@ -264,7 +275,7 @@ const ChatInput: React.FC<Props> = ({
             aria-expanded={showMoreOptions}
             aria-controls="chatinput-popover"
             aria-label="Mais opções"
-            disabled={disabled}
+            disabled={disabled || isSending}
           >
             {showMoreOptions ? <X size={18} /> : <Plus size={18} />}
           </button>
@@ -290,6 +301,7 @@ const ChatInput: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => {
+                  if (isSending) return;
                   onMoreOptionSelected('go_to_voice_page');
                   setShowMoreOptions(false);
                 }}
@@ -313,12 +325,15 @@ const ChatInput: React.FC<Props> = ({
               onTextChange?.(v);
             }}
             onKeyDown={(e) => {
-              if (disabled || isSending) return;
+              if (disabled || isSending) {
+                e.preventDefault();
+                return;
+              }
               // @ts-ignore
               const composing = e.nativeEvent?.isComposing;
               if (!composing && e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                void handleSend();
+                submitForm();
               }
             }}
             onFocus={onFocus}
@@ -343,7 +358,7 @@ const ChatInput: React.FC<Props> = ({
           <button
             type="button"
             onClick={startRecording}
-            disabled={disabled}
+            disabled={disabled || isSending}
             className="
               flex h-9 w-9 items-center justify-center rounded-full
               border border-white/60 bg-white/75 backdrop-blur-xl
@@ -366,7 +381,10 @@ const ChatInput: React.FC<Props> = ({
               hover:bg-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50
             "
             aria-label="Enviar mensagem"
-            onClick={() => void handleSend()}
+            onClick={() => {
+              if (isSending) return;
+              void handleSend();
+            }}
           >
             <Send size={16} strokeWidth={1.6} />
           </button>
