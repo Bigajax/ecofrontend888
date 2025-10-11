@@ -1,0 +1,440 @@
+import { AskEcoResponse, collectTexts, normalizeAskEcoResponse, unwrapPayload } from "./askEcoResponse";
+import { isDev } from "./environment";
+
+export interface EcoStreamResult {
+  text: string;
+  metadata?: unknown;
+  done?: unknown;
+  primeiraMemoriaSignificativa?: boolean;
+  /**
+   * Indica que recebemos "prompt_ready" e/ou "done", porém nenhum token de texto.
+   * Útil para alertar o front que o backend encerrou a stream sem conteúdo.
+   */
+  noTextReceived?: boolean;
+}
+
+export interface EcoSseEvent<TPayload = Record<string, any>> {
+  type: string;
+  payload: TPayload;
+  raw: unknown;
+  text?: string;
+  metadata?: unknown;
+  memory?: unknown;
+  latencyMs?: number;
+}
+
+export interface EcoEventHandlers {
+  onPromptReady?: (event: EcoSseEvent) => void;
+  onFirstToken?: (event: EcoSseEvent) => void;
+  onChunk?: (event: EcoSseEvent) => void;
+  onDone?: (event: EcoSseEvent) => void;
+  onMeta?: (event: EcoSseEvent) => void;
+  onMetaPending?: (event: EcoSseEvent) => void;
+  onMemorySaved?: (event: EcoSseEvent) => void;
+  onLatency?: (event: EcoSseEvent) => void;
+  onError?: (error: Error) => void;
+}
+
+const normalizeSseNewlines = (value: string): string => value.replace(/\r\n?/g, "\n");
+
+const parseSseEvent = (
+  eventBlock: string
+): { type?: string; payload?: any; rawData?: string } | undefined => {
+  const lines = eventBlock
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith(":"));
+
+  if (lines.length === 0) return undefined;
+
+  let eventName: string | undefined;
+  const dataParts: string[] = [];
+
+  for (const line of lines) {
+    if (line.startsWith("event:")) {
+      eventName = line.slice(6).trim();
+    } else if (line.startsWith("data:")) {
+      dataParts.push(line.slice(5).trimStart());
+    } else {
+      dataParts.push(line);
+    }
+  }
+
+  const dataStr = dataParts.join("\n").trim();
+  if (!dataStr) return { type: eventName, payload: undefined };
+
+  if (dataStr === "[DONE]") {
+    return { type: eventName ?? "done", payload: { done: true }, rawData: dataStr };
+  }
+
+  try {
+    const parsed = JSON.parse(dataStr);
+    return { type: eventName, payload: parsed, rawData: dataStr };
+  } catch {
+    return { type: eventName, payload: { text: dataStr }, rawData: dataStr };
+  }
+};
+
+const safeInvoke = (
+  cb: ((event: EcoSseEvent) => void) | undefined,
+  event: EcoSseEvent
+) => {
+  if (!cb) return;
+  try {
+    cb(event);
+  } catch (err) {
+    console.error("❌ [ECO API] Falha ao executar callback de stream", err);
+  }
+};
+
+const safeInvokeError = (cb: ((error: Error) => void) | undefined, error: Error) => {
+  if (!cb) return;
+  try {
+    cb(error);
+  } catch (err) {
+    console.error("❌ [ECO API] Falha ao executar callback de erro da stream", err);
+  }
+};
+
+export const processEventStream = async (
+  response: Response,
+  handlers: EcoEventHandlers = {}
+): Promise<EcoStreamResult> => {
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("Fluxo SSE indisponível na resposta da Eco.");
+
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+  let doneReceived = false;
+  let streamError: Error | null = null;
+  const aggregatedParts: string[] = [];
+  let donePayload: any;
+  let metadata: unknown;
+  let primeiraMemoriaSignificativa = false;
+  let gotAnyToken = false;
+  let lastNonEmptyText: string | undefined;
+  let promptReadyReceived = false;
+  let doneWithoutText = false;
+
+  const rememberText = (text: string | undefined) => {
+    if (typeof text !== "string") return;
+    const trimmed = text.trim();
+    if (trimmed.length === 0) return;
+    lastNonEmptyText = trimmed;
+    gotAnyToken = true;
+  };
+
+  const pushAggregatedPart = (text: string | undefined) => {
+    if (typeof text !== "string") return;
+    aggregatedParts.push(text);
+    rememberText(text);
+  };
+
+  const handleEvent = (eventData: unknown) => {
+    if (!eventData || typeof eventData !== "object") return;
+
+    const parsed = eventData as { type?: string; payload?: any; rawData?: string } & Record<
+      string,
+      any
+    >;
+
+    const hintedType = typeof parsed.type === "string" ? parsed.type : undefined;
+    const payload =
+      parsed.payload && typeof parsed.payload === "object"
+        ? (parsed.payload as Record<string, any>)
+        : (parsed as Record<string, any>);
+
+    const unwrappedPayload = unwrapPayload(payload);
+
+    const payloadType = typeof payload.type === "string" ? payload.type : undefined;
+    const unwrappedType =
+      typeof (unwrappedPayload as any)?.type === "string"
+        ? ((unwrappedPayload as any).type as string)
+        : undefined;
+    let type = payloadType ?? unwrappedType ?? hintedType;
+
+    const rawData = parsed.rawData;
+    const looksLikeDone =
+      (typeof rawData === "string" && rawData === "[DONE]") ||
+      (payload && (payload.done === true || (payload as any).DONE === true));
+
+    if (!type && looksLikeDone) type = "done";
+
+    if (!type && typeof payload?.text === "string") type = "chunk";
+
+    if (!type) {
+      if (isDev) console.debug("ℹ️ [ECO API] Evento SSE sem tipo reconhecido:", eventData);
+      return;
+    }
+
+    const baseEventInfo: EcoSseEvent = {
+      type,
+      payload: unwrappedPayload,
+      raw: eventData,
+    };
+
+    if (type === "error" || (payload as any)?.status === "error") {
+      const errMessage =
+        (payload as any)?.error?.message ||
+        (payload as any)?.error ||
+        (payload as any)?.message ||
+        "Erro na stream SSE da Eco.";
+      streamError = new Error(String(errMessage));
+      safeInvokeError(handlers.onError, streamError);
+      return;
+    }
+
+    if (type === "prompt_ready") {
+      promptReadyReceived = true;
+      safeInvoke(handlers.onPromptReady, baseEventInfo);
+      return;
+    }
+
+    if (type === "latency") {
+      const latencyPayload = unwrapPayload(payload);
+      const latencyValue =
+        typeof (latencyPayload as any)?.value === "number"
+          ? (latencyPayload as any).value
+          : typeof (latencyPayload as any)?.latency === "number"
+          ? (latencyPayload as any).latency
+          : undefined;
+      const eventWithLatency: EcoSseEvent = { ...baseEventInfo, latencyMs: latencyValue };
+      safeInvoke(handlers.onLatency, eventWithLatency);
+      return;
+    }
+
+    const fallbackText =
+      normalizeAskEcoResponse(unwrappedPayload as AskEcoResponse) ||
+      normalizeAskEcoResponse(payload as AskEcoResponse);
+
+    if (type === "first_token") {
+      const source =
+        (unwrappedPayload as any)?.delta ??
+        (unwrappedPayload as any)?.content ??
+        (unwrappedPayload as any)?.message ??
+        unwrappedPayload;
+      const texts = collectTexts(source);
+      const chunkText = texts.join("");
+      if (chunkText.length > 0) pushAggregatedPart(chunkText);
+      else if (!chunkText && fallbackText) pushAggregatedPart(fallbackText);
+      const eventWithText: EcoSseEvent = {
+        ...baseEventInfo,
+        text: chunkText.length > 0 ? chunkText : fallbackText,
+      };
+      safeInvoke(handlers.onFirstToken, eventWithText);
+      return;
+    }
+
+    if (type === "chunk") {
+      const source =
+        (unwrappedPayload as any)?.delta ??
+        (unwrappedPayload as any)?.content ??
+        (unwrappedPayload as any)?.message ??
+        unwrappedPayload;
+      const texts = collectTexts(source);
+      const chunkText = texts.join("");
+      if (chunkText.length > 0) pushAggregatedPart(chunkText);
+      else if (!chunkText && fallbackText) pushAggregatedPart(fallbackText);
+      const eventWithText: EcoSseEvent = {
+        ...baseEventInfo,
+        text: chunkText.length > 0 ? chunkText : fallbackText,
+      };
+      safeInvoke(handlers.onChunk, eventWithText);
+      return;
+    }
+
+    if (type === "meta" || type === "meta_pending" || type === "meta-pending") {
+      const metaSource =
+        (unwrappedPayload as any)?.metadata ??
+        (unwrappedPayload as any)?.response ??
+        unwrappedPayload;
+      const eventWithMeta: EcoSseEvent = { ...baseEventInfo, metadata: metaSource };
+      metadata = metaSource ?? metadata;
+      if (type === "meta") safeInvoke(handlers.onMeta, eventWithMeta);
+      else safeInvoke(handlers.onMetaPending, eventWithMeta);
+      return;
+    }
+
+    if (type === "memory_saved") {
+      const memoryPayload =
+        (unwrappedPayload as any)?.memory ??
+        (unwrappedPayload as any)?.memoria ??
+        unwrappedPayload;
+      const eventWithMemory: EcoSseEvent = { ...baseEventInfo, memory: memoryPayload };
+      if (
+        (unwrappedPayload as any)?.primeiraMemoriaSignificativa ||
+        (unwrappedPayload as any)?.primeira
+      ) {
+        primeiraMemoriaSignificativa = true;
+      }
+      safeInvoke(handlers.onMemorySaved, eventWithMemory);
+      return;
+    }
+
+    if (type === "done") {
+      doneReceived = true;
+      donePayload = unwrappedPayload;
+      const responseMetadata =
+        (unwrappedPayload as any)?.response ??
+        (unwrappedPayload as any)?.metadata ??
+        unwrappedPayload;
+      metadata = responseMetadata ?? metadata;
+
+      if (
+        (unwrappedPayload as any)?.primeiraMemoriaSignificativa ||
+        (unwrappedPayload as any)?.primeira
+      ) {
+        primeiraMemoriaSignificativa = true;
+      }
+
+      const source =
+        (unwrappedPayload as any)?.delta ??
+        (unwrappedPayload as any)?.content ??
+        (unwrappedPayload as any)?.message ??
+        (unwrappedPayload as any)?.response;
+      const texts = collectTexts(source);
+      const doneText = texts.join("");
+      if (doneText.length > 0 && aggregatedParts.length === 0) {
+        pushAggregatedPart(doneText);
+      } else if (!doneText && fallbackText && aggregatedParts.length === 0) {
+        pushAggregatedPart(fallbackText);
+      }
+
+      const eventWithMeta: EcoSseEvent = {
+        ...baseEventInfo,
+        payload: unwrappedPayload,
+        metadata: responseMetadata,
+        text: doneText.length > 0 ? doneText : fallbackText,
+      };
+      safeInvoke(handlers.onDone, eventWithMeta);
+      if (!gotAnyToken) {
+        doneWithoutText = true;
+      }
+      return;
+    }
+
+    if (fallbackText) {
+      pushAggregatedPart(fallbackText);
+      const eventWithText: EcoSseEvent = { ...baseEventInfo, text: fallbackText };
+      safeInvoke(handlers.onChunk, eventWithText);
+      return;
+    }
+
+    if (isDev) console.debug("ℹ️ [ECO API] Evento SSE ignorado:", eventData);
+  };
+
+  const flushBuffer = (final = false) => {
+    buffer = normalizeSseNewlines(buffer);
+    let idx = buffer.indexOf("\n\n");
+    while (idx !== -1) {
+      const segment = buffer.slice(0, idx);
+      buffer = buffer.slice(idx + 2);
+      const parsed = parseSseEvent(segment);
+      if (parsed !== undefined) handleEvent(parsed);
+      idx = buffer.indexOf("\n\n");
+    }
+    if (final) {
+      const remainder = buffer.trim();
+      if (remainder.length > 0) {
+        const parsed = parseSseEvent(remainder);
+        if (parsed !== undefined) handleEvent(parsed);
+      }
+      buffer = "";
+    }
+  };
+
+  try {
+    while (!doneReceived && !streamError) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      flushBuffer();
+    }
+    if (!streamError) {
+      buffer += decoder.decode();
+      flushBuffer(true);
+    }
+    if (streamError) throw streamError;
+
+    if (!doneReceived && !gotAnyToken) {
+      throw new Error('Fluxo SSE encerrado sem evento "done".');
+    }
+
+    let texto = aggregatedParts.join("");
+    if (!texto.trim() && lastNonEmptyText) {
+      texto = lastNonEmptyText;
+    }
+    texto = texto.trim();
+
+    if (!texto && donePayload) {
+      const fallback = normalizeAskEcoResponse(donePayload as AskEcoResponse);
+      if (fallback) texto = fallback;
+    }
+
+    if (!texto) texto = "";
+
+    const noTextReceived = (!gotAnyToken && doneReceived) || (doneWithoutText && promptReadyReceived);
+    if (noTextReceived) {
+      console.warn("⚠️ [ECO API] Stream encerrada sem nenhum texto recebido.", {
+        promptReadyReceived,
+        doneReceived,
+        aggregatedPartsCount: aggregatedParts.length,
+        donePayload,
+      });
+    }
+
+    return {
+      text: texto,
+      metadata,
+      done: donePayload,
+      primeiraMemoriaSignificativa,
+      ...(noTextReceived ? { noTextReceived: true } : {}),
+    };
+  } finally {
+    try {
+      reader.releaseLock();
+    } catch {}
+  }
+};
+
+export const parseNonStreamResponse = async (response: Response): Promise<EcoStreamResult> => {
+  let fallbackRaw = "";
+  try {
+    fallbackRaw = await response.text();
+  } catch (err) {
+    if (isDev) console.warn("⚠️ [ECO API] Falha ao ler resposta não-SSE da Eco", err);
+  }
+
+  let parsedPayload: any = undefined;
+  if (fallbackRaw) {
+    try {
+      parsedPayload = JSON.parse(fallbackRaw);
+    } catch {
+      parsedPayload = fallbackRaw;
+    }
+  }
+
+  const normalizedText =
+    typeof parsedPayload === "string"
+      ? parsedPayload
+      : normalizeAskEcoResponse(parsedPayload as AskEcoResponse);
+
+  return {
+    text: (normalizedText || "").trim(),
+    metadata:
+      typeof parsedPayload === "object" && parsedPayload
+        ? (parsedPayload.metadata ?? parsedPayload.response ?? undefined)
+        : undefined,
+    done:
+      typeof parsedPayload === "object" && parsedPayload
+        ? parsedPayload.done ?? parsedPayload.response ?? undefined
+        : undefined,
+    primeiraMemoriaSignificativa:
+      typeof parsedPayload === "object" && parsedPayload
+        ? Boolean(
+            parsedPayload.primeiraMemoriaSignificativa ||
+              (parsedPayload as Record<string, unknown>).primeira
+          )
+        : false,
+  };
+};
