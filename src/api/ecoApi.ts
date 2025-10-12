@@ -31,12 +31,18 @@ interface Message {
 
 const ASK_ENDPOINT = "/api/ask-eco";
 
+const NETWORK_ERROR_MESSAGE =
+  "Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.";
+
 const mapStatusToFriendlyMessage = (status: number, fallback: string) => {
   if (status === 401) {
     return "Faça login para continuar a conversa com a Eco.";
   }
   if (status === 429) {
     return "Muitas requisições. Aguarde alguns segundos antes de tentar novamente.";
+  }
+  if (status === 503) {
+    return NETWORK_ERROR_MESSAGE;
   }
   if (status >= 500) {
     return "A Eco está indisponível no momento. Tente novamente em instantes.";
@@ -99,23 +105,26 @@ const buildRequestInit = (
 ) => {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    Accept: isStreaming ? "text/event-stream" : "application/json",
+    "X-Guest-Id": guest.guestId,
   };
 
   if (!guest.isGuest && token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  headers["X-Guest-Id"] = guest.guestId;
-  headers["X-Guest-Mode"] = guest.isGuest ? "1" : "0";
+  if (isStreaming) {
+    headers.Accept = "text/event-stream";
+  }
 
   const bodyPayload: Record<string, unknown> = {
     mensagens,
-    nome_usuario: userName,
     clientHour: hour,
     clientTz: tz,
   };
 
+  if (typeof userName === "string" && userName.trim().length > 0) {
+    bodyPayload.nome_usuario = userName;
+  }
   if (!guest.isGuest && userId) bodyPayload.usuario_id = userId;
   if (guest.isGuest) {
     bodyPayload.isGuest = true;
@@ -125,8 +134,7 @@ const buildRequestInit = (
   return {
     method: "POST",
     headers,
-    mode: "cors" as const,
-    credentials: guest.isGuest ? ("omit" as const) : ("include" as const),
+    credentials: guest.isGuest ? "omit" : "include",
     body: JSON.stringify(bodyPayload),
   } satisfies RequestInit;
 };
@@ -174,6 +182,23 @@ export const enviarMensagemParaEco = async (
       token,
       isStreaming
     );
+
+    if (import.meta.env.DEV) {
+      const origin =
+        typeof window !== "undefined" && window?.location
+          ? window.location.origin
+          : "unknown";
+      const headers = { ...((requestInit.headers as Record<string, string>) ?? {}) };
+      if (headers.Authorization) {
+        headers.Authorization = "Bearer [redacted]";
+      }
+      console.debug("[ECO API] fetch", {
+        origin,
+        headers,
+        mode: guest.isGuest ? "guest" : "authenticated",
+        streaming: isStreaming,
+      });
+    }
 
     const response = await fetch(resolveApiUrl(ASK_ENDPOINT), {
       ...requestInit,
@@ -230,10 +255,19 @@ export const enviarMensagemParaEco = async (
       throw error;
     }
 
-    const message =
+    const rawMessage =
       typeof error?.message === "string" && error.message.trim().length > 0
         ? error.message
         : "Erro ao obter resposta da Eco.";
+
+    const normalized = rawMessage.toLowerCase();
+    const isNetworkIssue =
+      normalized.includes("failed to fetch") ||
+      normalized.includes("networkerror") ||
+      normalized.includes("net::err") ||
+      normalized.includes("err_connection");
+
+    const message = isNetworkIssue ? NETWORK_ERROR_MESSAGE : rawMessage;
     console.error("❌ [ECO API]", message, error);
     throw new EcoApiError(message, { details: error });
   }

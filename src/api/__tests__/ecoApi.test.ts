@@ -262,10 +262,13 @@ describe("enviarMensagemParaEco", () => {
     );
 
     const [, init] = fetchMock.mock.calls.at(-1) ?? [];
-    expect(init?.headers).toMatchObject({
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    expect(headers).toMatchObject({
       "X-Guest-Id": "guest_123",
-      "X-Guest-Mode": "1",
+      Accept: "text/event-stream",
+      "Content-Type": "application/json",
     });
+    expect(headers.Authorization).toBeUndefined();
     expect(init?.credentials).toBe("omit");
     const body = init?.body ? JSON.parse(init.body as string) : {};
     expect(body.isGuest).toBe(true);
@@ -296,10 +299,10 @@ describe("enviarMensagemParaEco", () => {
     );
 
     const [, init] = fetchMock.mock.calls.at(-1) ?? [];
-    expect(init?.headers).toMatchObject({
-      Accept: "application/json",
-      "X-Guest-Mode": "0",
-    });
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    expect(headers.Accept).toBeUndefined();
+    expect(headers["X-Guest-Id"]).toBeDefined();
+    expect(headers.Authorization).toBe("Bearer token-autenticado");
     expect(init?.credentials).toBe("include");
     expect(getSessionMock).toHaveBeenCalledTimes(1);
     expect(resposta.metadata).toEqual({ foo: "bar" });
