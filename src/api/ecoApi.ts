@@ -1,9 +1,9 @@
 // src/api/ecoApi.ts
 import { v4 as uuidv4 } from "uuid";
 
-import api from "./axios";
 import { supabase } from "../lib/supabaseClient";
 import { resolveApiUrl } from "../constants/api";
+import { logHttpRequestDebug } from "../utils/httpDebug";
 
 import { EcoApiError } from "./errors";
 import {
@@ -105,8 +105,11 @@ const buildRequestInit = (
 ) => {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "X-Guest-Id": guest.guestId,
   };
+
+  if (guest.isGuest) {
+    headers["X-Guest-Id"] = guest.guestId;
+  }
 
   if (!guest.isGuest && token) {
     headers.Authorization = `Bearer ${token}`;
@@ -183,22 +186,12 @@ export const enviarMensagemParaEco = async (
       isStreaming
     );
 
-    if (import.meta.env.DEV) {
-      const origin =
-        typeof window !== "undefined" && window?.location
-          ? window.location.origin
-          : "unknown";
-      const headers = { ...((requestInit.headers as Record<string, string>) ?? {}) };
-      if (headers.Authorization) {
-        headers.Authorization = "Bearer [redacted]";
-      }
-      console.debug("[ECO API] fetch", {
-        origin,
-        headers,
-        mode: guest.isGuest ? "guest" : "authenticated",
-        streaming: isStreaming,
-      });
-    }
+    logHttpRequestDebug({
+      method: requestInit.method ?? "GET",
+      url: resolveApiUrl(ASK_ENDPOINT),
+      credentials: requestInit.credentials,
+      headers: requestInit.headers,
+    });
 
     const response = await fetch(resolveApiUrl(ASK_ENDPOINT), {
       ...requestInit,

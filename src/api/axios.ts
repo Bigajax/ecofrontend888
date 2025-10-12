@@ -2,10 +2,10 @@ import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "../lib/supabaseClient";
 import { API_BASE_URL } from "../constants/api";
+import { logHttpRequestDebug } from "../utils/httpDebug";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
   timeout: 60000,
 });
 
@@ -32,22 +32,46 @@ api.interceptors.request.use(async (config) => {
       config.headers = {};
     }
 
+    const headers = config.headers as Record<string, string>;
+
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token;
 
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      delete config.headers["X-Guest-Id"];
+      headers.Authorization = `Bearer ${token}`;
+      delete headers["X-Guest-Id"];
+      delete headers["x-guest-id"];
+      config.withCredentials = true;
     } else {
-      config.headers["X-Guest-Id"] = ensureGuestId();
-      delete config.headers.Authorization;
+      headers["X-Guest-Id"] = ensureGuestId();
+      delete headers.Authorization;
+      delete headers.authorization;
+      config.withCredentials = false;
     }
 
-    console.log(
-      `➡️ [Axios] ${config.method?.toUpperCase()} ${config.baseURL}${config.url} | Auth: ${
-        token ? "Bearer" : "Guest"
-      }`
-    );
+    const hasJsonBody =
+      config.data &&
+      typeof config.data === "object" &&
+      !(config.data instanceof FormData) &&
+      !headers["Content-Type"] &&
+      !headers["content-type"];
+
+    if (hasJsonBody) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    const baseURL = typeof config.baseURL === "string" ? config.baseURL : "";
+    const requestUrl = typeof config.url === "string" ? config.url : "";
+    const fullUrl = /^https?:/i.test(requestUrl)
+      ? requestUrl
+      : `${baseURL.replace(/\/+$/, "")}/${requestUrl.replace(/^\/+/, "")}`.replace(/\/+$/, "");
+
+    logHttpRequestDebug({
+      method: config.method?.toUpperCase() || "GET",
+      url: fullUrl || baseURL,
+      credentials: config.withCredentials ? "include" : "omit",
+      headers,
+    });
   } catch (err) {
     console.warn("⚠️ [Axios] Falha ao preparar cabeçalhos de autenticação:", err);
   }
@@ -57,20 +81,9 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => {
-    console.log(
-      `✅ [Axios] ${response.config.method?.toUpperCase()} ${response.config.baseURL}${
-        response.config.url
-      } -> ${response.status}`
-    );
     return response;
   },
   (error) => {
-    const { config, response } = error;
-    console.error(
-      `❌ [Axios] ${config?.method?.toUpperCase()} ${config?.baseURL}${config?.url} -> ${
-        response?.status || "NO_RESPONSE"
-      }`
-    );
     return Promise.reject(error);
   }
 );
