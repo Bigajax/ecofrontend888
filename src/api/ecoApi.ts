@@ -94,20 +94,20 @@ const buildRequestInit = (
   hour: number,
   tz: string,
   guest: { guestId: string; isGuest: boolean },
-  token: string | null
+  token: string | null,
+  isStreaming: boolean
 ) => {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    Accept: "text/event-stream",
+    Accept: isStreaming ? "text/event-stream" : "application/json",
   };
 
   if (!guest.isGuest && token) {
     headers.Authorization = `Bearer ${token}`;
-  } else {
-    headers["x-guest-mode"] = "1";
   }
 
   headers["X-Guest-Id"] = guest.guestId;
+  headers["X-Guest-Mode"] = guest.isGuest ? "1" : "0";
 
   const bodyPayload: Record<string, unknown> = {
     mensagens,
@@ -126,7 +126,7 @@ const buildRequestInit = (
     method: "POST",
     headers,
     mode: "cors" as const,
-    credentials: "include" as const,
+    credentials: guest.isGuest ? ("omit" as const) : ("include" as const),
     body: JSON.stringify(bodyPayload),
   } satisfies RequestInit;
 };
@@ -135,6 +135,7 @@ type EnviarMensagemOptions = {
   guestId?: string;
   isGuest?: boolean;
   signal?: AbortSignal;
+  stream?: boolean;
 };
 
 export const enviarMensagemParaEco = async (
@@ -161,6 +162,8 @@ export const enviarMensagemParaEco = async (
 
     const guest = resolveGuestHeaders(options, token);
 
+    const isStreaming = options.stream !== false;
+
     const requestInit = buildRequestInit(
       mensagensValidas,
       userName,
@@ -168,7 +171,8 @@ export const enviarMensagemParaEco = async (
       hour,
       tz,
       guest,
-      token
+      token,
+      isStreaming
     );
 
     const response = await fetch(resolveApiUrl(ASK_ENDPOINT), {
@@ -212,7 +216,7 @@ export const enviarMensagemParaEco = async (
     const contentType = response.headers.get("content-type") || "";
     const isEventStream = /text\/event-stream/i.test(contentType);
 
-    if (!response.body || !isEventStream) {
+    if (!isStreaming || !response.body || !isEventStream) {
       return parseNonStreamResponse(response);
     }
 

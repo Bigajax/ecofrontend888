@@ -1,9 +1,12 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fetchMock, getSessionMock } = vi.hoisted(() => ({
-  fetchMock: vi.fn(),
-  getSessionMock: vi.fn().mockResolvedValue({ data: { session: { access_token: "token-mock" } } }),
-}));
+const { fetchMock } = vi.hoisted(() => {
+  vi.stubEnv("VITE_SUPABASE_URL", "https://supabase.test");
+  vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key-test");
+  return {
+    fetchMock: vi.fn(),
+  };
+});
 
 vi.stubGlobal("fetch", fetchMock);
 
@@ -13,17 +16,13 @@ vi.mock("../axios", () => ({
   },
 }));
 
-vi.mock("../lib/supabaseClient", () => ({
-  supabase: {
-    auth: {
-      getSession: getSessionMock,
-    },
-  },
-}));
-
 vi.mock("uuid", () => ({
   v4: () => "uuid-mock",
 }));
+
+import { supabase } from "../../lib/supabaseClient";
+const getSessionMock = vi.spyOn(supabase.auth, "getSession");
+getSessionMock.mockResolvedValue({ data: { session: { access_token: "token-mock" } } });
 
 import { enviarMensagemParaEco, EcoEventHandlers } from "../ecoApi";
 
@@ -54,7 +53,10 @@ const createSseResponse = (events: unknown[], newline = "\n") => {
 describe("enviarMensagemParaEco", () => {
   beforeEach(() => {
     fetchMock.mockReset();
-    getSessionMock.mockClear();
+    getSessionMock.mockReset();
+    getSessionMock.mockResolvedValue({
+      data: { session: { access_token: "token-mock" } },
+    });
   });
 
   const callApi = async () => enviarMensagemParaEco(mensagens);
@@ -260,11 +262,49 @@ describe("enviarMensagemParaEco", () => {
     );
 
     const [, init] = fetchMock.mock.calls.at(-1) ?? [];
-    expect(init?.headers).toMatchObject({ "x-guest-id": "guest_123" });
+    expect(init?.headers).toMatchObject({
+      "X-Guest-Id": "guest_123",
+      "X-Guest-Mode": "1",
+    });
+    expect(init?.credentials).toBe("omit");
     const body = init?.body ? JSON.parse(init.body as string) : {};
     expect(body.isGuest).toBe(true);
     expect(body.guestId).toBe("guest_123");
     expect(body.usuario_id).toBeUndefined();
+  });
+
+  it("usa Accept JSON e credentials include quando streaming é desativado", async () => {
+    getSessionMock.mockResolvedValueOnce({
+      data: { session: { access_token: "token-autenticado" } },
+    });
+
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ metadata: { foo: "bar" }, response: { content: "oi" } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    const resposta = await enviarMensagemParaEco(
+      mensagens,
+      undefined,
+      "usuario-123",
+      undefined,
+      undefined,
+      undefined,
+      { stream: false }
+    );
+
+    const [, init] = fetchMock.mock.calls.at(-1) ?? [];
+    expect(init?.headers).toMatchObject({
+      Accept: "application/json",
+      "X-Guest-Mode": "0",
+    });
+    expect(init?.credentials).toBe("include");
+    expect(getSessionMock).toHaveBeenCalledTimes(1);
+    expect(resposta.metadata).toEqual({ foo: "bar" });
+    const body = init?.body ? JSON.parse(init.body as string) : {};
+    expect(body.usuario_id).toBe("usuario-123");
   });
 });
 
