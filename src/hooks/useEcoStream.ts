@@ -779,15 +779,37 @@ export const useEcoStream = ({
           },
         };
 
-        const resposta = await enviarMensagemParaEco(
-          mensagensComContexto,
-          userName,
-          shouldPersist ? (authUserId as string) : undefined,
-          clientHour,
-          clientTz,
-          handlers,
-          { guestId, isGuest, signal: controller.signal }
-        );
+        // ------------------------------
+        // 👇 Fallback automático SSE → JSON
+        // ------------------------------
+        let resposta: Awaited<ReturnType<typeof enviarMensagemParaEco>>;
+        const commonOpts = { guestId, isGuest, signal: controller.signal as AbortSignal };
+
+        try {
+          // 1) tenta streaming (SSE)
+          resposta = await enviarMensagemParaEco(
+            mensagensComContexto,
+            userName,
+            shouldPersist ? (authUserId as string) : undefined,
+            clientHour,
+            clientTz,
+            handlers,
+            { ...commonOpts, stream: true }
+          );
+        } catch (err) {
+          // 2) se falhar (CORS/rede), tenta JSON
+          if (isDev) console.warn('[useEcoStream] SSE falhou; usando JSON:', err);
+          resposta = await enviarMensagemParaEco(
+            mensagensComContexto,
+            userName,
+            shouldPersist ? (authUserId as string) : undefined,
+            clientHour,
+            clientTz,
+            handlers,
+            { ...commonOpts, stream: false }
+          );
+        }
+        // ------------------------------
 
         if (resposta?.aborted) {
           markStreamDone();
