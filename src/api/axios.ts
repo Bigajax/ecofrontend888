@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosHeaders } from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "../lib/supabaseClient";
 import { API_BASE_URL } from "../constants/api";
@@ -26,25 +26,12 @@ function ensureGuestId(): string {
   }
 }
 
-api.interceptors.request.use(async (config) => {
-  try {
-    if (!config.headers) {
-      config.headers = {};
-    }
 
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token;
 
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      delete config.headers["X-Guest-Id"];
-    } else {
-      config.headers["X-Guest-Id"] = ensureGuestId();
-      delete config.headers.Authorization;
-    }
 
-    console.log(
-      `➡️ [Axios] ${config.method?.toUpperCase()} ${config.baseURL}${config.url} | Auth: ${
         token ? "Bearer" : "Guest"
       }`
     );
@@ -57,17 +44,13 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => {
-    console.log(
-      `✅ [Axios] ${response.config.method?.toUpperCase()} ${response.config.baseURL}${
-        response.config.url
-      } -> ${response.status}`
+
     );
     return response;
   },
   (error) => {
     const { config, response } = error;
-    console.error(
-      `❌ [Axios] ${config?.method?.toUpperCase()} ${config?.baseURL}${config?.url} -> ${
+
         response?.status || "NO_RESPONSE"
       }`
     );
