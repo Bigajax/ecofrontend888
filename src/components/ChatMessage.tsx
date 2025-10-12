@@ -94,7 +94,29 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   isEcoActive,
 }) => {
   const isUser = message.sender === "user";
-  const rawText = normalizeMessageContent([message.content, message.text]);
+  const candidateValues: unknown[] = [];
+
+  if (message.content !== undefined && message.content !== null) {
+    candidateValues.push(message.content);
+  }
+
+  if (
+    message.text !== undefined &&
+    message.text !== null &&
+    message.text !== message.content
+  ) {
+    candidateValues.push(message.text);
+  }
+
+  if (candidateValues.length === 0) {
+    candidateValues.push(message.content ?? message.text ?? "");
+  }
+
+  let rawText = "";
+  for (const value of candidateValues) {
+    rawText = normalizeMessageContent(value);
+    if (rawText.trim().length > 0) break;
+  }
   const trimmedText = rawText.trim();
   const isEcoMessage = message.sender === "eco";
   const showPlaceholder = isEcoMessage && trimmedText.length === 0;
