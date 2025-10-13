@@ -94,22 +94,32 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   isEcoActive,
 }) => {
   const isUser = message.sender === "user";
+  const isEcoMessage = message.sender === "eco";
   const candidateValues: unknown[] = [];
 
-  if (message.content !== undefined && message.content !== null) {
-    candidateValues.push(message.content);
-  }
+  const pushCandidate = (value: unknown) => {
+    if (value !== undefined && value !== null) {
+      candidateValues.push(value);
+    }
+  };
+
+  pushCandidate(message.content);
 
   if (
     message.text !== undefined &&
     message.text !== null &&
     message.text !== message.content
   ) {
-    candidateValues.push(message.text);
+    pushCandidate(message.text);
+  }
+
+  if (isEcoMessage) {
+    pushCandidate(message.metadata);
+    pushCandidate(message.donePayload);
   }
 
   if (candidateValues.length === 0) {
-    candidateValues.push(message.content ?? message.text ?? "");
+    pushCandidate(message.content ?? message.text ?? "");
   }
 
   let rawText = "";
@@ -118,7 +128,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     if (rawText.trim().length > 0) break;
   }
   const trimmedText = rawText.trim();
-  const isEcoMessage = message.sender === "eco";
   const showPlaceholder = isEcoMessage && trimmedText.length === 0;
   const displayText = showPlaceholder ? "…" : rawText;
   const hasMarkdownText = !showPlaceholder && trimmedText.length > 0;
