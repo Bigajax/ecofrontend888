@@ -16,7 +16,6 @@ const VoicePage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [ecoAudioURL, setEcoAudioURL] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const ecoAudioURLRef = useRef<string | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,11 +26,20 @@ const VoicePage: React.FC = () => {
   const goToMemoryPage = () => navigate("/memory");
   const goToChatPage = () => navigate("/chat");
 
+  const ecoAudioURLRef = useRef<string | null>(null);
+
   const revokeEcoAudioURL = () => {
-    if (ecoAudioURLRef.current) {
-      URL.revokeObjectURL(ecoAudioURLRef.current);
-      ecoAudioURLRef.current = null;
+    const current = ecoAudioURLRef.current;
+    if (current && current.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(current);
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn("[VoicePage] Falha ao revogar URL de áudio", error);
+        }
+      }
     }
+    ecoAudioURLRef.current = null;
     setEcoAudioURL(null);
   };
 
@@ -81,8 +89,8 @@ const VoicePage: React.FC = () => {
           const ecoTextoLimpo = response.ecoText?.replace(/\{[\s\S]*?\}$/, "").trim();
           console.log("[🧠 Eco disse]:", ecoTextoLimpo);
 
-          const audioURL = URL.createObjectURL(response.audioBlob);
-          ecoAudioURLRef.current = audioURL;
+          const audioURL = response.audioUrl;
+          ecoAudioURLRef.current = audioURL.startsWith("blob:") ? audioURL : null;
           setEcoAudioURL(audioURL);
           const ecoAudio = new Audio(audioURL);
           await ecoAudio.play();
