@@ -22,7 +22,11 @@ vi.mock("uuid", () => ({
   v4: () => "uuid-mock",
 }));
 
-import { supabase } from "../../lib/supabaseClient";
+import { getSupabase } from "../../lib/supabaseClient";
+const supabase = getSupabase();
+if (!supabase) {
+  throw new Error("Supabase client não pôde ser inicializado para os testes.");
+}
 const getSessionMock = vi.spyOn(supabase.auth, "getSession");
 getSessionMock.mockResolvedValue({ data: { session: { access_token: "token-mock" } } });
 
@@ -386,6 +390,7 @@ describe("enviarMensagemParaEco", () => {
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer token-autenticado",
+        "X-Guest-Id": expect.any(String),
       },
       responseType: "json",
     });
