@@ -7,10 +7,10 @@ import { logHttpRequestDebug } from "../utils/httpDebug";
 
 import { EcoApiError } from "./errors";
 import {
-  generateGuestId,
+  ensureGuestId,
   normalizeGuestIdFormat,
-  safeLocalStorageGet,
-  safeLocalStorageSet,
+  persistGuestId,
+  readPersistedGuestId,
 } from "./guestIdentity";
 import {
   EcoEventHandlers,
@@ -81,14 +81,12 @@ const resolveGuestHeaders = (
   const userWantsGuest = options?.isGuest === true;
   const isGuest = userWantsGuest || !token;
 
-  let storedGuestId = normalizeGuestIdFormat(safeLocalStorageGet("eco_guest_id"));
-  if (!storedGuestId) {
-    storedGuestId = generateGuestId();
-    safeLocalStorageSet("eco_guest_id", storedGuestId);
-  }
-
   const providedGuestId = normalizeGuestIdFormat(options?.guestId);
-  const guestId = providedGuestId || storedGuestId;
+  const storedGuestId = readPersistedGuestId();
+
+  const guestId = providedGuestId || storedGuestId || ensureGuestId();
+
+  persistGuestId(guestId);
 
   return { guestId, isGuest };
 };
@@ -199,7 +197,7 @@ export const enviarMensagemParaEco = async (
     });
 
     const serverGuestId = normalizeGuestIdFormat(response.headers.get("x-guest-id"));
-    if (serverGuestId) safeLocalStorageSet("eco_guest_id", serverGuestId);
+    if (serverGuestId) persistGuestId(serverGuestId);
 
     if (!response.ok) {
       let serverErr: string | undefined;
