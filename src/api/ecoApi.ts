@@ -15,9 +15,12 @@ import {
   readPersistedGuestId,
 } from "./guestIdentity";
 
-export async function askEco(payload: any, opts: { stream?: boolean } = {}) {
-  const headers: Record<string, string> = {};
-  if (opts.stream) headers["Accept"] = "text/event-stream";
+export async function askEco(
+  payload: any,
+  opts: { stream?: boolean; headers?: Record<string, string> } = {}
+) {
+  const headers: Record<string, string> = { ...(opts.headers ?? {}) };
+  if (opts.stream) headers["Accept"] = headers["Accept"] ?? "text/event-stream";
 
   const response = await api.post("/api/ask-eco", payload, {
     headers,
@@ -242,7 +245,7 @@ export const enviarMensagemParaEco = async (
     });
 
     if (!isStreaming) {
-      const data = await askEco(payload, { stream: false });
+      const data = await askEco(payload, { stream: false, headers });
       return parseNonStreamPayload(data);
     }
 

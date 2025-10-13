@@ -313,7 +313,13 @@ describe("enviarMensagemParaEco", () => {
       clientTz: expect.any(String),
     });
     expect(body.isGuest).toBeUndefined();
-    expect(config).toEqual({ headers: {}, responseType: "json" });
+    expect(config).toEqual({
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer token-autenticado",
+      },
+      responseType: "json",
+    });
     expect(getSessionMock).toHaveBeenCalledTimes(1);
     expect(resposta.metadata).toEqual({ foo: "bar" });
     expect(resposta.primeiraMemoriaSignificativa).toBe(true);
