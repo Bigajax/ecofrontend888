@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 
+import { persistGuestId, removePersistedGuestId } from '../api/guestIdentity';
 import mixpanel from '../lib/mixpanel';
 
 export const GUEST_ID_KEY = 'eco_guest_id';
@@ -41,8 +42,8 @@ const safeRemoveItem = (key: string) => {
 };
 
 export function clearGuestStorage() {
+  removePersistedGuestId();
   [
-    GUEST_ID_KEY,
     LEGACY_GUEST_ID_KEY,
     GUEST_INTERACTION_COUNT_KEY,
     GUEST_INPUT_DISABLED_KEY,
@@ -116,7 +117,7 @@ export function useGuestGate(enabled: boolean) {
     }
 
     // persistir o canônico (corrige formatos antigos automaticamente)
-    safeSetItem(GUEST_ID_KEY, canonical);
+    persistGuestId(canonical);
 
     setGuestId(canonical);
     guestIdRef.current = canonical;
