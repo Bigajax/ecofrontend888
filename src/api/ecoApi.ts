@@ -7,6 +7,7 @@ import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
 
 import { EcoApiError } from "./errors";
+import { AskEcoResponse, normalizeAskEcoResponse } from "./askEcoResponse";
 import {
   ensureGuestId,
   normalizeGuestIdFormat,
@@ -104,7 +105,13 @@ const resolveGuestHeaders = (
   return { guestId, isGuest };
 };
 
-const buildRequestInit = (
+type RequestPreparation = {
+  headers: Record<string, string>;
+  credentials: RequestCredentials;
+  payload: Record<string, unknown>;
+};
+
+const prepareRequest = (
   mensagens: Message[],
   userName: string | undefined,
   userId: string | undefined,
@@ -146,11 +153,41 @@ const buildRequestInit = (
   }
 
   return {
-    method: "POST",
     headers,
     credentials: guest.isGuest ? "omit" : "include",
-    body: JSON.stringify(bodyPayload),
-  } satisfies RequestInit;
+    payload: bodyPayload,
+  } satisfies RequestPreparation;
+};
+
+const parseNonStreamPayload = (payload: unknown): EcoStreamResult => {
+  if (typeof payload === "string") {
+    const trimmed = payload.trim();
+    if (!trimmed) return { text: "" };
+    try {
+      return parseNonStreamPayload(JSON.parse(trimmed));
+    } catch {
+      return { text: trimmed };
+    }
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return { text: "" };
+  }
+
+  const normalizedText = normalizeAskEcoResponse(payload as AskEcoResponse) ?? "";
+  const text = normalizedText.trim();
+  const metadata = (payload as any)?.metadata ?? (payload as any)?.response ?? undefined;
+  const done = (payload as any)?.done ?? (payload as any)?.response ?? undefined;
+  const primeiraMemoriaSignificativa = Boolean(
+    (payload as any)?.primeiraMemoriaSignificativa ?? (payload as any)?.primeira
+  );
+
+  return {
+    text,
+    metadata,
+    done,
+    primeiraMemoriaSignificativa,
+  };
 };
 
 type EnviarMensagemOptions = {
@@ -186,7 +223,7 @@ export const enviarMensagemParaEco = async (
 
     const isStreaming = options.stream !== false;
 
-    const requestInit = buildRequestInit(
+    const { headers, credentials, payload } = prepareRequest(
       mensagensValidas,
       userName,
       userId,
@@ -198,14 +235,22 @@ export const enviarMensagemParaEco = async (
     );
 
     logHttpRequestDebug({
-      method: requestInit.method ?? "GET",
+      method: "POST",
       url: resolveApiUrl(ASK_ENDPOINT),
-      credentials: requestInit.credentials,
-      headers: requestInit.headers,
+      credentials,
+      headers,
     });
 
+    if (!isStreaming) {
+      const data = await askEco(payload, { stream: false });
+      return parseNonStreamPayload(data);
+    }
+
     const response = await fetch(resolveApiUrl(ASK_ENDPOINT), {
-      ...requestInit,
+      method: "POST",
+      headers,
+      credentials,
+      body: JSON.stringify(payload),
       signal: options.signal,
     });
 
@@ -245,7 +290,7 @@ export const enviarMensagemParaEco = async (
     const contentType = response.headers.get("content-type") || "";
     const isEventStream = /text\/event-stream/i.test(contentType);
 
-    if (!isStreaming || !response.body || !isEventStream) {
+    if (!response.body || !isEventStream) {
       return parseNonStreamResponse(response);
     }
 
