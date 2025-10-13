@@ -33,6 +33,8 @@ export interface EcoClientEvent {
   delta?: string;
   /** Texto já normalizado para compatibilidade com clientes legados. */
   text?: string;
+  /** Alias para conteúdo textual incremental (compatibilidade com novos clientes). */
+  content?: string;
   /** Metadados finais/parciais retornados pelo backend. */
   metadata?: unknown;
   /** Payload bruto, incluindo campos específicos da plataforma. */
@@ -394,6 +396,7 @@ export const processEventStream = async (
           type: "first_token",
           delta: firstDelta,
           text: eventWithText.text ?? firstDelta,
+          content: eventWithText.text ?? firstDelta,
           payload: unwrappedPayload,
           raw: eventData,
           originalType: responseOriginalType,
@@ -429,6 +432,7 @@ export const processEventStream = async (
           type: "chunk",
           delta: chunkDelta,
           text: eventWithText.text ?? chunkDelta,
+          content: eventWithText.text ?? chunkDelta,
           payload: unwrappedPayload,
           raw: eventData,
           originalType: responseOriginalType,
@@ -535,6 +539,12 @@ export const processEventStream = async (
               : typeof fallbackText === "string"
               ? fallbackText
               : undefined,
+          content:
+            typeof eventWithMeta.text === "string"
+              ? eventWithMeta.text
+              : typeof fallbackText === "string"
+              ? fallbackText
+              : undefined,
           raw: eventData,
           originalType: responseOriginalType,
           done: unwrappedPayload,
@@ -556,6 +566,7 @@ export const processEventStream = async (
           type,
           delta: fallbackText,
           text: fallbackText,
+          content: fallbackText,
           payload: unwrappedPayload,
           raw: eventData,
           originalType: responseOriginalType,

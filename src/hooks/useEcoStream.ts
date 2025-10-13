@@ -618,21 +618,20 @@ export const useEcoStream = ({
           }
         };
 
-        const setAssistantMessage = (texto: string, streaming = true) => {
+        const clearPlaceholder = () => {
           ensureEcoMessage();
-          aggregatedEcoText = texto;
-          patchEcoMessage({
-            text: texto.length > 0 ? texto : ' ',
-            content: texto,
-            streaming,
-          });
+          aggregatedEcoText = '';
+          patchEcoMessage({ text: '', content: '', streaming: true });
         };
 
-        const appendToAssistantMessage = (delta: string) => {
+        const appendMessage = (delta: string) => {
           const chunk = flattenToString(delta);
           if (!chunk) return;
           ensureEcoMessage();
-          aggregatedEcoText += chunk;
+          if (aggregatedEcoText.length === 0) {
+            patchEcoMessage({ text: '', content: '', streaming: true });
+          }
+          aggregatedEcoText = `${aggregatedEcoText}${chunk}`;
           patchEcoMessage({
             text: aggregatedEcoText.length > 0 ? aggregatedEcoText : ' ',
             content: aggregatedEcoText,
@@ -640,7 +639,7 @@ export const useEcoStream = ({
           });
         };
 
-        const finalizeAssistantMessage = () => {
+        const finalizeMessage = () => {
           ensureEcoMessage();
           patchEcoMessage({ streaming: false });
         };
@@ -652,16 +651,42 @@ export const useEcoStream = ({
           setDigitando(false);
         };
 
-        const canonicalizeEventType = (value: string | undefined | null) => {
-          if (!value) return "";
-          return value
+        const canonicalizeEventType = (raw: unknown) => {
+          if (raw === null || raw === undefined) return '';
+          const base = String(raw).trim();
+          if (/^\[object\s/i.test(base)) return '';
+          if (!base) return '';
+          return base
             .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-            .replace(/[\s-]+/g, "_")
+            .replace(/[\s.\-]+/g, "_")
             .toLowerCase();
         };
 
+        const extractEventText = (event: EcoClientEvent, fallback?: string) => {
+          const candidates = [
+            event.delta,
+            event.text,
+            (event as any)?.content,
+            fallback,
+            event.payload && (event.payload as any)?.delta,
+            event.payload && (event.payload as any)?.text,
+            event.payload && (event.payload as any)?.content,
+          ];
+          for (const candidate of candidates) {
+            const str = flattenToString(candidate);
+            if (str.length > 0) return str;
+          }
+          return '';
+        };
+
         const handleStreamEvent = (rawEvent: EcoClientEvent) => {
-          const normalizedType = canonicalizeEventType(rawEvent?.type);
+          const candidateType =
+            rawEvent?.type ??
+            (rawEvent as any)?.event ??
+            (rawEvent as any)?.name ??
+            (rawEvent.payload as any)?.type ??
+            (rawEvent.payload as any)?.event;
+          const normalizedType = canonicalizeEventType(candidateType);
           if (isDev) {
             console.debug("[useEcoStream] event", normalizedType || rawEvent?.type, rawEvent);
           }
@@ -687,34 +712,28 @@ export const useEcoStream = ({
               if (firstTokenAt === undefined) {
                 firstTokenAt = getNow();
               }
-              let texto =
-                flattenToString(rawEvent.delta ?? '') ||
-                flattenToString(rawEvent.text ?? '') ||
-                flattenToString(
-                  (rawEvent.payload as any)?.delta ??
-                    (rawEvent.payload as any)?.text ??
-                    rawEvent.payload
-                );
-              setAssistantMessage(texto, true);
-              const hasSubstantiveContent = texto.trim().length > 0;
-              firstContentReceived = hasSubstantiveContent;
-              if (hasSubstantiveContent) {
+              clearPlaceholder();
+              const texto = extractEventText(rawEvent);
+              if (texto) {
+                appendMessage(texto);
+              }
+              firstContentReceived = aggregatedEcoText.trim().length > 0;
+              if (firstContentReceived) {
                 setDigitando(false);
               }
               syncScroll();
               return;
             }
-            case 'chunk': {
-              let chunkText =
-                flattenToString(rawEvent.delta ?? '') ||
-                flattenToString(rawEvent.text ?? '') ||
-                flattenToString(
-                  (rawEvent.payload as any)?.delta ??
-                    (rawEvent.payload as any)?.text ??
-                    ''
-                );
+            case 'chunk':
+            case 'chunk_delta':
+            case 'delta':
+            case 'message_delta': {
+              const chunkText = extractEventText(rawEvent);
               if (!chunkText) return;
-              appendToAssistantMessage(chunkText);
+              if (aggregatedEcoText.length === 0) {
+                clearPlaceholder();
+              }
+              appendMessage(chunkText);
               if (!firstContentReceived && aggregatedEcoText.trim().length > 0) {
                 firstContentReceived = true;
                 setDigitando(false);
@@ -774,6 +793,19 @@ export const useEcoStream = ({
                     (rawEvent.payload as any).metadata !== undefined
                   ? (rawEvent.payload as any).metadata
                   : undefined);
+              if (!aggregatedEcoText.length) {
+                const doneText =
+                  extractEventText(rawEvent) ||
+                  flattenToString(
+                    (rawEvent.payload as any)?.response ??
+                      (rawEvent.payload as any)?.content ??
+                      rawEvent.payload
+                  );
+                if (doneText) {
+                  clearPlaceholder();
+                  appendMessage(doneText);
+                }
+              }
               if (meta !== undefined) {
                 latestMetadata = meta;
                 ensureEcoMessage();
@@ -783,33 +815,18 @@ export const useEcoStream = ({
                 ensureEcoMessage();
                 patchEcoMessage({ donePayload: rawEvent.payload, streaming: false });
               }
-              if (!aggregatedEcoText.length) {
-                const doneText =
-                  flattenToString(rawEvent.delta ?? '') ||
-                  flattenToString(rawEvent.text ?? '') ||
-                  flattenToString(
-                    (rawEvent.payload as any)?.response ??
-                      (rawEvent.payload as any)?.content ??
-                      rawEvent.payload
-                  );
-                if (doneText) {
-                  aggregatedEcoText = doneText;
-                  patchEcoMessage({
-                    text: aggregatedEcoText,
-                    content: aggregatedEcoText,
-                    streaming: false,
-                  });
-                }
-              }
               if (
                 (rawEvent.payload as any)?.primeiraMemoriaSignificativa ||
                 (rawEvent.payload as any)?.primeira
               ) {
                 primeiraMemoriaFlag = true;
               }
+              if (aggregatedEcoText.trim().length > 0) {
+                firstContentReceived = true;
+              }
               setDigitando(false);
               syncScroll();
-              finalizeAssistantMessage();
+              finalizeMessage();
               const metricsExtra: Record<string, unknown> = { stage: 'on_done' };
               if (meta !== undefined) {
                 metricsExtra.final_metadata = meta;
@@ -857,8 +874,12 @@ export const useEcoStream = ({
               });
               return;
             }
-            default:
+            default: {
+              if (isDev) {
+                console.debug('[useEcoStream] evento desconhecido', rawEvent);
+              }
               return;
+            }
           }
         };
 
