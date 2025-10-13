@@ -109,9 +109,9 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           addMessage({ sender: 'user', text: response.userText });
           addMessage({ sender: 'eco', text: response.ecoText });
 
-          const audioURL = URL.createObjectURL(response.audioBlob);
-          new Audio(audioURL).play().catch(e => console.error("Erro ao reproduzir áudio da Eco:", e));
-          onEcoAudioURLChange(audioURL);
+          const audioUrl = response.audioUrl;
+          new Audio(audioUrl).play().catch(e => console.error("Erro ao reproduzir áudio da Eco:", e));
+          onEcoAudioURLChange(audioUrl);
 
         } catch (err: any) {
           handleError(`Falha na interação de voz: ${err.message}`);
