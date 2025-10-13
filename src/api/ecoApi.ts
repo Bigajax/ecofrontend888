@@ -1,6 +1,7 @@
 // src/api/ecoApi.ts
 import { v4 as uuidv4 } from "uuid";
 
+import api from "./axios";
 import { supabase } from "../lib/supabaseClient";
 import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
@@ -12,6 +13,18 @@ import {
   persistGuestId,
   readPersistedGuestId,
 } from "./guestIdentity";
+
+export async function askEco(payload: any, opts: { stream?: boolean } = {}) {
+  const headers: Record<string, string> = {};
+  if (opts.stream) headers["Accept"] = "text/event-stream";
+
+  const response = await api.post("/api/ask-eco", payload, {
+    headers,
+    responseType: opts.stream ? "text" : "json",
+  });
+
+  return response.data;
+}
 import {
   EcoEventHandlers,
   EcoSseEvent,

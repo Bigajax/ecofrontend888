@@ -1,119 +1,117 @@
 import { v4 as uuidv4 } from "uuid";
 
-import { hasWindow, isDev } from "./environment";
+const KEY = "eco.guestId";
+const COOKIE_NAME = "guest_id";
+const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365; // 1 ano
+const UUID_V4_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const GUEST_ID_KEY = "eco_guest_id";
-const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
+const hasWindow = typeof window !== "undefined";
 
-const normalizeUuid = (value: string) => value.toLowerCase();
+type NullableString = string | null | undefined;
 
-export const normalizeGuestIdFormat = (id: string | null | undefined) => {
-  const candidate = (id ?? "").trim();
-  if (!candidate) return "";
-
-  const normalized = candidate.replace(/^guest[:-]/i, "guest_");
-  if (/^guest_[0-9a-fA-F-]{36}$/.test(normalized)) {
-    const uuid = normalized.slice("guest_".length);
-    return `guest_${normalizeUuid(uuid)}`;
-  }
-
-  if (/^[0-9a-fA-F-]{36}$/.test(candidate)) {
-    return `guest_${normalizeUuid(candidate)}`;
-  }
-
-  return normalized.toLowerCase();
-};
-
-export const safeLocalStorageGet = (key: string) => {
-  if (!hasWindow()) return null;
+const readFromLocalStorage = (): string | null => {
+  if (!hasWindow) return null;
   try {
-    return window.localStorage.getItem(key);
-  } catch (error) {
-    if (isDev) console.warn(`⚠️ [ECO API] Falha ao ler localStorage (${key})`, error);
+    return window.localStorage.getItem(KEY);
+  } catch {
     return null;
   }
 };
 
-export const safeLocalStorageSet = (key: string, value: string) => {
-  if (!hasWindow()) return;
+const writeToLocalStorage = (value: string) => {
+  if (!hasWindow) return;
   try {
-    window.localStorage.setItem(key, value);
-  } catch (error) {
-    if (isDev) console.warn(`⚠️ [ECO API] Falha ao salvar localStorage (${key})`, error);
+    window.localStorage.setItem(KEY, value);
+  } catch {
+    return;
   }
 };
 
-export const safeLocalStorageRemove = (key: string) => {
-  if (!hasWindow()) return;
+const removeFromLocalStorage = () => {
+  if (!hasWindow) return;
   try {
-    window.localStorage.removeItem(key);
-  } catch (error) {
-    if (isDev) console.warn(`⚠️ [ECO API] Falha ao remover localStorage (${key})`, error);
+    window.localStorage.removeItem(KEY);
+  } catch {
+    return;
   }
 };
 
-const safeCookieGet = (key: string) => {
-  if (!hasWindow()) return null;
+const readFromCookie = (): string | null => {
+  if (!hasWindow) return null;
   try {
     const cookies = document.cookie ? document.cookie.split(";") : [];
-    for (const rawCookie of cookies) {
-      const [name, ...rest] = rawCookie.trim().split("=");
-      if (decodeURIComponent(name) === key) {
+    for (const raw of cookies) {
+      const [name, ...rest] = raw.trim().split("=");
+      if (decodeURIComponent(name) === COOKIE_NAME) {
         return decodeURIComponent(rest.join("="));
       }
     }
-  } catch (error) {
-    if (isDev) console.warn(`⚠️ [ECO API] Falha ao ler cookie (${key})`, error);
+  } catch {
+    return null;
   }
   return null;
 };
 
-const safeCookieSet = (key: string, value: string, maxAgeSeconds = ONE_YEAR_SECONDS) => {
-  if (!hasWindow()) return;
+const writeCookie = (value: string) => {
+  if (!hasWindow) return;
   try {
-    const sanitizedValue = value.replace(/\s+/g, "");
-    const secure = window.location?.protocol === "https:" ? ";Secure" : "";
-    const maxAge = Math.max(60, Math.floor(maxAgeSeconds));
-    document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(sanitizedValue)};path=/;max-age=${maxAge};SameSite=Lax${secure}`;
-  } catch (error) {
-    if (isDev) console.warn(`⚠️ [ECO API] Falha ao salvar cookie (${key})`, error);
+    const secure = window.location?.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${encodeURIComponent(COOKIE_NAME)}=${encodeURIComponent(
+      value
+    )}; Max-Age=${COOKIE_MAX_AGE_SECONDS}; path=/; SameSite=Lax${secure}`;
+  } catch {
+    return;
   }
 };
 
-const safeCookieRemove = (key: string) => {
-  if (!hasWindow()) return;
+const clearCookie = () => {
+  if (!hasWindow) return;
   try {
-    const secure = window.location?.protocol === "https:" ? ";Secure" : "";
-    document.cookie = `${encodeURIComponent(key)}=;path=/;max-age=0;expires=Thu, 01 Jan 1970 00:00:00 GMT;SameSite=Lax${secure}`;
-  } catch (error) {
-    if (isDev) console.warn(`⚠️ [ECO API] Falha ao remover cookie (${key})`, error);
+    const secure = window.location?.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${encodeURIComponent(COOKIE_NAME)}=; Max-Age=0; path=/; SameSite=Lax${secure}`;
+  } catch {
+    return;
   }
 };
 
-export const generateGuestId = () => {
-  if (hasWindow()) {
-    const { crypto } = window;
-    if (crypto && typeof crypto.randomUUID === "function") {
-      try {
-        return `guest_${crypto.randomUUID()}`;
-      } catch (error) {
-        if (isDev)
-          console.warn("⚠️ [ECO API] Falha ao gerar guestId com crypto.randomUUID", error);
-      }
+const normalizeUuid = (uuid: string) => uuid.toLowerCase();
+
+export const normalizeGuestIdFormat = (input: NullableString): string => {
+  const raw = (input ?? "").trim();
+  if (!raw) return "";
+
+  const candidate = raw.replace(/^guest[:-]/i, "guest_");
+  if (candidate.toLowerCase().startsWith("guest_") && candidate.length > 6) {
+    const suffix = candidate.slice(6);
+    if (UUID_V4_REGEX.test(suffix)) {
+      return `guest_${normalizeUuid(suffix)}`;
     }
   }
-  return `guest_${uuidv4()}`;
+
+  if (UUID_V4_REGEX.test(raw)) {
+    return `guest_${normalizeUuid(raw)}`;
+  }
+
+  return raw.toLowerCase();
+};
+
+const persistNormalizedGuestId = (guestId: string) => {
+  if (!guestId) return;
+  writeToLocalStorage(guestId);
+  writeCookie(guestId);
 };
 
 export const readPersistedGuestId = (): string | null => {
-  const fromLocalStorage = normalizeGuestIdFormat(safeLocalStorageGet(GUEST_ID_KEY));
-  if (fromLocalStorage) {
-    return fromLocalStorage;
+  const fromStorage = normalizeGuestIdFormat(readFromLocalStorage());
+  if (fromStorage) {
+    persistNormalizedGuestId(fromStorage);
+    return fromStorage;
   }
 
-  const fromCookie = normalizeGuestIdFormat(safeCookieGet(GUEST_ID_KEY));
+  const fromCookie = normalizeGuestIdFormat(readFromCookie());
   if (fromCookie) {
-    safeLocalStorageSet(GUEST_ID_KEY, fromCookie);
+    persistNormalizedGuestId(fromCookie);
     return fromCookie;
   }
 
@@ -123,24 +121,27 @@ export const readPersistedGuestId = (): string | null => {
 export const persistGuestId = (guestId: string) => {
   const normalized = normalizeGuestIdFormat(guestId);
   if (!normalized) return;
-
-  safeLocalStorageSet(GUEST_ID_KEY, normalized);
-  safeCookieSet(GUEST_ID_KEY, normalized);
+  persistNormalizedGuestId(normalized);
 };
 
-export const ensureGuestId = () => {
-  const stored = readPersistedGuestId();
-  if (stored) {
-    persistGuestId(stored);
-    return stored;
-  }
-
-  const generated = generateGuestId();
-  persistGuestId(generated);
-  return generated;
+export const clearGuestId = () => {
+  removeFromLocalStorage();
+  clearCookie();
 };
 
 export const removePersistedGuestId = () => {
-  safeLocalStorageRemove(GUEST_ID_KEY);
-  safeCookieRemove(GUEST_ID_KEY);
+  clearGuestId();
 };
+
+export const getOrCreateGuestId = (): string => {
+  const existing = readPersistedGuestId();
+  if (existing) return existing;
+
+  const generated = `guest_${normalizeUuid(uuidv4())}`;
+  if (hasWindow) {
+    persistNormalizedGuestId(generated);
+  }
+  return generated;
+};
+
+export const ensureGuestId = (): string => getOrCreateGuestId();

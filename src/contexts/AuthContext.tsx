@@ -5,6 +5,8 @@ import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import mixpanel from '../lib/mixpanel';
 import { clearGuestStorage } from '../hooks/useGuestGate';
 
+const AUTH_TOKEN_KEY = 'auth_token';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -50,6 +52,17 @@ function clearClientState() {
   } catch {}
 }
 
+function persistAuthToken(token: string | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (token) {
+      window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+    } else {
+      window.localStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+  } catch {}
+}
+
 function syncMixpanelIdentity(authUser?: User | null) {
   if (!authUser) return;
 
@@ -89,6 +102,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) console.error('Erro ao obter sessão:', error.message);
       setSession(session);
       setUser(session?.user ?? null);
+      persistAuthToken(session?.access_token ?? null);
       setLoading(false);
 
       if (session?.user) {
@@ -107,11 +121,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!mounted) return;
         setSession(session ?? null);
         setUser(session?.user ?? null);
+        persistAuthToken(session?.access_token ?? null);
 
         // Logout em outra aba/expiração da sessão
         if (event === 'SIGNED_OUT') {
           clearClientState();
           clearGuestStorage(); // <— garante limpeza do modo guest
+          persistAuthToken(null);
           if (typeof mixpanel.unregister_all === 'function') {
             mixpanel.unregister_all();
           }
@@ -193,6 +209,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Zera estado local SEMPRE, independente do retorno do supabase
       clearClientState();
       clearGuestStorage(); // <— limpa ID/contadores do guest ao sair
+      persistAuthToken(null);
       if (typeof mixpanel.unregister_all === 'function') {
         mixpanel.unregister_all();
       }
