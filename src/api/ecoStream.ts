@@ -23,6 +23,8 @@ export interface EcoSseEvent<TPayload = Record<string, any>> {
   metadata?: unknown;
   memory?: unknown;
   latencyMs?: number;
+  /** Mantém o tipo original reportado pelo backend para debug. */
+  originalType?: string;
 }
 
 export interface EcoEventHandlers {
@@ -152,7 +154,64 @@ export const processEventStream = async (
     signal.addEventListener("abort", handleAbort, { once: true });
   }
 
-  const handleEvent = (eventData: unknown) => {
+const mapResponseEventType = (
+  type: string | undefined,
+): { normalized?: string; original?: string } => {
+  if (!type) return { normalized: type };
+  if (!type.startsWith("response.")) return { normalized: type };
+
+  const original = type;
+  const lower = type.toLowerCase();
+
+  if (
+    lower === "response.created" ||
+    lower === "response.started" ||
+    lower === "response.in_progress" ||
+    lower === "response.input_message.delta"
+  ) {
+    return { normalized: "prompt_ready", original };
+  }
+
+  if (lower === "response.error") {
+    return { normalized: "error", original };
+  }
+
+  if (
+    lower === "response.completed" ||
+    lower.endsWith(".completed") ||
+    lower.endsWith(".done") ||
+    lower === "response.final"
+  ) {
+    return { normalized: "done", original };
+  }
+
+  if (lower.includes("metadata")) {
+    const isPending = lower.includes("pending") || lower.endsWith(".delta");
+    return { normalized: isPending ? "meta_pending" : "meta", original };
+  }
+
+  if (lower.includes("memory")) {
+    return { normalized: "memory_saved", original };
+  }
+
+  if (lower.includes("latency")) {
+    return { normalized: "latency", original };
+  }
+
+  if (
+    lower.includes("output") ||
+    lower.includes("message") ||
+    lower.includes("tool") ||
+    lower.includes("refusal") ||
+    lower.endsWith(".delta")
+  ) {
+    return { normalized: "chunk", original };
+  }
+
+  return { normalized: "chunk", original };
+};
+
+const handleEvent = (eventData: unknown) => {
     if (!eventData || typeof eventData !== "object") return;
 
     const parsed = eventData as { type?: string; payload?: any; rawData?: string } & Record<
@@ -174,6 +233,8 @@ export const processEventStream = async (
         ? ((unwrappedPayload as any).type as string)
         : undefined;
     let type = payloadType ?? unwrappedType ?? hintedType;
+    const { normalized: responseNormalizedType, original: responseOriginalType } = mapResponseEventType(type);
+    type = responseNormalizedType ?? type;
 
     const rawData = parsed.rawData;
     const looksLikeDone =
@@ -193,6 +254,7 @@ export const processEventStream = async (
       type,
       payload: unwrappedPayload,
       raw: eventData,
+      originalType: responseOriginalType,
     };
 
     if (type === "error" || (payload as any)?.status === "error") {
