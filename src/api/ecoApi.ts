@@ -4,15 +4,17 @@ import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
 
 import {
+  parseNonStreamResponse,
+  processEventStream,
+} from "./ecoStream";
+import type {
   EcoEventHandlers,
   EcoClientEvent,
   EcoSseEvent,
   EcoStreamResult,
-  parseNonStreamResponse,
-  processEventStream,
 } from "./ecoStream";
 
-export { EcoEventHandlers, EcoClientEvent, EcoSseEvent, EcoStreamResult };
+export type { EcoEventHandlers, EcoClientEvent, EcoSseEvent, EcoStreamResult };
 
 export class EcoApiError extends Error {
   status?: number;
@@ -52,7 +54,7 @@ const normalizeGuest = async (isGuest?: boolean, guestId?: string) => {
   const hdrs: Record<string, string> = {};
   if (effectiveGuest && guestId) hdrs["X-Guest-Id"] = guestId;
   if (!effectiveGuest && token) hdrs["Authorization"] = `Bearer ${token}`;
-  return { headers: hdrs, credentials: effectiveGuest ? "omit" as const : "include" as const, token };
+  return { headers: hdrs, credentials: (effectiveGuest ? "omit" : "include") as RequestCredentials, token };
 };
 
 type SendOpts = {
@@ -151,7 +153,7 @@ export async function enviarMensagemParaEco(
       signal,
       credentials: credentials ?? auth.credentials,
       cache: "no-store",
-      keepalive: false, // não marque true pra não cancelar ao trocar de aba/route
+      keepalive: false,
     });
   } catch (err: any) {
     const msg = (err?.message || "").toLowerCase();
@@ -165,7 +167,6 @@ export async function enviarMensagemParaEco(
     });
   }
 
-  // Se o back não setou corretamente o header, fazemos fallback pro parser não-stream
   const ct = response.headers.get("content-type") || "";
   const isEventStream = /text\/event-stream/i.test(ct);
 
@@ -187,7 +188,7 @@ export async function enviarMensagemParaEco(
   }
 
   if (!response.body || !isEventStream) {
-    // servidor respondeu sem SSE → trata como JSON/text
+    // Servidor respondeu sem SSE → trata como JSON/text
     return parseNonStreamResponse(response);
   }
 
