@@ -64,8 +64,8 @@ export interface EcoEventHandlers {
   onError?: (error: Error) => void;
 }
 
-const normalizeSseNewlines = (value: string): string => value.replace(/
-?/g, "\n");
+/** Normaliza quebras de linha do SSE (CRLF/CR/LF → LF) */
+const normalizeSseNewlines = (value: string): string => value.replace(/\r\n|\r|\n/g, "\n");
 
 const parseSseEvent = (
   eventBlock: string
@@ -125,7 +125,7 @@ const safeInvokeUnified = (
   try {
     cb(event);
   } catch (err) {
-    console.error("�?O [ECO API] Falha ao executar callback onEvent da stream", err);
+    console.error("❌ [ECO API] Falha ao executar callback onEvent da stream", err);
   }
 };
 
@@ -137,60 +137,6 @@ const safeInvokeError = (cb: ((error: Error) => void) | undefined, error: Error)
     console.error("❌ [ECO API] Falha ao executar callback de erro da stream", err);
   }
 };
-
-export const processEventStream = async (
-  response: Response,
-  handlers: EcoEventHandlers = {},
-  options: { signal?: AbortSignal } = {}
-): Promise<EcoStreamResult> => {
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("Fluxo SSE indisponível na resposta da Eco.");
-
-  const decoder = new TextDecoder("utf-8");
-  let buffer = "";
-  let doneReceived = false;
-  let streamError: Error | null = null;
-  const aggregatedParts: string[] = [];
-  let donePayload: any;
-  let metadata: unknown;
-  let primeiraMemoriaSignificativa = false;
-  let gotAnyToken = false;
-  let lastNonEmptyText: string | undefined;
-  let promptReadyReceived = false;
-  let doneWithoutText = false;
-
-  const rememberText = (text: string | undefined) => {
-    if (typeof text !== "string") return;
-    const trimmed = text.trim();
-    if (trimmed.length === 0) return;
-    lastNonEmptyText = trimmed;
-    gotAnyToken = true;
-  };
-
-  const pushAggregatedPart = (text: string | undefined) => {
-    if (typeof text !== "string") return;
-    aggregatedParts.push(text);
-    rememberText(text);
-  };
-
-  const { signal } = options;
-  let aborted = false;
-
-  const handleAbort = () => {
-    if (aborted) return;
-    aborted = true;
-    try {
-      void reader.cancel();
-    } catch {}
-  };
-
-  if (signal) {
-    if (signal.aborted) {
-      handleAbort();
-      throw new DOMException("Aborted", "AbortError");
-    }
-    signal.addEventListener("abort", handleAbort, { once: true });
-  }
 
 const mapResponseEventType = (
   type: string | undefined,
@@ -249,8 +195,65 @@ const mapResponseEventType = (
   return { normalized: "chunk", original };
 };
 
-const handleEvent = (eventData: unknown) => {
+export const processEventStream = async (
+  response: Response,
+  handlers: EcoEventHandlers = {},
+  options: { signal?: AbortSignal } = {}
+): Promise<EcoStreamResult> => {
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("Fluxo SSE indisponível na resposta da Eco.");
+
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+  let doneReceived = false;
+  let streamError: Error | null = null;
+  const aggregatedParts: string[] = [];
+  let donePayload: any;
+  let metadata: unknown;
+  let primeiraMemoriaSignificativa = false;
+  let gotAnyToken = false;
+  let lastNonEmptyText: string | undefined;
+  let promptReadyReceived = false;
+  let doneWithoutText = false;
+
+  const rememberText = (text: string | undefined) => {
+    if (typeof text !== "string") return;
+    const trimmed = text.trim();
+    if (trimmed.length === 0) return;
+    lastNonEmptyText = trimmed;
+    gotAnyToken = true;
+  };
+
+  const pushAggregatedPart = (text: string | undefined) => {
+    if (typeof text !== "string") return;
+    aggregatedParts.push(text);
+    rememberText(text);
+  };
+
+  const { signal } = options;
+  let aborted = false;
+
+  const handleAbort = () => {
+    if (aborted) return;
+    aborted = true;
+    try {
+      void reader.cancel();
+    } catch {}
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      handleAbort();
+      throw new DOMException("Aborted", "AbortError");
+    }
+    signal.addEventListener("abort", handleAbort, { once: true });
+  }
+
+  const handleEvent = (eventData: unknown) => {
     if (!eventData || typeof eventData !== "object") return;
+
+    // ⚠️ Precisamos saber cedo se o handler unificado existe
+    const usingUnifiedHandler = typeof handlers.onEvent === "function";
 
     const parsed = eventData as { type?: string; payload?: any; rawData?: string } & Record<
       string,
@@ -280,22 +283,19 @@ const handleEvent = (eventData: unknown) => {
       (payload && (payload.done === true || (payload as any).DONE === true));
 
     if (!type && looksLikeDone) type = "done";
-
     if (!type && typeof payload?.text === "string") type = "chunk";
 
     if (!type) {
-
-    if (usingUnifiedHandler) {
-      safeInvokeUnified(handlers.onEvent, {
-        type,
-        payload: unwrappedPayload,
-        raw: eventData,
-        originalType: responseOriginalType,
-      });
-      return;
-    }
-
-    if (isDev) console.debug("ℹ️ [ECO API] Evento SSE sem tipo reconhecido:", eventData);
+      if (usingUnifiedHandler) {
+        safeInvokeUnified(handlers.onEvent, {
+          type: type as any,
+          payload: unwrappedPayload,
+          raw: eventData,
+          originalType: responseOriginalType,
+        });
+        return;
+      }
+      if (isDev) console.debug("ℹ️ [ECO API] Evento SSE sem tipo reconhecido:", eventData);
       return;
     }
 
@@ -305,7 +305,6 @@ const handleEvent = (eventData: unknown) => {
       raw: eventData,
       originalType: responseOriginalType,
     };
-    const usingUnifiedHandler = typeof handlers.onEvent === "function";
 
     if (type === "error" || (payload as any)?.status === "error") {
       const errMessage =
@@ -340,16 +339,6 @@ const handleEvent = (eventData: unknown) => {
       } else {
         safeInvoke(handlers.onPromptReady, baseEventInfo);
       }
-      return;
-    }
-
-    if (usingUnifiedHandler) {
-      safeInvokeUnified(handlers.onEvent, {
-        type,
-        payload: unwrappedPayload,
-        raw: eventData,
-        originalType: responseOriginalType,
-      });
       return;
     }
 
@@ -730,5 +719,3 @@ export const parseNonStreamResponse = async (response: Response): Promise<EcoStr
         : false,
   };
 };
-
-
