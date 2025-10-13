@@ -1,34 +1,8 @@
 // src/api/ecoApi.ts
-import { v4 as uuidv4 } from "uuid";
-
-import api from "./axios";
 import { supabase } from "../lib/supabaseClient";
 import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
 
-import { EcoApiError } from "./errors";
-import { AskEcoResponse, normalizeAskEcoResponse } from "./askEcoResponse";
-import {
-  ensureGuestId,
-  normalizeGuestIdFormat,
-  persistGuestId,
-  readPersistedGuestId,
-} from "./guestIdentity";
-
-export async function askEco(
-  payload: any,
-  opts: { stream?: boolean; headers?: Record<string, string> } = {}
-) {
-  const headers: Record<string, string> = { ...(opts.headers ?? {}) };
-  if (opts.stream) headers["Accept"] = headers["Accept"] ?? "text/event-stream";
-
-  const response = await api.post("/api/ask-eco", payload, {
-    headers,
-    responseType: opts.stream ? "text" : "json",
-  });
-
-  return response.data;
-}
 import {
   EcoEventHandlers,
   EcoClientEvent,
@@ -38,290 +12,185 @@ import {
   processEventStream,
 } from "./ecoStream";
 
-export { EcoApiError };
-export type { EcoClientEvent, EcoEventHandlers, EcoSseEvent, EcoStreamResult };
+export { EcoEventHandlers, EcoClientEvent, EcoSseEvent, EcoStreamResult };
 
-interface Message {
-  id?: string;
-  role: string;
-  content: string;
+export class EcoApiError extends Error {
+  status?: number;
+  details?: unknown;
+  constructor(message: string, opts?: { status?: number; details?: unknown }) {
+    super(message);
+    this.name = "EcoApiError";
+    this.status = opts?.status;
+    this.details = opts?.details;
+  }
 }
 
-const ASK_ENDPOINT = "/api/ask-eco";
+type Message = { role: "user" | "assistant" | "system"; content: string; id?: string };
 
+const ASK_ENDPOINT = "/api/ask-eco";
 const NETWORK_ERROR_MESSAGE =
   "Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.";
 
 const mapStatusToFriendlyMessage = (status: number, fallback: string) => {
-  if (status === 401) {
-    return "Faça login para continuar a conversa com a Eco.";
-  }
-  if (status === 429) {
-    return "Muitas requisições. Aguarde alguns segundos antes de tentar novamente.";
-  }
-  if (status === 503) {
-    return NETWORK_ERROR_MESSAGE;
-  }
-  if (status >= 500) {
-    return "A Eco está indisponível no momento. Tente novamente em instantes.";
-  }
+  if (status === 401) return "Faça login para continuar a conversa com a Eco.";
+  if (status === 429) return "Muitas requisições. Aguarde alguns segundos antes de tentar novamente.";
+  if (status === 503) return NETWORK_ERROR_MESSAGE;
+  if (status >= 500) return "A Eco está indisponível no momento. Tente novamente em instantes.";
   return fallback;
-};
-
-const createMessageId = () => {
-  const globalCrypto: Crypto | undefined =
-    typeof globalThis !== "undefined" ? (globalThis as any).crypto : undefined;
-
-  if (globalCrypto && typeof globalCrypto.randomUUID === "function") {
-    try {
-      return globalCrypto.randomUUID();
-    } catch {}
-  }
-  return uuidv4();
 };
 
 const collectValidMessages = (userMessages: Message[]): Message[] =>
   userMessages
     .slice(-3)
-    .filter(
-      (m) =>
-        m &&
-        typeof m.role === "string" &&
-        typeof m.content === "string" &&
-        m.content.trim().length > 0
-    )
-    .map((m) => ({ ...m, id: m.id || createMessageId() }));
+    .filter((m) => m && typeof m.role === "string" && typeof m.content === "string" && m.content.trim())
+    .map((m) => ({ role: m.role, content: m.content.trim(), id: m.id }));
 
-const resolveGuestHeaders = (
-  options: { guestId?: string; isGuest?: boolean } | undefined,
-  token: string | null
-) => {
-  const userWantsGuest = options?.isGuest === true;
-  const isGuest = userWantsGuest || !token;
-
-  const providedGuestId = normalizeGuestIdFormat(options?.guestId);
-  const storedGuestId = readPersistedGuestId();
-
-  const guestId = providedGuestId || storedGuestId || ensureGuestId();
-
-  persistGuestId(guestId);
-
-  return { guestId, isGuest };
+const normalizeGuest = async (isGuest?: boolean, guestId?: string) => {
+  const { data } = await supabase.auth.getSession().catch(() => ({ data: { session: null } as any }));
+  const token = data?.session?.access_token ?? null;
+  const effectiveGuest = isGuest || !token;
+  const hdrs: Record<string, string> = {};
+  if (effectiveGuest && guestId) hdrs["X-Guest-Id"] = guestId;
+  if (!effectiveGuest && token) hdrs["Authorization"] = `Bearer ${token}`;
+  return { headers: hdrs, credentials: effectiveGuest ? "omit" as const : "include" as const, token };
 };
 
-type RequestPreparation = {
-  headers: Record<string, string>;
-  credentials: RequestCredentials;
-  payload: Record<string, unknown>;
-};
-
-const prepareRequest = (
-  mensagens: Message[],
-  userName: string | undefined,
-  userId: string | undefined,
-  hour: number,
-  tz: string,
-  guest: { guestId: string; isGuest: boolean },
-  token: string | null,
-  isStreaming: boolean
-) => {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  if (guest.isGuest) {
-    headers["X-Guest-Id"] = guest.guestId;
-  }
-
-  if (!guest.isGuest && token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  if (isStreaming) {
-    headers.Accept = "text/event-stream";
-  }
-
-  const bodyPayload: Record<string, unknown> = {
-    mensagens,
-    clientHour: hour,
-    clientTz: tz,
-  };
-
-  if (typeof userName === "string" && userName.trim().length > 0) {
-    bodyPayload.nome_usuario = userName;
-  }
-  if (!guest.isGuest && userId) bodyPayload.usuario_id = userId;
-  if (guest.isGuest) {
-    bodyPayload.isGuest = true;
-    bodyPayload.guestId = guest.guestId;
-  }
-
-  return {
-    headers,
-    credentials: guest.isGuest ? "omit" : "include",
-    payload: bodyPayload,
-  } satisfies RequestPreparation;
-};
-
-const parseNonStreamPayload = (payload: unknown): EcoStreamResult => {
-  if (typeof payload === "string") {
-    const trimmed = payload.trim();
-    if (!trimmed) return { text: "" };
-    try {
-      return parseNonStreamPayload(JSON.parse(trimmed));
-    } catch {
-      return { text: trimmed };
-    }
-  }
-
-  if (!payload || typeof payload !== "object") {
-    return { text: "" };
-  }
-
-  const normalizedText = normalizeAskEcoResponse(payload as AskEcoResponse) ?? "";
-  const text = normalizedText.trim();
-  const metadata = (payload as any)?.metadata ?? (payload as any)?.response ?? undefined;
-  const done = (payload as any)?.done ?? (payload as any)?.response ?? undefined;
-  const primeiraMemoriaSignificativa = Boolean(
-    (payload as any)?.primeiraMemoriaSignificativa ?? (payload as any)?.primeira
-  );
-
-  return {
-    text,
-    metadata,
-    done,
-    primeiraMemoriaSignificativa,
-  };
-};
-
-type EnviarMensagemOptions = {
+type SendOpts = {
+  stream?: boolean;           // default true
   guestId?: string;
   isGuest?: boolean;
   signal?: AbortSignal;
-  stream?: boolean;
+  endpoint?: string;          // override se necessário
+  credentials?: RequestCredentials; // se quiser forçar
+  extraHeaders?: Record<string, string>;
 };
 
-export const enviarMensagemParaEco = async (
+export async function enviarMensagemParaEco(
   userMessages: Message[],
   userName?: string,
   userId?: string,
   clientHour?: number,
   clientTz?: string,
   handlers: EcoEventHandlers = {},
-  options: EnviarMensagemOptions = {}
-): Promise<EcoStreamResult> => {
-  const mensagensValidas = collectValidMessages(userMessages);
-  if (mensagensValidas.length === 0) throw new Error("Nenhuma mensagem válida para enviar.");
+  {
+    stream = true,
+    guestId,
+    isGuest,
+    signal,
+    endpoint = ASK_ENDPOINT,
+    credentials,
+    extraHeaders = {},
+  }: SendOpts = {}
+): Promise<EcoStreamResult> {
+  const mensagens = collectValidMessages(userMessages);
+  if (mensagens.length === 0) throw new Error("Nenhuma mensagem válida para enviar.");
 
   const hour = typeof clientHour === "number" ? clientHour : new Date().getHours();
   const tz = clientTz || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  try {
-    const { data: sessionData } =
-      (await supabase.auth.getSession().catch(() => ({ data: { session: null } as any }))) || {
-        data: { session: null },
-      };
-    const token = sessionData?.session?.access_token ?? null;
+  // auth/guest headers
+  const auth = await normalizeGuest(isGuest, guestId);
 
-    const guest = resolveGuestHeaders(options, token);
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(auth.headers || {}),
+    ...(extraHeaders || {}),
+  };
+  if (stream) headers["Accept"] = "text/event-stream";
 
-    const isStreaming = options.stream !== false;
-
-    const { headers, credentials, payload } = prepareRequest(
-      mensagensValidas,
-      userName,
-      userId,
-      hour,
-      tz,
-      guest,
-      token,
-      isStreaming
-    );
-
-    logHttpRequestDebug({
-      method: "POST",
-      url: resolveApiUrl(ASK_ENDPOINT),
-      credentials,
-      headers,
-    });
-
-    if (!isStreaming) {
-      const data = await askEco(payload, { stream: false, headers });
-      return parseNonStreamPayload(data);
-    }
-
-    const response = await fetch(resolveApiUrl(ASK_ENDPOINT), {
-      method: "POST",
-      headers,
-      credentials,
-      body: JSON.stringify(payload),
-      signal: options.signal,
-    });
-
-    const serverGuestId = normalizeGuestIdFormat(response.headers.get("x-guest-id"));
-    if (serverGuestId) persistGuestId(serverGuestId);
-
-    if (!response.ok) {
-      let serverErr: string | undefined;
-      let details: unknown;
-      try {
-        const contentType = response.headers.get("content-type") || "";
-        if (contentType.includes("application/json")) {
-          const errJson = await response.json();
-          serverErr = errJson?.error || errJson?.message;
-          details = errJson;
-        } else {
-          const errText = await response.text();
-          serverErr = errText;
-          details = errText;
-        }
-      } catch {}
-
-      const baseMessage = `Erro HTTP ${response.status}: ${
-        response.statusText || "Falha na requisição"
-      }`;
-      const friendly = mapStatusToFriendlyMessage(response.status, baseMessage);
-      const message = serverErr?.trim() || friendly;
-      const retryAfter = response.headers.get("retry-after") || undefined;
-      const errorDetails = {
-        statusText: response.statusText,
-        body: details,
-        ...(retryAfter ? { retryAfter } : {}),
-      };
-      throw new EcoApiError(message, { status: response.status, details: errorDetails });
-    }
-
-    const contentType = response.headers.get("content-type") || "";
-    const isEventStream = /text\/event-stream/i.test(contentType);
-
-    if (!response.body || !isEventStream) {
-      return parseNonStreamResponse(response);
-    }
-
-    return await processEventStream(response, handlers, { signal: options.signal });
-  } catch (error: any) {
-    if (error?.name === "AbortError" || options.signal?.aborted) {
-      return { text: "", aborted: true, noTextReceived: true };
-    }
-
-    if (error instanceof EcoApiError) {
-      throw error;
-    }
-
-    const rawMessage =
-      typeof error?.message === "string" && error.message.trim().length > 0
-        ? error.message
-        : "Erro ao obter resposta da Eco.";
-
-    const normalized = rawMessage.toLowerCase();
-    const isNetworkIssue =
-      normalized.includes("failed to fetch") ||
-      normalized.includes("networkerror") ||
-      normalized.includes("net::err") ||
-      normalized.includes("err_connection");
-
-    const message = isNetworkIssue ? NETWORK_ERROR_MESSAGE : rawMessage;
-    console.error("❌ [ECO API]", message, error);
-    throw new EcoApiError(message, { details: error });
+  const payload: Record<string, unknown> = {
+    mensagens,
+    clientHour: hour,
+    clientTz: tz,
+    stream,
+  };
+  if (userName) payload.nome_usuario = userName;
+  if (!isGuest && userId) payload.usuario_id = userId;
+  if (isGuest) {
+    payload.isGuest = true;
+    if (guestId) payload.guestId = guestId;
   }
-};
+
+  const url = resolveApiUrl(endpoint);
+
+  logHttpRequestDebug({
+    method: "POST",
+    url,
+    credentials: credentials ?? auth.credentials,
+    headers,
+  });
+
+  // --- JSON (não-stream) ----------------------------------------------------
+  if (!stream) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { ...headers, Accept: "application/json" },
+      body: JSON.stringify(payload),
+      signal,
+      credentials: credentials ?? auth.credentials,
+      cache: "no-store",
+      keepalive: false,
+    });
+
+    const result = await parseNonStreamResponse(res);
+
+    if (!res.ok) {
+      const friendly = mapStatusToFriendlyMessage(res.status, `Erro HTTP ${res.status}`);
+      throw new EcoApiError(result.text || friendly, { status: res.status, details: result });
+    }
+    return result;
+  }
+
+  // --- SSE (stream) ---------------------------------------------------------
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+      signal,
+      credentials: credentials ?? auth.credentials,
+      cache: "no-store",
+      keepalive: false, // não marque true pra não cancelar ao trocar de aba/route
+    });
+  } catch (err: any) {
+    const msg = (err?.message || "").toLowerCase();
+    const isNet =
+      msg.includes("failed to fetch") ||
+      msg.includes("networkerror") ||
+      msg.includes("net::err") ||
+      msg.includes("err_connection");
+    throw new EcoApiError(isNet ? NETWORK_ERROR_MESSAGE : err?.message || "Falha ao conectar.", {
+      details: err,
+    });
+  }
+
+  // Se o back não setou corretamente o header, fazemos fallback pro parser não-stream
+  const ct = response.headers.get("content-type") || "";
+  const isEventStream = /text\/event-stream/i.test(ct);
+
+  if (!response.ok) {
+    let serverErr: string | undefined;
+    try {
+      if (ct.includes("application/json")) {
+        const j = await response.json();
+        serverErr = j?.error || j?.message;
+      } else {
+        serverErr = await response.text();
+      }
+    } catch {}
+    const friendly = mapStatusToFriendlyMessage(response.status, `Erro HTTP ${response.status}`);
+    throw new EcoApiError(serverErr?.trim() || friendly, {
+      status: response.status,
+      details: { statusText: response.statusText },
+    });
+  }
+
+  if (!response.body || !isEventStream) {
+    // servidor respondeu sem SSE → trata como JSON/text
+    return parseNonStreamResponse(response);
+  }
+
+  // Mantém a conexão aberta até o done
+  return processEventStream(response, handlers, { signal });
+}
