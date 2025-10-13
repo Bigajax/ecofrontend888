@@ -652,8 +652,19 @@ export const useEcoStream = ({
           setDigitando(false);
         };
 
+        const canonicalizeEventType = (value: string | undefined | null) => {
+          if (!value) return "";
+          return value
+            .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+            .replace(/[\s-]+/g, "_")
+            .toLowerCase();
+        };
+
         const handleStreamEvent = (rawEvent: EcoClientEvent) => {
-          const normalizedType = (rawEvent?.type ?? '').toLowerCase().replace(/-/g, '_');
+          const normalizedType = canonicalizeEventType(rawEvent?.type);
+          if (isDev) {
+            console.debug("[useEcoStream] event", normalizedType || rawEvent?.type, rawEvent);
+          }
           switch (normalizedType) {
             case 'prompt_ready': {
               if (promptReadyAt === undefined) {
