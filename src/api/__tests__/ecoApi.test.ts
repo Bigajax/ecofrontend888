@@ -154,6 +154,75 @@ describe("enviarMensagemParaEco", () => {
     expect(resposta.noTextReceived).toBe(true);
   });
 
+  it("normaliza eventos no formato da Responses API e agrega texto", async () => {
+    fetchMock.mockResolvedValue(
+      createSseResponse([
+        { type: "response.created", payload: { type: "response.created" } },
+        {
+          type: "response.output_text.delta",
+          payload: {
+            type: "response.output_text.delta",
+            delta: { type: "output_text.delta", text: "Olá" },
+          },
+        },
+        {
+          type: "response.output_text.delta",
+          payload: {
+            type: "response.output_text.delta",
+            delta: { type: "output_text.delta", text: " mundo" },
+          },
+        },
+        {
+          type: "response.completed",
+          payload: {
+            type: "response.completed",
+            response: {
+              output: [
+                {
+                  content: [
+                    { type: "output_text", text: "Olá mundo" },
+                    {
+                      type: "reasoning",
+                      reasoning: {
+                        steps: [
+                          {
+                            type: "text",
+                            text: "(pensamento interno oculto)",
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ])
+    );
+
+    const resposta = await callApi();
+
+    expect(resposta.text).toBe("Olá mundo");
+    expect(resposta.metadata).toEqual({
+      output: [
+        {
+          content: [
+            { type: "output_text", text: "Olá mundo" },
+            {
+              type: "reasoning",
+              reasoning: {
+                steps: [
+                  { type: "text", text: "(pensamento interno oculto)" },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+  });
+
   it("dispara callbacks incrementais conforme eventos SSE chegam", async () => {
     const events = [
       { type: "prompt_ready", payload: { type: "prompt_ready" } },
