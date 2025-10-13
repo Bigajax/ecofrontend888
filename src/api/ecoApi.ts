@@ -31,6 +31,7 @@ export async function askEco(
 }
 import {
   EcoEventHandlers,
+  EcoClientEvent,
   EcoSseEvent,
   EcoStreamResult,
   parseNonStreamResponse,
@@ -38,7 +39,7 @@ import {
 } from "./ecoStream";
 
 export { EcoApiError };
-export type { EcoEventHandlers, EcoSseEvent, EcoStreamResult };
+export type { EcoClientEvent, EcoEventHandlers, EcoSseEvent, EcoStreamResult };
 
 interface Message {
   id?: string;

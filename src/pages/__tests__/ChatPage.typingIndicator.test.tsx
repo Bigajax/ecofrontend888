@@ -183,13 +183,13 @@ describe('ChatPage typing indicator', () => {
     expect(handlersRef.current).toBeDefined();
 
     act(() => {
-      handlersRef.current?.onFirstToken?.({ text: '   ' } as any);
+      handlersRef.current?.onEvent?.({ type: 'first_token', delta: '   ' } as any);
     });
 
     expect(screen.getByTestId('typing-dots')).toBeInTheDocument();
 
     act(() => {
-      handlersRef.current?.onChunk?.({ text: 'Resposta da Eco' } as any);
+      handlersRef.current?.onEvent?.({ type: 'chunk', delta: 'Resposta da Eco' } as any);
     });
 
     await waitFor(() => {
@@ -201,7 +201,11 @@ describe('ChatPage typing indicator', () => {
     });
 
     await act(async () => {
-      handlersRef.current?.onDone?.({ text: 'Resposta da Eco' } as any);
+      handlersRef.current?.onEvent?.({
+        type: 'done',
+        text: 'Resposta da Eco',
+        payload: {},
+      } as any);
       resolveResponse?.({ text: 'Resposta da Eco' });
       await inflightPromise;
     });
@@ -233,19 +237,23 @@ describe('ChatPage typing indicator', () => {
     expect(handlersRef.current).toBeDefined();
 
     act(() => {
-      handlersRef.current?.onLatency?.({ latencyMs: 345 } as any);
+      handlersRef.current?.onEvent?.({ type: 'latency', latencyMs: 345 } as any);
     });
 
     act(() => {
-      handlersRef.current?.onPromptReady?.({} as any);
+      handlersRef.current?.onEvent?.({ type: 'prompt_ready' } as any);
     });
 
     act(() => {
-      handlersRef.current?.onFirstToken?.({ text: 'Eco responde' } as any);
+      handlersRef.current?.onEvent?.({ type: 'first_token', delta: 'Eco responde' } as any);
     });
 
     await act(async () => {
-      handlersRef.current?.onDone?.({ text: 'Eco responde' } as any);
+      handlersRef.current?.onEvent?.({
+        type: 'done',
+        text: 'Eco responde',
+        payload: {},
+      } as any);
       resolveResponse?.({ text: 'Eco responde' });
       await inflightPromise;
     });

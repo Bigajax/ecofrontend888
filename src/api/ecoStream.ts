@@ -27,7 +27,32 @@ export interface EcoSseEvent<TPayload = Record<string, any>> {
   originalType?: string;
 }
 
+export interface EcoClientEvent {
+  type: string;
+  /** Texto incremental fornecido pelo backend (token inicial ou chunk subsequente). */
+  delta?: string;
+  /** Texto já normalizado para compatibilidade com clientes legados. */
+  text?: string;
+  /** Metadados finais/parciais retornados pelo backend. */
+  metadata?: unknown;
+  /** Payload bruto, incluindo campos específicos da plataforma. */
+  payload?: unknown;
+  /** Memória persistida informada pelo backend. */
+  memory?: unknown;
+  /** Latência reportada pelo backend, quando disponível. */
+  latencyMs?: number;
+  /** Mensagem de erro fornecida pelo backend. */
+  message?: string;
+  /** Conteúdo original sem pós-processamento. */
+  raw?: unknown;
+  /** Tipo original emitido pelo backend (para troubleshooting). */
+  originalType?: string;
+  /** Payload `done` bruto, quando aplicável. */
+  done?: unknown;
+}
+
 export interface EcoEventHandlers {
+  onEvent?: (event: EcoClientEvent) => void;
   onPromptReady?: (event: EcoSseEvent) => void;
   onFirstToken?: (event: EcoSseEvent) => void;
   onChunk?: (event: EcoSseEvent) => void;
@@ -39,7 +64,8 @@ export interface EcoEventHandlers {
   onError?: (error: Error) => void;
 }
 
-const normalizeSseNewlines = (value: string): string => value.replace(/\r\n?/g, "\n");
+const normalizeSseNewlines = (value: string): string => value.replace(/
+?/g, "\n");
 
 const parseSseEvent = (
   eventBlock: string
@@ -88,6 +114,18 @@ const safeInvoke = (
     cb(event);
   } catch (err) {
     console.error("❌ [ECO API] Falha ao executar callback de stream", err);
+  }
+};
+
+const safeInvokeUnified = (
+  cb: ((event: EcoClientEvent) => void) | undefined,
+  event: EcoClientEvent
+) => {
+  if (!cb) return;
+  try {
+    cb(event);
+  } catch (err) {
+    console.error("�?O [ECO API] Falha ao executar callback onEvent da stream", err);
   }
 };
 
@@ -246,7 +284,18 @@ const handleEvent = (eventData: unknown) => {
     if (!type && typeof payload?.text === "string") type = "chunk";
 
     if (!type) {
-      if (isDev) console.debug("ℹ️ [ECO API] Evento SSE sem tipo reconhecido:", eventData);
+
+    if (usingUnifiedHandler) {
+      safeInvokeUnified(handlers.onEvent, {
+        type,
+        payload: unwrappedPayload,
+        raw: eventData,
+        originalType: responseOriginalType,
+      });
+      return;
+    }
+
+    if (isDev) console.debug("ℹ️ [ECO API] Evento SSE sem tipo reconhecido:", eventData);
       return;
     }
 
@@ -256,6 +305,7 @@ const handleEvent = (eventData: unknown) => {
       raw: eventData,
       originalType: responseOriginalType,
     };
+    const usingUnifiedHandler = typeof handlers.onEvent === "function";
 
     if (type === "error" || (payload as any)?.status === "error") {
       const errMessage =
@@ -263,14 +313,43 @@ const handleEvent = (eventData: unknown) => {
         (payload as any)?.error ||
         (payload as any)?.message ||
         "Erro na stream SSE da Eco.";
-      streamError = new Error(String(errMessage));
+      const normalizedError = String(errMessage);
+      if (usingUnifiedHandler) {
+        safeInvokeUnified(handlers.onEvent, {
+          type: "error",
+          message: normalizedError,
+          payload: unwrappedPayload,
+          raw: eventData,
+          originalType: responseOriginalType,
+        });
+      }
+      streamError = new Error(normalizedError);
       safeInvokeError(handlers.onError, streamError);
       return;
     }
 
     if (type === "prompt_ready") {
       promptReadyReceived = true;
-      safeInvoke(handlers.onPromptReady, baseEventInfo);
+      if (usingUnifiedHandler) {
+        safeInvokeUnified(handlers.onEvent, {
+          type: "prompt_ready",
+          payload: unwrappedPayload,
+          raw: eventData,
+          originalType: responseOriginalType,
+        });
+      } else {
+        safeInvoke(handlers.onPromptReady, baseEventInfo);
+      }
+      return;
+    }
+
+    if (usingUnifiedHandler) {
+      safeInvokeUnified(handlers.onEvent, {
+        type,
+        payload: unwrappedPayload,
+        raw: eventData,
+        originalType: responseOriginalType,
+      });
       return;
     }
 
@@ -283,7 +362,17 @@ const handleEvent = (eventData: unknown) => {
           ? (latencyPayload as any).latency
           : undefined;
       const eventWithLatency: EcoSseEvent = { ...baseEventInfo, latencyMs: latencyValue };
-      safeInvoke(handlers.onLatency, eventWithLatency);
+      if (usingUnifiedHandler) {
+        safeInvokeUnified(handlers.onEvent, {
+          type: "latency",
+          latencyMs: latencyValue,
+          payload: unwrappedPayload,
+          raw: eventData,
+          originalType: responseOriginalType,
+        });
+      } else {
+        safeInvoke(handlers.onLatency, eventWithLatency);
+      }
       return;
     }
 
@@ -305,7 +394,24 @@ const handleEvent = (eventData: unknown) => {
         ...baseEventInfo,
         text: chunkText.length > 0 ? chunkText : fallbackText,
       };
-      safeInvoke(handlers.onFirstToken, eventWithText);
+      if (usingUnifiedHandler) {
+        const firstDelta =
+          typeof eventWithText.text === "string"
+            ? eventWithText.text
+            : typeof fallbackText === "string"
+            ? fallbackText
+            : "";
+        safeInvokeUnified(handlers.onEvent, {
+          type: "first_token",
+          delta: firstDelta,
+          text: eventWithText.text ?? firstDelta,
+          payload: unwrappedPayload,
+          raw: eventData,
+          originalType: responseOriginalType,
+        });
+      } else {
+        safeInvoke(handlers.onFirstToken, eventWithText);
+      }
       return;
     }
 
@@ -323,7 +429,24 @@ const handleEvent = (eventData: unknown) => {
         ...baseEventInfo,
         text: chunkText.length > 0 ? chunkText : fallbackText,
       };
-      safeInvoke(handlers.onChunk, eventWithText);
+      if (usingUnifiedHandler) {
+        const chunkDelta =
+          typeof eventWithText.text === "string"
+            ? eventWithText.text
+            : typeof fallbackText === "string"
+            ? fallbackText
+            : "";
+        safeInvokeUnified(handlers.onEvent, {
+          type: "chunk",
+          delta: chunkDelta,
+          text: eventWithText.text ?? chunkDelta,
+          payload: unwrappedPayload,
+          raw: eventData,
+          originalType: responseOriginalType,
+        });
+      } else {
+        safeInvoke(handlers.onChunk, eventWithText);
+      }
       return;
     }
 
@@ -334,8 +457,20 @@ const handleEvent = (eventData: unknown) => {
         unwrappedPayload;
       const eventWithMeta: EcoSseEvent = { ...baseEventInfo, metadata: metaSource };
       metadata = metaSource ?? metadata;
-      if (type === "meta") safeInvoke(handlers.onMeta, eventWithMeta);
-      else safeInvoke(handlers.onMetaPending, eventWithMeta);
+      if (usingUnifiedHandler) {
+        const normalizedMetaType = type === "meta" ? "meta" : "meta_pending";
+        safeInvokeUnified(handlers.onEvent, {
+          type: normalizedMetaType,
+          metadata: metaSource,
+          payload: unwrappedPayload,
+          raw: eventData,
+          originalType: responseOriginalType,
+        });
+      } else if (type === "meta") {
+        safeInvoke(handlers.onMeta, eventWithMeta);
+      } else {
+        safeInvoke(handlers.onMetaPending, eventWithMeta);
+      }
       return;
     }
 
@@ -351,7 +486,17 @@ const handleEvent = (eventData: unknown) => {
       ) {
         primeiraMemoriaSignificativa = true;
       }
-      safeInvoke(handlers.onMemorySaved, eventWithMemory);
+      if (usingUnifiedHandler) {
+        safeInvokeUnified(handlers.onEvent, {
+          type: "memory_saved",
+          memory: memoryPayload,
+          payload: unwrappedPayload,
+          raw: eventData,
+          originalType: responseOriginalType,
+        });
+      } else {
+        safeInvoke(handlers.onMemorySaved, eventWithMemory);
+      }
       return;
     }
 
@@ -390,7 +535,24 @@ const handleEvent = (eventData: unknown) => {
         metadata: responseMetadata,
         text: doneText.length > 0 ? doneText : fallbackText,
       };
-      safeInvoke(handlers.onDone, eventWithMeta);
+      if (usingUnifiedHandler) {
+        safeInvokeUnified(handlers.onEvent, {
+          type: "done",
+          metadata: responseMetadata,
+          payload: unwrappedPayload,
+          text:
+            typeof eventWithMeta.text === "string"
+              ? eventWithMeta.text
+              : typeof fallbackText === "string"
+              ? fallbackText
+              : undefined,
+          raw: eventData,
+          originalType: responseOriginalType,
+          done: unwrappedPayload,
+        });
+      } else {
+        safeInvoke(handlers.onDone, eventWithMeta);
+      }
       if (!gotAnyToken) {
         doneWithoutText = true;
       }
@@ -400,7 +562,28 @@ const handleEvent = (eventData: unknown) => {
     if (fallbackText) {
       pushAggregatedPart(fallbackText);
       const eventWithText: EcoSseEvent = { ...baseEventInfo, text: fallbackText };
-      safeInvoke(handlers.onChunk, eventWithText);
+      if (usingUnifiedHandler) {
+        safeInvokeUnified(handlers.onEvent, {
+          type,
+          delta: fallbackText,
+          text: fallbackText,
+          payload: unwrappedPayload,
+          raw: eventData,
+          originalType: responseOriginalType,
+        });
+      } else {
+        safeInvoke(handlers.onChunk, eventWithText);
+      }
+      return;
+    }
+
+    if (usingUnifiedHandler) {
+      safeInvokeUnified(handlers.onEvent, {
+        type,
+        payload: unwrappedPayload,
+        raw: eventData,
+        originalType: responseOriginalType,
+      });
       return;
     }
 
@@ -547,3 +730,5 @@ export const parseNonStreamResponse = async (response: Response): Promise<EcoStr
         : false,
   };
 };
+
+

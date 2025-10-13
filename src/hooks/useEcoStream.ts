@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-import { enviarMensagemParaEco, EcoEventHandlers, EcoApiError } from '../api/ecoApi';
+import { enviarMensagemParaEco, EcoEventHandlers, EcoApiError, EcoClientEvent } from '../api/ecoApi';
 import { buscarUltimasMemoriasComTags, buscarMemoriasSemelhantesV2 } from '../api/memoriaApi';
 import { salvarMensagem } from '../api/mensagem';
 import { celebrateFirstMemory } from '../utils/celebrateFirstMemory';
@@ -259,6 +259,7 @@ export const useEcoStream = ({
       let primeiraMemoriaFlag = false;
       let trackedMemory = false;
       let latencyFromStream: number | undefined;
+      let streamErrorMessage: string | null = null;
       let firstContentReceived = false;
       let streamDoneLogged = false;
 
@@ -617,149 +618,250 @@ export const useEcoStream = ({
           }
         };
 
-        const handlers: EcoEventHandlers = {
-          onPromptReady: () => {
-            if (promptReadyAt === undefined) {
-              promptReadyAt = getNow();
-            }
-            ensureEcoMessage();
-            patchEcoMessage({ text: ' ', content: '', streaming: true });
-            syncScroll();
-          },
-          onLatency: (event) => {
-            if (typeof event.latencyMs === 'number') {
-              latencyFromStream = event.latencyMs;
+        const setAssistantMessage = (texto: string, streaming = true) => {
+          ensureEcoMessage();
+          aggregatedEcoText = texto;
+          patchEcoMessage({
+            text: texto.length > 0 ? texto : ' ',
+            content: texto,
+            streaming,
+          });
+        };
+
+        const appendToAssistantMessage = (delta: string) => {
+          const chunk = flattenToString(delta);
+          if (!chunk) return;
+          ensureEcoMessage();
+          aggregatedEcoText += chunk;
+          patchEcoMessage({
+            text: aggregatedEcoText.length > 0 ? aggregatedEcoText : ' ',
+            content: aggregatedEcoText,
+            streaming: true,
+          });
+        };
+
+        const finalizeAssistantMessage = () => {
+          ensureEcoMessage();
+          patchEcoMessage({ streaming: false });
+        };
+
+        const showStreamError = (message: string) => {
+          setErroApi(message);
+          ensureEcoMessage();
+          patchEcoMessage({ streaming: false });
+          setDigitando(false);
+        };
+
+        const handleStreamEvent = (rawEvent: EcoClientEvent) => {
+          const normalizedType = (rawEvent?.type ?? '').toLowerCase().replace(/-/g, '_');
+          switch (normalizedType) {
+            case 'prompt_ready': {
+              if (promptReadyAt === undefined) {
+                promptReadyAt = getNow();
+              }
               ensureEcoMessage();
-              patchEcoMessage({ latencyMs: event.latencyMs, streaming: true });
+              patchEcoMessage({ text: ' ', content: '', streaming: true });
+              syncScroll();
+              return;
             }
-          },
-          onFirstToken: (event) => {
-            if (firstTokenAt === undefined) {
-              firstTokenAt = getNow();
+            case 'latency': {
+              if (typeof rawEvent.latencyMs === 'number') {
+                latencyFromStream = rawEvent.latencyMs;
+                ensureEcoMessage();
+                patchEcoMessage({ latencyMs: rawEvent.latencyMs, streaming: true });
+              }
+              return;
             }
-            ensureEcoMessage();
-            const texto = flattenToString(event.text ?? '');
-            aggregatedEcoText = texto;
-            const hasSubstantiveContent = texto.trim().length > 0;
-            firstContentReceived = hasSubstantiveContent;
-            patchEcoMessage({
-              text: texto,
-              content: texto,
-              streaming: true,
-            });
-            if (hasSubstantiveContent) {
-              setDigitando(false);
+            case 'first_token': {
+              if (firstTokenAt === undefined) {
+                firstTokenAt = getNow();
+              }
+              let texto =
+                flattenToString(rawEvent.delta ?? '') ||
+                flattenToString(rawEvent.text ?? '') ||
+                flattenToString(
+                  (rawEvent.payload as any)?.delta ??
+                    (rawEvent.payload as any)?.text ??
+                    rawEvent.payload
+                );
+              setAssistantMessage(texto, true);
+              const hasSubstantiveContent = texto.trim().length > 0;
+              firstContentReceived = hasSubstantiveContent;
+              if (hasSubstantiveContent) {
+                setDigitando(false);
+              }
+              syncScroll();
+              return;
             }
-            syncScroll();
-          },
-          onChunk: (event) => {
-            const chunkText = flattenToString(event.text ?? '');
-            if (!chunkText) return;
-            ensureEcoMessage();
-            aggregatedEcoText += chunkText;
-            if (!firstContentReceived && aggregatedEcoText.trim().length > 0) {
-              firstContentReceived = true;
-              setDigitando(false);
+            case 'chunk': {
+              let chunkText =
+                flattenToString(rawEvent.delta ?? '') ||
+                flattenToString(rawEvent.text ?? '') ||
+                flattenToString(
+                  (rawEvent.payload as any)?.delta ??
+                    (rawEvent.payload as any)?.text ??
+                    ''
+                );
+              if (!chunkText) return;
+              appendToAssistantMessage(chunkText);
+              if (!firstContentReceived && aggregatedEcoText.trim().length > 0) {
+                firstContentReceived = true;
+                setDigitando(false);
+              }
+              syncScroll();
+              return;
             }
-            patchEcoMessage({
-              text: aggregatedEcoText,
-              content: aggregatedEcoText,
-              streaming: true,
-            });
-            syncScroll();
-          },
-          onMetaPending: (event) => {
-            const meta = event.metadata ?? event.payload;
-            pendingMetadata = meta;
-            ensureEcoMessage();
-            patchEcoMessage({ metadata: meta });
-          },
-          onMeta: (event) => {
-            const meta = event.metadata ?? event.payload;
-            latestMetadata = meta;
-            ensureEcoMessage();
-            patchEcoMessage({ metadata: meta });
-            trackMemoryIfSignificant(meta);
-          },
-          onMemorySaved: (event) => {
-            const memoria = event.memory ?? (event.payload as any)?.memory ?? (event.payload as any)?.memoria ?? event.payload;
-            memoryFromStream = memoria;
-            if ((event.payload as any)?.primeiraMemoriaSignificativa || (event.payload as any)?.primeira) {
-              primeiraMemoriaFlag = true;
+            case 'meta_pending': {
+              const meta = rawEvent.metadata ?? rawEvent.payload;
+              pendingMetadata = meta;
+              ensureEcoMessage();
+              patchEcoMessage({ metadata: meta });
+              return;
             }
-            ensureEcoMessage();
-            patchEcoMessage({ memory: memoria });
-            trackMemoryIfSignificant(memoria);
-          },
-          onDone: (event) => {
-            if (doneAt === undefined) {
-              doneAt = getNow();
-            }
-            donePayload = event.payload;
-            markStreamDone();
-            const meta = event.metadata ?? latestMetadata ?? pendingMetadata ?? event.payload?.response ?? event.payload?.metadata;
-            if (meta !== undefined) {
+            case 'meta': {
+              const meta = rawEvent.metadata ?? rawEvent.payload;
               latestMetadata = meta;
               ensureEcoMessage();
-              patchEcoMessage({ metadata: meta, donePayload: event.payload, streaming: false });
+              patchEcoMessage({ metadata: meta });
               trackMemoryIfSignificant(meta);
-            } else {
+              return;
+            }
+            case 'memory_saved': {
+              const memoria =
+                rawEvent.memory ??
+                (rawEvent.payload as any)?.memory ??
+                (rawEvent.payload as any)?.memoria ??
+                rawEvent.payload;
+              memoryFromStream = memoria;
+              if (
+                (rawEvent.payload as any)?.primeiraMemoriaSignificativa ||
+                (rawEvent.payload as any)?.primeira
+              ) {
+                primeiraMemoriaFlag = true;
+              }
               ensureEcoMessage();
-              patchEcoMessage({ donePayload: event.payload, streaming: false });
+              patchEcoMessage({ memory: memoria });
+              trackMemoryIfSignificant(memoria);
+              return;
             }
-            if (event.text && aggregatedEcoText.length === 0) {
-              aggregatedEcoText = flattenToString(event.text);
-              patchEcoMessage({
-                text: aggregatedEcoText,
-                content: aggregatedEcoText,
-                streaming: false,
+            case 'done': {
+              if (doneAt === undefined) {
+                doneAt = getNow();
+              }
+              donePayload = rawEvent.payload;
+              markStreamDone();
+              const meta =
+                rawEvent.metadata ??
+                latestMetadata ??
+                pendingMetadata ??
+                (rawEvent.payload &&
+                typeof rawEvent.payload === 'object' &&
+                (rawEvent.payload as any).response !== undefined
+                  ? (rawEvent.payload as any).response
+                  : rawEvent.payload &&
+                    typeof rawEvent.payload === 'object' &&
+                    (rawEvent.payload as any).metadata !== undefined
+                  ? (rawEvent.payload as any).metadata
+                  : undefined);
+              if (meta !== undefined) {
+                latestMetadata = meta;
+                ensureEcoMessage();
+                patchEcoMessage({ metadata: meta, donePayload: rawEvent.payload, streaming: false });
+                trackMemoryIfSignificant(meta);
+              } else {
+                ensureEcoMessage();
+                patchEcoMessage({ donePayload: rawEvent.payload, streaming: false });
+              }
+              if (!aggregatedEcoText.length) {
+                const doneText =
+                  flattenToString(rawEvent.delta ?? '') ||
+                  flattenToString(rawEvent.text ?? '') ||
+                  flattenToString(
+                    (rawEvent.payload as any)?.response ??
+                      (rawEvent.payload as any)?.content ??
+                      rawEvent.payload
+                  );
+                if (doneText) {
+                  aggregatedEcoText = doneText;
+                  patchEcoMessage({
+                    text: aggregatedEcoText,
+                    content: aggregatedEcoText,
+                    streaming: false,
+                  });
+                }
+              }
+              if (
+                (rawEvent.payload as any)?.primeiraMemoriaSignificativa ||
+                (rawEvent.payload as any)?.primeira
+              ) {
+                primeiraMemoriaFlag = true;
+              }
+              setDigitando(false);
+              syncScroll();
+              finalizeAssistantMessage();
+              const metricsExtra: Record<string, unknown> = { stage: 'on_done' };
+              if (meta !== undefined) {
+                metricsExtra.final_metadata = meta;
+              }
+              const usage =
+                (rawEvent.payload as any)?.usage ??
+                (meta && typeof meta === 'object' ? (meta as any).usage : undefined);
+              const completionTokens =
+                usage && typeof usage === 'object'
+                  ? typeof (usage as any).completion_tokens === 'number'
+                    ? (usage as any).completion_tokens
+                    : typeof (usage as any).output_tokens === 'number'
+                    ? (usage as any).output_tokens
+                    : undefined
+                  : undefined;
+              const latencyMs = Math.max(Math.round(getNow() - requestStartedAt), 0);
+              metricsExtra.persisted_id = persistedMensagemId ?? null;
+              metricsExtra.authenticated = isAuthenticated;
+              metricsExtra.latency_ms = latencyMs;
+              if (typeof completionTokens === 'number') {
+                metricsExtra.sse_tokens = completionTokens;
+              }
+              logAndSendStreamMetrics('success', metricsExtra);
+              mixpanel.track('Eco: Mensagem Conclu??da', {
+                mensagem_id: persistedMensagemId ?? userMsgId,
+                auth: isAuthenticated,
+                latency_ms: latencyMs,
+                sse_tokens: completionTokens ?? 0,
+                isGuest,
+                ...(isGuest ? { guestId } : {}),
               });
+              resetEcoMessageTracking();
+              return;
             }
-            if (event.payload?.primeiraMemoriaSignificativa || event.payload?.primeira) {
-              primeiraMemoriaFlag = true;
+            case 'error': {
+              const messageFromEvent =
+                typeof rawEvent.message === 'string' && rawEvent.message.trim().length > 0
+                  ? rawEvent.message.trim()
+                  : 'Erro ao obter resposta da Eco.';
+              streamErrorMessage = messageFromEvent;
+              markStreamDone();
+              showStreamError(messageFromEvent);
+              resetEcoMessageTracking({
+                removeIfEmpty: aggregatedEcoText.trim().length === 0,
+              });
+              return;
             }
-            setDigitando(false);
-            syncScroll();
-            patchEcoMessage({ streaming: false });
-            const metricsExtra: Record<string, unknown> = { stage: 'on_done' };
-            if (meta !== undefined) {
-              metricsExtra.final_metadata = meta;
-            }
-            const usage =
-              (event.payload as any)?.usage ??
-              (meta && typeof meta === 'object' ? (meta as any).usage : undefined);
-            const completionTokens =
-              usage && typeof usage === 'object'
-                ? typeof (usage as any).completion_tokens === 'number'
-                  ? (usage as any).completion_tokens
-                  : typeof (usage as any).output_tokens === 'number'
-                  ? (usage as any).output_tokens
-                  : undefined
-                : undefined;
-            const latencyMs = Math.max(Math.round(getNow() - requestStartedAt), 0);
-            metricsExtra.persisted_id = persistedMensagemId ?? null;
-            metricsExtra.authenticated = isAuthenticated;
-            metricsExtra.latency_ms = latencyMs;
-            if (typeof completionTokens === 'number') {
-              metricsExtra.sse_tokens = completionTokens;
-            }
-            logAndSendStreamMetrics('success', metricsExtra);
-            mixpanel.track('Eco: Mensagem Concluída', {
-              mensagem_id: persistedMensagemId ?? userMsgId,
-              auth: isAuthenticated,
-              latency_ms: latencyMs,
-              sse_tokens: completionTokens ?? 0,
-              isGuest,
-              ...(isGuest ? { guestId } : {}),
-            });
-            resetEcoMessageTracking();
-          },
+            default:
+              return;
+          }
+        };
+
+        const handlers: EcoEventHandlers = {
+          onEvent: handleStreamEvent,
           onError: (error) => {
             if (doneAt === undefined) {
               doneAt = getNow();
             }
             setDigitando(false);
             markStreamDone();
+            if (streamErrorMessage && !erroApi) {
+              showStreamError(streamErrorMessage);
+            }
             const message =
               typeof error?.message === 'string' ? error.message : undefined;
             const normalizedMessage = message?.toLowerCase() ?? '';
@@ -772,7 +874,7 @@ export const useEcoStream = ({
             logAndSendStreamMetrics('error', {
               stage: 'stream_error',
               error_name: error?.name ?? 'Error',
-              error_message: message ?? 'Erro desconhecido na stream.',
+              error_message: message ?? streamErrorMessage ?? 'Erro desconhecido na stream.',
               error_reason: reason,
             });
             resetEcoMessageTracking({ removeIfEmpty: aggregatedEcoText.trim().length === 0 });
@@ -1038,3 +1140,4 @@ export const useEcoStream = ({
 
   return { handleSendMessage, digitando, erroApi, setErroApi, pending: isSending } as const;
 };
+
