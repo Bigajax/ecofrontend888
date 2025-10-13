@@ -54,15 +54,21 @@ const ChatPage: React.FC = () => {
     });
   }, [user, userId, userName]);
 
+  // 👉 Abrir o modal imediatamente ao atingir o limite OU quando o input estiver bloqueado
   useEffect(() => {
     if (!isGuest) {
       setLoginGateOpen(false);
       return;
     }
-    if (guestGate.reachedLimit) {
+    if (guestGate.reachedLimit || guestGate.inputDisabled) {
+      // debug opcional para cravar diagnóstico
+      // console.debug('[Gate] Abrindo modal', {
+      //   count: guestGate.count, limit: guestGate.limit,
+      //   reachedLimit: guestGate.reachedLimit, inputDisabled: guestGate.inputDisabled
+      // });
       setLoginGateOpen(true);
     }
-  }, [guestGate.reachedLimit, isGuest]);
+  }, [guestGate.reachedLimit, guestGate.inputDisabled, isGuest]);
 
   const saudacao = useMemo(() => saudacaoDoDiaFromHour(new Date().getHours()), []);
 
@@ -103,6 +109,7 @@ const ChatPage: React.FC = () => {
     },
   });
 
+  // 👉 Guard: se já bateu o limite, abre modal e não envia
   const streamAndPersist = useCallback(
     async (text: string, systemHint?: string) => {
       if (pending) return;
@@ -111,6 +118,7 @@ const ChatPage: React.FC = () => {
           setLoginGateOpen(true);
           return;
         }
+        // registra a interação ANTES do envio para manter contagem consistente
         guestGate.registerUserInteraction();
       }
       await streamSendMessage(text, systemHint);
@@ -152,9 +160,7 @@ const ChatPage: React.FC = () => {
     });
     const hint =
       (s.modules?.length || s.systemHint)
-        ? `${s.modules?.length ? `Ative módulos: ${s.modules.join(', ')}.` : ''}${
-            s.systemHint ? ` ${s.systemHint}` : ''
-          }`.trim()
+        ? `${s.modules?.length ? `Ative módulos: ${s.modules.join(', ')}.` : ''}${s.systemHint ? ` ${s.systemHint}` : ''}`.trim()
         : '';
     const userText = `${s.icon ? s.icon + ' ' : ''}${s.label}`;
     await sendWithGuards(userText, hint);

@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 interface LoginGateModalProps {
   open: boolean;
@@ -11,16 +12,24 @@ interface LoginGateModalProps {
 const LoginGateModal: React.FC<LoginGateModalProps> = ({ open, onClose, onSignup, count, limit }) => {
   if (!open) return null;
 
-  void count;
-  void limit;
-
-  return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="gate-title"
+    >
       <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full text-center">
-        <h2 className="text-xl font-semibold text-slate-900">Crie sua conta para continuar</h2>
+        <h2 id="gate-title" className="text-xl font-semibold text-slate-900">
+          Crie sua conta para continuar
+        </h2>
         <p className="mt-2 text-sm text-slate-600">
           Você atingiu o limite de interação sem conta. Entre ou cadastre-se para continuar a conversa e salvar seu progresso.
         </p>
+
+        {/* Mostra contador, se quiser enfatizar UX */}
+        <p className="mt-2 text-xs text-slate-500">{`Você usou ${count} de ${limit} mensagens gratuitas.`}</p>
+
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <button
             onClick={onSignup}
@@ -35,11 +44,10 @@ const LoginGateModal: React.FC<LoginGateModalProps> = ({ open, onClose, onSignup
             Agora não
           </button>
         </div>
-        <p className="text-xs text-gray-400 mt-3">
-          Sem spam. Você pode sair quando quiser.
-        </p>
+        <p className="text-xs text-gray-400 mt-3">Sem spam. Você pode sair quando quiser.</p>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
