@@ -566,16 +566,6 @@ export const processEventStream = async (
       return;
     }
 
-    if (usingUnifiedHandler) {
-      safeInvokeUnified(handlers.onEvent, {
-        type,
-        payload: unwrappedPayload,
-        raw: eventData,
-        originalType: responseOriginalType,
-      });
-      return;
-    }
-
     if (isDev) console.debug("ℹ️ [ECO API] Evento SSE ignorado:", eventData);
   };
 
