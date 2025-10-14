@@ -9,7 +9,7 @@ import Input from '../components/Input';
 import MaskedInput from '../components/MaskedInput';
 import { fbq } from '../lib/fbpixel';
 import mixpanel from '../lib/mixpanel';
-import { supabase as supabaseClient } from '../lib/supabaseClient';
+import { getSupabase } from '../lib/supabaseClient';
 
 /* Bolha igual ao login (uma só) */
 const BubbleIcon: React.FC<{ className?: string }> = ({ className = 'h-5 w-5' }) => (
@@ -99,9 +99,13 @@ const CreateProfilePage: React.FC = () => {
     try {
       mixpanel.track('Front-end: Cadastro Iniciado', { email: email.trim() });
       await register(email.trim(), password, fullName.trim(), phoneClean);
-      const supabase = await supabaseClient.auth.getUser();
+      const supabaseClient = getSupabase();
+      const supabaseUser = supabaseClient ? await supabaseClient.auth.getUser() : null;
       mixpanel.track('Front-end: Cadastro Concluído', {
-        userId: supabase?.user?.id ?? 'pending',
+        userId:
+          supabaseUser?.data?.user?.id ??
+          (supabaseUser as any)?.user?.id ??
+          'pending',
       });
       fbq('CompleteRegistration', { value: 1, currency: 'BRL' });
       navigate('/chat');

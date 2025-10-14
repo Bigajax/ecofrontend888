@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { getSupabase } from '../lib/supabaseClient';
 import { ensureProfile } from '../lib/ensureProfile';
 import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import mixpanel from '../lib/mixpanel';
@@ -87,15 +87,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const supabaseClient = getSupabase();
 
   useEffect(() => {
     let mounted = true;
+
+    if (!supabaseClient) {
+      setLoading(false);
+      setSession(null);
+      setUser(null);
+      persistAuthToken(null);
+      return () => {
+        mounted = false;
+      };
+    }
 
     const getSession = async () => {
       const {
         data: { session },
         error,
-      } = await supabase.auth.getSession();
+      } = await supabaseClient.auth.getSession();
 
       if (!mounted) return;
 
@@ -116,7 +127,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     getSession();
 
-    const { data: sub } = supabase.auth.onAuthStateChange(
+    const { data: sub } = supabaseClient.auth.onAuthStateChange(
       (event: AuthChangeEvent, session) => {
         if (!mounted) return;
         setSession(session ?? null);
@@ -141,7 +152,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         if (event === 'SIGNED_IN') {
-          supabase.auth
+          supabaseClient.auth
             .getUser()
             .then(({ data }) =>
               ensureProfile(data.user).catch((err) => {
@@ -163,12 +174,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, []);
+  }, [supabaseClient]);
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (!supabaseClient) {
+        throw new Error('Supabase não configurado.');
+      }
+
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) throw error;
     } finally {
       setLoading(false);
@@ -178,6 +193,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
+      if (!supabaseClient) {
+        throw new Error('Supabase não configurado.');
+      }
+
       const envAppUrl = import.meta.env.VITE_APP_URL;
       const fallbackOrigin =
         typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
@@ -187,7 +206,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error('URL de redirecionamento inválida. Configure VITE_APP_URL.');
       }
 
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: `${baseUrl}/app` },
       });
@@ -203,7 +222,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Opcional: mostrar loading durante o processo
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signOut();
+      if (!supabaseClient) {
+        throw new Error('Supabase não configurado.');
+      }
+
+      const { error } = await supabaseClient.auth.signOut();
       if (error) throw error;
     } finally {
       // Zera estado local SEMPRE, independente do retorno do supabase
@@ -244,7 +267,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [user?.id, user?.email, user?.user_metadata?.full_name, user?.user_metadata?.name]);
 
   const register = async (email: string, password: string, nome: string, telefone: string) => {
-    const { data, error } = await supabase.auth.signUp({
+    if (!supabaseClient) {
+      throw new Error('Supabase não configurado.');
+    }
+
+    const { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
       options: {
@@ -255,7 +282,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const newUserId = data.user?.id;
     if (newUserId) {
-      await supabase.from('usuarios').insert([
+      await supabaseClient.from('usuarios').insert([
         {
           id: newUserId,
           nome,

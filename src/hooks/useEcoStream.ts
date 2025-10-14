@@ -10,7 +10,7 @@ import { extractDeepQuestionFlag } from '../utils/chat/deepQuestion';
 import { gerarMensagemRetorno } from '../utils/chat/memory';
 import type { Message as ChatMessageType } from '../contexts/ChatContext';
 import mixpanel from '../lib/mixpanel';
-import { supabase } from '../lib/supabaseClient';
+import { getSupabase } from '../lib/supabaseClient';
 
 interface UseEcoStreamOptions {
   messages: ChatMessageType[];
@@ -168,7 +168,7 @@ export const useEcoStream = ({
   scrollToBottom,
   isAtBottom,
   guestId,
-  isGuest = false,
+  isGuest: isGuestProp = false,
   onUnauthorized,
 }: UseEcoStreamOptions) => {
   const [digitando, setDigitando] = useState(false);
@@ -179,6 +179,9 @@ export const useEcoStream = ({
   const isAtBottomRef = useRef(isAtBottom);
   const inFlightRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const supabaseClient = getSupabase();
+  const isGuest = isGuestProp || !supabaseClient;
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -205,17 +208,16 @@ export const useEcoStream = ({
       setIsSending(true);
       setErroApi(null);
 
-      const {
-        data: sessionData,
-      } = await supabase
-        .auth
-        .getSession()
-        .catch(() => ({ data: { session: null } }));
-      const session = sessionData?.session ?? null;
+      const sessionResult = supabaseClient
+        ? await supabaseClient.auth
+            .getSession()
+            .catch(() => ({ data: { session: null } }))
+        : { data: { session: null } };
+      const session = sessionResult?.data?.session ?? null;
       const authUserId = session?.user?.id ?? undefined;
       const isAuthenticated = Boolean(authUserId);
       const analyticsUserId = authUserId ?? userId ?? guestId ?? 'guest';
-      const shouldPersist = isAuthenticated && !isGuest;
+      const shouldPersist = Boolean(supabaseClient) && isAuthenticated && !isGuest;
 
       const controller = new AbortController();
       abortControllerRef.current?.abort();
@@ -1160,6 +1162,7 @@ export const useEcoStream = ({
         guestId,
         isAtBottom,
         isGuest,
+        supabaseClient,
         onUnauthorized,
         isSending,
         scrollToBottom,

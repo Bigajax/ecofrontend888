@@ -1,5 +1,5 @@
 // src/api/mensagem.ts
-import { supabase } from "../lib/supabaseClient";
+import { getSupabase } from "../lib/supabaseClient";
 
 const rawSupabaseUrl = String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/+$/, "");
 const supabaseAnonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
@@ -35,6 +35,11 @@ async function supabaseRestRequest<T>(
   path: string,
   init: RequestInit,
 ): Promise<T> {
+  const supabase = getSupabase();
+  if (!supabase) {
+    throw new Error("Supabase não configurado.");
+  }
+
   const { data: sessionData } = await supabase.auth.getSession();
   const accessToken = sessionData?.session?.access_token ?? null;
 

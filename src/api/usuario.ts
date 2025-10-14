@@ -1,5 +1,5 @@
 // src/api/usuario.ts
-import { supabase } from '../lib/supabaseClient'
+import { getSupabase } from '../lib/supabaseClient';
 
 export async function criarUsuario({
   nome,
@@ -10,6 +10,11 @@ export async function criarUsuario({
   email: string
   tipo_plano?: string
 }) {
+  const supabase = getSupabase();
+  if (!supabase) {
+    throw new Error('Supabase não configurado.');
+  }
+
   const { data, error } = await supabase
     .from('usuario')
     .insert([

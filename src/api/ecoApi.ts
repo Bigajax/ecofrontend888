@@ -2,7 +2,7 @@
 import { v4 as uuidv4 } from "uuid";
 
 import api from "./axios";
-import { supabase } from "../lib/supabaseClient";
+import { getSupabase } from "../lib/supabaseClient";
 import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
 
@@ -122,9 +122,7 @@ const prepareRequest = (
     "Content-Type": "application/json",
   };
 
-  if (guest.isGuest) {
-    headers["X-Guest-Id"] = guest.guestId;
-  }
+  headers["X-Guest-Id"] = guest.guestId;
 
   if (!guest.isGuest && token) {
     headers.Authorization = `Bearer ${token}`;
@@ -149,8 +147,8 @@ const prepareRequest = (
   if (!guest.isGuest && userId) bodyPayload.usuario_id = userId;
   if (guest.isGuest) {
     bodyPayload.isGuest = true;
-    bodyPayload.guestId = guest.guestId;
   }
+  bodyPayload.guestId = guest.guestId;
 
   return {
     headers,
@@ -206,6 +204,7 @@ export const enviarMensagemParaEco = async (
   handlers: EcoEventHandlers = {},
   options: EnviarMensagemOptions = {}
 ): Promise<EcoStreamResult> => {
+  const supabase = getSupabase();
   const mensagensValidas = collectValidMessages(userMessages);
   if (mensagensValidas.length === 0) throw new Error("Nenhuma mensagem válida para enviar.");
 
@@ -213,11 +212,12 @@ export const enviarMensagemParaEco = async (
   const tz = clientTz || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   try {
-    const { data: sessionData } =
-      (await supabase.auth.getSession().catch(() => ({ data: { session: null } as any }))) || {
-        data: { session: null },
-      };
-    const token = sessionData?.session?.access_token ?? null;
+    const sessionWrapper = supabase
+      ? await supabase.auth
+          .getSession()
+          .catch(() => ({ data: { session: null } as any }))
+      : { data: { session: null } as any };
+    const token = sessionWrapper?.data?.session?.access_token ?? null;
 
     const guest = resolveGuestHeaders(options, token);
 
