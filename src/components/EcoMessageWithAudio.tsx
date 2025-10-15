@@ -16,6 +16,7 @@ import { trackFeedbackEvent } from "../analytics/track";
 import type { FeedbackTrackingPayload } from "../analytics/track";
 import { getSessionId, getUserIdFromStore } from "../utils/identity";
 import { FEEDBACK_REASONS } from "./FeedbackPrompt";
+import { useMessageFeedbackContext } from "../hooks/useMessageFeedbackContext";
 
 type Vote = "up" | "down";
 
@@ -60,6 +61,8 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
   const [showReasons, setShowReasons] = useState(false);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [sendingFeedback, setSendingFeedback] = useState(false);
+  const [pendingVote, setPendingVote] = useState<Vote | null>(null);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const reasonsRef = useRef<HTMLDivElement | null>(null);
@@ -75,7 +78,9 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     [message.content, message.text]
   );
   const canSpeak = !isUser && !!displayText;
-  const messageId = message.id;
+  const { interactionId, moduleCombo, promptHash, messageId: contextMessageId, latencyMs } =
+    useMessageFeedbackContext(message);
+  const messageId = contextMessageId ?? message.id;
 
   const ICON_CLASS = `${ICON_SIZE} ${ICON_BASE}`;
 
@@ -99,14 +104,24 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
         user_id: userId ?? undefined,
         session_id: sessionId ?? undefined,
         source: "inline",
+        interaction_id: interactionId,
         ...extra,
       };
       if (messageId) {
         payload.message_id = messageId;
       }
+      if (moduleCombo && moduleCombo.length > 0) {
+        payload.module_combo = moduleCombo;
+      }
+      if (promptHash) {
+        payload.prompt_hash = promptHash;
+      }
+      if (typeof latencyMs === "number") {
+        payload.latency_ms = latencyMs;
+      }
       return payload;
     },
-    [messageId, resolveSessionId, resolveUserId]
+    [interactionId, latencyMs, messageId, moduleCombo, promptHash, resolveSessionId, resolveUserId]
   );
 
   const copiarTexto = async () => {
@@ -154,32 +169,46 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     const payload = createEventPayload({ reasons, vote });
 
     setSendingFeedback(true);
-    const sessionId = (payload.session_id ?? null) as string | null;
-    const userId = (payload.user_id ?? null) as string | null;
+    setPendingVote(vote);
+    setFeedbackError(null);
+    const sessionId = (payload.session_id ?? resolveSessionId() ?? null) as string | null;
+    const userId = (payload.user_id ?? resolveUserId() ?? null) as string | null;
 
     try {
       await enviarFeedback({
-        ...(messageId ? { messageId } : {}),
+        interactionId,
         sessionId,
         userId,
         vote,
         reasons,
-        source: "inline",
-        meta: { page: "ChatPage" },
+        source: "chat",
+        meta: {
+          page: "ChatPage",
+          ui_source: "inline",
+          ...(moduleCombo && moduleCombo.length > 0 ? { module_combo: moduleCombo } : {}),
+          ...(typeof latencyMs === "number" ? { latency_ms: latencyMs } : {}),
+          ...(messageId ? { message_id: messageId } : {}),
+          ...(promptHash ? { prompt_hash: promptHash } : {}),
+        },
       });
       trackFeedbackEvent(
         vote === "up" ? "FE: Inline Like" : "FE: Inline Dislike",
         payload
       );
+      setFeedbackError(null);
       return true;
     } catch (error) {
       trackFeedbackEvent("FE: Feedback Error", {
         ...payload,
         error: error instanceof Error ? error.message : String(error),
       });
+      setFeedbackError(
+        "Não foi possível enviar o feedback agora. Tente novamente em instantes."
+      );
       return false;
     } finally {
       setSendingFeedback(false);
+      setPendingVote(null);
     }
   };
 
@@ -189,6 +218,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     if (!canSendFeedback || sendingFeedback) return;
     setShowReasons(false);
     setSelectedReasons([]);
+    setFeedbackError(null);
     const previousVote = optimisticVote;
     setOptimisticVote("up");
     const success = await submitFeedback("up");
@@ -206,6 +236,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
       }
       return next;
     });
+    setFeedbackError(null);
   };
 
   const handleConfirmDown = async () => {
@@ -235,6 +266,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
       }
       setShowReasons(false);
       setSelectedReasons([]);
+      setFeedbackError(null);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -323,12 +355,21 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
                   className={optimisticVote === "up" ? "bg-slate-100" : undefined}
                   aria-pressed={optimisticVote === "up"}
                 >
-                  <ThumbsUp
-                    className={
-                      optimisticVote === "up" ? `${ICON_SIZE} text-emerald-600` : ICON_CLASS
-                    }
-                    strokeWidth={1.5}
-                  />
+                  {sendingFeedback && pendingVote === "up" ? (
+                    <Loader2
+                      className={`${ICON_SIZE} text-emerald-600 animate-spin`}
+                      strokeWidth={1.75}
+                    />
+                  ) : (
+                    <ThumbsUp
+                      className={
+                        optimisticVote === "up"
+                          ? `${ICON_SIZE} text-emerald-600`
+                          : ICON_CLASS
+                      }
+                      strokeWidth={1.5}
+                    />
+                  )}
                 </GhostBtn>
 
                 <div className="relative">
@@ -343,14 +384,21 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
                     }
                     aria-pressed={optimisticVote === "down"}
                   >
-                    <ThumbsDown
-                      className={
-                        optimisticVote === "down" || showReasons
-                          ? `${ICON_SIZE} text-red-500`
-                          : ICON_CLASS
-                      }
-                      strokeWidth={1.5}
-                    />
+                    {sendingFeedback && pendingVote === "down" ? (
+                      <Loader2
+                        className={`${ICON_SIZE} text-red-500 animate-spin`}
+                        strokeWidth={1.75}
+                      />
+                    ) : (
+                      <ThumbsDown
+                        className={
+                          optimisticVote === "down" || showReasons
+                            ? `${ICON_SIZE} text-red-500`
+                            : ICON_CLASS
+                        }
+                        strokeWidth={1.5}
+                      />
+                    )}
                   </GhostBtn>
 
                   {showReasons && canSendFeedback && (
@@ -386,6 +434,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
                           onClick={() => {
                             setShowReasons(false);
                             setSelectedReasons([]);
+                            setFeedbackError(null);
                           }}
                         >
                           Cancelar
@@ -396,7 +445,14 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
                           disabled={sendingFeedback || !canSendFeedback}
                           className="rounded-full bg-red-500 px-3 py-1 font-medium text-white hover:bg-red-600 disabled:opacity-60"
                         >
-                          Enviar
+                          {sendingFeedback && pendingVote === "down" ? (
+                            <span className="flex items-center gap-1">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.75} />
+                              <span>Enviando...</span>
+                            </span>
+                          ) : (
+                            "Enviar"
+                          )}
                         </button>
                       </div>
                     </div>
@@ -430,6 +486,24 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
               Copiado!
             </span>
           </div>
+
+          {feedbackError && (
+            <p
+              className={[
+                "mt-1",
+                "max-w-[min(720px,88vw)]",
+                "text-[11px] sm:text-xs",
+                "text-red-500",
+                actionsPad,
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              role="status"
+              aria-live="polite"
+            >
+              {feedbackError}
+            </p>
+          )}
         </div>
       </div>
 

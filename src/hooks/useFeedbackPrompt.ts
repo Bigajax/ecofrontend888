@@ -4,6 +4,7 @@ import { trackFeedbackEvent } from '../analytics/track';
 import { FEEDBACK_KEY } from '../constants/chat';
 import type { Message } from '../contexts/ChatContext';
 import { getSessionId, getUserIdFromStore } from '../utils/identity';
+import { extractMessageFeedbackContext } from './useMessageFeedbackContext';
 
 const SS_KEY = FEEDBACK_KEY;
 
@@ -56,8 +57,19 @@ export function useFeedbackPrompt(messages: Message[]) {
         session_id: resolveSessionId() ?? undefined,
         source: 'prompt_auto',
       };
-      if (lastEcoInfo.msg.id) {
-        payload.message_id = lastEcoInfo.msg.id;
+      const context = extractMessageFeedbackContext(lastEcoInfo.msg);
+      payload.interaction_id = context.interactionId;
+      if (context.messageId) {
+        payload.message_id = context.messageId;
+      }
+      if (context.moduleCombo && context.moduleCombo.length > 0) {
+        payload.module_combo = context.moduleCombo;
+      }
+      if (context.promptHash) {
+        payload.prompt_hash = context.promptHash;
+      }
+      if (typeof context.latencyMs === 'number') {
+        payload.latency_ms = context.latencyMs;
       }
       trackFeedbackEvent('FE: Feedback Prompt Shown', payload);
     }

@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 
 const KEY = "eco.guestId";
+const ALT_KEY = "eco_guest_id";
 const COOKIE_NAME = "guest_id";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365; // 1 ano
 const UUID_V4_REGEX =
@@ -13,16 +14,29 @@ type NullableString = string | null | undefined;
 const readFromLocalStorage = (): string | null => {
   if (!hasWindow) return null;
   try {
-    return window.localStorage.getItem(KEY);
+    for (const storageKey of [KEY, ALT_KEY]) {
+      const value = window.localStorage.getItem(storageKey);
+      if (value) {
+        if (storageKey !== KEY) {
+          window.localStorage.setItem(KEY, value);
+        }
+        if (storageKey !== ALT_KEY) {
+          window.localStorage.setItem(ALT_KEY, value);
+        }
+        return value;
+      }
+    }
   } catch {
     return null;
   }
+  return null;
 };
 
 const writeToLocalStorage = (value: string) => {
   if (!hasWindow) return;
   try {
     window.localStorage.setItem(KEY, value);
+    window.localStorage.setItem(ALT_KEY, value);
   } catch {
     return;
   }
@@ -32,6 +46,7 @@ const removeFromLocalStorage = () => {
   if (!hasWindow) return;
   try {
     window.localStorage.removeItem(KEY);
+    window.localStorage.removeItem(ALT_KEY);
   } catch {
     return;
   }
