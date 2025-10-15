@@ -25,6 +25,10 @@ export interface EcoSseEvent<TPayload = Record<string, any>> {
   latencyMs?: number;
   /** Mantém o tipo original reportado pelo backend para debug. */
   originalType?: string;
+  /** Canal de origem do evento (ex.: "data", "control"). */
+  channel?: string;
+  /** Nome bruto informado pelo backend para eventos de controle. */
+  name?: string;
 }
 
 export interface EcoClientEvent {
@@ -51,6 +55,10 @@ export interface EcoClientEvent {
   originalType?: string;
   /** Payload `done` bruto, quando aplicável. */
   done?: unknown;
+  /** Canal de origem do evento (ex.: "data", "control"). */
+  channel?: string;
+  /** Nome bruto informado pelo backend para eventos de controle. */
+  name?: string;
 }
 
 export interface EcoEventHandlers {
@@ -197,6 +205,16 @@ const mapResponseEventType = (
   return { normalized: "chunk", original };
 };
 
+const normalizeControlName = (value: unknown): string | undefined => {
+  if (!value) return undefined;
+  const raw = String(value).trim();
+  if (!raw) return undefined;
+  return raw
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[\s.\-]+/g, "_")
+    .toLowerCase();
+};
+
 export const processEventStream = async (
   response: Response,
   handlers: EcoEventHandlers = {},
@@ -276,6 +294,11 @@ export const processEventStream = async (
         ? ((unwrappedPayload as any).type as string)
         : undefined;
     let type = payloadType ?? unwrappedType ?? hintedType;
+    const hintedChannel = normalizeControlName(
+      hintedType === "control" || payloadType === "control" || unwrappedType === "control"
+        ? "control"
+        : undefined,
+    );
     const { normalized: responseNormalizedType, original: responseOriginalType } = mapResponseEventType(type);
     type = responseNormalizedType ?? type;
 
@@ -306,7 +329,53 @@ export const processEventStream = async (
       payload: unwrappedPayload,
       raw: eventData,
       originalType: responseOriginalType,
+      channel: hintedChannel === "control" || type === "control" ? "control" : "data",
     };
+
+    if (baseEventInfo.channel === "control") {
+      const controlName =
+        normalizeControlName((unwrappedPayload as any)?.name) ??
+        normalizeControlName((unwrappedPayload as any)?.event) ??
+        normalizeControlName((payload as any)?.name) ??
+        normalizeControlName((payload as any)?.event);
+
+      const normalizedControl = controlName ? mapResponseEventType(controlName).normalized ?? controlName : undefined;
+      const controlEvent: EcoSseEvent = {
+        ...baseEventInfo,
+        type: normalizedControl ?? "control",
+        name: controlName ?? undefined,
+      };
+
+      if (normalizedControl === "prompt_ready") {
+        promptReadyReceived = true;
+      }
+
+      if (normalizedControl === "done") {
+        doneReceived = true;
+        donePayload = unwrappedPayload;
+        if (!gotAnyToken) {
+          doneWithoutText = true;
+        }
+      }
+
+      if (usingUnifiedHandler) {
+        safeInvokeUnified(handlers.onEvent, {
+          type: controlEvent.type,
+          payload: unwrappedPayload,
+          raw: eventData,
+          originalType: responseOriginalType,
+          channel: "control",
+          name: controlEvent.name,
+        });
+      } else {
+        if (normalizedControl === "prompt_ready") {
+          safeInvoke(handlers.onPromptReady, controlEvent);
+        } else if (normalizedControl === "done") {
+          safeInvoke(handlers.onDone, controlEvent);
+        }
+      }
+      return;
+    }
 
     if (type === "error" || (payload as any)?.status === "error") {
       const errMessage =
