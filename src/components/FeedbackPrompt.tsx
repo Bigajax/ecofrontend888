@@ -1,77 +1,87 @@
-// src/components/FeedbackPrompt.tsx
-import { useState } from "react";
-import mixpanel from "../lib/mixpanel";
+import { useMemo, useRef, useState } from "react";
 
-type Props = {
-  sessaoId: string;
-  usuarioId?: string;
-  /** Envie somente se for o ID da mensagem no BANCO. Se ainda não salva a resposta da ECO, omita. */
-  mensagemId?: string;
-  /** Dados extras opcionais (ex.: { ui_message_id }) */
-  extraMeta?: Record<string, any>;
+import { enviarFeedback } from "../api/feedbackApi";
+import { getSessionId } from "../utils/identity";
+import { trackFeedbackEvent } from "../analytics/track";
+
+type Mode = "ask" | "reasons" | "done";
+
+type FeedbackPromptProps = {
+  messageId: string;
+  userId?: string | null;
   onSubmitted?: () => void;
 };
 
-const REASONS = [
-  "Muito genérico",
-  "Confuso",
-  "Tom não combina",
-  "Longo demais",
-  "Faltou profundidade",
+export const FEEDBACK_REASONS = [
+  { key: "too_long", label: "Muito longo" },
+  { key: "off_topic", label: "Fora do tema" },
+  { key: "shallow", label: "Raso" },
+  { key: "tone", label: "Tom inadequado" },
+  { key: "other", label: "Outro" },
 ] as const;
 
-export function FeedbackPrompt({
-  sessaoId,
-  usuarioId,
-  mensagemId,
-  extraMeta,
-  onSubmitted,
-}: Props) {
-  const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"ask" | "reasons" | "done">("ask");
+const REASONS = FEEDBACK_REASONS;
 
-  async function send(rating: 1 | -1, reason?: string) {
+type ReasonKey = (typeof REASONS)[number]["key"];
+
+export function FeedbackPrompt({ messageId, userId, onSubmitted }: FeedbackPromptProps) {
+  const [mode, setMode] = useState<Mode>("ask");
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<ReasonKey | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null | undefined>(undefined);
+
+  const resolveSessionId = () => {
+    if (sessionIdRef.current !== undefined) return sessionIdRef.current;
+    sessionIdRef.current = getSessionId();
+    return sessionIdRef.current;
+  };
+
+  const baseEventPayload = useMemo(
+    () => ({
+      message_id: messageId,
+      user_id: userId ?? undefined,
+    }),
+    [messageId, userId]
+  );
+
+  const buildPayload = (vote: "up" | "down", reasons?: ReasonKey[]) => {
+    const sessionId = resolveSessionId();
+    return {
+      ...baseEventPayload,
+      session_id: sessionId ?? undefined,
+      source: vote === "up" ? "thumb_prompt" : "options",
+      reasons,
+    };
+  };
+
+  async function send(vote: "up" | "down", reasons?: ReasonKey[]) {
+    if (loading) return false;
+    if (!messageId) return false;
+
     setLoading(true);
+    const payload = buildPayload(vote, reasons);
+
     try {
-      // Se você usa o proxy do Vite, pode deixar vazio; em produção defina VITE_API_URL=/api
-      const API = (import.meta as any).env?.VITE_API_URL ?? "";
-      const res = await fetch(`${API}/api/feedback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessaoId,
-          usuarioId,
-          // só envie se for um ID real do banco
-          ...(mensagemId ? { mensagemId } : {}),
-          rating,
-          reason,
-          source: mode === "reasons" ? "options" : "thumb_prompt",
-          meta: { screen: "ChatPage", ...(extraMeta || {}) },
-        }),
+      await enviarFeedback({
+        messageId,
+        userId: userId ?? null,
+        sessionId: payload.session_id ?? null,
+        vote,
+        reasons,
+        source: payload.source,
+        meta: { page: "ChatPage" },
       });
-      if (!res.ok) throw new Error("fail");
-      mixpanel.track("Front-end: Feedback Enviado", {
-        rating,
-        reason,
-        sessaoId,
-        usuarioId,
-        mensagemId,
-      });
+      trackFeedbackEvent("FE: Feedback Prompt Sent", payload);
       setMode("done");
-      if (onSubmitted) {
-        mixpanel.track("Front-end: Feedback Encerrado", {
-          sessaoId,
-          usuarioId,
-          mensagemId,
-        });
-        onSubmitted();
-      }
-    } catch (err: unknown) {
-      mixpanel.track("Front-end: Feedback Falhou", {
-        error: err instanceof Error ? err.message : String(err),
-        rating,
-        reason,
+      onSubmitted?.();
+      return true;
+    } catch (error) {
+      trackFeedbackEvent("FE: Feedback Prompt Error", {
+        ...payload,
+        error: error instanceof Error ? error.message : String(error),
       });
+      return false;
     } finally {
       setLoading(false);
     }
@@ -79,7 +89,7 @@ export function FeedbackPrompt({
 
   if (mode === "done") {
     return (
-      <div className="text-xs text-gray-600 text-center">
+      <div className="mx-auto my-3 rounded-xl bg-white/70 p-3 text-sm text-gray-700 shadow">
         Obrigado pelo feedback 💛
       </div>
     );
@@ -87,96 +97,84 @@ export function FeedbackPrompt({
 
   if (mode === "reasons") {
     return (
-      <div className="flex flex-wrap gap-2 justify-center">
-        {REASONS.map((r) => (
+      <div className="mx-auto my-3 rounded-xl bg-white/70 p-3 shadow">
+        <p className="mb-2 text-sm text-gray-700">O que não ajudou?</p>
+        <div className="flex flex-wrap gap-2">
+          {REASONS.map((reason) => (
+            <button
+              key={reason.key}
+              disabled={loading}
+              onClick={() => {
+                setSelected(reason.key);
+                setError(null);
+              }}
+              className={`rounded-full border px-3 py-1 text-sm hover:bg-gray-50 ${
+                selected === reason.key ? "bg-gray-100" : ""
+              }`}
+            >
+              {reason.label}
+            </button>
+          ))}
+        </div>
+        {error && <div className="mt-2 text-xs text-red-500">{error}</div>}
+        <div className="mt-3 flex items-center justify-between">
           <button
-            key={r}
             disabled={loading}
-            onClick={() => send(-1, r)}
-            className="
-              px-3 py-1 text-xs rounded-full border
-              bg-white/60 hover:bg-white/80
-              border-gray-200/70 shadow-sm
-              disabled:opacity-50
-            "
+            onClick={() => {
+              setSelected(null);
+              setError(null);
+              setMode("ask");
+            }}
+            className="text-xs text-gray-500 hover:underline"
           >
-            {r}
+            Cancelar
           </button>
-        ))}
-        <button
-          disabled={loading}
-          onClick={() => send(-1, "Outro")}
-          className="
-            px-3 py-1 text-xs rounded-full border
-            bg-white/60 hover:bg-white/80
-            border-gray-200/70 shadow-sm
-            disabled:opacity-50
-          "
-        >
-          Outro
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("ask")}
-          disabled={loading}
-          className="
-            px-3 py-1 text-xs rounded-full border
-            bg-white/40 hover:bg-white/60
-            border-gray-200/70 shadow-sm
-            disabled:opacity-50
-          "
-        >
-          Voltar
-        </button>
+          <button
+            disabled={loading || !selected}
+            onClick={async () => {
+              if (!selected) return;
+              const reasons = [selected];
+              const payload = buildPayload("down", reasons);
+              trackFeedbackEvent("FE: Feedback Prompt Click", payload);
+              const success = await send("down", reasons);
+              if (!success) {
+                setError("Falha ao enviar feedback");
+              }
+            }}
+            className="rounded-md bg-red-500 px-3 py-1 text-white disabled:opacity-50"
+          >
+            {loading ? "Enviando..." : "Enviar"}
+          </button>
+        </div>
       </div>
     );
   }
 
-  // mode === "ask"
   return (
-    <div className="flex items-center justify-center gap-3">
-      <span className="text-xs text-gray-700">Essa resposta ajudou?</span>
+    <div className="mx-auto my-3 flex items-center justify-between rounded-xl bg-white/70 p-3 shadow">
+      <span className="text-sm text-gray-700">Essa resposta ajudou?</span>
       <div className="flex gap-2">
         <button
-          aria-label="Gostei"
           disabled={loading}
           onClick={() => {
-            mixpanel.track("Front-end: Feedback Interação", {
-              rating: "positive",
-              sessaoId,
-              usuarioId,
-              mensagemId,
-            });
-            send(1);
+            const payload = buildPayload("up");
+            trackFeedbackEvent("FE: Feedback Prompt Click", payload);
+            void send("up");
           }}
-          className="
-            inline-flex items-center justify-center
-            px-2 py-1 text-sm rounded-xl border
-            bg-white/60 hover:bg-white/80
-            border-gray-200/70 shadow-sm
-            disabled:opacity-50
-          "
+          className="rounded-full border px-3 py-1 text-sm hover:bg-gray-50"
         >
           👍
         </button>
         <button
-          aria-label="Não gostei"
           disabled={loading}
           onClick={() => {
-            mixpanel.track("Front-end: Feedback Motivos Abertos", {
-              sessaoId,
-              usuarioId,
-              mensagemId,
-            });
+            const payload = buildPayload("down");
+            trackFeedbackEvent("FE: Feedback Prompt Open Reasons", payload);
+            setSelected(null);
+            setError(null);
             setMode("reasons");
           }}
-          className="
-            inline-flex items-center justify-center
-            px-2 py-1 text-sm rounded-xl border
-            bg-white/60 hover:bg-white/80
-            border-gray-200/70 shadow-sm
-            disabled:opacity-50
-          "
+          className="rounded-full border px-3 py-1 text-sm hover:bg-gray-50"
         >
           👎
         </button>
@@ -184,5 +182,3 @@ export function FeedbackPrompt({
     </div>
   );
 }
-
-export default FeedbackPrompt;
