@@ -5,10 +5,20 @@ interface AudioPlayerOverlayProps {
   /** Data URL (data:audio/mpeg;base64,...) ou blob: (URL.createObjectURL) */
   audioUrl: string;
   onClose: () => void;
+  onProgress?: (info: { ratio: number; currentTime: number; duration: number }) => void;
 }
 
-const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClose }) => {
+const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
+  audioUrl,
+  onClose,
+  onProgress,
+}) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const progressRef = useRef<AudioPlayerOverlayProps["onProgress"]>(onProgress);
+
+  useEffect(() => {
+    progressRef.current = onProgress;
+  }, [onProgress]);
 
   // Web Audio (boost leve de volume)
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -18,6 +28,8 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const currentTimeRef = useRef(0);
+  const durationRef = useRef(0);
 
   const isBlobUrl = audioUrl.startsWith("blob:");
 
@@ -54,10 +66,35 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({ audioUrl, onClo
       }
     } catch {}
 
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime || 0);
-    const onLoadedMeta = () => setDuration(isFinite(audio.duration) ? audio.duration : 0);
+    const onTimeUpdate = () => {
+      const current = audio.currentTime || 0;
+      currentTimeRef.current = current;
+      setCurrentTime(current);
+      const total =
+        isFinite(audio.duration) && audio.duration > 0
+          ? audio.duration
+          : durationRef.current;
+      if (total > 0) {
+        const ratio = Math.min(1, Math.max(0, current / total));
+        progressRef.current?.({ ratio, currentTime: current, duration: total });
+      }
+    };
+    const onLoadedMeta = () => {
+      const total = isFinite(audio.duration) ? audio.duration : 0;
+      durationRef.current = total;
+      setDuration(total);
+      if (total > 0) {
+        const current = currentTimeRef.current;
+        const ratio = Math.min(1, Math.max(0, total ? current / total : 0));
+        progressRef.current?.({ ratio, currentTime: current, duration: total });
+      }
+    };
     const onCanPlay = () => {
-      if (!isFinite(audio.duration)) setDuration(audio.duration || 0);
+      if (!isFinite(audio.duration)) {
+        const total = audio.duration || 0;
+        durationRef.current = total;
+        setDuration(total);
+      }
     };
     const onEnded = () => setIsPlaying(false);
     const onError = () => {

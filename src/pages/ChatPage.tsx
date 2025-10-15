@@ -26,6 +26,8 @@ import { saudacaoDoDiaFromHour } from '../utils/chat/greetings';
 import { ROTATING_ITEMS, OPENING_VARIATIONS } from '../constants/chat';
 import mixpanel from '../lib/mixpanel';
 import { FeedbackPrompt } from '../components/FeedbackPrompt';
+import { trackFeedbackEvent } from '../analytics/track';
+import { getSessionId } from '../utils/identity';
 import { useGuestGate } from '../hooks/useGuestGate';
 
 const NETWORK_ERROR_MESSAGE =
@@ -35,7 +37,8 @@ const CORS_ERROR_MESSAGE =
 
 const ChatPage: React.FC = () => {
   const { messages, addMessage, setMessages } = useChat();
-  const { userId, userName = 'Usuário', user } = useAuth();
+  const auth = useAuth();
+  const { userId, userName = 'Usuário', user } = auth;
   const navigate = useNavigate();
 
   const [sessaoId] = useState(() => ensureSessionId());
@@ -83,10 +86,7 @@ const ChatPage: React.FC = () => {
 
   const { showQuick, hideQuickSuggestions, handleTextChange } = useQuickSuggestionsVisibility(messages);
 
-  const { showFeedback, aiMessages, lastEcoInfo, handleFeedbackSubmitted } = useFeedbackPrompt(
-    messages,
-    setMessages
-  );
+  const { showFeedback, lastEcoInfo, handleFeedbackSubmitted } = useFeedbackPrompt(messages);
 
   const {
     handleSendMessage: streamSendMessage,
@@ -255,21 +255,21 @@ const ChatPage: React.FC = () => {
               </div>
             ))}
 
-            {showFeedback && aiMessages.length >= 3 && lastEcoInfo.message && (
-              <div className="flex justify-center pt-3">
-                <div className="mx-auto flex max-w-xl items-center justify-center rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
-                  <FeedbackPrompt
-                    sessaoId={sessaoId}
-                    usuarioId={userId}
-                    mensagemId={lastEcoInfo.message.id}
-                    extraMeta={{
-                      ecoMessageIndex: lastEcoInfo.index,
-                      uiMessageId: lastEcoInfo.message.id,
-                    }}
-                    onSubmitted={handleFeedbackSubmitted}
-                  />
-                </div>
-              </div>
+            {showFeedback && lastEcoInfo?.msg?.id && (
+              <FeedbackPrompt
+                messageId={lastEcoInfo.msg.id}
+                userId={auth?.user?.id ?? null}
+                onSubmitted={() => {
+                  const sessionId = getSessionId();
+                  trackFeedbackEvent('FE: Feedback Prompt Closed', {
+                    message_id: lastEcoInfo.msg.id,
+                    user_id: auth?.user?.id ?? undefined,
+                    session_id: sessionId ?? undefined,
+                    source: 'prompt_auto',
+                  });
+                  handleFeedbackSubmitted();
+                }}
+              />
             )}
 
             {shouldShowGlobalTyping && (
