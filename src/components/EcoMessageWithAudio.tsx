@@ -13,6 +13,7 @@ import { enviarFeedback, enviarSignal } from "../api/feedbackApi";
 import { gerarAudioDaMensagem } from "../api/voiceApi";
 import { Message } from "../contexts/ChatContext";
 import { trackFeedbackEvent } from "../analytics/track";
+import type { FeedbackTrackingPayload } from "../analytics/track";
 import { getSessionId, getUserIdFromStore } from "../utils/identity";
 import { FEEDBACK_REASONS } from "./FeedbackPrompt";
 
@@ -92,16 +93,18 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
 
   const createEventPayload = useCallback(
     (extra?: Record<string, unknown>) => {
-      if (!messageId) return null;
       const sessionId = resolveSessionId();
       const userId = resolveUserId();
-      return {
-        message_id: messageId,
+      const payload: FeedbackTrackingPayload = {
         user_id: userId ?? undefined,
         session_id: sessionId ?? undefined,
         source: "inline",
         ...extra,
       };
+      if (messageId) {
+        payload.message_id = messageId;
+      }
+      return payload;
     },
     [messageId, resolveSessionId, resolveUserId]
   );
@@ -149,7 +152,6 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
   const submitFeedback = async (vote: Vote, reasons?: string[]) => {
     if (sendingFeedback) return false;
     const payload = createEventPayload({ reasons, vote });
-    if (!payload) return false;
 
     setSendingFeedback(true);
     const sessionId = (payload.session_id ?? null) as string | null;
@@ -157,7 +159,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
 
     try {
       await enviarFeedback({
-        messageId,
+        ...(messageId ? { messageId } : {}),
         sessionId,
         userId,
         vote,
@@ -181,7 +183,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     }
   };
 
-  const canSendFeedback = Boolean(messageId);
+  const canSendFeedback = !isUser;
 
   const handleThumbUp = async () => {
     if (!canSendFeedback || sendingFeedback) return;

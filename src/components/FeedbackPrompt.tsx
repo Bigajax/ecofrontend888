@@ -3,11 +3,12 @@ import { useMemo, useRef, useState } from "react";
 import { enviarFeedback } from "../api/feedbackApi";
 import { getSessionId } from "../utils/identity";
 import { trackFeedbackEvent } from "../analytics/track";
+import type { FeedbackTrackingPayload } from "../analytics/track";
 
 type Mode = "ask" | "reasons" | "done";
 
 type FeedbackPromptProps = {
-  messageId: string;
+  messageId?: string;
   userId?: string | null;
   onSubmitted?: () => void;
 };
@@ -37,36 +38,40 @@ export function FeedbackPrompt({ messageId, userId, onSubmitted }: FeedbackPromp
     return sessionIdRef.current;
   };
 
-  const baseEventPayload = useMemo(
-    () => ({
-      message_id: messageId,
+  const baseEventPayload = useMemo<FeedbackTrackingPayload>(() => {
+    const payload: FeedbackTrackingPayload = {
       user_id: userId ?? undefined,
-    }),
-    [messageId, userId]
-  );
+    };
+    if (messageId) {
+      payload.message_id = messageId;
+    }
+    return payload;
+  }, [messageId, userId]);
 
   const buildPayload = (vote: "up" | "down", reasons?: ReasonKey[]) => {
     const sessionId = resolveSessionId();
-    return {
+    const payload: FeedbackTrackingPayload = {
       ...baseEventPayload,
       session_id: sessionId ?? undefined,
       source: vote === "up" ? "thumb_prompt" : "options",
-      reasons,
     };
+    if (reasons && reasons.length > 0) {
+      payload.reasons = reasons;
+    }
+    return payload;
   };
 
   async function send(vote: "up" | "down", reasons?: ReasonKey[]) {
     if (loading) return false;
-    if (!messageId) return false;
 
     setLoading(true);
     const payload = buildPayload(vote, reasons);
 
     try {
       await enviarFeedback({
-        messageId,
+        ...(messageId ? { messageId } : {}),
         userId: userId ?? null,
-        sessionId: payload.session_id ?? null,
+        sessionId: (payload.session_id ?? resolveSessionId() ?? null) as string | null,
         vote,
         reasons,
         source: payload.source,
