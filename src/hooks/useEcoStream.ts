@@ -290,28 +290,11 @@ export const useEcoStream = ({
           }
         }
       };
-      dispatchSignal('prompt_ready');
+      let promptReadySignalSent = false;
       let firstTokenSignalSent = false;
       let doneSignalSent = false;
 
       try {
-        const placeholderId = uuidv4();
-        ecoMessageId = placeholderId;
-        resolvedEcoMessageId = placeholderId;
-        setMessages((prev) => {
-          const index = prev.length;
-          ecoMessageIndex = index;
-          resolvedEcoMessageIndex = index;
-          const placeholder: ChatMessageType = {
-            id: placeholderId,
-            sender: 'eco',
-            text: ' ',
-            content: '',
-            streaming: false,
-          };
-          return [...prev, placeholder];
-        });
-
         markStreamDone = () => {
           if (streamDoneLogged) return;
           streamDoneLogged = true;
@@ -650,7 +633,6 @@ export const useEcoStream = ({
         };
 
         const clearPlaceholder = () => {
-          ensureEcoMessage();
           aggregatedEcoText = '';
           patchEcoMessage({ text: '', content: '' });
         };
@@ -671,7 +653,7 @@ export const useEcoStream = ({
         };
 
         const finalizeMessage = () => {
-          ensureEcoMessage();
+          if (!ecoMessageId && !resolvedEcoMessageId) return;
           patchEcoMessage({ streaming: false });
         };
 
@@ -717,18 +699,28 @@ export const useEcoStream = ({
             (rawEvent as any)?.name ??
             (rawEvent.payload as any)?.type ??
             (rawEvent.payload as any)?.event;
-          const normalizedType = canonicalizeEventType(candidateType);
+          const candidateName =
+            (rawEvent as any)?.name ??
+            (rawEvent.payload as any)?.name ??
+            (rawEvent.payload as any)?.event;
+          const normalizedType =
+            canonicalizeEventType(candidateType) || canonicalizeEventType(candidateName);
+          const eventChannel = canonicalizeEventType(
+            (rawEvent as any)?.channel ?? (rawEvent.payload as any)?.channel,
+          );
+          const fromControlChannel = eventChannel === 'control';
           if (isDev) {
             console.debug("[useEcoStream] event", normalizedType || rawEvent?.type, rawEvent);
           }
           switch (normalizedType) {
             case 'prompt_ready': {
+              if (!promptReadySignalSent) {
+                dispatchSignal('prompt_ready');
+                promptReadySignalSent = true;
+              }
               if (promptReadyAt === undefined) {
                 promptReadyAt = getNow();
               }
-              ensureEcoMessage();
-              patchEcoMessage({ text: ' ', content: '' });
-              syncScroll();
               return;
             }
             case 'latency': {
@@ -740,6 +732,13 @@ export const useEcoStream = ({
               return;
             }
             case 'first_token': {
+              if (!promptReadySignalSent) {
+                dispatchSignal('prompt_ready');
+                promptReadySignalSent = true;
+              }
+              if (promptReadyAt === undefined) {
+                promptReadyAt = getNow();
+              }
               if (!firstTokenSignalSent) {
                 dispatchSignal('first_token');
                 firstTokenSignalSent = true;
@@ -765,6 +764,13 @@ export const useEcoStream = ({
             case 'chunk_delta':
             case 'delta':
             case 'message_delta': {
+              if (!promptReadySignalSent) {
+                dispatchSignal('prompt_ready');
+                promptReadySignalSent = true;
+              }
+              if (promptReadyAt === undefined) {
+                promptReadyAt = getNow();
+              }
               if (!firstTokenSignalSent) {
                 dispatchSignal('first_token');
                 firstTokenSignalSent = true;
@@ -816,6 +822,13 @@ export const useEcoStream = ({
               return;
             }
             case 'done': {
+              if (!promptReadySignalSent) {
+                dispatchSignal('prompt_ready');
+                promptReadySignalSent = true;
+              }
+              if (promptReadyAt === undefined) {
+                promptReadyAt = getNow();
+              }
               if (!firstTokenSignalSent) {
                 dispatchSignal('first_token');
                 firstTokenSignalSent = true;
@@ -842,7 +855,7 @@ export const useEcoStream = ({
                     (rawEvent.payload as any).metadata !== undefined
                   ? (rawEvent.payload as any).metadata
                   : undefined);
-              if (!aggregatedEcoText.length) {
+              if (!fromControlChannel && !aggregatedEcoText.length) {
                 const doneText =
                   extractEventText(rawEvent) ||
                   flattenToString(
@@ -855,14 +868,16 @@ export const useEcoStream = ({
                   appendMessage(doneText);
                 }
               }
-              if (meta !== undefined) {
+              if (!fromControlChannel && meta !== undefined) {
                 latestMetadata = meta;
                 ensureEcoMessage();
                 patchEcoMessage({ metadata: meta, donePayload: rawEvent.payload, streaming: false });
                 trackMemoryIfSignificant(meta);
-              } else {
+              } else if (!fromControlChannel && rawEvent.payload !== undefined) {
                 ensureEcoMessage();
                 patchEcoMessage({ donePayload: rawEvent.payload, streaming: false });
+              } else if (fromControlChannel) {
+                finalizeMessage();
               }
               if (
                 (rawEvent.payload as any)?.primeiraMemoriaSignificativa ||
@@ -899,7 +914,7 @@ export const useEcoStream = ({
                 metricsExtra.sse_tokens = completionTokens;
               }
               logAndSendStreamMetrics('success', metricsExtra);
-              mixpanel.track('Eco: Mensagem Conclu??da', {
+              mixpanel.track('Eco: Mensagem Concluída', {
                 mensagem_id: persistedMensagemId ?? userMsgId,
                 auth: isAuthenticated,
                 latency_ms: latencyMs,
@@ -1008,6 +1023,20 @@ export const useEcoStream = ({
             (resposta?.metadata && typeof resposta.metadata === 'object' ? resposta.metadata : undefined) ||
             (resposta?.done && typeof resposta.done === 'object' ? resposta.done : undefined);
 
+          if (!promptReadySignalSent) {
+            dispatchSignal('prompt_ready');
+            promptReadySignalSent = true;
+            if (promptReadyAt === undefined) {
+              promptReadyAt = getNow();
+            }
+          }
+          if (!firstTokenSignalSent) {
+            dispatchSignal('first_token');
+            firstTokenSignalSent = true;
+            if (firstTokenAt === undefined) {
+              firstTokenAt = getNow();
+            }
+          }
           if (!doneSignalSent) {
             dispatchSignal('done');
             doneSignalSent = true;
