@@ -131,10 +131,7 @@ const prepareRequest = (
   }
 
   if (isStreaming) {
-    // evita buffering por proxy
     headers.Accept = "text/event-stream";
-    headers["Cache-Control"] = "no-cache";
-    headers["Pragma"] = "no-cache";
   }
 
   const bodyPayload: Record<string, unknown> = {
