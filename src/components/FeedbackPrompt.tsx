@@ -4,11 +4,13 @@ import { enviarFeedback } from "../api/feedbackApi";
 import { getSessionId } from "../utils/identity";
 import { trackFeedbackEvent } from "../analytics/track";
 import type { FeedbackTrackingPayload } from "../analytics/track";
+import type { Message } from "../contexts/ChatContext";
+import { useMessageFeedbackContext } from "../hooks/useMessageFeedbackContext";
 
 type Mode = "ask" | "reasons" | "done";
 
 type FeedbackPromptProps = {
-  messageId?: string;
+  message: Message;
   userId?: string | null;
   onSubmitted?: () => void;
 };
@@ -25,12 +27,15 @@ const REASONS = FEEDBACK_REASONS;
 
 type ReasonKey = (typeof REASONS)[number]["key"];
 
-export function FeedbackPrompt({ messageId, userId, onSubmitted }: FeedbackPromptProps) {
+export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptProps) {
   const [mode, setMode] = useState<Mode>("ask");
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<ReasonKey | null>(null);
   const [error, setError] = useState<string | null>(null);
   const sessionIdRef = useRef<string | null | undefined>(undefined);
+  const { interactionId, moduleCombo, promptHash, messageId: contextMessageId, latencyMs } =
+    useMessageFeedbackContext(message);
+  const messageId = contextMessageId ?? message.id;
 
   const resolveSessionId = () => {
     if (sessionIdRef.current !== undefined) return sessionIdRef.current;
@@ -41,12 +46,22 @@ export function FeedbackPrompt({ messageId, userId, onSubmitted }: FeedbackPromp
   const baseEventPayload = useMemo<FeedbackTrackingPayload>(() => {
     const payload: FeedbackTrackingPayload = {
       user_id: userId ?? undefined,
+      interaction_id: interactionId,
     };
     if (messageId) {
       payload.message_id = messageId;
     }
+    if (moduleCombo && moduleCombo.length > 0) {
+      payload.module_combo = moduleCombo;
+    }
+    if (promptHash) {
+      payload.prompt_hash = promptHash;
+    }
+    if (typeof latencyMs === "number") {
+      payload.latency_ms = latencyMs;
+    }
     return payload;
-  }, [messageId, userId]);
+  }, [interactionId, latencyMs, messageId, moduleCombo, promptHash, userId]);
 
   const buildPayload = (vote: "up" | "down", reasons?: ReasonKey[]) => {
     const sessionId = resolveSessionId();
@@ -69,13 +84,20 @@ export function FeedbackPrompt({ messageId, userId, onSubmitted }: FeedbackPromp
 
     try {
       await enviarFeedback({
-        ...(messageId ? { messageId } : {}),
+        interactionId,
         userId: userId ?? null,
         sessionId: (payload.session_id ?? resolveSessionId() ?? null) as string | null,
         vote,
         reasons,
-        source: payload.source,
-        meta: { page: "ChatPage" },
+        source: "chat",
+        meta: {
+          page: "ChatPage",
+          ui_source: payload.source,
+          ...(moduleCombo && moduleCombo.length > 0 ? { module_combo: moduleCombo } : {}),
+          ...(typeof latencyMs === "number" ? { latency_ms: latencyMs } : {}),
+          ...(messageId ? { message_id: messageId } : {}),
+          ...(promptHash ? { prompt_hash: promptHash } : {}),
+        },
       });
       trackFeedbackEvent("FE: Feedback Prompt Sent", payload);
       setMode("done");

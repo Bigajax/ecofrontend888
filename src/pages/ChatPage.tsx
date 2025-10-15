@@ -29,6 +29,7 @@ import { FeedbackPrompt } from '../components/FeedbackPrompt';
 import { trackFeedbackEvent } from '../analytics/track';
 import { getSessionId } from '../utils/identity';
 import { useGuestGate } from '../hooks/useGuestGate';
+import { useMessageFeedbackContext } from '../hooks/useMessageFeedbackContext';
 
 const NETWORK_ERROR_MESSAGE =
   'Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.';
@@ -87,6 +88,7 @@ const ChatPage: React.FC = () => {
   const { showQuick, hideQuickSuggestions, handleTextChange } = useQuickSuggestionsVisibility(messages);
 
   const { showFeedback, lastEcoInfo, handleFeedbackSubmitted } = useFeedbackPrompt(messages);
+  const lastPromptFeedbackContext = useMessageFeedbackContext(lastEcoInfo?.msg);
 
   const {
     handleSendMessage: streamSendMessage,
@@ -257,7 +259,7 @@ const ChatPage: React.FC = () => {
 
             {showFeedback && lastEcoInfo?.msg && (
               <FeedbackPrompt
-                messageId={lastEcoInfo.msg.id}
+                message={lastEcoInfo.msg}
                 userId={auth?.user?.id ?? null}
                 onSubmitted={() => {
                   const sessionId = getSessionId();
@@ -265,9 +267,22 @@ const ChatPage: React.FC = () => {
                     user_id: auth?.user?.id ?? undefined,
                     session_id: sessionId ?? undefined,
                     source: 'prompt_auto',
+                    interaction_id: lastPromptFeedbackContext.interactionId,
                   };
-                  if (lastEcoInfo.msg.id) {
-                    payload.message_id = lastEcoInfo.msg.id;
+                  if (lastPromptFeedbackContext.messageId) {
+                    payload.message_id = lastPromptFeedbackContext.messageId;
+                  }
+                  if (
+                    lastPromptFeedbackContext.moduleCombo &&
+                    lastPromptFeedbackContext.moduleCombo.length > 0
+                  ) {
+                    payload.module_combo = lastPromptFeedbackContext.moduleCombo;
+                  }
+                  if (lastPromptFeedbackContext.promptHash) {
+                    payload.prompt_hash = lastPromptFeedbackContext.promptHash;
+                  }
+                  if (typeof lastPromptFeedbackContext.latencyMs === 'number') {
+                    payload.latency_ms = lastPromptFeedbackContext.latencyMs;
                   }
                   trackFeedbackEvent('FE: Feedback Prompt Closed', payload);
                   handleFeedbackSubmitted();
