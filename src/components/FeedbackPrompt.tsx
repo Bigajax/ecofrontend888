@@ -27,6 +27,8 @@ type ReasonKey = (typeof REASONS)[number]["key"];
 export function FeedbackPrompt({ messageId, userId, onSubmitted }: FeedbackPromptProps) {
   const [mode, setMode] = useState<Mode>("ask");
   const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<ReasonKey | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const sessionIdRef = useRef<string | null | undefined>(undefined);
 
   const resolveSessionId = () => {
@@ -54,8 +56,8 @@ export function FeedbackPrompt({ messageId, userId, onSubmitted }: FeedbackPromp
   };
 
   async function send(vote: "up" | "down", reasons?: ReasonKey[]) {
-    if (loading) return;
-    if (!messageId) return;
+    if (loading) return false;
+    if (!messageId) return false;
 
     setLoading(true);
     const payload = buildPayload(vote, reasons);
@@ -73,11 +75,13 @@ export function FeedbackPrompt({ messageId, userId, onSubmitted }: FeedbackPromp
       trackFeedbackEvent("FE: Feedback Prompt Sent", payload);
       setMode("done");
       onSubmitted?.();
+      return true;
     } catch (error) {
       trackFeedbackEvent("FE: Feedback Prompt Error", {
         ...payload,
         error: error instanceof Error ? error.message : String(error),
       });
+      return false;
     } finally {
       setLoading(false);
     }
@@ -101,23 +105,47 @@ export function FeedbackPrompt({ messageId, userId, onSubmitted }: FeedbackPromp
               key={reason.key}
               disabled={loading}
               onClick={() => {
-                const payload = buildPayload("down", [reason.key]);
-                trackFeedbackEvent("FE: Feedback Prompt Click", payload);
-                void send("down", [reason.key]);
+                setSelected(reason.key);
+                setError(null);
               }}
-              className="rounded-full border px-3 py-1 text-sm hover:bg-gray-50"
+              className={`rounded-full border px-3 py-1 text-sm hover:bg-gray-50 ${
+                selected === reason.key ? "bg-gray-100" : ""
+              }`}
             >
               {reason.label}
             </button>
           ))}
         </div>
-        <button
-          disabled={loading}
-          onClick={() => setMode("ask")}
-          className="mt-3 text-xs text-gray-500 hover:underline"
-        >
-          Voltar
-        </button>
+        {error && <div className="mt-2 text-xs text-red-500">{error}</div>}
+        <div className="mt-3 flex items-center justify-between">
+          <button
+            disabled={loading}
+            onClick={() => {
+              setSelected(null);
+              setError(null);
+              setMode("ask");
+            }}
+            className="text-xs text-gray-500 hover:underline"
+          >
+            Cancelar
+          </button>
+          <button
+            disabled={loading || !selected}
+            onClick={async () => {
+              if (!selected) return;
+              const reasons = [selected];
+              const payload = buildPayload("down", reasons);
+              trackFeedbackEvent("FE: Feedback Prompt Click", payload);
+              const success = await send("down", reasons);
+              if (!success) {
+                setError("Falha ao enviar feedback");
+              }
+            }}
+            className="rounded-md bg-red-500 px-3 py-1 text-white disabled:opacity-50"
+          >
+            {loading ? "Enviando..." : "Enviar"}
+          </button>
+        </div>
       </div>
     );
   }
@@ -142,6 +170,8 @@ export function FeedbackPrompt({ messageId, userId, onSubmitted }: FeedbackPromp
           onClick={() => {
             const payload = buildPayload("down");
             trackFeedbackEvent("FE: Feedback Prompt Open Reasons", payload);
+            setSelected(null);
+            setError(null);
             setMode("reasons");
           }}
           className="rounded-full border px-3 py-1 text-sm hover:bg-gray-50"
