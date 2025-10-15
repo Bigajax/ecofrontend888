@@ -255,18 +255,21 @@ const ChatPage: React.FC = () => {
               </div>
             ))}
 
-            {showFeedback && lastEcoInfo?.msg?.id && (
+            {showFeedback && lastEcoInfo?.msg && (
               <FeedbackPrompt
                 messageId={lastEcoInfo.msg.id}
                 userId={auth?.user?.id ?? null}
                 onSubmitted={() => {
                   const sessionId = getSessionId();
-                  trackFeedbackEvent('FE: Feedback Prompt Closed', {
-                    message_id: lastEcoInfo.msg.id,
+                  const payload: Record<string, unknown> = {
                     user_id: auth?.user?.id ?? undefined,
                     session_id: sessionId ?? undefined,
                     source: 'prompt_auto',
-                  });
+                  };
+                  if (lastEcoInfo.msg.id) {
+                    payload.message_id = lastEcoInfo.msg.id;
+                  }
+                  trackFeedbackEvent('FE: Feedback Prompt Closed', payload);
                   handleFeedbackSubmitted();
                 }}
               />

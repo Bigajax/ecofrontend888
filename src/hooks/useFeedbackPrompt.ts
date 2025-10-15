@@ -51,12 +51,14 @@ export function useFeedbackPrompt(messages: Message[]) {
     const deep = Boolean(lastEcoInfo.msg?.deepQuestion);
     if (aiMessages.length >= 3 && deep) {
       setShowFeedback(true);
-      const payload = {
-        message_id: lastEcoInfo.msg.id,
+      const payload: Record<string, unknown> = {
         user_id: resolveUserId() ?? undefined,
         session_id: resolveSessionId() ?? undefined,
         source: 'prompt_auto',
       };
+      if (lastEcoInfo.msg.id) {
+        payload.message_id = lastEcoInfo.msg.id;
+      }
       trackFeedbackEvent('FE: Feedback Prompt Shown', payload);
     }
   }, [aiMessages.length, lastEcoInfo]);

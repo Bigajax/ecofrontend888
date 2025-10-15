@@ -18,7 +18,7 @@ export function track(name: string, props?: TrackProps) {
 }
 
 export type FeedbackTrackingPayload = {
-  message_id: string;
+  message_id?: string;
   user_id?: string | null;
   session_id?: string | null;
   source?: string;
@@ -36,7 +36,10 @@ const resolveIdentity = <T extends FeedbackTrackingPayload>(payload: T) => {
 };
 
 export function trackFeedbackEvent(name: string, payload: FeedbackTrackingPayload) {
-  if (!payload?.message_id) return;
+  if (!payload) return;
+  if (!payload.message_id && !payload.session_id && !payload.user_id) {
+    return;
+  }
   const enriched = resolveIdentity(payload);
   track(name, enriched);
 }

@@ -1,7 +1,7 @@
-import { resolveApiUrl } from "../constants/api";
+import { buildApiUrl } from "../constants/api";
 
 export type FeedbackPayload = {
-  messageId: string;
+  messageId?: string;
   userId?: string | null;
   sessionId?: string | null;
   rating?: 1 | -1;
@@ -11,13 +11,21 @@ export type FeedbackPayload = {
   meta?: Record<string, any>;
 };
 
+const sanitizeBody = <T extends Record<string, unknown>>(input: T) => {
+  return Object.fromEntries(
+    Object.entries(input).filter(([, value]) => value !== undefined)
+  ) as T;
+};
+
 export async function enviarFeedback(payload: FeedbackPayload) {
-  const base = resolveApiUrl();
-  const body = { ...payload };
-  if (!body.vote && typeof body.rating === "number") {
-    body.vote = body.rating === 1 ? "up" : "down";
+  const url = buildApiUrl("/api/feedback");
+  const baseBody = { ...payload };
+  if (!baseBody.vote && typeof baseBody.rating === "number") {
+    baseBody.vote = baseBody.rating === 1 ? "up" : "down";
   }
-  const res = await fetch(`${base}/api/feedback`, {
+  const body = sanitizeBody(baseBody);
+  console.log("[FEEDBACK] POST", url, body);
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -36,8 +44,9 @@ export type SignalPayload = {
 };
 
 export async function enviarSignal(payload: SignalPayload) {
-  const base = resolveApiUrl();
-  const res = await fetch(`${base}/api/signal`, {
+  const url = buildApiUrl("/api/signal");
+  console.log("[FEEDBACK] POST", url, payload);
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

@@ -17,61 +17,58 @@ const formatUrlWithoutTrailingSlash = (url: URL) => {
 };
 
 const computeApiBaseUrl = () => {
-  const rawEnv = import.meta.env?.VITE_API_BASE_URL as string | undefined;
+  const rawEnv =
+    (import.meta.env?.VITE_API_URL as string | undefined) ??
+    (import.meta.env?.VITE_API_BASE_URL as string | undefined);
   const trimmedEnv = typeof rawEnv === 'string' ? rawEnv.trim() : '';
   const normalizedHint = trimmedEnv.toLowerCase();
   const treatAsSameOrigin =
-    normalizedHint === 'same-origin' || normalizedHint === 'origin' || normalizedHint === 'self';
-  const envCandidate = treatAsSameOrigin ? '' : trimmedEnv;
+    !trimmedEnv ||
+    normalizedHint === 'same-origin' ||
+    normalizedHint === 'origin' ||
+    normalizedHint === 'self';
 
-  const isDev = Boolean(import.meta.env?.DEV);
-  const devFallback = 'http://localhost:3001';
-
-  if (isDev) {
-    const devTarget = envCandidate || devFallback;
-    const parsed = toAbsoluteUrl(devTarget, devFallback);
-    return trimTrailingSlashes(parsed ? formatUrlWithoutTrailingSlash(parsed) : devTarget);
+  if (treatAsSameOrigin) {
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return '';
+    }
+    return Boolean(import.meta.env?.DEV) ? 'http://localhost:3001' : '';
   }
 
   const hasWindow = typeof window !== 'undefined' && !!window.location?.origin;
 
   if (hasWindow) {
     const currentOrigin = trimTrailingSlashes(window.location.origin);
-    if (!envCandidate) {
-      return currentOrigin;
-    }
-
-    const parsed = toAbsoluteUrl(envCandidate, currentOrigin);
+    const parsed = toAbsoluteUrl(trimmedEnv, currentOrigin) ?? undefined;
     if (!parsed) {
       return currentOrigin;
     }
-
-    const formatted = formatUrlWithoutTrailingSlash(parsed);
-    if (parsed.origin === currentOrigin) {
-      return formatted;
-    }
-    return trimTrailingSlashes(formatted);
+    const formatted = trimTrailingSlashes(formatUrlWithoutTrailingSlash(parsed));
+    return formatted;
   }
 
-  if (envCandidate) {
-    const parsed = toAbsoluteUrl(envCandidate);
-    if (parsed) {
-      return trimTrailingSlashes(formatUrlWithoutTrailingSlash(parsed));
-    }
+  const parsed = toAbsoluteUrl(trimmedEnv);
+  if (parsed) {
+    return trimTrailingSlashes(formatUrlWithoutTrailingSlash(parsed));
   }
 
-  return devFallback;
+  return trimTrailingSlashes(trimmedEnv);
 };
 
-const computedBaseUrl = computeApiBaseUrl();
+export const API_BASE_URL = computeApiBaseUrl();
 
-if (!computedBaseUrl) {
-  throw new Error('API_BASE_URL não configurada.');
-}
-
-export const API_BASE_URL = computedBaseUrl;
-
-export const resolveApiUrl = (path: string) => {
+export const buildApiUrl = (path: string, base = API_BASE_URL) => {
   const safePath = path.startsWith('/') ? path : `/${path}`;
-  return `${API_BASE_URL}${safePath}`;
+  if (!base) {
+    return safePath || '/';
+  }
+  const normalizedBase = base.replace(/\/+$/, '');
+  return `${normalizedBase}${safePath}`;
+};
+
+export const resolveApiUrl = (path = '') => {
+  if (!path) {
+    return API_BASE_URL || '';
+  }
+  return buildApiUrl(path);
 };
