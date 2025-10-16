@@ -15,8 +15,9 @@ export type FeedbackRequestPayload = {
   sessionId?: string | null;
   userId?: string | null;
   reasons?: string[];
-  source?: string;
-  meta?: FeedbackMetaPayload;
+  reason?: string | null;
+  source?: string | null;
+  meta?: FeedbackMetaPayload | Record<string, unknown>;
 };
 
 type FeedbackResponse = unknown;
@@ -46,8 +47,12 @@ const shouldRetryStatus = (status: number) => {
 
 const computeSignature = (payload: FeedbackRequestPayload) => {
   const reasons = payload.reasons ? [...payload.reasons] : [];
-  reasons.sort();
-  return `${payload.vote}|${reasons.join(",")}`;
+  const normalized = reasons.sort().join(",");
+  const reasonKey =
+    typeof payload.reason === "string" && payload.reason.trim().length > 0
+      ? payload.reason.trim()
+      : "";
+  return `${payload.vote}|${normalized}|${reasonKey}`;
 };
 
 const pruneRecent = () => {
@@ -57,6 +62,36 @@ const pruneRecent = () => {
       recentByInteraction.delete(key);
     }
   }
+};
+
+const readGuestId = () => {
+  if (typeof window === "undefined") return "";
+  try {
+    return (
+      window.localStorage.getItem("guest_id") ??
+      window.localStorage.getItem("eco_guest_id") ??
+      ""
+    );
+  } catch {
+    return "";
+  }
+};
+
+const normalizeReason = (payload: FeedbackRequestPayload) => {
+  if (typeof payload.reason === "string") {
+    const trimmed = payload.reason.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (payload.reason === null) {
+    return null;
+  }
+  if (Array.isArray(payload.reasons) && payload.reasons.length > 0) {
+    const [first] = payload.reasons.filter(
+      (item): item is string => typeof item === "string" && item.trim().length > 0,
+    );
+    return first ?? null;
+  }
+  return null;
 };
 
 export async function enviarFeedback(payload: FeedbackRequestPayload) {
@@ -80,12 +115,14 @@ export async function enviarFeedback(payload: FeedbackRequestPayload) {
   const requestBody = (() => {
     const meta = sanitizeBody({
       ...(payload.meta ?? {}),
-      module_combo: Array.isArray(payload.meta?.module_combo)
-        ? payload.meta?.module_combo?.filter((item) => typeof item === "string" && item.trim().length > 0)
+      module_combo: Array.isArray((payload.meta as FeedbackMetaPayload | undefined)?.module_combo)
+        ? (payload.meta as FeedbackMetaPayload | undefined)?.module_combo?.filter(
+            (item) => typeof item === "string" && item.trim().length > 0,
+          )
         : undefined,
       latency_ms:
-        typeof payload.meta?.latency_ms === "number"
-          ? Math.max(0, Math.round(payload.meta.latency_ms))
+        typeof (payload.meta as FeedbackMetaPayload | undefined)?.latency_ms === "number"
+          ? Math.max(0, Math.round((payload.meta as FeedbackMetaPayload | undefined)?.latency_ms ?? 0))
           : undefined,
     });
 
@@ -94,10 +131,7 @@ export async function enviarFeedback(payload: FeedbackRequestPayload) {
       user_id: payload.userId ?? null,
       session_id: payload.sessionId ?? null,
       vote: payload.vote,
-      reason:
-        payload.reasons && payload.reasons.length > 0
-          ? payload.reasons.filter((item) => typeof item === "string" && item.trim().length > 0)
-          : undefined,
+      reason: normalizeReason(payload),
       source: payload.source ?? "chat",
       meta: Object.keys(meta).length > 0 ? meta : undefined,
     });
@@ -113,10 +147,17 @@ export async function enviarFeedback(payload: FeedbackRequestPayload) {
       try {
         const res = await fetch(url, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Guest-Id": readGuestId(),
+          },
           body: JSON.stringify(requestBody),
           credentials: "include",
         });
+
+        if (res.status === 204) {
+          return {};
+        }
 
         if (!res.ok) {
           if (shouldRetryStatus(res.status) && attempt < MAX_ATTEMPTS) {
@@ -125,7 +166,13 @@ export async function enviarFeedback(payload: FeedbackRequestPayload) {
             await sleep(delay + jitter);
             continue;
           }
-          throw new Error(`Feedback HTTP ${res.status}`);
+          let message = "";
+          try {
+            message = ((await res.json()) as { error?: string })?.error ?? "";
+          } catch {
+            /* ignore */
+          }
+          throw new Error(`feedback_failed_${res.status}${message ? `:${message}` : ""}`);
         }
 
         const contentType = res.headers.get("content-type") ?? "";
