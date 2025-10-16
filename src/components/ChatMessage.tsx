@@ -4,6 +4,8 @@ import EcoBubbleOneEye from "./EcoBubbleOneEye";
 import TypingDots from "../components/TypingDots";
 import { Message } from "../contexts/ChatContext";
 
+const FeedbackCard: React.FC = () => null;
+
 interface ChatMessageProps {
   message: Message;
   isEcoTyping?: boolean;
@@ -133,6 +135,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const hasMarkdownText = !showPlaceholder && trimmedText.length > 0;
   const isStreamingPlaceholder = showPlaceholder;
   const showTyping = Boolean(isEcoTyping && showPlaceholder);
+  const shouldShowFeedbackActions = false;
 
   if (showTyping) {
     return (
@@ -202,56 +205,63 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     .join(" ");
 
   return (
-    <div
-      className={`w-full flex ${isUser ? "justify-end" : "justify-start"} min-w-0 mb-1 sm:mb-2`}
-      role="listitem"
-      aria-live="polite"
-      aria-atomic="false"
-    >
+    <>
       <div
-        className={`flex w-full max-w-3xl items-end gap-3 ${
-          isUser ? "flex-row-reverse" : "flex-row"
-        }`}
+        className={`w-full flex ${isUser ? "justify-end" : "justify-start"} min-w-0 mb-1 sm:mb-2`}
+        role="listitem"
+        aria-live="polite"
+        aria-atomic="false"
       >
-        {!isUser && (
-          <div className="flex-shrink-0 translate-y-[2px]">
-            <EcoBubbleOneEye variant="message" size={30} />
-          </div>
-        )}
+        <div
+          className={`flex w-full max-w-3xl items-end gap-3 ${
+            isUser ? "flex-row-reverse" : "flex-row"
+          }`}
+        >
+          {!isUser && (
+            <div className="flex-shrink-0 translate-y-[2px]">
+              <EcoBubbleOneEye variant="message" size={30} />
+            </div>
+          )}
 
-        <div className="min-w-0 max-w-full">
-          <div
-            className={bubbleClass}
-            style={bubbleStyle}
-            data-sender={message.sender}
-            data-deep-question={message.deepQuestion}
-            data-eco-active={isEcoActive ? "true" : undefined}
-          >
-            {hasMarkdownText && (
-              <div className="relative z-10 font-sans text-[14px] sm:text-sm md:text-base leading-relaxed">
-                <div className={markdownClassName}>
-                  <ReactMarkdown
-                    components={{
-                      p: ({ node: _node, ...props }) => (
-                        <p className="m-0 mb-2 last:mb-0" {...props} />
-                      ),
-                    }}
-                  >
-                    {displayText}
-                  </ReactMarkdown>
+          <div className="min-w-0 max-w-full">
+            <div
+              className={bubbleClass}
+              style={bubbleStyle}
+              data-sender={message.sender}
+              data-deep-question={message.deepQuestion}
+              data-eco-active={isEcoActive ? "true" : undefined}
+            >
+              {hasMarkdownText && (
+                <div className="relative z-10 font-sans text-[14px] sm:text-sm md:text-base leading-relaxed">
+                  <div className={markdownClassName}>
+                    <ReactMarkdown
+                      components={{
+                        p: ({ node: _node, ...props }) => (
+                          <p className="m-0 mb-2 last:mb-0" {...props} />
+                        ),
+                      }}
+                    >
+                      {displayText}
+                    </ReactMarkdown>
+                  </div>
                 </div>
-              </div>
-            )}
-            {showPlaceholder && (
-              <span className="relative z-10 text-slate-500">…</span>
-            )}
-            {!hasMarkdownText && !showPlaceholder && (
-              <span className="relative z-10">&nbsp;</span>
+              )}
+              {showPlaceholder && (
+                <span className="relative z-10 text-slate-500">…</span>
+              )}
+              {!hasMarkdownText && !showPlaceholder && (
+                <span className="relative z-10">&nbsp;</span>
+              )}
+            </div>
+
+            {shouldShowFeedbackActions && (
+              <div className="mt-2" />
             )}
           </div>
         </div>
       </div>
-    </div>
+      <FeedbackCard />
+    </>
   );
 };
 
