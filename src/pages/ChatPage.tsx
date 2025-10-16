@@ -30,6 +30,7 @@ import { trackFeedbackEvent } from '../analytics/track';
 import { getSessionId } from '../utils/identity';
 import { useGuestGate } from '../hooks/useGuestGate';
 import { useMessageFeedbackContext } from '../hooks/useMessageFeedbackContext';
+import { useAdminCommands } from '../hooks/useAdminCommands';
 
 const NETWORK_ERROR_MESSAGE =
   'Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.';
@@ -43,6 +44,7 @@ const ChatPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [sessaoId] = useState(() => ensureSessionId());
+  useAdminCommands(user, sessaoId);
   const isGuest = !user;
   const guestGate = useGuestGate(isGuest);
   const [loginGateOpen, setLoginGateOpen] = useState(false);

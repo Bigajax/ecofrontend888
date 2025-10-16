@@ -9,17 +9,27 @@ import {
 
 import AudioPlayerOverlay from "./AudioPlayerOverlay";
 import ChatMessage from "./ChatMessage";
-import { enviarSignal } from "../api/feedbackApi";
+import { FeedbackApiError } from "../api/feedbackApi";
+import {
+  ENABLE_PASSIVE_SIGNALS,
+  PassiveSignalName,
+  sendPassiveSignal,
+} from "../api/passiveSignals";
+import {
+  ENABLE_MODULE_USAGE,
+  sendModuleUsage,
+} from "../api/moduleUsage";
 import { gerarAudioDaMensagem } from "../api/voiceApi";
 import { Message } from "../contexts/ChatContext";
 import { trackFeedbackEvent } from "../analytics/track";
 import type { FeedbackTrackingPayload } from "../analytics/track";
 import { getSessionId, getUserIdFromStore } from "../utils/identity";
-import { FEEDBACK_REASONS } from "./FeedbackPrompt";
 import { useMessageFeedbackContext } from "../hooks/useMessageFeedbackContext";
 import { useSendFeedback } from "../hooks/useSendFeedback";
 import { toast } from "../utils/toast";
 import { useAuth } from "../contexts/AuthContext";
+import { FeedbackReasonPopover } from "./FeedbackReasonPopover";
+import { extractModuleUsageCandidates } from "../utils/moduleUsage";
 
 type Vote = "up" | "down";
 
@@ -68,14 +78,17 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const reasonsRef = useRef<HTMLDivElement | null>(null);
   const downBtnRef = useRef<HTMLButtonElement | null>(null);
-  const seenRef = useRef(false);
+  const viewSignalSentRef = useRef(false);
+  const timeSignalSentRef = useRef(false);
+  const visibleStartRef = useRef<number | null>(null);
+  const timeSignalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionIdRef = useRef<string | null | undefined>(undefined);
   const userIdRef = useRef<string | null | undefined>(undefined);
-  const ttsSignalSentRef = useRef(false);
+  const moduleUsageSentRef = useRef<Set<string>>(new Set());
 
   const isUser = message.sender === "user";
+  const isStreaming = message.streaming === true;
   const displayText = useMemo(
     () => (message.text ?? message.content ?? "").trim(),
     [message.content, message.text]
@@ -91,7 +104,13 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     messageId: contextMessageId,
     latencyMs,
   } = useMessageFeedbackContext(message);
-  const messageId = contextMessageId ?? message.id;
+  const explicitMessageId = (() => {
+    if (typeof message.message_id === "string" && message.message_id.trim().length > 0) {
+      return message.message_id.trim();
+    }
+    return undefined;
+  })();
+  const messageId = explicitMessageId ?? contextMessageId ?? message.id;
 
   const messageInteractionId = (() => {
     const raw = message.interaction_id ?? message.interactionId;
@@ -102,8 +121,24 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
   })();
 
   const interactionId = messageInteractionId ?? contextInteractionId;
+  const hasInteractionId = typeof interactionId === "string" && interactionId.length > 0;
 
   const ICON_CLASS = `${ICON_SIZE} ${ICON_BASE}`;
+  const canDisplayFeedback = !isUser;
+  const feedbackButtonsDisabled =
+    sendingFeedback || !hasInteractionId || isStreaming;
+  const reasonPopoverStatus =
+    sendingFeedback && pendingVote === "down" ? "sending" : "selecting";
+
+  const moduleUsageCandidates = useMemo(
+    () =>
+      extractModuleUsageCandidates({
+        metadata: message.metadata,
+        donePayload: message.donePayload,
+        fallbackModules: moduleCombo,
+      }),
+    [message.donePayload, message.metadata, moduleCombo],
+  );
 
   const resolveSessionId = useCallback(() => {
     if (session?.id) return session.id;
@@ -155,6 +190,100 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     ],
   );
 
+  const trackPassiveSignal = useCallback(
+    (signal: PassiveSignalName, value?: number) => {
+      if (!ENABLE_PASSIVE_SIGNALS) return;
+      const payload = createEventPayload({ signal, value });
+      if (payload) {
+        trackFeedbackEvent(`FE: Passive Signal ${signal}`, payload);
+      }
+    },
+    [createEventPayload],
+  );
+
+  const emitPassiveSignal = useCallback(
+    (signal: PassiveSignalName, value?: number) => {
+      if (!ENABLE_PASSIVE_SIGNALS) return;
+      const sessionId = resolveSessionId();
+      void sendPassiveSignal({
+        signal,
+        value,
+        sessionId: sessionId ?? null,
+        interactionId,
+        messageId,
+      });
+      trackPassiveSignal(signal, value);
+    },
+    [interactionId, messageId, resolveSessionId, trackPassiveSignal],
+  );
+
+  useEffect(() => {
+    if (!ENABLE_MODULE_USAGE) return;
+    if (isUser) return;
+    if (isStreaming) return;
+    if (moduleUsageCandidates.length === 0) return;
+
+    const sessionId = resolveSessionId();
+    const interactionKey = interactionId ?? "__no_interaction__";
+
+    moduleUsageCandidates.forEach((candidate, index) => {
+      const moduleKey = candidate.moduleKey;
+      if (!moduleKey) return;
+
+      const resolvedPosition =
+        typeof candidate.position === "number" && Number.isFinite(candidate.position)
+          ? candidate.position
+          : index + 1;
+      const positionKey = `${resolvedPosition}`;
+      const dedupeKey = `${interactionKey}|${moduleKey}|${positionKey}`;
+      const fallbackKey = `__any__|${moduleKey}|${positionKey}`;
+      if (
+        moduleUsageSentRef.current.has(dedupeKey) ||
+        moduleUsageSentRef.current.has(fallbackKey)
+      ) {
+        return;
+      }
+      moduleUsageSentRef.current.add(dedupeKey);
+      moduleUsageSentRef.current.add(fallbackKey);
+
+      void sendModuleUsage({
+        moduleKey,
+        position: resolvedPosition,
+        tokens: candidate.tokens,
+        sessionId: sessionId ?? null,
+        interactionId,
+        messageId: messageId ?? null,
+      });
+    });
+  }, [
+    interactionId,
+    isStreaming,
+    isUser,
+    messageId,
+    moduleUsageCandidates,
+    resolveSessionId,
+  ]);
+
+  const clearTimeSignalTimer = useCallback(() => {
+    if (timeSignalTimerRef.current) {
+      clearTimeout(timeSignalTimerRef.current);
+      timeSignalTimerRef.current = null;
+    }
+  }, []);
+
+  const finalizeTimeSignal = useCallback(() => {
+    if (timeSignalSentRef.current) return;
+    if (visibleStartRef.current === null) return;
+
+    const elapsedMs = Date.now() - visibleStartRef.current;
+    visibleStartRef.current = null;
+    timeSignalSentRef.current = true;
+    clearTimeSignalTimer();
+
+    const seconds = Math.max(1, Math.round(elapsedMs / 1000));
+    emitPassiveSignal("time_on_message", seconds);
+  }, [clearTimeSignalTimer, emitPassiveSignal]);
+
   const feedbackMeta = useMemo(() => {
     const meta: Record<string, unknown> = { ui: "chat_message_actions" };
     if (moduleCombo && moduleCombo.length > 0) {
@@ -174,9 +303,11 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
 
   const sendVote = useCallback(
     async (vote: Vote, reason: string | null) => {
-      if (!interactionId) {
+      if (!hasInteractionId || isStreaming || !interactionId) {
         return false;
       }
+
+      const resolvedInteractionId = interactionId;
 
       setPendingVote(vote);
       setSendingFeedback(true);
@@ -186,21 +317,19 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
 
       try {
         payload = createEventPayload({ vote, reason });
-        const success = await send({
-          interactionId,
+        if (import.meta.env.DEV) {
+          console.log("[feedback.submit]", { interactionId: resolvedInteractionId, vote, reason });
+        }
+        await send({
+          interactionId: resolvedInteractionId,
           vote,
           reason,
           source: "chat",
           userId: user?.id ?? null,
           sessionId: session?.id ?? null,
           meta: feedbackMeta,
+          messageId: messageId ?? null,
         });
-
-        if (!success) {
-          setFeedbackError("Não foi possível enviar agora");
-          toast.error("Não foi possível enviar agora");
-          return false;
-        }
 
         if (payload) {
           trackFeedbackEvent(
@@ -211,22 +340,41 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
         toast.success("Feedback enviado");
         return true;
       } catch (error) {
-        console.error("feedback_send_error", error);
         if (payload) {
           trackFeedbackEvent("FE: Feedback Error", {
             ...payload,
             error: error instanceof Error ? error.message : String(error),
           });
         }
-        setFeedbackError("Não foi possível enviar agora");
-        toast.error("Não foi possível enviar agora");
+
+        let friendly = "Não foi possível enviar agora";
+        if (error instanceof FeedbackApiError) {
+          const message = (error.message ?? "").toLowerCase();
+          if (error.status === 404 || error.code === "interaction_not_found" || message.includes("interaction_not_found")) {
+            friendly = "A conversa atualizou — tente na próxima resposta";
+          }
+        }
+
+        console.error("feedback_send_error", error);
+        setFeedbackError(friendly);
+        toast.error(friendly);
         return false;
       } finally {
         setSendingFeedback(false);
         setPendingVote(null);
       }
     },
-    [createEventPayload, feedbackMeta, interactionId, send, session?.id, user?.id],
+    [
+      createEventPayload,
+      feedbackMeta,
+      hasInteractionId,
+      interactionId,
+      isStreaming,
+      messageId,
+      send,
+      session?.id,
+      user?.id,
+    ],
   );
 
   const copiarTexto = async () => {
@@ -235,13 +383,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
       await navigator.clipboard.writeText(displayText || "");
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
-      if (messageId) {
-        const payload = createEventPayload({ signal: "copy" });
-        void enviarSignal({ messageId, signal: "copy" }).catch(() => {});
-        if (payload) {
-          trackFeedbackEvent("FE: Signal Copy", payload);
-        }
-      }
+      emitPassiveSignal("copy", 1);
     } catch (error) {
       console.warn("Falha ao copiar", error);
     }
@@ -251,6 +393,8 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     if (!canSpeak || loadingAudio) return;
     setLoadingAudio(true);
     if (audioUrl) setAudioUrl(null);
+
+    emitPassiveSignal("tts_play", 1);
 
     try {
       const dataUrl = await gerarAudioDaMensagem(displayText);
@@ -262,126 +406,131 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     }
   };
 
-  const selectReason = (key: string) => {
-    if (sendingFeedback) return;
-    setSelectedReason((prev) => (prev === key ? null : key));
-  };
+  const handleSelectReason = useCallback(
+    (key: string) => {
+      if (sendingFeedback) return;
+      setSelectedReason((prev) => (prev === key ? null : key));
+      setFeedbackError(null);
+    },
+    [sendingFeedback],
+  );
 
-  const canSendFeedback = !isUser && Boolean(interactionId);
-
-  const handleLike = useCallback(async () => {
-    if (!canSendFeedback || sendingFeedback) return;
+  const handleCloseReasons = useCallback(() => {
     setShowReasons(false);
     setSelectedReason(null);
     setFeedbackError(null);
+  }, []);
+
+  const handleLike = useCallback(async () => {
+    if (sendingFeedback || !hasInteractionId || isStreaming) return;
+    handleCloseReasons();
     const previousVote = optimisticVote;
     setOptimisticVote("up");
     const success = await sendVote("up", null);
     if (!success) {
       setOptimisticVote(previousVote ?? null);
     }
-  }, [canSendFeedback, optimisticVote, sendingFeedback, sendVote]);
+  }, [handleCloseReasons, hasInteractionId, isStreaming, optimisticVote, sendingFeedback, sendVote]);
 
   const handleDislike = useCallback(
     async (reason: string) => {
-      if (!canSendFeedback || sendingFeedback) return false;
+      if (sendingFeedback || !hasInteractionId || isStreaming) return false;
       return sendVote("down", reason);
     },
-    [canSendFeedback, sendVote, sendingFeedback],
+    [hasInteractionId, isStreaming, sendVote, sendingFeedback],
   );
 
   const handleThumbDownClick = () => {
-    if (!canSendFeedback || sendingFeedback) return;
-    setShowReasons((prev) => {
-      const next = !prev;
-      if (next) {
-        setSelectedReason(null);
-      }
-      return next;
-    });
+    if (sendingFeedback || !hasInteractionId || isStreaming) return;
+    if (showReasons) {
+      handleCloseReasons();
+      return;
+    }
+    setSelectedReason(null);
     setFeedbackError(null);
+    setShowReasons(true);
   };
 
   const handleConfirmDown = async () => {
-    if (!canSendFeedback || sendingFeedback) return;
+    if (sendingFeedback || !hasInteractionId || isStreaming) return;
     const reason = selectedReason ?? "other";
     const previousVote = optimisticVote;
     setOptimisticVote("down");
     const success = await handleDislike(reason);
     if (success) {
-      setShowReasons(false);
-      setSelectedReason(null);
+      handleCloseReasons();
     } else {
       setOptimisticVote(previousVote ?? null);
     }
   };
 
   useEffect(() => {
-    if (!showReasons) return;
-    if (typeof window === "undefined") return;
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node | null;
-      if (
-        target &&
-        (reasonsRef.current?.contains(target) || downBtnRef.current?.contains(target))
-      ) {
-        return;
-      }
-      setShowReasons(false);
-      setSelectedReason(null);
-      setFeedbackError(null);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showReasons]);
+    if (hasInteractionId && !isStreaming) return;
+    handleCloseReasons();
+  }, [handleCloseReasons, hasInteractionId, isStreaming]);
 
   useEffect(() => {
+    if (!ENABLE_PASSIVE_SIGNALS) return;
     if (isUser) return;
-    if (seenRef.current) return;
     if (typeof window === "undefined") return;
 
     const el = containerRef.current;
     if (!el) return;
 
-    let timer: number | undefined;
-    const io = new IntersectionObserver(
+    const VISIBLE_RATIO = 0.6;
+    const MIN_VISIBLE_MS = 6000;
+
+    const scheduleTimeSignal = () => {
+      if (timeSignalSentRef.current) return;
+      if (timeSignalTimerRef.current !== null) return;
+      timeSignalTimerRef.current = window.setTimeout(() => {
+        finalizeTimeSignal();
+      }, MIN_VISIBLE_MS);
+    };
+
+    const observer = new IntersectionObserver(
       (entries) => {
-        const visible = entries.some(
-          (entry) => entry.isIntersecting && entry.intersectionRatio >= 0.8
-        );
-        if (visible && !seenRef.current) {
-          timer = window.setTimeout(() => {
-            seenRef.current = true;
-            const payload = createEventPayload({ signal: "read_complete" });
-            if (!payload) return;
-            void enviarSignal({ messageId, signal: "read_complete" }).catch(() => {});
-            trackFeedbackEvent("FE: Signal Read Complete", payload);
-          }, 6000);
-        } else if (timer) {
-          window.clearTimeout(timer);
+        const entry = entries.find((item) => item.target === el);
+        const visible =
+          !!entry && entry.isIntersecting && entry.intersectionRatio >= VISIBLE_RATIO;
+
+        if (visible) {
+          if (!viewSignalSentRef.current) {
+            viewSignalSentRef.current = true;
+            emitPassiveSignal("view", 1);
+          }
+
+          if (!timeSignalSentRef.current && visibleStartRef.current === null) {
+            visibleStartRef.current = Date.now();
+          }
+
+          scheduleTimeSignal();
+        } else {
+          if (!timeSignalSentRef.current && visibleStartRef.current !== null) {
+            finalizeTimeSignal();
+          }
+          visibleStartRef.current = null;
+          clearTimeSignalTimer();
         }
       },
-      { threshold: [0, 0.8] }
+      { threshold: [0, 0.25, 0.6, 0.85, 1] }
     );
-    io.observe(el);
-    return () => {
-      if (timer) window.clearTimeout(timer);
-      io.disconnect();
-    };
-  }, [createEventPayload, isUser, messageId]);
 
-  const handleAudioProgress = ({ ratio }: { ratio: number }) => {
-    if (!messageId) return;
-    if (ttsSignalSentRef.current) return;
-    if (ratio < 0.6) return;
-    ttsSignalSentRef.current = true;
-    const payload = createEventPayload({ signal: "tts_60", value: 0.6 });
-    if (!payload) return;
-    void enviarSignal({ messageId, signal: "tts_60", value: 0.6 }).catch(() => {});
-    trackFeedbackEvent("FE: Signal TTS", payload);
-  };
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+      if (!timeSignalSentRef.current && visibleStartRef.current !== null) {
+        finalizeTimeSignal();
+      }
+      clearTimeSignalTimer();
+    };
+  }, [
+    clearTimeSignalTimer,
+    emitPassiveSignal,
+    finalizeTimeSignal,
+    isUser,
+  ]);
 
   const actionsPad = isUser ? "pr-4 sm:pr-5" : "ml-[58px] sm:ml-[62px]";
 
@@ -408,13 +557,13 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
               <ClipboardCopy className={ICON_CLASS} strokeWidth={1.5} />
             </GhostBtn>
 
-            {canSendFeedback && (
+            {canDisplayFeedback && (
               <>
                 <GhostBtn
                   onClick={handleLike}
                   aria-label="Curtir resposta"
                   title="Curtir"
-                  disabled={sendingFeedback || !canSendFeedback}
+                  disabled={feedbackButtonsDisabled}
                   className={optimisticVote === "up" ? "bg-slate-100" : undefined}
                   aria-pressed={optimisticVote === "up"}
                   aria-busy={sendingFeedback && pendingVote === "up"}
@@ -442,7 +591,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
                     onClick={handleThumbDownClick}
                     aria-label="Não curtir resposta"
                     title="Não curtir"
-                    disabled={sendingFeedback || !canSendFeedback}
+                    disabled={feedbackButtonsDisabled}
                     className={
                       optimisticVote === "down" || showReasons ? "bg-slate-100" : undefined
                     }
@@ -465,64 +614,16 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
                       />
                     )}
                   </GhostBtn>
-
-                  {showReasons && canSendFeedback && (
-                    <div
-                      ref={reasonsRef}
-                      className="absolute right-0 z-30 mt-2 w-60 rounded-xl border border-slate-200 bg-white p-3 shadow-xl"
-                    >
-                      <p className="mb-2 text-sm text-gray-700">O que não ajudou?</p>
-                      <div className="flex flex-wrap gap-2">
-                        {FEEDBACK_REASONS.map((reason) => {
-                          const active = selectedReason === reason.key;
-                          return (
-                            <button
-                              key={reason.key}
-                              type="button"
-                              disabled={sendingFeedback}
-                              onClick={() => selectReason(reason.key)}
-                              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                                active
-                                  ? "border-red-300 bg-red-50 text-red-600"
-                                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                              }`}
-                            >
-                              {reason.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <div className="mt-3 flex justify-end gap-2 text-xs">
-                        <button
-                          type="button"
-                          className="text-slate-400 hover:text-slate-600"
-                          onClick={() => {
-                            setShowReasons(false);
-                            setSelectedReason(null);
-                            setFeedbackError(null);
-                          }}
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleConfirmDown}
-                          disabled={sendingFeedback || !canSendFeedback}
-                          className="rounded-full bg-red-500 px-3 py-1 font-medium text-white hover:bg-red-600 disabled:opacity-60"
-                        >
-                          {sendingFeedback && pendingVote === "down" ? (
-                            <span className="flex items-center gap-1">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.75} />
-                              <span>Enviando...</span>
-                            </span>
-                          ) : (
-                            "Enviar"
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
+                <FeedbackReasonPopover
+                  anchorRef={downBtnRef}
+                  open={showReasons && hasInteractionId && !isStreaming}
+                  selectedReason={selectedReason}
+                  status={reasonPopoverStatus}
+                  onSelect={handleSelectReason}
+                  onConfirm={handleConfirmDown}
+                  onClose={handleCloseReasons}
+                />
               </>
             )}
 
@@ -576,7 +677,6 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
         <AudioPlayerOverlay
           audioUrl={audioUrl}
           onClose={() => setAudioUrl(null)}
-          onProgress={handleAudioProgress}
         />
       )}
     </>

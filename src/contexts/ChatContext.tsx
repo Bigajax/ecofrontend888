@@ -26,6 +26,7 @@ export interface Message {
   streaming?: boolean;
   interaction_id?: string | null;
   interactionId?: string | null;
+  message_id?: string | null;
 }
 
 interface ChatContextType {
