@@ -69,7 +69,7 @@ export async function sendModuleUsage({
   }
 
   const body = sanitize({
-    module_key: normalizedKey,
+    moduleKey: normalizedKey,
     position:
       typeof position === "number" && Number.isFinite(position)
         ? Math.max(0, Math.round(position))
@@ -78,15 +78,15 @@ export async function sendModuleUsage({
       typeof tokens === "number" && Number.isFinite(tokens)
         ? Math.max(0, Math.round(tokens))
         : undefined,
-    session_id:
+    sessionId:
       typeof sessionId === "string" && sessionId.trim().length > 0
         ? sessionId.trim()
         : undefined,
-    interaction_id:
+    interactionId:
       typeof interactionId === "string" && interactionId.trim().length > 0
         ? interactionId.trim()
         : undefined,
-    message_id:
+    messageId:
       typeof messageId === "string" && messageId.trim().length > 0
         ? messageId.trim()
         : undefined,
