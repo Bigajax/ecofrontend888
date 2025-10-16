@@ -1,0 +1,214 @@
+import { useCallback, useMemo, useRef, useState } from "react";
+
+import type { Message } from "../contexts/ChatContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useMessageFeedbackContext } from "../hooks/useMessageFeedbackContext";
+import { useSendFeedback } from "../hooks/useSendFeedback";
+import { getSessionId } from "../utils/identity";
+import { toast } from "../utils/toast";
+import { FeedbackReasonPopover } from "./FeedbackReasonPopover";
+
+export type FeedbackCardStatus =
+  | "idle"
+  | "selecting"
+  | "sending"
+  | "success"
+  | "error";
+
+type FeedbackCardProps = {
+  message: Message;
+};
+
+export function FeedbackCard({ message }: FeedbackCardProps) {
+  const { userId } = useAuth();
+  const { interactionId, moduleCombo, promptHash, messageId, latencyMs } =
+    useMessageFeedbackContext(message);
+  const [status, setStatus] = useState<FeedbackCardStatus>("idle");
+  const [selectedReason, setSelectedReason] = useState<string | null>(null);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const dislikeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const sessionIdRef = useRef<string | null | undefined>(undefined);
+  const { sendFeedback } = useSendFeedback();
+
+  const isEcoMessage = message.sender === "eco";
+  const isStreaming = Boolean(message.streaming);
+  const hasInteraction = Boolean(interactionId);
+
+  const disableActions = !hasInteraction || status === "sending";
+  const showCard =
+    isEcoMessage &&
+    !isStreaming &&
+    hasInteraction &&
+    status !== "success";
+
+  const resolveSessionId = useCallback(() => {
+    if (sessionIdRef.current !== undefined) {
+      return sessionIdRef.current;
+    }
+    sessionIdRef.current = getSessionId();
+    return sessionIdRef.current;
+  }, []);
+
+  const meta = useMemo(() => {
+    const base: Record<string, unknown> = { ui: "chat_actions" };
+    if (moduleCombo && moduleCombo.length > 0) {
+      base.module_combo = moduleCombo;
+    }
+    if (typeof latencyMs === "number") {
+      base.latency_ms = latencyMs;
+    }
+    if (messageId) {
+      base.message_id = messageId;
+    }
+    if (promptHash) {
+      base.prompt_hash = promptHash;
+    }
+    return base;
+  }, [latencyMs, messageId, moduleCombo, promptHash]);
+
+  const resetPopoverState = useCallback(() => {
+    setIsPopoverOpen(false);
+    setSelectedReason(null);
+    setStatus((prev) => {
+      if (prev === "selecting" || prev === "error") {
+        return "idle";
+      }
+      return prev;
+    });
+  }, []);
+
+  const handleSuccess = useCallback(() => {
+    setStatus("success");
+    resetPopoverState();
+    toast.success("Feedback enviado");
+  }, [resetPopoverState]);
+
+  const handleError = useCallback(() => {
+    setStatus("error");
+    toast.error("Não foi possível enviar agora");
+  }, []);
+
+  const handleLike = useCallback(async () => {
+    if (!hasInteraction || disableActions) {
+      return;
+    }
+    setStatus("sending");
+    try {
+      const success = await sendFeedback({
+        interactionId,
+        vote: "up",
+        reason: null,
+        source: "chat",
+        userId: userId ?? null,
+        sessionId: resolveSessionId(),
+        meta,
+      });
+      if (success === false) {
+        setStatus((prev) => (prev === "sending" ? "idle" : prev));
+        return;
+      }
+      if (success) {
+        handleSuccess();
+      } else {
+        handleError();
+      }
+    } catch (error) {
+      console.error("feedback_like_error", error);
+      handleError();
+    }
+  }, [disableActions, handleError, handleSuccess, hasInteraction, interactionId, meta, resolveSessionId, sendFeedback, userId]);
+
+  const openPopover = useCallback(() => {
+    if (!hasInteraction || status === "sending") {
+      return;
+    }
+    setSelectedReason(null);
+    setStatus("selecting");
+    setIsPopoverOpen(true);
+  }, [hasInteraction, status]);
+
+  const handleConfirmDislike = useCallback(async () => {
+    if (!hasInteraction || !selectedReason) {
+      return;
+    }
+    setStatus("sending");
+    try {
+      const success = await sendFeedback({
+        interactionId,
+        vote: "down",
+        reason: selectedReason,
+        source: "chat",
+        userId: userId ?? null,
+        sessionId: resolveSessionId(),
+        meta,
+      });
+      if (success === false) {
+        setStatus((prev) => (prev === "sending" ? "idle" : prev));
+        return;
+      }
+      if (success) {
+        handleSuccess();
+      } else {
+        setStatus("error");
+        toast.error("Não foi possível enviar agora");
+      }
+    } catch (error) {
+      console.error("feedback_dislike_error", error);
+      setStatus("error");
+      toast.error("Não foi possível enviar agora");
+    }
+  }, [handleSuccess, hasInteraction, interactionId, meta, resolveSessionId, selectedReason, sendFeedback, userId]);
+
+  if (!showCard) {
+    if (status === "success") {
+      return (
+        <div className="mt-2 flex items-center gap-2 text-sm text-slate-500" data-interaction-id={interactionId}>
+          <span role="status">Obrigado pelo feedback 💛</span>
+        </div>
+      );
+    }
+    return null;
+  }
+
+  return (
+    <div
+      className="mt-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-sm shadow-sm backdrop-blur"
+      data-interaction-id={interactionId}
+    >
+      <span className="text-slate-600">Essa resposta ajudou?</span>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="rounded-full border border-slate-200 px-3 py-1 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={handleLike}
+          disabled={disableActions}
+          aria-busy={status === "sending"}
+        >
+          {status === "sending" ? "Enviando…" : "👍"}
+        </button>
+        <button
+          ref={dislikeButtonRef}
+          type="button"
+          className="rounded-full border border-slate-200 px-3 py-1 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={openPopover}
+          disabled={disableActions}
+          aria-busy={status === "sending"}
+        >
+          👎
+        </button>
+      </div>
+      <FeedbackReasonPopover
+        anchorRef={dislikeButtonRef}
+        open={isPopoverOpen}
+        selectedReason={selectedReason}
+        status={status}
+        onSelect={(reason) => {
+          setSelectedReason(reason);
+          setStatus((prev) => (prev === "error" ? "selecting" : prev));
+        }}
+        onConfirm={handleConfirmDislike}
+        onClose={resetPopoverState}
+      />
+    </div>
+  );
+}

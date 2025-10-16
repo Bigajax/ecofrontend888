@@ -2,9 +2,8 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
 import TypingDots from "../components/TypingDots";
+import { FeedbackCard } from "./FeedbackCard";
 import { Message } from "../contexts/ChatContext";
-
-const FeedbackCard: React.FC = () => null;
 
 interface ChatMessageProps {
   message: Message;
@@ -135,7 +134,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const hasMarkdownText = !showPlaceholder && trimmedText.length > 0;
   const isStreamingPlaceholder = showPlaceholder;
   const showTyping = Boolean(isEcoTyping && showPlaceholder);
-  const shouldShowFeedbackActions = false;
+  const shouldShowFeedbackActions =
+    isEcoMessage &&
+    !showPlaceholder &&
+    !message.streaming &&
+    !showTyping;
 
   if (showTyping) {
     return (
@@ -255,12 +258,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             </div>
 
             {shouldShowFeedbackActions && (
-              <div className="mt-2" />
+              <FeedbackCard message={message} />
             )}
           </div>
         </div>
       </div>
-      <FeedbackCard />
     </>
   );
 };
