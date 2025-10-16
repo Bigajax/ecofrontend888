@@ -9,7 +9,12 @@ import {
 
 import AudioPlayerOverlay from "./AudioPlayerOverlay";
 import ChatMessage from "./ChatMessage";
-import { enviarSignal, FeedbackApiError } from "../api/feedbackApi";
+import { FeedbackApiError } from "../api/feedbackApi";
+import {
+  ENABLE_PASSIVE_SIGNALS,
+  PassiveSignalName,
+  sendPassiveSignal,
+} from "../api/passiveSignals";
 import { gerarAudioDaMensagem } from "../api/voiceApi";
 import { Message } from "../contexts/ChatContext";
 import { trackFeedbackEvent } from "../analytics/track";
@@ -69,10 +74,12 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const downBtnRef = useRef<HTMLButtonElement | null>(null);
-  const seenRef = useRef(false);
+  const viewSignalSentRef = useRef(false);
+  const timeSignalSentRef = useRef(false);
+  const visibleStartRef = useRef<number | null>(null);
+  const timeSignalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionIdRef = useRef<string | null | undefined>(undefined);
   const userIdRef = useRef<string | null | undefined>(undefined);
-  const ttsSignalSentRef = useRef(false);
 
   const isUser = message.sender === "user";
   const isStreaming = message.streaming === true;
@@ -166,6 +173,53 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
       resolveUserId,
     ],
   );
+
+  const trackPassiveSignal = useCallback(
+    (signal: PassiveSignalName, value?: number) => {
+      if (!ENABLE_PASSIVE_SIGNALS) return;
+      const payload = createEventPayload({ signal, value });
+      if (payload) {
+        trackFeedbackEvent(`FE: Passive Signal ${signal}`, payload);
+      }
+    },
+    [createEventPayload],
+  );
+
+  const emitPassiveSignal = useCallback(
+    (signal: PassiveSignalName, value?: number) => {
+      if (!ENABLE_PASSIVE_SIGNALS) return;
+      const sessionId = resolveSessionId();
+      void sendPassiveSignal({
+        signal,
+        value,
+        sessionId: sessionId ?? null,
+        interactionId,
+        messageId,
+      });
+      trackPassiveSignal(signal, value);
+    },
+    [interactionId, messageId, resolveSessionId, trackPassiveSignal],
+  );
+
+  const clearTimeSignalTimer = useCallback(() => {
+    if (timeSignalTimerRef.current) {
+      clearTimeout(timeSignalTimerRef.current);
+      timeSignalTimerRef.current = null;
+    }
+  }, []);
+
+  const finalizeTimeSignal = useCallback(() => {
+    if (timeSignalSentRef.current) return;
+    if (visibleStartRef.current === null) return;
+
+    const elapsedMs = Date.now() - visibleStartRef.current;
+    visibleStartRef.current = null;
+    timeSignalSentRef.current = true;
+    clearTimeSignalTimer();
+
+    const seconds = Math.max(1, Math.round(elapsedMs / 1000));
+    emitPassiveSignal("time_on_message", seconds);
+  }, [clearTimeSignalTimer, emitPassiveSignal]);
 
   const feedbackMeta = useMemo(() => {
     const meta: Record<string, unknown> = { ui: "chat_message_actions" };
@@ -266,13 +320,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
       await navigator.clipboard.writeText(displayText || "");
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
-      if (messageId) {
-        const payload = createEventPayload({ signal: "copy" });
-        void enviarSignal({ messageId, signal: "copy" }).catch(() => {});
-        if (payload) {
-          trackFeedbackEvent("FE: Signal Copy", payload);
-        }
-      }
+      emitPassiveSignal("copy", 1);
     } catch (error) {
       console.warn("Falha ao copiar", error);
     }
@@ -282,6 +330,8 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     if (!canSpeak || loadingAudio) return;
     setLoadingAudio(true);
     if (audioUrl) setAudioUrl(null);
+
+    emitPassiveSignal("tts_play", 1);
 
     try {
       const dataUrl = await gerarAudioDaMensagem(displayText);
@@ -357,50 +407,67 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
   }, [handleCloseReasons, hasInteractionId, isStreaming]);
 
   useEffect(() => {
+    if (!ENABLE_PASSIVE_SIGNALS) return;
     if (isUser) return;
-    if (seenRef.current) return;
     if (typeof window === "undefined") return;
 
     const el = containerRef.current;
     if (!el) return;
 
-    let timer: number | undefined;
-    const io = new IntersectionObserver(
+    const VISIBLE_RATIO = 0.6;
+    const MIN_VISIBLE_MS = 6000;
+
+    const scheduleTimeSignal = () => {
+      if (timeSignalSentRef.current) return;
+      if (timeSignalTimerRef.current !== null) return;
+      timeSignalTimerRef.current = window.setTimeout(() => {
+        finalizeTimeSignal();
+      }, MIN_VISIBLE_MS);
+    };
+
+    const observer = new IntersectionObserver(
       (entries) => {
-        const visible = entries.some(
-          (entry) => entry.isIntersecting && entry.intersectionRatio >= 0.8
-        );
-        if (visible && !seenRef.current) {
-          timer = window.setTimeout(() => {
-            seenRef.current = true;
-            const payload = createEventPayload({ signal: "read_complete" });
-            if (!payload) return;
-            void enviarSignal({ messageId, signal: "read_complete" }).catch(() => {});
-            trackFeedbackEvent("FE: Signal Read Complete", payload);
-          }, 6000);
-        } else if (timer) {
-          window.clearTimeout(timer);
+        const entry = entries.find((item) => item.target === el);
+        const visible =
+          !!entry && entry.isIntersecting && entry.intersectionRatio >= VISIBLE_RATIO;
+
+        if (visible) {
+          if (!viewSignalSentRef.current) {
+            viewSignalSentRef.current = true;
+            emitPassiveSignal("view", 1);
+          }
+
+          if (!timeSignalSentRef.current && visibleStartRef.current === null) {
+            visibleStartRef.current = Date.now();
+          }
+
+          scheduleTimeSignal();
+        } else {
+          if (!timeSignalSentRef.current && visibleStartRef.current !== null) {
+            finalizeTimeSignal();
+          }
+          visibleStartRef.current = null;
+          clearTimeSignalTimer();
         }
       },
-      { threshold: [0, 0.8] }
+      { threshold: [0, 0.25, 0.6, 0.85, 1] }
     );
-    io.observe(el);
-    return () => {
-      if (timer) window.clearTimeout(timer);
-      io.disconnect();
-    };
-  }, [createEventPayload, isUser, messageId]);
 
-  const handleAudioProgress = ({ ratio }: { ratio: number }) => {
-    if (!messageId) return;
-    if (ttsSignalSentRef.current) return;
-    if (ratio < 0.6) return;
-    ttsSignalSentRef.current = true;
-    const payload = createEventPayload({ signal: "tts_60", value: 0.6 });
-    if (!payload) return;
-    void enviarSignal({ messageId, signal: "tts_60", value: 0.6 }).catch(() => {});
-    trackFeedbackEvent("FE: Signal TTS", payload);
-  };
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+      if (!timeSignalSentRef.current && visibleStartRef.current !== null) {
+        finalizeTimeSignal();
+      }
+      clearTimeSignalTimer();
+    };
+  }, [
+    clearTimeSignalTimer,
+    emitPassiveSignal,
+    finalizeTimeSignal,
+    isUser,
+  ]);
 
   const actionsPad = isUser ? "pr-4 sm:pr-5" : "ml-[58px] sm:ml-[62px]";
 
@@ -547,7 +614,6 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
         <AudioPlayerOverlay
           audioUrl={audioUrl}
           onClose={() => setAudioUrl(null)}
-          onProgress={handleAudioProgress}
         />
       )}
     </>
