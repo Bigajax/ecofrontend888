@@ -24,6 +24,8 @@ export interface Message {
   donePayload?: unknown;
   latencyMs?: number;
   streaming?: boolean;
+  interaction_id?: string | null;
+  interactionId?: string | null;
 }
 
 interface ChatContextType {
