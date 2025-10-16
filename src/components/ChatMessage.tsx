@@ -2,7 +2,6 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
 import TypingDots from "../components/TypingDots";
-import { FeedbackCard } from "./FeedbackCard";
 import { Message } from "../contexts/ChatContext";
 
 interface ChatMessageProps {
@@ -89,11 +88,14 @@ const normalizeMessageContent = (
   return "";
 };
 
+const USE_NEW_FEEDBACK = false;
+
 const ChatMessage: React.FC<ChatMessageProps> = ({
   message,
   isEcoTyping,
   isEcoActive,
 }) => {
+  void USE_NEW_FEEDBACK;
   const isUser = message.sender === "user";
   const isEcoMessage = message.sender === "eco";
   const candidateValues: unknown[] = [];
@@ -134,12 +136,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const hasMarkdownText = !showPlaceholder && trimmedText.length > 0;
   const isStreamingPlaceholder = showPlaceholder;
   const showTyping = Boolean(isEcoTyping && showPlaceholder);
-  const shouldShowFeedbackActions =
-    isEcoMessage &&
-    !showPlaceholder &&
-    !message.streaming &&
-    !showTyping;
-
   if (showTyping) {
     return (
       <div
@@ -257,9 +253,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               )}
             </div>
 
-            {shouldShowFeedbackActions && (
-              <FeedbackCard message={message} />
-            )}
+            {/* Feedback actions handled via existing toolbar buttons */}
           </div>
         </div>
       </div>
