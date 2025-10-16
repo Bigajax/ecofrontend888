@@ -10,6 +10,7 @@ export type SendFeedbackArgs = {
   userId?: string | null;
   sessionId?: string | null;
   meta?: Record<string, unknown>;
+  messageId?: string | null;
 };
 
 export function useSendFeedback() {
@@ -33,6 +34,7 @@ export function useSendFeedback() {
               userId: args.userId ?? null,
               sessionId: args.sessionId ?? null,
               meta: args.meta ?? {},
+              messageId: args.messageId ?? null,
             });
             return true;
           } catch (error) {

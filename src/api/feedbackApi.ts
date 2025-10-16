@@ -18,9 +18,30 @@ export type FeedbackRequestPayload = {
   reason?: string | null;
   source?: string | null;
   meta?: FeedbackMetaPayload | Record<string, unknown>;
+  messageId?: string | null;
 };
 
 type FeedbackResponse = unknown;
+
+export class FeedbackApiError extends Error {
+  status: number;
+  details?: unknown;
+  code?: string;
+
+  constructor(status: number, message: string, details?: unknown) {
+    super(message || `feedback_http_${status}`);
+    this.name = "FeedbackApiError";
+    this.status = status;
+    this.details = details;
+    if (details && typeof details === "object") {
+      const record = details as Record<string, unknown>;
+      const code = record.error_code ?? record.code ?? record.error;
+      if (typeof code === "string" && code.trim().length > 0) {
+        this.code = code;
+      }
+    }
+  }
+}
 
 const sanitizeBody = <T extends Record<string, unknown>>(input: T) => {
   return Object.fromEntries(
@@ -122,7 +143,10 @@ export async function enviarFeedback(payload: FeedbackRequestPayload) {
         : undefined,
       latency_ms:
         typeof (payload.meta as FeedbackMetaPayload | undefined)?.latency_ms === "number"
-          ? Math.max(0, Math.round((payload.meta as FeedbackMetaPayload | undefined)?.latency_ms ?? 0))
+          ? Math.max(
+              0,
+              Math.round((payload.meta as FeedbackMetaPayload | undefined)?.latency_ms ?? 0),
+            )
           : undefined,
     });
 
@@ -130,6 +154,10 @@ export async function enviarFeedback(payload: FeedbackRequestPayload) {
       interaction_id: interactionId,
       user_id: payload.userId ?? null,
       session_id: payload.sessionId ?? null,
+      message_id:
+        typeof payload.messageId === "string" && payload.messageId.trim().length > 0
+          ? payload.messageId.trim()
+          : undefined,
       vote: payload.vote,
       reason: normalizeReason(payload),
       source: payload.source ?? "chat",
@@ -145,12 +173,17 @@ export async function enviarFeedback(payload: FeedbackRequestPayload) {
     let lastError: unknown;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        const guestId = readGuestId();
+        if (guestId) {
+          headers["X-Guest-Id"] = guestId;
+        }
+
         const res = await fetch(url, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Guest-Id": readGuestId(),
-          },
+          headers,
           body: JSON.stringify(requestBody),
           credentials: "include",
         });
@@ -159,36 +192,48 @@ export async function enviarFeedback(payload: FeedbackRequestPayload) {
           return {};
         }
 
-        if (!res.ok) {
-          if (shouldRetryStatus(res.status) && attempt < MAX_ATTEMPTS) {
-            const delay = BASE_DELAY_MS * 2 ** (attempt - 1);
-            const jitter = Math.random() * (delay * 0.5);
-            await sleep(delay + jitter);
-            continue;
-          }
-          let message = "";
-          try {
-            message = ((await res.json()) as { error?: string })?.error ?? "";
-          } catch {
-            /* ignore */
-          }
-          throw new Error(`feedback_failed_${res.status}${message ? `:${message}` : ""}`);
+        if (shouldRetryStatus(res.status) && attempt < MAX_ATTEMPTS) {
+          const delay = BASE_DELAY_MS * 2 ** (attempt - 1);
+          const jitter = Math.random() * (delay * 0.5);
+          await sleep(delay + jitter);
+          continue;
         }
 
         const contentType = res.headers.get("content-type") ?? "";
+        let parsed: unknown = undefined;
         if (contentType.includes("application/json")) {
           try {
-            return (await res.json()) as FeedbackResponse;
+            parsed = await res.json();
           } catch {
-            return {};
+            parsed = undefined;
+          }
+        } else {
+          try {
+            const text = await res.text();
+            if (text) {
+              try {
+                parsed = JSON.parse(text);
+              } catch {
+                parsed = { message: text };
+              }
+            }
+          } catch {
+            parsed = undefined;
           }
         }
-        try {
-          const text = await res.text();
-          return text ? { message: text } : {};
-        } catch {
-          return {};
-        }
+
+        const errorMessage = (() => {
+          if (parsed && typeof parsed === "object") {
+            const record = parsed as Record<string, unknown>;
+            const first = record.error ?? record.message ?? record.detail;
+            if (typeof first === "string" && first.trim().length > 0) {
+              return first;
+            }
+          }
+          return "";
+        })();
+
+        throw new FeedbackApiError(res.status, errorMessage, parsed);
       } catch (error) {
         lastError = error;
         if (attempt >= MAX_ATTEMPTS) {

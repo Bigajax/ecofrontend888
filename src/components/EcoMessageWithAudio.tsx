@@ -9,17 +9,17 @@ import {
 
 import AudioPlayerOverlay from "./AudioPlayerOverlay";
 import ChatMessage from "./ChatMessage";
-import { enviarSignal } from "../api/feedbackApi";
+import { enviarSignal, FeedbackApiError } from "../api/feedbackApi";
 import { gerarAudioDaMensagem } from "../api/voiceApi";
 import { Message } from "../contexts/ChatContext";
 import { trackFeedbackEvent } from "../analytics/track";
 import type { FeedbackTrackingPayload } from "../analytics/track";
 import { getSessionId, getUserIdFromStore } from "../utils/identity";
-import { FEEDBACK_REASONS } from "./FeedbackPrompt";
 import { useMessageFeedbackContext } from "../hooks/useMessageFeedbackContext";
 import { useSendFeedback } from "../hooks/useSendFeedback";
 import { toast } from "../utils/toast";
 import { useAuth } from "../contexts/AuthContext";
+import { FeedbackReasonPopover } from "./FeedbackReasonPopover";
 
 type Vote = "up" | "down";
 
@@ -68,7 +68,6 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const reasonsRef = useRef<HTMLDivElement | null>(null);
   const downBtnRef = useRef<HTMLButtonElement | null>(null);
   const seenRef = useRef(false);
   const sessionIdRef = useRef<string | null | undefined>(undefined);
@@ -76,6 +75,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
   const ttsSignalSentRef = useRef(false);
 
   const isUser = message.sender === "user";
+  const isStreaming = message.streaming === true;
   const displayText = useMemo(
     () => (message.text ?? message.content ?? "").trim(),
     [message.content, message.text]
@@ -91,7 +91,13 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     messageId: contextMessageId,
     latencyMs,
   } = useMessageFeedbackContext(message);
-  const messageId = contextMessageId ?? message.id;
+  const explicitMessageId = (() => {
+    if (typeof message.message_id === "string" && message.message_id.trim().length > 0) {
+      return message.message_id.trim();
+    }
+    return undefined;
+  })();
+  const messageId = explicitMessageId ?? contextMessageId ?? message.id;
 
   const messageInteractionId = (() => {
     const raw = message.interaction_id ?? message.interactionId;
@@ -102,8 +108,14 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
   })();
 
   const interactionId = messageInteractionId ?? contextInteractionId;
+  const hasInteractionId = typeof interactionId === "string" && interactionId.length > 0;
 
   const ICON_CLASS = `${ICON_SIZE} ${ICON_BASE}`;
+  const canDisplayFeedback = !isUser;
+  const feedbackButtonsDisabled =
+    sendingFeedback || !hasInteractionId || isStreaming;
+  const reasonPopoverStatus =
+    sendingFeedback && pendingVote === "down" ? "sending" : "selecting";
 
   const resolveSessionId = useCallback(() => {
     if (session?.id) return session.id;
@@ -174,9 +186,11 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
 
   const sendVote = useCallback(
     async (vote: Vote, reason: string | null) => {
-      if (!interactionId) {
+      if (!hasInteractionId || isStreaming || !interactionId) {
         return false;
       }
+
+      const resolvedInteractionId = interactionId;
 
       setPendingVote(vote);
       setSendingFeedback(true);
@@ -186,21 +200,19 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
 
       try {
         payload = createEventPayload({ vote, reason });
-        const success = await send({
-          interactionId,
+        if (import.meta.env.DEV) {
+          console.log("[feedback.submit]", { interactionId: resolvedInteractionId, vote, reason });
+        }
+        await send({
+          interactionId: resolvedInteractionId,
           vote,
           reason,
           source: "chat",
           userId: user?.id ?? null,
           sessionId: session?.id ?? null,
           meta: feedbackMeta,
+          messageId: messageId ?? null,
         });
-
-        if (!success) {
-          setFeedbackError("Não foi possível enviar agora");
-          toast.error("Não foi possível enviar agora");
-          return false;
-        }
 
         if (payload) {
           trackFeedbackEvent(
@@ -211,22 +223,41 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
         toast.success("Feedback enviado");
         return true;
       } catch (error) {
-        console.error("feedback_send_error", error);
         if (payload) {
           trackFeedbackEvent("FE: Feedback Error", {
             ...payload,
             error: error instanceof Error ? error.message : String(error),
           });
         }
-        setFeedbackError("Não foi possível enviar agora");
-        toast.error("Não foi possível enviar agora");
+
+        let friendly = "Não foi possível enviar agora";
+        if (error instanceof FeedbackApiError) {
+          const message = (error.message ?? "").toLowerCase();
+          if (error.status === 404 || error.code === "interaction_not_found" || message.includes("interaction_not_found")) {
+            friendly = "A conversa atualizou — tente na próxima resposta";
+          }
+        }
+
+        console.error("feedback_send_error", error);
+        setFeedbackError(friendly);
+        toast.error(friendly);
         return false;
       } finally {
         setSendingFeedback(false);
         setPendingVote(null);
       }
     },
-    [createEventPayload, feedbackMeta, interactionId, send, session?.id, user?.id],
+    [
+      createEventPayload,
+      feedbackMeta,
+      hasInteractionId,
+      interactionId,
+      isStreaming,
+      messageId,
+      send,
+      session?.id,
+      user?.id,
+    ],
   );
 
   const copiarTexto = async () => {
@@ -262,80 +293,68 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     }
   };
 
-  const selectReason = (key: string) => {
-    if (sendingFeedback) return;
-    setSelectedReason((prev) => (prev === key ? null : key));
-  };
+  const handleSelectReason = useCallback(
+    (key: string) => {
+      if (sendingFeedback) return;
+      setSelectedReason((prev) => (prev === key ? null : key));
+      setFeedbackError(null);
+    },
+    [sendingFeedback],
+  );
 
-  const canSendFeedback = !isUser && Boolean(interactionId);
-
-  const handleLike = useCallback(async () => {
-    if (!canSendFeedback || sendingFeedback) return;
+  const handleCloseReasons = useCallback(() => {
     setShowReasons(false);
     setSelectedReason(null);
     setFeedbackError(null);
+  }, []);
+
+  const handleLike = useCallback(async () => {
+    if (sendingFeedback || !hasInteractionId || isStreaming) return;
+    handleCloseReasons();
     const previousVote = optimisticVote;
     setOptimisticVote("up");
     const success = await sendVote("up", null);
     if (!success) {
       setOptimisticVote(previousVote ?? null);
     }
-  }, [canSendFeedback, optimisticVote, sendingFeedback, sendVote]);
+  }, [handleCloseReasons, hasInteractionId, isStreaming, optimisticVote, sendingFeedback, sendVote]);
 
   const handleDislike = useCallback(
     async (reason: string) => {
-      if (!canSendFeedback || sendingFeedback) return false;
+      if (sendingFeedback || !hasInteractionId || isStreaming) return false;
       return sendVote("down", reason);
     },
-    [canSendFeedback, sendVote, sendingFeedback],
+    [hasInteractionId, isStreaming, sendVote, sendingFeedback],
   );
 
   const handleThumbDownClick = () => {
-    if (!canSendFeedback || sendingFeedback) return;
-    setShowReasons((prev) => {
-      const next = !prev;
-      if (next) {
-        setSelectedReason(null);
-      }
-      return next;
-    });
+    if (sendingFeedback || !hasInteractionId || isStreaming) return;
+    if (showReasons) {
+      handleCloseReasons();
+      return;
+    }
+    setSelectedReason(null);
     setFeedbackError(null);
+    setShowReasons(true);
   };
 
   const handleConfirmDown = async () => {
-    if (!canSendFeedback || sendingFeedback) return;
+    if (sendingFeedback || !hasInteractionId || isStreaming) return;
     const reason = selectedReason ?? "other";
     const previousVote = optimisticVote;
     setOptimisticVote("down");
     const success = await handleDislike(reason);
     if (success) {
-      setShowReasons(false);
-      setSelectedReason(null);
+      handleCloseReasons();
     } else {
       setOptimisticVote(previousVote ?? null);
     }
   };
 
   useEffect(() => {
-    if (!showReasons) return;
-    if (typeof window === "undefined") return;
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node | null;
-      if (
-        target &&
-        (reasonsRef.current?.contains(target) || downBtnRef.current?.contains(target))
-      ) {
-        return;
-      }
-      setShowReasons(false);
-      setSelectedReason(null);
-      setFeedbackError(null);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showReasons]);
+    if (hasInteractionId && !isStreaming) return;
+    handleCloseReasons();
+  }, [handleCloseReasons, hasInteractionId, isStreaming]);
 
   useEffect(() => {
     if (isUser) return;
@@ -408,13 +427,13 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
               <ClipboardCopy className={ICON_CLASS} strokeWidth={1.5} />
             </GhostBtn>
 
-            {canSendFeedback && (
+            {canDisplayFeedback && (
               <>
                 <GhostBtn
                   onClick={handleLike}
                   aria-label="Curtir resposta"
                   title="Curtir"
-                  disabled={sendingFeedback || !canSendFeedback}
+                  disabled={feedbackButtonsDisabled}
                   className={optimisticVote === "up" ? "bg-slate-100" : undefined}
                   aria-pressed={optimisticVote === "up"}
                   aria-busy={sendingFeedback && pendingVote === "up"}
@@ -442,7 +461,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
                     onClick={handleThumbDownClick}
                     aria-label="Não curtir resposta"
                     title="Não curtir"
-                    disabled={sendingFeedback || !canSendFeedback}
+                    disabled={feedbackButtonsDisabled}
                     className={
                       optimisticVote === "down" || showReasons ? "bg-slate-100" : undefined
                     }
@@ -465,64 +484,16 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
                       />
                     )}
                   </GhostBtn>
-
-                  {showReasons && canSendFeedback && (
-                    <div
-                      ref={reasonsRef}
-                      className="absolute right-0 z-30 mt-2 w-60 rounded-xl border border-slate-200 bg-white p-3 shadow-xl"
-                    >
-                      <p className="mb-2 text-sm text-gray-700">O que não ajudou?</p>
-                      <div className="flex flex-wrap gap-2">
-                        {FEEDBACK_REASONS.map((reason) => {
-                          const active = selectedReason === reason.key;
-                          return (
-                            <button
-                              key={reason.key}
-                              type="button"
-                              disabled={sendingFeedback}
-                              onClick={() => selectReason(reason.key)}
-                              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                                active
-                                  ? "border-red-300 bg-red-50 text-red-600"
-                                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                              }`}
-                            >
-                              {reason.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <div className="mt-3 flex justify-end gap-2 text-xs">
-                        <button
-                          type="button"
-                          className="text-slate-400 hover:text-slate-600"
-                          onClick={() => {
-                            setShowReasons(false);
-                            setSelectedReason(null);
-                            setFeedbackError(null);
-                          }}
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleConfirmDown}
-                          disabled={sendingFeedback || !canSendFeedback}
-                          className="rounded-full bg-red-500 px-3 py-1 font-medium text-white hover:bg-red-600 disabled:opacity-60"
-                        >
-                          {sendingFeedback && pendingVote === "down" ? (
-                            <span className="flex items-center gap-1">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.75} />
-                              <span>Enviando...</span>
-                            </span>
-                          ) : (
-                            "Enviar"
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
+                <FeedbackReasonPopover
+                  anchorRef={downBtnRef}
+                  open={showReasons && hasInteractionId && !isStreaming}
+                  selectedReason={selectedReason}
+                  status={reasonPopoverStatus}
+                  onSelect={handleSelectReason}
+                  onConfirm={handleConfirmDown}
+                  onClose={handleCloseReasons}
+                />
               </>
             )}
 
