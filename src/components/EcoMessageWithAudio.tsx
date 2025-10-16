@@ -15,6 +15,10 @@ import {
   PassiveSignalName,
   sendPassiveSignal,
 } from "../api/passiveSignals";
+import {
+  ENABLE_MODULE_USAGE,
+  sendModuleUsage,
+} from "../api/moduleUsage";
 import { gerarAudioDaMensagem } from "../api/voiceApi";
 import { Message } from "../contexts/ChatContext";
 import { trackFeedbackEvent } from "../analytics/track";
@@ -25,6 +29,7 @@ import { useSendFeedback } from "../hooks/useSendFeedback";
 import { toast } from "../utils/toast";
 import { useAuth } from "../contexts/AuthContext";
 import { FeedbackReasonPopover } from "./FeedbackReasonPopover";
+import { extractModuleUsageCandidates } from "../utils/moduleUsage";
 
 type Vote = "up" | "down";
 
@@ -80,6 +85,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
   const timeSignalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionIdRef = useRef<string | null | undefined>(undefined);
   const userIdRef = useRef<string | null | undefined>(undefined);
+  const moduleUsageSentRef = useRef<Set<string>>(new Set());
 
   const isUser = message.sender === "user";
   const isStreaming = message.streaming === true;
@@ -123,6 +129,16 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     sendingFeedback || !hasInteractionId || isStreaming;
   const reasonPopoverStatus =
     sendingFeedback && pendingVote === "down" ? "sending" : "selecting";
+
+  const moduleUsageCandidates = useMemo(
+    () =>
+      extractModuleUsageCandidates({
+        metadata: message.metadata,
+        donePayload: message.donePayload,
+        fallbackModules: moduleCombo,
+      }),
+    [message.donePayload, message.metadata, moduleCombo],
+  );
 
   const resolveSessionId = useCallback(() => {
     if (session?.id) return session.id;
@@ -200,6 +216,53 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     },
     [interactionId, messageId, resolveSessionId, trackPassiveSignal],
   );
+
+  useEffect(() => {
+    if (!ENABLE_MODULE_USAGE) return;
+    if (isUser) return;
+    if (isStreaming) return;
+    if (moduleUsageCandidates.length === 0) return;
+
+    const sessionId = resolveSessionId();
+    const interactionKey = interactionId ?? "__no_interaction__";
+
+    moduleUsageCandidates.forEach((candidate, index) => {
+      const moduleKey = candidate.moduleKey;
+      if (!moduleKey) return;
+
+      const resolvedPosition =
+        typeof candidate.position === "number" && Number.isFinite(candidate.position)
+          ? candidate.position
+          : index + 1;
+      const positionKey = `${resolvedPosition}`;
+      const dedupeKey = `${interactionKey}|${moduleKey}|${positionKey}`;
+      const fallbackKey = `__any__|${moduleKey}|${positionKey}`;
+      if (
+        moduleUsageSentRef.current.has(dedupeKey) ||
+        moduleUsageSentRef.current.has(fallbackKey)
+      ) {
+        return;
+      }
+      moduleUsageSentRef.current.add(dedupeKey);
+      moduleUsageSentRef.current.add(fallbackKey);
+
+      void sendModuleUsage({
+        moduleKey,
+        position: resolvedPosition,
+        tokens: candidate.tokens,
+        sessionId: sessionId ?? null,
+        interactionId,
+        messageId: messageId ?? null,
+      });
+    });
+  }, [
+    interactionId,
+    isStreaming,
+    isUser,
+    messageId,
+    moduleUsageCandidates,
+    resolveSessionId,
+  ]);
 
   const clearTimeSignalTimer = useCallback(() => {
     if (timeSignalTimerRef.current) {
