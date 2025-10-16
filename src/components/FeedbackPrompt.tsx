@@ -90,6 +90,7 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
         vote,
         reasons,
         source: "chat",
+        messageId: messageId ?? null,
         meta: {
           page: "ChatPage",
           ui_source: payload.source,
