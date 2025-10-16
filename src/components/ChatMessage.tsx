@@ -1,8 +1,13 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
+
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
 import TypingDots from "../components/TypingDots";
+import FeedbackCard from "./FeedbackCard";
 import { Message } from "../contexts/ChatContext";
+import { useFeedback } from "../hooks/useFeedback";
+import { useMessageFeedbackContext } from "../hooks/useMessageFeedbackContext";
 
 interface ChatMessageProps {
   message: Message;
@@ -93,6 +98,29 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   isEcoTyping,
   isEcoActive,
 }) => {
+  const {
+    isOpen: feedbackOpen,
+    isSubmitting: feedbackSubmitting,
+    selectedReason: feedbackSelectedReason,
+    error: feedbackError,
+    openDislike,
+    close: closeFeedback,
+    sendLike,
+    submitDislike,
+    setSelectedReason,
+  } = useFeedback();
+  const feedbackContext = useMessageFeedbackContext(message);
+  const [optimisticVote, setOptimisticVote] = React.useState<"up" | "down" | null>(null);
+  const negativeReasons = React.useMemo(
+    () => [
+      "Não entendi",
+      "Resposta incorreta",
+      "Incompleta",
+      "Não é relevante",
+      "Outro motivo",
+    ],
+    [],
+  );
   const isUser = message.sender === "user";
   const isEcoMessage = message.sender === "eco";
   const candidateValues: unknown[] = [];
@@ -133,6 +161,48 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const hasMarkdownText = !showPlaceholder && trimmedText.length > 0;
   const isStreamingPlaceholder = showPlaceholder;
   const showTyping = Boolean(isEcoTyping && showPlaceholder);
+
+  const handleThumbUp = React.useCallback(async () => {
+    const id = feedbackContext.interactionId?.trim();
+    if (!id) return;
+    const ok = await sendLike(id);
+    if (ok && optimisticVote !== "down") {
+      setOptimisticVote("up");
+    }
+  }, [feedbackContext.interactionId, optimisticVote, sendLike]);
+
+  const handleThumbDown = React.useCallback(() => {
+    const id = feedbackContext.interactionId?.trim();
+    if (!id) return;
+    openDislike(id);
+  }, [feedbackContext.interactionId, openDislike]);
+
+  const handleSubmitDislike = React.useCallback(
+    async (reason?: string) => {
+      const ok = await submitDislike(reason);
+      if (ok) {
+        setOptimisticVote("down");
+      }
+    },
+    [submitDislike],
+  );
+
+  const handleSelectReason = React.useCallback(
+    (reason: string) => {
+      setSelectedReason(reason);
+    },
+    [setSelectedReason],
+  );
+
+  const handleCloseCard = React.useCallback(() => {
+    closeFeedback();
+  }, [closeFeedback]);
+
+  const feedbackDisabled = feedbackSubmitting;
+  const likeActive = optimisticVote === "up";
+  const dislikeActive = optimisticVote === "down" || feedbackOpen;
+  const shouldShowFeedbackActions =
+    isEcoMessage && !showPlaceholder && Boolean(feedbackContext.interactionId);
 
   if (showTyping) {
     return (
@@ -201,13 +271,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     .filter(Boolean)
     .join(" ");
 
-  return (
-    <div
-      className={`w-full flex ${isUser ? "justify-end" : "justify-start"} min-w-0 mb-1 sm:mb-2`}
-      role="listitem"
-      aria-live="polite"
-      aria-atomic="false"
-    >
+    return (
+      <>
+        <div
+          className={`w-full flex ${isUser ? "justify-end" : "justify-start"} min-w-0 mb-1 sm:mb-2`}
+          role="listitem"
+          aria-live="polite"
+          aria-atomic="false"
+        >
       <div
         className={`flex w-full max-w-3xl items-end gap-3 ${
           isUser ? "flex-row-reverse" : "flex-row"
@@ -249,10 +320,48 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               <span className="relative z-10">&nbsp;</span>
             )}
           </div>
+          {shouldShowFeedbackActions && (
+            <div className="mt-2 flex items-center gap-2 text-slate-500">
+              <button
+                type="button"
+                onClick={handleThumbUp}
+                className={`flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white/80 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
+                  likeActive ? "border-emerald-200 bg-emerald-50 text-emerald-600" : ""
+                }`}
+                aria-label="Curtir resposta"
+                aria-pressed={likeActive}
+                disabled={feedbackDisabled}
+              >
+                <ThumbsUp className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleThumbDown}
+                className={`flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white/80 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
+                  dislikeActive ? "border-red-200 bg-red-50 text-red-500" : ""
+                }`}
+                aria-label="Não curtir resposta"
+                aria-pressed={dislikeActive}
+                disabled={feedbackDisabled}
+              >
+                <ThumbsDown className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
-      </div>
-    </div>
-  );
-};
+        </div>
+        <FeedbackCard
+          isOpen={feedbackOpen}
+          isSubmitting={feedbackSubmitting}
+          selectedReason={feedbackSelectedReason}
+          error={feedbackError}
+          reasons={negativeReasons}
+          onSelectReason={handleSelectReason}
+          onSubmit={handleSubmitDislike}
+          onClose={handleCloseCard}
+        />
+      </>
+    );
+  };
 
 export default ChatMessage;
