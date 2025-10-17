@@ -34,6 +34,22 @@ const MemoryCard: React.FC<Props> = ({ mem }) => {
   const when = mem.created_at ? humanDate(mem.created_at) : '';
   const intensidade = Math.max(0, Math.min(10, Number((mem as any).intensidade ?? 0)));
   const preview = (mem.analise_resumo || mem.contexto || '').trim();
+  const tags = useMemo(() => {
+    if (Array.isArray(mem.tags)) return mem.tags;
+    if (typeof mem.tags === 'string') {
+      return mem.tags
+        .split(/[;,]/)
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+    }
+    return [];
+  }, [mem.tags]);
+  const domain = mem.dominio_vida || (mem as any).dominio || (mem as any).domain || null;
+  const pattern =
+    mem.padrao_comportamental ||
+    (mem as any).padrao_comportamento ||
+    (mem as any).padrao ||
+    null;
 
   return (
     <li
@@ -106,11 +122,11 @@ const MemoryCard: React.FC<Props> = ({ mem }) => {
           />
         </div>
 
-        {!!mem.tags?.length && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {mem.tags.map((tag, i) => (
-            <span
-              key={`${tag}-${i}`}
+        {!!tags.length && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {tags.map((tag, i) => (
+              <span
+                key={`${tag}-${i}`}
                 className="text-xs px-3 py-1 rounded-full font-medium border border-black/10 shadow-sm"
                 style={{ background: generateConsistentPastelColor(tag), color: '#0f172a' }}
               >
@@ -145,12 +161,19 @@ const MemoryCard: React.FC<Props> = ({ mem }) => {
             </div>
           )}
 
-          {(mem.dominio_vida || mem.categoria) && (
+          {pattern && (
+            <div className="rounded-xl p-3 bg-white/70 backdrop-blur border border-neutral-200 shadow-sm">
+              <div className="font-semibold mb-1 text-neutral-900">Padrão comportamental</div>
+              <div>{pattern}</div>
+            </div>
+          )}
+
+          {(domain || mem.categoria) && (
             <div className="flex flex-col sm:flex-row gap-2">
-              {mem.dominio_vida && (
+              {domain && (
                 <div className="flex-1 rounded-xl p-3 bg-white/70 backdrop-blur border border-neutral-200 shadow-sm">
                   <div className="font-semibold mb-1 text-neutral-900">Domínio</div>
-                  <div>{mem.dominio_vida}</div>
+                  <div>{domain}</div>
                 </div>
               )}
               {mem.categoria && (

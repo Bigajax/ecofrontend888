@@ -284,9 +284,12 @@ const MemoryPage: React.FC = () => {
                         <section key={bucket}>
                           <h3 className="text-sm font-semibold text-neutral-500 mb-2">{bucket}</h3>
                           <ul className="space-y-3">
-                            {groupedMemories[bucket].map((memory) => (
-                              <MemoryCard key={memory.id} mem={memory} />
-                            ))}
+                            {groupedMemories[bucket].map((memory) => {
+                              if (import.meta.env.DEV) {
+                                console.log('memoria', memory);
+                              }
+                              return <MemoryCard key={memory.id} mem={memory} />;
+                            })}
                           </ul>
                         </section>
                       ))}
