@@ -12,6 +12,11 @@ import type { Message as ChatMessageType } from '../contexts/ChatContext';
 import mixpanel from '../lib/mixpanel';
 import { supabase } from '../lib/supabaseClient';
 import { resolveApiUrl } from '../constants/api';
+import {
+  normalizeContinuity,
+  resolveContinuityMeta,
+  type ContinuityMeta,
+} from '../utils/chat/continuity';
 
 interface UseEcoStreamOptions {
   messages: ChatMessageType[];
@@ -258,6 +263,7 @@ export const useEcoStream = ({
       let donePayload: unknown;
       let memoryFromStream: unknown;
       let primeiraMemoriaFlag = false;
+      let continuityTracked = false;
       let trackedMemory = false;
       let latencyFromStream: number | undefined;
       let streamErrorMessage: string | null = null;
@@ -630,6 +636,36 @@ export const useEcoStream = ({
               padrao_comportamental: (bloco as any).padrao_comportamental || 'não identificado',
             });
           }
+        };
+
+        const trackContinuityEvent = (
+          continuity: ContinuityMeta | undefined,
+          messageId: string,
+        ) => {
+          if (!continuity?.hasContinuity || continuityTracked) {
+            return;
+          }
+
+          const memoryRef = continuity.memoryRef;
+          const payload: Record<string, unknown> = {
+            message_id: messageId,
+            has_continuity: true,
+            memory_ref_id: memoryRef?.id ?? null,
+            emotion: memoryRef?.emocao_principal ?? null,
+            dias_desde: memoryRef?.dias_desde ?? null,
+            similarity: memoryRef?.similarity ?? null,
+          };
+
+          if (sessionId) {
+            payload.session_id = sessionId;
+          }
+
+          if (analyticsUserId) {
+            payload.user_id = analyticsUserId;
+          }
+
+          mixpanel.track('continuity_shown', payload);
+          continuityTracked = true;
         };
 
         const clearPlaceholder = () => {
@@ -1023,6 +1059,31 @@ export const useEcoStream = ({
             (resposta?.metadata && typeof resposta.metadata === 'object' ? resposta.metadata : undefined) ||
             (resposta?.done && typeof resposta.done === 'object' ? resposta.done : undefined);
 
+          const continuitySources = [
+            finalMetadata,
+            pendingMetadata,
+            donePayload,
+            resposta?.metadata,
+            (resposta as any)?.meta,
+            resposta?.done,
+            (resposta as any)?.response,
+            resposta,
+          ];
+
+          let continuity = resolveContinuityMeta(...continuitySources);
+
+          if (!continuity) {
+            for (const candidate of continuitySources) {
+              if (candidate && typeof candidate === 'object') {
+                const normalized = normalizeContinuity(candidate);
+                if (normalized.hasContinuity || normalized.memoryRef) {
+                  continuity = normalized;
+                  break;
+                }
+              }
+            }
+          }
+
           if (!promptReadySignalSent) {
             dispatchSignal('prompt_ready');
             promptReadySignalSent = true;
@@ -1057,12 +1118,14 @@ export const useEcoStream = ({
               ...(resposta?.done ? { donePayload: resposta.done } : {}),
               ...(memoryFromStream ? { memory: memoryFromStream } : {}),
               ...(typeof latencyFromStream === 'number' ? { latencyMs: latencyFromStream } : {}),
+              ...(continuity ? { continuity } : {}),
             };
             setMessages((prev) => {
               const index = prev.length;
               resolvedEcoMessageIndex = index;
               return [...prev, ecoMessage];
             });
+            trackContinuityEvent(continuity, newId);
           }
         } else {
           if (finalText || noTextFromStream) {
@@ -1077,13 +1140,19 @@ export const useEcoStream = ({
           if (resposta?.done) patch.donePayload = resposta.done;
           if (memoryFromStream) patch.memory = memoryFromStream;
           if (typeof latencyFromStream === 'number') patch.latencyMs = latencyFromStream;
+          if (continuity) patch.continuity = continuity;
           if (!('streaming' in patch)) {
             patch.streaming = false;
           }
           if (Object.keys(patch).length > 0) {
             patchEcoMessage(patch);
           }
+          const targetId = resolvedEcoMessageId ?? ecoMessageId;
+          if (continuity && targetId) {
+            trackContinuityEvent(continuity, targetId);
+          }
         }
+
 
         resetEcoMessageTracking();
 

@@ -11,6 +11,7 @@ import React, {
   SetStateAction,
 } from 'react';
 import { useAuth } from './AuthContext';
+import type { ContinuityMeta } from '../utils/chat/continuity';
 
 export interface Message {
   id: string;
@@ -27,6 +28,7 @@ export interface Message {
   interaction_id?: string | null;
   interactionId?: string | null;
   message_id?: string | null;
+  continuity?: ContinuityMeta;
 }
 
 interface ChatContextType {
