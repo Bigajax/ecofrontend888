@@ -371,7 +371,7 @@ const ChatInput: React.FC<Props> = ({
           </button>
 
           <button
-            type="button"
+            type="submit"
             ref={sendButtonRef}
             disabled={disabled || isSending || !inputMessage.trim()}
             className="
@@ -381,10 +381,6 @@ const ChatInput: React.FC<Props> = ({
               hover:bg-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50
             "
             aria-label="Enviar mensagem"
-            onClick={() => {
-              if (isSending) return;
-              void handleSend();
-            }}
           >
             <Send size={16} strokeWidth={1.6} />
           </button>
