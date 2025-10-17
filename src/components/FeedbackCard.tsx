@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { Message } from "../contexts/ChatContext";
+import { FeedbackRequestError } from "../api/feedback";
 import { useAuth } from "../contexts/AuthContext";
 import { DEFAULT_FEEDBACK_PILLAR } from "../constants/feedback";
 import { useMessageFeedbackContext } from "../hooks/useMessageFeedbackContext";
@@ -98,15 +99,25 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
     });
   }, []);
 
-  const handleSuccess = useCallback(() => {
-    setStatus("success");
-    resetPopoverState();
-    toast.success("Feedback enviado");
-  }, [resetPopoverState]);
+  const handleSuccess = useCallback(
+    (statusCode: number) => {
+      setStatus("success");
+      resetPopoverState();
+      toast.success(`Feedback enviado (${statusCode})`);
+    },
+    [resetPopoverState],
+  );
 
-  const handleError = useCallback(() => {
+  const handleError = useCallback((error?: unknown) => {
     setStatus("error");
-    toast.error("Não foi possível enviar agora");
+    const statusCode =
+      error instanceof FeedbackRequestError
+        ? error.status
+        : error instanceof Error && "status" in error && typeof (error as any).status === "number"
+        ? (error as any).status
+        : 0;
+    const statusLabel = statusCode ? ` (${statusCode})` : "";
+    toast.error(`Falha no feedback${statusLabel}`);
   }, []);
 
   const handleLike = useCallback(async () => {
@@ -115,7 +126,7 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
     }
     setStatus("sending");
     try {
-      const success = await sendFeedback({
+      const result = await sendFeedback({
         interactionId,
         vote: "up",
         reason: null,
@@ -126,18 +137,18 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
         pillar: DEFAULT_FEEDBACK_PILLAR,
         arm: lastActivatedModuleKey ?? null,
       });
-      if (success === false) {
+      if (!result) {
         setStatus((prev) => (prev === "sending" ? "idle" : prev));
         return;
       }
-      if (success) {
-        handleSuccess();
+      if (result.ok) {
+        handleSuccess(result.status);
       } else {
-        handleError();
+        handleError({ status: result.status });
       }
     } catch (error) {
       console.error("feedback_like_error", error);
-      handleError();
+      handleError(error);
     }
   }, [disableActions, handleError, handleSuccess, hasInteraction, interactionId, meta, resolveSessionId, sendFeedback, userId]);
 
@@ -156,7 +167,7 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
     }
     setStatus("sending");
     try {
-      const success = await sendFeedback({
+      const result = await sendFeedback({
         interactionId,
         vote: "down",
         reason: selectedReason,
@@ -167,20 +178,18 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
         pillar: DEFAULT_FEEDBACK_PILLAR,
         arm: lastActivatedModuleKey ?? null,
       });
-      if (success === false) {
+      if (!result) {
         setStatus((prev) => (prev === "sending" ? "idle" : prev));
         return;
       }
-      if (success) {
-        handleSuccess();
+      if (result.ok) {
+        handleSuccess(result.status);
       } else {
-        setStatus("error");
-        toast.error("Não foi possível enviar agora");
+        handleError({ status: result.status });
       }
     } catch (error) {
       console.error("feedback_dislike_error", error);
-      setStatus("error");
-      toast.error("Não foi possível enviar agora");
+      handleError(error);
     }
   }, [handleSuccess, hasInteraction, interactionId, meta, resolveSessionId, selectedReason, sendFeedback, userId]);
 

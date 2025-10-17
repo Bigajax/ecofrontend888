@@ -9,7 +9,7 @@ import {
 
 import AudioPlayerOverlay from "./AudioPlayerOverlay";
 import ChatMessage from "./ChatMessage";
-import { FeedbackApiError } from "../api/feedbackApi";
+import { FeedbackRequestError } from "../api/feedback";
 import {
   ENABLE_PASSIVE_SIGNALS,
   PassiveSignalName,
@@ -330,7 +330,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
         if (import.meta.env.DEV) {
           console.log("[feedback.submit]", { interactionId: resolvedInteractionId, vote, reason });
         }
-        await send({
+        const result = await send({
           interactionId: resolvedInteractionId,
           vote,
           reason,
@@ -343,13 +343,21 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
           arm: lastActivatedModuleKey ?? null,
         });
 
+        if (!result) {
+          return false;
+        }
+        if (!result.ok) {
+          toast.error(`Falha no feedback (${result.status})`);
+          return false;
+        }
+
         if (payload) {
           trackFeedbackEvent(
             vote === "up" ? "FE: Inline Like" : "FE: Inline Dislike",
             payload,
           );
         }
-        toast.success("Feedback enviado");
+        toast.success(`Feedback enviado (${result.status})`);
         return true;
       } catch (error) {
         if (payload) {
@@ -360,16 +368,19 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
         }
 
         let friendly = "Não foi possível enviar agora";
-        if (error instanceof FeedbackApiError) {
+        let statusLabel = "";
+        if (error instanceof FeedbackRequestError) {
+          const status = error.status;
+          statusLabel = status ? ` (${status})` : "";
           const message = (error.message ?? "").toLowerCase();
-          if (error.status === 404 || error.code === "interaction_not_found" || message.includes("interaction_not_found")) {
+          if (status === 404 || message.includes("interaction_not_found")) {
             friendly = "A conversa atualizou — tente na próxima resposta";
           }
         }
 
         console.error("feedback_send_error", error);
         setFeedbackError(friendly);
-        toast.error(friendly);
+        toast.error(`Falha no feedback${statusLabel}`);
         return false;
       } finally {
         setSendingFeedback(false);
