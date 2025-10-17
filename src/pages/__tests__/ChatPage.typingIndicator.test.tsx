@@ -192,9 +192,7 @@ describe('ChatPage typing indicator', () => {
       handlersRef.current?.onEvent?.({ type: 'chunk', delta: 'Resposta da Eco' } as any);
     });
 
-    await waitFor(() => {
-      expect(screen.queryByTestId('typing-dots')).not.toBeInTheDocument();
-    });
+    expect(screen.getByTestId('typing-dots')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText(/Resposta da Eco/)).toBeInTheDocument();
@@ -208,6 +206,10 @@ describe('ChatPage typing indicator', () => {
       } as any);
       resolveResponse?.({ text: 'Resposta da Eco' });
       await inflightPromise;
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('typing-dots')).not.toBeInTheDocument();
     });
   });
 
