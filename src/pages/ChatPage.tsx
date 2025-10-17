@@ -22,6 +22,7 @@ import { useChatScroll } from '../hooks/useChatScroll';
 import { useEcoStream } from '../hooks/useEcoStream';
 import { useFeedbackPrompt } from '../hooks/useFeedbackPrompt';
 import { useQuickSuggestionsVisibility } from '../hooks/useQuickSuggestionsVisibility';
+import { useEcoActivity } from '../hooks/useEcoActivity';
 import { ensureSessionId } from '../utils/chat/session';
 import { saudacaoDoDiaFromHour } from '../utils/chat/greetings';
 import { ROTATING_ITEMS, OPENING_VARIATIONS } from '../constants/chat';
@@ -51,6 +52,7 @@ const ChatPage: React.FC = () => {
   const [loginGateOpen, setLoginGateOpen] = useState(false);
   const [isComposerSending, setIsComposerSending] = useState(false);
   const [lastAttempt, setLastAttempt] = useState<{ text: string; hint?: string } | null>(null);
+  const ecoActivity = useEcoActivity();
 
   useEffect(() => {
     if (!user) return;
@@ -93,12 +95,7 @@ const ChatPage: React.FC = () => {
   const { showFeedback, lastEcoInfo, handleFeedbackSubmitted } = useFeedbackPrompt(messages);
   const lastPromptFeedbackContext = useMessageFeedbackContext(lastEcoInfo?.msg);
 
-  const {
-    handleSendMessage: streamSendMessage,
-    digitando,
-    erroApi,
-    pending,
-  } = useEcoStream({
+  const { handleSendMessage: streamSendMessage, erroApi, pending } = useEcoStream({
     messages,
     addMessage,
     setMessages,
@@ -112,6 +109,7 @@ const ChatPage: React.FC = () => {
     onUnauthorized: () => {
       setLoginGateOpen(true);
     },
+    activity: ecoActivity,
   });
 
   // 👉 Guard: se já bateu o limite, abre modal e não envia
@@ -186,8 +184,16 @@ const ChatPage: React.FC = () => {
   const lastEcoMessageIsPlaceholder =
     !!lastMessage && lastMessage.sender === 'eco' && lastEcoMessageContent.length === 0;
 
-  const shouldShowGlobalTyping = digitando && !lastEcoMessageIsPlaceholder;
-  const composerPending = pending || isComposerSending;
+  const activityState = ecoActivity.activity;
+  const isWaitingForEco =
+    activityState.state === 'sending' ||
+    activityState.state === 'waiting_llm' ||
+    activityState.state === 'streaming';
+  const isSynthesizingAudio = activityState.state === 'synthesizing_audio';
+  const isSendingToEco = activityState.state === 'sending';
+
+  const shouldShowGlobalTyping = isWaitingForEco && !lastEcoMessageIsPlaceholder;
+  const composerPending = pending || isComposerSending || isSendingToEco;
   const canRetry = Boolean(
     lastAttempt &&
     erroApi &&
@@ -201,7 +207,7 @@ const ChatPage: React.FC = () => {
         ref={scrollerRef}
         onScroll={handleScroll}
         role="feed"
-        aria-busy={digitando}
+        aria-busy={isWaitingForEco || isSendingToEco}
         className="chat-scroller flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-10 pb-6 [scrollbar-gutter:stable]"
         style={{
           paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
@@ -253,7 +259,10 @@ const ChatPage: React.FC = () => {
             {messages.map((m) => (
               <div key={m.id} className="w-full">
                 {m.sender === 'eco' ? (
-                  <EcoMessageWithAudio message={m as any} />
+                  <EcoMessageWithAudio
+                    message={m as any}
+                    onActivityTTS={ecoActivity.onTTS}
+                  />
                 ) : (
                   <ChatMessage message={m} />
                 )}
@@ -293,15 +302,22 @@ const ChatPage: React.FC = () => {
               />
             )}
 
-            {shouldShowGlobalTyping && (
-              <div className="w-full flex justify-start">
+            {(shouldShowGlobalTyping || isSynthesizingAudio) && (
+              <div className="w-full flex justify-start" aria-live="polite">
                 <div className="max-w-3xl w-full min-w-0 flex items-start gap-3">
                   <div className="flex-shrink-0 translate-y-[2px]">
                     <EcoBubbleOneEye variant="message" state="thinking" size={30} />
                   </div>
-                  <div className="min-w-0">
-                    {/* TypingDots novo, com tom automático */}
-                    <TypingDots variant="bubble" size="md" tone="auto" />
+                  <div className="min-w-0 text-sm text-slate-500">
+                    {isSynthesizingAudio ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span aria-hidden>🎧</span>
+                        <span>preparando áudio…</span>
+                        <span className="sr-only">Eco está preparando áudio</span>
+                      </span>
+                    ) : (
+                      <TypingDots variant="bubble" size="md" tone="auto" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -332,7 +348,7 @@ const ChatPage: React.FC = () => {
             visible={
               showQuick &&
               messages.length === 0 &&
-              !digitando &&
+              !isWaitingForEco &&
               !composerPending &&
               !erroApi
             }

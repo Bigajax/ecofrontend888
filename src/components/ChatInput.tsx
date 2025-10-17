@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Mic, Plus, X, Headphones } from 'lucide-react';
 
+import { toast } from '../utils/toast';
+import mixpanel from '../lib/mixpanel';
+
 type Props = {
   onSendMessage: (t: string) => void | Promise<void>;
   onMoreOptionSelected: (k: 'go_to_voice_page') => void;
@@ -36,6 +39,8 @@ const ChatInput: React.FC<Props> = ({
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const safeOnSendAudio = onSendAudio ?? (() => {});
+  const isBusy = disabled || isSending;
+  const hasText = inputMessage.trim().length > 0;
 
   // --- outside click para o popover
   useEffect(() => {
@@ -56,7 +61,7 @@ const ChatInput: React.FC<Props> = ({
     const ta = textareaRef.current;
     if (!ta) return;
     ta.style.height = 'auto';
-    ta.style.height = `${Math.min(192, ta.scrollHeight)}px`; // ~12 linhas máx
+    ta.style.height = `${Math.min(144, ta.scrollHeight)}px`; // até ~6 linhas
   }, [inputMessage]);
 
   const onFocus = () => document.body.classList.add('keyboard-open');
@@ -98,7 +103,7 @@ const ChatInput: React.FC<Props> = ({
 
   // gravação
   const startRecording = async () => {
-    if (disabled || isTranscribing || isRecordingUI || isSending) return;
+    if (isBusy || isTranscribing || isRecordingUI) return;
     setIsRecordingUI(true);
     setIsTranscribing(false);
     try {
@@ -146,7 +151,7 @@ const ChatInput: React.FC<Props> = ({
 
   // envio texto
   const handleSend = async () => {
-    if (disabled || isSending) return;
+    if (isBusy) return;
     const msg = inputMessage.trim();
     if (!msg) return;
 
@@ -156,11 +161,22 @@ const ChatInput: React.FC<Props> = ({
       onTextChange?.('');
       setShowMoreOptions(false);
 
+      try {
+        mixpanel.track('ui_input_cleared');
+      } catch (trackErr) {
+        if ((import.meta as any)?.env?.DEV) {
+          console.warn('mixpanel track falhou', trackErr);
+        }
+      }
+
       sendButtonRef.current?.classList.add('scale-90');
       setTimeout(() => sendButtonRef.current?.classList.remove('scale-90'), 120);
       requestAnimationFrame(() => textareaRef.current?.focus());
     } catch (err) {
       console.error('Erro ao enviar mensagem:', err);
+      const fallbackMessage = 'Não foi possível enviar a mensagem. Tente novamente.';
+      const detail = err instanceof Error && err.message ? err.message : undefined;
+      toast.error(detail ? `${fallbackMessage} (${detail})` : fallbackMessage);
     }
   };
 
@@ -168,41 +184,47 @@ const ChatInput: React.FC<Props> = ({
     <motion.div
       ref={wrapperRef}
       className={`
-        relative w-full rounded-full border border-zinc-200/40 bg-white/70 backdrop-blur-lg
-        shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-all duration-200
-        ${disabled ? 'opacity-70' : 'focus-within:ring-2 focus-within:ring-blue-200/80 focus-within:shadow-[0_8px_30px_rgba(37,99,235,0.15)]'}
+        relative w-full rounded-2xl border border-white/60 bg-white/80 backdrop-blur-xl
+        shadow-[0_12px_30px_rgba(15,23,42,0.08)] transition-colors duration-200
+        ${
+          isBusy
+            ? 'opacity-95'
+            : 'focus-within:border-blue-200/70 focus-within:shadow-[0_18px_40px_rgba(37,99,235,0.16)]'
+        }
       `}
       initial={{ y: 40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 120, damping: 18 }}
-      aria-disabled={disabled}
+      aria-disabled={isBusy}
+      aria-busy={isSending}
       role="group"
       style={{ overflowAnchor: 'none' }}
     >
-      <div className="flex items-end gap-2 px-3 py-2 md:px-4 md:py-3">
+      <div className="flex items-end gap-3 px-3 py-2 sm:px-4 sm:py-3">
         <div className="relative flex items-center">
           <button
             type="button"
             onClick={() => {
-              if (isSending) return;
+              if (isBusy) return;
               setShowMoreOptions((prev) => !prev);
             }}
             className={`
-              flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200/60
-              bg-white/80 text-zinc-500 transition hover:bg-white focus-visible:outline-none
-              focus-visible:ring-2 focus-visible:ring-blue-300/70 active:scale-[0.97]
-              ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+              flex h-10 w-10 items-center justify-center rounded-xl border border-white/60 bg-white/90
+              text-slate-500 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2
+              focus-visible:ring-blue-200/70 active:scale-[0.98]
+              ${isBusy ? 'cursor-not-allowed opacity-60' : ''}
             `}
             aria-expanded={showMoreOptions}
             aria-controls="chatinput-popover"
             aria-label="Mais opções"
-            disabled={disabled || isSending}
+            disabled={isBusy}
+            title={isBusy ? 'Aguarde a resposta da Eco' : 'Mais opções'}
           >
             {showMoreOptions ? <X size={18} /> : <Plus size={18} />}
           </button>
 
           <AnimatePresence>
-            {showMoreOptions && !disabled && (
+            {showMoreOptions && !isBusy && (
               <motion.div
                 ref={popoverRef}
                 id="chatinput-popover"
@@ -218,7 +240,7 @@ const ChatInput: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    if (isSending) return;
+                    if (isBusy) return;
                     onMoreOptionSelected('go_to_voice_page');
                     setShowMoreOptions(false);
                   }}
@@ -260,7 +282,7 @@ const ChatInput: React.FC<Props> = ({
               onTextChange?.(v);
             }}
             onKeyDown={(e) => {
-              if (disabled || isSending) {
+              if (isBusy) {
                 e.preventDefault();
                 return;
               }
@@ -278,13 +300,13 @@ const ChatInput: React.FC<Props> = ({
             inputMode="text"
             enterKeyHint="send"
             maxLength={4000}
-            readOnly={disabled}
-            aria-disabled={disabled}
-            aria-label="Escreva sua mensagem"
-            className="
-              w-full min-w-0 max-h-48 resize-none overflow-y-auto border-none bg-transparent px-1 py-1 text-[15px]
-              leading-relaxed text-slate-800 placeholder:text-slate-400 placeholder:font-light focus:outline-none md:text-base
-            "
+            disabled={isBusy}
+            aria-disabled={isBusy}
+            aria-label="Mensagem para a Eco"
+            className="w-full min-w-0 max-h-36 resize-none overflow-y-auto border-none bg-transparent px-1 py-1 text-[15px]
+              leading-relaxed text-slate-800 placeholder:text-slate-400 placeholder:font-light focus:outline-none sm:text-base
+              disabled:cursor-not-allowed disabled:text-slate-400/90"
+            title={isBusy ? 'Aguarde a resposta da Eco' : undefined}
           />
         </div>
 
@@ -298,38 +320,53 @@ const ChatInput: React.FC<Props> = ({
               }
               void startRecording();
             }}
-            disabled={disabled || isSending}
+            disabled={isBusy}
             className={`
-              relative flex h-10 w-10 items-center justify-center rounded-full border transition
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/70 active:scale-[0.97]
-              ${isRecordingUI
-                ? 'border-blue-200 bg-blue-100 text-blue-500 animate-pulse'
-                : 'border-zinc-200/60 bg-white/80 text-slate-600 hover:bg-white'}
-              ${disabled ? 'opacity-50 cursor-not-allowed animate-none' : ''}
+              relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/60 bg-white/90 text-slate-600
+              transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200/70
+              active:scale-[0.98]
+              ${
+                isRecordingUI
+                  ? 'border-blue-200 bg-blue-100 text-blue-600 animate-pulse'
+                  : ''
+              }
+              ${isBusy ? 'cursor-not-allowed opacity-60 animate-none' : ''}
             `}
             aria-label={isRecordingUI ? 'Parar gravação' : 'Iniciar gravação'}
+            title={
+              isBusy
+                ? 'Aguarde a resposta da Eco'
+                : isRecordingUI
+                ? 'Parar gravação'
+                : 'Iniciar gravação'
+            }
           >
             <Mic size={18} strokeWidth={1.8} />
           </button>
 
           <AnimatePresence initial={false}>
-            {inputMessage.trim() && (
+            {hasText && (
               <motion.button
                 key="send"
                 ref={sendButtonRef}
                 type="button"
                 onClick={() => void handleSend()}
-                disabled={disabled || isSending}
+                disabled={isBusy || isRecordingUI || isTranscribing}
                 initial={{ opacity: 0, scale: 0.9, x: 8 }}
                 animate={{ opacity: 1, scale: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.9, x: 8 }}
                 transition={{ duration: 0.18 }}
-                className="
-                  flex h-10 w-10 items-center justify-center rounded-full border border-blue-200/80 bg-blue-500 text-white
-                  shadow-lg shadow-blue-500/30 transition hover:bg-blue-500/90 focus-visible:outline-none
-                  focus-visible:ring-2 focus-visible:ring-blue-300/70 active:scale-[0.96]
-                "
+                className={`
+                  flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500 text-white shadow-lg shadow-blue-500/30
+                  transition hover:bg-blue-500/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200/70
+                  active:scale-[0.97] ${isBusy || isRecordingUI || isTranscribing ? 'opacity-70 cursor-not-allowed' : ''}
+                `}
                 aria-label="Enviar mensagem"
+                title={
+                  isBusy || isRecordingUI || isTranscribing
+                    ? 'Aguarde a resposta da Eco'
+                    : 'Enviar mensagem'
+                }
               >
                 <Send size={17} strokeWidth={1.7} />
               </motion.button>

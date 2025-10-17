@@ -36,6 +36,7 @@ type Vote = "up" | "down";
 
 type EcoMessageWithAudioProps = {
   message: Message;
+  onActivityTTS?: (active: boolean) => void;
 };
 
 const BTN_SIZE = "w-7 h-7 sm:w-8 sm:h-8";
@@ -67,7 +68,10 @@ const GhostBtn = React.forwardRef<
 ));
 GhostBtn.displayName = "GhostBtn";
 
-const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) => {
+const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
+  message,
+  onActivityTTS,
+}) => {
   const [copied, setCopied] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [loadingAudio, setLoadingAudio] = useState(false);
@@ -420,14 +424,24 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
     emitPassiveSignal("tts_play", 1);
 
     try {
+      onActivityTTS?.(true);
       const dataUrl = await gerarAudioDaMensagem(displayText);
       setAudioUrl(dataUrl);
     } catch (error) {
       console.error("Erro ao gerar áudio:", error);
     } finally {
       setLoadingAudio(false);
+      onActivityTTS?.(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (loadingAudio) {
+        onActivityTTS?.(false);
+      }
+    };
+  }, [loadingAudio, onActivityTTS]);
 
   const handleSelectReason = useCallback(
     (key: string) => {
