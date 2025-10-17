@@ -8,6 +8,7 @@ import { celebrateFirstMemory } from '../utils/celebrateFirstMemory';
 import { extrairTagsRelevantes } from '../utils/extrairTagsRelevantes';
 import { extractDeepQuestionFlag } from '../utils/chat/deepQuestion';
 import { gerarMensagemRetorno } from '../utils/chat/memory';
+import { sanitizeEcoText } from '../utils/sanitizeEcoText';
 import type { Message as ChatMessageType } from '../contexts/ChatContext';
 import mixpanel from '../lib/mixpanel';
 import { supabase } from '../lib/supabaseClient';
@@ -258,6 +259,7 @@ export const useEcoStream = ({
       let resolvedEcoMessageId: string | null = null;
       let resolvedEcoMessageIndex: number | null = null;
       let aggregatedEcoText = '';
+      let aggregatedEcoTextRaw = '';
       let latestMetadata: unknown;
       let pendingMetadata: unknown;
       let donePayload: unknown;
@@ -615,6 +617,7 @@ export const useEcoStream = ({
           resolvedEcoMessageId = null;
           resolvedEcoMessageIndex = null;
           aggregatedEcoText = '';
+          aggregatedEcoTextRaw = '';
         };
 
         const syncScroll = () => {
@@ -669,6 +672,7 @@ export const useEcoStream = ({
         };
 
         const clearPlaceholder = () => {
+          aggregatedEcoTextRaw = '';
           aggregatedEcoText = '';
           patchEcoMessage({ text: '', content: '' });
         };
@@ -677,10 +681,11 @@ export const useEcoStream = ({
           const chunk = flattenToString(delta);
           if (!chunk) return;
           ensureEcoMessage();
-          if (aggregatedEcoText.length === 0) {
+          if (aggregatedEcoTextRaw.length === 0) {
             patchEcoMessage({ text: '', content: '' });
           }
-          aggregatedEcoText = `${aggregatedEcoText}${chunk}`;
+          aggregatedEcoTextRaw = `${aggregatedEcoTextRaw}${chunk}`;
+          aggregatedEcoText = sanitizeEcoText(aggregatedEcoTextRaw);
           patchEcoMessage({
             text: aggregatedEcoText.length > 0 ? aggregatedEcoText : ' ',
             content: aggregatedEcoText,

@@ -5,6 +5,7 @@ import api from "./axios";
 import { supabase } from "../lib/supabaseClient";
 import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
+import { sanitizeEcoText } from "../utils/sanitizeEcoText";
 
 import { EcoApiError } from "./errors";
 import { AskEcoResponse, normalizeAskEcoResponse } from "./askEcoResponse";
@@ -163,7 +164,7 @@ const parseNonStreamPayload = (payload: unknown): EcoStreamResult => {
     try {
       return parseNonStreamPayload(JSON.parse(trimmed));
     } catch {
-      return { text: trimmed };
+      return { text: sanitizeEcoText(trimmed).trim() };
     }
   }
 
@@ -172,7 +173,8 @@ const parseNonStreamPayload = (payload: unknown): EcoStreamResult => {
   }
 
   const normalizedText = normalizeAskEcoResponse(payload as AskEcoResponse) ?? "";
-  const text = normalizedText.trim();
+  const sanitizedText = sanitizeEcoText(normalizedText);
+  const text = sanitizedText.trim();
   const metadata = (payload as any)?.metadata ?? (payload as any)?.response ?? undefined;
   const done = (payload as any)?.done ?? (payload as any)?.response ?? undefined;
   const primeiraMemoriaSignificativa = Boolean(
