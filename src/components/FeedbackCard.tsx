@@ -2,8 +2,10 @@ import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { Message } from "../contexts/ChatContext";
 import { useAuth } from "../contexts/AuthContext";
+import { DEFAULT_FEEDBACK_PILLAR } from "../constants/feedback";
 import { useMessageFeedbackContext } from "../hooks/useMessageFeedbackContext";
 import { useSendFeedback } from "../hooks/useSendFeedback";
+import { extractModuleUsageCandidates, resolveLastActivatedModuleKey } from "../utils/moduleUsage";
 import { getSessionId } from "../utils/identity";
 import { toast } from "../utils/toast";
 import { FeedbackReasonPopover } from "./FeedbackReasonPopover";
@@ -40,6 +42,25 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
     !isStreaming &&
     hasInteraction &&
     status !== "success";
+
+  const moduleUsageCandidates = useMemo(
+    () =>
+      extractModuleUsageCandidates({
+        metadata: message.metadata,
+        donePayload: message.donePayload,
+        fallbackModules: moduleCombo,
+      }),
+    [message.donePayload, message.metadata, moduleCombo],
+  );
+
+  const lastActivatedModuleKey = useMemo(
+    () =>
+      resolveLastActivatedModuleKey({
+        moduleUsageCandidates,
+        moduleCombo,
+      }),
+    [moduleCombo, moduleUsageCandidates],
+  );
 
   const resolveSessionId = useCallback(() => {
     if (sessionIdRef.current !== undefined) {
@@ -102,6 +123,8 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
         userId: userId ?? null,
         sessionId: resolveSessionId(),
         meta,
+        pillar: DEFAULT_FEEDBACK_PILLAR,
+        arm: lastActivatedModuleKey ?? null,
       });
       if (success === false) {
         setStatus((prev) => (prev === "sending" ? "idle" : prev));
@@ -141,6 +164,8 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
         userId: userId ?? null,
         sessionId: resolveSessionId(),
         meta,
+        pillar: DEFAULT_FEEDBACK_PILLAR,
+        arm: lastActivatedModuleKey ?? null,
       });
       if (success === false) {
         setStatus((prev) => (prev === "sending" ? "idle" : prev));

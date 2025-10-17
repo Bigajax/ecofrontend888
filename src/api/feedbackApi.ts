@@ -19,6 +19,8 @@ export type FeedbackRequestPayload = {
   source?: string | null;
   meta?: FeedbackMetaPayload | Record<string, unknown>;
   messageId?: string | null;
+  pillar?: string | null;
+  arm?: string | null;
 };
 
 type FeedbackResponse = unknown;
@@ -66,6 +68,20 @@ const shouldRetryStatus = (status: number) => {
   return status === 408 || status === 409 || status === 425 || status === 429;
 };
 
+const normalizeNullableString = (value: string | null | undefined) => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+    return null;
+  }
+  if (value === null) {
+    return null;
+  }
+  return undefined;
+};
+
 const computeSignature = (payload: FeedbackRequestPayload) => {
   const reasons = payload.reasons ? [...payload.reasons] : [];
   const normalized = reasons.sort().join(",");
@@ -73,7 +89,9 @@ const computeSignature = (payload: FeedbackRequestPayload) => {
     typeof payload.reason === "string" && payload.reason.trim().length > 0
       ? payload.reason.trim()
       : "";
-  return `${payload.vote}|${normalized}|${reasonKey}`;
+  const pillarKey = normalizeNullableString(payload.pillar) ?? "";
+  const armKey = normalizeNullableString(payload.arm) ?? "";
+  return `${payload.vote}|${normalized}|${reasonKey}|${pillarKey}|${armKey}`;
 };
 
 const pruneRecent = () => {
@@ -162,6 +180,8 @@ export async function enviarFeedback(payload: FeedbackRequestPayload) {
       reason: normalizeReason(payload),
       source: payload.source ?? "chat",
       meta: Object.keys(meta).length > 0 ? meta : undefined,
+      pillar: normalizeNullableString(payload.pillar),
+      arm: normalizeNullableString(payload.arm),
     });
 
     return base;

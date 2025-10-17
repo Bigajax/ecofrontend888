@@ -29,7 +29,8 @@ import { useSendFeedback } from "../hooks/useSendFeedback";
 import { toast } from "../utils/toast";
 import { useAuth } from "../contexts/AuthContext";
 import { FeedbackReasonPopover } from "./FeedbackReasonPopover";
-import { extractModuleUsageCandidates } from "../utils/moduleUsage";
+import { DEFAULT_FEEDBACK_PILLAR } from "../constants/feedback";
+import { extractModuleUsageCandidates, resolveLastActivatedModuleKey } from "../utils/moduleUsage";
 
 type Vote = "up" | "down";
 
@@ -138,6 +139,15 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
         fallbackModules: moduleCombo,
       }),
     [message.donePayload, message.metadata, moduleCombo],
+  );
+
+  const lastActivatedModuleKey = useMemo(
+    () =>
+      resolveLastActivatedModuleKey({
+        moduleUsageCandidates,
+        moduleCombo,
+      }),
+    [moduleCombo, moduleUsageCandidates],
   );
 
   const resolveSessionId = useCallback(() => {
@@ -329,6 +339,8 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message }) =>
           sessionId: session?.id ?? null,
           meta: feedbackMeta,
           messageId: messageId ?? null,
+          pillar: DEFAULT_FEEDBACK_PILLAR,
+          arm: lastActivatedModuleKey ?? null,
         });
 
         if (payload) {

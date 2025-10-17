@@ -5,7 +5,9 @@ import { getSessionId } from "../utils/identity";
 import { trackFeedbackEvent } from "../analytics/track";
 import type { FeedbackTrackingPayload } from "../analytics/track";
 import type { Message } from "../contexts/ChatContext";
+import { DEFAULT_FEEDBACK_PILLAR } from "../constants/feedback";
 import { useMessageFeedbackContext } from "../hooks/useMessageFeedbackContext";
+import { extractModuleUsageCandidates, resolveLastActivatedModuleKey } from "../utils/moduleUsage";
 
 type Mode = "ask" | "reasons" | "done";
 
@@ -36,6 +38,25 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
   const { interactionId, moduleCombo, promptHash, messageId: contextMessageId, latencyMs } =
     useMessageFeedbackContext(message);
   const messageId = contextMessageId ?? message.id;
+
+  const moduleUsageCandidates = useMemo(
+    () =>
+      extractModuleUsageCandidates({
+        metadata: message.metadata,
+        donePayload: message.donePayload,
+        fallbackModules: moduleCombo,
+      }),
+    [message.donePayload, message.metadata, moduleCombo],
+  );
+
+  const lastActivatedModuleKey = useMemo(
+    () =>
+      resolveLastActivatedModuleKey({
+        moduleUsageCandidates,
+        moduleCombo,
+      }),
+    [moduleCombo, moduleUsageCandidates],
+  );
 
   const resolveSessionId = () => {
     if (sessionIdRef.current !== undefined) return sessionIdRef.current;
@@ -99,6 +120,8 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
           ...(messageId ? { message_id: messageId } : {}),
           ...(promptHash ? { prompt_hash: promptHash } : {}),
         },
+        pillar: DEFAULT_FEEDBACK_PILLAR,
+        arm: lastActivatedModuleKey ?? null,
       });
       trackFeedbackEvent("FE: Feedback Prompt Sent", payload);
       setMode("done");
