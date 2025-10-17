@@ -98,6 +98,33 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   void USE_NEW_FEEDBACK;
   const isUser = message.sender === "user";
   const isEcoMessage = message.sender === "eco";
+  const continuity = message.continuity;
+  const showContinuityBadge = isEcoMessage && continuity?.hasContinuity;
+
+  const continuityLabel = (() => {
+    const memoryRef = continuity?.memoryRef;
+    if (!memoryRef) {
+      return "Continuidade detectada";
+    }
+
+    const emotion = memoryRef.emocao_principal?.trim();
+    const days =
+      typeof memoryRef.dias_desde === "number" && Number.isFinite(memoryRef.dias_desde)
+        ? memoryRef.dias_desde
+        : undefined;
+
+    if (emotion || days !== undefined) {
+      if (emotion && days !== undefined) {
+        return `Continuidade: ${emotion} • ${days} dias`;
+      }
+      if (emotion) {
+        return `Continuidade: ${emotion}`;
+      }
+      return `Continuidade: ${days} dias`;
+    }
+
+    return "Continuidade detectada";
+  })();
   const candidateValues: unknown[] = [];
 
   const pushCandidate = (value: unknown) => {
@@ -230,6 +257,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               data-deep-question={message.deepQuestion}
               data-eco-active={isEcoActive ? "true" : undefined}
             >
+              {showContinuityBadge && (
+                <span
+                  className="badge-continuity absolute top-2 right-3 sm:top-2.5 sm:right-3.5"
+                  aria-label={continuityLabel}
+                  title={continuityLabel}
+                  role="img"
+                >
+                  🔁
+                </span>
+              )}
               {hasMarkdownText && (
                 <div className="relative z-10 font-sans text-[14px] sm:text-sm md:text-base leading-relaxed">
                   <div className={markdownClassName}>
