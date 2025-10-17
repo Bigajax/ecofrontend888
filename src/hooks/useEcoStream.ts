@@ -13,6 +13,7 @@ import type { Message as ChatMessageType } from '../contexts/ChatContext';
 import mixpanel from '../lib/mixpanel';
 import { supabase } from '../lib/supabaseClient';
 import { resolveApiUrl } from '../constants/api';
+import type { EcoActivityControls } from './useEcoActivity';
 import {
   normalizeContinuity,
   resolveContinuityMeta,
@@ -31,6 +32,7 @@ interface UseEcoStreamOptions {
   guestId?: string;
   isGuest?: boolean;
   onUnauthorized?: () => void;
+  activity?: EcoActivityControls;
 }
 
 type BuscarSimilaresResult = Awaited<ReturnType<typeof buscarMemoriasSemelhantesV2>>;
@@ -178,6 +180,7 @@ export const useEcoStream = ({
   guestId,
   isGuest = false,
   onUnauthorized,
+  activity,
 }: UseEcoStreamOptions) => {
   const [digitando, setDigitando] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -212,6 +215,7 @@ export const useEcoStream = ({
       setDigitando(true);
       setIsSending(true);
       setErroApi(null);
+      activity?.onSend();
 
       const {
         data: sessionData,
@@ -703,6 +707,7 @@ export const useEcoStream = ({
           ensureEcoMessage();
           patchEcoMessage({ streaming: false });
           setDigitando(false);
+          activity?.onError(message);
         };
 
         const canonicalizeEventType = (raw: unknown) => {
@@ -762,6 +767,7 @@ export const useEcoStream = ({
               if (promptReadyAt === undefined) {
                 promptReadyAt = getNow();
               }
+              activity?.onPromptReady();
               return;
             }
             case 'latency': {
@@ -794,10 +800,8 @@ export const useEcoStream = ({
               if (texto) {
                 appendMessage(texto);
               }
+              activity?.onToken();
               firstContentReceived = aggregatedEcoText.trim().length > 0;
-              if (firstContentReceived) {
-                setDigitando(false);
-              }
               syncScroll();
               return;
             }
@@ -822,9 +826,9 @@ export const useEcoStream = ({
                 clearPlaceholder();
               }
               appendMessage(chunkText);
+              activity?.onToken();
               if (!firstContentReceived && aggregatedEcoText.trim().length > 0) {
                 firstContentReceived = true;
-                setDigitando(false);
               }
               syncScroll();
               return;
@@ -930,6 +934,7 @@ export const useEcoStream = ({
                 firstContentReceived = true;
               }
               setDigitando(false);
+              activity?.onDone();
               syncScroll();
               finalizeMessage();
               const metricsExtra: Record<string, unknown> = { stage: 'on_done' };
@@ -1008,10 +1013,12 @@ export const useEcoStream = ({
                 : normalizedMessage.includes('expirou')
                 ? 'timeout'
                 : 'error';
+            const fallbackMessage = message ?? streamErrorMessage ?? 'Erro desconhecido na stream.';
+            activity?.onError(fallbackMessage);
             logAndSendStreamMetrics('error', {
               stage: 'stream_error',
               error_name: error?.name ?? 'Error',
-              error_message: message ?? streamErrorMessage ?? 'Erro desconhecido na stream.',
+              error_message: fallbackMessage,
               error_reason: reason,
             });
             resetEcoMessageTracking({ removeIfEmpty: aggregatedEcoText.trim().length === 0 });
@@ -1096,6 +1103,7 @@ export const useEcoStream = ({
               promptReadyAt = getNow();
             }
           }
+          activity?.onPromptReady();
           if (!firstTokenSignalSent) {
             dispatchSignal('first_token');
             firstTokenSignalSent = true;
@@ -1103,6 +1111,7 @@ export const useEcoStream = ({
               firstTokenAt = getNow();
             }
           }
+          activity?.onToken();
           if (!doneSignalSent) {
             dispatchSignal('done');
             doneSignalSent = true;
@@ -1160,6 +1169,7 @@ export const useEcoStream = ({
 
 
         resetEcoMessageTracking();
+        activity?.onDone();
 
         donePayload = donePayload || resposta?.done;
 
@@ -1269,6 +1279,7 @@ export const useEcoStream = ({
           }
 
           setErroApi(displayMessage);
+          activity?.onError(displayMessage);
           mixpanel.track('Eco: Erro ao Enviar Mensagem', {
             userId: analyticsUserId,
             erro: err?.message || 'desconhecido',
@@ -1308,6 +1319,9 @@ export const useEcoStream = ({
         inFlightRef.current = null;
         setIsSending(false);
         setDigitando(false);
+        if (activity && activity.activity.state !== 'error' && activity.activity.state !== 'synthesizing_audio') {
+          activity.onDone();
+        }
         scrollToBottom(true);
       }
     },
@@ -1323,6 +1337,7 @@ export const useEcoStream = ({
         sessionId,
         userId,
         userName,
+        activity,
     ]
   );
 
