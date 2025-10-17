@@ -2,7 +2,7 @@
 /*  ChatPage.tsx — scroll estável + sem bolinha fantasma + saudação alinhada  */
 /* -------------------------------------------------------------------------- */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -193,6 +193,108 @@ const ChatPage: React.FC = () => {
   const isSendingToEco = activityState.state === 'sending';
 
   const shouldShowGlobalTyping = isWaitingForEco && !lastEcoMessageIsPlaceholder;
+  const [globalTypingVisible, setGlobalTypingVisible] = useState(false);
+  const [globalTypingState, setGlobalTypingState] = useState<
+    'hidden' | 'enter' | 'visible' | 'exit'
+  >('hidden');
+  const globalTypingShowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const globalTypingHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const globalTypingRemoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const globalTypingMinVisibleRef = useRef<number>(0);
+
+  useEffect(() => {
+    const SHOW_DELAY = 150;
+    const MIN_VISIBLE = 500;
+    const EXIT_DURATION = 160;
+
+    if (shouldShowGlobalTyping) {
+      if (globalTypingHideTimeoutRef.current) {
+        clearTimeout(globalTypingHideTimeoutRef.current);
+        globalTypingHideTimeoutRef.current = null;
+      }
+      if (globalTypingRemoveTimeoutRef.current) {
+        clearTimeout(globalTypingRemoveTimeoutRef.current);
+        globalTypingRemoveTimeoutRef.current = null;
+      }
+
+      if (globalTypingVisible) {
+        globalTypingMinVisibleRef.current = Math.max(
+          globalTypingMinVisibleRef.current,
+          Date.now() + MIN_VISIBLE,
+        );
+        if (globalTypingState !== 'visible') {
+          setGlobalTypingState('visible');
+        }
+        return;
+      }
+
+      if (globalTypingShowTimeoutRef.current) {
+        return;
+      }
+
+      globalTypingShowTimeoutRef.current = window.setTimeout(() => {
+        globalTypingShowTimeoutRef.current = null;
+        globalTypingMinVisibleRef.current = Date.now() + MIN_VISIBLE;
+        setGlobalTypingVisible(true);
+        setGlobalTypingState('enter');
+        if (
+          typeof window !== 'undefined' &&
+          typeof window.requestAnimationFrame === 'function'
+        ) {
+          window.requestAnimationFrame(() => {
+            setGlobalTypingState('visible');
+          });
+        } else {
+          setGlobalTypingState('visible');
+        }
+      }, SHOW_DELAY);
+      return;
+    }
+
+    if (globalTypingShowTimeoutRef.current) {
+      clearTimeout(globalTypingShowTimeoutRef.current);
+      globalTypingShowTimeoutRef.current = null;
+    }
+
+    if (!globalTypingVisible || globalTypingHideTimeoutRef.current) {
+      return;
+    }
+
+    const remaining = globalTypingMinVisibleRef.current - Date.now();
+    const delay = remaining > 0 ? remaining : 0;
+
+    globalTypingHideTimeoutRef.current = window.setTimeout(() => {
+      globalTypingHideTimeoutRef.current = null;
+      setGlobalTypingState('exit');
+      globalTypingRemoveTimeoutRef.current = window.setTimeout(() => {
+        globalTypingRemoveTimeoutRef.current = null;
+        setGlobalTypingVisible(false);
+        setGlobalTypingState('hidden');
+      }, EXIT_DURATION);
+    }, delay);
+  }, [shouldShowGlobalTyping, globalTypingVisible, globalTypingState]);
+
+  useEffect(() => {
+    return () => {
+      if (globalTypingShowTimeoutRef.current) {
+        clearTimeout(globalTypingShowTimeoutRef.current);
+      }
+      if (globalTypingHideTimeoutRef.current) {
+        clearTimeout(globalTypingHideTimeoutRef.current);
+      }
+      if (globalTypingRemoveTimeoutRef.current) {
+        clearTimeout(globalTypingRemoveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const shouldRenderGlobalTyping = globalTypingVisible || isSynthesizingAudio;
   const composerPending = pending || isComposerSending || isSendingToEco;
   const canRetry = Boolean(
     lastAttempt &&
@@ -302,10 +404,10 @@ const ChatPage: React.FC = () => {
               />
             )}
 
-            {(shouldShowGlobalTyping || isSynthesizingAudio) && (
+            {shouldRenderGlobalTyping && (
               <div className="w-full flex justify-start" aria-live="polite">
-                <div className="max-w-3xl w-full min-w-0 flex items-start gap-3">
-                  <div className="flex-shrink-0 translate-y-[2px]">
+                <div className="max-w-3xl w-full min-w-0 flex items-center gap-2">
+                  <div className="flex-shrink-0 translate-y-[1px]">
                     <EcoBubbleOneEye variant="message" state="thinking" size={30} />
                   </div>
                   <div className="min-w-0 text-sm text-slate-500">
@@ -316,7 +418,16 @@ const ChatPage: React.FC = () => {
                         <span className="sr-only">Eco está preparando áudio</span>
                       </span>
                     ) : (
-                      <TypingDots variant="bubble" size="md" tone="auto" />
+                      <div
+                        className="opacity-0 translate-y-1 transition-opacity transition-transform duration-[160ms] ease-out data-[state=enter]:opacity-100 data-[state=visible]:opacity-100 data-[state=enter]:translate-y-0 data-[state=visible]:translate-y-0 data-[state=exit]:opacity-0 data-[state=exit]:translate-y-1"
+                        data-state={
+                          globalTypingState === 'hidden'
+                            ? undefined
+                            : globalTypingState
+                        }
+                      >
+                        <TypingDots variant="bubble" size="md" tone="auto" />
+                      </div>
                     )}
                   </div>
                 </div>

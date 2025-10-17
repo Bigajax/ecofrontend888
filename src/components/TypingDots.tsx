@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import React, { useMemo } from "react";
 
 type Variant = "pill" | "bubble" | "inline";
 type Tone = "auto" | "light" | "dark";
@@ -20,38 +19,24 @@ type Props = {
   density?: Density;
 };
 
-const SIZES = {
-  sm: { dot: 7, gap: 8, padX: 10, padY: 7, radius: "rounded-xl" },
-  md: { dot: 9, gap: 11, padX: 14, padY: 9, radius: "rounded-2xl" },
-  lg: { dot: 11, gap: 14, padX: 18, padY: 11, radius: "rounded-3xl" },
-} as const;
-
-const TOKENS = {
-  light: {
-    dot: "#2E79FF",
-    dotDim: "rgba(46, 121, 255, 0.55)",
-    container: "rgba(15, 23, 42, 0.05)",
-    bubble: "rgba(15, 23, 42, 0.06)",
-    border: "rgba(148, 163, 184, 0.28)",
-    shadow: "0 8px 22px rgba(16,24,40,0.08)",
-  },
-  dark: {
-    dot: "#5FA9FF",
-    dotDim: "rgba(95, 169, 255, 0.55)",
-    container: "rgba(148, 163, 184, 0.16)",
-    bubble: "rgba(148, 163, 184, 0.22)",
-    border: "rgba(148, 163, 184, 0.35)",
-    shadow: "0 8px 24px rgba(16,24,40,0.18)",
-  },
-} as const;
-
-const explicitTone = (tone: Exclude<Tone, "auto">): "light" | "dark" =>
-  tone === "dark" ? "dark" : "light";
+const DOT_DELAYS = [0, 120, 240];
+const DOT_SIZES: Record<NonNullable<Props["size"]>, string> = {
+  sm: "h-2 w-2",
+  md: "h-2.5 w-2.5",
+  lg: "h-3 w-3",
+};
 
 const srOnly =
   "sr-only absolute -m-px h-px w-px overflow-hidden p-0 whitespace-nowrap border-0";
 
-export default function TypingDots({
+const clampSpeed = (speed: number | undefined): number => {
+  if (typeof speed !== "number" || !Number.isFinite(speed) || speed <= 0) {
+    return 1;
+  }
+  return speed;
+};
+
+const TypingDots: React.FC<Props> = ({
   variant = "pill",
   size = "md",
   className = "",
@@ -60,138 +45,56 @@ export default function TypingDots({
   speed = 1,
   ariaLabel = "Eco está digitando",
   density = "airy",
-}: Props) {
-  const [resolvedTone, setResolvedTone] = useState<"light" | "dark">(
-    tone === "auto" ? "light" : explicitTone(tone)
-  );
+}) => {
+  void tone;
+  void density;
 
-  // resolve tema com prefers-color-scheme (SSR-safe)
-  useEffect(() => {
-    if (tone !== "auto") {
-      setResolvedTone(explicitTone(tone));
-      return;
-    }
-    if (typeof window === "undefined" || !window.matchMedia) {
-      setResolvedTone("light");
-      return;
-    }
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = (e: MediaQueryListEvent) =>
-      setResolvedTone(e.matches ? "dark" : "light");
-    setResolvedTone(media.matches ? "dark" : "light");
-    try {
-      media.addEventListener("change", onChange);
-      return () => media.removeEventListener("change", onChange);
-    } catch {
-      // Safari antigo
-      // @ts-ignore
-      media.addListener(onChange);
-      // @ts-ignore
-      return () => media.removeListener(onChange);
-    }
-  }, [tone]);
+  const animationDuration = useMemo(() => {
+    const base = 1.2;
+    const normalizedSpeed = clampSpeed(speed);
+    return Math.max(0.48, base / normalizedSpeed);
+  }, [speed]);
 
-  const base = SIZES[size];
-  const tokens = TOKENS[resolvedTone];
-  const prefersReduced = useReducedMotion();
-  const effectivePaused = paused || prefersReduced;
+  const playState: React.CSSProperties["animationPlayState"] = paused
+    ? "paused"
+    : "running";
 
-  // densidade: “airy” aumenta gap/padding e radius sutilmente
-  const airyFactor = density === "airy" ? 1.25 : 1;
-  const s = {
-    dot: base.dot,
-    gap: Math.round(base.gap * airyFactor),
-    padX: Math.round(base.padX * airyFactor),
-    padY: Math.round(base.padY * airyFactor),
-    radius:
-      density === "airy" && base.radius === "rounded-2xl"
-        ? "rounded-3xl"
-        : base.radius,
-  };
+  const resolvedVariant = variant === "inline" ? "inline" : "bubble";
 
-  // CSS vars (permite custom via tema)
-  const cssVars = useMemo(
-    () => ({
-      // @ts-expect-error CSS vars inline
-      "--dot": tokens.dot,
-      "--dot-dim": tokens.dotDim,
-      "--bg": variant === "bubble" ? tokens.bubble : tokens.container,
-      "--border": tokens.border,
-      "--shadow": tokens.shadow,
-    }),
-    [tokens, variant]
-  );
+  const containerClasses = [
+    resolvedVariant === "inline"
+      ? "inline-flex items-center gap-1.5 align-middle"
+      : "inline-flex h-6 min-w-[56px] items-center justify-center gap-1.5 rounded-full px-2 bg-white/70 backdrop-blur border border-zinc-200/60 shadow-sm",
+    "transition-colors duration-150 ease-out",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  // animação “respirada”
-  const baseDuration = 1.6; // mais lenta por padrão
-  const duration = Math.max(0.5, baseDuration / Math.max(0.25, speed));
-  const delays = [0, 0.22, 0.44]; // mais espaçadas
-
-  const dotAnim = effectivePaused
-    ? { opacity: [0.65, 1, 0.65] }
-    : {
-        y: [0, -3, -3, 0], // hold no topo
-        opacity: [0.7, 1, 1, 0.7],
-        scale: [1, 1.04, 1.04, 1],
-        backgroundColor: ["var(--dot-dim)", "var(--dot)", "var(--dot)", "var(--dot-dim)"],
-      };
-
-  const dotTransition = effectivePaused
-    ? { duration: duration * 1.1, repeat: Infinity, ease: "easeInOut" }
-    : { duration, repeat: Infinity, ease: [0.4, 0.0, 0.2, 1] as any }; // easeInOut custom
-
-  const containers: Record<Variant, string> = {
-    pill: `
-      inline-flex items-center
-      px-[${s.padX}px] py-[${s.padY}px] ${s.radius}
-      gap-[${s.gap}px] border
-    `,
-    bubble: `
-      inline-flex items-center
-      px-[${s.padX}px] py-[${s.padY}px] rounded-full
-      gap-[${s.gap}px] border
-    `,
-    inline: `
-      inline-flex items-center gap-[${s.gap}px] align-middle
-    `,
-  };
-
-  const containerStyle =
-    variant === "inline"
-      ? (cssVars as React.CSSProperties)
-      : ({
-          ...(cssVars as React.CSSProperties),
-          backgroundColor: "var(--bg)",
-          borderColor: "var(--border)",
-          boxShadow: "var(--shadow)",
-        } as React.CSSProperties);
+  const dotClass = [
+    "rounded-full bg-[#0A7AFF]",
+    DOT_SIZES[size] ?? DOT_SIZES.md,
+  ].join(" ");
 
   return (
-    <div
-      className={`relative ${containers[variant]} ${className}`}
-      style={containerStyle}
-      aria-live="polite"
-      role="status"
-    >
+    <div className={containerClasses} aria-live="polite" role="status">
       <span className={srOnly}>{ariaLabel}</span>
-      <div className="flex items-center gap-[inherit]">
-        {delays.map((delay, i) => (
-          <motion.span
-            key={i}
-            role="presentation"
-            aria-hidden="true"
-            className="inline-block rounded-full"
-            style={{
-              width: s.dot,
-              height: s.dot,
-              backgroundColor: effectivePaused ? "var(--dot)" : "var(--dot-dim)",
-              filter: "drop-shadow(0 1px 2px rgba(16,24,40,0.08))",
-            }}
-            animate={dotAnim}
-            transition={{ ...dotTransition, delay }}
-          />
-        ))}
-      </div>
+      {DOT_DELAYS.map((delay, index) => (
+        <span
+          key={delay + index}
+          role="presentation"
+          aria-hidden="true"
+          className={dotClass}
+          style={{
+            animation: `ecoDot ${animationDuration}s ease-in-out infinite`,
+            animationDelay: `${delay}ms`,
+            animationPlayState: playState,
+            opacity: 0.8,
+          }}
+        />
+      ))}
     </div>
   );
-}
+};
+
+export default TypingDots;

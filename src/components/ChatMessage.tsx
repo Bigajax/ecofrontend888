@@ -245,8 +245,111 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const showPlaceholder = isEcoMessage && trimmedText.length === 0;
   const displayText = showPlaceholder ? "…" : rawText;
   const hasMarkdownText = !showPlaceholder && trimmedText.length > 0;
-  const showTyping = Boolean(isEcoTyping && showPlaceholder);
-  if (showTyping) {
+  const typingActive = Boolean(isEcoTyping && showPlaceholder);
+
+  const [typingVisible, setTypingVisible] = React.useState(false);
+  const [typingState, setTypingState] = React.useState<
+    "hidden" | "enter" | "visible" | "exit"
+  >("hidden");
+  const typingShowTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const typingHideTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const typingRemoveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const typingMinVisibleRef = React.useRef<number>(0);
+
+  React.useEffect(() => {
+    const SHOW_DELAY = 150;
+    const MIN_VISIBLE = 500;
+    const EXIT_DURATION = 160;
+
+    if (typingActive) {
+      if (typingHideTimeoutRef.current) {
+        clearTimeout(typingHideTimeoutRef.current);
+        typingHideTimeoutRef.current = null;
+      }
+      if (typingRemoveTimeoutRef.current) {
+        clearTimeout(typingRemoveTimeoutRef.current);
+        typingRemoveTimeoutRef.current = null;
+      }
+
+      if (typingVisible) {
+        typingMinVisibleRef.current = Math.max(
+          typingMinVisibleRef.current,
+          Date.now() + MIN_VISIBLE,
+        );
+        if (typingState !== "visible") {
+          setTypingState("visible");
+        }
+        return;
+      }
+
+      if (typingShowTimeoutRef.current) {
+        return;
+      }
+
+      typingShowTimeoutRef.current = window.setTimeout(() => {
+        typingShowTimeoutRef.current = null;
+        typingMinVisibleRef.current = Date.now() + MIN_VISIBLE;
+        setTypingVisible(true);
+        setTypingState("enter");
+        if (
+          typeof window !== "undefined" &&
+          typeof window.requestAnimationFrame === "function"
+        ) {
+          window.requestAnimationFrame(() => {
+            setTypingState("visible");
+          });
+        } else {
+          setTypingState("visible");
+        }
+      }, SHOW_DELAY);
+      return;
+    }
+
+    if (typingShowTimeoutRef.current) {
+      clearTimeout(typingShowTimeoutRef.current);
+      typingShowTimeoutRef.current = null;
+    }
+
+    if (!typingVisible || typingHideTimeoutRef.current) {
+      return;
+    }
+
+    const remaining = typingMinVisibleRef.current - Date.now();
+    const delay = remaining > 0 ? remaining : 0;
+
+    typingHideTimeoutRef.current = window.setTimeout(() => {
+      typingHideTimeoutRef.current = null;
+      setTypingState("exit");
+      typingRemoveTimeoutRef.current = window.setTimeout(() => {
+        typingRemoveTimeoutRef.current = null;
+        setTypingVisible(false);
+        setTypingState("hidden");
+      }, EXIT_DURATION);
+    }, delay);
+  }, [typingActive, typingVisible, typingState]);
+
+  React.useEffect(() => {
+    return () => {
+      if (typingShowTimeoutRef.current) {
+        clearTimeout(typingShowTimeoutRef.current);
+      }
+      if (typingHideTimeoutRef.current) {
+        clearTimeout(typingHideTimeoutRef.current);
+      }
+      if (typingRemoveTimeoutRef.current) {
+        clearTimeout(typingRemoveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  if (typingVisible) {
+    const typingDataState = typingState === "hidden" ? undefined : typingState;
     return (
       <div
         className={`w-full flex ${isUser ? "justify-end" : "justify-start"} min-w-0 mb-1 sm:mb-2`}
@@ -254,9 +357,25 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         aria-live="polite"
         aria-label="ECO está digitando…"
       >
-        <div className="flex items-start gap-3">
-          <EcoBubbleOneEye variant="message" state="thinking" size={28} />
-          <TypingDots variant="bubble" size="md" />
+        <div
+          className={`flex w-full max-w-3xl items-center gap-2 ${
+            isUser ? "flex-row-reverse" : "flex-row"
+          }`}
+        >
+          {!isUser && (
+            <div className="flex-shrink-0 translate-y-[1px]">
+              <EcoBubbleOneEye variant="message" state="thinking" size={30} />
+            </div>
+          )}
+
+          <div className="min-w-0">
+            <div
+              className="opacity-0 translate-y-1 transition-opacity transition-transform duration-[160ms] ease-out data-[state=enter]:opacity-100 data-[state=visible]:opacity-100 data-[state=enter]:translate-y-0 data-[state=visible]:translate-y-0 data-[state=exit]:opacity-0 data-[state=exit]:translate-y-1"
+              data-state={typingDataState}
+            >
+              <TypingDots variant="bubble" size="md" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -266,13 +385,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     ? [
         "message-bubble",
         "relative",
-        "px-4 py-3 sm:px-5 sm:py-3.5",
-        "rounded-[20px]",
+        "rounded-3xl",
+        "px-5 py-3.5 sm:px-6 sm:py-4",
         "w-fit min-w-[10ch] sm:min-w-[12ch]",
-        "max-w-[min(720px,88vw)]",
-        "break-words whitespace-pre-wrap",
-        "border",
-        "transition-transform duration-200 ease-out",
+        "max-w-[min(92vw,68ch+2rem)]",
+        "break-words",
+        "bg-[#0A7AFF]",
+        "bg-[linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.08))]",
+        "text-white",
+        "shadow-[0_2px_10px_rgba(10,122,255,.20)]",
+        "ring-1 ring-inset ring-white/15 hover:ring-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35",
+        "transition-shadow transition-transform transition-colors duration-200 ease-out",
         "overflow-hidden",
       ].join(" ")
     : [
@@ -290,26 +413,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         "overflow-hidden",
       ].join(" ");
 
-  const bubbleStyle: React.CSSProperties | undefined = isUser
-    ? {
-        backgroundColor: "#007AFF",
-        color: "#FFFFFF",
-        borderColor: "#0064D2",
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 12,
-        boxShadow: "0 4px 10px rgba(0, 98, 204, 0.28)",
-        backdropFilter: "none",
-        WebkitBackdropFilter: "none",
-      }
-    : undefined;
-
   const processedMarkdown = React.useMemo(() => {
     if (!hasMarkdownText) return displayText;
-    if (!isEcoMessage) return displayText;
     return compactAndSmartQuotes(displayText);
-  }, [displayText, hasMarkdownText, isEcoMessage]);
+  }, [displayText, hasMarkdownText]);
 
   const creditLineNumbers = React.useMemo(() => {
     if (!isEcoMessage || !hasMarkdownText) {
@@ -374,7 +481,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <div className="min-w-0 max-w-full">
             <div
               className={bubbleClass}
-              style={bubbleStyle}
               data-sender={message.sender}
               data-deep-question={message.deepQuestion}
               data-eco-active={isEcoActive ? "true" : undefined}
@@ -392,10 +498,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               {hasMarkdownText && (
                 <div className="relative z-10 font-sans">
                   <div
-                    className="max-w-[68ch] text-[15px] sm:text-[16px] leading-6 tracking-tight text-zinc-800 whitespace-pre-wrap [&>p]:my-0 [&>p+*]:mt-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul>li]:mt-1.5 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol>li]:mt-1.5 [&>strong]:font-semibold [&>em]:italic [&>blockquote]:border-l-2 [&>blockquote]:border-zinc-300 [&>blockquote]:pl-4 [&>blockquote>p]:italic"
+                    className={`max-w-[68ch] whitespace-pre-wrap text-[15px] sm:text-[16px] leading-6 tracking-tight [&>p]:my-0 [&>p+*]:mt-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul>li]:mt-1.5 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol>li]:mt-1.5 [&>strong]:font-semibold [&>em]:italic ${
+                      isUser ? "text-white" : "text-zinc-800"
+                    }`}
                   >
                     <ReactMarkdown components={markdownComponents}>
-                      {isEcoMessage ? processedMarkdown : displayText}
+                      {processedMarkdown}
                     </ReactMarkdown>
                   </div>
                 </div>
