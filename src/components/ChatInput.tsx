@@ -32,7 +32,7 @@ const ChatInput: React.FC<Props> = ({
   const speechRecognitionRef = useRef<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sendButtonRef = useRef<HTMLButtonElement>(null);
-  const wrapperRef = useRef<HTMLFormElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const safeOnSendAudio = onSendAudio ?? (() => {});
@@ -116,7 +116,10 @@ const ChatInput: React.FC<Props> = ({
         const blob = new Blob(chunks, { type });
         safeOnSendAudio(blob);
         stopTracks(recorder);
-        setTimeout(() => setIsRecordingUI(false), 1200);
+        setTimeout(() => {
+          setIsRecordingUI(false);
+          setIsTranscribing(false);
+        }, 1200);
       };
 
       setMediaRecorder(recorder);
@@ -141,16 +144,6 @@ const ChatInput: React.FC<Props> = ({
     } catch {}
   };
 
-  const cancelRecording = () => {
-    try {
-      if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
-      stopTracks(mediaRecorder);
-      speechRecognitionRef.current?.abort?.();
-    } catch {}
-    setIsRecordingUI(false);
-    setIsTranscribing(false);
-  };
-
   // envio texto
   const handleSend = async () => {
     if (disabled || isSending) return;
@@ -171,107 +164,35 @@ const ChatInput: React.FC<Props> = ({
     }
   };
 
-  const submitForm = () => {
-    if (isSending || disabled) return;
-    if (wrapperRef.current && typeof wrapperRef.current.requestSubmit === 'function') {
-      wrapperRef.current.requestSubmit();
-    } else {
-      void handleSend();
-    }
-  };
-
-  // --- UI de gravação (fluida, sem max-width)
-  if (isRecordingUI) {
-    return (
-      <div className="relative w-full px-2 py-2">
-        <div
-          className="
-            w-full h-11 mb-2 rounded-3xl
-            bg-white/26 backdrop-blur-2xl border border-white/45
-            shadow-[0_16px_40px_rgba(16,24,40,0.10),inset_0_1px_0_rgba(255,255,255,0.45)]
-            flex items-center justify-center
-          "
-        >
-          {isTranscribing ? (
-            <div className="text-gray-700 text-sm flex items-center gap-2">
-              <span className="animate-spin w-4 h-4 border-2 border-gray-500/60 border-t-transparent rounded-full" />
-              Transcrevendo
-            </div>
-          ) : (
-            <div className="text-gray-800 text-sm flex items-center gap-2">
-              <svg className="animate-pulse w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <rect x="6" y="8" width="2" height="8" fill="currentColor" />
-                <rect x="11" y="5" width="2" height="14" fill="currentColor" />
-                <rect x="16" y="10" width="2" height="4" fill="currentColor" />
-              </svg>
-              Ouvindo
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-between items-center">
-          <Plus size={18} className="text-transparent select-none" aria-hidden />
-          <div className="flex gap-2">
-            <button
-              onClick={cancelRecording}
-              className="w-9 h-9 rounded-full border border-white/50 bg-white/30 backdrop-blur-xl shadow-sm flex items-center justify-center"
-              aria-label="Cancelar"
-              type="button"
-            >
-              <X size={18} />
-            </button>
-            <button
-              onClick={stopRecording}
-              className="w-9 h-9 rounded-full border border-white/60 bg-white/80 backdrop-blur-xl shadow-sm flex items-center justify-center"
-              aria-label="Confirmar"
-              type="button"
-            >
-              ✓
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // --- UI padrão (alinhada ao feed)
   return (
-    <motion.form
+    <motion.div
       ref={wrapperRef}
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (isSending) return;
-        void handleSend();
-      }}
       className={`
-        relative w-full px-3 py-1.5 md:px-4 md:py-2 rounded-[28px]
-        border border-white/60 bg-white/80 backdrop-blur-2xl
-        shadow-[0_18px_48px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.6)]
-        ring-1 ring-white/40 transition-all duration-200 ${disabled ? 'opacity-90' : ''}
+        relative w-full rounded-full border border-zinc-200/40 bg-white/70 backdrop-blur-lg
+        shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-all duration-200
+        ${disabled ? 'opacity-70' : 'focus-within:ring-2 focus-within:ring-blue-200/80 focus-within:shadow-[0_8px_30px_rgba(37,99,235,0.15)]'}
       `}
-      initial={{ y: 50, opacity: 0 }}
+      initial={{ y: 40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 120, damping: 14 }}
+      transition={{ type: 'spring', stiffness: 120, damping: 18 }}
       aria-disabled={disabled}
       role="group"
       style={{ overflowAnchor: 'none' }}
     >
-      {/* === Grid alinhada ao feed: [28px | 1fr | 28px] === */}
-      <div className="grid grid-cols-[28px,1fr,28px] items-center gap-2">
-        {/* esquerda (28px) */}
-        <div className="flex items-center justify-start">
+      <div className="flex items-end gap-2 px-3 py-2 md:px-4 md:py-3">
+        <div className="relative flex items-center">
           <button
             type="button"
             onClick={() => {
               if (isSending) return;
               setShowMoreOptions((prev) => !prev);
             }}
-            className="
-              flex h-9 w-9 items-center justify-center rounded-full
-              border border-white/60 bg-white/75 backdrop-blur-xl
-              shadow-[0_6px_16px_rgba(15,23,42,0.08)] transition
-              hover:bg-white active:scale-[0.98] disabled:opacity-50
-            "
+            className={`
+              flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200/60
+              bg-white/80 text-zinc-500 transition hover:bg-white focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-blue-300/70 active:scale-[0.97]
+              ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+            `}
             aria-expanded={showMoreOptions}
             aria-controls="chatinput-popover"
             aria-label="Mais opções"
@@ -279,43 +200,57 @@ const ChatInput: React.FC<Props> = ({
           >
             {showMoreOptions ? <X size={18} /> : <Plus size={18} />}
           </button>
+
+          <AnimatePresence>
+            {showMoreOptions && !disabled && (
+              <motion.div
+                ref={popoverRef}
+                id="chatinput-popover"
+                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                className="
+                  absolute bottom-full left-0 z-50 mb-3 w-52 overflow-hidden rounded-2xl border border-white/60
+                  bg-white/80 backdrop-blur-2xl shadow-[0_18px_40px_rgba(15,23,42,0.16)]
+                "
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isSending) return;
+                    onMoreOptionSelected('go_to_voice_page');
+                    setShowMoreOptions(false);
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-white/60"
+                >
+                  <Headphones size={18} strokeWidth={1.5} />
+                  Modo de voz
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Popover */}
-        <AnimatePresence>
-          {showMoreOptions && !disabled && (
-            <motion.div
-              ref={popoverRef}
-              id="chatinput-popover"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.2 }}
-              className="
-                absolute bottom-full left-2 z-50 mb-2 w-56
-                rounded-2xl border border-white/60 bg-white/80 backdrop-blur-2xl
-                shadow-[0_24px_60px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.6)]
-                p-1.5
-              "
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  if (isSending) return;
-                  onMoreOptionSelected('go_to_voice_page');
-                  setShowMoreOptions(false);
-                }}
-                className="flex items-center p-2 hover:bg-white/40 rounded-xl w-full text-left transition"
+        <div className="flex min-w-0 flex-1 flex-col">
+          <AnimatePresence>
+            {isRecordingUI && (
+              <motion.div
+                key="recording-indicator"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.2 }}
+                className="mb-1 flex items-center gap-2 rounded-full bg-blue-50/80 px-3 py-1 text-xs text-blue-600"
               >
-                <Headphones size={20} className="mr-3" strokeWidth={1.5} />
-                Modo de voz
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <span className="flex h-2.5 w-2.5 items-center justify-center">
+                  <span className="h-2 w-2 rounded-full bg-blue-500 animate-ping" aria-hidden />
+                </span>
+                {isTranscribing ? 'Transcrevendo áudio…' : 'Eco está ouvindo…'}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        {/* centro (1fr) */}
-        <div className="flex items-center min-w-0">
           <textarea
             ref={textareaRef}
             value={inputMessage}
@@ -333,7 +268,7 @@ const ChatInput: React.FC<Props> = ({
               const composing = e.nativeEvent?.isComposing;
               if (!composing && e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                submitForm();
+                void handleSend();
               }
             }}
             onFocus={onFocus}
@@ -347,46 +282,62 @@ const ChatInput: React.FC<Props> = ({
             aria-disabled={disabled}
             aria-label="Escreva sua mensagem"
             className="
-              w-full min-w-0 max-h-48 resize-none overflow-y-auto border-none bg-transparent py-2 leading-[1.42] tracking-tight
-              text-[15px] md:text-base text-slate-800 placeholder:text-slate-400 placeholder:font-light focus:outline-none
+              w-full min-w-0 max-h-48 resize-none overflow-y-auto border-none bg-transparent px-1 py-1 text-[15px]
+              leading-relaxed text-slate-800 placeholder:text-slate-400 placeholder:font-light focus:outline-none md:text-base
             "
           />
         </div>
 
-        {/* direita (28px) */}
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={startRecording}
+            onClick={() => {
+              if (isRecordingUI) {
+                stopRecording();
+                return;
+              }
+              void startRecording();
+            }}
             disabled={disabled || isSending}
-            className="
-              flex h-9 w-9 items-center justify-center rounded-full
-              border border-white/60 bg-white/75 backdrop-blur-xl
-              shadow-[0_6px_16px_rgba(15,23,42,0.08)] transition
-              hover:bg-white active:scale-[0.98] disabled:opacity-50
-            "
-            aria-label="Iniciar gravação"
+            className={`
+              relative flex h-10 w-10 items-center justify-center rounded-full border transition
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/70 active:scale-[0.97]
+              ${isRecordingUI
+                ? 'border-blue-200 bg-blue-100 text-blue-500 animate-pulse'
+                : 'border-zinc-200/60 bg-white/80 text-slate-600 hover:bg-white'}
+              ${disabled ? 'opacity-50 cursor-not-allowed animate-none' : ''}
+            `}
+            aria-label={isRecordingUI ? 'Parar gravação' : 'Iniciar gravação'}
           >
-            <Mic size={16} />
+            <Mic size={18} strokeWidth={1.8} />
           </button>
 
-          <button
-            type="submit"
-            ref={sendButtonRef}
-            disabled={disabled || isSending || !inputMessage.trim()}
-            className="
-              flex h-9 w-9 items-center justify-center rounded-full text-slate-700
-              border border-white/70 bg-white/90 backdrop-blur-xl
-              shadow-[0_8px_22px_rgba(15,23,42,0.12)] transition
-              hover:bg-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50
-            "
-            aria-label="Enviar mensagem"
-          >
-            <Send size={16} strokeWidth={1.6} />
-          </button>
+          <AnimatePresence initial={false}>
+            {inputMessage.trim() && (
+              <motion.button
+                key="send"
+                ref={sendButtonRef}
+                type="button"
+                onClick={() => void handleSend()}
+                disabled={disabled || isSending}
+                initial={{ opacity: 0, scale: 0.9, x: 8 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.9, x: 8 }}
+                transition={{ duration: 0.18 }}
+                className="
+                  flex h-10 w-10 items-center justify-center rounded-full border border-blue-200/80 bg-blue-500 text-white
+                  shadow-lg shadow-blue-500/30 transition hover:bg-blue-500/90 focus-visible:outline-none
+                  focus-visible:ring-2 focus-visible:ring-blue-300/70 active:scale-[0.96]
+                "
+                aria-label="Enviar mensagem"
+              >
+                <Send size={17} strokeWidth={1.7} />
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
       </div>
-    </motion.form>
+    </motion.div>
   );
 };
 
