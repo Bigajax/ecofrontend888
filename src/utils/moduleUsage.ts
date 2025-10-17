@@ -248,3 +248,46 @@ export const extractModuleUsageCandidates = ({
           : undefined,
     }));
 };
+
+export const resolveLastActivatedModuleKey = ({
+  moduleUsageCandidates,
+  moduleCombo,
+}: {
+  moduleUsageCandidates?: ModuleUsageCandidate[] | null | undefined;
+  moduleCombo?: string[] | null | undefined;
+}): string | null => {
+  if (Array.isArray(moduleUsageCandidates) && moduleUsageCandidates.length > 0) {
+    const sorted = moduleUsageCandidates
+      .map((candidate, index) => {
+        const key = typeof candidate.moduleKey === "string" ? candidate.moduleKey.trim() : "";
+        const basePosition = index + 1;
+        const position =
+          typeof candidate.position === "number" && Number.isFinite(candidate.position)
+            ? candidate.position
+            : basePosition;
+        return { key, position };
+      })
+      .filter((entry) => entry.key.length > 0)
+      .sort((a, b) => {
+        if (a.position === b.position) return 0;
+        return a.position - b.position;
+      });
+
+    const last = sorted[sorted.length - 1];
+    if (last?.key) {
+      return last.key;
+    }
+  }
+
+  if (Array.isArray(moduleCombo) && moduleCombo.length > 0) {
+    const last = moduleCombo[moduleCombo.length - 1];
+    if (typeof last === "string") {
+      const trimmed = last.trim();
+      if (trimmed.length > 0) {
+        return trimmed;
+      }
+    }
+  }
+
+  return null;
+};

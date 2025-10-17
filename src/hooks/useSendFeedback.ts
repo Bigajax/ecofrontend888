@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 
 import { enviarFeedback } from "../api/feedbackApi";
+import { DEFAULT_FEEDBACK_PILLAR } from "../constants/feedback";
 
 export type SendFeedbackArgs = {
   interactionId: string;
@@ -11,6 +12,8 @@ export type SendFeedbackArgs = {
   sessionId?: string | null;
   meta?: Record<string, unknown>;
   messageId?: string | null;
+  pillar?: string | null;
+  arm?: string | null;
 };
 
 export function useSendFeedback() {
@@ -35,6 +38,8 @@ export function useSendFeedback() {
               sessionId: args.sessionId ?? null,
               meta: args.meta ?? {},
               messageId: args.messageId ?? null,
+              pillar: args.pillar ?? DEFAULT_FEEDBACK_PILLAR,
+              arm: args.arm ?? null,
             });
             return true;
           } catch (error) {
