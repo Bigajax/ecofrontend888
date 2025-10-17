@@ -1,4 +1,5 @@
 import React from "react";
+import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
 import TypingDots from "../components/TypingDots";
@@ -90,6 +91,89 @@ const normalizeMessageContent = (
 
 const USE_NEW_FEEDBACK = false;
 
+const CODE_SEGMENT_REGEX = /```[\s\S]*?```|`[^`]*`/g;
+
+const applySmartTypography = (segment: string): string => {
+  let s = segment.replace(/\n{3,}/g, "\n\n");
+
+  s = s
+    .replace(/(^|[\s([{<])"([^"]*)"/g, '$1“$2”')
+    .replace(/(^|[\s([{<])'([^']*)'/g, "$1‘$2’")
+    .replace(/ ?-- ?/g, " — ");
+
+  return s;
+};
+
+function compactAndSmartQuotes(input: string): string {
+  if (!input) return input;
+
+  let result = "";
+  let lastIndex = 0;
+  const regex = new RegExp(CODE_SEGMENT_REGEX.source, "g");
+  let match: RegExpExecArray | null;
+
+  // eslint-disable-next-line no-cond-assign
+  while ((match = regex.exec(input)) !== null) {
+    const before = input.slice(lastIndex, match.index);
+    if (before) {
+      result += applySmartTypography(before);
+    }
+    result += match[0];
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < input.length) {
+    result += applySmartTypography(input.slice(lastIndex));
+  }
+
+  return result;
+}
+
+const getPlainTextFromNode = (children: React.ReactNode): string => {
+  if (typeof children === "string") return children;
+  if (typeof children === "number") return String(children);
+  if (Array.isArray(children)) {
+    return children.map(getPlainTextFromNode).join("");
+  }
+  if (React.isValidElement(children)) {
+    return getPlainTextFromNode(children.props.children);
+  }
+  return "";
+};
+
+const findQuoteCreditLineNumbers = (input: string): Set<number> => {
+  const creditLines = new Set<number>();
+  if (!input) return creditLines;
+
+  const lines = input.split(/\r?\n/);
+  let expectingCredit = false;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const trimmed = lines[index].trim();
+
+    if (trimmed.startsWith(">")) {
+      expectingCredit = true;
+      continue;
+    }
+
+    if (!expectingCredit) {
+      continue;
+    }
+
+    if (trimmed === "") {
+      continue;
+    }
+
+    if (/^—\s+.+/.test(trimmed)) {
+      creditLines.add(index + 1);
+    }
+
+    expectingCredit = false;
+  }
+
+  return creditLines;
+};
+
 const ChatMessage: React.FC<ChatMessageProps> = ({
   message,
   isEcoTyping,
@@ -161,7 +245,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const showPlaceholder = isEcoMessage && trimmedText.length === 0;
   const displayText = showPlaceholder ? "…" : rawText;
   const hasMarkdownText = !showPlaceholder && trimmedText.length > 0;
-  const isStreamingPlaceholder = showPlaceholder;
   const showTyping = Boolean(isEcoTyping && showPlaceholder);
   if (showTyping) {
     return (
@@ -179,56 +262,95 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     );
   }
 
-  const bubbleClass = [
-    "message-bubble",
-    "relative",
-    "px-4 py-3 sm:px-5 sm:py-3.5",
-    "rounded-[20px]",
-    "w-fit min-w-[10ch] sm:min-w-[12ch]",
-    "max-w-[min(720px,88vw)]",
-    "break-words whitespace-pre-wrap",
-    "border",
-    "transition-transform duration-200 ease-out",
-    "overflow-hidden",
-  ].join(" ");
+  const bubbleClass = isUser
+    ? [
+        "message-bubble",
+        "relative",
+        "px-4 py-3 sm:px-5 sm:py-3.5",
+        "rounded-[20px]",
+        "w-fit min-w-[10ch] sm:min-w-[12ch]",
+        "max-w-[min(720px,88vw)]",
+        "break-words whitespace-pre-wrap",
+        "border",
+        "transition-transform duration-200 ease-out",
+        "overflow-hidden",
+      ].join(" ")
+    : [
+        "message-bubble",
+        "relative",
+        "rounded-3xl",
+        "border border-zinc-200/60",
+        "bg-white/80 backdrop-blur",
+        "shadow-[0_1px_6px_rgba(0,0,0,0.03)]",
+        "px-5 py-4 sm:px-6 sm:py-4",
+        "w-fit min-w-[10ch] sm:min-w-[12ch]",
+        "max-w-[min(92vw,68ch+2rem)]",
+        "break-words",
+        "transition-transform duration-200 ease-out",
+        "overflow-hidden",
+      ].join(" ");
 
-  const bubbleStyle: React.CSSProperties = {
-    backgroundColor: isUser
-      ? "#007AFF"
-      : isStreamingPlaceholder
-      ? "rgba(226, 232, 240, 0.75)"
-      : "#F3F4F6",
-    color: isUser ? "#FFFFFF" : "#0F172A",
-    borderColor: isUser
-      ? "#0064D2"
-      : isStreamingPlaceholder
-      ? "rgba(148, 163, 184, 0.5)"
-      : "#D0D5DD",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderBottomLeftRadius: isUser ? 20 : 12,
-    borderBottomRightRadius: isUser ? 12 : 20,
-    boxShadow: isUser
-      ? "0 4px 10px rgba(0, 98, 204, 0.28)"
-      : isStreamingPlaceholder
-      ? "0 6px 18px rgba(148, 163, 184, 0.22)"
-      : "0 3px 9px rgba(15, 23, 42, 0.12)",
-    backdropFilter: "none",
-    WebkitBackdropFilter: "none",
+  const bubbleStyle: React.CSSProperties | undefined = isUser
+    ? {
+        backgroundColor: "#007AFF",
+        color: "#FFFFFF",
+        borderColor: "#0064D2",
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 12,
+        boxShadow: "0 4px 10px rgba(0, 98, 204, 0.28)",
+        backdropFilter: "none",
+        WebkitBackdropFilter: "none",
+      }
+    : undefined;
+
+  const processedMarkdown = React.useMemo(() => {
+    if (!hasMarkdownText) return displayText;
+    if (!isEcoMessage) return displayText;
+    return compactAndSmartQuotes(displayText);
+  }, [displayText, hasMarkdownText, isEcoMessage]);
+
+  const creditLineNumbers = React.useMemo(() => {
+    if (!isEcoMessage || !hasMarkdownText) {
+      return new Set<number>();
+    }
+    return findQuoteCreditLineNumbers(processedMarkdown);
+  }, [hasMarkdownText, isEcoMessage, processedMarkdown]);
+
+  const markdownComponents: Components = {
+    blockquote({ node: _node, className, ...props }) {
+      const combinedClassName = [
+        className,
+        "border-l-2 border-zinc-300 pl-4",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      return <blockquote className={combinedClassName} {...props} />;
+    },
+    p({ node, className, ...props }) {
+      const lineNumber = node?.position?.start.line;
+      const textContent = getPlainTextFromNode(props.children).trim();
+      const isCreditLine =
+        isEcoMessage &&
+        typeof lineNumber === "number" &&
+        creditLineNumbers.has(lineNumber) &&
+        /^—\s+.+/.test(textContent);
+
+      if (isCreditLine) {
+        return (
+          <div className="mt-2 text-zinc-500 text-[13px]" {...props} />
+        );
+      }
+      return <p className={className} {...props} />;
+    },
+    ul({ node: _node, ...props }) {
+      return <ul {...props} />;
+    },
+    ol({ node: _node, ...props }) {
+      return <ol {...props} />;
+    },
   };
-
-  const markdownClassName = [
-    "prose prose-sm sm:prose-base max-w-none font-sans",
-    "prose-p:my-1.5 sm:prose-p:my-2 prose-li:my-0.5",
-    "prose-strong:font-semibold prose-em:italic",
-    "prose-headings:font-semibold prose-headings:text-[1em] prose-headings:leading-snug",
-    "prose-a:underline prose-a:break-words",
-    "prose-pre:bg-gray-50/70 prose-pre:border prose-pre:border-gray-200/60 prose-pre:rounded-xl prose-pre:p-3",
-    "prose-code:before:content-[''] prose-code:after:content-['']",
-    isUser ? "prose-invert" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
 
   return (
     <>
@@ -268,16 +390,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 </span>
               )}
               {hasMarkdownText && (
-                <div className="relative z-10 font-sans text-[14px] sm:text-sm md:text-base leading-relaxed">
-                  <div className={markdownClassName}>
-                    <ReactMarkdown
-                      components={{
-                        p: ({ node: _node, ...props }) => (
-                          <p className="m-0 mb-2 last:mb-0" {...props} />
-                        ),
-                      }}
-                    >
-                      {displayText}
+                <div className="relative z-10 font-sans">
+                  <div
+                    className="max-w-[68ch] text-[15px] sm:text-[16px] leading-6 tracking-tight text-zinc-800 whitespace-pre-wrap [&>p]:my-0 [&>p+*]:mt-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul>li]:mt-1.5 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol>li]:mt-1.5 [&>strong]:font-semibold [&>em]:italic [&>blockquote]:border-l-2 [&>blockquote]:border-zinc-300 [&>blockquote]:pl-4 [&>blockquote>p]:italic"
+                  >
+                    <ReactMarkdown components={markdownComponents}>
+                      {isEcoMessage ? processedMarkdown : displayText}
                     </ReactMarkdown>
                   </div>
                 </div>
