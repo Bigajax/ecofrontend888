@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 
-import { enviarFeedback } from "../api/feedbackApi";
+import { FeedbackRequestError, sendFeedback as requestFeedback } from "../api/feedback";
 import { getSessionId } from "../utils/identity";
 import { trackFeedbackEvent } from "../analytics/track";
 import type { FeedbackTrackingPayload } from "../analytics/track";
@@ -104,14 +104,14 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
     const payload = buildPayload(vote, reasons);
 
     try {
-      await enviarFeedback({
-        interactionId,
-        userId: userId ?? null,
-        sessionId: (payload.session_id ?? resolveSessionId() ?? null) as string | null,
+      await requestFeedback({
+        interaction_id: interactionId,
+        user_id: userId ?? null,
+        session_id: (payload.session_id ?? resolveSessionId() ?? null) as string | null,
         vote,
-        reasons,
+        reason: reasons && reasons.length > 0 ? reasons[0] : null,
         source: "chat",
-        messageId: messageId ?? null,
+        message_id: messageId ?? null,
         meta: {
           page: "ChatPage",
           ui_source: payload.source,
@@ -128,6 +128,12 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
       onSubmitted?.();
       return true;
     } catch (error) {
+      if (error instanceof FeedbackRequestError) {
+        console.error("feedback_prompt_error", {
+          status: error.status,
+          message: error.message,
+        });
+      }
       trackFeedbackEvent("FE: Feedback Prompt Error", {
         ...payload,
         error: error instanceof Error ? error.message : String(error),

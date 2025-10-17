@@ -1,6 +1,10 @@
 import { useCallback, useRef } from "react";
 
-import { enviarFeedback } from "../api/feedbackApi";
+import {
+  sendFeedback as requestFeedback,
+  type SendFeedbackInput,
+  type SendFeedbackResult,
+} from "../api/feedback";
 import { DEFAULT_FEEDBACK_PILLAR } from "../constants/feedback";
 
 export type SendFeedbackArgs = {
@@ -16,41 +20,33 @@ export type SendFeedbackArgs = {
   arm?: string | null;
 };
 
+const toPayload = (args: SendFeedbackArgs): SendFeedbackInput => ({
+  interaction_id: args.interactionId,
+  vote: args.vote,
+  reason: args.reason ?? null,
+  source: args.source ?? "chat",
+  user_id: args.userId ?? null,
+  session_id: args.sessionId ?? null,
+  meta: args.meta ?? {},
+  message_id: args.messageId ?? null,
+  pillar: args.pillar ?? DEFAULT_FEEDBACK_PILLAR,
+  arm: args.arm ?? null,
+});
+
 export function useSendFeedback() {
   const lockRef = useRef(false);
 
   const sendFeedback = useCallback(
-    async (args: SendFeedbackArgs) => {
+    async (args: SendFeedbackArgs): Promise<SendFeedbackResult | null> => {
       if (lockRef.current) {
-        return false;
+        return null;
       }
       lockRef.current = true;
 
       try {
-        for (let attempt = 0; attempt < 2; attempt++) {
-          try {
-            await enviarFeedback({
-              interactionId: args.interactionId,
-              vote: args.vote,
-              reason: args.reason ?? null,
-              source: args.source ?? "chat",
-              userId: args.userId ?? null,
-              sessionId: args.sessionId ?? null,
-              meta: args.meta ?? {},
-              messageId: args.messageId ?? null,
-              pillar: args.pillar ?? DEFAULT_FEEDBACK_PILLAR,
-              arm: args.arm ?? null,
-            });
-            return true;
-          } catch (error) {
-            const isNetworkError = error instanceof TypeError;
-            const canRetry = isNetworkError && attempt === 0;
-            if (!canRetry) {
-              throw error;
-            }
-          }
-        }
-        return false;
+        const payload = toPayload(args);
+        const result = await requestFeedback(payload);
+        return result;
       } finally {
         lockRef.current = false;
       }

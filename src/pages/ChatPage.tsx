@@ -11,6 +11,7 @@ import ChatInput from '../components/ChatInput';
 import LoginGateModal from '../components/LoginGateModal';
 import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
 import EcoMessageWithAudio from '../components/EcoMessageWithAudio';
+import EcoLoopHud from '../components/EcoLoopHud';
 import QuickSuggestions, { Suggestion, SuggestionPickMeta } from '../components/QuickSuggestions';
 import TypingDots from '../components/TypingDots';
 
@@ -371,6 +372,8 @@ const ChatPage: React.FC = () => {
           />
         </div>
       </div>
+
+      <EcoLoopHud />
     </div>
   );
 };
