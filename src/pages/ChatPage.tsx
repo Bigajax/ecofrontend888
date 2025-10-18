@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import clsx from 'clsx';
 
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
@@ -206,6 +207,9 @@ const ChatPage: React.FC = () => {
   const globalTypingRemoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const chatInputWrapperRef = useRef<HTMLDivElement | null>(null);
+  const [chatInputHeight, setChatInputHeight] = useState(0);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const globalTypingMinVisibleRef = useRef<number>(0);
 
   useEffect(() => {
@@ -305,26 +309,123 @@ const ChatPage: React.FC = () => {
     (erroApi === NETWORK_ERROR_MESSAGE || erroApi === CORS_ERROR_MESSAGE)
   );
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const wrapper = chatInputWrapperRef.current;
+    if (!wrapper) return;
+
+    const updateHeight = () => {
+      const measured = wrapper.getBoundingClientRect().height;
+      setChatInputHeight(Math.round(measured));
+    };
+
+    updateHeight();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateHeight);
+      return () => {
+        window.removeEventListener('resize', updateHeight);
+      };
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target !== wrapper) continue;
+        const borderBoxSize = Array.isArray(entry.borderBoxSize)
+          ? entry.borderBoxSize[0]
+          : entry.borderBoxSize;
+        const nextHeight =
+          typeof borderBoxSize === 'object' && borderBoxSize
+            ? borderBoxSize.blockSize
+            : entry.contentRect.height;
+        setChatInputHeight(Math.round(nextHeight));
+      }
+    });
+
+    observer.observe(wrapper);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const handleFocusIn = (event: FocusEvent) => {
+      if (chatInputWrapperRef.current?.contains(event.target as Node)) {
+        setIsKeyboardOpen(true);
+      }
+    };
+
+    const handleFocusOut = (event: FocusEvent) => {
+      const relatedTarget = event.relatedTarget as Node | null;
+      if (relatedTarget && chatInputWrapperRef.current?.contains(relatedTarget)) {
+        return;
+      }
+
+      window.setTimeout(() => {
+        const active = document.activeElement;
+        if (!chatInputWrapperRef.current?.contains(active)) {
+          setIsKeyboardOpen(false);
+        }
+      }, 0);
+    };
+
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
+
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.body.classList.toggle('keyboard-open', isKeyboardOpen);
+    return () => {
+      document.body.classList.remove('keyboard-open');
+    };
+  }, [isKeyboardOpen]);
+
+  const scrollBottomPadding = useMemo(() => {
+    const measured = chatInputHeight > 0 ? chatInputHeight : 160;
+    const keyboardAdjustment = isKeyboardOpen ? 8 : 24;
+    return measured + keyboardAdjustment;
+  }, [chatInputHeight, isKeyboardOpen]);
+
   return (
-    <div className="relative flex h-[calc(100dvh-var(--eco-topbar-h,56px))] w-full flex-col overflow-hidden bg-white">
+    <div
+      className={clsx(
+        'chat-page relative flex min-h-[calc(100svh-var(--eco-topbar-h,56px))] w-full flex-1 flex-col bg-white',
+        { 'keyboard-open': isKeyboardOpen },
+      )}
+      style={{ minHeight: 'calc(100dvh - var(--eco-topbar-h, 56px))' }}
+    >
       {/* SCROLLER */}
       <div
         ref={scrollerRef}
         onScroll={handleScroll}
         role="feed"
         aria-busy={isWaitingForEco || isSendingToEco}
-        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-10 pb-6 [scrollbar-gutter:stable]"
+        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-10 [scrollbar-gutter:stable]"
         style={{
           paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
           WebkitOverflowScrolling: 'touch',
           overscrollBehaviorY: 'contain',
           scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
           touchAction: 'pan-y',
+          paddingBottom: `${scrollBottomPadding}px`,
+          scrollPaddingBottom: `${scrollBottomPadding}px`,
         }}
       >
         <div className="w-full mx-auto max-w-[800px]">
           {isEmptyState && (
-            <div className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex flex-col items-center justify-center py-16 sm:py-20">
+            <div
+              className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex flex-col items-center justify-center py-16 sm:py-20"
+              style={{ minHeight: 'calc(100dvh - var(--eco-topbar-h,56px) - 120px)' }}
+            >
               <motion.div
                 className="w-full px-4"
                 initial={{ opacity: 0, y: 12 }}
@@ -466,7 +567,13 @@ const ChatPage: React.FC = () => {
         )}
       </div>
 
-      <div className="sticky bottom-0 z-40 bg-gradient-to-t from-white via-white/95 to-white/80 px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5 lg:px-10">
+      <div
+        ref={chatInputWrapperRef}
+        className="sticky bottom-0 z-50 bg-gradient-to-t from-white via-white/95 to-white/80 px-4 pt-4 sm:px-6 sm:pt-5 lg:px-10"
+        style={{
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+        }}
+      >
         <div className="w-full mx-auto max-w-[800px]">
           <QuickSuggestions
             visible={

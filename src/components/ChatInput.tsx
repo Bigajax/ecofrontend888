@@ -64,9 +64,6 @@ const ChatInput: React.FC<Props> = ({
     ta.style.height = `${Math.min(144, ta.scrollHeight)}px`; // até ~6 linhas
   }, [inputMessage]);
 
-  const onFocus = () => document.body.classList.add('keyboard-open');
-  const onBlur = () => document.body.classList.remove('keyboard-open');
-
   // WebKit Speech (dictation)
   useEffect(() => {
     if ('webkitSpeechRecognition' in window) {
@@ -293,8 +290,6 @@ const ChatInput: React.FC<Props> = ({
                 void handleSend();
               }
             }}
-            onFocus={onFocus}
-            onBlur={onBlur}
             placeholder={placeholder}
             rows={1}
             inputMode="text"
