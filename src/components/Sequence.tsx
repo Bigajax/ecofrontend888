@@ -90,7 +90,8 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   }, [handleKeydown]);
 
   const renderVisual = (slide: OnboardingSlideData) => {
-    const wrapperClasses = 'flex min-h-[160px] w-full flex-col items-center justify-center gap-5 sm:min-h-[200px] md:min-h-[240px]';
+    const wrapperClasses =
+      'flex w-full min-h-[140px] flex-col items-center justify-center gap-5 max-[720px]:min-h-[128px] max-[720px]:gap-4 sm:min-h-[180px] sm:gap-6 md:min-h-[220px]';
     switch (slide.visual) {
       case 'orb':
         return (
@@ -98,7 +99,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
             <div className="relative flex items-center justify-center">
               <div className="absolute h-[200px] w-[200px] rounded-full bg-sky-100/60 blur-3xl sm:h-[220px] sm:w-[220px] md:h-[260px] md:w-[260px] dark:bg-sky-500/10" />
               <motion.div
-                className="relative h-[160px] w-[160px] rounded-full bg-gradient-to-br from-[#c5e5ff] via-[#e0f0ff] to-white shadow-[0_28px_70px_rgba(15,23,42,0.12)] sm:h-[200px] sm:w-[200px] md:h-[240px] md:w-[240px]"
+                className="relative h-[150px] w-[150px] rounded-full bg-gradient-to-br from-[#c5e5ff] via-[#e0f0ff] to-white shadow-[0_28px_70px_rgba(15,23,42,0.12)] sm:h-[190px] sm:w-[190px] md:h-[230px] md:w-[230px]"
                 animate={prefersReducedMotion ? undefined : { scale: [1, 1.035, 1] }}
                 transition={orbPulseTransition}
               >
@@ -111,11 +112,11 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
         );
       case 'mirror':
         return (
-          <div className={`${wrapperClasses} gap-6`}>
+          <div className={`${wrapperClasses} gap-5 sm:gap-6`}>
             <div className="relative flex items-center justify-center">
               <div className="absolute h-[200px] w-[200px] rounded-full bg-sky-200/30 blur-3xl sm:h-[220px] sm:w-[220px] md:h-[260px] md:w-[260px] dark:bg-slate-700/30" />
               <motion.div
-                className="relative h-[160px] w-[160px] rounded-full border border-white/50 bg-white/40 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur-3xl sm:h-[200px] sm:w-[200px] md:h-[240px] md:w-[240px]"
+                className="relative h-[150px] w-[150px] rounded-full border border-white/50 bg-white/40 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur-3xl sm:h-[190px] sm:w-[190px] md:h-[230px] md:w-[230px]"
                 animate={prefersReducedMotion ? undefined : { scale: [1, 1.015, 1] }}
                 transition={orbPulseTransition}
               >
@@ -131,14 +132,14 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
                 <div className="absolute inset-[34%] rounded-full border border-white/40 bg-gradient-to-br from-white/65 via-white/40 to-transparent" />
               </motion.div>
             </div>
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-300/80">
+            <div className="flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-center text-xs font-medium text-slate-500 dark:text-slate-300/80">
               <span className="text-slate-700 dark:text-white/90">Hoje</span>
-              <span className="h-px w-10 bg-slate-300/60" aria-hidden="true" />
-              <span>Padrões</span>
-              <span className="h-px w-10 bg-slate-300/60" aria-hidden="true" />
-              <span>Memórias</span>
-              <span className="h-px w-10 bg-slate-300/60" aria-hidden="true" />
-              <span>Você crescendo</span>
+              <span className="hidden h-px w-10 shrink-0 bg-slate-300/60 sm:block" aria-hidden="true" />
+              <span className="whitespace-normal">Padrões</span>
+              <span className="hidden h-px w-10 shrink-0 bg-slate-300/60 sm:block" aria-hidden="true" />
+              <span className="whitespace-normal">Memórias</span>
+              <span className="hidden h-px w-10 shrink-0 bg-slate-300/60 sm:block" aria-hidden="true" />
+              <span className="max-w-[10ch] whitespace-normal leading-snug">Você crescendo</span>
             </div>
           </div>
         );
@@ -148,13 +149,13 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
             <div className="relative flex items-center justify-center">
               <div className="absolute h-[200px] w-[200px] rounded-full bg-blue-100/40 blur-3xl sm:h-[220px] sm:w-[220px] md:h-[260px] md:w-[260px] dark:bg-blue-500/10" />
               <motion.div
-                className="relative flex h-[160px] w-[160px] flex-col items-center justify-center rounded-[28px] border border-white/40 bg-white/60 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-3xl sm:h-[200px] sm:w-[200px] md:h-[240px] md:w-[240px] dark:bg-white/5"
+                className="relative flex h-[150px] w-[150px] flex-col items-center justify-center rounded-[28px] border border-white/40 bg-white/60 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-3xl sm:h-[190px] sm:w-[190px] md:h-[230px] md:w-[230px] dark:bg-white/5"
                 animate={prefersReducedMotion ? undefined : { y: [-4, 4, -4] }}
                 transition={floatTransition}
               >
                 <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-white/40 via-white/20 to-transparent" />
                 <motion.div
-                  className="relative z-10 flex items-center gap-4 text-3xl"
+                  className="relative z-10 flex items-center gap-4 text-2xl sm:text-3xl"
                   animate={prefersReducedMotion ? undefined : { scale: [1, 1.06, 1] }}
                   transition={orbPulseTransition}
                 >
@@ -182,7 +183,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
 
   return (
     <div
-      className="relative grid min-h-[100dvh] w-full place-items-center overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+2.5rem)] pt-[calc(env(safe-area-inset-top,0px)+2.5rem)] sm:pb-[calc(env(safe-area-inset-bottom,0px)+3.5rem)] sm:pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] dark:from-slate-950 dark:to-slate-900"
+      className="relative grid min-h-[100dvh] w-full place-items-center bg-gradient-to-b from-slate-50 to-slate-100 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+2.5rem)] pt-[calc(env(safe-area-inset-top,0px)+2.5rem)] sm:pb-[calc(env(safe-area-inset-bottom,0px)+3.5rem)] sm:pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] dark:from-slate-950 dark:to-slate-900"
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-32 -left-28 h-72 w-72 rounded-full bg-[#b8d8ff]/40 blur-3xl" />
@@ -214,18 +215,18 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
             <header className="flex flex-col gap-4 sm:gap-5">
               <h2
                 id={`onboarding-slide-${currentSlideData.id}-title`}
-                className="text-2xl font-semibold leading-tight text-slate-900 sm:text-3xl md:text-[32px] dark:text-white"
+                className="text-2xl font-semibold leading-tight text-slate-900 max-[720px]:text-[1.75rem] max-[360px]:text-[1.6rem] sm:text-3xl md:text-[32px] dark:text-white"
               >
                 {currentSlideData.title}
               </h2>
-              <div className="flex flex-col gap-3 text-[15px] leading-relaxed text-slate-600 sm:text-base dark:text-slate-300">
+              <div className="flex flex-col gap-3 text-[15px] leading-relaxed text-slate-600 max-[720px]:text-sm max-[360px]:text-[13.5px] sm:text-base dark:text-slate-300">
                 {currentSlideData.paragraphs.map((paragraph, index) => (
                   <p key={index}>{paragraph}</p>
                 ))}
               </div>
             </header>
 
-            <div className="mt-6 flex flex-1 flex-col items-center justify-center gap-6 sm:mt-8 sm:gap-8">
+            <div className="mt-6 flex flex-1 min-h-0 flex-col items-center justify-center gap-6 sm:mt-8 sm:gap-8 max-[720px]:gap-5">
               {renderVisual(currentSlideData)}
               {currentSlideData.subtext ? (
                 <p className="text-sm font-medium text-slate-500 dark:text-slate-300/80">
@@ -233,11 +234,11 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
                 </p>
               ) : null}
               {currentSlideData.badges ? (
-                <div className="flex flex-wrap items-center justify-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-3">
                   {currentSlideData.badges.map((badge) => (
                     <span
                       key={badge.label}
-                      className="inline-flex items-center gap-1 rounded-full border border-white/40 bg-white/60 px-3 py-1 text-xs font-medium text-slate-600 shadow-[0_8px_20px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/10 dark:text-slate-200"
+                      className="inline-flex items-center gap-1 rounded-full border border-white/40 bg-white/60 px-3 py-1 text-xs font-medium text-slate-600 shadow-[0_8px_20px_rgba(15,23,42,0.08)] backdrop-blur-xl max-[360px]:text-[11px] dark:border-white/10 dark:bg-white/10 dark:text-slate-200"
                     >
                       <span aria-hidden="true">{badge.icon}</span>
                       <span>{badge.label}</span>
@@ -248,7 +249,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
             </div>
 
             <footer className="mt-6 border-t border-white/40 pt-4 sm:mt-8 sm:pt-5 dark:border-white/10">
-              <div className="flex flex-col items-center gap-5">
+              <div className="flex min-h-[140px] w-full flex-col items-center gap-5 max-[360px]:min-h-[128px]">
                 <div className="w-full">
                   <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/40 dark:bg-white/10">
                     <motion.span
