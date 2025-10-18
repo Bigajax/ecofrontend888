@@ -147,13 +147,13 @@ export default function QuickSuggestions({
 
   return (
     <div
-      className={`w-full max-w-2xl mx-auto mb-2 ${className}`}
+      className={`w-full max-w-[800px] mx-auto mb-2 flex flex-col gap-3 ${className}`}
       aria-label="Atalhos de início"
       role="region"
     >
       {/* ⬆️ Frases rotativas */}
       {showRotating && (
-        <div className="mb-1.5">
+        <div className="w-full">
           <RotatingPrompts
             items={rotatingItems}
             onPick={emitPick}
@@ -167,29 +167,21 @@ export default function QuickSuggestions({
       )}
 
       {/* ⬇️ Pílulas compactas */}
-      <div
-        className="
-          flex gap-2 overflow-x-auto py-1 px-0.5
-          whitespace-nowrap md:whitespace-normal
-          md:flex md:flex-wrap md:justify-center
-          [scrollbar-width:none] [-ms-overflow-style:none]
-          [&::-webkit-scrollbar]:hidden
-        "
-      >
+      <div className="flex w-full flex-wrap justify-center gap-2 px-0.5 py-1 sm:gap-2.5 lg:gap-3">
         {suggestions.map((s, index) => (
           <button
             key={s.id}
             onClick={() => emitPick(s, { source: "pill", index })}
             className="
-              shrink-0 md:shrink
-              h-9 md:h-10
-              rounded-full pl-2.5 pr-3 md:px-3.5
+              shrink-0
+              h-10 md:h-11
+              rounded-full px-3.5 md:px-4
               bg-white/70 backdrop-blur-md
               border border-black/10
               shadow-[0_8px_22px_rgba(16,24,40,0.08)]
-              hover:bg-white/85 hover:border-black/15
+              hover:bg-white hover:border-black/15 hover:shadow-[0_12px_32px_rgba(16,24,40,0.12)]
               focus:outline-none focus-visible:ring-2 focus-visible:ring-black/10
-              active:translate-y-[1px] transition
+              active:translate-y-[1px] transition duration-200 ease-out
               text-slate-900/95 inline-flex items-center gap-2
             "
             aria-label={`Sugerir: ${s.label}`}
