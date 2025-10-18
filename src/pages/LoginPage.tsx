@@ -179,7 +179,9 @@ const LoginPage: React.FC = () => {
     <PhoneFrame>
       <div className="relative min-h-[100dvh] overflow-hidden bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <div className="relative grid min-h-[100dvh] place-items-center px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom))]">
-          {isTourActive && <TourInicial onClose={closeTour} onFinish={closeTour as any} />}
+          {isTourActive && (
+            <TourInicial onClose={closeTour} reason="login" nextPath="/login" />
+          )}
 
           <motion.div
             initial={{ y: 12, opacity: 0 }}
