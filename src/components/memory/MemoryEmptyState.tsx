@@ -15,30 +15,41 @@ const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = ({ hasFilters }) => {
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center text-center py-16"
     >
-      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-        <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-slate-50 shadow-inner">
+        <svg className="h-12 w-12 text-slate-300" viewBox="0 0 48 48" fill="none" aria-hidden>
           <path
+            d="M24 8c-6.627 0-12 5.373-12 12v6c0 2.21-1.79 4-4 4h0"
+            stroke="currentColor"
+            strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+            opacity={0.4}
           />
+          <path
+            d="M38 30c-2.21 0-4 1.79-4 4v6"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity={0.6}
+          />
+          <circle cx={24} cy={20} r={6} stroke="currentColor" strokeWidth={2} opacity={0.7} />
         </svg>
       </div>
-      <p className="text-[19px] font-semibold text-gray-900 mb-2">
-        {hasFilters ? 'Nenhum resultado encontrado' : 'Nenhuma memória ainda'}
+      <p className="text-[19px] font-semibold text-slate-900 mb-2">
+        {hasFilters ? 'Nenhum resultado com esses filtros' : 'Você ainda não registrou memórias'}
       </p>
-      <p className="text-[15px] text-gray-500 mb-6 max-w-sm leading-[1.4]">
+      <p className="text-[15px] text-slate-500 mb-6 max-w-sm leading-[1.5]">
         {hasFilters
-          ? 'Tente ajustar os filtros para ver mais resultados.'
-          : 'Suas conversas com a Eco aparecerão aqui organizadas por data.'}
+          ? 'Experimente remover alguns filtros ou ajustar a busca para ver mais lembranças.'
+          : 'Comece gravando um momento marcante com a Eco. Ele aparece aqui organizado por intensidade e emoção.'}
       </p>
       {!hasFilters && (
         <button
           onClick={() => navigate('/chat')}
-          className="px-6 py-3 rounded-full bg-blue-500 hover:bg-blue-600 text-white font-medium text-[15px] transition-colors duration-150 shadow-sm"
+          className="px-6 py-3 rounded-full border border-slate-200 bg-white/90 text-slate-700 font-semibold text-[15px] shadow-sm transition hover:bg-white"
         >
-          Começar conversa
+          Grave sua primeira memória
         </button>
       )}
     </motion.div>

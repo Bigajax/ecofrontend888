@@ -1,27 +1,8 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import EmotionBubble from './EmotionBubble';
-import Chip from './Chip';
-import ExpandButton from './ExpandButton';
-import {
-  Memoria,
-  capitalize,
-  getCreatedAt,
-  getDomain,
-  getEmotion,
-  getPattern,
-  getTags,
-  humanDate,
-  intensityOf,
-  toDate,
-} from '../../pages/memory/utils';
-import { appleShade } from '../../pages/memory/palette';
-import { getEmotionToken } from '../../pages/memory/emotionTokens';
-
-type MemoryCardProps = {
-  mem: Memoria;
-};
+import type { MemoryCardDTO } from '../../pages/memory/memoryCardDto';
 
 const toRgb = (hex?: string) => {
   if (!hex) return null;
@@ -34,162 +15,301 @@ const toRgb = (hex?: string) => {
   return { r, g, b };
 };
 
-const MemoryCardComponent: React.FC<MemoryCardProps> = ({ mem }) => {
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const CONTEXT_PREVIEW_LIMIT = 260;
+
+type MemoryCardProps = {
+  mem: MemoryCardDTO;
+  onOpenChat?: (memory: MemoryCardDTO) => void;
+  onToggleFavorite?: (memory: MemoryCardDTO, next: boolean) => void;
+  onEditTags?: (memory: MemoryCardDTO) => void;
+};
+
+const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavorite, onEditTags }) => {
   const [open, setOpen] = useState(false);
-  const toggle = useCallback(() => setOpen((value) => !value), []);
-  const detailsId = `mem-details-${mem.id ?? Math.random().toString(36).slice(2)}`;
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [contextExpanded, setContextExpanded] = useState(false);
 
-  const emotionName = getEmotion(mem);
-  const token = getEmotionToken(emotionName);
-  const primaryColor = token.accent;
-  const primaryRgb = useMemo(() => toRgb(primaryColor), [primaryColor]);
-  const when = humanDate(getCreatedAt(mem));
-  const intensidade = intensityOf(mem);
+  const detailsId = `memory-details-${mem.id}`;
+  const accentRgb = useMemo(() => toRgb(mem.accent), [mem.accent]);
+  const cardShadow = accentRgb
+    ? `0 20px 50px rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.22), 0 12px 24px rgba(15, 23, 42, 0.12)`
+    : '0 20px 50px rgba(15, 23, 42, 0.12), 0 12px 24px rgba(15, 23, 42, 0.08)';
+  const meterShadow = accentRgb
+    ? `0 8px 16px rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.28)`
+    : '0 8px 16px rgba(15, 23, 42, 0.2)';
 
-  const domain = getDomain(mem);
-  const padrao = getPattern(mem);
-  const tags = getTags(mem);
+  const intensityPercent = mem.intensidade == null ? 0 : clamp((mem.intensidade / 10) * 100, 0, 100);
+  const hasTags = mem.tags.length > 0;
+  const visibleTags = mem.tags.slice(0, 3);
+  const extraTags = mem.tags.length - visibleTags.length;
 
-  const accentShadow = primaryRgb
-    ? `0 18px 46px rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.24)`
-    : '0 18px 46px rgba(15, 23, 42, 0.16)';
+  const context = mem.contexto?.trim() ?? '';
+  const showContextToggle = context.length > CONTEXT_PREVIEW_LIMIT;
+  const contextDisplay = contextExpanded || !showContextToggle
+    ? context
+    : `${context.slice(0, CONTEXT_PREVIEW_LIMIT).trim()}…`;
+
+  const timeLabel = mem.timeAgo || mem.fallbackDate;
+
+  const handleToggle = () => setOpen((value) => !value);
+
+  const handleOpenChat = () => {
+    if (onOpenChat) {
+      onOpenChat(mem);
+      return;
+    }
+    window.dispatchEvent(
+      new CustomEvent('eco:memory-open-chat', {
+        detail: {
+          memoryId: mem.id,
+          mensagemId: mem.mensagemId,
+          contexto: mem.contexto,
+        },
+      })
+    );
+  };
+
+  const handleToggleFavorite = () => {
+    setIsFavorite((previous) => {
+      const next = !previous;
+      onToggleFavorite?.(mem, next);
+      return next;
+    });
+  };
+
+  const handleEditTags = () => {
+    onEditTags?.(mem);
+  };
 
   return (
     <motion.li
       layout
-      className="group relative w-full max-w-full overflow-hidden rounded-[28px] border border-white/60 bg-white/80 px-6 py-6 backdrop-blur-2xl transition-shadow duration-300"
+      className={`group relative flex flex-col gap-5 overflow-hidden rounded-[26px] border border-white/60 bg-white/75 px-5 py-5 backdrop-blur-2xl transition-[box-shadow,transform] duration-300 ${mem.emotionTheme.className}`}
       style={{
-        boxShadow: `${accentShadow}, 0 12px 30px rgba(15, 23, 42, 0.08)`,
+        boxShadow: cardShadow,
       }}
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-[28px] opacity-70"
+        className="pointer-events-none absolute inset-0 opacity-80"
         style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.25))',
+          background: `linear-gradient(135deg, ${mem.emotionTheme.accentSofter}, rgba(255,255,255,0.55))`,
         }}
       />
       <span
         aria-hidden
-        className="pointer-events-none absolute -inset-px rounded-[30px] opacity-0 transition duration-500 ease-[cubic-bezier(0.22,0.61,0.36,1)] group-hover:opacity-60"
+        className="pointer-events-none absolute -inset-px rounded-[30px] opacity-0 transition duration-500 ease-[cubic-bezier(0.22,0.61,0.36,1)] group-hover:opacity-70"
         style={{
-          background: primaryRgb
-            ? `radial-gradient(140% 140% at 85% 15%, rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.24), transparent 65%)`
-            : 'radial-gradient(140% 140% at 85% 15%, rgba(79, 70, 229, 0.2), transparent 65%)',
+          background: accentRgb
+            ? `radial-gradient(140% 140% at 85% 12%, rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.2), transparent 70%)`
+            : 'radial-gradient(140% 140% at 85% 12%, rgba(79,70,229,0.2), transparent 70%)',
         }}
       />
 
-      <div className="relative flex flex-col gap-5">
-        <div className="flex items-start gap-5">
-          <EmotionBubble emotion={emotionName} size={56} />
-          <div className="min-w-0 flex-1 pt-1">
-            <div className="flex items-start justify-between gap-3">
+      <div className="relative flex flex-col gap-4">
+        <div className="flex items-start gap-4">
+          <EmotionBubble emotion={mem.emocao} size={56} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1">
-                <h3 className="mb-0.5 truncate text-[18px] font-semibold leading-[1.35] text-gray-900">
-                  {capitalize(getEmotion(mem)) || 'Registro emocional'}
-                </h3>
-                <p className="text-[13px] font-medium leading-[1.4] text-gray-500">{when}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="truncate text-[17px] font-semibold leading-[1.35] text-slate-900">
+                    {mem.titulo}
+                  </h3>
+                  {mem.nivelAbertura != null ? (
+                    <span className="rounded-full border border-black/5 bg-white/70 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                      Abertura {mem.nivelAbertura}
+                    </span>
+                  ) : null}
+                </div>
+                <p
+                  className={`mt-1 flex items-center gap-2 text-[13px] font-medium tracking-tight ${mem.emotionTheme.metaTextClass}`}
+                >
+                  <span>{timeLabel}</span>
+                  <span className="inline-block h-1 w-1 rounded-full bg-current opacity-60" aria-hidden />
+                  <span className="truncate">{mem.subtitulo}</span>
+                </p>
               </div>
-              <ExpandButton open={open} onClick={toggle} controlsId={detailsId} />
+              <button
+                type="button"
+                onClick={handleToggle}
+                aria-expanded={open}
+                aria-controls={detailsId}
+                aria-label={open ? 'Recolher detalhes da memória' : 'Expandir detalhes da memória'}
+                className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full border border-black/10 bg-white/80 text-slate-500 shadow-sm transition hover:bg-white"
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  className={`h-4 w-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                  aria-hidden
+                >
+                  <path
+                    d="M6 8l4 4 4-4"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
             </div>
 
-            <div className="mt-4 mb-4">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-[12px] font-medium text-gray-600">Intensidade</span>
-                <span className="text-[12px] font-semibold text-gray-800">{intensidade}/10</span>
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-[12px] font-medium text-slate-500">
+                <span>Intensidade</span>
+                <span className={`font-semibold ${mem.emotionTheme.accentTextClass}`}>{mem.intensidadeLabel}</span>
               </div>
-              <div className="relative h-2 rounded-full bg-gray-100/80">
+              <div className={`relative mt-2 h-2 w-full overflow-hidden rounded-full ${mem.emotionTheme.meterTrackClass}`}>
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${(intensidade / 10) * 100}%` }}
-                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                  animate={{ width: `${intensityPercent}%` }}
+                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                  aria-hidden
                   className="absolute inset-y-0 rounded-full"
                   style={{
-                    background: `linear-gradient(90deg, ${primaryColor}, ${appleShade(primaryColor, -0.2)})`,
-                    boxShadow: primaryRgb
-                      ? `0 8px 16px rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.24)`
-                      : undefined,
+                    background: `linear-gradient(90deg, ${mem.accent}, ${mem.emotionTheme.accentSoft})`,
+                    boxShadow: meterShadow,
                   }}
                 />
+                {mem.intensidade == null ? (
+                  <span className="absolute inset-0 grid place-items-center text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                    Sem dado
+                  </span>
+                ) : null}
               </div>
             </div>
 
-            {domain && (
-              <div className="mb-3">
-                <Chip variant="colorful" seedColor={domain}>
-                  {domain}
-                </Chip>
+            {hasTags ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {visibleTags.map((tag, index) => (
+                  <span
+                    key={`${tag}-${index}`}
+                    className={`rounded-full px-3 py-1 text-xs font-medium shadow-sm ${mem.emotionTheme.chipClass}`}
+                  >
+                    {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                  </span>
+                ))}
+                {extraTags > 0 ? (
+                  <span className="rounded-full border border-black/10 bg-white/80 px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">
+                    +{extraTags}
+                  </span>
+                ) : null}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
 
-      {!!tags.length && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {tags.slice(0, 3).map((tag, index) => (
-            <Chip key={`${tag}-${index}`} variant="colorful" seedColor={tag}>
-              {tag}
-            </Chip>
-          ))}
-          {tags.length > 3 && <Chip>+{tags.length - 3} mais</Chip>}
-        </div>
-      )}
-
       <AnimatePresence initial={false}>
-        {open && (
+        {open ? (
           <motion.div
+            key="details"
             id={detailsId}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="overflow-hidden"
+            transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="relative overflow-hidden"
           >
-            <div className="space-y-4 mt-4 pt-4 border-t border-gray-100">
-              <div className="flex flex-wrap gap-2">
-                <Chip title="Criado em">
-                  {toDate(getCreatedAt(mem)).toLocaleDateString('pt-BR', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </Chip>
-                {tags.length > 3 && <Chip title="Todas as tags">{tags.join(', ')}</Chip>}
+            <div className="mt-4 space-y-4 rounded-[22px] border border-white/70 bg-white/80 p-4 shadow-[0_12px_32px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+              {mem.resumo ? (
+                <div className="rounded-2xl border border-black/5 bg-white/85 p-4 shadow-sm">
+                  <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-900">
+                    <span
+                      aria-hidden
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: mem.accent }}
+                    />
+                    Resumo da Eco
+                  </div>
+                  <p className="mt-2 text-[13px] leading-relaxed text-slate-700">{mem.resumo}</p>
+                  {mem.resumoCompleto && mem.resumoCompleto !== mem.resumo ? (
+                    <p className="mt-2 text-[11px] text-slate-400">Texto encurtado para caber no cartão.</p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {context ? (
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[13px] font-semibold text-slate-800">Seu registro</span>
+                    {showContextToggle ? (
+                      <button
+                        type="button"
+                        onClick={() => setContextExpanded((value) => !value)}
+                        className="text-[12px] font-medium text-slate-500 underline-offset-2 transition hover:text-slate-600"
+                      >
+                        {contextExpanded ? 'Ver menos' : 'Ver mais'}
+                      </button>
+                    ) : null}
+                  </div>
+                  <p className="mt-2 whitespace-pre-line text-[13px] leading-relaxed text-slate-700">{contextDisplay}</p>
+                </div>
+              ) : null}
+
+              {mem.padrao ? (
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                  <span className="text-[13px] font-semibold text-slate-800">Padrão comportamental</span>
+                  <p className="mt-2 text-[13px] leading-relaxed text-slate-700">{mem.padrao}</p>
+                </div>
+              ) : null}
+
+              <div className="flex flex-wrap gap-3 text-[12px] text-slate-500">
+                <span className="inline-flex items-center gap-2 rounded-full border border-black/5 bg-white/90 px-3 py-1 font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: mem.accent }} aria-hidden />
+                  {mem.domain}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-black/5 bg-white/90 px-3 py-1 font-medium">
+                  Registrada em {mem.fallbackDate}
+                </span>
+                {mem.categoria ? (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-black/5 bg-white/90 px-3 py-1 font-medium">
+                    Categoria {mem.categoria}
+                  </span>
+                ) : null}
               </div>
 
-              {padrao && (
-                <div className="rounded-xl p-4 bg-gray-50/80 backdrop-blur-sm border border-gray-100">
-                  <div className="font-semibold text-[14px] text-gray-900 mb-2">Padrão identificado</div>
-                  <div className="text-[14px] leading-[1.5] text-gray-700">{padrao}</div>
-                </div>
-              )}
-
-              {(mem.analise_resumo || mem.resumo_eco) && (
-                <div className="rounded-xl p-4 bg-blue-50/50 backdrop-blur-sm border border-blue-100/60">
-                  <div className="font-semibold text-[14px] text-blue-900 mb-2 flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500" />
-                    Reflexão da Eco
-                  </div>
-                  <div className="text-[14px] leading-[1.5] text-blue-800">{mem.analise_resumo || mem.resumo_eco}</div>
-                </div>
-              )}
-
-              {mem.contexto && (
-                <div className="rounded-xl p-4 bg-gray-50/80 backdrop-blur-sm border border-gray-100">
-                  <div className="font-semibold text-[14px] text-gray-900 mb-2">Seu registro</div>
-                  <div className="text-[14px] leading-[1.5] text-gray-700">{mem.contexto}</div>
-                </div>
-              )}
+              <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleOpenChat}
+                  className="flex-1 rounded-full border border-black/10 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-white"
+                  aria-label="Abrir memória no chat"
+                >
+                  Abrir no chat
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggleFavorite}
+                  className={`flex-1 rounded-full border border-black/10 px-4 py-2 text-sm font-semibold shadow-sm transition ${
+                    isFavorite
+                      ? 'bg-amber-100 text-amber-700 hover:bg-amber-200/80 border-amber-200'
+                      : 'bg-white/90 text-slate-700 hover:bg-white'
+                  }`}
+                  aria-label={isFavorite ? 'Remover memória dos favoritos' : 'Marcar memória como favorita'}
+                >
+                  {isFavorite ? 'Favorita' : 'Marcar como favorita'}
+                </button>
+                {onEditTags ? (
+                  <button
+                    type="button"
+                    onClick={handleEditTags}
+                    className="flex-1 rounded-full border border-black/10 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-white"
+                    aria-label="Editar tags da memória"
+                  >
+                    Editar tags
+                  </button>
+                ) : null}
+              </div>
             </div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </motion.li>
   );
 };
 
-const MemoryCard = React.memo(MemoryCardComponent);
-MemoryCard.displayName = 'MemoryCard';
-
-export default MemoryCard;
+export default React.memo(MemoryCard);
