@@ -97,6 +97,11 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
       }
       return prev;
     });
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        dislikeButtonRef.current?.focus({ preventScroll: true });
+      });
+    }
   }, []);
 
   const handleSuccess = useCallback(
@@ -232,7 +237,6 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
         </button>
       </div>
       <FeedbackReasonPopover
-        anchorRef={dislikeButtonRef}
         open={isPopoverOpen}
         selectedReason={selectedReason}
         status={status}

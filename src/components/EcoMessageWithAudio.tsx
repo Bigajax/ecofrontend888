@@ -456,6 +456,11 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
     setShowReasons(false);
     setSelectedReason(null);
     setFeedbackError(null);
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        downBtnRef.current?.focus({ preventScroll: true });
+      });
+    }
   }, []);
 
   const handleLike = useCallback(async () => {
@@ -653,7 +658,6 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
                   </GhostBtn>
                 </div>
                 <FeedbackReasonPopover
-                  anchorRef={downBtnRef}
                   open={showReasons && hasInteractionId && !isStreaming}
                   selectedReason={selectedReason}
                   status={reasonPopoverStatus}
