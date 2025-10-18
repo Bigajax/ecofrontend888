@@ -1,20 +1,11 @@
-import {
-  MutableRefObject,
-  MouseEvent,
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { createPortal } from "react-dom";
+import { PointerEvent, useEffect, useId, useMemo, useRef } from "react";
 
+import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
+
+import FeedbackPortal from "./feedback/FeedbackPortal";
 import { FEEDBACK_REASONS } from "./FeedbackPrompt";
 
 type FeedbackReasonPopoverProps = {
-  anchorRef: MutableRefObject<HTMLElement | null>;
   open: boolean;
   selectedReason: string | null;
   status: "idle" | "selecting" | "sending" | "success" | "error";
@@ -23,15 +14,7 @@ type FeedbackReasonPopoverProps = {
   onClose: () => void;
 };
 
-type Position = {
-  top: number;
-  left: number;
-};
-
-const DEFAULT_POSITION: Position = { top: 0, left: 0 };
-
 export function FeedbackReasonPopover({
-  anchorRef,
   open,
   selectedReason,
   status,
@@ -39,40 +22,11 @@ export function FeedbackReasonPopover({
   onConfirm,
   onClose,
 }: FeedbackReasonPopoverProps) {
-  const [position, setPosition] = useState<Position>(DEFAULT_POSITION);
   const backdropRef = useRef<HTMLDivElement | null>(null);
   const firstReasonRef = useRef<HTMLButtonElement | null>(null);
   const descriptionId = useId();
 
-  const updatePosition = useCallback(() => {
-    const anchor = anchorRef.current;
-    if (!anchor) {
-      setPosition({
-        top: window.innerHeight / 2,
-        left: window.innerWidth / 2,
-      });
-      return;
-    }
-
-    const rect = anchor.getBoundingClientRect();
-    setPosition({
-      top: rect.bottom + window.scrollY + 8,
-      left: rect.left + rect.width / 2 + window.scrollX,
-    });
-  }, [anchorRef]);
-
-  useLayoutEffect(() => {
-    if (!open) return;
-    updatePosition();
-    const handleResize = () => updatePosition();
-    const handleScroll = () => updatePosition();
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("scroll", handleScroll, true);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("scroll", handleScroll, true);
-    };
-  }, [open, updatePosition]);
+  useLockBodyScroll(open);
 
   useEffect(() => {
     if (!open) return;
@@ -104,8 +58,10 @@ export function FeedbackReasonPopover({
           ref={ref}
           type="button"
           onClick={() => onSelect(reason.key)}
-          className={`rounded-full border px-3 py-1 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${
-            active ? "bg-slate-100 border-slate-300" : "bg-white hover:bg-slate-50"
+          className={`rounded-full border px-4 py-1.5 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${
+            active
+              ? "border-slate-300 bg-slate-100 text-slate-800"
+              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
           }`}
         >
           {reason.label}
@@ -116,55 +72,76 @@ export function FeedbackReasonPopover({
 
   if (!open) return null;
 
-  const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
+  const handleBackdropClick = (event: PointerEvent<HTMLDivElement>) => {
     if (event.target === backdropRef.current) {
       onClose();
     }
   };
 
   const isSending = status === "sending";
+  const bottomOffset = "calc(16px + env(safe-area-inset-bottom, 0px))";
 
-  return createPortal(
-    <div
-      ref={backdropRef}
-      className="fixed inset-0 z-[9999] bg-black/20"
-      onMouseDown={handleBackdropClick}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-describedby={descriptionId}
-        className="absolute min-w-[280px] max-w-sm rounded-2xl border border-slate-200 bg-white p-4 shadow-xl"
-        style={{
-          top: position.top,
-          left: position.left,
-          transform: "translate(-50%, 0)",
-        }}
-      >
-        <p id={descriptionId} className="mb-3 text-sm font-medium text-slate-700">
-          O que não ajudou?
-        </p>
-        <div className="mb-4 flex flex-wrap gap-2">{reasonButtons}</div>
-        <div className="flex items-center justify-end gap-3">
-          <button
-            type="button"
-            className="text-sm text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-            onClick={onClose}
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            className="rounded-full bg-slate-900 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={onConfirm}
-            disabled={!selectedReason || isSending}
-            aria-busy={isSending}
-          >
-            {isSending ? "Enviando…" : "Enviar"}
-          </button>
+  return (
+    <FeedbackPortal>
+      <>
+        <div
+          ref={backdropRef}
+          className="fixed inset-0 z-[60] min-h-[100dvh] bg-black/35 backdrop-blur-[2px]"
+          onPointerDown={handleBackdropClick}
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none fixed inset-x-0 bottom-0 z-[61] flex min-h-[100dvh] flex-col justify-end"
+          style={{ paddingBottom: bottomOffset }}
+        >
+          <div className="pointer-events-auto mx-auto w-full max-w-screen-sm px-4 md:max-w-lg">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-describedby={descriptionId}
+              className="animate-[feedback-sheet-in_220ms_ease-out] rounded-3xl bg-white/95 p-4 shadow-xl ring-1 ring-black/5 backdrop-blur"
+              style={{
+                maxHeight: "min(70dvh, 520px)",
+                overflow: "auto",
+                WebkitOverflowScrolling: "touch",
+                paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)",
+              }}
+            >
+              <div className="flex flex-col gap-4">
+                <div className="text-center">
+                  <p className="text-base font-semibold text-slate-900">
+                    O que não ajudou?
+                  </p>
+                  <p id={descriptionId} className="mt-1 text-sm text-slate-500">
+                    Conte para a Eco como ela pode responder melhor.
+                  </p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-2" role="group">
+                  {reasonButtons}
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                  <button
+                    type="button"
+                    className="w-full rounded-full border border-transparent px-4 py-2 text-sm font-medium text-slate-500 transition hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 sm:w-auto"
+                    onClick={onClose}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    onClick={onConfirm}
+                    disabled={!selectedReason || isSending}
+                    aria-busy={isSending}
+                  >
+                    {isSending ? "Enviando…" : "Enviar"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>,
-    document.body,
+      </>
+    </FeedbackPortal>
   );
 }

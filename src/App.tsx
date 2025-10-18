@@ -50,7 +50,7 @@ function AppInner() {
   }, []);
 
   return (
-    <div className="min-h-screen w-screen bg-white font-sans flex flex-col">
+    <div className="min-h-[100dvh] w-screen bg-white font-sans flex flex-col">
       <Routes>
         {/* Raiz inteligente → /welcome (ads/tour) ou /login */}
         <Route path="/" element={<RootRedirect />} />
