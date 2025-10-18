@@ -190,7 +190,9 @@ const LoginPage: React.FC = () => {
         />
 
         <div className="relative grid min-h-[100dvh] place-items-center px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom))]">
-          {isTourActive && <TourInicial onClose={closeTour} onFinish={closeTour as any} />}
+          {isTourActive && (
+            <TourInicial onClose={closeTour} reason="login" nextPath="/login" />
+          )}
 
           <motion.div
             initial={{ y: 12, opacity: 0 }}
