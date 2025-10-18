@@ -55,11 +55,26 @@ export default {
           '50%':  { transform: 'scale(1)', opacity: '1' },
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
+        pulseSlow: {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.05)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-6px)' },
+        },
+        spinSlow: {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
       },
       animation: {
         ripple: 'ripple 1.5s infinite ease-in-out',
         pulseListen: 'pulseListen 1.2s ease-in-out infinite',
         pulseTalk: 'pulseTalk 3s ease-in-out infinite',
+        pulseSlow: 'pulseSlow 6s ease-in-out infinite',
+        float: 'float 9s ease-in-out infinite',
+        spinSlow: 'spinSlow 18s linear infinite',
       },
     },
   },
