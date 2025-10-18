@@ -1,10 +1,15 @@
-import { buildApiUrl } from "../constants/api";
+import { API_BASE_URL, buildApiUrl } from "../constants/api";
 import { getOrCreateGuestId } from "./guestIdentity";
 
 const AUTH_TOKEN_KEY = "auth_token";
 
 export type ApiFetchErrorKind = "timeout" | "network" | "cors" | "http";
-export type ApiFetchFailureReason = "cors" | "network" | "timeout" | "5xx";
+export type ApiFetchFailureReason =
+  | "cors"
+  | "redirect_cross_origin"
+  | "network"
+  | "timeout"
+  | "5xx";
 
 export interface ApiFetchOptions extends Omit<RequestInit, "body" | "headers"> {
   method?: string;
@@ -38,6 +43,15 @@ const resolveOrigin = (targetUrl: string): string | undefined => {
   }
 };
 
+const parseUrl = (value: string): URL | undefined => {
+  try {
+    if (!value) return undefined;
+    return new URL(value);
+  } catch {
+    return undefined;
+  }
+};
+
 export class ApiFetchError extends Error {
   public readonly kind: ApiFetchErrorKind;
   public readonly status?: number;
@@ -47,6 +61,7 @@ export class ApiFetchError extends Error {
   public readonly origin?: string;
   public readonly bodyText?: string;
   public readonly retryable: boolean;
+  public readonly failureReason?: ApiFetchFailureReason;
 
   constructor(
     message: string,
@@ -59,6 +74,7 @@ export class ApiFetchError extends Error {
       origin,
       bodyText,
       retryable,
+      failureReason,
     }: {
       kind: ApiFetchErrorKind;
       status?: number;
@@ -68,6 +84,7 @@ export class ApiFetchError extends Error {
       origin?: string;
       bodyText?: string;
       retryable: boolean;
+      failureReason?: ApiFetchFailureReason;
     }
   ) {
     super(message);
@@ -80,6 +97,7 @@ export class ApiFetchError extends Error {
     this.origin = origin;
     this.bodyText = bodyText;
     this.retryable = retryable;
+    this.failureReason = failureReason;
   }
 }
 
@@ -108,6 +126,20 @@ const prepareHeaders = (method: string, headersInit?: HeadersInit, hasToken = fa
   headers.delete("content-type");
   headers.set("Accept", "application/json");
 
+  const normalizedMethod = method.toUpperCase();
+
+  if (normalizedMethod === "GET") {
+    headers.delete("Authorization");
+    headers.delete("authorization");
+    if (!hasToken) {
+      headers.set("X-Guest-Id", getOrCreateGuestId());
+    } else {
+      headers.delete("X-Guest-Id");
+      headers.delete("x-guest-id");
+    }
+    return headers;
+  }
+
   if (!hasToken) {
     headers.set("X-Guest-Id", getOrCreateGuestId());
   } else {
@@ -115,7 +147,7 @@ const prepareHeaders = (method: string, headersInit?: HeadersInit, hasToken = fa
     headers.delete("x-guest-id");
   }
 
-  if (isJsonMethod(method)) {
+  if (isJsonMethod(normalizedMethod)) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -143,7 +175,6 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
     baseUrl,
     json,
     body,
-    credentials,
     ...rest
   } = options;
 
@@ -159,23 +190,24 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
   const hasToken = Boolean(token);
   const targetUrl = computeUrl(path, baseUrl);
   const origin = resolveOrigin(targetUrl);
+  const normalizedBase = normalizeBase(baseUrl ?? API_BASE_URL) ?? "";
 
   const headers = prepareHeaders(method, headersInit, hasToken);
 
-  if (hasToken) {
+  if (hasToken && method !== "GET") {
     headers.set("Authorization", `Bearer ${token}`);
   } else {
     headers.delete("Authorization");
     headers.delete("authorization");
   }
 
-  const resolvedCredentials = credentials ?? (hasToken ? "include" : "omit");
-
   const fetchInit: RequestInit = {
     ...rest,
     method,
     headers,
-    credentials: resolvedCredentials,
+    credentials: "omit",
+    mode: "cors",
+    redirect: "follow",
   };
 
   if (method !== "GET" && method !== "HEAD") {
@@ -199,6 +231,47 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
       const response = await fetch(targetUrl, { ...fetchInit, signal: controller.signal });
       clearTimeout(timeoutId);
 
+      const finalUrl = response.url ?? "";
+      const finalUrlParsed = parseUrl(finalUrl);
+      const baseUrlParsed = normalizedBase ? parseUrl(normalizedBase) : undefined;
+      let redirectedToDifferentOrigin = response.redirected;
+
+      if (!redirectedToDifferentOrigin && baseUrlParsed && finalUrlParsed) {
+        const expectedOrigin = baseUrlParsed.origin;
+        const expectedPath = baseUrlParsed.pathname.replace(/\/+$/, "");
+        const finalOrigin = finalUrlParsed.origin;
+        const finalPath = finalUrlParsed.pathname;
+        redirectedToDifferentOrigin =
+          expectedOrigin !== finalOrigin ||
+          (expectedPath && !finalPath.startsWith(expectedPath));
+      }
+
+      if (!redirectedToDifferentOrigin && origin && finalUrlParsed?.origin) {
+        redirectedToDifferentOrigin = origin !== finalUrlParsed.origin;
+      }
+
+      if (redirectedToDifferentOrigin) {
+        const error = new ApiFetchError("Redirected cross-origin", {
+          kind: "cors",
+          status: response.status,
+          statusText: response.statusText,
+          response,
+          url: targetUrl,
+          origin,
+          bodyText: undefined,
+          retryable: false,
+          failureReason: "redirect_cross_origin",
+        });
+        console.error("[apiFetch] Redirect cross-origin detectado", {
+          url: error.url,
+          finalUrl,
+          origin: error.origin,
+          status: error.status,
+          redirected: response.redirected,
+        });
+        throw error;
+      }
+
       if (!response.ok) {
         const cloned = response.clone();
         let bodyText: string | undefined;
@@ -216,6 +289,7 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
           origin,
           bodyText,
           retryable: response.status === 503,
+          failureReason: response.status >= 500 ? "5xx" : undefined,
         });
         lastError = error;
         if (error.retryable && attempt < retries) {
@@ -247,7 +321,8 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
             kind: "timeout",
             url: targetUrl,
             origin,
-            retryable: true,
+            retryable: false,
+            failureReason: "timeout",
           });
         }
 
@@ -258,7 +333,8 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
           kind: isCors ? "cors" : "network",
           url: targetUrl,
           origin,
-          retryable: true,
+          retryable: isCors ? false : true,
+          failureReason: isCors ? "cors" : "network",
         });
       })();
 

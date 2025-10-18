@@ -2,7 +2,13 @@ import { createContext, useContext } from 'react';
 import type { Memoria } from '../../api/memoriaApi';
 import type { RelatorioEmocional } from '../../api/relatorioEmocionalApi';
 
-export type EndpointFailureReason = 'cors' | 'network' | 'timeout' | '5xx' | 'unknown';
+export type EndpointFailureReason =
+  | 'cors'
+  | 'redirect_cross_origin'
+  | 'network'
+  | 'timeout'
+  | '5xx'
+  | 'unknown';
 
 export type ApiErrorDetails = {
   endpoint: string;
