@@ -5,6 +5,7 @@ import { useMemoryData } from './memoryData';
 import type { ApiErrorDetails } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
+import { useAuth } from '../../contexts/AuthContext';
 import { emotionPalette, resolveEmotionKey } from './emotionTokens';
 
 import EcoBubbleLoading from '../../components/EcoBubbleLoading';
@@ -143,6 +144,7 @@ const SegmentedControl: FC<{ value: Period; onChange: (p: Period)=>void }> = ({ 
 
 /* ---------- componente ---------- */
 const ProfileSection: FC = () => {
+  const { userId } = useAuth();
   const {
     perfil,
     memories,
@@ -164,13 +166,13 @@ const ProfileSection: FC = () => {
     const needLocal =
       (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) &&
       (!memories || memories.length === 0);
-    if (!needLocal || fetchingLocal || memLocal) return;
+    if (!needLocal || fetchingLocal || memLocal || !userId) return;
     setFetchingLocal(true);
-    listarMemoriasBasico(600)
+    listarMemoriasBasico(userId, 600)
       .then((arr) => setMemLocal(Array.isArray(arr) ? (arr.filter(Boolean) as Memoria[]) : []))
       .catch(() => setMemLocal([]))
       .finally(() => setFetchingLocal(false));
-  }, [perfil, memories, fetchingLocal, memLocal]);
+  }, [perfil, memories, fetchingLocal, memLocal, userId]);
 
   const allMemories: Memoria[] = (memories?.length ? memories : (memLocal || []));
   const memScoped = useMemo(() => filterByDays(allMemories, period), [allMemories, period]);

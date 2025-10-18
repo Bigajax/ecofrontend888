@@ -1,5 +1,6 @@
 // src/api/perfilApi.ts
 import { ApiFetchError, apiFetchJson } from "./apiFetch";
+import { MissingUserIdError } from "./errors";
 
 export interface PerfilEmocional {
   id?: string;
@@ -46,102 +47,45 @@ function setCache(key: string, data: PerfilEmocional | null) {
 }
 
 /** Monta a lista de rotas candidatas (considera baseURL com '/api') */
-const FALLBACK_STATUSES = new Set([400, 404, 405]);
+const PERFIL_ENDPOINT = '/api/perfil-emocional';
 
-const PERFIL_PATHS = [
-  '/api/perfil-emocional',
-  '/perfil-emocional',
-  '/api/v1/perfil-emocional',
-  '/v1/perfil-emocional',
-  '/api/perfil_emocional',
-  '/perfil_emocional',
-  '/api/perfil',
-  '/perfil',
-];
-
-const buildPerfilCandidates = (userId?: string) => {
-  const unique = new Set<string>();
-  const items: string[] = [];
-
-  const add = (path: string) => {
-    if (!unique.has(path)) {
-      unique.add(path);
-      items.push(path);
-    }
-  };
-
-  PERFIL_PATHS.forEach(add);
-
-  if (userId) {
-    const id = encodeURIComponent(userId);
-    PERFIL_PATHS.forEach((path) => add(`${path}?usuario_id=${id}`));
-    PERFIL_PATHS.forEach((path) => add(`${path}/${id}`));
-  }
-
-  return items;
+const buildPerfilUrl = (userId: string) => {
+  const params = new URLSearchParams({ usuario_id: userId });
+  return `${PERFIL_ENDPOINT}?${params.toString()}`;
 };
 
-async function getPerfilFromCandidates(candidates: string[], timeoutMs: number) {
-  let lastError: unknown;
-
-  for (const path of candidates) {
-    try {
-      const payload = await apiFetchJson<any>(path, { method: 'GET', timeoutMs });
-      const parsed = unwrapPerfil(payload);
-      if (parsed) {
-        return { perfil: parsed, lastError: undefined } as const;
-      }
-    } catch (error) {
-      lastError = error;
-      if (error instanceof ApiFetchError && FALLBACK_STATUSES.has(error.status ?? 0)) {
-        continue;
-      }
-      throw error;
-    }
-  }
-
-  return { perfil: null, lastError } as const;
-}
-
-/* ---------------- API principal com retry + fallback ---------------- */
+/* ---------------- API principal ---------------- */
 export async function buscarPerfilEmocional(
   userId?: string,
   opts?: { timeoutMs?: number; retries?: number; retryDelayMs?: number }
 ): Promise<PerfilEmocional | null> {
-  const timeoutMs = opts?.timeoutMs ?? 10_000;
+  if (!userId) {
+    throw new MissingUserIdError(PERFIL_ENDPOINT);
+  }
 
-  const cacheKey = userId ? `perfil:${userId}` : "perfil:self";
+  const timeoutMs = opts?.timeoutMs ?? 12_000;
+
+  const cacheKey = `perfil:${userId}`;
   const cached = getCache(cacheKey);
   if (cached !== undefined) return cached;
 
-  const candidates = buildPerfilCandidates(userId);
-  let lastError: unknown;
-
   try {
-    const { perfil, lastError: candidateError } = await getPerfilFromCandidates(candidates, timeoutMs);
-    if (perfil) {
-      setCache(cacheKey, perfil);
-      return perfil;
-    }
-    lastError = candidateError;
+    const url = buildPerfilUrl(userId);
+    const payload = await apiFetchJson<any>(url, { method: 'GET', timeoutMs });
+    const parsed = unwrapPerfil(payload);
+    setCache(cacheKey, parsed);
+    return parsed;
   } catch (error) {
-    lastError = error;
-  }
+    if (error instanceof ApiFetchError && (error.status === 404 || error.status === 400)) {
+      setCache(cacheKey, null);
+      throw error;
+    }
 
-  if (lastError instanceof ApiFetchError && FALLBACK_STATUSES.has(lastError.status ?? 0)) {
-    setCache(cacheKey, null);
-    return null;
-  }
-
-  if (lastError) {
     console.error(
       '❌ Erro ao buscar perfil emocional:',
-      (lastError as any)?.response?.data || (lastError as Error)?.message || lastError
+      (error as any)?.response?.data || (error as Error)?.message || error
     );
     setCache(cacheKey, null);
-    throw lastError;
+    throw error;
   }
-
-  setCache(cacheKey, null);
-  return null;
 }

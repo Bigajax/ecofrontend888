@@ -12,3 +12,14 @@ export class EcoApiError extends Error {
     this.details = options.details;
   }
 }
+
+export class MissingUserIdError extends Error {
+  readonly endpoint: string;
+  readonly status = 400;
+
+  constructor(endpoint: string) {
+    super("missing_user_id");
+    this.name = "MissingUserIdError";
+    this.endpoint = endpoint;
+  }
+}

@@ -7,7 +7,7 @@ import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
 import { sanitizeEcoText } from "../utils/sanitizeEcoText";
 
-import { EcoApiError } from "./errors";
+import { EcoApiError, MissingUserIdError } from "./errors";
 import { AskEcoResponse, normalizeAskEcoResponse } from "./askEcoResponse";
 import {
   ensureGuestId,
@@ -144,7 +144,9 @@ const prepareRequest = (
   if (typeof userName === "string" && userName.trim().length > 0) {
     bodyPayload.nome_usuario = userName;
   }
-  if (!guest.isGuest && userId) bodyPayload.usuario_id = userId;
+  if (userId) {
+    bodyPayload.usuario_id = userId;
+  }
   if (guest.isGuest) {
     bodyPayload.isGuest = true;
     bodyPayload.guestId = guest.guestId;
@@ -152,7 +154,7 @@ const prepareRequest = (
 
   return {
     headers,
-    credentials: guest.isGuest ? "omit" : "include",
+    credentials: "omit",
     payload: bodyPayload,
   } satisfies RequestPreparation;
 };
@@ -220,9 +222,13 @@ export const enviarMensagemParaEco = async (
 
     const guest = resolveGuestHeaders(options, token);
 
+    if (!userId) {
+      throw new MissingUserIdError(ASK_ENDPOINT);
+    }
+
     const isStreaming = options.stream !== false;
 
-    const { headers, credentials, payload } = prepareRequest(
+    const { headers, payload } = prepareRequest(
       mensagensValidas,
       userName,
       userId,
@@ -236,7 +242,7 @@ export const enviarMensagemParaEco = async (
     logHttpRequestDebug({
       method: "POST",
       url: resolveApiUrl(ASK_ENDPOINT),
-      credentials,
+      credentials: "omit",
       headers,
     });
 
@@ -250,10 +256,12 @@ export const enviarMensagemParaEco = async (
     const response = await fetch(resolveApiUrl(ASK_ENDPOINT), {
       method: "POST",
       headers,
-      credentials,
       body: JSON.stringify(payload),
       signal: options.signal,
       cache: "no-store",
+      credentials: "omit",
+      mode: "cors",
+      redirect: "follow",
       keepalive: false,
     });
 
@@ -286,6 +294,34 @@ export const enviarMensagemParaEco = async (
         ...(retryAfter ? { retryAfter } : {}),
       };
       throw new EcoApiError(message, { status: response.status, details: errorDetails });
+    }
+
+    const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+    if (!contentType.startsWith("text/event-stream")) {
+      let diagnosticBody: string | undefined;
+      try {
+        diagnosticBody = await response.clone().text();
+      } catch {
+        diagnosticBody = undefined;
+      }
+      console.error("❌ [ECO API] Resposta inesperada para stream", {
+        url: response.url,
+        status: response.status,
+        statusText: response.statusText,
+        contentType,
+        bodyPreview: diagnosticBody?.slice(0, 500),
+      });
+      throw new EcoApiError(
+        "Não foi possível iniciar a transmissão da Eco. Tente novamente em instantes.",
+        {
+          status: response.status,
+          details: {
+            reason: "invalid_content_type",
+            contentType,
+            body: diagnosticBody,
+          },
+        }
+      );
     }
 
     // 👇 Não dependa do Content-Type: se tem body, consome via stream

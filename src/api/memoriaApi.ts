@@ -3,6 +3,7 @@
 import axios, { AxiosError } from 'axios';
 import api from './axios';
 import { ApiFetchError, apiFetchJson } from './apiFetch';
+import { MissingUserIdError } from './errors';
 
 /* -------------------------------------------------------------------------- */
 /*  Tipagens                                                                  */
@@ -190,10 +191,14 @@ function tratarErro(err: unknown, acao: string): never {
   throw new Error(`Erro inesperado ao ${acao}: ${(err as any)?.message || String(err)}`);
 }
 
-const MEMORY_ENDPOINTS = ['/api/memorias', '/memorias', '/api/memories', '/memories'];
+const MEMORY_ENDPOINTS = ['/api/memorias'];
 
 async function fetchMemoriasComFallback(userId?: string) {
-  const query = userId ? `?usuario_id=${encodeURIComponent(userId)}` : '';
+  if (!userId) {
+    throw new MissingUserIdError('/api/memorias');
+  }
+
+  const query = `?usuario_id=${encodeURIComponent(userId)}`;
   let lastError: unknown;
 
   for (const endpoint of MEMORY_ENDPOINTS) {
@@ -273,7 +278,7 @@ export async function buscarUltimasMemoriasComTags(
       timeout: 12000,
     };
 
-    const { data } = await getWithFallback('/memorias', '/memories', config);
+    const { data } = await getWithFallback('/api/memorias', null, config);
 
     const raw = pickArray<any>(data) ?? [];
     if (raw.length) {
@@ -326,7 +331,7 @@ export async function buscarMemoriasSemelhantesV2(
     // tenta v2
     try {
       const bodyV2 = { texto, query: texto, k, limit: k, limite: k, threshold, usuario_id };
-      const { data } = await postWithFallback('/memorias/similares_v2', '/memories/similar_v2', bodyV2, { timeout: 12000 });
+      const { data } = await postWithFallback('/api/memorias/similares_v2', null, bodyV2, { timeout: 12000 });
       const raw = pickArray<any>(data) ?? [];
       if (raw.length) {
         return raw.map((r) => {
@@ -351,7 +356,7 @@ export async function buscarMemoriasSemelhantesV2(
 
     // v1 (compat)
     const bodyV1 = { texto, query: texto, limite: k, limit: k };
-    const { data } = await postWithFallback('/memorias/similares', '/memories/similar', bodyV1, { timeout: 12000 });
+    const { data } = await postWithFallback('/api/memorias/similares', null, bodyV1, { timeout: 12000 });
     const raw = pickArray<any>(data) ?? [];
     if (raw.length) {
       return raw.map((r) => {
@@ -380,13 +385,18 @@ export async function buscarMemoriasSemelhantesV2(
 /**
  * 📄 Lista básica para gráficos locais (campos mínimos).
  */
-export async function listarMemoriasBasico(limit = 500): Promise<Memoria[]> {
+export async function listarMemoriasBasico(userId: string, limit = 500): Promise<Memoria[]> {
   try {
-    const { data } = await getWithFallback('/memorias', '/memories', {
+    if (!userId) {
+      throw new MissingUserIdError('/api/memorias');
+    }
+
+    const { data } = await getWithFallback('/api/memorias', null, {
       params: {
         limit,
         limite: limit,
         fields: 'id,created_at,emocao_principal,tags,categoria,dominio_vida,resumo_eco',
+        usuario_id: userId,
       },
       timeout: 12000,
     });
@@ -405,7 +415,7 @@ export async function listarMemoriasBasico(limit = 500): Promise<Memoria[]> {
 export async function registrarMemoria(payload: RegistrarMemoriaPayload): Promise<RegistrarMemoriaResult> {
   try {
     // Envia exatamente o que o backend espera (ele mapeia para a RPC internamente)
-    const { data } = await postWithFallback('/memorias/registrar', '/memories/registrar', payload, {
+    const { data } = await postWithFallback('/api/memorias/registrar', null, payload, {
       timeout: 12000,
     });
 

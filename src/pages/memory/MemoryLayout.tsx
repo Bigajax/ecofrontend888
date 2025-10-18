@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 import PhoneFrame from '../../components/PhoneFrame';
 import { useAuth } from '../../contexts/AuthContext';
 import { buscarMemoriasPorUsuario } from '../../api/memoriaApi';
@@ -14,6 +14,7 @@ import {
 import { sortMemoriesByCreatedAtDesc } from './memoryCardDto';
 import EcoBubbleLoading from '../../components/EcoBubbleLoading';
 import { ApiFetchError } from '../../api/apiFetch';
+import { MissingUserIdError } from '../../api/errors';
 import { track } from '../../analytics/track';
 
 type EndpointKey = 'memories' | 'perfil' | 'relatorio';
@@ -35,6 +36,24 @@ const INITIAL_STATE: MemoryState = {
   relatorioErrorDetails: null,
 };
 
+const LOGGED_OUT_CONTEXT: MemoryData = {
+  memories: [],
+  perfil: null,
+  relatorio: null,
+  memoriesLoading: false,
+  perfilLoading: false,
+  relatorioLoading: false,
+  memoriesError: null,
+  perfilError: null,
+  relatorioError: null,
+  memoriesErrorDetails: null,
+  perfilErrorDetails: null,
+  relatorioErrorDetails: null,
+  refetchMemories: () => {},
+  refetchPerfil: () => {},
+  refetchRelatorio: () => {},
+};
+
 const FRIENDLY_MESSAGES: Record<EndpointKey, string> = {
   memories: 'Eco não conseguiu acessar suas lembranças agora. Respire e tente de novo.',
   perfil: 'Não conseguimos atualizar seu perfil emocional agora. Tente novamente em instantes.',
@@ -53,6 +72,8 @@ const REASON_LABEL: Record<EndpointFailureReason, string> = {
   network: 'motivo: rede indisponível',
   timeout: 'motivo: timeout',
   '5xx': 'motivo: erro 5xx',
+  missing_user_id: 'motivo: missing_user_id',
+  not_found: 'motivo: not_found',
   unknown: 'motivo desconhecido',
 };
 
@@ -95,6 +116,8 @@ const determineReason = (error: ApiFetchError): EndpointFailureReason | undefine
     if (error.failureReason === 'timeout') return 'timeout';
     if (error.failureReason === '5xx') return '5xx';
   }
+  if (error.status === 404) return 'not_found';
+  if (error.status === 400) return 'missing_user_id';
   if (error.kind === 'timeout') return 'timeout';
   if (error.kind === 'cors') return 'cors';
   if (error.kind === 'network') return 'network';
@@ -114,6 +137,16 @@ const parseErrorDetails = (error: unknown, endpoint: EndpointKey): ApiErrorDetai
       origin: error.origin,
       url: error.url,
       reason,
+    };
+  }
+
+  if (error instanceof MissingUserIdError) {
+    return {
+      endpoint: error.endpoint,
+      status: error.status,
+      statusText: undefined,
+      message: error.message,
+      reason: 'missing_user_id',
     };
   }
 
@@ -186,7 +219,7 @@ const formatTechnicalDetails = (details: ApiErrorDetails | null) => {
 };
 
 const MemoryLayout: React.FC = () => {
-  const { userId } = useAuth();
+  const { userId, loading } = useAuth();
   const mountedRef = useRef(true);
   const [state, setState] = useState<MemoryState>(INITIAL_STATE);
 
@@ -349,6 +382,42 @@ const MemoryLayout: React.FC = () => {
     refetchPerfil,
     refetchRelatorio,
   }), [state, refetchMemories, refetchPerfil, refetchRelatorio]);
+
+  if (loading) {
+    return (
+      <MemoryDataContext.Provider value={LOGGED_OUT_CONTEXT}>
+        <PhoneFrame className="flex flex-col h-full bg-white">
+          <div className="flex-1 flex items-center justify-center">
+            <EcoBubbleLoading size={120} text="Carregando..." />
+          </div>
+        </PhoneFrame>
+      </MemoryDataContext.Provider>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <MemoryDataContext.Provider value={LOGGED_OUT_CONTEXT}>
+        <PhoneFrame className="flex flex-col h-full bg-white">
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
+            <h2 className="text-xl font-semibold text-neutral-900">Entre para continuar</h2>
+            <p className="text-sm text-neutral-500">
+              Você precisa estar logado para acessar suas memórias, perfil e relatório emocional.
+            </p>
+            <Link
+              to="/login"
+              className={[
+                'inline-flex items-center justify-center rounded-full bg-neutral-900',
+                'px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800',
+              ].join(' ')}
+            >
+              Fazer login
+            </Link>
+          </div>
+        </PhoneFrame>
+      </MemoryDataContext.Provider>
+    );
+  }
 
   return (
     <MemoryDataContext.Provider value={contextValue}>
