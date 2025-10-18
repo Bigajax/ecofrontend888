@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState, Suspense, lazy, Component } from 'react';
 import type { FC, PropsWithChildren, ReactNode } from 'react';
 import { useMemoryData } from './memoryData';
+import type { ApiErrorDetails } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
 import { emotionPalette, resolveEmotionKey } from './emotionTokens';
@@ -149,6 +150,8 @@ const ProfileSection: FC = () => {
     memoriesLoading,
     perfilError,
     memoriesError,
+    perfilErrorDetails,
+    memoriesErrorDetails,
   } = useMemoryData();
   const [memLocal, setMemLocal] = useState<Memoria[] | null>(null);
   const [fetchingLocal, setFetchingLocal] = useState(false);
@@ -237,12 +240,28 @@ const ProfileSection: FC = () => {
           </div>
         )}
         {(() => {
-          const messages = [perfilError, memoriesError].filter(Boolean) as string[];
+          const messages = [
+            perfilError && { message: perfilError, details: perfilErrorDetails },
+            memoriesError && { message: memoriesError, details: memoriesErrorDetails },
+          ].filter(Boolean) as Array<{ message: string; details: ApiErrorDetails | null }>;
+
           if (!messages.length) return null;
+
           return (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 text-sm space-y-1">
-              {messages.map((message, index) => (
-                <div key={`${message}-${index}`}>{message}</div>
+            <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-600 space-y-2">
+              {messages.map(({ message, details }, index) => (
+                <div key={`${message}-${index}`}>
+                  <p className="font-medium">{message}</p>
+                  {details?.status || details?.message ? (
+                    <p className="mt-1 text-[12px] text-rose-500/80">
+                      Detalhes técnicos:{' '}
+                      {details?.status
+                        ? `${details.status}${details.statusText ? ` ${details.statusText}` : ''}`
+                        : 'status indisponível'}
+                      {details?.message ? ` • ${details.message}` : ''}
+                    </p>
+                  ) : null}
+                </div>
               ))}
             </div>
           );
