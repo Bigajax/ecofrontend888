@@ -13,11 +13,11 @@ import { supabase } from '@/lib/supabase';
 /* Divisor com traço mais marcado */
 const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
   <div className="flex items-center gap-3" aria-hidden="true">
-    <span className="h-px flex-1 bg-slate-500/20 dark:bg-white/15" />
-    <span className="text-xs uppercase tracking-[0.4em] text-slate-500/80 dark:text-white/60">
+    <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+    <span className="text-xs uppercase tracking-[0.4em] text-slate-400 dark:text-slate-500">
       {label}
     </span>
-    <span className="h-px flex-1 bg-slate-500/20 dark:bg-white/15" />
+    <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
   </div>
 );
 
@@ -177,18 +177,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <PhoneFrame>
-      <div
-        className="relative min-h-[100dvh] overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 text-slate-900 dark:text-slate-100"
-      >
-        <div
-          className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-blue-400/30 blur-3xl dark:bg-blue-500/20"
-          aria-hidden="true"
-        />
-        <div
-          className="pointer-events-none absolute -bottom-36 right-[-10%] h-96 w-96 rounded-full bg-purple-400/25 blur-3xl dark:bg-purple-500/20"
-          aria-hidden="true"
-        />
-
+      <div className="relative min-h-[100dvh] overflow-hidden bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <div className="relative grid min-h-[100dvh] place-items-center px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom))]">
           {isTourActive && (
             <TourInicial onClose={closeTour} reason="login" nextPath="/login" />
@@ -199,14 +188,13 @@ const LoginPage: React.FC = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className={[
-              'w-full max-w-md space-y-8 rounded-3xl p-6 sm:p-8',
-              'bg-white/55 dark:bg-white/10 backdrop-blur-2xl',
-              'border border-white/25 dark:border-white/10 shadow-2xl ring-1 ring-black/5 dark:ring-white/5',
+              'w-full max-w-md space-y-8 rounded-3xl border p-6 shadow-xl sm:p-8',
+              'bg-white border-slate-200 dark:border-slate-800 dark:bg-slate-900',
             ].join(' ')}
           >
             {/* Header */}
             <div className="space-y-4 text-center">
-              <span className="inline-flex items-center justify-center gap-2 rounded-full bg-white/60 px-4 py-1 text-sm font-medium text-slate-700 backdrop-blur-md ring-1 ring-black/5 dark:bg-white/10 dark:text-slate-100 dark:ring-white/10">
+              <span className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-1 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">
                 <EcoBubbleOneEye variant="icon" size={18} state="focus" />
                 Autoconhecimento Guiado
               </span>
@@ -234,8 +222,8 @@ const LoginPage: React.FC = () => {
                     aria-invalid={Boolean(error)}
                     aria-describedby={error ? 'login-error' : undefined}
                     className={[
-                      'w-full h-12 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/10 px-4 text-base text-slate-900 placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-400/80',
-                      'shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#007AFF] dark:shadow-none',
+                      'w-full h-12 rounded-2xl border border-slate-200 bg-white px-4 text-base text-slate-900 placeholder:text-slate-400',
+                      'transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#007AFF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400',
                     ].join(' ')}
                   />
                 </div>
@@ -256,14 +244,14 @@ const LoginPage: React.FC = () => {
                       aria-invalid={Boolean(error)}
                       aria-describedby={error ? 'login-error' : undefined}
                       className={[
-                        'w-full h-12 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/10 px-4 pr-12 text-base text-slate-900 placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-400/80',
-                        'shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#007AFF] dark:shadow-none',
+                        'w-full h-12 rounded-2xl border border-slate-200 bg-white px-4 pr-12 text-base text-slate-900 placeholder:text-slate-400',
+                        'transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#007AFF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400',
                       ].join(' ')}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      className="absolute inset-y-0 right-1.5 my-1.5 flex items-center rounded-xl px-2 text-slate-600 transition hover:bg-white/70 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30 dark:text-slate-200 dark:hover:bg-white/15 dark:hover:text-white"
+                      className="absolute inset-y-0 right-1.5 my-1.5 flex items-center rounded-xl px-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                       aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                       aria-pressed={showPassword}
                       title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
@@ -311,8 +299,8 @@ const LoginPage: React.FC = () => {
                   onClick={handleGoogleLogin}
                   disabled={loading}
                   className={[
-                    'inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white/60 text-sm font-semibold text-slate-900 transition-colors',
-                    'ring-1 ring-black/5 backdrop-blur-md hover:bg-white/75 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/40 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white/10 dark:text-slate-100 dark:ring-white/10 dark:hover:bg-white/15',
+                    'inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border text-sm font-semibold text-slate-900 transition-colors',
+                    'border-slate-200 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/40 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800',
                   ].join(' ')}
                 >
                   <GoogleIcon />
@@ -324,8 +312,8 @@ const LoginPage: React.FC = () => {
                   onClick={() => navigate('/register')}
                   disabled={loading}
                   className={[
-                    'flex h-12 w-full items-center justify-center rounded-2xl bg-white/60 text-sm font-semibold text-slate-900 transition-colors',
-                    'ring-1 ring-black/5 backdrop-blur-md hover:bg-white/75 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/40 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white/10 dark:text-slate-100 dark:ring-white/10 dark:hover:bg-white/15',
+                    'flex h-12 w-full items-center justify-center rounded-2xl border text-sm font-semibold text-slate-900 transition-colors',
+                    'border-slate-200 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/40 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800',
                   ].join(' ')}
                 >
                   Criar uma nova conta
@@ -338,8 +326,8 @@ const LoginPage: React.FC = () => {
                   onClick={() => setIsTourActive(true)}
                   disabled={loading}
                   className={[
-                    'flex h-12 w-full items-center justify-center rounded-2xl bg-white/60 text-sm font-semibold text-slate-900 transition-colors',
-                    'ring-1 ring-black/5 backdrop-blur-md hover:bg-white/75 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/40 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white/10 dark:text-slate-100 dark:ring-white/10 dark:hover:bg-white/15',
+                    'flex h-12 w-full items-center justify-center rounded-2xl border text-sm font-semibold text-slate-900 transition-colors',
+                    'border-slate-200 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/40 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800',
                   ].join(' ')}
                 >
                   Iniciar Tour
