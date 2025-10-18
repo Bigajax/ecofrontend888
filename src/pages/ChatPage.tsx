@@ -296,6 +296,9 @@ const ChatPage: React.FC = () => {
 
   const shouldRenderGlobalTyping = globalTypingVisible || isSynthesizingAudio;
   const composerPending = pending || isComposerSending || isSendingToEco;
+  const isEmptyState = messages.length === 0 && !erroApi;
+  const showInitialSuggestions =
+    isEmptyState && showQuick && !isWaitingForEco && !composerPending && !erroApi;
   const canRetry = Boolean(
     lastAttempt &&
     erroApi &&
@@ -319,23 +322,33 @@ const ChatPage: React.FC = () => {
           touchAction: 'pan-y',
         }}
       >
-        <div className="w-full mx-auto max-w-3xl">
-          {messages.length === 0 && !erroApi && (
-            <div className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex items-center justify-center">
+        <div className="w-full mx-auto max-w-[800px]">
+          {isEmptyState && (
+            <div className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex flex-col items-center justify-center py-16 sm:py-20">
               <motion.div
-                className="px-4 w-full"
-                initial={{ opacity: 0, y: 8 }}
+                className="w-full px-4"
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.28 }}
               >
                 {/* Saudação centralizada */}
-                <div className="flex flex-col items-center gap-3 text-center md:gap-4">
-                  <h2 className="text-[32px] font-light leading-tight text-slate-800 md:text-[40px]">
-                    {saudacao}, {userName}
-                  </h2>
-                  <p className="max-w-xl text-base font-light text-slate-500 md:text-lg">
-                    {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
-                  </p>
+                <div className="mx-auto flex w-full max-w-[800px] flex-col items-center gap-6 text-center sm:gap-8">
+                  <div className="flex flex-col gap-3 sm:gap-4">
+                    <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+                      {saudacao}, {userName}
+                    </h1>
+                    <p className="mx-auto max-w-2xl text-base text-gray-500 sm:text-lg">
+                      {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
+                    </p>
+                  </div>
+                  <QuickSuggestions
+                    visible={showInitialSuggestions}
+                    onPickSuggestion={handlePickSuggestion}
+                    rotatingItems={ROTATING_ITEMS}
+                    rotationMs={5000}
+                    className="mt-2 flex w-full flex-col items-center gap-4"
+                    disabled={composerPending}
+                  />
                 </div>
               </motion.div>
             </div>
@@ -406,7 +419,7 @@ const ChatPage: React.FC = () => {
 
             {shouldRenderGlobalTyping && (
               <div className="w-full flex justify-start" aria-live="polite">
-                <div className="max-w-3xl w-full min-w-0 flex items-center gap-2">
+                <div className="max-w-[800px] w-full min-w-0 flex items-center gap-2">
                   <div className="flex-shrink-0 translate-y-[1px]">
                     <EcoBubbleOneEye variant="message" state="thinking" size={30} />
                   </div>
@@ -453,12 +466,12 @@ const ChatPage: React.FC = () => {
         )}
       </div>
 
-      <div className="sticky bottom-0 z-40 bg-gradient-to-t from-white via-white/95 to-white/80 px-4 pb-3 pt-3 sm:px-6 lg:px-10">
-        <div className="w-full mx-auto max-w-3xl">
+      <div className="sticky bottom-0 z-40 bg-gradient-to-t from-white via-white/95 to-white/80 px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5 lg:px-10">
+        <div className="w-full mx-auto max-w-[800px]">
           <QuickSuggestions
             visible={
               showQuick &&
-              messages.length === 0 &&
+              !isEmptyState &&
               !isWaitingForEco &&
               !composerPending &&
               !erroApi
@@ -466,7 +479,7 @@ const ChatPage: React.FC = () => {
             onPickSuggestion={handlePickSuggestion}
             rotatingItems={ROTATING_ITEMS}
             rotationMs={5000}
-            className="mt-1 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
+            className="mt-2"
             disabled={composerPending}
           />
           <ChatInput
