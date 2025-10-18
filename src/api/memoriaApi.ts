@@ -2,6 +2,7 @@
 
 import axios, { AxiosError } from 'axios';
 import api from './axios';
+import { ApiFetchError, apiFetchJson } from './apiFetch';
 
 /* -------------------------------------------------------------------------- */
 /*  Tipagens                                                                  */
@@ -52,6 +53,9 @@ export interface RegistrarMemoriaResult {
 
 /** 404/405 permitem fallback para outra rota */
 const isFallbackStatus = (err: any) => {
+  if (err instanceof ApiFetchError) {
+    return err.status === 404 || err.status === 405;
+  }
   const s = err?.response?.status;
   return s === 404 || s === 405;
 };
@@ -166,7 +170,50 @@ function tratarErro(err: unknown, acao: string): never {
     if (e.request) throw new Error(`Erro de rede ao ${acao}: nenhuma resposta recebida`);
     throw new Error(`Erro ao ${acao}: ${e.message}`);
   }
+
+  if (err instanceof ApiFetchError) {
+    if (err.status) {
+      throw new Error(`Erro HTTP ${err.status} ao ${acao}: ${err.statusText || err.bodyText || err.message}`);
+    }
+
+    if (err.kind === 'timeout') {
+      throw new Error(`Erro de timeout ao ${acao}`);
+    }
+
+    if (err.kind === 'cors') {
+      throw new Error(`Erro de CORS ao ${acao}`);
+    }
+
+    throw new Error(`Erro de rede ao ${acao}: ${err.message}`);
+  }
+
   throw new Error(`Erro inesperado ao ${acao}: ${(err as any)?.message || String(err)}`);
+}
+
+const MEMORY_ENDPOINTS = ['/api/memorias', '/memorias', '/api/memories', '/memories'];
+
+async function fetchMemoriasComFallback(userId?: string) {
+  const query = userId ? `?usuario_id=${encodeURIComponent(userId)}` : '';
+  let lastError: unknown;
+
+  for (const endpoint of MEMORY_ENDPOINTS) {
+    const url = `${endpoint}${query}`;
+    try {
+      return await apiFetchJson<any>(url, { method: 'GET' });
+    } catch (error) {
+      lastError = error;
+      if (isFallbackStatus(error)) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
+  return null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -249,27 +296,18 @@ export async function buscarUltimasMemoriasComTags(
  * 📥 Lista todas as memórias do usuário (RLS via JWT; `usuario_id` é opcional).
  */
 export async function buscarMemoriasPorUsuario(userId?: string): Promise<Memoria[]> {
-  try {
-    const config = {
-      params: userId ? { usuario_id: userId } : undefined,
-      timeout: 12000,
-    };
+  const data = await fetchMemoriasComFallback(userId);
 
-    const { data } = await getWithFallback('/memorias', '/memories', config);
-
-    const raw = pickArray<any>(data) ?? [];
-    if (raw.length) {
-      return raw
-        .map(normalizeMemoria)
-        .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-    }
-
-    if (isSuccessPayload(data)) return [];
-    if (import.meta.env.DEV) console.warn('[memoriaApi] Resposta inesperada em buscarMemoriasPorUsuario:', data);
-    return [];
-  } catch (err) {
-    tratarErro(err, 'buscar memórias');
+  const raw = pickArray<any>(data) ?? [];
+  if (raw.length) {
+    return raw
+      .map(normalizeMemoria)
+      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   }
+
+  if (isSuccessPayload(data)) return [];
+  if (import.meta.env.DEV) console.warn('[memoriaApi] Resposta inesperada em buscarMemoriasPorUsuario:', data);
+  return [];
 }
 
 /**
