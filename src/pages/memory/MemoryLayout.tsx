@@ -49,6 +49,7 @@ const ENDPOINT_LABEL: Record<EndpointKey, string> = {
 
 const REASON_LABEL: Record<EndpointFailureReason, string> = {
   cors: 'motivo: CORS bloqueado',
+  redirect_cross_origin: 'motivo: redirect cross-origin',
   network: 'motivo: rede indisponível',
   timeout: 'motivo: timeout',
   '5xx': 'motivo: erro 5xx',
@@ -87,6 +88,13 @@ const extractServerMessage = (error: ApiFetchError) => {
 };
 
 const determineReason = (error: ApiFetchError): EndpointFailureReason | undefined => {
+  if (error.failureReason) {
+    if (error.failureReason === 'redirect_cross_origin') return 'redirect_cross_origin';
+    if (error.failureReason === 'cors') return 'cors';
+    if (error.failureReason === 'network') return 'network';
+    if (error.failureReason === 'timeout') return 'timeout';
+    if (error.failureReason === '5xx') return '5xx';
+  }
   if (error.kind === 'timeout') return 'timeout';
   if (error.kind === 'cors') return 'cors';
   if (error.kind === 'network') return 'network';
