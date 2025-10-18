@@ -98,6 +98,24 @@ body {
   }
 }
 
+@keyframes feedback-sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-[feedback-sheet-in_220ms_ease-out] {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 .badge-continuity {
   font-size: 1rem;
   line-height: 1;
