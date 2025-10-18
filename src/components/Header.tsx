@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, NavLink, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Brain, BarChart3, X, Menu, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useScrolled } from '@/hooks/useScrolled';
 import EcoBubbleOneEye from './EcoBubbleOneEye';
 
 interface HeaderProps {
@@ -43,6 +44,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
 
   const isChat = /^\/chat\/?$/.test(location.pathname);
   const shouldShowBack = showBackButton || !isChat;
+  const scrolled = useScrolled(8);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -78,90 +80,88 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
 
   /* ================= AppBar “pill” ================= */
   const TopBar = (
-    <header
-      className="
-        fixed top-0 left-0 right-0 z-[70]
-        bg-white rounded-b-[22px]
-        border-b border-black/[0.06]
-        shadow-[0_8px_24px_rgba(16,24,40,0.06)]
-        pt-[env(safe-area-inset-top)]
-      "
-      style={{
-        WebkitMaskImage:
-          'linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)',
-        maskImage:
-          'linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)',
-      }}
-    >
-      <div className="flex items-center justify-between gap-2.5 px-4 sm:px-6 py-2.5">
-        {/* ☰ abre o drawer */}
-        <button
-          onClick={() => setDrawerOpen(true)}
-          className="p-2 rounded-[18px] hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/[0.08]"
-          aria-label="Abrir menu"
-        >
-          <Menu className="h-5 w-5 text-slate-900" />
-        </button>
+    <div className="sticky top-0 z-50">
+      <header
+        className={[
+          'glass-header pt-[env(safe-area-inset-top,0px)] transition-all duration-300 ease-out',
+          'backdrop-blur-xl border-b border-white/20 dark:border-white/10',
+          'ring-1 ring-black/5 dark:ring-white/5',
+          'bg-white/60 dark:bg-slate-900/40 shadow-sm',
+          scrolled ? 'bg-white/80 dark:bg-slate-900/60 shadow-md' : '',
+        ].join(' ')}
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <div className="flex items-center">
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="h-10 w-10 grid place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#007AFF]/60"
+                aria-label="Abrir menu"
+              >
+                <Menu className="h-5 w-5 text-slate-900 dark:text-slate-100" />
+              </button>
+            </div>
 
-        {/* Centro — título */}
-        <Link to="/chat" className="flex items-center gap-2 select-none hover:opacity-95">
-          <span className="translate-y-[1px] inline-flex">
-            <EcoBubbleOneEye variant="icon" size={20} state="focus" />
-          </span>
-          <span className={`${labelCls} text-[16px] md:text-[17px]`}>{autoTitle}</span>
-        </Link>
+            <div className="justify-self-center">
+              <Link
+                to="/chat"
+                className="flex items-center gap-2 select-none text-slate-900 dark:text-slate-100 transition hover:opacity-95"
+              >
+                <span className="inline-flex translate-y-[1px]">
+                  <EcoBubbleOneEye variant="icon" size={20} state="focus" />
+                </span>
+                <span className={`${labelCls} text-[16px] md:text-[17px] dark:text-slate-100`}>{autoTitle}</span>
+              </Link>
+            </div>
 
-        {/* Direita: voltar + Feedback (iOS Blue) + Sair */}
-        <div className="flex items-center gap-2">
-          {shouldShowBack && (
-            <button
-              onClick={() => navigate('/chat')}
-              className="px-2 py-2 rounded-[18px] hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/[0.08]"
-              aria-label="Voltar ao chat"
-              title="Voltar ao chat"
-            >
-              <ArrowLeft className="h-5 w-5 text-slate-900" />
-            </button>
-          )}
+            <div className="flex items-center justify-end gap-2">
+              {shouldShowBack && (
+                <button
+                  onClick={() => navigate('/chat')}
+                  className="h-10 w-10 grid place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#007AFF]/60"
+                  aria-label="Voltar ao chat"
+                  title="Voltar ao chat"
+                >
+                  <ArrowLeft className="h-5 w-5 text-slate-900 dark:text-slate-100" />
+                </button>
+              )}
 
-          {/* 🔵 Feedback no iOS Blue */}
-          <a
-            href="https://feedback777.vercel.app"
-            target="_blank"
-            rel="noreferrer"
-            className="
-              px-3 py-1.5 rounded-[14px]
-              text-white text-sm
-              bg-[#007AFF]
-              hover:opacity-95 active:opacity-90
-              border border-transparent
-              shadow-[0_1px_0_rgba(0,0,0,0.04)]
-              transition
-              focus-visible:outline-none
-              focus-visible:ring-2 focus-visible:ring-[#007AFF]/40
-            "
-            style={{ backgroundColor: IOS_BLUE }}
-          >
-            Feedback
-          </a>
+              <a
+                href="https://feedback777.vercel.app"
+                target="_blank"
+                rel="noreferrer"
+                className="hidden sm:inline-flex h-10 items-center justify-center rounded-xl px-3 text-sm font-medium text-white transition-colors hover:bg-[#1a84ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70"
+                style={{ backgroundColor: IOS_BLUE }}
+              >
+                Feedback
+              </a>
 
-          {onLogout && (
-            <button
-              onClick={onLogout}
-              className="
-                px-3 py-1.5 rounded-[14px]
-                bg-black/[0.04] hover:bg-black/[0.06]
-                border border-black/[0.08]
-                text-slate-900 text-sm
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/[0.08]
-              "
-            >
-              Sair
-            </button>
-          )}
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="inline-flex h-10 items-center justify-center rounded-xl px-3 text-sm font-medium text-slate-700 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#007AFF]/40 bg-white/50 hover:bg-white/70 dark:bg-white/5 dark:hover:bg-white/10 dark:text-slate-200 dark:ring-white/10 ring-1 ring-black/5"
+                >
+                  Sair
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      <style>{`
+        @media (prefers-reduced-transparency: reduce) {
+          .glass-header {
+            background-color: rgb(255 255 255 / 0.95) !important;
+            backdrop-filter: none !important;
+          }
+
+          .dark .glass-header {
+            background-color: rgb(15 23 42 / 0.95) !important;
+          }
+        }
+      `}</style>
+    </div>
   );
 
   /* ================= Drawer (overlay) ================= */
