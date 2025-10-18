@@ -1,34 +1,52 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
+import { useMemo, useState } from 'react';
+
+import type { Memoria } from '../../api/memoriaApi';
+
 import { useMemoryData } from './memoryData';
-import EcoBubbleLoading from '../../components/EcoBubbleLoading';
 import MemoryCard from '../../components/memory/MemoryCard';
 import MemoriesFilterBar from '../../components/memory/MemoriesFilterBar';
 import MemoryEmptyState from '../../components/memory/MemoryEmptyState';
+import MemoryCardSkeleton from '../../components/memory/MemoryCardSkeleton';
 import { useMemoriesFilters } from './useMemoriesFilters';
-import { getCreatedAt, getEmotion, Memoria } from './utils';
+import { normalizeMemoryCollection, BUCKET_ORDER, groupMemoryCards } from './memoryCardDto';
 
-const BUCKET_ORDER = ['Hoje', 'Ontem', 'Esta semana', 'Este mês', 'Anteriores'] as const;
+const PAGE_SIZE = 20;
 
 const MemoriesSection: React.FC = () => {
   const { memories, memoriesLoading, memoriesError, memoriesErrorDetails } = useMemoryData();
 
+  const normalizedCards = useMemo(
+    () => normalizeMemoryCollection(memories as Memoria[]),
+    [memories]
+  );
+
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
   const {
     emotionOptions,
     filteredMemories,
-    groupedMemories,
     filters,
     filtersActive,
     setEmotionFilter,
     setQueryFilter,
     resetFilters,
-  } = useMemoriesFilters(memories as Memoria[]);
+  } = useMemoriesFilters(normalizedCards);
+
+  const limitedMemories = useMemo(() => filteredMemories.slice(0, visibleCount), [filteredMemories, visibleCount]);
+  const limitedGroups = useMemo(() => groupMemoryCards(limitedMemories), [limitedMemories]);
+  const hasMore = filteredMemories.length > visibleCount;
 
   if (memoriesLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <EcoBubbleLoading size={120} text="Carregando memórias..." breathingSec={2} />
+      <div className="min-h-0 h-full max-h-[calc(100vh-96px)] overflow-y-auto overflow-x-hidden">
+        <div className="mx-auto grid w-full max-w-6xl gap-4 px-4 py-8 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <MemoryCardSkeleton key={`memory-skeleton-${index}`} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -49,6 +67,13 @@ const MemoriesSection: React.FC = () => {
               {memoriesErrorDetails?.message ? ` • ${memoriesErrorDetails.message}` : ''}
             </p>
           ) : null}
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-4 inline-flex items-center justify-center rounded-full border border-rose-200/70 bg-white/90 px-4 py-2 text-sm font-semibold text-rose-600 shadow-sm transition hover:bg-white"
+          >
+            Tentar novamente
+          </button>
         </div>
       </div>
     );
@@ -79,7 +104,7 @@ const MemoriesSection: React.FC = () => {
 
         {filteredMemories.length ? (
           <motion.div layout className="space-y-8">
-            {BUCKET_ORDER.filter((bucket) => groupedMemories[bucket]?.length).map((bucket) => (
+            {BUCKET_ORDER.filter((bucket) => limitedGroups[bucket]?.length).map((bucket) => (
               <motion.section
                 key={bucket}
                 layout
@@ -89,19 +114,23 @@ const MemoriesSection: React.FC = () => {
               >
                 <h3 className="text-[12px] font-semibold text-gray-500 uppercase tracking-wide mb-4">{bucket}</h3>
                 <ul className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
-                  {groupedMemories[bucket]!.map((memory, index) => (
-                    <MemoryCard
-                      key={
-                        memory.id
-                          ? String(memory.id)
-                          : `${getCreatedAt(memory) ?? 'sem-data'}-${getEmotion(memory)}-${index}`
-                      }
-                      mem={memory}
-                    />
+                  {limitedGroups[bucket]!.map((memory) => (
+                    <MemoryCard key={memory.id} mem={memory} />
                   ))}
                 </ul>
               </motion.section>
             ))}
+            {hasMore ? (
+              <div className="flex justify-center pt-4">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+                  className="rounded-full border border-black/10 bg-white/70 px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm transition hover:bg-white"
+                >
+                  Carregar mais
+                </button>
+              </div>
+            ) : null}
           </motion.div>
         ) : (
           <MemoryEmptyState hasFilters={filtersActive} />

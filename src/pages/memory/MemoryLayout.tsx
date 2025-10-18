@@ -6,6 +6,7 @@ import { buscarMemoriasPorUsuario } from '../../api/memoriaApi';
 import { buscarPerfilEmocional } from '../../api/perfilApi';
 import { buscarRelatorioEmocional } from '../../api/relatorioEmocionalApi';
 import { MemoryDataContext, type ApiErrorDetails, type MemoryData } from './memoryData';
+import { sortMemoriesByCreatedAtDesc } from './memoryCardDto';
 import EcoBubbleLoading from '../../components/EcoBubbleLoading';
 
 type EndpointKey = 'memories' | 'perfil' | 'relatorio';
@@ -152,7 +153,9 @@ const MemoryLayout: React.FC = () => {
         };
 
         if (memoriesResult.status === 'fulfilled') {
-          next.memories = memoriesResult.value.filter(shouldKeepMemory);
+          next.memories = sortMemoriesByCreatedAtDesc(
+            memoriesResult.value.filter(shouldKeepMemory),
+          );
           next.memoriesError = null;
           next.memoriesErrorDetails = null;
         } else {

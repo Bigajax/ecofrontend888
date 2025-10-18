@@ -17,27 +17,28 @@ describe('MemoryCard', () => {
     tags: ['trabalho', 'família'],
   };
 
-  it('renders collapsed card with emotion, preview and tags', () => {
+  it('renders collapsed card with meta info and tags', () => {
     render(<MemoryCard mem={baseMemory} />);
 
     expect(screen.getByRole('img', { name: /emoção: alegria/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /alegria/i })).toBeInTheDocument();
-    expect(screen.getByText('Resumo analítico')).toBeInTheDocument();
-    expect(screen.getByText(/trabalho/i)).toBeInTheDocument();
-    expect(screen.getByText(/família/i)).toBeInTheDocument();
-    expect(screen.getByText(/Ver mais/)).toBeInTheDocument();
+    expect(screen.getByText('7/10')).toBeInTheDocument();
+    expect(screen.getByText('Trabalho')).toBeInTheDocument();
+    expect(screen.getByText('Família')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /expandir detalhes da memória/i })).toBeInTheDocument();
   });
 
   it('expands to show details when toggled', () => {
     render(<MemoryCard mem={baseMemory} />);
 
-    const toggle = screen.getByRole('button', { name: /ver mais/i });
+    const toggle = screen.getByRole('button', { name: /expandir detalhes da memória/i });
     fireEvent.click(toggle);
 
-    expect(screen.getAllByText('Resumo analítico')).toHaveLength(2);
+    expect(screen.getByText('Resumo analítico')).toBeInTheDocument();
     expect(screen.getByText('Contexto da memória')).toBeInTheDocument();
-    expect(screen.getByText('Seu pensamento')).toBeInTheDocument();
-    expect(screen.getByText('Reflexão da Eco')).toBeInTheDocument();
-    expect(screen.getByText(/Fechar/)).toBeInTheDocument();
+    expect(screen.getByText('Resumo da Eco')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /recolher detalhes da memória/i })
+    ).toBeInTheDocument();
   });
 });
