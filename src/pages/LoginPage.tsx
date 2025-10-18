@@ -12,11 +12,12 @@ import { supabase } from '@/lib/supabase';
 
 /* Divisor com traço mais marcado */
 const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
-  <div className="relative my-4 select-none" aria-hidden="true">
-    <div className="h-px w-full bg-slate-300/70" />
-    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] tracking-[0.14em] text-slate-500">
+  <div className="flex items-center gap-3" aria-hidden="true">
+    <span className="h-px flex-1 bg-slate-500/20 dark:bg-white/15" />
+    <span className="text-xs uppercase tracking-[0.4em] text-slate-500/80 dark:text-white/60">
       {label}
     </span>
+    <span className="h-px flex-1 bg-slate-500/20 dark:bg-white/15" />
   </div>
 );
 
@@ -176,202 +177,188 @@ const LoginPage: React.FC = () => {
 
   return (
     <PhoneFrame>
-      <div className="flex h-full items-center justify-center px-6 py-10 bg-gradient-to-br from-slate-50 via-white to-slate-100">
-        {isTourActive && <TourInicial onClose={closeTour} onFinish={closeTour as any} />}
+      <div
+        className="relative min-h-[100dvh] overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 text-slate-900 dark:text-slate-100"
+      >
+        <div
+          className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-blue-400/30 blur-3xl dark:bg-blue-500/20"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute -bottom-36 right-[-10%] h-96 w-96 rounded-full bg-purple-400/25 blur-3xl dark:bg-purple-500/20"
+          aria-hidden="true"
+        />
 
-        <motion.div
-          initial={{ y: 6, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.28, ease: 'easeOut' }}
-          className={[
-            'w-full max-w-sm rounded-[28px] p-8 md:p-10',
-            'bg-white/35 backdrop-blur-2xl',
-            'border border-white/70 ring-1 ring-slate-900/10',
-            'shadow-[0_24px_80px_rgba(2,6,23,0.18)]',
-          ].join(' ')}
-        >
-          {/* Header */}
-          <div className="text-center space-y-3">
-            <h1 className="text-4xl md:text-[38px] leading-none font-semibold tracking-[-0.03em] text-slate-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.65)]">
-              ECO
-            </h1>
+        <div className="relative grid min-h-[100dvh] place-items-center px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom))]">
+          {isTourActive && <TourInicial onClose={closeTour} onFinish={closeTour as any} />}
 
-            <div className="w-full flex justify-center">
-              <span className="inline-flex items-center gap-2 rounded-full pl-2.5 pr-3 py-1.5 bg-white/75 backdrop-blur-xl border border-white/80 ring-1 ring-slate-900/5 shadow-[0_8px_24px_rgba(2,6,23,0.12)]">
-                <span className="shrink-0 inline-flex">
-                  <EcoBubbleOneEye variant="icon" size={16} state="focus" />
-                </span>
-                <span className="text-[14px] md:text-[15px] leading-none font-semibold text-slate-800">
-                  Autoconhecimento Guiado
-                </span>
+          <motion.div
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className={[
+              'w-full max-w-md space-y-8 rounded-3xl p-6 sm:p-8',
+              'bg-white/55 dark:bg-white/10 backdrop-blur-2xl',
+              'border border-white/25 dark:border-white/10 shadow-2xl ring-1 ring-black/5 dark:ring-white/5',
+            ].join(' ')}
+          >
+            {/* Header */}
+            <div className="space-y-4 text-center">
+              <span className="inline-flex items-center justify-center gap-2 rounded-full bg-white/60 px-4 py-1 text-sm font-medium text-slate-700 backdrop-blur-md ring-1 ring-black/5 dark:bg-white/10 dark:text-slate-100 dark:ring-white/10">
+                <EcoBubbleOneEye variant="icon" size={18} state="focus" />
+                Autoconhecimento Guiado
               </span>
-            </div>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="mt-7 space-y-4" noValidate>
-            <label className="sr-only" htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              autoCapitalize="none"
-              autoCorrect="off"
-              inputMode="email"
-              className={[
-                'w-full h-12 rounded-2xl px-4',
-                'bg-white/70 backdrop-blur-xl',
-                'border border-white/80 ring-1 ring-slate-900/5',
-                'text-slate-900 placeholder:text-slate-400',
-                'shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]',
-                'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
-              ].join(' ')}
-            />
-
-            <label className="sr-only" htmlFor="password">Senha</label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                className={[
-                  'w-full h-12 rounded-2xl px-4 pr-11',
-                  'bg-white/70 backdrop-blur-xl',
-                  'border border-white/80 ring-1 ring-slate-900/5',
-                  'text-slate-900 placeholder:text-slate-400',
-                  'shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]',
-                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
-                ].join(' ')}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-1.5 my-1.5 px-2 flex items-center rounded-xl text-slate-700 hover:text-slate-900 hover:bg-white/70 focus:outline-none focus:ring-2 focus:ring-slate-700/10"
-                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">ECO</h1>
             </div>
 
-            {/* Redefinir senha (link centralizado) */}
-            <div className="flex justify-center mt-1">
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                disabled={forgotLoading}
-                title="Enviaremos um link para o seu e-mail"
-                className="px-2 py-1 text-[13px] font-medium text-slate-600 hover:text-slate-900 underline underline-offset-2 disabled:opacity-60"
-              >
-                {forgotLoading ? 'Enviando…' : 'Redefinir senha'}
-              </button>
-            </div>
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="sr-only" htmlFor="email">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    inputMode="email"
+                    aria-invalid={Boolean(error)}
+                    aria-describedby={error ? 'login-error' : undefined}
+                    className={[
+                      'w-full h-12 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/10 px-4 text-base text-slate-900 placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-400/80',
+                      'shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#007AFF] dark:shadow-none',
+                    ].join(' ')}
+                  />
+                </div>
 
-            {/* Mensagem de erro acessível */}
-            <div role="status" aria-live="polite" className="min-h-[1rem]">
-              {error && (
-                <motion.p className="text-rose-600 text-sm text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  {error}
-                </motion.p>
-              )}
-            </div>
+                <div className="space-y-1">
+                  <label className="sr-only" htmlFor="password">
+                    Senha
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Senha"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                      aria-invalid={Boolean(error)}
+                      aria-describedby={error ? 'login-error' : undefined}
+                      className={[
+                        'w-full h-12 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/10 px-4 pr-12 text-base text-slate-900 placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-400/80',
+                        'shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#007AFF] dark:shadow-none',
+                      ].join(' ')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute inset-y-0 right-1.5 my-1.5 flex items-center rounded-xl px-2 text-slate-600 transition hover:bg-white/70 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30 dark:text-slate-200 dark:hover:bg-white/15 dark:hover:text-white"
+                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                      aria-pressed={showPassword}
+                      title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-            {/* Actions */}
-            <div className="pt-1 space-y-4">
-              {/* Entrar – azul Apple */}
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className={[
-                  'w-full h-11 rounded-2xl font-semibold text-white',
-                  'bg-[#007aff] hover:bg-[#1a84ff] active:bg-[#0466d6]',
-                  'shadow-[0_10px_28px_rgba(0,122,255,0.35)]',
-                  'disabled:opacity-60 active:translate-y-[0.5px]',
-                  'focus:outline-none focus:ring-2 focus:ring-[#007aff]/30',
-                ].join(' ')}
-              >
-                {loading ? 'Entrando…' : 'Entrar'}
-              </button>
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={forgotLoading}
+                  title="Enviaremos um link para o seu e-mail"
+                  className="text-sm font-medium text-slate-600 underline-offset-4 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:text-white"
+                >
+                  {forgotLoading ? 'Enviando…' : 'Redefinir senha'}
+                </button>
+              </div>
 
-              {/* Google – branco com ícone e label “Entrar com Google” */}
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={loading}
-                className={[
-                  'w-full h-11 rounded-2xl font-semibold',
-                  'bg-white text-slate-900',
-                  'border border-slate-200 ring-1 ring-slate-900/5',
-                  'shadow-[0_10px_28px_rgba(2,6,23,0.10)]',
-                  'hover:bg-slate-50 active:translate-y-[0.5px]',
-                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
-                  'inline-flex items-center justify-center gap-2',
-                ].join(' ')}
-              >
-                <GoogleIcon />
-                Entrar com Google
-              </button>
-
-              {/* Criar uma nova conta */}
-              <button
-                type="button"
-                onClick={() => navigate('/register')}
-                disabled={loading}
-                className={[
-                  'w-full h-11 rounded-2xl font-semibold',
-                  'bg-white/70 backdrop-blur-xl',
-                  'border border-white/80 ring-1 ring-slate-900/5',
-                  'text-slate-900 shadow-[0_10px_28px_rgba(2,6,23,0.10)]',
-                  'hover:bg-white/80 active:translate-y-[0.5px]',
-                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
-                ].join(' ')}
-              >
-                Criar uma nova conta
-              </button>
-
-              <Divider />
-
-              {/* Iniciar Tour (mantido) */}
-              <button
-                type="button"
-                onClick={() => setIsTourActive(true)}
-                disabled={loading}
-                className={[
-                  'w-full h-11 rounded-2xl font-semibold',
-                  'bg-white/70 backdrop-blur-xl',
-                  'border border-white/80 ring-1 ring-slate-900/5',
-                  'text-slate-900 shadow-[0_10px_28px_rgba(2,6,23,0.10)]',
-                  'hover:bg-white/80 active:translate-y-[0.5px]',
-                  'focus:outline-none focus:ring-2 focus:ring-slate-700/10',
-                ].join(' ')}
-              >
-                Iniciar Tour
-              </button>
-
-              {/* feedback do “Redefinir senha” */}
-              <div role="status" aria-live="polite" className="min-h-[1.25rem] text-center">
-                {forgotMessage && (
-                  <motion.p className="text-emerald-600 text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    {forgotMessage}
-                  </motion.p>
-                )}
-                {forgotError && !forgotMessage && (
-                  <motion.p className="text-rose-600 text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    {forgotError}
+              <div role="alert" id="login-error" aria-live="assertive" className="min-h-[1.25rem] text-center text-sm text-rose-500">
+                {error && (
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    {error}
                   </motion.p>
                 )}
               </div>
-            </div>
-          </form>
-        </motion.div>
+
+              <div className="space-y-4">
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  className={[
+                    'flex h-12 w-full items-center justify-center rounded-2xl bg-[#007AFF] text-sm font-semibold text-white shadow-lg transition-colors',
+                    'hover:bg-[#1a84ff] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/50 focus:ring-offset-2 focus:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-60',
+                  ].join(' ')}
+                >
+                  {loading ? 'Entrando…' : 'Entrar'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  disabled={loading}
+                  className={[
+                    'inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white/60 text-sm font-semibold text-slate-900 transition-colors',
+                    'ring-1 ring-black/5 backdrop-blur-md hover:bg-white/75 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/40 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white/10 dark:text-slate-100 dark:ring-white/10 dark:hover:bg-white/15',
+                  ].join(' ')}
+                >
+                  <GoogleIcon />
+                  Entrar com Google
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/register')}
+                  disabled={loading}
+                  className={[
+                    'flex h-12 w-full items-center justify-center rounded-2xl bg-white/60 text-sm font-semibold text-slate-900 transition-colors',
+                    'ring-1 ring-black/5 backdrop-blur-md hover:bg-white/75 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/40 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white/10 dark:text-slate-100 dark:ring-white/10 dark:hover:bg-white/15',
+                  ].join(' ')}
+                >
+                  Criar uma nova conta
+                </button>
+
+                <Divider />
+
+                <button
+                  type="button"
+                  onClick={() => setIsTourActive(true)}
+                  disabled={loading}
+                  className={[
+                    'flex h-12 w-full items-center justify-center rounded-2xl bg-white/60 text-sm font-semibold text-slate-900 transition-colors',
+                    'ring-1 ring-black/5 backdrop-blur-md hover:bg-white/75 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/40 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white/10 dark:text-slate-100 dark:ring-white/10 dark:hover:bg-white/15',
+                  ].join(' ')}
+                >
+                  Iniciar Tour
+                </button>
+
+                <div role="status" aria-live="polite" className="min-h-[1.25rem] text-center text-sm">
+                  {forgotMessage && (
+                    <motion.p className="text-emerald-500" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                      {forgotMessage}
+                    </motion.p>
+                  )}
+                  {forgotError && !forgotMessage && (
+                    <motion.p className="text-rose-500" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                      {forgotError}
+                    </motion.p>
+                  )}
+                </div>
+              </div>
+            </form>
+          </motion.div>
+        </div>
       </div>
     </PhoneFrame>
   );
