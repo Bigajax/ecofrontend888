@@ -1,5 +1,5 @@
 // src/api/perfilApi.ts
-import api from "./axios";
+import { ApiFetchError, apiFetchJson } from "./apiFetch";
 
 export interface PerfilEmocional {
   id?: string;
@@ -26,26 +26,6 @@ function unwrapPerfil(payload: any): PerfilEmocional | null {
   };
 }
 
-/* ---------------- helpers ---------------- */
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-const isTimeout = (err: any) => {
-  const code = err?.code || err?.response?.code;
-  const msg = String(err?.message || "");
-  return (
-    code === "ECONNABORTED" ||
-    code === "ETIMEDOUT" ||
-    msg.includes("timeout") ||
-    msg.includes("aborted")
-  );
-};
-
-const isFallbackStatus = (err: any) => {
-  const s = err?.response?.status;
-  // rotas não encontradas/sem suporte -> tentamos a próxima
-  return s === 400 || s === 404 || s === 405;
-};
-
 // cache leve em memória para evitar re-bater várias vezes em curto prazo
 type CacheItem = { data: PerfilEmocional | null; ts: number };
 const cache = new Map<string, CacheItem>();
@@ -66,56 +46,61 @@ function setCache(key: string, data: PerfilEmocional | null) {
 }
 
 /** Monta a lista de rotas candidatas (considera baseURL com '/api') */
-function buildCandidates(base: string, withUserId?: string): string[] {
-  // Rotas “normais”
-  const bases = [
-    "perfil-emocional",
-    "/perfil-emocional",
-    "v1/perfil-emocional",
-    "/v1/perfil-emocional",
-    "perfil_emocional",
-    "/perfil_emocional",
-    "perfil",
-    "/perfil",
-  ];
+const FALLBACK_STATUSES = new Set([400, 404, 405]);
 
-  // Rotas que “sobem” um nível (caso a baseURL tenha /api e o servidor exponha sem /api)
-  const upOne = [
-    "../perfil-emocional",
-    "../v1/perfil-emocional",
-    "../perfil_emocional",
-    "../perfil",
-  ];
+const PERFIL_PATHS = [
+  '/api/perfil-emocional',
+  '/perfil-emocional',
+  '/api/v1/perfil-emocional',
+  '/v1/perfil-emocional',
+  '/api/perfil_emocional',
+  '/perfil_emocional',
+  '/api/perfil',
+  '/perfil',
+];
 
-  const all = [...bases, ...upOne];
+const buildPerfilCandidates = (userId?: string) => {
+  const unique = new Set<string>();
+  const items: string[] = [];
 
-  if (!withUserId) return all;
+  const add = (path: string) => {
+    if (!unique.has(path)) {
+      unique.add(path);
+      items.push(path);
+    }
+  };
 
-  const id = encodeURIComponent(withUserId);
-  // anexa o id corretamente (evita //)
-  return all.map((p) => (p.endsWith("/") ? `${p}${id}` : `${p}/${id}`));
-}
+  PERFIL_PATHS.forEach(add);
 
-/** Tenta uma sequência de rotas até uma responder com 2xx. */
-async function getFirstOK(
-  candidates: string[],
-  timeoutMs: number
-): Promise<PerfilEmocional | null> {
+  if (userId) {
+    const id = encodeURIComponent(userId);
+    PERFIL_PATHS.forEach((path) => add(`${path}?usuario_id=${id}`));
+    PERFIL_PATHS.forEach((path) => add(`${path}/${id}`));
+  }
+
+  return items;
+};
+
+async function getPerfilFromCandidates(candidates: string[], timeoutMs: number) {
+  let lastError: unknown;
+
   for (const path of candidates) {
     try {
-      const { data } = await api.get(path, { timeout: timeoutMs });
-      const parsed = unwrapPerfil(data);
-      if (parsed) return parsed;
-    } catch (err: any) {
-      if (isFallbackStatus(err) || isTimeout(err)) {
-        // tenta a próxima rota em silêncio
+      const payload = await apiFetchJson<any>(path, { method: 'GET', timeoutMs });
+      const parsed = unwrapPerfil(payload);
+      if (parsed) {
+        return { perfil: parsed, lastError: undefined } as const;
+      }
+    } catch (error) {
+      lastError = error;
+      if (error instanceof ApiFetchError && FALLBACK_STATUSES.has(error.status ?? 0)) {
         continue;
       }
-      // falha “real” (401/5xx/rede): propaga p/ retry
-      throw err;
+      throw error;
     }
   }
-  return null;
+
+  return { perfil: null, lastError } as const;
 }
 
 /* ---------------- API principal com retry + fallback ---------------- */
@@ -123,55 +108,40 @@ export async function buscarPerfilEmocional(
   userId?: string,
   opts?: { timeoutMs?: number; retries?: number; retryDelayMs?: number }
 ): Promise<PerfilEmocional | null> {
-  const timeoutMs = opts?.timeoutMs ?? 12_000; // menor que 30s pra não travar a UI
-  const retries = Math.max(0, opts?.retries ?? 2);
-  const retryDelayMs = Math.max(100, opts?.retryDelayMs ?? 700);
+  const timeoutMs = opts?.timeoutMs ?? 10_000;
 
-  // cache key difere se passarmos userId
   const cacheKey = userId ? `perfil:${userId}` : "perfil:self";
   const cached = getCache(cacheKey);
   if (cached !== undefined) return cached;
 
-  let attempt = 0;
-  let lastError: any;
+  const candidates = buildPerfilCandidates(userId);
+  let lastError: unknown;
 
-  // baseURL atual (pode terminar com /api ou não)
-  const base = (api.defaults?.baseURL as string) || "";
-
-  while (attempt <= retries) {
-    try {
-      // 1) tentar rotas autenticadas (RLS)
-      const primary = buildCandidates(base);
-      const perfil = await getFirstOK(primary, timeoutMs);
-      if (perfil !== null) {
-        setCache(cacheKey, perfil);
-        return perfil;
-      }
-
-      // 2) fallback via :userId (backend legado ou quando RLS não suportado)
-      if (userId) {
-        const withId = buildCandidates(base, userId);
-        const perfilById = await getFirstOK(withId, timeoutMs);
-        setCache(cacheKey, perfilById);
-        return perfilById;
-      }
-
-      // se chegou aqui, não temos userId para fallback
-      setCache(cacheKey, null);
-      return null;
-    } catch (err) {
-      lastError = err;
-      if (attempt === retries) break;
-      // backoff exponencial
-      await sleep(retryDelayMs * Math.pow(2, attempt));
-      attempt++;
+  try {
+    const { perfil, lastError: candidateError } = await getPerfilFromCandidates(candidates, timeoutMs);
+    if (perfil) {
+      setCache(cacheKey, perfil);
+      return perfil;
     }
+    lastError = candidateError;
+  } catch (error) {
+    lastError = error;
   }
 
-  console.error(
-    "❌ Erro ao buscar perfil emocional:",
-    lastError?.response?.data || lastError?.message || lastError
-  );
+  if (lastError instanceof ApiFetchError && FALLBACK_STATUSES.has(lastError.status ?? 0)) {
+    setCache(cacheKey, null);
+    return null;
+  }
+
+  if (lastError) {
+    console.error(
+      '❌ Erro ao buscar perfil emocional:',
+      (lastError as any)?.response?.data || (lastError as Error)?.message || lastError
+    );
+    setCache(cacheKey, null);
+    throw lastError;
+  }
+
   setCache(cacheKey, null);
   return null;
 }

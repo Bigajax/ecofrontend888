@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 
 import type { Memoria } from '../../api/memoriaApi';
 
-import { useMemoryData } from './memoryData';
+import { useMemoryData, type ApiErrorDetails } from './memoryData';
 import MemoryCard from '../../components/memory/MemoryCard';
 import MemoriesFilterBar from '../../components/memory/MemoriesFilterBar';
 import MemoryEmptyState from '../../components/memory/MemoryEmptyState';
@@ -15,8 +15,39 @@ import { normalizeMemoryCollection, BUCKET_ORDER, groupMemoryCards } from './mem
 
 const PAGE_SIZE = 20;
 
+const REASON_LABEL: Record<string, string> = {
+  cors: 'motivo: CORS bloqueado',
+  network: 'motivo: rede indisponível',
+  timeout: 'motivo: timeout',
+  '5xx': 'motivo: erro 5xx',
+  unknown: 'motivo desconhecido',
+};
+
+const describeDetails = (details: ApiErrorDetails | null) => {
+  if (!details) return null;
+  const parts: string[] = [];
+  if (details.status) {
+    parts.push(`status ${details.status}${details.statusText ? ` ${details.statusText}` : ''}`);
+  } else {
+    parts.push('status indisponível');
+  }
+  if (details.reason && REASON_LABEL[details.reason]) {
+    parts.push(REASON_LABEL[details.reason]);
+  }
+  if (details.message) {
+    parts.push(details.message);
+  }
+  return parts.join(' • ');
+};
+
 const MemoriesSection: React.FC = () => {
-  const { memories, memoriesLoading, memoriesError, memoriesErrorDetails } = useMemoryData();
+  const {
+    memories,
+    memoriesLoading,
+    memoriesError,
+    memoriesErrorDetails,
+    refetchMemories,
+  } = useMemoryData();
 
   const normalizedCards = useMemo(
     () => normalizeMemoryCollection(memories as Memoria[]),
@@ -39,7 +70,7 @@ const MemoriesSection: React.FC = () => {
   const limitedGroups = useMemo(() => groupMemoryCards(limitedMemories), [limitedMemories]);
   const hasMore = filteredMemories.length > visibleCount;
 
-  if (memoriesLoading) {
+  if (memoriesLoading && memories.length === 0) {
     return (
       <div className="min-h-0 h-full max-h-[calc(100vh-96px)] overflow-y-auto overflow-x-hidden">
         <div className="mx-auto grid w-full max-w-6xl gap-4 px-4 py-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -56,20 +87,14 @@ const MemoriesSection: React.FC = () => {
       <div className="flex items-center justify-center h-64 px-6 text-center">
         <div className="rounded-3xl border border-rose-100 bg-rose-50 px-6 py-5 shadow-sm">
           <p className="text-[15px] font-semibold text-rose-600">{memoriesError}</p>
-          {memoriesErrorDetails?.status || memoriesErrorDetails?.message ? (
+          {describeDetails(memoriesErrorDetails) ? (
             <p className="mt-2 text-[12px] text-rose-500/80">
-              Detalhes técnicos:{' '}
-              {memoriesErrorDetails?.status
-                ? `${memoriesErrorDetails.status}${
-                    memoriesErrorDetails.statusText ? ` ${memoriesErrorDetails.statusText}` : ''
-                  }`
-                : 'status indisponível'}
-              {memoriesErrorDetails?.message ? ` • ${memoriesErrorDetails.message}` : ''}
+              {`Detalhes técnicos: ${describeDetails(memoriesErrorDetails)}`}
             </p>
           ) : null}
           <button
             type="button"
-            onClick={() => window.location.reload()}
+            onClick={() => refetchMemories()}
             className="mt-4 inline-flex items-center justify-center rounded-full border border-rose-200/70 bg-white/90 px-4 py-2 text-sm font-semibold text-rose-600 shadow-sm transition hover:bg-white"
           >
             Tentar novamente
