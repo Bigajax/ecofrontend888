@@ -117,7 +117,7 @@ const QuadrantLegend = () => (
 /* ---------- Main ---------- */
 
 const ReportSection: React.FC = () => {
-  const { relatorio, relatorioLoading, relatorioError } = useMemoryData();
+  const { relatorio, relatorioLoading, relatorioError, relatorioErrorDetails } = useMemoryData();
   const [heatmapRange, setHeatmapRange] = useState<30 | 90 | 180 | undefined>(30);
 
   const mapaEmocional2D = useMemo(() => {
@@ -171,8 +171,19 @@ const ReportSection: React.FC = () => {
 
   if (relatorioError) {
     return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700 text-sm">
-        {relatorioError}
+      <div className="rounded-3xl border border-rose-100 bg-rose-50 p-5 text-sm text-rose-600 shadow-sm">
+        <p className="font-semibold">{relatorioError}</p>
+        {relatorioErrorDetails?.status || relatorioErrorDetails?.message ? (
+          <p className="mt-2 text-[12px] text-rose-500/80">
+            Detalhes técnicos:{' '}
+            {relatorioErrorDetails?.status
+              ? `${relatorioErrorDetails.status}${
+                  relatorioErrorDetails.statusText ? ` ${relatorioErrorDetails.statusText}` : ''
+                }`
+              : 'status indisponível'}
+            {relatorioErrorDetails?.message ? ` • ${relatorioErrorDetails.message}` : ''}
+          </p>
+        ) : null}
       </div>
     );
   }

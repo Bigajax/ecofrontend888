@@ -12,7 +12,7 @@ import { getCreatedAt, getEmotion, Memoria } from './utils';
 const BUCKET_ORDER = ['Hoje', 'Ontem', 'Esta semana', 'Este mês', 'Anteriores'] as const;
 
 const MemoriesSection: React.FC = () => {
-  const { memories, memoriesLoading, memoriesError } = useMemoryData();
+  const { memories, memoriesLoading, memoriesError, memoriesErrorDetails } = useMemoryData();
 
   const {
     emotionOptions,
@@ -35,8 +35,21 @@ const MemoriesSection: React.FC = () => {
 
   if (memoriesError) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-red-500 text-[15px]">{memoriesError}</div>
+      <div className="flex items-center justify-center h-64 px-6 text-center">
+        <div className="rounded-3xl border border-rose-100 bg-rose-50 px-6 py-5 shadow-sm">
+          <p className="text-[15px] font-semibold text-rose-600">{memoriesError}</p>
+          {memoriesErrorDetails?.status || memoriesErrorDetails?.message ? (
+            <p className="mt-2 text-[12px] text-rose-500/80">
+              Detalhes técnicos:{' '}
+              {memoriesErrorDetails?.status
+                ? `${memoriesErrorDetails.status}${
+                    memoriesErrorDetails.statusText ? ` ${memoriesErrorDetails.statusText}` : ''
+                  }`
+                : 'status indisponível'}
+              {memoriesErrorDetails?.message ? ` • ${memoriesErrorDetails.message}` : ''}
+            </p>
+          ) : null}
+        </div>
       </div>
     );
   }
