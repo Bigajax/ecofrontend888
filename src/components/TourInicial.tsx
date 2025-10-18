@@ -31,7 +31,16 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose, reason, nextPath }) 
   const handleComplete = useCallback(() => {
     mixpanel.track('Front-end: Tour Concluído');
     onClose();
-    navigate(nextPath ?? '/chat', { replace: true });
+    const targetPath = nextPath ?? '/app';
+
+    if (typeof navigate === 'function') {
+      navigate(targetPath, { replace: true });
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.location.assign(targetPath);
+    }
   }, [navigate, nextPath, onClose]);
 
   useEffect(() => {

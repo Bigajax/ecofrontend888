@@ -95,29 +95,32 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   }, [handleKeydown]);
 
   const renderVisual = (slide: OnboardingSlideData) => {
+    const wrapperClasses = 'flex min-h-[140px] w-full flex-col items-center justify-center gap-5';
     switch (slide.visual) {
       case 'orb':
         return (
-          <div className="relative flex items-center justify-center">
-            <div className="absolute h-48 w-48 sm:h-56 sm:w-56 rounded-full bg-sky-100/60 dark:bg-sky-500/10 blur-3xl" />
-            <motion.div
-              className="relative h-44 w-44 sm:h-52 sm:w-52 rounded-full bg-gradient-to-br from-[#c5e5ff] via-[#e0f0ff] to-white shadow-[0_28px_70px_rgba(15,23,42,0.12)]"
-              animate={prefersReducedMotion ? undefined : { scale: [1, 1.035, 1] }}
-              transition={orbPulseTransition}
-            >
-              <div className="absolute inset-[18%] rounded-full border border-white/60 bg-white/30 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]" />
-              <div className="absolute inset-[34%] rounded-full bg-white/60 backdrop-blur-2xl" />
-              <div className="absolute inset-[48%] rounded-full bg-[#9ecfff]/60 blur-xl" />
-            </motion.div>
+          <div className={wrapperClasses}>
+            <div className="relative flex items-center justify-center">
+              <div className="absolute h-[200px] w-[200px] rounded-full bg-sky-100/60 blur-3xl sm:h-[220px] sm:w-[220px] md:h-[260px] md:w-[260px] dark:bg-sky-500/10" />
+              <motion.div
+                className="relative h-[160px] w-[160px] rounded-full bg-gradient-to-br from-[#c5e5ff] via-[#e0f0ff] to-white shadow-[0_28px_70px_rgba(15,23,42,0.12)] sm:h-[200px] sm:w-[200px] md:h-[240px] md:w-[240px]"
+                animate={prefersReducedMotion ? undefined : { scale: [1, 1.035, 1] }}
+                transition={orbPulseTransition}
+              >
+                <div className="absolute inset-[18%] rounded-full border border-white/60 bg-white/30 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]" />
+                <div className="absolute inset-[34%] rounded-full bg-white/60 backdrop-blur-2xl" />
+                <div className="absolute inset-[48%] rounded-full bg-[#9ecfff]/60 blur-xl" />
+              </motion.div>
+            </div>
           </div>
         );
       case 'mirror':
         return (
-          <div className="flex flex-col items-center gap-6">
+          <div className={`${wrapperClasses} gap-6`}>
             <div className="relative flex items-center justify-center">
-              <div className="absolute h-48 w-48 sm:h-56 sm:w-56 rounded-full bg-sky-200/30 dark:bg-slate-700/30 blur-3xl" />
+              <div className="absolute h-[200px] w-[200px] rounded-full bg-sky-200/30 blur-3xl sm:h-[220px] sm:w-[220px] md:h-[260px] md:w-[260px] dark:bg-slate-700/30" />
               <motion.div
-                className="relative h-44 w-44 sm:h-52 sm:w-52 rounded-full border border-white/50 bg-white/40 backdrop-blur-3xl shadow-[0_18px_50px_rgba(15,23,42,0.12)]"
+                className="relative h-[160px] w-[160px] rounded-full border border-white/50 bg-white/40 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur-3xl sm:h-[200px] sm:w-[200px] md:h-[240px] md:w-[240px]"
                 animate={prefersReducedMotion ? undefined : { scale: [1, 1.015, 1] }}
                 transition={orbPulseTransition}
               >
@@ -146,11 +149,11 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
         );
       case 'usage':
         return (
-          <div className="flex flex-col items-center gap-5">
+          <div className={`${wrapperClasses} gap-5`}>
             <div className="relative flex items-center justify-center">
-              <div className="absolute h-48 w-48 sm:h-56 sm:w-56 rounded-full bg-blue-100/40 dark:bg-blue-500/10 blur-3xl" />
+              <div className="absolute h-[200px] w-[200px] rounded-full bg-blue-100/40 blur-3xl sm:h-[220px] sm:w-[220px] md:h-[260px] md:w-[260px] dark:bg-blue-500/10" />
               <motion.div
-                className="relative flex h-40 w-40 sm:h-48 sm:w-48 flex-col items-center justify-center rounded-[28px] border border-white/40 bg-white/60 dark:bg-white/5 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-3xl"
+                className="relative flex h-[160px] w-[160px] flex-col items-center justify-center rounded-[28px] border border-white/40 bg-white/60 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-3xl sm:h-[200px] sm:w-[200px] md:h-[240px] md:w-[240px] dark:bg-white/5"
                 animate={prefersReducedMotion ? undefined : { y: [-4, 4, -4] }}
                 transition={floatTransition}
               >
@@ -181,8 +184,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
 
   return (
     <div
-      className="relative min-h-[100dvh] w-full overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100 px-4 py-6 sm:py-12 dark:from-slate-950 dark:to-slate-900"
-      style={{ paddingBottom: `max(2.5rem, calc(env(safe-area-inset-bottom, 0px) + 1.5rem))` }}
+      className="relative grid min-h-[100dvh] w-full place-items-center overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100 px-4 py-8 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:py-12 dark:from-slate-950 dark:to-slate-900"
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-32 -left-28 h-72 w-72 rounded-full bg-[#b8d8ff]/40 blur-3xl" />
@@ -206,11 +208,16 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.97, y: -18 }}
           transition={{ duration: 0.32, ease: 'easeOut' }}
-          className="relative z-30 mx-auto flex w-full max-w-md flex-col items-center rounded-[28px] border border-white/20 bg-white/60 p-8 text-center shadow-[0_18px_55px_rgba(15,23,42,0.16)] backdrop-blur-2xl sm:p-10 dark:border-white/15 dark:bg-white/10"
+          role="region"
+          aria-labelledby={`onboarding-slide-${currentSlideData.id}-title`}
+          className="relative z-30 mx-auto flex w-full max-w-[680px] flex-col rounded-[28px] border border-white/20 bg-white/60 p-8 text-center shadow-[0_18px_55px_rgba(15,23,42,0.16)] backdrop-blur-2xl sm:max-w-[720px] sm:p-10 dark:border-white/15 dark:bg-white/10"
         >
-          <div className="flex w-full flex-col items-center gap-6">
-            <header className="flex flex-col gap-3">
-              <h2 className="text-[1.75rem] font-semibold leading-snug text-slate-900 sm:text-2xl dark:text-white">
+          <div className="flex h-full w-full flex-col">
+            <header className="flex flex-col gap-4 sm:gap-5">
+              <h2
+                id={`onboarding-slide-${currentSlideData.id}-title`}
+                className="text-2xl font-semibold leading-tight text-slate-900 sm:text-3xl md:text-[32px] dark:text-white"
+              >
                 {currentSlideData.title}
               </h2>
               <div className="flex flex-col gap-3 text-[15px] leading-relaxed text-slate-600 sm:text-base dark:text-slate-300">
@@ -220,7 +227,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
               </div>
             </header>
 
-            <div className="flex w-full flex-col items-center gap-4">
+            <div className="mt-6 flex flex-1 flex-col items-center justify-center gap-6 sm:mt-8 sm:gap-8">
               {renderVisual(currentSlideData)}
               {currentSlideData.subtext ? (
                 <p className="text-sm font-medium text-slate-500 dark:text-slate-300/80">
@@ -228,7 +235,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
                 </p>
               ) : null}
               {currentSlideData.badges ? (
-                <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-2">
                   {currentSlideData.badges.map((badge) => (
                     <span
                       key={badge.label}
@@ -242,72 +249,81 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
               ) : null}
             </div>
 
-            <div className="mt-2 flex w-full flex-col items-center gap-5">
-              <div className="w-full">
-                <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/40 dark:bg-white/10">
-                  <motion.span
-                    className="absolute inset-y-0 left-0 rounded-full bg-slate-900/70 dark:bg-white/80"
-                    initial={false}
-                    animate={{ width: `${((slideIndex + 1) / totalSlides) * 100}%` }}
-                    transition={{ duration: 0.45, ease: 'easeOut' }}
-                  />
+            <footer className="mt-6 sm:mt-8">
+              <div className="flex flex-col items-center gap-5 pt-4 border-t border-white/40 dark:border-white/10">
+                <div className="w-full">
+                  <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/40 dark:bg-white/10">
+                    <motion.span
+                      className="absolute inset-y-0 left-0 rounded-full bg-slate-900/70 dark:bg-white/80"
+                      initial={false}
+                      animate={{ width: `${((slideIndex + 1) / totalSlides) * 100}%` }}
+                      transition={{ duration: 0.45, ease: 'easeOut' }}
+                    />
+                  </div>
+                  <div className="mt-3 flex items-center justify-center gap-3">
+                    {slides.map((slide, index) => {
+                      const active = index === slideIndex;
+                      return (
+                        <button
+                          key={slide.id}
+                          onClick={() => goTo(index)}
+                          aria-label={`Ir para ${slide.title}`}
+                          aria-current={active ? 'step' : undefined}
+                          className={`relative h-2.5 w-2.5 rounded-full transition ${
+                            active
+                              ? 'bg-slate-900 shadow-[0_0_0_4px_rgba(148,163,184,0.25)] dark:bg-white'
+                              : 'bg-slate-300/80 hover:bg-slate-400/80 dark:bg-white/30 dark:hover:bg-white/45'
+                          }`}
+                          type="button"
+                        >
+                          {active ? (
+                            <motion.span
+                              layoutId="onboarding-active-dot"
+                              className="absolute inset-[-6px] rounded-full bg-slate-900/5"
+                            />
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="mt-3 flex items-center justify-center gap-2">
-                  {slides.map((slide, index) => {
-                    const active = index === slideIndex;
-                    return (
-                      <button
-                        key={slide.id}
-                        onClick={() => goTo(index)}
-                        aria-label={`Ir para ${slide.title}`}
-                        aria-current={active}
-                        className={`relative h-2.5 w-2.5 rounded-full transition ${
-                          active
-                            ? 'bg-slate-900 shadow-[0_0_0_4px_rgba(148,163,184,0.25)] dark:bg-white'
-                            : 'bg-slate-300/80 hover:bg-slate-400/80 dark:bg-white/30 dark:hover:bg-white/45'
-                        }`}
-                        type="button"
-                      >
-                        {active ? (
-                          <motion.span
-                            layoutId="onboarding-active-dot"
-                            className="absolute inset-[-6px] rounded-full bg-slate-900/5"
-                          />
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
 
-              <div className="flex w-full items-center gap-3">
-                {slideIndex > 0 ? (
+                <div className="flex w-full flex-wrap items-center justify-center gap-3">
+                  {slideIndex > 0 ? (
+                    <button
+                      onClick={handlePrev}
+                      type="button"
+                      aria-label="Voltar slide"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-white/60 px-4 text-sm font-medium text-slate-600 shadow-[0_12px_28px_rgba(15,23,42,0.08)] ring-1 ring-black/5 transition hover:bg-white/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#79b7ff]/60 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10"
+                    >
+                      <ArrowLeft size={16} />
+                      Voltar
+                    </button>
+                  ) : null}
+
                   <button
-                    onClick={handlePrev}
+                    onClick={handleNext}
                     type="button"
-                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/40 bg-white/50 px-4 text-sm font-medium text-slate-600 shadow-[0_12px_28px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:bg-white/80 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+                    className={`${
+                      slideIndex === totalSlides - 1
+                        ? 'inline-flex h-12 items-center justify-center rounded-2xl bg-[#007AFF] px-6 text-base font-medium text-white shadow-lg transition hover:bg-[#1a84ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#79b7ff]/80'
+                        : 'inline-flex h-11 items-center justify-center rounded-2xl bg-white/60 px-4 text-sm font-medium text-slate-600 shadow-[0_12px_28px_rgba(15,23,42,0.08)] ring-1 ring-black/5 transition hover:bg-white/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#79b7ff]/60 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10'
+                    }`}
+                    aria-label={slideIndex === totalSlides - 1 ? 'Começar agora' : 'Próximo slide'}
                   >
-                    <ArrowLeft size={16} />
-                    Voltar
+                    {currentSlideData.ctaLabel}
                   </button>
-                ) : (
-                  <span className="hidden flex-1 sm:block" aria-hidden="true" />
-                )}
-
-                <button
-                  onClick={handleNext}
-                  type="button"
-                  className="inline-flex h-11 flex-[1.35] items-center justify-center rounded-2xl bg-[#007AFF] px-4 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,255,0.28)] transition hover:-translate-y-0.5 hover:bg-[#1a84ff] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#79b7ff]/80"
-                >
-                  {currentSlideData.ctaLabel}
-                </button>
+                </div>
               </div>
-            </div>
+            </footer>
           </div>
         </motion.article>
       </AnimatePresence>
 
-      <div className="absolute inset-x-0 bottom-6 z-40 flex justify-center">
+      <div
+        className="absolute inset-x-0 z-40 flex justify-center"
+        style={{ bottom: 'max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))' }}
+      >
         <button
           onClick={handleSkip}
           type="button"
