@@ -1,5 +1,6 @@
 // src/api/relatorioEmocionalApi.ts
 import { ApiFetchError, apiFetchJson } from "./apiFetch";
+import { MissingUserIdError } from "./errors";
 
 export interface LinhaTempoItem {
   data: string;
@@ -50,90 +51,44 @@ function setCache(key: string, data: RelatorioEmocional | null) {
   cache.set(key, { data, ts: Date.now() });
 }
 
-const RELATORIO_PATHS = [
-  '/api/relatorio-emocional',
-  '/relatorio-emocional',
-  '/api/v1/relatorio-emocional',
-  '/v1/relatorio-emocional',
-  '/api/relatorio_emocional',
-  '/relatorio_emocional',
-  '/api/relatorio',
-  '/relatorio',
-];
+const RELATORIO_ENDPOINT = '/api/relatorio-emocional';
 
-const FALLBACK_STATUS = new Set([400, 404, 405]);
-
-const buildReportCandidates = (userId?: string) => {
-  const unique = new Set<string>();
-  const items: string[] = [];
-
-  const add = (path: string) => {
-    if (!unique.has(path)) {
-      unique.add(path);
-      items.push(path);
-    }
-  };
-
-  RELATORIO_PATHS.forEach(add);
-
-  if (userId) {
-    const id = encodeURIComponent(userId);
-    RELATORIO_PATHS.forEach((path) => add(`${path}?usuario_id=${id}`));
-    RELATORIO_PATHS.forEach((path) => add(`${path}/${id}`));
-  }
-
-  return items;
+const buildRelatorioUrl = (userId: string) => {
+  const params = new URLSearchParams({ usuario_id: userId });
+  return `${RELATORIO_ENDPOINT}?${params.toString()}`;
 };
 
 export async function buscarRelatorioEmocional(
   userId?: string,
   opts?: { timeoutMs?: number; retries?: number; retryDelayMs?: number }
 ): Promise<RelatorioEmocional | null> {
-  const timeoutMs = opts?.timeoutMs ?? 10_000;
+  if (!userId) {
+    throw new MissingUserIdError(RELATORIO_ENDPOINT);
+  }
 
-  const cacheKey = userId ? `relatorio:${userId}` : 'relatorio:self';
+  const timeoutMs = opts?.timeoutMs ?? 12_000;
+
+  const cacheKey = `relatorio:${userId}`;
   const cached = getCache(cacheKey);
   if (cached !== undefined) return cached;
 
-  const candidates = buildReportCandidates(userId);
-  let lastError: unknown;
-
-  for (const path of candidates) {
-    try {
-      const payload = await apiFetchJson<any>(path, { method: 'GET', timeoutMs });
-      const parsed = unwrapRelatorio(payload);
-      if (parsed) {
-        setCache(cacheKey, parsed);
-        return parsed;
-      }
-    } catch (error) {
-      lastError = error;
-      if (error instanceof ApiFetchError && FALLBACK_STATUS.has(error.status ?? 0)) {
-        continue;
-      }
-      console.error(
-        '❌ Erro ao buscar relatório emocional:',
-        (error as any)?.response?.data || (error as Error)?.message || error
-      );
+  try {
+    const url = buildRelatorioUrl(userId);
+    const payload = await apiFetchJson<any>(url, { method: 'GET', timeoutMs });
+    const parsed = unwrapRelatorio(payload);
+    setCache(cacheKey, parsed);
+    return parsed;
+  } catch (error) {
+    if (error instanceof ApiFetchError && (error.status === 404 || error.status === 400)) {
       setCache(cacheKey, null);
       throw error;
     }
-  }
 
-  if (lastError instanceof ApiFetchError && FALLBACK_STATUS.has(lastError.status ?? 0)) {
-    setCache(cacheKey, null);
-    return null;
-  }
-
-  if (lastError) {
     console.error(
       '❌ Erro ao buscar relatório emocional:',
-      (lastError as any)?.response?.data || (lastError as Error)?.message || lastError
+      (error as any)?.response?.data || (error as Error)?.message || error
     );
     setCache(cacheKey, null);
-    throw lastError;
+    throw error;
   }
-
-  setCache(cacheKey, null);
-  return null;
 }

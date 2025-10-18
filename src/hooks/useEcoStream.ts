@@ -2,6 +2,7 @@ import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } fr
 import { v4 as uuidv4 } from 'uuid';
 
 import { enviarMensagemParaEco, EcoEventHandlers, EcoApiError, EcoClientEvent } from '../api/ecoApi';
+import { MissingUserIdError } from '../api/errors';
 import { buscarUltimasMemoriasComTags, buscarMemoriasSemelhantesV2 } from '../api/memoriaApi';
 import { salvarMensagem } from '../api/mensagem';
 import { celebrateFirstMemory } from '../utils/celebrateFirstMemory';
@@ -1255,7 +1256,19 @@ export const useEcoStream = ({
           let displayMessage = err?.message || 'Falha ao enviar mensagem.';
           const friendly = resolveFriendlyNetworkError(err);
 
-          if (friendly.type !== 'other' && friendly.message) {
+          if (err instanceof MissingUserIdError) {
+            displayMessage = 'Faça login para continuar a conversa com a Eco.';
+            showToast('Faça login para continuar', 'Entre para manter o bate-papo com a Eco.');
+            if (onUnauthorized) {
+              try {
+                onUnauthorized();
+              } catch (callbackError) {
+                if (isDev) {
+                  console.warn('[ChatPage] onUnauthorized falhou', callbackError);
+                }
+              }
+            }
+          } else if (friendly.type !== 'other' && friendly.message) {
             displayMessage = friendly.message;
           } else if (err instanceof EcoApiError) {
             if (err.status === 401) {

@@ -21,8 +21,8 @@ export interface ApiFetchOptions extends Omit<RequestInit, "body" | "headers"> {
   json?: unknown;
 }
 
-const DEFAULT_TIMEOUT = 10_000;
-const DEFAULT_RETRY_DELAYS = [500, 1500];
+const DEFAULT_TIMEOUT = 12_000;
+const DEFAULT_RETRY_DELAYS = [600, 1800];
 
 const hasWindow = typeof window !== "undefined";
 
@@ -208,6 +208,7 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
     credentials: "omit",
     mode: "cors",
     redirect: "follow",
+    keepalive: false,
   };
 
   if (method !== "GET" && method !== "HEAD") {

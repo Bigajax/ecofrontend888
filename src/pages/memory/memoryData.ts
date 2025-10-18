@@ -8,6 +8,8 @@ export type EndpointFailureReason =
   | 'network'
   | 'timeout'
   | '5xx'
+  | 'missing_user_id'
+  | 'not_found'
   | 'unknown';
 
 export type ApiErrorDetails = {

@@ -57,8 +57,19 @@ const computeApiBaseUrl = () => {
 
 export const API_BASE_URL = computeApiBaseUrl();
 
+const normalizePath = (value: string) => {
+  if (!value) return '/';
+  const hasQuery = value.includes('?');
+  const [rawPath, rawQuery] = hasQuery ? value.split('?') : [value, undefined];
+  const path = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+  const collapsed = path.replace(/\/+$/, '').replace(/\/{2,}/g, '/');
+  const finalPath = collapsed.length === 0 ? '/' : collapsed;
+  if (!rawQuery) return finalPath || '/';
+  return `${finalPath}?${rawQuery}`;
+};
+
 export const buildApiUrl = (path: string, base = API_BASE_URL) => {
-  const safePath = path.startsWith('/') ? path : `/${path}`;
+  const safePath = normalizePath(path);
   if (!base) {
     return safePath || '/';
   }
