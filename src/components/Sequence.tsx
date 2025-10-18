@@ -75,11 +75,6 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     unlockNavigation();
   }, [currentSlideData?.id, slideIndex]);
 
-  const handleSkip = useCallback(() => {
-    mixpanel.track('Front-end: Tour Skip', { at: slideIndex, id: currentSlideData?.id });
-    onComplete();
-  }, [currentSlideData?.id, onComplete, slideIndex]);
-
   const handleKeydown = useCallback(
     (event: KeyboardEvent) => {
       if (event.key === 'ArrowRight') handleNext();
@@ -95,7 +90,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   }, [handleKeydown]);
 
   const renderVisual = (slide: OnboardingSlideData) => {
-    const wrapperClasses = 'flex min-h-[140px] w-full flex-col items-center justify-center gap-5';
+    const wrapperClasses = 'flex min-h-[160px] w-full flex-col items-center justify-center gap-5 sm:min-h-[200px] md:min-h-[240px]';
     switch (slide.visual) {
       case 'orb':
         return (
@@ -182,9 +177,12 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     }
   };
 
+  const isFirstSlide = slideIndex === 0;
+  const isLastSlide = slideIndex === totalSlides - 1;
+
   return (
     <div
-      className="relative grid min-h-[100dvh] w-full place-items-center overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100 px-4 py-8 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:py-12 dark:from-slate-950 dark:to-slate-900"
+      className="relative grid min-h-[100dvh] w-full place-items-center overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+2.5rem)] pt-[calc(env(safe-area-inset-top,0px)+2.5rem)] sm:pb-[calc(env(safe-area-inset-bottom,0px)+3.5rem)] sm:pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] dark:from-slate-950 dark:to-slate-900"
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-32 -left-28 h-72 w-72 rounded-full bg-[#b8d8ff]/40 blur-3xl" />
@@ -249,8 +247,8 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
               ) : null}
             </div>
 
-            <footer className="mt-6 sm:mt-8">
-              <div className="flex flex-col items-center gap-5 pt-4 border-t border-white/40 dark:border-white/10">
+            <footer className="mt-6 border-t border-white/40 pt-4 sm:mt-8 sm:pt-5 dark:border-white/10">
+              <div className="flex flex-col items-center gap-5">
                 <div className="w-full">
                   <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/40 dark:bg-white/10">
                     <motion.span
@@ -289,27 +287,31 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
                 </div>
 
                 <div className="flex w-full flex-wrap items-center justify-center gap-3">
-                  {slideIndex > 0 ? (
-                    <button
-                      onClick={handlePrev}
-                      type="button"
-                      aria-label="Voltar slide"
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-white/60 px-4 text-sm font-medium text-slate-600 shadow-[0_12px_28px_rgba(15,23,42,0.08)] ring-1 ring-black/5 transition hover:bg-white/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#79b7ff]/60 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10"
-                    >
-                      <ArrowLeft size={16} />
-                      Voltar
-                    </button>
-                  ) : null}
+                  <button
+                    onClick={handlePrev}
+                    type="button"
+                    aria-label="Voltar slide"
+                    disabled={isFirstSlide}
+                    aria-disabled={isFirstSlide || undefined}
+                    className={`inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium shadow-[0_12px_28px_rgba(15,23,42,0.08)] ring-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#79b7ff]/60 dark:ring-white/10 ${
+                      isFirstSlide
+                        ? 'cursor-not-allowed bg-white/40 text-slate-400 ring-black/5 dark:bg-white/5 dark:text-slate-500'
+                        : 'bg-white/60 text-slate-600 ring-black/5 hover:bg-white/75 dark:bg-white/10 dark:text-slate-200'
+                    }`}
+                  >
+                    <ArrowLeft size={16} />
+                    Voltar
+                  </button>
 
                   <button
                     onClick={handleNext}
                     type="button"
                     className={`${
-                      slideIndex === totalSlides - 1
+                      isLastSlide
                         ? 'inline-flex h-12 items-center justify-center rounded-2xl bg-[#007AFF] px-6 text-base font-medium text-white shadow-lg transition hover:bg-[#1a84ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#79b7ff]/80'
                         : 'inline-flex h-11 items-center justify-center rounded-2xl bg-white/60 px-4 text-sm font-medium text-slate-600 shadow-[0_12px_28px_rgba(15,23,42,0.08)] ring-1 ring-black/5 transition hover:bg-white/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#79b7ff]/60 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10'
                     }`}
-                    aria-label={slideIndex === totalSlides - 1 ? 'Começar agora' : 'Próximo slide'}
+                    aria-label={isLastSlide ? 'Começar agora' : 'Próximo slide'}
                   >
                     {currentSlideData.ctaLabel}
                   </button>
@@ -319,19 +321,6 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
           </div>
         </motion.article>
       </AnimatePresence>
-
-      <div
-        className="absolute inset-x-0 z-40 flex justify-center"
-        style={{ bottom: 'max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))' }}
-      >
-        <button
-          onClick={handleSkip}
-          type="button"
-          className="text-sm font-medium text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
-        >
-          Pular tour
-        </button>
-      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}
