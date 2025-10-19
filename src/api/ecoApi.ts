@@ -103,6 +103,38 @@ type FetchWithRetryOptions = {
   retries?: number;
 };
 
+let currentStreamController: AbortController | null = null;
+
+const isNavigatorOffline = () => {
+  if (typeof navigator === "undefined") return false;
+  if (typeof navigator.onLine !== "boolean") return false;
+  return navigator.onLine === false;
+};
+
+const isLikelyNetworkError = (error: unknown) => {
+  const message =
+    typeof (error as { message?: unknown })?.message === "string"
+      ? ((error as { message: string }).message || "").toLowerCase()
+      : "";
+
+  return (
+    message.includes("failed to fetch") ||
+    message.includes("networkerror") ||
+    message.includes("net::err") ||
+    message.includes("err_connection")
+  );
+};
+
+const ensureHttpsUrl = (url: string) => {
+  if (!url || !/^http:\/\//i.test(url)) return url;
+
+  const runningInBrowser = typeof window !== "undefined" && !!window.location;
+  const shouldForceHttps =
+    (runningInBrowser && window.location.protocol === "https:") || !Boolean(import.meta.env?.DEV);
+
+  return shouldForceHttps ? url.replace(/^http:\/\//i, "https://") : url;
+};
+
 const fetchWithRetry = async (
   url: string,
   init: RequestInit & { signal?: AbortSignal },
@@ -401,94 +433,161 @@ export const enviarMensagemParaEco = async (
     }
 
     // 🔹 Caminho de STREAM (SSE) — força consumo do body sempre que existir
-    const response = await fetchWithRetry(
-      resolveApiUrl(ASK_ENDPOINT),
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-        cache: "no-store",
-        credentials: "omit",
-        mode: "cors",
-        redirect: "follow",
-        keepalive: false,
-      },
-      { signal: options.signal, timeoutMs: 12_000, retries: 2 }
-    );
+    const streamUrl = ensureHttpsUrl(resolveApiUrl(ASK_ENDPOINT));
+    const maxStreamRetries = 1;
+    let attempt = 0;
 
-    const serverGuestId = normalizeGuestIdFormat(response.headers.get("x-guest-id"));
-    if (serverGuestId) persistGuestId(serverGuestId);
+    while (attempt <= maxStreamRetries) {
+      headers["X-Stream-Id"] = uuidv4();
 
-    if (!response.ok) {
-      console.error("❌ [ECO API] SSE request falhou", {
-        url: response.url,
-        status: response.status,
-        statusText: response.statusText,
-        redirected: response.redirected,
-      });
-      let serverErr: string | undefined;
-      let details: unknown;
-      try {
-        const contentType = response.headers.get("content-type") || "";
-        if (contentType.includes("application/json")) {
-          const errJson = await response.json();
-          serverErr = errJson?.error || errJson?.message;
-          details = errJson;
-        } else {
-          const errText = await response.text();
-          serverErr = errText;
-          details = errText;
+      if (currentStreamController) {
+        try {
+          currentStreamController.abort();
+        } catch {
+          currentStreamController.abort();
         }
-      } catch {}
-
-      const baseMessage = `Erro HTTP ${response.status}: ${response.statusText || "Falha na requisição"}`;
-      const friendly = mapStatusToFriendlyMessage(response.status, baseMessage);
-      const message = serverErr?.trim() || friendly;
-      const retryAfter = response.headers.get("retry-after") || undefined;
-      const errorDetails = {
-        statusText: response.statusText,
-        body: details,
-        ...(retryAfter ? { retryAfter } : {}),
-      };
-      throw new EcoApiError(message, { status: response.status, details: errorDetails });
-    }
-
-    const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
-    if (!contentType.startsWith("text/event-stream")) {
-      let diagnosticBody: string | undefined;
-      try {
-        diagnosticBody = await response.clone().text();
-      } catch {
-        diagnosticBody = undefined;
       }
-      console.error("❌ [ECO API] Resposta inesperada para stream", {
-        url: response.url,
-        status: response.status,
-        statusText: response.statusText,
-        contentType,
-        redirected: response.redirected,
-        bodyPreview: diagnosticBody?.slice(0, 500),
-      });
-      throw new EcoApiError(
-        "Não foi possível iniciar a transmissão da Eco. Tente novamente em instantes.",
-        {
-          status: response.status,
-          details: {
-            reason: "invalid_content_type",
-            contentType,
-            body: diagnosticBody,
-          },
-        }
+
+      const streamController =
+        typeof AbortController !== "undefined" ? new AbortController() : null;
+      currentStreamController = streamController;
+
+      const { signal: mergedSignal, cleanup } = combineAbortSignals(
+        options.signal,
+        streamController?.signal
       );
-    }
 
-    // 👇 Não dependa do Content-Type: se tem body, consome via stream
-    if (response.body) {
-      return await processEventStream(response, handlers, { signal: options.signal });
-    }
+      let streamOpened = false;
 
-    // Se por alguma razão não existe body, faz fallback para parser não-stream
-    return await parseNonStreamResponse(response);
+      try {
+        const response = await fetch(streamUrl, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+          cache: "no-store",
+          credentials: "omit",
+          mode: "cors",
+          redirect: "follow",
+          keepalive: false,
+          signal: mergedSignal,
+        });
+
+        const serverGuestId = normalizeGuestIdFormat(response.headers.get("x-guest-id"));
+        if (serverGuestId) persistGuestId(serverGuestId);
+
+        if (!response.ok) {
+          if (response.status >= 500 && attempt < maxStreamRetries) {
+            attempt += 1;
+            try {
+              await response.body?.cancel?.();
+            } catch {
+              /* ignore */
+            }
+            continue;
+          }
+
+          console.error("❌ [ECO API] SSE request falhou", {
+            url: response.url,
+            status: response.status,
+            statusText: response.statusText,
+            redirected: response.redirected,
+          });
+
+          let serverErr: string | undefined;
+          let details: unknown;
+          try {
+            const responseContentType = response.headers.get("content-type") || "";
+            if (responseContentType.includes("application/json")) {
+              const errJson = await response.json();
+              serverErr = errJson?.error || errJson?.message;
+              details = errJson;
+            } else {
+              const errText = await response.text();
+              serverErr = errText;
+              details = errText;
+            }
+          } catch {}
+
+          const baseMessage = `Erro HTTP ${response.status}: ${
+            response.statusText || "Falha na requisição"
+          }`;
+          const friendly = mapStatusToFriendlyMessage(response.status, baseMessage);
+          const message = serverErr?.trim() || friendly;
+          const retryAfter = response.headers.get("retry-after") || undefined;
+          const errorDetails = {
+            statusText: response.statusText,
+            body: details,
+            ...(retryAfter ? { retryAfter } : {}),
+          };
+          throw new EcoApiError(message, { status: response.status, details: errorDetails });
+        }
+
+        const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+        if (!contentType.startsWith("text/event-stream")) {
+          let diagnosticBody: string | undefined;
+          try {
+            diagnosticBody = await response.clone().text();
+          } catch {
+            diagnosticBody = undefined;
+          }
+          console.error("❌ [ECO API] Resposta inesperada para stream", {
+            url: response.url,
+            status: response.status,
+            statusText: response.statusText,
+            contentType,
+            redirected: response.redirected,
+            bodyPreview: diagnosticBody?.slice(0, 500),
+          });
+          throw new EcoApiError(
+            "Não foi possível iniciar a transmissão da Eco. Tente novamente em instantes.",
+            {
+              status: response.status,
+              details: {
+                reason: "invalid_content_type",
+                contentType,
+                body: diagnosticBody,
+              },
+            }
+          );
+        }
+
+        streamOpened = true;
+
+        // 👇 Não dependa do Content-Type: se tem body, consome via stream
+        if (response.body) {
+          return await processEventStream(response, handlers, { signal: mergedSignal });
+        }
+
+        // Se por alguma razão não existe body, faz fallback para parser não-stream
+        return await parseNonStreamResponse(response);
+      } catch (error: any) {
+        if (error instanceof EcoApiError) {
+          throw error;
+        }
+
+        const abortError = error?.name === "AbortError" || error instanceof DOMException;
+        const abortedByCaller = Boolean(
+          abortError && (options.signal?.aborted || streamController?.signal.aborted)
+        );
+        if (abortedByCaller) {
+          throw error;
+        }
+
+        const networkFailure =
+          !streamOpened && (isNavigatorOffline() || error instanceof TypeError || isLikelyNetworkError(error));
+        if (networkFailure && attempt < maxStreamRetries) {
+          attempt += 1;
+          continue;
+        }
+
+        throw error;
+      } finally {
+        cleanup();
+        if (currentStreamController === streamController) {
+          currentStreamController = null;
+        }
+      }
+    }
   } catch (error: any) {
     if (error?.name === "AbortError" || options.signal?.aborted) {
       return { text: "", aborted: true, noTextReceived: true };
@@ -505,10 +604,9 @@ export const enviarMensagemParaEco = async (
 
     const normalized = rawMessage.toLowerCase();
     const isNetworkIssue =
-      normalized.includes("failed to fetch") ||
-      normalized.includes("networkerror") ||
-      normalized.includes("net::err") ||
-      normalized.includes("err_connection");
+      isNavigatorOffline() ||
+      isLikelyNetworkError(error) ||
+      normalized.includes("network offline");
 
     const message = isNetworkIssue ? NETWORK_ERROR_MESSAGE : rawMessage;
     console.error("❌ [ECO API]", message, error);
