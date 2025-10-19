@@ -242,6 +242,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     if (rawText.trim().length > 0) break;
   }
   const trimmedText = rawText.trim();
+  if (message.sender === "user" && trimmedText.length === 0) {
+    return null;
+  }
   const showPlaceholder = isEcoMessage && trimmedText.length === 0;
   const displayText = showPlaceholder ? "…" : rawText;
   const hasMarkdownText = !showPlaceholder && trimmedText.length > 0;
@@ -387,25 +390,24 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const bubbleClass = isUser
     ? [
-        'message-bubble',
-        'relative rounded-[28px] backdrop-blur-xl',
-        'px-5 py-3.5 sm:px-6 sm:py-4',
-        'w-fit min-w-[8ch] sm:min-w-[10ch] max-w-[min(70%,calc(68ch+2rem))]',
-        'whitespace-normal break-words overflow-hidden',
-        'border border-[color:var(--bubble-user-border)]',
-        'bg-white/70 text-[color:var(--bubble-user-text)]',
-        'shadow-sm shadow-neutral-300/20 transition duration-200 ease-out hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
-      ].join(' ')
+        "message-bubble",
+        "relative self-end rounded-2xl",
+        "px-4 py-2 sm:px-5 sm:py-2.5",
+        "w-fit max-w-[70%]",
+        "whitespace-normal break-words",
+        "bg-[#007AFF] text-white",
+        "shadow-sm shadow-black/10",
+      ].join(" ")
     : [
-        'message-bubble',
-        'relative rounded-[28px] backdrop-blur-xl',
-        'px-5 py-4 sm:px-6 sm:py-4',
-        'w-fit min-w-[8ch] sm:min-w-[10ch] max-w-[min(70%,calc(68ch+2rem))]',
-        'whitespace-normal break-words overflow-hidden',
-        'border border-[color:var(--bubble-border)]',
-        'bg-white/70 text-[color:var(--bubble-eco-text)]',
-        'shadow-sm shadow-neutral-300/20 transition duration-200 ease-out hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.18)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
-      ].join(' ');
+        "message-bubble",
+        "relative rounded-2xl",
+        "px-4 py-3 sm:px-5 sm:py-3",
+        "w-fit max-w-[70%]",
+        "whitespace-normal break-words",
+        "border border-black/5",
+        "bg-white text-slate-800",
+        "shadow-sm shadow-black/10",
+      ].join(" ");
 
   const processedMarkdown = React.useMemo(() => {
     if (!hasMarkdownText) return displayText;
@@ -472,7 +474,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             </div>
           )}
 
-          <div className="min-w-0 max-w-full">
+          <div
+            className={`min-w-0 max-w-full flex flex-col ${
+              isUser ? "items-end self-end" : "items-start"
+            }`}
+          >
             <div
               className={bubbleClass}
               data-sender={message.sender}
@@ -492,10 +498,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               {hasMarkdownText && (
                 <div className="relative z-10 font-sans">
                   <div
-                    className={`max-w-[68ch] whitespace-normal break-words hyphens-auto text-[15px] sm:text-[16px] leading-[1.5] font-[450] tracking-tight text-left [&>p]:my-0 [&>p+*]:mt-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul>li]:mt-1.5 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol>li]:mt-1.5 [&>strong]:font-semibold [&>em]:italic [&_a]:underline [&_a]:underline-offset-2 [&_a]:font-medium [&_a]:text-[inherit] [&_a]:transition-colors [&_a:hover]:opacity-90 [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:rounded-[2px] ${
+                    className={`max-w-[68ch] whitespace-pre-wrap break-words hyphens-auto text-[15px] sm:text-[16px] leading-[1.5] font-[450] tracking-tight text-left [&>p]:my-0 [&>p+*]:mt-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul>li]:mt-1.5 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol>li]:mt-1.5 [&>strong]:font-semibold [&>em]:italic [&_a]:underline [&_a]:underline-offset-2 [&_a]:font-medium [&_a]:text-[inherit] [&_a]:transition-colors [&_a:hover]:opacity-90 [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:rounded-[2px] ${
                       isUser
-                        ? '[&_a:focus-visible]:outline-white/80 text-[color:var(--bubble-user-text)]'
-                        : '[&_a:focus-visible]:outline-[rgba(0,122,255,0.45)] text-[color:var(--bubble-eco-text)]'
+                        ? "text-white [&_a]:text-white [&_a:focus-visible]:outline-white/80"
+                        : "text-slate-800 [&_a]:text-slate-800 [&_a:focus-visible]:outline-[rgba(0,122,255,0.45)]"
                     }`}
                   >
                     <ReactMarkdown components={markdownComponents}>
@@ -505,10 +511,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 </div>
               )}
               {showPlaceholder && (
-                <span className="relative z-10 text-[color:var(--bubble-eco-text)]/70">…</span>
-              )}
-              {!hasMarkdownText && !showPlaceholder && (
-                <span className="relative z-10">&nbsp;</span>
+                <span className="relative z-10 text-slate-500">…</span>
               )}
             </div>
 
