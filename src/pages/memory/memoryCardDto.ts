@@ -123,7 +123,36 @@ const emotionThemeMap: Record<EmotionThemeKey, Omit<EmotionTheme, 'accent' | 'ac
   },
 };
 
+const UNDEFINED_LABELS = new Set([
+  'indefinida',
+  'indefinido',
+  'sem emocao',
+  'sememocao',
+  'sem sentimento',
+  'sememocao_principal',
+  'sem_emocao',
+  'sem emocao principal',
+  'nao classificada',
+  'nao classificado',
+  'nao identificado',
+  'nao identificada',
+  'nao informado',
+  'nao informada',
+  'desconhecido',
+  'desconhecida',
+  'n/a',
+  'none',
+  'na',
+]);
+
+const shouldIgnoreLabel = (value: string) => {
+  const normalized = normalizeText(value);
+  return !normalized || UNDEFINED_LABELS.has(normalized);
+};
+
 const normalizeTitle = (value: string) => {
+  if (!value) return '';
+  if (shouldIgnoreLabel(value)) return '';
   const trimmed = value.trim();
   if (!trimmed) return '';
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
@@ -285,6 +314,8 @@ const resolveThemeKey = (emotion?: string) => {
     case 'irritado':
     case 'frustracao':
       return 'raiva';
+    case 'nojo':
+      return 'nojo';
     case 'medo':
     case 'incerteza':
       return 'medo';
@@ -292,6 +323,43 @@ const resolveThemeKey = (emotion?: string) => {
     default:
       return 'neutra';
   }
+};
+
+type EmotionCandidate = {
+  label: string;
+  normalized: string;
+  token: ReturnType<typeof getEmotionToken>;
+  themeKey: EmotionThemeKey;
+};
+
+const toEmotionCandidate = (
+  value: Maybe<string>,
+  { allowNeutral = false }: { allowNeutral?: boolean } = {},
+): EmotionCandidate | null => {
+  if (!value) return null;
+  if (shouldIgnoreLabel(value)) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const token = getEmotionToken(trimmed);
+  if (!allowNeutral && token.key === 'neutro') {
+    return null;
+  }
+
+  return {
+    label: token.label,
+    normalized: normalizeText(trimmed),
+    token,
+    themeKey: resolveThemeKey(trimmed),
+  };
+};
+
+const resolveEmotionFromTags = (tags: string[]): EmotionCandidate | null => {
+  for (const tag of tags) {
+    const candidate = toEmotionCandidate(tag, { allowNeutral: false });
+    if (candidate) return candidate;
+  }
+  return null;
 };
 
 const buildEmotionTheme = (emotionKey: EmotionThemeKey, accent: string): EmotionTheme => {
@@ -349,14 +417,18 @@ export const normalizeMemoryCard = (memory: Memoria): MemoryCardDTO => {
 
   const rawEmotion =
     (memory.emocao_principal ?? (memory as any).emocao ?? (memory as any).emotion ?? '') as Maybe<string>;
-  const themeKey = resolveThemeKey(rawEmotion ?? undefined);
-  const emotionToken = getEmotionToken(rawEmotion ?? undefined);
-  const theme = buildEmotionTheme(themeKey, emotionToken.accent);
+  const primaryEmotion = toEmotionCandidate(rawEmotion, { allowNeutral: true });
+  const categoryEmotion = toEmotionCandidate(memory.categoria, { allowNeutral: false });
+  const tagEmotion = resolveEmotionFromTags(tags);
+  const fallbackEmotion = toEmotionCandidate('Neutro', { allowNeutral: true })!;
 
-  const emotionLabel = emotionToken.label ?? '';
+  const resolvedEmotion = primaryEmotion ?? categoryEmotion ?? tagEmotion ?? fallbackEmotion;
+  const theme = buildEmotionTheme(resolvedEmotion.themeKey, resolvedEmotion.token.accent);
+
+  const emotionLabel = resolvedEmotion.label ?? '';
   const titulo = buildTitle(emotionLabel, memory.categoria ?? null, tags);
 
-  const emocaoNormalizada = normalizeText(rawEmotion ?? '');
+  const emocaoNormalizada = resolvedEmotion.normalized;
 
   return {
     id: String(memory.id ?? memory.mensagem_id ?? memory.created_at ?? Math.random().toString(36).slice(2)),
@@ -379,9 +451,9 @@ export const normalizeMemoryCard = (memory: Memoria): MemoryCardDTO => {
     createdAtDate,
     emocao: emotionLabel,
     emocaoNormalizada,
-    emotionKey: themeKey,
+    emotionKey: resolvedEmotion.themeKey,
     emotionTheme: theme,
-    accent: emotionToken.accent,
+    accent: resolvedEmotion.token.accent,
     raw: memory,
   };
 };

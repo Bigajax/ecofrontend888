@@ -325,13 +325,27 @@ export async function buscarMemoriasSemelhantesV2(
     k = 3,
     threshold = 0.12,
     usuario_id,
-  }: { k?: number; threshold?: number; usuario_id?: string } = {}
+  }: { k?: number; threshold?: number; usuario_id?: string } = {},
 ): Promise<MemoriaSimilar[]> {
   try {
-    // tenta v2
+    if (!usuario_id) {
+      throw new MissingUserIdError('/api/similares_v2');
+    }
+
+    const params = new URLSearchParams();
+    params.set('texto', texto);
+    params.set('query', texto);
+    params.set('k', String(k));
+    params.set('limit', String(k));
+    params.set('limite', String(k));
+    params.set('threshold', String(threshold));
+    params.set('usuario_id', usuario_id);
+
     try {
-      const bodyV2 = { texto, query: texto, k, limit: k, limite: k, threshold, usuario_id };
-      const { data } = await postWithFallback('/api/memorias/similares_v2', null, bodyV2, { timeout: 12000 });
+      const data = await apiFetchJson<any>(`/api/similares_v2?${params.toString()}`, {
+        method: 'GET',
+        timeoutMs: 12_000,
+      });
       const raw = pickArray<any>(data) ?? [];
       if (raw.length) {
         return raw.map((r) => {
@@ -344,13 +358,12 @@ export async function buscarMemoriasSemelhantesV2(
             created_at: n.created_at ?? null,
             tags: n.tags ?? [],
             similarity: sim,
-            similaridade: sim, // compat
+            similaridade: sim,
           };
         });
       }
       if (isSuccessPayload(data)) return [];
     } catch (e) {
-      // se não existir, cai para v1
       if (!isFallbackStatus(e)) throw e;
     }
 

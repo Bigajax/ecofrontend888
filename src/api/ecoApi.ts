@@ -54,6 +54,145 @@ const ASK_ENDPOINT = "/api/ask-eco";
 const NETWORK_ERROR_MESSAGE =
   "Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.";
 
+type AbortCleanup = { cleanup: () => void; signal?: AbortSignal };
+
+const combineAbortSignals = (
+  ...signals: (AbortSignal | null | undefined)[]
+): AbortCleanup => {
+  const active = signals.filter(Boolean) as AbortSignal[];
+  if (active.length === 0) {
+    return { cleanup: () => {} };
+  }
+
+  const controller = new AbortController();
+  const abort = (reason?: unknown) => {
+    if (!controller.signal.aborted) {
+      try {
+        controller.abort(reason);
+      } catch {
+        controller.abort();
+      }
+    }
+  };
+
+  const listeners = active.map((signal) => {
+    const handler = () => abort((signal as any).reason);
+    if (signal.aborted) {
+      abort((signal as any).reason);
+    } else {
+      signal.addEventListener("abort", handler, { once: true });
+    }
+    return { signal, handler };
+  });
+
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      listeners.forEach(({ signal, handler }) => {
+        signal.removeEventListener("abort", handler);
+      });
+    },
+  };
+};
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+type FetchWithRetryOptions = {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  retries?: number;
+};
+
+const fetchWithRetry = async (
+  url: string,
+  init: RequestInit & { signal?: AbortSignal },
+  { signal, timeoutMs = 12_000, retries = 2 }: FetchWithRetryOptions = {}
+): Promise<Response> => {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const timeoutController =
+      typeof AbortController !== "undefined" ? new AbortController() : null;
+    let timedOut = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    if (timeoutController && Number.isFinite(timeoutMs) && timeoutMs > 0) {
+      timeoutId = setTimeout(() => {
+        timedOut = true;
+        timeoutController.abort();
+      }, timeoutMs);
+    }
+
+    const { signal: mergedSignal, cleanup } = combineAbortSignals(
+      signal,
+      init.signal,
+      timeoutController?.signal
+    );
+
+    try {
+      const response = await fetch(url, { ...init, signal: mergedSignal });
+      if (timeoutId) clearTimeout(timeoutId);
+
+      if (response.status === 503 && attempt < retries) {
+        if (import.meta.env?.DEV) {
+          console.warn(
+            "[ECO API] HTTP 503 recebido, tentando novamente",
+            {
+              attempt: attempt + 1,
+              retries,
+              url: response.url,
+            }
+          );
+        }
+        try {
+          await response.body?.cancel?.();
+        } catch {
+          /* ignore */
+        }
+        lastError = response;
+        await sleep(250 * (attempt + 1));
+        continue;
+      }
+
+      return response;
+    } catch (error: any) {
+      if (timeoutId) clearTimeout(timeoutId);
+
+      const abortError = error?.name === "AbortError" || error instanceof DOMException;
+      const abortedByCaller = Boolean(
+        abortError && (signal?.aborted || init.signal?.aborted)
+      );
+
+      if (abortedByCaller) {
+        cleanup();
+        throw error;
+      }
+
+      const shouldRetry =
+        attempt < retries && (timedOut || error instanceof TypeError);
+
+      if (shouldRetry) {
+        lastError = error;
+        await sleep(250 * (attempt + 1));
+        continue;
+      }
+
+      throw error;
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+      cleanup();
+    }
+  }
+
+  if (lastError instanceof Response) {
+    return lastError;
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Falha ao se conectar ao servidor da Eco.");
+};
+
 const mapStatusToFriendlyMessage = (status: number, fallback: string) => {
   if (status === 401) return "Faça login para continuar a conversa com a Eco.";
   if (status === 429) return "Muitas requisições. Aguarde alguns segundos antes de tentar novamente.";
@@ -218,11 +357,20 @@ export const enviarMensagemParaEco = async (
       (await supabase.auth.getSession().catch(() => ({ data: { session: null } as any }))) || {
         data: { session: null },
       };
+    const sessionUser = sessionData?.session?.user as { id?: string } | undefined;
     const token = sessionData?.session?.access_token ?? null;
 
     const guest = resolveGuestHeaders(options, token);
 
-    if (!userId) {
+    const normalizedUserId = (() => {
+      const directId = typeof userId === "string" ? userId.trim() : "";
+      if (directId) return directId;
+      const sessionId = typeof sessionUser?.id === "string" ? sessionUser.id.trim() : "";
+      if (sessionId) return sessionId;
+      return guest.isGuest ? guest.guestId : "";
+    })();
+
+    if (!normalizedUserId) {
       throw new MissingUserIdError(ASK_ENDPOINT);
     }
 
@@ -231,7 +379,7 @@ export const enviarMensagemParaEco = async (
     const { headers, payload } = prepareRequest(
       mensagensValidas,
       userName,
-      userId,
+      normalizedUserId,
       hour,
       tz,
       guest,
@@ -253,22 +401,31 @@ export const enviarMensagemParaEco = async (
     }
 
     // 🔹 Caminho de STREAM (SSE) — força consumo do body sempre que existir
-    const response = await fetch(resolveApiUrl(ASK_ENDPOINT), {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-      signal: options.signal,
-      cache: "no-store",
-      credentials: "omit",
-      mode: "cors",
-      redirect: "follow",
-      keepalive: false,
-    });
+    const response = await fetchWithRetry(
+      resolveApiUrl(ASK_ENDPOINT),
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+        cache: "no-store",
+        credentials: "omit",
+        mode: "cors",
+        redirect: "follow",
+        keepalive: false,
+      },
+      { signal: options.signal, timeoutMs: 12_000, retries: 2 }
+    );
 
     const serverGuestId = normalizeGuestIdFormat(response.headers.get("x-guest-id"));
     if (serverGuestId) persistGuestId(serverGuestId);
 
     if (!response.ok) {
+      console.error("❌ [ECO API] SSE request falhou", {
+        url: response.url,
+        status: response.status,
+        statusText: response.statusText,
+        redirected: response.redirected,
+      });
       let serverErr: string | undefined;
       let details: unknown;
       try {
@@ -309,6 +466,7 @@ export const enviarMensagemParaEco = async (
         status: response.status,
         statusText: response.statusText,
         contentType,
+        redirected: response.redirected,
         bodyPreview: diagnosticBody?.slice(0, 500),
       });
       throw new EcoApiError(

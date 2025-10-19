@@ -283,6 +283,9 @@ export const useEcoStream = ({
       ) => {
         if (!sessionId || !signalEndpoint || isTestEnv || typeof fetch !== 'function') return;
         const payload: Record<string, unknown> = { session_id: sessionId, signal };
+        if (authUserId) {
+          payload.usuario_id = authUserId;
+        }
         if (extra && 'value' in extra && extra.value !== undefined) {
           payload.value = extra.value;
         }
@@ -294,6 +297,9 @@ export const useEcoStream = ({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
+            credentials: 'omit',
+            mode: 'cors',
+            redirect: 'follow',
             keepalive: true,
           });
           void request.catch(() => {});

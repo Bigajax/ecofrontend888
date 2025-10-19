@@ -16,6 +16,7 @@ export type EmotionKey =
   | 'raiva'
   | 'irritado'
   | 'frustracao'
+  | 'nojo'
   | 'medo'
   | 'incerteza'
   | 'neutro';
@@ -66,7 +67,7 @@ export const emotionTokens: Record<EmotionKey, EmotionToken> = {
     eyelidOffset: 0.04,
     microMotion: 'pulse',
   }),
-  calmo: createToken('calmo', 'Calmo', {
+  calmo: createToken('calmo', 'Calma', {
     gradient: ['#C9B6FF', '#8EE3D0'],
     irisGradient: ['rgba(182, 162, 255, 0.9)', 'rgba(92, 180, 176, 0.72)'],
     irisHighlight: ['rgba(255,255,255,0.85)', 'rgba(255,255,255,0.12)'],
@@ -123,6 +124,14 @@ export const emotionTokens: Record<EmotionKey, EmotionToken> = {
     eyelidOffset: 0.07,
     microMotion: 'tracking',
   }),
+  nojo: createToken('nojo', 'Nojo', {
+    gradient: ['#C4E538', '#A3CB38'],
+    irisGradient: ['rgba(172, 225, 68, 0.92)', 'rgba(124, 185, 52, 0.72)'],
+    accent: '#8BC53F',
+    blinkCadence: 3.4,
+    eyelidOffset: 0.1,
+    microMotion: 'tremor',
+  }),
   medo: createToken('medo', 'Medo', {
     gradient: ['#5B4BFF', '#3E3DA8'],
     irisGradient: ['rgba(112, 102, 255, 0.9)', 'rgba(46, 50, 162, 0.75)'],
@@ -161,6 +170,8 @@ export const emotionAliases: Record<string, EmotionKey> = {
   assustado: 'medo',
   medoansiedade: 'medo',
   apreensivo: 'incerteza',
+  asco: 'nojo',
+  repulsa: 'nojo',
 };
 
 export const resolveEmotionKey = (emotion?: string): EmotionKey => {
