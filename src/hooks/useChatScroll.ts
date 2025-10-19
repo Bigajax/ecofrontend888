@@ -14,10 +14,11 @@ export const useChatScroll = <T extends HTMLElement>(dependencies: DependencyLis
   const scrollToBottom = useCallback(
     (smooth = true) => {
       const el = scrollerRef.current;
-      if (!el) return;
+      const anchor = endRef.current;
+      if (!el || !anchor) return;
       const behavior: ScrollBehavior = smooth ? 'smooth' : 'auto';
       requestAnimationFrame(() => {
-        el.scrollTo({ top: el.scrollHeight, behavior });
+        anchor.scrollIntoView({ behavior, block: 'end', inline: 'nearest' });
         const at = nearBottom(el, 8);
         setIsAtBottom(at);
         setShowScrollBtn(!at);
