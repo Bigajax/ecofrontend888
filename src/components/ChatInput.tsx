@@ -60,8 +60,10 @@ const ChatInput: React.FC<Props> = ({
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
+    const MIN_HEIGHT = 48;
     ta.style.height = 'auto';
-    ta.style.height = `${Math.min(144, ta.scrollHeight)}px`; // até ~6 linhas
+    const next = Math.max(MIN_HEIGHT, Math.min(144, ta.scrollHeight));
+    ta.style.height = `${next}px`;
   }, [inputMessage]);
 
   // WebKit Speech (dictation)
@@ -197,7 +199,7 @@ const ChatInput: React.FC<Props> = ({
       role="group"
       style={{ overflowAnchor: 'none' }}
     >
-      <div className="flex items-end gap-3 px-3 py-2 sm:px-5 sm:py-3">
+      <div className="flex h-16 items-center gap-3 px-4 sm:px-5 md:h-[72px]">
         <div className="relative flex items-center">
           <button
             type="button"
@@ -206,7 +208,7 @@ const ChatInput: React.FC<Props> = ({
               setShowMoreOptions((prev) => !prev);
             }}
             className={`
-              glass-chip flex h-11 w-11 items-center justify-center text-[color:var(--color-text-muted)]
+              glass-chip flex h-10 w-10 items-center justify-center text-[color:var(--color-text-muted)]
               transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]
               ${isBusy ? 'cursor-not-allowed opacity-60' : 'hover:-translate-y-[1px] active:scale-[0.98]'}
             `}
@@ -249,61 +251,63 @@ const ChatInput: React.FC<Props> = ({
           </AnimatePresence>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <AnimatePresence>
-            {isRecordingUI && (
-              <motion.div
-                key="recording-indicator"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                transition={{ duration: 0.2 }}
-                className="mb-1 inline-flex items-center gap-2 rounded-full border border-[rgba(0,122,255,0.35)] bg-[rgba(0,122,255,0.12)] px-3 py-1 text-xs font-medium text-[color:var(--color-text-primary)] shadow-[0_12px_24px_rgba(0,122,255,0.18)]"
-              >
-                <span className="flex h-2.5 w-2.5 items-center justify-center">
-                  <span className="h-2 w-2 rounded-full bg-[color:var(--color-accent)] animate-ping" aria-hidden />
-                </span>
-                {isTranscribing ? 'Transcrevendo áudio…' : 'Eco está ouvindo…'}
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="flex flex-1 min-w-0 items-center">
+          <div className="flex w-full min-w-0 flex-col gap-1">
+            <AnimatePresence>
+              {isRecordingUI && (
+                <motion.div
+                  key="recording-indicator"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.2 }}
+                  className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,122,255,0.35)] bg-[rgba(0,122,255,0.12)] px-3 py-1 text-xs font-medium text-[color:var(--color-text-primary)] shadow-[0_12px_24px_rgba(0,122,255,0.18)]"
+                >
+                  <span className="flex h-2.5 w-2.5 items-center justify-center">
+                    <span className="h-2 w-2 rounded-full bg-[color:var(--color-accent)] animate-ping" aria-hidden />
+                  </span>
+                  {isTranscribing ? 'Transcrevendo áudio…' : 'Eco está ouvindo…'}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          <textarea
-            ref={textareaRef}
-            value={inputMessage}
-            onChange={(e) => {
-              const v = e.target.value;
-              setInputMessage(v);
-              onTextChange?.(v);
-            }}
-            onKeyDown={(e) => {
-              if (isBusy) {
-                e.preventDefault();
-                return;
-              }
-              // @ts-ignore
-              const composing = e.nativeEvent?.isComposing;
-              if (!composing && e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                void handleSend();
-              }
-            }}
-            placeholder={placeholder}
-            rows={1}
-            inputMode="text"
-            enterKeyHint="send"
-            maxLength={4000}
-            disabled={isBusy}
-            aria-disabled={isBusy}
-            aria-label="Mensagem para a Eco"
-            className="w-full min-w-0 max-h-36 resize-none overflow-y-auto border-none bg-transparent px-1 py-1 text-[15px]
-              leading-relaxed text-[color:var(--color-text-primary)] placeholder:text-[rgba(71,85,105,0.6)] placeholder:font-light focus:outline-none sm:text-base
-              disabled:cursor-not-allowed disabled:text-[rgba(71,85,105,0.55)]"
-            title={isBusy ? 'Aguarde a resposta da Eco' : undefined}
-          />
+            <div className="flex w-full items-center">
+              <textarea
+                ref={textareaRef}
+                value={inputMessage}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setInputMessage(v);
+                  onTextChange?.(v);
+                }}
+                onKeyDown={(e) => {
+                  if (isBusy) {
+                    e.preventDefault();
+                    return;
+                  }
+                  // @ts-ignore
+                  const composing = e.nativeEvent?.isComposing;
+                  if (!composing && e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    void handleSend();
+                  }
+                }}
+                placeholder={placeholder}
+                rows={1}
+                inputMode="text"
+                enterKeyHint="send"
+                maxLength={4000}
+                disabled={isBusy}
+                aria-disabled={isBusy}
+                aria-label="Mensagem para a Eco"
+                className="h-12 w-full min-h-[3rem] min-w-0 max-h-36 resize-none overflow-y-auto border-none bg-transparent px-1 py-0 text-[15px] leading-[1.6] text-[color:var(--color-text-primary)] placeholder:text-slate-400 placeholder:opacity-70 focus:outline-none sm:text-base disabled:cursor-not-allowed disabled:text-[rgba(71,85,105,0.55)]"
+                title={isBusy ? 'Aguarde a resposta da Eco' : undefined}
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => {
@@ -315,7 +319,7 @@ const ChatInput: React.FC<Props> = ({
             }}
             disabled={isBusy}
             className={`
-              glass-chip relative flex h-11 w-11 items-center justify-center text-[color:var(--color-text-muted)]
+              glass-chip relative flex h-10 w-10 items-center justify-center text-[color:var(--color-text-muted)]
               transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]
               ${
                 isRecordingUI
@@ -349,7 +353,7 @@ const ChatInput: React.FC<Props> = ({
                 exit={{ opacity: 0, scale: 0.9, x: 8 }}
                 transition={{ duration: 0.18 }}
                 className={`
-                  flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--color-accent)] text-white
+                  flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-accent)] text-white
                   shadow-[0_22px_48px_rgba(0,122,255,0.28)] transition-transform duration-200
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.35)]
                   hover:-translate-y-[2px] active:scale-[0.96]
@@ -362,7 +366,7 @@ const ChatInput: React.FC<Props> = ({
                     : 'Enviar mensagem'
                 }
               >
-                <Send size={17} strokeWidth={1.7} />
+                <Send size={16} strokeWidth={1.6} />
               </motion.button>
             )}
           </AnimatePresence>

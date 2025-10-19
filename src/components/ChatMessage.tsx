@@ -391,22 +391,24 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const bubbleClass = isUser
     ? [
         "message-bubble",
-        "relative self-end rounded-2xl",
-        "px-4 py-2 sm:px-5 sm:py-2.5",
-        "w-fit max-w-[70%]",
-        "whitespace-normal break-words",
+        "relative inline-flex w-fit flex-col self-end items-stretch rounded-2xl",
+        "px-4 py-2 sm:px-5",
+        "max-w-[72%] md:max-w-[64%] lg:max-w-[56%]",
+        "[min-width:min(100%,20ch)] sm:[min-width:min(100%,24ch)]",
         "bg-[#007AFF] text-white",
         "shadow-sm shadow-black/10",
+        "whitespace-normal break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
       ].join(" ")
     : [
         "message-bubble",
-        "relative rounded-2xl",
+        "relative inline-flex flex-col items-stretch rounded-2xl",
         "px-4 py-3 sm:px-5 sm:py-3",
-        "w-fit max-w-[70%]",
-        "whitespace-normal break-words",
+        "max-w-[70%]",
+        "min-w-0",
         "border border-black/5",
         "bg-white text-slate-800",
         "shadow-sm shadow-black/10",
+        "whitespace-normal break-normal [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
       ].join(" ");
 
   const processedMarkdown = React.useMemo(() => {
@@ -498,7 +500,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               {hasMarkdownText && (
                 <div className="relative z-10 font-sans">
                   <div
-                    className={`max-w-[68ch] whitespace-pre-wrap break-words hyphens-auto text-[15px] sm:text-[16px] leading-[1.5] font-[450] tracking-tight text-left [&>p]:my-0 [&>p+*]:mt-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul>li]:mt-1.5 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol>li]:mt-1.5 [&>strong]:font-semibold [&>em]:italic [&_a]:underline [&_a]:underline-offset-2 [&_a]:font-medium [&_a]:text-[inherit] [&_a]:transition-colors [&_a:hover]:opacity-90 [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:rounded-[2px] ${
+                    className={`max-w-[68ch] whitespace-pre-wrap break-normal [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none] text-[15px] sm:text-[16px] leading-[1.5] font-[450] tracking-tight text-left [&>p]:my-0 [&>p+*]:mt-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul>li]:mt-1.5 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol>li]:mt-1.5 [&>strong]:font-semibold [&>em]:italic [&_a]:underline [&_a]:underline-offset-2 [&_a]:font-medium [&_a]:text-[inherit] [&_a]:transition-colors [&_a:hover]:opacity-90 [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:rounded-[2px] ${
                       isUser
                         ? "text-white [&_a]:text-white [&_a:focus-visible]:outline-white/80"
                         : "text-slate-800 [&_a]:text-slate-800 [&_a:focus-visible]:outline-[rgba(0,122,255,0.45)]"
