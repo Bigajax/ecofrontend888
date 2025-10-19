@@ -1,4 +1,5 @@
 import React from "react";
+import clsx from "clsx";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
@@ -92,6 +93,34 @@ const normalizeMessageContent = (
 const USE_NEW_FEEDBACK = false;
 
 const CODE_SEGMENT_REGEX = /```[\s\S]*?```|`[^`]*`/g;
+
+const DEFINITION_KEYWORDS = [
+  "definition",
+  "definitions",
+  "dictionary",
+  "lexicon",
+  "lexico",
+  "verbete",
+  "glossary",
+  "glossario",
+  "etymology",
+  "etimologia",
+  "grammar",
+  "gramatica",
+  "synonyms",
+  "sinonimos",
+  "antonyms",
+  "antonimos",
+];
+
+const CITATION_KEYWORDS = [
+  "citation",
+  "citacao",
+  "quote",
+  "quotation",
+  "referencia",
+  "reference",
+];
 
 const applySmartTypography = (segment: string): string => {
   let s = segment.replace(/\n{3,}/g, "\n\n");
@@ -250,6 +279,44 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const hasMarkdownText = !showPlaceholder && trimmedText.length > 0;
   const typingActive = Boolean(isEcoTyping && showPlaceholder);
 
+  const metadataString = React.useMemo(() => {
+    if (!isEcoMessage) return "";
+    try {
+      return JSON.stringify({
+        metadata: message.metadata ?? null,
+        donePayload: message.donePayload ?? null,
+      }).toLowerCase();
+    } catch {
+      return "";
+    }
+  }, [isEcoMessage, message.donePayload, message.metadata]);
+
+  const looksLikeDefinition = React.useMemo(() => {
+    if (!isEcoMessage || !hasMarkdownText) return false;
+    const metaHit = DEFINITION_KEYWORDS.some((k) => metadataString.includes(k));
+    if (metaHit) return true;
+    const textHit = /\b(definiç|etimolog|gramát|sinônim|antônim|conjuga|origem)/i.test(
+      trimmedText,
+    );
+    if (textHit) return true;
+    const headingPattern = /\n\n[A-ZÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ\s/]{3,}\n/;
+    return headingPattern.test(trimmedText);
+  }, [hasMarkdownText, isEcoMessage, metadataString, trimmedText]);
+
+  const looksLikeCitation = React.useMemo(() => {
+    if (!isEcoMessage || !hasMarkdownText) return false;
+    const metaHit = CITATION_KEYWORDS.some((k) => metadataString.includes(k));
+    if (metaHit) return true;
+    const trimmed = trimmedText.trim();
+    return trimmed.startsWith('“') || trimmed.startsWith('"') || trimmed.startsWith('>');
+  }, [hasMarkdownText, isEcoMessage, metadataString, trimmedText]);
+
+  const typographyVariant: 'definition' | 'citation' | 'default' = looksLikeDefinition
+    ? 'definition'
+    : looksLikeCitation
+    ? 'citation'
+    : 'default';
+
   const [typingVisible, setTypingVisible] = React.useState(false);
   const [typingState, setTypingState] = React.useState<
     "hidden" | "enter" | "visible" | "exit"
@@ -355,15 +422,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     const typingDataState = typingState === "hidden" ? undefined : typingState;
     return (
       <div
-        className={`w-full flex min-w-0 px-3 sm:px-4 md:px-6 ${isUser ? 'justify-end' : 'justify-start'} mb-1 sm:mb-2`}
+        className={clsx(
+          "chat-row mb-1 flex w-full min-w-0 px-2 sm:px-4 md:px-6",
+          isUser ? "justify-end" : "justify-start",
+        )}
         role="status"
         aria-live="polite"
         aria-label="ECO está digitando…"
       >
         <div
-          className={`flex w-full max-w-3xl items-center gap-2 ${
-            isUser ? "flex-row-reverse" : "flex-row"
-          }`}
+          className={clsx(
+            "flex w-full max-w-[min(640px,88vw)] items-center gap-2",
+            isUser ? "flex-row-reverse" : "flex-row",
+          )}
         >
           {!isUser && (
             <div className="flex-shrink-0 translate-y-[1px]">
@@ -373,13 +444,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
           <div className="min-w-0">
             <div
-              className="opacity-0 translate-y-1 transition-opacity transition-transform duration-[160ms] ease-out data-[state=enter]:opacity-100 data-[state=visible]:opacity-100 data-[state=enter]:translate-y-0 data-[state=visible]:translate-y-0 data-[state=exit]:opacity-0 data-[state=exit]:translate-y-1"
+              className="opacity-0 translate-y-1 rounded-[18px] border border-black/10 bg-white px-4 py-2 transition-opacity transition-transform duration-[160ms] ease-out data-[state=enter]:translate-y-0 data-[state=enter]:opacity-100 data-[state=exit]:translate-y-1 data-[state=exit]:opacity-0 data-[state=visible]:translate-y-0 data-[state=visible]:opacity-100"
               data-state={typingDataState}
             >
               <TypingDots
                 variant="bubble"
                 size="md"
-                className="bg-white/70 border-[color:var(--bubble-border)] shadow-sm shadow-neutral-300/20"
+                className="text-slate-500"
               />
             </div>
           </div>
@@ -388,25 +459,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     );
   }
 
-  const bubbleClass = isUser
-    ? [
-        'message-bubble',
-        'relative inline-flex w-fit max-w-[88%] flex-col items-stretch rounded-2xl px-4 py-2 text-[15px] sm:max-w-[72%] sm:px-5 sm:text-[16px]',
-        'bg-[#007AFF] text-white',
-        'shadow-sm shadow-black/10',
-        'whitespace-normal break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]',
-      ].join(' ')
-    : [
-        "message-bubble",
-        "relative inline-flex flex-col items-stretch rounded-2xl",
-        "px-4 py-3 sm:px-5 sm:py-3",
-        "max-w-[70%]",
-        "min-w-0",
-        "border border-black/5",
-        "bg-white text-slate-800",
-        "shadow-sm shadow-black/10",
-        "whitespace-normal break-normal [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
-      ].join(" ");
+  const bubbleClass = clsx(
+    "message-bubble relative inline-flex max-w-full flex-col rounded-[20px] px-4 py-3 sm:px-5",
+    "whitespace-normal break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
+    isUser
+      ? "ml-auto bg-[#007AFF] text-white shadow-[0_12px_32px_rgba(0,122,255,0.18)]"
+      : "border border-black/10 bg-white text-[color:var(--color-text-primary)] shadow-[0_8px_26px_rgba(11,18,32,0.08)]",
+  );
 
   const processedMarkdown = React.useMemo(() => {
     if (!hasMarkdownText) return displayText;
@@ -420,11 +479,24 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     return findQuoteCreditLineNumbers(processedMarkdown);
   }, [hasMarkdownText, isEcoMessage, processedMarkdown]);
 
+  const baseMarkdownClass = clsx(
+    "markdown-body max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
+    isUser
+      ? "text-white font-[500] leading-[1.35] tracking-[-0.01em]"
+      : "text-[color:var(--color-text-primary)] font-[460] leading-[1.45] tracking-[-0.012em]",
+  );
+
+  const markdownClass = clsx(
+    baseMarkdownClass,
+    !isUser && typographyVariant === "definition" && "definition-block",
+    !isUser && typographyVariant === "citation" && "citation-block",
+  );
+
   const markdownComponents: Components = {
     blockquote({ node: _node, className, ...props }) {
       const combinedClassName = [
         className,
-        "border-l-2 border-zinc-300 pl-4",
+        "border-l border-[rgba(11,18,32,0.12)] pl-4",
       ]
         .filter(Boolean)
         .join(" ");
@@ -457,15 +529,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   return (
     <>
       <div
-        className={`w-full flex min-w-0 px-3 sm:px-4 md:px-6 ${isUser ? 'justify-end' : 'justify-start'} mb-1 sm:mb-2`}
+        className={clsx(
+          "chat-row mb-1 flex w-full min-w-0 px-2 sm:px-4 md:px-6",
+          isUser ? "justify-end" : "justify-start",
+        )}
         role="listitem"
         aria-live="polite"
         aria-atomic="false"
       >
         <div
-          className={`flex w-full max-w-3xl items-end gap-3 ${
-            isUser ? "flex-row-reverse" : "flex-row"
-          }`}
+          className={clsx(
+            "flex w-full max-w-[min(640px,88vw)] items-end gap-3",
+            isUser ? "flex-row-reverse" : "flex-row",
+          )}
         >
           {!isUser && (
             <div className="flex-shrink-0 translate-y-[2px]">
@@ -495,14 +571,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 </span>
               )}
               {hasMarkdownText && (
-                <div className="relative z-10 font-sans">
-                  <div
-                    className={`max-w-[68ch] whitespace-pre-wrap break-normal [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none] text-[15px] sm:text-[16px] leading-[1.5] font-[450] tracking-tight text-left [&>p]:my-0 [&>p+*]:mt-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul>li]:mt-1.5 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol>li]:mt-1.5 [&>strong]:font-semibold [&>em]:italic [&_a]:underline [&_a]:underline-offset-2 [&_a]:font-medium [&_a]:text-[inherit] [&_a]:transition-colors [&_a:hover]:opacity-90 [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:rounded-[2px] ${
-                      isUser
-                        ? "text-white [&_a]:text-white [&_a:focus-visible]:outline-white/80"
-                        : "text-slate-800 [&_a]:text-slate-800 [&_a:focus-visible]:outline-[rgba(0,122,255,0.45)]"
-                    }`}
-                  >
+                <div className="relative z-10">
+                  <div className={markdownClass}>
                     <ReactMarkdown components={markdownComponents}>
                       {processedMarkdown}
                     </ReactMarkdown>

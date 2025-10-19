@@ -4,7 +4,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import clsx from 'clsx';
 
 import ChatMessage from '../components/ChatMessage';
@@ -19,11 +19,12 @@ import TypingDots from '../components/TypingDots';
 import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
 
-import { useChatScroll } from '../hooks/useChatScroll';
+import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useEcoStream } from '../hooks/useEcoStream';
 import { useFeedbackPrompt } from '../hooks/useFeedbackPrompt';
 import { useQuickSuggestionsVisibility } from '../hooks/useQuickSuggestionsVisibility';
 import { useEcoActivity } from '../hooks/useEcoActivity';
+import { useKeyboardInsets } from '../hooks/useKeyboardInsets';
 import { ensureSessionId } from '../utils/chat/session';
 import { saudacaoDoDiaFromHour } from '../utils/chat/greetings';
 import { ROTATING_ITEMS, OPENING_VARIATIONS } from '../constants/chat';
@@ -45,6 +46,7 @@ const ChatPage: React.FC = () => {
   const auth = useAuth();
   const { userId, userName = 'Usuário', user } = auth;
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
 
   const [sessaoId] = useState(() => ensureSessionId());
   useAdminCommands(user, sessaoId);
@@ -82,14 +84,13 @@ const ChatPage: React.FC = () => {
 
   const saudacao = useMemo(() => saudacaoDoDiaFromHour(new Date().getHours()), []);
 
-  const {
-    scrollerRef,
-    endRef,
-    isAtBottom,
-    showScrollBtn,
-    scrollToBottom,
-    handleScroll,
-  } = useChatScroll<HTMLDivElement>([messages]);
+  const { scrollerRef, endRef, isAtBottom, showScrollBtn, scrollToBottom } =
+    useAutoScroll<HTMLDivElement>({ items: [messages] });
+
+  const chatInputWrapperRef = useRef<HTMLDivElement | null>(null);
+  const { contentInset, isKeyboardOpen, safeAreaBottom } = useKeyboardInsets({
+    inputRef: chatInputWrapperRef,
+  });
 
   const { showQuick, hideQuickSuggestions, handleTextChange } = useQuickSuggestionsVisibility(messages);
 
@@ -207,9 +208,6 @@ const ChatPage: React.FC = () => {
   const globalTypingRemoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const chatInputWrapperRef = useRef<HTMLDivElement | null>(null);
-  const [chatInputHeight, setChatInputHeight] = useState(0);
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const globalTypingMinVisibleRef = useRef<number>(0);
 
   useEffect(() => {
@@ -310,116 +308,40 @@ const ChatPage: React.FC = () => {
   );
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const wrapper = chatInputWrapperRef.current;
-    if (!wrapper) return;
-
-    const updateHeight = () => {
-      const measured = wrapper.getBoundingClientRect().height;
-      setChatInputHeight(Math.round(measured));
-    };
-
-    updateHeight();
-
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', updateHeight);
-      return () => {
-        window.removeEventListener('resize', updateHeight);
-      };
-    }
-
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.target !== wrapper) continue;
-        const borderBoxSize = Array.isArray(entry.borderBoxSize)
-          ? entry.borderBoxSize[0]
-          : entry.borderBoxSize;
-        const nextHeight =
-          typeof borderBoxSize === 'object' && borderBoxSize
-            ? borderBoxSize.blockSize
-            : entry.contentRect.height;
-        setChatInputHeight(Math.round(nextHeight));
-      }
-    });
-
-    observer.observe(wrapper);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
+    if (!isAtBottom) return;
+    scrollToBottom(false);
+  }, [contentInset, isAtBottom, scrollToBottom]);
 
   useEffect(() => {
-    if (typeof document === 'undefined') return;
-
-    const handleFocusIn = (event: FocusEvent) => {
-      if (chatInputWrapperRef.current?.contains(event.target as Node)) {
-        setIsKeyboardOpen(true);
-      }
-    };
-
-    const handleFocusOut = (event: FocusEvent) => {
-      const relatedTarget = event.relatedTarget as Node | null;
-      if (relatedTarget && chatInputWrapperRef.current?.contains(relatedTarget)) {
-        return;
-      }
-
-      window.setTimeout(() => {
-        const active = document.activeElement;
-        if (!chatInputWrapperRef.current?.contains(active)) {
-          setIsKeyboardOpen(false);
-        }
-      }, 0);
-    };
-
-    document.addEventListener('focusin', handleFocusIn);
-    document.addEventListener('focusout', handleFocusOut);
-
-    return () => {
-      document.removeEventListener('focusin', handleFocusIn);
-      document.removeEventListener('focusout', handleFocusOut);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    document.body.classList.toggle('keyboard-open', isKeyboardOpen);
-    return () => {
-      document.body.classList.remove('keyboard-open');
-    };
-  }, [isKeyboardOpen]);
-
-  const scrollBottomPadding = useMemo(() => {
-    const measured = chatInputHeight > 0 ? chatInputHeight : 160;
-    const keyboardAdjustment = isKeyboardOpen ? 12 : 32;
-    return measured + keyboardAdjustment;
-  }, [chatInputHeight, isKeyboardOpen]);
+    if (!shouldRenderGlobalTyping || !isAtBottom) return;
+    scrollToBottom(false);
+  }, [shouldRenderGlobalTyping, isAtBottom, scrollToBottom]);
 
   return (
     <div
       className={clsx(
-        'chat-page relative flex h-dvh min-h-0 w-full flex-1 flex-col bg-white md:h-screen',
+        'chat-page relative flex min-h-[100svh] w-full flex-1 flex-col bg-white',
         { 'keyboard-open': isKeyboardOpen },
       )}
+      style={{ minHeight: '100dvh' }}
     >
       {/* SCROLLER */}
       <div
         ref={scrollerRef}
-        onScroll={handleScroll}
         role="feed"
         aria-busy={isWaitingForEco || isSendingToEco}
-        className="chat-scroller messages flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-4 pb-[88px] scroll-smooth sm:px-6 sm:pb-[96px] lg:px-10 md:pb-0"
+        className="chat-scroller flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-4 pb-0 sm:px-6 lg:px-10"
         style={{
           paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
           WebkitOverflowScrolling: 'touch',
           scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
           touchAction: 'pan-y',
-          paddingBottom: `${scrollBottomPadding}px`,
-          scrollPaddingBottom: `${scrollBottomPadding}px`,
+          paddingBottom: `${contentInset}px`,
+          scrollPaddingBottom: `${contentInset}px`,
           overscrollBehavior: 'contain',
         }}
       >
-        <div className="w-full mx-auto max-w-[800px]">
+        <div className="mx-auto w-full max-w-[min(640px,88vw)]">
           {isEmptyState && (
             <div
               className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex flex-col items-center justify-center py-16 sm:py-20"
@@ -472,7 +394,16 @@ const ChatPage: React.FC = () => {
 
           <div className="w-full space-y-3 md:space-y-4">
             {messages.map((m) => (
-              <div key={m.id} className="w-full">
+              <motion.div
+                key={m.id}
+                className="w-full"
+                initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: prefersReducedMotion ? 0 : 0.18,
+                  ease: prefersReducedMotion ? 'linear' : 'easeOut',
+                }}
+              >
                 {m.sender === 'eco' ? (
                   <EcoMessageWithAudio
                     message={m as any}
@@ -481,7 +412,7 @@ const ChatPage: React.FC = () => {
                 ) : (
                   <ChatMessage message={m} />
                 )}
-              </div>
+              </motion.div>
             ))}
 
             {showFeedback && lastEcoInfo?.msg && (
@@ -552,7 +483,10 @@ const ChatPage: React.FC = () => {
         </div>
 
         {showScrollBtn && (
-          <div className="sticky bottom-24 z-30 flex justify-end pr-2 sm:pr-6">
+          <div
+            className="sticky bottom-24 z-30 flex justify-end pr-2 sm:pr-6"
+            style={{ bottom: safeAreaBottom + 96 }}
+          >
             <button
               onClick={() => scrollToBottom(true)}
               className="h-9 w-9 rounded-full glass-soft hover:bg-white/24 flex items-center justify-center transition"
@@ -568,9 +502,10 @@ const ChatPage: React.FC = () => {
 
       <div
         ref={chatInputWrapperRef}
-        className="composer z-50 bg-gradient-to-t from-white via-white/95 to-white/80 px-3 pb-3 pt-3 sm:px-6 sm:pb-5 sm:pt-5 lg:px-10"
+        className="composer sticky bottom-0 z-40 border-t border-black/10 bg-white/95 px-3 pt-3 backdrop-blur-sm sm:px-6 lg:px-10"
+        style={{ paddingBottom: safeAreaBottom + 12 }}
       >
-        <div className="mx-auto w-full max-w-[800px] space-y-3">
+        <div className="mx-auto w-full max-w-[min(640px,88vw)] space-y-3">
           <QuickSuggestions
             visible={
               showQuick &&
