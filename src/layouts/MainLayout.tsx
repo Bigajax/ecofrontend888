@@ -42,10 +42,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           pt-[var(--eco-topbar-h,56px)] md:pt-0
           pl-0 md:pl-[var(--eco-sidebar-w,0px)]
           transition-[padding] duration-200 ease-out
-          bg-white
+          bg-transparent text-[color:var(--color-text-primary)]
         "
       >
-        {children}
+        <div className="mx-auto w-full max-w-[1140px] px-4 sm:px-6 md:px-8">
+          {children}
+        </div>
       </main>
     </>
   );

@@ -86,7 +86,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
   return (
     <motion.li
       layout
-      className={`group relative flex flex-col gap-5 overflow-hidden rounded-[26px] border border-white/60 bg-white/75 px-5 py-5 backdrop-blur-2xl transition-[box-shadow,transform] duration-300 ${mem.emotionTheme.className}`}
+      className={`group relative flex flex-col gap-5 overflow-hidden glass-card px-6 py-6 transition-[box-shadow,transform] duration-300 ${mem.emotionTheme.className}`}
       style={{
         boxShadow: cardShadow,
       }}
@@ -119,7 +119,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
                     {mem.titulo}
                   </h3>
                   {mem.nivelAbertura != null ? (
-                    <span className="rounded-full border border-black/5 bg-white/70 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                    <span className="glass-chip px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-text-muted)]">
                       Abertura {mem.nivelAbertura}
                     </span>
                   ) : null}
@@ -138,7 +138,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
                 aria-expanded={open}
                 aria-controls={detailsId}
                 aria-label={open ? 'Recolher detalhes da memória' : 'Expandir detalhes da memória'}
-                className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full border border-black/10 bg-white/80 text-slate-500 shadow-sm transition hover:bg-white"
+                className="mt-1 grid h-10 w-10 shrink-0 place-items-center glass-chip text-[color:var(--color-text-muted)] transition-transform duration-200 hover:-translate-y-[1px]"
               >
                 <svg
                   viewBox="0 0 20 20"
@@ -158,7 +158,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
             </div>
 
             <div className="mt-4">
-              <div className="flex items-center justify-between text-[12px] font-medium text-slate-500">
+              <div className="flex items-center justify-between text-[12px] font-medium text-[color:var(--color-text-muted)]">
                 <span>Intensidade</span>
                 <span className={`font-semibold ${mem.emotionTheme.accentTextClass}`}>{mem.intensidadeLabel}</span>
               </div>
@@ -187,13 +187,13 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
                 {visibleTags.map((tag, index) => (
                   <span
                     key={`${tag}-${index}`}
-                    className={`rounded-full px-3 py-1 text-xs font-medium shadow-sm ${mem.emotionTheme.chipClass}`}
+                    className={`glass-chip px-3 py-1 text-xs font-medium ${mem.emotionTheme.chipClass}`}
                   >
                     {tag.charAt(0).toUpperCase() + tag.slice(1)}
                   </span>
                 ))}
                 {extraTags > 0 ? (
-                  <span className="rounded-full border border-black/10 bg-white/80 px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">
+                  <span className="glass-chip px-3 py-1 text-xs font-medium text-[color:var(--color-text-muted)]">
                     +{extraTags}
                   </span>
                 ) : null}
