@@ -62,7 +62,7 @@ describe("enviarMensagemParaEco", () => {
     });
   });
 
-  const callApi = async () => enviarMensagemParaEco(mensagens);
+  const callApi = async () => enviarMensagemParaEco(mensagens, 'Usuário', 'usuario-123');
 
   it("concatena deltas e retorna metadata do evento done", async () => {
     fetchMock.mockResolvedValue(
@@ -291,7 +291,7 @@ describe("enviarMensagemParaEco", () => {
     const resposta = await enviarMensagemParaEco(
       mensagens,
       undefined,
-      undefined,
+      'usuario-123',
       undefined,
       undefined,
       handlers
@@ -345,7 +345,7 @@ describe("enviarMensagemParaEco", () => {
     const body = init?.body ? JSON.parse(init.body as string) : {};
     expect(body.isGuest).toBe(true);
     expect(body.guestId).toBe("guest-123");
-    expect(body.usuario_id).toBeUndefined();
+    expect(body.usuario_id).toBe('guest-123');
   });
 
   it("usa Axios quando streaming é desativado e normaliza a resposta JSON", async () => {

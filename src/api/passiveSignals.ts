@@ -16,19 +16,6 @@ export const ENABLE_PASSIVE_SIGNALS = envFlag === undefined ? true : envFlag !==
 
 const PASSIVE_SIGNAL_TIMEOUT_MS = 2500;
 
-const readGuestId = () => {
-  if (typeof window === "undefined") return "";
-  try {
-    return (
-      window.localStorage.getItem("guest_id") ??
-      window.localStorage.getItem("eco_guest_id") ??
-      ""
-    );
-  } catch {
-    return "";
-  }
-};
-
 const sanitize = <T extends Record<string, unknown>>(payload: T) => {
   return Object.fromEntries(
     Object.entries(payload).filter(([, value]) => value !== undefined)
@@ -51,10 +38,6 @@ export async function sendPassiveSignal({
   if (!normalizedSignal) return;
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  const guestId = readGuestId();
-  if (guestId) {
-    headers["X-Guest-Id"] = guestId;
-  }
 
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -86,7 +69,9 @@ export async function sendPassiveSignal({
       method: "POST",
       headers,
       body: JSON.stringify(body),
-      credentials: "include",
+      credentials: "omit",
+      mode: "cors",
+      redirect: "follow",
       signal: controller?.signal,
     });
 

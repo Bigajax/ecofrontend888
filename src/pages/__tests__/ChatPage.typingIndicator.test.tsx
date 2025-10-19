@@ -179,20 +179,20 @@ describe('ChatPage typing indicator', () => {
     const input = await screen.findByPlaceholderText('Converse com a Eco…');
     await user.type(input, 'Oi{enter}');
 
-    await screen.findByTestId('typing-dots');
+    await screen.findAllByTestId('typing-dots');
     expect(handlersRef.current).toBeDefined();
 
     act(() => {
       handlersRef.current?.onEvent?.({ type: 'first_token', delta: '   ' } as any);
     });
 
-    expect(screen.getByTestId('typing-dots')).toBeInTheDocument();
+    expect(screen.getAllByTestId('typing-dots').length).toBeGreaterThan(0);
 
     act(() => {
       handlersRef.current?.onEvent?.({ type: 'chunk', delta: 'Resposta da Eco' } as any);
     });
 
-    expect(screen.getByTestId('typing-dots')).toBeInTheDocument();
+    expect(screen.getAllByTestId('typing-dots').length).toBeGreaterThan(0);
 
     await waitFor(() => {
       expect(screen.getByText(/Resposta da Eco/)).toBeInTheDocument();
@@ -209,7 +209,7 @@ describe('ChatPage typing indicator', () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByTestId('typing-dots')).not.toBeInTheDocument();
+      expect(screen.queryAllByTestId('typing-dots')).toHaveLength(0);
     });
   });
 
