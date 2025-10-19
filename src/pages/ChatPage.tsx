@@ -391,20 +391,16 @@ const ChatPage: React.FC = () => {
 
   const scrollBottomPadding = useMemo(() => {
     const measured = chatInputHeight > 0 ? chatInputHeight : 160;
-    const keyboardAdjustment = isKeyboardOpen ? 8 : 24;
+    const keyboardAdjustment = isKeyboardOpen ? 12 : 32;
     return measured + keyboardAdjustment;
   }, [chatInputHeight, isKeyboardOpen]);
 
   return (
     <div
       className={clsx(
-        'chat-page relative flex h-dvh min-h-[calc(100svh-var(--eco-topbar-h,56px))] w-full flex-1 flex-col bg-white',
+        'chat-page relative flex h-dvh min-h-0 w-full flex-1 flex-col bg-white md:h-screen',
         { 'keyboard-open': isKeyboardOpen },
       )}
-      style={{
-        minHeight: 'calc(100dvh - var(--eco-topbar-h, 56px))',
-        height: 'calc(100dvh - var(--eco-topbar-h, 56px))',
-      }}
     >
       {/* SCROLLER */}
       <div
@@ -412,7 +408,7 @@ const ChatPage: React.FC = () => {
         onScroll={handleScroll}
         role="feed"
         aria-busy={isWaitingForEco || isSendingToEco}
-        className="chat-scroller flex-1 min-h-0 overflow-y-auto scroll-smooth overscroll-y-contain px-4 sm:px-6 lg:px-10 [scrollbar-gutter:stable]"
+        className="chat-scroller messages flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-4 pb-[88px] scroll-smooth sm:px-6 sm:pb-[96px] lg:px-10 md:pb-0"
         style={{
           paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
           WebkitOverflowScrolling: 'touch',
@@ -572,12 +568,9 @@ const ChatPage: React.FC = () => {
 
       <div
         ref={chatInputWrapperRef}
-        className="sticky bottom-0 z-50 bg-gradient-to-t from-white via-white/95 to-white/80 px-4 pt-4 sm:px-6 sm:pt-5 lg:px-10"
-        style={{
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
-        }}
+        className="composer z-50 bg-gradient-to-t from-white via-white/95 to-white/80 px-3 pb-3 pt-3 sm:px-6 sm:pb-5 sm:pt-5 lg:px-10"
       >
-        <div className="w-full mx-auto max-w-[800px]">
+        <div className="mx-auto w-full max-w-[800px] space-y-3">
           <QuickSuggestions
             visible={
               showQuick &&
@@ -589,7 +582,7 @@ const ChatPage: React.FC = () => {
             onPickSuggestion={handlePickSuggestion}
             rotatingItems={ROTATING_ITEMS}
             rotationMs={5000}
-            className="mt-2"
+            className="mt-1"
             disabled={composerPending}
           />
           <ChatInput
