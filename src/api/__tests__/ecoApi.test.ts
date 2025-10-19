@@ -339,6 +339,7 @@ describe("enviarMensagemParaEco", () => {
       "X-Guest-Id": "guest-123",
       Accept: "text/event-stream",
       "Content-Type": "application/json",
+      "X-Stream-Id": "uuid-mock",
     });
     expect(headers.Authorization).toBeUndefined();
     expect(init?.credentials).toBe("omit");
