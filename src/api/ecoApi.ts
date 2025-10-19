@@ -95,14 +95,6 @@ const combineAbortSignals = (
   };
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-type FetchWithRetryOptions = {
-  signal?: AbortSignal;
-  timeoutMs?: number;
-  retries?: number;
-};
-
 let currentStreamController: AbortController | null = null;
 
 const isNavigatorOffline = () => {
@@ -133,96 +125,6 @@ const ensureHttpsUrl = (url: string) => {
     (runningInBrowser && window.location.protocol === "https:") || !Boolean(import.meta.env?.DEV);
 
   return shouldForceHttps ? url.replace(/^http:\/\//i, "https://") : url;
-};
-
-const fetchWithRetry = async (
-  url: string,
-  init: RequestInit & { signal?: AbortSignal },
-  { signal, timeoutMs = 12_000, retries = 2 }: FetchWithRetryOptions = {}
-): Promise<Response> => {
-  let lastError: unknown;
-
-  for (let attempt = 0; attempt <= retries; attempt += 1) {
-    const timeoutController =
-      typeof AbortController !== "undefined" ? new AbortController() : null;
-    let timedOut = false;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-    if (timeoutController && Number.isFinite(timeoutMs) && timeoutMs > 0) {
-      timeoutId = setTimeout(() => {
-        timedOut = true;
-        timeoutController.abort();
-      }, timeoutMs);
-    }
-
-    const { signal: mergedSignal, cleanup } = combineAbortSignals(
-      signal,
-      init.signal,
-      timeoutController?.signal
-    );
-
-    try {
-      const response = await fetch(url, { ...init, signal: mergedSignal });
-      if (timeoutId) clearTimeout(timeoutId);
-
-      if (response.status === 503 && attempt < retries) {
-        if (import.meta.env?.DEV) {
-          console.warn(
-            "[ECO API] HTTP 503 recebido, tentando novamente",
-            {
-              attempt: attempt + 1,
-              retries,
-              url: response.url,
-            }
-          );
-        }
-        try {
-          await response.body?.cancel?.();
-        } catch {
-          /* ignore */
-        }
-        lastError = response;
-        await sleep(250 * (attempt + 1));
-        continue;
-      }
-
-      return response;
-    } catch (error: any) {
-      if (timeoutId) clearTimeout(timeoutId);
-
-      const abortError = error?.name === "AbortError" || error instanceof DOMException;
-      const abortedByCaller = Boolean(
-        abortError && (signal?.aborted || init.signal?.aborted)
-      );
-
-      if (abortedByCaller) {
-        cleanup();
-        throw error;
-      }
-
-      const shouldRetry =
-        attempt < retries && (timedOut || error instanceof TypeError);
-
-      if (shouldRetry) {
-        lastError = error;
-        await sleep(250 * (attempt + 1));
-        continue;
-      }
-
-      throw error;
-    } finally {
-      if (timeoutId) clearTimeout(timeoutId);
-      cleanup();
-    }
-  }
-
-  if (lastError instanceof Response) {
-    return lastError;
-  }
-
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("Falha ao se conectar ao servidor da Eco.");
 };
 
 const mapStatusToFriendlyMessage = (status: number, fallback: string) => {
