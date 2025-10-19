@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { trackFeedbackEvent } from '../analytics/track';
 import { FEEDBACK_KEY } from '../constants/chat';
@@ -10,22 +10,32 @@ const SS_KEY = FEEDBACK_KEY;
 
 type LastEcoInfo = { idx: number; msg: Message } | null;
 
+type FeedbackOpenEventDetail = {
+  source?: string;
+};
+
+declare global {
+  interface WindowEventMap {
+    'eco-feedback-open': CustomEvent<FeedbackOpenEventDetail>;
+  }
+}
+
 export function useFeedbackPrompt(messages: Message[]) {
   const [showFeedback, setShowFeedback] = useState(false);
   const sessionIdRef = useRef<string | null | undefined>(undefined);
   const userIdRef = useRef<string | null | undefined>(undefined);
 
-  const resolveSessionId = () => {
+  const resolveSessionId = useCallback(() => {
     if (sessionIdRef.current !== undefined) return sessionIdRef.current;
     sessionIdRef.current = getSessionId();
     return sessionIdRef.current;
-  };
+  }, []);
 
-  const resolveUserId = () => {
+  const resolveUserId = useCallback(() => {
     if (userIdRef.current !== undefined) return userIdRef.current;
     userIdRef.current = getUserIdFromStore();
     return userIdRef.current;
-  };
+  }, []);
 
   const aiMessages = useMemo(
     () => messages.filter((m) => m?.sender === 'eco'),
@@ -40,23 +50,16 @@ export function useFeedbackPrompt(messages: Message[]) {
     return { idx, msg: lastMessage };
   }, [messages, aiMessages]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!lastEcoInfo?.msg) return;
-    try {
-      if (window.sessionStorage.getItem(SS_KEY)) return;
-    } catch {
-      return;
-    }
+  const trackPromptShown = useCallback(
+    (source: string) => {
+      if (!lastEcoInfo?.msg) return;
 
-    const deep = Boolean(lastEcoInfo.msg?.deepQuestion);
-    if (aiMessages.length >= 3 && deep) {
-      setShowFeedback(true);
       const payload: Record<string, unknown> = {
         user_id: resolveUserId() ?? undefined,
         session_id: resolveSessionId() ?? undefined,
-        source: 'prompt_auto',
+        source,
       };
+
       const context = extractMessageFeedbackContext(lastEcoInfo.msg);
       payload.interaction_id = context.interactionId;
       if (context.messageId) {
@@ -71,9 +74,43 @@ export function useFeedbackPrompt(messages: Message[]) {
       if (typeof context.latencyMs === 'number') {
         payload.latency_ms = context.latencyMs;
       }
+
       trackFeedbackEvent('FE: Feedback Prompt Shown', payload);
+    },
+    [lastEcoInfo, resolveSessionId, resolveUserId],
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!lastEcoInfo?.msg) return;
+    try {
+      if (window.sessionStorage.getItem(SS_KEY)) return;
+    } catch {
+      return;
     }
-  }, [aiMessages.length, lastEcoInfo]);
+
+    const deep = Boolean(lastEcoInfo.msg?.deepQuestion);
+    if (aiMessages.length >= 3 && deep) {
+      setShowFeedback(true);
+      trackPromptShown('prompt_auto');
+    }
+  }, [aiMessages.length, lastEcoInfo, trackPromptShown]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleOpen = (event: CustomEvent<FeedbackOpenEventDetail>) => {
+      if (!lastEcoInfo?.msg) {
+        return;
+      }
+      setShowFeedback(true);
+      trackPromptShown(event.detail?.source ?? 'prompt_manual');
+    };
+
+    window.addEventListener('eco-feedback-open', handleOpen as EventListener);
+    return () =>
+      window.removeEventListener('eco-feedback-open', handleOpen as EventListener);
+  }, [lastEcoInfo, trackPromptShown]);
 
   function handleFeedbackSubmitted() {
     if (typeof window !== 'undefined') {

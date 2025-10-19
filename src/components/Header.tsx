@@ -1,8 +1,8 @@
 // Header.tsx — AppBar “pill” + Drawer lateral (ChatGPT-like, apple-ish)
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, NavLink, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, BarChart3, X, Menu, MessageSquare } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, BarChart3, X, Menu, MessageCircle, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrolled } from '@/hooks/useScrolled';
 import EcoBubbleOneEye from './EcoBubbleOneEye';
@@ -48,6 +48,15 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
   const isChat = /^\/chat\/?$/.test(location.pathname);
   const shouldShowBack = showBackButton || !isChat;
   const scrolled = useScrolled(8);
+
+  const handleOpenFeedback = useCallback((source: 'header' | 'drawer') => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(
+      new CustomEvent('eco-feedback-open', {
+        detail: { source },
+      }),
+    );
+  }, []);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -126,14 +135,13 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
               </button>
             )}
 
-            <a
-              href="https://feedback777.vercel.app"
-              target="_blank"
-              rel="noreferrer"
+            <button
+              type="button"
+              onClick={() => handleOpenFeedback('header')}
               className="hidden sm:inline-flex items-center justify-center rounded-full bg-[color:var(--color-accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,255,0.25)] transition-transform duration-200 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
             >
               Feedback
-            </a>
+            </button>
 
             {onLogout && (
               <button
@@ -213,6 +221,18 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
                 <BarChart3 className={iconCls} strokeWidth={1.75} />
                 <span className={labelCls}>Relatórios</span>
               </NavLink>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDrawerOpen(false);
+                  handleOpenFeedback('drawer');
+                }}
+                className={navItem(false)}
+              >
+                <MessageCircle className={iconCls} strokeWidth={1.75} />
+                <span className={labelCls}>Feedback</span>
+              </button>
 
               {showBackButton && (
                 <button onClick={() => { setDrawerOpen(false); navigate(-1); }} className={navItem(false)}>
