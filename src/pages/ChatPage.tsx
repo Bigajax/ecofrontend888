@@ -398,10 +398,13 @@ const ChatPage: React.FC = () => {
   return (
     <div
       className={clsx(
-        'chat-page relative flex min-h-[calc(100svh-var(--eco-topbar-h,56px))] w-full flex-1 flex-col bg-white',
+        'chat-page relative flex h-dvh min-h-[calc(100svh-var(--eco-topbar-h,56px))] w-full flex-1 flex-col bg-white',
         { 'keyboard-open': isKeyboardOpen },
       )}
-      style={{ minHeight: 'calc(100dvh - var(--eco-topbar-h, 56px))' }}
+      style={{
+        minHeight: 'calc(100dvh - var(--eco-topbar-h, 56px))',
+        height: 'calc(100dvh - var(--eco-topbar-h, 56px))',
+      }}
     >
       {/* SCROLLER */}
       <div
@@ -417,6 +420,7 @@ const ChatPage: React.FC = () => {
           touchAction: 'pan-y',
           paddingBottom: `${scrollBottomPadding}px`,
           scrollPaddingBottom: `${scrollBottomPadding}px`,
+          overscrollBehavior: 'contain',
         }}
       >
         <div className="w-full mx-auto max-w-[800px]">
