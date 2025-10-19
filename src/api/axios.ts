@@ -18,16 +18,16 @@ api.interceptors.request.use((config) => {
   const token = hasWindow ? window.localStorage.getItem(AUTH_TOKEN_KEY) || "" : "";
   const isLogged = Boolean(token);
 
+  config.withCredentials = false;
+
   if (isLogged) {
     headers["Authorization"] = `Bearer ${token}`;
     delete headers["X-Guest-Id"];
     delete headers["x-guest-id"];
-    config.withCredentials = true;
   } else {
     headers["X-Guest-Id"] = getOrCreateGuestId();
     delete headers["Authorization"];
     delete headers["authorization"];
-    config.withCredentials = false;
   }
 
   return config;
