@@ -1,99 +1,129 @@
-import { useEffect, useRef } from 'react';
+import { MutableRefObject, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 
-type Opts = { container: HTMLElement | null; inputBar: HTMLElement | null; extra?: number };
+type UseKeyboardInsetsOptions = {
+  /**
+   * Ref for the composer wrapper so we can measure height changes when the
+   * textarea grows/shrinks.
+   */
+  inputRef?: MutableRefObject<HTMLElement | null>;
+};
 
-/**
- * Ajusta o padding-bottom do scroller somando teclado + altura do input.
- * Quando o teclado está FECHADO, usa apenas um baseMin (baixo) para evitar vãos.
- * Inclui throttle e corrige 100vh no iOS via --vh.
- */
-export function useKeyboardInsets({ container, inputBar, extra = 8 }: Opts) {
-  const applyRef = useRef<() => void>(() => {});
-  const rafRef = useRef<number | null>(null);
-  const lastRunRef = useRef(0);
+type KeyboardInsets = {
+  isKeyboardOpen: boolean;
+  safeAreaBottom: number;
+  keyboardHeight: number;
+  inputHeight: number;
+  /** Total bottom padding to apply to the scroll area. */
+  contentInset: number;
+};
 
-  useEffect(() => {
-    if (!container || !inputBar) return;
+const SAFARI_KEYBOARD_THRESHOLD = 60;
 
-    const root = document.documentElement;
+const readSafeAreaBottom = () => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return 0;
+  }
 
-    const setVHVar = () => {
-      root.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
-    };
-    setVHVar();
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom');
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
-    const applyInset = () => {
-      if (!container || !inputBar) return;
+export function useKeyboardInsets(options: UseKeyboardInsetsOptions = {}): KeyboardInsets {
+  const { inputRef } = options;
+  const [safeAreaBottom, setSafeAreaBottom] = useState<number>(() => readSafeAreaBottom());
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [inputHeight, setInputHeight] = useState(0);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
-      const vv = (window as any).visualViewport;
-      const inputH = inputBar.getBoundingClientRect().height || 0;
+  useLayoutEffect(() => {
+    if (!inputRef?.current) return;
+    const el = inputRef.current;
 
-      let keyboard = 0;
-      if (vv) {
-        keyboard = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      }
-
-      // Quando teclado fechado, mantenha compacto (sem “vão”)
-      const baseMin = inputH + Math.max(extra, 8);
-
-      const inset = keyboard > 4
-        ? keyboard + inputH + extra
-        : baseMin;
-
-      container.style.paddingBottom = `${inset}px`;
-      root.style.setProperty('--inset-bottom', `${inset}px`);
-
-      // rola pro fim de forma suave (+1px evita falso "já no fim")
-      Promise.resolve().then(() => {
-        setTimeout(() => {
-          container.scrollTo({ top: container.scrollHeight + 1, behavior: 'smooth' });
-        }, 10);
-      });
-
-      document.body.classList.toggle('keyboard-open', keyboard > 4);
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      const nextHeight = Math.round(rect.height);
+      setInputHeight((prev) => (prev === nextHeight ? prev : nextHeight));
     };
 
-    // throttle mais suave para iOS (80ms)
-    const throttled = () => {
-      const now = performance.now();
-      if (now - lastRunRef.current < 80) {
-        if (rafRef.current) cancelAnimationFrame(rafRef.current);
-        rafRef.current = requestAnimationFrame(applyInset);
-        return;
-      }
-      lastRunRef.current = now;
-      applyInset();
-    };
+    measure();
 
-    applyRef.current = applyInset;
-
-    const vv = (window as any).visualViewport;
-    window.addEventListener('resize', setVHVar);
-    window.addEventListener('orientationchange', setVHVar);
-    if (vv) {
-      vv.addEventListener('resize', throttled);
-      vv.addEventListener('scroll', throttled);
-    } else {
-      window.addEventListener('resize', throttled);
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
     }
 
-    applyInset();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [inputRef]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleResize = () => {
+      setSafeAreaBottom(readSafeAreaBottom());
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const vv = window.visualViewport;
+    if (!vv) {
+      setKeyboardHeight(0);
+      setIsKeyboardOpen(false);
+      return;
+    }
+
+    let raf = 0;
+
+    const measure = () => {
+      raf = 0;
+      const viewportHeight = vv.height + vv.offsetTop;
+      const rawInset = Math.max(0, window.innerHeight - viewportHeight);
+      const adjustedInset = Math.max(0, rawInset - safeAreaBottom);
+      setKeyboardHeight(adjustedInset);
+      setIsKeyboardOpen(adjustedInset > SAFARI_KEYBOARD_THRESHOLD);
+    };
+
+    const schedule = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    };
+
+    vv.addEventListener('resize', schedule);
+    vv.addEventListener('scroll', schedule);
+    schedule();
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      window.removeEventListener('resize', setVHVar);
-      window.removeEventListener('orientationchange', setVHVar);
-      if (vv) {
-        vv.removeEventListener('resize', throttled);
-        vv.removeEventListener('scroll', throttled);
-      } else {
-        window.removeEventListener('resize', throttled);
-      }
+      vv.removeEventListener('resize', schedule);
+      vv.removeEventListener('scroll', schedule);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [safeAreaBottom]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.body.classList.toggle('keyboard-open', isKeyboardOpen);
+    return () => {
       document.body.classList.remove('keyboard-open');
     };
-  }, [container, inputBar, extra]);
+  }, [isKeyboardOpen]);
 
-  // função para forçar recálculo (pós-render/envio/foco)
-  const recompute = () => applyRef.current && applyRef.current();
-  return recompute;
+  const contentInset = useMemo(() => {
+    return inputHeight + keyboardHeight;
+  }, [inputHeight, keyboardHeight]);
+
+  return {
+    isKeyboardOpen,
+    safeAreaBottom,
+    keyboardHeight,
+    inputHeight,
+    contentInset,
+  };
 }
+
+export default useKeyboardInsets;

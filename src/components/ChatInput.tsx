@@ -186,10 +186,10 @@ const ChatInput: React.FC<Props> = ({
     <motion.div
       ref={wrapperRef}
       className={clsx(
-        'relative flex w-full min-h-[72px] items-center gap-3 rounded-2xl border border-black/5 bg-white px-3 py-2 shadow-sm transition-[box-shadow,border-color,transform] duration-200 ease-out md:px-4',
+        'relative flex w-full min-h-[68px] items-end gap-3 rounded-[20px] border border-black/10 bg-white/95 px-3 py-2 shadow-[0_18px_40px_rgba(11,18,32,0.06)] backdrop-blur-[14px] transition-[box-shadow,border-color] duration-200 ease-out md:px-4',
         isBusy
-          ? 'opacity-95'
-          : 'focus-within:border-[rgba(0,122,255,0.35)] focus-within:shadow-[0_26px_60px_rgba(0,122,255,0.18)]',
+          ? 'opacity-90'
+          : 'focus-within:border-[rgba(0,122,255,0.32)] focus-within:shadow-[0_22px_48px_rgba(0,122,255,0.2)]',
       )}
       initial={{ y: 40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -207,8 +207,8 @@ const ChatInput: React.FC<Props> = ({
             setShowMoreOptions((prev) => !prev);
           }}
           className={clsx(
-            'inline-flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-[color:var(--color-text-muted)] transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]',
-            isBusy ? 'cursor-not-allowed opacity-60' : 'hover:-translate-y-[1px] active:scale-[0.98]',
+            'inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/70 text-[color:var(--color-text-primary)] transition-all duration-200 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]',
+            isBusy ? 'cursor-not-allowed opacity-50' : 'hover:-translate-y-[1px] active:scale-[0.98]',
           )}
           aria-expanded={showMoreOptions}
           aria-controls="chatinput-popover"
@@ -295,7 +295,7 @@ const ChatInput: React.FC<Props> = ({
             disabled={isBusy}
             aria-disabled={isBusy}
             aria-label="Mensagem para a Eco"
-            className="w-full min-w-0 max-h-[9.5rem] min-h-[2.75rem] resize-none border-0 bg-transparent py-2 text-[16px] leading-6 text-[color:var(--color-text-primary)] placeholder:text-slate-400 placeholder:opacity-70 focus:outline-none disabled:cursor-not-allowed disabled:text-[rgba(71,85,105,0.55)]"
+            className="w-full min-w-0 max-h-[9.5rem] min-h-[2.75rem] resize-none border-0 bg-transparent py-2 text-[15px] sm:text-[16px] leading-[1.45] tracking-[-0.01em] text-[color:var(--color-text-primary)] placeholder:text-slate-400 placeholder:opacity-70 focus:outline-none disabled:cursor-not-allowed disabled:text-[rgba(71,85,105,0.55)]"
             title={isBusy ? 'Aguarde a resposta da Eco' : undefined}
           />
         </div>
@@ -313,11 +313,11 @@ const ChatInput: React.FC<Props> = ({
           }}
           disabled={isBusy}
           className={clsx(
-            'inline-flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-[color:var(--color-text-muted)] transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]',
+            'inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/70 text-[color:var(--color-text-primary)] transition-all duration-200 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]',
             isRecordingUI
               ? 'border-[rgba(0,122,255,0.45)] bg-[rgba(0,122,255,0.15)] text-[color:var(--color-accent)] animate-pulse'
               : null,
-            isBusy ? 'cursor-not-allowed opacity-60 animate-none' : 'hover:-translate-y-[1px] active:scale-[0.98]'
+            isBusy ? 'cursor-not-allowed opacity-50 animate-none' : 'hover:-translate-y-[1px] active:scale-[0.98]'
           )}
           aria-label={isRecordingUI ? 'Parar gravação' : 'Iniciar gravação'}
           title={
@@ -344,7 +344,7 @@ const ChatInput: React.FC<Props> = ({
               exit={{ opacity: 0, scale: 0.9, x: 8 }}
               transition={{ duration: 0.18 }}
               className={clsx(
-                'inline-flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-accent)] text-white shadow-[0_22px_48px_rgba(0,122,255,0.28)] transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.35)] hover:-translate-y-[2px] active:scale-[0.96]',
+                'inline-flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-accent)] text-white shadow-[0_16px_32px_rgba(0,122,255,0.2)] transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.35)] hover:-translate-y-[1px] active:scale-[0.96]',
                 isBusy || isRecordingUI || isTranscribing
                   ? 'cursor-not-allowed opacity-70 hover:translate-y-0'
                   : null,
