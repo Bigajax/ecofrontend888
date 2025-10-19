@@ -355,7 +355,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     const typingDataState = typingState === "hidden" ? undefined : typingState;
     return (
       <div
-        className={`w-full flex ${isUser ? "justify-end" : "justify-start"} min-w-0 mb-1 sm:mb-2`}
+        className={`w-full flex min-w-0 px-3 sm:px-4 md:px-6 ${isUser ? 'justify-end' : 'justify-start'} mb-1 sm:mb-2`}
         role="status"
         aria-live="polite"
         aria-label="ECO está digitando…"
@@ -390,15 +390,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const bubbleClass = isUser
     ? [
-        "message-bubble",
-        "relative inline-flex w-fit flex-col self-end items-stretch rounded-2xl",
-        "px-4 py-2 sm:px-5",
-        "max-w-[72%] md:max-w-[64%] lg:max-w-[56%]",
-        "[min-width:min(100%,20ch)] sm:[min-width:min(100%,24ch)]",
-        "bg-[#007AFF] text-white",
-        "shadow-sm shadow-black/10",
-        "whitespace-normal break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
-      ].join(" ")
+        'message-bubble',
+        'relative inline-flex w-fit max-w-[88%] flex-col items-stretch rounded-2xl px-4 py-2 text-[15px] sm:max-w-[72%] sm:px-5 sm:text-[16px]',
+        'bg-[#007AFF] text-white',
+        'shadow-sm shadow-black/10',
+        'whitespace-normal break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]',
+      ].join(' ')
     : [
         "message-bubble",
         "relative inline-flex flex-col items-stretch rounded-2xl",
@@ -460,7 +457,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   return (
     <>
       <div
-        className={`w-full flex ${isUser ? "justify-end" : "justify-start"} min-w-0 mb-1 sm:mb-2`}
+        className={`w-full flex min-w-0 px-3 sm:px-4 md:px-6 ${isUser ? 'justify-end' : 'justify-start'} mb-1 sm:mb-2`}
         role="listitem"
         aria-live="polite"
         aria-atomic="false"
