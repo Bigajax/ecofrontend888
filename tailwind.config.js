@@ -1,5 +1,13 @@
 /** @type {import('tailwindcss').Config} */
 import plugin from 'tailwindcss/plugin'
+import tokens from './tokens.json' assert { type: 'json' }
+
+const glassStroke = tokens.stroke.glass
+const glassBackground = tokens.colors.bg.surface
+const glassBlur = tokens.blur.glass
+const glassBlurStrong = tokens.blur.glassStrong
+const glassShadow = tokens.shadows.glass
+const floatingShadow = tokens.shadows.floating
 
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
@@ -15,28 +23,38 @@ export default {
         ],
       },
 
-      /* Sua paleta azul mantida */
       colors: {
-        blue: {
-          50:  '#f0f7ff',
-          100: '#e0effe',
-          200: '#bae1fd',
-          300: '#7dcefc',
-          400: '#38b7f8',
-          500: '#0e9de9',
-          600: '#0280c7',
-          700: '#0267a1',
-          800: '#065786',
-          900: '#0a4970',
-        },
+        accent: tokens.colors.accent,
+        success: tokens.colors.success,
+        warn: tokens.colors.warn,
+        danger: tokens.colors.danger,
+        'bg-base': tokens.colors.bg.base,
+        'glass-surface': glassBackground,
+        'text-primary': tokens.colors.text.primary,
+        'text-muted': tokens.colors.text.muted,
       },
 
-      /* Gradientes de fundo “Visa vibe” (opcional de usar) */
       backgroundImage: {
-        'eco-vibe':
-          'radial-gradient(1200px_600px_at_20%_-10%,#E9E8FF,transparent_55%),' +
-          'radial-gradient(900px_600px_at_85%_-5%,#FFE7E1,transparent_60%),' +
-          'linear-gradient(120deg,#EEF3FF_0%,#FFF8F3_70%)',
+        'orb-surface':
+          'radial-gradient(680px_560px_at_16%_-12%,rgba(0,122,255,0.06),transparent_58%),' +
+          'radial-gradient(540px_420px_at_88%_-6%,rgba(168,85,247,0.045),transparent_62%),' +
+          'radial-gradient(720px_620px_at_50%_120%,rgba(14,165,233,0.035),transparent_70%)',
+      },
+
+      backdropBlur: {
+        glass: glassBlur,
+        'glass-strong': glassBlurStrong,
+      },
+
+      borderRadius: {
+        xl: tokens.radius.xl,
+        '2xl': tokens.radius['2xl'],
+      },
+
+      boxShadow: {
+        glass: glassShadow,
+        floating: floatingShadow,
+        'accent-glow': '0 0 0 6px rgba(0, 122, 255, 0.15)',
       },
 
       /* Animações já existentes */
@@ -79,27 +97,33 @@ export default {
     },
   },
 
-  /* Utilitários prontos de vidro */
   plugins: [
     plugin(function ({ addUtilities }) {
       addUtilities({
-        /* cartão de vidro forte (para sidebar/topbar/cards principais) */
-        '.glass': {
-          'background-color': 'rgba(255,255,255,0.10)',
-          'backdrop-filter': 'blur(24px)',
-          '-webkit-backdrop-filter': 'blur(24px)',
-          'border': '1px solid rgba(255,255,255,0.30)',
-          'box-shadow':
-            '0 10px 30px rgba(16,24,40,0.10), inset 0 1px 0 rgba(255,255,255,0.35)',
+        '.glass-shell': {
+          'background': glassBackground,
+          'border': glassStroke,
+          'backdrop-filter': `blur(${glassBlur})`,
+          '-webkit-backdrop-filter': `blur(${glassBlur})`,
+          'box-shadow': glassShadow,
+          'position': 'relative',
+          'overflow': 'hidden',
         },
-        /* vidro suave (para botões/chips) */
-        '.glass-soft': {
-          'background-color': 'rgba(255,255,255,0.12)',
-          'backdrop-filter': 'blur(18px)',
-          '-webkit-backdrop-filter': 'blur(18px)',
-          'border': '1px solid rgba(255,255,255,0.25)',
-          'box-shadow':
-            '0 6px 20px rgba(16,24,40,0.08), inset 0 1px 0 rgba(255,255,255,0.30)',
+        '.glass-shell::before': {
+          'content': '""',
+          'position': 'absolute',
+          'inset': '0',
+          'border-radius': 'inherit',
+          'background': 'linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0))',
+          'opacity': '0.75',
+          'pointer-events': 'none',
+        },
+        '.glass-shell-strong': {
+          'background': 'rgba(255, 255, 255, 0.75)',
+          'border': glassStroke,
+          'backdrop-filter': `blur(${glassBlurStrong})`,
+          '-webkit-backdrop-filter': `blur(${glassBlurStrong})`,
+          'box-shadow': floatingShadow,
         },
       })
     }),

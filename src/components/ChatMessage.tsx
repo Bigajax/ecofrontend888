@@ -383,35 +383,25 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const bubbleClass = isUser
     ? [
-        "message-bubble",
-        "relative",
-        "rounded-3xl",
-        "px-5 py-3.5 sm:px-6 sm:py-4",
-        "w-fit min-w-[10ch] sm:min-w-[12ch]",
-        "max-w-[min(92vw,68ch+2rem)]",
-        "break-words",
-        "bg-[#0A7AFF]",
-        "bg-[linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.08))]",
-        "text-white",
-        "shadow-[0_2px_10px_rgba(10,122,255,.20)]",
-        "ring-1 ring-inset ring-white/15 hover:ring-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35",
-        "transition-shadow transition-transform transition-colors duration-200 ease-out",
-        "overflow-hidden",
-      ].join(" ")
+        'message-bubble',
+        'relative rounded-[28px] backdrop-blur-xl',
+        'px-5 py-3.5 sm:px-6 sm:py-4',
+        'w-fit min-w-[10ch] sm:min-w-[12ch] max-w-[min(92vw,68ch+2rem)]',
+        'break-words overflow-hidden',
+        'border border-[color:var(--bubble-border)]',
+        'bg-[color:var(--bubble-user-bg)] text-[color:var(--bubble-user-text)]',
+        'shadow-[0_18px_40px_rgba(15,23,42,0.12)] transition duration-200 ease-out hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.18)]',
+      ].join(' ')
     : [
-        "message-bubble",
-        "relative",
-        "rounded-3xl",
-        "border border-zinc-200/60",
-        "bg-white/80 backdrop-blur",
-        "shadow-[0_1px_6px_rgba(0,0,0,0.03)]",
-        "px-5 py-4 sm:px-6 sm:py-4",
-        "w-fit min-w-[10ch] sm:min-w-[12ch]",
-        "max-w-[min(92vw,68ch+2rem)]",
-        "break-words",
-        "transition-transform duration-200 ease-out",
-        "overflow-hidden",
-      ].join(" ");
+        'message-bubble',
+        'relative rounded-[28px] backdrop-blur-xl',
+        'px-5 py-4 sm:px-6 sm:py-4',
+        'w-fit min-w-[10ch] sm:min-w-[12ch] max-w-[min(92vw,68ch+2rem)]',
+        'break-words overflow-hidden',
+        'border border-[rgba(0,122,255,0.18)]',
+        'bg-[color:var(--bubble-eco-bg)] text-[color:var(--bubble-eco-text)]',
+        'shadow-[0_18px_40px_rgba(2,6,23,0.12)] transition duration-200 ease-out hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.2)]',
+      ].join(' ');
 
   const processedMarkdown = React.useMemo(() => {
     if (!hasMarkdownText) return displayText;
