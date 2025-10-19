@@ -409,11 +409,10 @@ const ChatPage: React.FC = () => {
         onScroll={handleScroll}
         role="feed"
         aria-busy={isWaitingForEco || isSendingToEco}
-        className="chat-scroller flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-10 [scrollbar-gutter:stable]"
+        className="chat-scroller flex-1 min-h-0 overflow-y-auto scroll-smooth overscroll-y-contain px-4 sm:px-6 lg:px-10 [scrollbar-gutter:stable]"
         style={{
           paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
           WebkitOverflowScrolling: 'touch',
-          overscrollBehaviorY: 'contain',
           scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
           touchAction: 'pan-y',
           paddingBottom: `${scrollBottomPadding}px`,
