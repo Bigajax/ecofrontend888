@@ -391,14 +391,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const bubbleClass = isUser
     ? [
         "message-bubble",
-        "relative inline-flex flex-col self-end items-stretch rounded-2xl",
-        "px-4 py-2 sm:px-5 sm:py-2.5",
-        "max-w-[70%]",
-        "min-w-0",
-        "min-w-fit md:min-w-[44ch]",
+        "relative inline-flex w-fit flex-col self-end items-stretch rounded-2xl",
+        "px-4 py-2 sm:px-5",
+        "max-w-[72%] md:max-w-[64%] lg:max-w-[56%]",
+        "[min-width:min(100%,20ch)] sm:[min-width:min(100%,24ch)]",
         "bg-[#007AFF] text-white",
         "shadow-sm shadow-black/10",
-        "whitespace-normal break-normal [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
+        "whitespace-normal break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
       ].join(" ")
     : [
         "message-bubble",
