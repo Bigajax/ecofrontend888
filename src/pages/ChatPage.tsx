@@ -35,11 +35,24 @@ import { getSessionId } from '../utils/identity';
 import { useGuestGate } from '../hooks/useGuestGate';
 import { useMessageFeedbackContext } from '../hooks/useMessageFeedbackContext';
 import { useAdminCommands } from '../hooks/useAdminCommands';
+import { sendPassiveSignal } from '../api/passiveSignals';
 
 const NETWORK_ERROR_MESSAGE =
   'Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.';
 const CORS_ERROR_MESSAGE =
   'O servidor recusou a origem. Atualize e tente novamente.';
+
+const BEHAVIOR_BURST_WINDOW_MS = 1500;
+const BEHAVIOR_BURST_DELTA = 6;
+const BEHAVIOR_EDIT_DELTA = 6;
+const FAST_FOLLOWUP_WINDOW_MS = 15_000;
+const BEHAVIOR_HINT_FALLBACK_MS = 12_000;
+
+type BehaviorHintMetrics = {
+  typing_bursts: number;
+  message_edits: number;
+  fast_followup: number;
+};
 
 const ChatPage: React.FC = () => {
   const { messages, addMessage, setMessages } = useChat();
@@ -56,6 +69,102 @@ const ChatPage: React.FC = () => {
   const [isComposerSending, setIsComposerSending] = useState(false);
   const [lastAttempt, setLastAttempt] = useState<{ text: string; hint?: string } | null>(null);
   const ecoActivity = useEcoActivity();
+
+  const behaviorTrackerRef = useRef({
+    lastLength: 0,
+    lastChangeAt: 0,
+    bursts: 0,
+    edits: 0,
+  });
+  const pendingBehaviorHintRef = useRef<{
+    metrics: BehaviorHintMetrics;
+    timeoutId: ReturnType<typeof setTimeout> | null;
+  } | null>(null);
+  const lastMessageSentAtRef = useRef<number | null>(null);
+  const lastBehaviorInteractionRef = useRef<string | null>(null);
+
+  const flushBehaviorHint = useCallback(
+    (interactionId?: string | null) => {
+      const pending = pendingBehaviorHintRef.current;
+      if (!pending) return;
+      pendingBehaviorHintRef.current = null;
+      if (pending.timeoutId) {
+        clearTimeout(pending.timeoutId);
+      }
+
+      const meta = pending.metrics;
+      if (
+        meta.typing_bursts === 0 &&
+        meta.message_edits === 0 &&
+        meta.fast_followup === 0
+      ) {
+        lastBehaviorInteractionRef.current = interactionId ?? null;
+        return;
+      }
+
+      void sendPassiveSignal({
+        signal: 'behavior_hint',
+        sessionId: sessaoId,
+        interactionId: interactionId ?? undefined,
+        meta,
+      });
+      lastBehaviorInteractionRef.current = interactionId ?? null;
+    },
+    [sessaoId],
+  );
+
+  const scheduleBehaviorHint = useCallback(
+    (metrics: BehaviorHintMetrics) => {
+      if (pendingBehaviorHintRef.current) {
+        flushBehaviorHint(undefined);
+      }
+
+      const timeoutId =
+        typeof window !== 'undefined'
+          ? window.setTimeout(() => {
+              flushBehaviorHint(undefined);
+            }, BEHAVIOR_HINT_FALLBACK_MS)
+          : null;
+
+      pendingBehaviorHintRef.current = { metrics, timeoutId };
+      lastBehaviorInteractionRef.current = null;
+    },
+    [flushBehaviorHint],
+  );
+
+  const finalizeBehaviorMetrics = useCallback(() => {
+    const tracker = behaviorTrackerRef.current;
+    const now = Date.now();
+    const fastFollowup =
+      lastMessageSentAtRef.current &&
+      now - lastMessageSentAtRef.current <= FAST_FOLLOWUP_WINDOW_MS
+        ? 1
+        : 0;
+
+    const metrics: BehaviorHintMetrics = {
+      typing_bursts: tracker.bursts,
+      message_edits: tracker.edits,
+      fast_followup: fastFollowup,
+    };
+
+    behaviorTrackerRef.current = {
+      lastLength: 0,
+      lastChangeAt: now,
+      bursts: 0,
+      edits: 0,
+    };
+    lastMessageSentAtRef.current = now;
+
+    if (
+      metrics.typing_bursts === 0 &&
+      metrics.message_edits === 0 &&
+      metrics.fast_followup === 0
+    ) {
+      return;
+    }
+
+    scheduleBehaviorHint(metrics);
+  }, [scheduleBehaviorHint]);
 
   useEffect(() => {
     if (!user) return;
@@ -97,10 +206,58 @@ const ChatPage: React.FC = () => {
 
   const baseScrollPadding = 112;
 
-  const { showQuick, hideQuickSuggestions, handleTextChange } = useQuickSuggestionsVisibility(messages);
+  const { showQuick, hideQuickSuggestions, handleTextChange } =
+    useQuickSuggestionsVisibility(messages);
+
+  const handleComposerTextChange = useCallback(
+    (text: string) => {
+      const now = Date.now();
+      const length = typeof text === 'string' ? text.length : 0;
+      const tracker = behaviorTrackerRef.current;
+      const delta = length - tracker.lastLength;
+
+      if (delta > 0) {
+        if (
+          delta >= BEHAVIOR_BURST_DELTA &&
+          now - tracker.lastChangeAt <= BEHAVIOR_BURST_WINDOW_MS
+        ) {
+          tracker.bursts = Math.min(tracker.bursts + 1, 10);
+        }
+      } else if (delta < 0) {
+        if (Math.abs(delta) >= BEHAVIOR_EDIT_DELTA) {
+          tracker.edits = Math.min(tracker.edits + 1, 10);
+        }
+      }
+
+      tracker.lastChangeAt = now;
+      tracker.lastLength = length;
+      handleTextChange(text);
+    },
+    [handleTextChange],
+  );
 
   const { showFeedback, lastEcoInfo, handleFeedbackSubmitted } = useFeedbackPrompt(messages);
   const lastPromptFeedbackContext = useMessageFeedbackContext(lastEcoInfo?.msg);
+
+  useEffect(() => {
+    const interactionId = lastPromptFeedbackContext?.interactionId;
+    if (!interactionId) return;
+    if (
+      pendingBehaviorHintRef.current &&
+      lastBehaviorInteractionRef.current !== interactionId
+    ) {
+      flushBehaviorHint(interactionId);
+    }
+  }, [flushBehaviorHint, lastPromptFeedbackContext?.interactionId]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingBehaviorHintRef.current?.timeoutId) {
+        clearTimeout(pendingBehaviorHintRef.current.timeoutId);
+      }
+      pendingBehaviorHintRef.current = null;
+    };
+  }, []);
 
   const { handleSendMessage: streamSendMessage, erroApi, pending } = useEcoStream({
     messages,
@@ -146,12 +303,13 @@ const ChatPage: React.FC = () => {
       setLastAttempt({ text: trimmed, hint: systemHint });
       try {
         await streamAndPersist(trimmed, systemHint);
+        finalizeBehaviorMetrics();
         setLastAttempt(null);
       } finally {
         setIsComposerSending(false);
       }
     },
-    [isComposerSending, pending, streamAndPersist],
+    [finalizeBehaviorMetrics, isComposerSending, pending, streamAndPersist],
   );
 
   useEffect(() => {
@@ -547,7 +705,7 @@ const ChatPage: React.FC = () => {
                 ? 'Crie sua conta para continuar…'
                 : undefined
             }
-            onTextChange={handleTextChange}
+            onTextChange={handleComposerTextChange}
             isSending={composerPending}
           />
           <LoginGateModal
