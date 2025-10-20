@@ -770,22 +770,24 @@ export const parseNonStreamResponse = async (response: Response): Promise<EcoStr
       ? parsedPayload
       : normalizeAskEcoResponse(parsedPayload as AskEcoResponse);
 
+  const text = (normalizedText || "").trim();
+  const isObjectPayload = typeof parsedPayload === "object" && parsedPayload !== null;
+
   return {
-    text: (normalizedText || "").trim(),
-    metadata:
-      typeof parsedPayload === "object" && parsedPayload
-        ? (parsedPayload.metadata ?? parsedPayload.response ?? undefined)
-        : undefined,
-    done:
-      typeof parsedPayload === "object" && parsedPayload
-        ? parsedPayload.done ?? parsedPayload.response ?? undefined
-        : undefined,
-    primeiraMemoriaSignificativa:
-      typeof parsedPayload === "object" && parsedPayload
-        ? Boolean(
-            parsedPayload.primeiraMemoriaSignificativa ||
-              (parsedPayload as Record<string, unknown>).primeira
-          )
-        : false,
+    text,
+    metadata: isObjectPayload
+      ? (parsedPayload as any).metadata ?? (parsedPayload as any).response ?? undefined
+      : undefined,
+    done: isObjectPayload
+      ? parsedPayload
+      : text
+      ? { response: text }
+      : undefined,
+    primeiraMemoriaSignificativa: isObjectPayload
+      ? Boolean(
+          (parsedPayload as any).primeiraMemoriaSignificativa ||
+            (parsedPayload as Record<string, unknown>).primeira
+        )
+      : false,
   };
 };

@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-import { enviarMensagemParaEco, EcoEventHandlers, EcoApiError, EcoClientEvent } from '../api/ecoApi';
+import { enviarMensagemParaEco, EcoEventHandlers, EcoApiError, EcoSseEvent } from '../api/ecoApi';
 import { MissingUserIdError } from '../api/errors';
 import { buscarUltimasMemoriasComTags, buscarMemoriasSemelhantesV2 } from '../api/memoriaApi';
 import { salvarMensagem } from '../api/mensagem';
@@ -852,300 +852,272 @@ export const useEcoStream = ({
           activity?.onError(message);
         };
 
-        const canonicalizeEventType = (raw: unknown) => {
-          if (raw === null || raw === undefined) return '';
-          const base = String(raw).trim();
-          if (/^\[object\s/i.test(base)) return '';
-          if (!base) return '';
-          return base
-            .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-            .replace(/[\s.\-]+/g, "_")
-            .toLowerCase();
-        };
-
-        const extractEventText = (event: EcoClientEvent, fallback?: string) => {
+        const extractEventText = (event: EcoSseEvent, fallback?: string) => {
+          const payload = event?.payload as Record<string, unknown> | undefined;
           const candidates = [
-            event.delta,
-            event.text,
-            (event as any)?.content,
+            event?.text,
+            payload?.delta,
+            payload?.text,
+            payload?.content,
             fallback,
-            event.payload && (event.payload as any)?.delta,
-            event.payload && (event.payload as any)?.text,
-            event.payload && (event.payload as any)?.content,
+            payload?.response,
           ];
           for (const candidate of candidates) {
             const str = flattenToString(candidate);
             if (str.length > 0) return str;
           }
+          if (payload !== undefined) {
+            const raw = flattenToString(payload);
+            if (raw.length > 0) return raw;
+          }
           return '';
         };
 
-        const handleStreamEvent = (rawEvent: EcoClientEvent) => {
-          const candidateType =
-            rawEvent?.type ??
-            (rawEvent as any)?.event ??
-            (rawEvent as any)?.name ??
-            (rawEvent.payload as any)?.type ??
-            (rawEvent.payload as any)?.event;
-          const candidateName =
-            (rawEvent as any)?.name ??
-            (rawEvent.payload as any)?.name ??
-            (rawEvent.payload as any)?.event;
-          const normalizedType =
-            canonicalizeEventType(candidateType) || canonicalizeEventType(candidateName);
-          const eventChannel = canonicalizeEventType(
-            (rawEvent as any)?.channel ?? (rawEvent.payload as any)?.channel,
-          );
-          const fromControlChannel = eventChannel === 'control';
-          updateInteractionId(rawEvent);
-          if (rawEvent?.payload) updateInteractionId(rawEvent.payload);
-          if (rawEvent?.metadata) updateInteractionId(rawEvent.metadata);
-          if (isDev) {
-            console.debug("[useEcoStream] event", normalizedType || rawEvent?.type, rawEvent);
-          }
-          switch (normalizedType) {
-            case 'prompt_ready': {
-              if (!promptReadySignalSent) {
-                dispatchSignal('prompt_ready');
-                promptReadySignalSent = true;
-              }
-              if (promptReadyAt === undefined) {
-                promptReadyAt = getNow();
-              }
-              activity?.onPromptReady();
-              return;
-            }
-            case 'latency': {
-              if (typeof rawEvent.latencyMs === 'number') {
-                latencyFromStream = rawEvent.latencyMs;
-                ensureEcoMessage();
-                patchEcoMessage({ latencyMs: rawEvent.latencyMs });
-              }
-              return;
-            }
-            case 'first_token': {
-              if (!promptReadySignalSent) {
-                dispatchSignal('prompt_ready');
-                promptReadySignalSent = true;
-              }
-              if (promptReadyAt === undefined) {
-                promptReadyAt = getNow();
-              }
-              if (!firstTokenSignalSent) {
-                dispatchSignal('first_token');
-                firstTokenSignalSent = true;
-              }
-              if (firstTokenAt === undefined) {
-                firstTokenAt = getNow();
-              }
-              clearPlaceholder();
-              ensureEcoMessage();
-              patchEcoMessage({ streaming: true });
-              const texto = extractEventText(rawEvent);
-              if (texto) {
-                appendMessage(texto);
-              }
-              activity?.onToken();
-              firstContentReceived = aggregatedEcoText.trim().length > 0;
-              syncScroll();
-              return;
-            }
-            case 'chunk':
-            case 'chunk_delta':
-            case 'delta':
-            case 'message_delta': {
-              if (!promptReadySignalSent) {
-                dispatchSignal('prompt_ready');
-                promptReadySignalSent = true;
-              }
-              if (promptReadyAt === undefined) {
-                promptReadyAt = getNow();
-              }
-              if (!firstTokenSignalSent) {
-                dispatchSignal('first_token');
-                firstTokenSignalSent = true;
-              }
-              const chunkText = extractEventText(rawEvent);
-              if (!chunkText) return;
-              if (aggregatedEcoText.length === 0) {
-                clearPlaceholder();
-              }
-              appendMessage(chunkText);
-              activity?.onToken();
-              if (!firstContentReceived && aggregatedEcoText.trim().length > 0) {
-                firstContentReceived = true;
-              }
-              syncScroll();
-              return;
-            }
-            case 'meta_pending': {
-              const meta = rawEvent.metadata ?? rawEvent.payload;
-              pendingMetadata = meta;
-              ensureEcoMessage();
-              patchEcoMessage({ metadata: meta });
-              return;
-            }
-            case 'meta': {
-              const meta = rawEvent.metadata ?? rawEvent.payload;
-              latestMetadata = meta;
-              ensureEcoMessage();
-              patchEcoMessage({ metadata: meta });
-              trackMemoryIfSignificant(meta);
-              return;
-            }
-            case 'memory_saved': {
-              const memoria =
-                rawEvent.memory ??
-                (rawEvent.payload as any)?.memory ??
-                (rawEvent.payload as any)?.memoria ??
-                rawEvent.payload;
-              memoryFromStream = memoria;
-              if (
-                (rawEvent.payload as any)?.primeiraMemoriaSignificativa ||
-                (rawEvent.payload as any)?.primeira
-              ) {
-                primeiraMemoriaFlag = true;
-              }
-              ensureEcoMessage();
-              patchEcoMessage({ memory: memoria });
-              trackMemoryIfSignificant(memoria);
-              return;
-            }
-            case 'done': {
-              if (!promptReadySignalSent) {
-                dispatchSignal('prompt_ready');
-                promptReadySignalSent = true;
-              }
-              if (promptReadyAt === undefined) {
-                promptReadyAt = getNow();
-              }
-              if (!firstTokenSignalSent) {
-                dispatchSignal('first_token');
-                firstTokenSignalSent = true;
-              }
-              if (!doneSignalSent) {
-                dispatchSignal('done');
-                doneSignalSent = true;
-              }
-              if (doneAt === undefined) {
-                doneAt = getNow();
-              }
-              donePayload = rawEvent.payload;
-              markStreamDone();
-              const meta =
-                rawEvent.metadata ??
-                latestMetadata ??
-                pendingMetadata ??
-                (rawEvent.payload &&
-                typeof rawEvent.payload === 'object' &&
-                (rawEvent.payload as any).response !== undefined
-                  ? (rawEvent.payload as any).response
-                  : rawEvent.payload &&
-                    typeof rawEvent.payload === 'object' &&
-                    (rawEvent.payload as any).metadata !== undefined
-                  ? (rawEvent.payload as any).metadata
-                  : undefined);
-              if (!fromControlChannel && !aggregatedEcoText.length) {
-                const doneText =
-                  extractEventText(rawEvent) ||
-                  flattenToString(
-                    (rawEvent.payload as any)?.response ??
-                      (rawEvent.payload as any)?.content ??
-                      rawEvent.payload
-                  );
-                if (doneText) {
-                  clearPlaceholder();
-                  appendMessage(doneText);
-                }
-              }
-              if (!fromControlChannel && meta !== undefined) {
-                latestMetadata = meta;
-                ensureEcoMessage();
-                patchEcoMessage({ metadata: meta, donePayload: rawEvent.payload, streaming: false });
-                trackMemoryIfSignificant(meta);
-              } else if (!fromControlChannel && rawEvent.payload !== undefined) {
-                ensureEcoMessage();
-                patchEcoMessage({ donePayload: rawEvent.payload, streaming: false });
-              } else if (fromControlChannel) {
-                finalizeMessage();
-              }
-              if (
-                (rawEvent.payload as any)?.primeiraMemoriaSignificativa ||
-                (rawEvent.payload as any)?.primeira
-              ) {
-                primeiraMemoriaFlag = true;
-              }
-              if (aggregatedEcoText.trim().length > 0) {
-                firstContentReceived = true;
-              }
-              setDigitando(false);
-              activity?.onDone();
-              syncScroll();
-              finalizeMessage();
-              const metricsExtra: Record<string, unknown> = { stage: 'on_done' };
-              if (meta !== undefined) {
-                metricsExtra.final_metadata = meta;
-              }
-              const usage =
-                (rawEvent.payload as any)?.usage ??
-                (meta && typeof meta === 'object' ? (meta as any).usage : undefined);
-              const completionTokens =
-                usage && typeof usage === 'object'
-                  ? typeof (usage as any).completion_tokens === 'number'
-                    ? (usage as any).completion_tokens
-                    : typeof (usage as any).output_tokens === 'number'
-                    ? (usage as any).output_tokens
-                    : undefined
-                  : undefined;
-              const latencyMs = Math.max(Math.round(getNow() - requestStartedAt), 0);
-              metricsExtra.persisted_id = persistedMensagemId ?? null;
-              metricsExtra.authenticated = isAuthenticated;
-              metricsExtra.latency_ms = latencyMs;
-              if (typeof completionTokens === 'number') {
-                metricsExtra.sse_tokens = completionTokens;
-              }
-              logAndSendStreamMetrics('success', metricsExtra);
-              mixpanel.track('Eco: Mensagem Concluída', {
-                mensagem_id: persistedMensagemId ?? userMsgId,
-                auth: isAuthenticated,
-                latency_ms: latencyMs,
-                sse_tokens: completionTokens ?? 0,
-                isGuest,
-                ...(isGuest ? { guestId } : {}),
-              });
-              resetEcoMessageTracking();
-              return;
-            }
-            case 'error': {
-              const messageFromEvent =
-                typeof rawEvent.message === 'string' && rawEvent.message.trim().length > 0
-                  ? rawEvent.message.trim()
-                  : 'Erro ao obter resposta da Eco.';
-              streamErrorMessage = messageFromEvent;
-              markStreamDone();
-              showStreamError(messageFromEvent);
-              resetEcoMessageTracking({
-                removeIfEmpty: aggregatedEcoText.trim().length === 0,
-              });
-              return;
-            }
-            default: {
-              if (isDev) {
-                console.debug('[useEcoStream] evento desconhecido', rawEvent);
-              }
-              return;
-            }
+        const logSseEvent = (event: EcoSseEvent) => {
+          if (!isDev) return;
+          try {
+            console.debug('[useEcoStream] event', event.type, event);
+          } catch {
+            /* noop */
           }
         };
 
+        const trackEventContext = (event: EcoSseEvent) => {
+          updateInteractionId(event);
+          if (event?.payload) updateInteractionId(event.payload);
+          if (event?.metadata) updateInteractionId(event.metadata);
+          if ((event as any)?.memory) updateInteractionId((event as any).memory);
+        };
+
+        const ensurePromptReadySignal = () => {
+          if (!promptReadySignalSent) {
+            dispatchSignal('prompt_ready');
+            promptReadySignalSent = true;
+          }
+          if (promptReadyAt === undefined) {
+            promptReadyAt = getNow();
+          }
+        };
+
+        const ensureFirstTokenSignal = () => {
+          ensurePromptReadySignal();
+          if (!firstTokenSignalSent) {
+            dispatchSignal('first_token');
+            firstTokenSignalSent = true;
+          }
+          if (firstTokenAt === undefined) {
+            firstTokenAt = getNow();
+          }
+        };
+
+        const ensureDoneSignal = () => {
+          ensureFirstTokenSignal();
+          if (!doneSignalSent) {
+            dispatchSignal('done');
+            doneSignalSent = true;
+          }
+        };
+
+        const handlePromptReadyEvent = (event: EcoSseEvent) => {
+          logSseEvent(event);
+          trackEventContext(event);
+          ensurePromptReadySignal();
+          activity?.onPromptReady();
+        };
+
+        const handleLatencyEvent = (event: EcoSseEvent) => {
+          logSseEvent(event);
+          trackEventContext(event);
+          if (typeof event.latencyMs === 'number') {
+            latencyFromStream = event.latencyMs;
+            ensureEcoMessage();
+            patchEcoMessage({ latencyMs: event.latencyMs });
+          }
+        };
+
+        const handleFirstTokenEvent = (event: EcoSseEvent) => {
+          logSseEvent(event);
+          trackEventContext(event);
+          ensureFirstTokenSignal();
+          clearPlaceholder();
+          ensureEcoMessage();
+          patchEcoMessage({ streaming: true });
+          const texto = extractEventText(event);
+          if (texto) {
+            appendMessage(texto);
+          }
+          activity?.onToken();
+          firstContentReceived = aggregatedEcoText.trim().length > 0;
+          syncScroll();
+        };
+
+        const handleChunkEvent = (event: EcoSseEvent) => {
+          logSseEvent(event);
+          trackEventContext(event);
+          ensureFirstTokenSignal();
+          const chunkText = extractEventText(event);
+          if (!chunkText) return;
+          if (aggregatedEcoText.length === 0) {
+            clearPlaceholder();
+          }
+          appendMessage(chunkText);
+          activity?.onToken();
+          if (!firstContentReceived && aggregatedEcoText.trim().length > 0) {
+            firstContentReceived = true;
+          }
+          syncScroll();
+        };
+
+        const handleMetaEvent = (event: EcoSseEvent) => {
+          logSseEvent(event);
+          trackEventContext(event);
+          const meta = event.metadata ?? event.payload;
+          if (event.type === 'meta_pending') {
+            pendingMetadata = meta;
+          } else {
+            latestMetadata = meta;
+          }
+          ensureEcoMessage();
+          patchEcoMessage({ metadata: meta });
+          if (event.type !== 'meta_pending') {
+            trackMemoryIfSignificant(meta);
+          }
+        };
+
+        const handleMemorySavedEvent = (event: EcoSseEvent) => {
+          logSseEvent(event);
+          trackEventContext(event);
+          const memoria =
+            event.memory ??
+            (event.payload as any)?.memory ??
+            (event.payload as any)?.memoria ??
+            event.payload;
+          memoryFromStream = memoria;
+          if (
+            (event.payload as any)?.primeiraMemoriaSignificativa ||
+            (event.payload as any)?.primeira
+          ) {
+            primeiraMemoriaFlag = true;
+          }
+          ensureEcoMessage();
+          patchEcoMessage({ memory: memoria });
+          trackMemoryIfSignificant(memoria);
+        };
+
+        const handleDoneEvent = (event: EcoSseEvent) => {
+          logSseEvent(event);
+          trackEventContext(event);
+          ensureDoneSignal();
+          if (doneAt === undefined) {
+            doneAt = getNow();
+          }
+          donePayload = event.payload;
+          markStreamDone();
+
+          const fromControlChannel = event.channel === 'control';
+          const meta =
+            event.metadata ??
+            latestMetadata ??
+            pendingMetadata ??
+            (event.payload &&
+            typeof event.payload === 'object' &&
+            ((event.payload as any).response !== undefined ||
+              (event.payload as any).metadata !== undefined)
+              ? (event.payload as any).response ?? (event.payload as any).metadata
+              : undefined);
+
+          if (!fromControlChannel && !aggregatedEcoText.length) {
+            const doneText =
+              extractEventText(event) ||
+              flattenToString(
+                (event.payload as any)?.response ??
+                  (event.payload as any)?.content ??
+                  event.payload,
+              );
+            if (doneText) {
+              clearPlaceholder();
+              appendMessage(doneText);
+            }
+          }
+
+          if (!fromControlChannel && meta !== undefined) {
+            latestMetadata = meta;
+            ensureEcoMessage();
+            patchEcoMessage({ metadata: meta, donePayload: event.payload, streaming: false });
+            trackMemoryIfSignificant(meta);
+          } else if (!fromControlChannel && event.payload !== undefined) {
+            ensureEcoMessage();
+            patchEcoMessage({ donePayload: event.payload, streaming: false });
+          } else if (fromControlChannel) {
+            finalizeMessage();
+          }
+
+          if (
+            (event.payload as any)?.primeiraMemoriaSignificativa ||
+            (event.payload as any)?.primeira
+          ) {
+            primeiraMemoriaFlag = true;
+          }
+          if (aggregatedEcoText.trim().length > 0) {
+            firstContentReceived = true;
+          }
+
+          setDigitando(false);
+          activity?.onDone();
+          syncScroll();
+          finalizeMessage();
+
+          const metricsExtra: Record<string, unknown> = { stage: 'on_done' };
+          if (meta !== undefined) {
+            metricsExtra.final_metadata = meta;
+          }
+          const usage =
+            (event.payload as any)?.usage ??
+            (meta && typeof meta === 'object' ? (meta as any).usage : undefined);
+          const completionTokens =
+            usage && typeof usage === 'object'
+              ? typeof (usage as any).completion_tokens === 'number'
+                ? (usage as any).completion_tokens
+                : typeof (usage as any).output_tokens === 'number'
+                ? (usage as any).output_tokens
+                : undefined
+              : undefined;
+          const latencyMs = Math.max(Math.round(getNow() - requestStartedAt), 0);
+          metricsExtra.persisted_id = persistedMensagemId ?? null;
+          metricsExtra.authenticated = isAuthenticated;
+          metricsExtra.latency_ms = latencyMs;
+          if (typeof completionTokens === 'number') {
+            metricsExtra.sse_tokens = completionTokens;
+          }
+          logAndSendStreamMetrics('success', metricsExtra);
+          mixpanel.track('Eco: Mensagem Concluída', {
+            mensagem_id: persistedMensagemId ?? userMsgId,
+            auth: isAuthenticated,
+            latency_ms: latencyMs,
+            sse_tokens: completionTokens ?? 0,
+            isGuest,
+            ...(isGuest ? { guestId } : {}),
+          });
+          resetEcoMessageTracking();
+        };
+
         const handlers: EcoEventHandlers = {
-          onEvent: handleStreamEvent,
+          onPromptReady: handlePromptReadyEvent,
+          onFirstToken: handleFirstTokenEvent,
+          onChunk: handleChunkEvent,
+          onMeta: handleMetaEvent,
+          onMemorySaved: handleMemorySavedEvent,
+          onLatency: handleLatencyEvent,
+          onDone: handleDoneEvent,
           onError: (error) => {
             if (doneAt === undefined) {
               doneAt = getNow();
             }
             setDigitando(false);
             markStreamDone();
+            if (!streamErrorMessage && typeof error?.message === 'string') {
+              streamErrorMessage = error.message;
+            }
             if (streamErrorMessage && !erroApi) {
               showStreamError(streamErrorMessage);
             }

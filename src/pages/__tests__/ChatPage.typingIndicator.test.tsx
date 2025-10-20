@@ -183,13 +183,21 @@ describe('ChatPage typing indicator', () => {
     expect(handlersRef.current).toBeDefined();
 
     act(() => {
-      handlersRef.current?.onEvent?.({ type: 'first_token', delta: '   ' } as any);
+      handlersRef.current?.onFirstToken?.({
+        type: 'first_token',
+        text: '   ',
+        payload: { delta: '   ' },
+      } as any);
     });
 
     expect(screen.getAllByTestId('typing-dots').length).toBeGreaterThan(0);
 
     act(() => {
-      handlersRef.current?.onEvent?.({ type: 'chunk', delta: 'Resposta da Eco' } as any);
+      handlersRef.current?.onChunk?.({
+        type: 'chunk',
+        text: 'Resposta da Eco',
+        payload: { delta: 'Resposta da Eco' },
+      } as any);
     });
 
     expect(screen.getAllByTestId('typing-dots').length).toBeGreaterThan(0);
@@ -199,12 +207,11 @@ describe('ChatPage typing indicator', () => {
     });
 
     await act(async () => {
-      handlersRef.current?.onEvent?.({
+      handlersRef.current?.onDone?.({
         type: 'done',
-        text: 'Resposta da Eco',
-        payload: {},
+        payload: { response: 'Resposta da Eco' },
       } as any);
-      resolveResponse?.({ text: 'Resposta da Eco' });
+      resolveResponse?.({ text: 'Resposta da Eco', done: { response: 'Resposta da Eco' } });
       await inflightPromise;
     });
 
@@ -239,24 +246,27 @@ describe('ChatPage typing indicator', () => {
     expect(handlersRef.current).toBeDefined();
 
     act(() => {
-      handlersRef.current?.onEvent?.({ type: 'latency', latencyMs: 345 } as any);
+      handlersRef.current?.onLatency?.({ type: 'latency', latencyMs: 345 } as any);
     });
 
     act(() => {
-      handlersRef.current?.onEvent?.({ type: 'prompt_ready' } as any);
+      handlersRef.current?.onPromptReady?.({ type: 'prompt_ready' } as any);
     });
 
     act(() => {
-      handlersRef.current?.onEvent?.({ type: 'first_token', delta: 'Eco responde' } as any);
+      handlersRef.current?.onFirstToken?.({
+        type: 'first_token',
+        text: 'Eco responde',
+        payload: { delta: 'Eco responde' },
+      } as any);
     });
 
     await act(async () => {
-      handlersRef.current?.onEvent?.({
+      handlersRef.current?.onDone?.({
         type: 'done',
-        text: 'Eco responde',
-        payload: {},
+        payload: { response: 'Eco responde' },
       } as any);
-      resolveResponse?.({ text: 'Eco responde' });
+      resolveResponse?.({ text: 'Eco responde', done: { response: 'Eco responde' } });
       await inflightPromise;
     });
 
