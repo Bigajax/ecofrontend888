@@ -396,7 +396,11 @@ describe("enviarMensagemParaEco", () => {
     expect(getSessionMock).toHaveBeenCalledTimes(1);
     expect(resposta.metadata).toEqual({ foo: "bar" });
     expect(resposta.primeiraMemoriaSignificativa).toBe(true);
-    expect(resposta.done).toEqual({ content: "oi" });
+    expect(resposta.done).toEqual({
+      metadata: { foo: "bar" },
+      response: { content: "oi" },
+      primeiraMemoriaSignificativa: true,
+    });
   });
 });
 

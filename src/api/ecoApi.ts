@@ -240,7 +240,11 @@ const parseNonStreamPayload = (payload: unknown): EcoStreamResult => {
     try {
       return parseNonStreamPayload(JSON.parse(trimmed));
     } catch {
-      return { text: sanitizeEcoText(trimmed).trim() };
+      const sanitized = sanitizeEcoText(trimmed).trim();
+      return {
+        text: sanitized,
+        done: sanitized ? { response: sanitized } : undefined,
+      };
     }
   }
 
@@ -252,7 +256,6 @@ const parseNonStreamPayload = (payload: unknown): EcoStreamResult => {
   const sanitizedText = sanitizeEcoText(normalizedText);
   const text = sanitizedText.trim();
   const metadata = (payload as any)?.metadata ?? (payload as any)?.response ?? undefined;
-  const done = (payload as any)?.done ?? (payload as any)?.response ?? undefined;
   const primeiraMemoriaSignificativa = Boolean(
     (payload as any)?.primeiraMemoriaSignificativa ?? (payload as any)?.primeira
   );
@@ -260,7 +263,7 @@ const parseNonStreamPayload = (payload: unknown): EcoStreamResult => {
   return {
     text,
     metadata,
-    done,
+    done: payload,
     primeiraMemoriaSignificativa,
   };
 };

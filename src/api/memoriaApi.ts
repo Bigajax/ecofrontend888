@@ -317,7 +317,7 @@ export async function buscarMemoriasPorUsuario(userId?: string): Promise<Memoria
 
 /**
  * 🧠 v2 preferencial — memórias semanticamente parecidas (suporta k/threshold/usuario_id).
- * Tenta /memorias/similares_v2 e cai para v1 se necessário.
+ * Usa apenas /api/memorias/similares_v2 exposta pelo backend (RPC `public.buscar_memorias_semanticas_v2`).
  */
 export async function buscarMemoriasSemelhantesV2(
   texto: string,
@@ -329,7 +329,7 @@ export async function buscarMemoriasSemelhantesV2(
 ): Promise<MemoriaSimilar[]> {
   try {
     if (!usuario_id) {
-      throw new MissingUserIdError('/api/similares_v2');
+      throw new MissingUserIdError('/api/memorias/similares_v2');
     }
 
     const params = new URLSearchParams();
@@ -341,55 +341,33 @@ export async function buscarMemoriasSemelhantesV2(
     params.set('threshold', String(threshold));
     params.set('usuario_id', usuario_id);
 
-    try {
-      const data = await apiFetchJson<any>(`/api/similares_v2?${params.toString()}`, {
-        method: 'GET',
-        timeoutMs: 12_000,
-      });
-      const raw = pickArray<any>(data) ?? [];
-      if (raw.length) {
-        return raw.map((r) => {
-          const n = normalizeMemoria(r);
-          const sim = normalizeSimilarity(r);
-          return {
-            id: n.id,
-            contexto: n.contexto ?? '',
-            resumo_eco: n.resumo_eco ?? '',
-            created_at: n.created_at ?? null,
-            tags: n.tags ?? [],
-            similarity: sim,
-            similaridade: sim,
-          };
-        });
-      }
-      if (isSuccessPayload(data)) return [];
-    } catch (e) {
-      if (!isFallbackStatus(e)) throw e;
-    }
+    const data = await apiFetchJson<any>(`/api/memorias/similares_v2?${params.toString()}`, {
+      method: 'GET',
+      timeoutMs: 12_000,
+    });
 
-    // v1 (compat)
-    const bodyV1 = { texto, query: texto, limite: k, limit: k };
-    const { data } = await postWithFallback('/api/memorias/similares', null, bodyV1, { timeout: 12000 });
     const raw = pickArray<any>(data) ?? [];
-    if (raw.length) {
-      return raw.map((r) => {
-        const n = normalizeMemoria(r);
-        const sim = normalizeSimilarity(r);
-        return {
-          id: n.id,
-          contexto: n.contexto ?? '',
-          resumo_eco: n.resumo_eco ?? '',
-          created_at: n.created_at ?? null,
-          tags: n.tags ?? [],
-          similarity: sim,
-          similaridade: sim,
-        };
-      });
+    if (raw.length === 0) {
+      if (isSuccessPayload(data)) return [];
+      if (import.meta.env.DEV) {
+        console.warn('[memoriaApi] Resposta inesperada em buscarMemoriasSemelhantesV2:', data);
+      }
+      return [];
     }
 
-    if (isSuccessPayload(data)) return [];
-    if (import.meta.env.DEV) console.warn('[memoriaApi] Resposta inesperada de similares:', data);
-    return [];
+    return raw.map((r) => {
+      const n = normalizeMemoria(r);
+      const sim = normalizeSimilarity(r);
+      return {
+        id: n.id,
+        contexto: n.contexto ?? '',
+        resumo_eco: n.resumo_eco ?? '',
+        created_at: n.created_at ?? null,
+        tags: n.tags ?? [],
+        similarity: sim,
+        similaridade: sim,
+      };
+    });
   } catch (err) {
     tratarErro(err, 'buscar memórias semelhantes');
   }
