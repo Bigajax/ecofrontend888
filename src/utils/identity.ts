@@ -1,4 +1,4 @@
-import { getOrCreateGuestId } from "../api/guestIdentity";
+import { ensureSessionId } from "../lib/guestId";
 
 const AUTH_TOKEN_KEY = "auth_token";
 
@@ -43,7 +43,7 @@ export function getUserIdFromStore(): string | null {
 export function getSessionId(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return getOrCreateGuestId();
+    return ensureSessionId();
   } catch {
     return null;
   }

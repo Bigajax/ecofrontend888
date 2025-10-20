@@ -1,6 +1,9 @@
 // ✅ src/api/voiceApi.ts
 
 // Base do backend (Render) — no dev usamos o origin local (proxy do Vite)
+import { buildIdentityHeaders, updateBiasHint } from "../lib/guestId";
+import { computeBiasHintFromMessages, computeBiasHintFromText } from "../utils/biasHint";
+
 const BACKEND_BASE =
   (import.meta as any).env.MODE === "development"
     ? window.location.origin
@@ -61,9 +64,16 @@ export async function gerarAudioDaMensagem(text: string, _voiceId?: string): Pro
   if (!body.text) throw new Error("Texto vazio para TTS.");
 
   // 👇 NÃO enviamos mais voice_id; o backend decide a voz
+  const biasHint = computeBiasHintFromText(body.text);
+  updateBiasHint(biasHint ?? null);
+
   const resp = await fetchWithTimeout(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "audio/mpeg" },
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "audio/mpeg",
+      ...buildIdentityHeaders({ biasHint }),
+    },
     body: JSON.stringify(body),
   });
 
@@ -106,7 +116,14 @@ export async function sendVoiceMessage(
   fd.append("mensagens", JSON.stringify(messages || []));
 
   // 👇 NÃO enviamos voice_id; o backend decide a voz
-  const resp = await fetchWithTimeout(url, { method: "POST", body: fd });
+  const biasHint = computeBiasHintFromMessages(messages as any);
+  updateBiasHint(biasHint ?? null);
+
+  const resp = await fetchWithTimeout(url, {
+    method: "POST",
+    body: fd,
+    headers: buildIdentityHeaders({ biasHint }),
+  });
 
   if (!resp.ok) await readError(resp);
 

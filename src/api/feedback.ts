@@ -1,5 +1,5 @@
 import { getSessionId } from "../utils/identity";
-import { getGuestId } from "../lib/guestId";
+import { buildIdentityHeaders, syncGuestId } from "../lib/guestId";
 
 export type FeedbackVote = "up" | "down";
 
@@ -189,9 +189,8 @@ async function performRequest(args: NormalizedFeedbackInput): Promise<SendFeedba
   const body = JSON.stringify(toBody(args));
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...buildIdentityHeaders(),
   };
-
-  headers["x-eco-guest-id"] = getGuestId();
 
   if (!args.user_id) {
     const guestId = args.session_id ?? (typeof window !== "undefined" ? getSessionId() : null);
@@ -207,6 +206,15 @@ async function performRequest(args: NormalizedFeedbackInput): Promise<SendFeedba
       credentials: "include",
       body,
     });
+
+    const serverGuestId =
+      response.headers.get("x-eco-guest-id") ??
+      response.headers.get("X-Eco-Guest-Id") ??
+      response.headers.get("x-guest-id") ??
+      response.headers.get("X-Guest-Id");
+    if (serverGuestId) {
+      syncGuestId(serverGuestId);
+    }
 
     if (response.status === 204) {
       return { ok: true, status: 204 };

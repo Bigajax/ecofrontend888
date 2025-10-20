@@ -1,5 +1,5 @@
 import { buildApiUrl } from "../constants/api";
-import { getGuestId } from "../lib/guestId";
+import { buildIdentityHeaders } from "../lib/guestId";
 
 export type PassiveSignalName =
   | "view"
@@ -47,7 +47,7 @@ export async function sendPassiveSignal({
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "x-eco-guest-id": getGuestId(),
+    ...buildIdentityHeaders(),
   };
 
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;

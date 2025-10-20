@@ -1,19 +1,7 @@
 import { buildApiUrl } from "../constants/api";
+import { buildIdentityHeaders } from "../lib/guestId";
 
 const ADMIN_TIMEOUT_MS = 3000;
-
-const readGuestId = () => {
-  if (typeof window === "undefined") return "";
-  try {
-    return (
-      window.localStorage.getItem("guest_id") ??
-      window.localStorage.getItem("eco_guest_id") ??
-      ""
-    );
-  } catch {
-    return "";
-  }
-};
 
 type HttpMethod = "POST" | "PUT" | "PATCH";
 
@@ -32,12 +20,8 @@ const sendAdminCommand = async (
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...buildIdentityHeaders(),
   };
-
-  const guestId = readGuestId();
-  if (guestId) {
-    headers["X-Guest-Id"] = guestId;
-  }
 
   const controller =
     typeof AbortController !== "undefined" ? new AbortController() : null;

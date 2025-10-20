@@ -336,11 +336,12 @@ describe("enviarMensagemParaEco", () => {
     const [, init] = fetchMock.mock.calls.at(-1) ?? [];
     const headers = (init?.headers ?? {}) as Record<string, string>;
     expect(headers).toMatchObject({
-      "X-Guest-Id": "guest-123",
+      "X-Eco-Guest-Id": "guest-123",
       Accept: "text/event-stream",
       "Content-Type": "application/json",
       "X-Stream-Id": "uuid-mock",
     });
+    expect(headers["X-Eco-Session-Id"]).toEqual(expect.any(String));
     expect(headers.Authorization).toBeUndefined();
     expect(init?.credentials).toBe("omit");
     const body = init?.body ? JSON.parse(init.body as string) : {};
@@ -384,11 +385,12 @@ describe("enviarMensagemParaEco", () => {
     });
     expect(body.isGuest).toBeUndefined();
     expect(config).toEqual({
-      headers: {
+      headers: expect.objectContaining({
         "Content-Type": "application/json",
         Authorization: "Bearer token-autenticado",
-        "x-eco-guest-id": "guest_uuid-mock",
-      },
+        "X-Eco-Guest-Id": expect.any(String),
+        "X-Eco-Session-Id": expect.any(String),
+      }),
       responseType: "json",
     });
     expect(getSessionMock).toHaveBeenCalledTimes(1);

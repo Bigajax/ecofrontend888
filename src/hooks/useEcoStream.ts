@@ -13,7 +13,7 @@ import { sanitizeEcoText } from '../utils/sanitizeEcoText';
 import type { Message as ChatMessageType } from '../contexts/ChatContext';
 import mixpanel from '../lib/mixpanel';
 import { supabase } from '../lib/supabaseClient';
-import { getGuestId } from '../lib/guestId';
+import { buildIdentityHeaders } from '../lib/guestId';
 import { resolveApiUrl } from '../constants/api';
 import type { EcoActivityControls } from './useEcoActivity';
 import {
@@ -388,7 +388,7 @@ export const useEcoStream = ({
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-eco-guest-id': getGuestId(),
+              ...buildIdentityHeaders(),
             },
             body: JSON.stringify(payload),
             credentials: 'omit',

@@ -1,5 +1,5 @@
 import { API_BASE_URL, buildApiUrl } from "../constants/api";
-import { getOrCreateGuestId } from "./guestIdentity";
+import { buildIdentityHeaders, syncGuestId } from "../lib/guestId";
 
 const AUTH_TOKEN_KEY = "auth_token";
 
@@ -120,7 +120,7 @@ const computeUrl = (input: string, baseUrl?: string) => {
   return buildApiUrl(input);
 };
 
-const prepareHeaders = (method: string, headersInit?: HeadersInit, hasToken = false) => {
+const prepareHeaders = (method: string, headersInit?: HeadersInit) => {
   const headers = new Headers(headersInit);
   headers.delete("Content-Type");
   headers.delete("content-type");
@@ -128,27 +128,13 @@ const prepareHeaders = (method: string, headersInit?: HeadersInit, hasToken = fa
 
   const normalizedMethod = method.toUpperCase();
 
-  if (normalizedMethod === "GET") {
-    headers.delete("Authorization");
-    headers.delete("authorization");
-    if (!hasToken) {
-      headers.set("X-Guest-Id", getOrCreateGuestId());
-    } else {
-      headers.delete("X-Guest-Id");
-      headers.delete("x-guest-id");
-    }
-    return headers;
-  }
-
-  if (!hasToken) {
-    headers.set("X-Guest-Id", getOrCreateGuestId());
-  } else {
-    headers.delete("X-Guest-Id");
-    headers.delete("x-guest-id");
-  }
-
   if (isJsonMethod(normalizedMethod)) {
     headers.set("Content-Type", "application/json");
+  }
+
+  const identityHeaders = buildIdentityHeaders();
+  for (const [key, value] of Object.entries(identityHeaders)) {
+    headers.set(key, value);
   }
 
   return headers;
@@ -192,7 +178,7 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
   const origin = resolveOrigin(targetUrl);
   const normalizedBase = normalizeBase(baseUrl ?? API_BASE_URL) ?? "";
 
-  const headers = prepareHeaders(method, headersInit, hasToken);
+  const headers = prepareHeaders(method, headersInit);
 
   if (hasToken && method !== "GET") {
     headers.set("Authorization", `Bearer ${token}`);
@@ -231,6 +217,15 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
     try {
       const response = await fetch(targetUrl, { ...fetchInit, signal: controller.signal });
       clearTimeout(timeoutId);
+
+      const responseGuestId =
+        response.headers.get("x-eco-guest-id") ||
+        response.headers.get("X-Eco-Guest-Id") ||
+        response.headers.get("x-guest-id") ||
+        response.headers.get("X-Guest-Id");
+      if (responseGuestId) {
+        syncGuestId(responseGuestId);
+      }
 
       const finalUrl = response.url ?? "";
       const finalUrlParsed = parseUrl(finalUrl);
