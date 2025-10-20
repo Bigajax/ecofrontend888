@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { composePrompt } from '../selector';
-import type { EcoDecision } from '../types';
+import type { EcoDecision, PromptModule } from '../types';
 
 const baseDecision: EcoDecision = {
   intensity: 5,
@@ -74,5 +74,84 @@ describe('composePrompt selector', () => {
     expect(result.prompt).toContain('intensidade emocional percebida é 6');
     expect(result.prompt).not.toContain('{{DEC');
     expect(result.prompt).toContain('método VIVA enxuto em 3 etapas');
+  });
+
+  it('aplica gate de heurísticas com decay e cooldown', () => {
+    const evaluatedAt = new Date('2024-01-02T12:00:00.000Z');
+    const lastSeen = new Date(evaluatedAt.getTime() - 5 * 60 * 1000);
+
+    const heurModule: PromptModule = {
+      id: 'eco_heuristica_rumination',
+      content: 'rumination guidance',
+      meta: {
+        id: 'eco_heuristica_rumination',
+        order: 10,
+        dedupe_key: 'eco_heuristica_rumination',
+        inject_as: 'body',
+        gate: {
+          signal: 'rumination',
+          min: 0.35,
+        },
+      },
+    } as PromptModule;
+
+    const decision: EcoDecision = {
+      ...baseDecision,
+      signals: {
+        rumination: {
+          score: 0.7,
+          source: 'nlp',
+          last_seen_at: lastSeen.toISOString(),
+          ttl_s: 3600,
+        },
+      },
+      heuristics: {
+        evaluated_at: evaluatedAt.toISOString(),
+      },
+    };
+
+    const result = composePrompt(decision, { modules: [heurModule] });
+    expect(result.debug.selected_modules).toContain('eco_heuristica_rumination');
+    expect(result.debug.heuristics_eval?.[0]?.opened_arms).toContain('eco_heuristica_rumination');
+
+    const lowScoreResult = composePrompt(
+      {
+        ...decision,
+        signals: {
+          rumination: {
+            score: 0.1,
+            source: 'nlp',
+            last_seen_at: evaluatedAt.toISOString(),
+            ttl_s: 3600,
+          },
+        },
+      },
+      { modules: [heurModule] },
+    );
+    expect(lowScoreResult.debug.selected_modules).not.toContain('eco_heuristica_rumination');
+    const candidate = lowScoreResult.debug.module_candidates.find(
+      (c) => c.id === 'eco_heuristica_rumination',
+    );
+    expect(candidate?.reason).toContain('gate:low_score');
+    expect(lowScoreResult.debug.heuristics_eval?.[0]?.suppressed_by).toContain('low_score');
+
+    const cooldownResult = composePrompt(
+      {
+        ...decision,
+        heuristics: {
+          evaluated_at: evaluatedAt.toISOString(),
+          cooldowns: {
+            eco_heuristica_rumination: 1,
+          },
+        },
+      },
+      { modules: [heurModule] },
+    );
+    expect(cooldownResult.debug.selected_modules).not.toContain('eco_heuristica_rumination');
+    const cooldownCandidate = cooldownResult.debug.module_candidates.find(
+      (c) => c.id === 'eco_heuristica_rumination',
+    );
+    expect(cooldownCandidate?.reason).toContain('gate:cooldown');
+    expect(cooldownResult.debug.heuristics_eval?.[0]?.suppressed_by).toContain('cooldown');
   });
 });

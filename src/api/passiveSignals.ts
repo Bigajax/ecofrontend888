@@ -1,7 +1,12 @@
 import { buildApiUrl } from "../constants/api";
 import { getGuestId } from "../lib/guestId";
 
-export type PassiveSignalName = "view" | "copy" | "tts_play" | "time_on_message";
+export type PassiveSignalName =
+  | "view"
+  | "copy"
+  | "tts_play"
+  | "time_on_message"
+  | "behavior_hint";
 
 export type PassiveSignalRequest = {
   signal: PassiveSignalName;
@@ -9,6 +14,7 @@ export type PassiveSignalRequest = {
   sessionId?: string | null | undefined;
   interactionId?: string | null | undefined;
   messageId?: string | null | undefined;
+  meta?: Record<string, unknown> | null | undefined;
 };
 
 const envFlag = import.meta.env.VITE_ENABLE_PASSIVE_SIGNALS;
@@ -31,6 +37,7 @@ export async function sendPassiveSignal({
   sessionId,
   interactionId,
   messageId,
+  meta,
 }: PassiveSignalRequest): Promise<void> {
   if (!ENABLE_PASSIVE_SIGNALS) return;
   if (typeof fetch === "undefined") return;
@@ -66,6 +73,8 @@ export async function sendPassiveSignal({
       typeof messageId === "string" && messageId.trim().length > 0
         ? messageId.trim()
         : undefined,
+    meta:
+      meta && typeof meta === "object" && Object.keys(meta).length > 0 ? meta : undefined,
   });
 
   try {

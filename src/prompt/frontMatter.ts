@@ -31,6 +31,7 @@ export function parseTextModule(raw: string): PromptModule {
       require_tech_block: meta.require_tech_block,
       require_save_memory: meta.require_save_memory,
       flags_any: meta.flags_any,
+      gate: meta.gate,
     },
   };
 }

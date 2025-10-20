@@ -205,9 +205,9 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   );
 
   const trackPassiveSignal = useCallback(
-    (signal: PassiveSignalName, value?: number) => {
+    (signal: PassiveSignalName, value?: number, meta?: Record<string, unknown>) => {
       if (!ENABLE_PASSIVE_SIGNALS) return;
-      const payload = createEventPayload({ signal, value });
+      const payload = createEventPayload({ signal, value, ...(meta ? { meta } : {}) });
       if (payload) {
         trackFeedbackEvent(`FE: Passive Signal ${signal}`, payload);
       }
@@ -216,7 +216,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   );
 
   const emitPassiveSignal = useCallback(
-    (signal: PassiveSignalName, value?: number) => {
+    (signal: PassiveSignalName, value?: number, meta?: Record<string, unknown>) => {
       if (!ENABLE_PASSIVE_SIGNALS) return;
       if (!interactionId) return;
       const sessionId = resolveSessionId();
@@ -226,8 +226,9 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
         sessionId: sessionId ?? null,
         interactionId,
         messageId,
+        meta,
       });
-      trackPassiveSignal(signal, value);
+      trackPassiveSignal(signal, value, meta);
     },
     [interactionId, messageId, resolveSessionId, trackPassiveSignal],
   );

@@ -8,6 +8,11 @@ import type {
   PromptModule,
 } from './types';
 import modulesRegistry from './registry';
+import {
+  createHeuristicsContext,
+  evaluateHeuristicGate,
+  finalizeHeuristicsLog,
+} from './heuristics';
 
 const DEFAULT_MODULES = modulesRegistry;
 
@@ -30,9 +35,15 @@ function interpolate(content: string, dec: DerivedEcoDecision): string {
   });
 }
 
-function evaluateModule(module: PromptModule, dec: DerivedEcoDecision): ModuleCandidateDebug {
+function evaluateModule(
+  module: PromptModule,
+  dec: DerivedEcoDecision,
+  heuristicsContext: ReturnType<typeof createHeuristicsContext>,
+): ModuleCandidateDebug {
   const reasonParts: string[] = [];
   let activated = true;
+  let score: number | undefined;
+  let threshold: number | undefined;
 
   if (module.meta.min_intensity !== undefined && dec.intensity < module.meta.min_intensity) {
     activated = false;
@@ -74,10 +85,24 @@ function evaluateModule(module: PromptModule, dec: DerivedEcoDecision): ModuleCa
     reasonParts.push('flags_missing');
   }
 
+  if (activated && module.meta.gate) {
+    const gateResult = evaluateHeuristicGate(heuristicsContext, module.id, module.meta.gate);
+    score = gateResult.score;
+    threshold = gateResult.threshold;
+    if (!gateResult.allowed) {
+      activated = false;
+      gateResult.suppressedBy.forEach((reason) => {
+        reasonParts.push(`gate:${reason}`);
+      });
+    }
+  }
+
   return {
     id: module.id,
     activated,
     reason: reasonParts.join(',') || 'matched',
+    score,
+    threshold,
   };
 }
 
@@ -131,8 +156,11 @@ function assemblePrompt(buckets: ModuleBuckets): string {
 export function composePrompt(decision: EcoDecision, options: ComposePromptOptions = {}): ComposePromptResult {
   const modules = options.modules ?? DEFAULT_MODULES;
   const dec = deriveDecision(decision);
+  const heuristicsContext = createHeuristicsContext(dec);
 
-  const candidates: ModuleCandidateDebug[] = modules.map((module) => evaluateModule(module, dec));
+  const candidates: ModuleCandidateDebug[] = modules.map((module) =>
+    evaluateModule(module, dec, heuristicsContext),
+  );
   const selected = modules
     .filter((module) => candidates.find((c) => c.id === module.id)?.activated)
     .sort((a, b) => a.meta.order - b.meta.order);
@@ -143,11 +171,15 @@ export function composePrompt(decision: EcoDecision, options: ComposePromptOptio
   const prompt = assemblePrompt(buckets);
   const selectedIds = dedupedModules.map((module) => module.id);
 
+  const heuristicsLog = finalizeHeuristicsLog(heuristicsContext);
+  dec.heuristicsLog = heuristicsLog;
+
   const debugEvent: ModuleDebugEvent = {
     type: 'ECO_MODULE_DEBUG',
     module_candidates: dedupedCandidates,
     selected_modules: selectedIds,
     dec,
+    heuristics_eval: heuristicsLog,
   };
 
   options.onDebug?.(debugEvent);
