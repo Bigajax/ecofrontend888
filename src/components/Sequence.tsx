@@ -4,15 +4,17 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, X } from 'lucide-react';
 import { slides, OnboardingSlideData } from '../data/slides';
 import mixpanel from '../lib/mixpanel';
+import './Sequence.css';
 
 interface SequenceProps {
   onClose: () => void;
   onComplete: () => void;
 }
 
-const orbPulseTransition = { duration: 6, repeat: Infinity, ease: 'easeInOut' } as const;
-const floatTransition = { duration: 10, repeat: Infinity, ease: 'easeInOut' } as const;
-const spinTransition = { duration: 18, repeat: Infinity, ease: 'linear' } as const;
+const haloPulseTransition = { duration: 4, repeat: Infinity, ease: 'easeInOut' } as const;
+const corePulseTransition = { duration: 6, repeat: Infinity, ease: 'easeInOut' } as const;
+const floatTransition = { duration: 8, repeat: Infinity, ease: 'easeInOut', repeatType: 'mirror' } as const;
+const spinTransition = { duration: 16, repeat: Infinity, ease: 'linear' } as const;
 
 const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   const [slideIndex, setSlideIndex] = useState(0);
@@ -21,7 +23,11 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
   const prefersReducedMotion = useReducedMotion();
 
   const navLockRef = useRef(false);
-  const unlockNavigation = () => window.setTimeout(() => (navLockRef.current = false), 200);
+  const unlockNavigation = useCallback(() => {
+    window.setTimeout(() => {
+      navLockRef.current = false;
+    }, 200);
+  }, []);
 
   useEffect(() => {
     mixpanel.track('Front-end: Tour Slide', {
@@ -61,7 +67,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
 
     mixpanel.track('Front-end: Tour CTA Final Click', { id: currentSlideData?.id });
     onComplete();
-  }, [currentSlideData?.id, onComplete, slideIndex, totalSlides]);
+  }, [currentSlideData?.id, onComplete, slideIndex, totalSlides, unlockNavigation]);
 
   const handlePrev = useCallback(() => {
     if (navLockRef.current || slideIndex === 0) return;
@@ -73,7 +79,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     });
     setSlideIndex((i) => i - 1);
     unlockNavigation();
-  }, [currentSlideData?.id, slideIndex]);
+  }, [currentSlideData?.id, slideIndex, unlockNavigation]);
 
   const handleKeydown = useCallback(
     (event: KeyboardEvent) => {
@@ -89,88 +95,90 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     return () => window.removeEventListener('keydown', handleKeydown);
   }, [handleKeydown]);
 
+  const isFirstSlide = slideIndex === 0;
+  const isLastSlide = slideIndex === totalSlides - 1;
+
   const renderVisual = (slide: OnboardingSlideData) => {
-    const wrapperClasses =
-      'flex w-full min-h-[140px] flex-col items-center justify-center gap-5 max-[720px]:min-h-[128px] max-[720px]:gap-4 sm:min-h-[180px] sm:gap-6 md:min-h-[220px]';
     switch (slide.visual) {
       case 'orb':
         return (
-          <div className={wrapperClasses}>
-            <div className="relative flex items-center justify-center">
-              <div className="absolute h-[200px] w-[200px] rounded-full bg-sky-100/60 blur-3xl sm:h-[220px] sm:w-[220px] md:h-[260px] md:w-[260px] dark:bg-sky-500/10" />
-              <motion.div
-                className="relative h-[150px] w-[150px] rounded-full bg-gradient-to-br from-[#c5e5ff] via-[#e0f0ff] to-white shadow-[0_28px_70px_rgba(15,23,42,0.12)] sm:h-[190px] sm:w-[190px] md:h-[230px] md:w-[230px]"
-                animate={prefersReducedMotion ? undefined : { scale: [1, 1.035, 1] }}
-                transition={orbPulseTransition}
-              >
-                <div className="absolute inset-[18%] rounded-full border border-white/60 bg-white/30 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]" />
-                <div className="absolute inset-[34%] rounded-full bg-white/60 backdrop-blur-2xl" />
-                <div className="absolute inset-[48%] rounded-full bg-[#9ecfff]/60 blur-xl" />
-              </motion.div>
-            </div>
+          <div className="onboarding-visual" role="presentation">
+            <motion.span
+              aria-hidden="true"
+              className="onboarding-visual__halo"
+              animate={
+                prefersReducedMotion
+                  ? { opacity: 0.1 }
+                  : { opacity: [0.08, 0.12, 0.08] }
+              }
+              transition={haloPulseTransition}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="onboarding-visual__core onboarding-visual__core--orb"
+              animate={prefersReducedMotion ? undefined : { scale: [1, 1.03, 1] }}
+              transition={corePulseTransition}
+            >
+              <span className="onboarding-visual__ring onboarding-visual__ring--solid" />
+              <span className="onboarding-visual__ring onboarding-visual__ring--soft" />
+              <span className="onboarding-visual__ring onboarding-visual__ring--accent" />
+            </motion.div>
           </div>
         );
       case 'mirror':
         return (
-          <div className={`${wrapperClasses} gap-5 sm:gap-6`}>
-            <div className="relative flex items-center justify-center">
-              <div className="absolute h-[200px] w-[200px] rounded-full bg-sky-200/30 blur-3xl sm:h-[220px] sm:w-[220px] md:h-[260px] md:w-[260px] dark:bg-slate-700/30" />
-              <motion.div
-                className="relative h-[150px] w-[150px] rounded-full border border-white/50 bg-white/40 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur-3xl sm:h-[190px] sm:w-[190px] md:h-[230px] md:w-[230px]"
-                animate={prefersReducedMotion ? undefined : { scale: [1, 1.015, 1] }}
-                transition={orbPulseTransition}
-              >
-                <motion.div
-                  className="absolute inset-[22%]"
-                  animate={prefersReducedMotion ? undefined : { rotate: 360 }}
-                  transition={spinTransition}
-                >
-                  <div className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 rounded-full bg-sky-500/70 shadow-[0_0_12px_rgba(59,130,246,0.55)]" />
-                  <div className="absolute right-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-indigo-500/70 shadow-[0_0_12px_rgba(99,102,241,0.45)]" />
-                  <div className="absolute left-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-emerald-500/70 shadow-[0_0_12px_rgba(16,185,129,0.45)]" />
-                </motion.div>
-                <div className="absolute inset-[34%] rounded-full border border-white/40 bg-gradient-to-br from-white/65 via-white/40 to-transparent" />
-              </motion.div>
-            </div>
-            <div className="flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-center text-xs font-medium text-slate-500 dark:text-slate-300/80">
-              <span className="text-slate-700 dark:text-white/90">Hoje</span>
-              <span className="hidden h-px w-10 shrink-0 bg-slate-300/60 sm:block" aria-hidden="true" />
-              <span className="whitespace-normal">Padrões</span>
-              <span className="hidden h-px w-10 shrink-0 bg-slate-300/60 sm:block" aria-hidden="true" />
-              <span className="whitespace-normal">Memórias</span>
-              <span className="hidden h-px w-10 shrink-0 bg-slate-300/60 sm:block" aria-hidden="true" />
-              <span className="max-w-[10ch] whitespace-normal leading-snug">Você crescendo</span>
-            </div>
+          <div className="onboarding-visual" role="presentation">
+            <motion.span
+              aria-hidden="true"
+              className="onboarding-visual__halo onboarding-visual__halo--cool"
+              animate={
+                prefersReducedMotion
+                  ? { opacity: 0.1 }
+                  : { opacity: [0.08, 0.11, 0.08] }
+              }
+              transition={haloPulseTransition}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="onboarding-visual__core onboarding-visual__core--mirror"
+              animate={prefersReducedMotion ? undefined : { rotate: 360 }}
+              transition={spinTransition}
+            >
+              <span className="onboarding-visual__marker onboarding-visual__marker--top" />
+              <span className="onboarding-visual__marker onboarding-visual__marker--right" />
+              <span className="onboarding-visual__marker onboarding-visual__marker--left" />
+            </motion.div>
           </div>
         );
       case 'usage':
         return (
-          <div className={`${wrapperClasses} gap-5`}>
-            <div className="relative flex items-center justify-center">
-              <div className="absolute h-[200px] w-[200px] rounded-full bg-blue-100/40 blur-3xl sm:h-[220px] sm:w-[220px] md:h-[260px] md:w-[260px] dark:bg-blue-500/10" />
+          <div className="onboarding-visual" role="presentation">
+            <motion.span
+              aria-hidden="true"
+              className="onboarding-visual__halo onboarding-visual__halo--warm"
+              animate={
+                prefersReducedMotion
+                  ? { opacity: 0.1 }
+                  : { opacity: [0.08, 0.12, 0.08] }
+              }
+              transition={haloPulseTransition}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="onboarding-visual__card"
+              animate={prefersReducedMotion ? undefined : { y: [-4, 4, -4] }}
+              transition={floatTransition}
+            >
               <motion.div
-                className="relative flex h-[150px] w-[150px] flex-col items-center justify-center rounded-[28px] border border-white/40 bg-white/60 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-3xl sm:h-[190px] sm:w-[190px] md:h-[230px] md:w-[230px] dark:bg-white/5"
-                animate={prefersReducedMotion ? undefined : { y: [-4, 4, -4] }}
-                transition={floatTransition}
+                className="onboarding-visual__card-icons"
+                animate={prefersReducedMotion ? undefined : { scale: [1, 1.05, 1] }}
+                transition={corePulseTransition}
               >
-                <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-white/40 via-white/20 to-transparent" />
-                <motion.div
-                  className="relative z-10 flex items-center gap-4 text-2xl sm:text-3xl"
-                  animate={prefersReducedMotion ? undefined : { scale: [1, 1.06, 1] }}
-                  transition={orbPulseTransition}
-                >
-                  <span aria-hidden="true">🎙️</span>
-                  <span aria-hidden="true">💬</span>
-                </motion.div>
-                <p className="relative z-10 mt-3 text-sm font-medium text-slate-600 dark:text-slate-200">
-                  Texto · Voz · Pausa guiada
-                </p>
+                <span aria-hidden="true">🎙️</span>
+                <span aria-hidden="true">💬</span>
               </motion.div>
-            </div>
-            <div className="flex items-center gap-2 rounded-full border border-white/40 bg-white/50 px-4 py-1.5 text-xs font-medium text-slate-600 shadow-[0_10px_25px_rgba(15,23,42,0.08)] backdrop-blur-2xl dark:bg-white/10 dark:text-slate-200">
-              <span aria-hidden="true">🔐</span>
-              <span>Tudo criptografado e só seu</span>
-            </div>
+              <p className="onboarding-visual__card-caption">Texto · Voz · Pausa guiada</p>
+            </motion.div>
           </div>
         );
       default:
@@ -178,126 +186,96 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
     }
   };
 
-  const isFirstSlide = slideIndex === 0;
-  const isLastSlide = slideIndex === totalSlides - 1;
-
   return (
-    <div
-      className="relative grid min-h-[100dvh] w-full place-items-center bg-gradient-to-b from-slate-50 to-slate-100 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+2.5rem)] pt-[calc(env(safe-area-inset-top,0px)+2.5rem)] sm:pb-[calc(env(safe-area-inset-bottom,0px)+3.5rem)] sm:pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] dark:from-slate-950 dark:to-slate-900"
-    >
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-32 -left-28 h-72 w-72 rounded-full bg-[#b8d8ff]/40 blur-3xl" />
-        <div className="absolute top-1/3 -right-24 h-64 w-64 rounded-full bg-[#d6e9ff]/35 blur-3xl" />
-        <div className="absolute bottom-[-120px] right-[-80px] h-80 w-80 rounded-full bg-[#cde9ff]/30 blur-[120px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(59,130,246,0.08),transparent_60%)]" />
-      </div>
-
-      <button
-        onClick={onClose}
-        aria-label="Fechar tour"
-        className="absolute right-4 top-4 z-40 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/70 text-slate-500 shadow-[0_12px_28px_rgba(15,23,42,0.12)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/90 hover:text-slate-700 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/20"
-      >
-        <X size={18} />
-      </button>
-
-      <AnimatePresence mode="wait">
-        <motion.article
-          key={currentSlideData.id}
-          initial={{ opacity: 0, scale: 0.97, y: 18 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.97, y: -18 }}
-          transition={{ duration: 0.32, ease: 'easeOut' }}
-          role="region"
-          aria-labelledby={`onboarding-slide-${currentSlideData.id}-title`}
-          className="relative z-30 mx-auto flex w-full max-w-[680px] flex-col rounded-[28px] border border-white/20 bg-white/60 p-8 text-center shadow-[0_18px_55px_rgba(15,23,42,0.16)] backdrop-blur-2xl sm:max-w-[720px] sm:p-10 dark:border-white/15 dark:bg-white/10"
+    <div className="onboarding-shell">
+      <div className="onboarding-wrapper">
+        <button
+          onClick={onClose}
+          aria-label="Fechar tour"
+          className="onboarding-close"
+          type="button"
         >
-          <div className="flex h-full w-full flex-col">
-            <header className="flex flex-col gap-4 sm:gap-5">
-              <h2
-                id={`onboarding-slide-${currentSlideData.id}-title`}
-                className="text-2xl font-semibold leading-tight text-slate-900 max-[720px]:text-[1.75rem] max-[360px]:text-[1.6rem] sm:text-3xl md:text-[32px] dark:text-white"
-              >
-                {currentSlideData.title}
-              </h2>
-              <div className="flex flex-col gap-3 text-[15px] leading-relaxed text-slate-600 max-[720px]:text-sm max-[360px]:text-[13.5px] sm:text-base dark:text-slate-300">
-                {currentSlideData.paragraphs.map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
-                ))}
+          <X size={18} />
+        </button>
+
+        <div className="onboarding-stage">
+          <AnimatePresence mode="wait">
+            <motion.article
+              key={currentSlideData.id}
+              initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 6 }}
+              animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -6 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.16, ease: 'easeOut' }}
+              role="region"
+              aria-labelledby={`onboarding-slide-${currentSlideData.id}-title`}
+              className="onboarding-panel"
+            >
+              <div className="onboarding-scroll" data-testid="onboarding-scroll">
+                <div className="onboarding-layout">
+                  <div className="onboarding-copy">
+                    <header className="onboarding-header">
+                      <h2
+                        id={`onboarding-slide-${currentSlideData.id}-title`}
+                        className="onboarding-headline"
+                      >
+                        {currentSlideData.title}
+                      </h2>
+                      <div className="onboarding-body-copy">
+                        {currentSlideData.paragraphs.map((paragraph, index) => (
+                          <p key={index} className="onboarding-body-text">
+                            {paragraph}
+                          </p>
+                        ))}
+                      </div>
+                    </header>
+
+                    {currentSlideData.badges ? (
+                      <div className="onboarding-badges" role="list">
+                        {currentSlideData.badges.map((badge) => (
+                          <span key={badge.label} className="onboarding-badge" role="listitem">
+                            <span aria-hidden="true">{badge.icon}</span>
+                            <span>{badge.label}</span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="onboarding-visual-column">
+                    {renderVisual(currentSlideData)}
+                    {currentSlideData.subtext ? (
+                      <p className="onboarding-subtext">{currentSlideData.subtext}</p>
+                    ) : null}
+                  </div>
+                </div>
               </div>
-            </header>
 
-            <div className="mt-6 flex flex-1 min-h-0 flex-col items-center justify-center gap-6 sm:mt-8 sm:gap-8 max-[720px]:gap-5">
-              {renderVisual(currentSlideData)}
-              {currentSlideData.subtext ? (
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-300/80">
-                  {currentSlideData.subtext}
-                </p>
-              ) : null}
-              {currentSlideData.badges ? (
-                <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:gap-x-3">
-                  {currentSlideData.badges.map((badge) => (
-                    <span
-                      key={badge.label}
-                      className="inline-flex items-center gap-1 rounded-full border border-white/40 bg-white/60 px-3 py-1 text-xs font-medium text-slate-600 shadow-[0_8px_20px_rgba(15,23,42,0.08)] backdrop-blur-xl max-[360px]:text-[11px] dark:border-white/10 dark:bg-white/10 dark:text-slate-200"
-                    >
-                      <span aria-hidden="true">{badge.icon}</span>
-                      <span>{badge.label}</span>
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-
-            <footer className="mt-6 border-t border-white/40 pt-4 sm:mt-8 sm:pt-5 dark:border-white/10">
-              <div className="flex min-h-[140px] w-full flex-col items-center gap-5 max-[360px]:min-h-[128px]">
-                <div className="w-full">
-                  <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/40 dark:bg-white/10">
-                    <motion.span
-                      className="absolute inset-y-0 left-0 rounded-full bg-slate-900/70 dark:bg-white/80"
-                      initial={false}
-                      animate={{ width: `${((slideIndex + 1) / totalSlides) * 100}%` }}
-                      transition={{ duration: 0.45, ease: 'easeOut' }}
-                    />
-                  </div>
-                  <div className="mt-3 flex items-center justify-center gap-3">
-                    {slides.map((slide, index) => {
-                      const active = index === slideIndex;
-                      return (
-                        <button
-                          key={slide.id}
-                          onClick={() => goTo(index)}
-                          aria-label={`Ir para ${slide.title}`}
-                          aria-current={active ? 'step' : undefined}
-                          className={`relative h-2.5 w-2.5 rounded-full transition ${
-                            active
-                              ? 'bg-slate-900 shadow-[0_0_0_4px_rgba(148,163,184,0.25)] dark:bg-white'
-                              : 'bg-slate-300/80 hover:bg-slate-400/80 dark:bg-white/30 dark:hover:bg-white/45'
-                          }`}
-                          type="button"
-                        >
-                          {active ? (
-                            <motion.span
-                              layoutId="onboarding-active-dot"
-                              className="absolute inset-[-6px] rounded-full bg-slate-900/5"
-                            />
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                  </div>
+              <div className="onboarding-footer" role="group" aria-label="Navegação do tour">
+                <div className="onboarding-pagination" role="tablist" aria-label="Pontos do tour">
+                  {slides.map((slide, index) => {
+                    const active = index === slideIndex;
+                    return (
+                      <button
+                        key={slide.id}
+                        onClick={() => goTo(index)}
+                        type="button"
+                        aria-label={`Ir para ${slide.title}`}
+                        aria-current={active ? 'step' : undefined}
+                        className="onboarding-dot"
+                        data-active={active || undefined}
+                      />
+                    );
+                  })}
                 </div>
 
-                <div className="flex w-full flex-wrap items-center justify-center gap-3">
+                <div className="onboarding-actions">
                   <button
                     onClick={handlePrev}
                     type="button"
                     aria-label="Voltar slide"
                     disabled={isFirstSlide}
                     aria-disabled={isFirstSlide || undefined}
-                    className={`inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium shadow-[0_12px_28px_rgba(15,23,42,0.08)] ring-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#79b7ff]/60 dark:ring-white/10 ${
-                      isFirstSlide
-                        ? 'cursor-not-allowed bg-white/40 text-slate-400 ring-black/5 dark:bg-white/5 dark:text-slate-500'
-                        : 'bg-white/60 text-slate-600 ring-black/5 hover:bg-white/75 dark:bg-white/10 dark:text-slate-200'
+                    className={`onboarding-button onboarding-button--secondary${
+                      isFirstSlide ? ' onboarding-button--disabled' : ''
                     }`}
                   >
                     <ArrowLeft size={16} />
@@ -307,10 +285,8 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
                   <button
                     onClick={handleNext}
                     type="button"
-                    className={`${
-                      isLastSlide
-                        ? 'inline-flex h-12 items-center justify-center rounded-2xl bg-[#007AFF] px-6 text-base font-medium text-white shadow-lg transition hover:bg-[#1a84ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#79b7ff]/80'
-                        : 'inline-flex h-11 items-center justify-center rounded-2xl bg-white/60 px-4 text-sm font-medium text-slate-600 shadow-[0_12px_28px_rgba(15,23,42,0.08)] ring-1 ring-black/5 transition hover:bg-white/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#79b7ff]/60 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10'
+                    className={`onboarding-button onboarding-button--primary${
+                      isLastSlide ? ' onboarding-button--primary-final' : ''
                     }`}
                     aria-label={isLastSlide ? 'Começar agora' : 'Próximo slide'}
                   >
@@ -318,20 +294,10 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
                   </button>
                 </div>
               </div>
-            </footer>
-          </div>
-        </motion.article>
-      </AnimatePresence>
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
-        className="pointer-events-none absolute bottom-6 right-4 hidden max-w-[220px] items-center gap-2 rounded-2xl border border-white/30 bg-white/60 px-4 py-2 text-xs font-medium text-slate-600 shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur-2xl md:flex dark:border-white/10 dark:bg-white/10 dark:text-slate-200"
-      >
-        <span aria-hidden="true">✨</span>
-        Versão Beta · 7 minutos por dia de clareza emocional
-      </motion.div>
+            </motion.article>
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 };
