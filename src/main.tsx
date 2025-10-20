@@ -5,14 +5,15 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 
-import { ECO_GUEST_ID } from './lib/guestId';
+import { ensureGuestId, ensureSessionId } from './lib/guestId';
 
 import { initFacebookPixel } from './lib/fbpixel';
 import PixelRouteListener from './lib/PixelRouteListener';
 import MixpanelRouteListener from './lib/MixpanelRouteListener';
 
-// Garante que o guestId seja resolvido logo no boot do app
-void ECO_GUEST_ID;
+// Garante que guest_id e session_id existam antes de qualquer requisição
+ensureGuestId();
+ensureSessionId();
 
 // inicia o Pixel uma única vez
 initFacebookPixel();

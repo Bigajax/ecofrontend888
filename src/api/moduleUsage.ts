@@ -1,4 +1,5 @@
 import { buildApiUrl } from "../constants/api";
+import { buildIdentityHeaders } from "../lib/guestId";
 
 export type ModuleUsageRequest = {
   moduleKey: string;
@@ -14,19 +15,6 @@ export const ENABLE_MODULE_USAGE =
   envFlag === undefined ? true : envFlag !== "false";
 
 const MODULE_USAGE_TIMEOUT_MS = 2500;
-
-const readGuestId = () => {
-  if (typeof window === "undefined") return "";
-  try {
-    return (
-      window.localStorage.getItem("guest_id") ??
-      window.localStorage.getItem("eco_guest_id") ??
-      ""
-    );
-  } catch {
-    return "";
-  }
-};
 
 const sanitize = <T extends Record<string, unknown>>(payload: T) => {
   return Object.fromEntries(
@@ -52,12 +40,8 @@ export async function sendModuleUsage({
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...buildIdentityHeaders(),
   };
-
-  const guestId = readGuestId();
-  if (guestId) {
-    headers["X-Guest-Id"] = guestId;
-  }
 
   const controller =
     typeof AbortController !== "undefined" ? new AbortController() : null;

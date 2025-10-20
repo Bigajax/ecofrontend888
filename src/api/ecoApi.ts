@@ -6,16 +6,12 @@ import { supabase } from "../lib/supabaseClient";
 import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
 import { sanitizeEcoText } from "../utils/sanitizeEcoText";
-import { getGuestId } from "../lib/guestId";
+import { buildIdentityHeaders, getGuestId, syncGuestId, updateBiasHint } from "../lib/guestId";
 
 import { EcoApiError, MissingUserIdError } from "./errors";
 import { AskEcoResponse, normalizeAskEcoResponse } from "./askEcoResponse";
-import {
-  ensureGuestId,
-  normalizeGuestIdFormat,
-  persistGuestId,
-  readPersistedGuestId,
-} from "./guestIdentity";
+import { normalizeGuestIdFormat, readPersistedGuestId } from "./guestIdentity";
+import { computeBiasHintFromMessages } from "../utils/biasHint";
 
 // ⚠️ Estes são tipos, não valores em runtime
 import { parseNonStreamResponse, processEventStream } from "./ecoStream";
@@ -34,7 +30,10 @@ export async function askEco(
   opts: { stream?: boolean; headers?: Record<string, string> } = {}
 ) {
   const headers: Record<string, string> = { ...(opts.headers ?? {}) };
-  headers["x-eco-guest-id"] = getGuestId();
+  const identityHeaders = buildIdentityHeaders();
+  for (const [key, value] of Object.entries(identityHeaders)) {
+    headers[key] = value;
+  }
   if (opts.stream) headers["Accept"] = headers["Accept"] ?? "text/event-stream";
 
   const response = await api.post("/api/ask-eco", payload, {
@@ -171,9 +170,9 @@ const resolveGuestHeaders = (
   const providedGuestId = normalizeGuestIdFormat(options?.guestId);
   const storedGuestId = readPersistedGuestId();
 
-  const guestId = providedGuestId || storedGuestId || ensureGuestId();
+  const guestId = providedGuestId || storedGuestId || getGuestId();
 
-  persistGuestId(guestId);
+  syncGuestId(guestId);
 
   return { guestId, isGuest };
 };
@@ -194,15 +193,13 @@ const prepareRequest = (
   token: string | null,
   isStreaming: boolean
 ) => {
+  const biasHint = computeBiasHintFromMessages(mensagens);
+  updateBiasHint(biasHint ?? null);
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...buildIdentityHeaders({ biasHint }),
   };
-
-  headers["x-eco-guest-id"] = getGuestId();
-
-  if (guest.isGuest) {
-    headers["X-Guest-Id"] = guest.guestId;
-  }
 
   if (!guest.isGuest && token) {
     headers.Authorization = `Bearer ${token}`;
@@ -377,9 +374,11 @@ export const enviarMensagemParaEco = async (
           keepalive: false,
           signal: mergedSignal,
         });
-
-        const serverGuestId = normalizeGuestIdFormat(response.headers.get("x-guest-id"));
-        if (serverGuestId) persistGuestId(serverGuestId);
+        const serverGuestId =
+          normalizeGuestIdFormat(
+            response.headers.get("x-eco-guest-id") ?? response.headers.get("x-guest-id"),
+          ) || null;
+        if (serverGuestId) syncGuestId(serverGuestId);
 
         if (!response.ok) {
           if (response.status >= 500 && attempt < maxStreamRetries) {
