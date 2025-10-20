@@ -1,6 +1,14 @@
-import { DependencyList, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  DependencyList,
+  MutableRefObject,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
-export interface UseAutoScrollOptions {
+export interface UseAutoScrollOptions<T extends HTMLElement = HTMLElement> {
   /**
    * Dependency list that should trigger the auto-scroll effect when the user is
    * anchored near the bottom.
@@ -10,13 +18,19 @@ export interface UseAutoScrollOptions {
    * Distance in pixels considered "near" the bottom of the scroll area.
    */
   bottomThreshold?: number;
+  /**
+   * Optional external ref that should be used instead of creating an internal one.
+   * Enables consumers to run custom effects on the same DOM node.
+   */
+  externalRef?: MutableRefObject<T | null> | null;
 }
 
 export const useAutoScroll = <T extends HTMLElement>(
-  options: UseAutoScrollOptions = {},
+  options: UseAutoScrollOptions<T> = {},
 ) => {
-  const { items = [], bottomThreshold = 80 } = options;
-  const scrollerRef = useRef<T | null>(null);
+  const { items = [], bottomThreshold = 80, externalRef = null } = options;
+  const fallbackRef = useRef<T | null>(null);
+  const scrollerRef = externalRef ?? fallbackRef;
   const endRef = useRef<HTMLDivElement | null>(null);
 
   const [isAtBottom, setIsAtBottom] = useState(true);

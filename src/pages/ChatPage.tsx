@@ -84,13 +84,18 @@ const ChatPage: React.FC = () => {
 
   const saudacao = useMemo(() => saudacaoDoDiaFromHour(new Date().getHours()), []);
 
-  const { scrollerRef, endRef, isAtBottom, showScrollBtn, scrollToBottom } =
-    useAutoScroll<HTMLDivElement>({ items: [messages] });
+  const chatRef = useRef<HTMLDivElement | null>(null);
+  const { scrollerRef, endRef, isAtBottom, showScrollBtn, scrollToBottom } = useAutoScroll<HTMLDivElement>({
+    items: [messages],
+    externalRef: chatRef,
+  });
 
   const chatInputWrapperRef = useRef<HTMLDivElement | null>(null);
   const { contentInset, isKeyboardOpen, safeAreaBottom } = useKeyboardInsets({
     inputRef: chatInputWrapperRef,
   });
+
+  const baseScrollPadding = 112;
 
   const { showQuick, hideQuickSuggestions, handleTextChange } = useQuickSuggestionsVisibility(messages);
 
@@ -313,6 +318,16 @@ const ChatPage: React.FC = () => {
   }, [contentInset, isAtBottom, scrollToBottom]);
 
   useEffect(() => {
+    if (!chatRef.current || !isAtBottom) return;
+    const prefersReducedMotion =
+      typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    chatRef.current.scrollTo({
+      top: chatRef.current.scrollHeight,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
+  }, [messages, isAtBottom]);
+
+  useEffect(() => {
     if (!shouldRenderGlobalTyping || !isAtBottom) return;
     scrollToBottom(false);
   }, [shouldRenderGlobalTyping, isAtBottom, scrollToBottom]);
@@ -320,7 +335,7 @@ const ChatPage: React.FC = () => {
   return (
     <div
       className={clsx(
-        'chat-page relative flex min-h-[100svh] w-full flex-1 flex-col bg-white',
+        'chat-page relative flex min-h-screen min-h-[100svh] w-full flex-1 flex-col bg-white',
         { 'keyboard-open': isKeyboardOpen },
       )}
       style={{ minHeight: '100dvh' }}
@@ -330,14 +345,14 @@ const ChatPage: React.FC = () => {
         ref={scrollerRef}
         role="feed"
         aria-busy={isWaitingForEco || isSendingToEco}
-        className="chat-scroller flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-4 pb-0 sm:px-6 lg:px-10"
+        className="chat-scroller flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-4 pb-28 scroll-smooth h-[calc(100vh-140px)] sm:px-6 md:h-auto lg:px-10"
         style={{
           paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
           WebkitOverflowScrolling: 'touch',
           scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
           touchAction: 'pan-y',
-          paddingBottom: `${contentInset}px`,
-          scrollPaddingBottom: `${contentInset}px`,
+          paddingBottom: Math.max(contentInset, baseScrollPadding),
+          scrollPaddingBottom: Math.max(contentInset, baseScrollPadding),
           overscrollBehavior: 'contain',
         }}
       >
@@ -502,7 +517,7 @@ const ChatPage: React.FC = () => {
 
       <div
         ref={chatInputWrapperRef}
-        className="composer sticky bottom-0 z-40 border-t border-black/10 bg-white/95 px-3 pt-3 backdrop-blur-sm sm:px-6 lg:px-10"
+        className="composer sticky bottom-0 z-40 border-t border-black/10 bg-white px-3 pt-3 backdrop-blur-sm sm:px-6 lg:px-10"
         style={{ paddingBottom: safeAreaBottom + 12 }}
       >
         <div className="mx-auto w-full max-w-[min(640px,88vw)] space-y-3">
