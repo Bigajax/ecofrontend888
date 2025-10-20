@@ -24,7 +24,7 @@ const toPayload = (args: SendFeedbackArgs): SendFeedbackInput => ({
   interaction_id: args.interactionId,
   vote: args.vote,
   reason: args.reason ?? null,
-  source: args.source ?? "chat",
+  source: args.source ?? "api",
   user_id: args.userId ?? null,
   session_id: args.sessionId ?? null,
   meta: args.meta ?? {},

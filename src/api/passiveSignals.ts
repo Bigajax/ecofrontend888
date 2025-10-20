@@ -1,4 +1,5 @@
 import { buildApiUrl } from "../constants/api";
+import { getGuestId } from "../lib/guestId";
 
 export type PassiveSignalName = "view" | "copy" | "tts_play" | "time_on_message";
 
@@ -37,7 +38,10 @@ export async function sendPassiveSignal({
   const normalizedSignal = signal.trim();
   if (!normalizedSignal) return;
 
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-eco-guest-id": getGuestId(),
+  };
 
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;

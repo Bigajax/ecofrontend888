@@ -2,6 +2,7 @@ import axios from "axios";
 
 import { API_BASE_URL } from "../constants/api";
 import { getOrCreateGuestId } from "./guestIdentity";
+import { getGuestId } from "../lib/guestId";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -19,6 +20,8 @@ api.interceptors.request.use((config) => {
   const isLogged = Boolean(token);
 
   config.withCredentials = false;
+
+  headers["x-eco-guest-id"] = getGuestId();
 
   if (isLogged) {
     headers["Authorization"] = `Bearer ${token}`;

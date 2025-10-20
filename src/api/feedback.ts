@@ -1,4 +1,5 @@
 import { getSessionId } from "../utils/identity";
+import { getGuestId } from "../lib/guestId";
 
 export type FeedbackVote = "up" | "down";
 
@@ -82,6 +83,10 @@ function normalizeArgs(input: SendFeedbackInput): NormalizedFeedbackInput {
 
   const trimmedReason = typeof input.reason === "string" ? input.reason.trim() : input.reason;
   const reason = trimmedReason === "" ? null : trimmedReason ?? null;
+  const source =
+    typeof input.source === "string" && input.source.trim().length > 0
+      ? input.source.trim()
+      : "api";
 
   return {
     ...input,
@@ -90,6 +95,7 @@ function normalizeArgs(input: SendFeedbackInput): NormalizedFeedbackInput {
     vote: input.vote,
     session_id: input.session_id ?? null,
     user_id: input.user_id ?? null,
+    source,
   };
 }
 
@@ -184,6 +190,8 @@ async function performRequest(args: NormalizedFeedbackInput): Promise<SendFeedba
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
+
+  headers["x-eco-guest-id"] = getGuestId();
 
   if (!args.user_id) {
     const guestId = args.session_id ?? (typeof window !== "undefined" ? getSessionId() : null);

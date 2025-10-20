@@ -110,7 +110,7 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
         session_id: (payload.session_id ?? resolveSessionId() ?? null) as string | null,
         vote,
         reason: reasons && reasons.length > 0 ? reasons[0] : null,
-        source: "chat",
+        source: "api",
         message_id: messageId ?? null,
         meta: {
           page: "ChatPage",

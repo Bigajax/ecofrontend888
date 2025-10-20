@@ -218,6 +218,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   const emitPassiveSignal = useCallback(
     (signal: PassiveSignalName, value?: number) => {
       if (!ENABLE_PASSIVE_SIGNALS) return;
+      if (!interactionId) return;
       const sessionId = resolveSessionId();
       void sendPassiveSignal({
         signal,
@@ -236,6 +237,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
     if (isUser) return;
     if (isStreaming) return;
     if (moduleUsageCandidates.length === 0) return;
+    if (!interactionId) return;
 
     const sessionId = resolveSessionId();
     const interactionKey = interactionId ?? "__no_interaction__";
@@ -338,7 +340,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
           interactionId: resolvedInteractionId,
           vote,
           reason,
-          source: "chat",
+          source: "api",
           userId: user?.id ?? null,
           sessionId: session?.id ?? null,
           meta: feedbackMeta,
@@ -515,6 +517,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
     if (!ENABLE_PASSIVE_SIGNALS) return;
     if (isUser) return;
     if (typeof window === "undefined") return;
+    if (!interactionId) return;
 
     const el = containerRef.current;
     if (!el) return;
@@ -571,6 +574,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
     clearTimeSignalTimer,
     emitPassiveSignal,
     finalizeTimeSignal,
+    interactionId,
     isUser,
   ]);
 

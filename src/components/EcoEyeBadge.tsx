@@ -9,7 +9,7 @@ type EcoEyeBadgeProps = {
 const EcoEyeBadge: React.FC<EcoEyeBadgeProps> = ({ emotion, className }) => (
   <div
     role="img"
-    aria-label={emotion ? `Emoção ${emotion}` : 'Memória Eco'}
+    aria-label={emotion ? `Emoção: ${emotion}` : 'Memória Eco'}
     className={clsx(
       'relative grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-900 ring-1 ring-black/5 md:h-16 md:w-16 xl:h-[72px] xl:w-[72px]',
       className,

@@ -387,6 +387,7 @@ describe("enviarMensagemParaEco", () => {
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer token-autenticado",
+        "x-eco-guest-id": "guest_uuid-mock",
       },
       responseType: "json",
     });
