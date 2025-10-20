@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabaseClient";
 import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
 import { sanitizeEcoText } from "../utils/sanitizeEcoText";
+import { getGuestId } from "../lib/guestId";
 
 import { EcoApiError, MissingUserIdError } from "./errors";
 import { AskEcoResponse, normalizeAskEcoResponse } from "./askEcoResponse";
@@ -33,6 +34,7 @@ export async function askEco(
   opts: { stream?: boolean; headers?: Record<string, string> } = {}
 ) {
   const headers: Record<string, string> = { ...(opts.headers ?? {}) };
+  headers["x-eco-guest-id"] = getGuestId();
   if (opts.stream) headers["Accept"] = headers["Accept"] ?? "text/event-stream";
 
   const response = await api.post("/api/ask-eco", payload, {
@@ -195,6 +197,8 @@ const prepareRequest = (
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
+
+  headers["x-eco-guest-id"] = getGuestId();
 
   if (guest.isGuest) {
     headers["X-Guest-Id"] = guest.guestId;
