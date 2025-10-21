@@ -56,7 +56,7 @@ type BehaviorHintMetrics = {
   fast_followup: number;
 };
 
-export default function ChatPage() {
+function ChatPage() {
   const { messages, addMessage, setMessages } = useChat();
   const auth = useAuth();
   const { userId, userName: rawUserName = 'Usuário', user } = auth;
@@ -71,6 +71,7 @@ export default function ChatPage() {
   const [isComposerSending, setIsComposerSending] = useState(false);
   const [composerValue, setComposerValue] = useState('');
   const [lastAttempt, setLastAttempt] = useState<{ text: string; hint?: string } | null>(null);
+  const [voicePanelOpen, setVoicePanelOpen] = useState(false);
   const ecoActivity = useEcoActivity();
 
   const behaviorTrackerRef = useRef({
@@ -501,7 +502,6 @@ export default function ChatPage() {
   const shouldRenderGlobalTyping = globalTypingVisible || isSynthesizingAudio;
   const composerPending = pending || isComposerSending || isSendingToEco;
   const [hasPendingMessages, setHasPendingMessages] = useState(false);
-  const [voicePanelOpen, setVoicePanelOpen] = useState(false);
   const lastMessageTokenRef = useRef<string>('');
   const handleJumpToBottom = useCallback(() => {
     setHasPendingMessages(false);
@@ -773,4 +773,6 @@ export default function ChatPage() {
     </div>
   );
 };
+
+export default ChatPage;
 
