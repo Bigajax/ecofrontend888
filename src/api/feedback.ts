@@ -1,5 +1,6 @@
 import { getSessionId } from "../utils/identity";
 import { buildIdentityHeaders, syncGuestId } from "../lib/guestId";
+import { buildApiUrl } from "../constants/api";
 
 export type FeedbackVote = "up" | "down";
 
@@ -200,10 +201,10 @@ async function performRequest(args: NormalizedFeedbackInput): Promise<SendFeedba
   }
 
   try {
-    const response = await fetch("/api/feedback", {
+    const response = await fetch(buildApiUrl("/api/feedback"), {
       method: "POST",
       headers,
-      credentials: "include",
+      credentials: "omit",
       body,
     });
 

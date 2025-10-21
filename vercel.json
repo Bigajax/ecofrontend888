@@ -1,4 +1,7 @@
 {
+  "env": {
+    "VITE_API_URL": "https://ecobackend888.onrender.com"
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "https://ecobackend888.onrender.com/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
