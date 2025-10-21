@@ -1,17 +1,17 @@
+import { SHOW_API_BASE_WARNING } from "@/config/apiBase";
+
 export type ApiBaseWarningCardProps = {
-  visible: boolean;
   rawApiBaseDisplay: string;
   defaultApiBase: string;
   effectiveApiBase: string;
 };
 
 export default function ApiBaseWarningCard({
-  visible,
   rawApiBaseDisplay,
   defaultApiBase,
   effectiveApiBase,
 }: ApiBaseWarningCardProps) {
-  if (!visible) {
+  if (!SHOW_API_BASE_WARNING) {
     return null;
   }
 

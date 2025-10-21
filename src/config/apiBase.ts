@@ -1,30 +1,24 @@
-const DEFAULT_API_BASE = "https://ecobackend888.onrender.com";
+export const RAW_API_BASE = (import.meta.env.VITE_API_BASE ?? "") as string;
 
-const normalizeCandidate = (candidate: unknown): string | undefined => {
-  if (typeof candidate !== "string") return undefined;
-  const trimmed = candidate.trim();
-  if (!trimmed) return undefined;
-  const withoutTrailingSlash = trimmed.replace(/\/+$/, "");
-  return withoutTrailingSlash || undefined;
-};
+export const DEFAULT_API_BASE = "https://ecobackend888.onrender.com";
 
-const readWindowApiBase = (): string | undefined => {
-  if (typeof window === "undefined") return undefined;
-  const candidate = (window as { __API_BASE__?: unknown }).__API_BASE__;
-  return normalizeCandidate(candidate);
-};
+const trimmedRawApiBase = RAW_API_BASE.trim();
 
-const rawEnvApiBase = (() => {
-  const value = (import.meta as any)?.env?.VITE_API_BASE;
-  return typeof value === "string" ? value : undefined;
+export const IS_API_BASE_EMPTY = trimmedRawApiBase.length === 0;
+
+const sanitizeBase = (candidate: string) => candidate.replace(/\/+$/, "");
+
+export function getApiBase(): string {
+  const normalized = sanitizeBase(trimmedRawApiBase || DEFAULT_API_BASE);
+  return normalized || DEFAULT_API_BASE;
+}
+
+const isLocalhost = (() => {
+  if (typeof location === "undefined") {
+    return false;
+  }
+  const host = location.hostname;
+  return host === "localhost" || host === "127.0.0.1";
 })();
 
-export const getRawEnvApiBase = (): string | undefined => rawEnvApiBase;
-
-export const getApiBase = (): string => {
-  const envBase = normalizeCandidate(rawEnvApiBase);
-  const windowBase = readWindowApiBase();
-  return envBase ?? windowBase ?? DEFAULT_API_BASE;
-};
-
-export { DEFAULT_API_BASE };
+export const SHOW_API_BASE_WARNING = IS_API_BASE_EMPTY && isLocalhost;

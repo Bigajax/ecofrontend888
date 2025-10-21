@@ -1,17 +1,16 @@
 import {
   DEFAULT_API_BASE as BASE_DEFAULT,
+  IS_API_BASE_EMPTY as BASE_EMPTY_FLAG,
+  RAW_API_BASE,
   getApiBase,
-  getRawEnvApiBase,
 } from "../config/apiBase";
+
+export { RAW_API_BASE };
 
 const trimTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
 
 export const DEFAULT_API_BASE = BASE_DEFAULT;
-export const RAW_API_BASE = getRawEnvApiBase();
-
-const trimmedEnvApiBase = typeof RAW_API_BASE === "string" ? RAW_API_BASE.trim() : "";
-
-export const IS_API_BASE_EMPTY = trimmedEnvApiBase.length === 0;
+export const IS_API_BASE_EMPTY = BASE_EMPTY_FLAG;
 
 const resolveEffectiveApiBase = () => {
   const candidate = getApiBase() || BASE_DEFAULT;
