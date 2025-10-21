@@ -4,6 +4,7 @@ import {
   RAW_API_BASE,
   getApiBase,
 } from "../config/apiBase";
+import { ensureHttpsUrl } from "../utils/ensureHttpsUrl";
 
 export { RAW_API_BASE };
 
@@ -49,12 +50,13 @@ export const buildApiUrl = (path: string, base?: string) => {
   }
   const normalizedBase = trimTrailingSlashes(baseToUse);
   const sanitizedBase = normalizedBase || DEFAULT_API_BASE;
-  return `${sanitizedBase}${safePath}`;
+  const secureBase = ensureHttpsUrl(sanitizedBase);
+  return `${secureBase}${safePath}`;
 };
 
 export const resolveApiUrl = (path = "") => {
   if (!path) {
-    return getApiBase() || "";
+    return ensureHttpsUrl(getApiBase() || "");
   }
-  return buildApiUrl(path);
+  return ensureHttpsUrl(buildApiUrl(path));
 };
