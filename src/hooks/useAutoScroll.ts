@@ -54,11 +54,25 @@ export const useAutoScroll = <T extends HTMLElement>(
       const el = scrollerRef.current;
       if (!el) return;
       const behavior = smooth ? 'smooth' : 'auto';
-      const top = el.scrollHeight;
-      try {
-        el.scrollTo({ top, behavior });
-      } catch {
-        el.scrollTop = top;
+      const anchor = endRef.current;
+      if (anchor) {
+        try {
+          anchor.scrollIntoView({ behavior, block: 'end' });
+        } catch {
+          const top = el.scrollHeight;
+          try {
+            el.scrollTo({ top, behavior });
+          } catch {
+            el.scrollTop = top;
+          }
+        }
+      } else {
+        const top = el.scrollHeight;
+        try {
+          el.scrollTo({ top, behavior });
+        } catch {
+          el.scrollTop = top;
+        }
       }
       requestAnimationFrame(checkPosition);
     },

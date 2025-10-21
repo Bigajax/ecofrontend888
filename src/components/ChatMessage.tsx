@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
 import TypingDots from "../components/TypingDots";
 import { Message } from "../contexts/ChatContext";
+import { sanitizeText } from "../utils/sanitizeText";
 
 interface ChatMessageProps {
   message: Message;
@@ -270,12 +271,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     rawText = normalizeMessageContent(value);
     if (rawText.trim().length > 0) break;
   }
-  const trimmedText = rawText.trim();
+  const sanitizedRawText = React.useMemo(() => sanitizeText(rawText), [rawText]);
+  const trimmedText = sanitizedRawText.trim();
   if (message.sender === "user" && trimmedText.length === 0) {
     return null;
   }
   const showPlaceholder = isEcoMessage && trimmedText.length === 0;
-  const displayText = showPlaceholder ? "…" : rawText;
+  const displayText = showPlaceholder ? "…" : sanitizedRawText;
   const hasMarkdownText = !showPlaceholder && trimmedText.length > 0;
   const typingActive = Boolean(isEcoTyping && showPlaceholder);
 
@@ -463,8 +465,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     "message-bubble relative inline-flex max-w-full flex-col rounded-[20px] px-4 py-3 sm:px-5",
     "whitespace-normal break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
     isUser
-      ? "ml-auto bg-[#007AFF] text-white shadow-[0_12px_32px_rgba(0,122,255,0.18)]"
-      : "border border-black/10 bg-white text-[color:var(--color-text-primary)] shadow-[0_8px_26px_rgba(11,18,32,0.08)]",
+      ? "ml-auto bg-[color:var(--bubble-user-bg)] text-[color:var(--bubble-user-text)] shadow-[0_12px_32px_rgba(0,122,255,0.18)]"
+      : "border border-[color:var(--bubble-border)] bg-[color:var(--bubble-eco-bg)] text-[color:var(--bubble-eco-text)] shadow-[0_8px_26px_rgba(11,18,32,0.08)]",
   );
 
   const processedMarkdown = React.useMemo(() => {
@@ -482,8 +484,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const baseMarkdownClass = clsx(
     "markdown-body max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
     isUser
-      ? "text-white font-[500] leading-[1.35] tracking-[-0.01em]"
-      : "text-[color:var(--color-text-primary)] font-[460] leading-[1.45] tracking-[-0.012em]",
+      ? "text-[color:var(--bubble-user-text)] font-[500] leading-[1.35] tracking-[-0.01em]"
+      : "text-[color:var(--bubble-eco-text)] font-[460] leading-[1.45] tracking-[-0.012em]",
   );
 
   const markdownClass = clsx(

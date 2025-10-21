@@ -27,12 +27,20 @@ import { getSessionId, getUserIdFromStore } from "../utils/identity";
 import { useMessageFeedbackContext } from "../hooks/useMessageFeedbackContext";
 import { useSendFeedback } from "../hooks/useSendFeedback";
 import { toast } from "../utils/toast";
+import { sanitizeText } from "../utils/sanitizeText";
 import { useAuth } from "../contexts/AuthContext";
 import { FeedbackReasonPopover } from "./FeedbackReasonPopover";
 import { DEFAULT_FEEDBACK_PILLAR } from "../constants/feedback";
 import { extractModuleUsageCandidates, resolveLastActivatedModuleKey } from "../utils/moduleUsage";
 
 type Vote = "up" | "down";
+
+type AudioOverlayState = {
+  id: number;
+  url: string;
+  audio: HTMLAudioElement;
+  needsManualStart: boolean;
+};
 
 type EcoMessageWithAudioProps = {
   message: Message;
@@ -41,7 +49,8 @@ type EcoMessageWithAudioProps = {
 
 const BTN_SIZE = "w-7 h-7 sm:w-8 sm:h-8";
 const ICON_SIZE = "w-[14px] h-[14px] sm:w-4 sm:h-4";
-const ICON_BASE = "text-gray-500/80 group-hover:text-gray-800 transition-colors";
+const ICON_BASE =
+  "text-gray-500/80 transition-colors group-hover:text-gray-900 dark:text-slate-300/80 dark:group-hover:text-slate-100";
 
 const GhostBtn = React.forwardRef<
   HTMLButtonElement,
@@ -54,7 +63,7 @@ const GhostBtn = React.forwardRef<
       "group rounded-xl",
       BTN_SIZE,
       "flex items-center justify-center",
-      "hover:bg-gray-100 active:bg-gray-200/80",
+      "hover:bg-gray-100 active:bg-gray-200/80 dark:hover:bg-slate-200/70 dark:active:bg-slate-300/60",
       "focus:outline-none focus:ring-2 focus:ring-gray-300/50",
       "transition-colors",
       className,
@@ -73,7 +82,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   onActivityTTS,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioOverlay, setAudioOverlay] = useState<AudioOverlayState | null>(null);
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [optimisticVote, setOptimisticVote] = useState<Vote | null>(null);
   const [showReasons, setShowReasons] = useState(false);
@@ -95,7 +104,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   const isUser = message.sender === "user";
   const isStreaming = message.streaming === true;
   const displayText = useMemo(
-    () => (message.text ?? message.content ?? "").trim(),
+    () => sanitizeText(message.text ?? message.content ?? ""),
     [message.content, message.text]
   );
   const canSpeak = !isUser && !!displayText;
@@ -232,6 +241,33 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
     },
     [interactionId, messageId, resolveSessionId, trackPassiveSignal],
   );
+
+  const disposeAudioSession = useCallback((session?: AudioOverlayState | null) => {
+    if (!session) return;
+    try {
+      session.audio.pause();
+    } catch {}
+    try {
+      session.audio.currentTime = 0;
+    } catch {}
+    try {
+      session.audio.src = '';
+    } catch {}
+    if (session.url.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(session.url);
+      } catch {}
+    }
+  }, []);
+
+  const clearAudioOverlay = useCallback(() => {
+    setAudioOverlay((prev) => {
+      if (prev) {
+        disposeAudioSession(prev);
+      }
+      return null;
+    });
+  }, [disposeAudioSession]);
 
   useEffect(() => {
     if (!ENABLE_MODULE_USAGE) return;
@@ -422,14 +458,59 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   const reproduzirAudio = async () => {
     if (!canSpeak || loadingAudio) return;
     setLoadingAudio(true);
-    if (audioUrl) setAudioUrl(null);
+    clearAudioOverlay();
 
     emitPassiveSignal("tts_play", 1);
 
     try {
       onActivityTTS?.(true);
       const dataUrl = await gerarAudioDaMensagem(displayText);
-      setAudioUrl(dataUrl);
+      const audioEl = new Audio();
+      audioEl.src = dataUrl;
+      audioEl.preload = "auto";
+      audioEl.autoplay = false;
+      audioEl.playsInline = true;
+      audioEl.loop = false;
+      audioEl.muted = true;
+      try {
+        audioEl.load();
+      } catch {}
+
+      let needsManualStart = false;
+
+      try {
+        const playPromise = audioEl.play();
+        if (playPromise) {
+          await playPromise;
+        }
+        if (typeof window !== "undefined") {
+          window.setTimeout(() => {
+            try {
+              audioEl.muted = false;
+            } catch {}
+          }, 120);
+        } else {
+          audioEl.muted = false;
+        }
+      } catch (err) {
+        needsManualStart = true;
+        try {
+          audioEl.pause();
+        } catch {}
+        try {
+          audioEl.currentTime = 0;
+        } catch {}
+        try {
+          audioEl.muted = false;
+        } catch {}
+      }
+
+      setAudioOverlay({
+        id: Date.now(),
+        url: dataUrl,
+        audio: audioEl,
+        needsManualStart,
+      });
     } catch (error) {
       console.error("Erro ao gerar áudio:", error);
     } finally {
@@ -438,6 +519,25 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
     }
   };
 
+  const focusComposer = useCallback(() => {
+    if (typeof document === "undefined") return;
+    const textarea = document.querySelector<HTMLTextAreaElement>(
+      '[data-chat-input-textarea]'
+    );
+    textarea?.focus({ preventScroll: true });
+  }, []);
+
+  const handleCloseAudioOverlay = useCallback(() => {
+    clearAudioOverlay();
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        focusComposer();
+      });
+    } else {
+      focusComposer();
+    }
+  }, [clearAudioOverlay, focusComposer]);
+
   useEffect(() => {
     return () => {
       if (loadingAudio) {
@@ -445,6 +545,12 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
       }
     };
   }, [loadingAudio, onActivityTTS]);
+
+  useEffect(() => {
+    return () => {
+      disposeAudioSession(audioOverlay);
+    };
+  }, [audioOverlay, disposeAudioSession]);
 
   const handleSelectReason = useCallback(
     (key: string) => {
@@ -719,10 +825,12 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
         </div>
       </div>
 
-      {audioUrl && (
+      {audioOverlay && (
         <AudioPlayerOverlay
-          audioUrl={audioUrl}
-          onClose={() => setAudioUrl(null)}
+          key={audioOverlay.id}
+          audio={audioOverlay.audio}
+          requiresManualStart={audioOverlay.needsManualStart}
+          onClose={handleCloseAudioOverlay}
         />
       )}
     </>

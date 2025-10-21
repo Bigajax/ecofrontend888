@@ -197,6 +197,7 @@ const ChatPage: React.FC = () => {
   const { scrollerRef, endRef, isAtBottom, showScrollBtn, scrollToBottom } = useAutoScroll<HTMLDivElement>({
     items: [messages],
     externalRef: chatRef,
+    bottomThreshold: 120,
   });
 
   const chatInputWrapperRef = useRef<HTMLDivElement | null>(null);
@@ -205,6 +206,7 @@ const ChatPage: React.FC = () => {
   });
 
   const baseScrollPadding = 112;
+  const scrollInset = Math.max(baseScrollPadding, contentInset + safeAreaBottom + 24);
 
   const { showQuick, hideQuickSuggestions, handleTextChange } =
     useQuickSuggestionsVisibility(messages);
@@ -461,6 +463,13 @@ const ChatPage: React.FC = () => {
 
   const shouldRenderGlobalTyping = globalTypingVisible || isSynthesizingAudio;
   const composerPending = pending || isComposerSending || isSendingToEco;
+  const [hasPendingMessages, setHasPendingMessages] = useState(false);
+  const lastMessageTokenRef = useRef<string>('');
+  const handleJumpToBottom = useCallback(() => {
+    setHasPendingMessages(false);
+    scrollToBottom(true);
+  }, [scrollToBottom]);
+  const showNewMessagesChip = hasPendingMessages && showScrollBtn;
   const isEmptyState = messages.length === 0 && !erroApi;
   const showInitialSuggestions =
     isEmptyState && showQuick && !isWaitingForEco && !composerPending && !erroApi;
@@ -471,19 +480,22 @@ const ChatPage: React.FC = () => {
   );
 
   useEffect(() => {
-    if (!isAtBottom) return;
-    scrollToBottom(false);
-  }, [contentInset, isAtBottom, scrollToBottom]);
+    const last = messages[messages.length - 1];
+    const signature = last
+      ? `${last.id}|${last.sender}|${(last.content ?? last.text ?? '').length}|${last.streaming ? '1' : '0'}`
+      : 'empty';
+    if (isAtBottom) {
+      setHasPendingMessages(false);
+    } else if (lastMessageTokenRef.current && signature !== lastMessageTokenRef.current) {
+      setHasPendingMessages(true);
+    }
+    lastMessageTokenRef.current = signature;
+  }, [messages, isAtBottom]);
 
   useEffect(() => {
-    if (!chatRef.current || !isAtBottom) return;
-    const prefersReducedMotion =
-      typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    chatRef.current.scrollTo({
-      top: chatRef.current.scrollHeight,
-      behavior: prefersReducedMotion ? 'auto' : 'smooth',
-    });
-  }, [messages, isAtBottom]);
+    if (!isAtBottom) return;
+    scrollToBottom(false);
+  }, [scrollInset, isAtBottom, scrollToBottom]);
 
   useEffect(() => {
     if (!shouldRenderGlobalTyping || !isAtBottom) return;
@@ -492,29 +504,28 @@ const ChatPage: React.FC = () => {
 
   return (
     <div
+      ref={scrollerRef}
       className={clsx(
-        'chat-page relative flex min-h-screen min-h-[100svh] w-full flex-1 flex-col bg-white',
+        'chat-page relative flex h-[100dvh] w-full flex-1 flex-col overflow-y-auto bg-[color:var(--color-bg-base)] text-[color:var(--color-text-primary)]',
         { 'keyboard-open': isKeyboardOpen },
       )}
-      style={{ minHeight: '100dvh' }}
+      style={{
+        minHeight: '100dvh',
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehaviorY: 'contain',
+        scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
+        scrollPaddingBottom: scrollInset,
+      }}
     >
-      {/* SCROLLER */}
-      <div
-        ref={scrollerRef}
-        role="feed"
-        aria-busy={isWaitingForEco || isSendingToEco}
-        className="chat-scroller flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-4 pb-28 scroll-smooth h-[calc(100vh-140px)] sm:px-6 md:h-auto lg:px-10"
-        style={{
-          paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
-          WebkitOverflowScrolling: 'touch',
-          scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
-          touchAction: 'pan-y',
-          paddingBottom: Math.max(contentInset, baseScrollPadding),
-          scrollPaddingBottom: Math.max(contentInset, baseScrollPadding),
-          overscrollBehavior: 'contain',
-        }}
-      >
-        <div className="mx-auto w-full max-w-[min(640px,88vw)]">
+      <div role="feed" aria-busy={isWaitingForEco || isSendingToEco} className="flex-1">
+        <div
+          className="px-4 sm:px-6 lg:px-10"
+          style={{ paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)' }}
+        >
+          <div
+            className="mx-auto w-full max-w-[min(640px,88vw)]"
+            style={{ paddingBottom: scrollInset }}
+          >
           {isEmptyState && (
             <div
               className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex flex-col items-center justify-center py-16 sm:py-20"
@@ -529,10 +540,10 @@ const ChatPage: React.FC = () => {
                 {/* Saudação centralizada */}
                 <div className="mx-auto flex w-full max-w-[800px] flex-col items-center gap-6 text-center sm:gap-8">
                   <div className="flex flex-col gap-3 sm:gap-4">
-                    <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+                    <h1 className="text-4xl font-semibold tracking-tight text-[color:var(--bubble-eco-text)] sm:text-5xl">
                       {saudacao}, {userName}
                     </h1>
-                    <p className="mx-auto max-w-2xl text-base text-gray-500 sm:text-lg">
+                    <p className="mx-auto max-w-2xl text-base text-[color:var(--color-text-muted)] sm:text-lg">
                       {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
                     </p>
                   </div>
@@ -653,21 +664,20 @@ const ChatPage: React.FC = () => {
 
             <div ref={endRef} className="anchor-end h-px" />
           </div>
+          </div>
         </div>
 
-        {showScrollBtn && (
+        {showNewMessagesChip && (
           <div
-            className="sticky bottom-24 z-30 flex justify-end pr-2 sm:pr-6"
+            className="sticky bottom-24 z-30 flex justify-center px-2 sm:px-6"
             style={{ bottom: safeAreaBottom + 96 }}
           >
             <button
-              onClick={() => scrollToBottom(true)}
-              className="h-9 w-9 rounded-full glass-soft hover:bg-white/24 flex items-center justify-center transition"
-              aria-label="Descer para a última mensagem"
+              type="button"
+              onClick={handleJumpToBottom}
+              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[0_16px_32px_rgba(15,23,42,0.18)] transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300/60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
             >
-              <svg viewBox="0 0 24 24" className="h-5 w-5 text-gray-700">
-                <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              Novas mensagens
             </button>
           </div>
         )}
@@ -675,8 +685,8 @@ const ChatPage: React.FC = () => {
 
       <div
         ref={chatInputWrapperRef}
-        className="composer sticky bottom-0 z-40 border-t border-black/10 bg-white px-3 pt-3 backdrop-blur-sm sm:px-6 lg:px-10"
-        style={{ paddingBottom: safeAreaBottom + 12 }}
+        className="composer sticky bottom-0 z-40 border-t border-black/10 bg-[color:var(--color-bg-base)]/92 px-3 pt-3 backdrop-blur-md shadow-[0_-18px_40px_rgba(15,23,42,0.12)] sm:px-6 lg:px-10"
+        style={{ paddingBottom: safeAreaBottom + 16 }}
       >
         <div className="mx-auto w-full max-w-[min(640px,88vw)] space-y-3">
           <QuickSuggestions

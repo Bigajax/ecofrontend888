@@ -1,3 +1,5 @@
+import { sanitizeText } from './sanitizeText';
+
 const JSON_BLOCK_REGEX = /\{[\s\S]*"emocao_principal"[\s\S]*\}\s*$/;
 
 const STAGE_INLINE_PATTERNS = [
@@ -67,8 +69,11 @@ export function sanitizeEcoText(full: string): string {
     .replace(SPACE_BEFORE_PUNCT, "$1")
     .trim();
 
+  sanitized = sanitizeText(sanitized);
+
   if (json) {
-    return sanitized ? `${sanitized}\n${json}` : json;
+    const trimmedJson = json.trim();
+    return sanitized ? `${sanitized}\n${trimmedJson}` : trimmedJson;
   }
 
   return sanitized;

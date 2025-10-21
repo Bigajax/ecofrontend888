@@ -1,235 +1,329 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 
 interface AudioPlayerOverlayProps {
-  /** Data URL (data:audio/mpeg;base64,...) ou blob: (URL.createObjectURL) */
-  audioUrl: string;
+  audio: HTMLAudioElement;
   onClose: () => void;
   onProgress?: (info: { ratio: number; currentTime: number; duration: number }) => void;
+  requiresManualStart?: boolean;
 }
 
 const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
-  audioUrl,
+  audio,
   onClose,
   onProgress,
+  requiresManualStart = false,
 }) => {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(audio);
   const progressRef = useRef<AudioPlayerOverlayProps["onProgress"]>(onProgress);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
+
+  const [isPlaying, setIsPlaying] = useState(() => !audio.paused && !audio.ended);
+  const [currentTime, setCurrentTime] = useState(() => audio.currentTime || 0);
+  const [duration, setDuration] = useState(() =>
+    Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0,
+  );
+  const [manualStartNeeded, setManualStartNeeded] = useState(requiresManualStart);
 
   useEffect(() => {
     progressRef.current = onProgress;
   }, [onProgress]);
 
-  // Web Audio (boost leve de volume)
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const gainRef = useRef<GainNode | null>(null);
-
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const currentTimeRef = useRef(0);
-  const durationRef = useRef(0);
-
-  const isBlobUrl = audioUrl.startsWith("blob:");
+  useEffect(() => {
+    audioRef.current = audio;
+    setIsPlaying(!audio.paused && !audio.ended);
+    setCurrentTime(audio.currentTime || 0);
+    if (Number.isFinite(audio.duration) && audio.duration > 0) {
+      setDuration(audio.duration);
+    }
+  }, [audio]);
 
   useEffect(() => {
-    const audio = new Audio();
-    audioRef.current = audio;
+    setManualStartNeeded(requiresManualStart);
+  }, [requiresManualStart]);
 
-    // ajustes gerais + iOS
-    audio.src = audioUrl;
-    audio.preload = "auto";
-    audio.playsInline = true;
-    audio.autoplay = false;
-    audio.muted = false;
-    audio.volume = 1;
-    try { audio.load(); } catch {}
+  const ensureContext = useCallback(() => {
+    const ctx = audioCtxRef.current;
+    if (ctx && ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+    }
+  }, []);
 
-    // --- Web Audio: +3~4 dB ---
+  useEffect(() => {
+    const el = audio;
+    if (!el) return;
+
     try {
       // @ts-ignore - suporte webkit
       const Ctx = window.AudioContext || (window as any).webkitAudioContext;
       if (Ctx) {
         const ctx: AudioContext = new Ctx();
-        audioCtxRef.current = ctx;
-
-        const src = ctx.createMediaElementSource(audio);
-        sourceRef.current = src;
-
+        const src = ctx.createMediaElementSource(el);
         const gain = ctx.createGain();
-        gainRef.current = gain;
-        gain.gain.value = 1.4; // 1.0 = normal
+        gain.gain.value = 1.35;
 
         src.connect(gain).connect(ctx.destination);
-        ctx.resume().catch(() => {});
-      }
-    } catch {}
 
-    const onTimeUpdate = () => {
-      const current = audio.currentTime || 0;
-      currentTimeRef.current = current;
-      setCurrentTime(current);
-      const total =
-        isFinite(audio.duration) && audio.duration > 0
-          ? audio.duration
-          : durationRef.current;
-      if (total > 0) {
-        const ratio = Math.min(1, Math.max(0, current / total));
-        progressRef.current?.({ ratio, currentTime: current, duration: total });
-      }
-    };
-    const onLoadedMeta = () => {
-      const total = isFinite(audio.duration) ? audio.duration : 0;
-      durationRef.current = total;
-      setDuration(total);
-      if (total > 0) {
-        const current = currentTimeRef.current;
-        const ratio = Math.min(1, Math.max(0, total ? current / total : 0));
-        progressRef.current?.({ ratio, currentTime: current, duration: total });
-      }
-    };
-    const onCanPlay = () => {
-      if (!isFinite(audio.duration)) {
-        const total = audio.duration || 0;
-        durationRef.current = total;
-        setDuration(total);
-      }
-    };
-    const onEnded = () => setIsPlaying(false);
-    const onError = () => {
-      console.error("[AUDIO ERROR]", audio.error);
-      setIsPlaying(false);
-    };
+        audioCtxRef.current = ctx;
+        sourceRef.current = src;
+        gainRef.current = gain;
 
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("loadedmetadata", onLoadedMeta);
-    audio.addEventListener("canplay", onCanPlay);
-    audio.addEventListener("ended", onEnded);
-    audio.addEventListener("error", onError);
-
-    audio
-      .play()
-      .then(() => setIsPlaying(true))
-      .catch(() => setIsPlaying(false));
-
-    const onEsc = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") {
-        try { audio.pause(); } catch {}
-        onClose();
+        if (ctx.state === "suspended") {
+          ctx.resume().catch(() => {});
+        }
       }
-    };
-    window.addEventListener("keydown", onEsc);
+    } catch {
+      /* noop */
+    }
 
     return () => {
-      window.removeEventListener("keydown", onEsc);
-      try { audio.pause(); } catch {}
-
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("loadedmetadata", onLoadedMeta);
-      audio.removeEventListener("canplay", onCanPlay);
-      audio.removeEventListener("ended", onEnded);
-      audio.removeEventListener("error", onError);
-
-      if (isBlobUrl) {
-        try { URL.revokeObjectURL(audioUrl); } catch {}
-      }
-
       try {
         sourceRef.current?.disconnect();
+      } catch {}
+      try {
         gainRef.current?.disconnect();
+      } catch {}
+      try {
         audioCtxRef.current?.close();
       } catch {}
-
       sourceRef.current = null;
       gainRef.current = null;
       audioCtxRef.current = null;
-      audioRef.current = null;
     };
-  }, [audioUrl, isBlobUrl, onClose]);
+  }, [audio]);
 
-  const togglePlay = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
+  useEffect(() => {
+    const el = audio;
+    if (!el) return;
 
-    if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
-    } else {
-      if (audioCtxRef.current?.state === "suspended") {
-        audioCtxRef.current.resume().catch(() => {});
+    const handleTimeUpdate = () => {
+      const current = el.currentTime || 0;
+      setCurrentTime(current);
+      const baseDuration =
+        Number.isFinite(el.duration) && el.duration > 0 ? el.duration : duration;
+      if (baseDuration > 0) {
+        const ratio = Math.min(1, Math.max(0, current / baseDuration));
+        progressRef.current?.({ ratio, currentTime: current, duration: baseDuration });
       }
-      audio
+    };
+
+    const handleLoadedMetadata = () => {
+      if (Number.isFinite(el.duration) && el.duration > 0) {
+        setDuration(el.duration);
+      }
+    };
+
+    const handleDurationChange = () => {
+      if (Number.isFinite(el.duration) && el.duration > 0) {
+        setDuration(el.duration);
+      }
+    };
+
+    const handlePlay = () => {
+      setIsPlaying(true);
+      setManualStartNeeded(false);
+    };
+
+    const handlePause = () => {
+      setIsPlaying(false);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+    };
+
+    const handleError = () => {
+      setManualStartNeeded(true);
+      setIsPlaying(false);
+    };
+
+    el.addEventListener("timeupdate", handleTimeUpdate);
+    el.addEventListener("loadedmetadata", handleLoadedMetadata);
+    el.addEventListener("durationchange", handleDurationChange);
+    el.addEventListener("play", handlePlay);
+    el.addEventListener("pause", handlePause);
+    el.addEventListener("ended", handleEnded);
+    el.addEventListener("error", handleError);
+
+    handleTimeUpdate();
+
+    return () => {
+      el.removeEventListener("timeupdate", handleTimeUpdate);
+      el.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      el.removeEventListener("durationchange", handleDurationChange);
+      el.removeEventListener("play", handlePlay);
+      el.removeEventListener("pause", handlePause);
+      el.removeEventListener("ended", handleEnded);
+      el.removeEventListener("error", handleError);
+    };
+  }, [audio, duration]);
+
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        try {
+          audio.pause();
+        } catch {}
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [audio, onClose]);
+
+  useEffect(() => {
+    cardRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    const el = audioRef.current;
+    if (!el) return;
+
+    if (!isPlaying) {
+      ensureContext();
+      el
         .play()
-        .then(() => setIsPlaying(true))
-        .catch((e) => console.warn("[AUDIO] play() falhou:", e?.message || e));
+        .then(() => {
+          setManualStartNeeded(false);
+          setIsPlaying(true);
+        })
+        .catch(() => {
+          setManualStartNeeded(true);
+        });
+    } else {
+      el.pause();
     }
-  };
+  }, [ensureContext, isPlaying]);
 
-  const seek = (seconds: number) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const total = duration || audio.duration || 0;
-    const next = Math.max(0, Math.min(total, audio.currentTime + seconds));
-    audio.currentTime = next;
-    setCurrentTime(next);
-  };
+  const handleManualStart = useCallback(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    ensureContext();
+    el
+      .play()
+      .then(() => {
+        setManualStartNeeded(false);
+        setIsPlaying(true);
+      })
+      .catch(() => {
+        setManualStartNeeded(true);
+      });
+  }, [ensureContext]);
 
-  const seekToRatio = (ratio: number) => {
-    const audio = audioRef.current;
-    if (!audio || !duration) return;
-    const next = Math.max(0, Math.min(duration, duration * ratio));
-    audio.currentTime = next;
-    setCurrentTime(next);
-  };
+  const seek = useCallback(
+    (seconds: number) => {
+      const el = audioRef.current;
+      if (!el) return;
+      const baseDuration =
+        Number.isFinite(el.duration) && el.duration > 0 ? el.duration : duration;
+      const limit = baseDuration || el.duration || 0;
+      const next = Math.max(0, Math.min(limit, el.currentTime + seconds));
+      el.currentTime = next;
+      setCurrentTime(next);
+    },
+    [duration],
+  );
 
-  const onProgressClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    if (!duration) return;
-    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
-    seekToRatio(ratio);
-  };
+  const seekToRatio = useCallback(
+    (ratio: number) => {
+      if (!duration) return;
+      const el = audioRef.current;
+      if (!el) return;
+      const next = Math.max(0, Math.min(duration, duration * ratio));
+      el.currentTime = next;
+      setCurrentTime(next);
+    },
+    [duration],
+  );
 
-  const formatTime = (s: number) => {
-    const min = Math.floor(s / 60).toString().padStart(2, "0");
-    const sec = Math.floor(s % 60).toString().padStart(2, "0");
+  const onProgressClick: React.MouseEventHandler<HTMLDivElement> = useCallback(
+    (event) => {
+      if (!duration) return;
+      const rect = event.currentTarget.getBoundingClientRect();
+      const ratio = (event.clientX - rect.left) / rect.width;
+      seekToRatio(ratio);
+    },
+    [duration, seekToRatio],
+  );
+
+  const formatTime = (value: number) => {
+    const safe = Number.isFinite(value) ? value : 0;
+    const min = Math.floor(safe / 60)
+      .toString()
+      .padStart(2, "0");
+    const sec = Math.floor(safe % 60)
+      .toString()
+      .padStart(2, "0");
     return `${min}:${sec}`;
   };
+
+  const handleClose = useCallback(() => {
+    try {
+      audio.pause();
+    } catch {}
+    onClose();
+  }, [audio, onClose]);
 
   const IconBtn = ({
     onClick,
     label,
     children,
+    disabled = false,
   }: {
     onClick: () => void;
     label: string;
     children: React.ReactNode;
+    disabled?: boolean;
   }) => (
     <button
-      onClick={onClick}
-      className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition"
-      aria-label={label}
       type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-300/50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-500 dark:hover:bg-slate-200/70 dark:hover:text-slate-800"
+      aria-label={label}
     >
       {children}
     </button>
   );
 
   const PauseIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
-      <rect x="6" y="4" width="3" height="16" rx="1.5" />
-      <rect x="15" y="4" width="3" height="16" rx="1.5" />
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden
+    >
+      <rect x="6" y="4" width="3" height="16" rx="1.4" />
+      <rect x="15" y="4" width="3" height="16" rx="1.4" />
     </svg>
   );
 
   const PlayIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="black" aria-hidden>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M8 5v14l11-7z" />
     </svg>
   );
 
   const ArrowCircle = ({ direction }: { direction: "left" | "right" }) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <circle cx="12" cy="12" r="10" />
       {direction === "left" ? <path d="M13 8l-4 4 4 4" /> : <path d="M11 8l4 4-4 4" />}
     </svg>
@@ -238,57 +332,81 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
   const progress = duration ? Math.min(100, (currentTime / duration) * 100) : 0;
 
   return (
-    <div
-      className="
-        fixed left-1/2 -translate-x-1/2
-        top-[calc(env(safe-area-inset-top)+72px)]  /* abaixo do Header */
-        z-[80]                                     /* acima do Header (z-50) */
-        max-w-[92vw]
-        bg-white border border-gray-200 rounded-full shadow-lg
-        px-4 py-2 flex items-center gap-4 backdrop-blur-sm
-      "
-      role="dialog"
-      aria-label="Reprodutor de áudio"
-    >
-      <IconBtn onClick={togglePlay} label={isPlaying ? "Pausar" : "Tocar"}>
-        {isPlaying ? <PauseIcon /> : <PlayIcon />}
-      </IconBtn>
-
-      <div className="flex items-center gap-3">
-        <div
-          className="relative w-40 h-2 rounded-full bg-gray-200 overflow-hidden cursor-pointer"
-          onClick={onProgressClick}
-          aria-label="Barra de progresso"
-          role="slider"
-          aria-valuemin={0}
-          aria-valuemax={duration || 0}
-          aria-valuenow={currentTime}
-        >
-          <div className="absolute inset-y-0 left-0 bg-gray-800" style={{ width: `${progress}%` }} />
-        </div>
-
-        <span className="text-xs font-sans font-light text-black tracking-tight tabular-nums">
-          {formatTime(currentTime)}{duration ? ` / ${formatTime(duration)}` : ""}
-        </span>
-      </div>
-
-      <IconBtn onClick={() => seek(-15)} label="Voltar 15 segundos">
-        <ArrowCircle direction="left" />
-      </IconBtn>
-
-      <IconBtn onClick={() => seek(15)} label="Avançar 15 segundos">
-        <ArrowCircle direction="right" />
-      </IconBtn>
-
-      <IconBtn
-        onClick={() => {
-          try { audioRef.current?.pause(); } catch {}
-          onClose();
-        }}
-        label="Fechar"
+    <div className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+72px)] z-[80] flex justify-center px-3">
+      <div
+        ref={cardRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Reprodutor de áudio"
+        className="pointer-events-auto relative flex w-full max-w-[min(520px,92vw)] flex-col gap-4 rounded-2xl border border-slate-200 bg-white/95 px-4 py-4 text-slate-900 shadow-[0_24px_48px_rgba(15,23,42,0.18)] backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-blue-200/60 dark:border-slate-300/70 dark:bg-slate-100/95"
       >
-        <X className="w-5 h-5 stroke-[1.5]" />
-      </IconBtn>
+        <button
+          type="button"
+          onClick={handleClose}
+          className="absolute right-2.5 top-2.5 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-300/40 dark:text-slate-600 dark:hover:bg-slate-200/70"
+        >
+          <X className="h-4 w-4" strokeWidth={1.6} />
+          <span className="sr-only">Fechar</span>
+        </button>
+
+        <div className="flex flex-col gap-3 pr-6 sm:flex-row sm:items-center sm:gap-5">
+          <div className="flex items-center gap-3">
+            <IconBtn onClick={togglePlay} label={isPlaying ? "Pausar" : "Tocar"}>
+              {isPlaying ? <PauseIcon /> : <PlayIcon />}
+            </IconBtn>
+
+            {manualStartNeeded ? (
+              <button
+                type="button"
+                onClick={handleManualStart}
+                className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300/60 dark:bg-slate-800 dark:hover:bg-slate-700"
+              >
+                <PlayIcon />
+                <span>Tocar</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div
+                  className="relative h-2 w-40 cursor-pointer rounded-full bg-slate-200 transition-colors hover:bg-slate-300 dark:bg-slate-300/70 dark:hover:bg-slate-400/80"
+                  onClick={onProgressClick}
+                  role="slider"
+                  aria-valuemin={0}
+                  aria-valuemax={duration || 0}
+                  aria-valuenow={currentTime}
+                  aria-label="Posição do áudio"
+                >
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-slate-900 transition-all dark:bg-slate-800"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <span className="text-xs font-mono text-slate-600 dark:text-slate-700">
+                  {formatTime(currentTime)}
+                  {duration ? ` / ${formatTime(duration)}` : ""}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 sm:ml-auto">
+            <IconBtn
+              onClick={() => seek(-15)}
+              label="Voltar 15 segundos"
+              disabled={manualStartNeeded || (!duration && !isPlaying)}
+            >
+              <ArrowCircle direction="left" />
+            </IconBtn>
+            <IconBtn
+              onClick={() => seek(15)}
+              label="Avançar 15 segundos"
+              disabled={manualStartNeeded || (!duration && !isPlaying)}
+            >
+              <ArrowCircle direction="right" />
+            </IconBtn>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

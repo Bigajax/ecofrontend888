@@ -10,6 +10,7 @@ import { extrairTagsRelevantes } from '../utils/extrairTagsRelevantes';
 import { extractDeepQuestionFlag } from '../utils/chat/deepQuestion';
 import { gerarMensagemRetorno } from '../utils/chat/memory';
 import { sanitizeEcoText } from '../utils/sanitizeEcoText';
+import { sanitizeText } from '../utils/sanitizeText';
 import type { Message as ChatMessageType } from '../contexts/ChatContext';
 import mixpanel from '../lib/mixpanel';
 import { supabase } from '../lib/supabaseClient';
@@ -236,7 +237,13 @@ export const useEcoStream = ({
 
       const userMsgId = uuidv4();
       inFlightRef.current = userMsgId;
-      addMessage({ id: userMsgId, text: trimmed, content: trimmed, sender: 'user' });
+      const sanitizedUserText = sanitizeText(trimmed);
+      addMessage({
+        id: userMsgId,
+        text: sanitizedUserText,
+        content: sanitizedUserText,
+        sender: 'user',
+      });
 
       requestAnimationFrame(() => scrollToBottom(true));
 
