@@ -13,8 +13,6 @@ body {
   background-color: var(--color-bg-base);
   background-image: var(--orb-a), var(--orb-b), var(--orb-c);
   background-attachment: fixed;
-  overflow: hidden;              /* scroll vive no container do chat */
-  overscroll-behavior-y: none;   /* remove bounce do body */
   font-feature-settings: "kern","liga","clig","calt";
   font-variant-numeric: tabular-nums;
   letter-spacing: .005em;
@@ -29,6 +27,10 @@ body::before {
   opacity: 0.6;
   mix-blend-mode: screen;
   z-index: -1;
+}
+
+.chat-page {
+  scrollbar-gutter: stable both-edges;
 }
 
 /* ---------------------------- Tokens ---------------------------- */
@@ -100,8 +102,8 @@ body::before {
     --color-glass-stroke: rgba(148, 163, 184, 0.28);
     --color-text-primary: var(--eco-text);
     --color-text-muted: #cbd5f5;
-    --bubble-eco-bg: rgba(15, 23, 42, 0.88);
-    --bubble-eco-text: var(--eco-text);
+    --bubble-eco-bg: rgba(248, 250, 252, 0.92);
+    --bubble-eco-text: #0a0a0a;
     --bubble-user-bg: var(--eco-blue);
     --bubble-user-text: #ffffff;
     --bubble-border: rgba(148, 163, 184, 0.22);
@@ -356,20 +358,9 @@ body {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: #fff;
-}
-
-/* Contêiner de rolagem do chat */
-.chat-scroller {
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-  height: 100%;
-  min-height: 0;
-  overflow-y: auto;
-  scroll-behavior: auto;     /* usamos scrollIntoView no JS */
-  overflow-anchor: none;     /* evita “pulos” */
-  touch-action: pan-y;
+  overflow-anchor: none;
   scrollbar-gutter: stable both-edges;
+  touch-action: pan-y;
 }
 .anchor-end { overflow-anchor: auto; }
 

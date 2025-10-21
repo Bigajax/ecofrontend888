@@ -270,6 +270,7 @@ const ChatInput: React.FC<Props> = ({
           <textarea
             ref={textareaRef}
             value={inputMessage}
+            data-chat-input-textarea
             onChange={(e) => {
               const v = e.target.value;
               setInputMessage(v);
