@@ -1,10 +1,10 @@
 import axios from "axios";
 
-import { API_BASE_URL } from "../constants/api";
+import { getApiBase } from "../constants/api";
 import { buildIdentityHeaders, syncGuestId } from "../lib/guestId";
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiBase(),
   timeout: 60000,
   withCredentials: false,
 });

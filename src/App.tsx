@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
@@ -20,12 +20,12 @@ const ReportSection = React.lazy(() => import('./pages/memory/ReportSection'));
 import RequireAuth from './components/RequireAuth';
 import mixpanel from './lib/mixpanel';
 import MainLayout from './layouts/MainLayout';
-import { DEFAULT_API_BASE, EFFECTIVE_API_BASE, IS_API_BASE_EMPTY, RAW_API_BASE } from './constants/api';
+import { DEFAULT_API_BASE, IS_API_BASE_EMPTY, RAW_API_BASE, getApiBase } from './constants/api';
 import RootErrorBoundary from './components/RootErrorBoundary';
 import HealthBanner from './components/HealthBanner';
 import ApiBaseWarningCard from './components/ApiBaseWarningCard';
 import GlobalErrorChip from './components/GlobalErrorChip';
-import { HealthStatus, pingWithRetry } from './utils/health';
+import { HealthCheckResult, HealthStatus, pingWithRetry } from './utils/health';
 
 const lazyFallback = <div>Carregando…</div>;
 
@@ -109,12 +109,18 @@ function AppRoutes() {
 function AppChrome() {
   const [healthStatus, setHealthStatus] = useState<HealthStatus>('idle');
   const [hasCapturedError, setHasCapturedError] = useState(false);
+  const healthMetaRef = useRef<Pick<HealthCheckResult, 'aborted' | 'responseOk'>>({
+    aborted: false,
+    responseOk: true,
+  });
+  const rawEnvApiBase = RAW_API_BASE;
   const rawApiBaseDisplay =
-    typeof RAW_API_BASE === 'string'
-      ? RAW_API_BASE.trim().length === 0
+    typeof rawEnvApiBase === 'string'
+      ? rawEnvApiBase.length === 0
         ? '""'
-        : RAW_API_BASE
+        : rawEnvApiBase
       : 'indefinido';
+  const effectiveApiBase = getApiBase();
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -122,19 +128,44 @@ function AppChrome() {
     }
 
     let alive = true;
+    const BASE_DELAY = 20_000;
+    const STEP = 20_000;
+    const MAX_DELAY = 120_000;
+    let nextDelay = BASE_DELAY;
+    let timeoutId: number | null = null;
 
-    const tick = async () => {
-      const status = await pingWithRetry();
+    const runCheck = async () => {
+      const delayForThisCycle = nextDelay;
+      let result: HealthCheckResult;
+      try {
+        result = await pingWithRetry();
+      } catch (error) {
+        console.error('[App] Falha na verificação de saúde', error);
+        if (!alive) return;
+        result = { status: 'down', aborted: false, responseOk: false };
+      }
       if (!alive) return;
-      setHealthStatus(status);
+      healthMetaRef.current = { aborted: result.aborted, responseOk: result.responseOk };
+      setHealthStatus(result.status);
+
+      if (result.status === 'ok') {
+        nextDelay = BASE_DELAY;
+      } else {
+        nextDelay = Math.min(delayForThisCycle + STEP, MAX_DELAY);
+      }
+
+      if (!alive) return;
+      const delay = result.status === 'ok' ? BASE_DELAY : delayForThisCycle;
+      timeoutId = window.setTimeout(runCheck, delay);
     };
 
-    tick();
-    const intervalId = window.setInterval(tick, 30_000);
+    runCheck();
 
     return () => {
       alive = false;
-      window.clearInterval(intervalId);
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
     };
   }, []);
 
@@ -173,7 +204,9 @@ function AppChrome() {
     };
   }, []);
 
-  const showHealthBanner = healthStatus === 'degraded' || healthStatus === 'down';
+  const showHealthBanner =
+    (healthStatus === 'degraded' || healthStatus === 'down') &&
+    !(healthStatus === 'down' && healthMetaRef.current.aborted);
   const showApiBaseWarning = IS_API_BASE_EMPTY;
   const showErrorChip = hasCapturedError;
 
@@ -192,7 +225,7 @@ function AppChrome() {
             visible={showApiBaseWarning}
             rawApiBaseDisplay={rawApiBaseDisplay}
             defaultApiBase={DEFAULT_API_BASE}
-            effectiveApiBase={EFFECTIVE_API_BASE}
+            effectiveApiBase={effectiveApiBase}
           />
 
           <GlobalErrorChip visible={showErrorChip} onClick={handleErrorChipClick} />
