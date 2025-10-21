@@ -33,6 +33,18 @@ body::before {
   scrollbar-gutter: stable both-edges;
 }
 
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.suggestion-scroll {
+  scroll-behavior: smooth;
+}
+
 /* ---------------------------- Tokens ---------------------------- */
 :root {
   color-scheme: light;
