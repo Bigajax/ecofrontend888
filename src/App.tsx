@@ -26,7 +26,7 @@ import MainLayout from "@/layouts/MainLayout";
 import PixelRouteListener from "@/lib/PixelRouteListener";
 import MixpanelRouteListener from "@/lib/MixpanelRouteListener";
 import mixpanel from "@/lib/mixpanel";
-import { DEFAULT_API_BASE, IS_API_BASE_EMPTY, RAW_API_BASE } from "@/constants/api";
+import { DEFAULT_API_BASE, RAW_API_BASE } from "@/constants/api";
 import { getApiBase } from "@/config/apiBase";
 import { HealthCheckResult, HealthStatus, pingWithRetry } from "@/utils/health";
 
@@ -216,7 +216,6 @@ function AppChrome() {
   const showHealthBanner =
     (healthStatus === "degraded" || healthStatus === "down") &&
     !(healthStatus === "down" && healthMetaRef.current.aborted);
-  const showApiBaseWarning = IS_API_BASE_EMPTY;
   const showErrorChip = hasCapturedError;
 
   const handleErrorChipClick = () => {
@@ -229,7 +228,6 @@ function AppChrome() {
       <HealthBanner status={healthStatus} visible={showHealthBanner} />
 
       <ApiBaseWarningCard
-        visible={showApiBaseWarning}
         rawApiBaseDisplay={rawApiBaseDisplay}
         defaultApiBase={DEFAULT_API_BASE}
         effectiveApiBase={effectiveApiBase}

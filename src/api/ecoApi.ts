@@ -6,6 +6,8 @@ import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
 import { sanitizeEcoText } from "../utils/sanitizeEcoText";
 import { buildIdentityHeaders, getGuestId, syncGuestId, updateBiasHint } from "../lib/guestId";
+import { apiFetchJson, ApiFetchJsonNetworkError, ApiFetchJsonResult } from "../lib/apiFetch";
+import { pingHealth } from "../utils/health";
 
 import { EcoApiError, MissingUserIdError } from "./errors";
 import { AskEcoResponse, normalizeAskEcoResponse } from "./askEcoResponse";
@@ -24,10 +26,71 @@ import type {
 export { EcoApiError };
 export type { EcoClientEvent, EcoEventHandlers, EcoSseEvent, EcoStreamResult };
 
+const isNetworkErrorResult = (
+  result: ApiFetchJsonResult<unknown>,
+): result is ApiFetchJsonNetworkError => {
+  return !result.ok && (result as ApiFetchJsonNetworkError).status === 0;
+};
+
+const wasAbortedByCaller = (
+  result: ApiFetchJsonNetworkError,
+  signal?: AbortSignal,
+) => {
+  if (!signal || !signal.aborted) {
+    return false;
+  }
+  const error = result.error;
+  return error instanceof DOMException && error.name === "AbortError";
+};
+
+const shouldRetryAfterNetworkFailure = async (
+  result: ApiFetchJsonNetworkError,
+  signal?: AbortSignal,
+) => {
+  if (wasAbortedByCaller(result, signal)) {
+    return false;
+  }
+
+  try {
+    const health = await pingHealth();
+    return health.responseOk;
+  } catch {
+    return false;
+  }
+};
+
+const syncGuestFromHeaders = (headers?: Headers) => {
+  if (!headers) return;
+  const candidate = headers.get("x-eco-guest-id") ?? headers.get("x-guest-id");
+  if (candidate) {
+    syncGuestId(candidate);
+  }
+};
+
+const extractClientErrorMessage = (data: unknown) => {
+  if (typeof data === "string") {
+    const trimmed = data.trim();
+    return trimmed || undefined;
+  }
+
+  if (data && typeof data === "object") {
+    const candidate = (data as { message?: unknown }).message;
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  return undefined;
+};
+
 export async function askEco(
   payload: any,
   opts: { stream?: boolean; headers?: Record<string, string>; signal?: AbortSignal } = {}
 ) {
+  if (opts.signal?.aborted) {
+    throw new DOMException("Aborted", "AbortError");
+  }
+
   const baseHeaders: Record<string, string> = { ...(opts.headers ?? {}) };
   const identityHeaders = buildIdentityHeaders();
   for (const [key, value] of Object.entries(identityHeaders)) {
@@ -44,65 +107,55 @@ export async function askEco(
     headers.set("Accept", headers.get("Accept") ?? "application/json");
   }
 
-  const response = await fetch(resolveApiUrl(ASK_ENDPOINT), {
-    method: "POST",
-    headers,
-    body: JSON.stringify(payload ?? {}),
-    mode: "cors",
-    credentials: "include",
-    redirect: "follow",
-    keepalive: false,
-    signal: opts.signal,
-  });
+  const serializedHeaders = Object.fromEntries(headers.entries());
+  const body = JSON.stringify(payload ?? {});
 
-  const responseGuestId =
-    response.headers.get("x-eco-guest-id") ||
-    response.headers.get("X-Eco-Guest-Id") ||
-    response.headers.get("x-guest-id") ||
-    response.headers.get("X-Guest-Id");
-  if (responseGuestId) {
-    syncGuestId(responseGuestId);
+  const executeRequest = () =>
+    apiFetchJson<any>(ASK_ENDPOINT, {
+      method: "POST",
+      headers: serializedHeaders,
+      body,
+      signal: opts.signal,
+    });
+
+  let result = await executeRequest();
+
+  if (isNetworkErrorResult(result)) {
+    if (wasAbortedByCaller(result, opts.signal)) {
+      throw result.error ?? new DOMException("Aborted", "AbortError");
+    }
+
+    const canRetry = await shouldRetryAfterNetworkFailure(result, opts.signal);
+    if (canRetry) {
+      result = await executeRequest();
+    }
   }
 
-  if (!response.ok) {
-    let errorPayload: unknown;
-    let message = `Erro HTTP ${response.status}`;
-    try {
-      const contentType = response.headers.get("content-type") || "";
-      if (contentType.includes("application/json")) {
-        errorPayload = await response.json();
-      } else {
-        const text = await response.text();
-        errorPayload = text;
-      }
-    } catch {
-      errorPayload = undefined;
-    }
+  if (result.ok) {
+    syncGuestFromHeaders(result.headers);
+    return result.data;
+  }
 
-    if (errorPayload && typeof errorPayload === "object") {
-      const candidate =
-        (errorPayload as any)?.error ||
-        (errorPayload as any)?.message ||
-        (errorPayload as any)?.detail ||
-        (errorPayload as any)?.details;
-      if (typeof candidate === "string" && candidate.trim()) {
-        message = candidate.trim();
-      }
-    } else if (typeof errorPayload === "string" && errorPayload.trim()) {
-      message = errorPayload.trim();
-    }
-
-    throw new EcoApiError(message, {
-      status: response.status,
-      details: errorPayload,
+  if (isNetworkErrorResult(result)) {
+    throw new EcoApiError(NETWORK_ERROR_MESSAGE, {
+      code: result.code,
+      details: result.error,
     });
   }
 
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    return await response.json();
+  const status = result.status;
+  const data = result.data;
+
+  if (status >= 500) {
+    throw new EcoApiError(SERVER_INSTABILITY_MESSAGE, { status, details: data });
   }
-  return await response.text();
+
+  if (status >= 400) {
+    const message = extractClientErrorMessage(data) ?? CLIENT_ERROR_FALLBACK_MESSAGE;
+    throw new EcoApiError(message, { status, details: data });
+  }
+
+  throw new EcoApiError("Erro ao se comunicar com a Eco.", { status, details: data });
 }
 
 interface Message {
@@ -115,6 +168,8 @@ const ASK_ENDPOINT = "/api/ask-eco";
 
 const NETWORK_ERROR_MESSAGE =
   "Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.";
+const SERVER_INSTABILITY_MESSAGE = "O servidor está instável agora. Tente novamente em breve.";
+const CLIENT_ERROR_FALLBACK_MESSAGE = "Solicitação inválida.";
 
 type AbortCleanup = { cleanup: () => void; signal?: AbortSignal };
 

@@ -1378,7 +1378,8 @@ export const useEcoStream = ({
         const isAbortError = err?.name === 'AbortError';
 
         if (!isAbortError) {
-          let displayMessage = err?.message || 'Falha ao enviar mensagem.';
+          let displayMessage =
+            err instanceof EcoApiError ? err.message : err?.message || 'Falha ao enviar mensagem.';
           const friendly = resolveFriendlyNetworkError(err);
 
           if (err instanceof MissingUserIdError) {
@@ -1393,9 +1394,9 @@ export const useEcoStream = ({
                 }
               }
             }
-          } else if (friendly.type !== 'other' && friendly.message) {
-            displayMessage = friendly.message;
           } else if (err instanceof EcoApiError) {
+            displayMessage = err.message || displayMessage;
+
             if (err.status === 401) {
               displayMessage = 'Faça login para continuar a conversa com a Eco.';
               showToast('Faça login para salvar suas conversas', 'Entre para manter o histórico com a Eco.');
@@ -1411,9 +1412,9 @@ export const useEcoStream = ({
             } else if (err.status === 429) {
               displayMessage = 'Muitas requisições. Aguarde alguns segundos e tente novamente.';
               showToast('Calma aí 🙂', 'Aguarde alguns segundos antes de enviar outra mensagem.');
-            } else if (err.status && err.status >= 500) {
-              displayMessage = 'A Eco está instável no momento. Tente novamente em instantes.';
             }
+          } else if (friendly.type !== 'other' && friendly.message) {
+            displayMessage = friendly.message;
           }
 
           setErroApi(displayMessage);

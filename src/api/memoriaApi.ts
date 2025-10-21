@@ -3,7 +3,46 @@
 import axios, { AxiosError } from 'axios';
 import api from './axios';
 import { ApiFetchError, apiFetchJson } from './apiFetch';
+import {
+  apiFetchJson as apiFetchJsonWithTimeout,
+  ApiFetchJsonNetworkError,
+  ApiFetchJsonResult,
+} from '../lib/apiFetch';
 import { MissingUserIdError } from './errors';
+
+const NETWORK_ERROR_MESSAGE =
+  'Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.';
+const SERVER_UNSTABLE_MESSAGE = 'O servidor está instável agora. Tente novamente em breve.';
+const CLIENT_ERROR_FALLBACK_MESSAGE = 'Solicitação inválida.';
+
+const isNetworkFetchError = (
+  result: ApiFetchJsonResult<unknown>,
+): result is ApiFetchJsonNetworkError => {
+  return !result.ok && (result as ApiFetchJsonNetworkError).status === 0;
+};
+
+const extractApiMessage = (data: unknown) => {
+  if (typeof data === 'string') {
+    const trimmed = data.trim();
+    return trimmed || undefined;
+  }
+
+  if (data && typeof data === 'object') {
+    const candidate = (data as { message?: unknown }).message;
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  return undefined;
+};
+
+class FriendlyApiError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'FriendlyApiError';
+  }
+}
 
 /* -------------------------------------------------------------------------- */
 /*  Tipagens                                                                  */
@@ -339,10 +378,32 @@ export async function buscarMemoriasSemelhantesV2(
     params.set('threshold', String(threshold));
     params.set('usuario_id', usuario_id);
 
-    const data = await apiFetchJson<any>(`/api/memorias/similares_v2?${params.toString()}`, {
-      method: 'GET',
-      timeoutMs: 12_000,
-    });
+    const result = await apiFetchJsonWithTimeout<any>(
+      `/api/memorias/similares_v2?${params.toString()}`,
+      {
+        method: 'GET',
+        timeoutMs: 12_000,
+      },
+    );
+
+    if (!result.ok) {
+      if (isNetworkFetchError(result)) {
+        throw new FriendlyApiError(NETWORK_ERROR_MESSAGE);
+      }
+
+      if (result.status >= 500) {
+        throw new FriendlyApiError(SERVER_UNSTABLE_MESSAGE);
+      }
+
+      if (result.status >= 400) {
+        const message = extractApiMessage(result.data) ?? CLIENT_ERROR_FALLBACK_MESSAGE;
+        throw new FriendlyApiError(message);
+      }
+
+      throw new FriendlyApiError('Erro ao buscar memórias semelhantes.');
+    }
+
+    const data = result.data;
 
     const raw = pickArray<any>(data) ?? [];
     if (raw.length === 0) {
@@ -367,6 +428,9 @@ export async function buscarMemoriasSemelhantesV2(
       };
     });
   } catch (err) {
+    if (err instanceof FriendlyApiError || err instanceof MissingUserIdError) {
+      throw err;
+    }
     tratarErro(err, 'buscar memórias semelhantes');
   }
 }
