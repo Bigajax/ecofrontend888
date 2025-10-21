@@ -12,8 +12,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const { clearMessages } = useChat();
 
   const pageTitle =
-    location.pathname.startsWith('/memory') ? 'Memórias' :
-    location.pathname.startsWith('/voice')  ? 'ECO — Voz' :
+    location.pathname.startsWith('/app/memory') ? 'Memórias' :
+    location.pathname.startsWith('/app/voice') ? 'ECO — Voz' :
     'ECO';
 
   const handleLogout = async () => {
@@ -21,7 +21,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       await signOut();
       clearMessages(); // opcional: limpa as mensagens do chat
     } finally {
-      navigate('/login');
+      navigate('/');
     }
   };
 

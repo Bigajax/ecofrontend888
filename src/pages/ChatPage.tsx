@@ -732,7 +732,7 @@ const ChatPage: React.FC = () => {
             value={composerValue}
             onSendMessage={(t) => sendWithGuards(t)}
             onMoreOptionSelected={(opt) => {
-              if (opt === 'go_to_voice_page') navigate('/voice');
+              if (opt === 'go_to_voice_page') navigate('/app/voice');
             }}
             disabled={composerPending || (isGuest && guestGate.inputDisabled)}
             placeholder={
@@ -753,7 +753,7 @@ const ChatPage: React.FC = () => {
                 mixpanel.track('signup_clicked', { guestId: guestGate.guestId });
               }
               setLoginGateOpen(false);
-              window.location.href = '/login?returnTo=/chat';
+              window.location.href = '/?returnTo=/app';
             }}
             count={guestGate.count}
             limit={guestGate.limit}

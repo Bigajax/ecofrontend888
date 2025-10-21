@@ -19,7 +19,7 @@ export default function WelcomePage() {
 
   const goNext = () => {
     markSeen();
-    navigate(user ? '/chat' : '/login', { replace: true });
+    navigate(user ? '/app' : '/', { replace: true });
   };
 
   if (!open) return null;
@@ -27,7 +27,7 @@ export default function WelcomePage() {
   return (
     <TourInicial
       reason={reason}
-      nextPath={user ? '/chat' : '/login'}
+      nextPath={user ? '/app' : '/'}
       onClose={goNext}
     />
   );
