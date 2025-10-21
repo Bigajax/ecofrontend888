@@ -1,15 +1,15 @@
 // src/App.tsx
-import React, { Suspense, useEffect, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
 
 const LoginPage = React.lazy(() => import('./pages/LoginPage'));
 const ResetSenha = React.lazy(() => import('./pages/ResetSenha'));
 const ChatPage = React.lazy(() => import('./pages/ChatPage'));
-const VoicePage = React.lazy(() => import('./pages/VoicePage'));
 const CreateProfilePage = React.lazy(() => import('./pages/CreateProfilePage'));
 const WelcomePage = React.lazy(() => import('./pages/WelcomePage'));
+const VoicePage = React.lazy(() => import('./pages/VoicePage'));
 
 // MEMÓRIAS
 const MemoryLayout = React.lazy(() => import('./pages/memory/MemoryLayout'));
@@ -17,10 +17,14 @@ const MemoriesSection = React.lazy(() => import('./pages/memory/MemoriesSection'
 const ProfileSection = React.lazy(() => import('./pages/memory/ProfileSection'));
 const ReportSection = React.lazy(() => import('./pages/memory/ReportSection'));
 
-import ProtectedRoute from './components/ProtectedRoute';
+import RequireAuth from './components/RequireAuth';
 import mixpanel from './lib/mixpanel';
 import MainLayout from './layouts/MainLayout';
 import { DEFAULT_API_BASE, EFFECTIVE_API_BASE, IS_API_BASE_EMPTY, RAW_API_BASE } from './constants/api';
+import RootErrorBoundary from './components/RootErrorBoundary';
+import HealthBanner from './components/HealthBanner';
+import ApiBaseWarningCard from './components/ApiBaseWarningCard';
+import GlobalErrorChip from './components/GlobalErrorChip';
 
 const lazyFallback = <div>Carregando…</div>;
 
@@ -36,14 +40,31 @@ function ChatProviderWithKey({ children }: { children: React.ReactNode }) {
   return <ChatProvider key={userId || 'anon'}>{children}</ChatProvider>;
 }
 
-/** Redireciona "/" para /welcome quando há fbclid/utm_* ou ?tour=1; senão vai para /login */
-function RootRedirect() {
-  const search = typeof window !== 'undefined' ? window.location.search : '';
-  const fromAdsOrTour = /(\bfbclid=|\butm_|tour=1)/.test(search);
-  return fromAdsOrTour ? (
-    <Navigate to={`/welcome${search}`} replace />
-  ) : (
-    <Navigate to="/login" replace />
+function PublicShell() {
+  return (
+    <div className="flex min-h-[100dvh] w-screen flex-col bg-white font-sans">
+      <Outlet />
+    </div>
+  );
+}
+
+function PublicHome() {
+  const location = useLocation();
+  const fromAdsOrTour = useMemo(
+    () => /(\bfbclid=|\butm_|tour=1)/.test(location.search),
+    [location.search],
+  );
+
+  return fromAdsOrTour
+    ? renderWithSuspense(<WelcomePage />)
+    : renderWithSuspense(<LoginPage />);
+}
+
+function AppProtectedShell() {
+  return (
+    <MainLayout>
+      <Outlet />
+    </MainLayout>
   );
 }
 
@@ -53,80 +74,36 @@ function AppRoutes() {
   }, []);
 
   return (
-    <div className="flex min-h-[100dvh] w-screen flex-col bg-white font-sans">
-      <Routes>
-        {/* Raiz inteligente → /welcome (ads/tour) ou /login */}
-        <Route path="/" element={<RootRedirect />} />
-
-        {/* Rotas públicas */}
-        <Route path="/welcome" element={renderWithSuspense(<WelcomePage />)} />
-        <Route path="/login" element={renderWithSuspense(<LoginPage />)} />
-        {/* Atalho para forçar tour via /login/tour */}
-        <Route path="/login/tour" element={<Navigate to="/welcome?tour=1" replace />} />
-
-        <Route path="/register" element={renderWithSuspense(<CreateProfilePage />)} />
-        <Route path="/reset-senha" element={renderWithSuspense(<ResetSenha />)} />
-
-        {/* Rotas protegidas */}
-        <Route
-          path="/app"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Suspense fallback={lazyFallback}>
-                  <ChatPage />
-                </Suspense>
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/chat"
-          element={
-            <MainLayout>
-              <Suspense fallback={lazyFallback}>
-                <ChatPage />
-              </Suspense>
-            </MainLayout>
-          }
-        />
-
-        <Route
-          path="/voice"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Suspense fallback={lazyFallback}>
-                  <VoicePage />
-                </Suspense>
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* MEMÓRIAS — PAI COM * */}
-        <Route
-          path="/memory/*"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Suspense fallback={lazyFallback}>
-                  <MemoryLayout />
-                </Suspense>
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        >
+    <Routes>
+      <Route path="/" element={<PublicShell />}>
+        <Route index element={<PublicHome />} />
+        <Route path="welcome" element={renderWithSuspense(<WelcomePage />)} />
+        <Route path="register" element={renderWithSuspense(<CreateProfilePage />)} />
+        <Route path="reset-senha" element={renderWithSuspense(<ResetSenha />)} />
+        <Route path="login" element={<Navigate to="/" replace />} />
+        <Route path="login/tour" element={<Navigate to="/?tour=1" replace />} />
+      </Route>
+      <Route
+        path="/app/*"
+        element={
+          <RequireAuth>
+            <AppProtectedShell />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<ChatPage />)} />
+        <Route path="chat" element={<Navigate to="/app" replace />} />
+        <Route path="voice" element={renderWithSuspense(<VoicePage />)} />
+        <Route path="memory" element={renderWithSuspense(<MemoryLayout />)}>
           <Route index element={renderWithSuspense(<MemoriesSection />)} />
           <Route path="profile" element={renderWithSuspense(<ProfileSection />)} />
           <Route path="report" element={renderWithSuspense(<ReportSection />)} />
-          <Route path="*" element={<Navigate to="/memory" replace />} />
+          <Route path="*" element={<Navigate to="/app/memory" replace />} />
         </Route>
-
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </div>
+        <Route path="*" element={<Navigate to="/app" replace />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
@@ -214,46 +191,35 @@ function AppChrome() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] w-screen bg-white">
-      {showHealthBanner && (
-        <div className="fixed inset-x-0 top-0 z-50 bg-rose-600 px-4 py-2 text-center text-sm font-semibold text-white shadow">
-          Sem conexão com o servidor
+    <AuthProvider>
+      <ChatProviderWithKey>
+        <div className="relative min-h-[100dvh] w-screen bg-white">
+          <HealthBanner visible={showHealthBanner} />
+
+          <ApiBaseWarningCard
+            visible={showApiBaseWarning}
+            rawApiBaseDisplay={rawApiBaseDisplay}
+            defaultApiBase={DEFAULT_API_BASE}
+            effectiveApiBase={EFFECTIVE_API_BASE}
+          />
+
+          <GlobalErrorChip visible={showErrorChip} onClick={handleErrorChipClick} />
+
+          <div className={showHealthBanner ? 'pt-12' : ''}>
+            <AppRoutes />
+          </div>
         </div>
-      )}
-
-      {showApiBaseWarning && (
-        <div className="fixed bottom-4 left-4 z-40 max-w-sm rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 shadow">
-          <p className="font-semibold">API_BASE não configurado</p>
-          <p className="mt-1 text-xs leading-relaxed">
-            Valor configurado: {rawApiBaseDisplay}. Usando padrão {DEFAULT_API_BASE}.
-          </p>
-          <p className="mt-1 text-xs leading-relaxed">Endpoint ativo: {EFFECTIVE_API_BASE}</p>
-        </div>
-      )}
-
-      {showErrorChip && (
-        <button
-          type="button"
-          onClick={handleErrorChipClick}
-          className="fixed bottom-4 right-4 z-50 rounded-full bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-lg hover:bg-amber-600"
-        >
-          Erro capturado
-        </button>
-      )}
-
-      <div className={showHealthBanner ? 'pt-12' : ''}>
-        <AppRoutes />
-      </div>
-    </div>
+      </ChatProviderWithKey>
+    </AuthProvider>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <ChatProviderWithKey>
+    <RootErrorBoundary>
+      <Suspense fallback="Carregando…">
         <AppChrome />
-      </ChatProviderWithKey>
-    </AuthProvider>
+      </Suspense>
+    </RootErrorBoundary>
   );
 }

@@ -405,7 +405,7 @@ const MemoryLayout: React.FC = () => {
               Você precisa estar logado para acessar suas memórias, perfil e relatório emocional.
             </p>
             <Link
-              to="/login"
+              to="/"
               className={[
                 'inline-flex items-center justify-center rounded-full bg-neutral-900',
                 'px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800',
