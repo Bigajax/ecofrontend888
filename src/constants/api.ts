@@ -1,16 +1,22 @@
+import { API_BASE as RESOLVED_API_BASE, DEFAULT_API_BASE as BASE_DEFAULT, RAW_API_BASE } from '../api/base';
+
+export { RAW_API_BASE };
+
 const trimTrailingSlashes = (value: string) => value.replace(/\/+$/, '');
 
-export const DEFAULT_API_BASE = 'https://ecobackend888.onrender.com';
-export const API_BASE = import.meta.env.VITE_API_BASE ?? DEFAULT_API_BASE;
+export const DEFAULT_API_BASE = BASE_DEFAULT;
+export const API_BASE = RESOLVED_API_BASE;
 
-export const RAW_API_BASE = import.meta.env.VITE_API_BASE;
 const trimmedEnvApiBase = typeof RAW_API_BASE === 'string' ? RAW_API_BASE.trim() : '';
-export const IS_API_BASE_EMPTY = !trimmedEnvApiBase;
+const trimmedResolvedApiBase =
+  typeof RESOLVED_API_BASE === 'string' ? RESOLVED_API_BASE.trim() : '';
+
+export const IS_API_BASE_EMPTY = trimmedEnvApiBase.length === 0;
 
 const resolveEffectiveApiBase = () => {
-  const candidate = trimmedEnvApiBase || DEFAULT_API_BASE;
+  const candidate = trimmedResolvedApiBase || BASE_DEFAULT;
   if (!candidate) {
-    return DEFAULT_API_BASE;
+    return BASE_DEFAULT;
   }
 
   try {
@@ -18,7 +24,7 @@ const resolveEffectiveApiBase = () => {
     const pathname = parsed.pathname === '/' ? '' : trimTrailingSlashes(parsed.pathname);
     return `${parsed.origin}${pathname}`;
   } catch {
-    return trimTrailingSlashes(candidate) || DEFAULT_API_BASE;
+    return trimTrailingSlashes(candidate) || BASE_DEFAULT;
   }
 };
 

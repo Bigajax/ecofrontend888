@@ -25,10 +25,9 @@ import RootErrorBoundary from './components/RootErrorBoundary';
 import HealthBanner from './components/HealthBanner';
 import ApiBaseWarningCard from './components/ApiBaseWarningCard';
 import GlobalErrorChip from './components/GlobalErrorChip';
+import { HealthStatus, pingWithRetry } from './utils/health';
 
 const lazyFallback = <div>Carregando…</div>;
-
-type HealthStatus = 'idle' | 'ok' | 'error';
 
 const renderWithSuspense = (element: React.ReactElement) => (
   <Suspense fallback={lazyFallback}>{element}</Suspense>
@@ -118,31 +117,24 @@ function AppChrome() {
       : 'indefinido';
 
   useEffect(() => {
-    let active = true;
-    const controller = new AbortController();
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
 
-    const checkHealth = async () => {
-      try {
-        const response = await fetch(`${EFFECTIVE_API_BASE}/api/health`, {
-          credentials: 'include',
-          signal: controller.signal,
-        });
-        if (!active) return;
-        setHealthStatus(response.ok ? 'ok' : 'error');
-      } catch (error) {
-        if (!active) return;
-        if ((error as Error)?.name !== 'AbortError') {
-          console.warn('[App] Falha ao verificar saúde do backend', error);
-        }
-        setHealthStatus('error');
-      }
+    let alive = true;
+
+    const tick = async () => {
+      const status = await pingWithRetry();
+      if (!alive) return;
+      setHealthStatus(status);
     };
 
-    checkHealth();
+    tick();
+    const intervalId = window.setInterval(tick, 30_000);
 
     return () => {
-      active = false;
-      controller.abort();
+      alive = false;
+      window.clearInterval(intervalId);
     };
   }, []);
 
@@ -181,7 +173,7 @@ function AppChrome() {
     };
   }, []);
 
-  const showHealthBanner = healthStatus === 'error';
+  const showHealthBanner = healthStatus === 'degraded' || healthStatus === 'down';
   const showApiBaseWarning = IS_API_BASE_EMPTY;
   const showErrorChip = hasCapturedError;
 
@@ -194,7 +186,7 @@ function AppChrome() {
     <AuthProvider>
       <ChatProviderWithKey>
         <div className="relative min-h-[100dvh] w-screen bg-white">
-          <HealthBanner visible={showHealthBanner} />
+          <HealthBanner status={healthStatus} visible={showHealthBanner} />
 
           <ApiBaseWarningCard
             visible={showApiBaseWarning}
