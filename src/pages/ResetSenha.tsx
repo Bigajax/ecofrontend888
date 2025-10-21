@@ -177,7 +177,7 @@ const ResetSenha: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => navigate('/login')}
+          onClick={() => navigate('/')}
           className="w-full rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
         >
           Voltar para login
