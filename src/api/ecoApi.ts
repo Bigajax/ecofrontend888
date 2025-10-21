@@ -8,6 +8,7 @@ import { sanitizeEcoText } from "../utils/sanitizeEcoText";
 import { buildIdentityHeaders, getGuestId, syncGuestId, updateBiasHint } from "../lib/guestId";
 import { ApiFetchJsonNetworkError, ApiFetchJsonResult } from "../lib/apiFetch";
 import { pingHealth } from "../utils/health";
+import { ensureHttpsUrl } from "../utils/ensureHttpsUrl";
 
 import { EcoApiError, MissingUserIdError } from "./errors";
 import { AskEcoResponse, normalizeAskEcoResponse } from "./askEcoResponse";
@@ -289,16 +290,6 @@ const isLikelyNetworkError = (error: unknown) => {
     message.includes("net::err") ||
     message.includes("err_connection")
   );
-};
-
-const ensureHttpsUrl = (url: string) => {
-  if (!url || !/^http:\/\//i.test(url)) return url;
-
-  const runningInBrowser = typeof window !== "undefined" && !!window.location;
-  const shouldForceHttps =
-    (runningInBrowser && window.location.protocol === "https:") || !Boolean(import.meta.env?.DEV);
-
-  return shouldForceHttps ? url.replace(/^http:\/\//i, "https://") : url;
 };
 
 const mapStatusToFriendlyMessage = (status: number, fallback: string) => {
