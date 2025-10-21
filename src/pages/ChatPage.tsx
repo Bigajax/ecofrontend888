@@ -664,6 +664,7 @@ const ChatPage: React.FC = () => {
 
             <div ref={endRef} className="anchor-end h-px" />
           </div>
+          </div>
         </div>
 
         {showNewMessagesChip && (
