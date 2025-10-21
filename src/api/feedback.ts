@@ -204,7 +204,8 @@ async function performRequest(args: NormalizedFeedbackInput): Promise<SendFeedba
     const response = await fetch(buildApiUrl("/api/feedback"), {
       method: "POST",
       headers,
-      credentials: "omit",
+      credentials: "include",
+      mode: "cors",
       body,
     });
 

@@ -16,6 +16,8 @@ const formatUrlWithoutTrailingSlash = (url: URL) => {
   return `${url.origin}${pathname}`;
 };
 
+const DEFAULT_API_BASE_URL = 'https://ecobackend888.onrender.com';
+
 const computeApiBaseUrl = () => {
   const rawEnv =
     (import.meta.env?.VITE_API_URL as string | undefined) ??
@@ -30,9 +32,9 @@ const computeApiBaseUrl = () => {
 
   if (treatAsSameOrigin) {
     if (typeof window !== 'undefined' && window.location?.origin) {
-      return '';
+      return trimTrailingSlashes(window.location.origin);
     }
-    return Boolean(import.meta.env?.DEV) ? 'http://localhost:3001' : '';
+    return DEFAULT_API_BASE_URL;
   }
 
   const hasWindow = typeof window !== 'undefined' && !!window.location?.origin;
@@ -41,7 +43,7 @@ const computeApiBaseUrl = () => {
     const currentOrigin = trimTrailingSlashes(window.location.origin);
     const parsed = toAbsoluteUrl(trimmedEnv, currentOrigin) ?? undefined;
     if (!parsed) {
-      return currentOrigin;
+      return DEFAULT_API_BASE_URL;
     }
     const formatted = trimTrailingSlashes(formatUrlWithoutTrailingSlash(parsed));
     return formatted;
@@ -52,7 +54,7 @@ const computeApiBaseUrl = () => {
     return trimTrailingSlashes(formatUrlWithoutTrailingSlash(parsed));
   }
 
-  return trimTrailingSlashes(trimmedEnv);
+  return trimmedEnv ? trimTrailingSlashes(trimmedEnv) : DEFAULT_API_BASE_URL;
 };
 
 export const API_BASE_URL = computeApiBaseUrl();

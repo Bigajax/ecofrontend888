@@ -187,11 +187,17 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
     headers.delete("authorization");
   }
 
+  const isApiEndpoint = /\/api\//.test(targetUrl) || targetUrl.startsWith("/api/");
+
+  if (isApiEndpoint) {
+    headers.set("Content-Type", "application/json");
+  }
+
   const fetchInit: RequestInit = {
     ...rest,
     method,
     headers,
-    credentials: "omit",
+    credentials: isApiEndpoint ? "include" : "omit",
     mode: "cors",
     redirect: "follow",
     keepalive: false,
@@ -276,7 +282,33 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
         } catch {
           bodyText = undefined;
         }
-        const error = new ApiFetchError(`HTTP ${response.status}`, {
+        let parsedBody: unknown;
+        if (bodyText) {
+          try {
+            parsedBody = JSON.parse(bodyText);
+          } catch {
+            parsedBody = undefined;
+          }
+        }
+
+        const serverMessage = (() => {
+          if (parsedBody && typeof parsedBody === "object") {
+            const errorMessage = (parsedBody as any)?.error;
+            const message = (parsedBody as any)?.message;
+            const detail = (parsedBody as any)?.detail ?? (parsedBody as any)?.details;
+            if (typeof errorMessage === "string" && errorMessage.trim()) return errorMessage.trim();
+            if (typeof message === "string" && message.trim()) return message.trim();
+            if (typeof detail === "string" && detail.trim()) return detail.trim();
+          }
+          if (typeof bodyText === "string" && bodyText.trim().length > 0) {
+            return bodyText.trim();
+          }
+          return undefined;
+        })();
+
+        const errorMessage = serverMessage || `HTTP ${response.status}`;
+
+        const error = new ApiFetchError(errorMessage, {
           kind: "http",
           status: response.status,
           statusText: response.statusText,
