@@ -221,6 +221,124 @@ function AppChrome() {
   );
 }
 
+function AppChrome() {
+  const [healthStatus, setHealthStatus] = useState<HealthStatus>('idle');
+  const [hasCapturedError, setHasCapturedError] = useState(false);
+  const rawApiBaseDisplay =
+    typeof RAW_API_BASE === 'string'
+      ? RAW_API_BASE.trim().length === 0
+        ? '""'
+        : RAW_API_BASE
+      : 'indefinido';
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+
+    const checkHealth = async () => {
+      try {
+        const response = await fetch(`${EFFECTIVE_API_BASE}/api/health`, {
+          credentials: 'include',
+          signal: controller.signal,
+        });
+        if (!active) return;
+        setHealthStatus(response.ok ? 'ok' : 'error');
+      } catch (error) {
+        if (!active) return;
+        if ((error as Error)?.name !== 'AbortError') {
+          console.warn('[App] Falha ao verificar saúde do backend', error);
+        }
+        setHealthStatus('error');
+      }
+    };
+
+    checkHealth();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const previousOnError = window.onerror;
+    const previousOnUnhandledRejection = window.onunhandledrejection;
+
+    const handleWindowError: OnErrorEventHandler = function (message, source, lineno, colno, error) {
+      console.error('[App] window.onerror capturado', { message, source, lineno, colno, error });
+      setHasCapturedError(true);
+      if (typeof previousOnError === 'function') {
+        return previousOnError.call(window, message, source, lineno, colno, error);
+      }
+      return false;
+    };
+
+    const handleUnhandledRejection = function (event: PromiseRejectionEvent) {
+      console.error('[App] window.onunhandledrejection capturado', event.reason, event);
+      setHasCapturedError(true);
+      if (typeof previousOnUnhandledRejection === 'function') {
+        return previousOnUnhandledRejection.call(window, event);
+      }
+      return undefined;
+    };
+
+    window.onerror = handleWindowError;
+    window.onunhandledrejection = handleUnhandledRejection;
+
+    return () => {
+      window.onerror = previousOnError ?? null;
+      window.onunhandledrejection = previousOnUnhandledRejection ?? null;
+    };
+  }, []);
+
+  const showHealthBanner = healthStatus === 'error';
+  const showApiBaseWarning = IS_API_BASE_EMPTY;
+  const showErrorChip = hasCapturedError;
+
+  const handleErrorChipClick = () => {
+    console.info('Abra o console do navegador (F12) para inspecionar o erro capturado.');
+    setHasCapturedError(false);
+  };
+
+  return (
+    <div className="relative min-h-[100dvh] w-screen bg-white">
+      {showHealthBanner && (
+        <div className="fixed inset-x-0 top-0 z-50 bg-rose-600 px-4 py-2 text-center text-sm font-semibold text-white shadow">
+          Sem conexão com o servidor
+        </div>
+      )}
+
+      {showApiBaseWarning && (
+        <div className="fixed bottom-4 left-4 z-40 max-w-sm rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 shadow">
+          <p className="font-semibold">API_BASE não configurado</p>
+          <p className="mt-1 text-xs leading-relaxed">
+            Valor configurado: {rawApiBaseDisplay}. Usando padrão {DEFAULT_API_BASE}.
+          </p>
+          <p className="mt-1 text-xs leading-relaxed">Endpoint ativo: {EFFECTIVE_API_BASE}</p>
+        </div>
+      )}
+
+      {showErrorChip && (
+        <button
+          type="button"
+          onClick={handleErrorChipClick}
+          className="fixed bottom-4 right-4 z-50 rounded-full bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-lg hover:bg-amber-600"
+        >
+          Erro capturado
+        </button>
+      )}
+
+      <div className={showHealthBanner ? 'pt-12' : ''}>
+        <AppRoutes />
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
