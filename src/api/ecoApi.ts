@@ -215,12 +215,33 @@ const prepareRequest = (
     clientTz: tz,
   };
 
+  const ultimaMensagem = mensagens.length > 0 ? mensagens[mensagens.length - 1] : undefined;
+  const promptTexto = (() => {
+    if (!ultimaMensagem) return "";
+    const { content, text } = ultimaMensagem as { content?: unknown; text?: unknown };
+    if (typeof content === "string" && content.trim().length > 0) {
+      return content;
+    }
+    if (typeof text === "string" && text.trim().length > 0) {
+      return text;
+    }
+    return "";
+  })();
+
+  bodyPayload.texto = promptTexto;
+
   if (typeof userName === "string" && userName.trim().length > 0) {
     bodyPayload.nome_usuario = userName;
   }
   if (userId) {
     bodyPayload.usuario_id = userId;
+  } else if (bodyPayload.usuario_id === undefined) {
+    bodyPayload.usuario_id = null;
   }
+  if (!("contexto" in bodyPayload)) {
+    bodyPayload.contexto = {};
+  }
+
   if (guest.isGuest) {
     bodyPayload.isGuest = true;
     bodyPayload.guestId = guest.guestId;
