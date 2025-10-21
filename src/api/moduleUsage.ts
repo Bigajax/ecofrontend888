@@ -81,7 +81,7 @@ export async function sendModuleUsage({
       method: "POST",
       headers,
       body: JSON.stringify(body),
-      credentials: "include",
+      credentials: "omit",
       signal: controller?.signal,
     });
 
