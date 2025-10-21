@@ -7,14 +7,15 @@ import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import clsx from 'clsx';
 
-import ChatMessage from '../components/ChatMessage';
-import ChatInput from '../components/ChatInput';
+import ChatInput, { ChatInputHandle } from '../components/ChatInput';
 import LoginGateModal from '../components/LoginGateModal';
 import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
-import EcoMessageWithAudio from '../components/EcoMessageWithAudio';
 import EcoLoopHud from '../components/EcoLoopHud';
 import QuickSuggestions, { Suggestion, SuggestionPickMeta } from '../components/QuickSuggestions';
 import TypingDots from '../components/TypingDots';
+import SuggestionChips from '../components/SuggestionChips';
+import MessageList from '../components/MessageList';
+import VoiceRecorderPanel from '../components/VoiceRecorderPanel';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
@@ -36,6 +37,7 @@ import { useGuestGate } from '../hooks/useGuestGate';
 import { useMessageFeedbackContext } from '../hooks/useMessageFeedbackContext';
 import { useAdminCommands } from '../hooks/useAdminCommands';
 import { sendPassiveSignal } from '../api/passiveSignals';
+import formatName from '../utils/formatName';
 
 const NETWORK_ERROR_MESSAGE =
   'Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.';
@@ -57,7 +59,7 @@ type BehaviorHintMetrics = {
 const ChatPage: React.FC = () => {
   const { messages, addMessage, setMessages } = useChat();
   const auth = useAuth();
-  const { userId, userName = 'Usuário', user } = auth;
+  const { userId, userName: rawUserName = 'Usuário', user } = auth;
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
 
@@ -67,6 +69,7 @@ const ChatPage: React.FC = () => {
   const guestGate = useGuestGate(isGuest);
   const [loginGateOpen, setLoginGateOpen] = useState(false);
   const [isComposerSending, setIsComposerSending] = useState(false);
+  const [composerValue, setComposerValue] = useState('');
   const [lastAttempt, setLastAttempt] = useState<{ text: string; hint?: string } | null>(null);
   const ecoActivity = useEcoActivity();
 
@@ -166,14 +169,16 @@ const ChatPage: React.FC = () => {
     scheduleBehaviorHint(metrics);
   }, [scheduleBehaviorHint]);
 
+  const displayName = useMemo(() => formatName(rawUserName), [rawUserName]);
+
   useEffect(() => {
     if (!user) return;
     mixpanel.track('Eco: Entrou no Chat', {
       userId,
-      userName,
+      userName: rawUserName,
       timestamp: new Date().toISOString(),
     });
-  }, [user, userId, userName]);
+  }, [rawUserName, user, userId]);
 
   // 👉 Abrir o modal imediatamente ao atingir o limite OU quando o input estiver bloqueado
   useEffect(() => {
@@ -201,17 +206,20 @@ const ChatPage: React.FC = () => {
   });
 
   const chatInputWrapperRef = useRef<HTMLDivElement | null>(null);
-  const { contentInset, isKeyboardOpen, safeAreaBottom } = useKeyboardInsets({
+  const chatInputRef = useRef<ChatInputHandle | null>(null);
+  const { contentInset, isKeyboardOpen, safeAreaBottom, inputHeight, keyboardHeight } = useKeyboardInsets({
     inputRef: chatInputWrapperRef,
   });
 
   const baseScrollPadding = 112;
   const scrollInset = Math.max(baseScrollPadding, contentInset + safeAreaBottom + 24);
+  const computedInputHeight = inputHeight || 96;
+  const voicePanelBottomOffset = Math.max(120, keyboardHeight + computedInputHeight + 24);
 
   const { showQuick, hideQuickSuggestions, handleTextChange } =
     useQuickSuggestionsVisibility(messages);
 
-  const handleComposerTextChange = useCallback(
+  const trackComposerChange = useCallback(
     (text: string) => {
       const now = Date.now();
       const length = typeof text === 'string' ? text.length : 0;
@@ -236,6 +244,14 @@ const ChatPage: React.FC = () => {
       handleTextChange(text);
     },
     [handleTextChange],
+  );
+
+  const handleComposerTextChange = useCallback(
+    (text: string) => {
+      setComposerValue(text);
+      trackComposerChange(text);
+    },
+    [trackComposerChange],
   );
 
   const { showFeedback, lastEcoInfo, handleFeedbackSubmitted } = useFeedbackPrompt(messages);
@@ -266,7 +282,7 @@ const ChatPage: React.FC = () => {
     addMessage,
     setMessages,
     userId: userId || undefined,
-    userName,
+    userName: rawUserName,
     sessionId: sessaoId,
     scrollToBottom,
     isAtBottom,
@@ -340,6 +356,27 @@ const ChatPage: React.FC = () => {
     if (!lastAttempt) return;
     void sendWithGuards(lastAttempt.text, lastAttempt.hint);
   }, [lastAttempt, sendWithGuards]);
+
+  const handleOpenVoicePanel = useCallback(() => {
+    if (voicePanelOpen) return;
+    setVoicePanelOpen(true);
+  }, [voicePanelOpen]);
+
+  const handleVoicePanelClose = useCallback(() => {
+    setVoicePanelOpen(false);
+    requestAnimationFrame(() => chatInputRef.current?.focus());
+  }, []);
+
+  const handleVoiceConfirm = useCallback(
+    (payload: { audioBlob: Blob | null; transcript: string }) => {
+      const nextText = (payload.transcript ?? '').trim();
+      if (nextText !== composerValue) {
+        handleComposerTextChange(nextText);
+      }
+      handleVoicePanelClose();
+    },
+    [composerValue, handleComposerTextChange, handleVoicePanelClose],
+  );
 
   const lastMessage = messages[messages.length - 1];
   const lastEcoMessageContent =
@@ -464,6 +501,7 @@ const ChatPage: React.FC = () => {
   const shouldRenderGlobalTyping = globalTypingVisible || isSynthesizingAudio;
   const composerPending = pending || isComposerSending || isSendingToEco;
   const [hasPendingMessages, setHasPendingMessages] = useState(false);
+  const [voicePanelOpen, setVoicePanelOpen] = useState(false);
   const lastMessageTokenRef = useRef<string>('');
   const handleJumpToBottom = useCallback(() => {
     setHasPendingMessages(false);
@@ -471,8 +509,18 @@ const ChatPage: React.FC = () => {
   }, [scrollToBottom]);
   const showNewMessagesChip = hasPendingMessages && showScrollBtn;
   const isEmptyState = messages.length === 0 && !erroApi;
+  const hasComposerText = composerValue.trim().length > 0;
   const showInitialSuggestions =
     isEmptyState && showQuick && !isWaitingForEco && !composerPending && !erroApi;
+  const shouldShowSuggestionChips =
+    showQuick &&
+    !isEmptyState &&
+    !hasComposerText &&
+    isAtBottom &&
+    !isWaitingForEco &&
+    !composerPending &&
+    !erroApi &&
+    !voicePanelOpen;
   const canRetry = Boolean(
     lastAttempt &&
     erroApi &&
@@ -501,6 +549,68 @@ const ChatPage: React.FC = () => {
     if (!shouldRenderGlobalTyping || !isAtBottom) return;
     scrollToBottom(false);
   }, [shouldRenderGlobalTyping, isAtBottom, scrollToBottom]);
+
+  const feedbackPromptNode =
+    showFeedback && lastEcoInfo?.msg ? (
+      <FeedbackPrompt
+        message={lastEcoInfo.msg}
+        userId={auth?.user?.id ?? null}
+        onSubmitted={() => {
+          const sessionId = getSessionId();
+          const payload: Record<string, unknown> = {
+            user_id: auth?.user?.id ?? undefined,
+            session_id: sessionId ?? undefined,
+            source: 'prompt_auto',
+            interaction_id: lastPromptFeedbackContext.interactionId,
+          };
+          if (lastPromptFeedbackContext.messageId) {
+            payload.message_id = lastPromptFeedbackContext.messageId;
+          }
+          if (
+            lastPromptFeedbackContext.moduleCombo &&
+            lastPromptFeedbackContext.moduleCombo.length > 0
+          ) {
+            payload.module_combo = lastPromptFeedbackContext.moduleCombo;
+          }
+          if (lastPromptFeedbackContext.promptHash) {
+            payload.prompt_hash = lastPromptFeedbackContext.promptHash;
+          }
+          if (typeof lastPromptFeedbackContext.latencyMs === 'number') {
+            payload.latency_ms = lastPromptFeedbackContext.latencyMs;
+          }
+          trackFeedbackEvent('FE: Feedback Prompt Closed', payload);
+          handleFeedbackSubmitted();
+        }}
+      />
+    ) : null;
+
+  const typingIndicatorNode = shouldRenderGlobalTyping ? (
+    <div className="w-full flex justify-start" aria-live="polite">
+      <div className="max-w-[800px] w-full min-w-0 flex items-center gap-2">
+        <div className="flex-shrink-0 translate-y-[1px]">
+          <EcoBubbleOneEye variant="message" state="thinking" size={30} />
+        </div>
+        <div className="min-w-0 text-sm text-slate-500">
+          {isSynthesizingAudio ? (
+            <span className="inline-flex items-center gap-2">
+              <span aria-hidden>🎧</span>
+              <span>preparando áudio…</span>
+              <span className="sr-only">Eco está preparando áudio</span>
+            </span>
+          ) : (
+            <div
+              className="opacity-0 translate-y-1 transition-opacity transition-transform duration-[160ms] ease-out data-[state=enter]:opacity-100 data-[state=visible]:opacity-100 data-[state=enter]:translate-y-0 data-[state=visible]:translate-y-0 data-[state=exit]:opacity-0 data-[state=exit]:translate-y-1"
+              data-state={
+                globalTypingState === 'hidden' ? undefined : globalTypingState
+              }
+            >
+              <TypingDots variant="bubble" size="md" tone="auto" />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div
@@ -541,7 +651,7 @@ const ChatPage: React.FC = () => {
                 <div className="mx-auto flex w-full max-w-[800px] flex-col items-center gap-6 text-center sm:gap-8">
                   <div className="flex flex-col gap-3 sm:gap-4">
                     <h1 className="text-4xl font-semibold tracking-tight text-[color:var(--bubble-eco-text)] sm:text-5xl">
-                      {saudacao}, {userName}
+                      {saudacao}, {displayName || rawUserName}
                     </h1>
                     <p className="mx-auto max-w-2xl text-base text-[color:var(--color-text-muted)] sm:text-lg">
                       {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
@@ -576,101 +686,21 @@ const ChatPage: React.FC = () => {
             </div>
           )}
 
-          <div className="w-full space-y-3 md:space-y-4">
-            {messages.map((m) => (
-              <motion.div
-                key={m.id}
-                className="w-full"
-                initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: prefersReducedMotion ? 0 : 0.18,
-                  ease: prefersReducedMotion ? 'linear' : 'easeOut',
-                }}
-              >
-                {m.sender === 'eco' ? (
-                  <EcoMessageWithAudio
-                    message={m as any}
-                    onActivityTTS={ecoActivity.onTTS}
-                  />
-                ) : (
-                  <ChatMessage message={m} />
-                )}
-              </motion.div>
-            ))}
-
-            {showFeedback && lastEcoInfo?.msg && (
-              <FeedbackPrompt
-                message={lastEcoInfo.msg}
-                userId={auth?.user?.id ?? null}
-                onSubmitted={() => {
-                  const sessionId = getSessionId();
-                  const payload: Record<string, unknown> = {
-                    user_id: auth?.user?.id ?? undefined,
-                    session_id: sessionId ?? undefined,
-                    source: 'prompt_auto',
-                    interaction_id: lastPromptFeedbackContext.interactionId,
-                  };
-                  if (lastPromptFeedbackContext.messageId) {
-                    payload.message_id = lastPromptFeedbackContext.messageId;
-                  }
-                  if (
-                    lastPromptFeedbackContext.moduleCombo &&
-                    lastPromptFeedbackContext.moduleCombo.length > 0
-                  ) {
-                    payload.module_combo = lastPromptFeedbackContext.moduleCombo;
-                  }
-                  if (lastPromptFeedbackContext.promptHash) {
-                    payload.prompt_hash = lastPromptFeedbackContext.promptHash;
-                  }
-                  if (typeof lastPromptFeedbackContext.latencyMs === 'number') {
-                    payload.latency_ms = lastPromptFeedbackContext.latencyMs;
-                  }
-                  trackFeedbackEvent('FE: Feedback Prompt Closed', payload);
-                  handleFeedbackSubmitted();
-                }}
-              />
-            )}
-
-            {shouldRenderGlobalTyping && (
-              <div className="w-full flex justify-start" aria-live="polite">
-                <div className="max-w-[800px] w-full min-w-0 flex items-center gap-2">
-                  <div className="flex-shrink-0 translate-y-[1px]">
-                    <EcoBubbleOneEye variant="message" state="thinking" size={30} />
-                  </div>
-                  <div className="min-w-0 text-sm text-slate-500">
-                    {isSynthesizingAudio ? (
-                      <span className="inline-flex items-center gap-2">
-                        <span aria-hidden>🎧</span>
-                        <span>preparando áudio…</span>
-                        <span className="sr-only">Eco está preparando áudio</span>
-                      </span>
-                    ) : (
-                      <div
-                        className="opacity-0 translate-y-1 transition-opacity transition-transform duration-[160ms] ease-out data-[state=enter]:opacity-100 data-[state=visible]:opacity-100 data-[state=enter]:translate-y-0 data-[state=visible]:translate-y-0 data-[state=exit]:opacity-0 data-[state=exit]:translate-y-1"
-                        data-state={
-                          globalTypingState === 'hidden'
-                            ? undefined
-                            : globalTypingState
-                        }
-                      >
-                        <TypingDots variant="bubble" size="md" tone="auto" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div ref={endRef} className="anchor-end h-px" />
-          </div>
+          <MessageList
+            messages={messages}
+            prefersReducedMotion={prefersReducedMotion}
+            ecoActivityTTS={ecoActivity.onTTS}
+            feedbackPrompt={feedbackPromptNode}
+            typingIndicator={typingIndicatorNode}
+            endRef={endRef}
+          />
           </div>
         </div>
 
         {showNewMessagesChip && (
           <div
             className="sticky bottom-24 z-30 flex justify-center px-2 sm:px-6"
-            style={{ bottom: safeAreaBottom + 96 }}
+            style={{ bottom: safeAreaBottom + computedInputHeight + 24 }}
           >
             <button
               type="button"
@@ -685,30 +715,25 @@ const ChatPage: React.FC = () => {
 
       <div
         ref={chatInputWrapperRef}
-        className="composer sticky bottom-0 z-40 border-t border-black/10 bg-[color:var(--color-bg-base)]/92 px-3 pt-3 backdrop-blur-md shadow-[0_-18px_40px_rgba(15,23,42,0.12)] sm:px-6 lg:px-10"
+        className="composer sticky bottom-0 z-40 px-3 pt-3 sm:px-6 lg:px-10"
         style={{ paddingBottom: safeAreaBottom + 16 }}
       >
         <div className="mx-auto w-full max-w-[min(640px,88vw)] space-y-3">
-          <QuickSuggestions
-            visible={
-              showQuick &&
-              !isEmptyState &&
-              !isWaitingForEco &&
-              !composerPending &&
-              !erroApi
+          <SuggestionChips
+            visible={shouldShowSuggestionChips}
+            onPick={(suggestion, index) =>
+              handlePickSuggestion(suggestion, { source: 'pill', index })
             }
-            onPickSuggestion={handlePickSuggestion}
-            rotatingItems={ROTATING_ITEMS}
-            rotationMs={5000}
-            className="mt-1"
             disabled={composerPending}
+            className="mb-1"
           />
           <ChatInput
+            ref={chatInputRef}
+            value={composerValue}
             onSendMessage={(t) => sendWithGuards(t)}
             onMoreOptionSelected={(opt) => {
               if (opt === 'go_to_voice_page') navigate('/voice');
             }}
-            onSendAudio={() => console.log('Áudio enviado')}
             disabled={composerPending || (isGuest && guestGate.inputDisabled)}
             placeholder={
               isGuest && guestGate.inputDisabled
@@ -717,6 +742,8 @@ const ChatPage: React.FC = () => {
             }
             onTextChange={handleComposerTextChange}
             isSending={composerPending}
+            onMicPress={handleOpenVoicePanel}
+            isMicActive={voicePanelOpen}
           />
           <LoginGateModal
             open={loginGateOpen}
@@ -733,6 +760,14 @@ const ChatPage: React.FC = () => {
           />
         </div>
       </div>
+
+      <VoiceRecorderPanel
+        open={voicePanelOpen}
+        bottomOffset={voicePanelBottomOffset}
+        onCancel={handleVoicePanelClose}
+        onConfirm={handleVoiceConfirm}
+        onError={(error) => console.error('Painel de voz', error)}
+      />
 
       <EcoLoopHud />
     </div>
