@@ -4,8 +4,6 @@ import {
   getRawEnvApiBase,
 } from "../config/apiBase";
 
-export { getApiBase };
-
 const trimTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
 
 export const DEFAULT_API_BASE = BASE_DEFAULT;

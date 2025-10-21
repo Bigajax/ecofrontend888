@@ -2,7 +2,7 @@
 /*  ChatPage.tsx — scroll estável + sem bolinha fantasma + saudação alinhada  */
 /* -------------------------------------------------------------------------- */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import clsx from 'clsx';
@@ -56,7 +56,7 @@ type BehaviorHintMetrics = {
   fast_followup: number;
 };
 
-const ChatPage: React.FC = () => {
+export default function ChatPage() {
   const { messages, addMessage, setMessages } = useChat();
   const auth = useAuth();
   const { userId, userName: rawUserName = 'Usuário', user } = auth;
@@ -774,4 +774,3 @@ const ChatPage: React.FC = () => {
   );
 };
 
-export default ChatPage;

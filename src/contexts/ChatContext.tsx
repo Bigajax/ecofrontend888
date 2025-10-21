@@ -45,7 +45,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 const CHAT_NS = 'eco.chat.v1';
 const keyFor = (uid?: string | null) => (uid ? `${CHAT_NS}.${uid}` : `${CHAT_NS}.anon`);
 
-export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export function ChatProvider({ children }: { children: ReactNode }) {
   const { userId } = useAuth();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -123,7 +123,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       {children}
     </ChatContext.Provider>
   );
-};
+}
 
 export const useChat = () => {
   const ctx = useContext(ChatContext);

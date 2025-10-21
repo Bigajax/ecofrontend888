@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import TourInicial from '../components/TourInicial';
 import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
 import mixpanel from '../lib/mixpanel';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 
 /* Divisor com traço mais marcado */
 const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
