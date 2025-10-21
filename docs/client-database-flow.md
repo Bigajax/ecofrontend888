@@ -1,23 +1,31 @@
 # Client-to-Database Request Flow
 
-This document explains how a chat message travels from the browser all the way to the `mensagem` table in Supabase. It focuses on the code paths that run inside the frontend repo so that contributors can understand which layers are responsible for networking, identity headers, and database persistence.
+This document explains how a chat message travels from the Eco browser client to the `mensagem` table exposed by Supabase. It focuses on the frontend code path so maintainers can reason about which layer owns optimistic UI updates, authentication headers, and error handling along the way.
 
-## High-level pipeline
+## Call stack from UI to persistence
 
-1. **Chat UI dispatches the send action.** `ChatPage` wires the composer to `useEcoStream.handleSendMessage`, which is the entry point for every outbound chat message. 【F:src/pages/ChatPage.tsx†L1-L208】【F:src/hooks/useEcoStream.ts†L424-L491】
-2. **`useEcoStream` persists authenticated messages.** When the hook detects a Supabase user, it optimistically adds the message to local state and calls `salvarMensagem` before contacting the streaming backend. Guests skip this persistence step. 【F:src/hooks/useEcoStream.ts†L454-L490】
-3. **`salvarMensagem` builds the Supabase REST request.** The helper serializes the payload and forwards it to `supabaseRestRequest`, which attaches the anon key, the user access token (if present), and the `Prefer: return=representation` hint so the row comes back in the response. 【F:src/api/mensagem.ts†L70-L93】
-4. **`supabaseRestRequest` signs and sends the HTTP call.** It resolves the `apikey` and `Authorization` headers, then executes a `fetch` against `${VITE_SUPABASE_URL}/rest/v1/mensagem`. Any non-2xx status is promoted to a descriptive error message. 【F:src/api/mensagem.ts†L34-L68】
-5. **Supabase REST forwards the insert to Postgres.** The `/rest/v1/mensagem` endpoint maps directly to the `mensagem` table, so the JSON body is inserted and the created row (including the generated `id`) is returned to the client. 【F:src/api/mensagem.ts†L70-L93】
-6. **The hook reconciles optimistic state.** Once the promise resolves, `useEcoStream` swaps the temporary UUID with the real database ID and continues the streaming flow. Failures leave the optimistic ID in place but are logged to the console in development mode. 【F:src/hooks/useEcoStream.ts†L472-L491】
+1. **Composer hands off to the streaming hook.** `ChatPage` wires every send action to `useEcoStream.handleSendMessage`, after applying guest limits and UI guards. 【F:src/pages/ChatPage.tsx†L262-L337】
+2. **`useEcoStream` prepares optimistic state.** The hook logs client analytics, queues passive signals, and—when a Supabase session is present—starts persisting the user message before contacting the streaming backend. Guests skip Supabase entirely. 【F:src/hooks/useEcoStream.ts†L430-L520】
+3. **`salvarMensagem` creates the REST payload.** It serializes the message body and delegates the HTTP call to `supabaseRestRequest`, ensuring the response includes the inserted row by setting `Prefer: return=representation`. 【F:src/api/mensagem.ts†L70-L93】
+4. **`supabaseRestRequest` signs the HTTP request.** The helper retrieves the active Supabase session, sets both the `apikey` and `Authorization` headers, and calls `fetch` against `${VITE_SUPABASE_URL}/rest/v1/mensagem`. Non-2xx responses are turned into descriptive `Error`s. 【F:src/api/mensagem.ts†L34-L68】
+5. **Supabase REST writes to Postgres.** The `/rest/v1/mensagem` endpoint maps directly to the `mensagem` table, so Supabase inserts the JSON payload and returns the stored row (including the generated `id`). 【F:src/api/mensagem.ts†L70-L93】
+6. **Optimistic IDs are reconciled.** When the promise resolves, the hook swaps the temporary UUID used in local state with the persisted `mensagem.id`. Failures leave the optimistic ID in place and are surfaced to the console in development mode. 【F:src/hooks/useEcoStream.ts†L456-L491】
 
-> ℹ️  `src/lib/supabaseClient.ts` centralizes the authenticated client that is reused for the `getSession()` lookup before every REST call, ensuring the same credentials gate both real-time and HTTP paths. 【F:src/lib/supabaseClient.ts†L1-L6】
+> ℹ️  `supabaseRestRequest` relies on the shared client from `src/lib/supabaseClient.ts`, guaranteeing that the same credentials gate real-time listeners and REST calls. 【F:src/lib/supabaseClient.ts†L1-L6】
 
-## How `/api` requests reach the backend
+## HTTP request shape and headers
 
-While persistence talks directly to Supabase, most other API calls (e.g. `/api/ask-eco`) go through the `apiFetch` helper. The helper resolves `VITE_API_URL`/`VITE_API_BASE_URL` to an origin and combines it with the requested path. In production, every `/api/*` request is then rewritten by Vercel to `https://ecobackend888.onrender.com/api/*`, keeping client code free from environment-specific URLs. 【F:src/constants/api.ts†L19-L85】【F:vercel.json†L1-L5】
+- **Method & URL:** `POST ${VITE_SUPABASE_URL}/rest/v1/mensagem` (relative path `/mensagem`). 【F:src/api/mensagem.ts†L34-L85】
+- **Body fields:** At minimum `conteudo` (message text) and `usuario_id`; optional flags like `salvar_memoria` are forwarded untouched. 【F:src/hooks/useEcoStream.ts†L456-L463】【F:src/api/mensagem.ts†L70-L83】
+- **Authentication:**
+  - `apikey`: always set to `VITE_SUPABASE_ANON_KEY` so Supabase REST accepts the call. 【F:src/api/mensagem.ts†L34-L47】
+  - `Authorization`: bearer token using the logged-in user's `access_token` when present; falls back to the anon key for guests. 【F:src/api/mensagem.ts†L34-L47】
+- **Response contract:** With `Prefer: return=representation`, Supabase responds with the inserted row, letting the hook replace optimistic IDs without an extra query. 【F:src/api/mensagem.ts†L70-L93】
 
-`apiFetch` also injects the guest/session headers from `buildIdentityHeaders`, letting the backend correlate anonymous traffic without direct Supabase access. 【F:src/lib/guestId.ts†L12-L72】
+## Failure handling
+
+- The hook logs (and tolerates) persistence failures so the chat experience does not block on Supabase outages. It keeps the optimistic UUID and proceeds with streaming. 【F:src/hooks/useEcoStream.ts†L464-L491】
+- `supabaseRestRequest` throws rich errors containing the status code and body text, making upstream logging clearer. 【F:src/api/mensagem.ts†L53-L68】
 
 ## Mermaid sequence diagram
 
@@ -26,26 +34,29 @@ sequenceDiagram
     participant UI as ChatPage.tsx
     participant Hook as useEcoStream
     participant Persist as salvarMensagem
-    participant Rest as Supabase REST (/rest/v1)
+    participant Rest as supabaseRestRequest
+    participant Edge as Supabase REST (/rest/v1)
     participant DB as Postgres (mensagem)
 
     UI->>Hook: handleSendMessage(text)
-    Hook->>Hook: Add optimistic message & metrics
+    Hook->>Hook: Optimistic update & telemetry
     alt Authenticated user
-        Hook->>Persist: salvarMensagem({ conteudo, usuario_id, ... })
-        Persist->>Rest: POST /mensagem (apikey + bearer)
-        Rest->>DB: INSERT into mensagem
-        DB-->>Rest: Row with generated id
-        Rest-->>Persist: 200 + persisted row
-        Persist-->>Hook: Resolve saved.id
-        Hook-->>UI: Replace optimistic UUID
+        Hook->>Persist: salvarMensagem({conteudo, usuario_id, ...})
+        Persist->>Rest: Build body & headers
+        Rest->>Edge: POST /mensagem
+        Edge->>DB: INSERT payload
+        DB-->>Edge: Row with generated id
+        Edge-->>Rest: 200 + representation
+        Rest-->>Persist: Resolve persisted row
+        Persist-->>Hook: saved.id replaces optimistic UUID
+        Hook-->>UI: Update message store
     else Guest
-        Hook-->>Hook: Skip Supabase persistence
+        Hook-->>Hook: Skip Supabase call
     end
 ```
 
 ## Key takeaways
 
-- All Supabase calls share the same typed helpers (`salvarMensagem`, `listarMensagens`, etc.), which guarantee consistent headers and error handling. 【F:src/api/mensagem.ts†L70-L159】
-- Environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) are required at build time so the REST base URL and authentication tokens are available on the client. 【F:src/api/mensagem.ts†L4-L12】
-- Frontend `/api/*` calls are environment-agnostic thanks to the `buildApiUrl` logic plus the rewrite rules that proxy to the Render backend in production. 【F:src/constants/api.ts†L19-L85】【F:vercel.json†L1-L5】
+- Typed helpers (`salvarMensagem`, `listarMensagens`, etc.) keep Supabase headers and error handling consistent across the app. 【F:src/api/mensagem.ts†L70-L159】
+- Environment variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` must be available at build time so the REST base URL and anon credentials can be injected on the client. 【F:src/api/mensagem.ts†L4-L12】
+- The shared Supabase client centralizes session lookup, so the same identity governs realtime subscriptions, REST calls, and optimistic UI reconciliation. 【F:src/lib/supabaseClient.ts†L1-L6】
