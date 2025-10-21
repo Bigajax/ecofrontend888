@@ -6,7 +6,7 @@ import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
 import { sanitizeEcoText } from "../utils/sanitizeEcoText";
 import { buildIdentityHeaders, getGuestId, syncGuestId, updateBiasHint } from "../lib/guestId";
-import { apiFetchJson, ApiFetchJsonNetworkError, ApiFetchJsonResult } from "../lib/apiFetch";
+import { ApiFetchJsonNetworkError, ApiFetchJsonResult } from "../lib/apiFetch";
 import { pingHealth } from "../utils/health";
 
 import { EcoApiError, MissingUserIdError } from "./errors";
@@ -110,13 +110,51 @@ export async function askEco(
   const serializedHeaders = Object.fromEntries(headers.entries());
   const body = JSON.stringify(payload ?? {});
 
-  const executeRequest = () =>
-    apiFetchJson<any>(ASK_ENDPOINT, {
-      method: "POST",
-      headers: serializedHeaders,
-      body,
-      signal: opts.signal,
-    });
+  const targetPath = opts.stream ? ASK_ENDPOINT : `${ASK_ENDPOINT}?nostream=1`;
+  const url = ensureHttpsUrl(resolveApiUrl(targetPath));
+
+  const executeRequest = async (): Promise<ApiFetchJsonResult<any>> => {
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: serializedHeaders,
+        body,
+        credentials: "include",
+        mode: "cors",
+        signal: opts.signal,
+      });
+
+      const headers = new Headers(response.headers);
+      let parsedBody: any = undefined;
+
+      try {
+        const raw = await response.text();
+        if (raw) {
+          try {
+            parsedBody = JSON.parse(raw);
+          } catch {
+            parsedBody = raw;
+          }
+        }
+      } catch {
+        parsedBody = undefined;
+      }
+
+      if (response.ok) {
+        return { ok: true, status: response.status, data: parsedBody, headers };
+      }
+
+      return { ok: false, status: response.status, data: parsedBody, headers };
+    } catch (error) {
+      return {
+        ok: false,
+        status: 0,
+        code: "NETWORK",
+        message: NETWORK_ERROR_MESSAGE,
+        error,
+      } satisfies ApiFetchJsonNetworkError;
+    }
+  };
 
   let result = await executeRequest();
 
@@ -133,7 +171,26 @@ export async function askEco(
 
   if (result.ok) {
     syncGuestFromHeaders(result.headers);
-    return result.data;
+    const data = result.data;
+    if (data && typeof data === "object") {
+      const payload = data as { ok?: boolean; data?: unknown; error?: unknown } & Record<
+        string,
+        unknown
+      >;
+      if (payload.ok === false) {
+        const explicitError =
+          typeof payload.error === "string" && payload.error.trim()
+            ? payload.error.trim()
+            : undefined;
+        const message =
+          explicitError ?? extractClientErrorMessage(payload) ?? CLIENT_ERROR_FALLBACK_MESSAGE;
+        throw new EcoApiError(message, { status: result.status, details: payload });
+      }
+      if (payload.ok === true && "data" in payload) {
+        return payload.data;
+      }
+    }
+    return data;
   }
 
   if (isNetworkErrorResult(result)) {
@@ -505,7 +562,7 @@ export const enviarMensagemParaEco = async (
       let streamOpened = false;
 
       try {
-        const response = await fetch(streamUrl, {
+        const requestInit: RequestInit & { duplex?: "half" } = {
           method: "POST",
           headers,
           body: JSON.stringify(payload),
@@ -515,7 +572,19 @@ export const enviarMensagemParaEco = async (
           redirect: "follow",
           keepalive: false,
           signal: mergedSignal,
-        });
+        };
+
+        const maybeStreamBody = requestInit.body as unknown;
+        if (
+          typeof ReadableStream !== "undefined" &&
+          maybeStreamBody &&
+          (maybeStreamBody instanceof ReadableStream ||
+            typeof (maybeStreamBody as { getReader?: () => unknown }).getReader === "function")
+        ) {
+          requestInit.duplex = "half";
+        }
+
+        const response = await fetch(streamUrl, requestInit);
         const serverGuestId =
           normalizeGuestIdFormat(
             response.headers.get("x-eco-guest-id") ?? response.headers.get("x-guest-id"),

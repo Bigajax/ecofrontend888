@@ -75,6 +75,8 @@ vi.mock('../../components/EcoMessageWithAudio', () => ({
 
 vi.mock('../../components/QuickSuggestions', () => ({
   __esModule: true,
+  DEFAULT_SUGGESTIONS: [],
+  DEFAULT_ROTATING: [],
   default: () => null,
 }));
 

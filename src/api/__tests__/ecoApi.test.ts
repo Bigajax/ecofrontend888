@@ -1,22 +1,14 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fetchMock, axiosPostMock } = vi.hoisted(() => {
+const { fetchMock } = vi.hoisted(() => {
   vi.stubEnv("VITE_SUPABASE_URL", "https://supabase.test");
   vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key-test");
   return {
     fetchMock: vi.fn(),
-    axiosPostMock: vi.fn(),
   };
 });
 
 vi.stubGlobal("fetch", fetchMock);
-
-vi.mock("../axios", () => ({
-  default: {
-    defaults: { baseURL: "https://eco.test/api" },
-    post: axiosPostMock,
-  },
-}));
 
 vi.mock("uuid", () => ({
   v4: () => "uuid-mock",
@@ -55,7 +47,6 @@ const createSseResponse = (events: unknown[], newline = "\n") => {
 describe("enviarMensagemParaEco", () => {
   beforeEach(() => {
     fetchMock.mockReset();
-    axiosPostMock.mockReset();
     getSessionMock.mockReset();
     getSessionMock.mockResolvedValue({
       data: { session: { access_token: "token-mock" } },
@@ -334,34 +325,45 @@ describe("enviarMensagemParaEco", () => {
     );
 
     const [, init] = fetchMock.mock.calls.at(-1) ?? [];
-    const headers = (init?.headers ?? {}) as Record<string, string>;
+    const rawHeaders = (init?.headers ?? {}) as Record<string, string>;
+    const headers = Object.fromEntries(
+      Object.entries(rawHeaders).map(([key, value]) => [key.toLowerCase(), value]),
+    );
     expect(headers).toMatchObject({
-      "X-Eco-Guest-Id": "guest-123",
-      Accept: "text/event-stream",
-      "Content-Type": "application/json",
-      "X-Stream-Id": "uuid-mock",
+      "x-eco-guest-id": "guest-123",
+      accept: "text/event-stream",
+      "content-type": "application/json",
+      "x-stream-id": "uuid-mock",
     });
-    expect(headers["X-Eco-Session-Id"]).toEqual(expect.any(String));
-    expect(headers.Authorization).toBeUndefined();
-    expect(init?.credentials).toBe("omit");
+    expect(headers["x-eco-session-id"]).toEqual(expect.any(String));
+    expect(headers.authorization).toBeUndefined();
+    expect(init?.credentials).toBe("include");
     const body = init?.body ? JSON.parse(init.body as string) : {};
     expect(body.isGuest).toBe(true);
     expect(body.guestId).toBe("guest-123");
     expect(body.usuario_id).toBe('guest-123');
   });
 
-  it("usa Axios quando streaming é desativado e normaliza a resposta JSON", async () => {
+  it("usa fetch quando streaming é desativado e normaliza a resposta JSON", async () => {
     getSessionMock.mockResolvedValueOnce({
       data: { session: { access_token: "token-autenticado" } },
     });
 
-    axiosPostMock.mockResolvedValue({
+    const payload = {
+      ok: true,
       data: {
         metadata: { foo: "bar" },
         response: { content: "oi" },
         primeiraMemoriaSignificativa: true,
       },
-    });
+    };
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
 
     const resposta = await enviarMensagemParaEco(
       mensagens,
@@ -373,10 +375,19 @@ describe("enviarMensagemParaEco", () => {
       { stream: false }
     );
 
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(axiosPostMock).toHaveBeenCalledTimes(1);
-    const [url, body, config] = axiosPostMock.mock.calls[0];
-    expect(url).toBe("/api/ask-eco");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://ecobackend888.onrender.com/api/ask-eco?nostream=1");
+    expect(init?.method).toBe("POST");
+    expect(init?.credentials).toBe("include");
+    expect(init?.headers).toMatchObject({
+      "content-type": "application/json",
+      accept: "application/json",
+      authorization: "Bearer token-autenticado",
+    });
+    expect((init?.headers as Record<string, string>)["x-eco-guest-id"]).toEqual(expect.any(String));
+    expect((init?.headers as Record<string, string>)["x-eco-session-id"]).toEqual(expect.any(String));
+    const body = init?.body ? JSON.parse(init.body as string) : {};
     expect(body).toMatchObject({
       mensagens: expect.any(Array),
       usuario_id: "usuario-123",
@@ -384,15 +395,6 @@ describe("enviarMensagemParaEco", () => {
       clientTz: expect.any(String),
     });
     expect(body.isGuest).toBeUndefined();
-    expect(config).toEqual({
-      headers: expect.objectContaining({
-        "Content-Type": "application/json",
-        Authorization: "Bearer token-autenticado",
-        "X-Eco-Guest-Id": expect.any(String),
-        "X-Eco-Session-Id": expect.any(String),
-      }),
-      responseType: "json",
-    });
     expect(getSessionMock).toHaveBeenCalledTimes(1);
     expect(resposta.metadata).toEqual({ foo: "bar" });
     expect(resposta.primeiraMemoriaSignificativa).toBe(true);
