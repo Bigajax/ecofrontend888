@@ -144,6 +144,13 @@ const collectErrorMessages = (error: unknown, acc: Set<string> = new Set()): Set
 };
 
 const resolveFriendlyNetworkError = (error: unknown) => {
+  if (error instanceof TypeError) {
+    return {
+      type: 'network' as const,
+      message: 'Sem conexão. Tente novamente.',
+    };
+  }
+
   const texts = Array.from(collectErrorMessages(error));
   if (texts.length === 0) return { type: 'other' as const, message: '' };
 
@@ -398,7 +405,7 @@ export const useEcoStream = ({
               ...buildIdentityHeaders(),
             },
             body: JSON.stringify(payload),
-            credentials: 'omit',
+            credentials: 'include',
             mode: 'cors',
             redirect: 'follow',
             keepalive: true,
@@ -1150,35 +1157,17 @@ export const useEcoStream = ({
         };
 
         // ------------------------------
-        // 👇 Fallback automático SSE → JSON
+        // 👇 Fluxo principal de envio via SSE
         // ------------------------------
-        let resposta: Awaited<ReturnType<typeof enviarMensagemParaEco>>;
-        const commonOpts = { guestId, isGuest, signal: controller.signal as AbortSignal };
-
-        try {
-          // 1) tenta streaming (SSE)
-          resposta = await enviarMensagemParaEco(
-            mensagensComContexto,
-            userName,
-            shouldPersist ? (authUserId as string) : undefined,
-            clientHour,
-            clientTz,
-            handlers,
-            { ...commonOpts, stream: true }
-          );
-        } catch (err) {
-          // 2) se falhar (CORS/rede), tenta JSON
-          if (isDev) console.warn('[useEcoStream] SSE falhou; usando JSON:', err);
-          resposta = await enviarMensagemParaEco(
-            mensagensComContexto,
-            userName,
-            shouldPersist ? (authUserId as string) : undefined,
-            clientHour,
-            clientTz,
-            handlers,
-            { ...commonOpts, stream: false }
-          );
-        }
+        const resposta = await enviarMensagemParaEco(
+          mensagensComContexto,
+          userName,
+          shouldPersist ? (authUserId as string) : undefined,
+          clientHour,
+          clientTz,
+          handlers,
+          { guestId, isGuest, signal: controller.signal as AbortSignal, stream: true }
+        );
         // ------------------------------
 
         updateInteractionId(resposta);

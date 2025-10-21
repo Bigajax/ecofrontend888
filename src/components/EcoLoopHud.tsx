@@ -97,7 +97,12 @@ export function EcoLoopHud() {
       setSnapshotStatus("loading");
       setSnapshotError(null);
       try {
-        const res = await fetch(`/api/diag/last?response_id=${encodeURIComponent(responseId)}`);
+        const res = await fetch(`/api/diag/last?response_id=${encodeURIComponent(responseId)}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          mode: "cors",
+        });
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }

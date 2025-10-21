@@ -323,7 +323,7 @@ export async function buscarMemoriasSemelhantesV2(
   texto: string,
   {
     k = 3,
-    threshold = 0.12,
+    threshold = 0.72,
     usuario_id,
   }: { k?: number; threshold?: number; usuario_id?: string } = {},
 ): Promise<MemoriaSimilar[]> {
@@ -334,10 +334,8 @@ export async function buscarMemoriasSemelhantesV2(
 
     const params = new URLSearchParams();
     params.set('texto', texto);
-    params.set('query', texto);
     params.set('k', String(k));
     params.set('limit', String(k));
-    params.set('limite', String(k));
     params.set('threshold', String(threshold));
     params.set('usuario_id', usuario_id);
 

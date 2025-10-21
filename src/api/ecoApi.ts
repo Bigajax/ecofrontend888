@@ -1,7 +1,6 @@
 // src/api/ecoApi.ts
 import { v4 as uuidv4 } from "uuid";
 
-import api from "./axios";
 import { supabase } from "../lib/supabaseClient";
 import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
@@ -27,21 +26,83 @@ export type { EcoClientEvent, EcoEventHandlers, EcoSseEvent, EcoStreamResult };
 
 export async function askEco(
   payload: any,
-  opts: { stream?: boolean; headers?: Record<string, string> } = {}
+  opts: { stream?: boolean; headers?: Record<string, string>; signal?: AbortSignal } = {}
 ) {
-  const headers: Record<string, string> = { ...(opts.headers ?? {}) };
+  const baseHeaders: Record<string, string> = { ...(opts.headers ?? {}) };
   const identityHeaders = buildIdentityHeaders();
   for (const [key, value] of Object.entries(identityHeaders)) {
-    headers[key] = value;
+    baseHeaders[key] = value;
   }
-  if (opts.stream) headers["Accept"] = headers["Accept"] ?? "text/event-stream";
 
-  const response = await api.post("/api/ask-eco", payload, {
+  const headers = new Headers(baseHeaders);
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (opts.stream) {
+    headers.set("Accept", headers.get("Accept") ?? "text/event-stream");
+  } else {
+    headers.set("Accept", headers.get("Accept") ?? "application/json");
+  }
+
+  const response = await fetch(resolveApiUrl(ASK_ENDPOINT), {
+    method: "POST",
     headers,
-    responseType: opts.stream ? "text" : "json",
+    body: JSON.stringify(payload ?? {}),
+    mode: "cors",
+    credentials: "include",
+    redirect: "follow",
+    keepalive: false,
+    signal: opts.signal,
   });
 
-  return response.data;
+  const responseGuestId =
+    response.headers.get("x-eco-guest-id") ||
+    response.headers.get("X-Eco-Guest-Id") ||
+    response.headers.get("x-guest-id") ||
+    response.headers.get("X-Guest-Id");
+  if (responseGuestId) {
+    syncGuestId(responseGuestId);
+  }
+
+  if (!response.ok) {
+    let errorPayload: unknown;
+    let message = `Erro HTTP ${response.status}`;
+    try {
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        errorPayload = await response.json();
+      } else {
+        const text = await response.text();
+        errorPayload = text;
+      }
+    } catch {
+      errorPayload = undefined;
+    }
+
+    if (errorPayload && typeof errorPayload === "object") {
+      const candidate =
+        (errorPayload as any)?.error ||
+        (errorPayload as any)?.message ||
+        (errorPayload as any)?.detail ||
+        (errorPayload as any)?.details;
+      if (typeof candidate === "string" && candidate.trim()) {
+        message = candidate.trim();
+      }
+    } else if (typeof errorPayload === "string" && errorPayload.trim()) {
+      message = errorPayload.trim();
+    }
+
+    throw new EcoApiError(message, {
+      status: response.status,
+      details: errorPayload,
+    });
+  }
+
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return await response.json();
+  }
+  return await response.text();
 }
 
 interface Message {
@@ -179,7 +240,6 @@ const resolveGuestHeaders = (
 
 type RequestPreparation = {
   headers: Record<string, string>;
-  credentials: RequestCredentials;
   payload: Record<string, unknown>;
 };
 
@@ -228,19 +288,23 @@ const prepareRequest = (
     return "";
   })();
 
-  bodyPayload.texto = promptTexto;
+  bodyPayload.texto = promptTexto.trim();
 
   if (typeof userName === "string" && userName.trim().length > 0) {
     bodyPayload.nome_usuario = userName;
   }
-  if (userId) {
-    bodyPayload.usuario_id = userId;
-  } else if (bodyPayload.usuario_id === undefined) {
-    bodyPayload.usuario_id = null;
-  }
-  if (!("contexto" in bodyPayload)) {
-    bodyPayload.contexto = {};
-  }
+  const resolvedUserId = userId && userId.trim().length > 0 ? userId : guest.guestId;
+  bodyPayload.usuario_id = resolvedUserId;
+
+  const existingContext =
+    bodyPayload.contexto && typeof bodyPayload.contexto === "object"
+      ? (bodyPayload.contexto as Record<string, unknown>)
+      : {};
+  bodyPayload.contexto = {
+    ...existingContext,
+    origem: "web",
+    ts: Date.now(),
+  };
 
   if (guest.isGuest) {
     bodyPayload.isGuest = true;
@@ -249,7 +313,6 @@ const prepareRequest = (
 
   return {
     headers,
-    credentials: "omit",
     payload: bodyPayload,
   } satisfies RequestPreparation;
 };
@@ -349,7 +412,7 @@ export const enviarMensagemParaEco = async (
     logHttpRequestDebug({
       method: "POST",
       url: resolveApiUrl(ASK_ENDPOINT),
-      credentials: "omit",
+      credentials: "include",
       headers,
     });
 
@@ -392,7 +455,7 @@ export const enviarMensagemParaEco = async (
           headers,
           body: JSON.stringify(payload),
           cache: "no-store",
-          credentials: "omit",
+          credentials: "include",
           mode: "cors",
           redirect: "follow",
           keepalive: false,
