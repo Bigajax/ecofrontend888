@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { getApiBase } from "../constants/api";
+import { getApiBase } from "../config/apiBase";
 import { buildIdentityHeaders, syncGuestId } from "../lib/guestId";
 
 const api = axios.create({

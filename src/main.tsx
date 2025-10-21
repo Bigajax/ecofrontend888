@@ -1,15 +1,12 @@
 // src/main.tsx
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 
 import { ensureGuestId, ensureSessionId } from './lib/guestId';
 
 import { initFacebookPixel } from './lib/fbpixel';
-import PixelRouteListener from './lib/PixelRouteListener';
-import MixpanelRouteListener from './lib/MixpanelRouteListener';
 
 // Garante que guest_id e session_id existam antes de qualquer requisição
 ensureGuestId();
@@ -20,11 +17,6 @@ initFacebookPixel();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter basename="/">
-      {/* dispara PageView em cada navegação */}
-      <PixelRouteListener />
-      <MixpanelRouteListener />
-      <App />
-    </BrowserRouter>
+    <App />
   </StrictMode>,
 );

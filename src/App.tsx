@@ -1,42 +1,51 @@
-// src/App.tsx
-import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ChatProvider } from './contexts/ChatContext';
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+} from "react";
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 
-const LoginPage = React.lazy(() => import('./pages/LoginPage'));
-const ResetSenha = React.lazy(() => import('./pages/ResetSenha'));
-const ChatPage = React.lazy(() => import('./pages/ChatPage'));
-const CreateProfilePage = React.lazy(() => import('./pages/CreateProfilePage'));
-const WelcomePage = React.lazy(() => import('./pages/WelcomePage'));
-const VoicePage = React.lazy(() => import('./pages/VoicePage'));
+import { RootProviders } from "@/providers/RootProviders";
+import RequireAuth from "@/components/RequireAuth";
+import RootErrorBoundary from "@/components/RootErrorBoundary";
+import HealthBanner from "@/components/HealthBanner";
+import ApiBaseWarningCard from "@/components/ApiBaseWarningCard";
+import GlobalErrorChip from "@/components/GlobalErrorChip";
+import MainLayout from "@/layouts/MainLayout";
+import PixelRouteListener from "@/lib/PixelRouteListener";
+import MixpanelRouteListener from "@/lib/MixpanelRouteListener";
+import mixpanel from "@/lib/mixpanel";
+import { DEFAULT_API_BASE, IS_API_BASE_EMPTY, RAW_API_BASE } from "@/constants/api";
+import { getApiBase } from "@/config/apiBase";
+import { HealthCheckResult, HealthStatus, pingWithRetry } from "@/utils/health";
 
-// MEMÓRIAS
-const MemoryLayout = React.lazy(() => import('./pages/memory/MemoryLayout'));
-const MemoriesSection = React.lazy(() => import('./pages/memory/MemoriesSection'));
-const ProfileSection = React.lazy(() => import('./pages/memory/ProfileSection'));
-const ReportSection = React.lazy(() => import('./pages/memory/ReportSection'));
+const LoginPage = lazy(() => import("@/pages/LoginPage"));
+const ResetSenha = lazy(() => import("@/pages/ResetSenha"));
+const ChatPage = lazy(() => import("@/pages/ChatPage"));
+const CreateProfilePage = lazy(() => import("@/pages/CreateProfilePage"));
+const WelcomePage = lazy(() => import("@/pages/WelcomePage"));
+const VoicePage = lazy(() => import("@/pages/VoicePage"));
 
-import RequireAuth from './components/RequireAuth';
-import mixpanel from './lib/mixpanel';
-import MainLayout from './layouts/MainLayout';
-import { DEFAULT_API_BASE, IS_API_BASE_EMPTY, RAW_API_BASE, getApiBase } from './constants/api';
-import RootErrorBoundary from './components/RootErrorBoundary';
-import HealthBanner from './components/HealthBanner';
-import ApiBaseWarningCard from './components/ApiBaseWarningCard';
-import GlobalErrorChip from './components/GlobalErrorChip';
-import { HealthCheckResult, HealthStatus, pingWithRetry } from './utils/health';
+const MemoryLayout = lazy(() => import("@/pages/memory/MemoryLayout"));
+const MemoriesSection = lazy(() => import("@/pages/memory/MemoriesSection"));
+const ProfileSection = lazy(() => import("@/pages/memory/ProfileSection"));
+const ReportSection = lazy(() => import("@/pages/memory/ReportSection"));
 
 const lazyFallback = <div>Carregando…</div>;
 
-const renderWithSuspense = (element: React.ReactElement) => (
-  <Suspense fallback={lazyFallback}>{element}</Suspense>
-);
-
-/** Wrapper para dar key por usuário ao ChatProvider */
-function ChatProviderWithKey({ children }: { children: React.ReactNode }) {
-  const { userId } = useAuth();
-  return <ChatProvider key={userId || 'anon'}>{children}</ChatProvider>;
+function renderWithSuspense(element: ReactElement) {
+  return <Suspense fallback={lazyFallback}>{element}</Suspense>;
 }
 
 function PublicShell() {
@@ -69,7 +78,7 @@ function AppProtectedShell() {
 
 function AppRoutes() {
   useEffect(() => {
-    mixpanel.track('App iniciado', { origem: 'App.tsx', data: new Date().toISOString() });
+    mixpanel.track("App iniciado", { origem: "App.tsx", data: new Date().toISOString() });
   }, []);
 
   return (
@@ -107,23 +116,23 @@ function AppRoutes() {
 }
 
 function AppChrome() {
-  const [healthStatus, setHealthStatus] = useState<HealthStatus>('idle');
+  const [healthStatus, setHealthStatus] = useState<HealthStatus>("idle");
   const [hasCapturedError, setHasCapturedError] = useState(false);
-  const healthMetaRef = useRef<Pick<HealthCheckResult, 'aborted' | 'responseOk'>>({
+  const healthMetaRef = useRef<Pick<HealthCheckResult, "aborted" | "responseOk">>({
     aborted: false,
     responseOk: true,
   });
   const rawEnvApiBase = RAW_API_BASE;
   const rawApiBaseDisplay =
-    typeof rawEnvApiBase === 'string'
+    typeof rawEnvApiBase === "string"
       ? rawEnvApiBase.length === 0
         ? '""'
         : rawEnvApiBase
-      : 'indefinido';
+      : "indefinido";
   const effectiveApiBase = getApiBase();
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return undefined;
     }
 
@@ -140,22 +149,22 @@ function AppChrome() {
       try {
         result = await pingWithRetry();
       } catch (error) {
-        console.error('[App] Falha na verificação de saúde', error);
+        console.error("[App] Falha na verificação de saúde", error);
         if (!alive) return;
-        result = { status: 'down', aborted: false, responseOk: false };
+        result = { status: "down", aborted: false, responseOk: false };
       }
       if (!alive) return;
       healthMetaRef.current = { aborted: result.aborted, responseOk: result.responseOk };
       setHealthStatus(result.status);
 
-      if (result.status === 'ok') {
+      if (result.status === "ok") {
         nextDelay = BASE_DELAY;
       } else {
         nextDelay = Math.min(delayForThisCycle + STEP, MAX_DELAY);
       }
 
       if (!alive) return;
-      const delay = result.status === 'ok' ? BASE_DELAY : delayForThisCycle;
+      const delay = result.status === "ok" ? BASE_DELAY : delayForThisCycle;
       timeoutId = window.setTimeout(runCheck, delay);
     };
 
@@ -170,7 +179,7 @@ function AppChrome() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return undefined;
     }
 
@@ -178,18 +187,18 @@ function AppChrome() {
     const previousOnUnhandledRejection = window.onunhandledrejection;
 
     const handleWindowError: OnErrorEventHandler = function (message, source, lineno, colno, error) {
-      console.error('[App] window.onerror capturado', { message, source, lineno, colno, error });
+      console.error("[App] window.onerror capturado", { message, source, lineno, colno, error });
       setHasCapturedError(true);
-      if (typeof previousOnError === 'function') {
+      if (typeof previousOnError === "function") {
         return previousOnError.call(window, message, source, lineno, colno, error);
       }
       return false;
     };
 
     const handleUnhandledRejection = function (event: PromiseRejectionEvent) {
-      console.error('[App] window.onunhandledrejection capturado', event.reason, event);
+      console.error("[App] window.onunhandledrejection capturado", event.reason, event);
       setHasCapturedError(true);
-      if (typeof previousOnUnhandledRejection === 'function') {
+      if (typeof previousOnUnhandledRejection === "function") {
         return previousOnUnhandledRejection.call(window, event);
       }
       return undefined;
@@ -205,46 +214,48 @@ function AppChrome() {
   }, []);
 
   const showHealthBanner =
-    (healthStatus === 'degraded' || healthStatus === 'down') &&
-    !(healthStatus === 'down' && healthMetaRef.current.aborted);
+    (healthStatus === "degraded" || healthStatus === "down") &&
+    !(healthStatus === "down" && healthMetaRef.current.aborted);
   const showApiBaseWarning = IS_API_BASE_EMPTY;
   const showErrorChip = hasCapturedError;
 
   const handleErrorChipClick = () => {
-    console.info('Abra o console do navegador (F12) para inspecionar o erro capturado.');
+    console.info("Abra o console do navegador (F12) para inspecionar o erro capturado.");
     setHasCapturedError(false);
   };
 
   return (
-    <AuthProvider>
-      <ChatProviderWithKey>
-        <div className="relative min-h-[100dvh] w-screen bg-white">
-          <HealthBanner status={healthStatus} visible={showHealthBanner} />
+    <div className="relative min-h-[100dvh] w-screen bg-white">
+      <HealthBanner status={healthStatus} visible={showHealthBanner} />
 
-          <ApiBaseWarningCard
-            visible={showApiBaseWarning}
-            rawApiBaseDisplay={rawApiBaseDisplay}
-            defaultApiBase={DEFAULT_API_BASE}
-            effectiveApiBase={effectiveApiBase}
-          />
+      <ApiBaseWarningCard
+        visible={showApiBaseWarning}
+        rawApiBaseDisplay={rawApiBaseDisplay}
+        defaultApiBase={DEFAULT_API_BASE}
+        effectiveApiBase={effectiveApiBase}
+      />
 
-          <GlobalErrorChip visible={showErrorChip} onClick={handleErrorChipClick} />
+      <GlobalErrorChip visible={showErrorChip} onClick={handleErrorChipClick} />
 
-          <div className={showHealthBanner ? 'pt-12' : ''}>
-            <AppRoutes />
-          </div>
-        </div>
-      </ChatProviderWithKey>
-    </AuthProvider>
+      <div className={showHealthBanner ? "pt-12" : ""}>
+        <AppRoutes />
+      </div>
+    </div>
   );
 }
 
-export default function App() {
+export default function App(): JSX.Element {
   return (
-    <RootErrorBoundary>
-      <Suspense fallback="Carregando…">
-        <AppChrome />
-      </Suspense>
-    </RootErrorBoundary>
+    <RootProviders>
+      <BrowserRouter basename="/">
+        <PixelRouteListener />
+        <MixpanelRouteListener />
+        <RootErrorBoundary>
+          <Suspense fallback="Carregando…">
+            <AppChrome />
+          </Suspense>
+        </RootErrorBoundary>
+      </BrowserRouter>
+    </RootProviders>
   );
 }
