@@ -104,7 +104,7 @@ const CreateProfilePage: React.FC = () => {
         userId: supabase?.user?.id ?? 'pending',
       });
       fbq('CompleteRegistration', { value: 1, currency: 'BRL' });
-      navigate('/chat');
+      navigate('/app');
     } catch (err: any) {
       const translatedError = translateRegisterError(err);
       mixpanel.track('Front-end: Cadastro Falhou', { reason: translatedError });
@@ -261,7 +261,7 @@ const CreateProfilePage: React.FC = () => {
             <button
               type="button"
               className="text-slate-800 font-medium underline underline-offset-2 hover:text-slate-900"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/')}
             >
               Entrar
             </button>

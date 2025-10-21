@@ -113,7 +113,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
 
           <div className="justify-self-center">
             <Link
-              to="/chat"
+              to="/app"
               className="flex items-center gap-2 select-none text-[color:var(--color-text-primary)] transition hover:opacity-95"
             >
               <span className="inline-flex translate-y-[1px]">
@@ -126,7 +126,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
           <div className="flex items-center justify-end gap-2">
             {shouldShowBack && (
               <button
-                onClick={() => navigate('/chat')}
+                onClick={() => navigate('/app')}
                 className={iconButtonClass}
                 aria-label="Voltar ao chat"
                 title="Voltar ao chat"
@@ -200,7 +200,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
 
             <nav className="px-3 py-3 flex flex-col gap-1.5">
               <NavLink
-                to="/chat"
+                to="/app"
                 end
                 className={({ isActive }) => navItem(isActive)}
                 onClick={() => setDrawerOpen(false)}
@@ -209,15 +209,23 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
                 <span className={labelCls}>Chat</span>
               </NavLink>
 
-              <NavLink to="/memory" end className={({ isActive }) => navItem(isActive)} onClick={() => setDrawerOpen(false)}>
+              <NavLink to="/app/memory" end className={({ isActive }) => navItem(isActive)} onClick={() => setDrawerOpen(false)}>
                 <BookOpen className={iconCls} strokeWidth={1.75} />
                 <span className={labelCls}>Memórias</span>
               </NavLink>
-              <NavLink to="/memory/profile" className={({ isActive }) => navItem(isActive)} onClick={() => setDrawerOpen(false)}>
+              <NavLink
+                to="/app/memory/profile"
+                className={({ isActive }) => navItem(isActive)}
+                onClick={() => setDrawerOpen(false)}
+              >
                 <Brain className={iconCls} strokeWidth={1.75} />
                 <span className={labelCls}>Perfil Emocional</span>
               </NavLink>
-              <NavLink to="/memory/report" className={({ isActive }) => navItem(isActive)} onClick={() => setDrawerOpen(false)}>
+              <NavLink
+                to="/app/memory/report"
+                className={({ isActive }) => navItem(isActive)}
+                onClick={() => setDrawerOpen(false)}
+              >
                 <BarChart3 className={iconCls} strokeWidth={1.75} />
                 <span className={labelCls}>Relatórios</span>
               </NavLink>

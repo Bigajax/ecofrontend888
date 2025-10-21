@@ -46,7 +46,7 @@ const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = ({ hasFilters }) => {
       </p>
       {!hasFilters && (
         <button
-          onClick={() => navigate('/chat')}
+          onClick={() => navigate('/app')}
           className="px-6 py-3 rounded-full border border-slate-200 bg-white/90 text-slate-700 font-semibold text-[15px] shadow-sm transition hover:bg-white"
         >
           Grave sua primeira memória
