@@ -22,7 +22,7 @@ initFacebookPixel();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <RootErrorBoundary>
-      <BrowserRouter>
+      <BrowserRouter basename="/">
         {/* dispara PageView em cada navegação */}
         <PixelRouteListener />
         <MixpanelRouteListener />

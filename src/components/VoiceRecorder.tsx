@@ -32,7 +32,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
   const navigate = useNavigate();
 
-  const goToMemoryPage = () => navigate('/memory');
+  const goToMemoryPage = () => navigate('/app/memory');
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

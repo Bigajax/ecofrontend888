@@ -23,8 +23,8 @@ const VoicePage: React.FC = () => {
     isProcessing ? 'thinking' : isListening ? 'listening' : ecoAudioURL ? 'speaking' : 'focus';
 
   const navigate = useNavigate();
-  const goToMemoryPage = () => navigate("/memory");
-  const goToChatPage = () => navigate("/chat");
+  const goToMemoryPage = () => navigate('/app/memory');
+  const goToChatPage = () => navigate('/app');
 
   const ecoAudioURLRef = useRef<string | null>(null);
 

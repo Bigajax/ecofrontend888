@@ -76,7 +76,7 @@ const MemoryPage: React.FC = () => {
       startReportTiming();
     }
     setActiveTab(target);
-    navigate(target === 'memories' ? '/memory' : `/memory/${target}`, { replace: true });
+    navigate(target === 'memories' ? '/app/memory' : `/app/memory/${target}`, { replace: true });
   };
 
   const {
@@ -167,7 +167,7 @@ const MemoryPage: React.FC = () => {
         <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-3">
           <div className="flex w-full items-center justify-between gap-3">
             <button
-              onClick={() => navigate('/chat')}
+              onClick={() => navigate('/app')}
               className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 bg-white/80 backdrop-blur hover:bg-white transition"
               aria-label="Voltar"
             >
@@ -308,7 +308,7 @@ const MemoryPage: React.FC = () => {
                     </p>
                     {!filtersActive && (
                       <button
-                        onClick={() => navigate('/chat')}
+                        onClick={() => navigate('/app')}
                         className="px-4 py-2 rounded-full text-sm font-medium border border-neutral-300 bg-white/60 backdrop-blur hover:bg-white transition text-neutral-900"
                       >
                         + Nova memória
@@ -401,7 +401,7 @@ const MemoryPage: React.FC = () => {
                       Compartilhe o que sente com a Eco para criar seu panorama emocional.
                     </p>
                     <button
-                      onClick={() => navigate('/chat')}
+                      onClick={() => navigate('/app')}
                       className="px-4 py-2 rounded-full text-sm font-medium border border-neutral-300 bg-white/60 backdrop-blur hover:bg-white transition text-neutral-900"
                     >
                       + Nova memória
@@ -435,7 +435,7 @@ const MemoryPage: React.FC = () => {
                       Para criar seu primeiro relatório, compartilhe suas memórias mais marcantes com a Eco.
                     </p>
                     <button
-                      onClick={() => navigate('/chat')}
+                      onClick={() => navigate('/app')}
                       className="px-4 py-2 rounded-full text-sm font-medium border border-neutral-300 bg-white/60 backdrop-blur hover:bg-white transition text-neutral-900"
                     >
                       + Registrar memória
