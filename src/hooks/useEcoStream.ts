@@ -87,6 +87,8 @@ export const useEcoStream = ({
         messageId: string | null;
         buffer: string;
         pendingPatch: Partial<ChatMessageType>;
+        lastChunkIndex: number | null;
+        createdAtChunkIndex: number | null;
       }
     >
   >(new Map());
@@ -115,22 +117,13 @@ export const useEcoStream = ({
       if (!trimmed) return;
       if (isSending || inFlightRef.current) return;
 
+      const clientMessageId = uuidv4();
+      inFlightRef.current = clientMessageId;
+
       setDigitando(true);
       setIsSending(true);
       setErroApi(null);
       activity?.onSend();
-
-      const {
-        data: sessionData,
-      } = await supabase
-        .auth
-        .getSession()
-        .catch(() => ({ data: { session: null } }));
-      const session = sessionData?.session ?? null;
-      const authUserId = session?.user?.id ?? undefined;
-      const isAuthenticated = Boolean(authUserId);
-      const analyticsUserId = authUserId ?? userId ?? guestId ?? 'guest';
-      const shouldPersist = isAuthenticated && !isGuest;
 
       if (activeStreamRef.current.controller) {
         try {
@@ -144,12 +137,21 @@ export const useEcoStream = ({
 
       const controller = new AbortController();
       abortControllerRef.current = controller;
-      activeStreamRef.current = { controller, streamId: null };
+      activeStreamRef.current = { controller, streamId: clientMessageId };
+
+      const {
+        data: sessionData,
+      } = await supabase
+        .auth
+        .getSession()
+        .catch(() => ({ data: { session: null } }));
+      const session = sessionData?.session ?? null;
+      const authUserId = session?.user?.id ?? undefined;
+      const isAuthenticated = Boolean(authUserId);
+      const analyticsUserId = authUserId ?? userId ?? guestId ?? 'guest';
+      const shouldPersist = isAuthenticated && !isGuest;
 
       const userMsgId = uuidv4();
-      const clientMessageId = uuidv4();
-      activeStreamRef.current.streamId = clientMessageId;
-      inFlightRef.current = clientMessageId;
       const sanitizedUserText = sanitizeText(trimmed);
       addMessage({
         id: userMsgId,
@@ -181,6 +183,8 @@ export const useEcoStream = ({
         messageId: clientMessageId,
         buffer: '',
         pendingPatch: {},
+        lastChunkIndex: null,
+        createdAtChunkIndex: null,
       });
 
       let currentInteractionId: string | null = null;
@@ -735,7 +739,10 @@ export const useEcoStream = ({
           });
         };
 
-        const createEcoMessageIfNeeded = (initialPatch: Partial<ChatMessageType> = {}) => {
+        const createEcoMessageIfNeeded = (
+          initialPatch: Partial<ChatMessageType> = {},
+          originChunkIndex?: number | null,
+        ) => {
           if (ecoMessageCreated) {
             if (Object.keys(initialPatch).length > 0) {
               patchEcoMessage(initialPatch);
@@ -761,6 +768,15 @@ export const useEcoStream = ({
           const streamEntry = streamsRef.current.get(clientMessageId);
           if (streamEntry) {
             streamEntry.messageId = targetId;
+            if (typeof originChunkIndex === 'number') {
+              streamEntry.createdAtChunkIndex = originChunkIndex;
+              if (
+                streamEntry.lastChunkIndex == null ||
+                streamEntry.lastChunkIndex < originChunkIndex
+              ) {
+                streamEntry.lastChunkIndex = originChunkIndex;
+              }
+            }
           }
 
           const normalizedPatch = normalizePatch({ ...pendingEcoPatch, ...initialPatch });
@@ -901,6 +917,7 @@ export const useEcoStream = ({
         };
 
         const seenChunkIdentifiers = new Set<string>();
+        let lastSeenChunkIndex: number | null = null;
 
         const resolveChunkIdentifier = (event: EcoSseEvent | undefined) => {
           if (!event) return null;
@@ -934,6 +951,49 @@ export const useEcoStream = ({
           return null;
         };
 
+        const resolveChunkIndex = (event: EcoSseEvent | undefined): number | null => {
+          if (!event) return null;
+          const payload = (event.payload ?? {}) as Record<string, any>;
+          const delta = (payload?.delta ?? payload) as Record<string, any> | undefined;
+          const extractNumeric = (value: unknown): number | null => {
+            if (typeof value === 'number' && Number.isFinite(value)) {
+              return value;
+            }
+            if (typeof value === 'string') {
+              const parsed = Number.parseInt(value.trim(), 10);
+              if (Number.isFinite(parsed)) {
+                return parsed;
+              }
+            }
+            return null;
+          };
+
+          const candidates: Array<unknown> = [
+            delta?.chunk_index,
+            delta?.index,
+            delta?.cursor,
+            delta?.token_index,
+            delta?.id,
+            payload?.delta_id,
+            payload?.chunk_index,
+            payload?.index,
+            payload?.cursor,
+            payload?.token_index,
+            payload?.id,
+            (event as unknown as Record<string, any>)?.chunk_index,
+            (event as unknown as Record<string, any>)?.index,
+          ];
+
+          for (const candidate of candidates) {
+            const numeric = extractNumeric(candidate);
+            if (numeric !== null) {
+              return numeric;
+            }
+          }
+
+          return null;
+        };
+
         const appendMessage = (delta: string, event?: EcoSseEvent) => {
           const chunk = flattenToString(delta);
           if (!chunk) return;
@@ -953,12 +1013,37 @@ export const useEcoStream = ({
             seenChunkIdentifiers.add(identifier);
           }
 
+          const chunkIndex = resolveChunkIndex(event);
+          const streamEntry = streamsRef.current.get(clientMessageId);
+          if (chunkIndex !== null) {
+            const lastIndex = streamEntry?.lastChunkIndex ?? lastSeenChunkIndex;
+            if (lastIndex !== null && chunkIndex <= lastIndex) {
+              if (isDev) {
+                console.debug('[useEcoStream] delta ignorado (fora de ordem)', {
+                  type: event?.type,
+                  identifier,
+                  chunk,
+                  chunkIndex,
+                  lastIndex,
+                });
+              }
+              return;
+            }
+          }
+
           aggregatedEcoTextRaw = `${aggregatedEcoTextRaw}${chunk}`;
           aggregatedEcoText = sanitizeEcoText(aggregatedEcoTextRaw);
-          const streamEntry = streamsRef.current.get(clientMessageId);
           if (streamEntry) {
             streamEntry.buffer = aggregatedEcoText;
           }
+
+          if (chunkIndex !== null) {
+            lastSeenChunkIndex = chunkIndex;
+            if (streamEntry) {
+              streamEntry.lastChunkIndex = chunkIndex;
+            }
+          }
+
           const patch: Partial<ChatMessageType> = {
             text: aggregatedEcoText.length > 0 ? aggregatedEcoText : ' ',
             content: aggregatedEcoText,
@@ -969,7 +1054,15 @@ export const useEcoStream = ({
               mergePendingPatch({ streaming: true });
               return;
             }
-            createEcoMessageIfNeeded(patch);
+            if (
+              chunkIndex !== null &&
+              chunkIndex > 0 &&
+              streamEntry?.createdAtChunkIndex == null
+            ) {
+              mergePendingPatch(patch);
+              return;
+            }
+            createEcoMessageIfNeeded(patch, chunkIndex);
             return;
           }
           patchEcoMessage(patch);
