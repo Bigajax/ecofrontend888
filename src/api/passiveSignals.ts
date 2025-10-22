@@ -46,10 +46,13 @@ const sanitize = <T extends Record<string, unknown | undefined | null>>(payload:
   ) as Record<string, unknown>;
 };
 
-let pendingSignals: NormalizedPassiveSignal[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 let nextAllowedSendAt = 0;
 const sampleCounters: Partial<Record<PassiveSignalName, number>> = {};
+
+let outbox: NormalizedPassiveSignal[] = [];
+let awaitingInteractionId: NormalizedPassiveSignal[] = [];
+let defaultInteractionId: string | null = null;
 
 const normalizeRequest = ({
   signal,
@@ -109,23 +112,24 @@ const scheduleFlush = () => {
 };
 
 const flushPendingSignals = async () => {
-  if (pendingSignals.length === 0) {
+  if (outbox.length === 0) {
     return;
   }
 
   const now = Date.now();
   if (now < nextAllowedSendAt) {
+    const droppedCount = outbox.length;
     if (import.meta.env.DEV) {
       console.debug(
-        `[passive-signal] backoff active, dropping ${pendingSignals.length} queued signal(s)`,
+        `[passive-signal] backoff active, dropping ${droppedCount} queued signal(s)`,
       );
     }
-    pendingSignals = [];
+    outbox = [];
     return;
   }
 
-  const eventsToSend = pendingSignals;
-  pendingSignals = [];
+  const eventsToSend = outbox;
+  outbox = [];
 
   const endpoint = buildApiUrl("/api/signal");
   const headers: Record<string, string> = {
@@ -160,7 +164,10 @@ const flushPendingSignals = async () => {
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        console.debug(`[passive-signal] request error count=${eventsToSend.length}`);
+        console.debug(
+          `[passive-signal] request error count=${eventsToSend.length}`,
+          error,
+        );
       }
     }
   };
@@ -172,12 +179,38 @@ const flushPendingSignals = async () => {
       sent = navigator.sendBeacon(endpoint, blob);
     } catch (error) {
       sent = false;
+      if (import.meta.env.DEV) {
+        console.debug('[passive-signal] sendBeacon error', error);
+      }
     }
   }
 
   if (!sent) {
     await sendWithFetch();
   }
+};
+
+const enqueueForDelivery = (event: NormalizedPassiveSignal) => {
+  outbox.push(event);
+  scheduleFlush();
+};
+
+const queueUntilInteractionId = (event: NormalizedPassiveSignal) => {
+  awaitingInteractionId.push(event);
+};
+
+const resolveAwaitingSignals = () => {
+  if (!defaultInteractionId || awaitingInteractionId.length === 0) {
+    return;
+  }
+
+  const interactionId = defaultInteractionId;
+  const resolved = awaitingInteractionId.map((event) => ({
+    ...event,
+    interaction_id: interactionId,
+  }));
+  awaitingInteractionId = [];
+  resolved.forEach((event) => enqueueForDelivery(event));
 };
 
 export async function sendPassiveSignal(request: PassiveSignalRequest): Promise<void> {
@@ -192,6 +225,29 @@ export async function sendPassiveSignal(request: PassiveSignalRequest): Promise<
     return;
   }
 
-  pendingSignals.push(normalized);
-  scheduleFlush();
+  if (!("interaction_id" in normalized) || !normalized.interaction_id) {
+    if (defaultInteractionId) {
+      normalized.interaction_id = defaultInteractionId;
+      enqueueForDelivery(normalized);
+    } else {
+      queueUntilInteractionId(normalized);
+    }
+    return;
+  }
+
+  enqueueForDelivery(normalized);
+}
+
+export function updatePassiveSignalInteractionId(
+  interactionId: string | null | undefined,
+): void {
+  const normalized = typeof interactionId === "string" ? interactionId.trim() : "";
+  defaultInteractionId = normalized.length > 0 ? normalized : null;
+
+  if (!defaultInteractionId) {
+    awaitingInteractionId = [];
+    return;
+  }
+
+  resolveAwaitingSignals();
 }
