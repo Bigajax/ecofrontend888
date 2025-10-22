@@ -92,29 +92,29 @@ const clearCookie = () => {
 
 const normalizeUuid = (uuid: string) => uuid.toLowerCase();
 
-export const normalizeGuestIdFormat = (input: NullableString): string => {
+const extractUuid = (input: NullableString): string => {
   const raw = (input ?? "").trim();
   if (!raw) return "";
 
-  const candidate = raw.replace(/^guest[:-]/i, "guest_");
-  if (candidate.toLowerCase().startsWith("guest_") && candidate.length > 6) {
-    const suffix = candidate.slice(6);
-    if (UUID_V4_REGEX.test(suffix)) {
-      return `guest_${normalizeUuid(suffix)}`;
-    }
+  const normalized = raw.replace(/^guest[_:-]?/i, "");
+  if (UUID_V4_REGEX.test(normalized)) {
+    return normalizeUuid(normalized);
   }
 
   if (UUID_V4_REGEX.test(raw)) {
-    return `guest_${normalizeUuid(raw)}`;
+    return normalizeUuid(raw);
   }
 
-  return raw.toLowerCase();
+  return "";
 };
 
+export const normalizeGuestIdFormat = (input: NullableString): string => extractUuid(input);
+
 const persistNormalizedGuestId = (guestId: string) => {
-  if (!guestId) return;
-  writeToLocalStorage(guestId);
-  writeCookie(guestId);
+  const uuid = extractUuid(guestId);
+  if (!uuid) return;
+  writeToLocalStorage(uuid);
+  writeCookie(uuid);
 };
 
 export const readPersistedGuestId = (): string | null => {
@@ -152,7 +152,7 @@ export const getOrCreateGuestId = (): string => {
   const existing = readPersistedGuestId();
   if (existing) return existing;
 
-  const generated = `guest_${normalizeUuid(uuidv4())}`;
+  const generated = normalizeUuid(uuidv4());
   if (hasWindow) {
     persistNormalizedGuestId(generated);
   }

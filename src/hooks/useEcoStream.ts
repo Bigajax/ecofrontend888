@@ -15,6 +15,7 @@ import type { Message as ChatMessageType } from '../contexts/ChatContext';
 import mixpanel from '../lib/mixpanel';
 import { supabase } from '../lib/supabaseClient';
 import { buildIdentityHeaders } from '../lib/guestId';
+import { updatePassiveSignalInteractionId } from '../api/passiveSignals';
 import { resolveApiUrl } from '../constants/api';
 import type { EcoActivityControls } from './useEcoActivity';
 import {
@@ -147,6 +148,7 @@ export const useEcoStream = ({
       };
 
       let currentInteractionId: string | null = null;
+      updatePassiveSignalInteractionId(null);
       const pendingSignals: Array<{ signal: string; extra?: { value?: unknown; meta?: unknown } }> = [];
 
       const annotateMessagesWithInteractionId = (interactionId: string) => {
@@ -306,22 +308,19 @@ export const useEcoStream = ({
         currentInteractionId = candidate;
         annotateMessagesWithInteractionId(candidate);
         flushPendingSignals();
+        updatePassiveSignalInteractionId(candidate);
       };
 
       const dispatchSignal = (
         signal: string,
         extra?: { value?: unknown; meta?: unknown },
       ) => {
-        if (signal === 'done') {
-          if (currentInteractionId) {
-            flushPendingSignals();
-          }
-          sendSignal(signal, extra, currentInteractionId);
-          return;
-        }
         if (!currentInteractionId) {
           pendingSignals.push({ signal, extra });
           return;
+        }
+        if (signal === 'done') {
+          flushPendingSignals();
         }
         sendSignal(signal, extra, currentInteractionId);
       };
@@ -1050,6 +1049,7 @@ export const useEcoStream = ({
           if (resposta?.aborted) {
             markStreamDone();
             resetEcoMessageTracking({ removeIfEmpty: aggregatedEcoText.trim().length === 0 });
+            updatePassiveSignalInteractionId(null);
             return;
           }
 
@@ -1304,6 +1304,7 @@ export const useEcoStream = ({
 
         markStreamDone();
         resetEcoMessageTracking({ removeIfEmpty: aggregatedEcoText.trim().length === 0 });
+        updatePassiveSignalInteractionId(null);
 
         if (!metricsReported) {
           const now =
