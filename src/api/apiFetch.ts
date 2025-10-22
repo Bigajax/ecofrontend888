@@ -197,8 +197,6 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}): Pro
     ...rest,
     method,
     headers,
-    credentials: isApiEndpoint ? "include" : "omit",
-    mode: "cors",
     redirect: "follow",
     keepalive: false,
   };

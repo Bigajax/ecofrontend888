@@ -82,8 +82,6 @@ export async function sendPassiveSignal({
       method: "POST",
       headers,
       body: JSON.stringify(body),
-      credentials: "include",
-      mode: "cors",
       redirect: "follow",
       signal: controller?.signal,
     });

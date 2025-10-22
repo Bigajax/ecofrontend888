@@ -35,8 +35,6 @@ const sendAdminCommand = async (
       method,
       headers,
       body: JSON.stringify(payload ?? {}),
-      credentials: "include",
-      mode: "cors",
       signal: controller?.signal,
     });
 

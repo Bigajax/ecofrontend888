@@ -44,8 +44,6 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
   const t = setTimeout(() => ctrl.abort(), ms);
   try {
     const finalInit: RequestInit = { ...init, signal: ctrl.signal };
-    finalInit.mode = "cors";
-    finalInit.credentials = "include";
     return await fetch(input, finalInit);
   } finally {
     clearTimeout(t);

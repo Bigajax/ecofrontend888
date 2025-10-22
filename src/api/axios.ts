@@ -2,12 +2,9 @@ import axios from "axios";
 
 import { getApiBase } from "../config/apiBase";
 import { buildIdentityHeaders, syncGuestId } from "../lib/guestId";
-import { ensureHttpsUrl } from "../utils/ensureHttpsUrl";
-
 const api = axios.create({
-  baseURL: ensureHttpsUrl(getApiBase()),
+  baseURL: getApiBase(),
   timeout: 60000,
-  withCredentials: true,
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
@@ -21,8 +18,6 @@ const AUTH_TOKEN_KEY = "auth_token";
 api.interceptors.request.use((config) => {
   const headers = (config.headers ??= {});
   const token = hasWindow ? window.localStorage.getItem(AUTH_TOKEN_KEY) || "" : "";
-
-  config.withCredentials = true;
 
   const identityHeaders = buildIdentityHeaders();
   for (const [key, value] of Object.entries(identityHeaders)) {

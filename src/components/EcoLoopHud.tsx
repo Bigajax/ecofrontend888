@@ -102,8 +102,6 @@ export function EcoLoopHud() {
         const res = await fetch(url, {
           method: "GET",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
-          credentials: "include",
-          mode: "cors",
         });
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);

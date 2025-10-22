@@ -280,8 +280,6 @@ export const useEcoStream = ({
               ...buildIdentityHeaders(),
             },
             body: JSON.stringify(payload),
-            credentials: 'include',
-            mode: 'cors',
             redirect: 'follow',
             keepalive: true,
           });
