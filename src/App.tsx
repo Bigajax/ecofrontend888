@@ -125,9 +125,9 @@ function AppChrome() {
   const rawEnvApiBase = RAW_API_BASE;
   const rawApiBaseDisplay =
     typeof rawEnvApiBase === "string"
-      ? rawEnvApiBase.length === 0
-        ? '""'
-        : rawEnvApiBase
+      ? rawEnvApiBase.trim().length > 0
+        ? rawEnvApiBase
+        : "não definido (string vazia)"
       : "indefinido";
   const effectiveApiBase = getApiBase();
 

@@ -142,7 +142,7 @@ export function sendFeedback(input: SendFeedbackInput): Promise<SendFeedbackResu
 - Eventos SSE sem texto disparam `showToast('Sem resposta da Eco')` e mantêm a interface pronta para retry. 【F:src/hooks/useEcoStream.ts†L1160-L1205】
 
 ## Environment & Configuration
-- `resolveApiUrl` usa `VITE_API_URL` (fallback `same-origin`) para montar endpoints REST. 【F:src/constants/api.ts†L1-L80】
+- `resolveApiUrl` usa `RAW_API_BASE` (string vazia por padrão) em conjunto com `DEFAULT_API_BASE` para montar endpoints REST seguros. 【F:src/constants/api.ts†L1-L80】【F:src/config/apiBase.ts†L1-L40】
 - `VITE_METABASE_URL` (quando definido) transforma o HUD em link direto para dashboards. Outros ambientes usam `/api/diag/last`. 【F:src/components/EcoLoopHud.tsx†L1-L200】
 - Flags de desenvolvimento (`import.meta.env.DEV`) habilitam o `EcoLoopHud` (F12) e logs adicionais no stream. 【F:src/hooks/useEcoStream.ts†L25-L60】【F:src/components/EcoLoopHud.tsx†L1-L80】
 

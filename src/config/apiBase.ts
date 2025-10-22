@@ -1,21 +1,4 @@
-const resolveRawApiBase = () => {
-  const env = import.meta.env as Record<string, string | undefined>;
-  if (typeof env?.VITE_API_URL === "string") {
-    return env.VITE_API_URL;
-  }
-
-  if (typeof env?.VITE_API_BASE === "string") {
-    return env.VITE_API_BASE;
-  }
-
-  if (typeof env?.VITE_API_BASE_URL === "string") {
-    return env.VITE_API_BASE_URL;
-  }
-
-  return "";
-};
-
-export const RAW_API_BASE = resolveRawApiBase();
+export const RAW_API_BASE = "";
 
 export const DEFAULT_API_BASE = "https://ecobackend888.onrender.com";
 

@@ -36,7 +36,7 @@ Durante todo o fluxo o componente gerencia um estado `loading` para bloquear int
 O método `send` realiza as etapas abaixo:
 
 1. Define `loading=true`.
-2. Constrói a URL base a partir de `VITE_API_URL` (ou string vazia em desenvolvimento) e envia um `POST` para `/api/feedback` com os dados:
+2. Constrói a URL base a partir de `RAW_API_BASE` (vazio por padrão, com fallback para `DEFAULT_API_BASE`) e envia um `POST` para `/api/feedback` com os dados:
    - `sessaoId`, `usuarioId` e, se existir, `mensagemId` (somente IDs persistidos).
    - `rating` (`1` para like, `-1` para dislike).
    - `reason` (apenas quando o usuário escolhe um motivo no modo `reasons`).
