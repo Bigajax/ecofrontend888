@@ -50,7 +50,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const sendButtonRef = useRef<HTMLButtonElement>(null);
-    const wrapperRef = useRef<HTMLDivElement>(null);
+    const wrapperRef = useRef<HTMLFormElement>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
 
     const isBusy = disabled || isSending;
@@ -99,7 +99,8 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
         textarea.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
     }, [inputMessage]);
 
-    const handleSend = async () => {
+    const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
+      event.preventDefault();
       if (isBusy) return;
       const trimmed = inputMessage.trim();
       if (!trimmed) return;
@@ -132,7 +133,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
     };
 
     return (
-      <motion.div
+      <motion.form
         ref={wrapperRef}
         className="relative w-full"
         initial={{ y: 40, opacity: 0 }}
@@ -142,6 +143,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
         aria-busy={isSending}
         role="group"
         style={{ overflowAnchor: 'none' }}
+        onSubmit={handleSubmit}
       >
         <div className="flex w-full items-end gap-2 sm:gap-3">
           <div className="relative flex items-center">
@@ -210,17 +212,6 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                   setInputMessage(next);
                   onTextChange?.(next);
                 }}
-                onKeyDown={(e) => {
-                  if (isBusy) {
-                    e.preventDefault();
-                    return;
-                  }
-                  const composing = (e.nativeEvent as any)?.isComposing;
-                  if (!composing && e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    void handleSend();
-                  }
-                }}
                 placeholder={placeholder}
                 rows={1}
                 inputMode="text"
@@ -270,8 +261,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 <motion.button
                   key="send"
                   ref={sendButtonRef}
-                  type="button"
-                  onClick={() => void handleSend()}
+                  type="submit"
                   disabled={isBusy}
                   initial={{ opacity: 0, scale: 0.9, x: 8 }}
                   animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -290,7 +280,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
             </AnimatePresence>
           </div>
         </div>
-      </motion.div>
+      </motion.form>
     );
   },
 );
