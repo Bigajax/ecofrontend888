@@ -80,6 +80,9 @@ export async function safeFetch(input: RequestInfo | URL, init: RequestInit = {}
     signal: controller.signal,
   };
 
+  fetchInit.mode = "cors";
+  fetchInit.credentials = init.credentials ?? "include";
+
   if (typeof keepalive === "boolean") {
     fetchInit.keepalive = keepalive;
   }

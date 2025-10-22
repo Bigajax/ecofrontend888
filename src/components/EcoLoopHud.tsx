@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { buildApiUrl } from "@/constants/api";
 import type { SendFeedbackResult } from "../api/feedback";
 
 type SnapshotData = {
@@ -97,9 +98,10 @@ export function EcoLoopHud() {
       setSnapshotStatus("loading");
       setSnapshotError(null);
       try {
-        const res = await fetch(`/api/diag/last?response_id=${encodeURIComponent(responseId)}`, {
+        const url = buildApiUrl(`/api/diag/last?response_id=${encodeURIComponent(responseId)}`);
+        const res = await fetch(url, {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
           credentials: "include",
           mode: "cors",
         });
