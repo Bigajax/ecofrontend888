@@ -1,13 +1,13 @@
 export const RAW_API_BASE = "";
 
-export const DEFAULT_API_BASE = "https://ecobackend888.onrender.com";
+export const DEFAULT_API_BASE = "/api";
 
 const trimmedRawApiBase = RAW_API_BASE.trim();
 
 export const IS_API_BASE_EMPTY = trimmedRawApiBase.length === 0;
 
 export function getApiBase(): string {
-  return "";
+  return trimmedRawApiBase;
 }
 
 const isLocalhost = (() => {
