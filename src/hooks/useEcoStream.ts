@@ -17,6 +17,7 @@ import { supabase } from '../lib/supabaseClient';
 import { buildIdentityHeaders } from '../lib/guestId';
 import { updatePassiveSignalInteractionId } from '../api/passiveSignals';
 import { resolveApiUrl } from '../constants/api';
+import { findInteractionId, findMessageId } from '../utils/chat/identifiers';
 import type { EcoActivityControls } from './useEcoActivity';
 import {
   normalizeContinuity,
@@ -234,103 +235,6 @@ export const useEcoStream = ({
           });
           return changed ? next : prev;
         });
-      };
-
-      const INTERACTION_KEYS = new Set(['interaction_id', 'interactionId', 'interaction-id']);
-      const MESSAGE_ID_KEYS = new Set([
-        'message_id',
-        'messageId',
-        'message-id',
-        'response_message_id',
-      ]);
-      const findInteractionId = (root: unknown): string | null => {
-        if (root == null) return null;
-        if (typeof root === 'string' || typeof root === 'number') {
-          const normalized = String(root).trim();
-          return normalized.length > 0 ? normalized : null;
-        }
-        if (typeof root !== 'object') return null;
-        const visited = new WeakSet<object>();
-        const stack: Array<{ key?: string; value: unknown }> = [{ value: root }];
-
-        while (stack.length > 0) {
-          const current = stack.pop();
-          if (!current) continue;
-          const { key, value } = current;
-          if (value == null) continue;
-
-          if (typeof value === 'string' || typeof value === 'number') {
-            if (key && INTERACTION_KEYS.has(key)) {
-              const normalized = String(value).trim();
-              if (normalized.length > 0) {
-                return normalized;
-              }
-            }
-            continue;
-          }
-
-          if (typeof value !== 'object') continue;
-          if (visited.has(value as object)) continue;
-          visited.add(value as object);
-
-          if (Array.isArray(value)) {
-            for (const item of value) {
-              stack.push({ value: item });
-            }
-            continue;
-          }
-
-          for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
-            stack.push({ key: childKey, value: childValue });
-          }
-        }
-
-        return null;
-      };
-
-      const findMessageId = (root: unknown): string | null => {
-        if (root == null) return null;
-        if (typeof root === 'string' || typeof root === 'number') {
-          const normalized = String(root).trim();
-          return normalized.length > 0 ? normalized : null;
-        }
-        if (typeof root !== 'object') return null;
-        const visited = new WeakSet<object>();
-        const stack: Array<{ key?: string; value: unknown }> = [{ value: root }];
-
-        while (stack.length > 0) {
-          const current = stack.pop();
-          if (!current) continue;
-          const { key, value } = current;
-          if (value == null) continue;
-
-          if (typeof value === 'string' || typeof value === 'number') {
-            if (key && MESSAGE_ID_KEYS.has(key)) {
-              const normalized = String(value).trim();
-              if (normalized.length > 0) {
-                return normalized;
-              }
-            }
-            continue;
-          }
-
-          if (typeof value !== 'object') continue;
-          if (visited.has(value as object)) continue;
-          visited.add(value as object);
-
-          if (Array.isArray(value)) {
-            for (const item of value) {
-              stack.push({ value: item });
-            }
-            continue;
-          }
-
-          for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
-            stack.push({ key: childKey, value: childValue });
-          }
-        }
-
-        return null;
       };
 
       const signalEndpoint = resolveApiUrl('/api/signal');
