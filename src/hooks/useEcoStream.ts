@@ -76,6 +76,10 @@ export const useEcoStream = ({
   const isAtBottomRef = useRef(isAtBottom);
   const inFlightRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const activeStreamRef = useRef<{
+    controller: AbortController | null;
+    streamId: string | null;
+  }>({ controller: null, streamId: null });
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -87,7 +91,10 @@ export const useEcoStream = ({
 
   useEffect(() => {
     return () => {
-      abortControllerRef.current?.abort();
+      const { controller } = activeStreamRef.current;
+      controller?.abort();
+      activeStreamRef.current = { controller: null, streamId: null };
+      abortControllerRef.current = null;
     };
   }, []);
 
@@ -115,10 +122,22 @@ export const useEcoStream = ({
       const analyticsUserId = authUserId ?? userId ?? guestId ?? 'guest';
       const shouldPersist = isAuthenticated && !isGuest;
 
+      if (activeStreamRef.current.controller) {
+        try {
+          activeStreamRef.current.controller.abort();
+        } catch (abortError) {
+          if (isDev) {
+            console.warn('[useEcoStream] Falha ao abortar stream anterior', abortError);
+          }
+        }
+      }
+
       const controller = new AbortController();
       abortControllerRef.current = controller;
+      activeStreamRef.current = { controller, streamId: null };
 
       const userMsgId = uuidv4();
+      activeStreamRef.current.streamId = userMsgId;
       inFlightRef.current = userMsgId;
       const sanitizedUserText = sanitizeText(trimmed);
       addMessage({
@@ -709,9 +728,59 @@ export const useEcoStream = ({
           patchEcoMessage({ text: '', content: '' });
         };
 
-        const appendMessage = (delta: string) => {
+        const seenChunkIdentifiers = new Set<string>();
+
+        const resolveChunkIdentifier = (event: EcoSseEvent | undefined) => {
+          if (!event) return null;
+          const payload = (event.payload ?? {}) as Record<string, any>;
+          const delta = (payload?.delta ?? payload) as Record<string, any> | undefined;
+          const candidates: Array<string | number | undefined> = [
+            delta?.chunk_index,
+            delta?.index,
+            delta?.cursor,
+            delta?.token_index,
+            delta?.id,
+            payload?.delta_id,
+            payload?.chunk_index,
+            payload?.index,
+            payload?.cursor,
+            payload?.token_index,
+            payload?.id,
+            (event as unknown as Record<string, any>)?.chunk_index,
+            (event as unknown as Record<string, any>)?.index,
+          ];
+
+          for (const candidate of candidates) {
+            if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+              return `index:${candidate}`;
+            }
+            if (typeof candidate === 'string' && candidate.length > 0) {
+              return `index:${candidate}`;
+            }
+          }
+
+          return null;
+        };
+
+        const appendMessage = (delta: string, event?: EcoSseEvent) => {
           const chunk = flattenToString(delta);
           if (!chunk) return;
+
+          const identifier = resolveChunkIdentifier(event);
+          if (identifier) {
+            if (seenChunkIdentifiers.has(identifier)) {
+              if (isDev) {
+                console.debug('[useEcoStream] delta ignorado (duplicado)', {
+                  type: event?.type,
+                  identifier,
+                  chunk,
+                });
+              }
+              return;
+            }
+            seenChunkIdentifiers.add(identifier);
+          }
+
           ensureEcoMessage();
           if (aggregatedEcoTextRaw.length === 0) {
             patchEcoMessage({ text: '', content: '' });
@@ -751,10 +820,6 @@ export const useEcoStream = ({
           for (const candidate of candidates) {
             const str = flattenToString(candidate);
             if (str.length > 0) return str;
-          }
-          if (payload !== undefined) {
-            const raw = flattenToString(payload);
-            if (raw.length > 0) return raw;
           }
           return '';
         };
@@ -830,7 +895,14 @@ export const useEcoStream = ({
           patchEcoMessage({ streaming: true });
           const texto = extractEventText(event);
           if (texto) {
-            appendMessage(texto);
+            if (isDev) {
+              console.debug('[useEcoStream] chunk:first_token', {
+                type: event.type,
+                identifier: resolveChunkIdentifier(event),
+                chunk: texto,
+              });
+            }
+            appendMessage(texto, event);
           }
           activity?.onToken();
           firstContentReceived = aggregatedEcoText.trim().length > 0;
@@ -843,10 +915,17 @@ export const useEcoStream = ({
           ensureFirstTokenSignal();
           const chunkText = extractEventText(event);
           if (!chunkText) return;
+          if (isDev) {
+            console.debug('[useEcoStream] chunk:event', {
+              type: event.type,
+              identifier: resolveChunkIdentifier(event),
+              chunk: chunkText,
+            });
+          }
           if (aggregatedEcoText.length === 0) {
             clearPlaceholder();
           }
-          appendMessage(chunkText);
+          appendMessage(chunkText, event);
           activity?.onToken();
           if (!firstContentReceived && aggregatedEcoText.trim().length > 0) {
             firstContentReceived = true;
@@ -922,7 +1001,7 @@ export const useEcoStream = ({
               );
             if (doneText) {
               clearPlaceholder();
-              appendMessage(doneText);
+              appendMessage(doneText, event);
             }
           }
 
@@ -1328,6 +1407,9 @@ export const useEcoStream = ({
       } finally {
         if (abortControllerRef.current === controller) {
           abortControllerRef.current = null;
+        }
+        if (activeStreamRef.current.controller === controller) {
+          activeStreamRef.current = { controller: null, streamId: null };
         }
         inFlightRef.current = null;
         setIsSending(false);
