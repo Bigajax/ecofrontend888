@@ -351,7 +351,8 @@ const prepareRequest = (
   tz: string,
   guest: { guestId: string; isGuest: boolean },
   token: string | null,
-  isStreaming: boolean
+  isStreaming: boolean,
+  clientMessageId?: string
 ) => {
   const biasHint = computeBiasHintFromMessages(mensagens);
   updateBiasHint(biasHint ?? null);
@@ -406,6 +407,14 @@ const prepareRequest = (
     ts: Date.now(),
   };
 
+  if (clientMessageId && clientMessageId.trim().length > 0) {
+    bodyPayload.client_message_id = clientMessageId;
+    bodyPayload.contexto = {
+      ...bodyPayload.contexto,
+      client_message_id: clientMessageId,
+    };
+  }
+
   if (guest.isGuest) {
     bodyPayload.isGuest = true;
     bodyPayload.guestId = guest.guestId;
@@ -457,6 +466,7 @@ type EnviarMensagemOptions = {
   isGuest?: boolean;
   signal?: AbortSignal;
   stream?: boolean;
+  clientMessageId?: string;
 };
 
 export const enviarMensagemParaEco = async (
@@ -506,7 +516,8 @@ export const enviarMensagemParaEco = async (
       tz,
       guest,
       token,
-      isStreaming
+      isStreaming,
+      options.clientMessageId
     );
 
     logHttpRequestDebug({
