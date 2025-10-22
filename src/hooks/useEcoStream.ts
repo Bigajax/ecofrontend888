@@ -23,6 +23,7 @@ import {
   resolveContinuityMeta,
   type ContinuityMeta,
 } from '../utils/chat/continuity';
+import { resolveChunkIdentifier, resolveChunkIndex } from '../utils/chat/chunkSignals';
 import {
   CONTEXT_FETCH_TIMEOUT_MS,
   NO_TEXT_ALERT_MESSAGE,
@@ -126,6 +127,12 @@ export const useEcoStream = ({
       activity?.onSend();
 
       if (activeStreamRef.current.controller) {
+        if (isDev) {
+          console.info('[useEcoStream] AbortController: superseded run', {
+            previousStreamId: activeStreamRef.current.streamId,
+            nextStreamId: clientMessageId,
+          });
+        }
         try {
           activeStreamRef.current.controller.abort();
         } catch (abortError) {
@@ -859,6 +866,20 @@ export const useEcoStream = ({
           }
         };
 
+        const isStreamSuperseded = () => activeStreamRef.current.streamId !== clientMessageId;
+
+        const guardSupersededEvent = (eventType: string) => {
+          if (!isStreamSuperseded()) return false;
+          if (isDev) {
+            console.debug('[useEcoStream] evento ignorado (stream superseded)', {
+              eventType,
+              active: activeStreamRef.current.streamId,
+              received: clientMessageId,
+            });
+          }
+          return true;
+        };
+
         const trackMemoryIfSignificant = (bloco: any) => {
           if (trackedMemory || !bloco || typeof bloco !== 'object') return;
           const intensidade = (bloco as any).intensidade;
@@ -918,81 +939,6 @@ export const useEcoStream = ({
 
         const seenChunkIdentifiers = new Set<string>();
         let lastSeenChunkIndex: number | null = null;
-
-        const resolveChunkIdentifier = (event: EcoSseEvent | undefined) => {
-          if (!event) return null;
-          const payload = (event.payload ?? {}) as Record<string, any>;
-          const delta = (payload?.delta ?? payload) as Record<string, any> | undefined;
-          const candidates: Array<string | number | undefined> = [
-            delta?.chunk_index,
-            delta?.index,
-            delta?.cursor,
-            delta?.token_index,
-            delta?.id,
-            payload?.delta_id,
-            payload?.chunk_index,
-            payload?.index,
-            payload?.cursor,
-            payload?.token_index,
-            payload?.id,
-            (event as unknown as Record<string, any>)?.chunk_index,
-            (event as unknown as Record<string, any>)?.index,
-          ];
-
-          for (const candidate of candidates) {
-            if (typeof candidate === 'number' && Number.isFinite(candidate)) {
-              return `index:${candidate}`;
-            }
-            if (typeof candidate === 'string' && candidate.length > 0) {
-              return `index:${candidate}`;
-            }
-          }
-
-          return null;
-        };
-
-        const resolveChunkIndex = (event: EcoSseEvent | undefined): number | null => {
-          if (!event) return null;
-          const payload = (event.payload ?? {}) as Record<string, any>;
-          const delta = (payload?.delta ?? payload) as Record<string, any> | undefined;
-          const extractNumeric = (value: unknown): number | null => {
-            if (typeof value === 'number' && Number.isFinite(value)) {
-              return value;
-            }
-            if (typeof value === 'string') {
-              const parsed = Number.parseInt(value.trim(), 10);
-              if (Number.isFinite(parsed)) {
-                return parsed;
-              }
-            }
-            return null;
-          };
-
-          const candidates: Array<unknown> = [
-            delta?.chunk_index,
-            delta?.index,
-            delta?.cursor,
-            delta?.token_index,
-            delta?.id,
-            payload?.delta_id,
-            payload?.chunk_index,
-            payload?.index,
-            payload?.cursor,
-            payload?.token_index,
-            payload?.id,
-            (event as unknown as Record<string, any>)?.chunk_index,
-            (event as unknown as Record<string, any>)?.index,
-          ];
-
-          for (const candidate of candidates) {
-            const numeric = extractNumeric(candidate);
-            if (numeric !== null) {
-              return numeric;
-            }
-          }
-
-          return null;
-        };
 
         const appendMessage = (delta: string, event?: EcoSseEvent) => {
           const chunk = flattenToString(delta);
@@ -1155,6 +1101,7 @@ export const useEcoStream = ({
         };
 
         const handlePromptReadyEvent = (event: EcoSseEvent) => {
+          if (guardSupersededEvent('prompt_ready')) return;
           logSseEvent(event);
           trackEventContext(event);
           ensurePromptReadySignal();
@@ -1162,6 +1109,7 @@ export const useEcoStream = ({
         };
 
         const handleLatencyEvent = (event: EcoSseEvent) => {
+          if (guardSupersededEvent('latency')) return;
           logSseEvent(event);
           trackEventContext(event);
           if (typeof event.latencyMs === 'number') {
@@ -1171,6 +1119,7 @@ export const useEcoStream = ({
         };
 
         const handleFirstTokenEvent = (event: EcoSseEvent) => {
+          if (guardSupersededEvent('first_token')) return;
           logSseEvent(event);
           trackEventContext(event);
           ensureFirstTokenSignal();
@@ -1193,6 +1142,7 @@ export const useEcoStream = ({
         };
 
         const handleChunkEvent = (event: EcoSseEvent) => {
+          if (guardSupersededEvent('chunk')) return;
           logSseEvent(event);
           trackEventContext(event);
           ensureFirstTokenSignal();
@@ -1217,6 +1167,7 @@ export const useEcoStream = ({
         };
 
         const handleMetaEvent = (event: EcoSseEvent) => {
+          if (guardSupersededEvent('meta')) return;
           logSseEvent(event);
           trackEventContext(event);
           const meta = event.metadata ?? event.payload;
@@ -1232,6 +1183,7 @@ export const useEcoStream = ({
         };
 
         const handleMemorySavedEvent = (event: EcoSseEvent) => {
+          if (guardSupersededEvent('memory_saved')) return;
           logSseEvent(event);
           trackEventContext(event);
           const memoria =
@@ -1251,6 +1203,7 @@ export const useEcoStream = ({
         };
 
         const handleDoneEvent = (event: EcoSseEvent) => {
+          if (guardSupersededEvent('done')) return;
           logSseEvent(event);
           trackEventContext(event);
           ensureDoneSignal();

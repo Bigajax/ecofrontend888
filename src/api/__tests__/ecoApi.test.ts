@@ -89,6 +89,54 @@ describe("enviarMensagemParaEco", () => {
     expect(resposta.metadata).toEqual({ intensidade: 5 });
   });
 
+  it("ignora chunks duplicados com o mesmo chunk_index", async () => {
+    fetchMock.mockResolvedValue(
+      createSseResponse([
+        {
+          type: "first_token",
+          payload: { type: "first_token", delta: { content: "Olá", chunk_index: 0 } },
+        },
+        {
+          type: "chunk",
+          payload: { type: "chunk", delta: { content: " mundo", chunk_index: 1 } },
+        },
+        {
+          type: "chunk",
+          payload: { type: "chunk", delta: { content: "!", chunk_index: 1 } },
+        },
+        { type: "done", payload: { type: "done" } },
+      ]),
+    );
+
+    const resposta = await callApi();
+
+    expect(resposta.text).toBe("Olá mundo");
+  });
+
+  it("ignora chunks fora de ordem pelo chunk_index", async () => {
+    fetchMock.mockResolvedValue(
+      createSseResponse([
+        {
+          type: "first_token",
+          payload: { type: "first_token", delta: { content: "Olá", chunk_index: 0 } },
+        },
+        {
+          type: "chunk",
+          payload: { type: "chunk", delta: { content: " mundo", chunk_index: 2 } },
+        },
+        {
+          type: "chunk",
+          payload: { type: "chunk", delta: { content: "???", chunk_index: 1 } },
+        },
+        { type: "done", payload: { type: "done" } },
+      ]),
+    );
+
+    const resposta = await callApi();
+
+    expect(resposta.text).toBe("Olá mundo");
+  });
+
   it("ignora eventos auxiliares e processa conteúdo estruturado", async () => {
     fetchMock.mockResolvedValue(
       createSseResponse([

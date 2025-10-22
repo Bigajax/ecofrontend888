@@ -329,9 +329,13 @@ const resolveGuestHeaders = (
   const isGuest = userWantsGuest || !token;
 
   const providedGuestId = normalizeGuestIdFormat(options?.guestId);
+  const rawGuestId =
+    typeof options?.guestId === "string" && options.guestId.trim().length > 0
+      ? options.guestId.trim()
+      : "";
   const storedGuestId = readPersistedGuestId();
 
-  const guestId = providedGuestId || storedGuestId || getGuestId();
+  const guestId = providedGuestId || rawGuestId || storedGuestId || getGuestId();
 
   syncGuestId(guestId);
 
