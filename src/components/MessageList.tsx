@@ -1,4 +1,4 @@
-import React, { RefObject } from 'react';
+import React, { RefObject, useMemo } from 'react';
 import { motion } from 'framer-motion';
 
 import ChatMessage from './ChatMessage';
@@ -24,9 +24,33 @@ const MessageList: React.FC<MessageListProps> = ({
 }) => {
   const handleTTS = ecoActivityTTS ?? (() => {});
 
+  const uniqueMessages = useMemo(() => {
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return messages;
+    }
+
+    const seen = new Set<string>();
+    const deduped: Message[] = [];
+
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const message = messages[index];
+      if (!message) continue;
+      const id = typeof message.id === 'string' ? message.id : '';
+      if (id && seen.has(id)) {
+        continue;
+      }
+      if (id) {
+        seen.add(id);
+      }
+      deduped.unshift(message);
+    }
+
+    return deduped;
+  }, [messages]);
+
   return (
     <div className="w-full space-y-3 md:space-y-4">
-      {messages.map((message) => (
+      {uniqueMessages.map((message) => (
         <motion.div
           key={message.id}
           className="w-full"

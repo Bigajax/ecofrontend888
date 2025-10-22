@@ -463,7 +463,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const bubbleClass = clsx(
     "message-bubble relative inline-flex max-w-full flex-col rounded-[20px] px-4 py-3 sm:px-5",
-    "whitespace-normal break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
+    "whitespace-pre-line break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
     isUser
       ? "ml-auto bg-[color:var(--bubble-user-bg)] text-[color:var(--bubble-user-text)] shadow-[0_12px_32px_rgba(0,122,255,0.18)]"
       : "border border-[color:var(--bubble-border)] bg-[color:var(--bubble-eco-bg)] text-[color:var(--bubble-eco-text)] shadow-[0_8px_26px_rgba(11,18,32,0.08)]",
@@ -482,7 +482,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   }, [hasMarkdownText, isEcoMessage, processedMarkdown]);
 
   const baseMarkdownClass = clsx(
-    "markdown-body max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
+    "markdown-body max-w-full whitespace-pre-line break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
     isUser
       ? "text-[color:var(--bubble-user-text)] font-[500] leading-[1.35] tracking-[-0.01em]"
       : "text-[color:var(--bubble-eco-text)] font-[460] leading-[1.45] tracking-[-0.012em]",
