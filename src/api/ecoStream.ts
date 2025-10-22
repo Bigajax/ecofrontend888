@@ -704,8 +704,14 @@ export const processEventStream = async (
     }
     if (streamError) throw streamError;
 
-    if (!doneReceived && !gotAnyToken) {
-      throw new Error('Fluxo SSE encerrado sem evento "done".');
+    if (!doneReceived) {
+      console.warn("Fluxo encerrado sem done", {
+        doneReceived,
+        gotAnyToken,
+        aggregatedPartsCount: aggregatedParts.length,
+        promptReadyReceived,
+        donePayload,
+      });
     }
 
     let texto = aggregatedParts.join("");
