@@ -228,6 +228,12 @@ export const processEventStream = async (
   let doneReceived = false;
   let streamError: Error | null = null;
   const aggregatedParts: string[] = [];
+  const chunkDebugInfo = isDev
+    ? {
+        first: undefined as string | undefined,
+        last: [] as string[],
+      }
+    : null;
   let donePayload: any;
   let metadata: unknown;
   let primeiraMemoriaSignificativa = false;
@@ -268,6 +274,20 @@ export const processEventStream = async (
     }
     signal.addEventListener("abort", handleAbort, { once: true });
   }
+
+  const recordChunkPreview = (text: unknown) => {
+    if (!chunkDebugInfo) return;
+    if (typeof text !== "string") return;
+    const preview = text.length > 200 ? `${text.slice(0, 200)}…` : text;
+    if (!chunkDebugInfo.first) {
+      chunkDebugInfo.first = preview;
+      console.debug("🔎 [EcoStream] Primeiro chunk recebido:", preview);
+    }
+    chunkDebugInfo.last.push(preview);
+    if (chunkDebugInfo.last.length > 3) {
+      chunkDebugInfo.last.shift();
+    }
+  };
 
   const handleEvent = (eventData: unknown) => {
     if (!eventData || typeof eventData !== "object") return;
@@ -454,6 +474,13 @@ export const processEventStream = async (
         ...baseEventInfo,
         text: chunkText.length > 0 ? chunkText : fallbackText,
       };
+      recordChunkPreview(
+        typeof eventWithText.text === "string"
+          ? eventWithText.text
+          : typeof fallbackText === "string"
+          ? fallbackText
+          : undefined,
+      );
       if (usingUnifiedHandler) {
         const firstDelta =
           typeof eventWithText.text === "string"
@@ -490,6 +517,13 @@ export const processEventStream = async (
         ...baseEventInfo,
         text: chunkText.length > 0 ? chunkText : fallbackText,
       };
+      recordChunkPreview(
+        typeof eventWithText.text === "string"
+          ? eventWithText.text
+          : typeof fallbackText === "string"
+          ? fallbackText
+          : undefined,
+      );
       if (usingUnifiedHandler) {
         const chunkDelta =
           typeof eventWithText.text === "string"
@@ -623,6 +657,12 @@ export const processEventStream = async (
       }
       if (!gotAnyToken) {
         doneWithoutText = true;
+      }
+      if (chunkDebugInfo && chunkDebugInfo.last.length > 0) {
+        console.debug(
+          "🔎 [EcoStream] Últimos chunks recebidos:",
+          [...chunkDebugInfo.last],
+        );
       }
       return;
     }
