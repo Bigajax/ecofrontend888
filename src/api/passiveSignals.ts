@@ -21,41 +21,47 @@ const envFlag = import.meta.env.VITE_ENABLE_PASSIVE_SIGNALS;
 
 export const ENABLE_PASSIVE_SIGNALS = envFlag === undefined ? true : envFlag !== "false";
 
-const PASSIVE_SIGNAL_TIMEOUT_MS = 2500;
+const SEND_INTERVAL_MS = 2000;
+const SERVER_BACKOFF_MS = 60_000;
+const NON_CRITICAL_SAMPLE_RATE = 3;
 
-const sanitize = <T extends Record<string, unknown>>(payload: T) => {
-  return Object.fromEntries(
-    Object.entries(payload).filter(([, value]) => value !== undefined)
-  ) as T;
+const NON_CRITICAL_SIGNALS: ReadonlySet<PassiveSignalName> = new Set([
+  "view",
+  "copy",
+  "time_on_message",
+]);
+
+type NormalizedPassiveSignal = {
+  signal: PassiveSignalName;
+  value?: number;
+  session_id?: string;
+  interaction_id?: string;
+  message_id?: string;
+  meta?: Record<string, unknown>;
 };
 
-let hasLogged404 = false;
+const sanitize = <T extends Record<string, unknown | undefined | null>>(payload: T) => {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== undefined && value !== null),
+  ) as Record<string, unknown>;
+};
 
-export async function sendPassiveSignal({
+let pendingSignals: NormalizedPassiveSignal[] = [];
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+let nextAllowedSendAt = 0;
+const sampleCounters: Partial<Record<PassiveSignalName, number>> = {};
+
+const normalizeRequest = ({
   signal,
   value,
   sessionId,
   interactionId,
   messageId,
   meta,
-}: PassiveSignalRequest): Promise<void> {
-  if (!ENABLE_PASSIVE_SIGNALS) return;
-  if (typeof fetch === "undefined") return;
-
-  const normalizedSignal = signal.trim();
-  if (!normalizedSignal) return;
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...buildIdentityHeaders(),
-  };
-
-  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  if (controller) {
-    timeoutId = setTimeout(() => {
-      controller?.abort();
-    }, PASSIVE_SIGNAL_TIMEOUT_MS);
+}: PassiveSignalRequest): NormalizedPassiveSignal | null => {
+  const normalizedSignal = signal.trim() as PassiveSignalName;
+  if (!normalizedSignal) {
+    return null;
   }
 
   const body = sanitize({
@@ -77,35 +83,115 @@ export async function sendPassiveSignal({
       meta && typeof meta === "object" && Object.keys(meta).length > 0 ? meta : undefined,
   });
 
-  try {
-    const res = await fetch(buildApiUrl("/api/signal"), {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-      redirect: "follow",
-      signal: controller?.signal,
-    });
+  return body as NormalizedPassiveSignal;
+};
 
-    if (!res.ok) {
-      if (res.status === 404) {
-        if (import.meta.env.DEV && !hasLogged404) {
-          hasLogged404 = true;
-          console.debug("[passive-signal] endpoint /api/signal not found (404)");
+const shouldSample = (signal: PassiveSignalName): boolean => {
+  if (!NON_CRITICAL_SIGNALS.has(signal)) {
+    return true;
+  }
+
+  const previous = sampleCounters[signal] ?? 0;
+  const next = previous + 1;
+  sampleCounters[signal] = next >= NON_CRITICAL_SAMPLE_RATE ? 0 : next;
+  return next === 1;
+};
+
+const scheduleFlush = () => {
+  if (flushTimer !== null) {
+    return;
+  }
+
+  flushTimer = setTimeout(() => {
+    flushTimer = null;
+    void flushPendingSignals();
+  }, SEND_INTERVAL_MS);
+};
+
+const flushPendingSignals = async () => {
+  if (pendingSignals.length === 0) {
+    return;
+  }
+
+  const now = Date.now();
+  if (now < nextAllowedSendAt) {
+    if (import.meta.env.DEV) {
+      console.debug(
+        `[passive-signal] backoff active, dropping ${pendingSignals.length} queued signal(s)`,
+      );
+    }
+    pendingSignals = [];
+    return;
+  }
+
+  const eventsToSend = pendingSignals;
+  pendingSignals = [];
+
+  const endpoint = buildApiUrl("/api/signal");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...buildIdentityHeaders(),
+  };
+
+  const payload = eventsToSend.length === 1 ? eventsToSend[0] : { events: eventsToSend };
+  const bodyJson = JSON.stringify(payload);
+
+  const sendWithFetch = async () => {
+    if (typeof fetch === "undefined") {
+      return;
+    }
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers,
+        body: bodyJson,
+        keepalive: true,
+      });
+
+      if (!response.ok) {
+        if (response.status === 500) {
+          nextAllowedSendAt = Date.now() + SERVER_BACKOFF_MS;
         }
-      } else if (import.meta.env.DEV) {
-        console.debug("[passive-signal] request failed", {
-          status: res.status,
-          signal: normalizedSignal,
-        });
+        if (import.meta.env.DEV) {
+          console.debug(
+            `[passive-signal] request failed status=${response.status} count=${eventsToSend.length}`,
+          );
+        }
+      }
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.debug(`[passive-signal] request error count=${eventsToSend.length}`);
       }
     }
-  } catch (error) {
-    if (import.meta.env.DEV) {
-      console.debug("[passive-signal] error", error);
-    }
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
+  };
+
+  let sent = false;
+  if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+    try {
+      const blob = new Blob([bodyJson], { type: "application/json" });
+      sent = navigator.sendBeacon(endpoint, blob);
+    } catch (error) {
+      sent = false;
     }
   }
+
+  if (!sent) {
+    await sendWithFetch();
+  }
+};
+
+export async function sendPassiveSignal(request: PassiveSignalRequest): Promise<void> {
+  if (!ENABLE_PASSIVE_SIGNALS) return;
+
+  const normalized = normalizeRequest(request);
+  if (!normalized) {
+    return;
+  }
+
+  if (!shouldSample(normalized.signal)) {
+    return;
+  }
+
+  pendingSignals.push(normalized);
+  scheduleFlush();
 }
