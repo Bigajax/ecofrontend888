@@ -259,6 +259,14 @@ export const processEventStream = async (
     rememberText(text);
   };
 
+  const shouldIgnoreText = (text: unknown): boolean => {
+    if (typeof text !== "string") return false;
+    const normalized = text.trim().toLowerCase();
+    if (normalized.length === 0) return true;
+    if (normalized === "ok") return true;
+    return false;
+  };
+
   const { signal } = options;
   let aborted = false;
 
@@ -514,11 +522,21 @@ export const processEventStream = async (
         unwrappedPayload;
       const texts = collectTexts(source);
       const chunkText = texts.join("");
+      const resolvedText = chunkText.length > 0 ? chunkText : fallbackText;
+      if (shouldIgnoreText(resolvedText)) {
+        if (isDev) {
+          console.debug("🔁 [EcoStream] chunk ignorado (texto trivial)", {
+            eventType: "first_token",
+            preview: typeof resolvedText === "string" ? resolvedText : undefined,
+          });
+        }
+        return;
+      }
       if (chunkText.length > 0) pushAggregatedPart(chunkText);
       else if (!chunkText && fallbackText) pushAggregatedPart(fallbackText);
       const eventWithText: EcoSseEvent = {
         ...baseEventInfo,
-        text: chunkText.length > 0 ? chunkText : fallbackText,
+        text: resolvedText,
       };
       recordChunkPreview(
         typeof eventWithText.text === "string"
@@ -560,11 +578,21 @@ export const processEventStream = async (
         unwrappedPayload;
       const texts = collectTexts(source);
       const chunkText = texts.join("");
+      const resolvedText = chunkText.length > 0 ? chunkText : fallbackText;
+      if (shouldIgnoreText(resolvedText)) {
+        if (isDev) {
+          console.debug("🔁 [EcoStream] chunk ignorado (texto trivial)", {
+            eventType: "chunk",
+            preview: typeof resolvedText === "string" ? resolvedText : undefined,
+          });
+        }
+        return;
+      }
       if (chunkText.length > 0) pushAggregatedPart(chunkText);
       else if (!chunkText && fallbackText) pushAggregatedPart(fallbackText);
       const eventWithText: EcoSseEvent = {
         ...baseEventInfo,
-        text: chunkText.length > 0 ? chunkText : fallbackText,
+        text: resolvedText,
       };
       recordChunkPreview(
         typeof eventWithText.text === "string"
