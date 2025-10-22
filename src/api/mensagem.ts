@@ -48,6 +48,8 @@ async function supabaseRestRequest<T>(
   const response = await fetch(`${getSupabaseRestBaseUrl()}${path}`, {
     ...init,
     headers,
+    credentials: "include",
+    mode: "cors",
   });
 
   if (!response.ok) {

@@ -1,17 +1,13 @@
 // ✅ src/api/voiceApi.ts
 
-// Base do backend (Render) — no dev usamos o origin local (proxy do Vite)
+import { buildApiUrl } from "../constants/api";
 import { buildIdentityHeaders, updateBiasHint } from "../lib/guestId";
 import { computeBiasHintFromMessages, computeBiasHintFromText } from "../utils/biasHint";
 
-const BACKEND_BASE =
-  (import.meta as any).env.MODE === "development"
-    ? window.location.origin
-    : (import.meta as any).env.VITE_BACKEND_URL?.replace(/\/+$/, "");
+const VOICE_TTS_ENDPOINT = "/api/voice/tts";
+const VOICE_TRANSCRIBE_ENDPOINT = "/api/voice/transcribe-and-respond";
 
-if (!BACKEND_BASE) {
-  throw new Error("VITE_BACKEND_URL ausente no build do front.");
-}
+const buildVoiceUrl = (path: string) => buildApiUrl(path);
 
 function base64ToDataURL(b64: string, mime = "audio/mpeg") {
   return `data:${mime};base64,${b64}`;
@@ -43,11 +39,14 @@ function blobToDataURL(blob: Blob): Promise<string> {
 }
 
 // Pequeno helper de timeout p/ fetch
-async function fetchWithTimeout(input: RequestInfo, init: RequestInit = {}, ms = 25000) {
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, ms = 25000) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), ms);
   try {
-    return await fetch(input, { ...init, signal: ctrl.signal });
+    const finalInit: RequestInit = { ...init, signal: ctrl.signal };
+    finalInit.mode = "cors";
+    finalInit.credentials = "include";
+    return await fetch(input, finalInit);
   } finally {
     clearTimeout(t);
   }
@@ -59,7 +58,7 @@ async function fetchWithTimeout(input: RequestInfo, init: RequestInit = {}, ms =
  * Mantém o 2º parâmetro pra compatibilidade, mas IGNORA.
  */
 export async function gerarAudioDaMensagem(text: string, _voiceId?: string): Promise<string> {
-  const url = `${BACKEND_BASE}/api/voice/tts`;
+  const url = buildVoiceUrl(VOICE_TTS_ENDPOINT);
   const body: any = { text: String(text ?? "").trim() };
   if (!body.text) throw new Error("Texto vazio para TTS.");
 
@@ -106,7 +105,7 @@ export async function sendVoiceMessage(
   accessToken: string,
   _voiceId?: string
 ): Promise<{ userText: string; ecoText: string; audioUrl: string }> {
-  const url = `${BACKEND_BASE}/api/voice/transcribe-and-respond`;
+  const url = buildVoiceUrl(VOICE_TRANSCRIBE_ENDPOINT);
 
   const fd = new FormData();
   fd.append("audio", audioBlob, "gravacao.webm");

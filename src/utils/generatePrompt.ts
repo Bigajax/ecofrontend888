@@ -1,10 +1,17 @@
-import axios from 'axios';
+import api from '@/api/axios';
+import { buildApiUrl } from '@/constants/api';
+
+const PROMPT_ENDPOINT = '/api/prompt-mestre';
 
 export const gerarPromptMestre = async (): Promise<string> => {
-  console.log('Frontend: iniciando chamada para /api/prompt-mestre');
+  const targetUrl = buildApiUrl(PROMPT_ENDPOINT);
+  console.log('Frontend: iniciando chamada para', targetUrl);
 
   try {
-    const { data } = await axios.get<{ prompt: string }>('/api/prompt-mestre');
+    const { data } = await api.get<{ prompt: string }>(PROMPT_ENDPOINT, {
+      headers: { Accept: 'application/json' },
+      withCredentials: true,
+    });
     if (!data.prompt) {
       console.error('Frontend: resposta sem campo prompt:', data);
       throw new Error('Formato de resposta inesperado do servidor');
