@@ -26,13 +26,19 @@ export function syncGuestId(nextGuestId: string | null | undefined): string | nu
   }
 
   const normalized = normalizeGuestIdFormat(nextGuestId);
-  if (!normalized) {
+  if (normalized) {
+    cachedGuestId = normalized;
+    persistGuestId(normalized);
+    return normalized;
+  }
+
+  const trimmed = nextGuestId.trim();
+  if (!trimmed) {
     return null;
   }
 
-  cachedGuestId = normalized;
-  persistGuestId(normalized);
-  return normalized;
+  cachedGuestId = trimmed;
+  return trimmed;
 }
 
 export function ensureSessionId(): string {

@@ -1,5 +1,6 @@
 import { AskEcoResponse, collectTexts, normalizeAskEcoResponse, unwrapPayload } from "./askEcoResponse";
 import { isDev } from "./environment";
+import { resolveChunkIdentifier, resolveChunkIndex } from "../utils/chat/chunkSignals";
 
 export interface EcoStreamResult {
   text: string;
@@ -234,6 +235,8 @@ export const processEventStream = async (
         last: [] as string[],
       }
     : null;
+  const seenChunkIdentifiers = new Set<string>();
+  let lastChunkIndex: number | null = null;
   let donePayload: any;
   let metadata: unknown;
   let primeiraMemoriaSignificativa = false;
@@ -460,7 +463,50 @@ export const processEventStream = async (
       normalizeAskEcoResponse(unwrappedPayload as AskEcoResponse) ||
       normalizeAskEcoResponse(payload as AskEcoResponse);
 
+    const dedupeSources = [parsed, payload, unwrappedPayload];
+    const shouldSkipChunkEvent = (eventType: string) => {
+      const identifier = resolveChunkIdentifier(...dedupeSources);
+      const chunkIndexValue = resolveChunkIndex(...dedupeSources);
+
+      if (identifier && seenChunkIdentifiers.has(identifier)) {
+        if (isDev) {
+          console.debug("🔁 [EcoStream] chunk ignorado (duplicado)", {
+            eventType,
+            identifier,
+          });
+        }
+        return true;
+      }
+
+      if (
+        chunkIndexValue !== null &&
+        lastChunkIndex !== null &&
+        chunkIndexValue <= lastChunkIndex
+      ) {
+        if (isDev) {
+          console.debug("🔁 [EcoStream] chunk ignorado (fora de ordem)", {
+            eventType,
+            chunkIndex: chunkIndexValue,
+            lastChunkIndex,
+          });
+        }
+        return true;
+      }
+
+      if (identifier) {
+        seenChunkIdentifiers.add(identifier);
+      }
+      if (chunkIndexValue !== null) {
+        lastChunkIndex = chunkIndexValue;
+      }
+
+      return false;
+    };
+
     if (type === "first_token") {
+      if (shouldSkipChunkEvent("first_token")) {
+        return;
+      }
       const source =
         (unwrappedPayload as any)?.delta ??
         (unwrappedPayload as any)?.content ??
@@ -504,6 +550,9 @@ export const processEventStream = async (
     }
 
     if (type === "chunk") {
+      if (shouldSkipChunkEvent("chunk")) {
+        return;
+      }
       const source =
         (unwrappedPayload as any)?.delta ??
         (unwrappedPayload as any)?.content ??
