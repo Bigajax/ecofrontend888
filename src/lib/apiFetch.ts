@@ -117,10 +117,16 @@ export async function apiFetchJson<T = unknown>(
   const fetchInit: RequestInit = {
     ...rest,
     headers,
-    mode: mode ?? "cors",
-    credentials: credentials ?? "include",
     signal: controller.signal,
   };
+
+  if (mode) {
+    fetchInit.mode = mode;
+  }
+
+  if (credentials) {
+    fetchInit.credentials = credentials;
+  }
 
   try {
     const response = await fetch(buildUrl(path), fetchInit);

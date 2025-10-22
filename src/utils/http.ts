@@ -4,8 +4,6 @@ export async function fetchWithTimeout(input: RequestInfo, init: RequestInit = {
   const id = setTimeout(() => controller.abort(), timeout);
   try {
     const finalInit: RequestInit = { ...init, signal: controller.signal };
-    finalInit.mode = "cors";
-    finalInit.credentials = init.credentials ?? "include";
     const res = await fetch(input, finalInit);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res;

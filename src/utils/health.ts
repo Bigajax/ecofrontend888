@@ -1,4 +1,3 @@
-import { DEFAULT_API_BASE, getApiBase } from "../config/apiBase";
 import { safeFetch } from "./safeFetch";
 
 export type HealthStatus = "idle" | "ok" | "degraded" | "down";
@@ -9,19 +8,7 @@ export type HealthCheckResult = {
   responseOk: boolean;
 };
 
-const sanitizeBase = (base: string) => base.replace(/\/+$/, "");
-
-const resolveHealthUrl = () => {
-  const fallback = DEFAULT_API_BASE;
-  const candidate = getApiBase() || fallback;
-  try {
-    const base = candidate.endsWith("/") ? candidate : `${candidate}/`;
-    return new URL("api/health", base).toString();
-  } catch {
-    const sanitized = sanitizeBase(candidate || fallback);
-    return `${sanitized}/api/health`;
-  }
-};
+const resolveHealthUrl = () => "/api/health";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -29,7 +16,6 @@ export async function pingHealth(signal?: AbortSignal): Promise<HealthCheckResul
   const url = resolveHealthUrl();
   const result = await safeFetch(url, {
     method: "GET",
-    credentials: "include",
     headers: { Accept: "application/json" },
     signal,
   });

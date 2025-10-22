@@ -337,7 +337,7 @@ describe("enviarMensagemParaEco", () => {
     });
     expect(headers["x-eco-session-id"]).toEqual(expect.any(String));
     expect(headers.authorization).toBeUndefined();
-    expect(init?.credentials).toBe("include");
+    expect(init?.credentials).toBeUndefined();
     const body = init?.body ? JSON.parse(init.body as string) : {};
     expect(body.isGuest).toBe(true);
     expect(body.guestId).toBe("guest-123");
@@ -377,9 +377,9 @@ describe("enviarMensagemParaEco", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("https://ecobackend888.onrender.com/api/ask-eco?nostream=1");
+    expect(url).toBe("/api/ask-eco?nostream=1");
     expect(init?.method).toBe("POST");
-    expect(init?.credentials).toBe("include");
+    expect(init?.credentials).toBeUndefined();
     expect(init?.headers).toMatchObject({
       "content-type": "application/json",
       accept: "application/json",

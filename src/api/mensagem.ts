@@ -1,15 +1,12 @@
 // src/api/mensagem.ts
 import { supabase } from "../lib/supabaseClient";
 
-const rawSupabaseUrl = String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/+$/, "");
 const supabaseAnonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
 
-function getSupabaseRestBaseUrl(): string {
-  if (!rawSupabaseUrl) {
-    throw new Error("VITE_SUPABASE_URL não configurada.");
-  }
-  return `${rawSupabaseUrl}/rest/v1`;
-}
+const buildMensagemUrl = (path: string) => {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `/api${normalized}`;
+};
 
 export type MensagemRow = {
   id: string;
@@ -45,11 +42,9 @@ async function supabaseRestRequest<T>(
   headers.set("apikey", supabaseAnonKey);
   headers.set("Authorization", `Bearer ${accessToken ?? supabaseAnonKey}`);
 
-  const response = await fetch(`${getSupabaseRestBaseUrl()}${path}`, {
+  const response = await fetch(buildMensagemUrl(path), {
     ...init,
     headers,
-    credentials: "include",
-    mode: "cors",
   });
 
   if (!response.ok) {

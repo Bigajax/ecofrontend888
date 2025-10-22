@@ -8,7 +8,6 @@ import { sanitizeEcoText } from "../utils/sanitizeEcoText";
 import { buildIdentityHeaders, getGuestId, syncGuestId, updateBiasHint } from "../lib/guestId";
 import { ApiFetchJsonNetworkError, ApiFetchJsonResult } from "../lib/apiFetch";
 import { pingHealth } from "../utils/health";
-import { ensureHttpsUrl } from "../utils/ensureHttpsUrl";
 
 import { EcoApiError, MissingUserIdError } from "./errors";
 import { AskEcoResponse, normalizeAskEcoResponse } from "./askEcoResponse";
@@ -112,7 +111,7 @@ export async function askEco(
   const body = JSON.stringify(payload ?? {});
 
   const targetPath = opts.stream ? ASK_ENDPOINT : `${ASK_ENDPOINT}?nostream=1`;
-  const url = ensureHttpsUrl(resolveApiUrl(targetPath));
+  const url = resolveApiUrl(targetPath);
 
   const executeRequest = async (): Promise<ApiFetchJsonResult<any>> => {
     try {
@@ -120,8 +119,6 @@ export async function askEco(
         method: "POST",
         headers: serializedHeaders,
         body,
-        credentials: "include",
-        mode: "cors",
         signal: opts.signal,
       });
 
@@ -515,7 +512,6 @@ export const enviarMensagemParaEco = async (
     logHttpRequestDebug({
       method: "POST",
       url: resolveApiUrl(ASK_ENDPOINT),
-      credentials: "include",
       headers,
     });
 
@@ -526,7 +522,7 @@ export const enviarMensagemParaEco = async (
     }
 
     // 🔹 Caminho de STREAM (SSE) — força consumo do body sempre que existir
-    const streamUrl = ensureHttpsUrl(resolveApiUrl(ASK_ENDPOINT));
+    const streamUrl = resolveApiUrl(ASK_ENDPOINT);
     const maxStreamRetries = 1;
     let attempt = 0;
 
@@ -553,17 +549,15 @@ export const enviarMensagemParaEco = async (
       let streamOpened = false;
 
       try {
-        const requestInit: RequestInit & { duplex?: "half" } = {
-          method: "POST",
-          headers,
-          body: JSON.stringify(payload),
-          cache: "no-store",
-          credentials: "include",
-          mode: "cors",
-          redirect: "follow",
-          keepalive: false,
-          signal: mergedSignal,
-        };
+      const requestInit: RequestInit & { duplex?: "half" } = {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+        cache: "no-store",
+        redirect: "follow",
+        keepalive: false,
+        signal: mergedSignal,
+      };
 
         const maybeStreamBody = requestInit.body as unknown;
         if (

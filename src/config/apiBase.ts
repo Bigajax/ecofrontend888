@@ -23,11 +23,8 @@ const trimmedRawApiBase = RAW_API_BASE.trim();
 
 export const IS_API_BASE_EMPTY = trimmedRawApiBase.length === 0;
 
-const sanitizeBase = (candidate: string) => candidate.replace(/\/+$/, "");
-
 export function getApiBase(): string {
-  const normalized = sanitizeBase(trimmedRawApiBase || DEFAULT_API_BASE);
-  return normalized || DEFAULT_API_BASE;
+  return "";
 }
 
 const isLocalhost = (() => {
