@@ -46,6 +46,24 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 const CHAT_NS = 'eco.chat.v1';
 const keyFor = (uid?: string | null) => (uid ? `${CHAT_NS}.${uid}` : `${CHAT_NS}.anon`);
 
+const normalizeMessageForState = (message: Message): Message => {
+  if (!message) return message;
+
+  const normalized: Message = { ...message };
+  const shouldTrim = normalized.streaming !== true;
+
+  const maybeTrim = (field: 'text' | 'content') => {
+    const value = normalized[field];
+    if (typeof value !== 'string') return;
+    normalized[field] = shouldTrim ? value.trim() : value;
+  };
+
+  maybeTrim('text');
+  maybeTrim('content');
+
+  return normalized;
+};
+
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { userId } = useAuth();
 
@@ -110,12 +128,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const seen = new Map<string, number>();
     list.forEach((message) => {
       if (!message) return;
+      const normalized = normalizeMessageForState(message);
       const ids: string[] = [];
-      if (typeof message.id === 'string' && message.id) {
-        ids.push(message.id);
+      if (typeof normalized.id === 'string' && normalized.id) {
+        ids.push(normalized.id);
       }
-      if (typeof message.message_id === 'string' && message.message_id) {
-        ids.push(message.message_id);
+      if (typeof normalized.message_id === 'string' && normalized.message_id) {
+        ids.push(normalized.message_id);
       }
       let targetIndex: number | undefined;
       for (const id of ids) {
@@ -132,9 +151,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             seen.set(id, targetIndex as number);
           }
         });
-        result.push(message);
+        result.push(normalized);
       } else {
-        result[targetIndex] = { ...result[targetIndex], ...message };
+        const merged = { ...result[targetIndex], ...normalized } as Message;
+        result[targetIndex] = normalizeMessageForState(merged);
       }
     });
     return result;
@@ -164,22 +184,24 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const addMessage = useCallback((message: Message) => {
     setMessagesState((prev) => {
       if (!message) return prev;
+      const normalized = normalizeMessageForState(message);
       const ids: string[] = [];
-      if (typeof message.id === 'string' && message.id) {
-        ids.push(message.id);
+      if (typeof normalized.id === 'string' && normalized.id) {
+        ids.push(normalized.id);
       }
-      if (typeof message.message_id === 'string' && message.message_id) {
-        ids.push(message.message_id);
+      if (typeof normalized.message_id === 'string' && normalized.message_id) {
+        ids.push(normalized.message_id);
       }
       for (const id of ids) {
         const existingIndex = byIdRef.current.get(id);
         if (existingIndex !== undefined) {
           const next = [...prev];
-          next[existingIndex] = { ...next[existingIndex], ...message };
+          const merged = { ...next[existingIndex], ...normalized } as Message;
+          next[existingIndex] = normalizeMessageForState(merged);
           return dedupeAndMergeMessages(next);
         }
       }
-      return dedupeAndMergeMessages([...prev, message]);
+      return dedupeAndMergeMessages([...prev, normalized]);
     });
   }, [dedupeAndMergeMessages]);
 

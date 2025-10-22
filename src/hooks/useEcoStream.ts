@@ -116,31 +116,48 @@ export const useEcoStream = ({
       const raw = text ?? '';
       const trimmed = raw.trim();
       if (!trimmed) return;
-      if (isSending || inFlightRef.current) return;
 
-      const clientMessageId = uuidv4();
+      const nextClientMessageId = uuidv4();
+
+      let supersededPreviousStream = false;
+      const { controller: previousController, streamId: previousStreamId } =
+        activeStreamRef.current;
+      if (previousController) {
+        supersededPreviousStream = true;
+        if (isDev) {
+          console.info('[useEcoStream] AbortController: superseded run', {
+            previousStreamId,
+            nextStreamId: nextClientMessageId,
+          });
+        }
+        try {
+          previousController.abort('superseded');
+        } catch (abortError) {
+          if (isDev) {
+            console.warn('[useEcoStream] Falha ao abortar stream anterior', abortError);
+          }
+        }
+        if (abortControllerRef.current === previousController) {
+          abortControllerRef.current = null;
+        }
+        if (typeof previousStreamId === 'string' && previousStreamId) {
+          streamsRef.current.delete(previousStreamId);
+        }
+        activeStreamRef.current = { controller: null, streamId: null };
+        inFlightRef.current = null;
+        setDigitando(false);
+        setIsSending(false);
+      }
+
+      if (!supersededPreviousStream && (isSending || inFlightRef.current)) return;
+
+      const clientMessageId = nextClientMessageId;
       inFlightRef.current = clientMessageId;
 
       setDigitando(true);
       setIsSending(true);
       setErroApi(null);
       activity?.onSend();
-
-      if (activeStreamRef.current.controller) {
-        if (isDev) {
-          console.info('[useEcoStream] AbortController: superseded run', {
-            previousStreamId: activeStreamRef.current.streamId,
-            nextStreamId: clientMessageId,
-          });
-        }
-        try {
-          activeStreamRef.current.controller.abort();
-        } catch (abortError) {
-          if (isDev) {
-            console.warn('[useEcoStream] Falha ao abortar stream anterior', abortError);
-          }
-        }
-      }
 
       const controller = new AbortController();
       abortControllerRef.current = controller;
@@ -868,16 +885,54 @@ export const useEcoStream = ({
 
         const isStreamSuperseded = () => activeStreamRef.current.streamId !== clientMessageId;
 
-        const guardSupersededEvent = (eventType: string) => {
-          if (!isStreamSuperseded()) return false;
-          if (isDev) {
-            console.debug('[useEcoStream] evento ignorado (stream superseded)', {
-              eventType,
-              active: activeStreamRef.current.streamId,
-              received: clientMessageId,
-            });
+        const resolveEventClientMessageId = (event?: EcoSseEvent): string | null => {
+          if (!event) return null;
+          const potentialSources = [
+            event as Record<string, unknown>,
+            (event as any)?.payload as Record<string, unknown> | undefined,
+            (event as any)?.metadata as Record<string, unknown> | undefined,
+            (event as any)?.done as Record<string, unknown> | undefined,
+          ];
+
+          for (const source of potentialSources) {
+            if (!source || typeof source !== 'object') continue;
+            const candidate =
+              (source as any).clientMessageId ??
+              (source as any).client_message_id ??
+              (source as any).clientmessageid;
+            if (typeof candidate === 'string' && candidate.trim().length > 0) {
+              return candidate.trim();
+            }
           }
-          return true;
+
+          return null;
+        };
+
+        const guardSupersededEvent = (eventType: string, event?: EcoSseEvent) => {
+          if (isStreamSuperseded()) {
+            if (isDev) {
+              console.debug('[useEcoStream] evento ignorado (stream superseded)', {
+                eventType,
+                active: activeStreamRef.current.streamId,
+                received: clientMessageId,
+              });
+            }
+            return true;
+          }
+
+          const eventClientId = resolveEventClientMessageId(event);
+          if (eventClientId && eventClientId !== clientMessageId) {
+            if (isDev) {
+              console.debug('[useEcoStream] evento ignorado (client_message_id divergente)', {
+                eventType,
+                active: clientMessageId,
+                received: eventClientId,
+              });
+            }
+            return true;
+          }
+
+          return false;
         };
 
         const trackMemoryIfSignificant = (bloco: any) => {
@@ -1101,7 +1156,7 @@ export const useEcoStream = ({
         };
 
         const handlePromptReadyEvent = (event: EcoSseEvent) => {
-          if (guardSupersededEvent('prompt_ready')) return;
+          if (guardSupersededEvent('prompt_ready', event)) return;
           logSseEvent(event);
           trackEventContext(event);
           ensurePromptReadySignal();
@@ -1109,7 +1164,7 @@ export const useEcoStream = ({
         };
 
         const handleLatencyEvent = (event: EcoSseEvent) => {
-          if (guardSupersededEvent('latency')) return;
+          if (guardSupersededEvent('latency', event)) return;
           logSseEvent(event);
           trackEventContext(event);
           if (typeof event.latencyMs === 'number') {
@@ -1119,7 +1174,7 @@ export const useEcoStream = ({
         };
 
         const handleFirstTokenEvent = (event: EcoSseEvent) => {
-          if (guardSupersededEvent('first_token')) return;
+          if (guardSupersededEvent('first_token', event)) return;
           logSseEvent(event);
           trackEventContext(event);
           ensureFirstTokenSignal();
@@ -1142,7 +1197,7 @@ export const useEcoStream = ({
         };
 
         const handleChunkEvent = (event: EcoSseEvent) => {
-          if (guardSupersededEvent('chunk')) return;
+          if (guardSupersededEvent('chunk', event)) return;
           logSseEvent(event);
           trackEventContext(event);
           ensureFirstTokenSignal();
@@ -1167,7 +1222,7 @@ export const useEcoStream = ({
         };
 
         const handleMetaEvent = (event: EcoSseEvent) => {
-          if (guardSupersededEvent('meta')) return;
+          if (guardSupersededEvent('meta', event)) return;
           logSseEvent(event);
           trackEventContext(event);
           const meta = event.metadata ?? event.payload;
@@ -1183,7 +1238,7 @@ export const useEcoStream = ({
         };
 
         const handleMemorySavedEvent = (event: EcoSseEvent) => {
-          if (guardSupersededEvent('memory_saved')) return;
+          if (guardSupersededEvent('memory_saved', event)) return;
           logSseEvent(event);
           trackEventContext(event);
           const memoria =
@@ -1203,7 +1258,7 @@ export const useEcoStream = ({
         };
 
         const handleDoneEvent = (event: EcoSseEvent) => {
-          if (guardSupersededEvent('done')) return;
+          if (guardSupersededEvent('done', event)) return;
           logSseEvent(event);
           trackEventContext(event);
           ensureDoneSignal();
