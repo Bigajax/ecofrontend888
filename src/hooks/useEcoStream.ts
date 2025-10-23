@@ -11,7 +11,7 @@ import { extractDeepQuestionFlag } from '../utils/chat/deepQuestion';
 import { gerarMensagemRetorno } from '../utils/chat/memory';
 import { sanitizeEcoText } from '../utils/sanitizeEcoText';
 import { sanitizeText } from '../utils/sanitizeText';
-import type { Message as ChatMessageType } from '../contexts/ChatContext';
+import type { Message as ChatMessageType, UpsertMessageOptions } from '../contexts/ChatContext';
 import mixpanel from '../lib/mixpanel';
 import { supabase } from '../lib/supabaseClient';
 import { buildIdentityHeaders } from '../lib/guestId';
@@ -40,7 +40,7 @@ import {
 
 interface UseEcoStreamOptions {
   messages: ChatMessageType[];
-  addMessage: (message: ChatMessageType) => void;
+  upsertMessage: (message: ChatMessageType, options?: UpsertMessageOptions) => void;
   setMessages: Dispatch<SetStateAction<ChatMessageType[]>>;
   userId?: string;
   userName: string;
@@ -58,7 +58,7 @@ type BuscarPorTagResult = Awaited<ReturnType<typeof buscarUltimasMemoriasComTags
 
 export const useEcoStream = ({
   messages,
-  addMessage,
+  upsertMessage,
   setMessages,
   userId,
   userName,
@@ -179,14 +179,19 @@ export const useEcoStream = ({
       const analyticsUserId = authUserId ?? userId ?? guestId ?? 'guest';
       const shouldPersist = isAuthenticated && !isGuest;
 
-      const userMsgId = uuidv4();
       const sanitizedUserText = sanitizeText(trimmed);
-      addMessage({
-        id: userMsgId,
-        text: sanitizedUserText,
-        content: sanitizedUserText,
-        sender: 'user',
-      });
+      upsertMessage(
+        {
+          id: clientMessageId,
+          client_message_id: clientMessageId,
+          text: sanitizedUserText,
+          content: sanitizedUserText,
+          sender: 'user',
+          role: 'user',
+          status: 'pending',
+        },
+        { allowContentUpdate: true, patchSource: 'useEcoStream:send' },
+      );
 
       requestAnimationFrame(() => scrollToBottom(true));
 
@@ -201,7 +206,7 @@ export const useEcoStream = ({
 
       const messagesSnapshot = messagesRef.current;
 
-      const messageIdsForTurn = new Set<string>([userMsgId, clientMessageId]);
+      const messageIdsForTurn = new Set<string>([clientMessageId]);
       const recordMessageId = (id: string | null | undefined) => {
         if (!id) return;
         messageIdsForTurn.add(id);
@@ -466,23 +471,55 @@ export const useEcoStream = ({
 
         const mensagemIdPromise = salvarMensagemPromise
           .then((savedMensagemId) => {
-            if (savedMensagemId && savedMensagemId !== userMsgId) {
+            if (savedMensagemId) {
               persistedMensagemId = savedMensagemId;
-              setMessages((prev) =>
-                prev.map((m) => (m.id === userMsgId ? { ...m, id: savedMensagemId } : m)),
-              );
               recordMessageId(savedMensagemId);
+              upsertMessage(
+                {
+                  id: clientMessageId,
+                  client_message_id: clientMessageId,
+                  message_id: savedMensagemId,
+                  server_ids: [savedMensagemId],
+                  status: 'sent',
+                },
+                {
+                  allowedKeys: ['status', 'server_ids', 'message_id', 'updatedAt', 'createdAt', 'flags', 'audioUrl'],
+                  patchSource: 'useEcoStream:persist',
+                },
+              );
               return savedMensagemId;
             }
 
-            recordMessageId(userMsgId);
-            return userMsgId;
+            recordMessageId(clientMessageId);
+            upsertMessage(
+              {
+                id: clientMessageId,
+                client_message_id: clientMessageId,
+                status: 'sent',
+              },
+              {
+                allowedKeys: ['status', 'server_ids', 'message_id', 'updatedAt', 'createdAt', 'flags', 'audioUrl'],
+                patchSource: 'useEcoStream:persist',
+              },
+            );
+            return clientMessageId;
           })
           .catch((err) => {
             if (isDev) {
               console.warn('[ChatPage] Erro ao recuperar ID persistido', err);
             }
-            return userMsgId;
+            upsertMessage(
+              {
+                id: clientMessageId,
+                client_message_id: clientMessageId,
+                status: 'sent',
+              },
+              {
+                allowedKeys: ['status', 'server_ids', 'message_id', 'updatedAt', 'createdAt', 'flags', 'audioUrl'],
+                patchSource: 'useEcoStream:persist',
+              },
+            );
+            return clientMessageId;
           });
 
         const contextFetchStartedAt = getNow();
@@ -539,7 +576,10 @@ export const useEcoStream = ({
         );
         const contextTimedOut = similaresTimedOut || tagsTimedOut;
 
-        const baseHistory = [...messagesSnapshot, { id: userMsgId, role: 'user', content: trimmed }];
+        const baseHistory = [
+          ...messagesSnapshot,
+          { id: clientMessageId, role: 'user', content: trimmed, client_message_id: clientMessageId },
+        ];
 
         const vistos = new Set<string>();
         const mems = [...(similar || []), ...(porTag || [])].filter((m: any) => {
@@ -625,7 +665,7 @@ export const useEcoStream = ({
             sessionId,
             outcome,
             mensagem_id: persistedMensagemId ?? null,
-            mensagem_local_id: userMsgId,
+            mensagem_local_id: clientMessageId,
             latency_from_stream_ms:
               typeof latencyFromStream === 'number' ? latencyFromStream : null,
             latency_source: latencySource,
@@ -758,6 +798,7 @@ export const useEcoStream = ({
             text: ' ',
             content: '',
             streaming: true,
+            status: 'streaming',
             ...(currentInteractionId
               ? { interaction_id: currentInteractionId, interactionId: currentInteractionId }
               : {}),
@@ -1030,6 +1071,7 @@ export const useEcoStream = ({
             text: aggregatedEcoText.length > 0 ? aggregatedEcoText : ' ',
             content: aggregatedEcoText,
             streaming: true,
+            status: 'streaming',
           };
           if (!ecoMessageCreated) {
             if (aggregatedEcoText.length === 0) {
@@ -1052,24 +1094,27 @@ export const useEcoStream = ({
 
         const finalizeMessage = () => {
           if (!ecoMessageId && !resolvedEcoMessageId) return;
-          patchEcoMessage({ streaming: false });
+          patchEcoMessage({ streaming: false, status: 'final' });
         };
 
         const showStreamError = (message: string) => {
           setErroApi(message);
           createEcoMessageIfNeeded();
-          patchEcoMessage({ streaming: false });
+          patchEcoMessage({ streaming: false, status: 'error' });
           setDigitando(false);
           activity?.onError(message);
         };
 
         const extractEventText = (event: EcoSseEvent, fallback?: string) => {
-          const payload = event?.payload as Record<string, unknown> | undefined;
+          if (!event || event.type !== 'chunk') {
+            return '';
+          }
+          const payload = event.payload as Record<string, unknown> | undefined;
           const candidates = [
-            event?.text,
             payload?.delta,
             payload?.text,
             payload?.content,
+            event?.text,
             fallback,
             payload?.response,
           ];
@@ -1160,18 +1205,7 @@ export const useEcoStream = ({
           trackEventContext(event);
           ensureFirstTokenSignal();
           clearPlaceholder();
-          patchEcoMessage({ streaming: true });
-          const texto = extractEventText(event);
-          if (texto) {
-            if (isDev) {
-              console.debug('[useEcoStream] chunk:first_token', {
-                type: event.type,
-                identifier: resolveChunkIdentifier(event),
-                chunk: texto,
-              });
-            }
-            appendMessage(texto, event);
-          }
+          patchEcoMessage({ streaming: true, status: 'streaming' });
           activity?.onToken();
           firstContentReceived = aggregatedEcoText.trim().length > 0;
           syncScroll();
@@ -1261,26 +1295,17 @@ export const useEcoStream = ({
               ? (event.payload as any).response ?? (event.payload as any).metadata
               : undefined);
 
-          if (!fromControlChannel && !aggregatedEcoText.length) {
-            const doneText =
-              extractEventText(event) ||
-              flattenToString(
-                (event.payload as any)?.response ??
-                  (event.payload as any)?.content ??
-                  event.payload,
-              );
-            if (doneText) {
-              clearPlaceholder();
-              appendMessage(doneText, event);
-            }
-          }
-
           if (!fromControlChannel && meta !== undefined) {
             latestMetadata = meta;
-            patchEcoMessage({ metadata: meta, donePayload: event.payload, streaming: false });
+            patchEcoMessage({
+              metadata: meta,
+              donePayload: event.payload,
+              streaming: false,
+              status: 'final',
+            });
             trackMemoryIfSignificant(meta);
           } else if (!fromControlChannel && event.payload !== undefined) {
-            patchEcoMessage({ donePayload: event.payload, streaming: false });
+            patchEcoMessage({ donePayload: event.payload, streaming: false, status: 'final' });
           } else if (fromControlChannel) {
             finalizeMessage();
           }
@@ -1324,7 +1349,7 @@ export const useEcoStream = ({
           }
           logAndSendStreamMetrics('success', metricsExtra);
           mixpanel.track('Eco: Mensagem Concluída', {
-            mensagem_id: persistedMensagemId ?? userMsgId,
+            mensagem_id: persistedMensagemId ?? clientMessageId,
             auth: isAuthenticated,
             latency_ms: latencyMs,
             sse_tokens: completionTokens ?? 0,
@@ -1499,6 +1524,7 @@ export const useEcoStream = ({
                     text: finalText || NO_TEXT_WARNING,
                     content: finalText || NO_TEXT_WARNING,
                     streaming: false,
+                    status: 'final',
                   });
                   const patch: Partial<ChatMessageType> = {};
                   if (finalMetadata !== undefined) patch.metadata = finalMetadata;
@@ -1530,6 +1556,7 @@ export const useEcoStream = ({
                 content: finalText || NO_TEXT_WARNING,
                 sender: 'eco',
                 streaming: false,
+                status: 'final',
                 ...(currentInteractionId
                   ? { interaction_id: currentInteractionId, interactionId: currentInteractionId }
                   : {}),
@@ -1553,6 +1580,7 @@ export const useEcoStream = ({
               text: finalText || NO_TEXT_WARNING,
               content: finalText || NO_TEXT_WARNING,
               streaming: false,
+              status: 'final',
             });
           }
           const patch: Partial<ChatMessageType> = {};
@@ -1564,6 +1592,7 @@ export const useEcoStream = ({
           if (!('streaming' in patch)) {
             patch.streaming = false;
           }
+          patch.status = 'final';
           if (Object.keys(patch).length > 0) {
             if (currentInteractionId) {
               patch.interaction_id = currentInteractionId;
@@ -1577,6 +1606,17 @@ export const useEcoStream = ({
           }
         }
 
+        upsertMessage(
+          {
+            id: clientMessageId,
+            client_message_id: clientMessageId,
+            status: 'final',
+          },
+          {
+            allowedKeys: ['status', 'server_ids', 'message_id', 'updatedAt', 'createdAt', 'flags', 'audioUrl'],
+            patchSource: 'useEcoStream:done',
+          },
+        );
 
         resetEcoMessageTracking();
         activity?.onDone();
@@ -1636,7 +1676,7 @@ export const useEcoStream = ({
               mixpanel.track('Eco: Resposta Metadata', {
                 userId: analyticsUserId,
                 sessionId,
-                mensagemId: userMsgId,
+                mensagemId: clientMessageId,
                 metadata: finalMixpanelMetadata,
                 isGuest,
                 ...(isGuest ? { guestId } : {}),
@@ -1753,7 +1793,6 @@ export const useEcoStream = ({
       }
     },
       [
-        addMessage,
         guestId,
         isAtBottom,
         isGuest,
@@ -1761,6 +1800,7 @@ export const useEcoStream = ({
         isSending,
         scrollToBottom,
         setMessages,
+        upsertMessage,
         sessionId,
         userId,
         userName,

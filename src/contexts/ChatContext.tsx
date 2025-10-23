@@ -28,12 +28,26 @@ export interface Message {
   interaction_id?: string | null;
   interactionId?: string | null;
   message_id?: string | null;
+  client_message_id?: string | null;
+  status?: 'pending' | 'sent' | 'streaming' | 'final' | 'error';
+  server_ids?: string[];
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  flags?: Record<string, unknown> | null;
+  audioUrl?: string | null;
   continuity?: ContinuityMeta;
+}
+
+export interface UpsertMessageOptions {
+  allowContentUpdate?: boolean;
+  patchSource?: string;
+  allowedKeys?: Array<keyof Message | string>;
 }
 
 interface ChatContextType {
   messages: Message[];
   addMessage: (message: Message) => void;
+  upsertMessage: (message: Message, options?: UpsertMessageOptions) => void;
   clearMessages: () => void;
   updateMessage: (messageId: string, newText: string) => void;
   setMessages: Dispatch<SetStateAction<Message[]>>;
@@ -118,6 +132,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (typeof message.id === 'string' && message.id) {
         ids.add(message.id);
       }
+      if (typeof message.client_message_id === 'string' && message.client_message_id) {
+        ids.add(message.client_message_id);
+      }
       if (typeof message.message_id === 'string' && message.message_id) {
         ids.add(message.message_id);
       }
@@ -149,6 +166,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const ids: string[] = [];
       if (typeof normalized.id === 'string' && normalized.id) {
         ids.push(normalized.id);
+      }
+      if (typeof normalized.client_message_id === 'string' && normalized.client_message_id) {
+        ids.push(normalized.client_message_id);
       }
       if (typeof normalized.message_id === 'string' && normalized.message_id) {
         ids.push(normalized.message_id);
@@ -190,6 +210,113 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return result;
   }, []);
 
+  const mergeMessages = useCallback(
+    (
+      existing: Message | undefined,
+      incoming: Message,
+      options: UpsertMessageOptions | undefined,
+    ): { next: Message; changed: boolean } => {
+      if (!existing) {
+        return { next: normalizeMessageForState(incoming), changed: true };
+      }
+
+      const allowedKeys = options?.allowedKeys ? new Set(options.allowedKeys) : undefined;
+      const result: Message = { ...existing };
+      let changed = false;
+
+      for (const [key, value] of Object.entries(incoming)) {
+        if (key === 'id' || value === undefined) continue;
+
+        if (
+          key === 'content' &&
+          typeof value === 'string' &&
+          value.trim().toLowerCase() === 'ok' &&
+          options?.allowContentUpdate !== true
+        ) {
+          console.warn('Dropped suspicious OK content patch', options?.patchSource);
+          return { next: existing, changed: false };
+        }
+
+        if ((key === 'content' || key === 'text') && options?.allowContentUpdate !== true) {
+          const currentValue = (existing as any)[key];
+          if (typeof value === 'string' && value !== currentValue) {
+            continue;
+          }
+        }
+
+        if (allowedKeys && !allowedKeys.has(key)) {
+          const currentValue = (existing as any)[key];
+          if (currentValue !== value) {
+            continue;
+          }
+        }
+
+        if ((result as any)[key] !== value) {
+          (result as any)[key] = value as any;
+          changed = true;
+        }
+      }
+
+      if (!changed) {
+        return { next: existing, changed: false };
+      }
+
+      return { next: normalizeMessageForState(result), changed: true };
+    },
+    [],
+  );
+
+  const upsertMessage = useCallback(
+    (message: Message, options?: UpsertMessageOptions) => {
+      setMessagesState((prev) => {
+        if (!message) return prev;
+        const normalized = normalizeMessageForState(message);
+
+        const ids: string[] = [];
+        if (typeof normalized.id === 'string' && normalized.id) {
+          ids.push(normalized.id);
+        }
+        if (typeof normalized.client_message_id === 'string' && normalized.client_message_id) {
+          ids.push(normalized.client_message_id);
+        }
+        if (typeof normalized.message_id === 'string' && normalized.message_id) {
+          ids.push(normalized.message_id);
+        }
+
+        const interactionKey = resolveInteractionKey(normalized);
+        let targetIndex: number | undefined = undefined;
+
+        if (interactionKey) {
+          targetIndex = interactionByRef.current.get(interactionKey);
+        }
+
+        if (targetIndex === undefined) {
+          for (const id of ids) {
+            const existingIndex = byIdRef.current.get(id);
+            if (existingIndex !== undefined) {
+              targetIndex = existingIndex;
+              break;
+            }
+          }
+        }
+
+        if (targetIndex === undefined) {
+          return dedupeAndMergeMessages([...prev, normalized]);
+        }
+
+        const next = [...prev];
+        const existing = next[targetIndex];
+        const { next: merged, changed } = mergeMessages(existing, normalized, options);
+        if (!changed) {
+          return prev;
+        }
+        next[targetIndex] = merged;
+        return dedupeAndMergeMessages(next);
+      });
+    },
+    [dedupeAndMergeMessages, mergeMessages],
+  );
+
   // 3) Responde a alterações vindas de outras abas / limpeza externa
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
@@ -211,39 +338,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('storage', onStorage);
   }, [userId]);
 
-  const addMessage = useCallback((message: Message) => {
-    setMessagesState((prev) => {
-      if (!message) return prev;
-      const normalized = normalizeMessageForState(message);
-      const ids: string[] = [];
-      if (typeof normalized.id === 'string' && normalized.id) {
-        ids.push(normalized.id);
-      }
-      if (typeof normalized.message_id === 'string' && normalized.message_id) {
-        ids.push(normalized.message_id);
-      }
-      const interactionKey = resolveInteractionKey(normalized);
-      if (interactionKey) {
-        const existingIndex = interactionByRef.current.get(interactionKey);
-        if (existingIndex !== undefined) {
-          const next = [...prev];
-          const merged = { ...next[existingIndex], ...normalized } as Message;
-          next[existingIndex] = normalizeMessageForState(merged);
-          return dedupeAndMergeMessages(next);
-        }
-      }
-      for (const id of ids) {
-        const existingIndex = byIdRef.current.get(id);
-        if (existingIndex !== undefined) {
-          const next = [...prev];
-          const merged = { ...next[existingIndex], ...normalized } as Message;
-          next[existingIndex] = normalizeMessageForState(merged);
-          return dedupeAndMergeMessages(next);
-        }
-      }
-      return dedupeAndMergeMessages([...prev, normalized]);
-    });
-  }, [dedupeAndMergeMessages]);
+  const addMessage = useCallback(
+    (message: Message) => {
+      upsertMessage(message, { allowContentUpdate: true, patchSource: 'ChatContext.addMessage' });
+    },
+    [upsertMessage],
+  );
 
   const clearMessages = useCallback(() => {
     setMessagesState([]);
@@ -271,6 +371,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       value={{
         messages,
         addMessage,
+        upsertMessage,
         clearMessages,
         updateMessage,
         setMessages: setMessagesWithDedupe,

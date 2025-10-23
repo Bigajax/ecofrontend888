@@ -57,7 +57,7 @@ type BehaviorHintMetrics = {
 };
 
 function ChatPage() {
-  const { messages, addMessage, setMessages } = useChat();
+  const { messages, upsertMessage, setMessages } = useChat();
   const auth = useAuth();
   const { userId, userName: rawUserName = 'Usuário', user } = auth;
   const navigate = useNavigate();
@@ -280,7 +280,7 @@ function ChatPage() {
 
   const { handleSendMessage: streamSendMessage, erroApi, pending } = useEcoStream({
     messages,
-    addMessage,
+    upsertMessage,
     setMessages,
     userId: userId || undefined,
     userName: rawUserName,

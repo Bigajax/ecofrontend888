@@ -112,7 +112,10 @@ const parseSseEvent = (
     const parsed = JSON.parse(dataStr);
     return { type: eventName, payload: parsed, rawData: dataStr };
   } catch {
-    return { type: eventName, payload: { text: dataStr }, rawData: dataStr };
+    if (eventName === "chunk") {
+      return { type: eventName, payload: { text: dataStr }, rawData: dataStr };
+    }
+    return { type: eventName, payload: {}, rawData: dataStr };
   }
 };
 
