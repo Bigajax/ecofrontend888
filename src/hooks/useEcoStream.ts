@@ -82,18 +82,17 @@ export const useEcoStream = ({
     controller: AbortController | null;
     streamId: string | null;
   }>({ controller: null, streamId: null });
-  const streamsRef = useRef<
-    Map<
-      string,
-      {
-        messageId: string | null;
-        buffer: string;
-        pendingPatch: Partial<ChatMessageType>;
-        lastChunkIndex: number | null;
-        createdAtChunkIndex: number | null;
-      }
-    >
-  >(new Map());
+  type StreamDraft = {
+    messageId: string | null;
+    buffer: string;
+    pendingPatch: Partial<ChatMessageType>;
+    lastChunkIndex: number | null;
+    createdAtChunkIndex: number | null;
+    interactionId: string | null;
+  };
+
+  const streamsRef = useRef<Map<string, StreamDraft>>(new Map());
+  const draftsByInteractionRef = useRef<Map<string, StreamDraft>>(new Map());
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -142,6 +141,10 @@ export const useEcoStream = ({
           abortControllerRef.current = null;
         }
         if (typeof previousStreamId === 'string' && previousStreamId) {
+          const draft = streamsRef.current.get(previousStreamId);
+          if (draft?.interactionId) {
+            draftsByInteractionRef.current.delete(draft.interactionId);
+          }
           streamsRef.current.delete(previousStreamId);
         }
         activeStreamRef.current = { controller: null, streamId: null };
@@ -210,11 +213,72 @@ export const useEcoStream = ({
         pendingPatch: {},
         lastChunkIndex: null,
         createdAtChunkIndex: null,
+        interactionId: null,
       });
 
       let currentInteractionId: string | null = null;
       updatePassiveSignalInteractionId(null);
       const pendingSignals: Array<{ signal: string; extra?: { value?: unknown; meta?: unknown } }> = [];
+
+      const hydrateEcoMessageFromInteraction = (interactionId: string) => {
+        const normalized = typeof interactionId === 'string' ? interactionId.trim() : '';
+        if (!normalized) return;
+        if (ecoMessageCreated) return;
+        const existingIndex = messagesRef.current.findIndex((message) => {
+          if (!message) return false;
+          const rawInteraction =
+            (typeof message.interaction_id === 'string' && message.interaction_id.trim()) ||
+            (typeof message.interactionId === 'string' && message.interactionId.trim()) ||
+            '';
+          return rawInteraction === normalized;
+        });
+        if (existingIndex < 0) return;
+        const existing = messagesRef.current[existingIndex];
+        if (!existing) return;
+        const resolvedId =
+          (typeof existing.message_id === 'string' && existing.message_id.trim()) ||
+          (typeof existing.id === 'string' && existing.id.trim()) ||
+          null;
+        const entry = streamsRef.current.get(clientMessageId) ?? draftsByInteractionRef.current.get(normalized);
+        if (entry) {
+          entry.messageId = resolvedId ?? entry.messageId;
+          entry.interactionId = normalized;
+          const snapshot =
+            (typeof existing.content === 'string' && existing.content) ||
+            (typeof existing.text === 'string' && existing.text) ||
+            '';
+          entry.buffer = snapshot;
+        }
+        ecoMessageId = (typeof existing.id === 'string' && existing.id.trim()) || ecoMessageId;
+        resolvedEcoMessageId = resolvedId ?? ecoMessageId;
+        ecoMessageCreated = true;
+        ecoMessageIndex = existingIndex;
+        resolvedEcoMessageIndex = existingIndex;
+        aggregatedEcoTextRaw = flattenToString(existing.content ?? existing.text ?? '');
+        aggregatedEcoText = sanitizeEcoText(aggregatedEcoTextRaw);
+        if (typeof existing.id === 'string') {
+          messageIdsForTurn.add(existing.id);
+        }
+        if (typeof existing.message_id === 'string') {
+          messageIdsForTurn.add(existing.message_id);
+        }
+      };
+
+      const registerDraftForInteraction = (interactionId: string) => {
+        const normalized = typeof interactionId === 'string' ? interactionId.trim() : '';
+        if (!normalized) return;
+        const existingEntry = draftsByInteractionRef.current.get(normalized);
+        const currentEntry = streamsRef.current.get(clientMessageId);
+        if (existingEntry && existingEntry !== currentEntry) {
+          draftsByInteractionRef.current.set(normalized, existingEntry);
+          streamsRef.current.set(clientMessageId, existingEntry);
+          existingEntry.interactionId = normalized;
+        } else if (currentEntry) {
+          currentEntry.interactionId = normalized;
+          draftsByInteractionRef.current.set(normalized, currentEntry);
+        }
+        hydrateEcoMessageFromInteraction(normalized);
+      };
 
       const annotateMessagesWithInteractionId = (interactionId: string) => {
         if (!interactionId) return;
@@ -235,6 +299,7 @@ export const useEcoStream = ({
           });
           return changed ? next : prev;
         });
+        registerDraftForInteraction(interactionId);
       };
 
       const signalEndpoint = resolveApiUrl('/api/signal');
@@ -275,12 +340,13 @@ export const useEcoStream = ({
         extra: { value?: unknown; meta?: unknown } | undefined,
         interactionId: string | null,
       ) => {
+        if (!interactionId) {
+          return;
+        }
         if (!sessionId || !signalEndpoint || isTestEnv || typeof fetch !== 'function') return;
 
         const payload: Record<string, unknown> = { session_id: sessionId, signal };
-        if (interactionId) {
-          payload.interaction_id = interactionId;
-        }
+        payload.interaction_id = interactionId;
         if (authUserId) {
           payload.usuario_id = authUserId;
         }
@@ -301,6 +367,7 @@ export const useEcoStream = ({
             headers: {
               'Content-Type': 'application/json',
               ...buildIdentityHeaders(),
+              'X-Eco-Interaction-Id': interactionId,
             },
             body: JSON.stringify(payload),
             redirect: 'follow',
@@ -325,11 +392,14 @@ export const useEcoStream = ({
       const updateInteractionId = (value: unknown) => {
         const candidate = findInteractionId(value);
         if (!candidate) return;
-        if (currentInteractionId === candidate) return;
-        currentInteractionId = candidate;
-        annotateMessagesWithInteractionId(candidate);
+        const normalized = candidate.trim();
+        if (!normalized) return;
+        if (currentInteractionId === normalized) return;
+        currentInteractionId = normalized;
+        registerDraftForInteraction(normalized);
+        annotateMessagesWithInteractionId(normalized);
         flushPendingSignals();
-        updatePassiveSignalInteractionId(candidate);
+        updatePassiveSignalInteractionId(normalized);
       };
 
       const updateMessageIdFrom = (value: unknown) => {
@@ -747,6 +817,9 @@ export const useEcoStream = ({
             updatedEntry.pendingPatch = {};
           }
           ecoMessageCreated = true;
+          if (currentInteractionId) {
+            registerDraftForInteraction(currentInteractionId);
+          }
         };
 
         const removeStreamingMessageIfEmpty = () => {
@@ -778,6 +851,10 @@ export const useEcoStream = ({
           aggregatedEcoText = '';
           aggregatedEcoTextRaw = '';
           pendingEcoPatch = {};
+          const existingEntry = streamsRef.current.get(clientMessageId);
+          if (existingEntry?.interactionId) {
+            draftsByInteractionRef.current.delete(existingEntry.interactionId);
+          }
           streamsRef.current.delete(clientMessageId);
         };
 
@@ -1394,30 +1471,81 @@ export const useEcoStream = ({
 
         if (!resolvedEcoMessageId) {
           if (finalText || noTextFromStream) {
-            const newId = uuidv4();
-            resolvedEcoMessageId = newId;
-            recordMessageId(newId);
-            const ecoMessage: ChatMessageType = {
-              id: newId,
-              text: finalText || NO_TEXT_WARNING,
-              content: finalText || NO_TEXT_WARNING,
-              sender: 'eco',
-              streaming: false,
-              ...(currentInteractionId
-                ? { interaction_id: currentInteractionId, interactionId: currentInteractionId }
-                : {}),
-              ...(finalMetadata !== undefined ? { metadata: finalMetadata } : {}),
-              ...(resposta?.done ? { donePayload: resposta.done } : {}),
-              ...(memoryFromStream ? { memory: memoryFromStream } : {}),
-              ...(typeof latencyFromStream === 'number' ? { latencyMs: latencyFromStream } : {}),
-              ...(continuity ? { continuity } : {}),
-            };
-            setMessages((prev) => {
-              const index = prev.length;
-              resolvedEcoMessageIndex = index;
-              return [...prev, ecoMessage];
-            });
-            trackContinuityEvent(continuity, newId);
+            let reusedExisting = false;
+            if (currentInteractionId) {
+              const normalizedInteractionId = currentInteractionId.trim();
+              if (normalizedInteractionId) {
+                const existingIndex = messagesRef.current.findIndex((message) => {
+                  if (!message) return false;
+                  const candidateInteraction =
+                    (typeof message.interaction_id === 'string' && message.interaction_id.trim()) ||
+                    (typeof message.interactionId === 'string' && message.interactionId.trim()) ||
+                    '';
+                  return candidateInteraction === normalizedInteractionId;
+                });
+                if (existingIndex >= 0) {
+                  const existingMessage = messagesRef.current[existingIndex];
+                  const existingId =
+                    (typeof existingMessage?.message_id === 'string' && existingMessage.message_id.trim()) ||
+                    (typeof existingMessage?.id === 'string' && existingMessage.id.trim()) ||
+                    uuidv4();
+                  resolvedEcoMessageId = existingId;
+                  ecoMessageId = existingMessage?.id ?? existingId;
+                  ecoMessageCreated = true;
+                  ecoMessageIndex = existingIndex;
+                  resolvedEcoMessageIndex = existingIndex;
+                  reusedExisting = true;
+                  patchEcoMessage({
+                    text: finalText || NO_TEXT_WARNING,
+                    content: finalText || NO_TEXT_WARNING,
+                    streaming: false,
+                  });
+                  const patch: Partial<ChatMessageType> = {};
+                  if (finalMetadata !== undefined) patch.metadata = finalMetadata;
+                  if (resposta?.done) patch.donePayload = resposta.done;
+                  if (memoryFromStream) patch.memory = memoryFromStream;
+                  if (typeof latencyFromStream === 'number') patch.latencyMs = latencyFromStream;
+                  if (continuity) patch.continuity = continuity;
+                  if (Object.keys(patch).length > 0) {
+                    patchEcoMessage(patch);
+                  }
+                  if (continuity) {
+                    const targetId = resolvedEcoMessageId ?? existingId;
+                    if (targetId) {
+                      trackContinuityEvent(continuity, targetId);
+                    }
+                  }
+                  registerDraftForInteraction(normalizedInteractionId);
+                }
+              }
+            }
+
+            if (!reusedExisting) {
+              const newId = uuidv4();
+              resolvedEcoMessageId = newId;
+              recordMessageId(newId);
+              const ecoMessage: ChatMessageType = {
+                id: newId,
+                text: finalText || NO_TEXT_WARNING,
+                content: finalText || NO_TEXT_WARNING,
+                sender: 'eco',
+                streaming: false,
+                ...(currentInteractionId
+                  ? { interaction_id: currentInteractionId, interactionId: currentInteractionId }
+                  : {}),
+                ...(finalMetadata !== undefined ? { metadata: finalMetadata } : {}),
+                ...(resposta?.done ? { donePayload: resposta.done } : {}),
+                ...(memoryFromStream ? { memory: memoryFromStream } : {}),
+                ...(typeof latencyFromStream === 'number' ? { latencyMs: latencyFromStream } : {}),
+                ...(continuity ? { continuity } : {}),
+              };
+              setMessages((prev) => {
+                const index = prev.length;
+                resolvedEcoMessageIndex = index;
+                return [...prev, ecoMessage];
+              });
+              trackContinuityEvent(continuity, newId);
+            }
           }
         } else {
           if (finalText || noTextFromStream) {

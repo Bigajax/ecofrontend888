@@ -30,17 +30,28 @@ const MessageList: React.FC<MessageListProps> = ({
     }
 
     const seen = new Set<string>();
+    const seenInteractions = new Set<string>();
     const deduped: Message[] = [];
 
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       const message = messages[index];
       if (!message) continue;
       const id = typeof message.id === 'string' ? message.id : '';
+      const interactionKey =
+        (typeof message.interaction_id === 'string' && message.interaction_id.trim()) ||
+        (typeof message.interactionId === 'string' && message.interactionId.trim()) ||
+        '';
+      if (interactionKey && seenInteractions.has(interactionKey)) {
+        continue;
+      }
       if (id && seen.has(id)) {
         continue;
       }
       if (id) {
         seen.add(id);
+      }
+      if (interactionKey) {
+        seenInteractions.add(interactionKey);
       }
       deduped.unshift(message);
     }
