@@ -11,6 +11,7 @@ import { extractDeepQuestionFlag } from '../utils/chat/deepQuestion';
 import { gerarMensagemRetorno } from '../utils/chat/memory';
 import { sanitizeEcoText } from '../utils/sanitizeEcoText';
 import { sanitizeText } from '../utils/sanitizeText';
+import { smartJoin } from '../utils/streamJoin';
 import type { Message as ChatMessageType, UpsertMessageOptions } from '../contexts/ChatContext';
 import mixpanel from '../lib/mixpanel';
 import { supabase } from '../lib/supabaseClient';
@@ -89,6 +90,8 @@ export const useEcoStream = ({
     lastChunkIndex: number | null;
     createdAtChunkIndex: number | null;
     interactionId: string | null;
+    seenIndexes: Set<number>;
+    firstChunkLogged: boolean;
   };
 
   const streamsRef = useRef<Map<string, StreamDraft>>(new Map());
@@ -219,6 +222,8 @@ export const useEcoStream = ({
         lastChunkIndex: null,
         createdAtChunkIndex: null,
         interactionId: null,
+        seenIndexes: new Set<number>(),
+        firstChunkLogged: false,
       });
 
       let currentInteractionId: string | null = null;
@@ -992,6 +997,9 @@ export const useEcoStream = ({
           const streamEntry = streamsRef.current.get(clientMessageId);
           if (streamEntry) {
             streamEntry.buffer = '';
+            streamEntry.lastChunkIndex = null;
+            streamEntry.seenIndexes.clear();
+            streamEntry.firstChunkLogged = false;
           }
           if (ecoMessageCreated) {
             patchEcoMessage(
@@ -1004,7 +1012,12 @@ export const useEcoStream = ({
         const seenChunkIdentifiers = new Set<string>();
         let lastSeenChunkIndex: number | null = null;
 
-        const appendMessage = (delta: string, event?: EcoSseEvent) => {
+        const appendDelta = (
+          interactionId: string | null,
+          chunkIndex: number | null,
+          delta: string,
+          event?: EcoSseEvent,
+        ) => {
           const chunk = flattenToString(delta);
           if (!chunk) return;
 
@@ -1023,14 +1036,48 @@ export const useEcoStream = ({
             seenChunkIdentifiers.add(identifier);
           }
 
-          const chunkIndex = resolveChunkIndex(event);
-          const streamEntry = streamsRef.current.get(clientMessageId);
+          const baseEntry =
+            (interactionId ? draftsByInteractionRef.current.get(interactionId) : undefined) ??
+            streamsRef.current.get(clientMessageId);
+
+          if (!baseEntry) {
+            if (isDev) {
+              console.debug('[useEcoStream] sem draft ativo para aplicar delta', {
+                interactionId,
+                chunk,
+              });
+            }
+            return;
+          }
+
+          const resolvedInteractionId =
+            interactionId ?? baseEntry.interactionId ?? currentInteractionId ?? null;
+          if (resolvedInteractionId && baseEntry.interactionId !== resolvedInteractionId) {
+            baseEntry.interactionId = resolvedInteractionId;
+            draftsByInteractionRef.current.set(resolvedInteractionId, baseEntry);
+          }
+
+          const interactionForLog = resolvedInteractionId ?? 'pending';
+
+          if (!(baseEntry.seenIndexes instanceof Set)) {
+            baseEntry.seenIndexes = new Set<number>();
+          }
+
           if (chunkIndex !== null) {
-            const lastIndex = streamEntry?.lastChunkIndex ?? lastSeenChunkIndex;
-            if (lastIndex !== null && chunkIndex <= lastIndex) {
+            if (baseEntry.seenIndexes.has(chunkIndex)) {
+              if (isDev) {
+                console.debug('[useEcoStream] delta ignorado (index duplicado)', {
+                  interaction: interactionForLog,
+                  chunkIndex,
+                });
+              }
+              return;
+            }
+            const lastIndex = baseEntry.lastChunkIndex ?? lastSeenChunkIndex;
+            if (lastIndex !== null && chunkIndex < lastIndex) {
               if (isDev) {
                 console.debug('[useEcoStream] delta ignorado (fora de ordem)', {
-                  type: event?.type,
+                  interaction: interactionForLog,
                   identifier,
                   chunk,
                   chunkIndex,
@@ -1039,36 +1086,45 @@ export const useEcoStream = ({
               }
               return;
             }
-          }
-
-          aggregatedEcoTextRaw = `${aggregatedEcoTextRaw}${chunk}`;
-          aggregatedEcoText = aggregatedEcoTextRaw;
-          if (streamEntry) {
-            streamEntry.buffer = aggregatedEcoText;
-          }
-
-          if (chunkIndex !== null) {
+            baseEntry.seenIndexes.add(chunkIndex);
+            baseEntry.lastChunkIndex = chunkIndex;
             lastSeenChunkIndex = chunkIndex;
-            if (streamEntry) {
-              streamEntry.lastChunkIndex = chunkIndex;
-            }
+          }
+
+          if (!baseEntry.firstChunkLogged) {
+            console.debug('[STREAM]', interactionForLog, 'first-chunk');
+            baseEntry.firstChunkLogged = true;
+            setDigitando(false);
+          }
+
+          console.debug('[STREAM]', interactionForLog, 'chunk', chunkIndex ?? -1, chunk.length);
+
+          const previousBuffer = baseEntry.buffer ?? '';
+          const nextBuffer = smartJoin(previousBuffer, chunk);
+
+          aggregatedEcoTextRaw = nextBuffer;
+          aggregatedEcoText = nextBuffer;
+          baseEntry.buffer = nextBuffer;
+          if (nextBuffer.length > 0) {
+            setDigitando(false);
           }
 
           const patch: Partial<ChatMessageType> = {
-            text: aggregatedEcoText.length > 0 ? aggregatedEcoText : ' ',
-            content: aggregatedEcoText,
+            text: nextBuffer.length > 0 ? nextBuffer : ' ',
+            content: nextBuffer,
             streaming: true,
             status: 'streaming',
           };
+
           if (!ecoMessageCreated) {
-            if (aggregatedEcoText.length === 0) {
+            if (nextBuffer.length === 0) {
               mergePendingPatch({ streaming: true });
               return;
             }
             if (
               chunkIndex !== null &&
               chunkIndex > 0 &&
-              streamEntry?.createdAtChunkIndex == null
+              baseEntry.createdAtChunkIndex == null
             ) {
               mergePendingPatch(patch);
               return;
@@ -1076,6 +1132,7 @@ export const useEcoStream = ({
             createEcoMessageIfNeeded(patch, chunkIndex);
             return;
           }
+
           patchEcoMessage(patch, {
             allowContentUpdate: true,
             patchSource: 'useEcoStream:chunk',
@@ -1230,7 +1287,13 @@ export const useEcoStream = ({
           if (aggregatedEcoText.length === 0) {
             clearPlaceholder();
           }
-          appendMessage(chunkText, event);
+          const interactionForChunk =
+            currentInteractionId ??
+            findInteractionId(event) ??
+            findInteractionId(event.payload) ??
+            null;
+          const chunkIndex = resolveChunkIndex(event);
+          appendDelta(interactionForChunk, chunkIndex, chunkText, event);
           activity?.onToken();
           if (!firstContentReceived && aggregatedEcoText.trim().length > 0) {
             firstContentReceived = true;
@@ -1284,7 +1347,14 @@ export const useEcoStream = ({
           if (guardSupersededEvent('done', event)) return;
           logSseEvent(event);
           trackEventContext(event);
+          const doneInteraction =
+            currentInteractionId ??
+            findInteractionId(event) ??
+            findInteractionId(event.payload) ??
+            null;
+          console.debug('[STREAM]', doneInteraction ?? 'pending', 'done');
           ensureDoneSignal();
+          setDigitando(false);
           if (doneAt === undefined) {
             doneAt = getNow();
           }

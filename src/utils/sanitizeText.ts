@@ -72,8 +72,14 @@ const restoreValidStrong = (input: string, placeholders: string[]): string => {
   return restored;
 };
 
-export function sanitizeText(raw: string): string {
+interface SanitizeTextOptions {
+  collapseWhitespace?: boolean;
+}
+
+export function sanitizeText(raw: string, options?: SanitizeTextOptions): string {
   if (!raw) return '';
+
+  const collapseWhitespace = options?.collapseWhitespace ?? true;
 
   let sanitized = raw.replace(/\r\n?/g, '\n');
   sanitized = sanitized.replace(ZERO_WIDTH_RE, '');
@@ -97,9 +103,11 @@ export function sanitizeText(raw: string): string {
   });
 
   sanitized = sanitized.replace(/[\t\v\f\u00A0]+/g, ' ');
-  sanitized = sanitized.replace(MULTISPACE_RE, ' ');
-  sanitized = sanitized.replace(/[ \t\f\v]+\n/g, '\n');
-  sanitized = sanitized.replace(/\n[ \t\f\v]+/g, '\n');
+  if (collapseWhitespace) {
+    sanitized = sanitized.replace(MULTISPACE_RE, ' ');
+    sanitized = sanitized.replace(/[ \t\f\v]+\n/g, '\n');
+    sanitized = sanitized.replace(/\n[ \t\f\v]+/g, '\n');
+  }
   sanitized = sanitized.replace(MULTIBREAK_RE, '\n\n');
   sanitized = sanitized.replace(TRAILING_SPACE_RE, '');
   sanitized = sanitized.replace(SPACE_BEFORE_PUNCT_RE, '$1');
@@ -108,11 +116,13 @@ export function sanitizeText(raw: string): string {
 
   const lines = sanitized
     .split('\n')
-    .map((line) => line.replace(MULTISPACE_RE, ' ').trimEnd());
+    .map((line) =>
+      collapseWhitespace ? line.replace(MULTISPACE_RE, ' ').trimEnd() : line.replace(/\u00A0/g, ' ')
+    );
 
   sanitized = lines.join('\n');
 
-  return sanitized.trim();
+  return collapseWhitespace ? sanitized.trim() : sanitized;
 }
 
 export default sanitizeText;

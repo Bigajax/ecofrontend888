@@ -104,7 +104,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   const isUser = message.sender === "user";
   const isStreaming = message.streaming === true;
   const displayText = useMemo(
-    () => sanitizeText(message.text ?? message.content ?? ""),
+    () => sanitizeText(message.text ?? message.content ?? "", { collapseWhitespace: false }),
     [message.content, message.text]
   );
   const canSpeak = !isUser && !!displayText;

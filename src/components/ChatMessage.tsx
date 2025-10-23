@@ -271,7 +271,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     rawText = normalizeMessageContent(value);
     if (rawText.trim().length > 0) break;
   }
-  const sanitizedRawText = React.useMemo(() => sanitizeText(rawText), [rawText]);
+  const sanitizedRawText = React.useMemo(
+    () => sanitizeText(rawText, { collapseWhitespace: false }),
+    [rawText],
+  );
   const trimmedText = sanitizedRawText.trim();
   if (message.sender === "user" && trimmedText.length === 0) {
     return null;
