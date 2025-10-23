@@ -2,6 +2,9 @@ import { AskEcoResponse, collectTexts, normalizeAskEcoResponse, unwrapPayload } 
 import { isDev } from "./environment";
 import { resolveChunkIdentifier, resolveChunkIndex } from "../utils/chat/chunkSignals";
 import smartJoin from "../utils/streamJoin";
+import { resolveApiUrl } from "../constants/api";
+import { buildIdentityHeaders } from "../lib/guestId";
+import type { Message } from "../contexts/ChatContext";
 
 export interface EcoStreamResult {
   text: string;
@@ -929,3 +932,217 @@ export const parseNonStreamResponse = async (response: Response): Promise<EcoStr
       : false,
   };
 };
+
+export interface EcoStreamChunk {
+  index: number;
+  text?: string;
+  metadata?: unknown;
+}
+
+export interface StartEcoStreamOptions {
+  history: Message[];
+  clientMessageId: string;
+  systemHint?: string;
+  userId?: string;
+  userName?: string;
+  guestId?: string;
+  isGuest?: boolean;
+  signal?: AbortSignal;
+  headers?: Record<string, string>;
+  onChunk?: (chunk: EcoStreamChunk) => void;
+  onDone?: (payload: unknown) => void;
+  onError?: (error: unknown) => void;
+}
+
+const mapHistoryMessage = (message: Message) => {
+  const role = message.role ?? (message.sender === "user" ? "user" : "assistant");
+  const rawContent =
+    typeof message.content === "string"
+      ? message.content
+      : typeof message.text === "string"
+      ? message.text
+      : message.content ?? message.text ?? "";
+
+  const content = typeof rawContent === "string" ? rawContent : String(rawContent ?? "");
+
+  return {
+    id: message.id,
+    role,
+    content,
+    client_message_id:
+      message.client_message_id ?? message.clientMessageId ?? message.id ?? undefined,
+  };
+};
+
+const dispatchSseBlock = (
+  block: string,
+  context: {
+    nextChunkIndex: () => number;
+    onChunk?: (chunk: EcoStreamChunk) => void;
+    onDone?: (payload: unknown) => void;
+  },
+) => {
+  const normalizedBlock = normalizeSseNewlines(block);
+  const parsed = parseSseEvent(normalizedBlock);
+  if (!parsed) return;
+
+  const type = parsed.type ?? "chunk";
+  if (type === "chunk") {
+    const payload = parsed.payload ?? {};
+    const textCandidate =
+      typeof payload === "string"
+        ? payload
+        : typeof payload.text === "string"
+        ? payload.text
+        : typeof payload.delta === "string"
+        ? payload.delta
+        : typeof parsed.text === "string"
+        ? parsed.text
+        : undefined;
+
+    const index = context.nextChunkIndex();
+    context.onChunk?.({
+      index,
+      text: textCandidate,
+      metadata:
+        typeof payload === "object" && payload
+          ? (payload as Record<string, unknown>).metadata
+          : undefined,
+    });
+    return;
+  }
+
+  if (type === "done") {
+    context.onDone?.(parsed.payload);
+  }
+};
+
+export const startEcoStream = async (options: StartEcoStreamOptions): Promise<void> => {
+  const {
+    history,
+    clientMessageId,
+    systemHint,
+    userId,
+    userName,
+    guestId,
+    isGuest,
+    signal,
+    headers,
+    onChunk,
+    onDone,
+    onError,
+  } = options;
+
+  const baseHeaders: Record<string, string> = {
+    Accept: "text/event-stream",
+    "Content-Type": "application/json",
+    ...buildIdentityHeaders(),
+    ...(headers ?? {}),
+  };
+
+  const payload: Record<string, unknown> = {
+    history: history.map(mapHistoryMessage),
+    clientMessageId,
+  };
+
+  if (userId) payload.userId = userId;
+  if (userName) payload.userName = userName;
+  if (guestId) payload.guestId = guestId;
+  if (typeof isGuest === "boolean") payload.isGuest = isGuest;
+  if (systemHint && systemHint.trim()) payload.systemHint = systemHint.trim();
+
+  let chunkIndex = -1;
+  const nextChunkIndex = () => {
+    chunkIndex += 1;
+    return chunkIndex;
+  };
+
+  const url = resolveApiUrl("/api/ask-eco");
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: baseHeaders,
+      body: JSON.stringify(payload),
+      signal,
+      cache: "no-store",
+      redirect: "follow",
+      keepalive: false,
+    });
+
+    if (!response.ok) {
+      let detail: string | undefined;
+      try {
+        detail = await response.text();
+      } catch {
+        detail = undefined;
+      }
+      const error = new Error(
+        detail && detail.trim()
+          ? detail.trim()
+          : `Eco stream request failed (${response.status})`,
+      );
+      onError?.(error);
+      throw error;
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      const error = new Error("Eco stream response has no readable body.");
+      onError?.(error);
+      throw error;
+    }
+
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+
+    const flushBuffer = (finalFlush = false) => {
+      if (buffer.length === 0) return;
+      let searchIndex = buffer.indexOf("\n\n");
+      while (searchIndex !== -1) {
+        const eventBlock = buffer.slice(0, searchIndex);
+        buffer = buffer.slice(searchIndex + 2);
+        if (eventBlock.trim().length > 0) {
+          dispatchSseBlock(eventBlock, { nextChunkIndex, onChunk, onDone });
+        }
+        searchIndex = buffer.indexOf("\n\n");
+      }
+
+      if (finalFlush && buffer.trim().length > 0) {
+        dispatchSseBlock(buffer, { nextChunkIndex, onChunk, onDone });
+        buffer = "";
+      }
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        buffer = normalizeSseNewlines(buffer + decoder.decode());
+        flushBuffer(true);
+        break;
+      }
+
+      buffer = normalizeSseNewlines(buffer + decoder.decode(value, { stream: true }));
+      flushBuffer();
+    }
+
+    onDone?.(undefined);
+  } catch (error) {
+    if (signal?.aborted) {
+      const abortError =
+        error instanceof DOMException && error.name === "AbortError"
+          ? error
+          : new DOMException("Aborted", "AbortError");
+      onError?.(abortError);
+      throw abortError;
+    }
+    onError?.(error);
+    throw error;
+  }
+};
+
+export const normalizeStreamText = (s: string): string => {
+  // 🔤 Mantém tokens bem formatados para a bolha da Eco.
+  return s.replace(/\r/g, " ").replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
+};
+
