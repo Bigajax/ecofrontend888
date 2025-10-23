@@ -1,6 +1,7 @@
 import { AskEcoResponse, collectTexts, normalizeAskEcoResponse, unwrapPayload } from "./askEcoResponse";
 import { isDev } from "./environment";
 import { resolveChunkIdentifier, resolveChunkIndex } from "../utils/chat/chunkSignals";
+import smartJoin from "../utils/streamJoin";
 
 export interface EcoStreamResult {
   text: string;
@@ -232,6 +233,7 @@ export const processEventStream = async (
   let doneReceived = false;
   let streamError: Error | null = null;
   const aggregatedParts: string[] = [];
+  let aggregatedText = "";
   const chunkDebugInfo = isDev
     ? {
         first: undefined as string | undefined,
@@ -258,6 +260,7 @@ export const processEventStream = async (
 
   const pushAggregatedPart = (text: string | undefined) => {
     if (typeof text !== "string") return;
+    aggregatedText = smartJoin(aggregatedText, text);
     aggregatedParts.push(text);
     rememberText(text);
   };
@@ -843,7 +846,7 @@ export const processEventStream = async (
       });
     }
 
-    let texto = aggregatedParts.join("");
+    let texto = aggregatedText || aggregatedParts.join("");
     if (!texto.trim() && lastNonEmptyText) {
       texto = lastNonEmptyText;
     }
