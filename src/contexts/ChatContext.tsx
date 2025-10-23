@@ -123,11 +123,11 @@ export const keyOf = (message: Message | null | undefined): string => {
   if (!role) return '';
   const interaction = resolveInteractionKey(message);
   if (interaction) {
-    return `${interaction}::${role}`;
+    return `${interaction}:${role}`;
   }
   const clientId = resolveClientMessageId(message);
   if (clientId) {
-    return `${clientId}::${role}`;
+    return `${clientId}:${role}`;
   }
   return role;
 };
@@ -283,26 +283,44 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       options: UpsertMessageOptions | undefined,
     ): { next: Message; changed: boolean } => {
       if (!existing) {
-        return { next: normalizeMessageForState(incoming), changed: true };
+        const normalizedIncoming = normalizeMessageForState(incoming);
+        try {
+          console.debug(
+            '[UPSERT]',
+            keyOf(normalizedIncoming) || normalizedIncoming.id || 'new',
+            options?.patchSource ?? 'unknown',
+            Object.keys(normalizedIncoming),
+          );
+        } catch {
+          /* noop */
+        }
+        return { next: normalizedIncoming, changed: true };
       }
 
       const allowContentUpdate = options?.allowContentUpdate === true;
       const allowedKeys = new Set<string>();
       const defaultAllowed = [
         'status',
+        'serverIds',
         'server_ids',
         'message_id',
         'createdAt',
         'updatedAt',
         'flags',
         'audioUrl',
+        'timestamps',
       ];
       defaultAllowed.forEach((key) => allowedKeys.add(key));
       if (options?.allowedKeys) {
         options.allowedKeys.forEach((key) => allowedKeys.add(key));
       }
+      if (allowedKeys.has('timestamps')) {
+        allowedKeys.add('createdAt');
+        allowedKeys.add('updatedAt');
+      }
       const result: Message = { ...existing };
       let changed = false;
+      const appliedKeys: string[] = [];
 
       const existingRole = resolveRole(existing);
 
@@ -315,8 +333,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         return { next: existing, changed: false } as const;
       };
 
-      for (const [key, value] of Object.entries(incoming)) {
-        if (key === 'id' || value === undefined) continue;
+      for (const [rawKey, value] of Object.entries(incoming)) {
+        if (rawKey === 'id' || value === undefined) continue;
+
+        const key = rawKey === 'serverIds' ? 'server_ids' : rawKey;
 
         if (
           key === 'content' &&
@@ -325,10 +345,33 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           !allowContentUpdate
         ) {
           console.warn('Dropped suspicious OK content patch', options?.patchSource);
-          return { next: existing, changed: false };
+          continue;
         }
 
         const isContentKey = key === 'content' || key === 'text';
+
+        if (isContentKey && existing) {
+          const currentValue = ((existing as any)[key] as string | undefined) ?? '';
+          const normalizedCurrent = currentValue.trim();
+          const incomingValue =
+            typeof value === 'string'
+              ? value
+              : value == null
+              ? ''
+              : String(value);
+          const normalizedIncoming = incomingValue.trim();
+          const normalizedIncomingLower = normalizedIncoming.toLowerCase();
+          if (
+            normalizedCurrent.length > 0 &&
+            (normalizedIncoming.length === 0 || normalizedIncomingLower === 'ok')
+          ) {
+            console.warn('[ChatContext] Ignored empty content patch', {
+              key,
+              source: options?.patchSource,
+            });
+            continue;
+          }
+        }
 
         if (isContentKey && existingRole === 'user') {
           const currentValue = ((existing as any)[key] as string | undefined) ?? '';
@@ -349,7 +392,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        if (!allowContentUpdate && allowedKeys.size > 0 && !allowedKeys.has(key)) {
+        if (
+          !allowContentUpdate &&
+          allowedKeys.size > 0 &&
+          !allowedKeys.has(key) &&
+          !allowedKeys.has(rawKey)
+        ) {
           const currentValue = (existing as any)[key];
           if (currentValue !== value) {
             continue;
@@ -359,6 +407,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         if ((result as any)[key] !== value) {
           (result as any)[key] = value as any;
           changed = true;
+          appliedKeys.push(key);
         }
       }
 
@@ -366,7 +415,21 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         return { next: existing, changed: false };
       }
 
-      return { next: normalizeMessageForState(result), changed: true };
+      const normalizedNext = normalizeMessageForState(result);
+      if (appliedKeys.length > 0) {
+        try {
+          console.debug(
+            '[UPSERT]',
+            keyOf(normalizedNext) || normalizedNext.id || 'unknown',
+            options?.patchSource ?? 'unknown',
+            appliedKeys,
+          );
+        } catch {
+          /* noop */
+        }
+      }
+
+      return { next: normalizedNext, changed: true };
     },
     [],
   );
@@ -415,6 +478,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
 
         if (targetIndex === undefined) {
+          try {
+            console.debug(
+              '[UPSERT]',
+              messageKey || normalized.id || 'new',
+              options?.patchSource ?? 'unknown',
+              Object.keys(normalized),
+            );
+          } catch {
+            /* noop */
+          }
           return dedupeAndMergeMessages([...prev, normalized]);
         }
 

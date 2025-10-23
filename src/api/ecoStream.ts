@@ -366,6 +366,15 @@ export const processEventStream = async (
       channel: hintedChannel === "control" || type === "control" ? "control" : "data",
     };
 
+    try {
+      const payloadKeys = baseEventInfo.payload
+        ? Object.keys(baseEventInfo.payload as Record<string, unknown>)
+        : [];
+      console.debug("[SSE]", baseEventInfo.type, payloadKeys);
+    } catch {
+      console.debug("[SSE]", baseEventInfo.type, []);
+    }
+
     if (baseEventInfo.channel === "control") {
       const controlName =
         normalizeControlName((unwrappedPayload as any)?.name) ??
