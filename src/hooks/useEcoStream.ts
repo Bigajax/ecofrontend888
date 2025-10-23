@@ -257,10 +257,8 @@ export const useEcoStream = ({
         ecoMessageId = (typeof existing.id === 'string' && existing.id.trim()) || ecoMessageId;
         resolvedEcoMessageId = resolvedId ?? ecoMessageId;
         ecoMessageCreated = true;
-        ecoMessageIndex = existingIndex;
-        resolvedEcoMessageIndex = existingIndex;
         aggregatedEcoTextRaw = flattenToString(existing.content ?? existing.text ?? '');
-        aggregatedEcoText = sanitizeEcoText(aggregatedEcoTextRaw);
+        aggregatedEcoText = aggregatedEcoTextRaw;
         if (typeof existing.id === 'string') {
           messageIdsForTurn.add(existing.id);
         }
@@ -287,22 +285,34 @@ export const useEcoStream = ({
 
       const annotateMessagesWithInteractionId = (interactionId: string) => {
         if (!interactionId) return;
-        setMessages((prev) => {
-          let changed = false;
-          const next = prev.map((message) => {
-            if (!message || typeof message.id !== 'string') return message;
-            if (!messageIdsForTurn.has(message.id)) return message;
-            const existingRaw =
-              typeof message.interaction_id === 'string'
-                ? message.interaction_id.trim()
-                : typeof message.interactionId === 'string'
-                ? message.interactionId.trim()
-                : '';
-            if (existingRaw === interactionId) return message;
-            changed = true;
-            return { ...message, interaction_id: interactionId, interactionId: interactionId };
+        messageIdsForTurn.forEach((id) => {
+          if (!id) return;
+          const snapshot = messagesRef.current.find((message) => {
+            if (!message) return false;
+            if (message.id === id) return true;
+            if (typeof message.client_message_id === 'string' && message.client_message_id === id) {
+              return true;
+            }
+            if (typeof message.message_id === 'string' && message.message_id === id) {
+              return true;
+            }
+            return false;
           });
-          return changed ? next : prev;
+          const basePatch: Partial<ChatMessageType> = {
+            id,
+            interaction_id: interactionId,
+            interactionId: interactionId,
+          };
+          if (snapshot?.sender) {
+            basePatch.sender = snapshot.sender;
+          }
+          if (snapshot?.role) {
+            basePatch.role = snapshot.role;
+          }
+          upsertMessage(basePatch as ChatMessageType, {
+            allowedKeys: ['interaction_id', 'interactionId'],
+            patchSource: 'useEcoStream:interaction',
+          });
         });
         registerDraftForInteraction(interactionId);
       };
@@ -320,9 +330,7 @@ export const useEcoStream = ({
 
       let ecoMessageId: string | null = clientMessageId;
       let ecoMessageCreated = false;
-      let ecoMessageIndex: number | null = null;
       let resolvedEcoMessageId: string | null = null;
-      let resolvedEcoMessageIndex: number | null = null;
       let aggregatedEcoText = '';
       let aggregatedEcoTextRaw = '';
       let latestMetadata: unknown;
@@ -419,7 +427,10 @@ export const useEcoStream = ({
         }
         const patch: Partial<ChatMessageType> = { message_id: candidate };
         if (ecoMessageCreated) {
-          patchEcoMessage(patch);
+          patchEcoMessage(patch, {
+            allowedKeys: ['message_id'],
+            patchSource: 'useEcoStream:message-id',
+          });
         } else {
           mergePendingPatch(patch);
         }
@@ -733,7 +744,10 @@ export const useEcoStream = ({
           }
         };
 
-        const patchEcoMessage = (patch: Partial<ChatMessageType>) => {
+        const patchEcoMessage = (
+          patch: Partial<ChatMessageType>,
+          options?: UpsertMessageOptions,
+        ) => {
           const normalizedPatch = normalizePatch(patch);
           if (Object.keys(normalizedPatch).length === 0) return;
           if (!ecoMessageCreated) {
@@ -741,39 +755,25 @@ export const useEcoStream = ({
             return;
           }
 
-          const candidateIds: string[] = [];
-          if (resolvedEcoMessageId) {
-            candidateIds.push(resolvedEcoMessageId);
-          }
-          if (ecoMessageId && ecoMessageId !== resolvedEcoMessageId) {
-            candidateIds.push(ecoMessageId);
-          }
-          if (candidateIds.length === 0) return;
+          const targetId = resolvedEcoMessageId ?? ecoMessageId ?? clientMessageId;
+          if (!targetId) return;
+          recordMessageId(targetId);
 
-          setMessages((prev) => {
-            let index = -1;
-            for (const id of candidateIds) {
-              index = prev.findIndex(
-                (m) => m.id === id || (typeof m?.message_id === 'string' && m.message_id === id),
-              );
-              if (index >= 0) break;
-            }
-            if (index < 0) return prev;
-            const existing = prev[index];
-            if (!existing) return prev;
-            let changed = false;
-            for (const [key, value] of Object.entries(normalizedPatch)) {
-              if ((existing as any)[key] !== value) {
-                changed = true;
-                break;
-              }
-            }
-            if (!changed) return prev;
-            const next = [...prev];
-            next[index] = { ...existing, ...normalizedPatch };
-            ecoMessageIndex = index;
-            resolvedEcoMessageIndex = index;
-            return next;
+          const baseMessage: ChatMessageType = {
+            id: targetId,
+            client_message_id: clientMessageId,
+            sender: 'eco',
+            role: 'assistant',
+            ...(currentInteractionId
+              ? { interaction_id: currentInteractionId, interactionId: currentInteractionId }
+              : {}),
+          };
+
+          const message = { ...baseMessage, ...normalizedPatch } as ChatMessageType;
+
+          upsertMessage(message, {
+            ...options,
+            patchSource: options?.patchSource ?? 'useEcoStream:patch',
           });
         };
 
@@ -781,28 +781,25 @@ export const useEcoStream = ({
           initialPatch: Partial<ChatMessageType> = {},
           originChunkIndex?: number | null,
         ) => {
+          const normalizedInitialPatch = normalizePatch({
+            ...pendingEcoPatch,
+            ...initialPatch,
+          });
+
           if (ecoMessageCreated) {
-            if (Object.keys(initialPatch).length > 0) {
-              patchEcoMessage(initialPatch);
+            if (Object.keys(normalizedInitialPatch).length > 0) {
+              patchEcoMessage(normalizedInitialPatch, {
+                allowContentUpdate: true,
+                patchSource: 'useEcoStream:create',
+              });
             }
             return;
           }
 
           const targetId = ecoMessageId ?? uuidv4();
           ecoMessageId = targetId;
+          resolvedEcoMessageId = resolvedEcoMessageId ?? targetId;
           recordMessageId(targetId);
-
-          const baseMessage: ChatMessageType = {
-            id: targetId,
-            sender: 'eco',
-            text: ' ',
-            content: '',
-            streaming: true,
-            status: 'streaming',
-            ...(currentInteractionId
-              ? { interaction_id: currentInteractionId, interactionId: currentInteractionId }
-              : {}),
-          };
 
           const streamEntry = streamsRef.current.get(clientMessageId);
           if (streamEntry) {
@@ -818,38 +815,27 @@ export const useEcoStream = ({
             }
           }
 
-          const normalizedPatch = normalizePatch({ ...pendingEcoPatch, ...initialPatch });
-          const message = Object.keys(normalizedPatch).length
-            ? ({ ...baseMessage, ...normalizedPatch } as ChatMessageType)
+          const baseMessage: ChatMessageType = {
+            id: targetId,
+            client_message_id: clientMessageId,
+            sender: 'eco',
+            role: 'assistant',
+            text: ' ',
+            content: '',
+            streaming: true,
+            status: 'streaming',
+            ...(currentInteractionId
+              ? { interaction_id: currentInteractionId, interactionId: currentInteractionId }
+              : {}),
+          };
+
+          const message = Object.keys(normalizedInitialPatch).length
+            ? ({ ...baseMessage, ...normalizedInitialPatch } as ChatMessageType)
             : baseMessage;
 
-          setMessages((prev) => {
-            const candidateIds: string[] = [];
-            if (targetId) candidateIds.push(targetId);
-            if (resolvedEcoMessageId && resolvedEcoMessageId !== targetId) {
-              candidateIds.push(resolvedEcoMessageId);
-            }
-            let index = -1;
-            for (const id of candidateIds) {
-              index = prev.findIndex(
-                (m) => m.id === id || (typeof m?.message_id === 'string' && m.message_id === id),
-              );
-              if (index >= 0) break;
-            }
-            if (index >= 0) {
-              const next = [...prev];
-              const existing = next[index];
-              next[index] = { ...existing, ...message };
-              ecoMessageIndex = index;
-              resolvedEcoMessageIndex = index;
-              resolvedEcoMessageId = resolvedEcoMessageId ?? targetId;
-              return next;
-            }
-            const next = [...prev, message];
-            ecoMessageIndex = next.length - 1;
-            resolvedEcoMessageIndex = ecoMessageIndex;
-            resolvedEcoMessageId = resolvedEcoMessageId ?? targetId;
-            return next;
+          upsertMessage(message, {
+            allowContentUpdate: true,
+            patchSource: 'useEcoStream:create',
           });
 
           pendingEcoPatch = {};
@@ -886,9 +872,7 @@ export const useEcoStream = ({
           }
           ecoMessageId = null;
           ecoMessageCreated = false;
-          ecoMessageIndex = null;
           resolvedEcoMessageId = null;
-          resolvedEcoMessageIndex = null;
           aggregatedEcoText = '';
           aggregatedEcoTextRaw = '';
           pendingEcoPatch = {};
@@ -1010,7 +994,10 @@ export const useEcoStream = ({
             streamEntry.buffer = '';
           }
           if (ecoMessageCreated) {
-            patchEcoMessage({ text: '', content: '' });
+            patchEcoMessage(
+              { text: '', content: '' },
+              { allowContentUpdate: true, patchSource: 'useEcoStream:clear-placeholder' },
+            );
           }
         };
 
@@ -1055,7 +1042,7 @@ export const useEcoStream = ({
           }
 
           aggregatedEcoTextRaw = `${aggregatedEcoTextRaw}${chunk}`;
-          aggregatedEcoText = sanitizeEcoText(aggregatedEcoTextRaw);
+          aggregatedEcoText = aggregatedEcoTextRaw;
           if (streamEntry) {
             streamEntry.buffer = aggregatedEcoText;
           }
@@ -1089,18 +1076,27 @@ export const useEcoStream = ({
             createEcoMessageIfNeeded(patch, chunkIndex);
             return;
           }
-          patchEcoMessage(patch);
+          patchEcoMessage(patch, {
+            allowContentUpdate: true,
+            patchSource: 'useEcoStream:chunk',
+          });
         };
 
         const finalizeMessage = () => {
           if (!ecoMessageId && !resolvedEcoMessageId) return;
-          patchEcoMessage({ streaming: false, status: 'final' });
+          patchEcoMessage(
+            { streaming: false, status: 'final' },
+            { allowedKeys: ['streaming', 'status'], patchSource: 'useEcoStream:finalize' },
+          );
         };
 
         const showStreamError = (message: string) => {
           setErroApi(message);
           createEcoMessageIfNeeded();
-          patchEcoMessage({ streaming: false, status: 'error' });
+          patchEcoMessage(
+            { streaming: false, status: 'error' },
+            { allowedKeys: ['streaming', 'status'], patchSource: 'useEcoStream:error' },
+          );
           setDigitando(false);
           activity?.onError(message);
         };
@@ -1195,7 +1191,10 @@ export const useEcoStream = ({
           trackEventContext(event);
           if (typeof event.latencyMs === 'number') {
             latencyFromStream = event.latencyMs;
-            patchEcoMessage({ latencyMs: event.latencyMs });
+            patchEcoMessage(
+              { latencyMs: event.latencyMs },
+              { allowedKeys: ['latencyMs'], patchSource: 'useEcoStream:latency' },
+            );
           }
         };
 
@@ -1205,7 +1204,10 @@ export const useEcoStream = ({
           trackEventContext(event);
           ensureFirstTokenSignal();
           clearPlaceholder();
-          patchEcoMessage({ streaming: true, status: 'streaming' });
+          patchEcoMessage(
+            { streaming: true, status: 'streaming' },
+            { allowedKeys: ['streaming', 'status'], patchSource: 'useEcoStream:first-token' },
+          );
           activity?.onToken();
           firstContentReceived = aggregatedEcoText.trim().length > 0;
           syncScroll();
@@ -1246,7 +1248,10 @@ export const useEcoStream = ({
           } else {
             latestMetadata = meta;
           }
-          patchEcoMessage({ metadata: meta });
+          patchEcoMessage(
+            { metadata: meta },
+            { allowedKeys: ['metadata'], patchSource: 'useEcoStream:meta' },
+          );
           if (event.type !== 'meta_pending') {
             trackMemoryIfSignificant(meta);
           }
@@ -1268,7 +1273,10 @@ export const useEcoStream = ({
           ) {
             primeiraMemoriaFlag = true;
           }
-          patchEcoMessage({ memory: memoria });
+          patchEcoMessage(
+            { memory: memoria },
+            { allowedKeys: ['memory'], patchSource: 'useEcoStream:memory' },
+          );
           trackMemoryIfSignificant(memoria);
         };
 
@@ -1297,15 +1305,27 @@ export const useEcoStream = ({
 
           if (!fromControlChannel && meta !== undefined) {
             latestMetadata = meta;
-            patchEcoMessage({
-              metadata: meta,
-              donePayload: event.payload,
-              streaming: false,
-              status: 'final',
-            });
+            patchEcoMessage(
+              {
+                metadata: meta,
+                donePayload: event.payload,
+                streaming: false,
+                status: 'final',
+              },
+              {
+                allowedKeys: ['metadata', 'donePayload', 'streaming', 'status'],
+                patchSource: 'useEcoStream:done-meta',
+              },
+            );
             trackMemoryIfSignificant(meta);
           } else if (!fromControlChannel && event.payload !== undefined) {
-            patchEcoMessage({ donePayload: event.payload, streaming: false, status: 'final' });
+            patchEcoMessage(
+              { donePayload: event.payload, streaming: false, status: 'final' },
+              {
+                allowedKeys: ['donePayload', 'streaming', 'status'],
+                patchSource: 'useEcoStream:done-meta',
+              },
+            );
           } else if (fromControlChannel) {
             finalizeMessage();
           }
@@ -1438,7 +1458,10 @@ export const useEcoStream = ({
             return;
           }
 
-        const finalText = flattenToString(resposta?.text ?? aggregatedEcoText ?? '').trim();
+        const finalTextRaw = flattenToString(
+          resposta?.text ?? aggregatedEcoTextRaw ?? aggregatedEcoText ?? '',
+        );
+        const finalText = finalTextRaw ? sanitizeEcoText(finalTextRaw) : '';
         const noTextFromStream = resposta?.noTextReceived === true;
           const finalMetadata =
             latestMetadata ||
@@ -1517,15 +1540,19 @@ export const useEcoStream = ({
                   resolvedEcoMessageId = existingId;
                   ecoMessageId = existingMessage?.id ?? existingId;
                   ecoMessageCreated = true;
-                  ecoMessageIndex = existingIndex;
-                  resolvedEcoMessageIndex = existingIndex;
                   reusedExisting = true;
-                  patchEcoMessage({
-                    text: finalText || NO_TEXT_WARNING,
-                    content: finalText || NO_TEXT_WARNING,
-                    streaming: false,
-                    status: 'final',
-                  });
+                  patchEcoMessage(
+                    {
+                      text: finalText || NO_TEXT_WARNING,
+                      content: finalText || NO_TEXT_WARNING,
+                      streaming: false,
+                      status: 'final',
+                    },
+                    {
+                      allowContentUpdate: true,
+                      patchSource: 'useEcoStream:done',
+                    },
+                  );
                   const patch: Partial<ChatMessageType> = {};
                   if (finalMetadata !== undefined) patch.metadata = finalMetadata;
                   if (resposta?.done) patch.donePayload = resposta.done;
@@ -1533,7 +1560,10 @@ export const useEcoStream = ({
                   if (typeof latencyFromStream === 'number') patch.latencyMs = latencyFromStream;
                   if (continuity) patch.continuity = continuity;
                   if (Object.keys(patch).length > 0) {
-                    patchEcoMessage(patch);
+                    patchEcoMessage(patch, {
+                      allowContentUpdate: true,
+                      patchSource: 'useEcoStream:done-meta',
+                    });
                   }
                   if (continuity) {
                     const targetId = resolvedEcoMessageId ?? existingId;
@@ -1552,9 +1582,11 @@ export const useEcoStream = ({
               recordMessageId(newId);
               const ecoMessage: ChatMessageType = {
                 id: newId,
+                client_message_id: clientMessageId,
                 text: finalText || NO_TEXT_WARNING,
                 content: finalText || NO_TEXT_WARNING,
                 sender: 'eco',
+                role: 'assistant',
                 streaming: false,
                 status: 'final',
                 ...(currentInteractionId
@@ -1566,22 +1598,28 @@ export const useEcoStream = ({
                 ...(typeof latencyFromStream === 'number' ? { latencyMs: latencyFromStream } : {}),
                 ...(continuity ? { continuity } : {}),
               };
-              setMessages((prev) => {
-                const index = prev.length;
-                resolvedEcoMessageIndex = index;
-                return [...prev, ecoMessage];
+              upsertMessage(ecoMessage, {
+                allowContentUpdate: true,
+                patchSource: 'useEcoStream:done-create',
               });
+              messageIdsForTurn.add(newId);
               trackContinuityEvent(continuity, newId);
             }
           }
         } else {
           if (finalText || noTextFromStream) {
-            patchEcoMessage({
-              text: finalText || NO_TEXT_WARNING,
-              content: finalText || NO_TEXT_WARNING,
-              streaming: false,
-              status: 'final',
-            });
+            patchEcoMessage(
+              {
+                text: finalText || NO_TEXT_WARNING,
+                content: finalText || NO_TEXT_WARNING,
+                streaming: false,
+                status: 'final',
+              },
+              {
+                allowContentUpdate: true,
+                patchSource: 'useEcoStream:done',
+              },
+            );
           }
           const patch: Partial<ChatMessageType> = {};
           if (finalMetadata !== undefined) patch.metadata = finalMetadata;
@@ -1598,7 +1636,10 @@ export const useEcoStream = ({
               patch.interaction_id = currentInteractionId;
               patch.interactionId = currentInteractionId;
             }
-            patchEcoMessage(patch);
+            patchEcoMessage(patch, {
+              allowContentUpdate: true,
+              patchSource: 'useEcoStream:done-meta',
+            });
           }
           const targetId = resolvedEcoMessageId ?? ecoMessageId;
           if (continuity && targetId) {
@@ -1643,7 +1684,10 @@ export const useEcoStream = ({
         });
 
         if (resolvedEcoMessageId && deepQuestionFlag) {
-          patchEcoMessage({ deepQuestion: true });
+          patchEcoMessage(
+            { deepQuestion: true },
+            { allowedKeys: ['deepQuestion'], patchSource: 'useEcoStream:deep-question' },
+          );
         }
 
         if (resposta?.primeiraMemoriaSignificativa || primeiraMemoriaFlag) {

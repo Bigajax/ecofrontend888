@@ -60,6 +60,14 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 const CHAT_NS = 'eco.chat.v1';
 const keyFor = (uid?: string | null) => (uid ? `${CHAT_NS}.${uid}` : `${CHAT_NS}.anon`);
 
+const resolveRole = (message: Message | null | undefined): Message['role'] | undefined => {
+  if (!message) return undefined;
+  if (message.role) return message.role;
+  if (message.sender === 'eco') return 'assistant';
+  if (message.sender === 'user') return 'user';
+  return undefined;
+};
+
 const normalizeMessageForState = (message: Message): Message => {
   if (!message) return message;
 
@@ -75,6 +83,13 @@ const normalizeMessageForState = (message: Message): Message => {
   maybeTrim('text');
   maybeTrim('content');
 
+  if (!normalized.role) {
+    const inferredRole = resolveRole(normalized);
+    if (inferredRole) {
+      normalized.role = inferredRole;
+    }
+  }
+
   return normalized;
 };
 
@@ -87,12 +102,43 @@ const resolveInteractionKey = (message: Message | null | undefined): string => {
   return direct;
 };
 
+const resolveClientMessageId = (message: Message | null | undefined): string => {
+  if (!message) return '';
+  const direct =
+    (typeof message.client_message_id === 'string' && message.client_message_id.trim()) ||
+    '';
+  if (direct) return direct;
+  if (typeof message.id === 'string' && message.id.trim()) {
+    return message.id.trim();
+  }
+  if (typeof message.message_id === 'string' && message.message_id.trim()) {
+    return message.message_id.trim();
+  }
+  return '';
+};
+
+export const keyOf = (message: Message | null | undefined): string => {
+  if (!message) return '';
+  const role = resolveRole(message);
+  if (!role) return '';
+  const interaction = resolveInteractionKey(message);
+  if (interaction) {
+    return `${interaction}::${role}`;
+  }
+  const clientId = resolveClientMessageId(message);
+  if (clientId) {
+    return `${clientId}::${role}`;
+  }
+  return role;
+};
+
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { userId } = useAuth();
 
   const [messages, setMessagesState] = useState<Message[]>([]);
   const [byId, setById] = useState<Record<string, number>>({});
   const byIdRef = useRef<Map<string, number>>(new Map());
+  const keyIndexRef = useRef<Map<string, number>>(new Map());
   const interactionByRef = useRef<Map<string, number>>(new Map());
   const loadedFor = useRef<string | null | undefined>(undefined);
 
@@ -126,6 +172,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const map = new Map<string, number>();
     const interactionMap = new Map<string, number>();
+    const keyMap = new Map<string, number>();
     messages.forEach((message, index) => {
       if (!message) return;
       const ids = new Set<string>();
@@ -142,12 +189,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (interactionKey) {
         interactionMap.set(interactionKey, index);
       }
+      const messageKey = keyOf(message);
+      if (messageKey) {
+        keyMap.set(messageKey, index);
+      }
       ids.forEach((id) => {
         if (!id) return;
         map.set(id, index);
       });
     });
     byIdRef.current = map;
+    keyIndexRef.current = keyMap;
     interactionByRef.current = interactionMap;
     const record: Record<string, number> = {};
     map.forEach((value, key) => {
@@ -160,6 +212,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const result: Message[] = [];
     const seen = new Map<string, number>();
     const seenInteractions = new Map<string, number>();
+    const seenKeys = new Map<string, number>();
     list.forEach((message) => {
       if (!message) return;
       const normalized = normalizeMessageForState(message);
@@ -174,9 +227,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         ids.push(normalized.message_id);
       }
       const interactionKey = resolveInteractionKey(normalized);
+      const messageKey = keyOf(normalized);
       let targetIndex: number | undefined;
       if (interactionKey) {
         const existing = seenInteractions.get(interactionKey);
+        if (existing !== undefined) {
+          targetIndex = existing;
+        }
+      }
+      if (targetIndex === undefined && messageKey) {
+        const existing = seenKeys.get(messageKey);
         if (existing !== undefined) {
           targetIndex = existing;
         }
@@ -198,12 +258,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         if (interactionKey) {
           seenInteractions.set(interactionKey, targetIndex as number);
         }
+        if (messageKey) {
+          seenKeys.set(messageKey, targetIndex as number);
+        }
         result.push(normalized);
       } else {
         const merged = { ...result[targetIndex], ...normalized } as Message;
         result[targetIndex] = normalizeMessageForState(merged);
         if (interactionKey) {
           seenInteractions.set(interactionKey, targetIndex);
+        }
+        if (messageKey) {
+          seenKeys.set(messageKey, targetIndex);
         }
       }
     });
@@ -220,9 +286,34 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         return { next: normalizeMessageForState(incoming), changed: true };
       }
 
-      const allowedKeys = options?.allowedKeys ? new Set(options.allowedKeys) : undefined;
+      const allowContentUpdate = options?.allowContentUpdate === true;
+      const allowedKeys = new Set<string>();
+      const defaultAllowed = [
+        'status',
+        'server_ids',
+        'message_id',
+        'createdAt',
+        'updatedAt',
+        'flags',
+        'audioUrl',
+      ];
+      defaultAllowed.forEach((key) => allowedKeys.add(key));
+      if (options?.allowedKeys) {
+        options.allowedKeys.forEach((key) => allowedKeys.add(key));
+      }
       const result: Message = { ...existing };
       let changed = false;
+
+      const existingRole = resolveRole(existing);
+
+      const dropPatch = (reason: string) => {
+        if (options?.patchSource) {
+          console.warn(reason, options.patchSource);
+        } else {
+          console.warn(reason);
+        }
+        return { next: existing, changed: false } as const;
+      };
 
       for (const [key, value] of Object.entries(incoming)) {
         if (key === 'id' || value === undefined) continue;
@@ -231,20 +322,34 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           key === 'content' &&
           typeof value === 'string' &&
           value.trim().toLowerCase() === 'ok' &&
-          options?.allowContentUpdate !== true
+          !allowContentUpdate
         ) {
           console.warn('Dropped suspicious OK content patch', options?.patchSource);
           return { next: existing, changed: false };
         }
 
-        if ((key === 'content' || key === 'text') && options?.allowContentUpdate !== true) {
-          const currentValue = (existing as any)[key];
-          if (typeof value === 'string' && value !== currentValue) {
+        const isContentKey = key === 'content' || key === 'text';
+
+        if (isContentKey && existingRole === 'user') {
+          const currentValue = ((existing as any)[key] as string | undefined) ?? '';
+          const normalizedCurrent = currentValue.trim();
+          const incomingValue = typeof value === 'string' ? value : `${value ?? ''}`;
+          if (!allowContentUpdate && incomingValue !== currentValue) {
+            return dropPatch('Dropped user content mutation patch');
+          }
+          if (normalizedCurrent && incomingValue.trim().length === 0) {
+            return dropPatch('Dropped user content removal patch');
+          }
+        }
+
+        if (isContentKey && existingRole === 'assistant' && !allowContentUpdate) {
+          const currentValue = ((existing as any)[key] as string | undefined) ?? '';
+          if (currentValue.trim().length > 0 && typeof value === 'string' && value !== currentValue) {
             continue;
           }
         }
 
-        if (allowedKeys && !allowedKeys.has(key)) {
+        if (!allowContentUpdate && allowedKeys.size > 0 && !allowedKeys.has(key)) {
           const currentValue = (existing as any)[key];
           if (currentValue !== value) {
             continue;
@@ -284,13 +389,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
 
         const interactionKey = resolveInteractionKey(normalized);
+        const messageKey = keyOf(normalized);
         let targetIndex: number | undefined = undefined;
 
-        if (interactionKey) {
-          targetIndex = interactionByRef.current.get(interactionKey);
+        if (messageKey) {
+          targetIndex = keyIndexRef.current.get(messageKey);
         }
 
         if (targetIndex === undefined) {
+          if (interactionKey) {
+            targetIndex = interactionByRef.current.get(interactionKey);
+          }
+
+          if (targetIndex === undefined && messageKey) {
+            targetIndex = keyIndexRef.current.get(messageKey);
+          }
+
           for (const id of ids) {
             const existingIndex = byIdRef.current.get(id);
             if (existingIndex !== undefined) {
