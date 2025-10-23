@@ -132,18 +132,37 @@ const flushPendingSignals = async () => {
   outbox = [];
 
   const endpoint = buildApiUrl("/api/signal");
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...buildIdentityHeaders(),
-  };
+  const grouped = new Map<string, NormalizedPassiveSignal[]>();
 
-  const payload = eventsToSend.length === 1 ? eventsToSend[0] : { events: eventsToSend };
-  const bodyJson = JSON.stringify(payload);
-
-  const sendWithFetch = async () => {
-    if (typeof fetch === "undefined") {
-      return;
+  for (const event of eventsToSend) {
+    const interactionId =
+      typeof event.interaction_id === "string" && event.interaction_id.trim().length > 0
+        ? event.interaction_id.trim()
+        : "";
+    if (!interactionId) {
+      if (import.meta.env.DEV) {
+        console.debug("[passive-signal] dropping event without interaction_id", event);
+      }
+      continue;
     }
+    const bucket = grouped.get(interactionId) ?? [];
+    bucket.push({ ...event, interaction_id: interactionId });
+    grouped.set(interactionId, bucket);
+  }
+
+  for (const [interactionId, group] of grouped.entries()) {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...buildIdentityHeaders(),
+      "X-Eco-Interaction-Id": interactionId,
+    };
+    const payload = group.length === 1 ? group[0] : { events: group };
+    const bodyJson = JSON.stringify(payload);
+
+    if (typeof fetch === "undefined") {
+      continue;
+    }
+
     try {
       const response = await fetch(endpoint, {
         method: "POST",
@@ -158,35 +177,15 @@ const flushPendingSignals = async () => {
         }
         if (import.meta.env.DEV) {
           console.debug(
-            `[passive-signal] request failed status=${response.status} count=${eventsToSend.length}`,
+            `[passive-signal] request failed status=${response.status} count=${group.length}`,
           );
         }
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        console.debug(
-          `[passive-signal] request error count=${eventsToSend.length}`,
-          error,
-        );
+        console.debug(`[passive-signal] request error count=${group.length}`, error);
       }
     }
-  };
-
-  let sent = false;
-  if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
-    try {
-      const blob = new Blob([bodyJson], { type: "application/json" });
-      sent = navigator.sendBeacon(endpoint, blob);
-    } catch (error) {
-      sent = false;
-      if (import.meta.env.DEV) {
-        console.debug('[passive-signal] sendBeacon error', error);
-      }
-    }
-  }
-
-  if (!sent) {
-    await sendWithFetch();
   }
 };
 

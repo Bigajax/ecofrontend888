@@ -64,12 +64,22 @@ const normalizeMessageForState = (message: Message): Message => {
   return normalized;
 };
 
+const resolveInteractionKey = (message: Message | null | undefined): string => {
+  if (!message) return '';
+  const direct =
+    (typeof message.interaction_id === 'string' && message.interaction_id.trim()) ||
+    (typeof message.interactionId === 'string' && message.interactionId.trim()) ||
+    '';
+  return direct;
+};
+
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { userId } = useAuth();
 
   const [messages, setMessagesState] = useState<Message[]>([]);
   const [byId, setById] = useState<Record<string, number>>({});
   const byIdRef = useRef<Map<string, number>>(new Map());
+  const interactionByRef = useRef<Map<string, number>>(new Map());
   const loadedFor = useRef<string | null | undefined>(undefined);
 
   // 1) Hidrata mensagens quando o usuário muda (login/logout/troca de conta)
@@ -101,6 +111,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const map = new Map<string, number>();
+    const interactionMap = new Map<string, number>();
     messages.forEach((message, index) => {
       if (!message) return;
       const ids = new Set<string>();
@@ -110,12 +121,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (typeof message.message_id === 'string' && message.message_id) {
         ids.add(message.message_id);
       }
+      const interactionKey = resolveInteractionKey(message);
+      if (interactionKey) {
+        interactionMap.set(interactionKey, index);
+      }
       ids.forEach((id) => {
         if (!id) return;
         map.set(id, index);
       });
     });
     byIdRef.current = map;
+    interactionByRef.current = interactionMap;
     const record: Record<string, number> = {};
     map.forEach((value, key) => {
       record[key] = value;
@@ -126,6 +142,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const dedupeAndMergeMessages = useCallback((list: Message[]): Message[] => {
     const result: Message[] = [];
     const seen = new Map<string, number>();
+    const seenInteractions = new Map<string, number>();
     list.forEach((message) => {
       if (!message) return;
       const normalized = normalizeMessageForState(message);
@@ -136,7 +153,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (typeof normalized.message_id === 'string' && normalized.message_id) {
         ids.push(normalized.message_id);
       }
+      const interactionKey = resolveInteractionKey(normalized);
       let targetIndex: number | undefined;
+      if (interactionKey) {
+        const existing = seenInteractions.get(interactionKey);
+        if (existing !== undefined) {
+          targetIndex = existing;
+        }
+      }
       for (const id of ids) {
         const existing = seen.get(id);
         if (existing !== undefined) {
@@ -151,10 +175,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             seen.set(id, targetIndex as number);
           }
         });
+        if (interactionKey) {
+          seenInteractions.set(interactionKey, targetIndex as number);
+        }
         result.push(normalized);
       } else {
         const merged = { ...result[targetIndex], ...normalized } as Message;
         result[targetIndex] = normalizeMessageForState(merged);
+        if (interactionKey) {
+          seenInteractions.set(interactionKey, targetIndex);
+        }
       }
     });
     return result;
@@ -191,6 +221,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
       if (typeof normalized.message_id === 'string' && normalized.message_id) {
         ids.push(normalized.message_id);
+      }
+      const interactionKey = resolveInteractionKey(normalized);
+      if (interactionKey) {
+        const existingIndex = interactionByRef.current.get(interactionKey);
+        if (existingIndex !== undefined) {
+          const next = [...prev];
+          const merged = { ...next[existingIndex], ...normalized } as Message;
+          next[existingIndex] = normalizeMessageForState(merged);
+          return dedupeAndMergeMessages(next);
+        }
       }
       for (const id of ids) {
         const existingIndex = byIdRef.current.get(id);
