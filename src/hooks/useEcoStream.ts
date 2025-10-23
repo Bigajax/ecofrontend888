@@ -333,7 +333,9 @@ export const useEcoStream = ({
       let resetEcoMessageTracking: (options?: { removeIfEmpty?: boolean }) => void = () => {};
       let markStreamDone = () => {};
 
-      let ecoMessageId: string | null = clientMessageId;
+      // Start without reusing the user's clientMessageId so the UI keeps both
+      // bubbles visible once the ECO reply arrives.
+      let ecoMessageId: string | null = null;
       let ecoMessageCreated = false;
       let resolvedEcoMessageId: string | null = null;
       let aggregatedEcoText = '';
@@ -351,7 +353,8 @@ export const useEcoStream = ({
       let streamDoneLogged = false;
       let pendingEcoPatch: Partial<ChatMessageType> = {};
 
-      const resolveActiveMessageId = () => resolvedEcoMessageId ?? ecoMessageId;
+      const resolveActiveMessageId = () =>
+        resolvedEcoMessageId ?? ecoMessageId ?? clientMessageId;
 
       const sendSignal = (
         signal: string,
