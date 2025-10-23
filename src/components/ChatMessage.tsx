@@ -49,6 +49,8 @@ const CITATION_KEYWORDS = [
 const applySmartTypography = (segment: string): string => {
   let s = segment.replace(/\n{3,}/g, "\n\n");
 
+  s = s.replace(/[^\S\n]+/g, " ");
+
   s = s
     .replace(/(^|[\s([{<])"([^"]*)"/g, '$1“$2”')
     .replace(/(^|[\s([{<])'([^']*)'/g, "$1‘$2’")
@@ -408,7 +410,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   }, [hasMarkdownText, isEcoMessage, processedMarkdown]);
 
   const baseMarkdownClass = clsx(
-    "markdown-body max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
+    "markdown-body max-w-full whitespace-pre-line break-words [overflow-wrap:anywhere] [hyphens:none] [-webkit-hyphens:none] [-ms-hyphens:none]",
     isUser
       ? "text-[color:var(--bubble-user-text)] font-[500] leading-[1.35] tracking-[-0.01em]"
       : "text-[color:var(--bubble-eco-text)] font-[460] leading-[1.45] tracking-[-0.012em]",
