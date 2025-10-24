@@ -1040,10 +1040,64 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     ...(headers ?? {}),
   };
 
-  const payload: Record<string, unknown> = {
-    history: history.map(mapHistoryMessage),
-    clientMessageId,
+  const mappedHistory = history.map(mapHistoryMessage);
+
+  const mensagens = mappedHistory.filter(
+    (message) =>
+      Boolean(message?.role) && typeof message.content === "string" && message.content.trim().length > 0,
+  );
+
+  const recentMensagens = mensagens.slice(-3);
+  const lastUserMessage = [...recentMensagens].reverse().find((message) => message.role === "user");
+
+  const texto = (() => {
+    if (!lastUserMessage) return "";
+    const content = lastUserMessage.content;
+    return typeof content === "string" ? content.trim() : "";
+  })();
+
+  const resolvedUserId = (() => {
+    const normalizedUserId = typeof userId === "string" ? userId.trim() : "";
+    if (normalizedUserId) return normalizedUserId;
+    const normalizedGuestId = typeof guestId === "string" ? guestId.trim() : "";
+    return normalizedGuestId;
+  })();
+
+  const now = new Date();
+  const timezone = (() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return undefined;
+    }
+  })();
+
+  const contextPayload: Record<string, unknown> = {
+    origem: "web",
+    ts: Date.now(),
   };
+
+  if (clientMessageId && clientMessageId.trim().length > 0) {
+    contextPayload.client_message_id = clientMessageId;
+  }
+
+  const payload: Record<string, unknown> = {
+    history: mappedHistory,
+    mensagens: recentMensagens,
+    texto,
+    clientHour: now.getHours(),
+    clientTz: timezone,
+    clientMessageId,
+    contexto: contextPayload,
+  };
+
+  if (resolvedUserId) {
+    payload.usuario_id = resolvedUserId;
+  }
+
+  if (userName && userName.trim()) {
+    payload.nome_usuario = userName.trim();
+  }
 
   if (userId) payload.userId = userId;
   if (userName) payload.userName = userName;
