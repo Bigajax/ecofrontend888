@@ -500,7 +500,37 @@ export const useEcoStream = ({
             }
             return message;
           });
-          return updated ? mapped : prevMessages;
+          if (updated) {
+            return mapped;
+          }
+
+          const fallbackMessage: ChatMessageType = {
+            id: assistantId,
+            client_message_id: clientMessageId,
+            clientMessageId,
+            sender: "eco",
+            role: "assistant",
+            content: visibleContent,
+            text: visibleContent,
+            streaming: true,
+            status: "streaming",
+            interaction_id: assistantId,
+            interactionId: assistantId,
+            updatedAt,
+            createdAt: updatedAt,
+          };
+
+          if (chunk.metadata !== undefined) {
+            fallbackMessage.metadata = chunk.metadata;
+          }
+          if (chunk.payload !== undefined) {
+            fallbackMessage.donePayload = chunk.payload;
+          }
+          if (chunk.messageId) {
+            fallbackMessage.message_id = chunk.messageId;
+          }
+
+          return [...prevMessages, fallbackMessage];
         });
       }
     },

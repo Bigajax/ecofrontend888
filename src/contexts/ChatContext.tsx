@@ -105,6 +105,15 @@ const resolveInteractionKey = (message: Message | null | undefined): string => {
   return direct;
 };
 
+const resolveInteractionSenderKey = (
+  interactionKey: string,
+  sender: string | undefined,
+): string => {
+  if (!interactionKey) return '';
+  if (!sender) return interactionKey;
+  return `${interactionKey}::${sender}`;
+};
+
 const resolveClientMessageId = (message: Message | null | undefined): string => {
   if (!message) return '';
   const direct =
@@ -189,7 +198,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         ids.add(message.message_id);
       }
       const interactionKey = resolveInteractionKey(message);
-      if (interactionKey) {
+      const normalizedSender = resolveRole(message) ?? message?.sender ?? undefined;
+      const interactionSenderKey = resolveInteractionSenderKey(interactionKey, normalizedSender);
+      if (interactionSenderKey) {
+        interactionMap.set(interactionSenderKey, index);
+      }
+      if (interactionKey && !interactionMap.has(interactionKey)) {
         interactionMap.set(interactionKey, index);
       }
       const messageKey = keyOf(message);
@@ -232,6 +246,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const interactionKey = resolveInteractionKey(normalized);
       const messageKey = keyOf(normalized);
       const normalizedSender = resolveRole(normalized) ?? normalized.sender ?? undefined;
+      const interactionSenderKey = resolveInteractionSenderKey(interactionKey, normalizedSender);
 
       const findExistingIndexForId = (id: string): number | undefined => {
         if (!id) return undefined;
@@ -260,7 +275,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       };
 
       let targetIndex: number | undefined;
-      if (interactionKey) {
+      if (interactionSenderKey) {
+        const existing = seenInteractions.get(interactionSenderKey);
+        if (existing !== undefined) {
+          targetIndex = existing;
+        } else if (interactionKey) {
+          const existingRaw = seenInteractions.get(interactionKey);
+          if (existingRaw !== undefined) {
+            targetIndex = existingRaw;
+          }
+        }
+      } else if (interactionKey) {
         const existing = seenInteractions.get(interactionKey);
         if (existing !== undefined) {
           targetIndex = existing;
@@ -291,7 +316,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             }
           }
         });
-        if (interactionKey) {
+        if (interactionSenderKey) {
+          seenInteractions.set(interactionSenderKey, targetIndex as number);
+        }
+        if (interactionKey && !seenInteractions.has(interactionKey)) {
           seenInteractions.set(interactionKey, targetIndex as number);
         }
         if (messageKey) {
@@ -301,7 +329,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       } else {
         const merged = { ...result[targetIndex], ...normalized } as Message;
         result[targetIndex] = normalizeMessageForState(merged);
-        if (interactionKey) {
+        if (interactionSenderKey) {
+          seenInteractions.set(interactionSenderKey, targetIndex);
+        }
+        if (interactionKey && !seenInteractions.has(interactionKey)) {
           seenInteractions.set(interactionKey, targetIndex);
         }
         if (messageKey) {
@@ -507,6 +538,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         const interactionKey = resolveInteractionKey(normalized);
         const messageKey = keyOf(normalized);
+        const normalizedSender = resolveRole(normalized) ?? normalized.sender ?? undefined;
+        const interactionSenderKey = resolveInteractionSenderKey(interactionKey, normalizedSender);
         let targetIndex: number | undefined = undefined;
 
         if (messageKey) {
@@ -514,7 +547,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
 
         if (targetIndex === undefined) {
-          if (interactionKey) {
+          if (interactionSenderKey) {
+            targetIndex = interactionByRef.current.get(interactionSenderKey);
+            if (targetIndex === undefined && interactionKey) {
+              targetIndex = interactionByRef.current.get(interactionKey);
+            }
+          } else if (interactionKey) {
             targetIndex = interactionByRef.current.get(interactionKey);
           }
 
