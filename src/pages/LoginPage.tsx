@@ -194,7 +194,7 @@ const LoginPage: React.FC = () => {
           >
             {/* Header */}
             <div className="space-y-4 text-center">
-              <span className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-1 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">
+              <span className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-4 py-1 text-sm font-medium text-white ring-1 ring-white/60 shadow-[0_0_0_1px_rgba(255,255,255,0.65)] dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">
                 <EcoBubbleOneEye variant="icon" size={18} state="focus" />
                 Autoconhecimento Guiado
               </span>
