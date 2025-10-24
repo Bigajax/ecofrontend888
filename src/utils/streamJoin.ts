@@ -1,27 +1,28 @@
-export function smartJoin(prev: string, delta: string): string {
+const isAlphaNumeric = (value: string): boolean => /[A-Za-zÀ-ÖØ-öø-ÿ0-9]/.test(value);
+
+export function glue(prev: string, next: string): string {
   const previous = prev ?? "";
-  const nextDelta = delta ?? "";
+  const following = next ?? "";
 
   if (!previous) {
-    return nextDelta;
+    return following;
   }
 
-  if (!nextDelta) {
+  if (!following) {
     return previous;
   }
 
-  const normalizedDelta = nextDelta.replace(/\r\n/g, "\n");
-
   const prevLast = previous.slice(-1);
-  const startsAlphaNum = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9]/.test(normalizedDelta);
-  const startsPunctOrSpace = /^[\s.,;:!?)]/.test(normalizedDelta);
-  const prevEndsAlphaNumQuoteOrSpacerPunct =
-    /[A-Za-zÀ-ÖØ-öø-ÿ0-9"”’,.;:!?]$/.test(prevLast);
+  const nextFirst = following.slice(0, 1);
+  const needsSpace = isAlphaNumeric(prevLast) && isAlphaNumeric(nextFirst);
 
-  const needsSpace =
-    prevEndsAlphaNumQuoteOrSpacerPunct && startsAlphaNum && !startsPunctOrSpace;
+  return needsSpace ? `${previous} ${following}` : `${previous}${following}`;
+}
 
-  return needsSpace ? `${previous} ${normalizedDelta}` : `${previous}${normalizedDelta}`;
+export function smartJoin(prev: string, delta: string): string {
+  const normalizedPrev = (prev ?? "").replace(/\r\n/g, "\n");
+  const normalizedDelta = (delta ?? "").replace(/\r\n/g, "\n");
+  return glue(normalizedPrev, normalizedDelta);
 }
 
 export default smartJoin;

@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { normalizeStreamText, startEcoStream, type EcoStreamChunk } from "../api/ecoStream";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../contexts/ChatContext";
 import { sanitizeText } from "../utils/sanitizeText";
+import { glue } from "../utils/streamJoin";
 
 interface UseEcoStreamOptions {
   messages?: ChatMessageType[];
@@ -394,22 +395,46 @@ export const useEcoStream = ({
       const currentEntry = ecoReplyStateRef.current[assistantId] ?? { text: "", chunkIndexMax: -1 };
       if (chunk.index <= currentEntry.chunkIndexMax) return;
 
-      const appended = typeof chunk.text === "string" ? chunk.text : "";
-      const combinedText = normalizeStreamText(`${currentEntry.text}${appended}`);
-      const hasVisibleText = combinedText.trim().length > 0;
+      const payloadRecord = toRecord(chunk.payload);
+      const patchRecord = toRecord(payloadRecord?.patch);
+      const patchSourceRaw = typeof payloadRecord?.source === "string" ? payloadRecord.source : undefined;
+      const normalizedPatchSource = patchSourceRaw?.trim().toLowerCase();
+      const patchTextValue =
+        typeof patchRecord?.text === "string"
+          ? patchRecord.text
+          : typeof patchRecord?.content === "string"
+          ? patchRecord.content
+          : "";
+
+      if (
+        (!chunk.text || chunk.text.length === 0) &&
+        patchRecord &&
+        (!patchTextValue || normalizedPatchSource === "stream_init")
+      ) {
+        return;
+      }
+
+      const appendedSource =
+        typeof chunk.text === "string" && chunk.text.length > 0 ? chunk.text : patchTextValue;
+
+      if (!appendedSource) return;
+
+      const combinedText = normalizeStreamText(glue(currentEntry.text, appendedSource));
+      const hasVisibleText = /\S/.test(combinedText);
       const nextEntry = {
         chunkIndexMax: chunk.index,
         text: combinedText,
       };
 
-      
+      ecoReplyStateRef.current = {
+        ...ecoReplyStateRef.current,
+        [assistantId]: nextEntry,
+      };
 
       setEcoReplyByAssistantId((prev) => {
         const existing = prev[assistantId] ?? { text: "", chunkIndexMax: -1 };
         if (chunk.index <= existing.chunkIndexMax) return prev;
-        const nextState: EcoReplyState = { ...prev, [assistantId]: nextEntry };
-        ecoReplyStateRef.current = nextState;
-        return nextState;
+        return { ...prev, [assistantId]: nextEntry };
       });
 
       const updatedAt = new Date().toISOString();
@@ -431,6 +456,12 @@ export const useEcoStream = ({
           interactionId: assistantId,
           updatedAt,
         };
+        if (chunk.metadata !== undefined) {
+          chunkPatch.metadata = chunk.metadata;
+        }
+        if (chunk.payload !== undefined) {
+          chunkPatch.donePayload = chunk.payload;
+        }
         if (chunk.messageId) {
           chunkPatch.message_id = chunk.messageId;
         }
@@ -448,7 +479,7 @@ export const useEcoStream = ({
               message.interactionId === assistantId
             ) {
               updated = true;
-              return {
+              const nextMessage: ChatMessageType = {
                 ...message,
                 content: visibleContent,
                 text: visibleContent,
@@ -456,35 +487,20 @@ export const useEcoStream = ({
                 streaming: true,
                 status: message.status === "done" ? "done" : "streaming",
               };
+              if (chunk.metadata !== undefined) {
+                nextMessage.metadata = chunk.metadata;
+              }
+              if (chunk.payload !== undefined) {
+                nextMessage.donePayload = chunk.payload;
+              }
+              if (chunk.messageId) {
+                nextMessage.message_id = chunk.messageId;
+              }
+              return nextMessage;
             }
             return message;
           });
-          if (updated) {
-            return mapped;
-          }
-
-          const normalizedClientId =
-            typeof clientMessageId === "string"
-              ? clientMessageId.trim() || undefined
-              : undefined;
-          const fallbackMessage: ChatMessageType = {
-            id: assistantId,
-            client_message_id: normalizedClientId,
-            clientMessageId: normalizedClientId,
-            sender: "eco",
-            role: "assistant",
-            content: visibleContent,
-            text: visibleContent,
-            streaming: true,
-            status: "streaming",
-            interaction_id: assistantId,
-            interactionId: assistantId,
-            message_id: chunk.messageId ?? assistantId,
-            createdAt: updatedAt,
-            updatedAt,
-          };
-
-          return [...mapped, fallbackMessage];
+          return updated ? mapped : prevMessages;
         });
       }
     },
@@ -514,6 +530,11 @@ export const useEcoStream = ({
       controllersRef.current[clientMessageId] = controller;
       activeStreamClientIdRef.current = clientMessageId;
       activeAssistantIdRef.current = null;
+
+      const precreatedAssistantId = ensureAssistantMessage(clientMessageId);
+      if (precreatedAssistantId) {
+        activeAssistantIdRef.current = precreatedAssistantId;
+      }
 
       setDigitando(true);
 
