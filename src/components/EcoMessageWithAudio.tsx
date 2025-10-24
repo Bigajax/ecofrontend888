@@ -39,7 +39,7 @@ type EcoMessageWithAudioProps = {
 const BTN_SIZE = "w-7 h-7 sm:w-8 sm:h-8";
 const ICON_SIZE = "w-[14px] h-[14px] sm:w-4 sm:h-4";
 const ICON_BASE =
-  "text-gray-500/80 transition-colors group-hover:text-gray-900 dark:text-slate-300/80 dark:group-hover:text-slate-100";
+  "text-gray-500/80 transition-colors group-hover:text-gray-900";
 
 const GhostBtn = React.forwardRef<
   HTMLButtonElement,
@@ -52,7 +52,7 @@ const GhostBtn = React.forwardRef<
       "group rounded-xl",
       BTN_SIZE,
       "flex items-center justify-center",
-      "hover:bg-gray-100 active:bg-gray-200/80 dark:hover:bg-slate-200/70 dark:active:bg-slate-300/60",
+      "hover:bg-gray-100 active:bg-gray-200/80",
       "focus:outline-none focus:ring-2 focus:ring-gray-300/50",
       "transition-colors",
       className,
