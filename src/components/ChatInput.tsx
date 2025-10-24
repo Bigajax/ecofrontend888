@@ -102,11 +102,11 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
     const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
       event.preventDefault();
       if (isBusy) return;
-      const trimmed = inputMessage.trim();
-      if (!trimmed) return;
+      const raw = inputMessage;
+      if (!raw.trim()) return;
 
       try {
-        await onSendMessage(trimmed);
+        await onSendMessage(raw);
         setInputMessage('');
         onTextChange?.('');
         setShowMoreOptions(false);

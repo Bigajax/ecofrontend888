@@ -473,12 +473,12 @@ export const useEcoStream = ({
 
   const handleSendMessage = useCallback(
     async (text: string, systemHint?: string) => {
-      const trimmed = (text ?? "").trim();
-      if (!trimmed) {
+      const rawText = text ?? "";
+      if (!rawText.trim()) {
         return;
       }
 
-      const sanitized = sanitizeText(trimmed);
+      const sanitized = sanitizeText(rawText, { collapseWhitespace: false });
       const clientMessageId = uuidv4();
       const userMessage: ChatMessageType = {
         id: clientMessageId,

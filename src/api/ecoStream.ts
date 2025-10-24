@@ -1339,7 +1339,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
 };
 
 export const normalizeStreamText = (s: string): string => {
-  // 🔤 Mantém tokens bem formatados para a bolha da Eco.
-  return s.replace(/\r/g, " ").replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
+  // Preserve user-visible spacing by only normalizing carriage returns.
+  return s.replace(/\r\n?/g, "\n");
 };
 
