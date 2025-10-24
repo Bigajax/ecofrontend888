@@ -6,7 +6,6 @@ import { ArrowLeft, BookOpen, Brain, BarChart3, MessageCircle, MessageSquare } f
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrolled } from '@/hooks/useScrolled';
 import EcoBubbleOneEye from './EcoBubbleOneEye';
-import ClaudeGlyph from './icons/ClaudeGlyph';
 
 interface HeaderProps {
   title?: string;
@@ -114,7 +113,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
               className={iconButtonClass}
               aria-label="Abrir menu"
             >
-              <ClaudeGlyph className="h-5 w-5 text-[color:var(--color-text-primary)]" />
+              <EcoBubbleOneEye variant="icon" size={22} state="idle" />
             </button>
           </div>
 
@@ -123,9 +122,6 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
               to="/app"
               className="flex items-center gap-2 select-none text-[color:var(--color-text-primary)] transition hover:opacity-95"
             >
-              <span className="inline-flex translate-y-[1px]">
-                <EcoBubbleOneEye variant="icon" size={22} state="focus" />
-              </span>
               <span className={`${labelCls} text-[16px] md:text-[17px]`}>{autoTitle}</span>
             </Link>
           </div>
@@ -194,13 +190,13 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
             onTouchEnd={onTouchEnd}
           >
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/10 bg-white px-5 py-4">
-              <EcoBubbleOneEye variant="icon" size={24} state="focus" />
+              <span className={`${labelCls} text-[16px] md:text-[17px]`}>ECO</span>
               <button
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Fechar menu"
                 className={drawerIconButtonClass}
               >
-                <ClaudeGlyph className="h-5 w-5" active />
+                <EcoBubbleOneEye variant="icon" size={22} state="focus" />
               </button>
             </div>
 
