@@ -1,7 +1,7 @@
 // Header.tsx — AppBar “pill” + Drawer lateral (ChatGPT-like, apple-ish)
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, NavLink, Link, useLocation } from 'react-router-dom';
+import { useNavigate, NavLink, Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Brain, BarChart3, MessageCircle, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrolled } from '@/hooks/useScrolled';
@@ -18,42 +18,31 @@ const iconCls = 'h-[22px] w-[22px]';
 const labelCls =
   'text-[15px] leading-[1.35] font-medium tracking-[-0.01em] text-inherit antialiased';
 
-const iconButtonClass =
-  'glass-chip h-11 w-11 flex items-center justify-center transition-transform duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]';
-
 const navItem = (active: boolean) =>
   [
-    'group flex items-center gap-3 px-4 py-3 h-12 min-h-[48px] rounded-2xl border border-black/10 shadow-sm',
+    'group flex items-center gap-3 px-4 py-3 h-12 min-h-[48px] rounded-2xl border border-black/10',
     'transition duration-200 ease-out',
     active
-      ? 'bg-black text-white shadow-md'
-      : 'bg-white text-[#0b0b0f] hover:-translate-y-[1px] hover:bg-black/[0.04] hover:text-[#050505]',
+      ? 'bg-black text-white'
+      : 'bg-white text-[#0b0b0f] hover:bg-black/[0.04] hover:text-[#050505]',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white',
   ].join(' ');
 
 const drawerIconButtonClass = [
   'inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-[#0b0b0f]',
-  'shadow-sm transition-transform duration-200 hover:-translate-y-[1px]',
+  'transition-transform duration-200 hover:-translate-y-[1px]',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white',
 ].join(' ');
 
-const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ title: _title, showBackButton, onLogout }) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const routeTitleMap: Array<[RegExp, string]> = [
-    [/^\/memory\/?$/, 'Memórias'],
-    [/^\/memory\/profile\/?$/, 'Perfil Emocional'],
-    [/^\/memory\/report\/?$/, 'Relatórios'],
-    [/^\/chat\/?$/, 'ECO'],
-  ];
-  const autoTitle =
-    routeTitleMap.find(([re]) => re.test(location.pathname))?.[1] || title || 'ECO';
-
-  const isChat = /^\/chat\/?$/.test(location.pathname);
-  const shouldShowBack = showBackButton || !isChat;
+  const shouldShowBack = showBackButton ?? true;
   const scrolled = useScrolled(8);
+  const buttonBaseClass =
+    'inline-flex h-10 items-center justify-center rounded-full border border-[rgba(0,0,0,0.1)] bg-white px-4 text-sm font-medium text-[#0b0b0f] transition-colors duration-200 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/10 focus-visible:ring-offset-2 focus-visible:ring-offset-white';
+  const feedbackButtonClass = `${buttonBaseClass} text-[color:var(--color-accent)]`;
 
   const handleOpenFeedback = useCallback((source: 'header' | 'drawer') => {
     if (typeof window === 'undefined') return;
@@ -98,62 +87,52 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
 
   /* ================= AppBar “pill” ================= */
   const TopBar = (
-    <div className="sticky top-0 z-50 flex w-full justify-center px-3 pb-3 pt-[env(safe-area-inset-top,0px)] sm:px-6">
+    <div
+      className="sticky top-0 z-50 flex w-full justify-center bg-white/80 px-3 pb-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-sm sm:px-6"
+    >
       <div
         className={[
-          'glass-toolbar pointer-events-auto w-full max-w-6xl border border-white/60',
-          'shadow-glass transition-all duration-300 ease-out',
-          scrolled ? 'shadow-floating translate-y-[1px] bg-white/75' : 'bg-white/65',
+          'pointer-events-auto w-full max-w-6xl rounded-[28px] border border-[rgba(0,0,0,0.1)]',
+          'transition-all duration-300 ease-out',
+          scrolled ? 'bg-white' : 'bg-white/95',
         ].join(' ')}
       >
-        <div className="grid h-[64px] grid-cols-[auto_1fr_auto] items-center gap-3 px-3 sm:px-5">
-          <div className="flex items-center">
-            <button
-              onClick={() => setDrawerOpen(true)}
-              className={iconButtonClass}
-              aria-label="Abrir menu"
-            >
-              <EcoBubbleOneEye variant="icon" size={22} state="idle" />
-            </button>
+        <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-2 px-3 sm:gap-3 sm:px-6">
+          <div className="flex items-center justify-start">
+            {shouldShowBack ? (
+              <button
+                onClick={() => navigate('/app')}
+                className={`${buttonBaseClass} min-w-[2.5rem]`}
+                aria-label="Voltar ao chat"
+                title="Voltar ao chat"
+              >
+                <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
+              </button>
+            ) : (
+              <span aria-hidden className="inline-flex h-10 min-w-[2.5rem]" />
+            )}
           </div>
 
-          <div className="justify-self-center">
-            <Link
-              to="/app"
-              className="flex items-center gap-2 select-none text-[color:var(--color-text-primary)] transition hover:opacity-95"
-            >
-              <span className={`${labelCls} text-[16px] md:text-[17px]`}>{autoTitle}</span>
+          <div className="flex items-center justify-center">
+            <Link to="/app" className="select-none text-[color:var(--color-text-primary)]">
+              <span className={`${labelCls} text-[16px] md:text-[17px]`}>ECO</span>
             </Link>
           </div>
 
           <div className="flex items-center justify-end gap-2">
-            {shouldShowBack && (
-              <button
-                onClick={() => navigate('/app')}
-                className={iconButtonClass}
-                aria-label="Voltar ao chat"
-                title="Voltar ao chat"
-              >
-                <ArrowLeft className="h-5 w-5 text-[color:var(--color-text-primary)]" strokeWidth={1.75} />
-              </button>
-            )}
-
             <button
               type="button"
               onClick={() => handleOpenFeedback('header')}
-              className="hidden sm:inline-flex items-center justify-center rounded-full bg-[color:var(--color-accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,255,0.25)] transition-transform duration-200 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
+              className={`${feedbackButtonClass} whitespace-nowrap`}
             >
               Feedback
             </button>
 
-            {onLogout && (
-              <button
-                onClick={onLogout}
-                className="btn-secondary h-11 px-5 text-sm font-semibold"
-              >
+            {onLogout ? (
+              <button onClick={onLogout} className={`${buttonBaseClass} whitespace-nowrap`}>
                 Sair
               </button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
@@ -183,7 +162,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
               fixed top-0 left-0 z-[80] h-dvh w-screen sm:w-[420px]
               flex flex-col overflow-y-auto border-r border-black/10 bg-white text-[#050505]
               font-['SF Pro Display','SF Pro Text','-apple-system','BlinkMacSystemFont','Segoe UI',sans-serif]
-              pt-[env(safe-area-inset-top)] shadow-[0_20px_48px_rgba(15,15,15,0.18)] sm:rounded-r-[28px]
+              pt-[env(safe-area-inset-top)] sm:rounded-r-[28px]
             "
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
@@ -244,7 +223,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
                 <span className={labelCls}>Feedback</span>
               </button>
 
-              {showBackButton && (
+              {shouldShowBack && (
                 <button
                   onClick={() => {
                     setDrawerOpen(false);
@@ -266,7 +245,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
                     setDrawerOpen(false);
                     onLogout();
                   }}
-                  className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-[#050505] shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                  className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-[#050505] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                 >
                   Sair
                 </button>
