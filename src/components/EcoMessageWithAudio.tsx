@@ -89,11 +89,14 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
 
   const isUser = isUserMessage(message);
   const isStreaming = message.streaming === true || message.status === "streaming";
-  const displayText = useMemo(
-    () => sanitizeText(message.text ?? message.content ?? "", { collapseWhitespace: false }),
-    [message.content, message.text]
-  );
-  const canSpeak = !isUser && !!displayText;
+  const displayText = useMemo(() => {
+    const sanitized = sanitizeText(message.text ?? message.content ?? "", {
+      collapseWhitespace: false,
+    });
+    return sanitized.trim().length > 0 ? sanitized : "";
+  }, [message.content, message.text]);
+  const hasVisibleText = displayText.length > 0;
+  const canSpeak = !isUser && hasVisibleText;
   const { user, session } = useAuth();
   const { sendFeedback: send } = useSendFeedback();
 

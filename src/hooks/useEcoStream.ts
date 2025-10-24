@@ -395,9 +395,11 @@ export const useEcoStream = ({
       if (chunk.index <= currentEntry.chunkIndexMax) return;
 
       const appended = typeof chunk.text === "string" ? chunk.text : "";
+      const combinedText = normalizeStreamText(`${currentEntry.text}${appended}`);
+      const hasVisibleText = combinedText.trim().length > 0;
       const nextEntry = {
         chunkIndexMax: chunk.index,
-        text: normalizeStreamText(`${currentEntry.text}${appended}`),
+        text: combinedText,
       };
 
       
@@ -412,6 +414,8 @@ export const useEcoStream = ({
 
       const updatedAt = new Date().toISOString();
 
+      const visibleContent = hasVisibleText ? combinedText : "";
+
       if (upsertMessage) {
         const chunkPatch: ChatMessageType = {
           id: assistantId,
@@ -419,8 +423,8 @@ export const useEcoStream = ({
           clientMessageId,
           sender: "eco",
           role: "assistant",
-          content: nextEntry.text,
-          text: nextEntry.text,
+          content: visibleContent,
+          text: visibleContent,
           streaming: true,
           status: "streaming",
           interaction_id: assistantId,
@@ -446,8 +450,8 @@ export const useEcoStream = ({
               updated = true;
               return {
                 ...message,
-                content: nextEntry.text,
-                text: nextEntry.text,
+                content: visibleContent,
+                text: visibleContent,
                 updatedAt,
                 streaming: true,
                 status: message.status === "done" ? "done" : "streaming",
@@ -469,8 +473,8 @@ export const useEcoStream = ({
             clientMessageId: normalizedClientId,
             sender: "eco",
             role: "assistant",
-            content: nextEntry.text,
-            text: nextEntry.text,
+            content: visibleContent,
+            text: visibleContent,
             streaming: true,
             status: "streaming",
             interaction_id: assistantId,
