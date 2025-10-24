@@ -68,6 +68,7 @@ export function buildIdentityHeaders(
   const headers: Record<string, string> = {
     "X-Eco-Guest-Id": ensureGuestId(),
     "X-Eco-Session-Id": ensureSessionId(),
+    "X-Eco-Client": "web",
   };
 
   const hint = options.biasHint ?? cachedBiasHint;

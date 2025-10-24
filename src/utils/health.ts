@@ -49,10 +49,26 @@ export async function pingHealth(signal?: AbortSignal): Promise<HealthCheckResul
   };
 }
 
-export async function pingWithRetry(tries = 2, delayMs = 800): Promise<HealthCheckResult> {
+export async function pingWithRetry(
+  tries = 2,
+  delayMs = 800,
+  signal?: AbortSignal,
+): Promise<HealthCheckResult> {
+  if (signal?.aborted) {
+    return { status: "degraded", aborted: true, responseOk: false };
+  }
+
   let status: HealthCheckResult = { status: "degraded", aborted: false, responseOk: false };
   for (let attempt = 0; attempt < tries; attempt++) {
-    const current = await pingHealth();
+    if (signal?.aborted) {
+      return { status: "degraded", aborted: true, responseOk: false };
+    }
+
+    const current = await pingHealth(signal);
+    if (current.aborted) {
+      return current;
+    }
+
     if (current.status === "ok") {
       return current;
     }
@@ -61,9 +77,14 @@ export async function pingWithRetry(tries = 2, delayMs = 800): Promise<HealthChe
     } else if (status.status !== "down") {
       status = current;
     }
+
     if (attempt < tries - 1) {
+      if (signal?.aborted) {
+        return { status: "degraded", aborted: true, responseOk: false };
+      }
       await wait(delayMs);
     }
   }
+
   return status;
 }
