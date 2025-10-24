@@ -132,10 +132,8 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
           <div className="flex min-w-0 flex-1">
             <div
               className={clsx(
-                'group flex w-full min-w-0 items-center gap-3 rounded-full border border-white/60 bg-white/70 px-5 py-2.5 shadow-[0_26px_54px_rgba(15,23,42,0.16)] backdrop-blur-xl transition-all duration-200 focus-within:border-white focus-within:bg-white/80 focus-within:shadow-[0_32px_64px_rgba(15,23,42,0.22)] focus-within:ring-2 focus-within:ring-[rgba(0,122,255,0.22)]',
-                isBusy
-                  ? 'opacity-90'
-                  : 'hover:border-white/70 hover:bg-white/80 hover:shadow-[0_30px_60px_rgba(15,23,42,0.18)]',
+                'group flex w-full min-w-0 items-center gap-3 rounded-2xl border border-[rgba(0,0,0,0.05)] bg-white/80 px-4 py-2.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] backdrop-blur-[6px] transition-all duration-200 focus-within:border-[rgba(0,0,0,0.08)] focus-within:shadow-[0_2px_6px_rgba(0,0,0,0.08)] focus-within:ring-0',
+                isBusy ? 'opacity-90' : 'hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]',
               )}
             >
               <textarea
@@ -155,7 +153,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 disabled={isBusy}
                 aria-disabled={isBusy}
                 aria-label="Mensagem para a Eco"
-                className="w-full min-w-0 max-h-[9.5rem] min-h-[2.9rem] resize-none border-0 bg-transparent py-[0.45rem] text-[15px] leading-[1.6] tracking-[-0.01em] text-slate-800 placeholder:text-slate-400/90 placeholder:opacity-100 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:text-[rgba(71,85,105,0.55)] sm:text-[16px]"
+                className="w-full min-w-0 max-h-[9.5rem] min-h-[2.9rem] resize-none border-0 bg-transparent py-[0.45rem] text-[15px] leading-[1.6] tracking-[-0.01em] text-[#1a1a1a] placeholder:text-neutral-400 placeholder:opacity-100 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:text-[rgba(102,102,102,0.55)] sm:text-[16px]"
                 title={isBusy ? 'Aguarde a resposta da Eco' : undefined}
                 onKeyDown={(event) => {
                   if (
@@ -177,12 +175,12 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 }}
                 disabled={isBusy || isMicActive}
                 className={clsx(
-                  'relative -mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/70 text-[color:var(--color-text-primary)] shadow-[0_14px_28px_rgba(15,23,42,0.12)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.28)] group-hover:bg-white/80',
+                  'relative -mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[rgba(0,0,0,0.05)] bg-white/75 text-[color:var(--color-text-primary)] shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-0 group-hover:bg-white/85',
                   isBusy
                     ? 'cursor-not-allowed opacity-60 shadow-none'
                     : isMicActive
                     ? 'cursor-wait opacity-80'
-                    : 'hover:bg-white/90 hover:shadow-[0_18px_36px_rgba(15,23,42,0.18)]',
+                    : 'hover:shadow-[0_2px_6px_rgba(0,0,0,0.08)]',
                 )}
                 aria-label={
                   isMicActive ? 'Gravação em andamento' : 'Abrir painel de voz'
@@ -212,7 +210,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 exit={{ opacity: 0, scale: 0.9, x: 8 }}
                 transition={{ duration: 0.18 }}
                 className={clsx(
-                  'inline-flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--color-accent)] text-white shadow-[0_20px_36px_rgba(0,122,255,0.2)] transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.35)] hover:-translate-y-[1px] active:scale-[0.96]',
+                  'inline-flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--color-accent)] text-white shadow-[0_6px_16px_rgba(0,122,255,0.18)] transition-transform duration-200 focus-visible:outline-none focus-visible:ring-0 hover:-translate-y-[1px] active:scale-[0.96]',
                   isBusy ? 'cursor-not-allowed opacity-70 hover:translate-y-0' : null,
                 )}
                 aria-label="Enviar mensagem"

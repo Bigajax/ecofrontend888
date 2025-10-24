@@ -14,7 +14,7 @@ type Props = {
 };
 
 const defaultLabelCls =
-  "text-[15px] leading-[1.35] text-slate-900/95 font-normal tracking-[-0.005em] antialiased";
+  "text-[15px] font-medium leading-[1.4] tracking-[-0.01em] text-neutral-700 antialiased";
 
 const RotatingPrompts = ({
   items,
@@ -81,21 +81,12 @@ const RotatingPrompts = ({
         }}
         onFocus={() => (pauseRef.current = true)}
         onBlur={() => (pauseRef.current = false)}
-        className="
-          group inline-flex items-center gap-2
-          h-10 px-3.5 rounded-full
-          bg-white/85 backdrop-blur-md
-          border border-black/10
-          shadow-[0_10px_28px_rgba(16,24,40,0.10)]
-          hover:bg-white focus:outline-none
-          focus-visible:ring-2 focus-visible:ring-black/10
-          active:translate-y-[1px] transition
-        "
+        className="group inline-flex h-11 items-center gap-2 rounded-full border border-[rgba(0,0,0,0.05)] bg-white/85 px-4 py-2 text-neutral-700 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200 hover:scale-[1.01] hover:shadow-[0_2px_6px_rgba(0,0,0,0.06)] focus:outline-none focus:ring-0"
         aria-label={s.label}
         disabled={disabled}
       >
         {s.icon && (
-          <span className="text-[16px] leading-none" aria-hidden>
+          <span className="text-[16px] leading-none text-neutral-600/80" aria-hidden>
             {s.icon}
           </span>
         )}
@@ -103,11 +94,7 @@ const RotatingPrompts = ({
 
         {/* indicador sutil de “rotativo” */}
         <span
-          className="
-            ml-1 inline-block h-1.5 w-1.5 rounded-full bg-slate-400/70
-            group-hover:bg-slate-500/80
-            animate-[pulse_1.4s_ease-in-out_infinite]
-          "
+          className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-neutral-400/70 group-hover:bg-neutral-500/80 animate-[pulse_1.4s_ease-in-out_infinite]"
           aria-hidden
         />
       </button>

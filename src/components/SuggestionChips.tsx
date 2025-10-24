@@ -13,7 +13,7 @@ type SuggestionChipsProps = {
 };
 
 const labelClass =
-  'text-[15px] leading-[1.35] tracking-[-0.005em] text-slate-800 antialiased';
+  'text-[15px] font-medium leading-[1.4] tracking-[-0.01em] text-neutral-700 antialiased';
 
 const SuggestionChips: React.FC<SuggestionChipsProps> = ({
   visible,
@@ -64,14 +64,14 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
             disabled={disabled}
             data-suggestion-id={suggestion.id}
             className={clsx(
-              'inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-white px-4 text-left shadow-[0_8px_24px_rgba(15,23,42,0.08)] transition-all duration-200',
-              'hover:bg-white hover:shadow-[0_10px_30px_rgba(15,23,42,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(15,23,42,0.12)]',
-              disabled ? 'cursor-not-allowed opacity-60' : 'active:translate-y-[1px]'
+              'inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl border border-[rgba(0,0,0,0.05)] bg-white px-4 text-left text-neutral-700 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200',
+              'hover:scale-[1.01] hover:shadow-[0_2px_6px_rgba(0,0,0,0.06)] focus-visible:outline-none focus-visible:ring-0',
+              disabled ? 'cursor-not-allowed opacity-60' : 'active:translate-y-[0.5px]'
             )}
             style={{ scrollSnapAlign: 'start' }}
           >
             {suggestion.icon && (
-              <span className="text-[16px] leading-none" aria-hidden>
+              <span className="text-[16px] leading-none text-neutral-600/80" aria-hidden>
                 {suggestion.icon}
               </span>
             )}
