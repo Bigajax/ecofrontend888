@@ -2,10 +2,11 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, NavLink, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, BarChart3, X, Menu, MessageCircle, MessageSquare } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, BarChart3, MessageCircle, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrolled } from '@/hooks/useScrolled';
 import EcoBubbleOneEye from './EcoBubbleOneEye';
+import ClaudeGlyph from './icons/ClaudeGlyph';
 
 interface HeaderProps {
   title?: string;
@@ -14,22 +15,28 @@ interface HeaderProps {
 }
 
 const VERSION = '222';
-const iconCls = 'h-[22px] w-[22px] text-[color:rgba(15,23,42,0.8)]';
+const iconCls = 'h-[22px] w-[22px]';
 const labelCls =
-  'text-[15px] leading-[1.35] font-medium tracking-[-0.005em] text-[color:var(--color-text-primary)] antialiased';
+  'text-[15px] leading-[1.35] font-medium tracking-[-0.01em] text-inherit antialiased';
 
 const iconButtonClass =
   'glass-chip h-11 w-11 flex items-center justify-center transition-transform duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]';
 
 const navItem = (active: boolean) =>
   [
-    'glass-chip flex items-center gap-3 px-4 py-2 h-11 min-h-[44px]',
-    'transition-transform duration-200 ease-out',
+    'group flex items-center gap-3 px-4 py-3 h-12 min-h-[48px] rounded-2xl border border-black/10 shadow-sm',
+    'transition duration-200 ease-out',
     active
-      ? 'text-[color:var(--color-text-primary)] shadow-floating -translate-y-[1px]'
-      : 'text-[color:var(--color-text-muted)] hover:-translate-y-[2px] hover:text-[color:var(--color-text-primary)]',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]',
+      ? 'bg-black text-white shadow-md'
+      : 'bg-white text-[#0b0b0f] hover:-translate-y-[1px] hover:bg-black/[0.04] hover:text-[#050505]',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white',
   ].join(' ');
+
+const drawerIconButtonClass = [
+  'inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-[#0b0b0f]',
+  'shadow-sm transition-transform duration-200 hover:-translate-y-[1px]',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white',
+].join(' ');
 
 const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout }) => {
   const navigate = useNavigate();
@@ -107,7 +114,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
               className={iconButtonClass}
               aria-label="Abrir menu"
             >
-              <Menu className="h-5 w-5 text-[color:var(--color-text-primary)]" strokeWidth={1.75} />
+              <ClaudeGlyph className="h-5 w-5 text-[color:var(--color-text-primary)]" />
             </button>
           </div>
 
@@ -172,59 +179,58 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
           />
           <motion.aside
             key="panel"
-            initial={{ x: -360, opacity: 1 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -360, opacity: 1 }}
-            transition={{ type: 'tween', duration: 0.2 }}
+            initial={{ x: '-100%', opacity: 0.85, filter: 'blur(14px)' }}
+            animate={{ x: 0, opacity: 1, filter: 'blur(0px)' }}
+            exit={{ x: '-100%', opacity: 0.85, filter: 'blur(14px)' }}
+            transition={{ type: 'spring', stiffness: 380, damping: 38 }}
             className="
-              fixed top-0 left-0 z-[80] h-dvh w-[86vw] max-w-[340px]
-              glass-strong rounded-r-[28px]
-              border border-white/60 shadow-floating
-              pt-[env(safe-area-inset-top)] overflow-y-auto
-              flex flex-col backdrop-blur-xl
+              fixed top-0 left-0 z-[80] h-dvh w-screen sm:w-[420px]
+              flex flex-col overflow-y-auto border-r border-black/10 bg-white text-[#050505]
+              font-['SF Pro Display','SF Pro Text','-apple-system','BlinkMacSystemFont','Segoe UI',sans-serif]
+              pt-[env(safe-area-inset-top)] shadow-[0_20px_48px_rgba(15,15,15,0.18)] sm:rounded-r-[28px]
             "
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/60 bg-white/80 px-4 py-3 backdrop-blur-lg">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/10 bg-white px-5 py-4">
               <EcoBubbleOneEye variant="icon" size={24} state="focus" />
               <button
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Fechar menu"
-                className="glass-chip h-10 w-10 p-0 text-[color:var(--color-text-primary)] hover:-translate-y-[1px]"
+                className={drawerIconButtonClass}
               >
-                <X className="h-5 w-5" />
+                <ClaudeGlyph className="h-5 w-5" active />
               </button>
             </div>
 
-            <nav className="px-3 py-3 flex flex-col gap-1.5">
-              <NavLink
-                to="/app"
-                end
-                className={({ isActive }) => navItem(isActive)}
-                onClick={() => setDrawerOpen(false)}
-              >
+            <nav className="flex flex-col gap-2 px-4 py-5">
+              <NavLink to="/app" end onClick={() => setDrawerOpen(false)} className={({ isActive }) => navItem(isActive)}>
                 <MessageSquare className={iconCls} strokeWidth={1.75} />
                 <span className={labelCls}>Chat</span>
               </NavLink>
 
-              <NavLink to="/app/memory" end className={({ isActive }) => navItem(isActive)} onClick={() => setDrawerOpen(false)}>
+              <NavLink
+                to="/app/memory"
+                end
+                onClick={() => setDrawerOpen(false)}
+                className={({ isActive }) => navItem(isActive)}
+              >
                 <BookOpen className={iconCls} strokeWidth={1.75} />
                 <span className={labelCls}>Memórias</span>
               </NavLink>
               <NavLink
                 to="/app/memory/profile"
-                className={({ isActive }) => navItem(isActive)}
                 onClick={() => setDrawerOpen(false)}
+                className={({ isActive }) => navItem(isActive)}
               >
                 <Brain className={iconCls} strokeWidth={1.75} />
                 <span className={labelCls}>Perfil Emocional</span>
               </NavLink>
               <NavLink
                 to="/app/memory/report"
-                className={({ isActive }) => navItem(isActive)}
                 onClick={() => setDrawerOpen(false)}
+                className={({ isActive }) => navItem(isActive)}
               >
                 <BarChart3 className={iconCls} strokeWidth={1.75} />
                 <span className={labelCls}>Relatórios</span>
@@ -243,22 +249,28 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
               </button>
 
               {showBackButton && (
-                <button onClick={() => { setDrawerOpen(false); navigate(-1); }} className={navItem(false)}>
+                <button
+                  onClick={() => {
+                    setDrawerOpen(false);
+                    navigate(-1);
+                  }}
+                  className={navItem(false)}
+                >
                   <ArrowLeft className={iconCls} strokeWidth={1.75} />
                   <span className={labelCls}>Voltar</span>
                 </button>
               )}
             </nav>
 
-            <div className="mt-auto flex items-center justify-between border-t border-white/60 px-4 py-4">
-              <span className="text-[10px] leading-none text-[color:var(--color-text-muted)] tabular-nums select-none">{VERSION}</span>
+            <div className="mt-auto flex items-center justify-between border-t border-black/10 px-5 py-5">
+              <span className="select-none text-[10px] leading-none text-black/50 tabular-nums">{VERSION}</span>
               {onLogout && (
                 <button
                   onClick={() => {
                     setDrawerOpen(false);
                     onLogout();
                   }}
-                  className="btn-secondary h-10 px-4 text-sm font-semibold"
+                  className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-[#050505] shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                 >
                   Sair
                 </button>
