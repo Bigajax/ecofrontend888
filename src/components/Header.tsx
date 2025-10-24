@@ -21,6 +21,16 @@ const labelCls =
 const iconButtonClass =
   'glass-chip h-11 w-11 flex items-center justify-center transition-transform duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]';
 
+const ctaButtonBase = [
+  'items-center justify-center rounded-full font-semibold',
+  'bg-white text-[#007AFF]',
+  'shadow-[0_14px_34px_rgba(0,122,255,0.18)]',
+  'transition-all duration-200',
+  'hover:-translate-y-[2px] hover:bg-white/95',
+  'active:translate-y-0',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]',
+].join(' ');
+
 const navItem = (active: boolean) =>
   [
     'glass-chip flex items-center gap-3 px-4 py-2 h-11 min-h-[44px]',
@@ -37,16 +47,16 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const routeTitleMap: Array<[RegExp, string]> = [
-    [/^\/memory\/?$/, 'Memórias'],
-    [/^\/memory\/profile\/?$/, 'Perfil Emocional'],
-    [/^\/memory\/report\/?$/, 'Relatórios'],
-    [/^\/chat\/?$/, 'ECO'],
+    [/^\/app\/?$/, 'ECO'],
+    [/^\/app\/memory\/?$/, 'Memórias'],
+    [/^\/app\/memory\/profile\/?$/, 'Perfil Emocional'],
+    [/^\/app\/memory\/report\/?$/, 'Relatórios'],
   ];
   const autoTitle =
     routeTitleMap.find(([re]) => re.test(location.pathname))?.[1] || title || 'ECO';
 
-  const isChat = /^\/chat\/?$/.test(location.pathname);
-  const shouldShowBack = showBackButton || !isChat;
+  const isPrimaryChatRoute = /^\/app\/?$/.test(location.pathname);
+  const shouldShowBack = showBackButton || !isPrimaryChatRoute;
   const scrolled = useScrolled(8);
 
   const handleOpenFeedback = useCallback((source: 'header' | 'drawer') => {
@@ -138,7 +148,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
             <button
               type="button"
               onClick={() => handleOpenFeedback('header')}
-              className="hidden sm:inline-flex items-center justify-center rounded-full bg-[color:var(--color-accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,255,0.25)] transition-transform duration-200 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
+              className={`hidden sm:inline-flex ${ctaButtonBase} px-4 py-2 text-sm`}
             >
               Feedback
             </button>
@@ -146,7 +156,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
             {onLogout && (
               <button
                 onClick={onLogout}
-                className="btn-secondary h-11 px-5 text-sm font-semibold"
+                className={`${ctaButtonBase} inline-flex h-11 px-5 text-sm`}
               >
                 Sair
               </button>
@@ -258,7 +268,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
                     setDrawerOpen(false);
                     onLogout();
                   }}
-                  className="btn-secondary h-10 px-4 text-sm font-semibold"
+                  className={`${ctaButtonBase} inline-flex h-10 px-4 text-sm`}
                 >
                   Sair
                 </button>
