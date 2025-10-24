@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { processEventStream } from "../ecoStream";
+import { describe, expect, it, vi } from "vitest";
+import { processEventStream, startEcoStream } from "../ecoStream";
+import type { Message } from "../../contexts/ChatContext";
 
 describe("processEventStream", () => {
   it("preserves separators when streaming chunks without leading spaces", async () => {
@@ -23,5 +24,34 @@ describe("processEventStream", () => {
     const result = await processEventStream(response);
 
     expect(result.text).toBe("Olá mundo");
+  });
+
+  it("maps eco history role to assistant when starting stream", async () => {
+    const history = [
+      {
+        id: "msg-eco",
+        role: "eco",
+        sender: "eco",
+        content: "Olá",
+      } as unknown as Message,
+    ];
+
+    const fetchMock = vi.fn(async () => new Response("", { headers: { "Content-Type": "text/event-stream" } }));
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    try {
+      await startEcoStream({ history, clientMessageId: "client-123" });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0] ?? [];
+    expect(init).toBeTruthy();
+    const body = init?.body;
+    expect(typeof body).toBe("string");
+    const parsed = JSON.parse(body as string);
+    expect(parsed?.history?.[0]?.role).toBe("assistant");
   });
 });

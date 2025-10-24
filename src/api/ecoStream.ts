@@ -955,7 +955,9 @@ export interface StartEcoStreamOptions {
 }
 
 const mapHistoryMessage = (message: Message) => {
-  const role = message.role ?? (message.sender === "user" ? "user" : "assistant");
+  const explicitRole = (message.role ?? undefined) as string | undefined;
+  const fallbackRole = message.sender === "user" ? "user" : "assistant";
+  const role = explicitRole === "eco" ? "assistant" : explicitRole ?? fallbackRole;
   const rawContent =
     typeof message.content === "string"
       ? message.content
