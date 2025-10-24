@@ -488,6 +488,8 @@ export const useEcoStream = ({
         role: "user",
         content: sanitized,
         text: sanitized,
+        status: "done",
+        createdAt: Date.now(),
       };
 
       setErroApi(null);

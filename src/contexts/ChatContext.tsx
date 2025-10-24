@@ -31,7 +31,7 @@ export interface Message {
   client_message_id?: string | null;
   status?: 'pending' | 'sent' | 'streaming' | 'final' | 'error' | 'done';
   server_ids?: string[];
-  createdAt?: string | null;
+  createdAt?: number | string | null;
   updatedAt?: string | null;
   flags?: Record<string, unknown> | null;
   audioUrl?: string | null;
