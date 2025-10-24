@@ -1,4 +1,5 @@
 import React from "react";
+import clsx from "clsx";
 import RotatingPrompts from "./RotatingPrompts";
 
 /* --------- Tipo público para usar no ChatPage --------- */
@@ -147,7 +148,10 @@ export default function QuickSuggestions({
 
   return (
     <div
-      className={`w-full max-w-[800px] mx-auto mb-2 flex flex-col gap-3 ${className}`}
+      className={clsx(
+        "quick-suggestions w-full max-w-[800px] mx-auto mb-2 flex flex-col gap-3",
+        className,
+      )}
       aria-label="Atalhos de início"
       role="region"
     >
@@ -167,7 +171,7 @@ export default function QuickSuggestions({
       )}
 
       {/* ⬇️ Pílulas compactas */}
-      <div className="flex w-full flex-wrap justify-center gap-2 px-0.5 py-1 sm:gap-2.5 lg:gap-3">
+      <div className="quick-suggestions__pills flex w-full flex-wrap justify-center gap-1.5 px-0.5 py-1 sm:gap-2.5 lg:gap-3">
         {suggestions.map((s, index) => (
           <button
             key={s.id}

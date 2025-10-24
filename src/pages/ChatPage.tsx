@@ -212,7 +212,12 @@ function ChatPage() {
   });
 
   const baseScrollPadding = 112;
-  const scrollInset = Math.max(baseScrollPadding, contentInset + safeAreaBottom + 24);
+  const contentPaddingBase = Math.max(baseScrollPadding, contentInset + 24);
+  const scrollPaddingBottomValue = Math.max(
+    baseScrollPadding,
+    contentInset + safeAreaBottom + 24,
+  );
+  const contentPaddingBottom = `calc(${contentPaddingBase}px + env(safe-area-inset-bottom, 0px))`; // safe-area somada ao padding dinâmico
   const computedInputHeight = inputHeight || 96;
   const voicePanelBottomOffset = Math.max(120, keyboardHeight + computedInputHeight + 24);
 
@@ -542,7 +547,7 @@ function ChatPage() {
   useEffect(() => {
     if (!isAtBottom) return;
     scrollToBottom(false);
-  }, [scrollInset, isAtBottom, scrollToBottom]);
+  }, [scrollPaddingBottomValue, isAtBottom, scrollToBottom]);
 
   useEffect(() => {
     if (!shouldRenderGlobalTyping || !isAtBottom) return;
@@ -613,86 +618,97 @@ function ChatPage() {
 
   return (
     <div
-      ref={scrollerRef}
       className={clsx(
-        'chat-page relative flex h-[100dvh] w-full flex-1 flex-col overflow-y-auto bg-[color:var(--color-bg-base)] text-[color:var(--color-text-primary)]',
+        'chat-page relative w-full bg-[color:var(--color-bg-base)] text-[color:var(--color-text-primary)]',
         { 'keyboard-open': isKeyboardOpen },
       )}
       style={{
-        minHeight: '100dvh',
-        WebkitOverflowScrolling: 'touch',
-        overscrollBehaviorY: 'contain',
-        scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
-        scrollPaddingBottom: scrollInset,
+        minHeight: '100dvh', // 100dvh garante viewport real em iOS/Android
       }}
     >
-      <div role="feed" aria-busy={isWaitingForEco || isSendingToEco} className="flex-1">
-        <div
-          className="px-4 sm:px-6 lg:px-10"
-          style={{ paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)' }}
-        >
+      <div
+        ref={scrollerRef}
+        className="chat-scroll-area relative flex min-h-0 flex-1 flex-col overflow-y-auto px-4 sm:px-6 lg:px-10"
+        style={{
+          paddingTop: 'clamp(24px, 6vh, 80px)',
+          paddingBottom: contentPaddingBottom, // paddingBottom usa env(safe-area-inset-bottom)
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehaviorY: 'contain', // evita rubber band
+          scrollPaddingTop: 'calc(var(--eco-topbar-h, 72px) + 12px)',
+          scrollPaddingBottom: scrollPaddingBottomValue, // mantém ancoragens visíveis
+        }}
+      >
+        <div className="mx-auto flex w-full max-w-[min(700px,92vw)] flex-1 flex-col min-h-0">
           <div
-            className="mx-auto w-full max-w-[min(640px,88vw)]"
-            style={{ paddingBottom: scrollInset }}
+            role="feed"
+            aria-busy={isWaitingForEco || isSendingToEco}
+            className="flex flex-1 flex-col gap-6"
           >
-          {isEmptyState && (
-            <div
-              className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex flex-col items-center justify-center py-16 sm:py-20"
-              style={{ minHeight: 'calc(100dvh - var(--eco-topbar-h,56px) - 120px)' }}
-            >
+            {isEmptyState && (
               <motion.div
-                className="w-full px-4"
+                className="chat-hero glass-card w-full rounded-[28px] px-5 py-12 text-center shadow-[0_20px_48px_rgba(15,23,42,0.08)] sm:px-8 sm:py-16"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.28 }}
               >
-                {/* Saudação centralizada */}
-                <div className="mx-auto flex w-full max-w-[800px] flex-col items-center gap-6 text-center sm:gap-8">
-                  <div className="flex flex-col gap-3 sm:gap-4">
-                    <h1 className="text-4xl font-semibold tracking-tight text-[color:var(--bubble-eco-text)] sm:text-5xl">
+                <div className="chat-hero__wrap mx-auto flex w-full max-w-[760px] flex-col items-center gap-5 sm:gap-7">
+                  <div className="flex flex-col gap-2.5 sm:gap-4">
+                    <h1
+                      className="text-balance font-semibold tracking-tight text-[color:var(--bubble-eco-text)]"
+                      style={{ fontSize: 'clamp(24px, 4vw, 44px)' }} // clamp() para tipografia responsiva
+                    >
                       {saudacao}, {displayName || rawUserName}
                     </h1>
-                    <p className="mx-auto max-w-2xl text-base text-[color:var(--color-text-muted)] sm:text-lg">
+                    <p className="chat-hero__subtitle mx-auto max-w-2xl text-sm text-[color:var(--color-text-muted)] sm:text-base">
                       {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
                     </p>
                   </div>
-                  <QuickSuggestions
-                    visible={showInitialSuggestions}
-                    onPickSuggestion={handlePickSuggestion}
-                    rotatingItems={ROTATING_ITEMS}
-                    rotationMs={5000}
-                    className="mt-2 flex w-full flex-col items-center gap-4"
-                    disabled={composerPending}
-                  />
                 </div>
               </motion.div>
-            </div>
-          )}
+            )}
 
-          {erroApi && (
-            <div className="glass rounded-xl text-red-600 text-center mb-4 px-4 py-2 flex flex-col items-center gap-2">
-              <span>{erroApi}</span>
-              {canRetry && (
-                <button
-                  type="button"
-                  onClick={handleRetry}
+            {erroApi && (
+              <div className="glass rounded-xl text-red-600 text-center px-4 py-3">
+                <div className="flex flex-col items-center gap-2">
+                  <span>{erroApi}</span>
+                  {canRetry && (
+                    <button
+                      type="button"
+                      onClick={handleRetry}
+                      disabled={composerPending}
+                      className="text-sm font-medium text-red-700 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60 underline underline-offset-4"
+                    >
+                      Tentar novamente
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <MessageList
+              messages={messages}
+              prefersReducedMotion={prefersReducedMotion}
+              ecoActivityTTS={ecoActivity.onTTS}
+              feedbackPrompt={feedbackPromptNode}
+              typingIndicator={typingIndicatorNode}
+              endRef={endRef}
+            />
+
+            {showInitialSuggestions && (
+              <div className="quick-suggestions-slot mt-4">
+                <p className="mb-3 text-center text-sm font-medium text-[color:var(--color-text-muted)] sm:text-base">
+                  Pronto para começar?
+                </p>
+                <QuickSuggestions
+                  visible={showInitialSuggestions}
+                  onPickSuggestion={handlePickSuggestion}
+                  rotatingItems={ROTATING_ITEMS}
+                  rotationMs={5000}
+                  className="quick-suggestions-block"
                   disabled={composerPending}
-                  className="text-sm font-medium text-red-700 hover:text-red-600 disabled:opacity-60 disabled:cursor-not-allowed underline underline-offset-4"
-                >
-                  Tentar novamente
-                </button>
-              )}
-            </div>
-          )}
-
-          <MessageList
-            messages={messages}
-            prefersReducedMotion={prefersReducedMotion}
-            ecoActivityTTS={ecoActivity.onTTS}
-            feedbackPrompt={feedbackPromptNode}
-            typingIndicator={typingIndicatorNode}
-            endRef={endRef}
-          />
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -712,10 +728,13 @@ function ChatPage() {
         )}
       </div>
 
+      {/* Sticky composer mantém o ChatInput visível na base */}
       <div
         ref={chatInputWrapperRef}
         className="composer sticky bottom-0 z-40 px-4 pb-5 pt-4 sm:px-6 sm:pb-7 sm:pt-5 lg:px-10"
-        style={{ paddingBottom: safeAreaBottom + 16 }}
+        style={{
+          paddingBottom: safeAreaBottom + 16, // padding inclui safe-area inferior
+        }}
       >
         <div className="mx-auto w-full max-w-[min(700px,92vw)] space-y-3">
           <SuggestionChips
