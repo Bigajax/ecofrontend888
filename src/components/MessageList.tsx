@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import ChatMessage from './ChatMessage';
 import EcoMessageWithAudio from './EcoMessageWithAudio';
 import type { Message } from '../contexts/ChatContext';
+import { isEcoMessage, resolveMessageSender } from '../utils/chat/messages';
 
 type MessageListProps = {
   messages: Message[];
@@ -41,9 +42,10 @@ const MessageList: React.FC<MessageListProps> = ({
         (typeof message.interaction_id === 'string' && message.interaction_id.trim()) ||
         (typeof message.interactionId === 'string' && message.interactionId.trim()) ||
         '';
+      const normalizedSender = resolveMessageSender(message);
       const interactionSenderKey =
-        interactionKey && typeof message.sender === 'string' && message.sender
-          ? `${interactionKey}:${message.sender}`
+        interactionKey && normalizedSender
+          ? `${interactionKey}:${normalizedSender}`
           : '';
 
       if (id && seen.has(id)) {
@@ -77,7 +79,7 @@ const MessageList: React.FC<MessageListProps> = ({
             ease: prefersReducedMotion ? 'linear' : 'easeOut',
           }}
         >
-          {message.sender === 'eco' ? (
+          {isEcoMessage(message) ? (
             <EcoMessageWithAudio
               message={message as any}
               onActivityTTS={handleTTS}

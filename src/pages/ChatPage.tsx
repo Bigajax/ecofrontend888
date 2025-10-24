@@ -28,6 +28,7 @@ import { useEcoActivity } from '../hooks/useEcoActivity';
 import { useKeyboardInsets } from '../hooks/useKeyboardInsets';
 import { ensureSessionId } from '../utils/chat/session';
 import { saudacaoDoDiaFromHour } from '../utils/chat/greetings';
+import { isEcoMessage } from '../utils/chat/messages';
 import { ROTATING_ITEMS, OPENING_VARIATIONS } from '../constants/chat';
 import mixpanel from '../lib/mixpanel';
 import { FeedbackPrompt } from '../components/FeedbackPrompt';
@@ -387,7 +388,7 @@ function ChatPage() {
       ? lastMessage.text.trim()
       : '';
   const lastEcoMessageIsPlaceholder =
-    !!lastMessage && lastMessage.sender === 'eco' && lastEcoMessageContent.length === 0;
+    !!lastMessage && isEcoMessage(lastMessage) && lastEcoMessageContent.length === 0;
 
   const activityState = ecoActivity.activity;
   const isWaitingForEco =
