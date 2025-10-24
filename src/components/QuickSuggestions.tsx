@@ -1,4 +1,5 @@
 import React from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import RotatingPrompts from "./RotatingPrompts";
 
 /* --------- Tipo público para usar no ChatPage --------- */
@@ -137,7 +138,6 @@ export default function QuickSuggestions({
   rotationMs = 4500,
   disabled = false,
 }: QuickSuggestionsProps) {
-  if (!visible) return null;
 
   const emitPick = (s: Suggestion, meta?: SuggestionPickMeta) => {
     if (disabled) return;
@@ -146,59 +146,68 @@ export default function QuickSuggestions({
   };
 
   return (
-    <div
-      className={`w-full max-w-[800px] mx-auto mb-2 flex flex-col gap-3 ${className}`}
-      aria-label="Atalhos de início"
-      role="region"
-    >
-      {/* ⬆️ Frases rotativas */}
-      {showRotating && (
-        <div className="w-full">
-          <RotatingPrompts
-            items={rotatingItems}
-            onPick={emitPick}
-            intervalMs={rotationMs}
-            className="w-full"
-            // força a mesma tipografia no componente filho
-            labelClassName={labelCls}
-            disabled={disabled}
-          />
-        </div>
-      )}
+    <AnimatePresence>
+      {visible ? (
+        <motion.div
+          key="quick-suggestions"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 8 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+          className={`w-full max-w-[min(900px,100%)] mx-auto flex flex-col gap-3 sm:gap-3.5 ${className}`}
+          aria-label="Atalhos de início"
+          role="region"
+        >
+          {/* ⬆️ Frases rotativas */}
+          {showRotating && (
+            <div className="w-full">
+              <RotatingPrompts
+                items={rotatingItems}
+                onPick={emitPick}
+                intervalMs={rotationMs}
+                className="w-full"
+                // força a mesma tipografia no componente filho
+                labelClassName={labelCls}
+                disabled={disabled}
+              />
+            </div>
+          )}
 
-      {/* ⬇️ Pílulas compactas */}
-      <div className="flex w-full flex-wrap justify-center gap-2 px-0.5 py-1 sm:gap-2.5 lg:gap-3">
-        {suggestions.map((s, index) => (
-          <button
-            key={s.id}
-            onClick={() => emitPick(s, { source: "pill", index })}
-            className="
-              shrink-0
-              h-10 md:h-11
-              rounded-full px-3.5 md:px-4
-              bg-white/70 backdrop-blur-md
-              border border-black/10
-              shadow-[0_8px_22px_rgba(16,24,40,0.08)]
-              hover:bg-white hover:border-black/15 hover:shadow-[0_12px_32px_rgba(16,24,40,0.12)]
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-black/10
-              active:translate-y-[1px] transition duration-200 ease-out
-              text-slate-900/95 inline-flex items-center gap-2
-            "
-            aria-label={`Sugerir: ${s.label}`}
-            title={s.label}
-            data-suggestion-id={s.id}
-            type="button"
-            disabled={disabled}
-          >
-            {s.icon && (
-              <span className="leading-none text-[15px] md:text-[17px]" aria-hidden>
-                {s.icon}
-              </span>
-            )}
-            <span className={labelCls}>{s.label}</span>
-          </button>
-        ))}
-      </div>
-    </div>
+          {/* ⬇️ Pílulas compactas */}
+          <div className="flex w-full flex-wrap justify-center gap-2 px-1 py-1 sm:gap-2.5 lg:gap-3">
+            {suggestions.map((s, index) => (
+              <button
+                key={s.id}
+                onClick={() => emitPick(s, { source: "pill", index })}
+                className="
+                  shrink-0
+                  h-10 md:h-11
+                  rounded-full px-3.5 md:px-4
+                  bg-white/70 backdrop-blur-md
+                  border border-black/10
+                  shadow-[0_8px_22px_rgba(16,24,40,0.08)]
+                  hover:bg-white hover:border-black/15 hover:shadow-[0_12px_32px_rgba(16,24,40,0.12)]
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-black/10
+                  active:translate-y-[1px] transition duration-200 ease-out
+                  text-slate-900/95 inline-flex items-center gap-2
+                "
+                aria-label={`Sugerir: ${s.label}`}
+                title={s.label}
+                data-suggestion-id={s.id}
+                type="button"
+                disabled={disabled}
+              >
+                {s.icon && (
+                  <span className="leading-none text-[15px] md:text-[17px]" aria-hidden>
+                    {s.icon}
+                  </span>
+                )}
+                <span className={labelCls}>{s.label}</span>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }

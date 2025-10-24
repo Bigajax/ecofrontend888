@@ -522,6 +522,8 @@ function ChatPage() {
     !composerPending &&
     !erroApi &&
     !voicePanelOpen;
+  const shouldShowComposerQuickSuggestions =
+    showQuick && !composerPending && !isWaitingForEco && !erroApi && !voicePanelOpen;
   const canRetry = Boolean(
     lastAttempt &&
     erroApi &&
@@ -719,14 +721,22 @@ function ChatPage() {
         className="composer sticky bottom-0 z-40 px-3 pt-3 sm:px-6 lg:px-10"
         style={{ paddingBottom: safeAreaBottom + 16 }}
       >
-        <div className="mx-auto w-full max-w-[min(640px,88vw)] space-y-3">
+        <div className="mx-auto w-full max-w-[min(900px,94vw)] space-y-4 sm:space-y-5">
           <SuggestionChips
             visible={shouldShowSuggestionChips}
             onPick={(suggestion, index) =>
               handlePickSuggestion(suggestion, { source: 'pill', index })
             }
             disabled={composerPending}
-            className="mb-1"
+            className="mx-auto w-full max-w-[min(900px,100%)]"
+          />
+          <QuickSuggestions
+            visible={shouldShowComposerQuickSuggestions && (!isEmptyState || !showInitialSuggestions)}
+            onPickSuggestion={handlePickSuggestion}
+            rotatingItems={ROTATING_ITEMS}
+            rotationMs={5000}
+            disabled={composerPending}
+            className="px-1.5 sm:px-3"
           />
           <ChatInput
             ref={chatInputRef}
