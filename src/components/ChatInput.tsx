@@ -27,7 +27,7 @@ export type ChatInputHandle = {
   focus: () => void;
 };
 
-const CTA_TEXT = 'Converse com a Eco…';
+const CTA_TEXT = 'Converse com a Eco...';
 
 const ChatInput = forwardRef<ChatInputHandle, Props>(
   (
@@ -79,8 +79,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
         textarea.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
     }, [inputMessage]);
 
-    const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
-      event.preventDefault();
+    const trySendMessage = async () => {
       if (isBusy) return;
       const raw = inputMessage;
       if (!raw.trim()) return;
@@ -111,6 +110,11 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
       }
     };
 
+    const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
+      event.preventDefault();
+      await trySendMessage();
+    };
+
     return (
       <motion.form
         ref={wrapperRef}
@@ -128,8 +132,10 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
           <div className="flex min-w-0 flex-1">
             <div
               className={clsx(
-                'flex w-full min-w-0 items-center gap-3 rounded-full border border-slate-200/70 bg-white px-4 py-2 shadow-[0_18px_42px_rgba(15,23,42,0.08)] transition-colors duration-200 focus-within:border-slate-300 focus-within:shadow-[0_24px_54px_rgba(15,23,42,0.12)] focus-within:ring-2 focus-within:ring-[rgba(0,122,255,0.14)]',
-                isBusy ? 'opacity-95' : 'hover:border-slate-300',
+                'group flex w-full min-w-0 items-center gap-3 rounded-full border border-white/60 bg-white/70 px-5 py-2.5 shadow-[0_26px_54px_rgba(15,23,42,0.16)] backdrop-blur-xl transition-all duration-200 focus-within:border-white focus-within:bg-white/80 focus-within:shadow-[0_32px_64px_rgba(15,23,42,0.22)] focus-within:ring-2 focus-within:ring-[rgba(0,122,255,0.22)]',
+                isBusy
+                  ? 'opacity-90'
+                  : 'hover:border-white/70 hover:bg-white/80 hover:shadow-[0_30px_60px_rgba(15,23,42,0.18)]',
               )}
             >
               <textarea
@@ -149,8 +155,18 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 disabled={isBusy}
                 aria-disabled={isBusy}
                 aria-label="Mensagem para a Eco"
-                className="w-full min-w-0 max-h-[9.5rem] min-h-[2.75rem] resize-none border-0 bg-transparent text-[15px] leading-[1.45] tracking-[-0.01em] text-slate-800 placeholder:text-slate-400 placeholder:opacity-70 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:text-[rgba(71,85,105,0.55)] sm:text-[16px]"
+                className="w-full min-w-0 max-h-[9.5rem] min-h-[2.9rem] resize-none border-0 bg-transparent py-[0.45rem] text-[15px] leading-[1.6] tracking-[-0.01em] text-slate-800 placeholder:text-slate-400/90 placeholder:opacity-100 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:text-[rgba(71,85,105,0.55)] sm:text-[16px]"
                 title={isBusy ? 'Aguarde a resposta da Eco' : undefined}
+                onKeyDown={(event) => {
+                  if (
+                    event.key === 'Enter' &&
+                    !event.shiftKey &&
+                    !(event.nativeEvent as unknown as { isComposing?: boolean }).isComposing
+                  ) {
+                    event.preventDefault();
+                    void trySendMessage();
+                  }
+                }}
               />
 
               <button
@@ -161,12 +177,12 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 }}
                 disabled={isBusy || isMicActive}
                 className={clsx(
-                  'relative -mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(15,23,42,0.06)] text-[color:var(--color-text-primary)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.24)]',
+                  'relative -mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/70 text-[color:var(--color-text-primary)] shadow-[0_14px_28px_rgba(15,23,42,0.12)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.28)] group-hover:bg-white/80',
                   isBusy
-                    ? 'cursor-not-allowed opacity-60'
+                    ? 'cursor-not-allowed opacity-60 shadow-none'
                     : isMicActive
                     ? 'cursor-wait opacity-80'
-                    : 'hover:bg-[rgba(15,23,42,0.12)]',
+                    : 'hover:bg-white/90 hover:shadow-[0_18px_36px_rgba(15,23,42,0.18)]',
                 )}
                 aria-label={
                   isMicActive ? 'Gravação em andamento' : 'Abrir painel de voz'

@@ -714,10 +714,10 @@ function ChatPage() {
 
       <div
         ref={chatInputWrapperRef}
-        className="composer sticky bottom-0 z-40 px-4 pb-4 pt-3 sm:px-6 sm:pb-6 lg:px-10"
+        className="composer sticky bottom-0 z-40 px-4 pb-5 pt-4 sm:px-6 sm:pb-7 sm:pt-5 lg:px-10"
         style={{ paddingBottom: safeAreaBottom + 16 }}
       >
-        <div className="mx-auto w-full max-w-[min(680px,92vw)] space-y-3">
+        <div className="mx-auto w-full max-w-[min(700px,92vw)] space-y-3">
           <SuggestionChips
             visible={shouldShowSuggestionChips}
             onPick={(suggestion, index) =>
