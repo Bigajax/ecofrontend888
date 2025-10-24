@@ -1,4 +1,5 @@
 import React from "react";
+import clsx from "clsx";
 import RotatingPrompts from "./RotatingPrompts";
 
 /* --------- Tipo público para usar no ChatPage --------- */
@@ -124,7 +125,7 @@ export const DEFAULT_ROTATING: Suggestion[] = [
 
 /* === Tipografia igual ao Drawer (clean) === */
 const labelCls =
-  "text-[15px] leading-[1.35] text-slate-900/95 font-normal tracking-[-0.005em] antialiased";
+  "text-[15px] leading-[1.35] text-center text-slate-900/95 font-normal tracking-[-0.005em] antialiased";
 
 export default function QuickSuggestions({
   visible,
@@ -147,43 +148,35 @@ export default function QuickSuggestions({
 
   return (
     <div
-      className={`w-full max-w-[800px] mx-auto mb-2 flex flex-col gap-3 ${className}`}
+      className={`mx-auto mb-4 flex w-full max-w-[840px] flex-col items-center text-center md:mb-3 sm:mb-2 ${className}`}
       aria-label="Atalhos de início"
       role="region"
     >
-      {/* ⬆️ Frases rotativas */}
       {showRotating && (
         <div className="w-full">
           <RotatingPrompts
             items={rotatingItems}
             onPick={emitPick}
             intervalMs={rotationMs}
-            className="w-full"
-            // força a mesma tipografia no componente filho
+            className="w-full justify-center"
             labelClassName={labelCls}
             disabled={disabled}
           />
         </div>
       )}
 
-      {/* ⬇️ Pílulas compactas */}
-      <div className="flex w-full flex-wrap justify-center gap-2 px-0.5 py-1 sm:gap-2.5 lg:gap-3">
+      <div
+        className="quick-suggestions-grid mt-3 grid w-full place-items-center grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3 sm:gap-2"
+        role="list"
+      >
         {suggestions.map((s, index) => (
           <button
             key={s.id}
             onClick={() => emitPick(s, { source: "pill", index })}
-            className="
-              shrink-0
-              h-10 md:h-11
-              rounded-full px-3.5 md:px-4
-              bg-white/70 backdrop-blur-md
-              border border-black/10
-              shadow-[0_8px_22px_rgba(16,24,40,0.08)]
-              hover:bg-white hover:border-black/15 hover:shadow-[0_12px_32px_rgba(16,24,40,0.12)]
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-black/10
-              active:translate-y-[1px] transition duration-200 ease-out
-              text-slate-900/95 inline-flex items-center gap-2
-            "
+            className={clsx(
+              "inline-flex min-h-[48px] w-full min-w-[240px] shrink-0 snap-center items-center justify-center gap-2 rounded-2xl bg-white/90 px-4 py-3 text-center text-slate-900/95 shadow-sm ring-1 ring-slate-900/5 transition hover:bg-white hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 active:translate-y-[1px] dark:bg-slate-900/70 dark:text-slate-100 dark:ring-white/10 dark:hover:bg-slate-900/80",
+              disabled && "cursor-not-allowed opacity-60",
+            )}
             aria-label={`Sugerir: ${s.label}`}
             title={s.label}
             data-suggestion-id={s.id}

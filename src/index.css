@@ -5,6 +5,8 @@
 /* Evita “font boosting” no iOS/Android e melhora renderização */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; text-rendering: optimizeLegibility; }
 
+html, body, #root { height: 100%; }
+
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -43,6 +45,28 @@ body::before {
 
 .suggestion-scroll {
   scroll-behavior: smooth;
+}
+
+.quick-suggestions-grid {
+  scroll-padding-inline: 0.25rem;
+}
+
+@media (max-height: 640px) {
+  .quick-suggestions-grid {
+    display: flex !important;
+    align-items: stretch;
+    gap: 0.5rem !important;
+    overflow-x: auto;
+    padding-inline: 0.25rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .quick-suggestions-grid > * {
+    flex-shrink: 0;
+    min-width: 240px;
+    scroll-snap-align: center;
+  }
 }
 
 /* ---------------------------- Tokens ---------------------------- */
