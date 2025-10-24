@@ -125,7 +125,7 @@ export const DEFAULT_ROTATING: Suggestion[] = [
 
 /* === Tipografia igual ao Drawer (clean) === */
 const labelCls =
-  "text-[15px] leading-[1.35] text-center text-slate-900/95 font-normal tracking-[-0.005em] antialiased";
+  "text-[15px] font-medium leading-[1.4] tracking-[-0.01em] text-neutral-700 antialiased";
 
 export default function QuickSuggestions({
   visible,
@@ -148,7 +148,11 @@ export default function QuickSuggestions({
 
   return (
     <div
-      className={`mx-auto mb-4 flex w-full max-w-[840px] flex-col items-center text-center md:mb-3 sm:mb-2 ${className}`}
+      className={clsx(
+        "mx-auto flex w-full max-w-[840px] flex-col items-center text-center",
+        "mt-6",
+        className,
+      )}
       aria-label="Atalhos de início"
       role="region"
     >
@@ -166,7 +170,7 @@ export default function QuickSuggestions({
       )}
 
       <div
-        className="quick-suggestions-grid mt-3 grid w-full place-items-center grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3 sm:gap-2"
+        className="quick-suggestions-grid mt-4 grid w-full max-w-[840px] grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3 mx-auto"
         role="list"
       >
         {suggestions.map((s, index) => (
@@ -174,7 +178,9 @@ export default function QuickSuggestions({
             key={s.id}
             onClick={() => emitPick(s, { source: "pill", index })}
             className={clsx(
-              "inline-flex min-h-[48px] w-full min-w-[240px] shrink-0 snap-center items-center justify-center gap-2 rounded-2xl bg-white/90 px-4 py-3 text-center text-slate-900/95 shadow-sm ring-1 ring-slate-900/5 transition hover:bg-white hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 active:translate-y-[1px] dark:bg-slate-900/70 dark:text-slate-100 dark:ring-white/10 dark:hover:bg-slate-900/80",
+              "flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(0,0,0,0.05)] bg-white px-4 py-3 text-[15px] font-medium text-neutral-700 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all duration-200",
+              "hover:scale-[1.01] hover:shadow-[0_2px_6px_rgba(0,0,0,0.06)]",
+              "focus:outline-none focus:ring-0",
               disabled && "cursor-not-allowed opacity-60",
             )}
             aria-label={`Sugerir: ${s.label}`}
@@ -184,7 +190,7 @@ export default function QuickSuggestions({
             disabled={disabled}
           >
             {s.icon && (
-              <span className="leading-none text-[15px] md:text-[17px]" aria-hidden>
+              <span className="leading-none text-[15px] text-neutral-600/80" aria-hidden>
                 {s.icon}
               </span>
             )}

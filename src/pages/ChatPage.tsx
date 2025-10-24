@@ -647,7 +647,7 @@ function ChatPage() {
             className="w-full px-4 sm:px-6 lg:px-10"
             style={{ paddingTop: mainTopPadding }}
           >
-            <div className="mx-auto flex w-full max-w-[920px] flex-col items-center px-4 text-center sm:max-w-[600px] md:max-w-[760px]">
+            <div className="mx-auto flex w-full max-w-[840px] flex-col items-center px-4 text-center">
               {isEmptyState && (
                 <motion.div
                   className="w-full"
@@ -655,17 +655,17 @@ function ChatPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.28 }}
                 >
-                  <div className="flex w-full flex-col items-center py-10 sm:py-12">
-                    <div className="mt-4 w-full max-w-[840px] rounded-2xl border border-black/5 bg-white/90 px-5 py-4 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-colors md:py-3 sm:py-2 dark:border-white/10 dark:bg-slate-900/60">
-                      <h1 className="text-[clamp(28px,5vw,40px)] font-semibold leading-tight text-[color:var(--bubble-eco-text)]">
+                  <div className="flex w-full flex-col items-center justify-center py-12 sm:py-16">
+                    <div className="w-full rounded-2xl border border-[rgba(0,0,0,0.05)] bg-white/80 px-6 py-8 text-center shadow-[0_1px_4px_rgba(0,0,0,0.04)] backdrop-blur-[6px] transition-colors sm:px-8">
+                      <h1 className="text-[clamp(28px,5vw,40px)] font-semibold leading-tight text-[#0b0b0c]">
                         {saudacao}, {displayName || rawUserName}
                       </h1>
-                      <p className="mt-2 text-[clamp(14px,2.2vw,18px)] text-neutral-600 dark:text-slate-200">
+                      <p className="mt-2 text-[clamp(14px,2vw,18px)] text-neutral-600">
                         {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
                       </p>
                     </div>
                     <div className="flex w-full flex-col items-center">
-                      <h2 className="mt-4 text-[clamp(15px,2vw,18px)] font-semibold text-neutral-700 dark:text-slate-100">
+                      <h2 className="mt-6 text-[clamp(15px,2vw,18px)] font-medium text-neutral-700">
                         Pronto para começar?
                       </h2>
                       <QuickSuggestions
@@ -673,7 +673,7 @@ function ChatPage() {
                         onPickSuggestion={handlePickSuggestion}
                         rotatingItems={ROTATING_ITEMS}
                         rotationMs={5000}
-                        className="w-full"
+                        className="mt-6 w-full"
                         disabled={composerPending}
                       />
                     </div>
@@ -697,7 +697,7 @@ function ChatPage() {
                 </div>
               )}
 
-              <div className="mt-8 w-full max-w-[min(700px,92vw)] text-left sm:mt-10">
+              <div className="mt-10 w-full max-w-[min(700px,92vw)] text-left">
                 <MessageList
                   messages={messages}
                   prefersReducedMotion={prefersReducedMotion}
@@ -719,7 +719,7 @@ function ChatPage() {
             <button
               type="button"
               onClick={handleJumpToBottom}
-              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[0_16px_32px_rgba(15,23,42,0.18)] transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300/60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+              className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,0,0,0.05)] bg-white/85 px-4 py-2 text-sm font-medium text-neutral-700 shadow-[0_1px_4px_rgba(0,0,0,0.05)] transition hover:shadow-[0_2px_6px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-0"
             >
               Novas mensagens
             </button>
@@ -729,17 +729,17 @@ function ChatPage() {
 
       <footer
         ref={chatInputWrapperRef}
-        className="composer sticky bottom-0 z-40 px-4 pb-[env(safe-area-inset-bottom)] pt-4 sm:px-6 sm:pt-5 lg:px-10"
+        className="composer sticky bottom-0 z-40 w-full min-h-[64px] border-t border-[rgba(0,0,0,0.05)] bg-white/80 px-4 pb-[env(safe-area-inset-bottom)] pt-4 shadow-[0_-1px_6px_rgba(0,0,0,0.03)] backdrop-blur-md sm:px-6 sm:pt-5 lg:px-10"
         style={footerStyle}
       >
-        <div className="mx-auto w-full max-w-[min(700px,92vw)] space-y-3">
+        <div className="mx-auto w-full max-w-[min(700px,92vw)] space-y-4">
           <SuggestionChips
             visible={shouldShowSuggestionChips}
             onPick={(suggestion, index) =>
               handlePickSuggestion(suggestion, { source: 'pill', index })
             }
             disabled={composerPending}
-            className="mb-1"
+            className="mb-2"
           />
           <ChatInput
             ref={chatInputRef}
