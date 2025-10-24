@@ -67,16 +67,10 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
     useEffect(() => {
       const textarea = textareaRef.current;
       if (!textarea) return;
-      const MIN_HEIGHT = 44;
-      const MAX_HEIGHT = 152;
-      textarea.style.height = 'auto';
-      const nextHeight = Math.max(
-        MIN_HEIGHT,
-        Math.min(MAX_HEIGHT, textarea.scrollHeight),
-      );
-      textarea.style.height = `${nextHeight}px`;
+      const BASE_HEIGHT = 56;
+      textarea.style.height = `${BASE_HEIGHT}px`;
       textarea.style.overflowY =
-        textarea.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
+        textarea.scrollHeight > BASE_HEIGHT ? 'auto' : 'hidden';
     }, [inputMessage]);
 
     const trySendMessage = async () => {
@@ -128,12 +122,12 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
         style={{ overflowAnchor: 'none' }}
         onSubmit={handleSubmit}
       >
-        <div className="flex w-full items-center gap-2 sm:gap-3">
+        <div className="flex w-full items-center gap-3">
           <div className="flex min-w-0 flex-1">
             <div
               className={clsx(
-                'group flex w-full min-w-0 items-center gap-3 rounded-full border border-[rgba(0,0,0,0.08)] bg-transparent px-5 py-3 transition-all duration-200 ease-in-out focus-within:border-[rgba(0,0,0,0.15)]',
-                isBusy ? 'opacity-90' : 'hover:border-[rgba(0,0,0,0.12)]',
+                'group flex h-14 w-full min-w-0 items-center rounded-full border border-neutral-200 bg-transparent px-6 py-0 transition-all duration-200 ease-in-out focus-within:border-neutral-300',
+                isBusy ? 'opacity-80' : 'hover:border-neutral-300',
               )}
             >
               <textarea
@@ -153,7 +147,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 disabled={isBusy}
                 aria-disabled={isBusy}
                 aria-label="Mensagem para a Eco"
-                className="w-full min-w-0 max-h-[9.5rem] min-h-[2.9rem] resize-none border-0 bg-transparent py-0 text-[15px] leading-[1.6] tracking-[-0.01em] text-[rgba(28,28,30,0.6)] placeholder:text-[#A0A0A0] placeholder:opacity-100 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:text-[rgba(28,28,30,0.35)]"
+                className="h-full w-full min-w-0 resize-none border-0 bg-transparent py-0 text-center text-[15px] leading-[1.6] tracking-[-0.01em] text-[rgba(28,28,30,0.6)] placeholder:text-center placeholder:text-[#A0A0A0] placeholder:opacity-100 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:text-[rgba(28,28,30,0.35)]"
                 style={{
                   fontFamily:
                     'SF Pro Text, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -179,7 +173,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 }}
                 disabled={isBusy || isMicActive}
                 className={clsx(
-                  'relative -mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--color-text-primary)] transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.28)]',
+                  'relative -mr-1 flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-[color:var(--color-text-primary)] transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.28)]',
                   isBusy
                     ? 'cursor-not-allowed opacity-60'
                     : isMicActive
@@ -214,7 +208,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 exit={{ opacity: 0, scale: 0.9, x: 8 }}
                 transition={{ duration: 0.18 }}
                 className={clsx(
-                  'inline-flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--color-accent)] text-white transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.35)] hover:-translate-y-[1px] active:scale-[0.96]',
+                  'inline-flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--color-accent)] text-white transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.35)] hover:-translate-y-[1px] active:scale-[0.96]',
                   isBusy ? 'cursor-not-allowed opacity-70 hover:translate-y-0' : null,
                 )}
                 aria-label="Enviar mensagem"
