@@ -1,15 +1,52 @@
 # Client-to-Database Request Flow
 
-This document explains how a chat message travels from the Eco browser client to the `mensagem` table exposed by Supabase. It focuses on the frontend code path so maintainers can reason about which layer owns optimistic UI updates, authentication headers, and error handling along the way.
+This document explains how a chat message travels from the Eco browser client to the `mensagem` table exposed by Supabase. It focuses on the frontend code path so maintainers can reason about which layer owns optimistic UI updates, authentication headers, request routing, and error handling along the way.
+
+## High-level network route
+
+The frontend never calls Supabase directly from the browser. Every REST call hits the local `/api` namespace, which Vercel rewrites to the Render backend, and only then reaches Supabase. 【F:src/api/mensagem.ts†L1-L64】【F:vercel.json†L1-L6】
+
+```mermaid
+graph LR
+  subgraph Browser
+    UI[ChatPage.tsx]
+    Hook[useEcoStream]
+    Helper[salvarMensagem]
+    Rest[supabaseRestRequest]
+  end
+  subgraph Edge
+    Rewrite[Vercel rewrite<br/>/api → eco backend]
+  end
+  subgraph Backend
+    EcoAPI[Render eco backend]
+    SupabaseREST[Supabase REST endpoint]
+    DB[(Postgres mensagens table)]
+  end
+
+  UI --> Hook
+  Hook --> Helper
+  Helper --> Rest
+  Rest -- fetch /api/mensagem --> Rewrite
+  Rewrite --> EcoAPI
+  EcoAPI --> SupabaseREST
+  SupabaseREST --> DB
+  DB -->|inserted row| SupabaseREST
+  SupabaseREST --> EcoAPI
+  EcoAPI --> Rewrite
+  Rewrite --> Rest
+  Rest --> Helper
+  Helper --> Hook
+  Hook --> UI
+```
 
 ## Call stack from UI to persistence
 
-1. **Composer hands off to the streaming hook.** `ChatPage` wires every send action to `useEcoStream.handleSendMessage`, after applying guest limits and UI guards. 【F:src/pages/ChatPage.tsx†L262-L337】
+1. **Composer hands off to the streaming hook.** `ChatPage` wires every send action to `useEcoStream.handleSendMessage`, after applying guest limits and UI guards. 【F:src/pages/ChatPage.tsx†L262-L347】
 2. **`useEcoStream` prepares optimistic state.** The hook logs client analytics, queues passive signals, and—when a Supabase session is present—starts persisting the user message before contacting the streaming backend. Guests skip Supabase entirely. 【F:src/hooks/useEcoStream.ts†L430-L520】
-3. **`salvarMensagem` creates the REST payload.** It serializes the message body and delegates the HTTP call to `supabaseRestRequest`, ensuring the response includes the inserted row by setting `Prefer: return=representation`. 【F:src/api/mensagem.ts†L70-L93】
-4. **`supabaseRestRequest` signs the HTTP request.** The helper retrieves the active Supabase session, sets both the `apikey` and `Authorization` headers, and calls `fetch` against `${VITE_SUPABASE_URL}/rest/v1/mensagem`. Non-2xx responses are turned into descriptive `Error`s. 【F:src/api/mensagem.ts†L34-L68】
-5. **Supabase REST writes to Postgres.** The `/rest/v1/mensagem` endpoint maps directly to the `mensagem` table, so Supabase inserts the JSON payload and returns the stored row (including the generated `id`). 【F:src/api/mensagem.ts†L70-L93】
-6. **Optimistic IDs are reconciled.** When the promise resolves, the hook swaps the temporary UUID used in local state with the persisted `mensagem.id`. Failures leave the optimistic ID in place and are surfaced to the console in development mode. 【F:src/hooks/useEcoStream.ts†L456-L491】
+3. **`salvarMensagem` creates the REST payload.** It serializes the message body and delegates the HTTP call to `supabaseRestRequest`, ensuring the response includes the inserted row by setting `Prefer: return=representation`. 【F:src/api/mensagem.ts†L70-L101】
+4. **`supabaseRestRequest` signs and routes the HTTP request.** The helper retrieves the active Supabase session, sets both the `apikey` and `Authorization` headers, and calls `fetch` against `/api/mensagem`. On the edge, Vercel rewrites that relative URL to the Render backend before it continues to Supabase. Non-2xx responses are turned into descriptive `Error`s. 【F:src/api/mensagem.ts†L34-L68】【F:vercel.json†L1-L6】
+5. **Supabase REST writes to Postgres.** The backend forwards the request to Supabase, which inserts the JSON payload and returns the stored row (including the generated `id`). 【F:src/api/mensagem.ts†L70-L101】
+6. **Optimistic IDs are reconciled.** When the promise resolves, the hook swaps the temporary UUID used in local state with the persisted `mensagem.id`. Failures leave the optimistic ID in place and are surfaced to the console in development mode. 【F:src/hooks/useEcoStream.ts†L456-L507】
 
 > ℹ️  `supabaseRestRequest` relies on the shared client from `src/lib/supabaseClient.ts`, guaranteeing that the same credentials gate real-time listeners and REST calls. 【F:src/lib/supabaseClient.ts†L1-L6】
 
