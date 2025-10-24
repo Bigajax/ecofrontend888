@@ -132,8 +132,8 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
           <div className="flex min-w-0 flex-1">
             <div
               className={clsx(
-                'group flex w-full min-w-0 items-center gap-3 rounded-full border border-white/60 bg-white/70 px-5 py-2.5 backdrop-blur-xl transition-all duration-200 focus-within:border-white focus-within:bg-white/80 focus-within:ring-2 focus-within:ring-[rgba(0,122,255,0.22)]',
-                isBusy ? 'opacity-90' : 'hover:border-white/70 hover:bg-white/80',
+                'group flex w-full min-w-0 items-center gap-3 rounded-full border border-[rgba(0,0,0,0.08)] bg-transparent px-5 py-3 transition-all duration-200 ease-in-out focus-within:border-[rgba(0,0,0,0.15)]',
+                isBusy ? 'opacity-90' : 'hover:border-[rgba(0,0,0,0.12)]',
               )}
             >
               <textarea
@@ -153,7 +153,11 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 disabled={isBusy}
                 aria-disabled={isBusy}
                 aria-label="Mensagem para a Eco"
-                className="w-full min-w-0 max-h-[9.5rem] min-h-[2.9rem] resize-none border-0 bg-transparent py-[0.45rem] text-[15px] leading-[1.6] tracking-[-0.01em] text-slate-800 placeholder:text-slate-400/90 placeholder:opacity-100 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:text-[rgba(71,85,105,0.55)] sm:text-[16px]"
+                className="w-full min-w-0 max-h-[9.5rem] min-h-[2.9rem] resize-none border-0 bg-transparent py-0 text-[15px] leading-[1.6] tracking-[-0.01em] text-[rgba(28,28,30,0.6)] placeholder:text-[#A0A0A0] placeholder:opacity-100 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:text-[rgba(28,28,30,0.35)]"
+                style={{
+                  fontFamily:
+                    'SF Pro Text, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                }}
                 title={isBusy ? 'Aguarde a resposta da Eco' : undefined}
                 onKeyDown={(event) => {
                   if (
@@ -175,12 +179,12 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 }}
                 disabled={isBusy || isMicActive}
                 className={clsx(
-                  'relative -mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/70 text-[color:var(--color-text-primary)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.28)] group-hover:bg-white/80',
+                  'relative -mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--color-text-primary)] transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.28)]',
                   isBusy
                     ? 'cursor-not-allowed opacity-60'
                     : isMicActive
                     ? 'cursor-wait opacity-80'
-                    : 'hover:bg-white/90',
+                    : 'hover:text-[rgba(28,28,30,0.85)]',
                 )}
                 aria-label={
                   isMicActive ? 'Gravação em andamento' : 'Abrir painel de voz'
