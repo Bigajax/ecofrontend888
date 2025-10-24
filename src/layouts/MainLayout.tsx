@@ -1,5 +1,5 @@
 // src/layouts/MainLayout.tsx
-import React from 'react';
+import React, { type CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,7 +26,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <>
+    <div
+      className="app-shell"
+      style={{
+        // 72px desktop / 60px mobile — ref para grid-base no ChatPage
+        '--eco-topbar-h': '72px',
+      } as CSSProperties}
+    >
       {/* AUTO = TopBar no mobile / Sidebar no desktop */}
       <Header
         title={pageTitle}
@@ -34,21 +40,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         onLogout={user ? handleLogout : undefined}
       />
 
-      {/* Espaçamento controlado pelas CSS vars definidas no Header. */}
-      {/* Variantes com sidebar devem definir explicitamente --eco-sidebar-w quando existirem. */}
-      <main
-        className="
-          min-h-[100svh] md:min-h-[100dvh]
-          pt-[var(--eco-topbar-h,56px)] md:pt-0
-          pl-0 md:pl-[var(--eco-sidebar-w,0px)]
-          transition-[padding] duration-200 ease-out
-          bg-transparent text-[color:var(--color-text-primary)]
-        "
-      >
-        <div className="mx-auto w-full max-w-[1140px] px-4 sm:px-6 md:px-8">
+      {/* Área de conteúdo assume a segunda linha do grid */}
+      <main className="app-shell__main">
+        <div className="app-shell__viewport mx-auto w-full max-w-[600px] sm:max-w-[720px] xl:max-w-[960px] px-4 sm:px-5 md:px-6">
           {children}
         </div>
       </main>
-    </>
+    </div>
   );
 }

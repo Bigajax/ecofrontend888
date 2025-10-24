@@ -356,34 +356,180 @@ body {
 .safe-pads { padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); }
 
 /* --------------------------- Layout ---------------------------- */
+/* 100dvh para altura real com teclado móvel */
 .app-shell {
+  min-height: 100dvh; /* 100dvh mantém a altura real do viewport mesmo com teclado */
   height: 100%;
-  min-height: 0;
-  display: flex;
-  flex-direction: row;
+  width: 100%;
+  display: grid;
+  grid-template-rows: var(--eco-topbar-h, 72px) minmax(0, 1fr) auto; /* header | conteúdo | input */
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
 }
 
-.chat-page {
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 100%;
+@media (max-width: 767px) {
+  .app-shell {
+    --eco-topbar-h: 60px;
+  }
+}
+
+.app-shell__main {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow-anchor: none;
-  scrollbar-gutter: stable both-edges;
+  overflow: hidden;
+  padding-left: var(--eco-sidebar-w, 0px);
+  transition: padding 0.2s ease-out;
+}
+
+.app-shell__viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-page-grid {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto; /* conteúdo flexível + input */
+  min-height: 100%;
+  overflow: hidden;
   touch-action: pan-y;
 }
+
+.chat-page__main {
+  position: relative;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-anchor: none;
+  scrollbar-gutter: stable both-edges;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chat-page__content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.chat-home-block {
+  --rythm-sm: 8px;
+  --rythm-md: 12px;
+  --rythm-lg: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--rythm-lg);
+  width: 100%;
+  max-width: 840px;
+  margin: 0 auto;
+}
+
+.chat-home-block__hero {
+  width: 100%;
+  background: white;
+  border-radius: 1.5rem;
+  padding: 20px 20px 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.chat-home-block__hero > * + * {
+  margin-top: var(--rythm-md);
+}
+
+.chat-home-block__hero-title {
+  font-size: clamp(28px, 5vw, 40px); /* clamp() controla a tipografia responsiva do título */
+}
+
+.chat-home-block__hero-subtitle {
+  font-size: clamp(14px, 2.2vw, 18px); /* clamp() mantém o subtítulo compacto */
+  color: #475569;
+  margin-top: var(--rythm-md);
+}
+
+.chat-home-block__chips {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--rythm-lg);
+  align-items: center;
+}
+
+.quick-suggestions {
+  width: 100%;
+  max-width: 840px;
+}
+
+.quick-suggestions__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+@media (max-width: 639px) {
+  .quick-suggestions__grid {
+    gap: 8px;
+  }
+}
+
+@media (max-height: 640px) {
+  .chat-home-block {
+    gap: var(--rythm-md);
+  }
+
+  .chat-home-block__hero-subtitle {
+    display: none;
+  }
+
+  .quick-suggestions__grid {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .quick-suggestions__grid > * {
+    flex: 0 0 auto;
+    width: auto;
+    scroll-snap-align: start;
+  }
+
+  .quick-suggestions__pill {
+    width: auto;
+    min-width: 220px;
+  }
+}
+
+.quick-suggestions__pill {
+  display: grid;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+}
+
+.quick-suggestions__pill-icon {
+  justify-self: start;
+}
+
 .anchor-end { overflow-anchor: auto; }
 
 .messages {
   scrollbar-gutter: stable;
 }
 
-.composer {
-  position: sticky;
-  bottom: env(safe-area-inset-bottom, 0);
-  padding-bottom: calc(env(safe-area-inset-bottom, 0));
+.chat-page__composer {
+  position: sticky; /* sticky mantém o input sempre visível */
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px); /* padding-bottom respeita a safe-area inferior */
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
