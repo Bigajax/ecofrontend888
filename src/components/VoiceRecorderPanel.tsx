@@ -6,6 +6,7 @@ import React, {
   useState,
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Mic, Pause, Play, X, Check } from 'lucide-react';
 import clsx from 'clsx';
 
 const DEFAULT_BOTTOM_OFFSET = 120;
@@ -266,83 +267,146 @@ const VoiceRecorderPanel: React.FC<VoiceRecorderPanelProps> = ({
     return 'Pronto';
   }, [errorMessage, status]);
 
+  const transcriptPreview = useMemo(() => {
+    if (!transcript && !interimTranscript) return '';
+    return `${transcript} ${interimTranscript}`.replace(/\s+/g, ' ').trim();
+  }, [interimTranscript, transcript]);
+
+  const waveformBars = useMemo(() => {
+    const animated = status === 'recording' && !errorMessage;
+    return (
+      <span className="flex h-6 items-end gap-[3px]" aria-hidden>
+        {Array.from({ length: 5 }).map((_, index) => (
+          <motion.span
+            key={index}
+            className="w-[3px] rounded-full bg-slate-400/80"
+            animate={
+              animated
+                ? {
+                    height: [8, 16 + index * 3, 10],
+                    opacity: [0.45, 1, 0.55],
+                  }
+                : {
+                    height: 10 + index * 2,
+                    opacity: 0.65,
+                  }
+            }
+            transition={{
+              repeat: animated ? Infinity : 0,
+              duration: animated ? 1 + index * 0.12 : 0.2,
+              ease: 'easeInOut',
+              delay: animated ? index * 0.08 : 0,
+            }}
+          />
+        ))}
+      </span>
+    );
+  }, [errorMessage, status]);
+
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 24 }}
+          exit={{ opacity: 0, y: 28 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="fixed left-1/2 z-[60] w-[min(320px,calc(100vw-32px))] -translate-x-1/2"
-          style={{ bottom: `${Math.max(bottomOffset, 48)}px` }}
+          className="fixed left-1/2 z-[60] w-[min(360px,calc(100vw-28px))] -translate-x-1/2"
+          style={{ bottom: `${Math.max(bottomOffset, 56)}px` }}
           role="dialog"
           aria-modal="true"
           aria-live="assertive"
         >
           <div
             className={clsx(
-              'rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur-xl',
-              'dark:bg-white/80',
+              'rounded-3xl border border-white/70 bg-white/80 p-3 shadow-[0_20px_48px_rgba(15,23,42,0.2)] backdrop-blur-2xl',
+              'dark:bg-white/85',
             )}
           >
-            <div className="mb-3 flex items-center justify-between text-[13px] font-medium text-slate-700">
-              <span className="uppercase tracking-[0.18em] text-slate-500">{stateLabel}</span>
-              <span className="tabular-nums text-[15px] text-slate-900">{formattedTime}</span>
+            <div className="flex items-center justify-between px-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">
+              <span>{stateLabel}</span>
+              <span className="tabular-nums text-[12px] tracking-[0.08em] text-slate-600">{formattedTime}</span>
             </div>
 
-            <div className="mb-4 flex h-32 items-center justify-center rounded-xl bg-gradient-to-br from-white/70 via-white/50 to-white/70 text-slate-500">
-              <span className="text-sm font-medium tracking-[0.3em] text-slate-400">●●●</span>
-              <span className="sr-only">Visualização de áudio</span>
-            </div>
-
-            <div className="mb-4 min-h-[3rem] rounded-xl bg-white/80 px-3 py-2 text-sm text-slate-700">
-              {errorMessage ? (
-                <p>{errorMessage}</p>
-              ) : (
-                <p>
-                  {transcript || interimTranscript
-                    ? (
-                        <span>
-                          {transcript}
-                          {interimTranscript && (
-                            <span className="text-slate-400"> {interimTranscript}</span>
-                          )}
-                        </span>
-                      )
-                    : 'A gravação será transcrita aqui…'}
-                </p>
+            <div
+              className={clsx(
+                'mt-2 flex items-center gap-3 rounded-full border border-slate-200/60 bg-white/90 px-3 py-2.5 shadow-[0_18px_38px_rgba(15,23,42,0.12)] transition focus-within:border-slate-300 focus-within:shadow-[0_26px_52px_rgba(15,23,42,0.18)]',
+                errorMessage ? 'border-red-200/70 bg-red-50/80' : null,
               )}
-            </div>
-
-            <div className="flex items-center justify-between gap-2 text-sm font-medium">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-slate-700 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(15,23,42,0.18)]"
-              >
-                <span aria-hidden>❌</span>
-                Cancelar
-              </button>
+            >
               <button
                 type="button"
                 onClick={togglePause}
                 disabled={isActionDisabled || !!errorMessage}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-slate-700 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(15,23,42,0.18)] disabled:cursor-not-allowed disabled:opacity-60"
+                className={clsx(
+                  'flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/70 bg-white/95 text-slate-600 shadow-[0_12px_20px_rgba(15,23,42,0.08)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.28)]',
+                  isActionDisabled || errorMessage
+                    ? 'cursor-not-allowed opacity-50 shadow-none'
+                    : 'hover:-translate-y-[1px] hover:shadow-[0_16px_30px_rgba(15,23,42,0.14)]',
+                )}
+                aria-label={status === 'paused' ? 'Retomar gravação' : 'Pausar gravação'}
+                title={status === 'paused' ? 'Retomar gravação' : 'Pausar gravação'}
               >
-                <span aria-hidden>{status === 'paused' ? '▶️' : '⏸'}</span>
-                {status === 'paused' ? 'Retomar' : 'Pausar'}
+                {status === 'paused' ? (
+                  <Play size={16} strokeWidth={2} />
+                ) : (
+                  <Pause size={16} strokeWidth={2} />
+                )}
               </button>
-              <button
-                type="button"
-                onClick={handleConfirm}
-                disabled={isActionDisabled}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[color:var(--color-accent)] px-3 py-2 text-white transition hover:bg-[#0f6fe0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.35)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <span aria-hidden>✅</span>
-                Confirmar
-              </button>
+
+              <div className="flex min-w-0 flex-1 flex-col gap-1 text-left">
+                {errorMessage ? (
+                  <p className="text-sm font-medium text-red-600">{errorMessage}</p>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    {status === 'recording' ? (
+                      waveformBars
+                    ) : status === 'paused' ? (
+                      <Mic size={18} strokeWidth={1.7} className="text-slate-400" />
+                    ) : (
+                      <Mic size={18} strokeWidth={1.7} className="text-slate-400" />
+                    )}
+                    <p
+                      className={clsx(
+                        'min-w-0 flex-1 text-sm text-slate-600',
+                        transcriptPreview ? 'line-clamp-1' : 'italic text-slate-400',
+                      )}
+                    >
+                      {transcriptPreview || 'Transcrevendo sua mensagem…'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(15,23,42,0.22)]"
+                  aria-label="Cancelar gravação"
+                >
+                  <X size={18} strokeWidth={2} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={isActionDisabled}
+                  className={clsx(
+                    'flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--color-accent)] text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.32)]',
+                    isActionDisabled ? 'cursor-not-allowed opacity-60' : 'hover:bg-[#0f6fe0]'
+                  )}
+                  aria-label="Confirmar transcrição"
+                >
+                  <Check size={18} strokeWidth={2} />
+                </button>
+              </div>
             </div>
+
+            {transcriptPreview && !errorMessage && (
+              <p className="mt-2 line-clamp-3 px-1 text-xs text-slate-500">
+                {transcriptPreview}
+              </p>
+            )}
           </div>
         </motion.div>
       )}
