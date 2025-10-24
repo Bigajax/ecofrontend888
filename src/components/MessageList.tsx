@@ -76,6 +76,22 @@ const MessageList: React.FC<MessageListProps> = ({
     return deduped;
   }, [messages]);
 
+  try {
+    console.debug(
+      '[DIAG] render:list',
+      messages.map((message) => ({
+        id: message?.id ?? null,
+        role: message?.role ?? message?.sender ?? 'unknown',
+        status: message?.status ?? null,
+        len: typeof message?.text === 'string' ? message.text.length : message?.content
+          ? String(message.content).length
+          : 0,
+      })),
+    );
+  } catch {
+    /* noop */
+  }
+
   return (
     <div className="w-full space-y-3 md:space-y-4">
       {uniqueMessages.map((message, index) => {
@@ -94,11 +110,23 @@ const MessageList: React.FC<MessageListProps> = ({
             ? ((message as { message_id?: string }).message_id ?? '').trim()
             : '');
         const interactionOrLocal = interactionId || clientLocalId || `local-${index}`;
-        const renderKey = `${interactionOrLocal}:${normalizedRole}`;
+        const renderId = typeof message.id === 'string' && message.id ? message.id : undefined;
+
+        if (!renderId) {
+          try {
+            console.warn('[DIAG] render:missing-id', {
+              fallbackKey: interactionOrLocal,
+              role: normalizedRole,
+            });
+          } catch {
+            /* noop */
+          }
+          return null;
+        }
 
         return (
           <motion.div
-            key={renderKey}
+            key={renderId}
             className="w-full"
             initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 6 }}
             animate={{ opacity: 1, y: 0 }}
