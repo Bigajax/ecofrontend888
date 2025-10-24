@@ -32,12 +32,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
       ? message.text
       : "";
 
+  const hasVisibleText = raw.trim().length > 0;
+
   // sempre mantém a bolha visível quando está streamando
   // usa um espaço não-quebrável como placeholder para garantir altura mínima
-  const textToShow = raw && raw.length > 0 ? raw : isStreaming ? "\u00A0" : "";
+  const textToShow = hasVisibleText ? raw : isStreaming ? "\u00A0" : "";
 
   // mostra os três pontinhos dentro da bolha enquanto streama e ainda não há texto
-  const showTypingDots = isEco && isStreaming && (!raw || raw.length === 0);
+  const showTypingDots = isEco && isStreaming && !hasVisibleText;
 
   const bubbleClass = clsx(
     "max-w-[80%] min-w-0 rounded-2xl px-4 py-3 whitespace-pre-wrap break-words leading-relaxed text-sm",
