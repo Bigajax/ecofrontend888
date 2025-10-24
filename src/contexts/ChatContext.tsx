@@ -231,6 +231,34 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
       const interactionKey = resolveInteractionKey(normalized);
       const messageKey = keyOf(normalized);
+      const normalizedSender = resolveRole(normalized) ?? normalized.sender ?? undefined;
+
+      const findExistingIndexForId = (id: string): number | undefined => {
+        if (!id) return undefined;
+        if (normalizedSender) {
+          const compositeKey = `${id}::${normalizedSender}`;
+          const compositeExisting = seen.get(compositeKey);
+          if (compositeExisting !== undefined) {
+            return compositeExisting;
+          }
+        }
+
+        const existing = seen.get(id);
+        if (existing === undefined) {
+          return undefined;
+        }
+
+        const existingMessage = result[existing];
+        const existingSender =
+          resolveRole(existingMessage) ?? existingMessage?.sender ?? undefined;
+
+        if (!normalizedSender || !existingSender || existingSender === normalizedSender) {
+          return existing;
+        }
+
+        return undefined;
+      };
+
       let targetIndex: number | undefined;
       if (interactionKey) {
         const existing = seenInteractions.get(interactionKey);
@@ -245,7 +273,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
       }
       for (const id of ids) {
-        const existing = seen.get(id);
+        const existing = findExistingIndexForId(id);
         if (existing !== undefined) {
           targetIndex = existing;
           break;
@@ -255,7 +283,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         targetIndex = result.length;
         ids.forEach((id) => {
           if (id) {
-            seen.set(id, targetIndex as number);
+            if (normalizedSender) {
+              seen.set(`${id}::${normalizedSender}`, targetIndex as number);
+            }
+            if (!seen.has(id)) {
+              seen.set(id, targetIndex as number);
+            }
           }
         });
         if (interactionKey) {
@@ -274,6 +307,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         if (messageKey) {
           seenKeys.set(messageKey, targetIndex);
         }
+        ids.forEach((id) => {
+          if (!id) return;
+          if (normalizedSender) {
+            seen.set(`${id}::${normalizedSender}`, targetIndex as number);
+          }
+          if (!seen.has(id)) {
+            seen.set(id, targetIndex as number);
+          }
+        });
       }
     });
     return result;

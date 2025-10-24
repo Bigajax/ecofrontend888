@@ -30,14 +30,15 @@ const MessageList: React.FC<MessageListProps> = ({
       return messages;
     }
 
-    const seen = new Set<string>();
+    const seenIdSender = new Set<string>();
+    const seenIds = new Set<string>();
     const seenInteractionSenders = new Set<string>();
     const deduped: Message[] = [];
 
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       const message = messages[index];
       if (!message) continue;
-      const id = typeof message.id === 'string' ? message.id : '';
+      const id = typeof message.id === 'string' ? message.id.trim() : '';
       const interactionKey =
         (typeof message.interaction_id === 'string' && message.interaction_id.trim()) ||
         (typeof message.interactionId === 'string' && message.interactionId.trim()) ||
@@ -48,14 +49,23 @@ const MessageList: React.FC<MessageListProps> = ({
           ? `${interactionKey}:${normalizedSender}`
           : '';
 
-      if (id && seen.has(id)) {
+      const idSenderKey = id && normalizedSender ? `${id}::${normalizedSender}` : '';
+
+      if (idSenderKey && seenIdSender.has(idSenderKey)) {
+        continue;
+      }
+      if (!idSenderKey && id && seenIds.has(id)) {
         continue;
       }
       if (interactionSenderKey && seenInteractionSenders.has(interactionSenderKey)) {
         continue;
       }
       if (id) {
-        seen.add(id);
+        if (idSenderKey) {
+          seenIdSender.add(idSenderKey);
+        } else {
+          seenIds.add(id);
+        }
       }
       if (interactionSenderKey) {
         seenInteractionSenders.add(interactionSenderKey);
@@ -68,27 +78,42 @@ const MessageList: React.FC<MessageListProps> = ({
 
   return (
     <div className="w-full space-y-3 md:space-y-4">
-      {uniqueMessages.map((message) => (
-        <motion.div
-          key={message.id}
-          className="w-full"
-          initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: prefersReducedMotion ? 0 : 0.18,
-            ease: prefersReducedMotion ? 'linear' : 'easeOut',
-          }}
-        >
-          {isEcoMessage(message) ? (
-            <EcoMessageWithAudio
-              message={message as any}
-              onActivityTTS={handleTTS}
-            />
-          ) : (
-            <ChatMessage message={message} />
-          )}
-        </motion.div>
-      ))}
+      {uniqueMessages.map((message, index) => {
+        const senderKey = resolveMessageSender(message) ?? message.sender ?? 'unknown';
+        const id = typeof message.id === 'string' ? message.id.trim() : '';
+        const interactionId =
+          (typeof message.interaction_id === 'string' && message.interaction_id.trim()) ||
+          (typeof message.interactionId === 'string' && message.interactionId.trim()) ||
+          '';
+        const fallbackKey = interactionId ? `${interactionId}:${senderKey}` : `${senderKey}:${index}`;
+        const messageId =
+          typeof (message as { message_id?: unknown }).message_id === 'string'
+            ? ((message as { message_id?: string }).message_id ?? '').trim()
+            : '';
+        const renderKey = id || messageId || fallbackKey;
+
+        return (
+          <motion.div
+            key={renderKey}
+            className="w-full"
+            initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: prefersReducedMotion ? 0 : 0.18,
+              ease: prefersReducedMotion ? 'linear' : 'easeOut',
+            }}
+          >
+            {isEcoMessage(message) ? (
+              <EcoMessageWithAudio
+                message={message as any}
+                onActivityTTS={handleTTS}
+              />
+            ) : (
+              <ChatMessage message={message} />
+            )}
+          </motion.div>
+        );
+      })}
 
       {feedbackPrompt}
 
