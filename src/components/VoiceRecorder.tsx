@@ -163,7 +163,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       return (
         <button
           onClick={toggleRecording}
-          className="p-3 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75"
+          className="p-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75"
           aria-label="Parar gravação"
         >
           <StopCircle size={24} />
@@ -173,7 +173,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       return (
         <button
           onClick={toggleRecording}
-          className="p-3 rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75"
+          className="p-3 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75"
           aria-label="Iniciar gravação"
         >
           <Mic size={24} />
@@ -184,12 +184,12 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
   return (
     <motion.div
-      className="flex flex-col h-screen w-full max-w-4xl mx-auto bg-gray-50 rounded-lg shadow-xl"
+      className="flex flex-col h-screen w-full max-w-4xl mx-auto bg-gray-50 rounded-lg"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200 rounded-t-lg shadow-sm">
+      <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200 rounded-t-lg">
         <button onClick={goToMemoryPage} className="p-2 rounded-full text-gray-600 hover:bg-gray-100">
           <BookOpen size={24} />
         </button>
@@ -234,7 +234,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="flex justify-center items-center py-4 px-6 bg-white border-t border-gray-200 rounded-b-lg shadow-md">
+      <div className="flex justify-center items-center py-4 px-6 bg-white border-t border-gray-200 rounded-b-lg">
         {renderMicButton()}
         <span className="ml-4 text-gray-600 text-sm">
           {isListening ? 'Gravando...' : isProcessing ? 'Processando...' : 'Pressione para falar'}

@@ -124,7 +124,7 @@ const LinhaDoTempoEmocional: React.FC<Props> = ({
             className={
               "px-3 py-1.5 text-[11px] rounded-full transition " +
               (mode === (opt.k as any)
-                ? "bg-white shadow-sm text-neutral-900"
+                ? "bg-white text-neutral-900"
                 : "text-neutral-500 hover:text-neutral-700")
             }
             onClick={() => setMode(opt.k as any)}
@@ -178,7 +178,7 @@ const LinhaDoTempoEmocional: React.FC<Props> = ({
           if (!slice) return null;
           const d = slice.points[0]?.data.x as Date;
           return (
-            <div className="rounded-md border border-neutral-200 bg-white/95 p-2 shadow-sm text-xs">
+            <div className="rounded-md border border-neutral-200 bg-white/95 p-2 text-xs">
               <div className="font-medium mb-1">{fmtDM.format(d)}</div>
               {slice.points.map((p) => (
                 <div key={p.id} className="flex items-center gap-1">

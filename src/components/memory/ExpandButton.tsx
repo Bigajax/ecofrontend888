@@ -13,7 +13,7 @@ const ExpandButton: React.FC<ExpandButtonProps> = ({ open, onClick, controlsId }
     aria-expanded={open}
     aria-controls={controlsId}
     aria-label={open ? 'Recolher detalhes' : 'Ver detalhes'}
-    className="h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm border border-black/[0.06] hover:bg-white hover:border-black/[0.08] active:scale-[0.96] transition-all duration-150 grid place-items-center shadow-sm"
+    className="h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm border border-black/[0.06] hover:bg-white hover:border-black/[0.08] active:scale-[0.96] transition-all duration-150 grid place-items-center"
   >
     <svg
       viewBox="0 0 20 20"

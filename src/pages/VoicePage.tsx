@@ -149,7 +149,7 @@ const VoicePage: React.FC = () => {
     >
       {/* Selo “Em construção” */}
       <div className="absolute top-[calc(var(--eco-topbar-h,56px)+8px)]">
-        <span className="px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-neutral-700 text-sm font-medium shadow-sm">
+        <span className="px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-neutral-700 text-sm font-medium">
           Em construção
         </span>
       </div>
@@ -166,7 +166,7 @@ const VoicePage: React.FC = () => {
 
       {/* Mensagem/erro sutil */}
       {error && (
-        <div className="bg-red-50/90 border border-red-200 text-red-700 px-4 py-2 rounded-xl text-sm mb-6 text-center max-w-md shadow-sm">
+        <div className="bg-red-50/90 border border-red-200 text-red-700 px-4 py-2 rounded-xl text-sm mb-6 text-center max-w-md">
           {error}
         </div>
       )}
@@ -183,8 +183,8 @@ const VoicePage: React.FC = () => {
           onClick={goToMemoryPage}
           className="
             h-14 w-14 rounded-full bg-white/80 backdrop-blur-md
-            border border-white/70 shadow-md hover:shadow-lg
-            flex items-center justify-center transition
+            border border-white/70 flex items-center justify-center transition
+            hover:border-white/80
           "
           aria-label="Memórias"
           whileTap={{ scale: 0.96 }}
@@ -199,7 +199,8 @@ const VoicePage: React.FC = () => {
             h-16 w-16 rounded-full
             ${UNDER_CONSTRUCTION ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
             bg-white/90 backdrop-blur-md border border-white/80
-            shadow-lg hover:shadow-xl flex items-center justify-center transition
+            flex items-center justify-center transition
+            hover:border-white/90
           `}
           aria-label={isListening ? "Parar gravação" : "Iniciar gravação"}
           whileTap={!UNDER_CONSTRUCTION ? { scale: 0.95 } : undefined}
@@ -217,8 +218,8 @@ const VoicePage: React.FC = () => {
           onClick={goToChatPage}
           className="
             h-14 w-14 rounded-full bg-white/80 backdrop-blur-md
-            border border-white/70 shadow-md hover:shadow-lg
-            flex items-center justify-center transition
+            border border-white/70 flex items-center justify-center transition
+            hover:border-white/80
           "
           aria-label="Voltar ao chat"
           whileTap={{ scale: 0.96 }}

@@ -23,17 +23,17 @@ const iconButtonClass =
 
 const navItem = (active: boolean) =>
   [
-    'group flex items-center gap-3 px-4 py-3 h-12 min-h-[48px] rounded-2xl border border-black/10 shadow-sm',
+    'group flex items-center gap-3 px-4 py-3 h-12 min-h-[48px] rounded-2xl border border-black/10',
     'transition duration-200 ease-out',
     active
-      ? 'bg-black text-white shadow-md'
+      ? 'bg-black text-white'
       : 'bg-white text-[#0b0b0f] hover:-translate-y-[1px] hover:bg-black/[0.04] hover:text-[#050505]',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white',
   ].join(' ');
 
 const drawerIconButtonClass = [
   'inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-[#0b0b0f]',
-  'shadow-sm transition-transform duration-200 hover:-translate-y-[1px]',
+  'transition-transform duration-200 hover:-translate-y-[1px]',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white',
 ].join(' ');
 
@@ -102,8 +102,8 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
       <div
         className={[
           'glass-toolbar pointer-events-auto w-full max-w-6xl border border-white/60',
-          'shadow-glass transition-all duration-300 ease-out',
-          scrolled ? 'shadow-floating translate-y-[1px] bg-white/75' : 'bg-white/65',
+          'transition-all duration-300 ease-out',
+          scrolled ? 'translate-y-[1px] bg-white/75' : 'bg-white/65',
         ].join(' ')}
       >
         <div className="grid h-[64px] grid-cols-[auto_1fr_auto] items-center gap-3 px-3 sm:px-5">
@@ -141,7 +141,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
             <button
               type="button"
               onClick={() => handleOpenFeedback('header')}
-              className="hidden sm:inline-flex items-center justify-center rounded-full bg-[color:var(--color-accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,255,0.25)] transition-transform duration-200 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
+              className="hidden sm:inline-flex items-center justify-center rounded-full bg-[color:var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
             >
               Feedback
             </button>
@@ -183,7 +183,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
               fixed top-0 left-0 z-[80] h-dvh w-screen sm:w-[420px]
               flex flex-col overflow-y-auto border-r border-black/10 bg-white text-[#050505]
               font-['SF Pro Display','SF Pro Text','-apple-system','BlinkMacSystemFont','Segoe UI',sans-serif]
-              pt-[env(safe-area-inset-top)] shadow-[0_20px_48px_rgba(15,15,15,0.18)] sm:rounded-r-[28px]
+              pt-[env(safe-area-inset-top)] sm:rounded-r-[28px]
             "
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
@@ -266,7 +266,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
                     setDrawerOpen(false);
                     onLogout();
                   }}
-                  className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-[#050505] shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                  className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-[#050505] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                 >
                   Sair
                 </button>

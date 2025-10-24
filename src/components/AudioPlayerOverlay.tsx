@@ -339,7 +339,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label="Reprodutor de áudio"
-        className="pointer-events-auto relative flex w-full max-w-[min(520px,92vw)] flex-col gap-4 rounded-2xl border border-slate-200 bg-white/95 px-4 py-4 text-slate-900 shadow-[0_24px_48px_rgba(15,23,42,0.18)] backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-blue-200/60 dark:border-slate-300/70 dark:bg-slate-100/95"
+        className="pointer-events-auto relative flex w-full max-w-[min(520px,92vw)] flex-col gap-4 rounded-2xl border border-slate-200 bg-white/95 px-4 py-4 text-slate-900 backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-blue-200/60 dark:border-slate-300/70 dark:bg-slate-100/95"
       >
         <button
           type="button"
@@ -360,7 +360,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
               <button
                 type="button"
                 onClick={handleManualStart}
-                className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300/60 dark:bg-slate-800 dark:hover:bg-slate-700"
+                className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300/60 dark:bg-slate-800 dark:hover:bg-slate-700"
               >
                 <PlayIcon />
                 <span>Tocar</span>

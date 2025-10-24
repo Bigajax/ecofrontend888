@@ -42,7 +42,7 @@ const pastel = (str: string) => `hsl(${hashHue(str)}, 40%, 82%)`;
 
 /* ---------- UI ---------- */
 const Card: FC<PropsWithChildren<{ title: string; subtitle?: string; id?: string }>> = ({ title, subtitle, id, children }) => (
-  <section id={id} className="bg-white rounded-[24px] border border-black/10 shadow-[0_1px_0_rgba(255,255,255,.85),0_8px_28px_rgba(2,6,23,.05)] p-6 md:p-7" role="region" aria-label={title}>
+  <section id={id} className="bg-white rounded-[24px] border border-black/10 p-6 md:p-7" role="region" aria-label={title}>
     <header className="mb-4">
       <h3 className="text-[20px] md:text-[22px] font-semibold text-neutral-900">{title}</h3>
       {subtitle && <p className="text-[13px] text-neutral-500 mt-0.5">{subtitle}</p>}
@@ -130,9 +130,9 @@ function buildSparklineData(memories: Memoria[], days: Period) {
 /* toggle segmentado */
 const SegmentedControl: FC<{ value: Period; onChange: (p: Period)=>void }> = ({ value, onChange }) => {
   const base = 'px-4 h-9 rounded-full text-[14px] font-medium transition';
-  const item = (p: Period) => `${base} ${value===p ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-700 hover:bg-neutral-100'}`;
+  const item = (p: Period) => `${base} ${value===p ? 'bg-neutral-900 text-white' : 'text-neutral-700 hover:bg-neutral-100'}`;
   return (
-    <div role="tablist" aria-label="Período" className="inline-flex p-1 rounded-full border border-black/10 bg-white shadow-sm gap-1">
+    <div role="tablist" aria-label="Período" className="inline-flex p-1 rounded-full border border-black/10 bg-white gap-1">
       {[7,28,90].map(p => (
         <button key={p} role="tab" aria-selected={value===p} className={item(p as Period)} onClick={()=>onChange(p as Period)}>
           {PERIOD_LABEL[p as Period]}

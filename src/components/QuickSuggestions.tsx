@@ -174,7 +174,7 @@ export default function QuickSuggestions({
             key={s.id}
             onClick={() => emitPick(s, { source: "pill", index })}
             className={clsx(
-              "inline-flex min-h-[48px] w-full min-w-[240px] shrink-0 snap-center items-center justify-center gap-2 rounded-2xl bg-white/90 px-4 py-3 text-center text-slate-900/95 shadow-sm ring-1 ring-slate-900/5 transition hover:bg-white hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 active:translate-y-[1px] dark:bg-slate-900/70 dark:text-slate-100 dark:ring-white/10 dark:hover:bg-slate-900/80",
+              "inline-flex min-h-[48px] w-full min-w-[240px] shrink-0 snap-center items-center justify-center gap-2 rounded-2xl bg-white/90 px-4 py-3 text-center text-slate-900/95 ring-1 ring-slate-900/5 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 active:translate-y-[1px] dark:bg-slate-900/70 dark:text-slate-100 dark:ring-white/10 dark:hover:bg-slate-900/80",
               disabled && "cursor-not-allowed opacity-60",
             )}
             aria-label={`Sugerir: ${s.label}`}

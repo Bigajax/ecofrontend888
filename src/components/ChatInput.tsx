@@ -132,10 +132,8 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
           <div className="flex min-w-0 flex-1">
             <div
               className={clsx(
-                'group flex w-full min-w-0 items-center gap-3 rounded-full border border-white/60 bg-white/70 px-5 py-2.5 shadow-[0_26px_54px_rgba(15,23,42,0.16)] backdrop-blur-xl transition-all duration-200 focus-within:border-white focus-within:bg-white/80 focus-within:shadow-[0_32px_64px_rgba(15,23,42,0.22)] focus-within:ring-2 focus-within:ring-[rgba(0,122,255,0.22)]',
-                isBusy
-                  ? 'opacity-90'
-                  : 'hover:border-white/70 hover:bg-white/80 hover:shadow-[0_30px_60px_rgba(15,23,42,0.18)]',
+                'group flex w-full min-w-0 items-center gap-3 rounded-full border border-white/60 bg-white/70 px-5 py-2.5 backdrop-blur-xl transition-all duration-200 focus-within:border-white focus-within:bg-white/80 focus-within:ring-2 focus-within:ring-[rgba(0,122,255,0.22)]',
+                isBusy ? 'opacity-90' : 'hover:border-white/70 hover:bg-white/80',
               )}
             >
               <textarea
@@ -177,12 +175,12 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 }}
                 disabled={isBusy || isMicActive}
                 className={clsx(
-                  'relative -mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/70 text-[color:var(--color-text-primary)] shadow-[0_14px_28px_rgba(15,23,42,0.12)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.28)] group-hover:bg-white/80',
+                  'relative -mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/70 text-[color:var(--color-text-primary)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.28)] group-hover:bg-white/80',
                   isBusy
-                    ? 'cursor-not-allowed opacity-60 shadow-none'
+                    ? 'cursor-not-allowed opacity-60'
                     : isMicActive
                     ? 'cursor-wait opacity-80'
-                    : 'hover:bg-white/90 hover:shadow-[0_18px_36px_rgba(15,23,42,0.18)]',
+                    : 'hover:bg-white/90',
                 )}
                 aria-label={
                   isMicActive ? 'Gravação em andamento' : 'Abrir painel de voz'
@@ -212,7 +210,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 exit={{ opacity: 0, scale: 0.9, x: 8 }}
                 transition={{ duration: 0.18 }}
                 className={clsx(
-                  'inline-flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--color-accent)] text-white shadow-[0_20px_36px_rgba(0,122,255,0.2)] transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.35)] hover:-translate-y-[1px] active:scale-[0.96]',
+                  'inline-flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--color-accent)] text-white transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.35)] hover:-translate-y-[1px] active:scale-[0.96]',
                   isBusy ? 'cursor-not-allowed opacity-70 hover:translate-y-0' : null,
                 )}
                 aria-label="Enviar mensagem"

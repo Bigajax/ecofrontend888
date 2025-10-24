@@ -12,7 +12,7 @@ const MemoryButton: React.FC<MemoryButtonProps> = ({ onClick, className }) => {
     <motion.button
       type="button" // Importante: Garante que não é um submit de formulário
       onClick={onClick} // Agora apenas chama a função onClick que vem das props
-      className={`p-4 rounded-full bg-white/90 backdrop-blur-md shadow-md border border-gray-300 ${className}`}
+      className={`p-4 rounded-full bg-white/90 backdrop-blur-md border border-gray-300 ${className}`}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       aria-label="Salvar memória ou ver histórico" // Adicione uma descrição acessível

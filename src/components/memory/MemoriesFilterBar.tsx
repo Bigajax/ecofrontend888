@@ -23,7 +23,7 @@ const MemoriesFilterBar: React.FC<MemoriesFilterBarProps> = ({
   onQueryChange,
   onReset,
 }) => (
-  <div className="p-4 rounded-2xl bg-white/80 border border-black/[0.06] shadow-sm">
+  <div className="p-4 rounded-2xl bg-white/80 border border-black/[0.06]">
     <div className="flex flex-col sm:flex-row gap-3">
       <div className="flex-1">
         <label className="sr-only" htmlFor="emotion-filter">

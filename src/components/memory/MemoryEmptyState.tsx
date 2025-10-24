@@ -15,7 +15,7 @@ const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = ({ hasFilters }) => {
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center text-center py-16"
     >
-      <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-slate-50 shadow-inner">
+      <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-slate-50">
         <svg className="h-12 w-12 text-slate-300" viewBox="0 0 48 48" fill="none" aria-hidden>
           <path
             d="M24 8c-6.627 0-12 5.373-12 12v6c0 2.21-1.79 4-4 4h0"
@@ -47,7 +47,7 @@ const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = ({ hasFilters }) => {
       {!hasFilters && (
         <button
           onClick={() => navigate('/app')}
-          className="px-6 py-3 rounded-full border border-slate-200 bg-white/90 text-slate-700 font-semibold text-[15px] shadow-sm transition hover:bg-white"
+          className="px-6 py-3 rounded-full border border-slate-200 bg-white/90 text-slate-700 font-semibold text-[15px] transition hover:bg-white"
         >
           Grave sua primeira memória
         </button>

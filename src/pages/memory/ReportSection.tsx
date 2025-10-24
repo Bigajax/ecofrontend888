@@ -42,7 +42,7 @@ const Card: React.FC<{ title: string; right?: React.ReactNode; children: React.R
   right,
   children,
 }) => (
-  <div className="bg-white rounded-[28px] border border-black/10 shadow-sm p-4 sm:p-5">
+  <div className="bg-white rounded-[28px] border border-black/10 p-4 sm:p-5">
     <div className="flex items-start justify-between mb-3">
       <h4 className="text-[17px] font-semibold text-neutral-900 tracking-[-0.01em]">{title}</h4>
       <div className="shrink-0">{right}</div>
@@ -171,7 +171,7 @@ const ReportSection: React.FC = () => {
 
   if (relatorioError) {
     return (
-      <div className="rounded-3xl border border-rose-100 bg-rose-50 p-5 text-sm text-rose-600 shadow-sm">
+      <div className="rounded-3xl border border-rose-100 bg-rose-50 p-5 text-sm text-rose-600">
         <p className="font-semibold">{relatorioError}</p>
         {relatorioErrorDetails?.status || relatorioErrorDetails?.message ? (
           <p className="mt-2 text-[12px] text-rose-500/80">
@@ -325,7 +325,7 @@ const ReportSection: React.FC = () => {
               <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
                 <div className="absolute inset-0 bg-white/60 backdrop-blur-sm" />
                 <div className="relative">
-                  <span className="px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-neutral-700 text-sm font-medium shadow-sm">
+                  <span className="px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-neutral-700 text-sm font-medium">
                     Em construção
                   </span>
                 </div>

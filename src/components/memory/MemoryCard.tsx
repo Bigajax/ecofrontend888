@@ -101,7 +101,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
     <motion.li
       layout
       className={clsx(
-        'group relative flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm shadow-black/5 transition-[box-shadow,transform] duration-200 hover:-translate-y-[1px] hover:shadow-md hover:shadow-black/10 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-sky-500/40 md:p-5',
+        'group relative flex flex-col gap-3 rounded-2xl border border-black/10 bg-white p-4 transition-transform duration-200 hover:-translate-y-[1px] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-sky-500/40 md:p-5',
         isFavorite && 'ring-1 ring-sky-300/40',
       )}
     >
@@ -160,9 +160,6 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
                 style={{
                   width: `${intensityPercent}%`,
                   background: mem.accent || '#64748b',
-                  boxShadow: accentRgb
-                    ? `0 6px 14px rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.24)`
-                    : '0 6px 14px rgba(15, 23, 42, 0.18)',
                 }}
               />
             </div>

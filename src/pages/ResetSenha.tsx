@@ -101,7 +101,7 @@ const ResetSenha: React.FC = () => {
       </div>
 
       <div
-        className="relative w-full max-w-md space-y-6 rounded-3xl border border-white/25 bg-white/10 p-10 text-white shadow-[0_25px_70px_rgba(15,23,42,0.45)] backdrop-blur-2xl"
+        className="relative w-full max-w-md space-y-6 rounded-3xl border border-white/25 bg-white/10 p-10 text-white backdrop-blur-2xl"
       >
         <header className="space-y-3 text-center">
           <h1 className="text-3xl font-semibold tracking-tight">Redefinir senha</h1>
@@ -142,7 +142,7 @@ const ResetSenha: React.FC = () => {
               onChange={(event) => setNovaSenha(event.target.value)}
               minLength={8}
               disabled={!sessionReady || loading || Boolean(success)}
-              className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder:text-slate-300/70 shadow-inner focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300/50"
+              className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder:text-slate-300/70 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300/50"
               placeholder="Digite a nova senha"
               required
             />
@@ -160,7 +160,7 @@ const ResetSenha: React.FC = () => {
               onChange={(event) => setConfirmarSenha(event.target.value)}
               minLength={8}
               disabled={!sessionReady || loading || Boolean(success)}
-              className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder:text-slate-300/70 shadow-inner focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300/50"
+              className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder:text-slate-300/70 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300/50"
               placeholder="Confirme a nova senha"
               required
             />

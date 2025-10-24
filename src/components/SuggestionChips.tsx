@@ -64,8 +64,8 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
             disabled={disabled}
             data-suggestion-id={suggestion.id}
             className={clsx(
-              'inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-white px-4 text-left shadow-[0_8px_24px_rgba(15,23,42,0.08)] transition-all duration-200',
-              'hover:bg-white hover:shadow-[0_10px_30px_rgba(15,23,42,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(15,23,42,0.12)]',
+              'inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-white px-4 text-left transition-all duration-200',
+              'hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(15,23,42,0.12)]',
               disabled ? 'cursor-not-allowed opacity-60' : 'active:translate-y-[1px]'
             )}
             style={{ scrollSnapAlign: 'start' }}

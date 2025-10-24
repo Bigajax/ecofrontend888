@@ -64,7 +64,7 @@ const TypingDots: React.FC<Props> = ({
   const containerClasses = [
     resolvedVariant === "inline"
       ? "inline-flex items-center gap-1.5 align-middle"
-      : "inline-flex h-6 min-w-[56px] items-center justify-center gap-1.5 rounded-full px-2 bg-white/70 backdrop-blur border border-zinc-200/60 shadow-sm",
+      : "inline-flex h-6 min-w-[56px] items-center justify-center gap-1.5 rounded-full px-2 bg-white/70 backdrop-blur border border-zinc-200/60",
     "transition-colors duration-150 ease-out",
     className,
   ]
