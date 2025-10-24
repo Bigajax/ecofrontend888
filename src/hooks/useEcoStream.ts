@@ -2,10 +2,10 @@
 import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
-import { normalizeStreamText, startEcoStream, type EcoStreamChunk } from "../api/ecoStream";
+import { startEcoStream, type EcoStreamChunk, type EcoStreamControlEvent } from "../api/ecoStream";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../contexts/ChatContext";
 import { sanitizeText } from "../utils/sanitizeText";
-import { glue } from "../utils/streamJoin";
+import { updatePassiveSignalInteractionId } from "../api/passiveSignals";
 
 interface UseEcoStreamOptions {
   messages?: ChatMessageType[];
@@ -177,6 +177,17 @@ export const useEcoStream = ({
   const ecoReplyStateRef = useRef<EcoReplyState>({});
   const assistantByClientRef = useRef<Record<string, string>>({});
   const clientByAssistantRef = useRef<Record<string, string>>({});
+  const currentInteractionIdRef = useRef<string | null>(null);
+
+  const updateCurrentInteractionId = useCallback((next: string | null | undefined) => {
+    const normalized = typeof next === "string" ? next.trim() : "";
+    const resolved = normalized.length > 0 ? normalized : null;
+    if (currentInteractionIdRef.current === resolved) {
+      return;
+    }
+    currentInteractionIdRef.current = resolved;
+    updatePassiveSignalInteractionId(resolved);
+  }, []);
 
   useEffect(() => {
     ecoReplyStateRef.current = ecoReplyByAssistantId;
@@ -238,6 +249,9 @@ export const useEcoStream = ({
 
       const incomingInteractionId = normalizeString(event?.interactionId);
       const incomingMessageId = normalizeString(event?.messageId);
+      if (incomingInteractionId) {
+        updateCurrentInteractionId(incomingInteractionId);
+      }
       const existingAssistantId = assistantByClientRef.current[normalizedClientId];
       const candidateId = incomingInteractionId || incomingMessageId || existingAssistantId;
       const resolvedAssistantId = candidateId || uuidv4();
@@ -376,7 +390,7 @@ export const useEcoStream = ({
 
       return resolvedAssistantId;
     },
-    [setMessages, upsertMessage],
+    [setMessages, upsertMessage, updateCurrentInteractionId],
   );
 
   const applyChunkToMessages = useCallback(
@@ -419,7 +433,7 @@ export const useEcoStream = ({
 
       if (!appendedSource) return;
 
-      const combinedText = normalizeStreamText(glue(currentEntry.text, appendedSource));
+      const combinedText = `${currentEntry.text ?? ""}${appendedSource}`;
       const hasVisibleText = /\S/.test(combinedText);
       const nextEntry = {
         chunkIndexMax: chunk.index,
@@ -561,9 +575,21 @@ export const useEcoStream = ({
       activeStreamClientIdRef.current = clientMessageId;
       activeAssistantIdRef.current = null;
 
+      updateCurrentInteractionId(null);
+
       const precreatedAssistantId = ensureAssistantMessage(clientMessageId);
       if (precreatedAssistantId) {
         activeAssistantIdRef.current = precreatedAssistantId;
+        setEcoReplyByAssistantId((prev) => {
+          const existing = prev[precreatedAssistantId];
+          if (existing && existing.text === "" && existing.chunkIndexMax === -1) {
+            return prev;
+          }
+          const nextEntry = { text: "", chunkIndexMax: -1 };
+          const nextState: EcoReplyState = { ...prev, [precreatedAssistantId]: nextEntry };
+          ecoReplyStateRef.current = nextState;
+          return nextState;
+        });
       }
 
       setDigitando(true);
@@ -588,6 +614,9 @@ export const useEcoStream = ({
           });
           if (assistantId) {
             activeAssistantIdRef.current = assistantId;
+            if (event?.interactionId) {
+              updateCurrentInteractionId(event.interactionId);
+            }
             const timestamp = typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
             const updatedAt = timestamp || new Date().toISOString();
 
@@ -626,6 +655,10 @@ export const useEcoStream = ({
           if (!assistantId) return;
 
           activeAssistantIdRef.current = assistantId;
+
+          if (event?.interactionId) {
+            updateCurrentInteractionId(event.interactionId);
+          }
 
           const timestamp = typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
           const updatedAt = timestamp || new Date().toISOString();
@@ -814,6 +847,19 @@ export const useEcoStream = ({
           const message = error instanceof Error ? error.message : "Não foi possível concluir a resposta da Eco.";
           setErroApi(message);
         },
+        onControl: (event: EcoStreamControlEvent) => {
+          if (controller.signal.aborted) return;
+          const explicit = toCleanString(event?.interactionId);
+          const payloadRecord = toRecord(event?.payload);
+          const payloadInteraction =
+            toCleanString(payloadRecord?.interaction_id) ||
+            toCleanString(payloadRecord?.interactionId) ||
+            toCleanString(payloadRecord?.id);
+          const resolved = explicit ?? payloadInteraction;
+          if (resolved) {
+            updateCurrentInteractionId(resolved);
+          }
+        },
       });
 
       streamPromise.catch((error) => {
@@ -838,7 +884,19 @@ export const useEcoStream = ({
         }
       });
     },
-    [activity, applyChunkToMessages, ensureAssistantMessage, guestId, isGuest, removeEcoEntry, setErroApi, userId, userName],
+    [
+      activity,
+      applyChunkToMessages,
+      ensureAssistantMessage,
+      guestId,
+      interactionCacheDispatch,
+      isGuest,
+      removeEcoEntry,
+      setErroApi,
+      updateCurrentInteractionId,
+      userId,
+      userName,
+    ],
   );
 
   const handleSendMessage = useCallback(

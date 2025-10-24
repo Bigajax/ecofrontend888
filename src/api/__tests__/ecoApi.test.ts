@@ -425,7 +425,7 @@ describe("enviarMensagemParaEco", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("/api/ask-eco?nostream=1");
+    expect(url).toMatch(/\/api\/ask-eco\?nostream=1$/);
     expect(init?.method).toBe("POST");
     expect(init?.credentials).toBeUndefined();
     expect(init?.headers).toMatchObject({

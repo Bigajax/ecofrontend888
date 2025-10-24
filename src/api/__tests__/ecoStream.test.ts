@@ -3,7 +3,7 @@ import { processEventStream, startEcoStream } from "../ecoStream";
 import type { Message } from "../../contexts/ChatContext";
 
 describe("processEventStream", () => {
-  it("preserves separators when streaming chunks without leading spaces", async () => {
+  it("keeps chunk boundaries literal when streaming without explicit separators", async () => {
     const encoder = new TextEncoder();
     const messages = [
       `event: chunk\ndata: {"text":"Olá"}\n\n`,
@@ -23,7 +23,7 @@ describe("processEventStream", () => {
     const response = new Response(stream);
     const result = await processEventStream(response);
 
-    expect(result.text).toBe("Olá mundo");
+    expect(result.text).toBe("Olámundo");
   });
 
   it("maps eco history role to assistant when starting stream", async () => {

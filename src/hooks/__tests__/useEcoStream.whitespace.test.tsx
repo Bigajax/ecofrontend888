@@ -92,7 +92,7 @@ describe('useEcoStream whitespace handling', () => {
 
     const ecoBubbles = await screen.findAllByTestId(/eco-/);
     const lastBubble = ecoBubbles[ecoBubbles.length - 1];
-    expect(lastBubble.textContent).toBe('Primeira linha\n\n  Segunda linha  com  espaços  internos');
+    expect(lastBubble.textContent).toBe('Primeira linha\r\n\r\n  Segunda linha  com  espaços  internos');
   });
 
   it('keeps the latest user bubble visible while the Eco stream updates', async () => {

@@ -53,7 +53,6 @@ let nextAllowedSendAt = 0;
 const sampleCounters: Partial<Record<PassiveSignalName, number>> = {};
 
 let outbox: NormalizedPassiveSignal[] = [];
-let awaitingInteractionId: NormalizedPassiveSignal[] = [];
 let defaultInteractionId: string | null = null;
 
 const normalizeRequest = ({
@@ -200,24 +199,6 @@ const enqueueForDelivery = (event: NormalizedPassiveSignal) => {
   scheduleFlush();
 };
 
-const queueUntilInteractionId = (event: NormalizedPassiveSignal) => {
-  awaitingInteractionId.push(event);
-};
-
-const resolveAwaitingSignals = () => {
-  if (!defaultInteractionId || awaitingInteractionId.length === 0) {
-    return;
-  }
-
-  const interactionId = defaultInteractionId;
-  const resolved = awaitingInteractionId.map((event) => ({
-    ...event,
-    interaction_id: interactionId,
-  }));
-  awaitingInteractionId = [];
-  resolved.forEach((event) => enqueueForDelivery(event));
-};
-
 export async function sendPassiveSignal(request: PassiveSignalRequest): Promise<void> {
   if (!ENABLE_PASSIVE_SIGNALS) return;
 
@@ -230,14 +211,17 @@ export async function sendPassiveSignal(request: PassiveSignalRequest): Promise<
     return;
   }
 
-  if (!("interaction_id" in normalized) || !normalized.interaction_id) {
-    if (defaultInteractionId) {
-      normalized.interaction_id = defaultInteractionId;
-      enqueueForDelivery(normalized);
-    } else {
-      queueUntilInteractionId(normalized);
+  if (!normalized.interaction_id) {
+    if (!defaultInteractionId) {
+      if (import.meta.env.DEV) {
+        console.warn(
+          "[passive-signal] skipping signal without interaction_id",
+          normalized.signal,
+        );
+      }
+      return;
     }
-    return;
+    normalized.interaction_id = defaultInteractionId;
   }
 
   enqueueForDelivery(normalized);
@@ -248,11 +232,4 @@ export function updatePassiveSignalInteractionId(
 ): void {
   const normalized = typeof interactionId === "string" ? interactionId.trim() : "";
   defaultInteractionId = normalized.length > 0 ? normalized : null;
-
-  if (!defaultInteractionId) {
-    awaitingInteractionId = [];
-    return;
-  }
-
-  resolveAwaitingSignals();
 }
