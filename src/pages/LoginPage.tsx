@@ -198,7 +198,14 @@ const LoginPage: React.FC = () => {
                 <EcoBubbleOneEye variant="icon" size={18} state="focus" />
                 Autoconhecimento Guiado
               </span>
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">ECO</h1>
+              <div className="space-y-2">
+                <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+                  Bem-vindo de volta ao ECO
+                </h1>
+                <p className="text-sm text-slate-500 sm:text-base dark:text-slate-300">
+                  Continue sua jornada de autoconhecimento com trilhas guiadas e ferramentas que elevam o seu bem-estar.
+                </p>
+              </div>
             </div>
 
             {/* Form */}
