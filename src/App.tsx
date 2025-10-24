@@ -118,10 +118,17 @@ function AppRoutes() {
 function AppChrome() {
   const [healthStatus, setHealthStatus] = useState<HealthStatus>("idle");
   const [hasCapturedError, setHasCapturedError] = useState(false);
-  const healthMetaRef = useRef<Pick<HealthCheckResult, "aborted" | "responseOk">>({
+  const healthMetaRef = useRef<{
+    aborted: boolean;
+    responseOk: boolean;
+    consecutiveFailures: number;
+  }>({
     aborted: false,
     responseOk: true,
+    consecutiveFailures: 0,
   });
+  const healthControllerRef = useRef<AbortController | null>(null);
+  const consecutiveFailureRef = useRef(0);
   const rawEnvApiBase = RAW_API_BASE;
   const rawApiBaseDisplay =
     typeof rawEnvApiBase === "string"
@@ -146,15 +153,31 @@ function AppChrome() {
     const runCheck = async () => {
       const delayForThisCycle = nextDelay;
       let result: HealthCheckResult;
+      const controller = new AbortController();
+      healthControllerRef.current = controller;
       try {
-        result = await pingWithRetry();
+        result = await pingWithRetry(2, 800, controller.signal);
       } catch (error) {
         console.error("[App] Falha na verificação de saúde", error);
         if (!alive) return;
         result = { status: "down", aborted: false, responseOk: false };
       }
+      if (healthControllerRef.current === controller) {
+        healthControllerRef.current = null;
+      }
       if (!alive) return;
-      healthMetaRef.current = { aborted: result.aborted, responseOk: result.responseOk };
+      if (result.status === "ok") {
+        consecutiveFailureRef.current = 0;
+      } else if (!result.aborted && result.status === "down") {
+        consecutiveFailureRef.current += 1;
+      } else if (!result.aborted) {
+        consecutiveFailureRef.current = 0;
+      }
+      healthMetaRef.current = {
+        aborted: result.aborted,
+        responseOk: result.responseOk,
+        consecutiveFailures: consecutiveFailureRef.current,
+      };
       setHealthStatus(result.status);
 
       if (result.status === "ok") {
@@ -174,6 +197,15 @@ function AppChrome() {
       alive = false;
       if (timeoutId !== null) {
         window.clearTimeout(timeoutId);
+      }
+      const controller = healthControllerRef.current;
+      if (controller) {
+        try {
+          controller.abort();
+        } catch {
+          /* noop */
+        }
+        healthControllerRef.current = null;
       }
     };
   }, []);
@@ -214,8 +246,10 @@ function AppChrome() {
   }, []);
 
   const showHealthBanner =
-    (healthStatus === "degraded" || healthStatus === "down") &&
-    !(healthStatus === "down" && healthMetaRef.current.aborted);
+    (healthStatus === "degraded" && !healthMetaRef.current.aborted) ||
+    (healthStatus === "down" &&
+      !healthMetaRef.current.aborted &&
+      healthMetaRef.current.consecutiveFailures >= 3);
   const showErrorChip = hasCapturedError;
 
   const handleErrorChipClick = () => {

@@ -325,6 +325,11 @@ export const useEcoStream = ({
 
       setDigitando(true);
 
+      const placeholderAssistantId = ensureAssistantMessage(clientMessageId);
+      if (placeholderAssistantId) {
+        activeAssistantIdRef.current = placeholderAssistantId;
+      }
+
       const streamPromise = startEcoStream({
         history,
         clientMessageId,
