@@ -1,13 +1,6 @@
 // src/api/mensagem.ts
 import { supabase } from "../lib/supabaseClient";
 
-const supabaseAnonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
-
-const buildMensagemUrl = (path: string) => {
-  const normalized = path.startsWith("/") ? path : `/${path}`;
-  return `/api${normalized}`;
-};
-
 export type MensagemRow = {
   id: string;
   conteudo: string;
@@ -22,135 +15,156 @@ export type NovaMensagemPayload = Partial<Omit<MensagemRow, "id">> & {
   usuario_id: string;
 };
 
-type SupabaseRestResponse<T> = T[] | T;
+type ListarMensagensFiltro = Record<string, string | number | boolean>;
 
-function ensureArray<T>(value: SupabaseRestResponse<T>): T[] {
-  return Array.isArray(value) ? value : [value];
+const API_BASE_PATH = "/api/mensagens";
+
+async function getAuthToken(): Promise<string | null> {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
 }
 
-async function supabaseRestRequest<T>(
-  path: string,
-  init: RequestInit,
-): Promise<T> {
-  const { data: sessionData } = await supabase.auth.getSession();
-  const accessToken = sessionData?.session?.access_token ?? null;
-
-  const headers = new Headers(init.headers ?? {});
-  if (!supabaseAnonKey) {
-    throw new Error("VITE_SUPABASE_ANON_KEY não configurada.");
+function buildUrl(path: string = ""): string {
+  if (!path) {
+    return API_BASE_PATH;
   }
-  headers.set("apikey", supabaseAnonKey);
-  headers.set("Authorization", `Bearer ${accessToken ?? supabaseAnonKey}`);
 
-  const response = await fetch(buildMensagemUrl(path), {
+  if (path.startsWith("/")) {
+    return `${API_BASE_PATH}${path}`;
+  }
+
+  return `${API_BASE_PATH}/${path}`;
+}
+
+async function authenticatedFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<Response> {
+  const token = await getAuthToken();
+  const headers = new Headers(init.headers ?? {});
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  return fetch(input, {
     ...init,
     headers,
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `Falha na chamada Supabase REST ${path}: ${response.status} ${response.statusText}${
-        errorText ? ` - ${errorText}` : ""
-      }`,
-    );
-  }
-
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  const json = (await response.json()) as T;
-  return json;
 }
 
-export async function salvarMensagem(
-  payload: NovaMensagemPayload,
-): Promise<MensagemRow> {
-  const body = JSON.stringify(payload);
+function ensureMensagem(data: unknown): MensagemRow {
+  if (!data || typeof data !== "object") {
+    throw new Error("Resposta inválida ao processar a mensagem.");
+  }
 
-  const data = await supabaseRestRequest<SupabaseRestResponse<MensagemRow>>(
-    "/mensagem",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
-      body,
-    },
-  );
+  const mensagem = data as MensagemRow;
 
-  const [mensagem] = ensureArray(data);
-  if (!mensagem) {
-    throw new Error("Nenhuma mensagem retornada pelo Supabase.");
+  if (!mensagem.id) {
+    throw new Error("Mensagem retornada sem identificador.");
   }
 
   return mensagem;
 }
 
-type ListarMensagensFiltro = Record<string, string | number | boolean>;
+export async function salvarMensagem(
+  payload: NovaMensagemPayload,
+): Promise<MensagemRow> {
+  const response = await authenticatedFetch(buildUrl("/registrar"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(
+      `Erro ao salvar mensagem: ${error || `${response.status} ${response.statusText}`}`,
+    );
+  }
+
+  const data = await response.json();
+  return ensureMensagem(data);
+}
 
 export async function listarMensagens(
   select: string = "*",
   filtros: ListarMensagensFiltro = {},
 ): Promise<MensagemRow[]> {
   const params = new URLSearchParams();
-  params.set("select", select);
+
+  if (select) {
+    params.set("select", select);
+  }
 
   Object.entries(filtros).forEach(([coluna, valor]) => {
-    const valorStr = String(valor);
-    const temOperador = /^([a-z]+\.)/i.test(valorStr);
-    const prefixo = temOperador ? "" : "eq.";
-    params.append(coluna, `${prefixo}${valorStr}`);
+    params.append(coluna, String(valor));
   });
 
-  const data = await supabaseRestRequest<MensagemRow[]>(
-    `/mensagem?${params.toString()}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    },
-  );
+  const queryString = params.toString();
+  const url = queryString ? `${buildUrl()}?${queryString}` : buildUrl();
 
-  return Array.isArray(data) ? data : [data];
+  const response = await authenticatedFetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(
+      `Erro ao listar mensagens: ${error || `${response.status} ${response.statusText}`}`,
+    );
+  }
+
+  const data = await response.json();
+
+  if (!Array.isArray(data)) {
+    throw new Error("Resposta inválida ao listar mensagens.");
+  }
+
+  return data as MensagemRow[];
 }
 
 export async function atualizarMensagem(
   id: string,
   updates: Partial<Omit<MensagemRow, "id" | "usuario_id">>,
 ): Promise<MensagemRow> {
-  const body = JSON.stringify(updates);
-  const data = await supabaseRestRequest<SupabaseRestResponse<MensagemRow>>(
-    `/mensagem?id=eq.${id}`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
-      body,
+  const response = await authenticatedFetch(buildUrl(`/${id}`), {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  );
+    body: JSON.stringify(updates),
+  });
 
-  const [mensagem] = ensureArray(data);
-  if (!mensagem) {
-    throw new Error("Nenhuma mensagem retornada na atualização.");
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(
+      `Erro ao atualizar mensagem ${id}: ${error || `${response.status} ${response.statusText}`}`,
+    );
   }
 
-  return mensagem;
+  const data = await response.json();
+  return ensureMensagem(data);
 }
 
 export async function apagarMensagem(id: string): Promise<void> {
-  await supabaseRestRequest<void>(
-    `/mensagem?id=eq.${id}`,
-    {
-      method: "DELETE",
-      headers: {
-        Accept: "application/json",
-      },
+  const response = await authenticatedFetch(buildUrl(`/${id}`), {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
     },
-  );
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(
+      `Erro ao apagar mensagem ${id}: ${error || `${response.status} ${response.statusText}`}`,
+    );
+  }
 }
