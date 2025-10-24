@@ -50,6 +50,11 @@ const BEHAVIOR_EDIT_DELTA = 6;
 const FAST_FOLLOWUP_WINDOW_MS = 15_000;
 const BEHAVIOR_HINT_FALLBACK_MS = 12_000;
 
+const pickHeroSubtitle = () =>
+  OPENING_VARIATIONS[
+    Math.floor(Math.random() * Math.max(OPENING_VARIATIONS.length, 1))
+  ] ?? '';
+
 type BehaviorHintMetrics = {
   typing_bursts: number;
   message_edits: number;
@@ -197,6 +202,7 @@ function ChatPage() {
   }, [guestGate.reachedLimit, guestGate.inputDisabled, isGuest]);
 
   const saudacao = useMemo(() => saudacaoDoDiaFromHour(new Date().getHours()), []);
+  const [heroSubtitle, setHeroSubtitle] = useState<string>(() => pickHeroSubtitle());
 
   const chatRef = useRef<HTMLElement | null>(null);
   const { scrollerRef, endRef, isAtBottom, showScrollBtn, scrollToBottom } = useAutoScroll<HTMLElement>({
@@ -508,6 +514,13 @@ function ChatPage() {
   }, [scrollToBottom]);
   const showNewMessagesChip = hasPendingMessages && showScrollBtn;
   const isEmptyState = messages.length === 0 && !erroApi;
+  const heroSubtitleResetRef = useRef(isEmptyState);
+  useEffect(() => {
+    if (isEmptyState && !heroSubtitleResetRef.current) {
+      setHeroSubtitle(pickHeroSubtitle());
+    }
+    heroSubtitleResetRef.current = isEmptyState;
+  }, [isEmptyState, setHeroSubtitle]);
   const hasComposerText = composerValue.trim().length > 0;
   const showInitialSuggestions =
     isEmptyState && showQuick && !isWaitingForEco && !composerPending && !erroApi;
@@ -660,8 +673,11 @@ function ChatPage() {
                       <h1 className="text-[clamp(28px,5vw,40px)] font-semibold leading-tight text-[color:var(--bubble-eco-text)]">
                         {saudacao}, {displayName || rawUserName}
                       </h1>
-                      <p className="mt-2 text-[clamp(14px,2.2vw,18px)] text-neutral-600">
-                        {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
+                      <p
+                        className="mt-2 text-[clamp(14px,2.2vw,18px)] text-neutral-600"
+                        data-testid="chat-hero-subtitle"
+                      >
+                        {heroSubtitle || OPENING_VARIATIONS[0] || ''}
                       </p>
                     </div>
                     <div className="flex w-full flex-col items-center">
