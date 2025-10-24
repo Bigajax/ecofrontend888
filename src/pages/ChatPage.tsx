@@ -3,7 +3,6 @@
 /* -------------------------------------------------------------------------- */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import clsx from 'clsx';
 
@@ -61,7 +60,6 @@ function ChatPage() {
   const { messages, upsertMessage, setMessages } = useChat();
   const auth = useAuth();
   const { userId, userName: rawUserName = 'Usuário', user } = auth;
-  const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
 
   const [sessaoId] = useState(() => ensureSessionId());
@@ -716,10 +714,10 @@ function ChatPage() {
 
       <div
         ref={chatInputWrapperRef}
-        className="composer sticky bottom-0 z-40 px-3 pt-3 sm:px-6 lg:px-10"
+        className="composer sticky bottom-0 z-40 px-4 pb-4 pt-3 sm:px-6 sm:pb-6 lg:px-10"
         style={{ paddingBottom: safeAreaBottom + 16 }}
       >
-        <div className="mx-auto w-full max-w-[min(640px,88vw)] space-y-3">
+        <div className="mx-auto w-full max-w-[min(680px,92vw)] space-y-3">
           <SuggestionChips
             visible={shouldShowSuggestionChips}
             onPick={(suggestion, index) =>
@@ -732,9 +730,6 @@ function ChatPage() {
             ref={chatInputRef}
             value={composerValue}
             onSendMessage={(t) => sendWithGuards(t)}
-            onMoreOptionSelected={(opt) => {
-              if (opt === 'go_to_voice_page') navigate('/app/voice');
-            }}
             disabled={composerPending || (isGuest && guestGate.inputDisabled)}
             placeholder={
               isGuest && guestGate.inputDisabled
