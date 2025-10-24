@@ -185,7 +185,7 @@ const MemoryPage: React.FC = () => {
                     className={[
                       'px-3 py-1.5 text-[13px] font-medium transition rounded-full',
                       active
-                        ? 'bg-white text-neutral-900 shadow-sm ring-1 ring-white/60'
+                        ? 'bg-white text-neutral-900 ring-1 ring-white/60'
                         : 'text-neutral-700 hover:bg-white/40',
                     ].join(' ')}
                   >

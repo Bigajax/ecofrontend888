@@ -3,7 +3,7 @@ import React from 'react';
 const shimmer = 'bg-gradient-to-r from-white/40 via-white/90 to-white/40';
 
 const MemoryCardSkeleton: React.FC = () => (
-  <div className="relative flex flex-col gap-5 overflow-hidden rounded-[26px] border border-white/60 bg-white/70 px-5 py-5 backdrop-blur-2xl shadow-[0_16px_38px_rgba(15,23,42,0.08)]">
+  <div className="relative flex flex-col gap-5 overflow-hidden rounded-[26px] border border-white/60 bg-white/70 px-5 py-5 backdrop-blur-2xl">
     <span
       aria-hidden
       className="pointer-events-none absolute inset-0 rounded-[26px] bg-gradient-to-br from-slate-100/70 to-white/50"

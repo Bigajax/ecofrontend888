@@ -30,14 +30,14 @@ export default class RootErrorBoundary extends Component<
     if (this.state.hasError) {
       return (
         <div className="flex min-h-screen w-full items-center justify-center bg-gray-50 p-6 text-center">
-          <div className="space-y-4 rounded-lg bg-white p-6 shadow">
+          <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6">
             <p className="text-lg font-semibold text-gray-900">
               Opa, algo deu errado. Tentar recarregar.
             </p>
             <button
               type="button"
               onClick={this.handleReload}
-              className="rounded bg-emerald-600 px-4 py-2 font-medium text-white shadow hover:bg-emerald-700"
+              className="rounded bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
             >
               Recarregar
             </button>

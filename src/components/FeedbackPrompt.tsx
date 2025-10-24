@@ -146,7 +146,7 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
 
   if (mode === "done") {
     return (
-      <div className="mx-auto my-3 rounded-xl bg-white/70 p-3 text-sm text-gray-700 shadow">
+      <div className="mx-auto my-3 rounded-xl bg-white/70 p-3 text-sm text-gray-700">
         Obrigado pelo feedback 💛
       </div>
     );
@@ -154,7 +154,7 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
 
   if (mode === "reasons") {
     return (
-      <div className="mx-auto my-3 rounded-xl bg-white/70 p-3 shadow">
+      <div className="mx-auto my-3 rounded-xl bg-white/70 p-3">
         <p className="mb-2 text-sm text-gray-700">O que não ajudou?</p>
         <div className="flex flex-wrap gap-2">
           {REASONS.map((reason) => (
@@ -208,7 +208,7 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
   }
 
   return (
-    <div className="mx-auto my-3 flex items-center justify-between rounded-xl bg-white/70 p-3 shadow">
+    <div className="mx-auto my-3 flex items-center justify-between rounded-xl bg-white/70 p-3">
       <span className="text-sm text-gray-700">Essa resposta ajudou?</span>
       <div className="flex gap-2">
         <button

@@ -85,7 +85,7 @@ const MemoriesSection: React.FC = () => {
   if (memoriesError) {
     return (
       <div className="flex items-center justify-center h-64 px-6 text-center">
-        <div className="rounded-3xl border border-rose-100 bg-rose-50 px-6 py-5 shadow-sm">
+        <div className="rounded-3xl border border-rose-100 bg-rose-50 px-6 py-5">
           <p className="text-[15px] font-semibold text-rose-600">{memoriesError}</p>
           {describeDetails(memoriesErrorDetails) ? (
             <p className="mt-2 text-[12px] text-rose-500/80">
@@ -95,7 +95,7 @@ const MemoriesSection: React.FC = () => {
           <button
             type="button"
             onClick={() => refetchMemories()}
-            className="mt-4 inline-flex items-center justify-center rounded-full border border-rose-200/70 bg-white/90 px-4 py-2 text-sm font-semibold text-rose-600 shadow-sm transition hover:bg-white"
+            className="mt-4 inline-flex items-center justify-center rounded-full border border-rose-200/70 bg-white/90 px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-white"
           >
             Tentar novamente
           </button>
@@ -107,7 +107,7 @@ const MemoriesSection: React.FC = () => {
   return (
     <div className="min-h-0 h-full max-h-[calc(100vh-96px)] overflow-y-auto overflow-x-hidden">
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-8">
-        <section className="rounded-[28px] border border-black/[0.08] bg-white/90 backdrop-blur-sm shadow-[0_1px_2px_rgba(0,0,0,0.05),0_16px_60px_rgba(0,0,0,0.04)] p-6 md:p-8 mb-8">
+        <section className="rounded-[28px] border border-black/[0.08] bg-white/90 backdrop-blur-sm p-6 md:p-8 mb-8">
           <header className="mb-6">
             <h1 className="font-display text-[36px] md:text-[48px] leading-[1.06] font-semibold text-gray-900 tracking-tight">
               Memórias
@@ -150,7 +150,7 @@ const MemoriesSection: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
-                  className="rounded-full border border-black/10 bg-white/70 px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm transition hover:bg-white"
+                  className="rounded-full border border-black/10 bg-white/70 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-white"
                 >
                   Carregar mais
                 </button>

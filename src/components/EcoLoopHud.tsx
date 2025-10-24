@@ -173,7 +173,7 @@ export function EcoLoopHud() {
   const pulls = snapshot?.arm?.pulls;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[9999] w-[min(320px,90vw)] rounded-xl border border-slate-300 bg-white/95 p-4 text-sm shadow-xl">
+    <div className="fixed bottom-4 right-4 z-[9999] w-[min(320px,90vw)] rounded-xl border border-slate-300 bg-white/95 p-4 text-sm">
       <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
         <span>Eco Loop</span>
         <span className="text-[10px] text-slate-400">F12 para fechar</span>

@@ -14,7 +14,7 @@ const PhoneFrame: React.FC<PhoneFrameProps> = ({ children, className }) => {
       <motion.div
         className={[
           'relative w-full h-[calc(100svh-2rem)] max-w-sm',
-          'rounded-3xl shadow-xl',        // “bezel” do frame
+          'rounded-3xl',        // “bezel” do frame
           'flex flex-col bg-transparent',  // sem bg opaco aqui
           // IMPORTANTE: sem overflow-hidden, para não cortar sombras/popup
           className || '',
