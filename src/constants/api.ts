@@ -5,6 +5,7 @@ import {
   getApiBase,
 } from "../config/apiBase";
 import { ensureHttpsUrl } from "../utils/ensureHttpsUrl";
+import { stripTrailingApiSegments } from "../utils/stripTrailingApiSegments";
 
 export { RAW_API_BASE, getApiBase };
 
@@ -19,28 +20,47 @@ const normalizeBase = (candidate: string): string => {
     return "";
   }
 
+  const sanitizeAbsolute = (value: string): string => {
+    try {
+      const parsed = new URL(value);
+      const sanitizedPath = stripTrailingApiSegments(parsed.pathname);
+      return sanitizedPath ? `${parsed.origin}${sanitizedPath}` : parsed.origin;
+    } catch {
+      return "";
+    }
+  };
+
   if (trimmed.startsWith("//")) {
     const absolute = ensureHttpsUrl(`https:${trimmed}`);
-    return trimTrailingSlashes(absolute);
+    return sanitizeAbsolute(absolute) || "";
   }
 
   if (/^https?:/i.test(trimmed)) {
     const secure = ensureHttpsUrl(trimmed);
-    return trimTrailingSlashes(secure);
+    return sanitizeAbsolute(secure) || "";
   }
 
   if (trimmed.startsWith("/")) {
-    const normalized = trimTrailingSlashes(trimmed);
-    return normalized === "" ? "/" : normalized;
+    const collapsed = trimTrailingSlashes(trimmed);
+    if (!collapsed) {
+      return "/";
+    }
+    const normalized = stripTrailingApiSegments(collapsed);
+    return normalized || "/";
   }
 
   try {
-    const parsed = new URL(ensureHttpsUrl(`https://${trimmed}`));
-    const pathname = parsed.pathname === "/" ? "" : trimTrailingSlashes(parsed.pathname);
-    return `${parsed.origin}${pathname}`;
+    const ensured = ensureHttpsUrl(`https://${trimmed}`);
+    const sanitized = sanitizeAbsolute(ensured);
+    if (sanitized) {
+      return sanitized;
+    }
   } catch {
-    return trimTrailingSlashes(trimmed) || "";
+    /* noop */
   }
+
+  const fallback = stripTrailingApiSegments(trimTrailingSlashes(trimmed) || trimmed);
+  return fallback || "";
 };
 
 const resolveEffectiveApiBase = () => {

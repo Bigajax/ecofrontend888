@@ -1,4 +1,5 @@
 import { ensureHttpsUrl } from "../utils/ensureHttpsUrl";
+import { stripTrailingApiSegments } from "../utils/stripTrailingApiSegments";
 
 const readEnvApiUrl = (): string => {
   const fromImportMeta = import.meta?.env?.VITE_API_URL;
@@ -37,8 +38,9 @@ const normalizeApiBase = (value: string): string => {
 
   try {
     const parsed = new URL(candidate);
-    const pathname = parsed.pathname === "/" ? "" : parsed.pathname.replace(/\/+$/, "");
-    return `${parsed.origin}${pathname}`;
+    const sanitizedPath = stripTrailingApiSegments(parsed.pathname);
+    const finalPath = sanitizedPath === "/" ? "" : sanitizedPath;
+    return finalPath ? `${parsed.origin}${finalPath}` : parsed.origin;
   } catch {
     return "";
   }
@@ -49,7 +51,7 @@ const normalizedEnvApiBase = normalizeApiBase(rawEnvApiBase);
 
 export const RAW_API_BASE = rawEnvApiBase;
 
-export const DEFAULT_API_BASE = "/api";
+export const DEFAULT_API_BASE = "";
 
 export const IS_API_BASE_EMPTY = normalizedEnvApiBase.length === 0;
 
