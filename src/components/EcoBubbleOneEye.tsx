@@ -1,4 +1,5 @@
 import React from 'react';
+import clsx from 'clsx';
 import { motion, useReducedMotion } from 'framer-motion';
 
 import EyeBubbleBase, { EyeBubbleToken, MotionConfig } from './EyeBubbleBase';
@@ -6,7 +7,7 @@ import EyeBubbleBase, { EyeBubbleToken, MotionConfig } from './EyeBubbleBase';
 type EcoState = 'idle' | 'listening' | 'speaking' | 'thinking' | 'focus';
 type EcoVariant = 'icon' | 'avatar' | 'message' | 'voice';
 
-export interface EcoBubbleOneEyeProps {
+export interface EcoBubbleOneEyeProps extends React.HTMLAttributes<HTMLDivElement> {
   state?: EcoState;
   variant?: EcoVariant;
   size?: number;
@@ -141,6 +142,9 @@ const EcoBubbleOneEye: React.FC<EcoBubbleOneEyeProps> = ({
   state = 'idle',
   variant = 'icon',
   size,
+  className,
+  style,
+  ...rest
 }) => {
   const reduceMotion = useReducedMotion();
   const dimension = size ?? DEFAULT_SIZES[variant];
@@ -168,8 +172,9 @@ const EcoBubbleOneEye: React.FC<EcoBubbleOneEyeProps> = ({
 
   return (
     <div
-      className="relative inline-flex select-none items-center justify-center"
-      style={{ width: dimension, height: dimension }}
+      className={clsx('relative inline-flex select-none items-center justify-center', className)}
+      style={{ width: dimension, height: dimension, ...style }}
+      {...rest}
     >
       {showFocusGlow && (
         <motion.span
