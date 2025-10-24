@@ -22,13 +22,143 @@ interface UseEcoStreamOptions {
   isGuest?: boolean;
   onUnauthorized?: () => void;
   activity?: { onSend?: () => void; onDone?: () => void };
+  interactionCacheDispatch?: (action: InteractionMapAction) => void;
 }
+
+type InteractionMapAction = {
+  type: "updateInteractionMap";
+  clientId: string;
+  interaction_id: string;
+};
+
+const toRecord = (value: unknown): Record<string, unknown> | undefined => {
+  if (!value || typeof value !== "object") return undefined;
+  return value as Record<string, unknown>;
+};
+
+const toCleanString = (value: unknown): string | undefined => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return undefined;
+};
+
+const toNumber = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+};
+
+const toStringArray = (value: unknown): string[] | undefined => {
+  if (Array.isArray(value)) {
+    const normalized = value
+      .map((item) => toCleanString(item))
+      .filter((item): item is string => Boolean(item));
+    if (normalized.length === 0) return undefined;
+    return Array.from(new Set(normalized));
+  }
+  const str = toCleanString(value);
+  if (!str) return undefined;
+  const parts = str
+    .split(/[,\s]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return undefined;
+  return Array.from(new Set(parts));
+};
+
+const collectCandidates = (
+  records: Array<Record<string, unknown> | undefined>,
+  keys: string[],
+): unknown[] => {
+  const results: unknown[] = [];
+  for (const record of records) {
+    if (!record) continue;
+    for (const key of keys) {
+      if (key in record) {
+        const value = record[key];
+        if (value !== undefined && value !== null) {
+          results.push(value);
+        }
+      }
+    }
+  }
+  return results;
+};
+
+const pickStringFromRecords = (
+  records: Array<Record<string, unknown> | undefined>,
+  keys: string[],
+): string | undefined => {
+  const candidates = collectCandidates(records, keys);
+  for (const candidate of candidates) {
+    const normalized = toCleanString(candidate);
+    if (normalized) return normalized;
+  }
+  return undefined;
+};
+
+const pickNumberFromRecords = (
+  records: Array<Record<string, unknown> | undefined>,
+  keys: string[],
+): number | undefined => {
+  const candidates = collectCandidates(records, keys);
+  for (const candidate of candidates) {
+    const normalized = toNumber(candidate);
+    if (typeof normalized === "number") return normalized;
+  }
+  return undefined;
+};
+
+const pickStringArrayFromRecords = (
+  records: Array<Record<string, unknown> | undefined>,
+  keys: string[],
+): string[] | undefined => {
+  for (const record of records) {
+    if (!record) continue;
+    for (const key of keys) {
+      if (!(key in record)) continue;
+      const normalized = toStringArray(record[key]);
+      if (normalized && normalized.length > 0) {
+        return normalized;
+      }
+    }
+  }
+  return undefined;
+};
+
+const extractSummaryRecord = (payload: unknown): Record<string, unknown> | undefined => {
+  const record = toRecord(payload);
+  if (!record) return undefined;
+  const candidates = [
+    toRecord(record.summary),
+    toRecord((record.response as Record<string, unknown> | undefined)?.summary),
+    toRecord((record.metadata as Record<string, unknown> | undefined)?.summary),
+    toRecord((record.context as Record<string, unknown> | undefined)?.summary),
+  ];
+  for (const candidate of candidates) {
+    if (candidate) return candidate;
+  }
+  return undefined;
+};
 
 interface EcoReplyState {
   [assistantMessageId: string]: { text: string; chunkIndexMax: number };
 }
 
 export const useEcoStream = ({
+  upsertMessage,
   setMessages,
   userId,
   userName,
@@ -36,6 +166,7 @@ export const useEcoStream = ({
   guestId,
   isGuest = false,
   activity,
+  interactionCacheDispatch,
 }: UseEcoStreamOptions) => {
   const [digitando, setDigitando] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -198,38 +329,46 @@ export const useEcoStream = ({
       const createdAt = normalizeTimestamp(event?.createdAt) ?? new Date().toISOString();
       const resolvedMessageId = incomingMessageId || resolvedAssistantId;
 
-      setMessages((prevMessages) => {
-        const alreadyExists = prevMessages.some(
-          (message) =>
-            message.id === resolvedAssistantId ||
-            message.interaction_id === resolvedAssistantId ||
-            message.interactionId === resolvedAssistantId,
-        );
-        if (alreadyExists) {
-          return prevMessages;
-        }
-        const assistantMessage: ChatMessageType = {
-          id: resolvedAssistantId,
-          client_message_id: normalizedClientId,
-          clientMessageId: normalizedClientId,
-          sender: "eco",
-          role: "assistant",
-          content: "",
-          text: "",
-          streaming: true,
-          status: "streaming",
-          interaction_id: resolvedAssistantId,
-          interactionId: resolvedAssistantId,
-          message_id: resolvedMessageId || undefined,
-          createdAt,
-          updatedAt: createdAt,
-        };
-        return [...prevMessages, assistantMessage];
-      });
+      const assistantMessage: ChatMessageType = {
+        id: resolvedAssistantId,
+        client_message_id: normalizedClientId,
+        clientMessageId: normalizedClientId,
+        sender: "eco",
+        role: "assistant",
+        content: "",
+        text: "",
+        streaming: true,
+        status: "streaming",
+        interaction_id: resolvedAssistantId,
+        interactionId: resolvedAssistantId,
+        message_id: resolvedMessageId || undefined,
+        createdAt,
+        updatedAt: createdAt,
+      };
+
+      if (upsertMessage) {
+        upsertMessage(assistantMessage, {
+          allowContentUpdate: true,
+          patchSource: "stream_init",
+        });
+      } else {
+        setMessages((prevMessages) => {
+          const alreadyExists = prevMessages.some(
+            (message) =>
+              message.id === resolvedAssistantId ||
+              message.interaction_id === resolvedAssistantId ||
+              message.interactionId === resolvedAssistantId,
+          );
+          if (alreadyExists) {
+            return prevMessages;
+          }
+          return [...prevMessages, assistantMessage];
+        });
+      }
 
       return resolvedAssistantId;
     },
-    [setMessages],
+    [setMessages, upsertMessage],
   );
 
   const applyChunkToMessages = useCallback(
@@ -264,6 +403,8 @@ export const useEcoStream = ({
         text: normalizeStreamText(`${currentEntry.text}${appended}`),
       };
 
+      
+
       setEcoReplyByAssistantId((prev) => {
         const existing = prev[assistantId] ?? { text: "", chunkIndexMax: -1 };
         if (chunk.index <= existing.chunkIndexMax) {
@@ -275,27 +416,80 @@ export const useEcoStream = ({
       });
 
       const updatedAt = new Date().toISOString();
-      setMessages((prevMessages) =>
-        prevMessages.map((message) => {
-          if (
-            message.id === assistantId ||
-            message.interaction_id === assistantId ||
-            message.interactionId === assistantId
-          ) {
-            return {
-              ...message,
-              content: nextEntry.text,
-              text: nextEntry.text,
-              updatedAt,
-              streaming: true,
-              status: message.status === "done" ? "done" : "streaming",
-            };
+
+      if (upsertMessage) {
+        const chunkPatch: ChatMessageType = {
+          id: assistantId,
+          client_message_id: clientMessageId,
+          clientMessageId,
+          sender: "eco",
+          role: "assistant",
+          content: nextEntry.text,
+          text: nextEntry.text,
+          streaming: true,
+          status: "streaming",
+          interaction_id: assistantId,
+          interactionId: assistantId,
+          updatedAt,
+        };
+        if (chunk.messageId) {
+          chunkPatch.message_id = chunk.messageId;
+        }
+        upsertMessage(chunkPatch, {
+          allowContentUpdate: true,
+          patchSource: "stream_chunk",
+        });
+      } else {
+        setMessages((prevMessages) => {
+          let updated = false;
+          const mapped = prevMessages.map((message) => {
+            if (
+              message.id === assistantId ||
+              message.interaction_id === assistantId ||
+              message.interactionId === assistantId
+            ) {
+              updated = true;
+              return {
+                ...message,
+                content: nextEntry.text,
+                text: nextEntry.text,
+                updatedAt,
+                streaming: true,
+                status: message.status === "done" ? "done" : "streaming",
+              };
+            }
+            return message;
+          });
+          if (updated) {
+            return mapped;
           }
-          return message;
-        }),
-      );
+
+          const normalizedClientId =
+            typeof clientMessageId === "string"
+              ? clientMessageId.trim() || undefined
+              : undefined;
+          const fallbackMessage: ChatMessageType = {
+            id: assistantId,
+            client_message_id: normalizedClientId,
+            clientMessageId: normalizedClientId,
+            sender: "eco",
+            role: "assistant",
+            content: nextEntry.text,
+            text: nextEntry.text,
+            streaming: true,
+            status: "streaming",
+            interaction_id: assistantId,
+            interactionId: assistantId,
+            message_id: chunk.messageId ?? assistantId,
+            createdAt: updatedAt,
+            updatedAt,
+          };
+
+          return [...mapped, fallbackMessage];
+        });
+      }
     },
-    [ensureAssistantMessage, setMessages],
+    [ensureAssistantMessage, setMessages, upsertMessage],
   );
 
   const beginStream = useCallback(
@@ -398,32 +592,182 @@ export const useEcoStream = ({
             typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
           const updatedAt = timestamp || new Date().toISOString();
           const donePayload = event?.payload;
+          const payloadRecord = toRecord(donePayload);
+          const summaryRecord = extractSummaryRecord(donePayload);
+          const responseRecord = toRecord(payloadRecord?.response);
+          const metadataRecord = toRecord(payloadRecord?.metadata);
+          const contextRecord = toRecord(payloadRecord?.context);
+          const recordSources = [
+            summaryRecord,
+            responseRecord,
+            metadataRecord,
+            contextRecord,
+            payloadRecord,
+          ];
+
           const metadata =
-            donePayload && typeof donePayload === "object"
-              ? (donePayload as Record<string, any>).metadata ??
-                (donePayload as Record<string, any>).response ??
-                undefined
+            payloadRecord?.metadata !== undefined
+              ? (payloadRecord?.metadata as unknown)
+              : payloadRecord?.response !== undefined
+              ? (payloadRecord?.response as unknown)
               : undefined;
 
-          setMessages((prevMessages) =>
-            prevMessages.map((message) => {
-              if (
-                message.id === assistantId ||
-                message.interaction_id === assistantId ||
-                message.interactionId === assistantId
-              ) {
-                return {
-                  ...message,
-                  streaming: false,
-                  status: "done",
-                  updatedAt,
-                  metadata: metadata ?? message.metadata,
-                  donePayload: donePayload ?? message.donePayload,
-                };
-              }
-              return message;
-            }),
-          );
+          const interactionFromSummary = pickStringFromRecords(recordSources, [
+            "interaction_id",
+            "interactionId",
+            "interactionID",
+          ]);
+          const fallbackInteractionFromIds = pickStringFromRecords(recordSources, [
+            "id",
+            "message_id",
+            "messageId",
+          ]);
+          const eventInteractionId = toCleanString(event?.interactionId);
+          const resolvedInteractionId =
+            interactionFromSummary ??
+            eventInteractionId ??
+            fallbackInteractionFromIds ??
+            assistantId;
+
+          const resolvedMessageId =
+            pickStringFromRecords(recordSources, ["message_id", "messageId", "id"]) ??
+            toCleanString(event?.messageId);
+
+          const latencyCandidate = pickNumberFromRecords(recordSources, [
+            "latency_ms",
+            "latencyMs",
+          ]);
+          const normalizedLatency =
+            typeof latencyCandidate === "number"
+              ? Math.max(0, Math.round(latencyCandidate))
+              : undefined;
+
+          const moduleCombo = pickStringArrayFromRecords(recordSources, [
+            "module_combo",
+            "moduleCombo",
+            "modules",
+            "selected_modules",
+            "selectedModules",
+          ]);
+          const promptHash = pickStringFromRecords(recordSources, [
+            "prompt_hash",
+            "promptHash",
+          ]);
+          const ecoScore = pickNumberFromRecords(recordSources, [
+            "eco_score",
+            "ecoScore",
+          ]);
+
+          const patch: ChatMessageType = {
+            id: assistantId,
+            streaming: false,
+            status: "done",
+            updatedAt,
+          };
+
+          if (metadata !== undefined) {
+            patch.metadata = metadata;
+          }
+          if (donePayload !== undefined) {
+            patch.donePayload = donePayload;
+          }
+          if (resolvedInteractionId) {
+            patch.interaction_id = resolvedInteractionId;
+            patch.interactionId = resolvedInteractionId;
+          }
+          if (resolvedMessageId) {
+            patch.message_id = resolvedMessageId;
+          }
+          if (typeof normalizedLatency === "number") {
+            patch.latencyMs = normalizedLatency;
+          }
+          if (moduleCombo && moduleCombo.length > 0) {
+            patch.module_combo = moduleCombo;
+          }
+          if (promptHash) {
+            patch.prompt_hash = promptHash;
+          }
+          if (typeof ecoScore === "number" && Number.isFinite(ecoScore)) {
+            patch.eco_score = ecoScore;
+          }
+
+          const allowedKeys = [
+            "status",
+            "streaming",
+            "updatedAt",
+            "metadata",
+            "donePayload",
+            "interaction_id",
+            "interactionId",
+            "message_id",
+            "latencyMs",
+            "module_combo",
+            "prompt_hash",
+            "eco_score",
+          ];
+
+          if (upsertMessage) {
+            upsertMessage(patch, { patchSource: "stream_done", allowedKeys });
+          } else {
+            setMessages((prevMessages) =>
+              prevMessages.map((message) => {
+                if (
+                  message.id === assistantId ||
+                  message.interaction_id === assistantId ||
+                  message.interactionId === assistantId
+                ) {
+                  const nextMessage: ChatMessageType = {
+                    ...message,
+                    streaming: false,
+                    status: "done",
+                    updatedAt,
+                  };
+                  if (metadata !== undefined) {
+                    nextMessage.metadata = metadata;
+                  }
+                  if (donePayload !== undefined) {
+                    nextMessage.donePayload = donePayload;
+                  }
+                  if (resolvedInteractionId) {
+                    nextMessage.interaction_id = resolvedInteractionId;
+                    nextMessage.interactionId = resolvedInteractionId;
+                  }
+                  if (resolvedMessageId) {
+                    nextMessage.message_id = resolvedMessageId;
+                  }
+                  if (typeof normalizedLatency === "number") {
+                    nextMessage.latencyMs = normalizedLatency;
+                  }
+                  if (moduleCombo && moduleCombo.length > 0) {
+                    nextMessage.module_combo = moduleCombo;
+                  }
+                  if (promptHash) {
+                    nextMessage.prompt_hash = promptHash;
+                  }
+                  if (typeof ecoScore === "number" && Number.isFinite(ecoScore)) {
+                    nextMessage.eco_score = ecoScore;
+                  }
+                  return nextMessage;
+                }
+                return message;
+              }),
+            );
+          }
+
+          const normalizedClientId =
+            typeof clientMessageId === "string" ? clientMessageId.trim() : "";
+          if (
+            interactionCacheDispatch &&
+            normalizedClientId &&
+            resolvedInteractionId &&
+            typeof resolvedInteractionId === "string"
+          ) {
+            interactionCacheDispatch({
+              type: "updateInteractionMap",
+              clientId: normalizedClientId,
+              interaction_id: resolvedInteractionId,
+            });
+          }
 
           removeEcoEntry(assistantId);
         },

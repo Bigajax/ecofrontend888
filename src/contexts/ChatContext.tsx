@@ -29,6 +29,9 @@ export interface Message {
   interactionId?: string | null;
   message_id?: string | null;
   client_message_id?: string | null;
+  module_combo?: string[] | null;
+  prompt_hash?: string | null;
+  eco_score?: number | null;
   status?: 'pending' | 'sent' | 'streaming' | 'final' | 'error' | 'done';
   server_ids?: string[];
   createdAt?: number | string | null;
@@ -301,6 +304,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const allowedKeys = new Set<string>();
       const defaultAllowed = [
         'status',
+        'streaming',
         'serverIds',
         'server_ids',
         'message_id',
@@ -309,6 +313,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         'flags',
         'audioUrl',
         'timestamps',
+        'interaction_id',
+        'interactionId',
+        'latencyMs',
+        'metadata',
+        'donePayload',
+        'module_combo',
+        'prompt_hash',
+        'eco_score',
       ];
       defaultAllowed.forEach((key) => allowedKeys.add(key));
       if (options?.allowedKeys) {

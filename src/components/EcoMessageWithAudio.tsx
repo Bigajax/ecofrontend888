@@ -136,7 +136,8 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   })();
 
   const interactionId = messageInteractionId ?? contextInteractionId;
-  const hasInteractionId = typeof interactionId === "string" && interactionId.length > 0;
+  const hasInteractionId =
+    typeof messageInteractionId === "string" && messageInteractionId.length > 0;
 
   const ICON_CLASS = `${ICON_SIZE} ${ICON_BASE}`;
   const canDisplayFeedback = !isUser;
@@ -242,6 +243,14 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
     },
     [interactionId, messageId, resolveSessionId, trackPassiveSignal],
   );
+
+  const ensureFeedbackReady = useCallback(() => {
+    if (isStreaming || !hasInteractionId) {
+      toast.info("Espere a resposta finalizar");
+      return false;
+    }
+    return true;
+  }, [hasInteractionId, isStreaming]);
 
   const disposeAudioSession = useCallback((session?: AudioOverlayState | null) => {
     if (!session) return;
@@ -574,7 +583,8 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   }, []);
 
   const handleLike = useCallback(async () => {
-    if (sendingFeedback || !hasInteractionId || isStreaming) return;
+    if (sendingFeedback) return;
+    if (!ensureFeedbackReady()) return;
     handleCloseReasons();
     const previousVote = optimisticVote;
     setOptimisticVote("up");
@@ -582,18 +592,20 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
     if (!success) {
       setOptimisticVote(previousVote ?? null);
     }
-  }, [handleCloseReasons, hasInteractionId, isStreaming, optimisticVote, sendingFeedback, sendVote]);
+  }, [ensureFeedbackReady, handleCloseReasons, optimisticVote, sendingFeedback, sendVote]);
 
   const handleDislike = useCallback(
     async (reason: string) => {
-      if (sendingFeedback || !hasInteractionId || isStreaming) return false;
+      if (sendingFeedback) return false;
+      if (!ensureFeedbackReady()) return false;
       return sendVote("down", reason);
     },
-    [hasInteractionId, isStreaming, sendVote, sendingFeedback],
+    [ensureFeedbackReady, sendVote, sendingFeedback],
   );
 
   const handleThumbDownClick = () => {
-    if (sendingFeedback || !hasInteractionId || isStreaming) return;
+    if (sendingFeedback) return;
+    if (!ensureFeedbackReady()) return;
     if (showReasons) {
       handleCloseReasons();
       return;
@@ -604,7 +616,8 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   };
 
   const handleConfirmDown = async () => {
-    if (sendingFeedback || !hasInteractionId || isStreaming) return;
+    if (sendingFeedback) return;
+    if (!ensureFeedbackReady()) return;
     const reason = selectedReason ?? "other";
     const previousVote = optimisticVote;
     setOptimisticVote("down");
