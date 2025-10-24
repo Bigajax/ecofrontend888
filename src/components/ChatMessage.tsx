@@ -36,7 +36,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
       ? message.text
       : "";
 
-  const showTypingIndicator = !isUser && isEcoTyping && !resolvedText;
+  const isStreaming = message.streaming === true || message.status === "streaming";
+  const hasText = typeof resolvedText === "string" && resolvedText.length > 0;
+  const showTypingIndicator =
+    isEco && !hasText && (isStreaming || isEcoTyping);
+  const shouldRenderPlaceholder = isStreaming && !hasText && !showTypingIndicator;
 
   return (
     <div className={wrapperClass} role="listitem" aria-live="polite" aria-atomic="false">
@@ -50,7 +54,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
           />
         )}
         <div className={bubbleClass} data-sender={sender}>
-          {showTypingIndicator ? <TypingDots /> : <span>{resolvedText}</span>}
+          {showTypingIndicator ? (
+            <TypingDots />
+          ) : (
+            <span>{shouldRenderPlaceholder ? "\u00a0" : resolvedText}</span>
+          )}
         </div>
       </div>
     </div>
