@@ -1,4 +1,4 @@
-import { getApiBase } from "@/config/apiBase";
+import { buildApiUrl } from "@/constants/api";
 
 export type ApiFetchJsonErrorCode = "NETWORK" | "TIMEOUT";
 
@@ -38,9 +38,7 @@ const buildUrl = (path: string) => {
   if (/^https?:/i.test(path)) {
     return path;
   }
-  const base = getApiBase();
-  const prefix = path.startsWith("/") ? "" : "/";
-  return `${base}${prefix}${path}`;
+  return buildApiUrl(path);
 };
 
 const toHeaders = (source?: HeadersInit): Headers => {

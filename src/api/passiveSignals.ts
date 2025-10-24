@@ -1,5 +1,6 @@
 import { buildApiUrl } from "../constants/api";
 import { buildIdentityHeaders } from "../lib/guestId";
+import { fetchWithTimeout } from "../utils/http";
 
 export type PassiveSignalName =
   | "view"
@@ -24,6 +25,7 @@ export const ENABLE_PASSIVE_SIGNALS = envFlag === undefined ? true : envFlag !==
 const SEND_INTERVAL_MS = 2000;
 const SERVER_BACKOFF_MS = 60_000;
 const NON_CRITICAL_SAMPLE_RATE = 3;
+const PASSIVE_SIGNAL_TIMEOUT_MS = 5000;
 
 const NON_CRITICAL_SIGNALS: ReadonlySet<PassiveSignalName> = new Set([
   "view",
@@ -164,12 +166,16 @@ const flushPendingSignals = async () => {
     }
 
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers,
-        body: bodyJson,
-        keepalive: true,
-      });
+      const response = await fetchWithTimeout(
+        endpoint,
+        {
+          method: "POST",
+          headers,
+          body: bodyJson,
+          keepalive: true,
+        },
+        PASSIVE_SIGNAL_TIMEOUT_MS,
+      );
 
       if (!response.ok) {
         if (response.status === 500) {

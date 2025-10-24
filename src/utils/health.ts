@@ -1,3 +1,4 @@
+import { buildApiUrl } from "../constants/api";
 import { safeFetch } from "./safeFetch";
 
 export type HealthStatus = "idle" | "ok" | "degraded" | "down";
@@ -8,7 +9,7 @@ export type HealthCheckResult = {
   responseOk: boolean;
 };
 
-const resolveHealthUrl = () => "/api/health";
+const resolveHealthUrl = () => buildApiUrl("/api/health");
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
