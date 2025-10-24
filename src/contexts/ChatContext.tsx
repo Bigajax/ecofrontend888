@@ -150,7 +150,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessagesState] = useState<Message[]>([]);
   const [byId, setById] = useState<Record<string, number>>({});
   const byIdRef = useRef<Map<string, number>>(new Map());
-  const keyIndexRef = useRef<Map<string, number>>(new Map());
+  const clientIndexRef = useRef<{
+    assistant: Map<string, number>;
+    user: Map<string, number>;
+  }>({
+    assistant: new Map(),
+    user: new Map(),
+  });
   const interactionByRef = useRef<Map<string, number>>(new Map());
   const loadedFor = useRef<string | null | undefined>(undefined);
 
@@ -182,44 +188,53 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [messages, userId]);
 
   useEffect(() => {
-    const map = new Map<string, number>();
+    const idIndex = new Map<string, number>();
     const interactionMap = new Map<string, number>();
-    const keyMap = new Map<string, number>();
+    const clientAssistant = new Map<string, number>();
+    const clientUser = new Map<string, number>();
+
     messages.forEach((message, index) => {
       if (!message) return;
-      const ids = new Set<string>();
+
       if (typeof message.id === 'string' && message.id) {
-        ids.add(message.id);
+        idIndex.set(message.id, index);
       }
-      if (typeof message.client_message_id === 'string' && message.client_message_id) {
-        ids.add(message.client_message_id);
-      }
-      if (typeof message.message_id === 'string' && message.message_id) {
-        ids.add(message.message_id);
-      }
+
       const interactionKey = resolveInteractionKey(message);
-      const normalizedSender = resolveRole(message) ?? message?.sender ?? undefined;
-      const interactionSenderKey = resolveInteractionSenderKey(interactionKey, normalizedSender);
+      const normalizedRole = resolveRole(message) ?? message?.sender ?? undefined;
+      const interactionSenderKey = resolveInteractionSenderKey(interactionKey, normalizedRole);
       if (interactionSenderKey) {
         interactionMap.set(interactionSenderKey, index);
       }
       if (interactionKey && !interactionMap.has(interactionKey)) {
         interactionMap.set(interactionKey, index);
       }
-      const messageKey = keyOf(message);
-      if (messageKey) {
-        keyMap.set(messageKey, index);
+
+
+      if (normalizedRole === 'assistant' || normalizedRole === 'user') {
+        const clientId =
+          typeof message.client_message_id === 'string' && message.client_message_id
+            ? message.client_message_id.trim()
+            : '';
+        if (clientId) {
+          if (normalizedRole === 'assistant') {
+            clientAssistant.set(clientId, index);
+          } else {
+            clientUser.set(clientId, index);
+          }
+        }
       }
-      ids.forEach((id) => {
-        if (!id) return;
-        map.set(id, index);
-      });
     });
-    byIdRef.current = map;
-    keyIndexRef.current = keyMap;
+
+    byIdRef.current = idIndex;
+    clientIndexRef.current = {
+      assistant: clientAssistant,
+      user: clientUser,
+    };
     interactionByRef.current = interactionMap;
+
     const record: Record<string, number> = {};
-    map.forEach((value, key) => {
+    idIndex.forEach((value, key) => {
       record[key] = value;
     });
     setById(record);
@@ -423,6 +438,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         const key = rawKey === 'serverIds' ? 'server_ids' : rawKey;
 
+        if (key === 'role' || key === 'sender') {
+          if (value && existingRole && value !== existingRole) {
+            continue;
+          }
+        }
+
+        if (key === 'client_message_id' || key === 'clientMessageId') {
+          const existingClientId =
+            typeof existing.client_message_id === 'string' && existing.client_message_id
+              ? existing.client_message_id.trim()
+              : '';
+          const incomingClientId =
+            typeof value === 'string' && value
+              ? value.trim()
+              : typeof value === 'number'
+              ? `${value}`.trim()
+              : '';
+          if (existingClientId && incomingClientId && existingClientId !== incomingClientId) {
+            continue;
+          }
+        }
+
         if (
           key === 'content' &&
           typeof value === 'string' &&
@@ -513,6 +550,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           /* noop */
         }
       }
+      try {
+        console.debug('[DIAG] chat:merge', {
+          targetId: existing?.id ?? existing?.client_message_id ?? 'unknown',
+          existingRole,
+          incomingRole: resolveRole(normalizeMessageForState(incoming)) ?? incoming.sender ?? null,
+          appliedKeys,
+          allowContentUpdate,
+        });
+      } catch {
+        /* noop */
+      }
 
       return { next: normalizedNext, changed: true };
     },
@@ -524,46 +572,75 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setMessagesState((prev) => {
         if (!message) return prev;
         const normalized = normalizeMessageForState(message);
-
-        const ids: string[] = [];
-        if (typeof normalized.id === 'string' && normalized.id) {
-          ids.push(normalized.id);
-        }
-        if (typeof normalized.client_message_id === 'string' && normalized.client_message_id) {
-          ids.push(normalized.client_message_id);
-        }
-        if (typeof normalized.message_id === 'string' && normalized.message_id) {
-          ids.push(normalized.message_id);
-        }
-
-        const interactionKey = resolveInteractionKey(normalized);
         const messageKey = keyOf(normalized);
-        const normalizedSender = resolveRole(normalized) ?? normalized.sender ?? undefined;
-        const interactionSenderKey = resolveInteractionSenderKey(interactionKey, normalizedSender);
-        let targetIndex: number | undefined = undefined;
+        const normalizedRole = resolveRole(normalized) ?? normalized.sender ?? undefined;
+        const normalizedId =
+          typeof normalized.id === 'string' && normalized.id ? normalized.id.trim() : '';
 
-        if (messageKey) {
-          targetIndex = keyIndexRef.current.get(messageKey);
+        const selectIndex = (index: number | undefined): number | undefined => {
+          if (index === undefined) return undefined;
+          if (index < 0 || index >= prev.length) return undefined;
+          const candidate = prev[index];
+          if (!candidate) return undefined;
+          const candidateRole = resolveRole(candidate) ?? candidate?.sender ?? undefined;
+          if (
+            normalizedRole &&
+            normalizedRole !== 'system' &&
+            candidateRole &&
+            candidateRole !== normalizedRole
+          ) {
+            return undefined;
+          }
+          return index;
+        };
+
+        let targetIndex = selectIndex(normalizedId ? byIdRef.current.get(normalizedId) : undefined);
+
+        if (targetIndex === undefined && normalizedId) {
+          for (let index = 0; index < prev.length; index += 1) {
+            const candidate = prev[index];
+            if (!candidate) continue;
+            if (candidate.id !== normalizedId) continue;
+            const candidateRole = resolveRole(candidate) ?? candidate?.sender ?? undefined;
+            if (
+              !normalizedRole ||
+              normalizedRole === 'system' ||
+              !candidateRole ||
+              candidateRole === normalizedRole
+            ) {
+              targetIndex = index;
+              break;
+            }
+          }
         }
 
-        if (targetIndex === undefined) {
-          if (interactionSenderKey) {
-            targetIndex = interactionByRef.current.get(interactionSenderKey);
-            if (targetIndex === undefined && interactionKey) {
-              targetIndex = interactionByRef.current.get(interactionKey);
-            }
-          } else if (interactionKey) {
-            targetIndex = interactionByRef.current.get(interactionKey);
-          }
+        const normalizedClientId =
+          normalizedRole && normalizedRole !== 'system'
+            ? resolveClientMessageId(normalized)
+            : '';
 
-          if (targetIndex === undefined && messageKey) {
-            targetIndex = keyIndexRef.current.get(messageKey);
-          }
+        if (
+          targetIndex === undefined &&
+          normalizedClientId &&
+          (normalizedRole === 'assistant' || normalizedRole === 'user')
+        ) {
+          const roleIndexMap = clientIndexRef.current[normalizedRole];
+          targetIndex = selectIndex(roleIndexMap?.get(normalizedClientId));
+        }
 
-          for (const id of ids) {
-            const existingIndex = byIdRef.current.get(id);
-            if (existingIndex !== undefined) {
-              targetIndex = existingIndex;
+        if (
+          targetIndex === undefined &&
+          normalizedClientId &&
+          (normalizedRole === 'assistant' || normalizedRole === 'user')
+        ) {
+          for (let index = 0; index < prev.length; index += 1) {
+            const candidate = prev[index];
+            if (!candidate) continue;
+            const candidateRole = resolveRole(candidate) ?? candidate?.sender ?? undefined;
+            if (candidateRole !== normalizedRole) continue;
+            const candidateClientId = resolveClientMessageId(candidate);
+            if (candidateClientId && candidateClientId === normalizedClientId) {
+              targetIndex = index;
               break;
             }
           }
@@ -585,6 +662,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         const next = [...prev];
         const existing = next[targetIndex];
+        const existingRole = resolveRole(existing) ?? existing?.sender ?? undefined;
+        const incomingRole = normalizedRole;
+
+        if (
+          existingRole &&
+          incomingRole &&
+          existingRole !== incomingRole &&
+          incomingRole !== 'system'
+        ) {
+          try {
+            console.debug('[DIAG] chat:role-split', {
+              existingId: existing?.id ?? existing?.client_message_id ?? null,
+              existingRole,
+              incomingRole,
+              patchSource: options?.patchSource ?? null,
+            });
+          } catch {
+            /* noop */
+          }
+          return dedupeAndMergeMessages([...prev, normalized]);
+        }
+
         const { next: merged, changed } = mergeMessages(existing, normalized, options);
         if (!changed) {
           return prev;

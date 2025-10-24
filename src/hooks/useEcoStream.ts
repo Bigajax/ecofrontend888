@@ -152,6 +152,20 @@ const extractSummaryRecord = (payload: unknown): Record<string, unknown> | undef
   return undefined;
 };
 
+const mergeReplyMetadata = (metadata: unknown, replyTo: string): unknown => {
+  if (!replyTo) return metadata;
+  if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
+    return { ...(metadata as Record<string, unknown>), reply_to_client_message_id: replyTo };
+  }
+  if (metadata === undefined) {
+    return { reply_to_client_message_id: replyTo };
+  }
+  return {
+    reply_to_client_message_id: replyTo,
+    value: metadata,
+  };
+};
+
 interface EcoReplyState {
   [assistantMessageId: string]: { text: string; chunkIndexMax: number };
 }
@@ -213,6 +227,7 @@ export const useEcoStream = ({
   const pendingAssistantMetaRef = useRef<
     Record<string, { interactionId?: string; messageId?: string; createdAt?: string }>
   >({});
+  const userTextByClientIdRef = useRef<Record<string, string>>({});
   const currentInteractionIdRef = useRef<string | null>(null);
 
   const updateCurrentInteractionId = useCallback((next: string | null | undefined) => {
@@ -246,6 +261,14 @@ export const useEcoStream = ({
 
   const removeEcoEntry = useCallback((assistantMessageId?: string | null) => {
     if (!assistantMessageId) return;
+    try {
+      console.debug('[DIAG] eco:remove-entry', {
+        assistantMessageId,
+        mappedClientId: clientByAssistantRef.current[assistantMessageId] ?? null,
+      });
+    } catch {
+      /* noop */
+    }
     setEcoReplyByAssistantId((prev) => {
       if (!(assistantMessageId in prev)) return prev;
       const next = { ...prev };
@@ -262,6 +285,9 @@ export const useEcoStream = ({
       }
       if (pendingAssistantMetaRef.current[clientMessageId]) {
         delete pendingAssistantMetaRef.current[clientMessageId];
+      }
+      if (userTextByClientIdRef.current[clientMessageId]) {
+        delete userTextByClientIdRef.current[clientMessageId];
       }
     }
   }, []);
@@ -352,6 +378,16 @@ export const useEcoStream = ({
         }
         ensureReplyEntry(existingAssistantId);
 
+        try {
+          console.debug('[DIAG] eco:ensure-existing', {
+            clientMessageId: normalizedClientId,
+            assistantId: existingAssistantId,
+            allowCreate,
+          });
+        } catch {
+          /* noop */
+        }
+
         if (mergedMeta.interactionId || mergedMeta.messageId || mergedMeta.createdAt) {
           setMessages((prev) =>
             prev.map((message) => {
@@ -376,6 +412,16 @@ export const useEcoStream = ({
       }
 
       if (!allowCreate) {
+        try {
+          console.debug('[DIAG] eco:ensure-skip', {
+            clientMessageId: normalizedClientId,
+            reason: 'create_not_allowed',
+            pendingInteraction: mergedMeta.interactionId ?? null,
+            pendingMessageId: mergedMeta.messageId ?? null,
+          });
+        } catch {
+          /* noop */
+        }
         return undefined;
       }
 
@@ -400,6 +446,7 @@ export const useEcoStream = ({
         message_id: mergedMeta.messageId ?? undefined,
         createdAt,
         updatedAt: createdAt,
+        metadata: mergeReplyMetadata(undefined, normalizedClientId),
       };
 
       if (upsertMessage) {
@@ -409,6 +456,16 @@ export const useEcoStream = ({
         });
       } else {
         setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+      }
+
+      try {
+        console.debug('[DIAG] eco:placeholder', {
+          ecoMsgId: assistantId,
+          clientMessageId: normalizedClientId,
+          createdAt,
+        });
+      } catch {
+        /* noop */
       }
 
       return assistantId;
@@ -473,6 +530,35 @@ export const useEcoStream = ({
 
       if (!appendedSource) return;
 
+      const isFirstChunk = chunk.index === 0 || chunk.isFirstChunk === true;
+      if (isFirstChunk) {
+        const normalizedChunkText = sanitizeText(appendedSource).trim();
+        const userEcho = userTextByClientIdRef.current[normalizedClientId];
+        if (normalizedChunkText && userEcho && normalizedChunkText === userEcho) {
+          try {
+            console.debug('[DIAG] chunk:echo-skip', {
+              ecoMsgId: assistantId,
+              clientMessageId,
+              chunkIndex: chunk.index,
+            });
+          } catch {
+            /* noop */
+          }
+          return;
+        }
+      }
+
+      try {
+        console.debug('[DIAG] chunk', {
+          ecoMsgId: assistantId,
+          clientMessageId,
+          chunkIndex: chunk.index,
+          chunkTextPreview: appendedSource.slice(0, 60),
+        });
+      } catch {
+        /* noop */
+      }
+
       const combinedText = smartJoinText(currentEntry.text ?? "", appendedSource);
       const hasVisibleText = /\S/.test(combinedText);
       const nextEntry = {
@@ -524,9 +610,7 @@ export const useEcoStream = ({
         if (normalizedMessageId) {
           chunkPatch.message_id = normalizedMessageId;
         }
-        if (chunk.metadata !== undefined) {
-          chunkPatch.metadata = chunk.metadata;
-        }
+        chunkPatch.metadata = mergeReplyMetadata(chunk.metadata, normalizedClientId);
         if (chunk.payload !== undefined) {
           chunkPatch.donePayload = chunk.payload;
         }
@@ -539,6 +623,16 @@ export const useEcoStream = ({
           let updated = false;
           const mapped = prevMessages.map((message) => {
             if (message.id === assistantId) {
+              try {
+                console.debug('[DIAG] setMessages:update:before', {
+                  targetId: assistantId,
+                  role: message.role ?? message.sender ?? 'unknown',
+                  prevLength: typeof message.text === 'string' ? message.text.length : 0,
+                  chunkIndex: chunk.index,
+                });
+              } catch {
+                /* noop */
+              }
               updated = true;
               const nextMessage: ChatMessageType = {
                 ...message,
@@ -559,10 +653,22 @@ export const useEcoStream = ({
                 nextMessage.createdAt = normalizedCreatedAt;
               }
               if (chunk.metadata !== undefined) {
-                nextMessage.metadata = chunk.metadata;
+                nextMessage.metadata = mergeReplyMetadata(chunk.metadata, normalizedClientId);
+              } else if (normalizedClientId) {
+                nextMessage.metadata = mergeReplyMetadata(nextMessage.metadata, normalizedClientId);
               }
               if (chunk.payload !== undefined) {
                 nextMessage.donePayload = chunk.payload;
+              }
+              try {
+                console.debug('[DIAG] setMessages:update:after', {
+                  targetId: assistantId,
+                  role: nextMessage.role ?? nextMessage.sender ?? 'unknown',
+                  nextLength: typeof nextMessage.text === 'string' ? nextMessage.text.length : 0,
+                  chunkIndex: chunk.index,
+                });
+              } catch {
+                /* noop */
               }
               return nextMessage;
             }
@@ -593,11 +699,20 @@ export const useEcoStream = ({
           if (normalizedMessageId) {
             fallbackMessage.message_id = normalizedMessageId;
           }
-          if (chunk.metadata !== undefined) {
-            fallbackMessage.metadata = chunk.metadata;
-          }
+          fallbackMessage.metadata = mergeReplyMetadata(chunk.metadata, normalizedClientId);
           if (chunk.payload !== undefined) {
             fallbackMessage.donePayload = chunk.payload;
+          }
+
+          try {
+            console.debug('[DIAG] setMessages:insert', {
+              targetId: assistantId,
+              role: fallbackMessage.role ?? fallbackMessage.sender ?? 'unknown',
+              source: 'chunk-fallback',
+              chunkIndex: chunk.index,
+            });
+          } catch {
+            /* noop */
           }
 
           return [...prevMessages, fallbackMessage];
@@ -612,6 +727,13 @@ export const useEcoStream = ({
       const clientMessageId = userMessage.id;
       if (!clientMessageId) return;
 
+      const normalizedUserText = sanitizeText(userMessage.text ?? userMessage.content ?? "").trim();
+      if (normalizedUserText) {
+        userTextByClientIdRef.current[clientMessageId] = normalizedUserText;
+      } else if (userTextByClientIdRef.current[clientMessageId]) {
+        delete userTextByClientIdRef.current[clientMessageId];
+      }
+
       // encerra stream anterior, se houver
       const activeId = activeStreamClientIdRef.current;
       if (activeId && activeId !== clientMessageId) {
@@ -619,10 +741,21 @@ export const useEcoStream = ({
         if (activeController) {
           try {
             activeController.abort();
+            try {
+              console.debug('[DIAG] done/abort', {
+                clientMessageId: activeId,
+                reason: 'abort_previous_stream',
+              });
+            } catch {
+              /* noop */
+            }
           } catch {
             /* noop */
           }
           delete controllersRef.current[activeId];
+        }
+        if (userTextByClientIdRef.current[activeId]) {
+          delete userTextByClientIdRef.current[activeId];
         }
       }
 
@@ -638,6 +771,16 @@ export const useEcoStream = ({
       }
 
       setDigitando(true);
+
+      try {
+        console.debug('[DIAG] stream:start', {
+          clientMessageId,
+          historyLength: history.length,
+          systemHint: systemHint ?? null,
+        });
+      } catch {
+        /* noop */
+      }
 
       const streamPromise = startEcoStream({
         history,
@@ -672,7 +815,17 @@ export const useEcoStream = ({
             setMessages((prevMessages) =>
               prevMessages.map((message) => {
                 if (message.id !== assistantId) return message;
-                return {
+                try {
+                  console.debug('[DIAG] setMessages:update:before', {
+                    targetId: assistantId,
+                    role: message.role ?? message.sender ?? 'unknown',
+                    status: message.status,
+                    phase: 'prompt',
+                  });
+                } catch {
+                  /* noop */
+                }
+                const nextMessage: ChatMessageType = {
                   ...message,
                   streaming: true,
                   status: "streaming",
@@ -682,6 +835,17 @@ export const useEcoStream = ({
                   interaction_id: event?.interactionId || message.interaction_id,
                   interactionId: event?.interactionId || message.interactionId,
                 };
+                try {
+                  console.debug('[DIAG] setMessages:update:after', {
+                    targetId: assistantId,
+                    role: nextMessage.role ?? nextMessage.sender ?? 'unknown',
+                    status: nextMessage.status,
+                    phase: 'prompt',
+                  });
+                } catch {
+                  /* noop */
+                }
+                return nextMessage;
               }),
             );
           }
@@ -702,12 +866,19 @@ export const useEcoStream = ({
 
           activeAssistantIdRef.current = assistantId;
 
+          const normalizedClientId =
+            typeof clientMessageId === "string" ? clientMessageId.trim() : "";
+
           if (activeStreamClientIdRef.current === clientMessageId) {
             setDigitando(false);
           }
 
           if (event?.interactionId) {
             updateCurrentInteractionId(event.interactionId);
+          }
+
+          if (userTextByClientIdRef.current[clientMessageId]) {
+            delete userTextByClientIdRef.current[clientMessageId];
           }
 
           const timestamp = typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
@@ -806,9 +977,7 @@ export const useEcoStream = ({
           patch.content = finalText;
           patch.text = finalText;
 
-          if (metadata !== undefined) {
-            patch.metadata = metadata;
-          }
+          patch.metadata = mergeReplyMetadata(metadata, normalizedClientId);
           if (donePayload !== undefined) {
             patch.donePayload = donePayload;
           }
@@ -830,6 +999,17 @@ export const useEcoStream = ({
           }
           if (typeof ecoScore === "number" && Number.isFinite(ecoScore)) {
             patch.eco_score = ecoScore;
+          }
+
+          try {
+            console.debug('[DIAG] done', {
+              ecoMsgId: assistantId,
+              clientMessageId,
+              aggregatedLength: aggregatedText.length,
+              finalLength: typeof finalText === "string" ? finalText.length : 0,
+            });
+          } catch {
+            /* noop */
           }
 
           const allowedKeys = [
@@ -855,6 +1035,16 @@ export const useEcoStream = ({
             setMessages((prevMessages) =>
               prevMessages.map((message) => {
                 if (message.id === assistantId) {
+                  try {
+                    console.debug('[DIAG] setMessages:update:before', {
+                      targetId: assistantId,
+                      role: message.role ?? message.sender ?? 'unknown',
+                      status: message.status,
+                      phase: 'done',
+                    });
+                  } catch {
+                    /* noop */
+                  }
                   const nextMessage: ChatMessageType = {
                     ...message,
                     streaming: false,
@@ -863,9 +1053,7 @@ export const useEcoStream = ({
                     content: finalText,
                     text: finalText,
                   };
-                  if (metadata !== undefined) {
-                    nextMessage.metadata = metadata;
-                  }
+                  nextMessage.metadata = mergeReplyMetadata(metadata, normalizedClientId);
                   if (donePayload !== undefined) {
                     nextMessage.donePayload = donePayload;
                   }
@@ -888,6 +1076,17 @@ export const useEcoStream = ({
                   if (typeof ecoScore === "number" && Number.isFinite(ecoScore)) {
                     nextMessage.eco_score = ecoScore;
                   }
+                  try {
+                    console.debug('[DIAG] setMessages:update:after', {
+                      targetId: assistantId,
+                      role: nextMessage.role ?? nextMessage.sender ?? 'unknown',
+                      status: nextMessage.status,
+                      nextLength: typeof nextMessage.text === 'string' ? nextMessage.text.length : 0,
+                      phase: 'done',
+                    });
+                  } catch {
+                    /* noop */
+                  }
                   return nextMessage;
                 }
                 return message;
@@ -895,8 +1094,6 @@ export const useEcoStream = ({
             );
           }
 
-          const normalizedClientId =
-            typeof clientMessageId === "string" ? clientMessageId.trim() : "";
           if (
             interactionCacheDispatch &&
             normalizedClientId &&
@@ -916,6 +1113,17 @@ export const useEcoStream = ({
           if (controller.signal.aborted) return;
           const message = error instanceof Error ? error.message : "Não foi possível concluir a resposta da Eco.";
           setErroApi(message);
+          if (userTextByClientIdRef.current[clientMessageId]) {
+            delete userTextByClientIdRef.current[clientMessageId];
+          }
+          try {
+            console.debug('[DIAG] error', {
+              clientMessageId,
+              error: message,
+            });
+          } catch {
+            /* noop */
+          }
         },
         onControl: (event: EcoStreamControlEvent) => {
           if (controller.signal.aborted) return;
@@ -929,6 +1137,15 @@ export const useEcoStream = ({
           if (resolved) {
             updateCurrentInteractionId(resolved);
           }
+          try {
+            console.debug('[DIAG] control', {
+              clientMessageId,
+              assistantMessageId: activeAssistantIdRef.current,
+              interactionId: resolved ?? null,
+            });
+          } catch {
+            /* noop */
+          }
         },
       });
 
@@ -936,6 +1153,15 @@ export const useEcoStream = ({
         if (controller.signal.aborted) return;
         const message = error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
         setErroApi(message);
+        try {
+          console.debug('[DIAG] error', {
+            clientMessageId,
+            error: message,
+            phase: 'start',
+          });
+        } catch {
+          /* noop */
+        }
       });
 
       streamPromise.finally(() => {
@@ -949,8 +1175,26 @@ export const useEcoStream = ({
           setDigitando(false);
           setIsSending(false);
           activity?.onDone?.();
+          try {
+            console.debug('[DIAG] done/abort', {
+              clientMessageId,
+              assistantMessageId: assistantId ?? null,
+              reason: 'stream_finalized',
+            });
+          } catch {
+            /* noop */
+          }
         } else {
           removeEcoEntry(assistantId);
+          try {
+            console.debug('[DIAG] done/abort', {
+              clientMessageId,
+              assistantMessageId: assistantId ?? null,
+              reason: 'stream_finalized_inactive',
+            });
+          } catch {
+            /* noop */
+          }
         }
       });
     },
@@ -993,6 +1237,25 @@ export const useEcoStream = ({
       activity?.onSend?.();
 
       setMessages((prev) => {
+        try {
+          console.debug('[DIAG] send', {
+            userMsgId: clientMessageId,
+            textPreview: sanitized.slice(0, 80),
+            messagesLenBefore: prev.length,
+          });
+        } catch {
+          /* noop */
+        }
+        try {
+          console.debug('[DIAG] setMessages:insert', {
+            targetId: clientMessageId,
+            role: 'user',
+            source: 'send',
+            messagesLenAfter: prev.length + 1,
+          });
+        } catch {
+          /* noop */
+        }
         const next = [...prev, userMessage];
         // Usamos o array `next` recém-calculado como fonte do histórico para o stream.
         beginStream(next, userMessage, systemHint);
