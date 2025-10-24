@@ -1,14 +1,53 @@
 // utils/http.ts
-export async function fetchWithTimeout(input: RequestInfo, init: RequestInit = {}, timeout = 12000) {
+export async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeout = 12000,
+) {
+  if (typeof AbortController === "undefined") {
+    return fetch(input, init);
+  }
+
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
+  const { signal: userSignal, ...rest } = init;
+  const cleanups: Array<() => void> = [];
+
+  const abort = (reason?: unknown) => {
+    if (!controller.signal.aborted) {
+      try {
+        controller.abort(reason);
+      } catch {
+        controller.abort();
+      }
+    }
+  };
+
+  if (userSignal) {
+    if (userSignal.aborted) {
+      abort((userSignal as any).reason);
+    } else {
+      const onAbort = () => abort((userSignal as any).reason);
+      userSignal.addEventListener("abort", onAbort, { once: true });
+      cleanups.push(() => userSignal.removeEventListener("abort", onAbort));
+    }
+  }
+
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  if (timeout > 0) {
+    timeoutId = setTimeout(() => abort(new DOMException("Request timed out", "AbortError")), timeout);
+    cleanups.push(() => clearTimeout(timeoutId));
+  }
+
   try {
-    const finalInit: RequestInit = { ...init, signal: controller.signal };
-    const res = await fetch(input, finalInit);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res;
+    return await fetch(input, { ...rest, signal: controller.signal });
   } finally {
-    clearTimeout(id);
+    cleanups.forEach((cleanup) => {
+      try {
+        cleanup();
+      } catch {
+        // ignore cleanup errors
+      }
+    });
   }
 }
 

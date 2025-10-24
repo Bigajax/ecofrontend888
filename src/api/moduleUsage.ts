@@ -1,5 +1,6 @@
 import { buildApiUrl } from "../constants/api";
 import { buildIdentityHeaders } from "../lib/guestId";
+import { fetchWithTimeout } from "../utils/http";
 
 export type ModuleUsageRequest = {
   moduleKey: string;
@@ -43,15 +44,6 @@ export async function sendModuleUsage({
     ...buildIdentityHeaders(),
   };
 
-  const controller =
-    typeof AbortController !== "undefined" ? new AbortController() : null;
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  if (controller) {
-    timeoutId = setTimeout(() => {
-      controller?.abort();
-    }, MODULE_USAGE_TIMEOUT_MS);
-  }
-
   const body = sanitize({
     moduleKey: normalizedKey,
     position:
@@ -77,12 +69,15 @@ export async function sendModuleUsage({
   });
 
   try {
-    const res = await fetch(buildApiUrl("/api/module-usage"), {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-      signal: controller?.signal,
-    });
+    const res = await fetchWithTimeout(
+      buildApiUrl("/api/module-usage"),
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      },
+      MODULE_USAGE_TIMEOUT_MS,
+    );
 
     if (res.status !== 204) {
       if (res.status === 404) {
@@ -100,10 +95,6 @@ export async function sendModuleUsage({
   } catch (error) {
     if (import.meta.env.DEV) {
       console.debug("[module-usage] error", error);
-    }
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
     }
   }
 }
