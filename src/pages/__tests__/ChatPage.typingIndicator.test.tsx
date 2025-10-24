@@ -315,7 +315,9 @@ describe('ChatPage typing indicator', () => {
       </ChatProvider>,
     );
 
-    const input = await screen.findByPlaceholderText('Converse com a Eco…');
+    const input = await screen.findByRole('textbox', {
+      name: 'Mensagem para a Eco',
+    });
     await user.type(input, 'Oi');
 
     const sendButton = await screen.findByRole('button', {
@@ -384,7 +386,9 @@ describe('ChatPage typing indicator', () => {
       </ChatProvider>,
     );
 
-    const input = await screen.findByPlaceholderText('Converse com a Eco…');
+    const input = await screen.findByRole('textbox', {
+      name: 'Mensagem para a Eco',
+    });
     await user.type(input, 'Olá');
 
     const sendButton = await screen.findByRole('button', {
@@ -473,5 +477,29 @@ describe('ChatPage typing indicator', () => {
     expect(typeof logArgs?.[1]?.eco_prompt_ready_at).toBe('number');
     expect(typeof logArgs?.[1]?.eco_first_token_at).toBe('number');
     expect(typeof logArgs?.[1]?.eco_done_at).toBe('number');
+  });
+
+  test('hero subtitle remains stable while typing in the composer', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ChatProvider>
+        <ChatPage />
+      </ChatProvider>,
+    );
+
+    const subtitle = await screen.findByTestId('chat-hero-subtitle');
+    const initialSubtitle = subtitle.textContent;
+
+    expect((initialSubtitle ?? '').trim().length).toBeGreaterThan(0);
+
+    const composer = await screen.findByRole('textbox', {
+      name: 'Mensagem para a Eco',
+    });
+
+    await user.type(composer, 'Teste');
+
+    const afterTyping = screen.getByTestId('chat-hero-subtitle').textContent;
+    expect(afterTyping).toBe(initialSubtitle);
   });
 });
