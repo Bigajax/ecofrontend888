@@ -1,7 +1,6 @@
 import { AskEcoResponse, collectTexts, normalizeAskEcoResponse, unwrapPayload } from "./askEcoResponse";
 import { isDev } from "./environment";
 import { resolveChunkIdentifier, resolveChunkIndex } from "../utils/chat/chunkSignals";
-import smartJoin from "../utils/streamJoin";
 import { resolveApiUrl } from "../constants/api";
 import { buildIdentityHeaders } from "../lib/guestId";
 import type { Message } from "../contexts/ChatContext";
@@ -76,6 +75,7 @@ export interface EcoEventHandlers {
   onMetaPending?: (event: EcoSseEvent) => void;
   onMemorySaved?: (event: EcoSseEvent) => void;
   onLatency?: (event: EcoSseEvent) => void;
+  onControl?: (event: EcoSseEvent) => void;
   onError?: (error: Error) => void;
 }
 
@@ -83,11 +83,11 @@ export interface EcoEventHandlers {
 const normalizeSseNewlines = (value: string): string => value.replace(/\r\n|\r|\n/g, "\n");
 
 const parseSseEvent = (
-  eventBlock: string
+  eventBlock: string,
 ): { type?: string; payload?: any; rawData?: string } | undefined => {
   const lines = eventBlock
     .split("\n")
-    .map((line) => line.trim())
+    .map((line) => line.replace(/\r$/, ""))
     .filter((line) => line.length > 0 && !line.startsWith(":"));
 
   if (lines.length === 0) return undefined;
@@ -98,15 +98,19 @@ const parseSseEvent = (
   for (const line of lines) {
     if (line.startsWith("event:")) {
       eventName = line.slice(6).trim();
-    } else if (line.startsWith("data:")) {
-      dataParts.push(line.slice(5).trimStart());
-    } else {
-      dataParts.push(line);
+      continue;
     }
+
+    if (line.startsWith("data:")) {
+      dataParts.push(line.slice(5));
+      continue;
+    }
+
+    dataParts.push(line);
   }
 
-  const dataStr = dataParts.join("\n").trim();
-  if (!dataStr) return { type: eventName, payload: undefined };
+  const dataStr = dataParts.join("\n");
+  if (dataStr.length === 0) return { type: eventName, payload: undefined };
 
   if (dataStr === "[DONE]") {
     return { type: eventName ?? "done", payload: { done: true }, rawData: dataStr };
@@ -263,15 +267,16 @@ export const processEventStream = async (
 
   const pushAggregatedPart = (text: string | undefined) => {
     if (typeof text !== "string") return;
-    aggregatedText = smartJoin(aggregatedText, text);
+    aggregatedText += text;
     aggregatedParts.push(text);
     rememberText(text);
   };
 
   const shouldIgnoreText = (text: unknown): boolean => {
     if (typeof text !== "string") return false;
+    if (text.length === 0) return true;
     const normalized = text.trim().toLowerCase();
-    if (normalized.length === 0) return true;
+    if (normalized.length === 0) return false;
     if (normalized === "ok") return true;
     return false;
   };
@@ -406,6 +411,8 @@ export const processEventStream = async (
           doneWithoutText = true;
         }
       }
+
+      safeInvoke(handlers.onControl, controlEvent);
 
       if (usingUnifiedHandler) {
         safeInvokeUnified(handlers.onEvent, {
@@ -795,7 +802,7 @@ export const processEventStream = async (
       idx = buffer.indexOf("\n\n");
     }
     if (final) {
-      const remainder = buffer.trim();
+      const remainder = buffer;
       if (remainder.length > 0) {
         const parsed = parseSseEvent(remainder);
         if (parsed !== undefined) handleEvent(parsed);
@@ -958,6 +965,15 @@ export interface EcoStreamDoneEvent {
   createdAt?: string;
 }
 
+export interface EcoStreamControlEvent {
+  type?: string;
+  name?: string;
+  payload?: unknown;
+  interactionId?: string;
+  messageId?: string;
+  createdAt?: string;
+}
+
 export interface StartEcoStreamOptions {
   history: Message[];
   clientMessageId: string;
@@ -972,6 +988,7 @@ export interface StartEcoStreamOptions {
   onDone?: (event: EcoStreamDoneEvent) => void;
   onError?: (error: unknown) => void;
   onPromptReady?: (event: EcoStreamPromptReadyEvent) => void;
+  onControl?: (event: EcoStreamControlEvent) => void;
 }
 
 const mapHistoryMessage = (message: Message) => {
@@ -1071,6 +1088,7 @@ const dispatchSseBlock = (
     onChunk?: (chunk: EcoStreamChunk) => void;
     onDone?: (event: EcoStreamDoneEvent) => void;
     onPromptReady?: (event: EcoStreamPromptReadyEvent) => void;
+    onControl?: (event: EcoStreamControlEvent) => void;
   },
 ) => {
   const normalizedBlock = normalizeSseNewlines(block);
@@ -1080,7 +1098,8 @@ const dispatchSseBlock = (
   const rawType = parsed.type;
   const payload = parsed.payload ?? {};
   const payloadType = typeof (payload as any)?.type === "string" ? (payload as any).type : undefined;
-  const controlName = normalizeControlName((payload as any)?.name ?? (payload as any)?.event);
+  const rawControlName = (payload as any)?.name ?? (payload as any)?.event;
+  const controlName = normalizeControlName(rawControlName);
   const primaryType = rawType ?? payloadType ?? controlName ?? "chunk";
   const { normalized: mappedType } = mapResponseEventType(primaryType);
   let resolvedType = mappedType ?? primaryType;
@@ -1095,6 +1114,18 @@ const dispatchSseBlock = (
     messageId: extractMessageId(payload),
     createdAt: extractCreatedAt(payload),
   };
+
+  if (resolvedType === "control") {
+    context.onControl?.({
+      type: typeof payloadType === "string" ? payloadType : undefined,
+      name: typeof rawControlName === "string" ? rawControlName : undefined,
+      payload,
+      interactionId: baseEventInfo.interactionId,
+      messageId: baseEventInfo.messageId,
+      createdAt: baseEventInfo.createdAt,
+    });
+    return;
+  }
 
   if (resolvedType === "prompt_ready") {
     context.onPromptReady?.({
@@ -1164,6 +1195,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     onDone,
     onError,
     onPromptReady,
+    onControl,
   } = options;
 
   const baseHeaders: Record<string, string> = {
@@ -1295,17 +1327,19 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
             onChunk,
             onDone,
             onPromptReady,
+            onControl,
           });
         }
         searchIndex = buffer.indexOf("\n\n");
       }
 
-      if (finalFlush && buffer.trim().length > 0) {
+      if (finalFlush && buffer.length > 0) {
         dispatchSseBlock(buffer, {
           nextChunkIndex,
           onChunk,
           onDone,
           onPromptReady,
+          onControl,
         });
         buffer = "";
       }

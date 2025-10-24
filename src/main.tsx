@@ -7,8 +7,10 @@ import './index.css';
 import { ensureGuestId, ensureSessionId } from './lib/guestId';
 
 import { initFacebookPixel } from './lib/fbpixel';
+import { syncEcoStorageDomain } from './utils/ecoStorage';
 
 // Garante que guest_id e session_id existam antes de qualquer requisição
+syncEcoStorageDomain();
 ensureGuestId();
 ensureSessionId();
 
