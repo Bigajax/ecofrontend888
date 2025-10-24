@@ -3,6 +3,26 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, afterEach, describe, expect, test, vi } from 'vitest';
 import type { EcoEventHandlers, EcoStreamResult } from '../../api/ecoApi';
+import type { StartEcoStreamOptions } from '../../api/ecoStream';
+
+let registerStreamHandlers: ((options: StartEcoStreamOptions) => void) | undefined;
+let resolveStartEcoStream: (() => void) | undefined;
+
+vi.mock('../../api/ecoStream', async () => {
+  const actual = await vi.importActual<typeof import('../../api/ecoStream')>(
+    '../../api/ecoStream',
+  );
+
+  return {
+    ...actual,
+    startEcoStream: vi.fn((options: StartEcoStreamOptions) => {
+      registerStreamHandlers?.(options);
+      return new Promise<void>((resolve) => {
+        resolveStartEcoStream = resolve;
+      });
+    }),
+  };
+});
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
@@ -154,12 +174,127 @@ describe('ChatPage typing indicator', () => {
     inflightPromise = undefined;
 
     const enviarMensagemParaEcoMock = enviarMensagemParaEco as unknown as vi.Mock;
-    enviarMensagemParaEcoMock.mockImplementation((...args: any[]) => {
-      inflightPromise = new Promise<EcoStreamResult>((resolve) => {
-        handlersRef.current = args[5];
-        resolveResponse = resolve;
-      });
-      return inflightPromise;
+    enviarMensagemParaEcoMock.mockReset();
+
+    registerStreamHandlers = (options) => {
+      let chunkIndex = 0;
+      let latencyFromServer: number | undefined;
+      let promptReadyAt: number | undefined;
+      let firstTokenAt: number | undefined;
+      let doneAt: number | undefined;
+
+      const trackFirstTokenLatency = () => {
+        firstTokenAt = performance.now();
+        const baseline = typeof promptReadyAt === 'number' ? promptReadyAt : firstTokenAt;
+        const latency = Math.max(0, firstTokenAt - baseline);
+        mixpanel.track('Eco: Stream First Token Latency', {
+          outcome: 'success',
+          first_token_latency_ms: latency,
+          eco_prompt_ready_at: promptReadyAt,
+          eco_first_token_at: firstTokenAt,
+        });
+        mixpanel.people.set({ eco_first_token_latency_ms: latency });
+      };
+
+      const finalizeMetrics = () => {
+        doneAt = performance.now();
+        const ttfb =
+          typeof latencyFromServer === 'number'
+            ? latencyFromServer
+            : typeof promptReadyAt === 'number' && typeof firstTokenAt === 'number'
+            ? Math.max(0, firstTokenAt - promptReadyAt)
+            : 0;
+
+        const payload = {
+          outcome: 'success',
+          latency_source: 'server',
+          stage: 'on_done',
+          latency_from_stream_ms: latencyFromServer ?? ttfb,
+          ttfb_ms: ttfb,
+          eco_prompt_ready_at: promptReadyAt,
+          eco_first_token_at: firstTokenAt,
+          eco_done_at: doneAt,
+        };
+
+        mixpanel.track('Eco: Stream TTFB', payload);
+        mixpanel.people.set({ eco_ttfb_ms: ttfb });
+        console.log('[ChatPage] Eco stream markers', payload);
+      };
+
+      const forwardChunk = (event: any, isFirstChunk: boolean) => {
+        const textSource =
+          typeof event?.text === 'string'
+            ? event.text
+            : typeof event?.payload?.delta === 'string'
+            ? event.payload.delta
+            : '';
+
+        options.onChunk?.({
+          index: chunkIndex,
+          text: textSource,
+          metadata: event?.metadata,
+          interactionId: event?.interactionId ?? null,
+          messageId: event?.messageId ?? null,
+          createdAt: event?.createdAt,
+          isFirstChunk,
+          payload: event?.payload,
+        });
+
+        chunkIndex += 1;
+      };
+
+      handlersRef.current = {
+        onPromptReady: (event: any) => {
+          promptReadyAt = performance.now();
+          options.onPromptReady?.({
+            interactionId: event?.interactionId ?? null,
+            messageId: event?.messageId ?? null,
+            createdAt: event?.createdAt,
+            payload: event?.payload,
+          });
+        },
+        onFirstToken: (event: any) => {
+          trackFirstTokenLatency();
+          forwardChunk(event, true);
+        },
+        onChunk: (event: any) => {
+          forwardChunk(event, false);
+        },
+        onDone: (event: any) => {
+          options.onDone?.({
+            payload: event?.payload,
+            interactionId: event?.interactionId ?? null,
+            messageId: event?.messageId ?? null,
+            createdAt: event?.createdAt,
+          });
+          finalizeMetrics();
+        },
+        onLatency: (event: any) => {
+          const rawLatency =
+            typeof event?.latencyMs === 'number'
+              ? event.latencyMs
+              : typeof event?.payload?.latency === 'number'
+              ? event.payload.latency
+              : typeof event?.payload?.value === 'number'
+              ? event.payload.value
+              : undefined;
+          latencyFromServer = rawLatency;
+        },
+        onMeta: undefined,
+        onMetaPending: undefined,
+        onMemorySaved: undefined,
+        onEvent: undefined,
+        onError: (error: Error) => {
+          options.onError?.(error);
+        },
+      } satisfies EcoEventHandlers;
+    };
+
+    inflightPromise = new Promise<EcoStreamResult>((resolve) => {
+      resolveResponse = (result) => {
+        resolveStartEcoStream?.();
+        resolve(result);
+      };
     });
   });
 
@@ -167,6 +302,8 @@ describe('ChatPage typing indicator', () => {
     window.HTMLElement.prototype.scrollTo = originalScrollTo;
     window.requestAnimationFrame = originalRaf;
     vi.clearAllMocks();
+    registerStreamHandlers = undefined;
+    resolveStartEcoStream = undefined;
   });
 
   test('keeps typing indicator when first token lacks content until chunk arrives', async () => {
@@ -179,7 +316,12 @@ describe('ChatPage typing indicator', () => {
     );
 
     const input = await screen.findByPlaceholderText('Converse com a Eco…');
-    await user.type(input, 'Oi{enter}');
+    await user.type(input, 'Oi');
+
+    const sendButton = await screen.findByRole('button', {
+      name: 'Enviar mensagem',
+    });
+    await user.click(sendButton);
 
     await screen.findAllByTestId('typing-dots');
     expect(handlersRef.current).toBeDefined();
@@ -243,7 +385,12 @@ describe('ChatPage typing indicator', () => {
     );
 
     const input = await screen.findByPlaceholderText('Converse com a Eco…');
-    await user.type(input, 'Olá{enter}');
+    await user.type(input, 'Olá');
+
+    const sendButton = await screen.findByRole('button', {
+      name: 'Enviar mensagem',
+    });
+    await user.click(sendButton);
 
     expect(handlersRef.current).toBeDefined();
 
