@@ -6,7 +6,6 @@ import { Eye, EyeOff } from 'lucide-react';
 import PhoneFrame from '../components/PhoneFrame';
 import { useAuth } from '../contexts/AuthContext';
 import TourInicial from '../components/TourInicial';
-import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
 import mixpanel from '../lib/mixpanel';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -191,8 +190,10 @@ const LoginPage: React.FC = () => {
           >
             {/* Header */}
             <div className="space-y-4 text-center">
-              <span className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-1 text-sm font-medium text-slate-600 ring-1 ring-slate-200">
-                <EcoBubbleOneEye variant="icon" size={18} state="focus" />
+              <span
+                className="mx-auto inline-flex items-center justify-center rounded-full border border-black/5 bg-white/50 px-4 py-1 text-[13.5px] font-medium text-[#1C1C1E]/60"
+                style={{ fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
+              >
                 Autoconhecimento Guiado
               </span>
               <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">ECO</h1>
