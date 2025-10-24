@@ -9,7 +9,7 @@ export type HealthCheckResult = {
   responseOk: boolean;
 };
 
-const resolveHealthUrl = () => buildApiUrl("/api/health");
+const resolveHealthUrl = () => buildApiUrl("/health");
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -17,7 +17,7 @@ export async function pingHealth(signal?: AbortSignal): Promise<HealthCheckResul
   const url = resolveHealthUrl();
   const result = await safeFetch(url, {
     method: "GET",
-    headers: { Accept: "application/json" },
+    headers: { Accept: "text/plain, application/json;q=0.8" },
     signal,
   });
 
@@ -35,12 +35,23 @@ export async function pingHealth(signal?: AbortSignal): Promise<HealthCheckResul
     return { status: "down", aborted: false, responseOk: false };
   }
 
+  const contentType = result.response.headers.get("content-type")?.toLowerCase() ?? "";
   let payloadOk = false;
-  try {
-    const data = await result.response.clone().json();
-    payloadOk = Boolean(data && typeof data === "object" && (data as { ok?: unknown }).ok);
-  } catch {
-    payloadOk = false;
+
+  if (contentType.includes("application/json")) {
+    try {
+      const data = await result.response.clone().json();
+      payloadOk = Boolean(data && typeof data === "object" && (data as { ok?: unknown }).ok);
+    } catch {
+      payloadOk = false;
+    }
+  } else {
+    try {
+      const text = await result.response.clone().text();
+      payloadOk = text.trim().toLowerCase() === "ok";
+    } catch {
+      payloadOk = false;
+    }
   }
 
   return {
