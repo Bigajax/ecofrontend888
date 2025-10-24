@@ -29,7 +29,7 @@ const shouldKeepAlive = (input: RequestInfo | URL, method: string): boolean => {
   if (method.toUpperCase() !== "GET") return false;
   const target = resolveRequestUrl(input);
   if (!target) return false;
-  return /\/api\/health(?:\b|\?|$|\/)/.test(target);
+  return /\/(?:api\/)?health(?:\b|\?|$|\/)/.test(target);
 };
 
 export async function safeFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<SafeFetchResult> {

@@ -1085,6 +1085,62 @@ const extractCreatedAt = (payload: unknown): string | undefined => {
   return undefined;
 };
 
+const toFiniteNumber = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+};
+
+const extractChunkIndex = (payload: unknown): number | undefined => {
+  const record = toRecord(payload);
+  if (!record) return undefined;
+
+  const candidates: Array<unknown> = [
+    record.index,
+    record.chunk_index,
+    record.chunkIndex,
+    (record as { delta_index?: unknown }).delta_index,
+    (record as { deltaIndex?: unknown }).deltaIndex,
+  ];
+
+  const deltaRecord = toRecord((record as { delta?: unknown }).delta);
+  if (deltaRecord) {
+    candidates.push(deltaRecord.index, deltaRecord.chunk_index, deltaRecord.chunkIndex);
+  }
+
+  const patchRecord = toRecord((record as { patch?: unknown }).patch);
+  if (patchRecord) {
+    candidates.push(patchRecord.index, patchRecord.chunk_index, patchRecord.chunkIndex);
+  }
+
+  const nestedPayload = toRecord((record as { payload?: unknown }).payload);
+  if (nestedPayload) {
+    candidates.push(nestedPayload.index, nestedPayload.chunk_index, nestedPayload.chunkIndex);
+    const nestedDelta = toRecord((nestedPayload as { delta?: unknown }).delta);
+    if (nestedDelta) {
+      candidates.push(nestedDelta.index, nestedDelta.chunk_index, nestedDelta.chunkIndex);
+    }
+  }
+
+  for (const candidate of candidates) {
+    const value = toFiniteNumber(candidate);
+    if (typeof value === "number") {
+      return Math.trunc(value);
+    }
+  }
+
+  return undefined;
+};
+
 const dispatchSseBlock = (
   block: string,
   context: {
@@ -1166,7 +1222,9 @@ const dispatchSseBlock = (
         ? parsed.text
         : undefined;
 
-    const index = context.nextChunkIndex();
+    const serverIndex = extractChunkIndex(payload);
+    const fallbackIndex = context.nextChunkIndex();
+    const index = typeof serverIndex === "number" ? serverIndex : fallbackIndex;
     context.onChunk?.({
       index,
       text: textCandidate,
@@ -1177,7 +1235,11 @@ const dispatchSseBlock = (
       interactionId: baseEventInfo.interactionId,
       messageId: baseEventInfo.messageId,
       createdAt: baseEventInfo.createdAt,
-      isFirstChunk: isFirstToken || index === 0,
+      isFirstChunk:
+        isFirstToken ||
+        index === 0 ||
+        (typeof serverIndex === "number" && serverIndex <= 0) ||
+        fallbackIndex === 0,
       payload,
     });
     return;

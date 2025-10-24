@@ -20,7 +20,17 @@ export type PassiveSignalRequest = {
 
 const envFlag = import.meta.env.VITE_ENABLE_PASSIVE_SIGNALS;
 
-export const ENABLE_PASSIVE_SIGNALS = envFlag === undefined ? true : envFlag !== "false";
+const normalizeBooleanFlag = (value: unknown): boolean => {
+  if (typeof value === "boolean") return value;
+  if (typeof value !== "string") return false;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return false;
+  if (["1", "true", "yes", "y", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "n", "off"].includes(normalized)) return false;
+  return false;
+};
+
+export const ENABLE_PASSIVE_SIGNALS = normalizeBooleanFlag(envFlag);
 
 const SEND_INTERVAL_MS = 2000;
 const SERVER_BACKOFF_MS = 60_000;
@@ -132,7 +142,7 @@ const flushPendingSignals = async () => {
   const eventsToSend = outbox;
   outbox = [];
 
-  const endpoint = buildApiUrl("/api/signal");
+  const endpoint = buildApiUrl("/signal");
   const grouped = new Map<string, NormalizedPassiveSignal[]>();
 
   for (const event of eventsToSend) {
