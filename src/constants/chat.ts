@@ -47,7 +47,6 @@ export const ROTATING_ITEMS: Suggestion[] = [
 ];
 
 export const OPENING_VARIATIONS = [
-  'Pronto para começar?',
   'O que está vivo em você agora?',
   'Quer explorar algum pensamento ou emoção?',
   'Vamos começar de onde você quiser.',

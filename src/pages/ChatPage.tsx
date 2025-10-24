@@ -2,7 +2,7 @@
 /*  ChatPage.tsx — scroll estável + sem bolinha fantasma + saudação alinhada  */
 /* -------------------------------------------------------------------------- */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import clsx from 'clsx';
 
@@ -198,8 +198,8 @@ function ChatPage() {
 
   const saudacao = useMemo(() => saudacaoDoDiaFromHour(new Date().getHours()), []);
 
-  const chatRef = useRef<HTMLDivElement | null>(null);
-  const { scrollerRef, endRef, isAtBottom, showScrollBtn, scrollToBottom } = useAutoScroll<HTMLDivElement>({
+  const chatRef = useRef<HTMLElement | null>(null);
+  const { scrollerRef, endRef, isAtBottom, showScrollBtn, scrollToBottom } = useAutoScroll<HTMLElement>({
     items: [messages],
     externalRef: chatRef,
     bottomThreshold: 120,
@@ -611,88 +611,103 @@ function ChatPage() {
     </div>
   ) : null;
 
+  const mainTopPadding = 'calc(var(--eco-topbar-h,56px) + 12px)';
+  const mainScrollPadding =
+    'calc(var(--footer-h,72px) + env(safe-area-inset-bottom))';
+  const footerStyle: CSSProperties = {
+    paddingBottom: safeAreaBottom + 16,
+    '--footer-h': `${computedInputHeight}px`,
+  };
+
   return (
     <div
-      ref={scrollerRef}
       className={clsx(
-        'chat-page relative flex h-[100dvh] w-full flex-1 flex-col overflow-y-auto bg-[color:var(--color-bg-base)] text-[color:var(--color-text-primary)]',
+        'chat-page grid min-h-[100dvh] w-full grid-rows-[auto_minmax(0,1fr)_auto] bg-[color:var(--color-bg-base)] text-[color:var(--color-text-primary)]',
         { 'keyboard-open': isKeyboardOpen },
       )}
-      style={{
-        minHeight: '100dvh',
-        WebkitOverflowScrolling: 'touch',
-        overscrollBehaviorY: 'contain',
-        scrollPaddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)',
-        scrollPaddingBottom: scrollInset,
-      }}
     >
-      <div role="feed" aria-busy={isWaitingForEco || isSendingToEco} className="flex-1">
+      <header aria-hidden className="sr-only" />
+      <main
+        ref={scrollerRef}
+        className="relative flex min-h-0 flex-col overflow-y-auto"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehaviorY: 'contain',
+          paddingBottom: scrollInset,
+          scrollPaddingTop: mainTopPadding,
+          scrollPaddingBottom: mainScrollPadding,
+        }}
+      >
         <div
-          className="px-4 sm:px-6 lg:px-10"
-          style={{ paddingTop: 'calc(var(--eco-topbar-h,56px) + 12px)' }}
+          role="feed"
+          aria-busy={isWaitingForEco || isSendingToEco}
+          className="flex-1"
         >
           <div
-            className="mx-auto w-full max-w-[min(640px,88vw)]"
-            style={{ paddingBottom: scrollInset }}
+            className="w-full px-4 sm:px-6 lg:px-10"
+            style={{ paddingTop: mainTopPadding }}
           >
-          {isEmptyState && (
-            <div
-              className="min-h-[calc(100svh-var(--eco-topbar-h,56px)-120px)] flex flex-col items-center justify-center py-16 sm:py-20"
-              style={{ minHeight: 'calc(100dvh - var(--eco-topbar-h,56px) - 120px)' }}
-            >
-              <motion.div
-                className="w-full px-4"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.28 }}
-              >
-                {/* Saudação centralizada */}
-                <div className="mx-auto flex w-full max-w-[800px] flex-col items-center gap-6 text-center sm:gap-8">
-                  <div className="flex flex-col gap-3 sm:gap-4">
-                    <h1 className="text-4xl font-semibold tracking-tight text-[color:var(--bubble-eco-text)] sm:text-5xl">
-                      {saudacao}, {displayName || rawUserName}
-                    </h1>
-                    <p className="mx-auto max-w-2xl text-base text-[color:var(--color-text-muted)] sm:text-lg">
-                      {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
-                    </p>
-                  </div>
-                  <QuickSuggestions
-                    visible={showInitialSuggestions}
-                    onPickSuggestion={handlePickSuggestion}
-                    rotatingItems={ROTATING_ITEMS}
-                    rotationMs={5000}
-                    className="mt-2 flex w-full flex-col items-center gap-4"
-                    disabled={composerPending}
-                  />
-                </div>
-              </motion.div>
-            </div>
-          )}
-
-          {erroApi && (
-            <div className="glass rounded-xl text-red-600 text-center mb-4 px-4 py-2 flex flex-col items-center gap-2">
-              <span>{erroApi}</span>
-              {canRetry && (
-                <button
-                  type="button"
-                  onClick={handleRetry}
-                  disabled={composerPending}
-                  className="text-sm font-medium text-red-700 hover:text-red-600 disabled:opacity-60 disabled:cursor-not-allowed underline underline-offset-4"
+            <div className="mx-auto flex w-full max-w-[920px] flex-col items-center px-4 text-center sm:max-w-[600px] md:max-w-[760px]">
+              {isEmptyState && (
+                <motion.div
+                  className="w-full"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.28 }}
                 >
-                  Tentar novamente
-                </button>
+                  <div className="flex w-full flex-col items-center py-10 sm:py-12">
+                    <div className="mt-4 w-full max-w-[840px] rounded-2xl border border-black/5 bg-white/90 px-5 py-4 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-colors md:py-3 sm:py-2 dark:border-white/10 dark:bg-slate-900/60">
+                      <h1 className="text-[clamp(28px,5vw,40px)] font-semibold leading-tight text-[color:var(--bubble-eco-text)]">
+                        {saudacao}, {displayName || rawUserName}
+                      </h1>
+                      <p className="mt-2 text-[clamp(14px,2.2vw,18px)] text-neutral-600 dark:text-slate-200">
+                        {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
+                      </p>
+                    </div>
+                    <div className="flex w-full flex-col items-center">
+                      <h2 className="mt-4 text-[clamp(15px,2vw,18px)] font-semibold text-neutral-700 dark:text-slate-100">
+                        Pronto para começar?
+                      </h2>
+                      <QuickSuggestions
+                        visible={showInitialSuggestions}
+                        onPickSuggestion={handlePickSuggestion}
+                        rotatingItems={ROTATING_ITEMS}
+                        rotationMs={5000}
+                        className="w-full"
+                        disabled={composerPending}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
               )}
-            </div>
-          )}
 
-          <MessageList
-            messages={messages}
-            prefersReducedMotion={prefersReducedMotion}
-            ecoActivityTTS={ecoActivity.onTTS}
-            feedbackPrompt={feedbackPromptNode}
-            typingIndicator={typingIndicatorNode}
-            endRef={endRef}
-          />
+              {erroApi && (
+                <div className="mt-6 flex w-full max-w-[700px] flex-col items-center gap-2 rounded-xl border border-red-100 bg-red-50/70 px-4 py-3 text-center text-red-600 shadow-sm dark:border-red-500/30 dark:bg-red-500/10">
+                  <span>{erroApi}</span>
+                  {canRetry && (
+                    <button
+                      type="button"
+                      onClick={handleRetry}
+                      disabled={composerPending}
+                      className="text-sm font-medium text-red-700 underline underline-offset-4 transition hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60 dark:text-red-300 dark:hover:text-red-200"
+                    >
+                      Tentar novamente
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-8 w-full max-w-[min(700px,92vw)] text-left sm:mt-10">
+                <MessageList
+                  messages={messages}
+                  prefersReducedMotion={prefersReducedMotion}
+                  ecoActivityTTS={ecoActivity.onTTS}
+                  feedbackPrompt={feedbackPromptNode}
+                  typingIndicator={typingIndicatorNode}
+                  endRef={endRef}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -710,12 +725,12 @@ function ChatPage() {
             </button>
           </div>
         )}
-      </div>
+      </main>
 
-      <div
+      <footer
         ref={chatInputWrapperRef}
-        className="composer sticky bottom-0 z-40 px-4 pb-5 pt-4 sm:px-6 sm:pb-7 sm:pt-5 lg:px-10"
-        style={{ paddingBottom: safeAreaBottom + 16 }}
+        className="composer sticky bottom-0 z-40 px-4 pb-[env(safe-area-inset-bottom)] pt-4 sm:px-6 sm:pt-5 lg:px-10"
+        style={footerStyle}
       >
         <div className="mx-auto w-full max-w-[min(700px,92vw)] space-y-3">
           <SuggestionChips
@@ -755,7 +770,7 @@ function ChatPage() {
             limit={guestGate.limit}
           />
         </div>
-      </div>
+      </footer>
 
       <VoiceRecorderPanel
         open={voicePanelOpen}
