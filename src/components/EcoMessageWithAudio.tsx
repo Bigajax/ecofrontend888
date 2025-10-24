@@ -32,6 +32,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { FeedbackReasonPopover } from "./FeedbackReasonPopover";
 import { DEFAULT_FEEDBACK_PILLAR } from "../constants/feedback";
 import { extractModuleUsageCandidates, resolveLastActivatedModuleKey } from "../utils/moduleUsage";
+import { isUserMessage } from "../utils/chat/messages";
 
 type Vote = "up" | "down";
 
@@ -101,7 +102,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   const userIdRef = useRef<string | null | undefined>(undefined);
   const moduleUsageSentRef = useRef<Set<string>>(new Set());
 
-  const isUser = message.sender === "user";
+  const isUser = isUserMessage(message);
   const isStreaming = message.streaming === true;
   const displayText = useMemo(
     () => sanitizeText(message.text ?? message.content ?? "", { collapseWhitespace: false }),

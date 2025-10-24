@@ -4,6 +4,7 @@ import clsx from "clsx";
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
 import TypingDots from "./TypingDots";
 import type { Message } from "../contexts/ChatContext";
+import { resolveMessageSender, isUserMessage, isEcoMessage } from "../utils/chat/messages";
 
 interface ChatMessageProps {
   message: Message;
@@ -12,7 +13,9 @@ interface ChatMessageProps {
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoActive }) => {
-  const isUser = message.sender === "user" || message.role === "user";
+  const sender = resolveMessageSender(message) ?? message.sender;
+  const isUser = isUserMessage(message);
+  const isEco = isEcoMessage(message);
   const bubbleClass = clsx(
     "rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words",
     isUser ? "bg-emerald-600 text-white" : "bg-white text-slate-900 shadow-sm",
@@ -38,7 +41,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
   return (
     <div className={wrapperClass} role="listitem" aria-live="polite" aria-atomic="false">
       <div className={rowClass}>
-        {!isUser && (
+        {isEco && (
           <div className="flex-shrink-0 translate-y-[2px]">
             <EcoBubbleOneEye
               variant="message"
@@ -48,7 +51,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
           </div>
         )}
         <div className={clsx("min-w-0 max-w-full flex flex-col", isUser ? "items-end" : "items-start")}>
-          <div className={bubbleClass} data-sender={message.sender}>
+          <div className={bubbleClass} data-sender={sender}>
             {showTypingIndicator ? <TypingDots /> : <span>{resolvedText}</span>}
           </div>
         </div>

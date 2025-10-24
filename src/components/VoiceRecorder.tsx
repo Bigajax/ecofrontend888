@@ -6,6 +6,7 @@ import ChatMessage from './ChatMessage';
 import { sendVoiceMessage } from '../api/voiceApi';
 import { Message } from './ChatMessage';
 import { useAuth } from '../contexts/AuthContext';
+import { isEcoMessage, isUserMessage } from '../utils/chat/messages';
 
 interface VoiceRecorderProps {
   onListeningChange?: (isListening: boolean) => void;
@@ -213,11 +214,16 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           <ChatMessage
             key={msg.id}
             message={msg}
-            isEcoTyping={isEcoThinking && msg.sender === 'eco' && messages[messages.length - 1]?.id === msg.id && !msg.text}
+            isEcoTyping={
+              isEcoThinking &&
+              isEcoMessage(msg) &&
+              messages[messages.length - 1]?.id === msg.id &&
+              !msg.text
+            }
             isEcoActive={!isListening && (isProcessing || isEcoThinking)}
           />
         ))}
-        {isEcoThinking && messages.every(msg => msg.sender === 'user' || msg.text !== '') && (
+        {isEcoThinking && messages.every((msg) => isUserMessage(msg) || msg.text !== '') && (
           <ChatMessage
             key="eco-thinking-indicator"
             message={{ id: "eco-thinking-indicator", sender: "eco", text: "" }}

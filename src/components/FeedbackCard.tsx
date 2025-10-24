@@ -10,6 +10,7 @@ import { extractModuleUsageCandidates, resolveLastActivatedModuleKey } from "../
 import { getSessionId } from "../utils/identity";
 import { toast } from "../utils/toast";
 import { FeedbackReasonPopover } from "./FeedbackReasonPopover";
+import { isEcoMessage } from "../utils/chat/messages";
 
 export type FeedbackCardStatus =
   | "idle"
@@ -33,13 +34,13 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
   const sessionIdRef = useRef<string | null | undefined>(undefined);
   const { sendFeedback } = useSendFeedback();
 
-  const isEcoMessage = message.sender === "eco";
+  const isEco = isEcoMessage(message);
   const isStreaming = Boolean(message.streaming);
   const hasInteraction = Boolean(interactionId);
 
   const disableActions = !hasInteraction || status === "sending";
   const showCard =
-    isEcoMessage &&
+    isEco &&
     !isStreaming &&
     hasInteraction &&
     status !== "success";

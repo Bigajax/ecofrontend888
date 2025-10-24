@@ -5,6 +5,7 @@ import { FEEDBACK_KEY } from '../constants/chat';
 import type { Message } from '../contexts/ChatContext';
 import { getSessionId, getUserIdFromStore } from '../utils/identity';
 import { extractMessageFeedbackContext } from './useMessageFeedbackContext';
+import { isEcoMessage } from '../utils/chat/messages';
 
 const SS_KEY = FEEDBACK_KEY;
 
@@ -38,7 +39,7 @@ export function useFeedbackPrompt(messages: Message[]) {
   }, []);
 
   const aiMessages = useMemo(
-    () => messages.filter((m) => m?.sender === 'eco'),
+    () => messages.filter((m) => isEcoMessage(m)),
     [messages]
   );
 
