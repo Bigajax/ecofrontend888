@@ -280,12 +280,7 @@ const VoiceRecorderPanel: React.FC<VoiceRecorderPanelProps> = ({
           aria-modal="true"
           aria-live="assertive"
         >
-          <div
-            className={clsx(
-              'rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur-xl',
-              'dark:bg-white/80',
-            )}
-          >
+          <div className="rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur-xl">
             <div className="mb-3 flex items-center justify-between text-[13px] font-medium text-slate-700">
               <span className="uppercase tracking-[0.18em] text-slate-500">{stateLabel}</span>
               <span className="tabular-nums text-[15px] text-slate-900">{formattedTime}</span>

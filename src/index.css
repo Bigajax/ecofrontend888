@@ -127,32 +127,6 @@ body::before {
   --bubble-user-shadow: none;
 }
 
-/* Dark pronto (opcional) */
-  @media (prefers-color-scheme: dark) {
-  :root {
-    --eco-text: #e2e8f0;
-    --eco-bg: rgba(15, 23, 42, 0.86);
-    --color-bg-base: #0b1120;
-    --color-bg-surface: rgba(15, 23, 42, 0.52);
-    --color-glass-tint: rgba(255, 255, 255, 0.18);
-    --color-glass-stroke: rgba(148, 163, 184, 0.28);
-    --color-text-primary: var(--eco-text);
-    --color-text-muted: #cbd5f5;
-    --bubble-eco-bg: rgba(248, 250, 252, 0.92);
-    --bubble-eco-text: #0a0a0a;
-    --bubble-user-bg: var(--eco-blue);
-    --bubble-user-text: #ffffff;
-    --bubble-border: rgba(148, 163, 184, 0.22);
-    --bubble-user-border: rgba(92, 141, 255, 0.55);
-    --bubble-user-shadow: none;
-  }
-  body {
-    color: var(--color-text-primary);
-    background-color: var(--color-bg-base);
-    background-image: none;
-  }
-}
-
 /* Alto contraste / menos transparência */
 @media (prefers-contrast: more) {
   .glass,
@@ -633,11 +607,6 @@ button, [role="button"], a { touch-action: manipulation; }
 :where(button,[role="button"],a,input,textarea,select):focus-visible {
   outline: 2px solid rgba(59,130,246,.55);
   outline-offset: 2px;
-}
-@media (prefers-color-scheme: dark) {
-  :where(button,[role="button"],a,input,textarea,select):focus-visible {
-    outline-color: rgba(147,197,253,.7);
-  }
 }
 
 /* Fonte consistente nas bolhas */
