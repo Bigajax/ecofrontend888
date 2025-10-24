@@ -937,6 +937,25 @@ export interface EcoStreamChunk {
   index: number;
   text?: string;
   metadata?: unknown;
+  interactionId?: string;
+  messageId?: string;
+  createdAt?: string;
+  isFirstChunk?: boolean;
+  payload?: unknown;
+}
+
+export interface EcoStreamPromptReadyEvent {
+  interactionId?: string;
+  messageId?: string;
+  createdAt?: string;
+  payload?: unknown;
+}
+
+export interface EcoStreamDoneEvent {
+  payload: unknown;
+  interactionId?: string;
+  messageId?: string;
+  createdAt?: string;
 }
 
 export interface StartEcoStreamOptions {
@@ -950,8 +969,9 @@ export interface StartEcoStreamOptions {
   signal?: AbortSignal;
   headers?: Record<string, string>;
   onChunk?: (chunk: EcoStreamChunk) => void;
-  onDone?: (payload: unknown) => void;
+  onDone?: (event: EcoStreamDoneEvent) => void;
   onError?: (error: unknown) => void;
+  onPromptReady?: (event: EcoStreamPromptReadyEvent) => void;
 }
 
 const mapHistoryMessage = (message: Message) => {
@@ -974,28 +994,137 @@ const mapHistoryMessage = (message: Message) => {
   };
 };
 
+const extractInteractionId = (payload: unknown): string | undefined => {
+  if (!payload || typeof payload !== "object") return undefined;
+  const candidates: Array<unknown> = [
+    (payload as any).interaction_id,
+    (payload as any).interactionId,
+    (payload as any).interactionID,
+    (payload as any).id,
+    (payload as any).message_id,
+    (payload as any).messageId,
+    (payload as any).response?.interaction_id,
+    (payload as any).response?.interactionId,
+    (payload as any).response?.id,
+    (payload as any).metadata?.interaction_id,
+    (payload as any).metadata?.interactionId,
+    (payload as any).context?.interaction_id,
+    (payload as any).context?.interactionId,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string") {
+      const trimmed = candidate.trim();
+      if (trimmed) return trimmed;
+    }
+  }
+  return undefined;
+};
+
+const extractMessageId = (payload: unknown): string | undefined => {
+  if (!payload || typeof payload !== "object") return undefined;
+  const candidates: Array<unknown> = [
+    (payload as any).message_id,
+    (payload as any).messageId,
+    (payload as any).id,
+    (payload as any).response?.message_id,
+    (payload as any).response?.messageId,
+    (payload as any).delta?.message_id,
+    (payload as any).delta?.messageId,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string") {
+      const trimmed = candidate.trim();
+      if (trimmed) return trimmed;
+    }
+  }
+  return undefined;
+};
+
+const extractCreatedAt = (payload: unknown): string | undefined => {
+  if (!payload || typeof payload !== "object") return undefined;
+  const candidates: Array<unknown> = [
+    (payload as any).created_at,
+    (payload as any).createdAt,
+    (payload as any).response?.created_at,
+    (payload as any).response?.createdAt,
+    (payload as any).timestamp,
+    (payload as any).ts,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string") {
+      const trimmed = candidate.trim();
+      if (trimmed) return trimmed;
+    }
+  }
+  return undefined;
+};
+
 const dispatchSseBlock = (
   block: string,
   context: {
     nextChunkIndex: () => number;
     onChunk?: (chunk: EcoStreamChunk) => void;
-    onDone?: (payload: unknown) => void;
+    onDone?: (event: EcoStreamDoneEvent) => void;
+    onPromptReady?: (event: EcoStreamPromptReadyEvent) => void;
   },
 ) => {
   const normalizedBlock = normalizeSseNewlines(block);
   const parsed = parseSseEvent(normalizedBlock);
   if (!parsed) return;
 
-  const type = parsed.type ?? "chunk";
-  if (type === "chunk") {
-    const payload = parsed.payload ?? {};
+  const rawType = parsed.type;
+  const payload = parsed.payload ?? {};
+  const payloadType = typeof (payload as any)?.type === "string" ? (payload as any).type : undefined;
+  const controlName = normalizeControlName((payload as any)?.name ?? (payload as any)?.event);
+  const primaryType = rawType ?? payloadType ?? controlName ?? "chunk";
+  const { normalized: mappedType } = mapResponseEventType(primaryType);
+  let resolvedType = mappedType ?? primaryType;
+
+  if (resolvedType === "control" && controlName) {
+    const mappedControl = mapResponseEventType(controlName).normalized;
+    resolvedType = mappedControl ?? controlName;
+  }
+
+  const baseEventInfo = {
+    interactionId: extractInteractionId(payload),
+    messageId: extractMessageId(payload),
+    createdAt: extractCreatedAt(payload),
+  };
+
+  if (resolvedType === "prompt_ready") {
+    context.onPromptReady?.({
+      interactionId: baseEventInfo.interactionId,
+      messageId: baseEventInfo.messageId,
+      createdAt: baseEventInfo.createdAt,
+      payload,
+    });
+    return;
+  }
+
+  if (resolvedType === "done") {
+    context.onDone?.({
+      payload: parsed.payload,
+      interactionId: baseEventInfo.interactionId,
+      messageId: baseEventInfo.messageId,
+      createdAt: baseEventInfo.createdAt,
+    });
+    return;
+  }
+
+  const isFirstToken = resolvedType === "first_token";
+  const treatedType = resolvedType === "first_token" ? "chunk" : resolvedType;
+
+  if (treatedType === "chunk") {
     const textCandidate =
       typeof payload === "string"
         ? payload
-        : typeof payload.text === "string"
-        ? payload.text
-        : typeof payload.delta === "string"
-        ? payload.delta
+        : typeof (payload as any)?.text === "string"
+        ? (payload as any).text
+        : typeof (payload as any)?.delta === "string"
+        ? (payload as any).delta
         : typeof parsed.text === "string"
         ? parsed.text
         : undefined;
@@ -1008,12 +1137,13 @@ const dispatchSseBlock = (
         typeof payload === "object" && payload
           ? (payload as Record<string, unknown>).metadata
           : undefined,
+      interactionId: baseEventInfo.interactionId,
+      messageId: baseEventInfo.messageId,
+      createdAt: baseEventInfo.createdAt,
+      isFirstChunk: isFirstToken || index === 0,
+      payload,
     });
     return;
-  }
-
-  if (type === "done") {
-    context.onDone?.(parsed.payload);
   }
 };
 
@@ -1031,6 +1161,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     onChunk,
     onDone,
     onError,
+    onPromptReady,
   } = options;
 
   const baseHeaders: Record<string, string> = {
@@ -1157,13 +1288,23 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
         const eventBlock = buffer.slice(0, searchIndex);
         buffer = buffer.slice(searchIndex + 2);
         if (eventBlock.trim().length > 0) {
-          dispatchSseBlock(eventBlock, { nextChunkIndex, onChunk, onDone });
+          dispatchSseBlock(eventBlock, {
+            nextChunkIndex,
+            onChunk,
+            onDone,
+            onPromptReady,
+          });
         }
         searchIndex = buffer.indexOf("\n\n");
       }
 
       if (finalFlush && buffer.trim().length > 0) {
-        dispatchSseBlock(buffer, { nextChunkIndex, onChunk, onDone });
+        dispatchSseBlock(buffer, {
+          nextChunkIndex,
+          onChunk,
+          onDone,
+          onPromptReady,
+        });
         buffer = "";
       }
     };
@@ -1180,7 +1321,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       flushBuffer();
     }
 
-    onDone?.(undefined);
+    onDone?.({ payload: undefined });
   } catch (error) {
     if (signal?.aborted) {
       const abortError =
