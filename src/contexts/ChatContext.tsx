@@ -29,7 +29,7 @@ export interface Message {
   interactionId?: string | null;
   message_id?: string | null;
   client_message_id?: string | null;
-  status?: 'pending' | 'sent' | 'streaming' | 'final' | 'error';
+  status?: 'pending' | 'sent' | 'streaming' | 'final' | 'error' | 'done';
   server_ids?: string[];
   createdAt?: string | null;
   updatedAt?: string | null;
