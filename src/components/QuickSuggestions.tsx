@@ -149,7 +149,7 @@ export default function QuickSuggestions({
   return (
     <div
       className={clsx(
-        "quick-suggestions w-full max-w-[800px] mx-auto mb-2 flex flex-col gap-3",
+        "quick-suggestions mx-auto flex w-full flex-col items-center gap-3",
         className,
       )}
       aria-label="Atalhos de início"
@@ -171,22 +171,24 @@ export default function QuickSuggestions({
       )}
 
       {/* ⬇️ Pílulas compactas */}
-      <div className="quick-suggestions__pills flex w-full flex-wrap justify-center gap-1.5 px-0.5 py-1 sm:gap-2.5 lg:gap-3">
+      <div className="quick-suggestions__grid">
         {suggestions.map((s, index) => (
           <button
             key={s.id}
             onClick={() => emitPick(s, { source: "pill", index })}
             className="
-              shrink-0
-              h-10 md:h-11
-              rounded-full px-3.5 md:px-4
-              bg-white/70 backdrop-blur-md
+              quick-suggestions__pill
+              rounded-2xl
               border border-black/10
-              shadow-[0_8px_22px_rgba(16,24,40,0.08)]
-              hover:bg-white hover:border-black/15 hover:shadow-[0_12px_32px_rgba(16,24,40,0.12)]
+              bg-white/80
+              px-4 py-3
+              text-slate-900/95
+              shadow-[0_2px_12px_rgba(0,0,0,0.06)]
+              backdrop-blur-md
+              transition-colors duration-200 ease-out
+              hover:border-black/15 hover:bg-white
               focus:outline-none focus-visible:ring-2 focus-visible:ring-black/10
-              active:translate-y-[1px] transition duration-200 ease-out
-              text-slate-900/95 inline-flex items-center gap-2
+              disabled:opacity-70
             "
             aria-label={`Sugerir: ${s.label}`}
             title={s.label}
@@ -195,11 +197,14 @@ export default function QuickSuggestions({
             disabled={disabled}
           >
             {s.icon && (
-              <span className="leading-none text-[15px] md:text-[17px]" aria-hidden>
+              <span
+                className="quick-suggestions__pill-icon leading-none text-[15px] md:text-[17px]"
+                aria-hidden
+              >
                 {s.icon}
               </span>
             )}
-            <span className={labelCls}>{s.label}</span>
+            <span className={clsx(labelCls, "text-center")}>{s.label}</span>
           </button>
         ))}
       </div>

@@ -211,14 +211,15 @@ function ChatPage() {
     inputRef: chatInputWrapperRef,
   });
 
-  const baseScrollPadding = 112;
-  const contentPaddingBase = Math.max(baseScrollPadding, contentInset + 24);
-  const scrollPaddingBottomValue = Math.max(
-    baseScrollPadding,
-    contentInset + safeAreaBottom + 24,
-  );
-  const contentPaddingBottom = `calc(${contentPaddingBase}px + env(safe-area-inset-bottom, 0px))`; // safe-area somada ao padding dinâmico
   const computedInputHeight = inputHeight || 96;
+  const safeAreaOffset = safeAreaBottom ?? 0;
+  const insetCompensation = Math.max(contentInset, keyboardHeight);
+  const paddingBaseline = Math.max(
+    computedInputHeight + 24,
+    insetCompensation + 24,
+  );
+  const mainPaddingBottom = `calc(${paddingBaseline}px + env(safe-area-inset-bottom, 0px))`; // padding inferior soma altura do input + safe-area
+  const scrollPaddingBottomValue = paddingBaseline + safeAreaOffset;
   const voicePanelBottomOffset = Math.max(120, keyboardHeight + computedInputHeight + 24);
 
   const { showQuick, hideQuickSuggestions, handleTextChange } =
@@ -619,7 +620,7 @@ function ChatPage() {
   return (
     <div
       className={clsx(
-        'chat-page relative w-full bg-[color:var(--color-bg-base)] text-[color:var(--color-text-primary)]',
+        'chat-page-grid relative w-full bg-[color:var(--color-bg-base)] text-[color:var(--color-text-primary)]',
         { 'keyboard-open': isKeyboardOpen },
       )}
       style={{
@@ -628,45 +629,58 @@ function ChatPage() {
     >
       <div
         ref={scrollerRef}
-        className="chat-scroll-area relative flex min-h-0 flex-1 flex-col overflow-y-auto px-4 sm:px-6 lg:px-10"
+        className="chat-page__main px-4 sm:px-5 md:px-6"
         style={{
-          paddingTop: 'clamp(24px, 6vh, 80px)',
-          paddingBottom: contentPaddingBottom, // paddingBottom usa env(safe-area-inset-bottom)
-          WebkitOverflowScrolling: 'touch',
-          overscrollBehaviorY: 'contain', // evita rubber band
+          paddingTop: 'clamp(28px, 8vh, 64px)',
+          paddingBottom: mainPaddingBottom, // padding inferior inclui altura do input + safe-area
           scrollPaddingTop: 'calc(var(--eco-topbar-h, 72px) + 12px)',
-          scrollPaddingBottom: scrollPaddingBottomValue, // mantém ancoragens visíveis
+          scrollPaddingBottom: `${scrollPaddingBottomValue}px`, // mantém ancoragens visíveis ao focar
         }}
       >
-        <div className="mx-auto flex w-full max-w-[min(700px,92vw)] flex-1 flex-col min-h-0">
-          <div
-            role="feed"
-            aria-busy={isWaitingForEco || isSendingToEco}
-            className="flex flex-1 flex-col gap-6"
-          >
-            {isEmptyState && (
-              <motion.div
-                className="chat-hero glass-card w-full rounded-[28px] px-5 py-12 text-center shadow-[0_20px_48px_rgba(15,23,42,0.08)] sm:px-8 sm:py-16"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.28 }}
-              >
-                <div className="chat-hero__wrap mx-auto flex w-full max-w-[760px] flex-col items-center gap-5 sm:gap-7">
-                  <div className="flex flex-col gap-2.5 sm:gap-4">
-                    <h1
-                      className="text-balance font-semibold tracking-tight text-[color:var(--bubble-eco-text)]"
-                      style={{ fontSize: 'clamp(24px, 4vw, 44px)' }} // clamp() para tipografia responsiva
-                    >
+        <div className="chat-page__content mx-auto w-full max-w-[600px] sm:max-w-[720px] xl:max-w-[960px]">
+          {(isEmptyState || showInitialSuggestions) && (
+            <section className="chat-home-block" aria-label="Sugestões iniciais">
+              {isEmptyState && (
+                <motion.div
+                  className="chat-home-block__hero"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.28 }}
+                >
+                  <div className="flex flex-col items-center">
+                    <h1 className="chat-home-block__hero-title text-balance font-semibold tracking-tight text-[color:var(--bubble-eco-text)]">
                       {saudacao}, {displayName || rawUserName}
                     </h1>
-                    <p className="chat-hero__subtitle mx-auto max-w-2xl text-sm text-[color:var(--color-text-muted)] sm:text-base">
+                    <p className="chat-home-block__hero-subtitle max-w-[52ch] text-balance">
                       {OPENING_VARIATIONS[Math.floor(Math.random() * OPENING_VARIATIONS.length)]}
                     </p>
                   </div>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              )}
 
+              {showInitialSuggestions && (
+                <div className="chat-home-block__chips">
+                  <p className="text-sm font-medium text-slate-600" style={{ marginBottom: 'var(--rythm-sm)' }}>
+                    Pronto para começar?
+                  </p>
+                  <QuickSuggestions
+                    visible={showInitialSuggestions}
+                    onPickSuggestion={handlePickSuggestion}
+                    rotatingItems={ROTATING_ITEMS}
+                    rotationMs={5000}
+                    className="w-full"
+                    disabled={composerPending}
+                  />
+                </div>
+              )}
+            </section>
+          )}
+
+          <div
+            role="feed"
+            aria-busy={isWaitingForEco || isSendingToEco}
+            className="flex flex-col gap-6"
+          >
             {erroApi && (
               <div className="glass rounded-xl text-red-600 text-center px-4 py-3">
                 <div className="flex flex-col items-center gap-2">
@@ -694,21 +708,6 @@ function ChatPage() {
               endRef={endRef}
             />
 
-            {showInitialSuggestions && (
-              <div className="quick-suggestions-slot mt-4">
-                <p className="mb-3 text-center text-sm font-medium text-[color:var(--color-text-muted)] sm:text-base">
-                  Pronto para começar?
-                </p>
-                <QuickSuggestions
-                  visible={showInitialSuggestions}
-                  onPickSuggestion={handlePickSuggestion}
-                  rotatingItems={ROTATING_ITEMS}
-                  rotationMs={5000}
-                  className="quick-suggestions-block"
-                  disabled={composerPending}
-                />
-              </div>
-            )}
           </div>
         </div>
 
@@ -731,12 +730,12 @@ function ChatPage() {
       {/* Sticky composer mantém o ChatInput visível na base */}
       <div
         ref={chatInputWrapperRef}
-        className="composer sticky bottom-0 z-40 px-4 pb-5 pt-4 sm:px-6 sm:pb-7 sm:pt-5 lg:px-10"
+        className="chat-page__composer z-40 px-4 pb-5 pt-4 sm:px-5 sm:pb-6 sm:pt-5 md:px-6"
         style={{
-          paddingBottom: safeAreaBottom + 16, // padding inclui safe-area inferior
+          paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))', // padding inferior respeita a safe-area
         }}
       >
-        <div className="mx-auto w-full max-w-[min(700px,92vw)] space-y-3">
+        <div className="mx-auto w-full max-w-[600px] sm:max-w-[720px] xl:max-w-[960px] space-y-3">
           <SuggestionChips
             visible={shouldShowSuggestionChips}
             onPick={(suggestion, index) =>

@@ -42,7 +42,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       {/* Área de conteúdo assume a segunda linha do grid */}
       <main className="app-shell__main">
-        <div className="app-shell__viewport mx-auto w-full max-w-[1140px] px-4 sm:px-6 md:px-8">
+        <div className="app-shell__viewport mx-auto w-full max-w-[600px] sm:max-w-[720px] xl:max-w-[960px] px-4 sm:px-5 md:px-6">
           {children}
         </div>
       </main>
