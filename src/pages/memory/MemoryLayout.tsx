@@ -408,7 +408,7 @@ const MemoryLayout: React.FC = () => {
               to="/"
               className={[
                 'inline-flex items-center justify-center rounded-full bg-neutral-900',
-                'px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800',
+                'px-5 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800',
               ].join(' ')}
             >
               Fazer login
@@ -457,7 +457,7 @@ const MemoryLayout: React.FC = () => {
                 {items.map(({ key, message, details, onRetry }) => (
                   <div
                     key={key}
-                    className="rounded-2xl border border-rose-100/80 bg-rose-50/80 px-4 py-3 text-left shadow-sm"
+                    className="rounded-2xl border border-rose-100/80 bg-rose-50/80 px-4 py-3 text-left"
                   >
                     <p className="text-[13px] font-medium text-rose-600">{message}</p>
                     {formatTechnicalDetails(details) ? (
@@ -466,7 +466,7 @@ const MemoryLayout: React.FC = () => {
                     <button
                       type="button"
                       onClick={onRetry}
-                      className="mt-3 inline-flex items-center justify-center rounded-full border border-rose-200/70 bg-white/90 px-3 py-1.5 text-xs font-semibold text-rose-600 shadow-sm transition hover:bg-white"
+                      className="mt-3 inline-flex items-center justify-center rounded-full border border-rose-200/70 bg-white/90 px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-white"
                     >
                       Tentar novamente
                     </button>

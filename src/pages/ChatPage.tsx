@@ -656,7 +656,7 @@ function ChatPage() {
                   transition={{ duration: 0.28 }}
                 >
                   <div className="flex w-full flex-col items-center py-10 sm:py-12">
-                    <div className="mt-4 w-full max-w-[840px] rounded-2xl border border-black/5 bg-white/90 px-5 py-4 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-colors md:py-3 sm:py-2 dark:border-white/10 dark:bg-slate-900/60">
+                    <div className="mt-4 w-full max-w-[840px] rounded-2xl border border-black/5 bg-white/90 px-5 py-4 text-center backdrop-blur-sm transition-colors md:py-3 sm:py-2 dark:border-white/10 dark:bg-slate-900/60">
                       <h1 className="text-[clamp(28px,5vw,40px)] font-semibold leading-tight text-[color:var(--bubble-eco-text)]">
                         {saudacao}, {displayName || rawUserName}
                       </h1>
@@ -682,7 +682,7 @@ function ChatPage() {
               )}
 
               {erroApi && (
-                <div className="mt-6 flex w-full max-w-[700px] flex-col items-center gap-2 rounded-xl border border-red-100 bg-red-50/70 px-4 py-3 text-center text-red-600 shadow-sm dark:border-red-500/30 dark:bg-red-500/10">
+                <div className="mt-6 flex w-full max-w-[700px] flex-col items-center gap-2 rounded-xl border border-red-100 bg-red-50/70 px-4 py-3 text-center text-red-600 dark:border-red-500/30 dark:bg-red-500/10">
                   <span>{erroApi}</span>
                   {canRetry && (
                     <button
@@ -719,7 +719,7 @@ function ChatPage() {
             <button
               type="button"
               onClick={handleJumpToBottom}
-              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[0_16px_32px_rgba(15,23,42,0.18)] transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300/60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300/60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
             >
               Novas mensagens
             </button>

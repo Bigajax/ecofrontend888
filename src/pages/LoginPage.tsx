@@ -188,8 +188,8 @@ const LoginPage: React.FC = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className={[
-              'w-full max-w-md space-y-8 rounded-3xl border p-6 shadow-xl sm:p-8',
-              'bg-white border-slate-200 dark:border-slate-800 dark:bg-slate-900',
+              'w-full max-w-md space-y-8 rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8',
+              'dark:border-slate-800 dark:bg-slate-900',
             ].join(' ')}
           >
             {/* Header */}
@@ -287,7 +287,7 @@ const LoginPage: React.FC = () => {
                   type="submit"
                   disabled={!canSubmit}
                   className={[
-                    'flex h-12 w-full items-center justify-center rounded-2xl bg-[#007AFF] text-sm font-semibold text-white shadow-lg transition-colors',
+                    'flex h-12 w-full items-center justify-center rounded-2xl bg-[#007AFF] text-sm font-semibold text-white transition-colors',
                     'hover:bg-[#1a84ff] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/50 focus:ring-offset-2 focus:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-60',
                   ].join(' ')}
                 >

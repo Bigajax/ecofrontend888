@@ -282,7 +282,7 @@ const VoiceRecorderPanel: React.FC<VoiceRecorderPanelProps> = ({
         >
           <div
             className={clsx(
-              'rounded-2xl border border-white/60 bg-white/70 p-4 shadow-[0_22px_48px_rgba(15,23,42,0.22)] backdrop-blur-xl',
+              'rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur-xl',
               'dark:bg-white/80',
             )}
           >

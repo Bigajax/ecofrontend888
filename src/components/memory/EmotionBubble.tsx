@@ -52,9 +52,7 @@ const EmotionBubble: React.FC<EmotionBubbleProps> = ({
   const accentDark = useMemo(() => appleShade(data.accent, -0.25), [data.accent]);
   const accentRgb = useMemo(() => toRgb(data.accent), [data.accent]);
 
-  const frameShadow = accentRgb
-    ? `0 18px 42px rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.25)`
-    : '0 18px 42px rgba(15, 23, 42, 0.18)';
+  const frameShadow = 'none';
 
   const padding = Math.max(8, Math.round(size * 0.22));
   const frameSize = size + padding * 2;
@@ -66,10 +64,10 @@ const EmotionBubble: React.FC<EmotionBubbleProps> = ({
     >
       <span
         aria-hidden
-        className="absolute inset-0 rounded-[22px] transition-shadow duration-500 ease-[cubic-bezier(0.22,0.61,0.36,1)]"
+        className="absolute inset-0 rounded-[22px] transition duration-500 ease-[cubic-bezier(0.22,0.61,0.36,1)]"
         style={{
           background: `linear-gradient(135deg, ${accentLight}, ${accentDark})`,
-          boxShadow: `${frameShadow}, inset 0 1px 0 rgba(255,255,255,0.48)`,
+          boxShadow: frameShadow,
         }}
       />
       <span

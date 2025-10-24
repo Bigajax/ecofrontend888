@@ -19,7 +19,7 @@ const LoginGateModal: React.FC<LoginGateModalProps> = ({ open, onClose, onSignup
       aria-modal="true"
       aria-labelledby="gate-title"
     >
-      <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full text-center">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 max-w-md w-full text-center">
         <h2 id="gate-title" className="text-xl font-semibold text-slate-900">
           Crie sua conta para continuar
         </h2>

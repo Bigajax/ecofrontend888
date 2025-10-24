@@ -99,7 +99,7 @@ export function FeedbackReasonPopover({
               role="dialog"
               aria-modal="true"
               aria-describedby={descriptionId}
-              className="animate-[feedback-sheet-in_220ms_ease-out] rounded-3xl bg-white/95 p-4 shadow-xl ring-1 ring-black/5 backdrop-blur"
+              className="animate-[feedback-sheet-in_220ms_ease-out] rounded-3xl bg-white/95 p-4 ring-1 ring-black/5 backdrop-blur"
               style={{
                 maxHeight: "min(70dvh, 520px)",
                 overflow: "auto",

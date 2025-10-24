@@ -86,7 +86,6 @@ const RotatingPrompts = ({
           h-10 px-3.5 rounded-full
           bg-white/85 backdrop-blur-md
           border border-black/10
-          shadow-[0_10px_28px_rgba(16,24,40,0.10)]
           hover:bg-white focus:outline-none
           focus-visible:ring-2 focus-visible:ring-black/10
           active:translate-y-[1px] transition

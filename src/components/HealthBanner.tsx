@@ -9,13 +9,13 @@ const resolveAppearance = (status: HealthStatus) => {
   if (status === 'down') {
     return {
       className:
-        'bg-rose-600 text-white shadow',
+        'bg-rose-600 text-white',
       message: 'Sem conexão com o servidor',
     };
   }
 
   return {
-    className: 'bg-amber-400 text-amber-950 shadow',
+    className: 'bg-amber-400 text-amber-950',
     message: 'Conexão instável com o servidor',
   };
 };

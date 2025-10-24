@@ -109,7 +109,7 @@ const Slide: React.FC<SlideProps> = ({
               const emo = pillEmoji(p);
               return (
                 <li key={`${p}-${i}`}>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600 shadow-sm ring-1 ring-slate-900/5">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600 ring-1 ring-slate-900/5">
                     {emo ? <span aria-hidden="true">{emo}</span> : null}
                     <span>{p}</span>
                   </span>
@@ -118,7 +118,7 @@ const Slide: React.FC<SlideProps> = ({
             })}
             {extraCount > 0 && (
               <li>
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600 shadow-sm ring-1 ring-slate-900/5">
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600 ring-1 ring-slate-900/5">
                   +{extraCount}
                 </span>
               </li>

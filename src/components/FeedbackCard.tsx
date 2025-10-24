@@ -212,7 +212,7 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
 
   return (
     <div
-      className="mt-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-sm shadow-sm backdrop-blur"
+      className="mt-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-sm backdrop-blur"
       data-interaction-id={interactionId}
     >
       <span className="text-slate-600">Essa resposta ajudou?</span>

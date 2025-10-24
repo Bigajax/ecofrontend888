@@ -198,7 +198,7 @@ export default function StackedAreaSemanalEmocional({
           if (!slice) return null;
           const d = slice.points[0]?.data.x as Date;
           return (
-            <div className="rounded-md border border-neutral-200 bg-white/95 p-2 shadow-sm text-xs">
+            <div className="rounded-md border border-neutral-200 bg-white/95 p-2 text-xs">
               <div className="font-medium mb-1">{fmt.format(d)} (semana)</div>
               {variant === "total" ? (
                 <div className="flex items-center gap-1">
