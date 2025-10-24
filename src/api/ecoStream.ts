@@ -102,7 +102,11 @@ const parseSseEvent = (
     }
 
     if (line.startsWith("data:")) {
-      dataParts.push(line.slice(5));
+      if (line.startsWith("data: ")) {
+        dataParts.push(line.slice(6));
+      } else {
+        dataParts.push(line.slice(5));
+      }
       continue;
     }
 
@@ -1321,7 +1325,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       while (searchIndex !== -1) {
         const eventBlock = buffer.slice(0, searchIndex);
         buffer = buffer.slice(searchIndex + 2);
-        if (eventBlock.trim().length > 0) {
+        if (eventBlock.length > 0) {
           dispatchSseBlock(eventBlock, {
             nextChunkIndex,
             onChunk,

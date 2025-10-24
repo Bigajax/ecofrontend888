@@ -3,6 +3,7 @@ import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } fr
 import { v4 as uuidv4 } from "uuid";
 
 import { startEcoStream, type EcoStreamChunk, type EcoStreamControlEvent } from "../api/ecoStream";
+import { collectTexts } from "../api/askEcoResponse";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../contexts/ChatContext";
 import { sanitizeText } from "../utils/sanitizeText";
 import { updatePassiveSignalInteractionId } from "../api/passiveSignals";
@@ -155,6 +156,38 @@ interface EcoReplyState {
   [assistantMessageId: string]: { text: string; chunkIndexMax: number };
 }
 
+const isAlphaNumericChar = (char: string | undefined): boolean =>
+  typeof char === "string" && /[0-9A-Za-zÀ-ÖØ-öø-ÿ]/u.test(char);
+
+const isLetterOrQuoteChar = (char: string | undefined): boolean =>
+  typeof char === "string" && /[A-Za-zÀ-ÖØ-öø-ÿ"'“”‘’`]/u.test(char);
+
+const smartJoinText = (previous: string, next: string): string => {
+  if (!previous) return next;
+  if (!next) return previous;
+
+  const lastChar = previous.slice(-1);
+  const firstChar = next[0];
+  const previousEndsWithWhitespace = /\s$/.test(previous);
+  const nextStartsWithWhitespace = /^\s/.test(next);
+
+  let needsSpace = false;
+
+  if (!previousEndsWithWhitespace && !nextStartsWithWhitespace) {
+    if (/[.?!,;:]$/.test(lastChar) && isLetterOrQuoteChar(firstChar)) {
+      needsSpace = true;
+    } else if (isAlphaNumericChar(lastChar) && isAlphaNumericChar(firstChar)) {
+      needsSpace = true;
+    }
+  }
+
+  if (needsSpace) {
+    return `${previous} ${next}`;
+  }
+
+  return `${previous}${next}`;
+};
+
 export const useEcoStream = ({
   upsertMessage,
   setMessages,
@@ -177,6 +210,9 @@ export const useEcoStream = ({
   const ecoReplyStateRef = useRef<EcoReplyState>({});
   const assistantByClientRef = useRef<Record<string, string>>({});
   const clientByAssistantRef = useRef<Record<string, string>>({});
+  const pendingAssistantMetaRef = useRef<
+    Record<string, { interactionId?: string; messageId?: string; createdAt?: string }>
+  >({});
   const currentInteractionIdRef = useRef<string | null>(null);
 
   const updateCurrentInteractionId = useCallback((next: string | null | undefined) => {
@@ -224,22 +260,29 @@ export const useEcoStream = ({
       if (assistantByClientRef.current[clientMessageId] === assistantMessageId) {
         delete assistantByClientRef.current[clientMessageId];
       }
+      if (pendingAssistantMetaRef.current[clientMessageId]) {
+        delete pendingAssistantMetaRef.current[clientMessageId];
+      }
     }
   }, []);
 
   /**
    * Garante a existência/atualização da mensagem da Eco (bolha de resposta).
-   * - Cria com status "streaming" quando necessário (no prompt_ready).
-   * - Atualiza IDs (interaction/message) assim que o servidor os fornece.
+   * - Mantém um ID local estável para a Eco (eco-<uuid>).
+   * - Só cria a bolha quando permitido (primeiro chunk ou finalização sem chunks).
+   * - Atualiza metadados assim que o servidor os fornece.
    */
   const ensureAssistantMessage = useCallback(
     (
       clientMessageId: string,
       event?: { interactionId?: string | null; messageId?: string | null; createdAt?: string | null },
+      options?: { allowCreate?: boolean },
     ): string | undefined => {
       if (!clientMessageId) return undefined;
       const normalizedClientId = clientMessageId.trim();
       if (!normalizedClientId) return undefined;
+
+      const allowCreate = options?.allowCreate ?? true;
 
       const normalizeString = (value?: string | null): string => (typeof value === "string" ? value.trim() : "");
       const normalizeTimestamp = (value?: string | null): string | undefined => {
@@ -247,14 +290,47 @@ export const useEcoStream = ({
         return trimmed || undefined;
       };
 
-      const incomingInteractionId = normalizeString(event?.interactionId);
-      const incomingMessageId = normalizeString(event?.messageId);
-      if (incomingInteractionId) {
-        updateCurrentInteractionId(incomingInteractionId);
+      const mergePendingMeta = () => {
+        const pending = pendingAssistantMetaRef.current[normalizedClientId] ?? {};
+        const nextPending = { ...pending } as {
+          interactionId?: string;
+          messageId?: string;
+          createdAt?: string;
+        };
+
+        const incomingInteractionId = normalizeString(event?.interactionId);
+        const incomingMessageId = normalizeString(event?.messageId);
+        const incomingCreatedAt = normalizeTimestamp(event?.createdAt);
+
+        if (incomingInteractionId) {
+          nextPending.interactionId = incomingInteractionId;
+        }
+        if (incomingMessageId) {
+          nextPending.messageId = incomingMessageId;
+        }
+        if (incomingCreatedAt) {
+          nextPending.createdAt = incomingCreatedAt;
+        }
+
+        const hasPendingValues =
+          Boolean(nextPending.interactionId) || Boolean(nextPending.messageId) || Boolean(nextPending.createdAt);
+
+        if (hasPendingValues) {
+          pendingAssistantMetaRef.current[normalizedClientId] = nextPending;
+        }
+
+        return {
+          interactionId: nextPending.interactionId,
+          messageId: nextPending.messageId,
+          createdAt: nextPending.createdAt,
+        };
+      };
+
+      const mergedMeta = mergePendingMeta();
+
+      if (mergedMeta.interactionId) {
+        updateCurrentInteractionId(mergedMeta.interactionId);
       }
-      const existingAssistantId = assistantByClientRef.current[normalizedClientId];
-      const candidateId = incomingInteractionId || incomingMessageId || existingAssistantId;
-      const resolvedAssistantId = candidateId || uuidv4();
 
       const ensureReplyEntry = (assistantId: string) => {
         if (!assistantId) return;
@@ -268,91 +344,49 @@ export const useEcoStream = ({
         }
       };
 
-      const upgradeAssistantIdIfNeeded = (oldId: string, newId: string) => {
-        if (!oldId || !newId || oldId === newId) return newId;
-
-        assistantByClientRef.current[normalizedClientId] = newId;
-        clientByAssistantRef.current[newId] = normalizedClientId;
-        if (clientByAssistantRef.current[oldId] === normalizedClientId) {
-          delete clientByAssistantRef.current[oldId];
-        }
-
-        setEcoReplyByAssistantId((prev) => {
-          const previousEntry = prev[oldId];
-          if (!previousEntry) return prev;
-          const nextState: EcoReplyState = { ...prev, [newId]: previousEntry };
-          delete nextState[oldId];
-          ecoReplyStateRef.current = nextState;
-          return nextState;
-        });
-
-        const updatedAt = new Date().toISOString();
-        const createdAt = normalizeTimestamp(event?.createdAt) ?? updatedAt;
-        const resolvedMessageId = incomingMessageId || newId;
-
-        setMessages((prevMessages) =>
-          prevMessages.map((message) => {
-            if (message.id === oldId || message.interaction_id === oldId || message.interactionId === oldId) {
-              return {
-                ...message,
-                id: newId,
-                interaction_id: newId,
-                interactionId: newId,
-                client_message_id: normalizedClientId,
-                clientMessageId: normalizedClientId,
-                message_id: resolvedMessageId || message.message_id || undefined,
-                updatedAt,
-                createdAt: message.createdAt ?? createdAt,
-                streaming: true,
-                status: "streaming",
-              };
-            }
-            return message;
-          }),
-        );
-
-        ensureReplyEntry(newId);
-        return newId;
-      };
-
+      const existingAssistantId = assistantByClientRef.current[normalizedClientId];
       if (existingAssistantId) {
-        if (incomingInteractionId && existingAssistantId !== incomingInteractionId) {
-          return upgradeAssistantIdIfNeeded(existingAssistantId, incomingInteractionId);
-        }
         assistantByClientRef.current[normalizedClientId] = existingAssistantId;
         if (!clientByAssistantRef.current[existingAssistantId]) {
           clientByAssistantRef.current[existingAssistantId] = normalizedClientId;
         }
         ensureReplyEntry(existingAssistantId);
 
-        // hidrata IDs se chegarem depois
-        if (incomingMessageId || incomingInteractionId) {
+        if (mergedMeta.interactionId || mergedMeta.messageId || mergedMeta.createdAt) {
           setMessages((prev) =>
-            prev.map((m) =>
-              m.id === existingAssistantId || m.interaction_id === existingAssistantId || m.interactionId === existingAssistantId
-                ? {
-                    ...m,
-                    message_id: incomingMessageId || m.message_id,
-                    interaction_id: incomingInteractionId || m.interaction_id || existingAssistantId,
-                    interactionId: incomingInteractionId || m.interactionId || existingAssistantId,
-                  }
-                : m,
-            ),
+            prev.map((message) => {
+              if (message.id !== existingAssistantId) return message;
+              const nextMessage: ChatMessageType = { ...message };
+              if (mergedMeta.interactionId) {
+                nextMessage.interaction_id = mergedMeta.interactionId;
+                nextMessage.interactionId = mergedMeta.interactionId;
+              }
+              if (mergedMeta.messageId) {
+                nextMessage.message_id = mergedMeta.messageId;
+              }
+              if (mergedMeta.createdAt && !nextMessage.createdAt) {
+                nextMessage.createdAt = mergedMeta.createdAt;
+              }
+              return nextMessage;
+            }),
           );
         }
+
         return existingAssistantId;
       }
 
-      // cria nova bolha da Eco (streaming)
-      assistantByClientRef.current[normalizedClientId] = resolvedAssistantId;
-      clientByAssistantRef.current[resolvedAssistantId] = normalizedClientId;
-      ensureReplyEntry(resolvedAssistantId);
+      if (!allowCreate) {
+        return undefined;
+      }
 
-      const createdAt = normalizeTimestamp(event?.createdAt) ?? new Date().toISOString();
-      const resolvedMessageId = incomingMessageId || resolvedAssistantId;
+      const assistantId = `eco-${uuidv4()}`;
+      assistantByClientRef.current[normalizedClientId] = assistantId;
+      clientByAssistantRef.current[assistantId] = normalizedClientId;
+      ensureReplyEntry(assistantId);
 
+      const createdAt = mergedMeta.createdAt ?? new Date().toISOString();
       const assistantMessage: ChatMessageType = {
-        id: resolvedAssistantId,
+        id: assistantId,
         client_message_id: normalizedClientId,
         clientMessageId: normalizedClientId,
         sender: "eco",
@@ -361,9 +395,9 @@ export const useEcoStream = ({
         text: "",
         streaming: true,
         status: "streaming",
-        interaction_id: resolvedAssistantId,
-        interactionId: resolvedAssistantId,
-        message_id: resolvedMessageId || undefined,
+        interaction_id: mergedMeta.interactionId ?? undefined,
+        interactionId: mergedMeta.interactionId ?? undefined,
+        message_id: mergedMeta.messageId ?? undefined,
         createdAt,
         updatedAt: createdAt,
       };
@@ -374,21 +408,10 @@ export const useEcoStream = ({
           patchSource: "stream_init",
         });
       } else {
-        setMessages((prevMessages) => {
-          const alreadyExists = prevMessages.some(
-            (message) =>
-              message.id === resolvedAssistantId ||
-              message.interaction_id === resolvedAssistantId ||
-              message.interactionId === resolvedAssistantId,
-          );
-          if (alreadyExists) {
-            return prevMessages;
-          }
-          return [...prevMessages, assistantMessage];
-        });
+        setMessages((prevMessages) => [...prevMessages, assistantMessage]);
       }
 
-      return resolvedAssistantId;
+      return assistantId;
     },
     [setMessages, upsertMessage, updateCurrentInteractionId],
   );
@@ -397,12 +420,29 @@ export const useEcoStream = ({
     (clientMessageId: string, chunk: EcoStreamChunk) => {
       if (typeof chunk.index !== "number") return;
 
-      const assistantId = ensureAssistantMessage(clientMessageId, {
-        interactionId: chunk.interactionId,
-        messageId: chunk.messageId,
-        createdAt: chunk.createdAt,
-      });
+      const normalizedClientId = typeof clientMessageId === "string" ? clientMessageId.trim() : "";
+      if (!normalizedClientId) return;
+
+      const existingAssistantId = assistantByClientRef.current[normalizedClientId];
+      const shouldAllowCreate =
+        chunk.index === 0 ||
+        chunk.isFirstChunk === true ||
+        !existingAssistantId;
+
+      const assistantId = ensureAssistantMessage(
+        clientMessageId,
+        {
+          interactionId: chunk.interactionId,
+          messageId: chunk.messageId,
+          createdAt: chunk.createdAt,
+        },
+        { allowCreate: shouldAllowCreate },
+      );
       if (!assistantId) return;
+
+      if ((chunk.index === 0 || chunk.isFirstChunk === true) && activeStreamClientIdRef.current === clientMessageId) {
+        setDigitando(false);
+      }
 
       activeAssistantIdRef.current = assistantId;
 
@@ -433,7 +473,7 @@ export const useEcoStream = ({
 
       if (!appendedSource) return;
 
-      const combinedText = `${currentEntry.text ?? ""}${appendedSource}`;
+      const combinedText = smartJoinText(currentEntry.text ?? "", appendedSource);
       const hasVisibleText = /\S/.test(combinedText);
       const nextEntry = {
         chunkIndexMax: chunk.index,
@@ -455,6 +495,15 @@ export const useEcoStream = ({
 
       const visibleContent = hasVisibleText ? combinedText : "";
 
+      const normalizedInteractionId =
+        typeof chunk.interactionId === "string" && chunk.interactionId.trim()
+          ? chunk.interactionId.trim()
+          : undefined;
+      const normalizedMessageId =
+        typeof chunk.messageId === "string" && chunk.messageId.trim() ? chunk.messageId.trim() : undefined;
+      const normalizedCreatedAt =
+        typeof chunk.createdAt === "string" && chunk.createdAt ? chunk.createdAt : undefined;
+
       if (upsertMessage) {
         const chunkPatch: ChatMessageType = {
           id: assistantId,
@@ -466,18 +515,20 @@ export const useEcoStream = ({
           text: visibleContent,
           streaming: true,
           status: "streaming",
-          interaction_id: assistantId,
-          interactionId: assistantId,
           updatedAt,
         };
+        if (normalizedInteractionId) {
+          chunkPatch.interaction_id = normalizedInteractionId;
+          chunkPatch.interactionId = normalizedInteractionId;
+        }
+        if (normalizedMessageId) {
+          chunkPatch.message_id = normalizedMessageId;
+        }
         if (chunk.metadata !== undefined) {
           chunkPatch.metadata = chunk.metadata;
         }
         if (chunk.payload !== undefined) {
           chunkPatch.donePayload = chunk.payload;
-        }
-        if (chunk.messageId) {
-          chunkPatch.message_id = chunk.messageId;
         }
         upsertMessage(chunkPatch, {
           allowContentUpdate: true,
@@ -487,11 +538,7 @@ export const useEcoStream = ({
         setMessages((prevMessages) => {
           let updated = false;
           const mapped = prevMessages.map((message) => {
-            if (
-              message.id === assistantId ||
-              message.interaction_id === assistantId ||
-              message.interactionId === assistantId
-            ) {
+            if (message.id === assistantId) {
               updated = true;
               const nextMessage: ChatMessageType = {
                 ...message,
@@ -501,14 +548,21 @@ export const useEcoStream = ({
                 streaming: true,
                 status: message.status === "done" ? "done" : "streaming",
               };
+              if (normalizedInteractionId) {
+                nextMessage.interaction_id = normalizedInteractionId;
+                nextMessage.interactionId = normalizedInteractionId;
+              }
+              if (normalizedMessageId) {
+                nextMessage.message_id = normalizedMessageId;
+              }
+              if (normalizedCreatedAt && !nextMessage.createdAt) {
+                nextMessage.createdAt = normalizedCreatedAt;
+              }
               if (chunk.metadata !== undefined) {
                 nextMessage.metadata = chunk.metadata;
               }
               if (chunk.payload !== undefined) {
                 nextMessage.donePayload = chunk.payload;
-              }
-              if (chunk.messageId) {
-                nextMessage.message_id = chunk.messageId;
               }
               return nextMessage;
             }
@@ -528,27 +582,29 @@ export const useEcoStream = ({
             text: visibleContent,
             streaming: true,
             status: "streaming",
-            interaction_id: assistantId,
-            interactionId: assistantId,
             updatedAt,
-            createdAt: updatedAt,
+            createdAt: normalizedCreatedAt ?? updatedAt,
           };
 
+          if (normalizedInteractionId) {
+            fallbackMessage.interaction_id = normalizedInteractionId;
+            fallbackMessage.interactionId = normalizedInteractionId;
+          }
+          if (normalizedMessageId) {
+            fallbackMessage.message_id = normalizedMessageId;
+          }
           if (chunk.metadata !== undefined) {
             fallbackMessage.metadata = chunk.metadata;
           }
           if (chunk.payload !== undefined) {
             fallbackMessage.donePayload = chunk.payload;
           }
-          if (chunk.messageId) {
-            fallbackMessage.message_id = chunk.messageId;
-          }
 
           return [...prevMessages, fallbackMessage];
         });
       }
     },
-    [ensureAssistantMessage, setMessages, upsertMessage],
+    [ensureAssistantMessage, setDigitando, setMessages, upsertMessage],
   );
 
   const beginStream = useCallback(
@@ -577,19 +633,8 @@ export const useEcoStream = ({
 
       updateCurrentInteractionId(null);
 
-      const precreatedAssistantId = ensureAssistantMessage(clientMessageId);
-      if (precreatedAssistantId) {
-        activeAssistantIdRef.current = precreatedAssistantId;
-        setEcoReplyByAssistantId((prev) => {
-          const existing = prev[precreatedAssistantId];
-          if (existing && existing.text === "" && existing.chunkIndexMax === -1) {
-            return prev;
-          }
-          const nextEntry = { text: "", chunkIndexMax: -1 };
-          const nextState: EcoReplyState = { ...prev, [precreatedAssistantId]: nextEntry };
-          ecoReplyStateRef.current = nextState;
-          return nextState;
-        });
+      if (pendingAssistantMetaRef.current[clientMessageId]) {
+        delete pendingAssistantMetaRef.current[clientMessageId];
       }
 
       setDigitando(true);
@@ -606,12 +651,16 @@ export const useEcoStream = ({
         onPromptReady: (event) => {
           if (controller.signal.aborted) return;
 
-          // cria/atualiza bolha da Eco já no prompt_ready
-          const assistantId = ensureAssistantMessage(clientMessageId, {
-            interactionId: event?.interactionId,
-            messageId: event?.messageId,
-            createdAt: event?.createdAt,
-          });
+          const assistantId = ensureAssistantMessage(
+            clientMessageId,
+            {
+              interactionId: event?.interactionId,
+              messageId: event?.messageId,
+              createdAt: event?.createdAt,
+            },
+            { allowCreate: false },
+          );
+
           if (assistantId) {
             activeAssistantIdRef.current = assistantId;
             if (event?.interactionId) {
@@ -622,20 +671,17 @@ export const useEcoStream = ({
 
             setMessages((prevMessages) =>
               prevMessages.map((message) => {
-                if (message.id === assistantId || message.interaction_id === assistantId || message.interactionId === assistantId) {
-                  return {
-                    ...message,
-                    streaming: true,
-                    status: "streaming",
-                    updatedAt,
-                    createdAt: message.createdAt ?? updatedAt,
-                    // hidrata IDs se só chegaram agora
-                    message_id: event?.messageId || message.message_id,
-                    interaction_id: event?.interactionId || message.interaction_id || assistantId,
-                    interactionId: event?.interactionId || message.interactionId || assistantId,
-                  };
-                }
-                return message;
+                if (message.id !== assistantId) return message;
+                return {
+                  ...message,
+                  streaming: true,
+                  status: "streaming",
+                  updatedAt,
+                  createdAt: message.createdAt ?? updatedAt,
+                  message_id: event?.messageId || message.message_id,
+                  interaction_id: event?.interactionId || message.interaction_id,
+                  interactionId: event?.interactionId || message.interactionId,
+                };
               }),
             );
           }
@@ -656,6 +702,10 @@ export const useEcoStream = ({
 
           activeAssistantIdRef.current = assistantId;
 
+          if (activeStreamClientIdRef.current === clientMessageId) {
+            setDigitando(false);
+          }
+
           if (event?.interactionId) {
             updateCurrentInteractionId(event.interactionId);
           }
@@ -663,6 +713,8 @@ export const useEcoStream = ({
           const timestamp = typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
           const updatedAt = timestamp || new Date().toISOString();
           const donePayload = event?.payload;
+          const aggregatedEntry = ecoReplyStateRef.current[assistantId];
+          const aggregatedText = aggregatedEntry?.text ?? "";
           const payloadRecord = toRecord(donePayload);
           const summaryRecord = extractSummaryRecord(donePayload);
           const responseRecord = toRecord(payloadRecord?.response);
@@ -694,11 +746,7 @@ export const useEcoStream = ({
             "messageId",
           ]);
           const eventInteractionId = toCleanString(event?.interactionId);
-          const resolvedInteractionId =
-            interactionFromSummary ??
-            eventInteractionId ??
-            fallbackInteractionFromIds ??
-            assistantId;
+          const resolvedInteractionId = interactionFromSummary ?? eventInteractionId ?? fallbackInteractionFromIds;
 
           const resolvedMessageId =
             pickStringFromRecords(recordSources, ["message_id", "messageId", "id"]) ??
@@ -729,12 +777,34 @@ export const useEcoStream = ({
             "ecoScore",
           ]);
 
+          const doneTexts = collectTexts(donePayload);
+          const doneContentCandidate =
+            Array.isArray(doneTexts) && doneTexts.length > 0 ? doneTexts.join("") : undefined;
+          const normalizedAggregated = aggregatedText.replace(/\s+/g, " ").trim();
+          const normalizedDone = typeof doneContentCandidate === "string"
+            ? doneContentCandidate.replace(/\s+/g, " ").trim()
+            : "";
+
+          let finalContent = aggregatedText;
+          if (typeof doneContentCandidate === "string" && doneContentCandidate.length > 0) {
+            if (!normalizedAggregated) {
+              finalContent = doneContentCandidate;
+            } else if (normalizedAggregated !== normalizedDone) {
+              finalContent = doneContentCandidate;
+            }
+          }
+
+          const finalText = finalContent;
+
           const patch: ChatMessageType = {
             id: assistantId,
             streaming: false,
             status: "done",
             updatedAt,
           };
+
+          patch.content = finalText;
+          patch.text = finalText;
 
           if (metadata !== undefined) {
             patch.metadata = metadata;
@@ -775,6 +845,8 @@ export const useEcoStream = ({
             "module_combo",
             "prompt_hash",
             "eco_score",
+            "content",
+            "text",
           ];
 
           if (upsertMessage) {
@@ -782,16 +854,14 @@ export const useEcoStream = ({
           } else {
             setMessages((prevMessages) =>
               prevMessages.map((message) => {
-                if (
-                  message.id === assistantId ||
-                  message.interaction_id === assistantId ||
-                  message.interactionId === assistantId
-                ) {
+                if (message.id === assistantId) {
                   const nextMessage: ChatMessageType = {
                     ...message,
                     streaming: false,
                     status: "done",
                     updatedAt,
+                    content: finalText,
+                    text: finalText,
                   };
                   if (metadata !== undefined) {
                     nextMessage.metadata = metadata;

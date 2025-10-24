@@ -79,18 +79,22 @@ const MessageList: React.FC<MessageListProps> = ({
   return (
     <div className="w-full space-y-3 md:space-y-4">
       {uniqueMessages.map((message, index) => {
-        const senderKey = resolveMessageSender(message) ?? message.sender ?? 'unknown';
-        const id = typeof message.id === 'string' ? message.id.trim() : '';
+        const normalizedRole = message.role ?? resolveMessageSender(message) ?? message.sender ?? 'unknown';
         const interactionId =
           (typeof message.interaction_id === 'string' && message.interaction_id.trim()) ||
           (typeof message.interactionId === 'string' && message.interactionId.trim()) ||
           '';
-        const fallbackKey = interactionId ? `${interactionId}:${senderKey}` : `${senderKey}:${index}`;
-        const messageId =
-          typeof (message as { message_id?: unknown }).message_id === 'string'
+        const clientLocalId =
+          (typeof message.client_message_id === 'string' && message.client_message_id.trim()) ||
+          (typeof (message as { clientMessageId?: unknown }).clientMessageId === 'string'
+            ? ((message as { clientMessageId?: string }).clientMessageId ?? '').trim()
+            : '') ||
+          (typeof message.id === 'string' && message.id.trim()) ||
+          (typeof (message as { message_id?: unknown }).message_id === 'string'
             ? ((message as { message_id?: string }).message_id ?? '').trim()
-            : '';
-        const renderKey = id || messageId || fallbackKey;
+            : '');
+        const interactionOrLocal = interactionId || clientLocalId || `local-${index}`;
+        const renderKey = `${interactionOrLocal}:${normalizedRole}`;
 
         return (
           <motion.div
