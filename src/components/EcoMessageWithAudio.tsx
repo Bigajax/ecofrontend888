@@ -1,24 +1,12 @@
+// src/components/EcoMessageWithAudio.tsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ClipboardCopy,
-  ThumbsDown,
-  ThumbsUp,
-  Volume2,
-  Loader2,
-} from "lucide-react";
+import { ClipboardCopy, ThumbsDown, ThumbsUp, Volume2, Loader2 } from "lucide-react";
 
 import AudioPlayerOverlay from "./AudioPlayerOverlay";
 import ChatMessage from "./ChatMessage";
 import { FeedbackRequestError } from "../api/feedback";
-import {
-  ENABLE_PASSIVE_SIGNALS,
-  PassiveSignalName,
-  sendPassiveSignal,
-} from "../api/passiveSignals";
-import {
-  ENABLE_MODULE_USAGE,
-  sendModuleUsage,
-} from "../api/moduleUsage";
+import { ENABLE_PASSIVE_SIGNALS, PassiveSignalName, sendPassiveSignal } from "../api/passiveSignals";
+import { ENABLE_MODULE_USAGE, sendModuleUsage } from "../api/moduleUsage";
 import { gerarAudioDaMensagem } from "../api/voiceApi";
 import { Message } from "../contexts/ChatContext";
 import { trackFeedbackEvent } from "../analytics/track";
@@ -78,10 +66,7 @@ const GhostBtn = React.forwardRef<
 ));
 GhostBtn.displayName = "GhostBtn";
 
-const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
-  message,
-  onActivityTTS,
-}) => {
+const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onActivityTTS }) => {
   const [copied, setCopied] = useState(false);
   const [audioOverlay, setAudioOverlay] = useState<AudioOverlayState | null>(null);
   const [loadingAudio, setLoadingAudio] = useState(false);
@@ -103,7 +88,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
   const moduleUsageSentRef = useRef<Set<string>>(new Set());
 
   const isUser = isUserMessage(message);
-  const isStreaming = message.streaming === true;
+  const isStreaming = message.streaming === true || message.status === "streaming";
   const displayText = useMemo(
     () => sanitizeText(message.text ?? message.content ?? "", { collapseWhitespace: false }),
     [message.content, message.text]
@@ -119,6 +104,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
     messageId: contextMessageId,
     latencyMs,
   } = useMessageFeedbackContext(message);
+
   const explicitMessageId = (() => {
     if (typeof message.message_id === "string" && message.message_id.trim().length > 0) {
       return message.message_id.trim();
@@ -141,10 +127,8 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
 
   const ICON_CLASS = `${ICON_SIZE} ${ICON_BASE}`;
   const canDisplayFeedback = !isUser;
-  const feedbackButtonsDisabled =
-    sendingFeedback || !hasInteractionId || isStreaming;
-  const reasonPopoverStatus =
-    sendingFeedback && pendingVote === "down" ? "sending" : "selecting";
+  const feedbackButtonsDisabled = sendingFeedback || !hasInteractionId || isStreaming;
+  const reasonPopoverStatus = sendingFeedback && pendingVote === "down" ? "sending" : "selecting";
 
   const moduleUsageCandidates = useMemo(
     () =>
@@ -153,7 +137,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
         donePayload: message.donePayload,
         fallbackModules: moduleCombo,
       }),
-    [message.donePayload, message.metadata, moduleCombo],
+    [message.donePayload, message.metadata, moduleCombo]
   );
 
   const lastActivatedModuleKey = useMemo(
@@ -162,7 +146,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
         moduleUsageCandidates,
         moduleCombo,
       }),
-    [moduleCombo, moduleUsageCandidates],
+    [moduleCombo, moduleUsageCandidates]
   );
 
   const resolveSessionId = useCallback(() => {
@@ -190,29 +174,13 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
         interaction_id: interactionId,
         ...extra,
       };
-      if (messageId) {
-        payload.message_id = messageId;
-      }
-      if (moduleCombo && moduleCombo.length > 0) {
-        payload.module_combo = moduleCombo;
-      }
-      if (promptHash) {
-        payload.prompt_hash = promptHash;
-      }
-      if (typeof latencyMs === "number") {
-        payload.latency_ms = latencyMs;
-      }
+      if (messageId) payload.message_id = messageId;
+      if (moduleCombo && moduleCombo.length > 0) payload.module_combo = moduleCombo;
+      if (promptHash) payload.prompt_hash = promptHash;
+      if (typeof latencyMs === "number") payload.latency_ms = latencyMs;
       return payload;
     },
-    [
-      interactionId,
-      latencyMs,
-      messageId,
-      moduleCombo,
-      promptHash,
-      resolveSessionId,
-      resolveUserId,
-    ],
+    [interactionId, latencyMs, messageId, moduleCombo, promptHash, resolveSessionId, resolveUserId]
   );
 
   const trackPassiveSignal = useCallback(
@@ -223,7 +191,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
         trackFeedbackEvent(`FE: Passive Signal ${signal}`, payload);
       }
     },
-    [createEventPayload],
+    [createEventPayload]
   );
 
   const emitPassiveSignal = useCallback(
@@ -241,7 +209,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
       });
       trackPassiveSignal(signal, value, meta);
     },
-    [interactionId, messageId, resolveSessionId, trackPassiveSignal],
+    [interactionId, messageId, resolveSessionId, trackPassiveSignal]
   );
 
   const ensureFeedbackReady = useCallback(() => {
@@ -261,9 +229,9 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
       session.audio.currentTime = 0;
     } catch {}
     try {
-      session.audio.src = '';
+      session.audio.src = "";
     } catch {}
-    if (session.url.startsWith('blob:')) {
+    if (session.url.startsWith("blob:")) {
       try {
         URL.revokeObjectURL(session.url);
       } catch {}
@@ -272,9 +240,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
 
   const clearAudioOverlay = useCallback(() => {
     setAudioOverlay((prev) => {
-      if (prev) {
-        disposeAudioSession(prev);
-      }
+      if (prev) disposeAudioSession(prev);
       return null;
     });
   }, [disposeAudioSession]);
@@ -300,10 +266,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
       const positionKey = `${resolvedPosition}`;
       const dedupeKey = `${interactionKey}|${moduleKey}|${positionKey}`;
       const fallbackKey = `__any__|${moduleKey}|${positionKey}`;
-      if (
-        moduleUsageSentRef.current.has(dedupeKey) ||
-        moduleUsageSentRef.current.has(fallbackKey)
-      ) {
+      if (moduleUsageSentRef.current.has(dedupeKey) || moduleUsageSentRef.current.has(fallbackKey)) {
         return;
       }
       moduleUsageSentRef.current.add(dedupeKey);
@@ -318,14 +281,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
         messageId: messageId ?? null,
       });
     });
-  }, [
-    interactionId,
-    isStreaming,
-    isUser,
-    messageId,
-    moduleUsageCandidates,
-    resolveSessionId,
-  ]);
+  }, [interactionId, isStreaming, isUser, messageId, moduleUsageCandidates, resolveSessionId]);
 
   const clearTimeSignalTimer = useCallback(() => {
     if (timeSignalTimerRef.current) {
@@ -349,26 +305,16 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
 
   const feedbackMeta = useMemo(() => {
     const meta: Record<string, unknown> = { ui: "chat_message_actions" };
-    if (moduleCombo && moduleCombo.length > 0) {
-      meta.module_combo = moduleCombo;
-    }
-    if (typeof latencyMs === "number") {
-      meta.latency_ms = latencyMs;
-    }
-    if (messageId) {
-      meta.message_id = messageId;
-    }
-    if (promptHash) {
-      meta.prompt_hash = promptHash;
-    }
+    if (moduleCombo && moduleCombo.length > 0) meta.module_combo = moduleCombo;
+    if (typeof latencyMs === "number") meta.latency_ms = latencyMs;
+    if (messageId) meta.message_id = messageId;
+    if (promptHash) meta.prompt_hash = promptHash;
     return meta;
   }, [latencyMs, messageId, moduleCombo, promptHash]);
 
   const sendVote = useCallback(
     async (vote: Vote, reason: string | null) => {
-      if (!hasInteractionId || isStreaming || !interactionId) {
-        return false;
-      }
+      if (!hasInteractionId || isStreaming || !interactionId) return false;
 
       const resolvedInteractionId = interactionId;
 
@@ -396,19 +342,14 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
           arm: lastActivatedModuleKey ?? null,
         });
 
-        if (!result) {
-          return false;
-        }
+        if (!result) return false;
         if (!result.ok) {
           toast.error(`Falha no feedback (${result.status})`);
           return false;
         }
 
         if (payload) {
-          trackFeedbackEvent(
-            vote === "up" ? "FE: Inline Like" : "FE: Inline Dislike",
-            payload,
-          );
+          trackFeedbackEvent(vote === "up" ? "FE: Inline Like" : "FE: Inline Dislike", payload);
         }
         toast.success(`Feedback enviado (${result.status})`);
         return true;
@@ -440,17 +381,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
         setPendingVote(null);
       }
     },
-    [
-      createEventPayload,
-      feedbackMeta,
-      hasInteractionId,
-      interactionId,
-      isStreaming,
-      messageId,
-      send,
-      session?.id,
-      user?.id,
-    ],
+    [createEventPayload, feedbackMeta, hasInteractionId, interactionId, isStreaming, messageId, send, session?.id, user?.id]
   );
 
   const copiarTexto = async () => {
@@ -531,9 +462,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
 
   const focusComposer = useCallback(() => {
     if (typeof document === "undefined") return;
-    const textarea = document.querySelector<HTMLTextAreaElement>(
-      '[data-chat-input-textarea]'
-    );
+    const textarea = document.querySelector<HTMLTextAreaElement>('[data-chat-input-textarea]');
     textarea?.focus({ preventScroll: true });
   }, []);
 
@@ -568,7 +497,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
       setSelectedReason((prev) => (prev === key ? null : key));
       setFeedbackError(null);
     },
-    [sendingFeedback],
+    [sendingFeedback]
   );
 
   const handleCloseReasons = useCallback(() => {
@@ -657,8 +586,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries.find((item) => item.target === el);
-        const visible =
-          !!entry && entry.isIntersecting && entry.intersectionRatio >= VISIBLE_RATIO;
+        const visible = !!entry && entry.isIntersecting && entry.intersectionRatio >= VISIBLE_RATIO;
 
         if (visible) {
           if (!viewSignalSentRef.current) {
@@ -691,24 +619,18 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
       }
       clearTimeSignalTimer();
     };
-  }, [
-    clearTimeSignalTimer,
-    emitPassiveSignal,
-    finalizeTimeSignal,
-    interactionId,
-    isUser,
-  ]);
+  }, [clearTimeSignalTimer, emitPassiveSignal, finalizeTimeSignal, interactionId, isUser]);
 
   const actionsPad = isUser ? "pr-4 sm:pr-5" : "ml-[58px] sm:ml-[62px]";
 
+  // <<< ADIÇÃO PRINCIPAL: informar ao ChatMessage quando a Eco está digitando >>>
+  const isEcoTyping = !isUser && isStreaming;
+
   return (
     <>
-      <div
-        ref={containerRef}
-        className={`flex w-full ${isUser ? "justify-end" : "justify-start"} min-w-0`}
-      >
+      <div ref={containerRef} className={`flex w-full ${isUser ? "justify-end" : "justify-start"} min-w-0`}>
         <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} w-full min-w-0 max-w-full`}>
-          <ChatMessage message={message} />
+          <ChatMessage message={message} isEcoTyping={isEcoTyping} isEcoActive={isEcoTyping} />
 
           <div
             className={[
@@ -736,17 +658,10 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
                   aria-busy={sendingFeedback && pendingVote === "up"}
                 >
                   {sendingFeedback && pendingVote === "up" ? (
-                    <Loader2
-                      className={`${ICON_SIZE} text-emerald-600 animate-spin`}
-                      strokeWidth={1.75}
-                    />
+                    <Loader2 className={`${ICON_SIZE} text-emerald-600 animate-spin`} strokeWidth={1.75} />
                   ) : (
                     <ThumbsUp
-                      className={
-                        optimisticVote === "up"
-                          ? `${ICON_SIZE} text-emerald-600`
-                          : ICON_CLASS
-                      }
+                      className={optimisticVote === "up" ? `${ICON_SIZE} text-emerald-600` : ICON_CLASS}
                       strokeWidth={1.5}
                     />
                   )}
@@ -759,24 +674,15 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({
                     aria-label="Não curtir resposta"
                     title="Não curtir"
                     disabled={feedbackButtonsDisabled}
-                    className={
-                      optimisticVote === "down" || showReasons ? "bg-slate-100" : undefined
-                    }
+                    className={optimisticVote === "down" || showReasons ? "bg-slate-100" : undefined}
                     aria-pressed={optimisticVote === "down"}
                     aria-busy={sendingFeedback && pendingVote === "down"}
                   >
                     {sendingFeedback && pendingVote === "down" ? (
-                      <Loader2
-                        className={`${ICON_SIZE} text-red-500 animate-spin`}
-                        strokeWidth={1.75}
-                      />
+                      <Loader2 className={`${ICON_SIZE} text-red-500 animate-spin`} strokeWidth={1.75} />
                     ) : (
                       <ThumbsDown
-                        className={
-                          optimisticVote === "down" || showReasons
-                            ? `${ICON_SIZE} text-red-500`
-                            : ICON_CLASS
-                        }
+                        className={optimisticVote === "down" || showReasons ? `${ICON_SIZE} text-red-500` : ICON_CLASS}
                         strokeWidth={1.5}
                       />
                     )}

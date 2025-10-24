@@ -1,11 +1,8 @@
+// src/hooks/useEcoStream.ts
 import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
-import {
-  normalizeStreamText,
-  startEcoStream,
-  type EcoStreamChunk,
-} from "../api/ecoStream";
+import { normalizeStreamText, startEcoStream, type EcoStreamChunk } from "../api/ecoStream";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../contexts/ChatContext";
 import { sanitizeText } from "../utils/sanitizeText";
 
@@ -202,9 +199,7 @@ export const useEcoStream = ({
   const removeEcoEntry = useCallback((assistantMessageId?: string | null) => {
     if (!assistantMessageId) return;
     setEcoReplyByAssistantId((prev) => {
-      if (!(assistantMessageId in prev)) {
-        return prev;
-      }
+      if (!(assistantMessageId in prev)) return prev;
       const next = { ...prev };
       delete next[assistantMessageId];
       ecoReplyStateRef.current = next;
@@ -220,6 +215,11 @@ export const useEcoStream = ({
     }
   }, []);
 
+  /**
+   * Garante a existência/atualização da mensagem da Eco (bolha de resposta).
+   * - Cria com status "streaming" quando necessário (no prompt_ready).
+   * - Atualiza IDs (interaction/message) assim que o servidor os fornece.
+   */
   const ensureAssistantMessage = useCallback(
     (
       clientMessageId: string,
@@ -229,11 +229,7 @@ export const useEcoStream = ({
       const normalizedClientId = clientMessageId.trim();
       if (!normalizedClientId) return undefined;
 
-      const normalizeString = (value?: string | null): string => {
-        if (typeof value !== "string") return "";
-        return value.trim();
-      };
-
+      const normalizeString = (value?: string | null): string => (typeof value === "string" ? value.trim() : "");
       const normalizeTimestamp = (value?: string | null): string | undefined => {
         const trimmed = normalizeString(value);
         return trimmed || undefined;
@@ -250,10 +246,7 @@ export const useEcoStream = ({
         if (!ecoReplyStateRef.current[assistantId]) {
           setEcoReplyByAssistantId((prev) => {
             if (prev[assistantId]) return prev;
-            const next: EcoReplyState = {
-              ...prev,
-              [assistantId]: { text: "", chunkIndexMax: -1 },
-            };
+            const next: EcoReplyState = { ...prev, [assistantId]: { text: "", chunkIndexMax: -1 } };
             ecoReplyStateRef.current = next;
             return next;
           });
@@ -284,11 +277,7 @@ export const useEcoStream = ({
 
         setMessages((prevMessages) =>
           prevMessages.map((message) => {
-            if (
-              message.id === oldId ||
-              message.interaction_id === oldId ||
-              message.interactionId === oldId
-            ) {
+            if (message.id === oldId || message.interaction_id === oldId || message.interactionId === oldId) {
               return {
                 ...message,
                 id: newId,
@@ -299,6 +288,8 @@ export const useEcoStream = ({
                 message_id: resolvedMessageId || message.message_id || undefined,
                 updatedAt,
                 createdAt: message.createdAt ?? createdAt,
+                streaming: true,
+                status: "streaming",
               };
             }
             return message;
@@ -313,15 +304,31 @@ export const useEcoStream = ({
         if (incomingInteractionId && existingAssistantId !== incomingInteractionId) {
           return upgradeAssistantIdIfNeeded(existingAssistantId, incomingInteractionId);
         }
-
         assistantByClientRef.current[normalizedClientId] = existingAssistantId;
         if (!clientByAssistantRef.current[existingAssistantId]) {
           clientByAssistantRef.current[existingAssistantId] = normalizedClientId;
         }
         ensureReplyEntry(existingAssistantId);
+
+        // hidrata IDs se chegarem depois
+        if (incomingMessageId || incomingInteractionId) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === existingAssistantId || m.interaction_id === existingAssistantId || m.interactionId === existingAssistantId
+                ? {
+                    ...m,
+                    message_id: incomingMessageId || m.message_id,
+                    interaction_id: incomingInteractionId || m.interaction_id || existingAssistantId,
+                    interactionId: incomingInteractionId || m.interactionId || existingAssistantId,
+                  }
+                : m,
+            ),
+          );
+        }
         return existingAssistantId;
       }
 
+      // cria nova bolha da Eco (streaming)
       assistantByClientRef.current[normalizedClientId] = resolvedAssistantId;
       clientByAssistantRef.current[resolvedAssistantId] = normalizedClientId;
       ensureReplyEntry(resolvedAssistantId);
@@ -373,29 +380,19 @@ export const useEcoStream = ({
 
   const applyChunkToMessages = useCallback(
     (clientMessageId: string, chunk: EcoStreamChunk) => {
-      if (typeof chunk.index !== "number") {
-        return;
-      }
+      if (typeof chunk.index !== "number") return;
 
       const assistantId = ensureAssistantMessage(clientMessageId, {
         interactionId: chunk.interactionId,
         messageId: chunk.messageId,
         createdAt: chunk.createdAt,
       });
-      if (!assistantId) {
-        return;
-      }
+      if (!assistantId) return;
 
       activeAssistantIdRef.current = assistantId;
 
-      const currentEntry = ecoReplyStateRef.current[assistantId] ?? {
-        text: "",
-        chunkIndexMax: -1,
-      };
-
-      if (chunk.index <= currentEntry.chunkIndexMax) {
-        return;
-      }
+      const currentEntry = ecoReplyStateRef.current[assistantId] ?? { text: "", chunkIndexMax: -1 };
+      if (chunk.index <= currentEntry.chunkIndexMax) return;
 
       const appended = typeof chunk.text === "string" ? chunk.text : "";
       const nextEntry = {
@@ -407,9 +404,7 @@ export const useEcoStream = ({
 
       setEcoReplyByAssistantId((prev) => {
         const existing = prev[assistantId] ?? { text: "", chunkIndexMax: -1 };
-        if (chunk.index <= existing.chunkIndexMax) {
-          return prev;
-        }
+        if (chunk.index <= existing.chunkIndexMax) return prev;
         const nextState: EcoReplyState = { ...prev, [assistantId]: nextEntry };
         ecoReplyStateRef.current = nextState;
         return nextState;
@@ -495,10 +490,9 @@ export const useEcoStream = ({
   const beginStream = useCallback(
     (history: ChatMessageType[], userMessage: ChatMessageType, systemHint?: string) => {
       const clientMessageId = userMessage.id;
-      if (!clientMessageId) {
-        return;
-      }
+      if (!clientMessageId) return;
 
+      // encerra stream anterior, se houver
       const activeId = activeStreamClientIdRef.current;
       if (activeId && activeId !== clientMessageId) {
         const activeController = controllersRef.current[activeId];
@@ -519,11 +513,6 @@ export const useEcoStream = ({
 
       setDigitando(true);
 
-      const placeholderAssistantId = ensureAssistantMessage(clientMessageId);
-      if (placeholderAssistantId) {
-        activeAssistantIdRef.current = placeholderAssistantId;
-      }
-
       const streamPromise = startEcoStream({
         history,
         clientMessageId,
@@ -534,9 +523,9 @@ export const useEcoStream = ({
         isGuest,
         signal: controller.signal,
         onPromptReady: (event) => {
-          if (controller.signal.aborted) {
-            return;
-          }
+          if (controller.signal.aborted) return;
+
+          // cria/atualiza bolha da Eco já no prompt_ready
           const assistantId = ensureAssistantMessage(clientMessageId, {
             interactionId: event?.interactionId,
             messageId: event?.messageId,
@@ -544,22 +533,22 @@ export const useEcoStream = ({
           });
           if (assistantId) {
             activeAssistantIdRef.current = assistantId;
-            const timestamp =
-              typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
+            const timestamp = typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
             const updatedAt = timestamp || new Date().toISOString();
+
             setMessages((prevMessages) =>
               prevMessages.map((message) => {
-                if (
-                  message.id === assistantId ||
-                  message.interaction_id === assistantId ||
-                  message.interactionId === assistantId
-                ) {
+                if (message.id === assistantId || message.interaction_id === assistantId || message.interactionId === assistantId) {
                   return {
                     ...message,
                     streaming: true,
                     status: "streaming",
                     updatedAt,
                     createdAt: message.createdAt ?? updatedAt,
+                    // hidrata IDs se só chegaram agora
+                    message_id: event?.messageId || message.message_id,
+                    interaction_id: event?.interactionId || message.interaction_id || assistantId,
+                    interactionId: event?.interactionId || message.interactionId || assistantId,
                   };
                 }
                 return message;
@@ -568,28 +557,22 @@ export const useEcoStream = ({
           }
         },
         onChunk: (chunk) => {
-          if (controller.signal.aborted) {
-            return;
-          }
+          if (controller.signal.aborted) return;
           applyChunkToMessages(clientMessageId, chunk);
         },
         onDone: (event) => {
-          if (controller.signal.aborted) {
-            return;
-          }
+          if (controller.signal.aborted) return;
+
           const assistantId = ensureAssistantMessage(clientMessageId, {
             interactionId: event?.interactionId,
             messageId: event?.messageId,
             createdAt: event?.createdAt,
           });
-          if (!assistantId) {
-            return;
-          }
+          if (!assistantId) return;
 
           activeAssistantIdRef.current = assistantId;
 
-          const timestamp =
-            typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
+          const timestamp = typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
           const updatedAt = timestamp || new Date().toISOString();
           const donePayload = event?.payload;
           const payloadRecord = toRecord(donePayload);
@@ -772,29 +755,22 @@ export const useEcoStream = ({
           removeEcoEntry(assistantId);
         },
         onError: (error) => {
-          if (controller.signal.aborted) {
-            return;
-          }
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Não foi possível concluir a resposta da Eco.";
+          if (controller.signal.aborted) return;
+          const message = error instanceof Error ? error.message : "Não foi possível concluir a resposta da Eco.";
           setErroApi(message);
         },
       });
 
       streamPromise.catch((error) => {
-        if (controller.signal.aborted) {
-          return;
-        }
-        const message =
-          error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
+        if (controller.signal.aborted) return;
+        const message = error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
         setErroApi(message);
       });
 
       streamPromise.finally(() => {
         delete controllersRef.current[clientMessageId];
         const assistantId = assistantByClientRef.current[clientMessageId];
+
         if (activeStreamClientIdRef.current === clientMessageId) {
           activeStreamClientIdRef.current = null;
           activeAssistantIdRef.current = null;
@@ -807,25 +783,13 @@ export const useEcoStream = ({
         }
       });
     },
-    [
-      activity,
-      applyChunkToMessages,
-      ensureAssistantMessage,
-      guestId,
-      isGuest,
-      removeEcoEntry,
-      setErroApi,
-      userId,
-      userName,
-    ],
+    [activity, applyChunkToMessages, ensureAssistantMessage, guestId, isGuest, removeEcoEntry, setErroApi, userId, userName],
   );
 
   const handleSendMessage = useCallback(
     async (text: string, systemHint?: string) => {
       const rawText = text ?? "";
-      if (!rawText.trim()) {
-        return;
-      }
+      if (!rawText.trim()) return;
 
       const sanitized = sanitizeText(rawText, { collapseWhitespace: false });
       const clientMessageId = uuidv4();
@@ -847,7 +811,7 @@ export const useEcoStream = ({
 
       setMessages((prev) => {
         const next = [...prev, userMessage];
-        // ✅ Usamos o array `next` recém-calculado como única fonte para o payload do stream.
+        // Usamos o array `next` recém-calculado como fonte do histórico para o stream.
         beginStream(next, userMessage, systemHint);
         return next;
       });
@@ -861,4 +825,3 @@ export const useEcoStream = ({
 
   return { handleSendMessage, digitando, erroApi, setErroApi, pending: isSending } as const;
 };
-
