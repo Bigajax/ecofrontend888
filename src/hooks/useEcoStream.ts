@@ -897,9 +897,6 @@ export const useEcoStream = ({
 
           activeAssistantIdRef.current = assistantId;
 
-          const normalizedClientId =
-            typeof clientMessageId === "string" ? clientMessageId.trim() : "";
-
           if (activeStreamClientIdRef.current === clientMessageId) {
             setDigitando(false);
           }
