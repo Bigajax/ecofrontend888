@@ -42,17 +42,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
   const showTypingDots = isEco && isStreaming && !hasVisibleText;
 
   const bubbleClass = clsx(
-    "max-w-[80%] min-w-0 rounded-2xl px-4 py-3 whitespace-pre-wrap break-words leading-relaxed text-sm",
+    "min-w-0 rounded-2xl px-4 py-3 text-left whitespace-pre-wrap break-words leading-relaxed",
+    "text-[15px] sm:text-[15px]",
+    "max-w-[min(72ch,90vw)] md:max-w-[min(68ch,70vw)]",
     isUser
       ? "bg-[#007AFF] text-white"
       : // contraste suave no fundo branco para a bolha da Eco
         "bg-white text-gray-900 border border-gray-100"
   );
 
-  const wrapperClass = clsx("flex w-full mb-2", isUser ? "justify-end" : "justify-start");
+  const wrapperClass = clsx("flex w-full", isUser ? "justify-end" : "justify-start");
 
   const rowClass = clsx(
-    "flex max-w-full items-start min-w-0",
+    "flex max-w-full items-start min-w-0 gap-2 sm:gap-3",
     isUser ? "justify-end" : "justify-start"
   );
 
@@ -61,10 +63,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
       <div className={rowClass}>
         {isEco && (
           <EcoBubbleOneEye
-            className="mr-2 mt-1"
+            className="mt-1 shrink-0"
             variant="message"
             size={30}
             data-eco-active={isEcoActive ? "true" : undefined}
+            data-testid="eco-avatar"
           />
         )}
         <div className={bubbleClass} data-sender={sender}>

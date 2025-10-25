@@ -16,11 +16,12 @@ describe('ChatMessage layout', () => {
     const { container } = render(<ChatMessage message={userMessage} />);
     const wrapper = container.firstElementChild as HTMLElement;
 
-    expect(wrapper).toHaveClass('flex', 'w-full', 'mb-2', 'justify-end');
+    expect(wrapper).toHaveClass('flex', 'w-full', 'justify-end');
 
     const bubble = container.querySelector('[data-sender="user"]');
     expect(bubble).not.toBeNull();
-    expect(bubble).toHaveClass('bg-[#007AFF]', 'text-white', 'max-w-[80%]', 'whitespace-pre-wrap');
+    expect(bubble).toHaveClass('bg-[#007AFF]', 'text-white', 'whitespace-pre-wrap');
+    expect(bubble).toHaveClass('max-w-[min(72ch,90vw)]');
   });
 
   it('renders eco avatar spacing and preserves multi-line text', () => {
@@ -40,7 +41,7 @@ describe('ChatMessage layout', () => {
     expect(bubble).toHaveClass('bg-white', 'text-gray-900', 'whitespace-pre-wrap');
     expect(bubble?.textContent).toBe('Linha 1\nLinha 2');
 
-    const ecoAvatar = container.querySelector('.mr-2.mt-1');
+    const ecoAvatar = container.querySelector('[data-testid="eco-avatar"]');
     expect(ecoAvatar).not.toBeNull();
   });
 });
