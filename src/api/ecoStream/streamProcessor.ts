@@ -257,6 +257,32 @@ export const processEventStream = async (
         ? ((unwrappedPayload as any).type as string)
         : undefined;
     let type = payloadType ?? unwrappedType ?? hintedType;
+    const contractPayload =
+      payload && typeof payload === "object" ? (payload as Record<string, unknown>) : undefined;
+    const resolveContractIndex = (value: unknown): number | undefined => {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed) return undefined;
+        const parsedNumber = Number(trimmed);
+        if (Number.isFinite(parsedNumber)) return parsedNumber;
+      }
+      return undefined;
+    };
+    const contractIndex = resolveContractIndex(contractPayload?.index);
+    const contractHasText = typeof contractPayload?.text === "string";
+    const contractIsDone = contractPayload?.done === true;
+    if (contractIndex !== undefined) {
+      if (contractIsDone) {
+        type = "done";
+      } else if (!type || type === "delta" || type === "data" || type === "chunk") {
+        if (contractHasText) {
+          type = "chunk";
+        }
+      }
+    }
     const hintedChannel = normalizeControlName(
       hintedType === "control" || payloadType === "control" || unwrappedType === "control"
         ? "control"
