@@ -30,50 +30,16 @@ const MessageList: React.FC<MessageListProps> = ({
       return messages;
     }
 
-    const seenIdSender = new Set<string>();
-    const seenIds = new Set<string>();
-    const seenInteractionSenders = new Set<string>();
-    const deduped: Message[] = [];
-
-    for (let index = messages.length - 1; index >= 0; index -= 1) {
-      const message = messages[index];
-      if (!message) continue;
-      const id = typeof message.id === 'string' ? message.id.trim() : '';
-      const interactionKey =
-        (typeof message.interaction_id === 'string' && message.interaction_id.trim()) ||
-        (typeof message.interactionId === 'string' && message.interactionId.trim()) ||
-        '';
-      const normalizedSender = resolveMessageSender(message);
-      const interactionSenderKey =
-        interactionKey && normalizedSender
-          ? `${interactionKey}:${normalizedSender}`
-          : '';
-
-      const idSenderKey = id && normalizedSender ? `${id}::${normalizedSender}` : '';
-
-      if (idSenderKey && seenIdSender.has(idSenderKey)) {
-        continue;
+    const seen = new Set<string>();
+    return messages.filter((message) => {
+      if (!message) return false;
+      const key = `${message.id ?? ''}-${message.sender ?? ''}`;
+      if (seen.has(key)) {
+        return false;
       }
-      if (!idSenderKey && id && seenIds.has(id)) {
-        continue;
-      }
-      if (interactionSenderKey && seenInteractionSenders.has(interactionSenderKey)) {
-        continue;
-      }
-      if (id) {
-        if (idSenderKey) {
-          seenIdSender.add(idSenderKey);
-        } else {
-          seenIds.add(id);
-        }
-      }
-      if (interactionSenderKey) {
-        seenInteractionSenders.add(interactionSenderKey);
-      }
-      deduped.unshift(message);
-    }
-
-    return deduped;
+      seen.add(key);
+      return true;
+    });
   }, [messages]);
 
   try {
@@ -126,7 +92,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
         return (
           <motion.div
-            key={renderId}
+            key={`${message.id ?? ''}-${message.sender ?? ''}`}
             className="w-full"
             initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 6 }}
             animate={{ opacity: 1, y: 0 }}

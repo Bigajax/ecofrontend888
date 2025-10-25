@@ -85,10 +85,15 @@ const normalizeSseNewlines = (value: string): string => value.replace(/\r\n|\r|\
 const parseSseEvent = (
   eventBlock: string,
 ): { type?: string; payload?: any; rawData?: string } | undefined => {
-  const lines = eventBlock
-    .split("\n")
-    .map((line) => line.replace(/\r$/, ""))
-    .filter((line) => line.length > 0 && !line.startsWith(":"));
+  const normalizedLines = eventBlock.split("\n").map((line) => line.replace(/\r$/, ""));
+  const firstNonEmptyLine = normalizedLines.find((line) => line.length > 0);
+
+  if (firstNonEmptyLine?.startsWith(":")) {
+    console.log("[SSE] Heartbeat received");
+    return undefined;
+  }
+
+  const lines = normalizedLines.filter((line) => line.length > 0 && !line.startsWith(":"));
 
   if (lines.length === 0) return undefined;
 
@@ -291,9 +296,6 @@ export const processEventStream = async (
   const handleAbort = () => {
     if (aborted) return;
     aborted = true;
-    try {
-      void reader.cancel();
-    } catch {}
   };
 
   if (signal) {
@@ -1100,45 +1102,66 @@ const toFiniteNumber = (value: unknown): number | undefined => {
   return undefined;
 };
 
-const extractChunkIndex = (payload: unknown): number | undefined => {
-  const record = toRecord(payload);
-  if (!record) return undefined;
+const normalizeChunkData = (
+  payload: unknown,
+): { index: number; text?: string; done?: boolean; meta?: Record<string, unknown> } | null => {
+  const rawRecord =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
+      : undefined;
+  const dataValue = (rawRecord as { data?: unknown })?.data;
+  const dataRecord =
+    dataValue && typeof dataValue === "object"
+      ? (dataValue as Record<string, unknown>)
+      : rawRecord;
 
-  const candidates: Array<unknown> = [
-    record.index,
-    record.chunk_index,
-    record.chunkIndex,
-    (record as { delta_index?: unknown }).delta_index,
-    (record as { deltaIndex?: unknown }).deltaIndex,
+  if (!dataRecord || typeof dataRecord !== "object") {
+    console.warn("[SSE] Invalid format", payload);
+    return null;
+  }
+
+  if (!("index" in dataRecord)) {
+    console.warn("[SSE] Invalid format", dataRecord);
+    return null;
+  }
+
+  const indexValue = toFiniteNumber((dataRecord as { index?: unknown }).index);
+  if (typeof indexValue !== "number") {
+    console.warn("[SSE] Invalid format", dataRecord);
+    return null;
+  }
+
+  const textCandidates: Array<unknown> = [
+    (dataRecord as { text?: unknown }).text,
+    (dataRecord as { delta?: unknown }).delta,
+    (dataRecord as { content?: unknown }).content,
   ];
 
-  const deltaRecord = toRecord((record as { delta?: unknown }).delta);
-  if (deltaRecord) {
-    candidates.push(deltaRecord.index, deltaRecord.chunk_index, deltaRecord.chunkIndex);
-  }
-
-  const patchRecord = toRecord((record as { patch?: unknown }).patch);
-  if (patchRecord) {
-    candidates.push(patchRecord.index, patchRecord.chunk_index, patchRecord.chunkIndex);
-  }
-
-  const nestedPayload = toRecord((record as { payload?: unknown }).payload);
-  if (nestedPayload) {
-    candidates.push(nestedPayload.index, nestedPayload.chunk_index, nestedPayload.chunkIndex);
-    const nestedDelta = toRecord((nestedPayload as { delta?: unknown }).delta);
-    if (nestedDelta) {
-      candidates.push(nestedDelta.index, nestedDelta.chunk_index, nestedDelta.chunkIndex);
+  let resolvedText: string | undefined;
+  for (const candidate of textCandidates) {
+    if (typeof candidate === "string") {
+      resolvedText = candidate;
+      break;
     }
   }
 
-  for (const candidate of candidates) {
-    const value = toFiniteNumber(candidate);
-    if (typeof value === "number") {
-      return Math.trunc(value);
-    }
-  }
+  const doneValue = (dataRecord as { done?: unknown }).done === true ? true : undefined;
 
-  return undefined;
+  const metaValue = (dataRecord as { meta?: unknown }).meta;
+  const metadataValue = (dataRecord as { metadata?: unknown }).metadata;
+  const metaRecord =
+    metaValue && typeof metaValue === "object"
+      ? (metaValue as Record<string, unknown>)
+      : metadataValue && typeof metadataValue === "object"
+        ? (metadataValue as Record<string, unknown>)
+        : undefined;
+
+  return {
+    index: Math.trunc(indexValue),
+    text: resolvedText,
+    done: doneValue,
+    meta: metaRecord,
+  };
 };
 
 const dispatchSseBlock = (
@@ -1211,36 +1234,63 @@ const dispatchSseBlock = (
   const treatedType = resolvedType === "first_token" ? "chunk" : resolvedType;
 
   if (treatedType === "chunk") {
-    const textCandidate =
-      typeof payload === "string"
-        ? payload
-        : typeof (payload as any)?.text === "string"
-        ? (payload as any).text
-        : typeof (payload as any)?.delta === "string"
-        ? (payload as any).delta
+    const payloadRecord =
+      payload && typeof payload === "object" ? (payload as Record<string, unknown>) : undefined;
+    const dataRecord =
+      payloadRecord && payloadRecord.data && typeof payloadRecord.data === "object"
+        ? (payloadRecord.data as Record<string, unknown>)
+        : payloadRecord;
+    const metaRecord =
+      dataRecord && typeof dataRecord.meta === "object"
+        ? (dataRecord.meta as Record<string, unknown>)
+        : undefined;
+    const rawTextCandidate = (() => {
+      if (!dataRecord || typeof dataRecord !== "object") return undefined;
+      const directText = (dataRecord as { text?: unknown }).text;
+      if (typeof directText === "string") return directText;
+      const deltaText = (dataRecord as { delta?: unknown }).delta;
+      if (typeof deltaText === "string") return deltaText;
+      const contentText = (dataRecord as { content?: unknown }).content;
+      if (typeof contentText === "string") return contentText;
+      return undefined;
+    })();
+
+    if (
+      metaRecord &&
+      typeof metaRecord.status === "string" &&
+      metaRecord.status.toLowerCase() === "connected" &&
+      (typeof rawTextCandidate !== "string" || rawTextCandidate.length === 0)
+    ) {
+      console.log("[SSE-FE] Connection frame received, waiting for real chunks");
+      return;
+    }
+
+    const normalizedData = normalizeChunkData(payload);
+    if (!normalizedData) {
+      return;
+    }
+
+    const fallbackIndex = context.nextChunkIndex();
+    const index =
+      typeof normalizedData.index === "number" && Number.isFinite(normalizedData.index)
+        ? normalizedData.index
+        : fallbackIndex;
+    const resolvedText =
+      typeof normalizedData.text === "string"
+        ? normalizedData.text
         : typeof parsed.text === "string"
         ? parsed.text
         : undefined;
 
-    const serverIndex = extractChunkIndex(payload);
-    const fallbackIndex = context.nextChunkIndex();
-    const index = typeof serverIndex === "number" ? serverIndex : fallbackIndex;
     context.onChunk?.({
       index,
-      text: textCandidate,
-      metadata:
-        typeof payload === "object" && payload
-          ? (payload as Record<string, unknown>).metadata
-          : undefined,
+      text: resolvedText,
+      metadata: normalizedData.meta,
       interactionId: baseEventInfo.interactionId,
       messageId: baseEventInfo.messageId,
       createdAt: baseEventInfo.createdAt,
-      isFirstChunk:
-        isFirstToken ||
-        index === 0 ||
-        (typeof serverIndex === "number" && serverIndex <= 0) ||
-        fallbackIndex === 0,
-      payload,
+      isFirstChunk: isFirstToken || index === 0 || fallbackIndex === 0,
+      payload: normalizedData,
     });
     return;
   }
@@ -1451,7 +1501,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
     let chunkReceived = false;
-    const chunkTimeoutMs = 4000;
+    const chunkTimeoutMs = 180000;
 
     chunkTimeoutId = setTimeout(() => {
       if (!chunkReceived && isDev) {
