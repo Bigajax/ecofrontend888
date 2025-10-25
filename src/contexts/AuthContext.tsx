@@ -83,6 +83,17 @@ function syncMixpanelIdentity(authUser?: User | null) {
   }
 }
 
+async function safelyEnsureProfile(user: User | null | undefined, context: string) {
+  if (!user) return null;
+  try {
+    await ensureProfile(user);
+    return user;
+  } catch (error) {
+    console.error('[Auth] Profile error', { context, error });
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -108,13 +119,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         // logou => zera dados do modo guest
         clearGuestStorage();
-        ensureProfile(session.user).catch((err) =>
-          console.error('Erro ao garantir perfil durante getSession:', err),
-        );
+        await safelyEnsureProfile(session.user, 'getSession');
       }
     };
 
-    getSession();
+    getSession().catch((error) => {
+      console.error('[Auth] Session bootstrap error', error);
+    });
 
     const { data: sub } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, session) => {
@@ -140,22 +151,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           syncMixpanelIdentity(session.user);
         }
 
-        if (event === 'SIGNED_IN') {
-          supabase.auth
-            .getUser()
-            .then(({ data }) =>
-              ensureProfile(data.user).catch((err) => {
-                console.error('Erro ao garantir perfil após OAuth:', err);
-              }),
-            )
-            .catch((err) => {
-              console.error('Erro ao obter usuário após OAuth:', err);
-            });
-        } else if (session?.user) {
-          ensureProfile(session.user).catch((err) =>
-            console.error('Erro ao garantir perfil após mudança de sessão:', err),
-          );
-        }
+        const handleSessionChange = async () => {
+          if (event === 'SIGNED_IN') {
+            try {
+              const { data } = await supabase.auth.getUser();
+              await safelyEnsureProfile(data.user, 'postOAuth');
+            } catch (error) {
+              console.error('[Auth] Session change error', error);
+            }
+            return;
+          }
+
+          if (session?.user) {
+            await safelyEnsureProfile(session.user, 'sessionChange');
+          }
+        };
+
+        handleSessionChange().catch((error) => {
+          console.error('[Auth] Session change error', error);
+        });
       }
     );
 

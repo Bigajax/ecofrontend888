@@ -55,6 +55,11 @@ const pickHeroSubtitle = () =>
     Math.floor(Math.random() * Math.max(OPENING_VARIATIONS.length, 1))
   ] ?? '';
 
+const calculateFollowup = (lastSentAt: number | null, now: number): number => {
+  if (!lastSentAt) return 0;
+  return now - lastSentAt <= FAST_FOLLOWUP_WINDOW_MS ? 1 : 0;
+};
+
 type BehaviorHintMetrics = {
   typing_bursts: number;
   message_edits: number;
@@ -120,15 +125,29 @@ function ChatPage() {
   );
 
   const scheduleBehaviorHint = useCallback(
-    (metrics: BehaviorHintMetrics) => {
+    (metrics: BehaviorHintMetrics & { fastFollowup?: number }) => {
       if (pendingBehaviorHintRef.current) flushBehaviorHint(undefined);
+
+      const now = Date.now();
+      const fast_followup =
+        typeof metrics.fast_followup === 'number'
+          ? metrics.fast_followup
+          : typeof metrics.fastFollowup === 'number'
+          ? metrics.fastFollowup
+          : calculateFollowup(lastMessageSentAtRef.current, now);
+
+      const normalizedMetrics: BehaviorHintMetrics = {
+        typing_bursts: typeof metrics.typing_bursts === 'number' ? metrics.typing_bursts : 0,
+        message_edits: typeof metrics.message_edits === 'number' ? metrics.message_edits : 0,
+        fast_followup,
+      };
 
       const timeoutId =
         typeof window !== 'undefined'
           ? window.setTimeout(() => flushBehaviorHint(undefined), BEHAVIOR_HINT_FALLBACK_MS)
           : null;
 
-      pendingBehaviorHintRef.current = { metrics, timeoutId };
+      pendingBehaviorHintRef.current = { metrics: normalizedMetrics, timeoutId };
       lastBehaviorInteractionRef.current = null;
     },
     [flushBehaviorHint],
@@ -137,11 +156,7 @@ function ChatPage() {
   const finalizeBehaviorMetrics = useCallback(() => {
     const tracker = behaviorTrackerRef.current;
     const now = Date.now();
-    const fastFollowup =
-      lastMessageSentAtRef.current &&
-      now - lastMessageSentAtRef.current <= FAST_FOLLOWUP_WINDOW_MS
-        ? 1
-        : 0;
+    const fast_followup = calculateFollowup(lastMessageSentAtRef.current, now);
 
     const metrics: BehaviorHintMetrics = {
       typing_bursts: tracker.bursts,
