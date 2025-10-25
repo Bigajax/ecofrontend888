@@ -1336,6 +1336,49 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     onControl,
   } = options;
 
+  // --- Abort/Signal robusto para SSE ---
+  const userSignal = options.signal;
+  const internalCtrl = new AbortController();
+  // Fallback para navegadores sem AbortSignal.any
+  const anySignal = (signals: AbortSignal[]): AbortSignal => {
+    const ctrl = new AbortController();
+    const abortFrom = (s: AbortSignal) => {
+      if (!ctrl.signal.aborted) ctrl.abort((s as any).reason ?? "any-abort");
+    };
+    for (const s of signals) {
+      if (!s) continue;
+      if (s.aborted) {
+        abortFrom(s);
+        break;
+      }
+      s.addEventListener("abort", () => abortFrom(s), { once: true });
+    }
+    return ctrl.signal;
+  };
+  const supportsAbortAny =
+    typeof AbortSignal !== "undefined" && typeof (AbortSignal as any).any === "function";
+  const effectiveSignal = supportsAbortAny
+    ? (AbortSignal as any).any([internalCtrl.signal, ...(userSignal ? [userSignal] : [])])
+    : anySignal([internalCtrl.signal, ...(userSignal ? [userSignal] : [])]);
+  (globalThis as any).__ecoActiveCtrl = internalCtrl;
+  if (userSignal?.aborted) {
+    internalCtrl.abort(); // sincroniza estado
+    throw new DOMException("Aborted", "AbortError");
+  }
+  if (userSignal && !userSignal.aborted) {
+    userSignal.addEventListener(
+      "abort",
+      () => {
+        try {
+          internalCtrl.abort();
+        } catch {
+          /* noop */
+        }
+      },
+      { once: true },
+    );
+  }
+
   const baseHeaders: Record<string, string> = {
     Accept: "text/event-stream",
     "Content-Type": "application/json",
@@ -1429,7 +1472,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       method: "POST",
       headers: baseHeaders,
       body: JSON.stringify(payload),
-      signal,
+      signal: effectiveSignal,
       cache: "no-store",
       redirect: "follow",
       keepalive: false,
@@ -1636,7 +1679,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     onDone?.({ payload: undefined });
   } catch (error) {
     clearChunkTimeout();
-    if (signal?.aborted) {
+    if ((effectiveSignal as AbortSignal | undefined)?.aborted) {
       const abortError =
         error instanceof DOMException && error.name === "AbortError"
           ? error
