@@ -245,7 +245,6 @@ export const useEcoStream = ({
       console.log("[SSE-FE] Component unmounting, delaying abort");
       setTimeout(() => {
         if (!streamActiveRef.current) {
-          console.warn("[SSE-FE] Attempted abort on inactive stream");
           return;
         }
         Object.values(controllersSnapshot).forEach((controller) => {
@@ -309,13 +308,14 @@ export const useEcoStream = ({
     (
       clientMessageId: string,
       event?: { interactionId?: string | null; messageId?: string | null; createdAt?: string | null },
-      options?: { allowCreate?: boolean },
+      options?: { allowCreate?: boolean; draftMessages?: ChatMessageType[] },
     ): string | null | undefined => {
       if (!clientMessageId) return undefined;
       const normalizedClientId = clientMessageId.trim();
       if (!normalizedClientId) return undefined;
 
       const allowCreate = options?.allowCreate ?? true;
+      const draftMessages = options?.draftMessages;
 
       const normalizeString = (value?: string | null): string => (typeof value === "string" ? value.trim() : "");
       const normalizeTimestamp = (value?: string | null): string | undefined => {
@@ -464,7 +464,9 @@ export const useEcoStream = ({
         metadata: mergeReplyMetadata(undefined, normalizedClientId),
       };
 
-      if (upsertMessage) {
+      if (draftMessages && !upsertMessage) {
+        draftMessages.push(assistantMessage);
+      } else if (upsertMessage) {
         upsertMessage(assistantMessage, {
           allowContentUpdate: true,
           patchSource: "stream_init",
@@ -770,9 +772,7 @@ export const useEcoStream = ({
           typeof activeId === "string" && activeId ? activeId.trim() || activeId : activeId;
         const activeController = controllersRef.current[activeId];
         if (activeController) {
-          if (!streamActiveRef.current) {
-            console.warn("[SSE-FE] Attempted abort on inactive stream");
-          } else if (!activeController.signal.aborted) {
+          if (streamActiveRef.current && !activeController.signal.aborted) {
             try {
               streamActiveRef.current = false;
               activeController.abort();
@@ -806,7 +806,7 @@ export const useEcoStream = ({
       setDigitando(true);
 
       const placeholderAssistantId = ensureAssistantMessage(clientMessageId, undefined, {
-        allowCreate: false,
+        allowCreate: true,
       });
       if (placeholderAssistantId) {
         activeAssistantIdRef.current = placeholderAssistantId;
@@ -935,8 +935,6 @@ export const useEcoStream = ({
           const timestamp = typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
           const updatedAt = timestamp || new Date().toISOString();
           const donePayload = event?.payload;
-          const aggregatedEntry = ecoReplyStateRef.current[assistantId];
-          const aggregatedText = aggregatedEntry?.text ?? "";
           const payloadRecord = toRecord(donePayload);
           const summaryRecord = extractSummaryRecord(donePayload);
           const responseRecord = toRecord(payloadRecord?.response);
@@ -950,7 +948,7 @@ export const useEcoStream = ({
             payloadRecord,
           ];
 
-          const metadata =
+          const metadataBase =
             payloadRecord?.metadata !== undefined
               ? (payloadRecord?.metadata as unknown)
               : payloadRecord?.response !== undefined
@@ -999,166 +997,181 @@ export const useEcoStream = ({
             "ecoScore",
           ]);
 
-          const doneTexts = collectTexts(donePayload);
-          const doneContentCandidate =
-            Array.isArray(doneTexts) && doneTexts.length > 0 ? doneTexts.join("") : undefined;
-          const normalizedAggregated = aggregatedText.replace(/\s+/g, " ").trim();
-          const normalizedDone = typeof doneContentCandidate === "string"
-            ? doneContentCandidate.replace(/\s+/g, " ").trim()
-            : "";
+          const finalizeWithEntry = (entry: { text: string; chunkIndexMax: number } | undefined) => {
+            const aggregatedTextValue = entry?.text ?? "";
+            const aggregatedLength = aggregatedTextValue.length;
+            const doneTexts = collectTexts(donePayload);
+            const doneContentCandidate =
+              Array.isArray(doneTexts) && doneTexts.length > 0 ? doneTexts.join("") : undefined;
+            const normalizedAggregated = aggregatedTextValue.replace(/\s+/g, " ").trim();
+            const normalizedDone = typeof doneContentCandidate === "string"
+              ? doneContentCandidate.replace(/\s+/g, " ").trim()
+              : "";
 
-          let finalContent = aggregatedText;
-          if (typeof doneContentCandidate === "string" && doneContentCandidate.length > 0) {
-            if (!normalizedAggregated) {
-              finalContent = doneContentCandidate;
-            } else if (normalizedAggregated !== normalizedDone) {
-              finalContent = doneContentCandidate;
+            let finalContent = aggregatedTextValue;
+            if (typeof doneContentCandidate === "string" && doneContentCandidate.length > 0) {
+              if (!normalizedAggregated) {
+                finalContent = doneContentCandidate;
+              } else if (normalizedAggregated !== normalizedDone) {
+                finalContent = doneContentCandidate;
+              }
             }
-          }
 
-          const finalText = finalContent;
+            const finalText = finalContent;
 
-          const patch: ChatMessageType = {
-            id: assistantId,
-            streaming: false,
-            status: "done",
-            updatedAt,
+            const patch: ChatMessageType = {
+              id: assistantId,
+              streaming: false,
+              status: "done",
+              updatedAt,
+            };
+
+            patch.content = finalText;
+            patch.text = finalText;
+
+            patch.metadata = mergeReplyMetadata(metadataBase, normalizedClientId);
+            if (donePayload !== undefined) {
+              patch.donePayload = donePayload;
+            }
+            if (resolvedInteractionId) {
+              patch.interaction_id = resolvedInteractionId;
+              patch.interactionId = resolvedInteractionId;
+            }
+            if (resolvedMessageId) {
+              patch.message_id = resolvedMessageId;
+            }
+            if (typeof normalizedLatency === "number") {
+              patch.latencyMs = normalizedLatency;
+            }
+            if (moduleCombo && moduleCombo.length > 0) {
+              patch.module_combo = moduleCombo;
+            }
+            if (promptHash) {
+              patch.prompt_hash = promptHash;
+            }
+            if (typeof ecoScore === "number" && Number.isFinite(ecoScore)) {
+              patch.eco_score = ecoScore;
+            }
+
+            try {
+              console.debug('[DIAG] done', {
+                ecoMsgId: assistantId,
+                clientMessageId,
+                aggregatedLength,
+                finalLength: typeof finalText === "string" ? finalText.length : 0,
+              });
+            } catch {
+              /* noop */
+            }
+
+            const allowedKeys = [
+              "status",
+              "streaming",
+              "updatedAt",
+              "metadata",
+              "donePayload",
+              "interaction_id",
+              "interactionId",
+              "message_id",
+              "latencyMs",
+              "module_combo",
+              "prompt_hash",
+              "eco_score",
+              "content",
+              "text",
+            ];
+
+            if (upsertMessage) {
+              upsertMessage(patch, { patchSource: "stream_done", allowedKeys });
+            } else {
+              setMessages((prevMessages) =>
+                prevMessages.map((message) => {
+                  if (message.id === assistantId) {
+                    try {
+                      console.debug('[DIAG] setMessages:update:before', {
+                        targetId: assistantId,
+                        role: message.role ?? message.sender ?? 'unknown',
+                        status: message.status,
+                        phase: 'done',
+                      });
+                    } catch {
+                      /* noop */
+                    }
+                    const nextMessage: ChatMessageType = {
+                      ...message,
+                      streaming: false,
+                      status: "done",
+                      updatedAt,
+                      content: finalText,
+                      text: finalText,
+                    };
+                    nextMessage.metadata = mergeReplyMetadata(metadataBase, normalizedClientId);
+                    if (donePayload !== undefined) {
+                      nextMessage.donePayload = donePayload;
+                    }
+                    if (resolvedInteractionId) {
+                      nextMessage.interaction_id = resolvedInteractionId;
+                      nextMessage.interactionId = resolvedInteractionId;
+                    }
+                    if (resolvedMessageId) {
+                      nextMessage.message_id = resolvedMessageId;
+                    }
+                    if (typeof normalizedLatency === "number") {
+                      nextMessage.latencyMs = normalizedLatency;
+                    }
+                    if (moduleCombo && moduleCombo.length > 0) {
+                      nextMessage.module_combo = moduleCombo;
+                    }
+                    if (promptHash) {
+                      nextMessage.prompt_hash = promptHash;
+                    }
+                    if (typeof ecoScore === "number" && Number.isFinite(ecoScore)) {
+                      nextMessage.eco_score = ecoScore;
+                    }
+                    try {
+                      console.debug('[DIAG] setMessages:update:after', {
+                        targetId: assistantId,
+                        role: nextMessage.role ?? nextMessage.sender ?? 'unknown',
+                        status: nextMessage.status,
+                        nextLength: typeof nextMessage.text === 'string' ? nextMessage.text.length : 0,
+                        phase: 'done',
+                      });
+                    } catch {
+                      /* noop */
+                    }
+                    return nextMessage;
+                  }
+                  return message;
+                }),
+              );
+            }
+
+            if (
+              interactionCacheDispatch &&
+              normalizedClientId &&
+              resolvedInteractionId &&
+              typeof resolvedInteractionId === "string"
+            ) {
+              interactionCacheDispatch({
+                type: "updateInteractionMap",
+                clientId: normalizedClientId,
+                interaction_id: resolvedInteractionId,
+              });
+            }
           };
 
-          patch.content = finalText;
-          patch.text = finalText;
+          const aggregatedEntry = ecoReplyStateRef.current[assistantId];
+          const hasChunks = aggregatedEntry?.chunkIndexMax !== undefined && aggregatedEntry.chunkIndexMax >= 0;
+          const aggregatedLength = aggregatedEntry?.text ? aggregatedEntry.text.length : 0;
 
-          patch.metadata = mergeReplyMetadata(metadata, normalizedClientId);
-          if (donePayload !== undefined) {
-            patch.donePayload = donePayload;
-          }
-          if (resolvedInteractionId) {
-            patch.interaction_id = resolvedInteractionId;
-            patch.interactionId = resolvedInteractionId;
-          }
-          if (resolvedMessageId) {
-            patch.message_id = resolvedMessageId;
-          }
-          if (typeof normalizedLatency === "number") {
-            patch.latencyMs = normalizedLatency;
-          }
-          if (moduleCombo && moduleCombo.length > 0) {
-            patch.module_combo = moduleCombo;
-          }
-          if (promptHash) {
-            patch.prompt_hash = promptHash;
-          }
-          if (typeof ecoScore === "number" && Number.isFinite(ecoScore)) {
-            patch.eco_score = ecoScore;
-          }
-
-          try {
-            console.debug('[DIAG] done', {
-              ecoMsgId: assistantId,
-              clientMessageId,
-              aggregatedLength: aggregatedText.length,
-              finalLength: typeof finalText === "string" ? finalText.length : 0,
-            });
-          } catch {
-            /* noop */
-          }
-
-          const allowedKeys = [
-            "status",
-            "streaming",
-            "updatedAt",
-            "metadata",
-            "donePayload",
-            "interaction_id",
-            "interactionId",
-            "message_id",
-            "latencyMs",
-            "module_combo",
-            "prompt_hash",
-            "eco_score",
-            "content",
-            "text",
-          ];
-
-          if (upsertMessage) {
-            upsertMessage(patch, { patchSource: "stream_done", allowedKeys });
+          if (!hasChunks || aggregatedLength === 0) {
+            setTimeout(() => {
+              const latestEntry = ecoReplyStateRef.current[assistantId];
+              finalizeWithEntry(latestEntry);
+            }, 100);
           } else {
-            setMessages((prevMessages) =>
-              prevMessages.map((message) => {
-                if (message.id === assistantId) {
-                  try {
-                    console.debug('[DIAG] setMessages:update:before', {
-                      targetId: assistantId,
-                      role: message.role ?? message.sender ?? 'unknown',
-                      status: message.status,
-                      phase: 'done',
-                    });
-                  } catch {
-                    /* noop */
-                  }
-                  const nextMessage: ChatMessageType = {
-                    ...message,
-                    streaming: false,
-                    status: "done",
-                    updatedAt,
-                    content: finalText,
-                    text: finalText,
-                  };
-                  nextMessage.metadata = mergeReplyMetadata(metadata, normalizedClientId);
-                  if (donePayload !== undefined) {
-                    nextMessage.donePayload = donePayload;
-                  }
-                  if (resolvedInteractionId) {
-                    nextMessage.interaction_id = resolvedInteractionId;
-                    nextMessage.interactionId = resolvedInteractionId;
-                  }
-                  if (resolvedMessageId) {
-                    nextMessage.message_id = resolvedMessageId;
-                  }
-                  if (typeof normalizedLatency === "number") {
-                    nextMessage.latencyMs = normalizedLatency;
-                  }
-                  if (moduleCombo && moduleCombo.length > 0) {
-                    nextMessage.module_combo = moduleCombo;
-                  }
-                  if (promptHash) {
-                    nextMessage.prompt_hash = promptHash;
-                  }
-                  if (typeof ecoScore === "number" && Number.isFinite(ecoScore)) {
-                    nextMessage.eco_score = ecoScore;
-                  }
-                  try {
-                    console.debug('[DIAG] setMessages:update:after', {
-                      targetId: assistantId,
-                      role: nextMessage.role ?? nextMessage.sender ?? 'unknown',
-                      status: nextMessage.status,
-                      nextLength: typeof nextMessage.text === 'string' ? nextMessage.text.length : 0,
-                      phase: 'done',
-                    });
-                  } catch {
-                    /* noop */
-                  }
-                  return nextMessage;
-                }
-                return message;
-              }),
-            );
+            finalizeWithEntry(aggregatedEntry);
           }
-
-          if (
-            interactionCacheDispatch &&
-            normalizedClientId &&
-            resolvedInteractionId &&
-            typeof resolvedInteractionId === "string"
-          ) {
-            interactionCacheDispatch({
-              type: "updateInteractionMap",
-              clientId: normalizedClientId,
-              interaction_id: resolvedInteractionId,
-            });
-          }
-
-          removeEcoEntry(assistantId);
         },
         onError: (error) => {
           if (controller.signal.aborted) return;
@@ -1179,6 +1192,10 @@ export const useEcoStream = ({
             });
           } catch {
             /* noop */
+          }
+          const assistantIdOnError = assistantByClientRef.current[clientMessageId];
+          if (assistantIdOnError) {
+            removeEcoEntry(assistantIdOnError);
           }
         },
         onControl: (event: EcoStreamControlEvent) => {
@@ -1223,6 +1240,10 @@ export const useEcoStream = ({
         } catch {
           /* noop */
         }
+        const assistantIdOnStartError = assistantByClientRef.current[clientMessageId];
+        if (assistantIdOnStartError) {
+          removeEcoEntry(assistantIdOnStartError);
+        }
       });
 
       streamPromise.finally(() => {
@@ -1231,12 +1252,15 @@ export const useEcoStream = ({
         delete streamTimersRef.current[normalizedClientId];
 
         const isActiveStream = activeStreamClientIdRef.current === clientMessageId;
+        const wasAborted = controller.signal.aborted;
 
         if (isActiveStream) {
           streamActiveRef.current = false;
           activeStreamClientIdRef.current = null;
           activeAssistantIdRef.current = null;
-          removeEcoEntry(assistantId);
+          if (wasAborted && assistantId) {
+            removeEcoEntry(assistantId);
+          }
           setDigitando(false);
           setIsSending(false);
           activity?.onDone?.();
@@ -1244,13 +1268,23 @@ export const useEcoStream = ({
             console.debug('[DIAG] done/abort', {
               clientMessageId,
               assistantMessageId: assistantId ?? null,
-              reason: 'stream_completed',
+              reason: wasAborted ? 'stream_aborted' : 'stream_completed',
+            });
+          } catch {
+            /* noop */
+          }
+        } else if (wasAborted && assistantId) {
+          removeEcoEntry(assistantId);
+          try {
+            console.debug('[DIAG] done/abort', {
+              clientMessageId,
+              assistantMessageId: assistantId ?? null,
+              reason: 'stream_aborted_inactive',
             });
           } catch {
             /* noop */
           }
         } else {
-          removeEcoEntry(assistantId);
           try {
             console.debug('[DIAG] done/abort', {
               clientMessageId,
@@ -1302,6 +1336,7 @@ export const useEcoStream = ({
       setIsSending(true);
       activity?.onSend?.();
 
+      let placeholderAssistantId: string | null = null;
       setMessages((prev) => {
         try {
           console.debug('[DIAG] send', {
@@ -1323,16 +1358,26 @@ export const useEcoStream = ({
           /* noop */
         }
         const next = [...prev, userMessage];
-        // Usamos o array `next` recém-calculado como fonte do histórico para o stream.
+        const ensureOptions = !upsertMessage ? { draftMessages: next } : undefined;
+        const assistantId = ensureAssistantMessage(clientMessageId, undefined, ensureOptions);
+        if (assistantId) {
+          placeholderAssistantId = assistantId;
+        }
+        // Usamos o array `next` recém-calculado (já com placeholder quando aplicável)
+        // como fonte do histórico para o stream.
         beginStream(next, userMessage, systemHint);
         return next;
       });
+
+      if (placeholderAssistantId) {
+        activeAssistantIdRef.current = placeholderAssistantId;
+      }
 
       if (scrollToBottom) {
         requestAnimationFrame(() => scrollToBottom(true));
       }
     },
-    [activity, beginStream, scrollToBottom, setMessages],
+    [activity, beginStream, ensureAssistantMessage, scrollToBottom, setMessages, upsertMessage],
   );
 
   return { handleSendMessage, digitando, erroApi, setErroApi, pending: isSending } as const;
