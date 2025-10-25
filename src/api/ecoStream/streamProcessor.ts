@@ -1,140 +1,29 @@
-import { AskEcoResponse, collectTexts, normalizeAskEcoResponse, unwrapPayload } from "./askEcoResponse";
-import { isDev } from "./environment";
-import { resolveChunkIdentifier, resolveChunkIndex } from "../utils/chat/chunkSignals";
-import { resolveApiUrl } from "../constants/api";
-import { buildIdentityHeaders } from "../lib/guestId";
+import { AskEcoResponse, collectTexts, normalizeAskEcoResponse, unwrapPayload } from "../askEcoResponse";
+import { isDev } from "../environment";
+import { resolveChunkIdentifier, resolveChunkIndex } from "../../utils/chat/chunkSignals";
+import { resolveApiUrl } from "../../constants/api";
+import { buildIdentityHeaders } from "../../lib/guestId";
 import type { Message } from "../contexts/ChatContext";
-
-export interface EcoStreamResult {
-  text: string;
-  metadata?: unknown;
-  done?: unknown;
-  primeiraMemoriaSignificativa?: boolean;
-  /**
-   * Indica que recebemos "prompt_ready" e/ou "done", porém nenhum token de texto.
-   * Útil para alertar o front que o backend encerrou a stream sem conteúdo.
-   */
-  noTextReceived?: boolean;
-  aborted?: boolean;
-  status?: number;
-}
-
-export interface EcoSseEvent<TPayload = Record<string, any>> {
-  type: string;
-  payload: TPayload;
-  raw: unknown;
-  text?: string;
-  metadata?: unknown;
-  memory?: unknown;
-  latencyMs?: number;
-  /** Mantém o tipo original reportado pelo backend para debug. */
-  originalType?: string;
-  /** Canal de origem do evento (ex.: "data", "control"). */
-  channel?: string;
-  /** Nome bruto informado pelo backend para eventos de controle. */
-  name?: string;
-}
-
-export interface EcoClientEvent {
-  type: string;
-  /** Texto incremental fornecido pelo backend (token inicial ou chunk subsequente). */
-  delta?: string;
-  /** Texto já normalizado para compatibilidade com clientes legados. */
-  text?: string;
-  /** Alias para conteúdo textual incremental (compatibilidade com novos clientes). */
-  content?: string;
-  /** Metadados finais/parciais retornados pelo backend. */
-  metadata?: unknown;
-  /** Payload bruto, incluindo campos específicos da plataforma. */
-  payload?: unknown;
-  /** Memória persistida informada pelo backend. */
-  memory?: unknown;
-  /** Latência reportada pelo backend, quando disponível. */
-  latencyMs?: number;
-  /** Mensagem de erro fornecida pelo backend. */
-  message?: string;
-  /** Conteúdo original sem pós-processamento. */
-  raw?: unknown;
-  /** Tipo original emitido pelo backend (para troubleshooting). */
-  originalType?: string;
-  /** Payload `done` bruto, quando aplicável. */
-  done?: unknown;
-  /** Canal de origem do evento (ex.: "data", "control"). */
-  channel?: string;
-  /** Nome bruto informado pelo backend para eventos de controle. */
-  name?: string;
-}
-
-export interface EcoEventHandlers {
-  onEvent?: (event: EcoClientEvent) => void;
-  onPromptReady?: (event: EcoSseEvent) => void;
-  onFirstToken?: (event: EcoSseEvent) => void;
-  onChunk?: (event: EcoSseEvent) => void;
-  onDone?: (event: EcoSseEvent) => void;
-  onMeta?: (event: EcoSseEvent) => void;
-  onMetaPending?: (event: EcoSseEvent) => void;
-  onMemorySaved?: (event: EcoSseEvent) => void;
-  onLatency?: (event: EcoSseEvent) => void;
-  onControl?: (event: EcoSseEvent) => void;
-  onError?: (error: Error) => void;
-}
-
-/** Normaliza quebras de linha do SSE (CRLF/CR/LF → LF) */
-const normalizeSseNewlines = (value: string): string => value.replace(/\r\n|\r|\n/g, "\n");
-
-const parseSseEvent = (
-  eventBlock: string,
-): { type?: string; payload?: any; rawData?: string } | undefined => {
-  const normalizedLines = eventBlock.split("\n").map((line) => line.replace(/\r$/, ""));
-  const firstNonEmptyLine = normalizedLines.find((line) => line.length > 0);
-
-  if (firstNonEmptyLine?.startsWith(":")) {
-    console.log("[SSE] Heartbeat received");
-    return undefined;
-  }
-
-  const lines = normalizedLines.filter((line) => line.length > 0 && !line.startsWith(":"));
-
-  if (lines.length === 0) return undefined;
-
-  let eventName: string | undefined;
-  const dataParts: string[] = [];
-
-  for (const line of lines) {
-    if (line.startsWith("event:")) {
-      eventName = line.slice(6).trim();
-      continue;
-    }
-
-    if (line.startsWith("data:")) {
-      if (line.startsWith("data: ")) {
-        dataParts.push(line.slice(6));
-      } else {
-        dataParts.push(line.slice(5));
-      }
-      continue;
-    }
-
-    dataParts.push(line);
-  }
-
-  const dataStr = dataParts.join("\n");
-  if (dataStr.length === 0) return { type: eventName, payload: undefined };
-
-  if (dataStr === "[DONE]") {
-    return { type: eventName ?? "done", payload: { done: true }, rawData: dataStr };
-  }
-
-  try {
-    const parsed = JSON.parse(dataStr);
-    return { type: eventName, payload: parsed, rawData: dataStr };
-  } catch {
-    if (eventName === "chunk") {
-      return { type: eventName, payload: { text: dataStr }, rawData: dataStr };
-    }
-    return { type: eventName, payload: {}, rawData: dataStr };
-  }
-};
+import {
+  EcoClientEvent,
+  EcoEventHandlers,
+  EcoSseEvent,
+  EcoStreamChunk,
+  EcoStreamControlEvent,
+  EcoStreamDoneEvent,
+  EcoStreamPromptReadyEvent,
+  EcoStreamResult,
+  StartEcoStreamOptions,
+} from "./types";
+import {
+  extractCreatedAt,
+  extractInteractionId,
+  extractMessageId,
+  mapResponseEventType,
+  normalizeChunkData,
+  normalizeControlName,
+} from "./eventMapper";
+import { normalizeSseNewlines, parseSseEvent } from "./sseParser";
 
 const safeInvoke = (
   cb: ((event: EcoSseEvent) => void) | undefined,
@@ -969,57 +858,6 @@ export const parseNonStreamResponse = async (response: Response): Promise<EcoStr
   };
 };
 
-export interface EcoStreamChunk {
-  index: number;
-  text?: string;
-  metadata?: unknown;
-  interactionId?: string;
-  messageId?: string;
-  createdAt?: string;
-  isFirstChunk?: boolean;
-  payload?: unknown;
-}
-
-export interface EcoStreamPromptReadyEvent {
-  interactionId?: string;
-  messageId?: string;
-  createdAt?: string;
-  payload?: unknown;
-}
-
-export interface EcoStreamDoneEvent {
-  payload: unknown;
-  interactionId?: string;
-  messageId?: string;
-  createdAt?: string;
-}
-
-export interface EcoStreamControlEvent {
-  type?: string;
-  name?: string;
-  payload?: unknown;
-  interactionId?: string;
-  messageId?: string;
-  createdAt?: string;
-}
-
-export interface StartEcoStreamOptions {
-  history: Message[];
-  clientMessageId: string;
-  systemHint?: string;
-  userId?: string;
-  userName?: string;
-  guestId?: string;
-  isGuest?: boolean;
-  signal?: AbortSignal;
-  headers?: Record<string, string>;
-  onChunk?: (chunk: EcoStreamChunk) => void;
-  onDone?: (event: EcoStreamDoneEvent) => void;
-  onError?: (error: unknown) => void;
-  onPromptReady?: (event: EcoStreamPromptReadyEvent) => void;
-  onControl?: (event: EcoStreamControlEvent) => void;
-}
-
 const mapHistoryMessage = (message: Message) => {
   const explicitRole = (message.role ?? undefined) as string | undefined;
   const fallbackRole = message.sender === "user" ? "user" : "assistant";
@@ -1039,151 +877,6 @@ const mapHistoryMessage = (message: Message) => {
     content,
     client_message_id:
       message.client_message_id ?? message.clientMessageId ?? message.id ?? undefined,
-  };
-};
-
-const extractInteractionId = (payload: unknown): string | undefined => {
-  if (!payload || typeof payload !== "object") return undefined;
-  const candidates: Array<unknown> = [
-    (payload as any).interaction_id,
-    (payload as any).interactionId,
-    (payload as any).interactionID,
-    (payload as any).id,
-    (payload as any).message_id,
-    (payload as any).messageId,
-    (payload as any).response?.interaction_id,
-    (payload as any).response?.interactionId,
-    (payload as any).response?.id,
-    (payload as any).metadata?.interaction_id,
-    (payload as any).metadata?.interactionId,
-    (payload as any).context?.interaction_id,
-    (payload as any).context?.interactionId,
-  ];
-
-  for (const candidate of candidates) {
-    if (typeof candidate === "string") {
-      const trimmed = candidate.trim();
-      if (trimmed) return trimmed;
-    }
-  }
-  return undefined;
-};
-
-const extractMessageId = (payload: unknown): string | undefined => {
-  if (!payload || typeof payload !== "object") return undefined;
-  const candidates: Array<unknown> = [
-    (payload as any).message_id,
-    (payload as any).messageId,
-    (payload as any).id,
-    (payload as any).response?.message_id,
-    (payload as any).response?.messageId,
-    (payload as any).delta?.message_id,
-    (payload as any).delta?.messageId,
-  ];
-
-  for (const candidate of candidates) {
-    if (typeof candidate === "string") {
-      const trimmed = candidate.trim();
-      if (trimmed) return trimmed;
-    }
-  }
-  return undefined;
-};
-
-const extractCreatedAt = (payload: unknown): string | undefined => {
-  if (!payload || typeof payload !== "object") return undefined;
-  const candidates: Array<unknown> = [
-    (payload as any).created_at,
-    (payload as any).createdAt,
-    (payload as any).response?.created_at,
-    (payload as any).response?.createdAt,
-    (payload as any).timestamp,
-    (payload as any).ts,
-  ];
-
-  for (const candidate of candidates) {
-    if (typeof candidate === "string") {
-      const trimmed = candidate.trim();
-      if (trimmed) return trimmed;
-    }
-  }
-  return undefined;
-};
-
-const toFiniteNumber = (value: unknown): number | undefined => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) return undefined;
-    const parsed = Number(trimmed);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-  return undefined;
-};
-
-const normalizeChunkData = (
-  payload: unknown,
-): { index: number; text?: string; done?: boolean; meta?: Record<string, unknown> } | null => {
-  const rawRecord =
-    payload && typeof payload === "object"
-      ? (payload as Record<string, unknown>)
-      : undefined;
-  const dataValue = (rawRecord as { data?: unknown })?.data;
-  const dataRecord =
-    dataValue && typeof dataValue === "object"
-      ? (dataValue as Record<string, unknown>)
-      : rawRecord;
-
-  if (!dataRecord || typeof dataRecord !== "object") {
-    console.warn("[SSE] Invalid format", payload);
-    return null;
-  }
-
-  if (!("index" in dataRecord)) {
-    console.warn("[SSE] Invalid format", dataRecord);
-    return null;
-  }
-
-  const indexValue = toFiniteNumber((dataRecord as { index?: unknown }).index);
-  if (typeof indexValue !== "number") {
-    console.warn("[SSE] Invalid format", dataRecord);
-    return null;
-  }
-
-  const textCandidates: Array<unknown> = [
-    (dataRecord as { text?: unknown }).text,
-    (dataRecord as { delta?: unknown }).delta,
-    (dataRecord as { content?: unknown }).content,
-  ];
-
-  let resolvedText: string | undefined;
-  for (const candidate of textCandidates) {
-    if (typeof candidate === "string") {
-      resolvedText = candidate;
-      break;
-    }
-  }
-
-  const doneValue = (dataRecord as { done?: unknown }).done === true ? true : undefined;
-
-  const metaValue = (dataRecord as { meta?: unknown }).meta;
-  const metadataValue = (dataRecord as { metadata?: unknown }).metadata;
-  const metaRecord =
-    metaValue && typeof metaValue === "object"
-      ? (metaValue as Record<string, unknown>)
-      : metadataValue && typeof metadataValue === "object"
-        ? (metadataValue as Record<string, unknown>)
-        : undefined;
-
-  return {
-    index: Math.trunc(indexValue),
-    text: resolvedText,
-    done: doneValue,
-    meta: metaRecord,
   };
 };
 
