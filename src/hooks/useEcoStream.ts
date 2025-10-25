@@ -203,6 +203,7 @@ export const useEcoStream = ({
   const streamTimersRef = useRef<Record<string, { startedAt: number; firstChunkAt?: number }>>({});
   const activeStreamClientIdRef = useRef<string | null>(null);
   const activeAssistantIdRef = useRef<string | null>(null);
+  const streamActiveRef = useRef(false);
   const [ecoReplyByAssistantId, setEcoReplyByAssistantId] = useState<EcoReplyState>({});
   const ecoReplyStateRef = useRef<EcoReplyState>({});
   const assistantByClientRef = useRef<Record<string, string>>({});
@@ -240,6 +241,24 @@ export const useEcoStream = ({
 
   useEffect(() => {
     return () => {
+      const controllersSnapshot = { ...controllersRef.current };
+      console.log("[SSE-FE] Component unmounting, delaying abort");
+      setTimeout(() => {
+        if (!streamActiveRef.current) {
+          console.warn("[SSE-FE] Attempted abort on inactive stream");
+          return;
+        }
+        Object.values(controllersSnapshot).forEach((controller) => {
+          if (!controller || controller.signal.aborted) return;
+          try {
+            controller.abort();
+          } catch {
+            /* noop */
+          }
+        });
+        streamActiveRef.current = false;
+      }, 100);
+
       controllersRef.current = {};
       streamTimersRef.current = {};
       activeStreamClientIdRef.current = null;
@@ -751,11 +770,16 @@ export const useEcoStream = ({
           typeof activeId === "string" && activeId ? activeId.trim() || activeId : activeId;
         const activeController = controllersRef.current[activeId];
         if (activeController) {
-          try {
-            activeController.abort();
-            logSse("abort", { clientMessageId: normalizedActiveId, reason: "new-send" });
-          } catch {
-            /* noop */
+          if (!streamActiveRef.current) {
+            console.warn("[SSE-FE] Attempted abort on inactive stream");
+          } else if (!activeController.signal.aborted) {
+            try {
+              streamActiveRef.current = false;
+              activeController.abort();
+              logSse("abort", { clientMessageId: normalizedActiveId, reason: "new-send" });
+            } catch {
+              /* noop */
+            }
           }
           delete controllersRef.current[activeId];
         }
@@ -771,6 +795,7 @@ export const useEcoStream = ({
       controllersRef.current[clientMessageId] = controller;
       activeStreamClientIdRef.current = clientMessageId;
       activeAssistantIdRef.current = null;
+      streamActiveRef.current = true;
 
       updateCurrentInteractionId(null);
 
@@ -875,6 +900,10 @@ export const useEcoStream = ({
         },
         onDone: (event) => {
           if (controller.signal.aborted) return;
+
+          if (activeStreamClientIdRef.current === clientMessageId) {
+            streamActiveRef.current = false;
+          }
 
           const now = Date.now();
           const metrics = streamTimersRef.current[normalizedClientId];
@@ -1133,6 +1162,9 @@ export const useEcoStream = ({
         },
         onError: (error) => {
           if (controller.signal.aborted) return;
+          if (activeStreamClientIdRef.current === clientMessageId) {
+            streamActiveRef.current = false;
+          }
           const message = error instanceof Error ? error.message : "Não foi possível concluir a resposta da Eco.";
           setErroApi(message);
           logSse("abort", { clientMessageId: normalizedClientId, reason: "error", message });
@@ -1175,6 +1207,9 @@ export const useEcoStream = ({
 
       streamPromise.catch((error) => {
         if (controller.signal.aborted) return;
+        if (activeStreamClientIdRef.current === clientMessageId) {
+          streamActiveRef.current = false;
+        }
         const message = error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
         setErroApi(message);
         logSse("abort", { clientMessageId: normalizedClientId, reason: "start-error", message });
@@ -1195,7 +1230,10 @@ export const useEcoStream = ({
         const assistantId = assistantByClientRef.current[clientMessageId];
         delete streamTimersRef.current[normalizedClientId];
 
-        if (activeStreamClientIdRef.current === clientMessageId) {
+        const isActiveStream = activeStreamClientIdRef.current === clientMessageId;
+
+        if (isActiveStream) {
+          streamActiveRef.current = false;
           activeStreamClientIdRef.current = null;
           activeAssistantIdRef.current = null;
           removeEcoEntry(assistantId);
@@ -1206,7 +1244,7 @@ export const useEcoStream = ({
             console.debug('[DIAG] done/abort', {
               clientMessageId,
               assistantMessageId: assistantId ?? null,
-              reason: 'stream_finalized',
+              reason: 'stream_completed',
             });
           } catch {
             /* noop */
@@ -1217,7 +1255,7 @@ export const useEcoStream = ({
             console.debug('[DIAG] done/abort', {
               clientMessageId,
               assistantMessageId: assistantId ?? null,
-              reason: 'stream_finalized_inactive',
+              reason: 'stream_completed_inactive',
             });
           } catch {
             /* noop */

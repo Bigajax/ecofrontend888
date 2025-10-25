@@ -296,9 +296,6 @@ export const processEventStream = async (
   const handleAbort = () => {
     if (aborted) return;
     aborted = true;
-    try {
-      void reader.cancel();
-    } catch {}
   };
 
   if (signal) {
@@ -1237,6 +1234,37 @@ const dispatchSseBlock = (
   const treatedType = resolvedType === "first_token" ? "chunk" : resolvedType;
 
   if (treatedType === "chunk") {
+    const payloadRecord =
+      payload && typeof payload === "object" ? (payload as Record<string, unknown>) : undefined;
+    const dataRecord =
+      payloadRecord && payloadRecord.data && typeof payloadRecord.data === "object"
+        ? (payloadRecord.data as Record<string, unknown>)
+        : payloadRecord;
+    const metaRecord =
+      dataRecord && typeof dataRecord.meta === "object"
+        ? (dataRecord.meta as Record<string, unknown>)
+        : undefined;
+    const rawTextCandidate = (() => {
+      if (!dataRecord || typeof dataRecord !== "object") return undefined;
+      const directText = (dataRecord as { text?: unknown }).text;
+      if (typeof directText === "string") return directText;
+      const deltaText = (dataRecord as { delta?: unknown }).delta;
+      if (typeof deltaText === "string") return deltaText;
+      const contentText = (dataRecord as { content?: unknown }).content;
+      if (typeof contentText === "string") return contentText;
+      return undefined;
+    })();
+
+    if (
+      metaRecord &&
+      typeof metaRecord.status === "string" &&
+      metaRecord.status.toLowerCase() === "connected" &&
+      (typeof rawTextCandidate !== "string" || rawTextCandidate.length === 0)
+    ) {
+      console.log("[SSE-FE] Connection frame received, waiting for real chunks");
+      return;
+    }
+
     const normalizedData = normalizeChunkData(payload);
     if (!normalizedData) {
       return;
