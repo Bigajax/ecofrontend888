@@ -96,9 +96,7 @@ function ChatPage() {
       const pending = pendingBehaviorHintRef.current;
       if (!pending) return;
       pendingBehaviorHintRef.current = null;
-      if (pending.timeoutId) {
-        clearTimeout(pending.timeoutId);
-      }
+      if (pending.timeoutId) clearTimeout(pending.timeoutId);
 
       const meta = pending.metrics;
       if (
@@ -123,15 +121,11 @@ function ChatPage() {
 
   const scheduleBehaviorHint = useCallback(
     (metrics: BehaviorHintMetrics) => {
-      if (pendingBehaviorHintRef.current) {
-        flushBehaviorHint(undefined);
-      }
+      if (pendingBehaviorHintRef.current) flushBehaviorHint(undefined);
 
       const timeoutId =
         typeof window !== 'undefined'
-          ? window.setTimeout(() => {
-              flushBehaviorHint(undefined);
-            }, BEHAVIOR_HINT_FALLBACK_MS)
+          ? window.setTimeout(() => flushBehaviorHint(undefined), BEHAVIOR_HINT_FALLBACK_MS)
           : null;
 
       pendingBehaviorHintRef.current = { metrics, timeoutId };
@@ -152,7 +146,7 @@ function ChatPage() {
     const metrics: BehaviorHintMetrics = {
       typing_bursts: tracker.bursts,
       message_edits: tracker.edits,
-      fast_followup: fastFollowup,
+      fast_followup,
     };
 
     behaviorTrackerRef.current = {
@@ -167,9 +161,7 @@ function ChatPage() {
       metrics.typing_bursts === 0 &&
       metrics.message_edits === 0 &&
       metrics.fast_followup === 0
-    ) {
-      return;
-    }
+    ) return;
 
     scheduleBehaviorHint(metrics);
   }, [scheduleBehaviorHint]);
@@ -185,18 +177,12 @@ function ChatPage() {
     });
   }, [rawUserName, user, userId]);
 
-  // 👉 Abrir o modal imediatamente ao atingir o limite OU quando o input estiver bloqueado
   useEffect(() => {
     if (!isGuest) {
       setLoginGateOpen(false);
       return;
     }
     if (guestGate.reachedLimit || guestGate.inputDisabled) {
-      // debug opcional para cravar diagnóstico
-      // console.debug('[Gate] Abrindo modal', {
-      //   count: guestGate.count, limit: guestGate.limit,
-      //   reachedLimit: guestGate.reachedLimit, inputDisabled: guestGate.inputDisabled
-      // });
       setLoginGateOpen(true);
     }
   }, [guestGate.reachedLimit, guestGate.inputDisabled, isGuest]);
@@ -205,17 +191,17 @@ function ChatPage() {
   const [heroSubtitle, setHeroSubtitle] = useState<string>(() => pickHeroSubtitle());
 
   const chatRef = useRef<HTMLElement | null>(null);
-  const { scrollerRef, endRef, isAtBottom, showScrollBtn, scrollToBottom } = useAutoScroll<HTMLElement>({
-    items: [messages],
-    externalRef: chatRef,
-    bottomThreshold: 120,
-  });
+  const { scrollerRef, endRef, isAtBottom, showScrollBtn, scrollToBottom } =
+    useAutoScroll<HTMLElement>({
+      items: [messages],
+      externalRef: chatRef,
+      bottomThreshold: 120,
+    });
 
   const chatInputWrapperRef = useRef<HTMLDivElement | null>(null);
   const chatInputRef = useRef<ChatInputHandle | null>(null);
-  const { contentInset, isKeyboardOpen, safeAreaBottom, inputHeight, keyboardHeight } = useKeyboardInsets({
-    inputRef: chatInputWrapperRef,
-  });
+  const { contentInset, isKeyboardOpen, safeAreaBottom, inputHeight, keyboardHeight } =
+    useKeyboardInsets({ inputRef: chatInputWrapperRef });
 
   const baseScrollPadding = 112;
   const scrollInset = Math.max(baseScrollPadding, contentInset + safeAreaBottom + 24);
@@ -233,10 +219,7 @@ function ChatPage() {
       const delta = length - tracker.lastLength;
 
       if (delta > 0) {
-        if (
-          delta >= BEHAVIOR_BURST_DELTA &&
-          now - tracker.lastChangeAt <= BEHAVIOR_BURST_WINDOW_MS
-        ) {
+        if (delta >= BEHAVIOR_BURST_DELTA && now - tracker.lastChangeAt <= BEHAVIOR_BURST_WINDOW_MS) {
           tracker.bursts = Math.min(tracker.bursts + 1, 10);
         }
       } else if (delta < 0) {
@@ -266,10 +249,7 @@ function ChatPage() {
   useEffect(() => {
     const interactionId = lastPromptFeedbackContext?.interactionId;
     if (!interactionId) return;
-    if (
-      pendingBehaviorHintRef.current &&
-      lastBehaviorInteractionRef.current !== interactionId
-    ) {
+    if (pendingBehaviorHintRef.current && lastBehaviorInteractionRef.current !== interactionId) {
       flushBehaviorHint(interactionId);
     }
   }, [flushBehaviorHint, lastPromptFeedbackContext?.interactionId]);
@@ -294,13 +274,10 @@ function ChatPage() {
     isAtBottom,
     isGuest,
     guestId: guestGate.guestId || undefined,
-    onUnauthorized: () => {
-      setLoginGateOpen(true);
-    },
+    onUnauthorized: () => setLoginGateOpen(true),
     activity: ecoActivity,
   });
 
-  // 👉 Guard: se já bateu o limite, abre modal e não envia
   const streamAndPersist = useCallback(
     async (text: string, systemHint?: string) => {
       if (pending) return;
@@ -309,7 +286,6 @@ function ChatPage() {
           setLoginGateOpen(true);
           return;
         }
-        // registra a interação ANTES do envio para manter contagem consistente
         guestGate.registerUserInteraction();
       }
       await streamSendMessage(text, systemHint);
@@ -404,18 +380,10 @@ function ChatPage() {
 
   const shouldShowGlobalTyping = isWaitingForEco && !lastEcoMessageIsPlaceholder;
   const [globalTypingVisible, setGlobalTypingVisible] = useState(false);
-  const [globalTypingState, setGlobalTypingState] = useState<
-    'hidden' | 'enter' | 'visible' | 'exit'
-  >('hidden');
-  const globalTypingShowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const globalTypingHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const globalTypingRemoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const [globalTypingState, setGlobalTypingState] = useState<'hidden' | 'enter' | 'visible' | 'exit'>('hidden');
+  const globalTypingShowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const globalTypingHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const globalTypingRemoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const globalTypingMinVisibleRef = useRef<number>(0);
 
   useEffect(() => {
@@ -438,28 +406,19 @@ function ChatPage() {
           globalTypingMinVisibleRef.current,
           Date.now() + MIN_VISIBLE,
         );
-        if (globalTypingState !== 'visible') {
-          setGlobalTypingState('visible');
-        }
+        if (globalTypingState !== 'visible') setGlobalTypingState('visible');
         return;
       }
 
-      if (globalTypingShowTimeoutRef.current) {
-        return;
-      }
+      if (globalTypingShowTimeoutRef.current) return;
 
       globalTypingShowTimeoutRef.current = window.setTimeout(() => {
         globalTypingShowTimeoutRef.current = null;
         globalTypingMinVisibleRef.current = Date.now() + MIN_VISIBLE;
         setGlobalTypingVisible(true);
         setGlobalTypingState('enter');
-        if (
-          typeof window !== 'undefined' &&
-          typeof window.requestAnimationFrame === 'function'
-        ) {
-          window.requestAnimationFrame(() => {
-            setGlobalTypingState('visible');
-          });
+        if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+          window.requestAnimationFrame(() => setGlobalTypingState('visible'));
         } else {
           setGlobalTypingState('visible');
         }
@@ -472,9 +431,7 @@ function ChatPage() {
       globalTypingShowTimeoutRef.current = null;
     }
 
-    if (!globalTypingVisible || globalTypingHideTimeoutRef.current) {
-      return;
-    }
+    if (!globalTypingVisible || globalTypingHideTimeoutRef.current) return;
 
     const remaining = globalTypingMinVisibleRef.current - Date.now();
     const delay = remaining > 0 ? remaining : 0;
@@ -492,15 +449,9 @@ function ChatPage() {
 
   useEffect(() => {
     return () => {
-      if (globalTypingShowTimeoutRef.current) {
-        clearTimeout(globalTypingShowTimeoutRef.current);
-      }
-      if (globalTypingHideTimeoutRef.current) {
-        clearTimeout(globalTypingHideTimeoutRef.current);
-      }
-      if (globalTypingRemoveTimeoutRef.current) {
-        clearTimeout(globalTypingRemoveTimeoutRef.current);
-      }
+      if (globalTypingShowTimeoutRef.current) clearTimeout(globalTypingShowTimeoutRef.current);
+      if (globalTypingHideTimeoutRef.current) clearTimeout(globalTypingHideTimeoutRef.current);
+      if (globalTypingRemoveTimeoutRef.current) clearTimeout(globalTypingRemoveTimeoutRef.current);
     };
   }, []);
 
@@ -516,14 +467,14 @@ function ChatPage() {
   const isEmptyState = messages.length === 0 && !erroApi;
   const heroSubtitleResetRef = useRef(isEmptyState);
   useEffect(() => {
-    if (isEmptyState && !heroSubtitleResetRef.current) {
-      setHeroSubtitle(pickHeroSubtitle());
-    }
+    if (isEmptyState && !heroSubtitleResetRef.current) setHeroSubtitle(pickHeroSubtitle());
     heroSubtitleResetRef.current = isEmptyState;
   }, [isEmptyState, setHeroSubtitle]);
   const hasComposerText = composerValue.trim().length > 0;
-  const showInitialSuggestions =
-    isEmptyState && showQuick && !isWaitingForEco && !composerPending && !erroApi;
+
+  // herói limpo (sem sugestões em cima)
+  const showInitialSuggestions = false;
+
   const shouldShowSuggestionChips =
     showQuick &&
     !isEmptyState &&
@@ -533,10 +484,11 @@ function ChatPage() {
     !composerPending &&
     !erroApi &&
     !voicePanelOpen;
+
   const canRetry = Boolean(
     lastAttempt &&
-    erroApi &&
-    (erroApi === NETWORK_ERROR_MESSAGE || erroApi === CORS_ERROR_MESSAGE)
+      erroApi &&
+      (erroApi === NETWORK_ERROR_MESSAGE || erroApi === CORS_ERROR_MESSAGE),
   );
 
   useEffect(() => {
@@ -575,21 +527,10 @@ function ChatPage() {
             source: 'prompt_auto',
             interaction_id: lastPromptFeedbackContext.interactionId,
           };
-          if (lastPromptFeedbackContext.messageId) {
-            payload.message_id = lastPromptFeedbackContext.messageId;
-          }
-          if (
-            lastPromptFeedbackContext.moduleCombo &&
-            lastPromptFeedbackContext.moduleCombo.length > 0
-          ) {
-            payload.module_combo = lastPromptFeedbackContext.moduleCombo;
-          }
-          if (lastPromptFeedbackContext.promptHash) {
-            payload.prompt_hash = lastPromptFeedbackContext.promptHash;
-          }
-          if (typeof lastPromptFeedbackContext.latencyMs === 'number') {
-            payload.latency_ms = lastPromptFeedbackContext.latencyMs;
-          }
+          if (lastPromptFeedbackContext.messageId) payload.message_id = lastPromptFeedbackContext.messageId;
+          if (lastPromptFeedbackContext.moduleCombo?.length) payload.module_combo = lastPromptFeedbackContext.moduleCombo;
+          if (lastPromptFeedbackContext.promptHash) payload.prompt_hash = lastPromptFeedbackContext.promptHash;
+          if (typeof lastPromptFeedbackContext.latencyMs === 'number') payload.latency_ms = lastPromptFeedbackContext.latencyMs;
           trackFeedbackEvent('FE: Feedback Prompt Closed', payload);
           handleFeedbackSubmitted();
         }}
@@ -612,9 +553,7 @@ function ChatPage() {
           ) : (
             <div
               className="opacity-0 translate-y-1 transition-opacity transition-transform duration-[160ms] ease-out data-[state=enter]:opacity-100 data-[state=visible]:opacity-100 data-[state=enter]:translate-y-0 data-[state=visible]:translate-y-0 data-[state=exit]:opacity-0 data-[state=exit]:translate-y-1"
-              data-state={
-                globalTypingState === 'hidden' ? undefined : globalTypingState
-              }
+              data-state={globalTypingState === 'hidden' ? undefined : globalTypingState}
             >
               <TypingDots variant="bubble" size="md" tone="auto" />
             </div>
@@ -625,8 +564,7 @@ function ChatPage() {
   ) : null;
 
   const mainTopPadding = 'calc(var(--eco-topbar-h,56px) + 12px)';
-  const mainScrollPadding =
-    'calc(var(--footer-h,72px) + env(safe-area-inset-bottom))';
+  const mainScrollPadding = 'calc(var(--footer-h,72px) + env(safe-area-inset-bottom))';
   const footerStyle: CSSProperties = {
     paddingBottom: safeAreaBottom + 16,
     '--footer-h': `${computedInputHeight}px`,
@@ -651,15 +589,8 @@ function ChatPage() {
           scrollPaddingBottom: mainScrollPadding,
         }}
       >
-        <div
-          role="feed"
-          aria-busy={isWaitingForEco || isSendingToEco}
-          className="flex-1"
-        >
-          <div
-            className="w-full px-4 sm:px-6 lg:px-10"
-            style={{ paddingTop: mainTopPadding }}
-          >
+        <div role="feed" aria-busy={isWaitingForEco || isSendingToEco} className="flex-1">
+          <div className="w-full px-4 sm:px-6 lg:px-10" style={{ paddingTop: mainTopPadding }}>
             <div className="mx-auto flex w-full max-w-[920px] flex-col items-center px-4 text-center sm:max-w-[600px] md:max-w-[760px]">
               {isEmptyState && (
                 <motion.div
@@ -673,26 +604,11 @@ function ChatPage() {
                       <h1 className="text-[clamp(28px,5vw,40px)] font-semibold leading-tight text-[color:var(--bubble-eco-text)]">
                         {saudacao}, {displayName || rawUserName}
                       </h1>
-                      <p
-                        className="mt-2 text-[clamp(14px,2.2vw,18px)] text-neutral-600"
-                        data-testid="chat-hero-subtitle"
-                      >
+                      <p className="mt-2 text-[clamp(14px,2.2vw,18px)] text-neutral-600" data-testid="chat-hero-subtitle">
                         {heroSubtitle || OPENING_VARIATIONS[0] || ''}
                       </p>
                     </div>
-                    <div className="flex w-full flex-col items-center">
-                      <h2 className="mt-4 text-[clamp(15px,2vw,18px)] font-semibold text-neutral-700">
-                        Pronto para começar?
-                      </h2>
-                      <QuickSuggestions
-                        visible={showInitialSuggestions}
-                        onPickSuggestion={handlePickSuggestion}
-                        rotatingItems={ROTATING_ITEMS}
-                        rotationMs={5000}
-                        className="w-full"
-                        disabled={composerPending}
-                      />
-                    </div>
+                    {/* herói limpo (sem sugestões aqui) */}
                   </div>
                 </motion.div>
               )}
@@ -729,7 +645,7 @@ function ChatPage() {
 
         {showNewMessagesChip && (
           <div
-            className="sticky bottom-24 z-30 flex justify-center px-2 sm:px-6"
+            className="sticky z-30 flex justify-center px-2 sm:px-6"
             style={{ bottom: safeAreaBottom + computedInputHeight + 24 }}
           >
             <button
@@ -748,15 +664,28 @@ function ChatPage() {
         className="composer sticky bottom-0 z-40 px-4 pb-[env(safe-area-inset-bottom)] pt-4 sm:px-6 sm:pt-5 lg:px-10"
         style={footerStyle}
       >
-        <div className="mx-auto w-full max-w-[min(700px,92vw)] space-y-3">
+        <div className="mx-auto w-full max-w-[min(700px,92vw)] space-y-2">
+          {/* QuickSuggestions compactas + rotativo acima do input */}
+          <QuickSuggestions
+            variant="footer"
+            visible={showQuick && !composerPending && !erroApi && !voicePanelOpen}
+            onPickSuggestion={handlePickSuggestion}
+            rotatingItems={ROTATING_ITEMS}
+            rotationMs={5000}
+            showRotating={true}
+            disabled={composerPending}
+            className="-mb-1"
+          />
+
           <SuggestionChips
             visible={shouldShowSuggestionChips}
             onPick={(suggestion, index) =>
               handlePickSuggestion(suggestion, { source: 'pill', index })
             }
             disabled={composerPending}
-            className="mb-1"
+            className="-mt-1"
           />
+
           <ChatInput
             ref={chatInputRef}
             value={composerValue}
@@ -772,6 +701,7 @@ function ChatPage() {
             onMicPress={handleOpenVoicePanel}
             isMicActive={voicePanelOpen}
           />
+
           <LoginGateModal
             open={loginGateOpen}
             onClose={() => setLoginGateOpen(false)}
@@ -802,4 +732,3 @@ function ChatPage() {
 };
 
 export default ChatPage;
-

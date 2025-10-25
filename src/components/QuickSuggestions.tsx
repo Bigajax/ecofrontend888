@@ -1,8 +1,8 @@
-import React from "react";
+import React, { memo } from "react";
 import clsx from "clsx";
 import RotatingPrompts from "./RotatingPrompts";
 
-/* --------- Tipo público para usar no ChatPage --------- */
+/* --------- Tipos públicos --------- */
 export type Suggestion = {
   id: string;
   label: string;          // texto visível
@@ -16,7 +16,7 @@ export type SuggestionPickMeta = {
   index: number;
 };
 
-type QuickSuggestionsProps = {
+export type QuickSuggestionsProps = {
   visible: boolean;
   className?: string;
 
@@ -24,14 +24,17 @@ type QuickSuggestionsProps = {
   suggestions?: Suggestion[];
   onPickSuggestion?: (s: Suggestion, meta?: SuggestionPickMeta) => void;
 
-  /** Legado: compat com versão antiga (texto direto) */
+  /** Legado: compat c/ versão antiga (texto direto) */
   onPick?: (text: string) => void;
 
   /** Rotativas */
-  showRotating?: boolean;          // default: true
-  rotatingItems?: Suggestion[];    // opcional — se não vier, usa DEFAULT_ROTATING
-  rotationMs?: number;             // default: 4500ms
+  showRotating?: boolean;         // default: true
+  rotatingItems?: Suggestion[];   // se não vier, usa DEFAULT_ROTATING
+  rotationMs?: number;            // default: 4500ms
   disabled?: boolean;
+
+  /** Onde aparece */
+  variant?: "hero" | "footer";    // default: hero
 };
 
 /* --------- Pílulas padrão (Eco convida) --------- */
@@ -123,11 +126,13 @@ export const DEFAULT_ROTATING: Suggestion[] = [
   },
 ];
 
-/* === Tipografia igual ao Drawer (clean) === */
-const labelCls =
-  "text-[15px] leading-[1.35] text-center text-slate-900/95 font-normal tracking-[-0.005em] antialiased";
+/* === Tipografia (clean) === */
+const labelBase =
+  "text-center text-slate-900/95 tracking-[-0.005em] antialiased";
+const labelHero = "text-[15px] leading-[1.35] font-normal";
+const labelFooter = "text-[14px] leading-[1.35] font-normal";
 
-export default function QuickSuggestions({
+function QuickSuggestionsComp({
   visible,
   className = "",
   suggestions = DEFAULT_SUGGESTIONS,
@@ -137,8 +142,12 @@ export default function QuickSuggestions({
   rotatingItems = DEFAULT_ROTATING,
   rotationMs = 4500,
   disabled = false,
+  variant = "hero",
 }: QuickSuggestionsProps) {
   if (!visible) return null;
+
+  const isFooter = variant === "footer";
+  const labelCls = clsx(labelBase, isFooter ? labelFooter : labelHero);
 
   const emitPick = (s: Suggestion, meta?: SuggestionPickMeta) => {
     if (disabled) return;
@@ -148,7 +157,13 @@ export default function QuickSuggestions({
 
   return (
     <div
-      className={`mx-auto mb-4 flex w-full max-w-[840px] flex-col items-center text-center md:mb-3 sm:mb-2 ${className}`}
+      className={clsx(
+        "mx-auto flex w-full flex-col items-center text-center",
+        isFooter
+          ? "mb-2 md:mb-2 sm:mb-1 max-w-[min(700px,92vw)]"
+          : "mb-4 md:mb-3 sm:mb-2 max-w-[840px]",
+        className
+      )}
       aria-label="Atalhos de início"
       role="region"
     >
@@ -156,9 +171,9 @@ export default function QuickSuggestions({
         <div className="w-full">
           <RotatingPrompts
             items={rotatingItems}
-            onPick={emitPick}
+            onPick={(s) => emitPick(s, { source: "rotating", index: -1 })}
             intervalMs={rotationMs}
-            className="w-full justify-center"
+            className={clsx("w-full justify-center", isFooter && "mb-1")}
             labelClassName={labelCls}
             disabled={disabled}
           />
@@ -166,7 +181,12 @@ export default function QuickSuggestions({
       )}
 
       <div
-        className="quick-suggestions-grid mt-3 grid w-full place-items-center grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3 sm:gap-2"
+        className={clsx(
+          "quick-suggestions-grid grid w-full place-items-center",
+          isFooter
+            ? "mt-2 grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2 sm:gap-1"
+            : "mt-3 grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3 sm:gap-2"
+        )}
         role="list"
       >
         {suggestions.map((s, index) => (
@@ -174,17 +194,27 @@ export default function QuickSuggestions({
             key={s.id}
             onClick={() => emitPick(s, { source: "pill", index })}
             className={clsx(
-              "inline-flex min-h-[48px] w-full min-w-[240px] shrink-0 snap-center items-center justify-center gap-2 rounded-2xl bg-white/90 px-4 py-3 text-center text-slate-900/95 ring-1 ring-slate-900/5 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 active:translate-y-[1px]",
-              disabled && "cursor-not-allowed opacity-60",
+              "inline-flex w-full shrink-0 snap-center items-center justify-center gap-2 rounded-2xl bg-white/90 text-slate-900/95 ring-1 ring-slate-900/5 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 active:translate-y-[1px]",
+              isFooter
+                ? "min-h-[44px] min-w-[180px] px-3.5 py-2.5"
+                : "min-h-[48px] min-w-[240px] px-4 py-3",
+              disabled && "cursor-not-allowed opacity-60"
             )}
             aria-label={`Sugerir: ${s.label}`}
             title={s.label}
             data-suggestion-id={s.id}
             type="button"
             disabled={disabled}
+            role="listitem"
           >
             {s.icon && (
-              <span className="leading-none text-[15px] md:text-[17px]" aria-hidden>
+              <span
+                className={clsx(
+                  "leading-none",
+                  isFooter ? "text-[14px]" : "text-[15px] md:text-[17px]"
+                )}
+                aria-hidden
+              >
                 {s.icon}
               </span>
             )}
@@ -195,3 +225,5 @@ export default function QuickSuggestions({
     </div>
   );
 }
+
+export default memo(QuickSuggestionsComp);
