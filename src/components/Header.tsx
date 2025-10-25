@@ -46,12 +46,14 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
     [/^\/memory\/?$/, 'Memórias'],
     [/^\/memory\/profile\/?$/, 'Perfil Emocional'],
     [/^\/memory\/report\/?$/, 'Relatórios'],
-    [/^\/chat\/?$/, 'ECO'],
+    [/^\/(app|chat)\/?$/, 'ECO'], // ⬅ ajuste: considera /app e /chat
   ];
   const autoTitle =
     routeTitleMap.find(([re]) => re.test(location.pathname))?.[1] || title || 'ECO';
 
-  const isChat = /^\/chat\/?$/.test(location.pathname);
+  // ⬅ ajuste: detecta chat em /app ou /chat (com ou sem / final)
+  const isChat = /^\/(app|chat)\/?$/.test(location.pathname);
+
   const shouldShowBack = showBackButton || !isChat;
   const scrolled = useScrolled(8);
 
@@ -96,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
     if (dx < -60) setDrawerOpen(false);
   };
 
-  /* ================= AppBar “pill” ================= */
+  /* ================= AppBar ================= */
   const TopBar = (
     <div className="sticky top-0 z-50 flex w-full justify-center px-3 pb-3 pt-[env(safe-area-inset-top,0px)] sm:px-6">
       <div
@@ -106,7 +108,9 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
           scrolled ? 'translate-y-[1px] bg-white/75' : 'bg-white/65',
         ].join(' ')}
       >
-        <div className="grid h-[64px] grid-cols-[auto_1fr_auto] items-center gap-3 px-3 sm:px-5">
+        {/* Grid de 3 colunas - centralização perfeita */}
+        <div className="grid grid-cols-[1fr,auto,1fr] items-center h-[64px] gap-3 px-3 sm:px-5">
+          {/* ESQUERDA */}
           <div className="flex items-center">
             <button
               onClick={() => setDrawerOpen(true)}
@@ -117,24 +121,30 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
             </button>
           </div>
 
-          <div className="justify-self-center">
+          {/* CENTRO */}
+          <div className="justify-self-center select-none">
             <Link
               to="/app"
-              className="flex items-center gap-2 select-none text-[color:var(--color-text-primary)] transition hover:opacity-95"
+              className="flex items-center gap-2 text-[color:var(--color-text-primary)] transition hover:opacity-95"
             >
               <span className={`${labelCls} text-[16px] md:text-[17px]`}>{autoTitle}</span>
             </Link>
           </div>
 
-          <div className="flex items-center justify-end gap-2">
-            {shouldShowBack && (
+          {/* DIREITA */}
+          <div className="justify-self-end flex items-center gap-2">
+            {/* só aparece se NÃO estiver no chat */}
+            {!isChat && shouldShowBack && (
               <button
                 onClick={() => navigate('/app')}
                 className={iconButtonClass}
                 aria-label="Voltar ao chat"
                 title="Voltar ao chat"
               >
-                <ArrowLeft className="h-5 w-5 text-[color:var(--color-text-primary)]" strokeWidth={1.75} />
+                <ArrowLeft
+                  className="h-5 w-5 text-[color:var(--color-text-primary)]"
+                  strokeWidth={1.75}
+                />
               </button>
             )}
 
@@ -159,7 +169,8 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
       </div>
     </div>
   );
-  /* ================= Drawer (overlay) ================= */
+
+  /* ================= Drawer ================= */
   const Drawer = (
     <AnimatePresence>
       {drawerOpen && (
