@@ -660,7 +660,7 @@ function ChatPage() {
             className="w-full px-4 sm:px-6 lg:px-10"
             style={{ paddingTop: mainTopPadding }}
           >
-            <div className="mx-auto flex w-full max-w-[920px] flex-col items-center px-4 text-center sm:max-w-[600px] md:max-w-[760px]">
+            <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-2 text-center">
               {isEmptyState && (
                 <motion.div
                   className="w-full"
@@ -669,7 +669,7 @@ function ChatPage() {
                   transition={{ duration: 0.28 }}
                 >
                   <div className="flex w-full flex-col items-center py-10 sm:py-12">
-                    <div className="mt-4 w-full max-w-[840px] rounded-2xl border border-black/5 bg-white/90 px-5 py-4 text-center backdrop-blur-sm transition-colors md:py-3 sm:py-2">
+                    <div className="mt-4 w-full rounded-2xl border border-black/5 bg-white/90 px-5 py-4 text-center backdrop-blur-sm transition-colors md:py-3 sm:py-2">
                       <h1 className="text-[clamp(28px,5vw,40px)] font-semibold leading-tight text-[color:var(--bubble-eco-text)]">
                         {saudacao}, {displayName || rawUserName}
                       </h1>
@@ -748,7 +748,7 @@ function ChatPage() {
         className="composer sticky bottom-0 z-40 px-4 pb-[env(safe-area-inset-bottom)] pt-4 sm:px-6 sm:pt-5 lg:px-10"
         style={footerStyle}
       >
-        <div className="mx-auto w-full max-w-[min(700px,92vw)] space-y-3">
+        <div className="mx-auto w-full max-w-5xl space-y-3">
           <SuggestionChips
             visible={shouldShowSuggestionChips}
             onPick={(suggestion, index) =>
@@ -757,21 +757,23 @@ function ChatPage() {
             disabled={composerPending}
             className="mb-1"
           />
-          <ChatInput
-            ref={chatInputRef}
-            value={composerValue}
-            onSendMessage={(t) => sendWithGuards(t)}
-            disabled={composerPending || (isGuest && guestGate.inputDisabled)}
-            placeholder={
-              isGuest && guestGate.inputDisabled
-                ? 'Crie sua conta para continuar…'
-                : undefined
-            }
-            onTextChange={handleComposerTextChange}
-            isSending={composerPending}
-            onMicPress={handleOpenVoicePanel}
-            isMicActive={voicePanelOpen}
-          />
+          <div className="mx-auto flex w-full max-w-5xl items-center gap-3">
+            <ChatInput
+              ref={chatInputRef}
+              value={composerValue}
+              onSendMessage={(t) => sendWithGuards(t)}
+              disabled={composerPending || (isGuest && guestGate.inputDisabled)}
+              placeholder={
+                isGuest && guestGate.inputDisabled
+                  ? 'Crie sua conta para continuar…'
+                  : undefined
+              }
+              onTextChange={handleComposerTextChange}
+              isSending={composerPending}
+              onMicPress={handleOpenVoicePanel}
+              isMicActive={voicePanelOpen}
+            />
+          </div>
           <LoginGateModal
             open={loginGateOpen}
             onClose={() => setLoginGateOpen(false)}
