@@ -1344,6 +1344,14 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
 
   const url = resolveApiUrl("/api/ask-eco");
 
+  let chunkTimeoutId: ReturnType<typeof setTimeout> | undefined;
+  const clearChunkTimeout = () => {
+    if (chunkTimeoutId) {
+      clearTimeout(chunkTimeoutId);
+      chunkTimeoutId = undefined;
+    }
+  };
+
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -1354,6 +1362,27 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       redirect: "follow",
       keepalive: false,
     });
+
+    const headerEntries = Array.from(response.headers.entries());
+    const headerMap = headerEntries.reduce<Record<string, string>>((acc, [key, value]) => {
+      acc[key.toLowerCase()] = value;
+      return acc;
+    }, {});
+    const contentType = headerMap["content-type"]?.toLowerCase() ?? "";
+    const isSseResponse = contentType.includes("text/event-stream");
+
+    if (isDev) {
+      try {
+        console.debug("[DIAG] stream:response", {
+          clientMessageId,
+          status: response.status,
+          decision: isSseResponse ? "sse" : "fallback",
+          headers: headerMap,
+        });
+      } catch {
+        /* noop */
+      }
+    }
 
     if (!response.ok) {
       let detail: string | undefined;
@@ -1371,6 +1400,47 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       throw error;
     }
 
+    if (!isSseResponse) {
+      const nowIso = new Date().toISOString();
+      if (isDev) {
+        try {
+          console.info("ℹ️ [ECO API] fallback aplicado", {
+            clientMessageId,
+            reason: "content_type",
+            contentType: contentType || null,
+            status: response.status,
+          });
+        } catch {
+          /* noop */
+        }
+      }
+
+      const fallbackResult = await parseNonStreamResponse(response);
+      const fallbackPayload =
+        fallbackResult.done ?? fallbackResult.metadata ?? (fallbackResult.text || undefined);
+
+      if (fallbackResult.text) {
+        onChunk?.({
+          index: 0,
+          text: fallbackResult.text,
+          metadata: fallbackResult.metadata,
+          interactionId: undefined,
+          messageId: undefined,
+          createdAt: nowIso,
+          isFirstChunk: true,
+          payload: fallbackPayload,
+        });
+      }
+
+      onDone?.({
+        payload: fallbackPayload,
+        interactionId: undefined,
+        messageId: undefined,
+        createdAt: nowIso,
+      });
+      return;
+    }
+
     const reader = response.body?.getReader();
     if (!reader) {
       const error = new Error("Eco stream response has no readable body.");
@@ -1380,6 +1450,71 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
 
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
+    let chunkReceived = false;
+    const chunkTimeoutMs = 4000;
+
+    chunkTimeoutId = setTimeout(() => {
+      if (!chunkReceived && isDev) {
+        try {
+          console.warn("⚠️ [ECO API] SSE sem chunks", {
+            clientMessageId,
+            status: response.status,
+            contentType: contentType || null,
+          });
+        } catch {
+          /* noop */
+        }
+      }
+    }, chunkTimeoutMs);
+
+    const wrappedOnChunk = (chunk: EcoStreamChunk) => {
+      if (!chunkReceived) {
+        chunkReceived = true;
+        clearChunkTimeout();
+      }
+      onChunk?.(chunk);
+    };
+
+    const wrappedOnDone = (event: EcoStreamDoneEvent) => {
+      clearChunkTimeout();
+      if (!chunkReceived) {
+        const fallbackText = normalizeAskEcoResponse(event?.payload as AskEcoResponse);
+        if (fallbackText) {
+          chunkReceived = true;
+          if (isDev) {
+            try {
+              console.info("ℹ️ [ECO API] fallback aplicado", {
+                clientMessageId,
+                reason: "no_chunks",
+                status: response.status,
+              });
+            } catch {
+              /* noop */
+            }
+          }
+
+          const payloadRecord =
+            event?.payload && typeof event.payload === "object"
+              ? (event.payload as Record<string, unknown>)
+              : undefined;
+
+          const fallbackMetadata = (payloadRecord?.metadata as unknown) ?? undefined;
+
+          wrappedOnChunk({
+            index: 0,
+            text: fallbackText,
+            metadata: fallbackMetadata,
+            interactionId: event?.interactionId,
+            messageId: event?.messageId,
+            createdAt: event?.createdAt,
+            isFirstChunk: true,
+            payload: event?.payload,
+          });
+        }
+      }
+
+      onDone?.(event);
+    };
 
     const flushBuffer = (finalFlush = false) => {
       if (buffer.length === 0) return;
@@ -1390,8 +1525,8 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
         if (eventBlock.length > 0) {
           dispatchSseBlock(eventBlock, {
             nextChunkIndex,
-            onChunk,
-            onDone,
+            onChunk: wrappedOnChunk,
+            onDone: wrappedOnDone,
             onPromptReady,
             onControl,
           });
@@ -1402,8 +1537,8 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       if (finalFlush && buffer.length > 0) {
         dispatchSseBlock(buffer, {
           nextChunkIndex,
-          onChunk,
-          onDone,
+          onChunk: wrappedOnChunk,
+          onDone: wrappedOnDone,
           onPromptReady,
           onControl,
         });
@@ -1423,8 +1558,11 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       flushBuffer();
     }
 
+    clearChunkTimeout();
+
     onDone?.({ payload: undefined });
   } catch (error) {
+    clearChunkTimeout();
     if (signal?.aborted) {
       const abortError =
         error instanceof DOMException && error.name === "AbortError"
