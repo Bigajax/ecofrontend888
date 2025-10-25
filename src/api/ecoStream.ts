@@ -1108,8 +1108,15 @@ const toFiniteNumber = (value: unknown): number | undefined => {
 const normalizeChunkData = (
   payload: unknown,
 ): { index: number; text?: string; done?: boolean; meta?: Record<string, unknown> } | null => {
-  const rawRecord = toRecord(payload);
-  const dataRecord = toRecord((rawRecord as { data?: unknown })?.data) ?? rawRecord;
+  const rawRecord =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
+      : undefined;
+  const dataValue = (rawRecord as { data?: unknown })?.data;
+  const dataRecord =
+    dataValue && typeof dataValue === "object"
+      ? (dataValue as Record<string, unknown>)
+      : rawRecord;
 
   if (!dataRecord || typeof dataRecord !== "object") {
     console.warn("[SSE] Invalid format", payload);
@@ -1143,10 +1150,14 @@ const normalizeChunkData = (
 
   const doneValue = (dataRecord as { done?: unknown }).done === true ? true : undefined;
 
+  const metaValue = (dataRecord as { meta?: unknown }).meta;
+  const metadataValue = (dataRecord as { metadata?: unknown }).metadata;
   const metaRecord =
-    toRecord((dataRecord as { meta?: unknown }).meta) ??
-    toRecord((dataRecord as { metadata?: unknown }).metadata) ??
-    undefined;
+    metaValue && typeof metaValue === "object"
+      ? (metaValue as Record<string, unknown>)
+      : metadataValue && typeof metadataValue === "object"
+        ? (metadataValue as Record<string, unknown>)
+        : undefined;
 
   return {
     index: Math.trunc(indexValue),
