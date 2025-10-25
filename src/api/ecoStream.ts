@@ -290,7 +290,15 @@ export const processEventStream = async (
     return false;
   };
 
-  const { signal } = options;
+  const userSignal = options.signal;
+  const internalCtrl = new AbortController();
+  const supportsAbortAny = typeof AbortSignal !== "undefined" && typeof (AbortSignal as any).any === "function";
+  const effectiveSignal =
+    userSignal && !userSignal.aborted && supportsAbortAny
+      ? (AbortSignal as any).any([internalCtrl.signal, userSignal])
+      : internalCtrl.signal;
+  (globalThis as any).__ecoActiveCtrl = internalCtrl;
+
   let aborted = false;
 
   const handleAbort = () => {
@@ -298,13 +306,28 @@ export const processEventStream = async (
     aborted = true;
   };
 
-  if (signal) {
-    if (signal.aborted) {
-      handleAbort();
-      throw new DOMException("Aborted", "AbortError");
-    }
-    signal.addEventListener("abort", handleAbort, { once: true });
+  if (userSignal?.aborted) {
+    handleAbort();
+    internalCtrl.abort();
+    throw new DOMException("Aborted", "AbortError");
   }
+
+  if (userSignal && !userSignal.aborted) {
+    userSignal.addEventListener(
+      "abort",
+      () => {
+        try {
+          internalCtrl.abort();
+        } catch {
+          /* noop */
+        }
+      },
+      { once: true },
+    );
+  }
+
+  const signal = effectiveSignal;
+  signal.addEventListener?.("abort", handleAbort, { once: true });
 
   const recordChunkPreview = (text: unknown) => {
     if (!chunkDebugInfo) return;
@@ -893,7 +916,7 @@ export const processEventStream = async (
       ...(noTextReceived ? { noTextReceived: true } : {}),
     };
   } finally {
-    if (signal) {
+    if (signal && typeof signal.removeEventListener === "function") {
       signal.removeEventListener("abort", handleAbort);
     }
     try {
@@ -1305,7 +1328,6 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     userName,
     guestId,
     isGuest,
-    signal,
     headers,
     onChunk,
     onDone,
@@ -1497,6 +1519,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       onError?.(error);
       throw error;
     }
+    (globalThis as any).__ecoActiveReader = reader;
 
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
