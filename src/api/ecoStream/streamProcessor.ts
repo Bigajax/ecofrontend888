@@ -1194,7 +1194,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       signal: effectiveSignal,
       cache: "no-store",
       redirect: "follow",
-      keepalive: false,
+      keepalive: true,
     });
 
     const headerEntries = Array.from(response.headers.entries());
