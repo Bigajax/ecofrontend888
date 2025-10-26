@@ -1,12 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  disableGuestAutoEntry,
+  isGuestAutoEntryEnabled,
+} from '../constants/guest';
 
 interface RequireAuthProps {
   children: React.ReactNode;
 }
 
-type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
+type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated' | 'guest';
+
+const isGuestChatPath = (pathname: string): boolean => {
+  return pathname === '/app' || pathname === '/app/';
+};
 
 const loadingSkeleton = (
   <div className="flex min-h-screen w-full items-center justify-center bg-slate-50">
@@ -19,22 +27,37 @@ const loadingSkeleton = (
 
 const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
+  const [guestAllowed, setGuestAllowed] = useState(() => isGuestAutoEntryEnabled());
   const [status, setStatus] = useState<AuthStatus>('loading');
+
+  useEffect(() => {
+    setGuestAllowed(isGuestAutoEntryEnabled());
+  }, [location.pathname]);
 
   useEffect(() => {
     if (loading) {
       setStatus('loading');
     } else if (user) {
       setStatus('authenticated');
+    } else if (guestAllowed && isGuestChatPath(location.pathname)) {
+      setStatus('guest');
     } else {
       setStatus('unauthenticated');
     }
-  }, [loading, user]);
+  }, [guestAllowed, loading, location.pathname, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    disableGuestAutoEntry();
+    setGuestAllowed(false);
+  }, [user]);
 
   const content = useMemo(() => {
     switch (status) {
       case 'loading':
         return loadingSkeleton;
+      case 'guest':
       case 'authenticated':
         return <>{children}</>;
       case 'unauthenticated':
