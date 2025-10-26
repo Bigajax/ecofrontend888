@@ -48,7 +48,15 @@ export const useEcoStream = ({
     activeStreamClientIdRef = useRef<string | null>(null),
     activeAssistantIdRef = useRef<string | null>(null),
     streamActiveRef = useRef(false),
-    currentInteractionIdRef = useRef<string | null>(null);
+    currentInteractionIdRef = useRef<string | null>(null),
+    pendingSendRef = useRef<
+      | {
+          clientMessageId: string;
+          payload: { history: ChatMessageType[]; userMessage: ChatMessageType; systemHint?: string };
+        }
+      | null
+    >(null),
+    activeClientIdRef = useRef<string | null>(null);
 
   const tracking = useMessageTracking(), replyState = useReplyState();
 
@@ -60,7 +68,14 @@ export const useEcoStream = ({
     }
   }, []);
   const streamRefs = useMemo(
-    () => ({ controllerRef, streamTimersRef, activeStreamClientIdRef, activeAssistantIdRef, streamActiveRef }),
+    () => ({
+      controllerRef,
+      streamTimersRef,
+      activeStreamClientIdRef,
+      activeAssistantIdRef,
+      streamActiveRef,
+      activeClientIdRef,
+    }),
     [],
   );
 
@@ -76,7 +91,7 @@ export const useEcoStream = ({
     const activeController = controllerRef.current;
     if (activeController && !activeController.signal.aborted) {
       try {
-        activeController.abort();
+        activeController.abort("unmount");
       } catch {
         /* noop */
       }
@@ -86,6 +101,8 @@ export const useEcoStream = ({
     streamTimersRef.current = {};
     activeStreamClientIdRef.current = null;
     activeAssistantIdRef.current = null;
+    pendingSendRef.current = null;
+    activeClientIdRef.current = null;
   }, []);
 
   const ensureAssistantMessage: EnsureAssistantMessageFn = useCallback(
@@ -109,11 +126,15 @@ export const useEcoStream = ({
   );
 
   const beginStreamSafely = useCallback(
-    (history: ChatMessageType[], userMessage: ChatMessageType, systemHint?: string) =>
+    (
+      payload: { history: ChatMessageType[]; userMessage: ChatMessageType; systemHint?: string },
+      controller?: AbortController,
+    ) =>
       beginStream({
-        history,
-        userMessage,
-        systemHint,
+        history: payload.history,
+        userMessage: payload.userMessage,
+        systemHint: payload.systemHint,
+        controllerOverride: controller ?? undefined,
         ...streamRefs,
         setDigitando,
         setIsSending,
@@ -159,7 +180,7 @@ export const useEcoStream = ({
       setIsSending(true);
       activity?.onSend?.();
 
-      let placeholderAssistantId: string | null = null;
+      let historySnapshot: ChatMessageType[] | undefined;
       setMessages((prev) => {
         safeDebug('[DIAG] send', {
           userMsgId: clientMessageId,
@@ -173,25 +194,83 @@ export const useEcoStream = ({
           messagesLenAfter: prev.length + 1,
         });
         const next = [...prev, userMessage];
-        const ensureOptions = !upsertMessage ? { draftMessages: next } : undefined;
-        const assistantId = ensureAssistantMessage(clientMessageId, undefined, ensureOptions);
-        if (assistantId) {
-          placeholderAssistantId = assistantId;
-        }
-        beginStreamSafely(next, userMessage, systemHint);
+        historySnapshot = next;
         return next;
       });
 
-      if (placeholderAssistantId) {
-        activeAssistantIdRef.current = placeholderAssistantId;
+      const payload = {
+        history: historySnapshot ?? [userMessage],
+        userMessage,
+        systemHint,
+      };
+
+      pendingSendRef.current = { clientMessageId, payload };
+      try {
+        console.debug('[EcoStream] pending_send', {
+          clientMessageId,
+          historyLength: payload.history.length,
+        });
+      } catch {
+        /* noop */
       }
 
       if (scrollToBottom) {
         requestAnimationFrame(() => scrollToBottom(true));
       }
     },
-    [activity, beginStreamSafely, ensureAssistantMessage, scrollToBottom, setMessages, upsertMessage],
+    [activity, scrollToBottom, setMessages],
   );
+
+  useEffect(() => {
+    const pending = pendingSendRef.current;
+    if (!pending) return;
+
+    const { clientMessageId, payload } = pending;
+    if (!clientMessageId) {
+      pendingSendRef.current = null;
+      return;
+    }
+
+    if (activeClientIdRef.current === clientMessageId) {
+      pendingSendRef.current = null;
+      return;
+    }
+
+    const controller = new AbortController();
+    activeClientIdRef.current = clientMessageId;
+
+    controller.signal.addEventListener('abort', () => {
+      try {
+        console.warn('[EcoStream] aborted', {
+          clientMessageId,
+          reason: controller.reason ?? 'manual/cleanup',
+        });
+      } catch {
+        /* noop */
+      }
+    });
+
+    try {
+      console.info('[EcoStream] stream_init', { clientMessageId });
+    } catch {
+      /* noop */
+    }
+
+    const streamPromise = beginStreamSafely(payload, controller);
+    pendingSendRef.current = null;
+
+    const finalize = () => {
+      if (activeClientIdRef.current === clientMessageId) {
+        activeClientIdRef.current = null;
+      }
+    };
+
+    if (streamPromise && typeof (streamPromise as Promise<unknown>).finally === 'function') {
+      (streamPromise as Promise<unknown>).finally(finalize);
+    } else {
+      finalize();
+    }
+  });
 
   return { handleSendMessage, digitando, erroApi, setErroApi, pending: isSending } as const;
 };
