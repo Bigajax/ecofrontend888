@@ -18,6 +18,22 @@ import {
 } from "./useEcoStream/streamOrchestrator";
 import { safeDebug } from "./useEcoStream/utils";
 
+const makeSafeLogger = (method: "debug" | "info" | "warn") =>
+  (message: string, payload?: Record<string, unknown>) => {
+    try {
+      const logger = console[method] as ((msg?: any, ...args: any[]) => void) | undefined;
+      logger?.(message, payload);
+    } catch {
+      /* noop */
+    }
+  };
+
+const log = {
+  debug: makeSafeLogger("debug"),
+  info: makeSafeLogger("info"),
+  warn: makeSafeLogger("warn"),
+};
+
 interface UseEcoStreamOptions {
   messages?: ChatMessageType[];
   upsertMessage?: (message: ChatMessageType, options?: UpsertMessageOptions) => void;
@@ -129,12 +145,14 @@ export const useEcoStream = ({
     (
       payload: { history: ChatMessageType[]; userMessage: ChatMessageType; systemHint?: string },
       controller?: AbortController,
+      onFirstChunk?: () => void,
     ) =>
       beginStream({
         history: payload.history,
         userMessage: payload.userMessage,
         systemHint: payload.systemHint,
         controllerOverride: controller ?? undefined,
+        onFirstChunk,
         ...streamRefs,
         setDigitando,
         setIsSending,
@@ -154,7 +172,26 @@ export const useEcoStream = ({
         replyState,
         tracking,
       }),
-    [activity, ensureAssistantMessage, guestId, interactionCacheDispatch, isGuest, logSse, removeEcoEntry, replyState, streamRefs, tracking, setDigitando, setErroApi, setIsSending, setMessages, upsertMessage, updateCurrentInteractionId, userId, userName],
+    [
+      activity,
+      ensureAssistantMessage,
+      guestId,
+      interactionCacheDispatch,
+      isGuest,
+      logSse,
+      removeEcoEntry,
+      replyState,
+      streamRefs,
+      tracking,
+      setDigitando,
+      setErroApi,
+      setIsSending,
+      setMessages,
+      upsertMessage,
+      updateCurrentInteractionId,
+      userId,
+      userName,
+    ],
   );
 
   const handleSendMessage = useCallback(
@@ -205,14 +242,10 @@ export const useEcoStream = ({
       };
 
       pendingSendRef.current = { clientMessageId, payload };
-      try {
-        console.debug('[EcoStream] pending_send', {
-          clientMessageId,
-          historyLength: payload.history.length,
-        });
-      } catch {
-        /* noop */
-      }
+      log.debug('[EcoStream] pending_send', {
+        clientMessageId,
+        historyLength: payload.history.length,
+      });
 
       if (scrollToBottom) {
         requestAnimationFrame(() => scrollToBottom(true));
@@ -239,33 +272,33 @@ export const useEcoStream = ({
     const controller = new AbortController();
     activeClientIdRef.current = clientMessageId;
 
-    controller.signal.addEventListener('abort', () => {
-      try {
-        console.warn('[EcoStream] aborted', {
-          clientMessageId,
-          reason: controller.reason ?? 'manual/cleanup',
-        });
-      } catch {
-        /* noop */
-      }
+    controller.signal.addEventListener("abort", () => {
+      const signalWithReason = controller.signal as AbortSignal & { reason?: unknown };
+      const abortReason = signalWithReason.reason ?? (controller as unknown as { reason?: unknown }).reason;
+      log.warn("[EcoStream] aborted", {
+        clientMessageId,
+        reason: abortReason ?? "manual/cleanup",
+      });
     });
 
-    try {
-      console.info('[EcoStream] stream_init', { clientMessageId });
-    } catch {
-      /* noop */
-    }
+    log.info("[EcoStream] stream_init", { clientMessageId });
 
-    const streamPromise = beginStreamSafely(payload, controller);
+    let gotAnyChunk = false;
+    const streamPromise = beginStreamSafely(payload, controller, () => {
+      gotAnyChunk = true;
+    });
     pendingSendRef.current = null;
 
     const finalize = () => {
-      if (activeClientIdRef.current === clientMessageId) {
+      const stillActive = activeClientIdRef.current === clientMessageId;
+      const logger = stillActive ? log.info : log.debug;
+      logger("[EcoStream] stream_completed", { clientMessageId, gotAnyChunk });
+      if (stillActive) {
         activeClientIdRef.current = null;
       }
     };
 
-    if (streamPromise && typeof (streamPromise as Promise<unknown>).finally === 'function') {
+    if (streamPromise && typeof (streamPromise as Promise<unknown>).finally === "function") {
       (streamPromise as Promise<unknown>).finally(finalize);
     } else {
       finalize();

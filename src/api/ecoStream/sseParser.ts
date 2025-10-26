@@ -1,6 +1,10 @@
 /** Normaliza quebras de linha do SSE (CRLF/CR/LF → LF) */
 export const normalizeSseNewlines = (value: string): string => value.replace(/\r\n|\r|\n/g, "\n");
 
+// Ignora heartbeats ":" e linhas vazias. NUNCA finalize por controle
+// "prompt_ready" ou status diversos; finalize apenas por:
+// 1) evt { type: 'control', name: 'done' } OU
+// 2) reader.read().done === true (fechamento do servidor)
 export const parseSseEvent = (
   eventBlock: string,
 ): { type?: string; payload?: any; rawData?: string } | undefined => {

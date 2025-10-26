@@ -1047,6 +1047,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     userName,
     guestId,
     isGuest,
+    onFirstChunk,
     headers,
     onChunk,
     onDone,
@@ -1306,6 +1307,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       if (!chunkReceived) {
         chunkReceived = true;
         clearChunkTimeout();
+        onFirstChunk?.();
       }
       onChunk?.(chunk);
     };
