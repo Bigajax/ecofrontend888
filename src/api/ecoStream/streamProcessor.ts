@@ -1048,6 +1048,8 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     guestId,
     isGuest,
     onFirstChunk,
+    onStreamOpen,
+    onStreamAbort,
     headers,
     onChunk,
     onDone,
@@ -1231,6 +1233,11 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
           ? detail.trim()
           : `Eco stream request failed (${response.status})`,
       );
+      try {
+        onStreamAbort?.(error);
+      } catch {
+        /* noop */
+      }
       onError?.(error);
       throw error;
     }
@@ -1276,9 +1283,20 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       return;
     }
 
+    try {
+      onStreamOpen?.({ status: response.status, contentType: contentType || null });
+    } catch {
+      /* noop */
+    }
+
     const reader = response.body?.getReader();
     if (!reader) {
       const error = new Error("Eco stream response has no readable body.");
+      try {
+        onStreamAbort?.("no-readable-body");
+      } catch {
+        /* noop */
+      }
       onError?.(error);
       throw error;
     }
@@ -1400,13 +1418,26 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     onDone?.({ payload: undefined });
   } catch (error) {
     clearChunkTimeout();
-    if ((effectiveSignal as AbortSignal | undefined)?.aborted) {
+    const effective = effectiveSignal as AbortSignal & { reason?: unknown };
+    if (effective?.aborted) {
+      const abortReason =
+        effective?.reason ?? (userSignal as (AbortSignal & { reason?: unknown }) | undefined)?.reason ?? error;
+      try {
+        onStreamAbort?.(abortReason);
+      } catch {
+        /* noop */
+      }
       const abortError =
         error instanceof DOMException && error.name === "AbortError"
           ? error
           : new DOMException("Aborted", "AbortError");
       onError?.(abortError);
       throw abortError;
+    }
+    try {
+      onStreamAbort?.(error);
+    } catch {
+      /* noop */
     }
     onError?.(error);
     throw error;

@@ -34,6 +34,43 @@ const log = {
   warn: makeSafeLogger("warn"),
 };
 
+const resolveAbortReason = (input: unknown): string => {
+  if (typeof input === "string") {
+    const trimmed = input.trim();
+    if (trimmed.length > 0) return trimmed;
+  }
+  if (typeof input === "number" && Number.isFinite(input)) {
+    return String(input);
+  }
+  if (input instanceof DOMException) {
+    const domReason =
+      typeof (input as DOMException & { reason?: unknown }).reason === "string"
+        ? ((input as DOMException & { reason?: unknown }).reason as string).trim()
+        : "";
+    if (domReason) return domReason;
+    const domMessage = typeof input.message === "string" ? input.message.trim() : "";
+    if (domMessage) return domMessage;
+    const domName = typeof input.name === "string" ? input.name.trim() : "";
+    if (domName) return domName;
+    return "DOMException";
+  }
+  if (input instanceof Error) {
+    const errorMessage = typeof input.message === "string" ? input.message.trim() : "";
+    if (errorMessage) return errorMessage;
+    const errorName = typeof input.name === "string" ? input.name.trim() : "";
+    if (errorName) return errorName;
+    return "Error";
+  }
+  if (typeof input === "object" && input !== null) {
+    const maybeReason = (input as { reason?: unknown }).reason;
+    if (maybeReason !== undefined) {
+      const nested = resolveAbortReason(maybeReason);
+      if (nested !== "unknown") return nested;
+    }
+  }
+  return "unknown";
+};
+
 interface UseEcoStreamOptions {
   messages?: ChatMessageType[];
   upsertMessage?: (message: ChatMessageType, options?: UpsertMessageOptions) => void;
@@ -76,13 +113,19 @@ export const useEcoStream = ({
 
   const tracking = useMessageTracking(), replyState = useReplyState();
 
-  const logSse = useCallback((phase: "start" | "first-chunk" | "done" | "abort", payload: Record<string, unknown>) => {
-    try {
-      console.info(`[FE] sse:${phase}`, payload);
-    } catch {
-      /* noop */
-    }
-  }, []);
+  const logSse = useCallback(
+    (
+      phase: "open" | "start" | "first-chunk" | "delta" | "done" | "abort",
+      payload: Record<string, unknown>,
+    ) => {
+      try {
+        console.info(`[FE] sse:${phase}`, payload);
+      } catch {
+        /* noop */
+      }
+    },
+    [],
+  );
   const streamRefs = useMemo(
     () => ({
       controllerRef,
@@ -270,16 +313,27 @@ export const useEcoStream = ({
     }
 
     const controller = new AbortController();
+    controllerRef.current = controller;
     activeClientIdRef.current = clientMessageId;
 
-    controller.signal.addEventListener("abort", () => {
-      const signalWithReason = controller.signal as AbortSignal & { reason?: unknown };
-      const abortReason = signalWithReason.reason ?? (controller as unknown as { reason?: unknown }).reason;
-      log.warn("[EcoStream] aborted", {
-        clientMessageId,
-        reason: abortReason ?? "manual/cleanup",
-      });
-    });
+    controller.signal.addEventListener(
+      "abort",
+      () => {
+        const signalWithReason = controller.signal as AbortSignal & { reason?: unknown };
+        const rawReason = signalWithReason.reason ?? (controller as unknown as { reason?: unknown }).reason;
+        const resolvedReason = resolveAbortReason(rawReason);
+        log.warn("[EcoStream] aborted", {
+          clientMessageId,
+          reason: resolvedReason,
+        });
+        logSse("abort", {
+          clientMessageId,
+          reason: resolvedReason,
+          source: "controller.signal",
+        });
+      },
+      { once: true },
+    );
 
     log.info("[EcoStream] stream_init", { clientMessageId });
 
