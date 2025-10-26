@@ -22,3 +22,5 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 );
+
+// ✅ StrictMode permanece; os envios agora são idempotentes e fora do setState.

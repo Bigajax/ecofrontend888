@@ -43,6 +43,7 @@ interface StreamSharedContext {
   upsertMessage?: (message: ChatMessageType, options?: UpsertMessageOptions) => void;
   activeAssistantIdRef: MutableRefObject<string | null>;
   activeStreamClientIdRef: MutableRefObject<string | null>;
+  activeClientIdRef: MutableRefObject<string | null>;
   setDigitando: Dispatch<SetStateAction<boolean>>;
   updateCurrentInteractionId: (next: string | null | undefined) => void;
   streamTimersRef: MutableRefObject<Record<string, { startedAt: number; firstChunkAt?: number }>>;
@@ -435,11 +436,13 @@ interface BeginStreamParams {
   history: ChatMessageType[];
   userMessage: ChatMessageType;
   systemHint?: string;
+  controllerOverride?: AbortController;
   controllerRef: MutableRefObject<AbortController | null>;
   streamTimersRef: MutableRefObject<Record<string, { startedAt: number; firstChunkAt?: number }>>;
   activeStreamClientIdRef: MutableRefObject<string | null>;
   activeAssistantIdRef: MutableRefObject<string | null>;
   streamActiveRef: MutableRefObject<boolean>;
+  activeClientIdRef: MutableRefObject<string | null>;
   setDigitando: Dispatch<SetStateAction<boolean>>;
   setIsSending: Dispatch<SetStateAction<boolean>>;
   setErroApi: Dispatch<SetStateAction<string | null>>;
@@ -463,11 +466,13 @@ export const beginStream = ({
   history,
   userMessage,
   systemHint,
+  controllerOverride,
   controllerRef,
   streamTimersRef,
   activeStreamClientIdRef,
   activeAssistantIdRef,
   streamActiveRef,
+  activeClientIdRef,
   setDigitando,
   setIsSending,
   setErroApi,
@@ -505,7 +510,7 @@ export const beginStream = ({
     if (activeController && !activeController.signal.aborted) {
       try {
         streamActiveRef.current = false;
-        activeController.abort();
+        activeController.abort("new-send");
         if (typeof normalizedActiveId === "string" && normalizedActiveId) {
           logSse("abort", { clientMessageId: normalizedActiveId, reason: "new-send" });
         }
@@ -521,7 +526,7 @@ export const beginStream = ({
     }
   }
 
-  const controller = new AbortController();
+  const controller = controllerOverride ?? new AbortController();
   controllerRef.current = controller;
   activeStreamClientIdRef.current = clientMessageId;
   activeAssistantIdRef.current = null;
@@ -565,6 +570,7 @@ export const beginStream = ({
     upsertMessage,
     activeAssistantIdRef,
     activeStreamClientIdRef,
+    activeClientIdRef,
     setDigitando,
     updateCurrentInteractionId,
     streamTimersRef,
@@ -670,7 +676,8 @@ export const beginStream = ({
   });
 
   streamPromise.finally(() => {
-    if (controllerRef.current === controller) {
+    const isCurrentClient = activeClientIdRef.current === clientMessageId;
+    if (isCurrentClient && controllerRef.current === controller) {
       controllerRef.current = null;
     }
     const assistantId = tracking.assistantByClientRef.current[clientMessageId];
@@ -678,6 +685,23 @@ export const beginStream = ({
 
     const isActiveStream = activeStreamClientIdRef.current === clientMessageId;
     const wasAborted = controller.signal.aborted;
+
+    if (isCurrentClient) {
+      if (!wasAborted) {
+        try {
+          console.info('[EcoStream] stream_completed', { clientMessageId });
+        } catch {
+          /* noop */
+        }
+      }
+      activeClientIdRef.current = null;
+    } else {
+      try {
+        console.debug('[EcoStream] stream_final_ignored', { clientMessageId });
+      } catch {
+        /* noop */
+      }
+    }
 
     if (isActiveStream) {
       streamActiveRef.current = false;
@@ -721,5 +745,7 @@ export const beginStream = ({
       }
     }
   });
+
+  return streamPromise;
 };
 

@@ -59,6 +59,56 @@ export const useReplyState = (): ReplyStateController => {
   );
 };
 
+const resolveTargetKey = (message: ChatMessageType | null | undefined): string => {
+  if (!message) return "";
+  const explicitTarget = typeof (message as any)?.targetId === "string" ? (message as any).targetId.trim() : "";
+  if (explicitTarget) return explicitTarget;
+  const directClient =
+    (typeof message.clientMessageId === "string" && message.clientMessageId.trim()) ||
+    (typeof message.client_message_id === "string" && message.client_message_id.trim()) ||
+    "";
+  if (directClient) return directClient;
+  if (typeof message.id === "string" && message.id.trim()) {
+    return message.id.trim();
+  }
+  return "";
+};
+
+interface EnsureSameTargetIdOptions {
+  replaceIf?: (message: ChatMessageType) => boolean;
+}
+
+const ensureSameTargetId = (
+  messages: ChatMessageType[],
+  incoming: ChatMessageType,
+  options: EnsureSameTargetIdOptions = {},
+): ChatMessageType[] => {
+  if (!incoming) return messages;
+  const targetKey = resolveTargetKey(incoming);
+  if (!targetKey) {
+    return [...messages, incoming];
+  }
+
+  let replaced = false;
+  const nextMessages = messages.map((message) => {
+    const candidateKey = resolveTargetKey(message);
+    if (!candidateKey || candidateKey !== targetKey) {
+      return message;
+    }
+    if (options.replaceIf && !options.replaceIf(message)) {
+      return message;
+    }
+    replaced = true;
+    return { ...message, ...incoming };
+  });
+
+  if (replaced) {
+    return nextMessages;
+  }
+
+  return [...messages, incoming];
+};
+
 interface EnsureAssistantMessageParams {
   clientMessageId: string;
   event?: { interactionId?: string | null; messageId?: string | null; createdAt?: string | null };
@@ -239,14 +289,30 @@ export const ensureAssistantMessage = ({
   };
 
   if (draftMessages && !upsertMessage) {
-    draftMessages.push(assistantMessage);
+    const replaced = ensureSameTargetId(draftMessages, assistantMessage, {
+      replaceIf: (message) => {
+        const candidateRole = message.role ?? message.sender;
+        return (candidateRole === "assistant" || candidateRole === "eco") && resolveTargetKey(message) === normalizedClientId;
+      },
+    });
+    draftMessages.length = 0;
+    draftMessages.push(...replaced);
   } else if (upsertMessage) {
     upsertMessage(assistantMessage, {
       allowContentUpdate: true,
       patchSource: "stream_init",
     });
   } else {
-    setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+    setMessages((prevMessages) =>
+      ensureSameTargetId(prevMessages, assistantMessage, {
+        replaceIf: (message) => {
+          const candidateRole = message.role ?? message.sender;
+          return (
+            (candidateRole === "assistant" || candidateRole === "eco") && resolveTargetKey(message) === normalizedClientId
+          );
+        },
+      }),
+    );
   }
 
   try {
