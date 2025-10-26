@@ -34,6 +34,49 @@ export type EnsureAssistantMessageFn = (
 
 export type RemoveEcoEntryFn = (assistantMessageId?: string | null) => void;
 
+const formatAbortReason = (input: unknown): string => {
+  if (typeof input === "string") {
+    const trimmed = input.trim();
+    if (trimmed.length > 0) return trimmed;
+  }
+  if (typeof input === "number" && Number.isFinite(input)) {
+    return String(input);
+  }
+  if (input instanceof DOMException) {
+    const domReason =
+      typeof (input as DOMException & { reason?: unknown }).reason === "string"
+        ? ((input as DOMException & { reason?: unknown }).reason as string).trim()
+        : "";
+    if (domReason) return domReason;
+    const domMessage = typeof input.message === "string" ? input.message.trim() : "";
+    if (domMessage) return domMessage;
+    const domName = typeof input.name === "string" ? input.name.trim() : "";
+    if (domName) return domName;
+    return "DOMException";
+  }
+  if (input instanceof Error) {
+    const errorMessage = typeof input.message === "string" ? input.message.trim() : "";
+    if (errorMessage) return errorMessage;
+    const errorName = typeof input.name === "string" ? input.name.trim() : "";
+    if (errorName) return errorName;
+    return "Error";
+  }
+  if (typeof input === "object" && input !== null) {
+    const maybeReason = (input as { reason?: unknown }).reason;
+    if (maybeReason !== undefined) {
+      const nested = formatAbortReason(maybeReason);
+      if (nested !== "unknown") return nested;
+    }
+    try {
+      const serialized = JSON.stringify(input);
+      if (serialized && serialized !== "{}") return serialized;
+    } catch {
+      /* noop */
+    }
+  }
+  return "unknown";
+};
+
 interface StreamSharedContext {
   clientMessageId: string;
   normalizedClientId: string;
@@ -47,7 +90,10 @@ interface StreamSharedContext {
   setDigitando: Dispatch<SetStateAction<boolean>>;
   updateCurrentInteractionId: (next: string | null | undefined) => void;
   streamTimersRef: MutableRefObject<Record<string, { startedAt: number; firstChunkAt?: number }>>;
-  logSse: (phase: "start" | "first-chunk" | "done" | "abort", payload: Record<string, unknown>) => void;
+  logSse: (
+    phase: "open" | "start" | "first-chunk" | "delta" | "done" | "abort",
+    payload: Record<string, unknown>,
+  ) => void;
   replyState: ReplyStateController;
   tracking: MessageTrackingRefs;
   interactionCacheDispatch?: (action: InteractionMapAction) => void;
@@ -388,7 +434,12 @@ export const handleError = (
 ) => {
   const message = error instanceof Error ? error.message : "Não foi possível concluir a resposta da Eco.";
   context.setErroApi(message);
-  context.logSse("abort", { clientMessageId: context.normalizedClientId, reason: "error", message });
+  context.logSse("abort", {
+    clientMessageId: context.normalizedClientId,
+    reason: "error",
+    message,
+    source: "error-handler",
+  });
   delete context.streamTimersRef.current[context.normalizedClientId];
   if (context.tracking.userTextByClientIdRef.current[context.clientMessageId]) {
     delete context.tracking.userTextByClientIdRef.current[context.clientMessageId];
@@ -451,7 +502,10 @@ interface BeginStreamParams {
   ensureAssistantMessage: EnsureAssistantMessageFn;
   removeEcoEntry: RemoveEcoEntryFn;
   updateCurrentInteractionId: (next: string | null | undefined) => void;
-  logSse: (phase: "start" | "first-chunk" | "done" | "abort", payload: Record<string, unknown>) => void;
+  logSse: (
+    phase: "open" | "start" | "first-chunk" | "delta" | "done" | "abort",
+    payload: Record<string, unknown>,
+  ) => void;
   userId?: string;
   userName?: string;
   guestId?: string;
@@ -514,7 +568,11 @@ export const beginStream = ({
         streamActiveRef.current = false;
         activeController.abort("new-send");
         if (typeof normalizedActiveId === "string" && normalizedActiveId) {
-          logSse("abort", { clientMessageId: normalizedActiveId, reason: "new-send" });
+          logSse("abort", {
+            clientMessageId: normalizedActiveId,
+            reason: "new-send",
+            source: "controller",
+          });
         }
       } catch {
         /* noop */
@@ -591,6 +649,40 @@ export const beginStream = ({
     guestId,
     isGuest,
     signal: controller.signal,
+    onStreamOpen: (info) => {
+      const normalizedContentType = info?.contentType ?? null;
+      logSse("open", {
+        clientMessageId: normalizedClientId,
+        status: info?.status,
+        contentType: normalizedContentType,
+      });
+      try {
+        console.info("[EcoStream] onStreamOpen", {
+          clientMessageId,
+          status: info?.status ?? null,
+          contentType: normalizedContentType,
+        });
+      } catch {
+        /* noop */
+      }
+    },
+    onStreamAbort: (reason) => {
+      const formatted = formatAbortReason(reason);
+      logSse("abort", {
+        clientMessageId: normalizedClientId,
+        reason: formatted,
+        source: "fetch",
+      });
+      try {
+        console.warn("[EcoStream] stream_abort", {
+          clientMessageId,
+          reason: formatted,
+          source: "fetch",
+        });
+      } catch {
+        /* noop */
+      }
+    },
     onFirstChunk: () => {
       onFirstChunk?.();
     },
@@ -612,7 +704,8 @@ export const beginStream = ({
       const now = Date.now();
       const metrics = streamTimersRef.current[normalizedClientId];
       const totalMs = metrics ? now - metrics.startedAt : undefined;
-      logSse("done", { clientMessageId: normalizedClientId, totalMs });
+      const doneReason = event ? (event.payload ? "server-done" : "server-done-empty") : "missing-event";
+      logSse("done", { clientMessageId: normalizedClientId, totalMs, reason: doneReason });
       delete streamTimersRef.current[normalizedClientId];
 
       const assistantId = ensureAssistantMessage(clientMessageId, {
@@ -663,7 +756,12 @@ export const beginStream = ({
     }
     const message = error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
     setErroApi(message);
-    logSse("abort", { clientMessageId: normalizedClientId, reason: "start-error", message });
+    logSse("abort", {
+      clientMessageId: normalizedClientId,
+      reason: "start-error",
+      message,
+      source: "start",
+    });
     delete streamTimersRef.current[normalizedClientId];
     try {
       console.debug('[DIAG] error', {

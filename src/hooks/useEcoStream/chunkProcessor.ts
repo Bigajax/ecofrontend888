@@ -56,7 +56,10 @@ interface ApplyChunkToMessagesParams {
   chunk: EcoStreamChunk;
   ensureAssistantMessage: (clientMessageId: string, event?: unknown, options?: unknown) => string | null | undefined;
   setDigitando: Dispatch<SetStateAction<boolean>>;
-  logSse: (phase: "start" | "first-chunk" | "done" | "abort", payload: Record<string, unknown>) => void;
+  logSse: (
+    phase: "open" | "start" | "first-chunk" | "delta" | "done" | "abort",
+    payload: Record<string, unknown>,
+  ) => void;
   streamTimersRef: MutableRefObject<Record<string, { startedAt: number; firstChunkAt?: number }>>;
   assistantByClientRef: MutableRefObject<Record<string, string>>;
   activeStreamClientIdRef: MutableRefObject<string | null>;
@@ -137,6 +140,17 @@ export const applyChunkToMessages = ({
 
   const { userTextByClientIdRef } = tracking;
   const isFirstChunk = chunk.index === 0 || chunk.isFirstChunk === true;
+
+  try {
+    logSse("delta", {
+      clientMessageId: normalizedClientId,
+      chunkIndex: chunk.index,
+      len: appendedSource.length,
+      isFirstChunk,
+    });
+  } catch {
+    /* noop */
+  }
   if (isFirstChunk) {
     const metrics = streamTimersRef.current[normalizedClientId];
     if (metrics && metrics.firstChunkAt === undefined) {
