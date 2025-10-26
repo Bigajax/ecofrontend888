@@ -14,6 +14,93 @@ import {
   toRecord,
 } from "./utils";
 
+const toTrimmedString = (value: unknown): string | undefined => {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const pickFirstString = (...values: Array<unknown>): string | undefined => {
+  for (const value of values) {
+    const result = toTrimmedString(value);
+    if (result) return result;
+  }
+  return undefined;
+};
+
+const toNumberOrUndefined = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+};
+
+export interface ProcessSseHandlers {
+  appendAssistantDelta: (index: number, delta: string, event: Record<string, unknown>) => void;
+  onStreamDone: (event?: Record<string, unknown>) => void;
+  onControl?: (event: Record<string, unknown>) => void;
+  onPromptReady?: (event: Record<string, unknown>) => void;
+  onError?: (event: Record<string, unknown>) => void;
+}
+
+export const processSseLine = (
+  jsonLine: string,
+  handlers: ProcessSseHandlers,
+): void => {
+  if (!jsonLine) return;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonLine);
+  } catch {
+    return;
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return;
+  }
+
+  const event = parsed as Record<string, unknown>;
+  const type = toTrimmedString(event.type);
+
+  if (type === "control") {
+    const payloadRecord = toRecord(event.payload);
+    const name = pickFirstString(event.name, event.event, payloadRecord?.name, payloadRecord?.event);
+    if (name === "done") {
+      handlers.onStreamDone?.(event);
+      return;
+    }
+    if (name === "prompt_ready" || name === "prompt-ready") {
+      handlers.onPromptReady?.(event);
+      return;
+    }
+    handlers.onControl?.(event);
+    return;
+  }
+
+  if (type === "chunk") {
+    const payloadRecord = toRecord(event.payload);
+    const indexCandidate =
+      toNumberOrUndefined(event.index) ?? toNumberOrUndefined(payloadRecord?.index) ?? 0;
+    const partCandidate =
+      pickFirstString(event.delta, event.text, event.content) ??
+      pickFirstString(payloadRecord?.delta, payloadRecord?.text, payloadRecord?.content) ??
+      "";
+    if (!partCandidate) {
+      return;
+    }
+    handlers.appendAssistantDelta(indexCandidate ?? 0, partCandidate, event);
+    return;
+  }
+
+  if (type === "error") {
+    handlers.onError?.(event);
+  }
+};
+
 export const smartJoinText = (previous: string, next: string): string => {
   const parts: string[] = [];
   if (previous) parts.push(previous);
