@@ -118,6 +118,7 @@ export interface StartEcoStreamOptions {
   isGuest?: boolean;
   signal?: AbortSignal;
   headers?: Record<string, string>;
+  onFirstChunk?: () => void;
   onChunk?: (chunk: EcoStreamChunk) => void;
   onDone?: (event: EcoStreamDoneEvent) => void;
   onError?: (error: unknown) => void;

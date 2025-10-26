@@ -443,6 +443,7 @@ interface BeginStreamParams {
   activeAssistantIdRef: MutableRefObject<string | null>;
   streamActiveRef: MutableRefObject<boolean>;
   activeClientIdRef: MutableRefObject<string | null>;
+  onFirstChunk?: () => void;
   setDigitando: Dispatch<SetStateAction<boolean>>;
   setIsSending: Dispatch<SetStateAction<boolean>>;
   setErroApi: Dispatch<SetStateAction<string | null>>;
@@ -473,6 +474,7 @@ export const beginStream = ({
   activeAssistantIdRef,
   streamActiveRef,
   activeClientIdRef,
+  onFirstChunk,
   setDigitando,
   setIsSending,
   setErroApi,
@@ -589,6 +591,9 @@ export const beginStream = ({
     guestId,
     isGuest,
     signal: controller.signal,
+    onFirstChunk: () => {
+      onFirstChunk?.();
+    },
     onPromptReady: (event) => {
       if (controller.signal.aborted) return;
       handlePromptReady(event, sharedContext);
