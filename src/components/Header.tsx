@@ -1,8 +1,8 @@
 // Header.tsx — AppBar “pill” + Drawer lateral (ChatGPT-like, apple-ish)
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, NavLink, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, BarChart3, MessageCircle, MessageSquare } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, BarChart3, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrolled } from '@/hooks/useScrolled';
 import EcoBubbleOneEye from './EcoBubbleOneEye';
@@ -58,15 +58,6 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
 
   const shouldShowBack = showBackButton || !isChat;
   const scrolled = useScrolled(8);
-
-  const handleOpenFeedback = useCallback((source: 'header' | 'drawer') => {
-    if (typeof window === 'undefined') return;
-    window.dispatchEvent(
-      new CustomEvent('eco-feedback-open', {
-        detail: { source },
-      }),
-    );
-  }, []);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -245,18 +236,6 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
                 <BarChart3 className={iconCls} strokeWidth={1.75} />
                 <span className={labelCls}>Relatórios</span>
               </NavLink>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setDrawerOpen(false);
-                  handleOpenFeedback('drawer');
-                }}
-                className={navItem(false)}
-              >
-                <MessageCircle className={iconCls} strokeWidth={1.75} />
-                <span className={labelCls}>Feedback</span>
-              </button>
 
               {showBackButton && (
                 <button
