@@ -1,7 +1,7 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 
 import {
-  startEcoStream,
+  parseNonStreamResponse,
   type EcoStreamChunk,
   type EcoStreamControlEvent,
   type EcoStreamDoneEvent,
@@ -10,8 +10,14 @@ import {
 import { collectTexts } from "../../api/askEcoResponse";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
 import { sanitizeText } from "../../utils/sanitizeText";
-import type { MessageTrackingRefs, ReplyStateController } from "./messageState";
-import { applyChunkToMessages, extractSummaryRecord, mergeReplyMetadata } from "./chunkProcessor";
+import type { EnsureAssistantEventMeta, MessageTrackingRefs, ReplyStateController } from "./messageState";
+import {
+  applyChunkToMessages,
+  extractSummaryRecord,
+  mergeReplyMetadata,
+  processSseLine,
+  type ProcessSseHandlers,
+} from "./chunkProcessor";
 import {
   pickNumberFromRecords,
   pickStringArrayFromRecords,
@@ -19,6 +25,8 @@ import {
   toCleanString,
   toRecord,
 } from "./utils";
+import { resolveApiUrl } from "../../constants/api";
+import { buildIdentityHeaders } from "../../lib/guestId";
 
 export type InteractionMapAction = {
   type: "updateInteractionMap";
@@ -28,7 +36,7 @@ export type InteractionMapAction = {
 
 export type EnsureAssistantMessageFn = (
   clientMessageId: string,
-  event?: { interactionId?: string | null; messageId?: string | null; createdAt?: string | null },
+  event?: EnsureAssistantEventMeta,
   options?: { allowCreate?: boolean; draftMessages?: ChatMessageType[] },
 ) => string | null | undefined;
 
@@ -75,6 +83,109 @@ const formatAbortReason = (input: unknown): string => {
     }
   }
   return "unknown";
+};
+
+const mapHistoryMessage = (message: ChatMessageType) => {
+  if (!message) return { id: undefined, role: "assistant", content: "" };
+  const explicitRole = (message.role ?? undefined) as string | undefined;
+  const fallbackRole = message.sender === "user" ? "user" : "assistant";
+  const role = explicitRole === "eco" ? "assistant" : explicitRole ?? fallbackRole;
+  const rawContent =
+    typeof message.content === "string"
+      ? message.content
+      : typeof message.text === "string"
+      ? message.text
+      : message.content ?? message.text ?? "";
+  const content = typeof rawContent === "string" ? rawContent : String(rawContent ?? "");
+
+  return {
+    id: message.id,
+    role,
+    content,
+    client_message_id: message.client_message_id ?? (message as any)?.clientMessageId ?? message.id ?? undefined,
+  };
+};
+
+const buildEcoRequestBody = ({
+  history,
+  clientMessageId,
+  systemHint,
+  userId,
+  userName,
+  guestId,
+  isGuest,
+}: {
+  history: ChatMessageType[];
+  clientMessageId: string;
+  systemHint?: string;
+  userId?: string;
+  userName?: string;
+  guestId?: string;
+  isGuest: boolean;
+}): Record<string, unknown> => {
+  const mappedHistory = history.map(mapHistoryMessage);
+  const mensagens = mappedHistory.filter(
+    (message) =>
+      Boolean(message?.role) && typeof message.content === "string" && message.content.trim().length > 0,
+  );
+
+  const recentMensagens = mensagens.slice(-3);
+  const lastUserMessage = [...recentMensagens].reverse().find((message) => message.role === "user");
+
+  const texto = (() => {
+    if (!lastUserMessage) return "";
+    const content = lastUserMessage.content;
+    return typeof content === "string" ? content.trim() : "";
+  })();
+
+  const resolvedUserId = (() => {
+    const normalizedUserId = typeof userId === "string" ? userId.trim() : "";
+    if (normalizedUserId) return normalizedUserId;
+    const normalizedGuestId = typeof guestId === "string" ? guestId.trim() : "";
+    return normalizedGuestId;
+  })();
+
+  const now = new Date();
+  const timezone = (() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return undefined;
+    }
+  })();
+
+  const contextPayload: Record<string, unknown> = {
+    origem: "web",
+    ts: Date.now(),
+  };
+
+  if (typeof clientMessageId === "string" && clientMessageId.trim().length > 0) {
+    contextPayload.client_message_id = clientMessageId;
+  }
+
+  const payload: Record<string, unknown> = {
+    history: mappedHistory,
+    mensagens: recentMensagens,
+    texto,
+    clientHour: now.getHours(),
+    clientTz: timezone,
+    clientMessageId,
+    contexto: contextPayload,
+  };
+
+  if (resolvedUserId) {
+    payload.usuario_id = resolvedUserId;
+  }
+  if (userName && userName.trim()) {
+    payload.nome_usuario = userName.trim();
+  }
+  if (userId) payload.userId = userId;
+  if (userName) payload.userName = userName;
+  if (guestId) payload.guestId = guestId;
+  if (typeof isGuest === "boolean") payload.isGuest = isGuest;
+  if (systemHint && systemHint.trim()) payload.systemHint = systemHint.trim();
+
+  return payload;
 };
 
 interface StreamSharedContext {
@@ -640,114 +751,333 @@ export const beginStream = ({
     interactionCacheDispatch,
   };
 
-  const streamPromise = startEcoStream({
-    history,
-    clientMessageId,
-    systemHint,
-    userId,
-    userName,
-    guestId,
-    isGuest,
-    signal: controller.signal,
-    onStreamOpen: (info) => {
-      const normalizedContentType = info?.contentType ?? null;
-      logSse("open", {
-        clientMessageId: normalizedClientId,
-        status: info?.status,
-        contentType: normalizedContentType,
+  const streamStats = { aggregatedLength: 0, gotAnyChunk: false };
+
+  const streamPromise = (async () => {
+    const requestBody = buildEcoRequestBody({
+      history,
+      clientMessageId,
+      systemHint,
+      userId,
+      userName,
+      guestId,
+      isGuest,
+    });
+
+    const baseHeaders: Record<string, string> = {
+      Accept: "text/event-stream",
+      "Content-Type": "application/json",
+      ...buildIdentityHeaders(),
+    };
+
+    let response: Response;
+    try {
+      response = await fetch(resolveApiUrl("/api/ask-eco"), {
+        method: "POST",
+        headers: baseHeaders,
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+        cache: "no-store",
+        keepalive: true,
       });
-      try {
-        console.info("[EcoStream] onStreamOpen", {
-          clientMessageId,
-          status: info?.status ?? null,
-          contentType: normalizedContentType,
-        });
-      } catch {
-        /* noop */
-      }
-    },
-    onStreamAbort: (reason) => {
-      const formatted = formatAbortReason(reason);
+    } catch (error) {
+      const formatted = formatAbortReason(error);
       logSse("abort", {
         clientMessageId: normalizedClientId,
         reason: formatted,
         source: "fetch",
       });
+      throw error;
+    }
+
+    const headerEntries = Array.from(response.headers.entries());
+    const headerMap = headerEntries.reduce<Record<string, string>>((acc, [key, value]) => {
+      acc[key.toLowerCase()] = value;
+      return acc;
+    }, {});
+    const contentType = headerMap["content-type"]?.toLowerCase() ?? "";
+
+    logSse("open", {
+      clientMessageId: normalizedClientId,
+      status: response.status,
+      contentType,
+    });
+    try {
+      console.info("[EcoStream] onStreamOpen", {
+        clientMessageId,
+        status: response.status ?? null,
+        contentType,
+      });
+    } catch {
+      /* noop */
+    }
+
+    if (!response.ok) {
+      let detail: string | undefined;
       try {
-        console.warn("[EcoStream] stream_abort", {
-          clientMessageId,
-          reason: formatted,
-          source: "fetch",
-        });
+        detail = await response.text();
       } catch {
-        /* noop */
+        detail = undefined;
       }
-    },
-    onFirstChunk: () => {
-      onFirstChunk?.();
-    },
-    onPromptReady: (event) => {
+      const errorMessage =
+        detail && detail.trim() ? detail.trim() : `Eco stream request failed (${response.status})`;
+      throw new Error(errorMessage);
+    }
+
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+    let doneReceived = false;
+    let fatalError: Error | null = null;
+    let firstChunkDelivered = false;
+
+    const buildRecordChain = (rawEvent?: Record<string, unknown>): Record<string, unknown>[] => {
+      const eventRecord = toRecord(rawEvent) ?? undefined;
+      const payloadRecord = toRecord(eventRecord?.payload) ?? undefined;
+      const metadataRecord = toRecord(payloadRecord?.metadata) ?? toRecord(eventRecord?.metadata) ?? undefined;
+      const responseRecord = toRecord(payloadRecord?.response) ?? undefined;
+      const contextRecord = toRecord(payloadRecord?.context) ?? undefined;
+      return [metadataRecord, responseRecord, payloadRecord, contextRecord, eventRecord].filter(
+        Boolean,
+      ) as Record<string, unknown>[];
+    };
+
+    const extractPayloadRecord = (rawEvent?: Record<string, unknown>) => {
+      const eventRecord = toRecord(rawEvent);
+      return toRecord(eventRecord?.payload) ?? undefined;
+    };
+
+    const processChunkEvent = (index: number, delta: string, rawEvent: Record<string, unknown>) => {
       if (controller.signal.aborted) return;
-      handlePromptReady(event, sharedContext);
-    },
-    onChunk: (chunk) => {
-      if (controller.signal.aborted) return;
+      streamStats.gotAnyChunk = true;
+      streamStats.aggregatedLength += delta.length;
+      if (!firstChunkDelivered) {
+        firstChunkDelivered = true;
+        onFirstChunk?.();
+      }
+      const payloadRecord = extractPayloadRecord(rawEvent);
+      const metadataRecord =
+        toRecord(payloadRecord?.metadata) ?? toRecord((rawEvent as Record<string, unknown>)?.metadata);
+      const records = buildRecordChain(rawEvent);
+      const interactionId =
+        pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
+      const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
+      const createdAt =
+        pickStringFromRecords(records, ["created_at", "createdAt", "timestamp"]) ?? undefined;
+
+      const chunk: EcoStreamChunk = {
+        index,
+        text: delta,
+        interactionId,
+        messageId,
+        createdAt,
+        metadata: metadataRecord ?? undefined,
+        payload: payloadRecord ?? rawEvent,
+        isFirstChunk: index === 0,
+      };
+
       handleChunk(chunk, sharedContext);
-    },
-    onDone: (event) => {
+    };
+
+    const handlePromptEvent = (rawEvent: Record<string, unknown>) => {
       if (controller.signal.aborted) return;
+      const records = buildRecordChain(rawEvent);
+      const interactionId =
+        pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
+      const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
+      const createdAt =
+        pickStringFromRecords(records, ["created_at", "createdAt", "timestamp"]) ?? undefined;
+      const payloadRecord = extractPayloadRecord(rawEvent);
+
+      const promptEvent: EcoStreamPromptReadyEvent = {
+        interactionId,
+        messageId,
+        createdAt,
+        payload: payloadRecord ?? rawEvent,
+      };
+
+      handlePromptReady(promptEvent, sharedContext);
+    };
+
+    const handleControlEvent = (rawEvent: Record<string, unknown>) => {
+      if (controller.signal.aborted) return;
+      const records = buildRecordChain(rawEvent);
+      const interactionId =
+        pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
+      const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
+      const payloadRecord = extractPayloadRecord(rawEvent);
+      const name =
+        pickStringFromRecords([toRecord(rawEvent) ?? {}, payloadRecord ?? {}], ["name", "event", "type"]) ??
+        undefined;
+
+      const controlEvent: EcoStreamControlEvent = {
+        name,
+        interactionId,
+        messageId,
+        payload: payloadRecord ?? rawEvent,
+      };
+
+      handleControl(controlEvent, sharedContext);
+    };
+
+    const handleStreamDone = (rawEvent?: Record<string, unknown>) => {
+      if (controller.signal.aborted || doneReceived) return;
+      doneReceived = true;
 
       if (activeStreamClientIdRef.current === clientMessageId) {
         streamActiveRef.current = false;
       }
 
+      const records = buildRecordChain(rawEvent);
+      const interactionId =
+        pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
+      const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
+      const createdAt =
+        pickStringFromRecords(records, ["created_at", "createdAt", "timestamp"]) ?? undefined;
+      const clientMetaId =
+        pickStringFromRecords(records, ["client_message_id", "clientMessageId"]) ?? undefined;
+      const payloadRecord = extractPayloadRecord(rawEvent);
+
       const now = Date.now();
       const metrics = streamTimersRef.current[normalizedClientId];
       const totalMs = metrics ? now - metrics.startedAt : undefined;
-      const doneReason = event ? (event.payload ? "server-done" : "server-done-empty") : "missing-event";
+      const doneReason = rawEvent ? (payloadRecord ? "server-done" : "server-done-empty") : "missing-event";
       logSse("done", { clientMessageId: normalizedClientId, totalMs, reason: doneReason });
       delete streamTimersRef.current[normalizedClientId];
 
-      const assistantId = ensureAssistantMessage(clientMessageId, {
-        interactionId: event?.interactionId,
-        messageId: event?.messageId,
-        createdAt: event?.createdAt,
-      });
+      const ensureMeta: EnsureAssistantEventMeta = {
+        interactionId: interactionId ?? null,
+        messageId: messageId ?? null,
+        message_id: messageId ?? null,
+        clientMessageId: clientMetaId ?? null,
+        client_message_id: clientMetaId ?? null,
+        createdAt: createdAt ?? null,
+      };
+
+      const assistantId = ensureAssistantMessage(clientMessageId, ensureMeta);
       if (!assistantId) return;
 
       activeAssistantIdRef.current = assistantId;
 
+      const doneEvent: EcoStreamDoneEvent = {
+        interactionId: interactionId ?? undefined,
+        messageId: messageId ?? undefined,
+        createdAt: createdAt ?? undefined,
+        payload: payloadRecord ?? toRecord(rawEvent) ?? undefined,
+      };
+
       const doneContext: DoneContext = {
         ...sharedContext,
-        event,
+        event: doneEvent,
         setErroApi,
         removeEcoEntry,
         assistantId,
       };
 
       handleDone(doneContext);
-    },
-    onError: (error) => {
-      if (controller.signal.aborted) return;
-      if (activeStreamClientIdRef.current === clientMessageId) {
-        streamActiveRef.current = false;
+    };
+
+    const handleErrorEvent = (rawEvent: Record<string, unknown>) => {
+      const records = buildRecordChain(rawEvent);
+      const message =
+        pickStringFromRecords(records, ["message", "error", "detail", "reason"]) ??
+        "Erro na stream SSE da Eco.";
+      fatalError = new Error(message);
+    };
+
+    if (!contentType.includes("text/event-stream")) {
+      const fallbackResult = await parseNonStreamResponse(response);
+      const fallbackPayload =
+        fallbackResult.done ?? fallbackResult.metadata ?? (fallbackResult.text || undefined);
+      if (fallbackResult.text) {
+        processChunkEvent(0, fallbackResult.text, {
+          type: "chunk",
+          index: 0,
+          delta: fallbackResult.text,
+          payload: fallbackPayload,
+        } as Record<string, unknown>);
       }
-      const doneContext: DoneContext = {
-        ...sharedContext,
-        event: undefined,
-        setErroApi,
-        removeEcoEntry,
-        assistantId: sharedContext.activeAssistantIdRef.current ??
-          sharedContext.tracking.assistantByClientRef.current[clientMessageId] ??
-          "",
-      };
-      handleError(error, doneContext);
-    },
-    onControl: (event: EcoStreamControlEvent) => {
-      if (controller.signal.aborted) return;
-      handleControl(event, sharedContext);
-    },
-  });
+      handleStreamDone(
+        fallbackPayload
+          ? ({ type: "control", name: "done", payload: fallbackPayload } as Record<string, unknown>)
+          : undefined,
+      );
+      return;
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("Eco stream response has no readable body.");
+    }
+
+    (globalThis as any).__ecoActiveReader = reader;
+
+    const handlers: ProcessSseHandlers = {
+      appendAssistantDelta: (index, delta, event) => processChunkEvent(index, delta, event),
+      onStreamDone: (event) => handleStreamDone(event),
+      onPromptReady: (event) => handlePromptEvent(event),
+      onControl: (event) => handleControlEvent(event),
+      onError: (event) => handleErrorEvent(event),
+    };
+
+    const processEventBlock = (block: string) => {
+      if (!block) return;
+      const normalizedBlock = block.replace(/\r\n/g, "\n");
+      const lines = normalizedBlock.split("\n");
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith("data:")) continue;
+        const payload = trimmed.slice(5).trim();
+        if (!payload) continue;
+        processSseLine(payload, handlers);
+        if (fatalError) break;
+      }
+    };
+
+    while (true) {
+      if (controller.signal.aborted) break;
+      let chunk: ReadableStreamReadResult<Uint8Array>;
+      try {
+        chunk = await reader.read();
+      } catch (error: any) {
+        if (controller.signal.aborted || error?.name === "AbortError") {
+          break;
+        }
+        throw error;
+      }
+
+      const { value, done } = chunk;
+      if (done) {
+        buffer += decoder.decode();
+        if (buffer) {
+          processEventBlock(buffer);
+          buffer = "";
+        }
+        break;
+      }
+
+      if (value) {
+        buffer += decoder.decode(value, { stream: true });
+        let delimiterIndex = buffer.indexOf("\n\n");
+        while (delimiterIndex !== -1) {
+          const eventBlock = buffer.slice(0, delimiterIndex);
+          buffer = buffer.slice(delimiterIndex + 2);
+          processEventBlock(eventBlock);
+          if (fatalError) break;
+          delimiterIndex = buffer.indexOf("\n\n");
+        }
+      }
+
+      if (fatalError) break;
+    }
+
+    if (fatalError) {
+      throw fatalError;
+    }
+
+    if (!doneReceived && !controller.signal.aborted) {
+      handleStreamDone();
+    }
+  })();
 
   streamPromise.catch((error) => {
     if (controller.signal.aborted) return;
@@ -792,7 +1122,11 @@ export const beginStream = ({
     if (isCurrentClient) {
       if (!wasAborted) {
         try {
-          console.info('[EcoStream] stream_completed', { clientMessageId });
+          console.info('[EcoStream] stream_completed', {
+            clientMessageId,
+            gotAnyChunk: streamStats.gotAnyChunk,
+            aggregatedLength: streamStats.aggregatedLength,
+          });
         } catch {
           /* noop */
         }

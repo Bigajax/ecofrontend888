@@ -7,6 +7,11 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; text-rendering: o
 
 html, body, #root { height: 100%; }
 
+.chat-message-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;

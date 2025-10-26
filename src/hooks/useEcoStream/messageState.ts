@@ -26,6 +26,15 @@ export interface ReplyStateController {
   ecoReplyStateRef: MutableRefObject<EcoReplyState>;
 }
 
+export interface EnsureAssistantEventMeta {
+  interactionId?: string | null;
+  messageId?: string | null;
+  message_id?: string | null;
+  clientMessageId?: string | null;
+  client_message_id?: string | null;
+  createdAt?: string | null;
+}
+
 export const useMessageTracking = (): MessageTrackingRefs => {
   const assistantByClientRef = useRef<Record<string, string>>({});
   const clientByAssistantRef = useRef<Record<string, string>>({});
@@ -111,7 +120,7 @@ const ensureSameTargetId = (
 
 interface EnsureAssistantMessageParams {
   clientMessageId: string;
-  event?: { interactionId?: string | null; messageId?: string | null; createdAt?: string | null };
+  event?: EnsureAssistantEventMeta;
   options?: { allowCreate?: boolean; draftMessages?: ChatMessageType[] };
   tracking: MessageTrackingRefs;
   replyState: ReplyStateController;
@@ -125,6 +134,25 @@ const normalizeString = (value?: string | null): string => (typeof value === "st
 const normalizeTimestamp = (value?: string | null): string | undefined => {
   const trimmed = normalizeString(value);
   return trimmed || undefined;
+};
+
+const resolveClientKeys = (clientMessageId: string, event?: EnsureAssistantEventMeta): string[] => {
+  const keys = new Set<string>();
+  const base = normalizeString(clientMessageId);
+  if (base) keys.add(base);
+  if (event) {
+    const candidates = [
+      event.client_message_id,
+      event.clientMessageId,
+      event.message_id,
+      event.messageId,
+    ];
+    for (const candidate of candidates) {
+      const normalized = normalizeString(candidate);
+      if (normalized) keys.add(normalized);
+    }
+  }
+  return Array.from(keys);
 };
 
 export const ensureAssistantMessage = ({
@@ -146,16 +174,26 @@ export const ensureAssistantMessage = ({
   const { assistantByClientRef, clientByAssistantRef, pendingAssistantMetaRef } = tracking;
   const { ecoReplyStateRef, setEcoReplyByAssistantId } = replyState;
 
-  const mergePendingMeta = () => {
-    const pending = pendingAssistantMetaRef.current[normalizedClientId] ?? {};
-    const nextPending = { ...pending } as {
+  const resolvedClientKeys = (() => {
+    const keys = resolveClientKeys(clientMessageId, event);
+    if (keys.length > 0) return keys;
+    return [normalizedClientId];
+  })();
+
+  const mergePendingMeta = (clientKeys: string[]) => {
+    const [firstKey] = clientKeys;
+    const pendingSource = clientKeys
+      .map((key) => pendingAssistantMetaRef.current[key])
+      .find((entry) => Boolean(entry)) ??
+      {};
+    const nextPending = { ...pendingSource } as {
       interactionId?: string;
       messageId?: string;
       createdAt?: string;
     };
 
     const incomingInteractionId = normalizeString(event?.interactionId);
-    const incomingMessageId = normalizeString(event?.messageId);
+    const incomingMessageId = normalizeString(event?.messageId ?? event?.message_id);
     const incomingCreatedAt = normalizeTimestamp(event?.createdAt);
 
     if (incomingInteractionId) {
@@ -172,26 +210,38 @@ export const ensureAssistantMessage = ({
       Boolean(nextPending.interactionId) || Boolean(nextPending.messageId) || Boolean(nextPending.createdAt);
 
     if (hasPendingValues) {
-      pendingAssistantMetaRef.current[normalizedClientId] = nextPending;
+      for (const key of clientKeys) {
+        if (!key) continue;
+        pendingAssistantMetaRef.current[key] = nextPending;
+      }
     }
 
     return {
       interactionId: nextPending.interactionId,
       messageId: nextPending.messageId,
       createdAt: nextPending.createdAt,
+      clientMessageId: firstKey ?? normalizedClientId,
+      clientKeys,
     };
   };
 
-  const existingAssistantId = assistantByClientRef.current[normalizedClientId];
+  let existingAssistantId: string | undefined;
+  for (const key of resolvedClientKeys) {
+    const mapped = assistantByClientRef.current[key];
+    if (mapped) {
+      existingAssistantId = mapped;
+      break;
+    }
+  }
 
   if (!allowCreate && !existingAssistantId) {
-    const pendingMeta = mergePendingMeta();
+    const pendingMeta = mergePendingMeta(resolvedClientKeys);
     if (pendingMeta.interactionId) {
       updateCurrentInteractionId(pendingMeta.interactionId);
     }
     try {
       console.debug('[DIAG] eco:ensure-skip', {
-        clientMessageId: normalizedClientId,
+        clientMessageId: pendingMeta.clientMessageId ?? normalizedClientId,
         reason: 'create_not_allowed',
         pendingInteraction: event?.interactionId ?? null,
         pendingMessageId: event?.messageId ?? null,
@@ -202,7 +252,10 @@ export const ensureAssistantMessage = ({
     return null;
   }
 
-  const mergedMeta = mergePendingMeta();
+  const mergedMeta = mergePendingMeta(resolvedClientKeys);
+  const clientKeysForRegistration =
+    mergedMeta.clientKeys.length > 0 ? mergedMeta.clientKeys : resolvedClientKeys;
+  const primaryClientKey = mergedMeta.clientMessageId ?? normalizedClientId;
 
   if (mergedMeta.interactionId) {
     updateCurrentInteractionId(mergedMeta.interactionId);
@@ -220,16 +273,24 @@ export const ensureAssistantMessage = ({
     }
   };
 
-  if (existingAssistantId) {
-    assistantByClientRef.current[normalizedClientId] = existingAssistantId;
-    if (!clientByAssistantRef.current[existingAssistantId]) {
-      clientByAssistantRef.current[existingAssistantId] = normalizedClientId;
+  const registerClientKeys = (assistantId: string, clientKeys: string[]) => {
+    if (!assistantId) return;
+    const keys = clientKeys.length > 0 ? clientKeys : [normalizedClientId];
+    for (const key of keys) {
+      if (!key) continue;
+      assistantByClientRef.current[key] = assistantId;
     }
+    const firstKey = keys[0] ?? normalizedClientId;
+    clientByAssistantRef.current[assistantId] = firstKey;
+  };
+
+  if (existingAssistantId) {
+    registerClientKeys(existingAssistantId, clientKeysForRegistration);
     ensureReplyEntry(existingAssistantId);
 
     try {
       console.debug('[DIAG] eco:ensure-existing', {
-        clientMessageId: normalizedClientId,
+        clientMessageId: primaryClientKey,
         assistantId: existingAssistantId,
         allowCreate,
       });
@@ -252,6 +313,10 @@ export const ensureAssistantMessage = ({
           if (mergedMeta.createdAt && !nextMessage.createdAt) {
             nextMessage.createdAt = mergedMeta.createdAt;
           }
+          if (!nextMessage.client_message_id && primaryClientKey) {
+            nextMessage.client_message_id = primaryClientKey;
+            (nextMessage as { clientMessageId?: string }).clientMessageId = primaryClientKey;
+          }
           return nextMessage;
         }),
       );
@@ -265,15 +330,14 @@ export const ensureAssistantMessage = ({
   }
 
   const assistantId = `eco-${uuidv4()}`;
-  assistantByClientRef.current[normalizedClientId] = assistantId;
-  clientByAssistantRef.current[assistantId] = normalizedClientId;
+  registerClientKeys(assistantId, clientKeysForRegistration);
   ensureReplyEntry(assistantId);
 
   const createdAt = mergedMeta.createdAt ?? new Date().toISOString();
   const assistantMessage: ChatMessageType = {
     id: assistantId,
-    client_message_id: normalizedClientId,
-    clientMessageId: normalizedClientId,
+    client_message_id: primaryClientKey,
+    clientMessageId: primaryClientKey,
     sender: "eco",
     role: "assistant",
     content: "",
@@ -285,14 +349,14 @@ export const ensureAssistantMessage = ({
     message_id: mergedMeta.messageId ?? undefined,
     createdAt,
     updatedAt: createdAt,
-    metadata: mergeReplyMetadata(undefined, normalizedClientId),
+    metadata: mergeReplyMetadata(undefined, primaryClientKey),
   };
 
   if (draftMessages && !upsertMessage) {
     const replaced = ensureSameTargetId(draftMessages, assistantMessage, {
       replaceIf: (message) => {
         const candidateRole = message.role ?? message.sender;
-        return (candidateRole === "assistant" || candidateRole === "eco") && resolveTargetKey(message) === normalizedClientId;
+        return (candidateRole === "assistant" || candidateRole === "eco") && resolveTargetKey(message) === primaryClientKey;
       },
     });
     draftMessages.length = 0;
@@ -308,7 +372,7 @@ export const ensureAssistantMessage = ({
         replaceIf: (message) => {
           const candidateRole = message.role ?? message.sender;
           return (
-            (candidateRole === "assistant" || candidateRole === "eco") && resolveTargetKey(message) === normalizedClientId
+            (candidateRole === "assistant" || candidateRole === "eco") && resolveTargetKey(message) === primaryClientKey
           );
         },
       }),
@@ -318,7 +382,7 @@ export const ensureAssistantMessage = ({
   try {
     console.debug('[DIAG] eco:placeholder', {
       ecoMsgId: assistantId,
-      clientMessageId: normalizedClientId,
+      clientMessageId: primaryClientKey,
       createdAt,
     });
   } catch {
@@ -360,18 +424,27 @@ export const removeEcoEntry = ({
     return next;
   });
 
-  const clientMessageId = clientByAssistantRef.current[assistantMessageId];
-  if (clientMessageId) {
+  const mappedClientId = clientByAssistantRef.current[assistantMessageId];
+  if (mappedClientId) {
     delete clientByAssistantRef.current[assistantMessageId];
-    if (assistantByClientRef.current[clientMessageId] === assistantMessageId) {
-      delete assistantByClientRef.current[clientMessageId];
-    }
-    if (pendingAssistantMetaRef.current[clientMessageId]) {
-      delete pendingAssistantMetaRef.current[clientMessageId];
-    }
-    if (userTextByClientIdRef.current[clientMessageId]) {
-      delete userTextByClientIdRef.current[clientMessageId];
-    }
   }
+
+  const keysToClear = new Set<string>();
+  if (mappedClientId) keysToClear.add(mappedClientId);
+  Object.entries(assistantByClientRef.current).forEach(([clientKey, mappedAssistant]) => {
+    if (mappedAssistant === assistantMessageId) {
+      keysToClear.add(clientKey);
+    }
+  });
+
+  keysToClear.forEach((clientKey) => {
+    delete assistantByClientRef.current[clientKey];
+    if (pendingAssistantMetaRef.current[clientKey]) {
+      delete pendingAssistantMetaRef.current[clientKey];
+    }
+    if (userTextByClientIdRef.current[clientKey]) {
+      delete userTextByClientIdRef.current[clientKey];
+    }
+  });
 };
 

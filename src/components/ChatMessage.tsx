@@ -71,7 +71,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
           />
         )}
         <div className={bubbleClass} data-sender={sender}>
-          {showTypingDots ? <TypingDots /> : <span>{textToShow}</span>}
+          {showTypingDots ? <TypingDots /> : <span className="chat-message-text">{textToShow}</span>}
         </div>
       </div>
     </div>
