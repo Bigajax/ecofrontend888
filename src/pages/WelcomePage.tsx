@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TourInicial from '../components/TourInicial';
 import { useShouldShowTour } from '../hooks/useShouldShowTour';
@@ -10,7 +10,6 @@ export default function WelcomePage() {
   const { user } = useAuth();
   const { shouldShow, reason, markSeen } = useShouldShowTour();
   const [open, setOpen] = useState(false);
-  const shouldRedirectToChatRef = useRef(false);
 
   // Abre o tour em primeira visita ou quando forçado por query (ex: ?tour=1)
   useEffect(() => {
@@ -19,19 +18,28 @@ export default function WelcomePage() {
     }
   }, [shouldShow]);
 
-  const goNext = useCallback(() => {
-    markSeen();
-    const shouldGoToChat = Boolean(user) || shouldRedirectToChatRef.current;
-    navigate(shouldGoToChat ? '/app' : '/', { replace: true });
-    shouldRedirectToChatRef.current = false;
-  }, [markSeen, navigate, user]);
+  const closeTour = useCallback(
+    (targetPath?: string) => {
+      markSeen();
+      setOpen(false);
+
+      const destination = targetPath ?? (user ? '/app' : '/');
+      navigate(destination, { replace: true });
+    },
+    [markSeen, navigate, user]
+  );
+
+  const handleClose = useCallback(() => {
+    closeTour();
+  }, [closeTour]);
 
   const handleTourComplete = useCallback(() => {
-    shouldRedirectToChatRef.current = true;
     if (!user) {
       enableGuestAutoEntry();
     }
-  }, [user]);
+
+    closeTour('/app');
+  }, [closeTour, user]);
 
   if (!open) return null;
 
@@ -39,7 +47,7 @@ export default function WelcomePage() {
     <TourInicial
       reason={reason}
       nextPath="/app"
-      onClose={goNext}
+      onClose={handleClose}
       onComplete={handleTourComplete}
     />
   );

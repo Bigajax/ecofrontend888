@@ -31,7 +31,12 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose, onComplete, reason, 
 
   const handleComplete = useCallback(() => {
     mixpanel.track('Front-end: Tour Concluído');
-    if (onComplete) onComplete();
+
+    if (onComplete) {
+      onComplete();
+      return;
+    }
+
     onClose();
     const targetPath = nextPath ?? '/app';
 
