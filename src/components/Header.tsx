@@ -37,6 +37,8 @@ const drawerIconButtonClass = [
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white',
 ].join(' ');
 
+const FEEDBACK_URL = 'https://feedback777.vercel.app/';
+
 const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -148,13 +150,14 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
               </button>
             )}
 
-            <button
-              type="button"
-              onClick={() => handleOpenFeedback('header')}
+            <a
+              href={FEEDBACK_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="hidden sm:inline-flex items-center justify-center rounded-full bg-[color:var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
             >
               Feedback
-            </button>
+            </a>
 
             {onLogout && (
               <button
