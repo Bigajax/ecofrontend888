@@ -76,6 +76,10 @@ export const processSseLine = (
   }
 
   const event = parsed as Record<string, unknown>;
+  if ((event as { done?: unknown }).done === true) {
+    handlers.onStreamDone?.(event);
+    return;
+  }
   const fallbackEvent = normalizeEventKey(options?.eventName);
   const type = normalizeEventKey(toTrimmedString(event.type)) ?? fallbackEvent;
 
