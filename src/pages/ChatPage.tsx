@@ -90,6 +90,7 @@ function ChatPage() {
   const [composerValue, setComposerValue] = useState('');
   const [lastAttempt, setLastAttempt] = useState<{ text: string; hint?: string } | null>(null);
   const [voicePanelOpen, setVoicePanelOpen] = useState(false);
+  const sendingRef = useRef(false); // FIX: guard síncrono para bloquear envios concorrentes
   const ecoActivity = useEcoActivity();
 
   const behaviorTrackerRef = useRef({
@@ -327,6 +328,10 @@ function ChatPage() {
     async (text: string, systemHint?: string) => {
       const trimmed = (text ?? '').trim();
       if (!trimmed) return;
+      if (sendingRef.current) {
+        console.warn('[ChatPage] Bloqueio síncrono - já enviando'); // FIX: evita duplicar envio no mesmo tick
+        return;
+      }
       const blockReason = (() => {
         if (isComposerSending) return 'composer';
         if (pending) return 'pending';
@@ -340,21 +345,26 @@ function ChatPage() {
         });
         return;
       }
-      devLog('[ChatPage] send_start', {
-        preview: trimmed.slice(0, 60),
-        hasHint: Boolean(systemHint?.trim()),
-      });
-      setIsComposerSending(true);
-      setLastAttempt({ text: trimmed, hint: systemHint });
+      sendingRef.current = true; // FIX: trava imediatamente o novo envio
       try {
-        await streamAndPersist(trimmed, systemHint);
-        finalizeBehaviorMetrics();
-        setLastAttempt(null);
-      } finally {
-        setIsComposerSending(false);
-        devLog('[ChatPage] send_complete', {
+        devLog('[ChatPage] send_start', {
           preview: trimmed.slice(0, 60),
+          hasHint: Boolean(systemHint?.trim()),
         });
+        setIsComposerSending(true);
+        setLastAttempt({ text: trimmed, hint: systemHint });
+        try {
+          await streamAndPersist(trimmed, systemHint);
+          finalizeBehaviorMetrics();
+          setLastAttempt(null);
+        } finally {
+          setIsComposerSending(false);
+          devLog('[ChatPage] send_complete', {
+            preview: trimmed.slice(0, 60),
+          });
+        }
+      } finally {
+        sendingRef.current = false; // FIX: libera o bloqueio após término do envio
       }
     },
     [finalizeBehaviorMetrics, isComposerSending, pending, streamAndPersist, streaming],

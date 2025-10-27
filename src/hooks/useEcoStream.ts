@@ -168,7 +168,7 @@ export const useEcoStream = ({
       activeAssistantIdRef.current = null;
       pendingSendRef.current = null;
       activeClientIdRef.current = null;
-      streamLockRef.current = false;
+      streamLockRef.current = false; // FIX: garante liberação do lock na desmontagem
     };
   }, []);
 
@@ -250,9 +250,16 @@ export const useEcoStream = ({
       const rawText = text ?? "";
       if (!rawText.trim()) return;
 
+      if (streamLockRef.current) {
+        // FIX: trava síncrona para evitar múltiplos envios simultâneos
+        console.warn("[useEcoStream] Envio já em curso, ignorando");
+        return;
+      }
+
+      streamLockRef.current = true; // FIX: garante bloqueio antes do efeito processar o pending
+
       const activeController = controllerRef.current;
       const blockReason = (() => {
-        if (streamLockRef.current) return "active-stream";
         if (pendingSendRef.current) return "pending-send";
         if (activeController && !activeController.signal.aborted) return "active-controller";
         return null;
@@ -265,66 +272,72 @@ export const useEcoStream = ({
             textPreview: rawText.slice(0, 60),
           });
         }
+        streamLockRef.current = false; // FIX: libera o lock se outro guard impedir o envio
         return;
       }
 
-      const sanitized = sanitizeText(rawText, { collapseWhitespace: false });
-      const clientMessageId = uuidv4();
-      const userMessage: ChatMessageType = {
-        id: clientMessageId,
-        client_message_id: clientMessageId,
-        clientMessageId: clientMessageId,
-        sender: "user",
-        role: "user",
-        content: sanitized,
-        text: sanitized,
-        status: "done",
-        createdAt: Date.now(),
-      };
+      try {
+        const sanitized = sanitizeText(rawText, { collapseWhitespace: false });
+        const clientMessageId = uuidv4();
+        const userMessage: ChatMessageType = {
+          id: clientMessageId,
+          client_message_id: clientMessageId,
+          clientMessageId: clientMessageId,
+          sender: "user",
+          role: "user",
+          content: sanitized,
+          text: sanitized,
+          status: "done",
+          createdAt: Date.now(),
+        };
 
-      setErroApi(null);
-      setIsSending(true);
-      activity?.onSend?.();
+        setErroApi(null);
+        setIsSending(true);
+        activity?.onSend?.();
 
-      if (import.meta.env?.DEV) {
-        console.info("[EcoStream] send_queued", {
+        if (import.meta.env?.DEV) {
+          console.info("[EcoStream] send_queued", {
+            clientMessageId,
+            textPreview: sanitized.slice(0, 60),
+          });
+        }
+
+        let historySnapshot: ChatMessageType[] | undefined;
+        setMessages((prev) => {
+          safeDebug('[DIAG] send', {
+            userMsgId: clientMessageId,
+            textPreview: sanitized.slice(0, 80),
+            messagesLenBefore: prev.length,
+          });
+          safeDebug('[DIAG] setMessages:insert', {
+            targetId: clientMessageId,
+            role: 'user',
+            source: 'send',
+            messagesLenAfter: prev.length + 1,
+          });
+          const next = [...prev, userMessage];
+          historySnapshot = next;
+          return next;
+        });
+
+        const payload = {
+          history: historySnapshot ?? [userMessage],
+          userMessage,
+          systemHint,
+        };
+
+        pendingSendRef.current = { clientMessageId, payload }; // FIX: agenda envio sob lock ativo
+        log.debug('[EcoStream] pending_send', {
           clientMessageId,
-          textPreview: sanitized.slice(0, 60),
+          historyLength: payload.history.length,
         });
-      }
 
-      let historySnapshot: ChatMessageType[] | undefined;
-      setMessages((prev) => {
-        safeDebug('[DIAG] send', {
-          userMsgId: clientMessageId,
-          textPreview: sanitized.slice(0, 80),
-          messagesLenBefore: prev.length,
-        });
-        safeDebug('[DIAG] setMessages:insert', {
-          targetId: clientMessageId,
-          role: 'user',
-          source: 'send',
-          messagesLenAfter: prev.length + 1,
-        });
-        const next = [...prev, userMessage];
-        historySnapshot = next;
-        return next;
-      });
-
-      const payload = {
-        history: historySnapshot ?? [userMessage],
-        userMessage,
-        systemHint,
-      };
-
-      pendingSendRef.current = { clientMessageId, payload };
-      log.debug('[EcoStream] pending_send', {
-        clientMessageId,
-        historyLength: payload.history.length,
-      });
-
-      if (scrollToBottom) {
-        requestAnimationFrame(() => scrollToBottom(true));
+        if (scrollToBottom) {
+          requestAnimationFrame(() => scrollToBottom(true));
+        }
+      } catch (error) {
+        streamLockRef.current = false; // FIX: garante liberação em caso de erro inesperado
+        throw error;
       }
     },
     [activity, scrollToBottom, setMessages],
@@ -348,7 +361,6 @@ export const useEcoStream = ({
     const controller = new AbortController();
     controllerRef.current = controller;
     activeClientIdRef.current = clientMessageId;
-    streamLockRef.current = true;
     if (isMountedRef.current) {
       setHasActiveStream(true);
     }
@@ -381,7 +393,7 @@ export const useEcoStream = ({
         gotAnyChunk = true;
       });
     } catch (error) {
-      streamLockRef.current = false;
+      streamLockRef.current = false; // FIX: libera lock caso o stream falhe ao iniciar
       if (isMountedRef.current) {
         setHasActiveStream(false);
       }
@@ -393,7 +405,7 @@ export const useEcoStream = ({
       const stillActive = activeClientIdRef.current === clientMessageId;
       const logger = stillActive ? log.info : log.debug;
       logger("[EcoStream] stream_completed", { clientMessageId, gotAnyChunk });
-      streamLockRef.current = false;
+      streamLockRef.current = false; // FIX: libera lock somente após término da stream
       if (isMountedRef.current) {
         setHasActiveStream(false);
       }
