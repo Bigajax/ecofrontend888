@@ -156,16 +156,38 @@ export const useEcoStream = ({
     return () => {
       isMountedRef.current = false;
       const activeController = controllerRef.current;
+      const isStreaming = streamActiveRef.current === true;
       if (activeController && !activeController.signal.aborted) {
-        try {
-          activeController.abort("unmount");
-        } catch {
-          /* noop */
+        if (isStreaming) {
+          try {
+            console.warn("[EcoStream] cleanup_skip_abort", {
+              reason: "active-stream",
+              clientMessageId: activeStreamClientIdRef.current,
+            });
+          } catch {
+            /* noop */
+          }
+        } else {
+          try {
+            console.info("[EcoStream] cleanup_abort", {
+              reason: "unmount",
+              clientMessageId: activeStreamClientIdRef.current,
+            });
+          } catch {
+            /* noop */
+          }
+          try {
+            activeController.abort("unmount");
+          } catch {
+            /* noop */
+          }
         }
       }
-      streamActiveRef.current = false;
-      setStreamActive(false);
-      controllerRef.current = null;
+      if (!isStreaming) {
+        streamActiveRef.current = false;
+        setStreamActive(false);
+        controllerRef.current = null;
+      }
       streamTimersRef.current = {};
       activeStreamClientIdRef.current = null;
       activeAssistantIdRef.current = null;

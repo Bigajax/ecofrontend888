@@ -611,10 +611,20 @@ export const handleDone = (
   const aggregatedEntryLength = aggregatedEntry?.text ? aggregatedEntry.text.length : 0;
 
   if (!hasChunks || aggregatedEntryLength === 0) {
-    setTimeout(() => {
+    const scheduleFinalize = () => {
       const latestEntry = doneContext.replyState.ecoReplyStateRef.current[assistantId];
       finalizeWithEntry(latestEntry);
-    }, 100);
+    };
+
+    if (typeof queueMicrotask === "function") {
+      queueMicrotask(scheduleFinalize);
+    } else {
+      void Promise.resolve()
+        .then(scheduleFinalize)
+        .catch(() => {
+          scheduleFinalize();
+        });
+    }
   } else {
     finalizeWithEntry(aggregatedEntry);
   }
@@ -803,6 +813,15 @@ export const beginStream = ({
       try {
         streamActiveRef.current = false;
         setStreamActive(false);
+        try {
+          console.info("[SSE] aborting_active_stream", {
+            clientMessageId: normalizedActiveId,
+            reason: "new-send",
+            timestamp: Date.now(),
+          });
+        } catch {
+          /* noop */
+        }
         activeController.abort("new-send");
         if (typeof normalizedActiveId === "string" && normalizedActiveId) {
           logSse("abort", {
@@ -1486,12 +1505,22 @@ export const beginStream = ({
     }
 
     if (isActiveStream) {
+      const closeReason = wasAborted ? "stream_aborted" : "stream_completed";
+      try {
+        console.info("[SSE] event_source_close:pre", {
+          clientMessageId,
+          reason: closeReason,
+          timestamp: Date.now(),
+        });
+      } catch {
+        /* noop */
+      }
       streamActiveRef.current = false;
       setStreamActive(false);
       try {
         console.info("[SSE] event_source_close", {
           clientMessageId,
-          reason: wasAborted ? "stream_aborted" : "stream_completed",
+          reason: closeReason,
           timestamp: Date.now(),
         });
       } catch {
