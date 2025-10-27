@@ -1221,18 +1221,24 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       }
     }
 
-    if (!response.ok) {
-      let detail: string | undefined;
+    if (!response.ok || !isSseResponse) {
+      let detail = "";
       try {
         detail = await response.text();
       } catch {
-        detail = undefined;
+        detail = "";
       }
-      const error = new Error(
-        detail && detail.trim()
-          ? detail.trim()
-          : `Eco stream request failed (${response.status})`,
-      );
+
+      const trimmedDetail = detail.trim();
+      const preview = trimmedDetail.slice(0, 200);
+      const baseMessage = !response.ok
+        ? `Eco stream request failed (${response.status})`
+        : `Resposta inválida: status=${response.status} content-type=${contentType || "<desconhecido>"}`;
+      const message = trimmedDetail.startsWith("<!DOCTYPE")
+        ? `Gateway/edge retornou HTML (${response.status}). Ver backlogs. Trecho: ${preview}...`
+        : `${baseMessage}${preview ? ` body=${preview}...` : ""}`;
+
+      const error = new Error(message);
       try {
         onStreamAbort?.(error);
       } catch {
@@ -1240,47 +1246,6 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       }
       onError?.(error);
       throw error;
-    }
-
-    if (!isSseResponse) {
-      const nowIso = new Date().toISOString();
-      if (isDev) {
-        try {
-          console.info("ℹ️ [ECO API] fallback aplicado", {
-            clientMessageId,
-            reason: "content_type",
-            contentType: contentType || null,
-            status: response.status,
-          });
-        } catch {
-          /* noop */
-        }
-      }
-
-      const fallbackResult = await parseNonStreamResponse(response);
-      const fallbackPayload =
-        fallbackResult.done ?? fallbackResult.metadata ?? (fallbackResult.text || undefined);
-
-      if (fallbackResult.text) {
-        onChunk?.({
-          index: 0,
-          text: fallbackResult.text,
-          metadata: fallbackResult.metadata,
-          interactionId: undefined,
-          messageId: undefined,
-          createdAt: nowIso,
-          isFirstChunk: true,
-          payload: fallbackPayload,
-        });
-      }
-
-      onDone?.({
-        payload: fallbackPayload,
-        interactionId: undefined,
-        messageId: undefined,
-        createdAt: nowIso,
-      });
-      return;
     }
 
     try {
@@ -1401,16 +1366,24 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       }
     };
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        buffer = normalizeSseNewlines(buffer + decoder.decode());
-        flushBuffer(true);
-        break;
-      }
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          buffer = normalizeSseNewlines(buffer + decoder.decode());
+          flushBuffer(true);
+          break;
+        }
 
-      buffer = normalizeSseNewlines(buffer + decoder.decode(value, { stream: true }));
-      flushBuffer();
+        buffer = normalizeSseNewlines(buffer + decoder.decode(value, { stream: true }));
+        flushBuffer();
+      }
+    } finally {
+      try {
+        reader.releaseLock();
+      } catch {
+        /* noop */
+      }
     }
 
     clearChunkTimeout();
