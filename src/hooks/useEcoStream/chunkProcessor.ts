@@ -1,6 +1,7 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 
 import type { EcoStreamChunk } from "../../api/ecoStream";
+import { collectTexts } from "../../api/askEcoResponse";
 import { mapResponseEventType, normalizeControlName } from "../../api/ecoStream/eventMapper";
 import { sanitizeText } from "../../utils/sanitizeText";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
@@ -119,10 +120,30 @@ export const processSseLine = (
   if (isChunk) {
     const indexCandidate =
       toNumberOrUndefined(event.index) ?? toNumberOrUndefined(payloadRecord?.index) ?? 0;
-    const partCandidate =
-      pickFirstString(event.delta, event.text, event.content) ??
-      pickFirstString(payloadRecord?.delta, payloadRecord?.text, payloadRecord?.content) ??
-      "";
+    const partCandidate = (() => {
+      const sources = [
+        event.delta,
+        event.text,
+        event.content,
+        payloadRecord?.delta,
+        payloadRecord?.text,
+        payloadRecord?.content,
+      ];
+
+      for (const source of sources) {
+        const firstString = pickFirstString(source);
+        if (firstString) return firstString;
+
+        if (source !== null && typeof source === "object") {
+          const collected = collectTexts(source);
+          const firstCollected = collected
+            .map((text) => text.trim())
+            .find((text) => text.length > 0);
+          if (firstCollected) return firstCollected;
+        }
+      }
+      return "";
+    })();
     if (!partCandidate) {
       return;
     }
