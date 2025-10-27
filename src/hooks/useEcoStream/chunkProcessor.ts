@@ -1,6 +1,7 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 
 import type { EcoStreamChunk } from "../../api/ecoStream";
+import { mapResponseEventType, normalizeControlName } from "../../api/ecoStream/eventMapper";
 import { sanitizeText } from "../../utils/sanitizeText";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
 import type { ReplyStateController, MessageTrackingRefs, EcoReplyState } from "./messageState";
@@ -55,7 +56,9 @@ const normalizeEventKey = (value?: string | null): string | undefined => {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  return trimmed.toLowerCase().replace(/[\s-]+/g, "_");
+  const mapped = mapResponseEventType(trimmed);
+  const candidate = mapped.normalized ?? trimmed;
+  return normalizeControlName(candidate);
 };
 
 export const processSseLine = (
@@ -87,9 +90,17 @@ export const processSseLine = (
   const payloadName = pickFirstString(event.name, event.event, payloadRecord?.name, payloadRecord?.event);
   const normalizedPayloadName = normalizeEventKey(payloadName) ?? fallbackEvent;
 
-  const isPromptReady = normalizedPayloadName === "prompt_ready" || normalizedPayloadName === "promptready";
-  const isDone = normalizedPayloadName === "done";
-  const isControl = type === "control" || normalizedPayloadName === "control" || isPromptReady || isDone;
+  const isPromptReady =
+    normalizedPayloadName === "prompt_ready" ||
+    normalizedPayloadName === "promptready" ||
+    type === "prompt_ready";
+  const isDone = normalizedPayloadName === "done" || type === "done";
+  const isControl =
+    type === "control" ||
+    normalizedPayloadName === "control" ||
+    type === "control_command" ||
+    isPromptReady ||
+    isDone;
 
   if (isControl) {
     if (isDone) {
