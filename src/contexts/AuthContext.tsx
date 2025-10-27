@@ -53,21 +53,41 @@ function clearClientState() {
   } catch {}
 }
 
-async function safeCleanupAfterSignout(runCleanup: () => void) {
-  if (!isStreamActive()) {
-    runCleanup();
-    return;
-  }
+async function waitForIdle(timeoutMs = 4000) {
+  if (!isStreamActive()) return;
 
   await new Promise<void>((resolve) => {
+    let resolved = false;
+    let cleanup = () => {};
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
+      cleanup();
+      resolve();
+    };
     const off = onStreamActivityChange(() => {
       if (!isStreamActive()) {
-        off();
-        resolve();
+        finish();
       }
     });
-  });
+    const timeoutId = setTimeout(() => {
+      finish();
+    }, Math.max(0, timeoutMs));
+    cleanup = () => {
+      clearTimeout(timeoutId);
+      off();
+    };
 
+    if (!isStreamActive()) {
+      finish();
+    }
+  });
+}
+
+async function safeCleanupAfterSignout(runCleanup: () => void) {
+  if (isStreamActive()) {
+    await waitForIdle(4000);
+  }
   runCleanup();
 }
 
