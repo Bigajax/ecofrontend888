@@ -121,7 +121,7 @@ export const processSseLine = (
     const indexCandidate =
       toNumberOrUndefined(event.index) ?? toNumberOrUndefined(payloadRecord?.index) ?? 0;
     const partCandidate = (() => {
-      const sources = [
+      const directSources = [
         event.delta,
         event.text,
         event.content,
@@ -130,18 +130,36 @@ export const processSseLine = (
         payloadRecord?.content,
       ];
 
-      for (const source of sources) {
-        const firstString = pickFirstString(source);
-        if (firstString) return firstString;
+      const directText = pickFirstString(...directSources);
+      if (directText) {
+        return directText;
+      }
 
-        if (source !== null && typeof source === "object") {
+      const nestedSources = [...directSources, payloadRecord];
+
+      for (const source of nestedSources) {
+        if (!source) continue;
+
+        if (typeof source === "string") {
+          const normalized = source.trim();
+          if (normalized.length > 0) {
+            return source;
+          }
+          continue;
+        }
+
+        if (typeof source === "object") {
           const collected = collectTexts(source);
-          const firstCollected = collected
-            .map((text) => text.trim())
-            .find((text) => text.length > 0);
-          if (firstCollected) return firstCollected;
+          if (collected.length === 0) {
+            continue;
+          }
+          const joined = collected.join("");
+          if (joined.trim().length > 0) {
+            return joined;
+          }
         }
       }
+
       return "";
     })();
     if (!partCandidate) {
