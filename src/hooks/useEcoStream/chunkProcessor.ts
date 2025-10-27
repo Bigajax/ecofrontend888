@@ -47,9 +47,21 @@ export interface ProcessSseHandlers {
   onError?: (event: Record<string, unknown>) => void;
 }
 
+export interface ProcessSseLineOptions {
+  eventName?: string | null;
+}
+
+const normalizeEventKey = (value?: string | null): string | undefined => {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return trimmed.toLowerCase().replace(/[\s-]+/g, "_");
+};
+
 export const processSseLine = (
   jsonLine: string,
   handlers: ProcessSseHandlers,
+  options?: ProcessSseLineOptions,
 ): void => {
   if (!jsonLine) return;
   let parsed: unknown;
@@ -64,16 +76,23 @@ export const processSseLine = (
   }
 
   const event = parsed as Record<string, unknown>;
-  const type = toTrimmedString(event.type);
+  const fallbackEvent = normalizeEventKey(options?.eventName);
+  const type = normalizeEventKey(toTrimmedString(event.type)) ?? fallbackEvent;
 
-  if (type === "control") {
-    const payloadRecord = toRecord(event.payload);
-    const name = pickFirstString(event.name, event.event, payloadRecord?.name, payloadRecord?.event);
-    if (name === "done") {
+  const payloadRecord = toRecord(event.payload);
+  const payloadName = pickFirstString(event.name, event.event, payloadRecord?.name, payloadRecord?.event);
+  const normalizedPayloadName = normalizeEventKey(payloadName) ?? fallbackEvent;
+
+  const isPromptReady = normalizedPayloadName === "prompt_ready" || normalizedPayloadName === "promptready";
+  const isDone = normalizedPayloadName === "done";
+  const isControl = type === "control" || normalizedPayloadName === "control" || isPromptReady || isDone;
+
+  if (isControl) {
+    if (isDone) {
       handlers.onStreamDone?.(event);
       return;
     }
-    if (name === "prompt_ready" || name === "prompt-ready") {
+    if (isPromptReady) {
       handlers.onPromptReady?.(event);
       return;
     }
@@ -81,8 +100,8 @@ export const processSseLine = (
     return;
   }
 
-  if (type === "chunk") {
-    const payloadRecord = toRecord(event.payload);
+  const isChunk = type === "chunk" || normalizedPayloadName === "chunk";
+  if (isChunk) {
     const indexCandidate =
       toNumberOrUndefined(event.index) ?? toNumberOrUndefined(payloadRecord?.index) ?? 0;
     const partCandidate =
@@ -96,7 +115,7 @@ export const processSseLine = (
     return;
   }
 
-  if (type === "error") {
+  if (type === "error" || normalizedPayloadName === "error") {
     handlers.onError?.(event);
   }
 };

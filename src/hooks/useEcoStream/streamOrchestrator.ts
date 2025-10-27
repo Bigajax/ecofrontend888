@@ -1023,14 +1023,54 @@ export const beginStream = ({
       if (!block) return;
       const normalizedBlock = block.replace(/\r\n/g, "\n");
       const lines = normalizedBlock.split("\n");
+      let currentEventName: string | undefined;
+      const dataParts: string[] = [];
+
       for (const line of lines) {
         const trimmed = line.trim();
-        if (!trimmed || !trimmed.startsWith("data:")) continue;
-        const payload = trimmed.slice(5).trim();
-        if (!payload) continue;
-        processSseLine(payload, handlers);
-        if (fatalError) break;
+        if (!trimmed) continue;
+        if (trimmed.startsWith(":")) {
+          const comment = trimmed.slice(1).trim();
+          if (comment) {
+            try {
+              console.info("[SSE] comment", { comment });
+            } catch {
+              /* noop */
+            }
+          }
+          continue;
+        }
+        if (trimmed.startsWith("event:")) {
+          const declaredEvent = trimmed.slice(6).trim();
+          currentEventName = declaredEvent || undefined;
+          continue;
+        }
+        if (!trimmed.startsWith("data:")) continue;
+
+        const dataIndex = line.indexOf("data:");
+        const rawValue = dataIndex >= 0 ? line.slice(dataIndex + 5) : line.slice(5);
+        const normalizedValue = rawValue.startsWith(" ") ? rawValue.slice(1) : rawValue;
+        if (!normalizedValue.trim()) continue;
+        dataParts.push(normalizedValue);
       }
+
+      if (dataParts.length === 0) return;
+
+      const payload = dataParts.join("\n");
+      const payloadForParse = payload.trim();
+      if (!payloadForParse) return;
+
+      try {
+        console.info("[SSE] event_data", {
+          event: currentEventName ?? "message",
+          data: payloadForParse,
+        });
+      } catch {
+        /* noop */
+      }
+
+      processSseLine(payloadForParse, handlers, { eventName: currentEventName });
+      if (fatalError) return;
     };
 
     while (true) {
