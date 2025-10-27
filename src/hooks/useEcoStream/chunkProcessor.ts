@@ -1,6 +1,7 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 
 import type { EcoStreamChunk } from "../../api/ecoStream";
+import { collectTexts } from "../../api/askEcoResponse";
 import { mapResponseEventType, normalizeControlName } from "../../api/ecoStream/eventMapper";
 import { sanitizeText } from "../../utils/sanitizeText";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
@@ -119,10 +120,48 @@ export const processSseLine = (
   if (isChunk) {
     const indexCandidate =
       toNumberOrUndefined(event.index) ?? toNumberOrUndefined(payloadRecord?.index) ?? 0;
-    const partCandidate =
-      pickFirstString(event.delta, event.text, event.content) ??
-      pickFirstString(payloadRecord?.delta, payloadRecord?.text, payloadRecord?.content) ??
-      "";
+    const partCandidate = (() => {
+      const directSources = [
+        event.delta,
+        event.text,
+        event.content,
+        payloadRecord?.delta,
+        payloadRecord?.text,
+        payloadRecord?.content,
+      ];
+
+      const directText = pickFirstString(...directSources);
+      if (directText) {
+        return directText;
+      }
+
+      const nestedSources = [...directSources, payloadRecord];
+
+      for (const source of nestedSources) {
+        if (!source) continue;
+
+        if (typeof source === "string") {
+          const normalized = source.trim();
+          if (normalized.length > 0) {
+            return source;
+          }
+          continue;
+        }
+
+        if (typeof source === "object") {
+          const collected = collectTexts(source);
+          if (collected.length === 0) {
+            continue;
+          }
+          const joined = collected.join("");
+          if (joined.trim().length > 0) {
+            return joined;
+          }
+        }
+      }
+
+      return "";
+    })();
     if (!partCandidate) {
       return;
     }

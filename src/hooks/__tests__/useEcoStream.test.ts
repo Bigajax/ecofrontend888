@@ -89,6 +89,47 @@ describe('processSseLine event normalization', () => {
     expect(onStreamDone).not.toHaveBeenCalled();
   });
 
+  it('supports payload deltas provided as objects with nested text', () => {
+    const { handlers, appendAssistantDelta } = buildHandlers();
+
+    processSseLine(
+      JSON.stringify({
+        type: 'response.output_text.delta',
+        payload: { index: 1, delta: { text: 'Texto parcial' } },
+      }),
+      handlers,
+      { eventName: 'message' },
+    );
+
+    expect(appendAssistantDelta).toHaveBeenCalledTimes(1);
+    expect(appendAssistantDelta).toHaveBeenCalledWith(1, 'Texto parcial', expect.any(Object));
+  });
+
+  it('joins text fragments collected from nested payload arrays', () => {
+    const { handlers, appendAssistantDelta } = buildHandlers();
+
+    processSseLine(
+      JSON.stringify({
+        type: 'response.output_text.delta',
+        payload: {
+          index: 2,
+          delta: {
+            content: [
+              { text: 'Olá' },
+              { text: ' ' },
+              { text: 'Eco!' },
+            ],
+          },
+        },
+      }),
+      handlers,
+      { eventName: 'message' },
+    );
+
+    expect(appendAssistantDelta).toHaveBeenCalledTimes(1);
+    expect(appendAssistantDelta).toHaveBeenCalledWith(2, 'Olá Eco!', expect.any(Object));
+  });
+
   it('routes response.completed events to onStreamDone', () => {
     const { handlers, appendAssistantDelta, onStreamDone } = buildHandlers();
 
