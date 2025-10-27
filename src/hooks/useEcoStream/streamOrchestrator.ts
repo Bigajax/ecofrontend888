@@ -26,7 +26,7 @@ import {
 } from "./utils";
 import { resolveApiUrl } from "../../constants/api";
 import { buildIdentityHeaders } from "../../lib/guestId";
-import { markStreamActive, markStreamIdle } from "./streamStatus";
+import { setStreamActive } from "./streamStatus";
 
 export type InteractionMapAction = {
   type: "updateInteractionMap";
@@ -677,7 +677,7 @@ export const beginStream = ({
     if (activeController && !activeController.signal.aborted) {
       try {
         streamActiveRef.current = false;
-        markStreamIdle();
+        setStreamActive(false);
         activeController.abort("new-send");
         if (typeof normalizedActiveId === "string" && normalizedActiveId) {
           logSse("abort", {
@@ -703,7 +703,6 @@ export const beginStream = ({
   activeStreamClientIdRef.current = clientMessageId;
   activeAssistantIdRef.current = null;
   streamActiveRef.current = true;
-  markStreamActive();
 
   updateCurrentInteractionId(null);
 
@@ -773,14 +772,17 @@ export const beginStream = ({
     };
 
     let response: Response;
+    setStreamActive(true);
     try {
       response = await fetch(resolveApiUrl("/api/ask-eco"), {
         method: "POST",
+        mode: "cors",
+        credentials: "include",
         headers: baseHeaders,
         body: JSON.stringify(requestBody),
         signal: controller.signal,
         cache: "no-store",
-        keepalive: true,
+        // keepalive: true,  // ❌ NÃO usar em SSE
       });
     } catch (error) {
       const formatted = formatAbortReason(error);
@@ -930,7 +932,7 @@ export const beginStream = ({
 
       if (activeStreamClientIdRef.current === clientMessageId) {
         streamActiveRef.current = false;
-        markStreamIdle();
+        setStreamActive(false);
       }
 
       const records = buildRecordChain(rawEvent);
@@ -1127,7 +1129,7 @@ export const beginStream = ({
     if (controller.signal.aborted) return;
     if (activeStreamClientIdRef.current === clientMessageId) {
       streamActiveRef.current = false;
-      markStreamIdle();
+      setStreamActive(false);
     }
     const message = error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
     setErroApi(message);
@@ -1154,6 +1156,7 @@ export const beginStream = ({
   });
 
   streamPromise.finally(() => {
+    setStreamActive(false);
     const isCurrentClient = activeClientIdRef.current === clientMessageId;
     if (isCurrentClient && controllerRef.current === controller) {
       controllerRef.current = null;
@@ -1187,7 +1190,7 @@ export const beginStream = ({
 
     if (isActiveStream) {
       streamActiveRef.current = false;
-      markStreamIdle();
+      setStreamActive(false);
       activeStreamClientIdRef.current = null;
       activeAssistantIdRef.current = null;
       if (wasAborted && assistantId) {

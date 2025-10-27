@@ -17,7 +17,7 @@ import {
   type RemoveEcoEntryFn,
 } from "./useEcoStream/streamOrchestrator";
 import { safeDebug } from "./useEcoStream/utils";
-import { markStreamIdle } from "./useEcoStream/streamStatus";
+import { setStreamActive } from "./useEcoStream/streamStatus";
 
 const makeSafeLogger = (method: "debug" | "info" | "warn") =>
   (message: string, payload?: Record<string, unknown>) => {
@@ -163,7 +163,7 @@ export const useEcoStream = ({
         }
       }
       streamActiveRef.current = false;
-      markStreamIdle();
+      setStreamActive(false);
       controllerRef.current = null;
       streamTimersRef.current = {};
       activeStreamClientIdRef.current = null;
