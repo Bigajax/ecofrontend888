@@ -470,7 +470,8 @@ function ChatPage() {
     };
   }, []);
 
-  const shouldRenderGlobalTyping = globalTypingVisible || isSynthesizingAudio;
+  const shouldRenderTypingWrapper = isWaitingForEco || globalTypingVisible || isSynthesizingAudio;
+  const shouldShowTypingContent = globalTypingVisible || isSynthesizingAudio;
   const composerPending = pending || isComposerSending || isSendingToEco;
   const [hasPendingMessages, setHasPendingMessages] = useState(false);
   const lastMessageTokenRef = useRef<string>('');
@@ -525,9 +526,9 @@ function ChatPage() {
   }, [scrollInset, isAtBottom, scrollToBottom]);
 
   useEffect(() => {
-    if (!shouldRenderGlobalTyping || !isAtBottom) return;
+    if (!shouldShowTypingContent || !isAtBottom) return;
     scrollToBottom(false);
-  }, [shouldRenderGlobalTyping, isAtBottom, scrollToBottom]);
+  }, [shouldShowTypingContent, isAtBottom, scrollToBottom]);
 
   const feedbackPromptNode =
     showFeedback && lastEcoInfo?.msg ? (
@@ -552,8 +553,11 @@ function ChatPage() {
       />
     ) : null;
 
-  const typingIndicatorNode = shouldRenderGlobalTyping ? (
-    <div className="w-full flex justify-start" aria-live="polite">
+  const typingIndicatorNode = shouldRenderTypingWrapper ? (
+    <div
+      className={clsx('w-full flex justify-start', shouldShowTypingContent ? undefined : 'hidden')}
+      aria-live="polite"
+    >
       <div className="max-w-[800px] w-full min-w-0 flex items-center gap-2">
         <div className="flex-shrink-0 translate-y-[1px]">
           <EcoBubbleOneEye variant="message" state="thinking" size={30} />
@@ -568,7 +572,9 @@ function ChatPage() {
           ) : (
             <div
               className="opacity-0 translate-y-1 transition-opacity transition-transform duration-[160ms] ease-out data-[state=enter]:opacity-100 data-[state=visible]:opacity-100 data-[state=enter]:translate-y-0 data-[state=visible]:translate-y-0 data-[state=exit]:opacity-0 data-[state=exit]:translate-y-1"
-              data-state={globalTypingState === 'hidden' ? undefined : globalTypingState}
+              data-state={
+                shouldShowTypingContent && globalTypingState !== 'hidden' ? globalTypingState : undefined
+              }
             >
               <TypingDots variant="bubble" size="md" tone="auto" />
             </div>
