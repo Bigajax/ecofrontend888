@@ -131,7 +131,7 @@ const extractFinishReasonFromMeta = (meta: unknown): string | undefined => {
   return undefined;
 };
 
-const FIRST_EVENT_GRACE_MS = 35_000;
+const FIRST_EVENT_GRACE_MS = 30_000;
 const HEARTBEAT_GRACE_MS = 25_000;
 
 const applyMetaToStreamStats = (
@@ -1432,7 +1432,6 @@ export const beginStream = ({
 
   streamPromise.finally(() => {
     clearFirstEventGuard();
-    setStreamActive(false);
     const isCurrentClient = activeClientIdRef.current === clientMessageId;
     if (isCurrentClient && controllerRef.current === controller) {
       controllerRef.current = null;
@@ -1489,6 +1488,15 @@ export const beginStream = ({
     if (isActiveStream) {
       streamActiveRef.current = false;
       setStreamActive(false);
+      try {
+        console.info("[SSE] event_source_close", {
+          clientMessageId,
+          reason: wasAborted ? "stream_aborted" : "stream_completed",
+          timestamp: Date.now(),
+        });
+      } catch {
+        /* noop */
+      }
       activeStreamClientIdRef.current = null;
       activeAssistantIdRef.current = null;
       if (wasAborted && assistantId) {
