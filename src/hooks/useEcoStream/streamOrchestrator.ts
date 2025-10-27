@@ -344,6 +344,15 @@ export const handleDone = (
 ) => {
   const { event, clientMessageId, normalizedClientId, assistantId } = doneContext;
   if (doneContext.activeStreamClientIdRef.current === clientMessageId) {
+    try {
+      console.debug('[DIAG] setDigitando:before', {
+        clientMessageId,
+        value: false,
+        phase: 'handleDone',
+      });
+    } catch {
+      /* noop */
+    }
     doneContext.setDigitando(false);
   }
 
@@ -812,7 +821,25 @@ export const beginStream = ({
     if (activeController && !activeController.signal.aborted) {
       try {
         streamActiveRef.current = false;
+        try {
+          console.debug('[DIAG] setStreamActive:before', {
+            clientMessageId: normalizedActiveId,
+            value: false,
+            phase: 'abort-existing',
+          });
+        } catch {
+          /* noop */
+        }
         setStreamActive(false);
+        try {
+          console.debug('[DIAG] controller.abort:before', {
+            clientMessageId: normalizedActiveId,
+            reason: 'new-send',
+            timestamp: Date.now(),
+          });
+        } catch {
+          /* noop */
+        }
         try {
           console.info("[SSE] aborting_active_stream", {
             clientMessageId: normalizedActiveId,
@@ -846,6 +873,15 @@ export const beginStream = ({
   controllerRef.current = controller;
   activeStreamClientIdRef.current = clientMessageId;
   activeAssistantIdRef.current = null;
+  try {
+    console.debug('[DIAG] streamActiveRef:update', {
+      clientMessageId,
+      value: true,
+      phase: 'beginStream:start',
+    });
+  } catch {
+    /* noop */
+  }
   streamActiveRef.current = true;
 
   updateCurrentInteractionId(null);
@@ -854,6 +890,15 @@ export const beginStream = ({
     delete tracking.pendingAssistantMetaRef.current[clientMessageId];
   }
 
+  try {
+    console.debug('[DIAG] setDigitando:before', {
+      clientMessageId,
+      value: true,
+      phase: 'beginStream:start',
+    });
+  } catch {
+    /* noop */
+  }
   setDigitando(true);
 
   const placeholderAssistantId = ensureAssistantMessage(clientMessageId, undefined, {
@@ -984,6 +1029,15 @@ export const beginStream = ({
     }
 
     let response: Response;
+    try {
+      console.debug('[DIAG] setStreamActive:before', {
+        clientMessageId,
+        value: true,
+        phase: 'fetch:before',
+      });
+    } catch {
+      /* noop */
+    }
     setStreamActive(true);
     try {
       const url = resolveApiUrl("/api/ask-eco");
@@ -1170,6 +1224,15 @@ export const beginStream = ({
 
       if (activeStreamClientIdRef.current === clientMessageId) {
         streamActiveRef.current = false;
+        try {
+          console.debug('[DIAG] setStreamActive:before', {
+            clientMessageId,
+            value: false,
+            phase: 'handleStreamDone',
+          });
+        } catch {
+          /* noop */
+        }
         setStreamActive(false);
       }
 
@@ -1226,6 +1289,58 @@ export const beginStream = ({
           extractFinishReasonFromMeta(payloadRecord);
         if (finishReasonFallback) {
           sharedContext.streamStats.finishReasonFromMeta = finishReasonFallback;
+        }
+      }
+
+      const finishReasonNormalized = (() => {
+        const finishReason = sharedContext.streamStats.finishReasonFromMeta;
+        if (typeof finishReason === "string") {
+          const trimmed = finishReason.trim().toLowerCase();
+          return trimmed || undefined;
+        }
+        return undefined;
+      })();
+      const endedBeforeFirstChunk = !sharedContext.streamStats.gotAnyChunk;
+      const serverReportedClientDisconnect = finishReasonNormalized === "client_disconnect";
+      if (endedBeforeFirstChunk && serverReportedClientDisconnect) {
+        try {
+          console.warn("[DIAG] server_reported_client_disconnect", {
+            clientMessageId,
+            totalMs,
+            finishReason: sharedContext.streamStats.finishReasonFromMeta ?? null,
+          });
+        } catch {
+          /* noop */
+        }
+        try {
+          console.debug('[DIAG] setErroApi:before', {
+            clientMessageId,
+            value: 'A conexão foi encerrada antes da Eco responder. Tente novamente.',
+            phase: 'server_client_disconnect',
+          });
+        } catch {
+          /* noop */
+        }
+        try {
+          setErroApi("A conexão foi encerrada antes da Eco responder. Tente novamente.");
+        } catch {
+          /* noop */
+        }
+        if (!controller.signal.aborted) {
+          try {
+            console.debug('[DIAG] controller.abort:before', {
+              clientMessageId,
+              reason: 'server_reported_client_disconnect_before_first_chunk',
+              timestamp: Date.now(),
+            });
+          } catch {
+            /* noop */
+          }
+          try {
+            controller.abort('server_reported_client_disconnect_before_first_chunk');
+          } catch {
+            /* noop */
+          }
         }
       }
 
@@ -1423,9 +1538,27 @@ export const beginStream = ({
     clearFirstEventGuard();
     if (activeStreamClientIdRef.current === clientMessageId) {
       streamActiveRef.current = false;
+      try {
+        console.debug('[DIAG] setStreamActive:before', {
+          clientMessageId,
+          value: false,
+          phase: 'streamPromise:catch',
+        });
+      } catch {
+        /* noop */
+      }
       setStreamActive(false);
     }
     const message = error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
+    try {
+      console.debug('[DIAG] setErroApi:before', {
+        clientMessageId,
+        value: message,
+        phase: 'streamPromise:catch',
+      });
+    } catch {
+      /* noop */
+    }
     setErroApi(message);
     logSse("abort", {
       clientMessageId: normalizedClientId,
@@ -1516,6 +1649,15 @@ export const beginStream = ({
         /* noop */
       }
       streamActiveRef.current = false;
+      try {
+        console.debug('[DIAG] setStreamActive:before', {
+          clientMessageId,
+          value: false,
+          phase: 'streamPromise:finally',
+        });
+      } catch {
+        /* noop */
+      }
       setStreamActive(false);
       try {
         console.info("[SSE] event_source_close", {
@@ -1531,7 +1673,25 @@ export const beginStream = ({
       if (wasAborted && assistantId) {
         removeEcoEntry(assistantId);
       }
+      try {
+        console.debug('[DIAG] setDigitando:before', {
+          clientMessageId,
+          value: false,
+          phase: 'streamPromise:finally:active',
+        });
+      } catch {
+        /* noop */
+      }
       setDigitando(false);
+      try {
+        console.debug('[DIAG] setIsSending:before', {
+          clientMessageId,
+          value: false,
+          phase: 'streamPromise:finally:active',
+        });
+      } catch {
+        /* noop */
+      }
       setIsSending(false);
       activity?.onDone?.();
       try {

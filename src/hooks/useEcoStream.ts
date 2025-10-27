@@ -154,6 +154,14 @@ export const useEcoStream = ({
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
+      try {
+        console.debug('[DIAG] useEffect:cleanup', {
+          clientMessageId: activeStreamClientIdRef.current,
+          isStreaming: streamActiveRef.current === true,
+        });
+      } catch {
+        /* noop */
+      }
       isMountedRef.current = false;
       const activeController = controllerRef.current;
       const isStreaming = streamActiveRef.current === true;
@@ -177,6 +185,15 @@ export const useEcoStream = ({
             /* noop */
           }
           try {
+            console.debug('[DIAG] controller.abort:before', {
+              clientMessageId: activeStreamClientIdRef.current,
+              reason: 'unmount',
+              timestamp: Date.now(),
+            });
+          } catch {
+            /* noop */
+          }
+          try {
             activeController.abort("unmount");
           } catch {
             /* noop */
@@ -185,6 +202,15 @@ export const useEcoStream = ({
       }
       if (!isStreaming) {
         streamActiveRef.current = false;
+        try {
+          console.debug('[DIAG] setStreamActive:before', {
+            clientMessageId: activeStreamClientIdRef.current,
+            value: false,
+            phase: 'cleanup',
+          });
+        } catch {
+          /* noop */
+        }
         setStreamActive(false);
         controllerRef.current = null;
       }
@@ -316,7 +342,25 @@ export const useEcoStream = ({
           createdAt: Date.now(),
         };
 
+        try {
+          console.debug('[DIAG] setErroApi:before', {
+            clientMessageId,
+            value: null,
+            phase: 'send:start',
+          });
+        } catch {
+          /* noop */
+        }
         setErroApi(null);
+        try {
+          console.debug('[DIAG] setIsSending:before', {
+            clientMessageId,
+            value: true,
+            phase: 'send:start',
+          });
+        } catch {
+          /* noop */
+        }
         setIsSending(true);
         activity?.onSend?.();
 
@@ -387,6 +431,15 @@ export const useEcoStream = ({
     controllerRef.current = controller;
     activeClientIdRef.current = clientMessageId;
     if (isMountedRef.current) {
+      try {
+        console.debug('[DIAG] setHasActiveStream:before', {
+          clientMessageId,
+          value: true,
+          phase: 'pending-send:activate',
+        });
+      } catch {
+        /* noop */
+      }
       setHasActiveStream(true);
     }
 
@@ -439,6 +492,15 @@ export const useEcoStream = ({
       logger("[EcoStream] stream_completed", { clientMessageId, gotAnyChunk, finishReasonFromMeta });
       streamLockRef.current = false; // FIX: libera lock somente após término da stream
       if (isMountedRef.current) {
+        try {
+          console.debug('[DIAG] setHasActiveStream:before', {
+            clientMessageId,
+            value: false,
+            phase: 'stream-complete',
+          });
+        } catch {
+          /* noop */
+        }
         setHasActiveStream(false);
       }
       if (stillActive) {
@@ -460,6 +522,15 @@ export const useEcoStream = ({
         })
         .finally(() => finalize(lastMetaFromStream));
     } else {
+      try {
+        console.debug('[DIAG] setHasActiveStream:before', {
+          clientMessageId,
+          value: false,
+          phase: 'stream-complete:sync',
+        });
+      } catch {
+        /* noop */
+      }
       finalize();
     }
   });
