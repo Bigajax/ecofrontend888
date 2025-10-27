@@ -155,7 +155,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                     !(event.nativeEvent as unknown as { isComposing?: boolean }).isComposing
                   ) {
                     event.preventDefault();
-                    void trySendMessage();
+                    event.currentTarget.form?.requestSubmit(); // FIX: delega o envio apenas ao submit do formulário
                   }
                 }}
               />
