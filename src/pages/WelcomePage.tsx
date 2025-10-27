@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TourInicial from '../components/TourInicial';
 import { useShouldShowTour } from '../hooks/useShouldShowTour';
 import { useAuth } from '../contexts/AuthContext';
+import { enableGuestAutoEntry } from '../constants/guest';
 
 export default function WelcomePage() {
   const navigate = useNavigate();
@@ -17,18 +18,37 @@ export default function WelcomePage() {
     }
   }, [shouldShow]);
 
-  const goNext = () => {
-    markSeen();
-    navigate(user ? '/app' : '/', { replace: true });
-  };
+  const closeTour = useCallback(
+    (targetPath?: string) => {
+      markSeen();
+      setOpen(false);
+
+      const destination = targetPath ?? (user ? '/app' : '/');
+      navigate(destination, { replace: true });
+    },
+    [markSeen, navigate, user]
+  );
+
+  const handleClose = useCallback(() => {
+    closeTour();
+  }, [closeTour]);
+
+  const handleTourComplete = useCallback(() => {
+    if (!user) {
+      enableGuestAutoEntry();
+    }
+
+    closeTour('/app');
+  }, [closeTour, user]);
 
   if (!open) return null;
 
   return (
     <TourInicial
       reason={reason}
-      nextPath={user ? '/app' : '/'}
-      onClose={goNext}
+      nextPath="/app"
+      onClose={handleClose}
+      onComplete={handleTourComplete}
     />
   );
 }

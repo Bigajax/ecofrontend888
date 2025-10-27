@@ -7,11 +7,12 @@ import mixpanel from '../lib/mixpanel';
 
 interface TourInicialProps {
   onClose: () => void;
+  onComplete?: () => void;
   reason?: string | null;
   nextPath?: string;
 }
 
-const TourInicial: React.FC<TourInicialProps> = ({ onClose, reason, nextPath }) => {
+const TourInicial: React.FC<TourInicialProps> = ({ onClose, onComplete, reason, nextPath }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,6 +31,12 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose, reason, nextPath }) 
 
   const handleComplete = useCallback(() => {
     mixpanel.track('Front-end: Tour Concluído');
+
+    if (onComplete) {
+      onComplete();
+      return;
+    }
+
     onClose();
     const targetPath = nextPath ?? '/app';
 
@@ -41,7 +48,7 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose, reason, nextPath }) 
     if (typeof window !== 'undefined') {
       window.location.assign(targetPath);
     }
-  }, [navigate, nextPath, onClose]);
+  }, [navigate, nextPath, onClose, onComplete]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
