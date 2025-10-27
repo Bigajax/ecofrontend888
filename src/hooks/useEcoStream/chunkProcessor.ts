@@ -211,10 +211,6 @@ export const applyChunkToMessages = ({
   );
   if (!assistantId) return;
 
-  if ((chunk.index === 0 || chunk.isFirstChunk === true) && activeStreamClientIdRef.current === clientMessageId) {
-    setDigitando(false);
-  }
-
   activeAssistantIdRef.current = assistantId;
 
   const { ecoReplyStateRef, setEcoReplyByAssistantId } = replyState;

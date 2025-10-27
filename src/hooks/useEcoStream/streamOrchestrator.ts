@@ -1,6 +1,7 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 
 import {
+  startEcoStream,
   type EcoStreamChunk,
   type EcoStreamControlEvent,
   type EcoStreamDoneEvent,
@@ -14,8 +15,6 @@ import {
   applyChunkToMessages,
   extractSummaryRecord,
   mergeReplyMetadata,
-  processSseLine,
-  type ProcessSseHandlers,
 } from "./chunkProcessor";
 import {
   pickNumberFromRecords,
@@ -24,8 +23,6 @@ import {
   toCleanString,
   toRecord,
 } from "./utils";
-import { resolveApiUrl } from "../../constants/api";
-import { buildIdentityHeaders } from "../../lib/guestId";
 
 export type InteractionMapAction = {
   type: "updateInteractionMap";
@@ -82,109 +79,6 @@ const formatAbortReason = (input: unknown): string => {
     }
   }
   return "unknown";
-};
-
-const mapHistoryMessage = (message: ChatMessageType) => {
-  if (!message) return { id: undefined, role: "assistant", content: "" };
-  const explicitRole = (message.role ?? undefined) as string | undefined;
-  const fallbackRole = message.sender === "user" ? "user" : "assistant";
-  const role = explicitRole === "eco" ? "assistant" : explicitRole ?? fallbackRole;
-  const rawContent =
-    typeof message.content === "string"
-      ? message.content
-      : typeof message.text === "string"
-      ? message.text
-      : message.content ?? message.text ?? "";
-  const content = typeof rawContent === "string" ? rawContent : String(rawContent ?? "");
-
-  return {
-    id: message.id,
-    role,
-    content,
-    client_message_id: message.client_message_id ?? (message as any)?.clientMessageId ?? message.id ?? undefined,
-  };
-};
-
-const buildEcoRequestBody = ({
-  history,
-  clientMessageId,
-  systemHint,
-  userId,
-  userName,
-  guestId,
-  isGuest,
-}: {
-  history: ChatMessageType[];
-  clientMessageId: string;
-  systemHint?: string;
-  userId?: string;
-  userName?: string;
-  guestId?: string;
-  isGuest: boolean;
-}): Record<string, unknown> => {
-  const mappedHistory = history.map(mapHistoryMessage);
-  const mensagens = mappedHistory.filter(
-    (message) =>
-      Boolean(message?.role) && typeof message.content === "string" && message.content.trim().length > 0,
-  );
-
-  const recentMensagens = mensagens.slice(-3);
-  const lastUserMessage = [...recentMensagens].reverse().find((message) => message.role === "user");
-
-  const texto = (() => {
-    if (!lastUserMessage) return "";
-    const content = lastUserMessage.content;
-    return typeof content === "string" ? content.trim() : "";
-  })();
-
-  const resolvedUserId = (() => {
-    const normalizedUserId = typeof userId === "string" ? userId.trim() : "";
-    if (normalizedUserId) return normalizedUserId;
-    const normalizedGuestId = typeof guestId === "string" ? guestId.trim() : "";
-    return normalizedGuestId;
-  })();
-
-  const now = new Date();
-  const timezone = (() => {
-    try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone;
-    } catch {
-      return undefined;
-    }
-  })();
-
-  const contextPayload: Record<string, unknown> = {
-    origem: "web",
-    ts: Date.now(),
-  };
-
-  if (typeof clientMessageId === "string" && clientMessageId.trim().length > 0) {
-    contextPayload.client_message_id = clientMessageId;
-  }
-
-  const payload: Record<string, unknown> = {
-    history: mappedHistory,
-    mensagens: recentMensagens,
-    texto,
-    clientHour: now.getHours(),
-    clientTz: timezone,
-    clientMessageId,
-    contexto: contextPayload,
-  };
-
-  if (resolvedUserId) {
-    payload.usuario_id = resolvedUserId;
-  }
-  if (userName && userName.trim()) {
-    payload.nome_usuario = userName.trim();
-  }
-  if (userId) payload.userId = userId;
-  if (userName) payload.userName = userName;
-  if (guestId) payload.guestId = guestId;
-  if (typeof isGuest === "boolean") payload.isGuest = isGuest;
-  if (systemHint && systemHint.trim()) payload.systemHint = systemHint.trim();
-
-  return payload;
 };
 
 interface StreamSharedContext {
@@ -709,6 +603,7 @@ export const beginStream = ({
   }
 
   setDigitando(true);
+  activity?.onSend?.();
 
   const placeholderAssistantId = ensureAssistantMessage(clientMessageId, undefined, {
     allowCreate: true,
@@ -750,178 +645,76 @@ export const beginStream = ({
     interactionCacheDispatch,
   };
 
-  const streamStats = { aggregatedLength: 0, gotAnyChunk: false };
-
-  const streamPromise = (async () => {
-    const requestBody = buildEcoRequestBody({
-      history,
-      clientMessageId,
-      systemHint,
-      userId,
-      userName,
-      guestId,
-      isGuest,
-    });
-
-    const baseHeaders: Record<string, string> = {
-      Accept: "text/event-stream",
-      "Content-Type": "application/json",
-      ...buildIdentityHeaders(),
-    };
-
-    let response: Response;
-    try {
-      response = await fetch(resolveApiUrl("/api/ask-eco"), {
-        method: "POST",
-        headers: baseHeaders,
-        body: JSON.stringify(requestBody),
-        signal: controller.signal,
-        cache: "no-store",
-        keepalive: true,
-      });
-    } catch (error) {
-      const formatted = formatAbortReason(error);
-      logSse("abort", {
-        clientMessageId: normalizedClientId,
-        reason: formatted,
-        source: "fetch",
-      });
-      throw error;
-    }
-
-    const headerEntries = Array.from(response.headers.entries());
-    const headerMap = headerEntries.reduce<Record<string, string>>((acc, [key, value]) => {
-      acc[key.toLowerCase()] = value;
-      return acc;
-    }, {});
-    const contentType = headerMap["content-type"]?.toLowerCase() ?? "";
-
-    logSse("open", {
-      clientMessageId: normalizedClientId,
-      status: response.status,
-      contentType,
-    });
-    try {
-      console.info("[EcoStream] onStreamOpen", {
-        clientMessageId,
-        status: response.status ?? null,
-        contentType,
-      });
-    } catch {
-      /* noop */
-    }
-
-    if (!response.ok) {
-      let detail = "";
-      try {
-        detail = await response.text();
-      } catch {
-        detail = "";
-      }
-      const trimmed = detail.trim();
-      const preview = trimmed.slice(0, 200);
-      const message = trimmed.startsWith("<!DOCTYPE")
-        ? `Gateway/edge retornou HTML (${response.status}). Ver backlogs. Trecho: ${preview}...`
-        : trimmed || `Eco stream request failed (${response.status})`;
-      throw new Error(message);
-    }
-
-    const decoder = new TextDecoder("utf-8");
-    let buffer = "";
+    const streamStats = { aggregatedLength: 0, gotAnyChunk: false };
     let doneReceived = false;
-    let fatalError: Error | null = null;
-    let firstChunkDelivered = false;
 
-    const buildRecordChain = (rawEvent?: Record<string, unknown>): Record<string, unknown>[] => {
-      const eventRecord = toRecord(rawEvent) ?? undefined;
-      const payloadRecord = toRecord(eventRecord?.payload) ?? undefined;
+    const buildRecordChain = (event?: { payload?: unknown }): Record<string, unknown>[] => {
+      const eventRecord = toRecord(event) ?? undefined;
+      const payloadRecord = toRecord(eventRecord?.payload) ?? toRecord((event as any)?.payload) ?? undefined;
       const metadataRecord = toRecord(payloadRecord?.metadata) ?? toRecord(eventRecord?.metadata) ?? undefined;
       const responseRecord = toRecord(payloadRecord?.response) ?? undefined;
       const contextRecord = toRecord(payloadRecord?.context) ?? undefined;
-      return [metadataRecord, responseRecord, payloadRecord, contextRecord, eventRecord].filter(
-        Boolean,
-      ) as Record<string, unknown>[];
+      return [metadataRecord, responseRecord, payloadRecord, contextRecord, eventRecord].filter(Boolean) as Record<
+        string,
+        unknown
+      >[];
     };
 
-    const extractPayloadRecord = (rawEvent?: Record<string, unknown>) => {
-      const eventRecord = toRecord(rawEvent);
-      return toRecord(eventRecord?.payload) ?? undefined;
-    };
+    const extractPayloadRecord = (event?: { payload?: unknown }) =>
+      toRecord((event as { payload?: unknown } | undefined)?.payload) ?? undefined;
 
-    const processChunkEvent = (index: number, delta: string, rawEvent: Record<string, unknown>) => {
+    const handlePromptEvent = (event?: EcoStreamPromptReadyEvent) => {
       if (controller.signal.aborted) return;
-      streamStats.gotAnyChunk = true;
-      streamStats.aggregatedLength += delta.length;
-      if (!firstChunkDelivered) {
-        firstChunkDelivered = true;
-        onFirstChunk?.();
-      }
-      const payloadRecord = extractPayloadRecord(rawEvent);
-      const metadataRecord =
-        toRecord(payloadRecord?.metadata) ?? toRecord((rawEvent as Record<string, unknown>)?.metadata);
-      const records = buildRecordChain(rawEvent);
+      const records = buildRecordChain(event);
       const interactionId =
-        pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
-      const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
+        event?.interactionId ??
+        pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ??
+          undefined;
+      const messageId =
+        event?.messageId ?? pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
       const createdAt =
-        pickStringFromRecords(records, ["created_at", "createdAt", "timestamp"]) ?? undefined;
-
-      const chunk: EcoStreamChunk = {
-        index,
-        text: delta,
-        interactionId,
-        messageId,
-        createdAt,
-        metadata: metadataRecord ?? undefined,
-        payload: payloadRecord ?? rawEvent,
-        isFirstChunk: index === 0,
-      };
-
-      handleChunk(chunk, sharedContext);
-    };
-
-    const handlePromptEvent = (rawEvent: Record<string, unknown>) => {
-      if (controller.signal.aborted) return;
-      const records = buildRecordChain(rawEvent);
-      const interactionId =
-        pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
-      const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
-      const createdAt =
-        pickStringFromRecords(records, ["created_at", "createdAt", "timestamp"]) ?? undefined;
-      const payloadRecord = extractPayloadRecord(rawEvent);
+        event?.createdAt ?? pickStringFromRecords(records, ["created_at", "createdAt", "timestamp"]) ?? undefined;
+      const payloadRecord = extractPayloadRecord(event);
 
       const promptEvent: EcoStreamPromptReadyEvent = {
         interactionId,
         messageId,
         createdAt,
-        payload: payloadRecord ?? rawEvent,
+        payload: payloadRecord ?? event?.payload,
       };
 
       handlePromptReady(promptEvent, sharedContext);
     };
 
-    const handleControlEvent = (rawEvent: Record<string, unknown>) => {
+    const handleControlEvent = (event?: EcoStreamControlEvent) => {
       if (controller.signal.aborted) return;
-      const records = buildRecordChain(rawEvent);
+      const records = buildRecordChain(event);
       const interactionId =
-        pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
-      const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
-      const payloadRecord = extractPayloadRecord(rawEvent);
+        event?.interactionId ??
+        pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ??
+          undefined;
+      const messageId =
+        event?.messageId ?? pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
+      const payloadRecord = extractPayloadRecord(event);
       const name =
-        pickStringFromRecords([toRecord(rawEvent) ?? {}, payloadRecord ?? {}], ["name", "event", "type"]) ??
-        undefined;
+        event?.name ??
+        pickStringFromRecords([toRecord(event) ?? {}, payloadRecord ?? {}], ["name", "event", "type"]) ?? undefined;
+      const createdAt =
+        event?.createdAt ?? pickStringFromRecords(records, ["created_at", "createdAt", "timestamp"]) ?? undefined;
 
       const controlEvent: EcoStreamControlEvent = {
+        type: event?.type,
         name,
         interactionId,
         messageId,
-        payload: payloadRecord ?? rawEvent,
+        createdAt,
+        payload: payloadRecord ?? event?.payload,
       };
 
       handleControl(controlEvent, sharedContext);
     };
 
-    const handleStreamDone = (rawEvent?: Record<string, unknown>) => {
+    const handleStreamDone = (event?: EcoStreamDoneEvent) => {
       if (controller.signal.aborted || doneReceived) return;
       doneReceived = true;
 
@@ -929,20 +722,26 @@ export const beginStream = ({
         streamActiveRef.current = false;
       }
 
-      const records = buildRecordChain(rawEvent);
+      const records = buildRecordChain(event);
       const interactionId =
-        pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
-      const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
+        event?.interactionId ??
+        pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ??
+          undefined;
+      const messageId =
+        event?.messageId ?? pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
       const createdAt =
-        pickStringFromRecords(records, ["created_at", "createdAt", "timestamp"]) ?? undefined;
-      const clientMetaId =
-        pickStringFromRecords(records, ["client_message_id", "clientMessageId"]) ?? undefined;
-      const payloadRecord = extractPayloadRecord(rawEvent);
+        event?.createdAt ?? pickStringFromRecords(records, ["created_at", "createdAt", "timestamp"]) ?? undefined;
+      const clientMetaId = pickStringFromRecords(records, ["client_message_id", "clientMessageId"]) ?? undefined;
+      const payloadRecord = extractPayloadRecord(event);
 
       const now = Date.now();
       const metrics = streamTimersRef.current[normalizedClientId];
       const totalMs = metrics ? now - metrics.startedAt : undefined;
-      const doneReason = rawEvent ? (payloadRecord ? "server-done" : "server-done-empty") : "missing-event";
+      const doneReason = event
+        ? payloadRecord
+          ? "server-done"
+          : "server-done-empty"
+        : "missing-event";
       logSse("done", { clientMessageId: normalizedClientId, totalMs, reason: doneReason });
       delete streamTimersRef.current[normalizedClientId];
 
@@ -964,7 +763,7 @@ export const beginStream = ({
         interactionId: interactionId ?? undefined,
         messageId: messageId ?? undefined,
         createdAt: createdAt ?? undefined,
-        payload: payloadRecord ?? toRecord(rawEvent) ?? undefined,
+        payload: payloadRecord ?? event?.payload,
       };
 
       const doneContext: DoneContext = {
@@ -978,251 +777,165 @@ export const beginStream = ({
       handleDone(doneContext);
     };
 
-    const handleErrorEvent = (rawEvent: Record<string, unknown>) => {
-      const records = buildRecordChain(rawEvent);
+    const handleErrorEvent = (event: unknown) => {
+      const eventRecord = toRecord(event);
+      const payloadRecord = toRecord(eventRecord?.payload);
+      const records = [payloadRecord, eventRecord].filter(Boolean) as Record<string, unknown>[];
       const message =
         pickStringFromRecords(records, ["message", "error", "detail", "reason"]) ??
         "Erro na stream SSE da Eco.";
-      fatalError = new Error(message);
+      throw new Error(message);
     };
 
-    if (!contentType.includes("text/event-stream")) {
-      let detail = "";
-      try {
-        detail = await response.text();
-      } catch {
-        detail = "";
-      }
-      const trimmed = detail.trim();
-      const preview = trimmed.slice(0, 200);
-      const baseMessage = `Resposta inválida: status=${response.status} content-type=${
-        contentType || "<desconhecido>"
-      }`;
-      const message = trimmed.startsWith("<!DOCTYPE")
-        ? `Gateway/edge retornou HTML (${response.status}). Ver backlogs. Trecho: ${preview}...`
-        : `${baseMessage}${preview ? ` body=${preview}...` : ""}`;
-      throw new Error(message);
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error("Eco stream response has no readable body.");
-    }
-
-    (globalThis as any).__ecoActiveReader = reader;
-
-    const handlers: ProcessSseHandlers = {
-      appendAssistantDelta: (index, delta, event) => processChunkEvent(index, delta, event),
-      onStreamDone: (event) => handleStreamDone(event),
+    const streamPromise = startEcoStream({
+      history,
+      clientMessageId,
+      systemHint,
+      userId,
+      userName,
+      guestId,
+      isGuest,
+      signal: controller.signal,
+      onFirstChunk: () => {
+        streamStats.gotAnyChunk = true;
+        onFirstChunk?.();
+      },
+      onStreamOpen: ({ status, contentType }) => {
+        logSse("open", { clientMessageId: normalizedClientId, status, contentType });
+        try {
+          console.info("[EcoStream] onStreamOpen", {
+            clientMessageId,
+            status: status ?? null,
+            contentType,
+          });
+        } catch {
+          /* noop */
+        }
+      },
+      onStreamAbort: (reason) => {
+        const formatted = formatAbortReason(reason);
+        logSse("abort", {
+          clientMessageId: normalizedClientId,
+          reason: formatted,
+          source: "start",
+        });
+      },
+      onChunk: (chunk) => {
+        if (controller.signal.aborted) return;
+        streamStats.gotAnyChunk = true;
+        if (typeof chunk.text === "string") {
+          streamStats.aggregatedLength += chunk.text.length;
+        }
+        handleChunk(chunk, sharedContext);
+      },
       onPromptReady: (event) => handlePromptEvent(event),
       onControl: (event) => handleControlEvent(event),
+      onDone: (event) => handleStreamDone(event),
       onError: (event) => handleErrorEvent(event),
-    };
+    });
 
-    const processEventBlock = (block: string) => {
-      if (!block) return;
-      const normalizedBlock = block.replace(/\r\n/g, "\n");
-      const lines = normalizedBlock.split("\n");
-      let currentEventName: string | undefined;
-      const dataParts: string[] = [];
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-        if (trimmed.startsWith(":")) {
-          const comment = trimmed.slice(1).trim();
-          if (comment) {
-            try {
-              console.info("[SSE] comment", { comment });
-            } catch {
-              /* noop */
-            }
-          }
-          continue;
-        }
-        if (trimmed.startsWith("event:")) {
-          const declaredEvent = trimmed.slice(6).trim();
-          currentEventName = declaredEvent || undefined;
-          continue;
-        }
-        if (!trimmed.startsWith("data:")) continue;
-
-        const dataIndex = line.indexOf("data:");
-        const rawValue = dataIndex >= 0 ? line.slice(dataIndex + 5) : line.slice(5);
-        const normalizedValue = rawValue.startsWith(" ") ? rawValue.slice(1) : rawValue;
-        if (!normalizedValue.trim()) continue;
-        dataParts.push(normalizedValue);
+    streamPromise.catch((error) => {
+      if (controller.signal.aborted) return;
+      if (activeStreamClientIdRef.current === clientMessageId) {
+        streamActiveRef.current = false;
       }
-
-      if (dataParts.length === 0) return;
-
-      const payload = dataParts.join("\n");
-      const payloadForParse = payload.trim();
-      if (!payloadForParse) return;
-
+      const message = error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
+      setErroApi(message);
+      logSse("abort", {
+        clientMessageId: normalizedClientId,
+        reason: "start-error",
+        message,
+        source: "start",
+      });
+      delete streamTimersRef.current[normalizedClientId];
       try {
-        console.info("[SSE] event_data", {
-          event: currentEventName ?? "message",
-          data: payloadForParse,
+        console.debug('[DIAG] error', {
+          clientMessageId,
+          error: message,
+          phase: 'start',
         });
       } catch {
         /* noop */
       }
-
-      processSseLine(payloadForParse, handlers, { eventName: currentEventName });
-      if (fatalError) return;
-    };
-
-    while (true) {
-      if (controller.signal.aborted) break;
-      let chunk: ReadableStreamReadResult<Uint8Array>;
-      try {
-        chunk = await reader.read();
-      } catch (error: any) {
-        if (controller.signal.aborted || error?.name === "AbortError") {
-          break;
-        }
-        throw error;
+      const assistantIdOnStartError = tracking.assistantByClientRef.current[clientMessageId];
+      if (assistantIdOnStartError) {
+        removeEcoEntry(assistantIdOnStartError);
       }
-
-      const { value, done } = chunk;
-      if (done) {
-        buffer += decoder.decode();
-        if (buffer) {
-          processEventBlock(buffer);
-          buffer = "";
-        }
-        break;
-      }
-
-      if (value) {
-        buffer += decoder.decode(value, { stream: true });
-        let delimiterIndex = buffer.indexOf("\n\n");
-        while (delimiterIndex !== -1) {
-          const eventBlock = buffer.slice(0, delimiterIndex);
-          buffer = buffer.slice(delimiterIndex + 2);
-          processEventBlock(eventBlock);
-          if (fatalError) break;
-          delimiterIndex = buffer.indexOf("\n\n");
-        }
-      }
-
-      if (fatalError) break;
-    }
-
-    if (fatalError) {
-      throw fatalError;
-    }
-
-    if (!doneReceived && !controller.signal.aborted) {
-      handleStreamDone();
-    }
-  })();
-
-  streamPromise.catch((error) => {
-    if (controller.signal.aborted) return;
-    if (activeStreamClientIdRef.current === clientMessageId) {
-      streamActiveRef.current = false;
-    }
-    const message = error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
-    setErroApi(message);
-    logSse("abort", {
-      clientMessageId: normalizedClientId,
-      reason: "start-error",
-      message,
-      source: "start",
     });
-    delete streamTimersRef.current[normalizedClientId];
-    try {
-      console.debug('[DIAG] error', {
-        clientMessageId,
-        error: message,
-        phase: 'start',
-      });
-    } catch {
-      /* noop */
-    }
-    const assistantIdOnStartError = tracking.assistantByClientRef.current[clientMessageId];
-    if (assistantIdOnStartError) {
-      removeEcoEntry(assistantIdOnStartError);
-    }
-  });
 
-  streamPromise.finally(() => {
-    const isCurrentClient = activeClientIdRef.current === clientMessageId;
-    if (isCurrentClient && controllerRef.current === controller) {
-      controllerRef.current = null;
-    }
-    const assistantId = tracking.assistantByClientRef.current[clientMessageId];
-    delete streamTimersRef.current[normalizedClientId];
+    streamPromise.finally(() => {
+      const isCurrentClient = activeClientIdRef.current === clientMessageId;
+      if (isCurrentClient && controllerRef.current === controller) {
+        controllerRef.current = null;
+      }
+      const assistantId = tracking.assistantByClientRef.current[clientMessageId];
+      delete streamTimersRef.current[normalizedClientId];
 
-    const isActiveStream = activeStreamClientIdRef.current === clientMessageId;
-    const wasAborted = controller.signal.aborted;
+      const isActiveStream = activeStreamClientIdRef.current === clientMessageId;
+      const wasAborted = controller.signal.aborted;
 
-    if (isCurrentClient) {
-      if (!wasAborted) {
+      if (isCurrentClient) {
+        if (!wasAborted) {
+          try {
+            console.info('[EcoStream] stream_completed', {
+              clientMessageId,
+              gotAnyChunk: streamStats.gotAnyChunk,
+              aggregatedLength: streamStats.aggregatedLength,
+            });
+          } catch {
+            /* noop */
+          }
+        }
+        activeClientIdRef.current = null;
+      } else {
         try {
-          console.info('[EcoStream] stream_completed', {
+          console.debug('[EcoStream] stream_final_ignored', { clientMessageId });
+        } catch {
+          /* noop */
+        }
+      }
+
+      if (isActiveStream) {
+        streamActiveRef.current = false;
+        activeStreamClientIdRef.current = null;
+        activeAssistantIdRef.current = null;
+        if (wasAborted && assistantId) {
+          removeEcoEntry(assistantId);
+        }
+        setDigitando(false);
+        setIsSending(false);
+        activity?.onDone?.();
+        try {
+          console.debug('[DIAG] done/abort', {
             clientMessageId,
-            gotAnyChunk: streamStats.gotAnyChunk,
-            aggregatedLength: streamStats.aggregatedLength,
+            assistantMessageId: assistantId ?? null,
+            reason: wasAborted ? 'stream_aborted' : 'stream_completed',
+          });
+        } catch {
+          /* noop */
+        }
+      } else if (wasAborted && assistantId) {
+        removeEcoEntry(assistantId);
+        try {
+          console.debug('[DIAG] done/abort', {
+            clientMessageId,
+            assistantMessageId: assistantId ?? null,
+            reason: 'stream_aborted_inactive',
+          });
+        } catch {
+          /* noop */
+        }
+      } else {
+        try {
+          console.debug('[DIAG] done/abort', {
+            clientMessageId,
+            assistantMessageId: assistantId ?? null,
+            reason: 'stream_completed_inactive',
           });
         } catch {
           /* noop */
         }
       }
-      activeClientIdRef.current = null;
-    } else {
-      try {
-        console.debug('[EcoStream] stream_final_ignored', { clientMessageId });
-      } catch {
-        /* noop */
-      }
-    }
-
-    if (isActiveStream) {
-      streamActiveRef.current = false;
-      activeStreamClientIdRef.current = null;
-      activeAssistantIdRef.current = null;
-      if (wasAborted && assistantId) {
-        removeEcoEntry(assistantId);
-      }
-      setDigitando(false);
-      setIsSending(false);
-      activity?.onDone?.();
-      try {
-        console.debug('[DIAG] done/abort', {
-          clientMessageId,
-          assistantMessageId: assistantId ?? null,
-          reason: wasAborted ? 'stream_aborted' : 'stream_completed',
-        });
-      } catch {
-        /* noop */
-      }
-    } else if (wasAborted && assistantId) {
-      removeEcoEntry(assistantId);
-      try {
-        console.debug('[DIAG] done/abort', {
-          clientMessageId,
-          assistantMessageId: assistantId ?? null,
-          reason: 'stream_aborted_inactive',
-        });
-      } catch {
-        /* noop */
-      }
-    } else {
-      try {
-        console.debug('[DIAG] done/abort', {
-          clientMessageId,
-          assistantMessageId: assistantId ?? null,
-          reason: 'stream_completed_inactive',
-        });
-      } catch {
-        /* noop */
-      }
-    }
-  });
-
-  return streamPromise;
-};
-
+    });
+    return streamPromise;
+  };
