@@ -107,6 +107,7 @@ export const useEcoStream = ({
     currentInteractionIdRef = useRef<string | null>(null),
     isMountedRef = useRef(true),
     streamLockRef = useRef(false),
+    hasFirstChunkRef = useRef(false),
     pendingSendRef = useRef<
       | {
           clientMessageId: string;
@@ -138,6 +139,7 @@ export const useEcoStream = ({
       activeStreamClientIdRef,
       activeAssistantIdRef,
       streamActiveRef,
+      hasFirstChunkRef,
       activeClientIdRef,
     }),
     [],
@@ -468,8 +470,10 @@ export const useEcoStream = ({
     let streamPromise: Promise<StreamRunStats> | void;
     let lastMetaFromStream: Record<string, unknown> | undefined;
     try {
+      hasFirstChunkRef.current = false;
       streamPromise = beginStreamSafely(payload, controller, () => {
         gotAnyChunk = true;
+        hasFirstChunkRef.current = true;
       });
     } catch (error) {
       streamLockRef.current = false; // FIX: libera lock caso o stream falhe ao iniciar

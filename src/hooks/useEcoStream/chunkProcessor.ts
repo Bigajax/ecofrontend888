@@ -47,6 +47,7 @@ export interface ProcessSseHandlers {
   onControl?: (event: Record<string, unknown>) => void;
   onPromptReady?: (event: Record<string, unknown>) => void;
   onError?: (event: Record<string, unknown>) => void;
+  onMessage?: (event: Record<string, unknown>, info?: { eventName?: string | null }) => void;
 }
 
 export interface ProcessSseLineOptions {
@@ -166,6 +167,12 @@ export const processSseLine = (
       return;
     }
     handlers.appendAssistantDelta(indexCandidate ?? 0, partCandidate, event);
+    return;
+  }
+
+  const normalizedEventKey = normalizedPayloadName ?? type ?? fallbackEvent;
+  if (normalizedEventKey === "message") {
+    handlers.onMessage?.(event, { eventName: options?.eventName ?? null });
     return;
   }
 
