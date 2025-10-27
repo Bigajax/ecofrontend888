@@ -32,6 +32,7 @@ export interface StreamRunStats {
   aggregatedLength: number;
   gotAnyChunk: boolean;
   lastMeta?: Record<string, unknown>;
+  finishReasonFromMeta?: string;
 }
 
 export type InteractionMapAction = {
@@ -110,6 +111,34 @@ const mapHistoryMessage = (message: ChatMessageType) => {
     content,
     client_message_id: message.client_message_id ?? (message as any)?.clientMessageId ?? message.id ?? undefined,
   };
+};
+
+const extractFinishReasonFromMeta = (meta: unknown): string | undefined => {
+  if (!meta || typeof meta !== "object" || Array.isArray(meta)) return undefined;
+  const record = meta as Record<string, unknown> & {
+    finishReason?: unknown;
+    finish_reason?: unknown;
+    reason?: unknown;
+  };
+  const candidate =
+    record.finishReason ??
+    record.finish_reason ??
+    record.reason;
+  if (typeof candidate === "string") {
+    const trimmed = candidate.trim();
+    return trimmed ? trimmed : undefined;
+  }
+  return undefined;
+};
+
+const applyMetaToStreamStats = (
+  streamStats: StreamRunStats,
+  meta: Record<string, unknown> | undefined,
+) => {
+  if (!meta) return;
+  streamStats.lastMeta = meta;
+  const finishReason = extractFinishReasonFromMeta(meta);
+  streamStats.finishReasonFromMeta = finishReason;
 };
 
 const buildEcoRequestBody = ({
@@ -663,7 +692,7 @@ export const handleControl = (
       /* noop */
     }
     if (meta) {
-      context.streamStats.lastMeta = meta;
+      applyMetaToStreamStats(context.streamStats, meta);
     }
   }
 
@@ -682,7 +711,7 @@ export const handleControl = (
       /* noop */
     }
     if (meta) {
-      context.streamStats.lastMeta = meta;
+      applyMetaToStreamStats(context.streamStats, meta);
     }
   }
 };
@@ -826,7 +855,12 @@ export const beginStream = ({
     /* noop */
   }
 
-  const streamStats: StreamRunStats = { aggregatedLength: 0, gotAnyChunk: false, lastMeta: undefined };
+  const streamStats: StreamRunStats = {
+    aggregatedLength: 0,
+    gotAnyChunk: false,
+    lastMeta: undefined,
+    finishReasonFromMeta: undefined,
+  };
 
   const sharedContext: StreamSharedContext = {
     clientMessageId,
@@ -967,10 +1001,11 @@ export const beginStream = ({
     const buildRecordChain = (rawEvent?: Record<string, unknown>): Record<string, unknown>[] => {
       const eventRecord = toRecord(rawEvent) ?? undefined;
       const payloadRecord = toRecord(eventRecord?.payload) ?? undefined;
+      const metaRecord = toRecord(eventRecord?.meta) ?? undefined;
       const metadataRecord = toRecord(payloadRecord?.metadata) ?? toRecord(eventRecord?.metadata) ?? undefined;
       const responseRecord = toRecord(payloadRecord?.response) ?? undefined;
       const contextRecord = toRecord(payloadRecord?.context) ?? undefined;
-      return [metadataRecord, responseRecord, payloadRecord, contextRecord, eventRecord].filter(
+      return [metadataRecord, metaRecord, responseRecord, payloadRecord, contextRecord, eventRecord].filter(
         Boolean,
       ) as Record<string, unknown>[];
     };
@@ -1071,6 +1106,7 @@ export const beginStream = ({
         setStreamActive(false);
       }
 
+      const eventRecord = toRecord(rawEvent) ?? undefined;
       const records = buildRecordChain(rawEvent);
       const interactionId =
         pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
@@ -1080,6 +1116,7 @@ export const beginStream = ({
       const clientMetaId =
         pickStringFromRecords(records, ["client_message_id", "clientMessageId"]) ?? undefined;
       const payloadRecord = extractPayloadRecord(rawEvent);
+      const eventMetaRecord = toRecord(eventRecord?.meta) ?? undefined;
 
       const now = Date.now();
       const metrics = streamTimersRef.current[normalizedClientId];
@@ -1098,9 +1135,22 @@ export const beginStream = ({
       };
 
       const doneMetaRecord =
-        toRecord(payloadRecord?.meta) ?? toRecord(payloadRecord?.metadata) ?? toRecord(payloadRecord);
+        toRecord(payloadRecord?.meta) ??
+        toRecord(payloadRecord?.metadata) ??
+        eventMetaRecord ??
+        toRecord(eventRecord?.metadata) ??
+        toRecord(payloadRecord);
       if (doneMetaRecord) {
-        sharedContext.streamStats.lastMeta = doneMetaRecord;
+        applyMetaToStreamStats(sharedContext.streamStats, doneMetaRecord);
+      } else if (eventMetaRecord) {
+        applyMetaToStreamStats(sharedContext.streamStats, eventMetaRecord);
+      } else {
+        const finishReasonFallback =
+          extractFinishReasonFromMeta(eventRecord) ??
+          extractFinishReasonFromMeta(payloadRecord);
+        if (finishReasonFallback) {
+          sharedContext.streamStats.finishReasonFromMeta = finishReasonFallback;
+        }
       }
 
       const assistantId = ensureAssistantMessage(clientMessageId, ensureMeta);
@@ -1330,21 +1380,34 @@ export const beginStream = ({
 
     if (isCurrentClient) {
       if (!wasAborted) {
-        const finishReasonFromMeta = (() => {
-          const meta = sharedContext.streamStats.lastMeta;
-          if (meta && typeof meta === "object" && !Array.isArray(meta)) {
-            const record = meta as Record<string, unknown> & { finishReason?: unknown; finish_reason?: unknown };
-            return record.finishReason ?? record.finish_reason;
-          }
-          return undefined;
-        })();
+        const finishReasonFromMeta =
+          sharedContext.streamStats.finishReasonFromMeta ??
+          (() => {
+            const meta = sharedContext.streamStats.lastMeta;
+            if (meta && typeof meta === "object" && !Array.isArray(meta)) {
+              const record = meta as Record<string, unknown> & {
+                finishReason?: unknown;
+                finish_reason?: unknown;
+                reason?: unknown;
+              };
+              const candidate = record.finishReason ?? record.finish_reason ?? record.reason;
+              if (typeof candidate === "string") {
+                const trimmed = candidate.trim();
+                return trimmed ? trimmed : undefined;
+              }
+            }
+            return undefined;
+          })();
+        const logPayload: Record<string, unknown> = {
+          clientMessageId,
+          gotAnyChunk: streamStats.gotAnyChunk,
+          aggregatedLength: streamStats.aggregatedLength,
+        };
+        if (finishReasonFromMeta !== undefined) {
+          logPayload.finishReasonFromMeta = finishReasonFromMeta;
+        }
         try {
-          console.info('[EcoStream] stream_completed', {
-            clientMessageId,
-            gotAnyChunk: streamStats.gotAnyChunk,
-            aggregatedLength: streamStats.aggregatedLength,
-            finishReasonFromMeta,
-          });
+          console.info('[EcoStream] stream_completed', logPayload);
         } catch {
           /* noop */
         }
