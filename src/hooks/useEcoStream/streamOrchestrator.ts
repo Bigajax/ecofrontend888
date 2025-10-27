@@ -765,11 +765,34 @@ export const beginStream = ({
       isGuest,
     });
 
+    const identityHeaders = buildIdentityHeaders();
     const baseHeaders: Record<string, string> = {
-      Accept: "text/event-stream",
+      "Accept": "text/event-stream",
       "Content-Type": "application/json",
-      ...buildIdentityHeaders(),
+      ...identityHeaders,
     };
+
+    const resolvedClientId = (() => {
+      const explicit = identityHeaders["X-Client-Id"] ?? (identityHeaders as Record<string, string | undefined>)["x-client-id"];
+      if (typeof explicit === "string" && explicit.trim().length > 0) {
+        return explicit.trim();
+      }
+      return "web";
+    })();
+    baseHeaders["X-Client-Id"] = resolvedClientId;
+
+    const contexto = (requestBody as { contexto?: { stream_id?: unknown; streamId?: unknown } })?.contexto;
+    const streamIdCandidates: unknown[] = [
+      (requestBody as { streamId?: unknown })?.streamId,
+      contexto?.stream_id,
+      contexto?.streamId,
+    ];
+    const streamId = streamIdCandidates
+      .map((candidate) => (typeof candidate === "string" ? candidate.trim() : ""))
+      .find((candidate) => candidate.length > 0);
+    if (streamId) {
+      baseHeaders["X-Stream-Id"] = streamId;
+    }
 
     let response: Response;
     setStreamActive(true);
