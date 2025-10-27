@@ -4,6 +4,7 @@ import { ensureProfile } from '../lib/ensureProfile';
 import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import mixpanel from '../lib/mixpanel';
 import { clearGuestStorage } from '../hooks/useGuestGate';
+import { isEcoStreamActive, runWhenStreamIdle } from '../hooks/useEcoStream/streamStatus';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
@@ -136,13 +137,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Logout em outra aba/expiração da sessão
         if (event === 'SIGNED_OUT') {
-          clearClientState();
-          clearGuestStorage(); // <— garante limpeza do modo guest
-          persistAuthToken(null);
-          if (typeof mixpanel.unregister_all === 'function') {
-            mixpanel.unregister_all();
+          const signedOutCleanup = () => {
+            clearClientState();
+            clearGuestStorage(); // <— garante limpeza do modo guest
+            persistAuthToken(null);
+            if (typeof mixpanel.unregister_all === 'function') {
+              mixpanel.unregister_all();
+            }
+            mixpanel.reset();
+          };
+
+          if (isEcoStreamActive()) {
+            console.info('[Auth] SIGNED_OUT deferred until stream idle');
+            runWhenStreamIdle(signedOutCleanup);
+          } else {
+            signedOutCleanup();
           }
-          mixpanel.reset();
+
           return;
         }
 

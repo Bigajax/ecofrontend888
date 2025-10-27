@@ -118,3 +118,19 @@ export const resolveApiUrl = (path = "") => {
   }
   return url;
 };
+
+if (typeof window !== "undefined") {
+  try {
+    Object.defineProperty(window as typeof window & { __ecoApi?: unknown }, "__ecoApi", {
+      configurable: true,
+      enumerable: false,
+      writable: true,
+      value: { API_BASE_URL, resolveApiUrl },
+    });
+  } catch {
+    (window as typeof window & { __ecoApi?: unknown }).__ecoApi = {
+      API_BASE_URL,
+      resolveApiUrl,
+    };
+  }
+}

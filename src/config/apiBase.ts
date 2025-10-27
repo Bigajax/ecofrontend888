@@ -51,7 +51,7 @@ const normalizedEnvApiBase = normalizeApiBase(rawEnvApiBase);
 
 export const RAW_API_BASE = rawEnvApiBase;
 
-export const DEFAULT_API_BASE = "";
+export const DEFAULT_API_BASE = "https://ecobackend888.onrender.com";
 
 export const IS_API_BASE_EMPTY = normalizedEnvApiBase.length === 0;
 
