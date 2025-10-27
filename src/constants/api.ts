@@ -1,136 +1,105 @@
-import {
-  DEFAULT_API_BASE as BASE_DEFAULT,
-  IS_API_BASE_EMPTY as BASE_EMPTY_FLAG,
-  RAW_API_BASE,
-  getApiBase,
-} from "../config/apiBase";
 import { ensureHttpsUrl } from "../utils/ensureHttpsUrl";
 import { stripTrailingApiSegments } from "../utils/stripTrailingApiSegments";
 
-export { RAW_API_BASE, getApiBase };
+const readEnvApiUrl = (): string => {
+  const fromImportMeta = import.meta?.env?.VITE_API_URL;
+  if (typeof fromImportMeta === "string" && fromImportMeta.trim().length > 0) return fromImportMeta.trim();
 
-const trimTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
+  const gp = typeof globalThis !== "undefined" && (globalThis as any).process
+    ? ((globalThis as any).process as { env?: Record<string, unknown> })
+    : undefined;
+  const fromProcess = gp?.env?.VITE_API_URL;
+  if (typeof fromProcess === "string" && fromProcess.trim().length > 0) return fromProcess.trim();
 
-export const DEFAULT_API_BASE = BASE_DEFAULT;
-export const IS_API_BASE_EMPTY = BASE_EMPTY_FLAG;
+  return "";
+};
+
+const normalizeApiBase = (value: string): string => {
+  const trimmed = typeof value === "string" ? value.trim() : "";
+  if (!trimmed) return "";
+
+  let candidate = trimmed;
+  if (candidate.startsWith("//")) candidate = `https:${candidate}`;
+  else if (!/^https?:/i.test(candidate)) candidate = `https://${candidate.replace(/^\/+/, "")}`;
+
+  candidate = ensureHttpsUrl(candidate);
+
+  try {
+    const u = new URL(candidate);
+    const sanitizedPath = stripTrailingApiSegments(u.pathname);
+    const finalPath = sanitizedPath === "/" ? "" : sanitizedPath;
+    return finalPath ? `${u.origin}${finalPath}` : u.origin;
+  } catch {
+    return "";
+  }
+};
+
+const rawEnvApiBase = readEnvApiUrl();
+const normalizedEnvApiBase = normalizeApiBase(rawEnvApiBase);
+
+// ⚠️ Fallback explícito para o backend quando não há VITE_API_URL
+export const DEFAULT_API_BASE = "https://ecobackend888.onrender.com";
+
+export const RAW_API_BASE = rawEnvApiBase;
+export const IS_API_BASE_EMPTY = normalizedEnvApiBase.length === 0;
+
+export function getApiBase(): string {
+  // se env normalizado existir, usar; senão, fallback DEFAULT_API_BASE
+  return normalizedEnvApiBase || DEFAULT_API_BASE;
+}
+
+const trimTrailingSlashes = (v: string) => v.replace(/\/+$/, "");
 
 const normalizeBase = (candidate: string): string => {
   const trimmed = candidate.trim();
-  if (!trimmed) {
-    return "";
-  }
-
-  const sanitizeAbsolute = (value: string): string => {
-    try {
-      const parsed = new URL(value);
-      const sanitizedPath = stripTrailingApiSegments(parsed.pathname);
-      return sanitizedPath ? `${parsed.origin}${sanitizedPath}` : parsed.origin;
-    } catch {
-      return "";
-    }
-  };
-
-  if (trimmed.startsWith("//")) {
-    const absolute = ensureHttpsUrl(`https:${trimmed}`);
-    return sanitizeAbsolute(absolute) || "";
-  }
-
-  if (/^https?:/i.test(trimmed)) {
-    const secure = ensureHttpsUrl(trimmed);
-    return sanitizeAbsolute(secure) || "";
-  }
-
-  if (trimmed.startsWith("/")) {
-    const collapsed = trimTrailingSlashes(trimmed);
-    if (!collapsed) {
-      return "/";
-    }
-    const normalized = stripTrailingApiSegments(collapsed);
-    return normalized || "/";
-  }
-
+  if (!trimmed) return "";
   try {
-    const ensured = ensureHttpsUrl(`https://${trimmed}`);
-    const sanitized = sanitizeAbsolute(ensured);
-    if (sanitized) {
-      return sanitized;
-    }
+    const baseCandidate = trimmed.startsWith("//")
+      ? `https:${trimmed}`
+      : /^https?:/i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`;
+    const u = new URL(ensureHttpsUrl(baseCandidate));
+    const sanitizedPath = stripTrailingApiSegments(u.pathname);
+    return sanitizedPath ? `${u.origin}${sanitizedPath}` : u.origin;
   } catch {
-    /* noop */
+    // relativo
+    if (trimmed.startsWith("/")) {
+      const collapsed = trimTrailingSlashes(trimmed) || "/";
+      const normalized = stripTrailingApiSegments(collapsed);
+      return normalized || "/";
+    }
+    return stripTrailingApiSegments(trimTrailingSlashes(trimmed) || trimmed) || "";
   }
-
-  const fallback = stripTrailingApiSegments(trimTrailingSlashes(trimmed) || trimmed);
-  return fallback || "";
 };
 
-const resolveEffectiveApiBase = () => {
-  const candidate = getApiBase() || BASE_DEFAULT;
-  const normalized = normalizeBase(candidate);
-  if (!normalized) {
-    return BASE_DEFAULT;
-  }
-  return normalized;
-};
-
-export const EFFECTIVE_API_BASE = resolveEffectiveApiBase();
+export const EFFECTIVE_API_BASE = normalizeBase(getApiBase()) || DEFAULT_API_BASE;
 export const API_BASE_URL = EFFECTIVE_API_BASE;
 
-const normalizePath = (value: string) => {
-  if (!value) return "/";
-  const hasQuery = value.includes("?");
-  const [rawPath, rawQuery] = hasQuery ? value.split("?") : [value, undefined];
+const normalizePath = (p: string) => {
+  if (!p) return "/";
+  const hasQ = p.includes("?");
+  const [rawPath, rawQuery] = hasQ ? p.split("?") : [p, undefined];
   const path = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
   const collapsed = path.replace(/\/+$/, "").replace(/\/{2,}/g, "/");
   const finalPath = collapsed.length === 0 ? "/" : collapsed;
-  if (!rawQuery) return finalPath || "/";
-  return `${finalPath}?${rawQuery}`;
-};
-
-export const buildApiUrl = (path: string, base?: string) => {
-  const safePath = normalizePath(path);
-  const baseCandidate =
-    typeof base === "string" && base.trim().length > 0 ? base : getApiBase() || BASE_DEFAULT;
-  const normalizedBase = normalizeBase(baseCandidate);
-
-  if (!normalizedBase) {
-    return safePath || "/";
-  }
-
-  if (normalizedBase === "/") {
-    return safePath || "/";
-  }
-
-  return `${normalizedBase}${safePath}`;
+  return rawQuery ? `${finalPath}?${rawQuery}` : finalPath;
 };
 
 export const resolveApiUrl = (path = "") => {
-  if (!path) {
-    const base = getApiBase() || BASE_DEFAULT;
-    const normalized = normalizeBase(base);
-    if (!normalized) {
-      return BASE_DEFAULT;
-    }
-    return normalized;
-  }
-  const url = buildApiUrl(path);
-  if (/^https?:/i.test(url)) {
-    return ensureHttpsUrl(url);
-  }
-  return url;
+  if (!path) return API_BASE_URL;
+  const safePath = normalizePath(path);
+  if (API_BASE_URL === "/" || API_BASE_URL === "") return safePath || "/";
+  const url = `${API_BASE_URL}${safePath}`;
+  return /^https?:/i.test(url) ? ensureHttpsUrl(url) : url;
 };
 
+export const buildApiUrl = resolveApiUrl;
+
+// Debug helper no navegador:
+declare global {
+  interface Window { __ecoApi?: any }
+}
 if (typeof window !== "undefined") {
-  try {
-    Object.defineProperty(window as typeof window & { __ecoApi?: unknown }, "__ecoApi", {
-      configurable: true,
-      enumerable: false,
-      writable: true,
-      value: { API_BASE_URL, resolveApiUrl },
-    });
-  } catch {
-    (window as typeof window & { __ecoApi?: unknown }).__ecoApi = {
-      API_BASE_URL,
-      resolveApiUrl,
-    };
-  }
+  window.__ecoApi = { API_BASE_URL, resolveApiUrl };
 }

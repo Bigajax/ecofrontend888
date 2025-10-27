@@ -4,7 +4,7 @@ import { ensureProfile } from '../lib/ensureProfile';
 import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import mixpanel from '../lib/mixpanel';
 import { clearGuestStorage } from '../hooks/useGuestGate';
-import { isEcoStreamActive, runWhenStreamIdle } from '../hooks/useEcoStream/streamStatus';
+import { isStreamActive, onStreamActivityChange } from '../hooks/useEcoStream/streamStatus';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
@@ -51,6 +51,24 @@ function clearClientState() {
       });
     }
   } catch {}
+}
+
+async function safeCleanupAfterSignout(runCleanup: () => void) {
+  if (!isStreamActive()) {
+    runCleanup();
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    const off = onStreamActivityChange(() => {
+      if (!isStreamActive()) {
+        off();
+        resolve();
+      }
+    });
+  });
+
+  runCleanup();
 }
 
 function persistAuthToken(token: string | null) {
@@ -147,12 +165,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             mixpanel.reset();
           };
 
-          if (isEcoStreamActive()) {
+          if (isStreamActive()) {
             console.info('[Auth] SIGNED_OUT deferred until stream idle');
-            runWhenStreamIdle(signedOutCleanup);
-          } else {
-            signedOutCleanup();
           }
+
+          void safeCleanupAfterSignout(signedOutCleanup);
 
           return;
         }
