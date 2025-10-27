@@ -41,6 +41,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
   // mostra os três pontinhos dentro da bolha enquanto streama e ainda não há texto
   const showTypingDots = isEco && isStreaming && !hasVisibleText;
 
+  const finishReasonLabel = (() => {
+    if (!isEco) return undefined;
+    if (isStreaming) return undefined;
+    if (hasVisibleText) return undefined;
+    const meta = message?.metadata;
+    if (!meta || typeof meta !== "object" || Array.isArray(meta)) return undefined;
+    const record = meta as Record<string, unknown> & { finishReason?: unknown; finish_reason?: unknown };
+    const finishReason = record.finishReason ?? record.finish_reason;
+    if (typeof finishReason !== "string") return undefined;
+    const trimmed = finishReason.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  })();
+
   const bubbleClass = clsx(
     "min-w-0 rounded-2xl px-4 py-3 text-left whitespace-pre-wrap break-words leading-relaxed",
     "text-[15px] sm:text-[15px]",
@@ -70,8 +83,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
             data-testid="eco-avatar"
           />
         )}
-        <div className={bubbleClass} data-sender={sender}>
-          {showTypingDots ? <TypingDots /> : <span className="chat-message-text">{textToShow}</span>}
+        <div className="flex min-w-0 flex-col">
+          <div className={bubbleClass} data-sender={sender}>
+            {showTypingDots ? <TypingDots /> : <span className="chat-message-text">{textToShow}</span>}
+          </div>
+          {finishReasonLabel && (
+            <div className="mt-1 pl-1 text-xs text-gray-500">
+              <span className="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-medium text-gray-600">
+                ({finishReasonLabel})
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>

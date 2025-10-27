@@ -28,6 +28,12 @@ import { resolveApiUrl } from "../../constants/api";
 import { buildIdentityHeaders } from "../../lib/guestId";
 import { setStreamActive } from "./streamStatus";
 
+export interface StreamRunStats {
+  aggregatedLength: number;
+  gotAnyChunk: boolean;
+  lastMeta?: Record<string, unknown>;
+}
+
 export type InteractionMapAction = {
   type: "updateInteractionMap";
   clientId: string;
@@ -208,6 +214,7 @@ interface StreamSharedContext {
   replyState: ReplyStateController;
   tracking: MessageTrackingRefs;
   interactionCacheDispatch?: (action: InteractionMapAction) => void;
+  streamStats: StreamRunStats;
 }
 
 interface DoneContext extends StreamSharedContext {
@@ -395,6 +402,47 @@ export const handleDone = (
     patch.text = finalText;
 
     patch.metadata = mergeReplyMetadata(metadataBase, normalizedClientId);
+
+    const finishReasonSource = (() => {
+      const streamMeta = toRecord(doneContext.streamStats?.lastMeta);
+      if (streamMeta && typeof streamMeta === "object") {
+        return streamMeta;
+      }
+      const metadataRecord = toRecord(metadataBase);
+      if (metadataRecord && typeof metadataRecord === "object") {
+        return metadataRecord;
+      }
+      return undefined;
+    })();
+    const finishReasonValue = (() => {
+      if (!finishReasonSource) return undefined;
+      const direct =
+        (finishReasonSource as Record<string, unknown>).finishReason ??
+        (finishReasonSource as Record<string, unknown>).finish_reason;
+      if (typeof direct === "string" && direct.trim().length > 0) {
+        return direct.trim();
+      }
+      return direct;
+    })();
+    const annotateWithFinishReason = (metadata: unknown): unknown => {
+      if (!(aggregatedLength === 0 && finishReasonValue !== undefined)) {
+        return metadata;
+      }
+      if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
+        return {
+          ...(metadata as Record<string, unknown>),
+          finishReason: finishReasonValue,
+        };
+      }
+      if (metadata === undefined) {
+        return { finishReason: finishReasonValue };
+      }
+      return {
+        finishReason: finishReasonValue,
+        value: metadata,
+      };
+    };
+    patch.metadata = annotateWithFinishReason(patch.metadata);
     if (donePayload !== undefined) {
       patch.donePayload = donePayload;
     }
@@ -471,6 +519,7 @@ export const handleDone = (
               text: finalText,
             };
             nextMessage.metadata = mergeReplyMetadata(metadataBase, normalizedClientId);
+            nextMessage.metadata = annotateWithFinishReason(nextMessage.metadata);
             if (donePayload !== undefined) {
               nextMessage.donePayload = donePayload;
             }
@@ -575,6 +624,19 @@ export const handleControl = (
 ) => {
   const explicit = toCleanString(event?.interactionId);
   const payloadRecord = toRecord(event?.payload);
+  const resolvedName = (() => {
+    const candidates = [toRecord(event) ?? {}, payloadRecord ?? {}];
+    const rawName = pickStringFromRecords(candidates, ["name", "event", "type"]);
+    return typeof rawName === "string" ? rawName.trim().toLowerCase() : undefined;
+  })();
+  const extractMetaRecord = (): Record<string, unknown> | undefined => {
+    const metaCandidate =
+      toRecord(payloadRecord?.meta) ?? toRecord(payloadRecord?.metadata) ?? toRecord(payloadRecord);
+    if (metaCandidate && typeof metaCandidate === "object" && !Array.isArray(metaCandidate)) {
+      return metaCandidate;
+    }
+    return undefined;
+  };
   const payloadInteraction =
     toCleanString(payloadRecord?.interaction_id) ||
     toCleanString(payloadRecord?.interactionId) ||
@@ -591,6 +653,37 @@ export const handleControl = (
     });
   } catch {
     /* noop */
+  }
+
+  if (resolvedName === "meta") {
+    const meta = extractMetaRecord();
+    try {
+      console.debug('[SSE] meta', meta ?? null);
+    } catch {
+      /* noop */
+    }
+    if (meta) {
+      context.streamStats.lastMeta = meta;
+    }
+  }
+
+  if (resolvedName === "done") {
+    const meta = extractMetaRecord();
+    try {
+      const metaForLog = meta as
+        | (Record<string, unknown> & { finishReason?: unknown; usage?: unknown; modelo?: unknown })
+        | undefined;
+      console.debug('[SSE] done', {
+        finishReason: metaForLog?.finishReason,
+        usage: metaForLog?.usage,
+        modelo: metaForLog?.modelo,
+      });
+    } catch {
+      /* noop */
+    }
+    if (meta) {
+      context.streamStats.lastMeta = meta;
+    }
   }
 };
 
@@ -657,7 +750,7 @@ export const beginStream = ({
   upsertMessage,
   replyState,
   tracking,
-}: BeginStreamParams) => {
+}: BeginStreamParams): Promise<StreamRunStats> | void => {
   const clientMessageId = userMessage.id;
   if (!clientMessageId) return;
   const trimmedClientId = typeof clientMessageId === "string" ? clientMessageId.trim() : "";
@@ -733,6 +826,8 @@ export const beginStream = ({
     /* noop */
   }
 
+  const streamStats: StreamRunStats = { aggregatedLength: 0, gotAnyChunk: false, lastMeta: undefined };
+
   const sharedContext: StreamSharedContext = {
     clientMessageId,
     normalizedClientId,
@@ -750,9 +845,8 @@ export const beginStream = ({
     replyState,
     tracking,
     interactionCacheDispatch,
+    streamStats,
   };
-
-  const streamStats = { aggregatedLength: 0, gotAnyChunk: false };
 
   const streamPromise = (async () => {
     const requestBody = buildEcoRequestBody({
@@ -767,10 +861,14 @@ export const beginStream = ({
 
     const identityHeaders = buildIdentityHeaders();
     const baseHeaders: Record<string, string> = {
-      "Accept": "text/event-stream",
       "Content-Type": "application/json",
       ...identityHeaders,
     };
+    const diagForceJson =
+      typeof window !== "undefined" && Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
+    const acceptHeader = diagForceJson ? "application/json" : "text/event-stream";
+    baseHeaders["Accept"] = acceptHeader;
+    const requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
 
     const resolvedClientId = (() => {
       const explicit = identityHeaders["X-Client-Id"] ?? (identityHeaders as Record<string, string | undefined>)["x-client-id"];
@@ -797,12 +895,18 @@ export const beginStream = ({
     let response: Response;
     setStreamActive(true);
     try {
-      response = await fetch(resolveApiUrl("/api/ask-eco"), {
+      const url = resolveApiUrl("/api/ask-eco");
+      try {
+        console.debug('[DIAG] start', { url, accept: acceptHeader, forcedJson: diagForceJson });
+      } catch {
+        /* noop */
+      }
+      response = await fetch(url, {
         method: "POST",
         mode: "cors",
         credentials: "include",
         headers: baseHeaders,
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(requestPayload),
         signal: controller.signal,
         cache: "no-store",
         // keepalive: true,  // ❌ NÃO usar em SSE
@@ -883,6 +987,15 @@ export const beginStream = ({
       if (!firstChunkDelivered) {
         firstChunkDelivered = true;
         onFirstChunk?.();
+      }
+      try {
+        console.debug('[SSE] chunk', {
+          idx: index,
+          len: delta.length,
+          sample: delta.slice(0, 40),
+        });
+      } catch {
+        /* noop */
       }
       const payloadRecord = extractPayloadRecord(rawEvent);
       const metadataRecord =
@@ -984,6 +1097,12 @@ export const beginStream = ({
         createdAt: createdAt ?? null,
       };
 
+      const doneMetaRecord =
+        toRecord(payloadRecord?.meta) ?? toRecord(payloadRecord?.metadata) ?? toRecord(payloadRecord);
+      if (doneMetaRecord) {
+        sharedContext.streamStats.lastMeta = doneMetaRecord;
+      }
+
       const assistantId = ensureAssistantMessage(clientMessageId, ensureMeta);
       if (!assistantId) return;
 
@@ -1016,6 +1135,23 @@ export const beginStream = ({
     };
 
     if (!contentType.includes("text/event-stream")) {
+      if (diagForceJson && contentType.includes("application/json")) {
+        let jsonPayload: unknown;
+        try {
+          jsonPayload = await response.json();
+        } catch {
+          jsonPayload = undefined;
+        }
+        try {
+          console.debug('[DIAG] json_response', jsonPayload);
+        } catch {
+          /* noop */
+        }
+        const recordPayload =
+          toRecord(jsonPayload) ?? (typeof jsonPayload === "object" && jsonPayload ? (jsonPayload as Record<string, unknown>) : undefined);
+        handleStreamDone(recordPayload);
+        return streamStats;
+      }
       let detail = "";
       try {
         detail = await response.text();
@@ -1146,6 +1282,8 @@ export const beginStream = ({
     if (!doneReceived && !controller.signal.aborted) {
       handleStreamDone();
     }
+
+    return streamStats;
   })();
 
   streamPromise.catch((error) => {
@@ -1192,11 +1330,20 @@ export const beginStream = ({
 
     if (isCurrentClient) {
       if (!wasAborted) {
+        const finishReasonFromMeta = (() => {
+          const meta = sharedContext.streamStats.lastMeta;
+          if (meta && typeof meta === "object" && !Array.isArray(meta)) {
+            const record = meta as Record<string, unknown> & { finishReason?: unknown; finish_reason?: unknown };
+            return record.finishReason ?? record.finish_reason;
+          }
+          return undefined;
+        })();
         try {
           console.info('[EcoStream] stream_completed', {
             clientMessageId,
             gotAnyChunk: streamStats.gotAnyChunk,
             aggregatedLength: streamStats.aggregatedLength,
+            finishReasonFromMeta,
           });
         } catch {
           /* noop */

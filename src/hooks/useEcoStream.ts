@@ -15,6 +15,7 @@ import {
   type EnsureAssistantMessageFn,
   type InteractionMapAction,
   type RemoveEcoEntryFn,
+  type StreamRunStats,
 } from "./useEcoStream/streamOrchestrator";
 import { safeDebug } from "./useEcoStream/utils";
 import { setStreamActive } from "./useEcoStream/streamStatus";
@@ -389,7 +390,8 @@ export const useEcoStream = ({
     log.info("[EcoStream] stream_init", { clientMessageId });
 
     let gotAnyChunk = false;
-    let streamPromise: Promise<unknown> | void;
+    let streamPromise: Promise<StreamRunStats> | void;
+    let lastMetaFromStream: Record<string, unknown> | undefined;
     try {
       streamPromise = beginStreamSafely(payload, controller, () => {
         gotAnyChunk = true;
@@ -403,10 +405,16 @@ export const useEcoStream = ({
     }
     pendingSendRef.current = null;
 
-    const finalize = () => {
+    const finalize = (meta?: Record<string, unknown>) => {
       const stillActive = activeClientIdRef.current === clientMessageId;
       const logger = stillActive ? log.info : log.debug;
-      logger("[EcoStream] stream_completed", { clientMessageId, gotAnyChunk });
+      const finishReasonFromMeta = (() => {
+        if (!meta || typeof meta !== "object" || Array.isArray(meta)) return undefined;
+        const record = meta as Record<string, unknown> & { finishReason?: unknown; finish_reason?: unknown };
+        const finishReason = record.finishReason ?? record.finish_reason;
+        return typeof finishReason === "string" ? finishReason : finishReason;
+      })();
+      logger("[EcoStream] stream_completed", { clientMessageId, gotAnyChunk, finishReasonFromMeta });
       streamLockRef.current = false; // FIX: libera lock somente após término da stream
       if (isMountedRef.current) {
         setHasActiveStream(false);
@@ -416,8 +424,19 @@ export const useEcoStream = ({
       }
     };
 
-    if (streamPromise && typeof (streamPromise as Promise<unknown>).finally === "function") {
-      (streamPromise as Promise<unknown>).finally(finalize);
+    if (
+      streamPromise &&
+      typeof (streamPromise as Promise<StreamRunStats>).then === "function" &&
+      typeof (streamPromise as Promise<StreamRunStats>).finally === "function"
+    ) {
+      (streamPromise as Promise<StreamRunStats>)
+        .then((result) => {
+          lastMetaFromStream = result?.lastMeta;
+        })
+        .catch(() => {
+          lastMetaFromStream = undefined;
+        })
+        .finally(() => finalize(lastMetaFromStream));
     } else {
       finalize();
     }
