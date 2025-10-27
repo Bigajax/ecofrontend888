@@ -50,6 +50,15 @@ const BEHAVIOR_EDIT_DELTA = 6;
 const FAST_FOLLOWUP_WINDOW_MS = 15_000;
 const BEHAVIOR_HINT_FALLBACK_MS = 12_000;
 
+const devLog = (label: string, payload?: Record<string, unknown>) => {
+  if (!import.meta.env?.DEV) return;
+  try {
+    console.info(label, payload ?? {});
+  } catch {
+    /* noop */
+  }
+};
+
 const pickHeroSubtitle = () =>
   OPENING_VARIATIONS[
     Math.floor(Math.random() * Math.max(OPENING_VARIATIONS.length, 1))
@@ -278,7 +287,7 @@ function ChatPage() {
     };
   }, []);
 
-  const { handleSendMessage: streamSendMessage, erroApi, pending } = useEcoStream({
+  const { handleSendMessage: streamSendMessage, erroApi, pending, streaming } = useEcoStream({
     messages,
     upsertMessage,
     setMessages,
@@ -295,7 +304,13 @@ function ChatPage() {
 
   const streamAndPersist = useCallback(
     async (text: string, systemHint?: string) => {
-      if (pending) return;
+      if (pending || streaming) {
+        devLog('[ChatPage] stream_guard_blocked', {
+          reason: pending ? 'pending' : 'streaming',
+          preview: text.slice(0, 60),
+        });
+        return;
+      }
       if (isGuest) {
         if (guestGate.inputDisabled || guestGate.count >= guestGate.limit) {
           setLoginGateOpen(true);
@@ -305,15 +320,30 @@ function ChatPage() {
       }
       await streamSendMessage(text, systemHint);
     },
-    [guestGate, isGuest, pending, streamSendMessage],
+    [guestGate, isGuest, pending, streamSendMessage, streaming],
   );
 
   const sendWithGuards = useCallback(
     async (text: string, systemHint?: string) => {
       const trimmed = (text ?? '').trim();
       if (!trimmed) return;
-      if (isComposerSending || pending) return;
-      console.count('HANDLE_SEND');
+      const blockReason = (() => {
+        if (isComposerSending) return 'composer';
+        if (pending) return 'pending';
+        if (streaming) return 'streaming';
+        return null;
+      })();
+      if (blockReason) {
+        devLog('[ChatPage] send_blocked', {
+          reason: blockReason,
+          preview: trimmed.slice(0, 60),
+        });
+        return;
+      }
+      devLog('[ChatPage] send_start', {
+        preview: trimmed.slice(0, 60),
+        hasHint: Boolean(systemHint?.trim()),
+      });
       setIsComposerSending(true);
       setLastAttempt({ text: trimmed, hint: systemHint });
       try {
@@ -322,9 +352,12 @@ function ChatPage() {
         setLastAttempt(null);
       } finally {
         setIsComposerSending(false);
+        devLog('[ChatPage] send_complete', {
+          preview: trimmed.slice(0, 60),
+        });
       }
     },
-    [finalizeBehaviorMetrics, isComposerSending, pending, streamAndPersist],
+    [finalizeBehaviorMetrics, isComposerSending, pending, streamAndPersist, streaming],
   );
 
   useEffect(() => {
@@ -332,7 +365,13 @@ function ChatPage() {
   }, [messages, hideQuickSuggestions]);
 
   const handlePickSuggestion = async (s: Suggestion, meta?: SuggestionPickMeta) => {
-    if (isComposerSending || pending) return;
+    if (isComposerSending || pending || streaming) {
+      devLog('[ChatPage] suggestion_blocked', {
+        reason: isComposerSending ? 'composer' : pending ? 'pending' : 'streaming',
+        suggestionId: s.id,
+      });
+      return;
+    }
     hideQuickSuggestions();
     mixpanel.track('Front-end: Quick Suggestion', {
       id: s.id,
@@ -351,6 +390,9 @@ function ChatPage() {
 
   const handleRetry = useCallback(() => {
     if (!lastAttempt) return;
+    devLog('[ChatPage] retry_triggered', {
+      hasAttempt: Boolean(lastAttempt),
+    });
     void sendWithGuards(lastAttempt.text, lastAttempt.hint);
   }, [lastAttempt, sendWithGuards]);
 
