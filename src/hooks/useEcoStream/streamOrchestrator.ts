@@ -1,7 +1,6 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 
 import {
-  parseNonStreamResponse,
   type EcoStreamChunk,
   type EcoStreamControlEvent,
   type EcoStreamDoneEvent,
@@ -813,15 +812,18 @@ export const beginStream = ({
     }
 
     if (!response.ok) {
-      let detail: string | undefined;
+      let detail = "";
       try {
         detail = await response.text();
       } catch {
-        detail = undefined;
+        detail = "";
       }
-      const errorMessage =
-        detail && detail.trim() ? detail.trim() : `Eco stream request failed (${response.status})`;
-      throw new Error(errorMessage);
+      const trimmed = detail.trim();
+      const preview = trimmed.slice(0, 200);
+      const message = trimmed.startsWith("<!DOCTYPE")
+        ? `Gateway/edge retornou HTML (${response.status}). Ver backlogs. Trecho: ${preview}...`
+        : trimmed || `Eco stream request failed (${response.status})`;
+      throw new Error(message);
     }
 
     const decoder = new TextDecoder("utf-8");
@@ -985,23 +987,21 @@ export const beginStream = ({
     };
 
     if (!contentType.includes("text/event-stream")) {
-      const fallbackResult = await parseNonStreamResponse(response);
-      const fallbackPayload =
-        fallbackResult.done ?? fallbackResult.metadata ?? (fallbackResult.text || undefined);
-      if (fallbackResult.text) {
-        processChunkEvent(0, fallbackResult.text, {
-          type: "chunk",
-          index: 0,
-          delta: fallbackResult.text,
-          payload: fallbackPayload,
-        } as Record<string, unknown>);
+      let detail = "";
+      try {
+        detail = await response.text();
+      } catch {
+        detail = "";
       }
-      handleStreamDone(
-        fallbackPayload
-          ? ({ type: "control", name: "done", payload: fallbackPayload } as Record<string, unknown>)
-          : undefined,
-      );
-      return;
+      const trimmed = detail.trim();
+      const preview = trimmed.slice(0, 200);
+      const baseMessage = `Resposta inválida: status=${response.status} content-type=${
+        contentType || "<desconhecido>"
+      }`;
+      const message = trimmed.startsWith("<!DOCTYPE")
+        ? `Gateway/edge retornou HTML (${response.status}). Ver backlogs. Trecho: ${preview}...`
+        : `${baseMessage}${preview ? ` body=${preview}...` : ""}`;
+      throw new Error(message);
     }
 
     const reader = response.body?.getReader();
