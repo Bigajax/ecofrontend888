@@ -131,6 +131,9 @@ const extractFinishReasonFromMeta = (meta: unknown): string | undefined => {
   return undefined;
 };
 
+const FIRST_EVENT_GRACE_MS = 35_000;
+const HEARTBEAT_GRACE_MS = 25_000;
+
 const applyMetaToStreamStats = (
   streamStats: StreamRunStats,
   meta: Record<string, unknown> | undefined,
@@ -862,6 +865,41 @@ export const beginStream = ({
     finishReasonFromMeta: undefined,
   };
 
+  let firstEventTimer: ReturnType<typeof setInterval> | null = null;
+  let lastActivityAt = Date.now();
+
+  const clearFirstEventGuard = () => {
+    if (firstEventTimer !== null) {
+      clearInterval(firstEventTimer);
+      firstEventTimer = null;
+    }
+  };
+
+  const bumpActivity = () => {
+    lastActivityAt = Date.now();
+  };
+
+  const armFirstEventGuard = (onTimeout: (reason: "first_event_timeout") => void) => {
+    if (typeof setInterval !== "function") {
+      return;
+    }
+    clearFirstEventGuard();
+    lastActivityAt = Date.now();
+    firstEventTimer = setInterval(() => {
+      const grace = streamStats.gotAnyChunk ? HEARTBEAT_GRACE_MS : FIRST_EVENT_GRACE_MS;
+      const since = Date.now() - lastActivityAt;
+      if (since > grace) {
+        clearFirstEventGuard();
+        try {
+          console.info("[SSE] first-event-timeout", { clientMessageId, since, grace });
+        } catch {
+          /* noop */
+        }
+        onTimeout("first_event_timeout");
+      }
+    }, 1_000);
+  };
+
   const sharedContext: StreamSharedContext = {
     clientMessageId,
     normalizedClientId,
@@ -967,6 +1005,7 @@ export const beginStream = ({
       status: response.status,
       contentType,
     });
+    bumpActivity();
     try {
       console.info("[EcoStream] onStreamOpen", {
         clientMessageId,
@@ -1017,6 +1056,7 @@ export const beginStream = ({
 
     const processChunkEvent = (index: number, delta: string, rawEvent: Record<string, unknown>) => {
       if (controller.signal.aborted) return;
+      bumpActivity();
       streamStats.gotAnyChunk = true;
       streamStats.aggregatedLength += delta.length;
       if (!firstChunkDelivered) {
@@ -1058,6 +1098,7 @@ export const beginStream = ({
 
     const handlePromptEvent = (rawEvent: Record<string, unknown>) => {
       if (controller.signal.aborted) return;
+      bumpActivity();
       const records = buildRecordChain(rawEvent);
       const interactionId =
         pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
@@ -1078,6 +1119,7 @@ export const beginStream = ({
 
     const handleControlEvent = (rawEvent: Record<string, unknown>) => {
       if (controller.signal.aborted) return;
+      bumpActivity();
       const records = buildRecordChain(rawEvent);
       const interactionId =
         pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
@@ -1097,9 +1139,15 @@ export const beginStream = ({
       handleControl(controlEvent, sharedContext);
     };
 
-    const handleStreamDone = (rawEvent?: Record<string, unknown>) => {
+    const handleStreamDone = (
+      rawEvent?: Record<string, unknown>,
+      options?: { reason?: string },
+    ) => {
       if (controller.signal.aborted || doneReceived) return;
       doneReceived = true;
+
+      clearFirstEventGuard();
+      bumpActivity();
 
       if (activeStreamClientIdRef.current === clientMessageId) {
         streamActiveRef.current = false;
@@ -1121,7 +1169,16 @@ export const beginStream = ({
       const now = Date.now();
       const metrics = streamTimersRef.current[normalizedClientId];
       const totalMs = metrics ? now - metrics.startedAt : undefined;
-      const doneReason = rawEvent ? (payloadRecord ? "server-done" : "server-done-empty") : "missing-event";
+      const doneReason = (() => {
+        if (options?.reason) return options.reason;
+        if (rawEvent) {
+          if ((rawEvent as { done?: unknown }).done === true) {
+            return "done_message_compat";
+          }
+          return payloadRecord ? "server-done" : "server-done-empty";
+        }
+        return "missing-event";
+      })();
       logSse("done", { clientMessageId: normalizedClientId, totalMs, reason: doneReason });
       delete streamTimersRef.current[normalizedClientId];
 
@@ -1177,6 +1234,7 @@ export const beginStream = ({
     };
 
     const handleErrorEvent = (rawEvent: Record<string, unknown>) => {
+      bumpActivity();
       const records = buildRecordChain(rawEvent);
       const message =
         pickStringFromRecords(records, ["message", "error", "detail", "reason"]) ??
@@ -1226,6 +1284,10 @@ export const beginStream = ({
 
     (globalThis as any).__ecoActiveReader = reader;
 
+    armFirstEventGuard((reason) => {
+      handleStreamDone(undefined, { reason });
+    });
+
     const handlers: ProcessSseHandlers = {
       appendAssistantDelta: (index, delta, event) => processChunkEvent(index, delta, event),
       onStreamDone: (event) => handleStreamDone(event),
@@ -1246,6 +1308,7 @@ export const beginStream = ({
         if (!trimmed) continue;
         if (trimmed.startsWith(":")) {
           const comment = trimmed.slice(1).trim();
+          bumpActivity();
           if (comment) {
             try {
               console.info("[SSE] comment", { comment });
@@ -1338,6 +1401,7 @@ export const beginStream = ({
 
   streamPromise.catch((error) => {
     if (controller.signal.aborted) return;
+    clearFirstEventGuard();
     if (activeStreamClientIdRef.current === clientMessageId) {
       streamActiveRef.current = false;
       setStreamActive(false);
@@ -1367,6 +1431,7 @@ export const beginStream = ({
   });
 
   streamPromise.finally(() => {
+    clearFirstEventGuard();
     setStreamActive(false);
     const isCurrentClient = activeClientIdRef.current === clientMessageId;
     if (isCurrentClient && controllerRef.current === controller) {
