@@ -137,6 +137,10 @@ function AppChrome() {
         : "não definido (string vazia)"
       : "indefinido";
   const effectiveApiBase = getApiBase();
+  const defaultApiBaseDisplay =
+    DEFAULT_API_BASE && DEFAULT_API_BASE.trim().length > 0
+      ? DEFAULT_API_BASE
+      : "mesmo host (/)";
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -264,7 +268,7 @@ function AppChrome() {
 
       <ApiBaseWarningCard
         rawApiBaseDisplay={rawApiBaseDisplay}
-        defaultApiBase={DEFAULT_API_BASE}
+        defaultApiBase={defaultApiBaseDisplay}
         effectiveApiBase={effectiveApiBase}
       />
 
