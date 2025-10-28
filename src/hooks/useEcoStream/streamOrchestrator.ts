@@ -51,6 +51,27 @@ const FALLBACK_NO_CHUNK_REASONS = new Set<string>([
   "start-error",
 ]);
 
+const logAbortDebug = () => {
+  try {
+    console.log('[DEBUG] Abortando conexão', new Error().stack);
+  } catch {
+    /* noop */
+  }
+};
+
+const debugAbortController = (controller: AbortController, reason?: unknown) => {
+  logAbortDebug();
+  try {
+    controller.abort(reason as any);
+  } catch {
+    try {
+      controller.abort();
+    } catch {
+      /* noop */
+    }
+  }
+};
+
 const resolveStreamGuardTimeoutMs = (): number => {
   const envContainer = import.meta as { env?: Record<string, unknown> };
   const envCandidates: unknown[] = [
@@ -171,11 +192,7 @@ export async function openEcoSseStream(opts: {
     if (closed) return;
     closed = true;
     closeReason = reason;
-    try {
-      controller.abort();
-    } catch {
-      /* noop */
-    }
+    debugAbortController(controller);
     try {
       wd.clear();
     } catch {
@@ -1182,7 +1199,7 @@ export const beginStream = ({
         } catch {
           /* noop */
         }
-        activeController.abort("new-send");
+        debugAbortController(activeController, "new-send");
         if (typeof normalizedActiveId === "string" && normalizedActiveId) {
           logSse("abort", {
             clientMessageId: normalizedActiveId,
@@ -1427,11 +1444,7 @@ export const beginStream = ({
       });
       registerNoContent("fallback_guard_timeout");
       if (!controller.signal.aborted) {
-        try {
-          controller.abort("fallback_guard_timeout");
-        } catch {
-          controller.abort();
-        }
+        debugAbortController(controller, "fallback_guard_timeout");
       }
       if (triggerJsonFallback) {
         triggerJsonFallback("fallback_guard_timeout");
@@ -1561,11 +1574,11 @@ export const beginStream = ({
 
       const fallbackController = new AbortController();
       if (parentSignal.aborted) {
-        fallbackController.abort(parentSignal.reason);
+        debugAbortController(fallbackController, parentSignal.reason);
       } else {
         parentSignal.addEventListener(
           "abort",
-          () => fallbackController.abort(parentSignal.reason),
+          () => debugAbortController(fallbackController, parentSignal.reason),
           { once: true },
         );
       }

@@ -155,60 +155,60 @@ export const useEcoStream = ({
 
   useEffect(() => {
     isMountedRef.current = true;
-    return () => {
-      try {
-        console.debug('[DIAG] useEffect:cleanup', {
-          clientMessageId: activeStreamClientIdRef.current,
-          isStreaming: streamActiveRef.current === true,
-        });
-      } catch {
-        /* noop */
-      }
-      isMountedRef.current = false;
-      const activeController = controllerRef.current;
-      const isStreaming = streamActiveRef.current === true;
-      if (activeController && !activeController.signal.aborted) {
-        if (isStreaming) {
-          try {
-            console.warn("[EcoStream] cleanup_skip_abort", {
-              reason: "active-stream",
-              clientMessageId: activeStreamClientIdRef.current,
-            });
-          } catch {
-            /* noop */
-          }
-        } else {
-          try {
-            console.info("[EcoStream] cleanup_controller_idle", {
-              reason: "unmount",
-              clientMessageId: activeStreamClientIdRef.current,
-            });
-          } catch {
-            /* noop */
-          }
-        }
-      }
-      if (!isStreaming) {
-        streamActiveRef.current = false;
-        try {
-          console.debug('[DIAG] setStreamActive:before', {
-            clientMessageId: activeStreamClientIdRef.current,
-            value: false,
-            phase: 'cleanup',
-          });
-        } catch {
-          /* noop */
-        }
-        setStreamActive(false);
-        controllerRef.current = null;
-      }
-      streamTimersRef.current = {};
-      activeStreamClientIdRef.current = null;
-      activeAssistantIdRef.current = null;
-      pendingSendRef.current = null;
-      activeClientIdRef.current = null;
-      streamLockRef.current = false; // FIX: garante liberação do lock na desmontagem
-    };
+    // return () => {
+    //   try {
+    //     console.debug('[DIAG] useEffect:cleanup', {
+    //       clientMessageId: activeStreamClientIdRef.current,
+    //       isStreaming: streamActiveRef.current === true,
+    //     });
+    //   } catch {
+    //     /* noop */
+    //   }
+    //   isMountedRef.current = false;
+    //   const activeController = controllerRef.current;
+    //   const isStreaming = streamActiveRef.current === true;
+    //   if (activeController && !activeController.signal.aborted) {
+    //     if (isStreaming) {
+    //       try {
+    //         console.warn("[EcoStream] cleanup_skip_abort", {
+    //           reason: "active-stream",
+    //           clientMessageId: activeStreamClientIdRef.current,
+    //         });
+    //       } catch {
+    //         /* noop */
+    //       }
+    //     } else {
+    //       try {
+    //         console.info("[EcoStream] cleanup_controller_idle", {
+    //           reason: "unmount",
+    //           clientMessageId: activeStreamClientIdRef.current,
+    //         });
+    //       } catch {
+    //         /* noop */
+    //       }
+    //     }
+    //   }
+    //   if (!isStreaming) {
+    //     streamActiveRef.current = false;
+    //     try {
+    //       console.debug('[DIAG] setStreamActive:before', {
+    //         clientMessageId: activeStreamClientIdRef.current,
+    //         value: false,
+    //         phase: 'cleanup',
+    //       });
+    //     } catch {
+    //       /* noop */
+    //     }
+    //     setStreamActive(false);
+    //     controllerRef.current = null;
+    //   }
+    //   streamTimersRef.current = {};
+    //   activeStreamClientIdRef.current = null;
+    //   activeAssistantIdRef.current = null;
+    //   pendingSendRef.current = null;
+    //   activeClientIdRef.current = null;
+    //   streamLockRef.current = false; // FIX: garante liberação do lock na desmontagem
+    // };
   }, []);
 
   const ensureAssistantMessage: EnsureAssistantMessageFn = useCallback(
