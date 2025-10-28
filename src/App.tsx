@@ -228,6 +228,7 @@ function AppChrome() {
     };
 
     const handleUnhandledRejection = function (event: PromiseRejectionEvent) {
+      event.preventDefault?.();
       console.error("[App] window.onunhandledrejection capturado", event.reason, event);
       setHasCapturedError(true);
       if (typeof previousOnUnhandledRejection === "function") {

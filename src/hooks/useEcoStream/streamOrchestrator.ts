@@ -29,6 +29,20 @@ import { resolveApiUrl } from "../../constants/api";
 import { buildIdentityHeaders } from "../../lib/guestId";
 import { setStreamActive } from "./streamStatus";
 
+const diag = (...args: unknown[]) => {
+  try {
+    const envContainer = import.meta as { env?: Record<string, unknown> };
+    const isDev = Boolean(envContainer?.env?.DEV);
+    const hasDebug =
+      typeof window !== "undefined" && Boolean((window as { ECO_DEBUG?: boolean }).ECO_DEBUG);
+    if (isDev || hasDebug) {
+      console.log("[eco-stream]", ...args);
+    }
+  } catch {
+    /* noop */
+  }
+};
+
 export interface StreamRunStats {
   aggregatedLength: number;
   gotAnyChunk: boolean;
@@ -1001,7 +1015,7 @@ export const beginStream = ({
       timing: streamStats.timing ?? {},
       headers: streamStats.responseHeaders ?? {},
     };
-    log.info("eco_stream_no_content", telemetry);
+    diag("eco_stream_no_content", telemetry);
     try {
       console.info("[EcoStream] eco_stream_no_content", telemetry);
     } catch {
@@ -1244,6 +1258,7 @@ export const beginStream = ({
     }
 
     let fatalError: Error | null = null;
+    let handledReaderError = false;
 
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
@@ -1328,6 +1343,12 @@ export const beginStream = ({
         payload: payloadRecord ?? rawEvent,
       };
 
+      diag("prompt_ready", {
+        clientMessageId: normalizedClientId,
+        interactionId: promptEvent.interactionId ?? null,
+        messageId: promptEvent.messageId ?? null,
+      });
+
       handlePromptReady(promptEvent, sharedContext);
     };
 
@@ -1342,6 +1363,9 @@ export const beginStream = ({
         pickStringFromRecords([toRecord(rawEvent) ?? {}, payloadRecord ?? {}], ["name", "event", "type"]) ??
         undefined;
 
+      const normalizedName =
+        typeof name === "string" ? name.trim().toLowerCase() : undefined;
+
       const controlEvent: EcoStreamControlEvent = {
         name,
         interactionId,
@@ -1349,10 +1373,14 @@ export const beginStream = ({
         payload: payloadRecord ?? rawEvent,
       };
 
-      if (resolvedName === "heartbeat") {
+      if (normalizedName === "heartbeat") {
         bumpWatchdog("steady");
       } else {
         bumpWatchdog();
+      }
+
+      if (normalizedName) {
+        diag("control_event", { name: normalizedName, clientMessageId: normalizedClientId });
       }
 
       handleControl(controlEvent, sharedContext);
@@ -1385,12 +1413,12 @@ export const beginStream = ({
       rawEvent?: Record<string, unknown>,
       options?: { reason?: string },
     ) => {
-    if (controller.signal.aborted || doneReceived) return;
-    doneReceived = true;
-    clearWatchdog();
+      if (controller.signal.aborted || doneReceived) return;
+      doneReceived = true;
+      clearWatchdog();
 
-    if (activeStreamClientIdRef.current === clientMessageId) {
-      streamActiveRef.current = false;
+      if (activeStreamClientIdRef.current === clientMessageId) {
+        streamActiveRef.current = false;
         try {
           console.debug('[DIAG] setStreamActive:before', {
             clientMessageId,
@@ -1521,6 +1549,16 @@ export const beginStream = ({
     };
 
     onWatchdogTimeout = (reason) => {
+      if (!streamStats.gotAnyChunk) {
+        diag("watchdog_timeout_ignored", { reason, clientMessageId: normalizedClientId });
+        if (reason === "first_chunk_timeout") {
+          startWatchdog();
+        } else {
+          bumpWatchdog("steady");
+        }
+        return;
+      }
+      diag("watchdog_timeout", { reason, clientMessageId: normalizedClientId });
       handleStreamDone(undefined, { reason });
     };
 
@@ -1752,7 +1790,19 @@ export const beginStream = ({
         if (controller.signal.aborted || error?.name === "AbortError") {
           break;
         }
-        throw error;
+        handledReaderError = true;
+        fatalError = error instanceof Error ? error : new Error(String(error ?? "reader_error"));
+        diag("reader_read_failed", {
+          clientMessageId: normalizedClientId,
+          message: fatalError.message,
+        });
+        try {
+          setErroApi("Falha no stream, tente novamente");
+        } catch {
+          /* noop */
+        }
+        handleStreamDone(undefined, { reason: "reader_error" });
+        break;
       }
 
       const { value, done } = chunk;
@@ -1781,7 +1831,13 @@ export const beginStream = ({
     }
 
     if (fatalError) {
-      throw fatalError;
+      if (!handledReaderError) {
+        throw fatalError;
+      }
+      diag("reader_error_handled", {
+        clientMessageId: normalizedClientId,
+        message: fatalError.message,
+      });
     }
 
     if (!doneReceived && !controller.signal.aborted) {
