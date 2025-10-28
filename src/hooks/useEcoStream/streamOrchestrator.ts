@@ -28,6 +28,7 @@ import {
 import { resolveApiUrl } from "../../constants/api";
 import { buildIdentityHeaders } from "../../lib/guestId";
 import { setStreamActive } from "./streamStatus";
+import { NO_TEXT_ALERT_MESSAGE, showToast } from "../useEcoStream.helpers";
 
 const diag = (...args: unknown[]) => {
   try {
@@ -52,6 +53,8 @@ export interface StreamRunStats {
   timing?: { startedAt?: number; firstChunkAt?: number; totalMs?: number };
   responseHeaders?: Record<string, string>;
   noContentReason?: string;
+  clientFinishReason?: string;
+  streamId?: string;
 }
 
 export type InteractionMapAction = {
@@ -437,13 +440,48 @@ export const handleDone = (
     const normalizedDone = typeof doneContentCandidate === "string"
       ? doneContentCandidate.replace(/\s+/g, " ").trim()
       : "";
+    const doneHasRenderableText = typeof doneContentCandidate === "string" && doneContentCandidate.length > 0;
+    const hasStructuredDonePayload = (() => {
+      if (!payloadRecord) return false;
+      const responseRecord = toRecord(payloadRecord.response);
+      if (responseRecord && Object.keys(responseRecord).length > 0) return true;
+      const responseBodyRecord = toRecord(payloadRecord.responseBody);
+      if (responseBodyRecord && Object.keys(responseBodyRecord).length > 0) return true;
+      const altResponseBody = toRecord((payloadRecord as { response_body?: unknown }).response_body);
+      if (altResponseBody && Object.keys(altResponseBody).length > 0) return true;
+      const maybeMessages = (payloadRecord as { messages?: unknown }).messages;
+      return Array.isArray(maybeMessages) && maybeMessages.length > 0;
+    })();
 
     let finalContent = aggregatedTextValue;
-    if (typeof doneContentCandidate === "string" && doneContentCandidate.length > 0) {
+    if (doneHasRenderableText) {
       if (!normalizedAggregated) {
         finalContent = doneContentCandidate;
       } else if (normalizedAggregated !== normalizedDone) {
         finalContent = doneContentCandidate;
+      }
+    } else if (aggregatedLength > 0 && !hasStructuredDonePayload) {
+      try {
+        console.debug('[DIAG] done:fallback-aggregated', {
+          clientMessageId,
+          assistantId,
+          aggregatedLength,
+        });
+      } catch {
+        /* noop */
+      }
+    }
+
+    if (aggregatedLength === 0 && !doneHasRenderableText) {
+      if (!doneContext.streamStats.clientFinishReason) {
+        doneContext.streamStats.clientFinishReason = "no_text_before_done";
+      }
+      if (doneContext.streamStats.clientFinishReason === "no_text_before_done") {
+        try {
+          showToast(NO_TEXT_ALERT_MESSAGE);
+        } catch {
+          /* noop */
+        }
       }
     }
 
@@ -484,20 +522,29 @@ export const handleDone = (
       return direct;
     })();
     const annotateWithFinishReason = (metadata: unknown): unknown => {
-      if (!(aggregatedLength === 0 && finishReasonValue !== undefined)) {
+      const shouldAnnotateFinishReason = aggregatedLength === 0 && finishReasonValue !== undefined;
+      const clientFinishReason = doneContext.streamStats.clientFinishReason;
+      if (!shouldAnnotateFinishReason && !clientFinishReason) {
         return metadata;
+      }
+      const finishAnnotations: Record<string, unknown> = {};
+      if (shouldAnnotateFinishReason && finishReasonValue !== undefined) {
+        finishAnnotations.finishReason = finishReasonValue;
+      }
+      if (clientFinishReason) {
+        finishAnnotations.clientFinishReason = clientFinishReason;
       }
       if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
         return {
           ...(metadata as Record<string, unknown>),
-          finishReason: finishReasonValue,
+          ...finishAnnotations,
         };
       }
       if (metadata === undefined) {
-        return { finishReason: finishReasonValue };
+        return finishAnnotations;
       }
       return {
-        finishReason: finishReasonValue,
+        ...finishAnnotations,
         value: metadata,
       };
     };
@@ -663,6 +710,9 @@ export const handleError = (
 ) => {
   const message = error instanceof Error ? error.message : "Não foi possível concluir a resposta da Eco.";
   context.setErroApi(message);
+  if (!context.streamStats.clientFinishReason) {
+    context.streamStats.clientFinishReason = "error";
+  }
   context.logSse("abort", {
     clientMessageId: context.normalizedClientId,
     reason: "error",
@@ -932,6 +982,7 @@ export const beginStream = ({
   streamTimersRef.current[normalizedClientId] = { startedAt: Date.now() };
   logSse("start", { clientMessageId: normalizedClientId });
   console.log("[SSE] Stream started", { timestamp: Date.now() });
+  startWatchdog();
 
   try {
     console.debug('[DIAG] stream:start', {
@@ -950,11 +1001,12 @@ export const beginStream = ({
     finishReasonFromMeta: undefined,
   };
 
-  const FIRST_CHUNK_TIMEOUT_MS = 35_000;
-  const INTER_EVENT_TIMEOUT_MS = 25_000;
+  const PROMPT_READY_TIMEOUT_MS = 30_000;
+  const HEARTBEAT_TIMEOUT_MS = 40_000;
+  type WatchdogMode = "idle" | "awaiting-prompt" | "steady";
   let watchdogTimer: ReturnType<typeof setTimeout> | null = null;
-  let watchdogMode: "idle" | "first-chunk" | "steady" = "idle";
-  let onWatchdogTimeout: ((reason: "first_chunk_timeout" | "inter_event_timeout") => void) | null = null;
+  let watchdogMode: WatchdogMode = "idle";
+  let onWatchdogTimeout: ((reason: "prompt_ready_timeout" | "heartbeat_timeout") => void) | null = null;
 
   const clearWatchdog = () => {
     if (watchdogTimer !== null) {
@@ -964,33 +1016,32 @@ export const beginStream = ({
     watchdogMode = "idle";
   };
 
-  const scheduleWatchdog = (mode: "first-chunk" | "steady") => {
+  const scheduleWatchdog = (mode: Exclude<WatchdogMode, "idle">) => {
     if (typeof setTimeout !== "function") return;
     if (watchdogTimer !== null) {
       clearTimeout(watchdogTimer);
     }
     watchdogMode = mode;
-    const timeout = mode === "first-chunk" ? FIRST_CHUNK_TIMEOUT_MS : INTER_EVENT_TIMEOUT_MS;
+    const timeout = mode === "awaiting-prompt" ? PROMPT_READY_TIMEOUT_MS : HEARTBEAT_TIMEOUT_MS;
     watchdogTimer = setTimeout(() => {
       watchdogTimer = null;
       watchdogMode = "idle";
+      const reason = mode === "awaiting-prompt" ? "prompt_ready_timeout" : "heartbeat_timeout";
       try {
-        console.warn("[SSE] watchdog_timeout", { clientMessageId, mode, timeout });
+        console.warn("[SSE] watchdog_timeout", { clientMessageId, mode, timeout, reason });
       } catch {
         /* noop */
       }
-      const reason = mode === "first-chunk" ? "first_chunk_timeout" : "inter_event_timeout";
       onWatchdogTimeout?.(reason);
     }, timeout);
   };
 
   const startWatchdog = () => {
-    scheduleWatchdog("first-chunk");
+    scheduleWatchdog("awaiting-prompt");
   };
 
-  const bumpWatchdog = (modeOverride?: "first-chunk" | "steady") => {
-    if (watchdogMode === "idle" && !modeOverride) return;
-    const mode = modeOverride ?? watchdogMode;
+  const bumpWatchdog = (modeOverride?: Exclude<WatchdogMode, "idle">) => {
+    const mode = modeOverride ?? (watchdogMode === "idle" ? "steady" : watchdogMode);
     if (mode === "idle") return;
     scheduleWatchdog(mode);
   };
@@ -1001,6 +1052,9 @@ export const beginStream = ({
     if (streamStats.status === "no_content") return;
     streamStats.status = "no_content";
     streamStats.noContentReason = reason;
+    if (!streamStats.clientFinishReason) {
+      streamStats.clientFinishReason = "no_content";
+    }
     const metrics = streamTimersRef.current[normalizedClientId];
     const now = Date.now();
     const totalMs = metrics ? now - metrics.startedAt : streamStats.timing?.totalMs;
@@ -1129,6 +1183,7 @@ export const beginStream = ({
       .find((candidate) => candidate.length > 0);
     if (streamId) {
       baseHeaders["X-Stream-Id"] = streamId;
+      streamStats.streamId = streamId;
     }
 
     let response: Response | null = null;
@@ -1327,7 +1382,7 @@ export const beginStream = ({
 
     const handlePromptEvent = (rawEvent: Record<string, unknown>) => {
       if (controller.signal.aborted) return;
-      startWatchdog();
+      bumpWatchdog("steady");
       const records = buildRecordChain(rawEvent);
       const interactionId =
         pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
@@ -1350,6 +1405,7 @@ export const beginStream = ({
       });
 
       handlePromptReady(promptEvent, sharedContext);
+      bumpWatchdog("steady");
     };
 
     const handleControlEvent = (rawEvent: Record<string, unknown>) => {
@@ -1373,7 +1429,7 @@ export const beginStream = ({
         payload: payloadRecord ?? rawEvent,
       };
 
-      if (normalizedName === "heartbeat") {
+      if (normalizedName === "heartbeat" || normalizedName === "meta" || normalizedName === "latency") {
         bumpWatchdog("steady");
       } else {
         bumpWatchdog();
@@ -1406,7 +1462,7 @@ export const beginStream = ({
         bumpWatchdog("steady");
         return;
       }
-      bumpWatchdog();
+      bumpWatchdog("steady");
     };
 
     const handleStreamDone = (
@@ -1550,15 +1606,20 @@ export const beginStream = ({
 
     onWatchdogTimeout = (reason) => {
       if (!streamStats.gotAnyChunk) {
-        diag("watchdog_timeout_ignored", { reason, clientMessageId: normalizedClientId });
-        if (reason === "first_chunk_timeout") {
-          startWatchdog();
-        } else {
-          bumpWatchdog("steady");
+        diag("watchdog_timeout_no_chunk", { reason, clientMessageId: normalizedClientId });
+        streamStats.clientFinishReason = "no_content";
+        registerNoContent(reason);
+        try {
+          showToast(NO_TEXT_ALERT_MESSAGE);
+        } catch {
+          /* noop */
         }
-        return;
+      } else {
+        diag("watchdog_timeout", { reason, clientMessageId: normalizedClientId });
+        if (!streamStats.clientFinishReason) {
+          streamStats.clientFinishReason = reason;
+        }
       }
-      diag("watchdog_timeout", { reason, clientMessageId: normalizedClientId });
       handleStreamDone(undefined, { reason });
     };
 
@@ -1930,11 +1991,16 @@ export const beginStream = ({
           })();
         const logPayload: Record<string, unknown> = {
           clientMessageId,
+          assistantId: assistantId ?? null,
+          streamId: streamStats.streamId ?? null,
           gotAnyChunk: streamStats.gotAnyChunk,
           aggregatedLength: streamStats.aggregatedLength,
         };
         if (finishReasonFromMeta !== undefined) {
           logPayload.finishReasonFromMeta = finishReasonFromMeta;
+        }
+        if (streamStats.clientFinishReason) {
+          logPayload.clientFinishReason = streamStats.clientFinishReason;
         }
         try {
           console.info('[EcoStream] stream_completed', logPayload);

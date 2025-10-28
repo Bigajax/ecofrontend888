@@ -256,4 +256,64 @@ describe("handleDone", () => {
       expect.objectContaining({ patchSource: "stream_done" }),
     );
   });
+
+  it("usa texto agregado quando done chega sem payload estruturado", async () => {
+    const assistantId = "assistant-1";
+    const clientMessageId = "client-1";
+    const aggregatedText = "Resposta parcial agregada";
+
+    const replyState: ReplyStateController = {
+      ecoReplyByAssistantId: {},
+      setEcoReplyByAssistantId: vi.fn(),
+      ecoReplyStateRef: createRef({
+        [assistantId]: { text: aggregatedText, chunkIndexMax: 0 },
+      }),
+    };
+
+    const tracking: MessageTrackingRefs = {
+      assistantByClientRef: createRef({ [clientMessageId]: assistantId }),
+      clientByAssistantRef: createRef({ [assistantId]: clientMessageId }),
+      pendingAssistantMetaRef: createRef({}),
+      userTextByClientIdRef: createRef({}),
+    };
+
+    const upsertMessage = vi.fn();
+
+    handleDone({
+      event: { payload: { type: "done" } },
+      assistantId,
+      clientMessageId,
+      normalizedClientId: clientMessageId,
+      controller: new AbortController(),
+      ensureAssistantMessage: vi.fn(),
+      setMessages: vi.fn(),
+      upsertMessage,
+      activeAssistantIdRef: createRef<string | null>(assistantId),
+      activeStreamClientIdRef: createRef<string | null>(clientMessageId),
+      activeClientIdRef: createRef<string | null>(clientMessageId),
+      hasFirstChunkRef: createRef(true),
+      setDigitando: vi.fn(),
+      updateCurrentInteractionId: vi.fn(),
+      streamTimersRef: createRef({}),
+      logSse: vi.fn(),
+      replyState,
+      tracking,
+      interactionCacheDispatch: undefined,
+      streamStats: { aggregatedLength: aggregatedText.length, gotAnyChunk: true },
+      setErroApi: vi.fn(),
+      removeEcoEntry: vi.fn(),
+    });
+
+    await Promise.resolve();
+
+    expect(upsertMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: assistantId,
+        text: aggregatedText,
+        content: aggregatedText,
+        status: "done",
+      }),
+      expect.objectContaining({ patchSource: "stream_done" }),
+    );
+  });
 });

@@ -303,7 +303,7 @@ export const useEcoStream = ({
       const rawText = text ?? "";
       if (!rawText.trim()) return;
 
-      if (streamLockRef.current) {
+      if (streamLockRef.current || streamRefs.streamActiveRef.current || hasActiveStream) {
         // FIX: trava síncrona para evitar múltiplos envios simultâneos
         console.warn("[useEcoStream] Envio já em curso, ignorando");
         return;
@@ -411,7 +411,7 @@ export const useEcoStream = ({
         throw error;
       }
     },
-    [activity, scrollToBottom, setMessages],
+    [activity, hasActiveStream, scrollToBottom, setMessages, streamRefs],
   );
 
   useEffect(() => {
