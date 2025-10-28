@@ -1221,6 +1221,18 @@ export const beginStream = ({
 
   const controller = controllerOverride ?? new AbortController();
   controllerRef.current = controller;
+  console.log('[DEBUG] Controller criado', {
+    isAborted: controller.signal.aborted,
+    reason: (controller.signal as any).reason,
+    stack: new Error().stack,
+  });
+
+  if (controller.signal.aborted) {
+    console.error('[ERROR] Controller CRIADO JÁ ABORTADO!', {
+      reason: (controller.signal as any).reason,
+      stack: new Error().stack,
+    });
+  }
   activeStreamClientIdRef.current = clientMessageId;
   activeAssistantIdRef.current = null;
   try {
@@ -1609,6 +1621,19 @@ export const beginStream = ({
         } catch {
           /* noop */
         }
+        console.log('[DEBUG] Antes do fetch', {
+          isAborted: controller.signal.aborted,
+          reason: (controller.signal as any).reason,
+        });
+
+        if (controller.signal.aborted) {
+          throw new Error(
+            `Signal já abortado antes do fetch: ${
+              (controller.signal as any).reason || 'no reason'
+            }`,
+          );
+        }
+
         response = await fetchFn(url, {
           method: "POST",
           mode: "cors",
