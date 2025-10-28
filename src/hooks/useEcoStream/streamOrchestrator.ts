@@ -30,6 +30,216 @@ import { buildIdentityHeaders } from "../../lib/guestId";
 import { setStreamActive } from "./streamStatus";
 import { NO_TEXT_ALERT_MESSAGE, showToast } from "../useEcoStream.helpers";
 
+type WatchdogMode = "idle" | "first" | "steady";
+export type CloseReason =
+  | "server_done"
+  | "server_error"
+  | "ui_abort"
+  | "watchdog_first_token"
+  | "watchdog_heartbeat"
+  | "network_error";
+
+function now() {
+  return Date.now();
+}
+
+export function createSseWatchdogs() {
+  let t: ReturnType<typeof setTimeout> | null = null;
+  let mode: WatchdogMode = "idle";
+  let promptReadyAt = 0;
+  let lastHandler: ((reason: CloseReason) => void) | null = null;
+
+  const clear = () => {
+    if (t) {
+      clearTimeout(t);
+      t = null;
+    }
+    mode = "idle";
+  };
+
+  const arm = (
+    m: Exclude<WatchdogMode, "idle">,
+    onTimeout?: (reason: CloseReason) => void,
+  ) => {
+    clear();
+    mode = m;
+    if (onTimeout) {
+      lastHandler = onTimeout;
+    }
+    const handler = onTimeout ?? lastHandler;
+    if (!handler) return;
+    const ms = m === "first" ? 35_000 : 25_000;
+    t = setTimeout(
+      () => handler(m === "first" ? "watchdog_first_token" : "watchdog_heartbeat"),
+      ms,
+    );
+  };
+
+  return {
+    markPromptReady(onTimeout?: (reason: CloseReason) => void) {
+      promptReadyAt = now();
+      arm("first", onTimeout);
+    },
+    bumpFirstToken(onTimeout?: (reason: CloseReason) => void) {
+      arm("steady", onTimeout);
+    },
+    bumpHeartbeat(onTimeout?: (reason: CloseReason) => void) {
+      arm("steady", onTimeout);
+    },
+    clear,
+    get sincePromptReadyMs() {
+      return promptReadyAt ? now() - promptReadyAt : 0;
+    },
+  };
+}
+
+export async function openEcoSseStream(opts: {
+  url: string;
+  body: unknown;
+  onPromptReady?: () => void;
+  onChunk?: (delta: string) => void;
+  onControl?: (name: string, payload?: any) => void;
+  onDone?: (meta?: any) => void;
+  onError?: (err: Error) => void;
+  controller?: AbortController;
+}) {
+  const {
+    url,
+    body,
+    onPromptReady,
+    onChunk,
+    onControl,
+    onDone,
+    onError,
+    controller = new AbortController(),
+  } = opts;
+
+  const wd = createSseWatchdogs();
+  let closed = false;
+  let closeReason: CloseReason | null = null;
+
+  const safeClose = (reason: CloseReason) => {
+    if (closed) return;
+    closed = true;
+    closeReason = reason;
+    try {
+      controller.abort();
+    } catch {
+      /* noop */
+    }
+    try {
+      wd.clear();
+    } catch {
+      /* noop */
+    }
+  };
+  const onWdTimeout = (reason: CloseReason) => {
+    safeClose(reason);
+    onError?.(new Error(`SSE watchdog timeout: ${reason}`));
+  };
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      accept: "text/event-stream",
+    },
+    body: JSON.stringify(body),
+    signal: controller.signal,
+  });
+
+  if (!res.ok || !res.body) {
+    onError?.(new Error(`SSE failed: ${res.status}`));
+    safeClose("network_error");
+    return { abort: () => safeClose("ui_abort") } as const;
+  }
+
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+
+  const markPromptReady = () => {
+    onPromptReady?.();
+    wd.markPromptReady(onWdTimeout);
+  };
+
+  const readLoop = async () => {
+    try {
+      while (!closed) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+
+        let idx: number;
+        while ((idx = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, idx).trim();
+          buf = buf.slice(idx + 1);
+          if (!line || line.startsWith(":")) continue;
+
+          if (line.startsWith("data:")) {
+            const json = line.slice(5).trim();
+            try {
+              const evt = JSON.parse(json);
+              const type = evt?.type ?? evt?.event ?? "chunk";
+              if (type === "control" && evt?.name === "prompt_ready") {
+                markPromptReady();
+                continue;
+              }
+              if (type === "control" && evt?.name === "ping") {
+                wd.bumpHeartbeat(onWdTimeout);
+                continue;
+              }
+              if (type === "control" && evt?.name === "guard_fallback_trigger") {
+                onControl?.("guard_fallback_trigger", evt?.payload);
+                wd.bumpHeartbeat(onWdTimeout);
+                continue;
+              }
+              if (type === "control" && evt?.name === "done") {
+                onDone?.(evt?.payload);
+                safeClose("server_done");
+                break;
+              }
+              if (type === "chunk") {
+                if (evt?.delta) onChunk?.(String(evt.delta));
+                wd.bumpFirstToken(onWdTimeout);
+                continue;
+              }
+              if (type === "control") {
+                onControl?.(evt?.name ?? "control", evt?.payload);
+                wd.bumpHeartbeat(onWdTimeout);
+                continue;
+              }
+            } catch {
+              /* linha quebrada */
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      if (!closed && e?.name !== "AbortError") {
+        onError?.(e instanceof Error ? e : new Error(String(e)));
+        safeClose("server_error");
+      }
+    } finally {
+      try {
+        await reader.cancel();
+      } catch {
+        /* noop */
+      }
+      wd.clear();
+      if (!closed) safeClose("server_error");
+      try {
+        console.info("[FE] sse:finalize", { reason: closeReason });
+      } catch {
+        /* noop */
+      }
+    }
+  };
+
+  void readLoop();
+  return { abort: () => safeClose("ui_abort"), get closed() { return closed; } } as const;
+}
+
 const diag = (...args: unknown[]) => {
   try {
     const envContainer = import.meta as { env?: Record<string, unknown> };
@@ -986,55 +1196,28 @@ export const beginStream = ({
     finishReasonFromMeta: undefined,
   };
 
-  const PROMPT_READY_TIMEOUT_MS = 30_000;
-  const HEARTBEAT_TIMEOUT_MS = 40_000;
-  type WatchdogMode = "idle" | "awaiting-prompt" | "steady";
-  let watchdogTimer: ReturnType<typeof setTimeout> | null = null;
-  let watchdogMode: WatchdogMode = "idle";
-  let onWatchdogTimeout: ((reason: "prompt_ready_timeout" | "heartbeat_timeout") => void) | null = null;
+  const watchdog = createSseWatchdogs();
+  let onWatchdogTimeout: ((reason: CloseReason) => void) | null = null;
 
   const clearWatchdog = () => {
-    if (watchdogTimer !== null) {
-      clearTimeout(watchdogTimer);
-      watchdogTimer = null;
-    }
-    watchdogMode = "idle";
+    watchdog.clear();
   };
 
-  const scheduleWatchdog = (mode: Exclude<WatchdogMode, "idle">) => {
-    if (typeof setTimeout !== "function") return;
-    if (watchdogTimer !== null) {
-      clearTimeout(watchdogTimer);
-    }
-    watchdogMode = mode;
-    const timeout = mode === "awaiting-prompt" ? PROMPT_READY_TIMEOUT_MS : HEARTBEAT_TIMEOUT_MS;
-    watchdogTimer = setTimeout(() => {
-      watchdogTimer = null;
-      watchdogMode = "idle";
-      const reason = mode === "awaiting-prompt" ? "prompt_ready_timeout" : "heartbeat_timeout";
-      try {
-        console.warn("[SSE] watchdog_timeout", { clientMessageId, mode, timeout, reason });
-      } catch {
-        /* noop */
-      }
-      onWatchdogTimeout?.(reason);
-    }, timeout);
+  const markPromptReadyWatchdog = () => {
+    watchdog.markPromptReady(onWatchdogTimeout ?? undefined);
   };
 
-  const startWatchdog = () => {
-    scheduleWatchdog("awaiting-prompt");
+  const bumpFirstTokenWatchdog = () => {
+    watchdog.bumpFirstToken(onWatchdogTimeout ?? undefined);
   };
 
-  const bumpWatchdog = (modeOverride?: Exclude<WatchdogMode, "idle">) => {
-    const mode = modeOverride ?? (watchdogMode === "idle" ? "steady" : watchdogMode);
-    if (mode === "idle") return;
-    scheduleWatchdog(mode);
+  const bumpHeartbeatWatchdog = () => {
+    watchdog.bumpHeartbeat(onWatchdogTimeout ?? undefined);
   };
 
   streamTimersRef.current[normalizedClientId] = { startedAt: Date.now() };
   logSse("start", { clientMessageId: normalizedClientId });
   console.log("[SSE] Stream started", { timestamp: Date.now() });
-  startWatchdog();
 
   try {
     console.debug('[DIAG] stream:start', {
@@ -1342,7 +1525,7 @@ export const beginStream = ({
       sharedContext.hasFirstChunkRef.current = true;
       streamStats.gotAnyChunk = true;
       streamStats.aggregatedLength += delta.length;
-      bumpWatchdog("steady");
+      bumpFirstTokenWatchdog();
       if (!firstChunkDelivered) {
         firstChunkDelivered = true;
         onFirstChunk?.();
@@ -1382,7 +1565,7 @@ export const beginStream = ({
 
     const handlePromptEvent = (rawEvent: Record<string, unknown>) => {
       if (controller.signal.aborted) return;
-      bumpWatchdog("steady");
+      markPromptReadyWatchdog();
       const records = buildRecordChain(rawEvent);
       const interactionId =
         pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
@@ -1405,7 +1588,6 @@ export const beginStream = ({
       });
 
       handlePromptReady(promptEvent, sharedContext);
-      bumpWatchdog("steady");
     };
 
     const handleControlEvent = (rawEvent: Record<string, unknown>) => {
@@ -1429,11 +1611,7 @@ export const beginStream = ({
         payload: payloadRecord ?? rawEvent,
       };
 
-      if (normalizedName === "heartbeat" || normalizedName === "meta" || normalizedName === "latency") {
-        bumpWatchdog("steady");
-      } else {
-        bumpWatchdog();
-      }
+      bumpHeartbeatWatchdog();
 
       if (normalizedName) {
         diag("control_event", { name: normalizedName, clientMessageId: normalizedClientId });
@@ -1459,10 +1637,10 @@ export const beginStream = ({
       if (normalized) {
         sharedContext.hasFirstChunkRef.current = true;
         streamStats.gotAnyChunk = true;
-        bumpWatchdog("steady");
+        bumpFirstTokenWatchdog();
         return;
       }
-      bumpWatchdog("steady");
+      bumpHeartbeatWatchdog();
     };
 
     const handleStreamDone = (
@@ -1624,7 +1802,7 @@ export const beginStream = ({
     };
 
     const handleErrorEvent = (rawEvent: Record<string, unknown>) => {
-      bumpWatchdog();
+      bumpHeartbeatWatchdog();
       const records = buildRecordChain(rawEvent);
       const message =
         pickStringFromRecords(records, ["message", "error", "detail", "reason"]) ??
@@ -1656,7 +1834,7 @@ export const beginStream = ({
               status,
               contentType: streamContentType ?? '',
             });
-            bumpWatchdog();
+            bumpHeartbeatWatchdog();
           },
           onStreamAbort: (reason) => {
             logSse('abort', {
@@ -1710,7 +1888,7 @@ export const beginStream = ({
       status: responseNonNull.status,
       contentType,
     });
-    bumpWatchdog();
+    bumpHeartbeatWatchdog();
     try {
       console.info("[EcoStream] onStreamOpen", {
         clientMessageId,
@@ -1799,7 +1977,7 @@ export const beginStream = ({
         if (!trimmed) continue;
         if (trimmed.startsWith(":")) {
           const comment = trimmed.slice(1).trim();
-          bumpWatchdog();
+          bumpHeartbeatWatchdog();
           if (comment) {
             try {
               console.info("[SSE] comment", { comment });
