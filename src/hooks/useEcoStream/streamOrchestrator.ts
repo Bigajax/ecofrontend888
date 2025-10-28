@@ -2105,15 +2105,15 @@ export const beginStream = ({
     }
 
     const reader = responseNonNull.body?.getReader();
+
+    console.log('[DEBUG] Reader obtido');
+    console.log('[DEBUG] ===== INICIANDO LOOP DE LEITURA =====');
+
+    let loopIteration = 0;
+
     if (!reader) {
       throw new Error("Eco stream response has no readable body.");
     }
-
-    console.log('[DEBUG] Reader obtido:', {
-      hasReader: !!reader,
-      locked: responseNonNull.body?.locked,
-      bodyUsed: responseNonNull.bodyUsed,
-    });
 
     let initialChunk: ReadableStreamReadResult<Uint8Array> | null = null;
 
@@ -2219,9 +2219,6 @@ export const beginStream = ({
       processSseLine(payloadForParse, handlers, { eventName: currentEventName });
       if (fatalError) return;
     };
-
-    console.log('[DEBUG] ===== INICIANDO LOOP DE LEITURA =====');
-    let loopIteration = 0;
 
     while (true) {
       loopIteration++;
