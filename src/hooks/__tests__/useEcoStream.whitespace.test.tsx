@@ -1,5 +1,5 @@
 import React, { forwardRef, useImperativeHandle, useState } from 'react';
-import { render, screen, act, cleanup } from '@testing-library/react';
+import { render, screen, act, cleanup, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEcoStream } from '../useEcoStream';
@@ -29,7 +29,14 @@ type HarnessHandle = {
 };
 
 const StreamHarness = forwardRef<HarnessHandle>((_, ref) => {
-  const [messages, setMessages] = useState<ChatMessageType[]>([]);
+  const [messages, setMessagesState] = useState<ChatMessageType[]>([]);
+  const setMessages = React.useCallback(
+    (update: React.SetStateAction<ChatMessageType[]>) =>
+      setMessagesState((prev) =>
+        typeof update === 'function' ? (update as (draft: ChatMessageType[]) => ChatMessageType[])(prev) : update,
+      ),
+    [messages],
+  );
   const { handleSendMessage } = useEcoStream({ setMessages });
 
   useImperativeHandle(ref, () => ({
@@ -80,7 +87,9 @@ describe('useEcoStream whitespace handling', () => {
       await harnessRef.current?.send('Olá');
     });
 
-    expect(startEcoStreamMock).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(startEcoStreamMock).toHaveBeenCalled();
+    });
     expect(lastStartOptions).toBeTruthy();
 
     await act(async () => {
@@ -103,6 +112,11 @@ describe('useEcoStream whitespace handling', () => {
       await harnessRef.current?.send('estou bem');
     });
 
+    await waitFor(() => {
+      expect(startEcoStreamMock).toHaveBeenCalled();
+    });
+    expect(lastStartOptions).toBeTruthy();
+
     const userBubbles = await screen.findAllByTestId(/user-/);
     const latestUserBubble = userBubbles[userBubbles.length - 1];
     expect(latestUserBubble.textContent).toBe('estou bem');
@@ -123,6 +137,11 @@ describe('useEcoStream whitespace handling', () => {
     await act(async () => {
       await harnessRef.current?.send('Oi');
     });
+
+    await waitFor(() => {
+      expect(startEcoStreamMock).toHaveBeenCalled();
+    });
+    expect(lastStartOptions).toBeTruthy();
 
     await act(async () => {
       lastStartOptions?.onChunk?.({ index: 0, text: 'Bom' } as any);

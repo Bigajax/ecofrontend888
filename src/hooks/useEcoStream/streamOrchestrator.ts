@@ -39,6 +39,55 @@ export type CloseReason =
   | "watchdog_heartbeat"
   | "network_error";
 
+const DEFAULT_STREAM_GUARD_TIMEOUT_MS = 15_000;
+const FALLBACK_NO_CHUNK_REASONS = new Set<string>([
+  "client_disconnect",
+  "stream_aborted",
+  "watchdog_first_token",
+  "watchdog_heartbeat",
+  "fallback_guard_timeout",
+  "server-done-empty",
+  "missing-event",
+  "start-error",
+]);
+
+const resolveStreamGuardTimeoutMs = (): number => {
+  const envContainer = import.meta as { env?: Record<string, unknown> };
+  const envCandidates: unknown[] = [
+    envContainer?.env?.VITE_ECO_STREAM_GUARD_TIMEOUT_MS,
+    envContainer?.env?.VITE_STREAM_GUARD_TIMEOUT_MS,
+  ];
+  try {
+    const processEnv = (globalThis as typeof globalThis & {
+      process?: { env?: Record<string, unknown> };
+    }).process?.env;
+    if (processEnv) {
+      envCandidates.push(
+        processEnv.VITE_ECO_STREAM_GUARD_TIMEOUT_MS,
+        processEnv.VITE_STREAM_GUARD_TIMEOUT_MS,
+      );
+    }
+  } catch {
+    /* noop */
+  }
+
+  for (const candidate of envCandidates) {
+    if (candidate === undefined || candidate === null) continue;
+    if (typeof candidate === "number" && Number.isFinite(candidate)) {
+      if (candidate >= 0) return candidate;
+      continue;
+    }
+    if (typeof candidate === "string") {
+      const trimmed = candidate.trim();
+      if (!trimmed) continue;
+      const parsed = Number(trimmed);
+      if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+    }
+  }
+
+  return DEFAULT_STREAM_GUARD_TIMEOUT_MS;
+};
+
 function now() {
   return Date.now();
 }
@@ -265,6 +314,10 @@ export interface StreamRunStats {
   noContentReason?: string;
   clientFinishReason?: string;
   streamId?: string;
+  guardTimeoutMs?: number;
+  guardFallbackTriggered?: boolean;
+  jsonFallbackAttempts?: number;
+  jsonFallbackSucceeded?: boolean;
 }
 
 export type InteractionMapAction = {
@@ -1196,6 +1249,12 @@ export const beginStream = ({
     finishReasonFromMeta: undefined,
   };
 
+  const guardTimeoutMs = resolveStreamGuardTimeoutMs();
+  let fallbackGuardTimer: ReturnType<typeof setTimeout> | null = null;
+  let fallbackGuardTriggered = false;
+  let fallbackRequested = false;
+  let triggerJsonFallback: ((reason: string) => void) | null = null;
+
   const watchdog = createSseWatchdogs();
   let onWatchdogTimeout: ((reason: CloseReason) => void) | null = null;
 
@@ -1232,6 +1291,7 @@ export const beginStream = ({
   const NO_CONTENT_MESSAGE = "A Eco não chegou a enviar nada. Tente novamente.";
 
   const registerNoContent = (reason: string) => {
+    clearFallbackGuardTimer();
     if (streamStats.status === "no_content") return;
     streamStats.status = "no_content";
     streamStats.noContentReason = reason;
@@ -1262,6 +1322,9 @@ export const beginStream = ({
       setErroApi(NO_CONTENT_MESSAGE);
     } catch {
       /* noop */
+    }
+    if (!streamStats.gotAnyChunk && triggerJsonFallback && FALLBACK_NO_CHUNK_REASONS.has(reason)) {
+      triggerJsonFallback(reason);
     }
   };
 
@@ -1324,6 +1387,58 @@ export const beginStream = ({
     streamStats,
   };
 
+  const clearFallbackGuardTimer = () => {
+    if (!fallbackGuardTimer) return;
+    try {
+      if (typeof window !== "undefined") {
+        window.clearTimeout(fallbackGuardTimer);
+      } else {
+        clearTimeout(fallbackGuardTimer);
+      }
+    } catch {
+      clearTimeout(fallbackGuardTimer);
+    }
+    fallbackGuardTimer = null;
+  };
+
+  const startFallbackGuardTimer = () => {
+    if (guardTimeoutMs <= 0) return;
+    if (typeof window === "undefined") return;
+    clearFallbackGuardTimer();
+    fallbackGuardTimer = window.setTimeout(() => {
+      if (controller.signal.aborted || sharedContext.hasFirstChunkRef.current) return;
+      fallbackGuardTriggered = true;
+      streamStats.guardFallbackTriggered = true;
+      streamStats.guardTimeoutMs = guardTimeoutMs;
+      diag("fallback_guard_timeout", { clientMessageId: normalizedClientId, timeoutMs: guardTimeoutMs });
+      try {
+        console.warn("[SSE] fallback_guard_timeout", {
+          clientMessageId,
+          timeoutMs: guardTimeoutMs,
+        });
+      } catch {
+        /* noop */
+      }
+      logSse("abort", {
+        clientMessageId: normalizedClientId,
+        reason: "fallback_guard_timeout",
+        timeoutMs: guardTimeoutMs,
+        source: "fallback-guard",
+      });
+      registerNoContent("fallback_guard_timeout");
+      if (!controller.signal.aborted) {
+        try {
+          controller.abort("fallback_guard_timeout");
+        } catch {
+          controller.abort();
+        }
+      }
+      if (triggerJsonFallback) {
+        triggerJsonFallback("fallback_guard_timeout");
+      }
+    }, guardTimeoutMs);
+  };
+
   const streamPromise = (async () => {
     const requestBody = buildEcoRequestBody({
       history,
@@ -1354,6 +1469,8 @@ export const beginStream = ({
       return "web";
     })();
     baseHeaders["X-Client-Id"] = resolvedClientId;
+
+    const url = resolveApiUrl("/api/ask-eco");
 
     const contexto = (requestBody as { contexto?: { stream_id?: unknown; streamId?: unknown } })?.contexto;
     const streamIdCandidates: unknown[] = [
@@ -1422,37 +1539,54 @@ export const beginStream = ({
         fetchSource = null;
       }
     }
-    const fetchLooksNative = (() => {
-      if (!fetchFn) return false;
-      const source = fetchSource?.trim();
-      if (!source) return false;
-      if (source.includes('[native code]')) return true;
-      if (source.includes("internal/deps/undici/undici")) return true;
-      return false;
-    })();
-    const fetchLooksMocked = (() => {
-      if (!fetchFn) return false;
-      const candidate = fetchFn as unknown as {
-        mock?: unknown;
-        _isMockFunction?: unknown;
-        getMockImplementation?: unknown;
-      };
-      if (candidate.mock !== undefined) return true;
-      if (candidate._isMockFunction !== undefined) return true;
-      if (typeof candidate.getMockImplementation === "function") return true;
-      if (typeof fetchFn.name === "string" && fetchFn.name.toLowerCase().includes("mock")) {
+    const shouldSkipFetchInTest = false;
+
+    const tryJsonFallback = async (reason: string): Promise<boolean> => {
+      if (fallbackRequested) return false;
+      if (streamStats.gotAnyChunk) return false;
+      if (activeStreamClientIdRef.current !== clientMessageId) return false;
+      if (!streamActiveRef.current) return false;
+      const abortReason = (controller.signal as AbortSignal & { reason?: unknown }).reason;
+      const normalizedAbortReason = resolveAbortReason(abortReason);
+      if (normalizedAbortReason === "new-send" || normalizedAbortReason === "ui_abort") {
+        return false;
+      }
+      fallbackRequested = true;
+      streamStats.jsonFallbackAttempts = (streamStats.jsonFallbackAttempts ?? 0) + 1;
+
+      const parentSignal = controller.signal as AbortSignal & { reason?: unknown };
+      if (parentSignal.aborted && resolveAbortReason(parentSignal.reason) === "new-send") {
+        return false;
+      }
+
+      const fallbackController = new AbortController();
+      if (parentSignal.aborted) {
+        fallbackController.abort(parentSignal.reason);
+      } else {
+        parentSignal.addEventListener(
+          "abort",
+          () => fallbackController.abort(parentSignal.reason),
+          { once: true },
+        );
+      }
+
+      fatalError = null;
+      const streamFallbackOk = await runStartEcoStreamFallback(fallbackController.signal);
+      if (streamFallbackOk && !fallbackController.signal.aborted) {
+        streamStats.jsonFallbackSucceeded = true;
+        streamStats.clientFinishReason ??= reason;
         return true;
       }
-      const source = fetchSource?.trim();
-      if (!source) return false;
-      if (fetchLooksNative) return false;
-      if (source.includes("internal/deps/undici/undici")) return false;
-      return true;
-    })();
-    const shouldSkipFetchInTest =
-      (isVitest || isTestEnv || typeof window === "undefined") &&
-      !fetchLooksMocked &&
-      fetchLooksNative;
+      if (fallbackController.signal.aborted) {
+        streamStats.clientFinishReason ??= reason;
+        return false;
+      }
+      return false;
+    };
+
+    triggerJsonFallback = (reason: string) => {
+      void tryJsonFallback(reason);
+    };
 
     if (fetchFn && !shouldSkipFetchInTest) {
       try {
@@ -1525,6 +1659,7 @@ export const beginStream = ({
       sharedContext.hasFirstChunkRef.current = true;
       streamStats.gotAnyChunk = true;
       streamStats.aggregatedLength += delta.length;
+      clearFallbackGuardTimer();
       bumpFirstTokenWatchdog();
       if (!firstChunkDelivered) {
         firstChunkDelivered = true;
@@ -1810,7 +1945,7 @@ export const beginStream = ({
       fatalError = new Error(message);
     };
 
-    if (shouldFallbackToStartEcoStream) {
+    const runStartEcoStreamFallback = async (signalOverride?: AbortSignal) => {
       try {
         await startEcoStream({
           history,
@@ -1820,7 +1955,7 @@ export const beginStream = ({
           userName,
           guestId,
           isGuest,
-          signal: controller.signal,
+          signal: signalOverride ?? controller.signal,
           headers: baseHeaders,
           onFirstChunk: () => {
             if (!firstChunkDelivered) {
@@ -1860,10 +1995,16 @@ export const beginStream = ({
             handleControlEvent(event as unknown as Record<string, unknown>);
           },
         });
+        return true;
       } catch (error) {
         fatalError = error instanceof Error ? error : new Error(String(error ?? 'Unknown stream error'));
+        return false;
       }
-      if (fatalError) {
+    };
+
+    if (shouldFallbackToStartEcoStream) {
+      const fallbackOk = await runStartEcoStreamFallback();
+      if (!fallbackOk && fatalError) {
         logSse('abort', {
           clientMessageId: normalizedClientId,
           reason: formatAbortReason(fatalError),
@@ -1888,6 +2029,7 @@ export const beginStream = ({
       status: responseNonNull.status,
       contentType,
     });
+    startFallbackGuardTimer();
     bumpHeartbeatWatchdog();
     try {
       console.info("[EcoStream] onStreamOpen", {
@@ -2137,6 +2279,8 @@ export const beginStream = ({
 
   streamPromise.finally(() => {
     clearWatchdog();
+    clearFallbackGuardTimer();
+    triggerJsonFallback = null;
     const isCurrentClient = activeClientIdRef.current === clientMessageId;
     if (isCurrentClient && controllerRef.current === controller) {
       controllerRef.current = null;
