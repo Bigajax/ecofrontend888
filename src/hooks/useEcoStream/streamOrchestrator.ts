@@ -187,6 +187,7 @@ export async function openEcoSseStream(opts: {
   const wd = createSseWatchdogs();
   let closed = false;
   let closeReason: CloseReason | null = null;
+  let streamErrored = false;
 
   const safeClose = (reason: CloseReason) => {
     if (closed) return;
@@ -201,20 +202,44 @@ export async function openEcoSseStream(opts: {
   };
   const onWdTimeout = (reason: CloseReason) => {
     safeClose(reason);
+    streamErrored = true;
     onError?.(new Error(`SSE watchdog timeout: ${reason}`));
   };
 
+  const acceptHeader = "text/event-stream";
+  const forcedJson = false;
+  const requestHeaders: Record<string, string> = {
+    "content-type": "application/json",
+    accept: acceptHeader,
+  };
+
+  console.log("[DIAG] start", { url, accept: acceptHeader, forcedJson });
+
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      accept: "text/event-stream",
-    },
+    headers: requestHeaders,
     body: JSON.stringify(body),
     signal: controller.signal,
   });
 
+  const responseHeaders = (() => {
+    try {
+      return Object.fromEntries(res.headers.entries());
+    } catch {
+      return {} as Record<string, string>;
+    }
+  })();
+
+  console.log("[DIAG] response", {
+    ok: res.ok,
+    status: res.status,
+    ct: res.headers.get("content-type"),
+    xab: res.headers.get("x-accel-buffering"),
+    headers: responseHeaders,
+  });
+
   if (!res.ok || !res.body) {
+    streamErrored = true;
     onError?.(new Error(`SSE failed: ${res.status}`));
     safeClose("network_error");
     return { abort: () => safeClose("ui_abort") } as const;
@@ -223,6 +248,8 @@ export async function openEcoSseStream(opts: {
   const reader = res.body.getReader();
   const dec = new TextDecoder();
   let buf = "";
+  let bytes = 0;
+  let chunks = 0;
 
   const markPromptReady = () => {
     onPromptReady?.();
@@ -233,8 +260,14 @@ export async function openEcoSseStream(opts: {
     try {
       while (!closed) {
         const { value, done } = await reader.read();
+        if (value && value.byteLength > 0) {
+          bytes += value.byteLength;
+          chunks += 1;
+        }
         if (done) break;
-        buf += dec.decode(value, { stream: true });
+        if (value) {
+          buf += dec.decode(value, { stream: true });
+        }
 
         let idx: number;
         while ((idx = buf.indexOf("\n")) >= 0) {
@@ -261,8 +294,14 @@ export async function openEcoSseStream(opts: {
                 continue;
               }
               if (type === "control" && evt?.name === "done") {
-                onDone?.(evt?.payload);
-                safeClose("server_done");
+                if (chunks === 0) {
+                  streamErrored = true;
+                  onError?.(new Error("Stream vazio: backend finalizou sem enviar chunks."));
+                  safeClose("server_error");
+                } else {
+                  onDone?.(evt?.payload);
+                  safeClose("server_done");
+                }
                 break;
               }
               if (type === "chunk") {
@@ -283,10 +322,19 @@ export async function openEcoSseStream(opts: {
       }
     } catch (e: any) {
       if (!closed && e?.name !== "AbortError") {
+        streamErrored = true;
         onError?.(e instanceof Error ? e : new Error(String(e)));
         safeClose("server_error");
       }
     } finally {
+      console.log("[DIAG] stream:end", { bytes, chunks });
+      const endedByUiAbort = closeReason === "ui_abort";
+      const endedByWatchdog =
+        closeReason === "watchdog_first_token" || closeReason === "watchdog_heartbeat";
+      if (!streamErrored && chunks === 0 && !endedByUiAbort && !endedByWatchdog) {
+        streamErrored = true;
+        onError?.(new Error("Stream vazio: backend finalizou sem enviar chunks."));
+      }
       try {
         await reader.cancel();
       } catch {
