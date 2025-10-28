@@ -537,7 +537,7 @@ export const useEcoStream = ({
       }
       finalize();
     }
-  });
+  }, [beginStreamSafely, logSse]);
 
   return {
     handleSendMessage,
