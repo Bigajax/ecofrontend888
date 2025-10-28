@@ -241,7 +241,7 @@ export const applyChunkToMessages = ({
   clientMessageId,
   chunk,
   ensureAssistantMessage,
-  setDigitando,
+  setDigitando: _setDigitando,
   logSse,
   streamTimersRef,
   assistantByClientRef,
@@ -271,10 +271,6 @@ export const applyChunkToMessages = ({
     { allowCreate: shouldAllowCreate },
   );
   if (!assistantId) return;
-
-  if ((chunk.index === 0 || chunk.isFirstChunk === true) && activeStreamClientIdRef.current === clientMessageId) {
-    setDigitando(false);
-  }
 
   activeAssistantIdRef.current = assistantId;
 
