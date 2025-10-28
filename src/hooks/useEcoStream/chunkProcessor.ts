@@ -81,16 +81,35 @@ export const processSseLine = (
   }
 
   const event = parsed as Record<string, unknown>;
-  if ((event as { done?: unknown }).done === true) {
-    handlers.onStreamDone?.(event);
-    return;
+  const clientMessageId = pickFirstString(
+    (event as { client_message_id?: unknown }).client_message_id,
+    (event as { clientMessageId?: unknown }).clientMessageId,
+    (event as { id?: unknown }).id,
+  );
+  if (clientMessageId) {
+    (event as { client_message_id?: string }).client_message_id = clientMessageId;
+    (event as { clientMessageId?: string }).clientMessageId = clientMessageId;
   }
+
   const fallbackEvent = normalizeEventKey(options?.eventName);
   const type = normalizeEventKey(toTrimmedString(event.type)) ?? fallbackEvent;
 
   const payloadRecord = toRecord(event.payload);
   const payloadName = pickFirstString(event.name, event.event, payloadRecord?.name, payloadRecord?.event);
   const normalizedPayloadName = normalizeEventKey(payloadName) ?? fallbackEvent;
+
+  const normalizedType = type ?? normalizedPayloadName ?? fallbackEvent;
+
+  try {
+    console.log("[SSE EVENT]", normalizedType ?? null, event);
+  } catch {
+    /* noop */
+  }
+
+  if ((event as { done?: unknown }).done === true) {
+    handlers.onStreamDone?.(event);
+    return;
+  }
 
   const isPromptReady =
     normalizedPayloadName === "prompt_ready" ||
