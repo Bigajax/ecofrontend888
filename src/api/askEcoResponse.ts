@@ -98,6 +98,72 @@ const NESTED_KEYS = [
   "segments",
 ] as const;
 
+const TEXTUAL_KEY_SET = new Set<string>(TEXTUAL_KEYS);
+const NESTED_KEY_SET = new Set<string>(NESTED_KEYS);
+
+const TEXTUAL_TOKENS = new Set<string>([
+  "content",
+  "texto",
+  "text",
+  "output",
+  "answer",
+  "resposta",
+  "reply",
+  "fala",
+  "speech",
+  "response",
+  "final",
+  "result",
+  "resulttext",
+  "value",
+]);
+
+const NESTED_TOKENS = new Set<string>([
+  "message",
+  "messages",
+  "mensagem",
+  "mensagens",
+  "response",
+  "responses",
+  "resposta",
+  "respostas",
+  "payload",
+  "data",
+  "delta",
+  "result",
+  "results",
+  "output",
+  "outputs",
+  "item",
+  "items",
+  "entry",
+  "entries",
+  "alternative",
+  "alternatives",
+  "segment",
+  "segments",
+  "choice",
+  "choices",
+  "record",
+  "records",
+  "list",
+  "lists",
+  "part",
+  "parts",
+  "variant",
+  "variants",
+  "value",
+]);
+
+const splitKeyIntoTokens = (key: string): string[] => {
+  if (!key) return [];
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .split(/[^a-zA-Z0-9]+/)
+    .map((token) => token.trim().toLowerCase())
+    .filter((token) => token.length > 0);
+};
+
 export const collectTexts = (value: unknown, visited = new WeakSet<object>()): string[] => {
   if (typeof value === "string") return [value];
   if (Array.isArray(value)) return value.flatMap((item) => collectTexts(item, visited));
@@ -108,17 +174,50 @@ export const collectTexts = (value: unknown, visited = new WeakSet<object>()): s
 
     const obj = value as Record<string, unknown> & { choices?: unknown };
     const results: string[] = [];
+    const processedKeys = new Set<string>();
 
     TEXTUAL_KEYS.forEach((key) => {
-      if (key in obj) results.push(...collectTexts(obj[key], visited));
+      if (key in obj) {
+        processedKeys.add(key);
+        results.push(...collectTexts(obj[key], visited));
+      }
     });
 
     NESTED_KEYS.forEach((key) => {
-      if (key in obj) results.push(...collectTexts(obj[key], visited));
+      if (key in obj) {
+        processedKeys.add(key);
+        results.push(...collectTexts(obj[key], visited));
+      }
     });
 
     if (Array.isArray(obj.choices)) {
       results.push(...obj.choices.flatMap((choice) => collectTexts(choice, visited)));
+      processedKeys.add("choices");
+    }
+
+    Object.entries(obj).forEach(([key, entryValue]) => {
+      if (!key || processedKeys.has(key)) return;
+      if (TEXTUAL_KEY_SET.has(key) || NESTED_KEY_SET.has(key)) return;
+
+      const tokens = splitKeyIntoTokens(key);
+      if (tokens.length === 0) return;
+
+      const lastToken = tokens[tokens.length - 1];
+      if (TEXTUAL_TOKENS.has(lastToken)) {
+        processedKeys.add(key);
+        results.push(...collectTexts(entryValue, visited));
+        return;
+      }
+      if (NESTED_TOKENS.has(lastToken)) {
+        processedKeys.add(key);
+        results.push(...collectTexts(entryValue, visited));
+      }
+    });
+
+    if (Array.isArray(obj.choices)) {
+      // Ensure heuristics above don't skip nested arrays when "choices" is represented
+      // with alternative casing (e.g., "responseChoices").
+      // Already processed, so no action needed.
     }
 
     return results;

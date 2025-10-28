@@ -112,4 +112,75 @@ describe("handleDone", () => {
     expect(updateCurrentInteractionId).not.toHaveBeenCalled();
     expect(messages).toHaveLength(1);
   });
+
+  it("consolida texto quando payload usa estruturas aninhadas", async () => {
+    const assistantId = "assistant-1";
+    const clientMessageId = "client-1";
+    const donePayload = {
+      type: "response.completed",
+      response: {
+        messages: [
+          {
+            role: "assistant",
+            content: [
+              {
+                type: "output_text",
+                text: { value: "Olá" },
+              },
+              {
+                type: "output_text",
+                text: { value: " mundo" },
+              },
+            ],
+          },
+        ],
+      },
+      metadata: {
+        answer: { content: { text: "Olá mundo" } },
+      },
+    };
+
+    const upsertMessage = vi.fn();
+
+    handleDone({
+      event: { payload: donePayload },
+      assistantId,
+      clientMessageId,
+      normalizedClientId: clientMessageId,
+      controller: new AbortController(),
+      ensureAssistantMessage: vi.fn(),
+      setMessages: vi.fn(),
+      upsertMessage,
+      activeAssistantIdRef: createRef<string | null>(assistantId),
+      activeStreamClientIdRef: createRef<string | null>(clientMessageId),
+      activeClientIdRef: createRef<string | null>(clientMessageId),
+      hasFirstChunkRef: createRef(false),
+      setDigitando: vi.fn(),
+      updateCurrentInteractionId: vi.fn(),
+      streamTimersRef: createRef({}),
+      logSse: vi.fn(),
+      replyState: {
+        ecoReplyByAssistantId: {},
+        setEcoReplyByAssistantId: vi.fn(),
+        ecoReplyStateRef: createRef({}),
+      },
+      tracking: {
+        assistantByClientRef: createRef({ [clientMessageId]: assistantId }),
+        clientByAssistantRef: createRef({ [assistantId]: clientMessageId }),
+        pendingAssistantMetaRef: createRef({}),
+        userTextByClientIdRef: createRef({}),
+      },
+      interactionCacheDispatch: undefined,
+      streamStats: { aggregatedLength: 0, gotAnyChunk: false },
+      setErroApi: vi.fn(),
+      removeEcoEntry: vi.fn(),
+    });
+
+    await Promise.resolve();
+
+    expect(upsertMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ content: "Olá mundo", text: "Olá mundo" }),
+      expect.objectContaining({ patchSource: "stream_done" }),
+    );
+  });
 });
