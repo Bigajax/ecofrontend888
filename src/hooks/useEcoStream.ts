@@ -179,24 +179,10 @@ export const useEcoStream = ({
           }
         } else {
           try {
-            console.info("[EcoStream] cleanup_abort", {
+            console.info("[EcoStream] cleanup_controller_idle", {
               reason: "unmount",
               clientMessageId: activeStreamClientIdRef.current,
             });
-          } catch {
-            /* noop */
-          }
-          try {
-            console.debug('[DIAG] controller.abort:before', {
-              clientMessageId: activeStreamClientIdRef.current,
-              reason: 'unmount',
-              timestamp: Date.now(),
-            });
-          } catch {
-            /* noop */
-          }
-          try {
-            activeController.abort("unmount");
           } catch {
             /* noop */
           }
