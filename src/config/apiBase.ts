@@ -51,12 +51,19 @@ const normalizedEnvApiBase = normalizeApiBase(rawEnvApiBase);
 
 export const RAW_API_BASE = rawEnvApiBase;
 
-export const DEFAULT_API_BASE = "https://ecobackend888.onrender.com";
+const REMOTE_API_BASE_FALLBACK = "https://ecobackend888.onrender.com";
+
+const DEFAULT_BROWSER_API_BASE = "";
+const DEFAULT_NON_BROWSER_API_BASE = REMOTE_API_BASE_FALLBACK;
+
+export const DEFAULT_API_BASE = typeof window === "undefined"
+  ? DEFAULT_NON_BROWSER_API_BASE
+  : DEFAULT_BROWSER_API_BASE;
 
 export const IS_API_BASE_EMPTY = normalizedEnvApiBase.length === 0;
 
 export function getApiBase(): string {
-  return normalizedEnvApiBase;
+  return normalizedEnvApiBase || DEFAULT_API_BASE;
 }
 
 const isLocalhost = (() => {
