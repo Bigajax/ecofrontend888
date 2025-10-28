@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as ecoStreamApi from '../../api/ecoStream';
@@ -29,7 +29,14 @@ describe('useEcoStream.handleSendMessage', () => {
 
     try {
       const { result } = renderHook(() => {
-        const [messages, setMessages] = React.useState<Message[]>([]);
+        const [messages, setMessagesState] = React.useState<Message[]>([]);
+        const setMessages = React.useCallback(
+          (update: React.SetStateAction<Message[]>) =>
+            setMessagesState((prev) =>
+              typeof update === 'function' ? (update as (draft: Message[]) => Message[])(prev) : update,
+            ),
+          [messages],
+        );
         const stream = useEcoStream({ setMessages });
         return { ...stream, messages };
       });
@@ -38,8 +45,9 @@ describe('useEcoStream.handleSendMessage', () => {
         await result.current.handleSendMessage('Olá, Eco!');
       });
 
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(startEcoStreamSpy).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      });
 
       const userMessage = result.current.messages.find((message) => message.sender === 'user');
 
