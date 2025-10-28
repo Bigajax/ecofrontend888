@@ -2109,6 +2109,34 @@ export const beginStream = ({
       throw new Error("Eco stream response has no readable body.");
     }
 
+    console.log('[DEBUG] Reader obtido:', {
+      hasReader: !!reader,
+      locked: responseNonNull.body?.locked,
+      bodyUsed: responseNonNull.bodyUsed,
+    });
+
+    let initialChunk: ReadableStreamReadResult<Uint8Array> | null = null;
+
+    try {
+      console.log('[DEBUG] Testando reader.read()...');
+      const testRead = reader.read();
+      console.log('[DEBUG] reader.read() retornou Promise:', testRead);
+
+      const testResult = await testRead;
+      console.log('[DEBUG] Primeiro read() resultado:', {
+        done: testResult.done,
+        hasValue: !!testResult.value,
+        valueLength: testResult.value?.length,
+        valuePreview: testResult.value
+          ? new TextDecoder().decode(testResult.value.slice(0, 100))
+          : null,
+      });
+
+      initialChunk = testResult;
+    } catch (e) {
+      console.error('[DEBUG] ERRO ao testar reader:', e);
+    }
+
     (globalThis as any).__ecoActiveReader = reader;
 
     const handlers: ProcessSseHandlers = {
@@ -2192,12 +2220,39 @@ export const beginStream = ({
       if (fatalError) return;
     };
 
+    console.log('[DEBUG] ===== INICIANDO LOOP DE LEITURA =====');
+    let loopIteration = 0;
+
     while (true) {
-      if (controller.signal.aborted) break;
+      loopIteration++;
+      console.log(`[DEBUG] Loop iteração ${loopIteration}`);
+
+      if (controller.signal.aborted) {
+        console.log('[DEBUG] Loop abortado pelo controller.signal');
+        break;
+      }
+
       let chunk: ReadableStreamReadResult<Uint8Array>;
       try {
-        chunk = await reader.read();
+        if (initialChunk) {
+          console.log('[DEBUG] Utilizando chunk pré-lido do teste', {
+            done: initialChunk.done,
+            hasValue: !!initialChunk.value,
+            valueLength: initialChunk.value?.length,
+          });
+          chunk = initialChunk;
+          initialChunk = null;
+        } else {
+          console.log('[DEBUG] Chamando reader.read()...');
+          chunk = await reader.read();
+          console.log('[DEBUG] reader.read() retornou:', {
+            done: chunk.done,
+            hasValue: !!chunk.value,
+            valueLength: chunk.value?.length,
+          });
+        }
       } catch (error: any) {
+        console.error('[DEBUG] reader.read() ERRO:', error);
         if (controller.signal.aborted || error?.name === "AbortError") {
           break;
         }
@@ -2248,6 +2303,10 @@ export const beginStream = ({
 
       if (fatalError) break;
     }
+
+    console.log('[DEBUG] ===== LOOP DE LEITURA FINALIZADO =====', {
+      totalIterations: loopIteration,
+    });
 
     if (fatalError) {
       if (!handledReaderError) {
