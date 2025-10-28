@@ -45,8 +45,16 @@ export type AskEcoPayload =
       mensagem?: AskEcoPayload;
       data?: AskEcoPayload;
       response?: AskEcoPayload;
+      responses?: AskEcoPayload;
       result?: AskEcoPayload;
+      results?: AskEcoPayload;
       payload?: AskEcoPayload;
+      messages?: AskEcoPayload;
+      outputs?: AskEcoPayload;
+      items?: AskEcoPayload;
+      entries?: AskEcoPayload;
+      alternatives?: AskEcoPayload;
+      segments?: AskEcoPayload;
       choices?: AskEcoChoice[];
     };
 
@@ -75,11 +83,19 @@ const NESTED_KEYS = [
   "mensagem",
   "resposta",
   "response",
+  "responses",
   "data",
   "value",
   "delta",
   "result",
+  "results",
   "payload",
+  "messages",
+  "outputs",
+  "items",
+  "entries",
+  "alternatives",
+  "segments",
 ] as const;
 
 export const collectTexts = (value: unknown, visited = new WeakSet<object>()): string[] => {
