@@ -2107,6 +2107,23 @@ export const beginStream = ({
       onMessage: (event) => handleMessageEvent(event),
     };
 
+    const findEventDelimiter = (input: string): { index: number; length: number } | null => {
+      const crlfIndex = input.indexOf("\r\n\r\n");
+      const lfIndex = input.indexOf("\n\n");
+      if (crlfIndex === -1 && lfIndex === -1) {
+        return null;
+      }
+      if (crlfIndex === -1) {
+        return { index: lfIndex, length: 2 };
+      }
+      if (lfIndex === -1) {
+        return { index: crlfIndex, length: 4 };
+      }
+      return crlfIndex <= lfIndex
+        ? { index: crlfIndex, length: 4 }
+        : { index: lfIndex, length: 2 };
+    };
+
     const processEventBlock = (block: string) => {
       if (!block) return;
       const normalizedBlock = block.replace(/\r\n/g, "\n");
@@ -2189,7 +2206,15 @@ export const beginStream = ({
       const { value, done } = chunk;
       if (done) {
         buffer += decoder.decode();
-        if (buffer) {
+        while (true) {
+          const delimiter = findEventDelimiter(buffer);
+          if (!delimiter) break;
+          const eventBlock = buffer.slice(0, delimiter.index);
+          buffer = buffer.slice(delimiter.index + delimiter.length);
+          processEventBlock(eventBlock);
+          if (fatalError) break;
+        }
+        if (!fatalError && buffer) {
           processEventBlock(buffer);
           buffer = "";
         }
@@ -2198,13 +2223,13 @@ export const beginStream = ({
 
       if (value) {
         buffer += decoder.decode(value, { stream: true });
-        let delimiterIndex = buffer.indexOf("\n\n");
-        while (delimiterIndex !== -1) {
-          const eventBlock = buffer.slice(0, delimiterIndex);
-          buffer = buffer.slice(delimiterIndex + 2);
+        while (true) {
+          const delimiter = findEventDelimiter(buffer);
+          if (!delimiter) break;
+          const eventBlock = buffer.slice(0, delimiter.index);
+          buffer = buffer.slice(delimiter.index + delimiter.length);
           processEventBlock(eventBlock);
           if (fatalError) break;
-          delimiterIndex = buffer.indexOf("\n\n");
         }
       }
 
