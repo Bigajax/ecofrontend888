@@ -1,4 +1,36 @@
 // src/main.tsx
+console.log('[DEBUG] Instalando interceptor de AbortController...');
+
+const OriginalAbortController = window.AbortController;
+
+class DebugAbortController extends OriginalAbortController {
+  private _createdAt = new Date().toISOString();
+  private _createdStack = new Error().stack;
+
+  constructor() {
+    super();
+    console.log('[AbortController] CRIADO', {
+      timestamp: this._createdAt,
+      stack: this._createdStack?.split('\n').slice(0, 6).join('\n'),
+    });
+  }
+
+  abort(reason?: any) {
+    console.error('[AbortController] ⚠️ ABORT CHAMADO', {
+      reason: reason ?? 'no reason',
+      createdAt: this._createdAt,
+      abortedAt: new Date().toISOString(),
+      createdStack: this._createdStack?.split('\n').slice(0, 4).join(' | '),
+      abortStack: new Error().stack?.split('\n').slice(0, 8).join('\n'),
+    });
+    super.abort(reason);
+  }
+}
+
+(window as any).AbortController = DebugAbortController;
+
+console.log('[DEBUG] Interceptor instalado ✓');
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
