@@ -19,6 +19,7 @@ const getSessionMock = vi.spyOn(supabase.auth, "getSession");
 getSessionMock.mockResolvedValue({ data: { session: { access_token: "token-mock" } } });
 
 import { enviarMensagemParaEco, EcoEventHandlers } from "../ecoApi";
+import { normalizeAskEcoResponse } from "../askEcoResponse";
 
 const mensagens = [
   { role: "user", content: "Olá" },
@@ -162,6 +163,50 @@ describe("enviarMensagemParaEco", () => {
 
     expect(resposta.text).toBe("Parte 1 + Parte 2");
     expect(resposta.metadata).toEqual({ mensagem: { texto: "Parte 1 + Parte 2" } });
+  });
+
+  it("normaliza payload done com mensagens aninhadas", () => {
+    const payload = {
+      type: "done",
+      response: {
+        messages: [
+          {
+            role: "assistant",
+            content: [
+              { type: "output_text", text: "Olá" },
+              { type: "output_text", text: " mundo" },
+            ],
+          },
+        ],
+      },
+    };
+
+    expect(normalizeAskEcoResponse(payload)).toBe("Olá\n\nmundo");
+  });
+
+  it("normaliza payload done no formato Responses API com text.value", () => {
+    const payload = {
+      type: "response.completed",
+      response: {
+        messages: [
+          {
+            role: "assistant",
+            content: [
+              {
+                type: "output_text",
+                text: { value: "Olá" },
+              },
+              {
+                type: "output_text",
+                text: { value: " mundo" },
+              },
+            ],
+          },
+        ],
+      },
+    };
+
+    expect(normalizeAskEcoResponse(payload)).toBe("Olá\n\nmundo");
   });
 
   it('tolera stream encerrado sem evento "done" quando já recebeu conteúdo', async () => {
