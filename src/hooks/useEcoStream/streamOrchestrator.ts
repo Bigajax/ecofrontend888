@@ -979,21 +979,6 @@ export const beginStream = ({
     activeAssistantIdRef.current = placeholderAssistantId;
   }
 
-  streamTimersRef.current[normalizedClientId] = { startedAt: Date.now() };
-  logSse("start", { clientMessageId: normalizedClientId });
-  console.log("[SSE] Stream started", { timestamp: Date.now() });
-  startWatchdog();
-
-  try {
-    console.debug('[DIAG] stream:start', {
-      clientMessageId,
-      historyLength: history.length,
-      systemHint: systemHint ?? null,
-    });
-  } catch {
-    /* noop */
-  }
-
   const streamStats: StreamRunStats = {
     aggregatedLength: 0,
     gotAnyChunk: false,
@@ -1045,6 +1030,21 @@ export const beginStream = ({
     if (mode === "idle") return;
     scheduleWatchdog(mode);
   };
+
+  streamTimersRef.current[normalizedClientId] = { startedAt: Date.now() };
+  logSse("start", { clientMessageId: normalizedClientId });
+  console.log("[SSE] Stream started", { timestamp: Date.now() });
+  startWatchdog();
+
+  try {
+    console.debug('[DIAG] stream:start', {
+      clientMessageId,
+      historyLength: history.length,
+      systemHint: systemHint ?? null,
+    });
+  } catch {
+    /* noop */
+  }
 
   const NO_CONTENT_MESSAGE = "A Eco não chegou a enviar nada. Tente novamente.";
 
