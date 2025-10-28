@@ -35,6 +35,8 @@ export type AskEcoTextValue =
       response?: AskEcoTextValue;
       final?: AskEcoTextValue;
       resultText?: AskEcoTextValue;
+      value?: AskEcoTextValue;
+      values?: AskEcoTextValue;
     };
 
 export type AskEcoPayload =
@@ -49,12 +51,21 @@ export type AskEcoPayload =
       result?: AskEcoPayload;
       results?: AskEcoPayload;
       payload?: AskEcoPayload;
+      payloads?: AskEcoPayload;
       messages?: AskEcoPayload;
+      messageBody?: AskEcoPayload;
+      responseBody?: AskEcoPayload;
       outputs?: AskEcoPayload;
+      output?: AskEcoPayload;
       items?: AskEcoPayload;
       entries?: AskEcoPayload;
       alternatives?: AskEcoPayload;
       segments?: AskEcoPayload;
+      body?: AskEcoPayload;
+      bodies?: AskEcoPayload;
+      candidate?: AskEcoPayload;
+      candidates?: AskEcoPayload;
+      values?: AskEcoPayload;
       choices?: AskEcoChoice[];
     };
 
@@ -92,6 +103,7 @@ const NESTED_KEYS = [
   "payload",
   "messages",
   "outputs",
+  "output",
   "items",
   "entries",
   "alternatives",
@@ -116,6 +128,7 @@ const TEXTUAL_TOKENS = new Set<string>([
   "result",
   "resulttext",
   "value",
+  "values",
 ]);
 
 const NESTED_TOKENS = new Set<string>([
@@ -128,12 +141,15 @@ const NESTED_TOKENS = new Set<string>([
   "resposta",
   "respostas",
   "payload",
+  "payloads",
   "data",
   "delta",
   "result",
   "results",
   "output",
   "outputs",
+  "body",
+  "bodies",
   "item",
   "items",
   "entry",
@@ -144,6 +160,8 @@ const NESTED_TOKENS = new Set<string>([
   "segments",
   "choice",
   "choices",
+  "candidate",
+  "candidates",
   "record",
   "records",
   "list",
@@ -202,13 +220,15 @@ export const collectTexts = (value: unknown, visited = new WeakSet<object>()): s
       const tokens = splitKeyIntoTokens(key);
       if (tokens.length === 0) return;
 
-      const lastToken = tokens[tokens.length - 1];
-      if (TEXTUAL_TOKENS.has(lastToken)) {
+      const hasTextualToken = tokens.some((token) => TEXTUAL_TOKENS.has(token));
+      const hasNestedToken = hasTextualToken ? false : tokens.some((token) => NESTED_TOKENS.has(token));
+
+      if (hasTextualToken) {
         processedKeys.add(key);
         results.push(...collectTexts(entryValue, visited));
         return;
       }
-      if (NESTED_TOKENS.has(lastToken)) {
+      if (hasNestedToken) {
         processedKeys.add(key);
         results.push(...collectTexts(entryValue, visited));
       }

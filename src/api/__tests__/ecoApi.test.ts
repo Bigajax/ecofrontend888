@@ -209,6 +209,37 @@ describe("enviarMensagemParaEco", () => {
     expect(normalizeAskEcoResponse(payload)).toBe("Olá\n\nmundo");
   });
 
+  it("normaliza payload done com responseBody e valores aninhados", () => {
+    const payload = {
+      type: "done",
+      responseBody: {
+        data: {
+          assistantResponse: {
+            candidates: [
+              {
+                messages: [
+                  {
+                    role: "assistant",
+                    content: [
+                      {
+                        type: "output_text",
+                        text: {
+                          values: [{ value: "Olá" }, { value: " mundo" }],
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    expect(normalizeAskEcoResponse(payload)).toBe("Olá\n\nmundo");
+  });
+
   it('tolera stream encerrado sem evento "done" quando já recebeu conteúdo', async () => {
     fetchMock.mockResolvedValue(
       createSseResponse([
