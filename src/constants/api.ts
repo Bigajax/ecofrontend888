@@ -37,8 +37,19 @@ const normalizeApiBase = (value: string): string => {
 const rawEnvApiBase = readEnvApiUrl();
 const normalizedEnvApiBase = normalizeApiBase(rawEnvApiBase);
 
-// ⚠️ Fallback explícito para o backend quando não há VITE_API_URL
-export const DEFAULT_API_BASE = "https://ecobackend888.onrender.com";
+const REMOTE_API_BASE_FALLBACK = "https://ecobackend888.onrender.com";
+
+// ⚠️ Em ambientes de navegador preferimos usar o mesmo host para que
+// rewrites/proxies (ex: Vercel, Vite) façam o roteamento e evitem erros de CORS.
+const DEFAULT_BROWSER_API_BASE = "";
+
+// ⚠️ Fallback explícito para ambientes sem `window` (ex: testes) onde não há
+// reescrita disponível.
+const DEFAULT_NON_BROWSER_API_BASE = REMOTE_API_BASE_FALLBACK;
+
+export const DEFAULT_API_BASE = typeof window === "undefined"
+  ? DEFAULT_NON_BROWSER_API_BASE
+  : DEFAULT_BROWSER_API_BASE;
 
 export const RAW_API_BASE = rawEnvApiBase;
 export const IS_API_BASE_EMPTY = normalizedEnvApiBase.length === 0;
