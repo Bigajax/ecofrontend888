@@ -37,6 +37,24 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
       : "";
 
   const hasVisibleText = raw.trim().length > 0;
+  const createdAtCandidate = message?.createdAt ?? message?.updatedAt ?? null;
+  const createdAtMs = (() => {
+    if (!createdAtCandidate) return undefined;
+    if (typeof createdAtCandidate === "number" && Number.isFinite(createdAtCandidate)) {
+      return createdAtCandidate;
+    }
+    if (typeof createdAtCandidate === "string") {
+      const parsed = Date.parse(createdAtCandidate);
+      return Number.isNaN(parsed) ? undefined : parsed;
+    }
+    if (createdAtCandidate instanceof Date) {
+      return createdAtCandidate.getTime();
+    }
+    return undefined;
+  })();
+  const streamingSeconds = createdAtMs
+    ? Math.max(0, Math.floor((Date.now() - createdAtMs) / 1000))
+    : undefined;
 
   // sempre mantém a bolha visível quando está streamando
   // usa um espaço não-quebrável como placeholder para garantir altura mínima
@@ -107,6 +125,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
               <span className="chat-message-text">{textToShow}</span>
             )}
           </div>
+          {isStreaming && !hasVisibleText && (
+            <div className="mt-1 flex items-center gap-2 text-gray-500">
+              <span>digitando...</span>
+              <span className="text-xs">
+                (aguardando resposta... {streamingSeconds ?? 0}s)
+              </span>
+            </div>
+          )}
           {finishReasonLabel && (
             <div className="mt-1 pl-1 text-xs text-gray-500">
               <span className="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-medium text-gray-600">

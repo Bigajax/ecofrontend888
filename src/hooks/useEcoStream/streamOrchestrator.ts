@@ -139,7 +139,7 @@ export function createSseWatchdogs() {
     }
     const handler = onTimeout ?? lastHandler;
     if (!handler) return;
-    const ms = m === "first" ? 35_000 : 25_000;
+    const ms = m === "first" ? 90_000 : 60_000; // Debug: 90s/60s
     t = setTimeout(
       () => handler(m === "first" ? "watchdog_first_token" : "watchdog_heartbeat"),
       ms,
@@ -215,6 +215,7 @@ export async function openEcoSseStream(opts: {
   };
 
   console.log("[DIAG] start", { url, accept: acceptHeader, forcedJson });
+  console.log("[SSE-DEBUG] Conectando", { url, headers: Object.keys(requestHeaders) });
 
   const res = await fetch(url, {
     method: "POST",
@@ -281,6 +282,25 @@ export async function openEcoSseStream(opts: {
             try {
               const evt = JSON.parse(json);
               const type = evt?.type ?? evt?.event ?? "chunk";
+              try {
+                const previewSource =
+                  typeof evt?.delta === "string"
+                    ? evt.delta
+                    : typeof evt?.text === "string"
+                    ? evt.text
+                    : typeof evt?.payload?.text === "string"
+                    ? evt.payload.text
+                    : typeof evt?.data === "string"
+                    ? evt.data
+                    : undefined;
+                console.log("[SSE-DEBUG] Evento", {
+                  type: evt?.event ?? evt?.name ?? type,
+                  hasData: Boolean(evt?.data ?? evt?.delta ?? evt?.text ?? evt?.payload),
+                  preview: typeof previewSource === "string" ? previewSource.slice(0, 50) : undefined,
+                });
+              } catch {
+                /* noop */
+              }
               if (type === "control" && evt?.name === "prompt_ready") {
                 markPromptReady();
                 continue;
@@ -296,9 +316,51 @@ export async function openEcoSseStream(opts: {
               }
               if (type === "control" && evt?.name === "done") {
                 if (chunks === 0) {
-                  streamErrored = true;
-                  onError?.(new Error("Stream vazio: backend finalizou sem enviar chunks."));
-                  safeClose("server_error");
+                  const payloadText =
+                    typeof evt?.payload?.text === "string" ? evt.payload.text : undefined;
+                  const dataText = (() => {
+                    if (typeof evt?.data === "string") return evt.data;
+                    if (evt?.data && typeof evt.data === "object") {
+                      const nestedText = (evt.data as { text?: unknown }).text;
+                      if (typeof nestedText === "string") return nestedText;
+                    }
+                    return undefined;
+                  })();
+                  const directText = typeof evt?.text === "string" ? evt.text : undefined;
+                  const collected = collectTexts(evt?.payload);
+                  const collectedText =
+                    Array.isArray(collected) && collected.length > 0 ? collected.join("") : undefined;
+                  const finalText = payloadText || dataText || directText || collectedText;
+
+                  if (finalText) {
+                    try {
+                      console.warn("[SSE] Resposta completa recebida no done (sem chunks)");
+                    } catch {
+                      /* noop */
+                    }
+                    onChunk?.(String(finalText));
+                    wd.bumpFirstToken(onWdTimeout);
+                    chunks = 1;
+                    const donePayload = (() => {
+                      if (evt?.payload && typeof evt.payload === "object") {
+                        const basePayload = { ...(evt.payload as Record<string, unknown>) };
+                        if (typeof basePayload.text !== "string") {
+                          basePayload.text = String(finalText);
+                        }
+                        return basePayload;
+                      }
+                      if (evt?.payload !== undefined) {
+                        return { value: evt.payload, text: String(finalText) };
+                      }
+                      return { text: String(finalText) };
+                    })();
+                    onDone?.(donePayload);
+                    safeClose("server_done");
+                  } else {
+                    streamErrored = true;
+                    onError?.(new Error("Stream vazio: backend finalizou sem enviar chunks."));
+                    safeClose("server_error");
+                  }
                 } else {
                   onDone?.(evt?.payload);
                   safeClose("server_done");
@@ -2490,7 +2552,7 @@ export const beginStream = ({
     return streamStats;
   })();
 
-  streamPromise.catch((error) => {
+  streamPromise.catch(async (error) => {
     if (controller.signal.aborted) return;
     clearWatchdog();
     if (activeStreamClientIdRef.current === clientMessageId) {
@@ -2505,6 +2567,74 @@ export const beginStream = ({
         /* noop */
       }
       setStreamActive(false);
+    }
+    const attemptJsonFallback = async (): Promise<boolean> => {
+      if (controller.signal.aborted) return false;
+      if (typeof fetch !== "function") return false;
+      streamStats.jsonFallbackAttempts = (streamStats.jsonFallbackAttempts ?? 0) + 1;
+      console.error('[SSE] Stream failed, tentando JSON', error);
+      try {
+        const fallbackUrl = resolveApiUrl("/api/ask-eco");
+        const fallbackHeaders: Record<string, string> = {
+          "Content-Type": "application/json",
+          ...baseHeaders,
+        };
+        const res = await fetch(fallbackUrl, {
+          method: "POST",
+          headers: fallbackHeaders,
+          body: JSON.stringify(requestPayload),
+          signal: controller.signal,
+        });
+        if (res.ok) {
+          const data = await res.json().catch(() => null);
+          const fallbackText =
+            typeof data?.text === "string"
+              ? data.text
+              : typeof data?.content === "string"
+              ? data.content
+              : undefined;
+          if (fallbackText) {
+            sharedContext.hasFirstChunkRef.current = true;
+            streamStats.gotAnyChunk = true;
+            streamStats.aggregatedLength += fallbackText.length;
+            streamStats.jsonFallbackSucceeded = true;
+            streamStats.clientFinishReason ??= "json_fallback";
+            const fallbackChunk: EcoStreamChunk = {
+              index: 0,
+              text: fallbackText,
+              isFirstChunk: true,
+              payload: {
+                source: "json_fallback",
+                patch: {
+                  type: "json_fallback",
+                  text: fallbackText,
+                  content: fallbackText,
+                },
+              },
+            };
+            handleChunk(fallbackChunk, sharedContext);
+            handleStreamDone({
+              type: "control",
+              name: "done",
+              payload: {
+                text: fallbackText,
+                response: { text: fallbackText },
+                metadata: { finish_reason: "json_fallback", source: "json_fallback" },
+              },
+            });
+            fallbackRequested = true;
+            return true;
+          }
+        }
+      } catch (fallbackErr) {
+        console.error('[SSE] Fallback JSON também falhou', fallbackErr);
+      }
+      return false;
+    };
+
+    const fallbackSucceeded = await attemptJsonFallback();
+    if (fallbackSucceeded) {
+      return;
     }
     const message = error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
     try {
