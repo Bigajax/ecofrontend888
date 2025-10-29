@@ -1744,6 +1744,18 @@ export const beginStream = ({
     return { "Content-Type": "application/json" };
   };
 
+  const identityHeaders = buildIdentityHeaders();
+  const resolveIdentityHeader = (key: string) => {
+    const exact = identityHeaders[key];
+    if (typeof exact === "string" && exact.trim().length > 0) return exact.trim();
+    const lower = identityHeaders[key.toLowerCase() as keyof typeof identityHeaders];
+    if (typeof lower === "string" && lower.trim().length > 0) return lower.trim();
+    return "";
+  };
+
+  const resolvedGuestId = resolveIdentityHeader("X-Eco-Guest-Id");
+  const resolvedSessionId = resolveIdentityHeader("X-Eco-Session-Id");
+
   let streamPromise: Promise<StreamRunStats>;
   try {
     streamPromise = (async () => {
@@ -1752,22 +1764,10 @@ export const beginStream = ({
         clientMessageId,
         systemHint,
         userId,
-      userName,
-      guestId,
-      isGuest,
-    });
-
-    const identityHeaders = buildIdentityHeaders();
-    const resolveIdentityHeader = (key: string) => {
-      const exact = identityHeaders[key];
-      if (typeof exact === "string" && exact.trim().length > 0) return exact.trim();
-      const lower = identityHeaders[key.toLowerCase() as keyof typeof identityHeaders];
-      if (typeof lower === "string" && lower.trim().length > 0) return lower.trim();
-      return "";
-    };
-
-    const resolvedGuestId = resolveIdentityHeader("X-Eco-Guest-Id");
-    const resolvedSessionId = resolveIdentityHeader("X-Eco-Session-Id");
+        userName,
+        guestId,
+        isGuest,
+      });
 
     const diagForceJson =
       typeof window !== "undefined" && Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
