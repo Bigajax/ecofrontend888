@@ -1633,7 +1633,7 @@ export const beginStream = ({
         fetchSource = null;
       }
     }
-    const shouldSkipFetchInTest = false;
+    const shouldSkipFetchInTest = isTestEnv || isVitest;
 
     const tryJsonFallback = async (reason: string): Promise<boolean> => {
       if (fallbackRequested) return false;

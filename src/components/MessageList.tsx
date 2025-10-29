@@ -39,16 +39,40 @@ const MessageList: React.FC<MessageListProps> = ({
 }) => {
   const handleTTS = ecoActivityTTS ?? (() => {});
 
+  const buildMessageKey = (message: Message, index: number): string => {
+    const role = message.role ?? resolveMessageSender(message) ?? message.sender ?? 'unknown';
+    const normalizedRole = typeof role === 'string' && role.trim().length > 0 ? role.trim() : 'unknown';
+    const clientMessageId = extractClientMessageId(message);
+    if (clientMessageId) {
+      return `${normalizedRole}:${clientMessageId}`;
+    }
+    const messageId =
+      (typeof message.id === 'string' && message.id.trim()) ||
+      (typeof (message as { message_id?: unknown }).message_id === 'string'
+        ? ((message as { message_id?: string }).message_id ?? '').trim()
+        : '');
+    if (messageId) {
+      return `${normalizedRole}:${messageId}`;
+    }
+    const interactionId =
+      (typeof message.interaction_id === 'string' && message.interaction_id.trim()) ||
+      (typeof message.interactionId === 'string' && message.interactionId.trim()) ||
+      '';
+    if (interactionId) {
+      return `${normalizedRole}:${interactionId}`;
+    }
+    return `${normalizedRole}:local-${index}`;
+  };
+
   const uniqueMessages = useMemo(() => {
     if (!Array.isArray(messages) || messages.length === 0) {
       return messages;
     }
 
     const seen = new Set<string>();
-    return messages.filter((message) => {
+    return messages.filter((message, index) => {
       if (!message) return false;
-      const clientMessageId = extractClientMessageId(message);
-      const key = `${message.sender ?? ''}:${clientMessageId ?? message.id ?? ''}`;
+      const key = buildMessageKey(message, index);
       if (seen.has(key)) {
         return false;
       }
@@ -91,23 +115,11 @@ const MessageList: React.FC<MessageListProps> = ({
             ? ((message as { message_id?: string }).message_id ?? '').trim()
             : '');
         const interactionOrLocal = interactionId || clientLocalId || `local-${index}`;
-        const renderId = typeof message.id === 'string' && message.id ? message.id : undefined;
-
-        if (!renderId) {
-          try {
-            console.warn('[DIAG] render:missing-id', {
-              fallbackKey: interactionOrLocal,
-              role: normalizedRole,
-            });
-          } catch {
-            /* noop */
-          }
-          return null;
-        }
+        const messageKey = buildMessageKey(message, index);
 
         return (
           <motion.div
-            key={`${message.sender ?? ''}:${extractClientMessageId(message) ?? message.id ?? index}`}
+            key={messageKey || `auto-${index}`}
             className="w-full"
             initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 6 }}
             animate={{ opacity: 1, y: 0 }}

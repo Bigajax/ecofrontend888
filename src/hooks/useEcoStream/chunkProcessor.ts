@@ -211,23 +211,19 @@ export const processSseLine = (
 
 export function extractText(evt: any): string {
   if (!evt) return "";
-  if (
-    evt?.error &&
-    typeof evt?.message === "string" &&
-    evt.message.trim()
-  ) {
-    return `⚠️ ${evt.message.trim()}`;
+  if (evt.error && typeof evt.message === "string" && evt.message.trim()) {
+    return `⚠️ ${evt.message}`;
   }
-  if (typeof evt?.text === "string" && evt.text.trim()) {
-    return evt.text.trim();
+  if (typeof evt.text === "string" && evt.text.trim()) {
+    return evt.text;
   }
   const deltaContent = evt?.choices?.[0]?.delta?.content;
   if (typeof deltaContent === "string" && deltaContent.trim()) {
-    return deltaContent.trim();
+    return deltaContent;
   }
   const payloadText = evt?.payload?.text ?? evt?.payload?.delta ?? evt?.delta;
   if (typeof payloadText === "string" && payloadText.trim()) {
-    return payloadText.trim();
+    return payloadText;
   }
   if (typeof evt === "string") {
     const trimmed = evt.trim();
