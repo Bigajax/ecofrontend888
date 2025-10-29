@@ -326,16 +326,21 @@ export async function openEcoSseStream(opts: {
 
   const acceptHeader = "text/event-stream";
   const forcedJson = false;
+  const requestMethod = "POST" as const;
   const requestHeaders: Record<string, string> = {
     "content-type": "application/json",
     accept: acceptHeader,
   };
 
-  console.log("[DIAG] start", { url, accept: acceptHeader, forcedJson });
-  console.log("[SSE-DEBUG] Conectando", { url, headers: Object.keys(requestHeaders) });
+  console.log("[DIAG] start", { url, accept: acceptHeader, forcedJson, method: requestMethod });
+  console.log("[SSE-DEBUG] Conectando", {
+    url,
+    method: requestMethod,
+    headers: Object.keys(requestHeaders),
+  });
 
   const res = await fetch(url, {
-    method: "POST",
+    method: requestMethod,
     headers: requestHeaders,
     body: JSON.stringify(body),
     signal: controller.signal,
@@ -1604,8 +1609,19 @@ export const beginStream = ({
   };
 
   streamTimersRef.current[normalizedClientId] = { startedAt: Date.now() };
-  logSse("start", { clientMessageId: normalizedClientId });
-  console.log("[SSE] Stream started", { timestamp: Date.now() });
+  logSse("start", {
+    clientMessageId: normalizedClientId,
+    guestId: effectiveGuestId,
+    sessionId: effectiveSessionId,
+    method: requestMethod,
+  });
+  console.log("[SSE] Stream started", {
+    timestamp: Date.now(),
+    clientMessageId: normalizedClientId,
+    guestId: effectiveGuestId,
+    sessionId: effectiveSessionId,
+    method: requestMethod,
+  });
 
   try {
     console.debug('[DIAG] stream:start', {
@@ -1848,10 +1864,17 @@ export const beginStream = ({
   const effectiveGuestId = resolvedGuestId || getOrCreateGuestId();
   const effectiveSessionId = resolvedSessionId || getOrCreateSessionId();
 
+  const diagForceJson =
+    typeof window !== "undefined" &&
+    Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
+  const requestMethod: "GET" | "POST" = diagForceJson ? "POST" : "GET";
+  const acceptHeader = diagForceJson ? "application/json" : "text/event-stream";
+
   logDev("identifiers", {
     guestId: effectiveGuestId,
     sessionId: effectiveSessionId,
     clientMessageId: normalizedClientId,
+    method: requestMethod,
   });
 
   let streamPromise: Promise<StreamRunStats>;
@@ -1867,16 +1890,13 @@ export const beginStream = ({
         isGuest,
       });
 
-    const diagForceJson =
-      typeof window !== "undefined" && Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
-    const acceptHeader = diagForceJson ? "application/json" : "text/event-stream";
-  const resolvedClientId = (() => {
-    const explicit = resolveIdentityHeader("X-Client-Id");
-    if (explicit) {
-      return explicit;
-    }
-    return "webapp";
-  })();
+    const resolvedClientId = (() => {
+      const explicit = resolveIdentityHeader("X-Client-Id");
+      if (explicit) {
+        return explicit;
+      }
+      return "webapp";
+    })();
 
     const headers: Record<string, string> = {};
     const appendHeader = (key: string, value: unknown) => {
@@ -1930,62 +1950,62 @@ export const beginStream = ({
       streamStats.streamId = streamId;
     }
 
-    baseHeadersCache = headers;
+      baseHeadersCache = headers;
 
-    let response: Response | null = null;
-    let fetchError: unknown = null;
-    const envContainer = import.meta as { env?: { MODE?: string; mode?: string; VITEST?: unknown } };
-    const rawMode = envContainer.env?.MODE ?? envContainer.env?.mode ?? "";
-    const normalizedImportMode =
-      typeof rawMode === "string" ? rawMode.trim().toLowerCase() : "";
-    const processEnv = (() => {
+      let response: Response | null = null;
+      let fetchError: unknown = null;
+      const envContainer = import.meta as { env?: { MODE?: string; mode?: string; VITEST?: unknown } };
+      const rawMode = envContainer.env?.MODE ?? envContainer.env?.mode ?? "";
+      const normalizedImportMode =
+        typeof rawMode === "string" ? rawMode.trim().toLowerCase() : "";
+      const processEnv = (() => {
+        try {
+          const candidate = (globalThis as typeof globalThis & {
+            process?: { env?: Record<string, string | undefined> };
+          }).process;
+          return candidate?.env ?? undefined;
+        } catch {
+          return undefined;
+        }
+      })();
+      const processModeRaw =
+        (processEnv?.NODE_ENV && processEnv.NODE_ENV.trim().length > 0
+          ? processEnv.NODE_ENV
+          : processEnv?.MODE) ?? "";
+      const normalizedProcessMode =
+        typeof processModeRaw === "string" ? processModeRaw.trim().toLowerCase() : "";
+      const isTestEnv = normalizedImportMode === "test" || normalizedProcessMode === "test";
+      const vitestFlag = envContainer.env?.VITEST;
+      const processVitestFlag = processEnv?.VITEST;
+      const processVitestWorker = processEnv?.VITEST_WORKER_ID;
+      const isVitest =
+        vitestFlag === true ||
+        vitestFlag === "true" ||
+        processVitestFlag === "true" ||
+        processVitestFlag === "1" ||
+        typeof processVitestWorker === "string";
       try {
-        const candidate = (globalThis as typeof globalThis & {
-          process?: { env?: Record<string, string | undefined> };
-        }).process;
-        return candidate?.env ?? undefined;
+        console.debug('[DIAG] setStreamActive:before', {
+          clientMessageId,
+          value: true,
+          phase: 'fetch:before',
+        });
       } catch {
-        return undefined;
+        /* noop */
       }
-    })();
-    const processModeRaw =
-      (processEnv?.NODE_ENV && processEnv.NODE_ENV.trim().length > 0
-        ? processEnv.NODE_ENV
-        : processEnv?.MODE) ?? "";
-    const normalizedProcessMode =
-      typeof processModeRaw === "string" ? processModeRaw.trim().toLowerCase() : "";
-    const isTestEnv = normalizedImportMode === "test" || normalizedProcessMode === "test";
-    const vitestFlag = envContainer.env?.VITEST;
-    const processVitestFlag = processEnv?.VITEST;
-    const processVitestWorker = processEnv?.VITEST_WORKER_ID;
-    const isVitest =
-      vitestFlag === true ||
-      vitestFlag === "true" ||
-      processVitestFlag === "true" ||
-      processVitestFlag === "1" ||
-      typeof processVitestWorker === "string";
-    try {
-      console.debug('[DIAG] setStreamActive:before', {
-        clientMessageId,
-        value: true,
-        phase: 'fetch:before',
-      });
-    } catch {
-      /* noop */
-    }
-    setStreamActive(true);
+      setStreamActive(true);
 
-    const fetchFn: typeof fetch | undefined =
-      typeof globalThis.fetch === "function" ? (globalThis.fetch as typeof fetch) : undefined;
-    let fetchSource: string | null = null;
-    if (fetchFn) {
-      try {
-        fetchSource = Function.prototype.toString.call(fetchFn);
-      } catch {
-        fetchSource = null;
+      const fetchFn: typeof fetch | undefined =
+        typeof globalThis.fetch === "function" ? (globalThis.fetch as typeof fetch) : undefined;
+      let fetchSource: string | null = null;
+      if (fetchFn) {
+        try {
+          fetchSource = Function.prototype.toString.call(fetchFn);
+        } catch {
+          fetchSource = null;
+        }
       }
-    }
-    const shouldSkipFetchInTest = isTestEnv || isVitest;
+      const shouldSkipFetchInTest = isTestEnv || isVitest;
 
     runJsonFallbackRequest = async (options: {
       reason?: string;
@@ -2120,7 +2140,12 @@ export const beginStream = ({
     if (fetchFn && !shouldSkipFetchInTest) {
       try {
         try {
-          console.debug('[DIAG] start', { url: requestUrl, accept: acceptHeader, forcedJson: diagForceJson });
+          console.debug('[DIAG] start', {
+            url: requestUrl,
+            accept: acceptHeader,
+            forcedJson: diagForceJson,
+            method: requestMethod,
+          });
         } catch {
           /* noop */
         }
@@ -2152,7 +2177,7 @@ export const beginStream = ({
         }
 
         const fetchInit: RequestInit = {
-          method: diagForceJson ? "POST" : "GET",
+          method: requestMethod,
           mode: "cors",
           credentials: "include",
           headers: requestHeaders,
