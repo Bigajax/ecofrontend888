@@ -26,10 +26,10 @@ import {
   toCleanString,
   toRecord,
 } from "./utils";
-import { resolveApiUrl } from "../../constants/api";
 import { buildIdentityHeaders } from "../../lib/guestId";
 import { setStreamActive } from "./streamStatus";
 import { NO_TEXT_ALERT_MESSAGE, showToast } from "../useEcoStream.helpers";
+import { buildAskEcoUrl } from "@/api/askEcoUrl";
 
 type WatchdogMode = "idle" | "first" | "steady";
 export type CloseReason =
@@ -1759,7 +1759,7 @@ export const beginStream = ({
 
     requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
 
-    const url = resolveApiUrl("/api/ask-eco");
+    const url = buildAskEcoUrl();
 
     const contexto = (requestBody as { contexto?: { stream_id?: unknown; streamId?: unknown } })?.contexto;
     const streamIdCandidates: unknown[] = [
@@ -1882,7 +1882,7 @@ export const beginStream = ({
 
     if (fetchFn && !shouldSkipFetchInTest) {
       try {
-        const url = resolveApiUrl("/api/ask-eco");
+        const url = buildAskEcoUrl();
         try {
           console.debug('[DIAG] start', { url, accept: acceptHeader, forcedJson: diagForceJson });
         } catch {
@@ -2722,7 +2722,7 @@ export const beginStream = ({
       streamStats.jsonFallbackAttempts = (streamStats.jsonFallbackAttempts ?? 0) + 1;
       console.error('[SSE] Stream failed, tentando JSON', error);
       try {
-        const fallbackUrl = resolveApiUrl("/api/ask-eco");
+        const fallbackUrl = buildAskEcoUrl();
         const fallbackHeaders = baseHeaders();
         const res = await fetch(fallbackUrl, {
           method: "POST",
