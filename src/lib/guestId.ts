@@ -1,23 +1,23 @@
 import {
-  ensureGuestId as ensurePersistedGuestId,
-  normalizeGuestIdFormat,
-  persistGuestId,
-} from "../api/guestIdentity";
-import { getOrCreateSessionId } from "../utils/session";
+  ensureGuestId as ensureGuestIdentity,
+  ensureSessionId as ensureSessionIdentity,
+  getGuestId as getCachedGuestId,
+  getSessionId as getCachedSessionId,
+  rememberGuestId,
+  rememberGuestIdFromResponse,
+  rememberSessionId,
+  rememberSessionIdFromResponse,
+} from "@/utils/guestSession";
+import { normalizeGuestIdFormat } from "@/api/guestIdentity";
 
-let cachedGuestId: string | null = null;
-let cachedSessionId: string | null = null;
 let cachedBiasHint: string | null = null;
 
 export function ensureGuestId(): string {
-  if (!cachedGuestId) {
-    cachedGuestId = ensurePersistedGuestId();
-  }
-  return cachedGuestId;
+  return ensureGuestIdentity();
 }
 
 export function getGuestId(): string {
-  return ensureGuestId();
+  return getCachedGuestId();
 }
 
 export function syncGuestId(nextGuestId: string | null | undefined): string | null {
@@ -26,30 +26,37 @@ export function syncGuestId(nextGuestId: string | null | undefined): string | nu
   }
 
   const normalized = normalizeGuestIdFormat(nextGuestId);
-  if (normalized) {
-    cachedGuestId = normalized;
-    persistGuestId(normalized);
-    return normalized;
-  }
-
-  const trimmed = nextGuestId.trim();
-  if (!trimmed) {
+  if (!normalized) {
     return null;
   }
 
-  cachedGuestId = trimmed;
-  return trimmed;
+  rememberGuestId(normalized);
+  return normalized;
 }
 
 export function ensureSessionId(): string {
-  if (!cachedSessionId) {
-    cachedSessionId = getOrCreateSessionId();
-  }
-  return cachedSessionId;
+  return ensureSessionIdentity();
 }
 
 export function getSessionId(): string {
-  return ensureSessionId();
+  return getCachedSessionId();
+}
+
+export function rememberSessionIdValue(candidate: string | null | undefined): string | null {
+  if (typeof candidate !== "string") return null;
+  return rememberSessionId(candidate);
+}
+
+export function rememberGuestIdentityFromResponse(
+  source: Headers | Response | Record<string, unknown> | null | undefined,
+): string | null {
+  return rememberGuestIdFromResponse(source);
+}
+
+export function rememberSessionIdentityFromResponse(
+  source: Headers | Response | Record<string, unknown> | null | undefined,
+): string | null {
+  return rememberSessionIdFromResponse(source);
 }
 
 export function updateBiasHint(nextHint: string | null | undefined): string | null {
