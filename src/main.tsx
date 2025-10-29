@@ -37,7 +37,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-import { getOrCreateGuestId, getOrCreateSessionId } from './utils/ecoIdentity';
+import { getOrCreateGuestId, getOrCreateSessionId } from './utils/identity';
 
 import { initFacebookPixel } from './lib/fbpixel';
 import { syncEcoStorageDomain } from './utils/ecoStorage';

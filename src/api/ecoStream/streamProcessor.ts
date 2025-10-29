@@ -6,7 +6,7 @@ import {
   rememberGuestIdentityFromResponse,
   rememberSessionIdentityFromResponse,
 } from "../../lib/guestId";
-import { rememberIdsFromResponse } from "@/utils/ecoIdentity";
+import { rememberIdsFromResponse } from "@/utils/identity";
 import { buildAskEcoUrl } from "@/api/askEcoUrl";
 import type { Message } from "../contexts/ChatContext";
 import {

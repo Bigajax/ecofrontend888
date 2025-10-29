@@ -2,6 +2,7 @@ import axios from "axios";
 
 import { getApiBase } from "../config/apiBase";
 import { buildIdentityHeaders, syncGuestId } from "../lib/guestId";
+import { getOrCreateGuestId, getOrCreateSessionId } from "@/utils/identity";
 const api = axios.create({
   baseURL: getApiBase(),
   timeout: 60000,
@@ -10,6 +11,13 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+const defaultGuestId = getOrCreateGuestId();
+const defaultSessionId = getOrCreateSessionId();
+
+api.defaults.headers.common["X-Eco-Guest-Id"] = defaultGuestId;
+api.defaults.headers.common["X-Eco-Session-Id"] = defaultSessionId;
+api.defaults.headers.common["X-Client-Id"] = "webapp";
 
 const hasWindow = typeof window !== "undefined";
 

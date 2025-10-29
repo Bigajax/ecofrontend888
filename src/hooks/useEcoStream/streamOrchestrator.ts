@@ -34,7 +34,7 @@ import {
 import { setStreamActive } from "./streamStatus";
 import { NO_TEXT_ALERT_MESSAGE, showToast } from "../useEcoStream.helpers";
 import { buildAskEcoUrl } from "@/api/askEcoUrl";
-import { getOrCreateGuestId, getOrCreateSessionId, rememberIdsFromResponse } from "@/utils/ecoIdentity";
+import { getOrCreateGuestId, getOrCreateSessionId, rememberIdsFromResponse } from "@/utils/identity";
 
 type WatchdogMode = "idle" | "first" | "steady";
 export type CloseReason =
@@ -84,6 +84,7 @@ const ensureHeadProbe = async (url: string, guestId: string, sessionId: string) 
         headers: {
           "X-Eco-Guest-Id": guestId,
           "X-Eco-Session-Id": sessionId,
+          "X-Client-Id": "webapp",
         },
       });
     } catch (error) {
@@ -1772,13 +1773,13 @@ export const beginStream = ({
     const diagForceJson =
       typeof window !== "undefined" && Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
     const acceptHeader = diagForceJson ? "application/json" : "text/event-stream";
-    const resolvedClientId = (() => {
-      const explicit = resolveIdentityHeader("X-Client-Id");
-      if (explicit) {
-        return explicit;
-      }
-      return "web";
-    })();
+  const resolvedClientId = (() => {
+    const explicit = resolveIdentityHeader("X-Client-Id");
+    if (explicit) {
+      return explicit;
+    }
+    return "webapp";
+  })();
 
     const headers: Record<string, string> = {};
     const appendHeader = (key: string, value: unknown) => {
@@ -2792,6 +2793,7 @@ export const beginStream = ({
           "Content-Type": "application/json",
           "X-Eco-Guest-Id": fallbackGuestId,
           "X-Eco-Session-Id": fallbackSessionId,
+          "X-Client-Id": resolvedClientId || "webapp",
           ...(clientMessageId
             ? { "X-Eco-Client-Message-Id": clientMessageId, "x-eco-client-message-id": clientMessageId }
             : {}),
