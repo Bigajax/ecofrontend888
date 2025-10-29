@@ -1411,6 +1411,11 @@ export const beginStream = ({
   let clearTypingWatchdog: () => void = () => {
     /* noop */
   };
+  let runJsonFallbackRequest: (
+    options?: { reason?: string; logError?: unknown },
+  ) => Promise<boolean> = async () => false;
+  let fallbackRequested = false;
+  let firstChunkDelivered = false;
 
   const activeId = activeStreamClientIdRef.current;
   if (activeId && activeId !== clientMessageId) {
@@ -1549,9 +1554,20 @@ export const beginStream = ({
     }
   });
 
-  const placeholderAssistantId = ensureAssistantMessage(clientMessageId, undefined, {
-    allowCreate: true,
-  });
+  const existingAssistantForClient =
+    tracking.assistantByClientRef.current[normalizedClientId] ??
+    tracking.assistantByClientRef.current[clientMessageId];
+
+  let placeholderAssistantId: string | null | undefined = null;
+  if (existingAssistantForClient) {
+    placeholderAssistantId =
+      ensureAssistantMessage(clientMessageId, undefined, { allowCreate: false }) ??
+      existingAssistantForClient;
+  } else {
+    placeholderAssistantId = ensureAssistantMessage(clientMessageId, undefined, {
+      allowCreate: true,
+    });
+  }
   if (placeholderAssistantId) {
     activeAssistantIdRef.current = placeholderAssistantId;
   }
@@ -1566,7 +1582,6 @@ export const beginStream = ({
   const guardTimeoutMs = resolveStreamGuardTimeoutMs();
   let fallbackGuardTimer: ReturnType<typeof setTimeout> | null = null;
   let fallbackGuardTriggered = false;
-  let fallbackRequested = false;
   let triggerJsonFallback: ((reason: string) => void) | null = null;
 
   const watchdog = createSseWatchdogs();
@@ -1735,12 +1750,57 @@ export const beginStream = ({
     fallbackGuardTimer = null;
   };
 
+  const beginFallback = (reason: string): boolean => {
+    if (firstChunkDelivered || sharedContext.hasFirstChunkRef.current) {
+      return false;
+    }
+    if (fallbackRequested) {
+      return false;
+    }
+    fallbackRequested = true;
+    streamStats.clientFinishReason ??= reason;
+    clearFallbackGuardTimer();
+    clearTypingWatchdog();
+    if (activeStreamClientIdRef.current === clientMessageId) {
+      streamActiveRef.current = false;
+      try {
+        console.debug('[DIAG] setStreamActive:before', {
+          clientMessageId,
+          value: false,
+          phase: 'fallback-init',
+        });
+      } catch {
+        /* noop */
+      }
+      setStreamActive(false);
+      try {
+        console.debug('[DIAG] setDigitando:before', {
+          clientMessageId,
+          value: false,
+          phase: 'fallback-init',
+        });
+      } catch {
+        /* noop */
+      }
+      setDigitando(false);
+    } else {
+      try {
+        console.debug('[DIAG] fallback-init:inactive', { clientMessageId });
+      } catch {
+        /* noop */
+      }
+    }
+    return true;
+  };
+
   const startFallbackGuardTimer = () => {
     if (guardTimeoutMs <= 0) return;
     if (typeof window === "undefined") return;
     clearFallbackGuardTimer();
     fallbackGuardTimer = window.setTimeout(() => {
       if (controller.signal.aborted || sharedContext.hasFirstChunkRef.current) return;
+      if (firstChunkDelivered) return;
+      if (fallbackRequested) return;
       fallbackGuardTriggered = true;
       streamStats.guardFallbackTriggered = true;
       streamStats.guardTimeoutMs = guardTimeoutMs;
@@ -1760,12 +1820,7 @@ export const beginStream = ({
         source: "fallback-guard",
       });
       registerNoContent("fallback_guard_timeout");
-      if (!controller.signal.aborted) {
-        debugAbortController(controller, "fallback_guard_timeout");
-      }
-      if (triggerJsonFallback) {
-        triggerJsonFallback("fallback_guard_timeout");
-      }
+      triggerJsonFallback?.("fallback_guard_timeout");
     }, guardTimeoutMs);
   };
 
@@ -1932,12 +1987,17 @@ export const beginStream = ({
     }
     const shouldSkipFetchInTest = isTestEnv || isVitest;
 
-    const runJsonFallbackRequest = async (options: {
+    runJsonFallbackRequest = async (options: {
       reason?: string;
       logError?: unknown;
     } = {}): Promise<boolean> => {
-      if (controller.signal.aborted) return false;
-      if (typeof fetch !== "function") return false;
+      if (firstChunkDelivered || sharedContext.hasFirstChunkRef.current) {
+        return false;
+      }
+      const fallbackFetch = fetchFn ?? fetch;
+      if (typeof fallbackFetch !== "function") {
+        return false;
+      }
 
       const { reason = "json_fallback", logError } = options;
       streamStats.jsonFallbackAttempts = (streamStats.jsonFallbackAttempts ?? 0) + 1;
@@ -1962,11 +2022,12 @@ export const beginStream = ({
             : {}),
         };
 
-        const res = await fetch(fallbackUrl, {
+        const fallbackController = new AbortController();
+        const res = await fallbackFetch(fallbackUrl, {
           method: "POST",
           headers: fallbackHeaders,
           body: JSON.stringify(requestPayload),
-          signal: controller.signal,
+          signal: fallbackController.signal,
         });
         rememberIdsFromResponse(res);
         if (!res.ok) {
@@ -1993,6 +2054,7 @@ export const beginStream = ({
 
         if (fallbackText) {
           sharedContext.hasFirstChunkRef.current = true;
+          firstChunkDelivered = true;
           streamStats.gotAnyChunk = true;
           streamStats.aggregatedLength += fallbackText.length;
           streamStats.jsonFallbackSucceeded = true;
@@ -2020,7 +2082,6 @@ export const beginStream = ({
               metadata: { finish_reason: "json_fallback", source: "json_fallback" },
             },
           });
-          fallbackRequested = true;
           return true;
         }
       } catch (fallbackErr) {
@@ -2031,7 +2092,7 @@ export const beginStream = ({
     };
 
     const tryJsonFallback = async (reason: string): Promise<boolean> => {
-      if (fallbackRequested) return false;
+      if (firstChunkDelivered) return false;
       if (streamStats.gotAnyChunk) return false;
       if (activeStreamClientIdRef.current !== clientMessageId) return false;
       if (!streamActiveRef.current) return false;
@@ -2040,13 +2101,16 @@ export const beginStream = ({
       if (normalizedAbortReason === "new-send" || normalizedAbortReason === "ui_abort") {
         return false;
       }
-      fallbackRequested = true;
+      const started = beginFallback(reason);
+      if (!started) {
+        return false;
+      }
 
       const succeeded = await runJsonFallbackRequest({ reason });
-      if (succeeded) {
-        return true;
+      if (!controller.signal.aborted && fallbackRequested) {
+        debugAbortController(controller, reason || "json_fallback");
       }
-      return false;
+      return succeeded;
     };
 
     triggerJsonFallback = (reason: string) => {
@@ -2136,7 +2200,6 @@ export const beginStream = ({
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
     let doneReceived = false;
-    let firstChunkDelivered = false;
 
     const buildRecordChain = (rawEvent?: Record<string, unknown>): Record<string, unknown>[] => {
       const eventRecord = toRecord(rawEvent) ?? undefined;
@@ -2157,6 +2220,7 @@ export const beginStream = ({
 
     const processChunkEvent = (index: number, delta: string, rawEvent: Record<string, unknown>) => {
       if (controller.signal.aborted) return;
+      if (fallbackRequested) return;
 
       const payloadRecord = extractPayloadRecord(rawEvent);
       const records = buildRecordChain(rawEvent);
@@ -2198,12 +2262,14 @@ export const beginStream = ({
       sharedContext.hasFirstChunkRef.current = true;
       streamStats.gotAnyChunk = true;
       streamStats.aggregatedLength += effectiveDelta.length;
-      clearFallbackGuardTimer();
-      bumpFirstTokenWatchdog();
       if (!firstChunkDelivered) {
         firstChunkDelivered = true;
+        clearFallbackGuardTimer();
         onFirstChunk?.();
+      } else {
+        clearFallbackGuardTimer();
       }
+      bumpFirstTokenWatchdog();
       try {
         console.debug('[SSE] chunk', {
           idx: index,
@@ -2237,6 +2303,7 @@ export const beginStream = ({
 
     const handlePromptEvent = (rawEvent: Record<string, unknown>) => {
       if (controller.signal.aborted) return;
+      if (fallbackRequested) return;
       markPromptReadyWatchdog();
       const records = buildRecordChain(rawEvent);
       const interactionId =
@@ -2264,6 +2331,7 @@ export const beginStream = ({
 
     const handleControlEvent = (rawEvent: Record<string, unknown>) => {
       if (controller.signal.aborted) return;
+      if (fallbackRequested) return;
       const records = buildRecordChain(rawEvent);
       const interactionId =
         pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
@@ -2294,6 +2362,7 @@ export const beginStream = ({
 
     const handleMessageEvent = (rawEvent: Record<string, unknown>) => {
       if (controller.signal.aborted) return;
+      if (fallbackRequested) return;
       const payloadRecord = extractPayloadRecord(rawEvent);
       const records = buildRecordChain(rawEvent);
       const directText =
@@ -2308,7 +2377,9 @@ export const beginStream = ({
       const normalized = typeof directText === "string" ? directText.trim() : "";
       if (normalized) {
         sharedContext.hasFirstChunkRef.current = true;
+        firstChunkDelivered = true;
         streamStats.gotAnyChunk = true;
+        clearFallbackGuardTimer();
         bumpFirstTokenWatchdog();
         return;
       }
@@ -2319,6 +2390,7 @@ export const beginStream = ({
       rawEvent?: Record<string, unknown>,
       options?: { reason?: string },
     ) => {
+      clearTypingWatchdog();
       if (controller.signal.aborted || doneReceived) return;
       doneReceived = true;
       clearWatchdog();
@@ -2662,6 +2734,7 @@ export const beginStream = ({
 
     const processEventBlock = (block: string) => {
       if (!block) return;
+      if (fallbackRequested) return;
       const normalizedBlock = block.replace(/\r\n/g, "\n");
       const lines = normalizedBlock.split("\n");
       let currentEventName: string | undefined;
@@ -2824,6 +2897,7 @@ export const beginStream = ({
 
   streamPromise.catch(async (error) => {
     if (controller.signal.aborted) return;
+    clearTypingWatchdog();
     clearWatchdog();
     if (activeStreamClientIdRef.current === clientMessageId) {
       streamActiveRef.current = false;
@@ -2838,12 +2912,21 @@ export const beginStream = ({
       }
       setStreamActive(false);
     }
-    const fallbackSucceeded = await runJsonFallbackRequest({
-      reason: "json_fallback",
-      logError: error,
-    });
-    if (fallbackSucceeded) {
-      return;
+    const fallbackAlreadyRequested = fallbackRequested;
+    const canBeginFallback =
+      !firstChunkDelivered && (fallbackAlreadyRequested || beginFallback("json_fallback"));
+    let fallbackSucceeded = false;
+    if (canBeginFallback) {
+      fallbackSucceeded = await runJsonFallbackRequest({
+        reason: "json_fallback",
+        logError: error,
+      });
+      if (!controller.signal.aborted && fallbackRequested) {
+        debugAbortController(controller, "json_fallback");
+      }
+      if (fallbackSucceeded) {
+        return;
+      }
     }
     const message = error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
     try {
