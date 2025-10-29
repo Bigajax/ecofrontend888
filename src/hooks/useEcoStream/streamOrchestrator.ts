@@ -1595,6 +1595,9 @@ export const beginStream = ({
     }, guardTimeoutMs);
   };
 
+  let requestPayload: Record<string, unknown> | null = null;
+  let baseHeaders: Record<string, string> = {};
+
   const streamPromise = (async () => {
     const requestBody = buildEcoRequestBody({
       history,
@@ -1607,24 +1610,46 @@ export const beginStream = ({
     });
 
     const identityHeaders = buildIdentityHeaders();
-    const baseHeaders: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...identityHeaders,
+    const resolveIdentityHeader = (key: string) => {
+      const exact = identityHeaders[key];
+      if (typeof exact === "string" && exact.trim().length > 0) return exact.trim();
+      const lower = identityHeaders[key.toLowerCase() as keyof typeof identityHeaders];
+      if (typeof lower === "string" && lower.trim().length > 0) return lower.trim();
+      return "";
     };
+
+    const resolvedGuestId = resolveIdentityHeader("X-Eco-Guest-Id");
+    const resolvedSessionId = resolveIdentityHeader("X-Eco-Session-Id");
+
     const diagForceJson =
       typeof window !== "undefined" && Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
     const acceptHeader = diagForceJson ? "application/json" : "text/event-stream";
-    baseHeaders["Accept"] = acceptHeader;
-    const requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
-
     const resolvedClientId = (() => {
-      const explicit = identityHeaders["X-Client-Id"] ?? (identityHeaders as Record<string, string | undefined>)["x-client-id"];
-      if (typeof explicit === "string" && explicit.trim().length > 0) {
-        return explicit.trim();
+      const explicit = resolveIdentityHeader("X-Client-Id");
+      if (explicit) {
+        return explicit;
       }
       return "web";
     })();
-    baseHeaders["X-Client-Id"] = resolvedClientId;
+
+    baseHeaders = {
+      "Content-Type": "application/json",
+      Accept: acceptHeader,
+      ...identityHeaders,
+    };
+
+    if (resolvedClientId) {
+      baseHeaders["X-Client-Id"] = resolvedClientId;
+      baseHeaders["x-client-id"] = resolvedClientId;
+    }
+    if (resolvedGuestId) {
+      baseHeaders["x-eco-guest-id"] = resolvedGuestId;
+    }
+    if (resolvedSessionId) {
+      baseHeaders["x-eco-session-id"] = resolvedSessionId;
+    }
+
+    requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
 
     const url = resolveApiUrl("/api/ask-eco");
 
@@ -1775,6 +1800,12 @@ export const beginStream = ({
           cache: "no-store",
           // keepalive: true,  // ❌ NÃO usar em SSE
         });
+        if (!response.ok) {
+          const httpError = new Error(`HTTP ${response.status}: ${response.statusText}`);
+          fetchError = httpError;
+          response = null;
+          throw httpError;
+        }
       } catch (error) {
         fetchError = error;
         const formatted = formatAbortReason(error);
