@@ -114,7 +114,10 @@ export const processSseLine = (
   const isPromptReady =
     normalizedPayloadName === "prompt_ready" ||
     normalizedPayloadName === "promptready" ||
-    type === "prompt_ready";
+    normalizedPayloadName === "ready" ||
+    type === "prompt_ready" ||
+    type === "ready" ||
+    normalizedType === "ready";
   const isDone = normalizedPayloadName === "done" || type === "done";
   const isControl =
     type === "control" ||
@@ -145,9 +148,15 @@ export const processSseLine = (
         event.delta,
         event.text,
         event.content,
+        (event as { message?: unknown }).message,
+        (event as { detail?: unknown }).detail,
+        (event as { reason?: unknown }).reason,
         payloadRecord?.delta,
         payloadRecord?.text,
         payloadRecord?.content,
+        payloadRecord?.message,
+        payloadRecord?.detail,
+        payloadRecord?.reason,
       ];
 
       const directText = pickFirstString(...directSources);

@@ -6,6 +6,20 @@ import EcoMessageWithAudio from './EcoMessageWithAudio';
 import type { Message } from '../contexts/ChatContext';
 import { isEcoMessage, resolveMessageSender } from '../utils/chat/messages';
 
+const extractClientMessageId = (message: Message | undefined): string | undefined => {
+  if (!message) return undefined;
+  if (typeof message.client_message_id === "string") {
+    const trimmed = message.client_message_id.trim();
+    if (trimmed) return trimmed;
+  }
+  const camelCaseId = (message as { clientMessageId?: unknown }).clientMessageId;
+  if (typeof camelCaseId === "string") {
+    const trimmed = camelCaseId.trim();
+    if (trimmed) return trimmed;
+  }
+  return undefined;
+};
+
 type MessageListProps = {
   messages: Message[];
   prefersReducedMotion: boolean;
@@ -33,7 +47,8 @@ const MessageList: React.FC<MessageListProps> = ({
     const seen = new Set<string>();
     return messages.filter((message) => {
       if (!message) return false;
-      const key = `${message.id ?? ''}-${message.sender ?? ''}`;
+      const clientMessageId = extractClientMessageId(message);
+      const key = `${message.sender ?? ''}:${clientMessageId ?? message.id ?? ''}`;
       if (seen.has(key)) {
         return false;
       }
@@ -92,7 +107,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
         return (
           <motion.div
-            key={`${message.id ?? ''}-${message.sender ?? ''}`}
+            key={`${message.sender ?? ''}:${extractClientMessageId(message) ?? message.id ?? index}`}
             className="w-full"
             initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 6 }}
             animate={{ opacity: 1, y: 0 }}

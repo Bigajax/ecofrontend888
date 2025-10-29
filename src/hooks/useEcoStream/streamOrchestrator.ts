@@ -1408,13 +1408,14 @@ export const beginStream = ({
   const patchAssistantNoContent = (assistantId: string | null | undefined) => {
     if (!assistantId) return;
     const updatedAt = new Date().toISOString();
+    const fallbackText = NO_CONTENT_MESSAGE;
     const patch: ChatMessageType = {
       id: assistantId,
       streaming: false,
       status: "no_content",
       updatedAt,
-      content: "",
-      text: "",
+      content: fallbackText,
+      text: fallbackText,
     };
     const allowedKeys = ["status", "streaming", "updatedAt", "content", "text"] as string[];
     if (upsertMessage) {
@@ -1424,13 +1425,32 @@ export const beginStream = ({
     setMessages((prevMessages) =>
       prevMessages.map((message) => {
         if (message.id !== assistantId) return message;
+        const existingText = (() => {
+          if (typeof message.text === "string") {
+            const trimmedText = message.text.trim();
+            if (trimmedText) return trimmedText;
+          }
+          if (typeof message.content === "string") {
+            const trimmedContent = message.content.trim();
+            if (trimmedContent) return trimmedContent;
+          }
+          return "";
+        })();
+        if (existingText) {
+          return {
+            ...message,
+            streaming: false,
+            status: "no_content",
+            updatedAt,
+          };
+        }
         return {
           ...message,
           streaming: false,
           status: "no_content",
           updatedAt,
-          content: "",
-          text: "",
+          content: fallbackText,
+          text: fallbackText,
         };
       }),
     );
@@ -1742,9 +1762,47 @@ export const beginStream = ({
 
     const processChunkEvent = (index: number, delta: string, rawEvent: Record<string, unknown>) => {
       if (controller.signal.aborted) return;
+
+      const payloadRecord = extractPayloadRecord(rawEvent);
+      const records = buildRecordChain(rawEvent);
+
+      let effectiveDelta = typeof delta === "string" ? delta : "";
+      let trimmedDelta = effectiveDelta.trim();
+
+      if (!trimmedDelta) {
+        const fallbackText =
+          pickStringFromRecords(records, ["message", "detail", "reason", "warning", "warn"]) ??
+          (() => {
+            const payloadMessage =
+              typeof payloadRecord === "object" && payloadRecord
+                ? pickStringFromRecords([payloadRecord], ["message", "detail", "reason"])
+                : undefined;
+            return payloadMessage ?? undefined;
+          })();
+
+        const normalizedFallback = typeof fallbackText === "string" ? fallbackText.trim() : "";
+        if (normalizedFallback) {
+          const hasAlertFlag =
+            (rawEvent as { error?: unknown }).error === true ||
+            (rawEvent as { warn?: unknown }).warn === true ||
+            (rawEvent as { warning?: unknown }).warning === true ||
+            (payloadRecord as { error?: unknown })?.error === true ||
+            (payloadRecord as { warn?: unknown })?.warn === true ||
+            (payloadRecord as { warning?: unknown })?.warning === true;
+
+          effectiveDelta = hasAlertFlag ? `⚠️ ${normalizedFallback}` : normalizedFallback;
+          trimmedDelta = effectiveDelta.trim();
+        }
+      }
+
+      if (!trimmedDelta) {
+        bumpHeartbeatWatchdog();
+        return;
+      }
+
       sharedContext.hasFirstChunkRef.current = true;
       streamStats.gotAnyChunk = true;
-      streamStats.aggregatedLength += delta.length;
+      streamStats.aggregatedLength += effectiveDelta.length;
       clearFallbackGuardTimer();
       bumpFirstTokenWatchdog();
       if (!firstChunkDelivered) {
@@ -1754,16 +1812,14 @@ export const beginStream = ({
       try {
         console.debug('[SSE] chunk', {
           idx: index,
-          len: delta.length,
-          sample: delta.slice(0, 40),
+          len: effectiveDelta.length,
+          sample: effectiveDelta.slice(0, 40),
         });
       } catch {
         /* noop */
       }
-      const payloadRecord = extractPayloadRecord(rawEvent);
       const metadataRecord =
         toRecord(payloadRecord?.metadata) ?? toRecord((rawEvent as Record<string, unknown>)?.metadata);
-      const records = buildRecordChain(rawEvent);
       const interactionId =
         pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
       const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
@@ -1772,7 +1828,7 @@ export const beginStream = ({
 
       const chunk: EcoStreamChunk = {
         index,
-        text: delta,
+        text: effectiveDelta,
         interactionId,
         messageId,
         createdAt,
