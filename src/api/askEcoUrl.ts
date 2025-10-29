@@ -1,5 +1,5 @@
 import { resolveApiUrl } from "@/constants/api";
-import { getGuestId, getSessionId } from "@/utils/guestSession";
+import { getOrCreateGuestId, getOrCreateSessionId } from "@/utils/ecoIdentity";
 
 export const ASK_ECO_ENDPOINT_PATH = "/api/ask-eco" as const;
 
@@ -22,8 +22,8 @@ export const buildAskEcoUrl = (
 ): string => {
   const resolved = resolveApiUrl(path);
   const url = toAbsoluteUrl(resolved);
-  const guestId = getGuestId();
-  const sessionId = getSessionId();
+  const guestId = getOrCreateGuestId();
+  const sessionId = getOrCreateSessionId();
   const clientMessageId = typeof options.clientMessageId === "string"
     ? options.clientMessageId.trim()
     : "";
