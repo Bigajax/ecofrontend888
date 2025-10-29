@@ -5,7 +5,6 @@ import {
   type EcoStreamControlEvent,
   type EcoStreamDoneEvent,
   type EcoStreamPromptReadyEvent,
-  startEcoStream,
 } from "../../api/ecoStream";
 import { collectTexts } from "../../api/askEcoResponse";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
@@ -61,6 +60,41 @@ const inflightControllers = new Map<string, AbortController>();
 
 let headProbeCompleted = false;
 let headProbePromise: Promise<void> | null = null;
+
+const isDevelopmentEnv = (() => {
+  try {
+    const meta = import.meta as { env?: { DEV?: boolean; MODE?: string; mode?: string } };
+    if (typeof meta?.env?.DEV === "boolean") {
+      return meta.env.DEV;
+    }
+    const mode = meta?.env?.MODE ?? meta?.env?.mode;
+    if (typeof mode === "string" && mode.trim()) {
+      return mode.trim().toLowerCase() === "development";
+    }
+  } catch {
+    /* noop */
+  }
+  try {
+    const nodeEnv = (
+      globalThis as typeof globalThis & { process?: { env?: Record<string, string | undefined> } }
+    ).process?.env?.NODE_ENV;
+    if (typeof nodeEnv === "string" && nodeEnv.trim()) {
+      return nodeEnv.trim().toLowerCase() === "development";
+    }
+  } catch {
+    /* noop */
+  }
+  return false;
+})();
+
+const logDev = (label: string, payload: Record<string, unknown>) => {
+  if (!isDevelopmentEnv) return;
+  try {
+    console.debug(`[EcoStream] ${label}`, payload);
+  } catch {
+    /* noop */
+  }
+};
 
 const ensureHeadProbe = async (url: string, guestId: string, sessionId: string) => {
   if (headProbeCompleted) return;
@@ -1742,7 +1776,7 @@ export const beginStream = ({
     if (baseHeadersCache) {
       return { ...baseHeadersCache };
     }
-    return { "Content-Type": "application/json" };
+    return {};
   };
 
   const identityHeaders = buildIdentityHeaders();
@@ -1756,6 +1790,14 @@ export const beginStream = ({
 
   const resolvedGuestId = resolveIdentityHeader("X-Eco-Guest-Id");
   const resolvedSessionId = resolveIdentityHeader("X-Eco-Session-Id");
+  const effectiveGuestId = resolvedGuestId || getOrCreateGuestId();
+  const effectiveSessionId = resolvedSessionId || getOrCreateSessionId();
+
+  logDev("identifiers", {
+    guestId: effectiveGuestId,
+    sessionId: effectiveSessionId,
+    clientMessageId: normalizedClientId,
+  });
 
   let streamPromise: Promise<StreamRunStats>;
   try {
@@ -1789,8 +1831,6 @@ export const beginStream = ({
       headers[key] = trimmed;
     };
 
-    appendHeader("Content-Type", "application/json");
-
     for (const [key, value] of Object.entries(identityHeaders)) {
       appendHeader(key, value);
     }
@@ -1808,7 +1848,17 @@ export const beginStream = ({
 
     requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
 
-    const url = buildAskEcoUrl(undefined, { clientMessageId });
+    const baseUrl = buildAskEcoUrl(undefined, { clientMessageId });
+    let requestUrl = baseUrl;
+    if (!diagForceJson && requestPayload) {
+      try {
+        const urlObj = new URL(baseUrl);
+        urlObj.searchParams.set("payload", JSON.stringify(requestPayload));
+        requestUrl = urlObj.toString();
+      } catch {
+        requestUrl = baseUrl;
+      }
+    }
 
     const contexto = (requestBody as { contexto?: { stream_id?: unknown; streamId?: unknown } })?.contexto;
     const streamIdCandidates: unknown[] = [
@@ -1882,6 +1932,104 @@ export const beginStream = ({
     }
     const shouldSkipFetchInTest = isTestEnv || isVitest;
 
+    const runJsonFallbackRequest = async (options: {
+      reason?: string;
+      logError?: unknown;
+    } = {}): Promise<boolean> => {
+      if (controller.signal.aborted) return false;
+      if (typeof fetch !== "function") return false;
+
+      const { reason = "json_fallback", logError } = options;
+      streamStats.jsonFallbackAttempts = (streamStats.jsonFallbackAttempts ?? 0) + 1;
+
+      if (logError !== undefined) {
+        console.error('[SSE] Stream failed, tentando JSON', logError);
+      }
+
+      try {
+        const fallbackUrl = buildAskEcoUrl(undefined, { clientMessageId });
+        const fallbackGuestId = effectiveGuestId;
+        const fallbackSessionId = effectiveSessionId;
+        const fallbackHeaders: Record<string, string> = {
+          ...baseHeaders(),
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-Eco-Guest-Id": fallbackGuestId,
+          "X-Eco-Session-Id": fallbackSessionId,
+          "X-Client-Id": resolvedClientId || "webapp",
+          ...(clientMessageId
+            ? { "X-Eco-Client-Message-Id": clientMessageId, "x-eco-client-message-id": clientMessageId }
+            : {}),
+        };
+
+        const res = await fetch(fallbackUrl, {
+          method: "POST",
+          headers: fallbackHeaders,
+          body: JSON.stringify(requestPayload),
+          signal: controller.signal,
+        });
+        rememberIdsFromResponse(res);
+        if (!res.ok) {
+          const detail = await res.text().catch(() => "");
+          const trimmedDetail = detail.trim();
+          const message = trimmedDetail || `Eco fallback request failed (${res.status})`;
+          setErroApi(message);
+          logSse("abort", {
+            clientMessageId: normalizedClientId,
+            reason: "json_fallback_http_error",
+            status: res.status,
+            source: "json_fallback",
+          });
+          return false;
+        }
+
+        const data = await res.json().catch(() => null);
+        const fallbackText =
+          typeof data?.text === "string"
+            ? data.text
+            : typeof data?.content === "string"
+            ? data.content
+            : undefined;
+
+        if (fallbackText) {
+          sharedContext.hasFirstChunkRef.current = true;
+          streamStats.gotAnyChunk = true;
+          streamStats.aggregatedLength += fallbackText.length;
+          streamStats.jsonFallbackSucceeded = true;
+          streamStats.clientFinishReason ??= reason;
+          const fallbackChunk: EcoStreamChunk = {
+            index: 0,
+            text: fallbackText,
+            isFirstChunk: true,
+            payload: {
+              source: "json_fallback",
+              patch: {
+                type: "json_fallback",
+                text: fallbackText,
+                content: fallbackText,
+              },
+            },
+          };
+          handleChunk(fallbackChunk, sharedContext);
+          handleStreamDone({
+            type: "control",
+            name: "done",
+            payload: {
+              text: fallbackText,
+              response: { text: fallbackText },
+              metadata: { finish_reason: "json_fallback", source: "json_fallback" },
+            },
+          });
+          fallbackRequested = true;
+          return true;
+        }
+      } catch (fallbackErr) {
+        console.error('[SSE] Fallback JSON também falhou', fallbackErr);
+      }
+
+      return false;
+    };
+
     const tryJsonFallback = async (reason: string): Promise<boolean> => {
       if (fallbackRequested) return false;
       if (streamStats.gotAnyChunk) return false;
@@ -1893,34 +2041,10 @@ export const beginStream = ({
         return false;
       }
       fallbackRequested = true;
-      streamStats.jsonFallbackAttempts = (streamStats.jsonFallbackAttempts ?? 0) + 1;
 
-      const parentSignal = controller.signal as AbortSignal & { reason?: unknown };
-      if (parentSignal.aborted && resolveAbortReason(parentSignal.reason) === "new-send") {
-        return false;
-      }
-
-      const fallbackController = new AbortController();
-      if (parentSignal.aborted) {
-        debugAbortController(fallbackController, parentSignal.reason);
-      } else {
-        parentSignal.addEventListener(
-          "abort",
-          () => debugAbortController(fallbackController, parentSignal.reason),
-          { once: true },
-        );
-      }
-
-      fatalError = null;
-      const streamFallbackOk = await runStartEcoStreamFallback(fallbackController.signal);
-      if (streamFallbackOk && !fallbackController.signal.aborted) {
-        streamStats.jsonFallbackSucceeded = true;
-        streamStats.clientFinishReason ??= reason;
+      const succeeded = await runJsonFallbackRequest({ reason });
+      if (succeeded) {
         return true;
-      }
-      if (fallbackController.signal.aborted) {
-        streamStats.clientFinishReason ??= reason;
-        return false;
       }
       return false;
     };
@@ -1931,9 +2055,8 @@ export const beginStream = ({
 
     if (fetchFn && !shouldSkipFetchInTest) {
       try {
-        const url = buildAskEcoUrl(undefined, { clientMessageId });
         try {
-          console.debug('[DIAG] start', { url, accept: acceptHeader, forcedJson: diagForceJson });
+          console.debug('[DIAG] start', { url: requestUrl, accept: acceptHeader, forcedJson: diagForceJson });
         } catch {
           /* noop */
         }
@@ -1951,26 +2074,34 @@ export const beginStream = ({
         }
 
         try {
-          await ensureHeadProbe(
-            url,
-            resolvedGuestId || getOrCreateGuestId(),
-            resolvedSessionId || getOrCreateSessionId(),
-          );
+          await ensureHeadProbe(requestUrl, effectiveGuestId, effectiveSessionId);
         } catch {
           /* noop */
         }
 
         const requestHeaders = { ...baseHeaders(), Accept: acceptHeader };
-        response = await fetchFn(url, {
-          method: "POST",
+        if (!diagForceJson) {
+          delete requestHeaders["Content-Type"];
+          delete requestHeaders["content-type"];
+        } else {
+          requestHeaders["Content-Type"] = "application/json";
+        }
+
+        const fetchInit: RequestInit = {
+          method: diagForceJson ? "POST" : "GET",
           mode: "cors",
           credentials: "include",
           headers: requestHeaders,
-          body: JSON.stringify(requestPayload),
           signal: controller.signal,
           cache: "no-store",
           // keepalive: true,  // ❌ NÃO usar em SSE
-        });
+        };
+
+        if (diagForceJson) {
+          fetchInit.body = JSON.stringify(requestPayload);
+        }
+
+        response = await fetchFn(requestUrl, fetchInit);
         if (!response.ok) {
           const httpError = new Error(`HTTP ${response.status}: ${response.statusText}`);
           fetchError = httpError;
@@ -1987,6 +2118,7 @@ export const beginStream = ({
         });
       }
     } else {
+      fetchError = new Error(shouldSkipFetchInTest ? "skipped_in_test_env" : "fetch_unavailable");
       logSse("abort", {
         clientMessageId: normalizedClientId,
         reason: shouldSkipFetchInTest ? "skipped_in_test_env" : "fetch_unavailable",
@@ -1994,9 +2126,7 @@ export const beginStream = ({
       });
     }
 
-    const shouldFallbackToStartEcoStream =
-      shouldSkipFetchInTest || (!response && fetchError !== null);
-    if (!response && !shouldFallbackToStartEcoStream) {
+    if (!response) {
       throw fetchError ?? new Error('Eco stream request failed to start.');
     }
 
@@ -2390,76 +2520,6 @@ export const beginStream = ({
       fatalError = new Error(message);
     };
 
-    const runStartEcoStreamFallback = async (signalOverride?: AbortSignal) => {
-      try {
-        await startEcoStream({
-          history,
-          clientMessageId,
-          systemHint,
-          userId,
-          userName,
-          guestId,
-          isGuest,
-          signal: signalOverride ?? controller.signal,
-          headers: { ...baseHeaders(), Accept: acceptHeader },
-          onFirstChunk: () => {
-            if (!firstChunkDelivered) {
-              firstChunkDelivered = true;
-              onFirstChunk?.();
-            }
-          },
-          onStreamOpen: ({ status, contentType: streamContentType }) => {
-            logSse('open', {
-              clientMessageId: normalizedClientId,
-              status,
-              contentType: streamContentType ?? '',
-            });
-            bumpHeartbeatWatchdog();
-          },
-          onStreamAbort: (reason) => {
-            logSse('abort', {
-              clientMessageId: normalizedClientId,
-              reason: formatAbortReason(reason),
-              source: 'startEcoStream',
-            });
-          },
-          onChunk: (chunk) => {
-            const text = typeof chunk.text === 'string' ? chunk.text : '';
-            processChunkEvent(chunk.index ?? 0, text, chunk as unknown as Record<string, unknown>);
-          },
-          onDone: (event) => {
-            handleStreamDone(event.payload as Record<string, unknown> | undefined);
-          },
-          onError: (error) => {
-            fatalError = error instanceof Error ? error : new Error(String(error ?? 'Unknown stream error'));
-          },
-          onPromptReady: (event) => {
-            handlePromptEvent(event as unknown as Record<string, unknown>);
-          },
-          onControl: (event) => {
-            handleControlEvent(event as unknown as Record<string, unknown>);
-          },
-        });
-        return true;
-      } catch (error) {
-        fatalError = error instanceof Error ? error : new Error(String(error ?? 'Unknown stream error'));
-        return false;
-      }
-    };
-
-    if (shouldFallbackToStartEcoStream) {
-      const fallbackOk = await runStartEcoStreamFallback();
-      if (!fallbackOk && fatalError) {
-        logSse('abort', {
-          clientMessageId: normalizedClientId,
-          reason: formatAbortReason(fatalError),
-          source: 'startEcoStream',
-        });
-        throw fatalError;
-      }
-      return streamStats;
-    }
-
     const responseNonNull = response as Response;
     const headerEntries = Array.from(responseNonNull.headers.entries());
     const headerMap = headerEntries.reduce<Record<string, string>>((acc, [key, value]) => {
@@ -2778,92 +2838,10 @@ export const beginStream = ({
       }
       setStreamActive(false);
     }
-    const attemptJsonFallback = async (): Promise<boolean> => {
-      if (controller.signal.aborted) return false;
-      if (typeof fetch !== "function") return false;
-      streamStats.jsonFallbackAttempts = (streamStats.jsonFallbackAttempts ?? 0) + 1;
-      console.error('[SSE] Stream failed, tentando JSON', error);
-      try {
-        const fallbackUrl = buildAskEcoUrl(undefined, { clientMessageId });
-        const fallbackGuestId = resolvedGuestId || getOrCreateGuestId();
-        const fallbackSessionId = resolvedSessionId || getOrCreateSessionId();
-        const fallbackHeaders: Record<string, string> = {
-          ...baseHeaders(),
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "X-Eco-Guest-Id": fallbackGuestId,
-          "X-Eco-Session-Id": fallbackSessionId,
-          "X-Client-Id": resolvedClientId || "webapp",
-          ...(clientMessageId
-            ? { "X-Eco-Client-Message-Id": clientMessageId, "x-eco-client-message-id": clientMessageId }
-            : {}),
-        };
-        const res = await fetch(fallbackUrl, {
-          method: "POST",
-          headers: fallbackHeaders,
-          body: JSON.stringify(requestPayload),
-          signal: controller.signal,
-        });
-        rememberIdsFromResponse(res);
-        if (!res.ok) {
-          const detail = await res.text().catch(() => "");
-          const trimmedDetail = detail.trim();
-          const message = trimmedDetail || `Eco fallback request failed (${res.status})`;
-          setErroApi(message);
-          logSse("abort", {
-            clientMessageId: normalizedClientId,
-            reason: "json_fallback_http_error",
-            status: res.status,
-            source: "json_fallback",
-          });
-          return false;
-        }
-        const data = await res.json().catch(() => null);
-        const fallbackText =
-          typeof data?.text === "string"
-            ? data.text
-            : typeof data?.content === "string"
-            ? data.content
-            : undefined;
-        if (fallbackText) {
-          sharedContext.hasFirstChunkRef.current = true;
-          streamStats.gotAnyChunk = true;
-          streamStats.aggregatedLength += fallbackText.length;
-          streamStats.jsonFallbackSucceeded = true;
-          streamStats.clientFinishReason ??= "json_fallback";
-          const fallbackChunk: EcoStreamChunk = {
-            index: 0,
-            text: fallbackText,
-            isFirstChunk: true,
-            payload: {
-              source: "json_fallback",
-              patch: {
-                type: "json_fallback",
-                text: fallbackText,
-                content: fallbackText,
-              },
-            },
-          };
-          handleChunk(fallbackChunk, sharedContext);
-          handleStreamDone({
-            type: "control",
-            name: "done",
-            payload: {
-              text: fallbackText,
-              response: { text: fallbackText },
-              metadata: { finish_reason: "json_fallback", source: "json_fallback" },
-            },
-          });
-          fallbackRequested = true;
-          return true;
-        }
-      } catch (fallbackErr) {
-        console.error('[SSE] Fallback JSON também falhou', fallbackErr);
-      }
-      return false;
-    };
-
-    const fallbackSucceeded = await attemptJsonFallback();
+    const fallbackSucceeded = await runJsonFallbackRequest({
+      reason: "json_fallback",
+      logError: error,
+    });
     if (fallbackSucceeded) {
       return;
     }
