@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { Message } from "../../../contexts/ChatContext";
 import type { MessageTrackingRefs, ReplyStateController } from "../messageState";
-import { handleDone, type StreamRunStats } from "../streamOrchestrator";
+import { beginStream, handleDone, type StreamRunStats } from "../streamOrchestrator";
 
 const createRef = <T>(value: T) => ({ current: value });
 
@@ -315,5 +315,166 @@ describe("handleDone", () => {
       }),
       expect.objectContaining({ patchSource: "stream_done" }),
     );
+  });
+});
+
+describe("beginStream", () => {
+  it("não inclui payload na query durante streaming", async () => {
+    const mutableEnv = import.meta.env as Record<string, any>;
+    const originalMode = mutableEnv.MODE;
+    const originalModeLower = mutableEnv.mode;
+    const originalVitestFlag = mutableEnv.VITEST;
+    const originalNodeEnv = process.env.NODE_ENV;
+    const originalProcessMode = process.env.MODE;
+    const originalProcessVitest = process.env.VITEST;
+    const originalWorkerId = process.env.VITEST_WORKER_ID;
+    const originalFetch = globalThis.fetch;
+
+    mutableEnv.MODE = "development";
+    mutableEnv.mode = "development";
+    mutableEnv.VITEST = undefined;
+    process.env.NODE_ENV = "development";
+    delete process.env.MODE;
+    delete process.env.VITEST;
+    delete process.env.VITEST_WORKER_ID;
+
+    const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+
+    const fetchSpy = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input instanceof URL ? input.toString() : typeof input === "string" ? input : input.url;
+      fetchCalls.push({ url, init });
+
+      const method = (init?.method ?? "GET").toUpperCase();
+      if (method === "HEAD") {
+        return new Response(null, { status: 200, headers: { "content-type": "text/event-stream" } });
+      }
+
+      if (method === "GET") {
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(
+              encoder.encode('event: done\ndata: {"type":"done","payload":{"source":"test"}}\n\n'),
+            );
+            controller.close();
+          },
+        });
+        return new Response(stream, {
+          status: 200,
+          headers: { "content-type": "text/event-stream" },
+        });
+      }
+
+      return new Response(JSON.stringify({ text: "fallback" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+
+    globalThis.fetch = fetchSpy as typeof fetch;
+
+    const controllerRef = createRef<AbortController | null>(null);
+    const streamTimersRef = createRef<Record<string, { startedAt: number; firstChunkAt?: number }>>({});
+    const activeStreamClientIdRef = createRef<string | null>(null);
+    const activeAssistantIdRef = createRef<string | null>(null);
+    const streamActiveRef = createRef(false);
+    const activeClientIdRef = createRef<string | null>(null);
+    const hasFirstChunkRef = createRef(false);
+    const replyState = {
+      ecoReplyByAssistantId: {},
+      setEcoReplyByAssistantId: vi.fn(),
+      ecoReplyStateRef: createRef({}),
+    };
+    const tracking = {
+      assistantByClientRef: createRef<Record<string, string>>({}),
+      clientByAssistantRef: createRef<Record<string, string>>({}),
+      pendingAssistantMetaRef: createRef<Record<string, { interactionId?: string; messageId?: string; createdAt?: string }>>({}),
+      userTextByClientIdRef: createRef<Record<string, string>>({}),
+    };
+
+    let messages: Message[] = [];
+    const setMessages = vi.fn(
+      (updater: Message[] | ((prev: Message[]) => Message[])) => {
+        if (typeof updater === "function") {
+          messages = (updater as (prev: Message[]) => Message[])(messages);
+        } else {
+          messages = updater;
+        }
+      },
+    );
+
+    const setDigitando = vi.fn();
+    const setIsSending = vi.fn();
+    const setErroApi = vi.fn();
+    const ensureAssistantMessage = vi.fn(() => "assistant-1");
+    const removeEcoEntry = vi.fn();
+    const updateCurrentInteractionId = vi.fn();
+    const logSse = vi.fn();
+    const upsertMessage = vi.fn();
+
+    try {
+      const streamPromise = beginStream({
+        history: [],
+        userMessage: { id: "client-1", sender: "user", content: "Olá" },
+        controllerRef,
+        controllerOverride: undefined,
+        streamTimersRef,
+        activeStreamClientIdRef,
+        activeAssistantIdRef,
+        streamActiveRef,
+        activeClientIdRef,
+        onFirstChunk: undefined,
+        hasFirstChunkRef,
+        setDigitando,
+        setIsSending,
+        setErroApi,
+        activity: undefined,
+        ensureAssistantMessage,
+        removeEcoEntry,
+        updateCurrentInteractionId,
+        logSse,
+        userId: undefined,
+        userName: undefined,
+        guestId: undefined,
+        isGuest: false,
+        interactionCacheDispatch: undefined,
+        setMessages,
+        upsertMessage,
+        replyState,
+        tracking,
+      }) as Promise<StreamRunStats>;
+
+      await expect(streamPromise).resolves.toMatchObject({ aggregatedLength: expect.any(Number) });
+    } finally {
+      globalThis.fetch = originalFetch;
+      mutableEnv.MODE = originalMode;
+      mutableEnv.mode = originalModeLower;
+      mutableEnv.VITEST = originalVitestFlag;
+      if (originalNodeEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = originalNodeEnv;
+      }
+      if (originalProcessMode === undefined) {
+        delete process.env.MODE;
+      } else {
+        process.env.MODE = originalProcessMode;
+      }
+      if (originalProcessVitest === undefined) {
+        delete process.env.VITEST;
+      } else {
+        process.env.VITEST = originalProcessVitest;
+      }
+      if (originalWorkerId === undefined) {
+        delete process.env.VITEST_WORKER_ID;
+      } else {
+        process.env.VITEST_WORKER_ID = originalWorkerId;
+      }
+    }
+
+    const streamCall = fetchCalls.find((call) => (call.init?.method ?? "GET").toUpperCase() === "GET");
+    expect(streamCall).toBeDefined();
+    const url = new URL(streamCall!.url);
+    expect(url.searchParams.has("payload")).toBe(false);
   });
 });
