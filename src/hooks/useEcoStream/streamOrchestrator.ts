@@ -13,6 +13,7 @@ import { sanitizeText } from "../../utils/sanitizeText";
 import type { EnsureAssistantEventMeta, MessageTrackingRefs, ReplyStateController } from "./messageState";
 import {
   applyChunkToMessages,
+  extractText,
   extractSummaryRecord,
   mergeReplyMetadata,
   processSseLine,
@@ -2081,8 +2082,46 @@ export const beginStream = ({
     const handleErrorEvent = (rawEvent: Record<string, unknown>) => {
       bumpHeartbeatWatchdog();
       const records = buildRecordChain(rawEvent);
+      const reasonRaw =
+        pickStringFromRecords(records, ["reason", "error", "code", "type"]) ?? undefined;
+      const normalizedReason = typeof reasonRaw === "string" ? reasonRaw.trim().toLowerCase() : undefined;
+
+      if (normalizedReason === "internal_error") {
+        const assistantId = tracking.assistantByClientRef.current[clientMessageId];
+        const currentEntry = assistantId
+          ? replyState.ecoReplyStateRef.current[assistantId]
+          : undefined;
+        const nextIndex = typeof currentEntry?.chunkIndexMax === "number"
+          ? currentEntry.chunkIndexMax + 1
+          : 0;
+        const messageText = "⚠️ Ocorreu um erro interno. Tente novamente.";
+        const syntheticEvent: Record<string, unknown> = {
+          ...rawEvent,
+          error: true,
+          text: messageText,
+          delta: messageText,
+          message: messageText,
+          payload: {
+            ...(toRecord((rawEvent as { payload?: unknown }).payload) ?? {}),
+            error: true,
+            text: messageText,
+            delta: messageText,
+            message: messageText,
+          },
+        };
+        processChunkEvent(nextIndex, messageText, syntheticEvent);
+        sharedContext.streamStats.clientFinishReason = "internal_error";
+        diag("stream_error_internal", { clientMessageId: normalizedClientId });
+        handleStreamDone(undefined, { reason: "internal_error" });
+        debugAbortController(controller, "internal_error_handled");
+        fatalError = null;
+        return;
+      }
+
+      const extractedMessage = extractText(rawEvent);
       const message =
-        pickStringFromRecords(records, ["message", "error", "detail", "reason"]) ??
+        extractedMessage ||
+        pickStringFromRecords(records, ["message", "error", "detail", "reason"]) ||
         "Erro na stream SSE da Eco.";
       fatalError = new Error(message);
     };
