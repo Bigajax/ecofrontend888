@@ -1903,17 +1903,7 @@ export const beginStream = ({
 
     requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
 
-    const baseUrl = buildAskEcoUrl(undefined, { clientMessageId });
-    let requestUrl = baseUrl;
-    if (!diagForceJson && requestPayload) {
-      try {
-        const urlObj = new URL(baseUrl);
-        urlObj.searchParams.set("payload", JSON.stringify(requestPayload));
-        requestUrl = urlObj.toString();
-      } catch {
-        requestUrl = baseUrl;
-      }
-    }
+    const requestUrl = buildAskEcoUrl(undefined, { clientMessageId });
 
     const contexto = (requestBody as { contexto?: { stream_id?: unknown; streamId?: unknown } })?.contexto;
     const streamIdCandidates: unknown[] = [
