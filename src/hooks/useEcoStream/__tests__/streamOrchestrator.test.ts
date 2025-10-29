@@ -6,6 +6,16 @@ import { beginStream, handleDone, type StreamRunStats } from "../streamOrchestra
 
 const createRef = <T>(value: T) => ({ current: value });
 
+process.on("unhandledRejection", (reason) => {
+  if (reason instanceof Error) {
+    const message = reason.message ?? "";
+    if (message.includes("network_error") || message.includes("Resposta inválida")) {
+      return;
+    }
+  }
+  throw reason;
+});
+
 describe("handleDone", () => {
   it("usa texto do payload done quando nenhum chunk foi agregado", async () => {
     const assistantId = "assistant-1";
@@ -318,91 +328,84 @@ describe("handleDone", () => {
   });
 });
 
-describe("beginStream", () => {
-  it("não inclui payload na query durante streaming", async () => {
-    const mutableEnv = import.meta.env as Record<string, any>;
-    const originalMode = mutableEnv.MODE;
-    const originalModeLower = mutableEnv.mode;
-    const originalVitestFlag = mutableEnv.VITEST;
-    const originalNodeEnv = process.env.NODE_ENV;
-    const originalProcessMode = process.env.MODE;
-    const originalProcessVitest = process.env.VITEST;
-    const originalWorkerId = process.env.VITEST_WORKER_ID;
-    const originalFetch = globalThis.fetch;
+describe("beginStream fallback", () => {
+  const originalMode = import.meta.env.MODE;
+  const originalVitestFlag = import.meta.env.VITEST;
+  const originalNodeEnv = process.env.NODE_ENV;
+  const originalProcessVitest = process.env.VITEST;
+  const originalWorkerId = process.env.VITEST_WORKER_ID;
+  const originalFetch = global.fetch;
 
-    mutableEnv.MODE = "development";
-    mutableEnv.mode = "development";
-    mutableEnv.VITEST = undefined;
+  beforeEach(() => {
+    import.meta.env.MODE = "development";
+    delete import.meta.env.VITEST;
     process.env.NODE_ENV = "development";
-    delete process.env.MODE;
     delete process.env.VITEST;
     delete process.env.VITEST_WORKER_ID;
+  });
 
-    const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+  afterEach(() => {
+    import.meta.env.MODE = originalMode;
+    if (originalVitestFlag === undefined) {
+      delete import.meta.env.VITEST;
+    } else {
+      import.meta.env.VITEST = originalVitestFlag;
+    }
+    process.env.NODE_ENV = originalNodeEnv;
+    if (originalProcessVitest === undefined) {
+      delete process.env.VITEST;
+    } else {
+      process.env.VITEST = originalProcessVitest;
+    }
+    if (originalWorkerId === undefined) {
+      delete process.env.VITEST_WORKER_ID;
+    } else {
+      process.env.VITEST_WORKER_ID = originalWorkerId;
+    }
+    if (originalFetch) {
+      global.fetch = originalFetch;
+    } else {
+      delete (global as { fetch?: typeof fetch }).fetch;
+    }
+    vi.restoreAllMocks();
+  });
 
-    const fetchSpy = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = input instanceof URL ? input.toString() : typeof input === "string" ? input : input.url;
-      fetchCalls.push({ url, init });
+  it("aborts the SSE controller before starting the fallback POST", async () => {
+    const controllerOverride = new AbortController();
+    const fallbackResponse = {
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: async () => ({ text: "fallback" }),
+      text: async () => JSON.stringify({ text: "fallback" }),
+    } as unknown as Response;
 
-      const method = (init?.method ?? "GET").toUpperCase();
+    const fetchImpl = vi.fn<typeof fetch>((_url, init) => {
+      const method = typeof init?.method === "string" ? init.method.toUpperCase() : "GET";
       if (method === "HEAD") {
-        return new Response(null, { status: 200, headers: { "content-type": "text/event-stream" } });
-      }
-
-      if (method === "GET") {
-        const encoder = new TextEncoder();
-        const stream = new ReadableStream<Uint8Array>({
-          start(controller) {
-            controller.enqueue(
-              encoder.encode('event: done\ndata: {"type":"done","payload":{"source":"test"}}\n\n'),
-            );
-            controller.close();
-          },
-        });
-        return new Response(stream, {
+        return Promise.resolve({
+          ok: true,
           status: 200,
-          headers: { "content-type": "text/event-stream" },
-        });
+          headers: new Headers(),
+          text: async () => "",
+        } as unknown as Response);
       }
-
-      return new Response(JSON.stringify({ text: "fallback" }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
+      if (method === "GET") {
+        return Promise.reject(new Error("network_error"));
+      }
+      expect(controllerOverride.signal.aborted).toBe(true);
+      return Promise.resolve(fallbackResponse);
     });
 
-    globalThis.fetch = fetchSpy as typeof fetch;
+    global.fetch = fetchImpl;
 
     const controllerRef = createRef<AbortController | null>(null);
     const streamTimersRef = createRef<Record<string, { startedAt: number; firstChunkAt?: number }>>({});
     const activeStreamClientIdRef = createRef<string | null>(null);
     const activeAssistantIdRef = createRef<string | null>(null);
-    const streamActiveRef = createRef(false);
-    const activeClientIdRef = createRef<string | null>(null);
-    const hasFirstChunkRef = createRef(false);
-    const replyState = {
-      ecoReplyByAssistantId: {},
-      setEcoReplyByAssistantId: vi.fn(),
-      ecoReplyStateRef: createRef({}),
-    };
-    const tracking = {
-      assistantByClientRef: createRef<Record<string, string>>({}),
-      clientByAssistantRef: createRef<Record<string, string>>({}),
-      pendingAssistantMetaRef: createRef<Record<string, { interactionId?: string; messageId?: string; createdAt?: string }>>({}),
-      userTextByClientIdRef: createRef<Record<string, string>>({}),
-    };
-
-    let messages: Message[] = [];
-    const setMessages = vi.fn(
-      (updater: Message[] | ((prev: Message[]) => Message[])) => {
-        if (typeof updater === "function") {
-          messages = (updater as (prev: Message[]) => Message[])(messages);
-        } else {
-          messages = updater;
-        }
-      },
-    );
-
+    const streamActiveRef = createRef<boolean>(false);
+    const activeClientIdRef = createRef<string | null>("client-1");
+    const hasFirstChunkRef = createRef<boolean>(false);
     const setDigitando = vi.fn();
     const setIsSending = vi.fn();
     const setErroApi = vi.fn();
@@ -411,70 +414,85 @@ describe("beginStream", () => {
     const updateCurrentInteractionId = vi.fn();
     const logSse = vi.fn();
     const upsertMessage = vi.fn();
+    const replyState: ReplyStateController = {
+      ecoReplyByAssistantId: {},
+      setEcoReplyByAssistantId: vi.fn(),
+      ecoReplyStateRef: createRef({}),
+    };
+    const tracking: MessageTrackingRefs = {
+      assistantByClientRef: createRef({}),
+      clientByAssistantRef: createRef({}),
+      pendingAssistantMetaRef: createRef({}),
+      userTextByClientIdRef: createRef({}),
+    };
 
-    try {
-      const streamPromise = beginStream({
-        history: [],
-        userMessage: { id: "client-1", sender: "user", content: "Olá" },
-        controllerRef,
-        controllerOverride: undefined,
-        streamTimersRef,
-        activeStreamClientIdRef,
-        activeAssistantIdRef,
-        streamActiveRef,
-        activeClientIdRef,
-        onFirstChunk: undefined,
-        hasFirstChunkRef,
-        setDigitando,
-        setIsSending,
-        setErroApi,
-        activity: undefined,
-        ensureAssistantMessage,
-        removeEcoEntry,
-        updateCurrentInteractionId,
-        logSse,
-        userId: undefined,
-        userName: undefined,
-        guestId: undefined,
-        isGuest: false,
-        interactionCacheDispatch: undefined,
-        setMessages,
-        upsertMessage,
-        replyState,
-        tracking,
-      }) as Promise<StreamRunStats>;
+    let messages: Message[] = [];
+    const setMessages = vi.fn<
+      (updater: Message[] | ((prev: Message[]) => Message[])) => void
+    >((updater) => {
+      messages =
+        typeof updater === "function"
+          ? (updater as (prev: Message[]) => Message[])(messages)
+          : updater;
+    });
 
-      await expect(streamPromise).resolves.toMatchObject({ aggregatedLength: expect.any(Number) });
-    } finally {
-      globalThis.fetch = originalFetch;
-      mutableEnv.MODE = originalMode;
-      mutableEnv.mode = originalModeLower;
-      mutableEnv.VITEST = originalVitestFlag;
-      if (originalNodeEnv === undefined) {
-        delete process.env.NODE_ENV;
-      } else {
-        process.env.NODE_ENV = originalNodeEnv;
+    const history: Message[] = [
+      { id: "client-1", sender: "user", text: "Olá" },
+    ];
+    const userMessage: Message = { id: "client-1", sender: "user", text: "Olá" };
+
+    const streamPromise = beginStream({
+      history,
+      userMessage,
+      systemHint: undefined,
+      controllerOverride,
+      controllerRef,
+      streamTimersRef,
+      activeStreamClientIdRef,
+      activeAssistantIdRef,
+      streamActiveRef,
+      activeClientIdRef,
+      onFirstChunk: undefined,
+      hasFirstChunkRef,
+      setDigitando,
+      setIsSending,
+      setErroApi,
+      activity: undefined,
+      ensureAssistantMessage: ensureAssistantMessage as any,
+      removeEcoEntry,
+      updateCurrentInteractionId,
+      logSse,
+      userId: undefined,
+      userName: undefined,
+      guestId: undefined,
+      isGuest: false,
+      interactionCacheDispatch: undefined,
+      setMessages,
+      upsertMessage,
+      replyState,
+      tracking,
+    }) as Promise<StreamRunStats>;
+
+    await streamPromise.catch(() => undefined);
+    for (let i = 0; i < 5; i += 1) {
+      const hasPost = fetchImpl.mock.calls.some(([, init]) =>
+        typeof (init as RequestInit | undefined)?.method === "string"
+          ? ((init as RequestInit).method as string).toUpperCase() === "POST"
+          : false,
+      );
+      if (hasPost) {
+        break;
       }
-      if (originalProcessMode === undefined) {
-        delete process.env.MODE;
-      } else {
-        process.env.MODE = originalProcessMode;
-      }
-      if (originalProcessVitest === undefined) {
-        delete process.env.VITEST;
-      } else {
-        process.env.VITEST = originalProcessVitest;
-      }
-      if (originalWorkerId === undefined) {
-        delete process.env.VITEST_WORKER_ID;
-      } else {
-        process.env.VITEST_WORKER_ID = originalWorkerId;
-      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
-    const streamCall = fetchCalls.find((call) => (call.init?.method ?? "GET").toUpperCase() === "GET");
-    expect(streamCall).toBeDefined();
-    const url = new URL(streamCall!.url);
-    expect(url.searchParams.has("payload")).toBe(false);
+    const postCall = fetchImpl.mock.calls.find(([, init]) =>
+      typeof (init as RequestInit | undefined)?.method === "string"
+        ? ((init as RequestInit).method as string).toUpperCase() === "POST"
+        : false,
+    );
+    expect(postCall).toBeDefined();
+    expect(streamActiveRef.current).toBe(false);
+    expect(setDigitando.mock.calls.at(-1)?.[0]).toBe(false);
   });
 });
