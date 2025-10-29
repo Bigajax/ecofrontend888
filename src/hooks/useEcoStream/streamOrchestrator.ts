@@ -52,6 +52,40 @@ const FALLBACK_NO_CHUNK_REASONS = new Set<string>([
   "start-error",
 ]);
 
+const inflightControllers = new Map<string, AbortController>();
+
+const TYPING_WATCHDOG_MS = 45_000;
+
+const withTypingWatchdog = (id: string, onTimeout: () => void) => {
+  if (TYPING_WATCHDOG_MS <= 0) {
+    return () => {
+      /* noop */
+    };
+  }
+
+  const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
+    try {
+      onTimeout();
+    } finally {
+      const inflight = inflightControllers.get(id);
+      if (inflight) {
+        try {
+          debugAbortController(inflight, "typing-watchdog");
+        } catch {
+          try {
+            inflight.abort();
+          } catch {
+            /* noop */
+          }
+        }
+      }
+      inflightControllers.delete(id);
+    }
+  }, TYPING_WATCHDOG_MS);
+
+  return () => clearTimeout(timer);
+};
+
 const logAbortDebug = () => {
   try {
     console.log('[DEBUG] Abortando conexão', new Error().stack);
@@ -1268,12 +1302,32 @@ export const beginStream = ({
   const trimmedClientId = typeof clientMessageId === "string" ? clientMessageId.trim() : "";
   const normalizedClientId = trimmedClientId || clientMessageId;
 
+  const existingInflight = inflightControllers.get(normalizedClientId);
+  if (existingInflight && !existingInflight.signal.aborted) {
+    try {
+      console.warn("[SSE] stream_inflight_skip", {
+        clientMessageId: normalizedClientId,
+        reason: "duplicate-client-id",
+      });
+    } catch {
+      /* noop */
+    }
+    return;
+  }
+  if (existingInflight) {
+    inflightControllers.delete(normalizedClientId);
+  }
+
   const normalizedUserText = sanitizeText(userMessage.text ?? userMessage.content ?? "").trim();
   if (normalizedUserText) {
     tracking.userTextByClientIdRef.current[clientMessageId] = normalizedUserText;
   } else if (tracking.userTextByClientIdRef.current[clientMessageId]) {
     delete tracking.userTextByClientIdRef.current[clientMessageId];
   }
+
+  let clearTypingWatchdog: () => void = () => {
+    /* noop */
+  };
 
   const activeId = activeStreamClientIdRef.current;
   if (activeId && activeId !== clientMessageId) {
@@ -1332,6 +1386,7 @@ export const beginStream = ({
 
   const controller = controllerOverride ?? new AbortController();
   controllerRef.current = controller;
+  inflightControllers.set(normalizedClientId, controller);
   console.log('[DEBUG] Controller criado', {
     isAborted: controller.signal.aborted,
     reason: (controller.signal as any).reason,
@@ -1374,6 +1429,42 @@ export const beginStream = ({
     /* noop */
   }
   setDigitando(true);
+
+  clearTypingWatchdog = withTypingWatchdog(normalizedClientId, () => {
+    try {
+      console.warn('[SSE] typing_watchdog_timeout', {
+        clientMessageId: normalizedClientId,
+        timeoutMs: TYPING_WATCHDOG_MS,
+      });
+    } catch {
+      /* noop */
+    }
+    try {
+      setDigitando(false);
+    } catch {
+      /* noop */
+    }
+    try {
+      setErroApi((previous) => {
+        if (typeof previous === "string" && previous.trim().length > 0) {
+          return previous;
+        }
+        return "Tempo limite atingido. Tente novamente.";
+      });
+    } catch {
+      /* noop */
+    }
+    try {
+      logSse('abort', {
+        clientMessageId: normalizedClientId,
+        reason: 'typing_watchdog',
+        source: 'typing-watchdog',
+        timeoutMs: TYPING_WATCHDOG_MS,
+      });
+    } catch {
+      /* noop */
+    }
+  });
 
   const placeholderAssistantId = ensureAssistantMessage(clientMessageId, undefined, {
     allowCreate: true,
@@ -1596,14 +1687,23 @@ export const beginStream = ({
   };
 
   let requestPayload: Record<string, unknown> | null = null;
-  let baseHeaders: Record<string, string> = {};
+  let baseHeadersCache: Record<string, string> | null = null;
 
-  const streamPromise = (async () => {
-    const requestBody = buildEcoRequestBody({
-      history,
-      clientMessageId,
-      systemHint,
-      userId,
+  const baseHeaders = (): Record<string, string> => {
+    if (baseHeadersCache) {
+      return { ...baseHeadersCache };
+    }
+    return { "Content-Type": "application/json" };
+  };
+
+  let streamPromise: Promise<StreamRunStats>;
+  try {
+    streamPromise = (async () => {
+      const requestBody = buildEcoRequestBody({
+        history,
+        clientMessageId,
+        systemHint,
+        userId,
       userName,
       guestId,
       isGuest,
@@ -1632,21 +1732,29 @@ export const beginStream = ({
       return "web";
     })();
 
-    baseHeaders = {
-      "Content-Type": "application/json",
-      Accept: acceptHeader,
-      ...identityHeaders,
+    const headers: Record<string, string> = {};
+    const appendHeader = (key: string, value: unknown) => {
+      if (typeof value !== "string") return;
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      headers[key] = trimmed;
     };
 
+    appendHeader("Content-Type", "application/json");
+
+    for (const [key, value] of Object.entries(identityHeaders)) {
+      appendHeader(key, value);
+    }
+
     if (resolvedClientId) {
-      baseHeaders["X-Client-Id"] = resolvedClientId;
-      baseHeaders["x-client-id"] = resolvedClientId;
+      appendHeader("X-Client-Id", resolvedClientId);
+      appendHeader("x-client-id", resolvedClientId);
     }
     if (resolvedGuestId) {
-      baseHeaders["x-eco-guest-id"] = resolvedGuestId;
+      appendHeader("x-eco-guest-id", resolvedGuestId);
     }
     if (resolvedSessionId) {
-      baseHeaders["x-eco-session-id"] = resolvedSessionId;
+      appendHeader("x-eco-session-id", resolvedSessionId);
     }
 
     requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
@@ -1663,9 +1771,12 @@ export const beginStream = ({
       .map((candidate) => (typeof candidate === "string" ? candidate.trim() : ""))
       .find((candidate) => candidate.length > 0);
     if (streamId) {
-      baseHeaders["X-Stream-Id"] = streamId;
+      appendHeader("X-Stream-Id", streamId);
+      appendHeader("x-stream-id", streamId);
       streamStats.streamId = streamId;
     }
+
+    baseHeadersCache = headers;
 
     let response: Response | null = null;
     let fetchError: unknown = null;
@@ -1790,11 +1901,12 @@ export const beginStream = ({
           );
         }
 
+        const requestHeaders = { ...baseHeaders(), Accept: acceptHeader };
         response = await fetchFn(url, {
           method: "POST",
           mode: "cors",
           credentials: "include",
-          headers: baseHeaders,
+          headers: requestHeaders,
           body: JSON.stringify(requestPayload),
           signal: controller.signal,
           cache: "no-store",
@@ -2230,7 +2342,7 @@ export const beginStream = ({
           guestId,
           isGuest,
           signal: signalOverride ?? controller.signal,
-          headers: baseHeaders,
+          headers: { ...baseHeaders(), Accept: acceptHeader },
           onFirstChunk: () => {
             if (!firstChunkDelivered) {
               firstChunkDelivered = true;
@@ -2581,7 +2693,12 @@ export const beginStream = ({
     }
 
     return streamStats;
-  })();
+    })();
+  } catch (error) {
+    clearTypingWatchdog();
+    inflightControllers.delete(normalizedClientId);
+    throw error;
+  }
 
   streamPromise.catch(async (error) => {
     if (controller.signal.aborted) return;
@@ -2606,10 +2723,7 @@ export const beginStream = ({
       console.error('[SSE] Stream failed, tentando JSON', error);
       try {
         const fallbackUrl = resolveApiUrl("/api/ask-eco");
-        const fallbackHeaders: Record<string, string> = {
-          "Content-Type": "application/json",
-          ...baseHeaders,
-        };
+        const fallbackHeaders = baseHeaders();
         const res = await fetch(fallbackUrl, {
           method: "POST",
           headers: fallbackHeaders,
@@ -2701,6 +2815,8 @@ export const beginStream = ({
   });
 
   streamPromise.finally(() => {
+    clearTypingWatchdog();
+    inflightControllers.delete(normalizedClientId);
     clearWatchdog();
     clearFallbackGuardTimer();
     triggerJsonFallback = null;
