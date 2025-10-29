@@ -16,16 +16,26 @@ const toAbsoluteUrl = (rawUrl: string): URL => {
   }
 };
 
-export const buildAskEcoUrl = (path: string = ASK_ECO_ENDPOINT_PATH): string => {
+export const buildAskEcoUrl = (
+  path: string = ASK_ECO_ENDPOINT_PATH,
+  options: { clientMessageId?: string | null } = {},
+): string => {
   const resolved = resolveApiUrl(path);
   const url = toAbsoluteUrl(resolved);
   const guestId = getGuestId();
   const sessionId = getSessionId();
+  const clientMessageId = typeof options.clientMessageId === "string"
+    ? options.clientMessageId.trim()
+    : "";
+
   if (guestId) {
-    url.searchParams.set("guest", guestId);
+    url.searchParams.set("guest_id", guestId);
   }
   if (sessionId) {
-    url.searchParams.set("session", sessionId);
+    url.searchParams.set("session_id", sessionId);
+  }
+  if (clientMessageId) {
+    url.searchParams.set("client_message_id", clientMessageId);
   }
   return url.toString();
 };

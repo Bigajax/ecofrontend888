@@ -26,7 +26,11 @@ import {
   toCleanString,
   toRecord,
 } from "./utils";
-import { buildIdentityHeaders } from "../../lib/guestId";
+import {
+  buildIdentityHeaders,
+  rememberGuestIdentityFromResponse,
+  rememberSessionIdentityFromResponse,
+} from "../../lib/guestId";
 import { setStreamActive } from "./streamStatus";
 import { NO_TEXT_ALERT_MESSAGE, showToast } from "../useEcoStream.helpers";
 import { buildAskEcoUrl } from "@/api/askEcoUrl";
@@ -1759,7 +1763,7 @@ export const beginStream = ({
 
     requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
 
-    const url = buildAskEcoUrl();
+    const url = buildAskEcoUrl(undefined, { clientMessageId });
 
     const contexto = (requestBody as { contexto?: { stream_id?: unknown; streamId?: unknown } })?.contexto;
     const streamIdCandidates: unknown[] = [
@@ -1882,7 +1886,7 @@ export const beginStream = ({
 
     if (fetchFn && !shouldSkipFetchInTest) {
       try {
-        const url = buildAskEcoUrl();
+        const url = buildAskEcoUrl(undefined, { clientMessageId });
         try {
           console.debug('[DIAG] start', { url, accept: acceptHeader, forcedJson: diagForceJson });
         } catch {
@@ -2407,6 +2411,8 @@ export const beginStream = ({
       acc[key.toLowerCase()] = value;
       return acc;
     }, {});
+    rememberGuestIdentityFromResponse(responseNonNull.headers);
+    rememberSessionIdentityFromResponse(responseNonNull.headers);
     streamStats.responseHeaders = { ...headerMap };
     const contentType = headerMap["content-type"]?.toLowerCase() ?? "";
 
@@ -2722,7 +2728,7 @@ export const beginStream = ({
       streamStats.jsonFallbackAttempts = (streamStats.jsonFallbackAttempts ?? 0) + 1;
       console.error('[SSE] Stream failed, tentando JSON', error);
       try {
-        const fallbackUrl = buildAskEcoUrl();
+        const fallbackUrl = buildAskEcoUrl(undefined, { clientMessageId });
         const fallbackHeaders = baseHeaders();
         const res = await fetch(fallbackUrl, {
           method: "POST",

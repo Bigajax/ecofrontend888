@@ -1,7 +1,11 @@
 import { AskEcoResponse, collectTexts, normalizeAskEcoResponse, unwrapPayload } from "../askEcoResponse";
 import { isDev } from "../environment";
 import { resolveChunkIdentifier, resolveChunkIndex } from "../../utils/chat/chunkSignals";
-import { buildIdentityHeaders } from "../../lib/guestId";
+import {
+  buildIdentityHeaders,
+  rememberGuestIdentityFromResponse,
+  rememberSessionIdentityFromResponse,
+} from "../../lib/guestId";
 import { buildAskEcoUrl } from "@/api/askEcoUrl";
 import type { Message } from "../contexts/ChatContext";
 import {
@@ -1179,7 +1183,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     return chunkIndex;
   };
 
-  const url = buildAskEcoUrl();
+  const url = buildAskEcoUrl(undefined, { clientMessageId });
 
   let chunkTimeoutId: ReturnType<typeof setTimeout> | undefined;
   const clearChunkTimeout = () => {
@@ -1205,6 +1209,8 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
       acc[key.toLowerCase()] = value;
       return acc;
     }, {});
+    rememberGuestIdentityFromResponse(response.headers);
+    rememberSessionIdentityFromResponse(response.headers);
     const contentType = headerMap["content-type"]?.toLowerCase() ?? "";
     const isSseResponse = contentType.includes("text/event-stream");
 
