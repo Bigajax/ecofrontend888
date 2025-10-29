@@ -288,7 +288,13 @@ function ChatPage() {
     };
   }, []);
 
-  const { handleSendMessage: streamSendMessage, erroApi, pending, streaming } = useEcoStream({
+  const {
+    handleSendMessage: streamSendMessage,
+    erroApi,
+    pending,
+    streaming,
+    digitando: isEcoStreamTyping,
+  } = useEcoStream({
     messages,
     upsertMessage,
     setMessages,
@@ -445,7 +451,11 @@ function ChatPage() {
   const isSynthesizingAudio = activityState.state === 'synthesizing_audio';
   const isSendingToEco = activityState.state === 'sending';
 
-  const shouldShowGlobalTyping = isWaitingForEco && !lastEcoMessageIsPlaceholder;
+  const hasEcoStreamingMessage = messages.some(
+    (msg) => isEcoMessage(msg) && (msg.streaming === true || msg.status === 'streaming'),
+  );
+  const shouldShowGlobalTyping =
+    isWaitingForEco || hasEcoStreamingMessage || isEcoStreamTyping === true;
   const [globalTypingVisible, setGlobalTypingVisible] = useState(false);
   const [globalTypingState, setGlobalTypingState] = useState<'hidden' | 'enter' | 'visible' | 'exit'>('hidden');
   const globalTypingShowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -622,6 +632,9 @@ function ChatPage() {
               className="opacity-0 translate-y-1 transition-opacity transition-transform duration-[160ms] ease-out data-[state=enter]:opacity-100 data-[state=visible]:opacity-100 data-[state=enter]:translate-y-0 data-[state=visible]:translate-y-0 data-[state=exit]:opacity-0 data-[state=exit]:translate-y-1"
               data-state={globalTypingState === 'hidden' ? undefined : globalTypingState}
             >
+              <span data-testid="typing-dots" className="sr-only">
+                digitando…
+              </span>
               <TypingDots variant="bubble" size="md" tone="auto" />
             </div>
           )}
@@ -697,6 +710,11 @@ function ChatPage() {
               )}
 
               <div className="mt-8 w-full max-w-[min(700px,92vw)] text-left sm:mt-10">
+                {(shouldShowGlobalTyping || isEcoStreamTyping) && (
+                  <span data-testid="typing-dots" className="sr-only" aria-hidden>
+                    digitando…
+                  </span>
+                )}
                 <MessageList
                   messages={messages}
                   prefersReducedMotion={prefersReducedMotion}

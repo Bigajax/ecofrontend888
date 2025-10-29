@@ -17,6 +17,10 @@ interface ChatMessageProps {
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoActive }) => {
   const sender = resolveMessageSender(message) ?? message.sender;
+  const normalizedRole = (() => {
+    const roleCandidate = message.role ?? sender;
+    return typeof roleCandidate === "string" ? roleCandidate.toLowerCase() : "";
+  })();
   const isUser = isUserMessage(message);
   const isEco = isEcoMessage(message);
 
@@ -36,10 +40,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
 
   // sempre mantém a bolha visível quando está streamando
   // usa um espaço não-quebrável como placeholder para garantir altura mínima
-  const textToShow = hasVisibleText ? raw : isStreaming ? "\u00A0" : "";
+  const fallbackText = "⚠️ Nenhuma resposta da ECO desta vez. Tente novamente.";
+  const shouldShowFallback = !isStreaming && normalizedRole === "assistant" && !hasVisibleText;
+  const textToShow = hasVisibleText
+    ? raw
+    : isStreaming
+    ? "\u00A0"
+    : shouldShowFallback
+    ? fallbackText
+    : "";
 
   // mostra os três pontinhos dentro da bolha enquanto streama e ainda não há texto
   const showTypingDots = isEco && isStreaming && !hasVisibleText;
+  const showTypingPlaceholder = (normalizedRole === "assistant" || isEco) && isStreaming && !hasVisibleText;
 
   const finishReasonLabel = (() => {
     if (!isEco) return undefined;
@@ -85,7 +98,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
         )}
         <div className="flex min-w-0 flex-col">
           <div className={bubbleClass} data-sender={sender}>
-            {showTypingDots ? <TypingDots /> : <span className="chat-message-text">{textToShow}</span>}
+            {showTypingDots ? (
+              <span aria-live="polite" className="inline-flex items-center gap-2 text-gray-600">
+                <TypingDots />
+                {showTypingPlaceholder && <span>digitando…</span>}
+              </span>
+            ) : (
+              <span className="chat-message-text">{textToShow}</span>
+            )}
           </div>
           {finishReasonLabel && (
             <div className="mt-1 pl-1 text-xs text-gray-500">

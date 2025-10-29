@@ -93,8 +93,11 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
     const sanitized = sanitizeText(message.text ?? message.content ?? "", {
       collapseWhitespace: false,
     });
-    return sanitized.trim().length > 0 ? sanitized : "";
-  }, [message.content, message.text]);
+    if (sanitized.trim().length > 0) {
+      return sanitized;
+    }
+    return isStreaming ? "" : "⚠️ Nenhuma resposta da ECO desta vez. Tente novamente.";
+  }, [isStreaming, message.content, message.text]);
   const hasVisibleText = displayText.length > 0;
   const canSpeak = !isUser && hasVisibleText;
   const { user, session } = useAuth();

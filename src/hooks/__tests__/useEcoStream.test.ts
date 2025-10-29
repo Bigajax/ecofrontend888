@@ -46,8 +46,10 @@ describe('useEcoStream.handleSendMessage', () => {
       });
 
       await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(startEcoStreamSpy).toHaveBeenCalledTimes(1);
       });
+
+      expect(fetchMock).not.toHaveBeenCalled();
 
       const userMessage = result.current.messages.find((message) => message.sender === 'user');
 
