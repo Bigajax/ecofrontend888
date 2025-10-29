@@ -219,34 +219,30 @@ function AppChrome() {
       return undefined;
     }
 
-    const previousOnError = window.onerror;
-    const previousOnUnhandledRejection = window.onunhandledrejection;
-
-    const handleWindowError: OnErrorEventHandler = function (message, source, lineno, colno, error) {
-      console.error("[App] window.onerror capturado", { message, source, lineno, colno, error });
+    const handleWindowError = (event: ErrorEvent) => {
+      console.error("[App] window error capturado", {
+        message: event.message,
+        source: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error,
+      });
       setHasCapturedError(true);
-      if (typeof previousOnError === "function") {
-        return previousOnError.call(window, message, source, lineno, colno, error);
-      }
-      return false;
     };
 
-    const handleUnhandledRejection = function (event: PromiseRejectionEvent) {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       event.preventDefault?.();
-      console.error("[App] window.onunhandledrejection capturado", event.reason, event);
+      console.debug("[App] onunhandledrejection", event.reason);
+      console.error("[App] window.unhandledrejection capturado", event.reason, event);
       setHasCapturedError(true);
-      if (typeof previousOnUnhandledRejection === "function") {
-        return previousOnUnhandledRejection.call(window, event);
-      }
-      return undefined;
     };
 
-    window.onerror = handleWindowError;
-    window.onunhandledrejection = handleUnhandledRejection;
+    window.addEventListener("error", handleWindowError);
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
 
     return () => {
-      window.onerror = previousOnError ?? null;
-      window.onunhandledrejection = previousOnUnhandledRejection ?? null;
+      window.removeEventListener("error", handleWindowError);
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
     };
   }, []);
 

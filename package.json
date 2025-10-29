@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "smoke": "bash scripts/front-smoke.sh"
   },
   "dependencies": {
     "@google-cloud/language": "^7.0.2",
