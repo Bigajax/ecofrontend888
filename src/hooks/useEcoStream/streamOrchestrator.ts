@@ -1761,6 +1761,7 @@ export const beginStream = ({
     streamStats.clientFinishReason ??= reason;
     clearFallbackGuardTimer();
     clearTypingWatchdog();
+    clearWatchdog();
     if (activeStreamClientIdRef.current === clientMessageId) {
       streamActiveRef.current = false;
       try {
@@ -1791,6 +1792,13 @@ export const beginStream = ({
       }
     }
     return true;
+  };
+
+  const abortSseForFallback = (reason?: string) => {
+    const fallbackReason = typeof reason === "string" && reason.trim() ? reason : "json_fallback";
+    if (!controller.signal.aborted) {
+      debugAbortController(controller, fallbackReason);
+    }
   };
 
   const startFallbackGuardTimer = () => {
@@ -2106,10 +2114,8 @@ export const beginStream = ({
         return false;
       }
 
+      abortSseForFallback(reason);
       const succeeded = await runJsonFallbackRequest({ reason });
-      if (!controller.signal.aborted && fallbackRequested) {
-        debugAbortController(controller, reason || "json_fallback");
-      }
       return succeeded;
     };
 
@@ -2917,13 +2923,11 @@ export const beginStream = ({
       !firstChunkDelivered && (fallbackAlreadyRequested || beginFallback("json_fallback"));
     let fallbackSucceeded = false;
     if (canBeginFallback) {
+      abortSseForFallback("json_fallback");
       fallbackSucceeded = await runJsonFallbackRequest({
         reason: "json_fallback",
         logError: error,
       });
-      if (!controller.signal.aborted && fallbackRequested) {
-        debugAbortController(controller, "json_fallback");
-      }
       if (fallbackSucceeded) {
         return;
       }
