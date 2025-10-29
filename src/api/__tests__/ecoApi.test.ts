@@ -501,7 +501,17 @@ describe("enviarMensagemParaEco", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toMatch(/\/api\/ask-eco\?nostream=1$/);
+    const parsedUrl = (() => {
+      try {
+        return new URL(url as string);
+      } catch {
+        return new URL(url as string, "https://local.eco");
+      }
+    })();
+    expect(parsedUrl.pathname).toBe("/api/ask-eco");
+    expect(parsedUrl.searchParams.get("nostream")).toBe("1");
+    expect(parsedUrl.searchParams.get("guest")).toEqual(expect.any(String));
+    expect(parsedUrl.searchParams.get("session")).toEqual(expect.any(String));
     expect(init?.method).toBe("POST");
     expect(init?.credentials).toBeUndefined();
     expect(init?.headers).toMatchObject({

@@ -1,6 +1,5 @@
 // src/api/ecoApi.ts
 import { supabase } from "../lib/supabaseClient";
-import { resolveApiUrl } from "../constants/api";
 import { logHttpRequestDebug } from "../utils/httpDebug";
 import { buildIdentityHeaders, syncGuestId } from "../lib/guestId";
 import { ApiFetchJsonNetworkError, ApiFetchJsonResult } from "../lib/apiFetch";
@@ -12,6 +11,7 @@ import { resolveGuestHeaders, resolveUserId } from "./auth";
 import { collectValidMessages, parseNonStreamPayload, prepareRequest } from "./request";
 import { executeStreamRequest, isLikelyNetworkError, isNavigatorOffline } from "./streaming";
 import type { EnviarMensagemOptions, Message } from "./types";
+import { ASK_ECO_ENDPOINT_PATH, buildAskEcoUrl } from "./askEcoUrl";
 
 export { EcoApiError };
 export type { EcoClientEvent, EcoEventHandlers, EcoSseEvent, EcoStreamResult };
@@ -101,7 +101,7 @@ export async function askEco(
   const body = JSON.stringify(payload ?? {});
 
   const targetPath = opts.stream ? ASK_ENDPOINT : `${ASK_ENDPOINT}?nostream=1`;
-  const url = resolveApiUrl(targetPath);
+  const url = buildAskEcoUrl(targetPath);
 
   const executeRequest = async (): Promise<ApiFetchJsonResult<any>> => {
     try {
@@ -200,7 +200,7 @@ export async function askEco(
   throw new EcoApiError("Erro ao se comunicar com a Eco.", { status, details: data });
 }
 
-const ASK_ENDPOINT = "/api/ask-eco";
+const ASK_ENDPOINT = ASK_ECO_ENDPOINT_PATH;
 
 const NETWORK_ERROR_MESSAGE =
   "Não consegui conectar ao servidor. Verifique sua internet ou tente novamente em instantes.";
@@ -253,7 +253,7 @@ export const enviarMensagemParaEco = async (
 
     logHttpRequestDebug({
       method: "POST",
-      url: resolveApiUrl(ASK_ENDPOINT),
+      url: buildAskEcoUrl(ASK_ENDPOINT),
       headers,
     });
 
@@ -265,7 +265,7 @@ export const enviarMensagemParaEco = async (
     return await executeStreamRequest({
       headers,
       payload,
-      streamUrl: resolveApiUrl(ASK_ENDPOINT),
+      streamUrl: buildAskEcoUrl(ASK_ENDPOINT),
       handlers,
       signal: options.signal,
       networkErrorMessage: NETWORK_ERROR_MESSAGE,

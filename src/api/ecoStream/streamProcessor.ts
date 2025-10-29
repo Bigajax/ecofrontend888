@@ -1,8 +1,8 @@
 import { AskEcoResponse, collectTexts, normalizeAskEcoResponse, unwrapPayload } from "../askEcoResponse";
 import { isDev } from "../environment";
 import { resolveChunkIdentifier, resolveChunkIndex } from "../../utils/chat/chunkSignals";
-import { resolveApiUrl } from "../../constants/api";
 import { buildIdentityHeaders } from "../../lib/guestId";
+import { buildAskEcoUrl } from "@/api/askEcoUrl";
 import type { Message } from "../contexts/ChatContext";
 import {
   EcoClientEvent,
@@ -1179,7 +1179,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     return chunkIndex;
   };
 
-  const url = resolveApiUrl("/api/ask-eco");
+  const url = buildAskEcoUrl();
 
   let chunkTimeoutId: ReturnType<typeof setTimeout> | undefined;
   const clearChunkTimeout = () => {
