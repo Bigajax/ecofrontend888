@@ -37,15 +37,16 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-import { ensureGuestId, ensureSessionId } from './lib/guestId';
+import { getOrCreateGuestId, getOrCreateSessionId } from './utils/ecoIdentity';
 
 import { initFacebookPixel } from './lib/fbpixel';
 import { syncEcoStorageDomain } from './utils/ecoStorage';
 
 // Garante que guest_id e session_id existam antes de qualquer requisição
 syncEcoStorageDomain();
-ensureGuestId();
-ensureSessionId();
+const guestId = getOrCreateGuestId();
+const sessionId = getOrCreateSessionId();
+console.info('[IDENTITY]', { guestId, sessionId });
 
 // inicia o Pixel uma única vez
 initFacebookPixel();

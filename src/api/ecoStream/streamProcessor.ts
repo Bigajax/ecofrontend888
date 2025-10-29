@@ -6,6 +6,7 @@ import {
   rememberGuestIdentityFromResponse,
   rememberSessionIdentityFromResponse,
 } from "../../lib/guestId";
+import { rememberIdsFromResponse } from "@/utils/ecoIdentity";
 import { buildAskEcoUrl } from "@/api/askEcoUrl";
 import type { Message } from "../contexts/ChatContext";
 import {
@@ -1211,6 +1212,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     }, {});
     rememberGuestIdentityFromResponse(response.headers);
     rememberSessionIdentityFromResponse(response.headers);
+    rememberIdsFromResponse(response);
     const contentType = headerMap["content-type"]?.toLowerCase() ?? "";
     const isSseResponse = contentType.includes("text/event-stream");
 
