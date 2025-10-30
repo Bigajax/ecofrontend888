@@ -1,15 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { Message } from "../../../contexts/ChatContext";
+import type { Dispatch, SetStateAction } from "react";
+import type { Message, UpsertMessageOptions } from "../../../contexts/ChatContext";
 import type { MessageTrackingRefs, ReplyStateController } from "../messageState";
 import { beginStream, handleDone, type StreamRunStats } from "../streamOrchestrator";
 
 const createRef = <T>(value: T) => ({ current: value });
 
+type SetErroApiArg = string | null | ((prev: string | null) => string | null);
+
 process.on("unhandledRejection", (reason) => {
   if (reason instanceof Error) {
     const message = reason.message ?? "";
-    if (message.includes("network_error") || message.includes("Resposta inválida")) {
+    if (
+      message.includes("network_error") ||
+      message.includes("Resposta inválida") ||
+      message.includes("skipped_in_test_env")
+    ) {
       return;
     }
   }
@@ -325,6 +332,245 @@ describe("handleDone", () => {
       }),
       expect.objectContaining({ patchSource: "stream_done" }),
     );
+  });
+});
+
+describe("beginStream start error", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("marks placeholder message as error when stream start fails (setMessages path)", async () => {
+    const controllerOverride = new AbortController();
+    const controllerRef = createRef<AbortController | null>(null);
+    const streamTimersRef = createRef<Record<string, { startedAt: number; firstChunkAt?: number }>>({});
+    const activeStreamClientIdRef = createRef<string | null>(null);
+    const activeAssistantIdRef = createRef<string | null>(null);
+    const streamActiveRef = createRef<boolean>(false);
+    const activeClientIdRef = createRef<string | null>("client-1");
+    const hasFirstChunkRef = createRef<boolean>(false);
+    const setDigitando = vi.fn();
+    const setIsSending = vi.fn();
+    const setErroApi = vi.fn<(value: SetErroApiArg) => void>();
+    const updateCurrentInteractionId = vi.fn();
+    const logSse = vi.fn();
+    const removeEcoEntry = vi.fn();
+
+    const assistantId = "assistant-1";
+    const clientMessageId = "client-1";
+
+    let messages: Message[] = [
+      {
+        id: assistantId,
+        sender: "eco",
+        streaming: true,
+        status: "streaming",
+      },
+    ];
+    const snapshots: Message[][] = [];
+    const setMessages = vi.fn<
+      (updater: Message[] | ((prev: Message[]) => Message[])) => void
+    >((updater) => {
+      messages =
+        typeof updater === "function"
+          ? (updater as (prev: Message[]) => Message[])(messages)
+          : updater;
+      snapshots.push(messages.map((message) => ({ ...message })));
+    });
+
+    const replyState: ReplyStateController = {
+      ecoReplyByAssistantId: {},
+      setEcoReplyByAssistantId: vi.fn(),
+      ecoReplyStateRef: createRef({}),
+    };
+    const tracking: MessageTrackingRefs = {
+      assistantByClientRef: createRef({ [clientMessageId]: assistantId }),
+      clientByAssistantRef: createRef({ [assistantId]: clientMessageId }),
+      pendingAssistantMetaRef: createRef({}),
+      userTextByClientIdRef: createRef({}),
+    };
+
+    const ensureAssistantMessage = vi.fn(() => {
+      tracking.assistantByClientRef.current[clientMessageId] = assistantId;
+      tracking.clientByAssistantRef.current[assistantId] = clientMessageId;
+      return assistantId;
+    });
+
+    const history: Message[] = [
+      { id: clientMessageId, sender: "user", text: "Olá" },
+    ];
+    const userMessage: Message = { id: clientMessageId, sender: "user", text: "Olá" };
+
+    const streamPromise = beginStream({
+      history,
+      userMessage,
+      systemHint: undefined,
+      controllerOverride,
+      controllerRef,
+      streamTimersRef,
+      activeStreamClientIdRef,
+      activeAssistantIdRef,
+      streamActiveRef,
+      activeClientIdRef,
+      onFirstChunk: undefined,
+      hasFirstChunkRef,
+      setDigitando,
+      setIsSending,
+      setErroApi: setErroApi as unknown as Dispatch<SetStateAction<string | null>>,
+      activity: undefined,
+      ensureAssistantMessage: ensureAssistantMessage as any,
+      removeEcoEntry,
+      updateCurrentInteractionId,
+      logSse,
+      userId: undefined,
+      userName: undefined,
+      guestId: undefined,
+      isGuest: false,
+      interactionCacheDispatch: undefined,
+      setMessages,
+      upsertMessage: undefined,
+      replyState,
+      tracking,
+    }) as Promise<StreamRunStats>;
+
+    await streamPromise.catch(() => undefined);
+    await Promise.resolve();
+
+    expect(messages).toHaveLength(1);
+    const errorSnapshotMessage = (() => {
+      for (const list of snapshots) {
+        const found = list.find(
+          (message) =>
+            message.id === assistantId && message.streaming === false && message.status === "error",
+        );
+        if (found) return found;
+      }
+      return null;
+    })();
+    expect(errorSnapshotMessage).not.toBeNull();
+    const errorText = errorSnapshotMessage?.text ?? "";
+    expect(typeof errorText).toBe("string");
+    expect(errorText.length).toBeGreaterThan(0);
+    expect(removeEcoEntry).toHaveBeenCalledWith(assistantId);
+  });
+
+  it("upserts fallback error message when stream start fails", async () => {
+    const controllerOverride = new AbortController();
+    const controllerRef = createRef<AbortController | null>(null);
+    const streamTimersRef = createRef<Record<string, { startedAt: number; firstChunkAt?: number }>>({});
+    const activeStreamClientIdRef = createRef<string | null>(null);
+    const activeAssistantIdRef = createRef<string | null>(null);
+    const streamActiveRef = createRef<boolean>(false);
+    const activeClientIdRef = createRef<string | null>("client-2");
+    const hasFirstChunkRef = createRef<boolean>(false);
+    const setDigitando = vi.fn();
+    const setIsSending = vi.fn();
+    const setErroApi = vi.fn<(value: SetErroApiArg) => void>();
+    const updateCurrentInteractionId = vi.fn();
+    const logSse = vi.fn();
+    const removeEcoEntry = vi.fn();
+
+    const assistantId = "assistant-2";
+    const clientMessageId = "client-2";
+
+    let messages: Message[] = [
+      {
+        id: assistantId,
+        sender: "eco",
+        streaming: true,
+        status: "streaming",
+      },
+    ];
+    const setMessages = vi.fn<
+      (updater: Message[] | ((prev: Message[]) => Message[])) => void
+    >((updater) => {
+      messages =
+        typeof updater === "function"
+          ? (updater as (prev: Message[]) => Message[])(messages)
+          : updater;
+    });
+
+    const upsertMessage = vi.fn<
+      (message: Message, options?: UpsertMessageOptions) => void
+    >((patch) => {
+      const index = messages.findIndex((message) => message.id === patch.id);
+      if (index >= 0) {
+        messages[index] = { ...messages[index], ...patch };
+      } else {
+        messages.push({ ...patch, sender: "eco" });
+      }
+    });
+
+    const replyState: ReplyStateController = {
+      ecoReplyByAssistantId: {},
+      setEcoReplyByAssistantId: vi.fn(),
+      ecoReplyStateRef: createRef({}),
+    };
+    const tracking: MessageTrackingRefs = {
+      assistantByClientRef: createRef({ [clientMessageId]: assistantId }),
+      clientByAssistantRef: createRef({ [assistantId]: clientMessageId }),
+      pendingAssistantMetaRef: createRef({}),
+      userTextByClientIdRef: createRef({}),
+    };
+
+    const ensureAssistantMessage = vi.fn(() => {
+      tracking.assistantByClientRef.current[clientMessageId] = assistantId;
+      tracking.clientByAssistantRef.current[assistantId] = clientMessageId;
+      return assistantId;
+    });
+
+    const history: Message[] = [
+      { id: clientMessageId, sender: "user", text: "Oi" },
+    ];
+    const userMessage: Message = { id: clientMessageId, sender: "user", text: "Oi" };
+
+    const streamPromise = beginStream({
+      history,
+      userMessage,
+      systemHint: undefined,
+      controllerOverride,
+      controllerRef,
+      streamTimersRef,
+      activeStreamClientIdRef,
+      activeAssistantIdRef,
+      streamActiveRef,
+      activeClientIdRef,
+      onFirstChunk: undefined,
+      hasFirstChunkRef,
+      setDigitando,
+      setIsSending,
+      setErroApi: setErroApi as unknown as Dispatch<SetStateAction<string | null>>,
+      activity: undefined,
+      ensureAssistantMessage: ensureAssistantMessage as any,
+      removeEcoEntry,
+      updateCurrentInteractionId,
+      logSse,
+      userId: undefined,
+      userName: undefined,
+      guestId: undefined,
+      isGuest: false,
+      interactionCacheDispatch: undefined,
+      setMessages,
+      upsertMessage: upsertMessage as any,
+      replyState,
+      tracking,
+    }) as Promise<StreamRunStats>;
+
+    await streamPromise.catch(() => undefined);
+    await Promise.resolve();
+
+    const startErrorPatch = upsertMessage.mock.calls.find(([, options]) => options?.patchSource === "stream_start_error");
+    const patchedMessage = startErrorPatch?.[0] as Message | undefined;
+    expect(patchedMessage).toMatchObject({ id: assistantId, streaming: false, status: "error" });
+    expect(typeof patchedMessage?.text).toBe("string");
+    expect((patchedMessage?.text ?? "").length).toBeGreaterThan(0);
+    expect(messages[0]).toMatchObject({
+      id: assistantId,
+      streaming: false,
+      status: "error",
+      text: patchedMessage?.text,
+    });
+    expect(removeEcoEntry).toHaveBeenCalledWith(assistantId);
   });
 });
 
