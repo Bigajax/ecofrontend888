@@ -60,6 +60,27 @@ const inflightControllers = new Map<string, AbortController>();
 const streamStartLogged = new Set<string>();
 const streamWatchdogRegistry = new Map<string, () => void>();
 
+export interface StreamRunnerTimers {
+  setTimeout: (
+    handler: (...args: any[]) => void,
+    timeout?: number,
+    ...args: any[]
+  ) => ReturnType<typeof setTimeout>;
+  clearTimeout: (handle: ReturnType<typeof setTimeout>) => void;
+}
+
+const createDefaultTimers = (): StreamRunnerTimers => {
+  const setTimeoutImpl: StreamRunnerTimers["setTimeout"] = ((
+    handler: (...args: any[]) => void,
+    timeout?: number,
+    ...args: any[]
+  ) => setTimeout(handler, timeout, ...args)) as StreamRunnerTimers["setTimeout"];
+  const clearTimeoutImpl: StreamRunnerTimers["clearTimeout"] = ((
+    handle: ReturnType<typeof setTimeout>,
+  ) => clearTimeout(handle)) as StreamRunnerTimers["clearTimeout"];
+  return { setTimeout: setTimeoutImpl, clearTimeout: clearTimeoutImpl };
+};
+
 let headProbeCompleted = false;
 let headProbePromise: Promise<void> | null = null;
 
@@ -98,9 +119,16 @@ const logDev = (label: string, payload: Record<string, unknown>) => {
   }
 };
 
-const ensureHeadProbe = async (url: string, guestId: string, sessionId: string) => {
+const ensureHeadProbe = async (
+  url: string,
+  guestId: string,
+  sessionId: string,
+  fetchImpl?: typeof fetch,
+) => {
   if (headProbeCompleted) return;
-  if (typeof fetch !== "function") {
+  const resolvedFetch =
+    fetchImpl ?? (typeof globalThis.fetch === "function" ? (globalThis.fetch as typeof fetch) : undefined);
+  if (typeof resolvedFetch !== "function") {
     headProbeCompleted = true;
     headProbePromise = null;
     return;
@@ -115,7 +143,7 @@ const ensureHeadProbe = async (url: string, guestId: string, sessionId: string) 
   }
   headProbePromise = (async () => {
     try {
-      await fetch(url, {
+      await resolvedFetch(url, {
         method: "HEAD",
         headers: {
           "X-Eco-Guest-Id": guestId,
@@ -141,14 +169,18 @@ const ensureHeadProbe = async (url: string, guestId: string, sessionId: string) 
 
 const TYPING_WATCHDOG_MS = 45_000;
 
-const withTypingWatchdog = (id: string, onTimeout: () => void) => {
+const withTypingWatchdog = (
+  id: string,
+  onTimeout: () => void,
+  timers: StreamRunnerTimers,
+) => {
   if (TYPING_WATCHDOG_MS <= 0) {
     return () => {
       /* noop */
     };
   }
 
-  const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
+  const timer = timers.setTimeout(() => {
     try {
       onTimeout();
     } catch {
@@ -158,7 +190,7 @@ const withTypingWatchdog = (id: string, onTimeout: () => void) => {
     }
   }, TYPING_WATCHDOG_MS);
 
-  return () => clearTimeout(timer);
+  return () => timers.clearTimeout(timer);
 };
 
 type AllowedAbortReason = "watchdog_timeout" | "user_cancel";
@@ -244,7 +276,10 @@ function now() {
   return Date.now();
 }
 
-export function createSseWatchdogs(id: string = "legacy") {
+export function createSseWatchdogs(
+  id: string = "legacy",
+  timers: StreamRunnerTimers = createDefaultTimers(),
+) {
   const previousClear = streamWatchdogRegistry.get(id);
   if (previousClear) {
     try {
@@ -261,7 +296,7 @@ export function createSseWatchdogs(id: string = "legacy") {
 
   const clear = () => {
     if (t) {
-      clearTimeout(t);
+      timers.clearTimeout(t);
       t = null;
     }
     mode = "idle";
@@ -283,7 +318,7 @@ export function createSseWatchdogs(id: string = "legacy") {
     const handler = onTimeout ?? lastHandler;
     if (!handler) return;
     const ms = 45_000;
-    t = setTimeout(() => {
+    t = timers.setTimeout(() => {
       const registered = streamWatchdogRegistry.get(id);
       if (registered && registered === clear) {
         streamWatchdogRegistry.delete(id);
@@ -332,7 +367,7 @@ export async function openEcoSseStream(opts: {
     controller = new AbortController(),
   } = opts;
 
-  const wd = createSseWatchdogs();
+  const wd = createSseWatchdogs("legacy", createDefaultTimers());
   let closed = false;
   let closeReason: CloseReason | null = null;
   let streamErrored = false;
@@ -610,6 +645,43 @@ export interface StreamRunStats {
   jsonFallbackSucceeded?: boolean;
 }
 
+export interface StreamRunnerFactoryOptions {
+  fetchImpl?: typeof fetch;
+  timers?: StreamRunnerTimers;
+  watchdogFactory?: (
+    id: string,
+    timers: StreamRunnerTimers,
+  ) => ReturnType<typeof createSseWatchdogs>;
+}
+
+interface ResolvedStreamRunnerDeps {
+  fetchImpl?: typeof fetch;
+  timers: StreamRunnerTimers;
+  watchdogFactory: (id: string) => ReturnType<typeof createSseWatchdogs>;
+  typingWatchdogFactory: (id: string, onTimeout: () => void) => () => void;
+}
+
+const resolveStreamRunnerDeps = (
+  options?: StreamRunnerFactoryOptions,
+): ResolvedStreamRunnerDeps => {
+  const timers = options?.timers ?? createDefaultTimers();
+  const fetchImpl =
+    typeof options?.fetchImpl === "function"
+      ? options.fetchImpl
+      : typeof globalThis.fetch === "function"
+      ? (globalThis.fetch as typeof fetch)
+      : undefined;
+  const watchdogFactory: ResolvedStreamRunnerDeps["watchdogFactory"] =
+    typeof options?.watchdogFactory === "function"
+      ? (id: string) => options.watchdogFactory!(id, timers)
+      : (id: string) => createSseWatchdogs(id, timers);
+  const typingWatchdogFactory: ResolvedStreamRunnerDeps["typingWatchdogFactory"] = (
+    id: string,
+    onTimeout: () => void,
+  ) => withTypingWatchdog(id, onTimeout, timers);
+  return { fetchImpl, timers, watchdogFactory, typingWatchdogFactory };
+};
+
 export type InteractionMapAction = {
   type: "updateInteractionMap";
   clientId: string;
@@ -666,6 +738,8 @@ const formatAbortReason = (input: unknown): string => {
   }
   return "unknown";
 };
+
+const resolveAbortReason = (input: unknown): string => formatAbortReason(input);
 
 const mapHistoryMessage = (message: ChatMessageType) => {
   if (!message) return { id: undefined, role: "assistant", content: "" };
@@ -1394,7 +1468,8 @@ interface BeginStreamParams {
   tracking: MessageTrackingRefs;
 }
 
-export const beginStream = ({
+const beginStreamInternal = (
+  {
   history,
   userMessage,
   systemHint,
@@ -1424,7 +1499,10 @@ export const beginStream = ({
   upsertMessage,
   replyState,
   tracking,
-}: BeginStreamParams): Promise<StreamRunStats> | void => {
+}: BeginStreamParams,
+  deps: ResolvedStreamRunnerDeps,
+): Promise<StreamRunStats> | void => {
+  const { fetchImpl, timers, watchdogFactory, typingWatchdogFactory } = deps;
   const clientMessageId = userMessage.id;
   if (!clientMessageId) return;
   const trimmedClientId = typeof clientMessageId === "string" ? clientMessageId.trim() : "";
@@ -1560,7 +1638,7 @@ export const beginStream = ({
   }
   setDigitando(true);
 
-  clearTypingWatchdog = withTypingWatchdog(normalizedClientId, () => {
+  clearTypingWatchdog = typingWatchdogFactory(normalizedClientId, () => {
     try {
       console.warn('[SSE] typing_watchdog_timeout', {
         clientMessageId: normalizedClientId,
@@ -1629,7 +1707,7 @@ export const beginStream = ({
   let startErrorMessage: string | null = null;
   let startErrorAssistantId: string | null = null;
 
-  const watchdog = createSseWatchdogs(normalizedClientId);
+  const watchdog = watchdogFactory(normalizedClientId);
   let onWatchdogTimeout: ((reason: CloseReason) => void) | null = null;
 
   const clearWatchdog = () => {
@@ -1878,13 +1956,13 @@ export const beginStream = ({
   const clearFallbackGuardTimer = () => {
     if (!fallbackGuardTimer) return;
     try {
-      if (typeof window !== "undefined") {
-        window.clearTimeout(fallbackGuardTimer);
-      } else {
-        clearTimeout(fallbackGuardTimer);
-      }
+      timers.clearTimeout(fallbackGuardTimer);
     } catch {
-      clearTimeout(fallbackGuardTimer);
+      try {
+        timers.clearTimeout(fallbackGuardTimer);
+      } catch {
+        /* noop */
+      }
     }
     fallbackGuardTimer = null;
   };
@@ -1953,9 +2031,8 @@ export const beginStream = ({
   const startFallbackGuardTimer = () => {
     if (!fallbackEnabled) return;
     if (guardTimeoutMs <= 0) return;
-    if (typeof window === "undefined") return;
     clearFallbackGuardTimer();
-    fallbackGuardTimer = window.setTimeout(() => {
+    fallbackGuardTimer = timers.setTimeout(() => {
       if (controller.signal.aborted || sharedContext.hasFirstChunkRef.current) return;
       if (firstChunkDelivered) return;
       if (fallbackRequested) return;
@@ -2100,8 +2177,7 @@ export const beginStream = ({
       }
       setStreamActive(true);
 
-      const fetchFn: typeof fetch | undefined =
-        typeof globalThis.fetch === "function" ? (globalThis.fetch as typeof fetch) : undefined;
+      const fetchFn = fetchImpl;
       let fetchSource: string | null = null;
       if (fetchFn) {
         try {
@@ -2122,7 +2198,7 @@ export const beginStream = ({
     if (firstChunkDelivered || sharedContext.hasFirstChunkRef.current) {
       return false;
     }
-      const fallbackFetch = fetchFn ?? fetch;
+      const fallbackFetch = fetchFn;
       if (typeof fallbackFetch !== "function") {
         return false;
       }
@@ -2270,7 +2346,7 @@ export const beginStream = ({
         }
 
         try {
-          await ensureHeadProbe(requestUrl, effectiveGuestId, effectiveSessionId);
+          await ensureHeadProbe(requestUrl, effectiveGuestId, effectiveSessionId, fetchImpl);
         } catch {
           /* noop */
         }
@@ -3300,5 +3376,20 @@ export const beginStream = ({
   });
 
   return streamPromise;
+};
+
+export const beginStream = (
+  params: BeginStreamParams,
+  options?: StreamRunnerFactoryOptions,
+): Promise<StreamRunStats> | void => {
+  const deps = resolveStreamRunnerDeps(options);
+  return beginStreamInternal(params, deps);
+};
+
+export const createStreamRunner = (options: StreamRunnerFactoryOptions = {}) => {
+  const deps = resolveStreamRunnerDeps(options);
+  return {
+    beginStream: (params: BeginStreamParams) => beginStreamInternal(params, deps),
+  };
 };
 
