@@ -57,6 +57,8 @@ const FALLBACK_NO_CHUNK_REASONS = new Set<string>([
 ]);
 
 const inflightControllers = new Map<string, AbortController>();
+const streamStartLogged = new Set<string>();
+const streamWatchdogRegistry = new Map<string, () => void>();
 
 let headProbeCompleted = false;
 let headProbePromise: Promise<void> | null = null;
@@ -149,19 +151,9 @@ const withTypingWatchdog = (id: string, onTimeout: () => void) => {
   const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
     try {
       onTimeout();
+    } catch {
+      /* noop */
     } finally {
-      const inflight = inflightControllers.get(id);
-      if (inflight) {
-        try {
-          debugAbortController(inflight, "typing-watchdog");
-        } catch {
-          try {
-            inflight.abort();
-          } catch {
-            /* noop */
-          }
-        }
-      }
       inflightControllers.delete(id);
     }
   }, TYPING_WATCHDOG_MS);
@@ -169,25 +161,46 @@ const withTypingWatchdog = (id: string, onTimeout: () => void) => {
   return () => clearTimeout(timer);
 };
 
-const logAbortDebug = () => {
+type AllowedAbortReason = "watchdog_timeout" | "user_cancel";
+
+const ALLOWED_ABORT_REASONS = new Set<AllowedAbortReason>(["watchdog_timeout", "user_cancel"]);
+
+const logAbortDebug = (reason: AllowedAbortReason) => {
   try {
-    console.log('[DEBUG] Abortando conexão', new Error().stack);
+    console.log('[DEBUG] Abortando conexão', { reason, stack: new Error().stack });
   } catch {
     /* noop */
   }
 };
 
-const debugAbortController = (controller: AbortController, reason?: unknown) => {
-  logAbortDebug();
+const abortControllerSafely = (
+  controller: AbortController,
+  reason: AllowedAbortReason,
+): boolean => {
+  if (controller.signal.aborted) {
+    return false;
+  }
+  if (!ALLOWED_ABORT_REASONS.has(reason)) {
+    try {
+      console.warn('[SSE] abort_ignored', { reason });
+    } catch {
+      /* noop */
+    }
+    return false;
+  }
+  logAbortDebug(reason);
   try {
-    controller.abort(reason as any);
+    controller.abort(reason);
+    return true;
   } catch {
     try {
       controller.abort();
+      return true;
     } catch {
       /* noop */
     }
   }
+  return false;
 };
 
 const resolveStreamGuardTimeoutMs = (): number => {
@@ -231,7 +244,16 @@ function now() {
   return Date.now();
 }
 
-export function createSseWatchdogs() {
+export function createSseWatchdogs(id: string = "legacy") {
+  const previousClear = streamWatchdogRegistry.get(id);
+  if (previousClear) {
+    try {
+      previousClear();
+    } catch {
+      /* noop */
+    }
+  }
+
   let t: ReturnType<typeof setTimeout> | null = null;
   let mode: WatchdogMode = "idle";
   let promptReadyAt = 0;
@@ -243,6 +265,10 @@ export function createSseWatchdogs() {
       t = null;
     }
     mode = "idle";
+    const registered = streamWatchdogRegistry.get(id);
+    if (registered && registered === clear) {
+      streamWatchdogRegistry.delete(id);
+    }
   };
 
   const arm = (
@@ -256,11 +282,15 @@ export function createSseWatchdogs() {
     }
     const handler = onTimeout ?? lastHandler;
     if (!handler) return;
-    const ms = m === "first" ? 90_000 : 60_000; // Debug: 90s/60s
-    t = setTimeout(
-      () => handler(m === "first" ? "watchdog_first_token" : "watchdog_heartbeat"),
-      ms,
-    );
+    const ms = 45_000;
+    t = setTimeout(() => {
+      const registered = streamWatchdogRegistry.get(id);
+      if (registered && registered === clear) {
+        streamWatchdogRegistry.delete(id);
+      }
+      handler(m === "first" ? "watchdog_first_token" : "watchdog_heartbeat");
+    }, ms);
+    streamWatchdogRegistry.set(id, clear);
   };
 
   return {
@@ -311,7 +341,17 @@ export async function openEcoSseStream(opts: {
     if (closed) return;
     closed = true;
     closeReason = reason;
-    debugAbortController(controller);
+    if (reason === "watchdog_first_token" || reason === "watchdog_heartbeat") {
+      abortControllerSafely(controller, "watchdog_timeout");
+    } else if (reason === "ui_abort") {
+      abortControllerSafely(controller, "user_cancel");
+    } else if (!controller.signal.aborted) {
+      try {
+        console.warn('[SSE] abort_ignored', { reason });
+      } catch {
+        /* noop */
+      }
+    }
     try {
       wd.clear();
     } catch {
@@ -1393,10 +1433,7 @@ export const beginStream = ({
   const existingInflight = inflightControllers.get(normalizedClientId);
   if (existingInflight && !existingInflight.signal.aborted) {
     try {
-      console.warn("[SSE] stream_inflight_skip", {
-        clientMessageId: normalizedClientId,
-        reason: "duplicate-client-id",
-      });
+      console.warn("duplicated stream", { clientMessageId: normalizedClientId });
     } catch {
       /* noop */
     }
@@ -1457,7 +1494,7 @@ export const beginStream = ({
         } catch {
           /* noop */
         }
-        debugAbortController(activeController, "new-send");
+        abortControllerSafely(activeController, "user_cancel");
         if (typeof normalizedActiveId === "string" && normalizedActiveId) {
           logSse("abort", {
             clientMessageId: normalizedActiveId,
@@ -1592,7 +1629,7 @@ export const beginStream = ({
   let startErrorMessage: string | null = null;
   let startErrorAssistantId: string | null = null;
 
-  const watchdog = createSseWatchdogs();
+  const watchdog = createSseWatchdogs(normalizedClientId);
   let onWatchdogTimeout: ((reason: CloseReason) => void) | null = null;
 
   const clearWatchdog = () => {
@@ -1630,6 +1667,7 @@ export const beginStream = ({
     Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
   const requestMethod: "GET" | "POST" = diagForceJson ? "POST" : "GET";
   const acceptHeader = diagForceJson ? "application/json" : "text/event-stream";
+  const fallbackEnabled = diagForceJson;
 
   logDev("identifiers", {
     guestId: effectiveGuestId,
@@ -1653,14 +1691,23 @@ export const beginStream = ({
     method: requestMethod,
   });
 
-  try {
-    console.debug('[DIAG] stream:start', {
-      clientMessageId,
-      historyLength: history.length,
-      systemHint: systemHint ?? null,
-    });
-  } catch {
-    /* noop */
+  if (streamStartLogged.has(normalizedClientId)) {
+    try {
+      console.warn("duplicated stream", { clientMessageId: normalizedClientId });
+    } catch {
+      /* noop */
+    }
+  } else {
+    streamStartLogged.add(normalizedClientId);
+    try {
+      console.debug('[DIAG] stream:start', {
+        clientMessageId,
+        historyLength: history.length,
+        systemHint: systemHint ?? null,
+      });
+    } catch {
+      /* noop */
+    }
   }
 
   const NO_CONTENT_MESSAGE = "A Eco não chegou a enviar nada. Tente novamente.";
@@ -1698,7 +1745,12 @@ export const beginStream = ({
     } catch {
       /* noop */
     }
-    if (!streamStats.gotAnyChunk && triggerJsonFallback && FALLBACK_NO_CHUNK_REASONS.has(reason)) {
+    if (
+      fallbackEnabled &&
+      !streamStats.gotAnyChunk &&
+      triggerJsonFallback &&
+      FALLBACK_NO_CHUNK_REASONS.has(reason)
+    ) {
       triggerJsonFallback(reason);
     }
   };
@@ -1838,6 +1890,9 @@ export const beginStream = ({
   };
 
   const beginFallback = (reason: string): boolean => {
+    if (!fallbackEnabled) {
+      return false;
+    }
     if (firstChunkDelivered || sharedContext.hasFirstChunkRef.current) {
       return false;
     }
@@ -1882,13 +1937,21 @@ export const beginStream = ({
   };
 
   const abortSseForFallback = (reason?: string) => {
+    if (!fallbackEnabled) {
+      return;
+    }
     const fallbackReason = typeof reason === "string" && reason.trim() ? reason : "json_fallback";
-    if (!controller.signal.aborted) {
-      debugAbortController(controller, fallbackReason);
+    if (abortControllerSafely(controller, "watchdog_timeout")) {
+      try {
+        console.warn('[SSE] aborting_for_fallback', { clientMessageId, reason: fallbackReason });
+      } catch {
+        /* noop */
+      }
     }
   };
 
   const startFallbackGuardTimer = () => {
+    if (!fallbackEnabled) return;
     if (guardTimeoutMs <= 0) return;
     if (typeof window === "undefined") return;
     clearFallbackGuardTimer();
@@ -2049,13 +2112,16 @@ export const beginStream = ({
       }
       const shouldSkipFetchInTest = isTestEnv || isVitest;
 
-    runJsonFallbackRequest = async (options: {
-      reason?: string;
-      logError?: unknown;
-    } = {}): Promise<boolean> => {
-      if (firstChunkDelivered || sharedContext.hasFirstChunkRef.current) {
-        return false;
-      }
+  runJsonFallbackRequest = async (options: {
+    reason?: string;
+    logError?: unknown;
+  } = {}): Promise<boolean> => {
+    if (!fallbackEnabled) {
+      return false;
+    }
+    if (firstChunkDelivered || sharedContext.hasFirstChunkRef.current) {
+      return false;
+    }
       const fallbackFetch = fetchFn ?? fetch;
       if (typeof fallbackFetch !== "function") {
         return false;
@@ -2154,6 +2220,7 @@ export const beginStream = ({
     };
 
     const tryJsonFallback = async (reason: string): Promise<boolean> => {
+      if (!fallbackEnabled) return false;
       if (firstChunkDelivered) return false;
       if (streamStats.gotAnyChunk) return false;
       if (activeStreamClientIdRef.current !== clientMessageId) return false;
@@ -2644,7 +2711,6 @@ export const beginStream = ({
         sharedContext.streamStats.clientFinishReason = "internal_error";
         diag("stream_error_internal", { clientMessageId: normalizedClientId });
         handleStreamDone(undefined, { reason: "internal_error" });
-        debugAbortController(controller, "internal_error_handled");
         fatalError = null;
         return;
       }

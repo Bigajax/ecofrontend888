@@ -616,7 +616,7 @@ describe("beginStream fallback", () => {
     vi.restoreAllMocks();
   });
 
-  it("aborts the SSE controller before starting the fallback POST", async () => {
+  it("does not trigger POST fallback when GET transport is active", async () => {
     const controllerOverride = new AbortController();
     const fallbackResponse = {
       ok: true,
@@ -639,7 +639,6 @@ describe("beginStream fallback", () => {
       if (method === "GET") {
         return Promise.reject(new Error("network_error"));
       }
-      expect(controllerOverride.signal.aborted).toBe(true);
       return Promise.resolve(fallbackResponse);
     });
 
@@ -737,7 +736,8 @@ describe("beginStream fallback", () => {
         ? ((init as RequestInit).method as string).toUpperCase() === "POST"
         : false,
     );
-    expect(postCall).toBeDefined();
+    expect(postCall).toBeUndefined();
+    expect(controllerOverride.signal.aborted).toBe(false);
     expect(streamActiveRef.current).toBe(false);
     expect(setDigitando.mock.calls.at(-1)?.[0]).toBe(false);
   });
