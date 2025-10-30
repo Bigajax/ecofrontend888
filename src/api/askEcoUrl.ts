@@ -1,5 +1,5 @@
 import { resolveApiUrl } from "@/constants/api";
-import { getOrCreateGuestId, getOrCreateSessionId } from "@/utils/ecoIdentity";
+import { getOrCreateGuestId, getOrCreateSessionId } from "@/utils/identity";
 
 export const ASK_ECO_ENDPOINT_PATH = "/api/ask-eco" as const;
 
