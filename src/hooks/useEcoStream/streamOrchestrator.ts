@@ -1588,6 +1588,9 @@ export const beginStream = ({
   let fallbackGuardTimer: ReturnType<typeof setTimeout> | null = null;
   let fallbackGuardTriggered = false;
   let triggerJsonFallback: ((reason: string) => void) | null = null;
+  let startErrorTriggered = false;
+  let startErrorMessage: string | null = null;
+  let startErrorAssistantId: string | null = null;
 
   const watchdog = createSseWatchdogs();
   let onWatchdogTimeout: ((reason: CloseReason) => void) | null = null;
@@ -1607,6 +1610,33 @@ export const beginStream = ({
   const bumpHeartbeatWatchdog = () => {
     watchdog.bumpHeartbeat(onWatchdogTimeout ?? undefined);
   };
+
+  const identityHeaders = buildIdentityHeaders();
+  const resolveIdentityHeader = (key: string) => {
+    const exact = identityHeaders[key];
+    if (typeof exact === "string" && exact.trim().length > 0) return exact.trim();
+    const lower = identityHeaders[key.toLowerCase() as keyof typeof identityHeaders];
+    if (typeof lower === "string" && lower.trim().length > 0) return lower.trim();
+    return "";
+  };
+
+  const resolvedGuestId = resolveIdentityHeader("X-Eco-Guest-Id");
+  const resolvedSessionId = resolveIdentityHeader("X-Eco-Session-Id");
+  const effectiveGuestId = resolvedGuestId || getOrCreateGuestId();
+  const effectiveSessionId = resolvedSessionId || getOrCreateSessionId();
+
+  const diagForceJson =
+    typeof window !== "undefined" &&
+    Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
+  const requestMethod: "GET" | "POST" = diagForceJson ? "POST" : "GET";
+  const acceptHeader = diagForceJson ? "application/json" : "text/event-stream";
+
+  logDev("identifiers", {
+    guestId: effectiveGuestId,
+    sessionId: effectiveSessionId,
+    clientMessageId: normalizedClientId,
+    method: requestMethod,
+  });
 
   streamTimersRef.current[normalizedClientId] = { startedAt: Date.now() };
   logSse("start", {
@@ -1719,6 +1749,47 @@ export const beginStream = ({
           updatedAt,
           content: fallbackText,
           text: fallbackText,
+        };
+      }),
+    );
+  };
+
+  const patchAssistantStartError = (
+    assistantId: string | null | undefined,
+    fallbackText: string | undefined,
+  ) => {
+    if (!assistantId) return;
+    const updatedAt = new Date().toISOString();
+    const resolvedText = (() => {
+      if (typeof fallbackText === "string") {
+        const trimmed = fallbackText.trim();
+        if (trimmed) return trimmed;
+      }
+      return "Falha ao iniciar a resposta da Eco.";
+    })();
+    const patch: ChatMessageType = {
+      id: assistantId,
+      streaming: false,
+      status: "error",
+      updatedAt,
+      content: resolvedText,
+      text: resolvedText,
+    };
+    const allowedKeys = ["status", "streaming", "updatedAt", "content", "text"] as string[];
+    if (upsertMessage) {
+      upsertMessage(patch, { patchSource: "stream_start_error", allowedKeys });
+      return;
+    }
+    setMessages((prevMessages) =>
+      prevMessages.map((message) => {
+        if (message.id !== assistantId) return message;
+        return {
+          ...message,
+          streaming: false,
+          status: "error",
+          updatedAt,
+          content: resolvedText,
+          text: resolvedText,
         };
       }),
     );
@@ -1857,33 +1928,6 @@ export const beginStream = ({
     }
     return {};
   };
-
-  const identityHeaders = buildIdentityHeaders();
-  const resolveIdentityHeader = (key: string) => {
-    const exact = identityHeaders[key];
-    if (typeof exact === "string" && exact.trim().length > 0) return exact.trim();
-    const lower = identityHeaders[key.toLowerCase() as keyof typeof identityHeaders];
-    if (typeof lower === "string" && lower.trim().length > 0) return lower.trim();
-    return "";
-  };
-
-  const resolvedGuestId = resolveIdentityHeader("X-Eco-Guest-Id");
-  const resolvedSessionId = resolveIdentityHeader("X-Eco-Session-Id");
-  const effectiveGuestId = resolvedGuestId || getOrCreateGuestId();
-  const effectiveSessionId = resolvedSessionId || getOrCreateSessionId();
-
-  const diagForceJson =
-    typeof window !== "undefined" &&
-    Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
-  const requestMethod: "GET" | "POST" = diagForceJson ? "POST" : "GET";
-  const acceptHeader = diagForceJson ? "application/json" : "text/event-stream";
-
-  logDev("identifiers", {
-    guestId: effectiveGuestId,
-    sessionId: effectiveSessionId,
-    clientMessageId: normalizedClientId,
-    method: requestMethod,
-  });
 
   let streamPromise: Promise<StreamRunStats>;
   try {
@@ -2917,6 +2961,7 @@ export const beginStream = ({
   }
 
   streamPromise.catch(async (error) => {
+    startErrorTriggered = true;
     if (controller.signal.aborted) return;
     clearTypingWatchdog();
     clearWatchdog();
@@ -2948,6 +2993,9 @@ export const beginStream = ({
       }
     }
     const message = error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
+    startErrorMessage = message;
+    streamStats.clientFinishReason = "start_error";
+    streamStats.status = "error";
     try {
       console.debug('[DIAG] setErroApi:before', {
         clientMessageId,
@@ -2974,7 +3022,33 @@ export const beginStream = ({
     } catch {
       /* noop */
     }
-    const assistantIdOnStartError = tracking.assistantByClientRef.current[clientMessageId];
+    const assistantIdOnStartError =
+      tracking.assistantByClientRef.current[clientMessageId] ??
+      tracking.assistantByClientRef.current[normalizedClientId] ??
+      activeAssistantIdRef.current ??
+      ensureAssistantMessage(clientMessageId, undefined, { allowCreate: false });
+    startErrorAssistantId = assistantIdOnStartError ?? startErrorAssistantId;
+    const applyStartErrorPatch = () => {
+      patchAssistantStartError(assistantIdOnStartError, message);
+    };
+    applyStartErrorPatch();
+    try {
+      if (typeof queueMicrotask === "function") {
+        queueMicrotask(applyStartErrorPatch);
+      } else {
+        void Promise.resolve()
+          .then(applyStartErrorPatch)
+          .catch(() => {
+            applyStartErrorPatch();
+          });
+      }
+    } catch {
+      try {
+        applyStartErrorPatch();
+      } catch {
+        /* noop */
+      }
+    }
     if (assistantIdOnStartError) {
       removeEcoEntry(assistantIdOnStartError);
     }
@@ -3045,7 +3119,20 @@ export const beginStream = ({
     }
 
     if (isActiveStream) {
-      if (wasAborted && !sharedContext.hasFirstChunkRef.current) {
+      if (startErrorTriggered) {
+        const assistantForError =
+          startErrorAssistantId ??
+          assistantId ??
+          tracking.assistantByClientRef.current[clientMessageId] ??
+          tracking.assistantByClientRef.current[normalizedClientId] ??
+          sharedContext.activeAssistantIdRef.current;
+        patchAssistantStartError(assistantForError, startErrorMessage ?? "Falha ao iniciar a resposta da Eco.");
+      } else if (
+        wasAborted &&
+        !sharedContext.hasFirstChunkRef.current &&
+        !startErrorTriggered &&
+        streamStats.clientFinishReason !== "start_error"
+      ) {
         registerNoContent("stream_aborted");
         const ensuredAssistantId = ensureAssistantForNoContent();
         if (ensuredAssistantId) {
