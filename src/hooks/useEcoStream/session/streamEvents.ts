@@ -11,7 +11,7 @@ import type {
   MessageTrackingRefs,
   ReplyStateController,
 } from "../messageState";
-import type { StreamRunStats, StreamSharedContext, RemoveEcoEntryFn } from "../streamOrchestrator";
+import type { StreamRunStats, StreamSharedContext, RemoveEcoEntryFn } from "../types";
 
 type PickStringFromRecords = (
   records: Array<Record<string, unknown> | undefined>,

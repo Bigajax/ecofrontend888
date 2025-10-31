@@ -10,6 +10,18 @@ import { collectTexts } from "../../api/askEcoResponse";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
 import type { EnsureAssistantEventMeta, MessageTrackingRefs, ReplyStateController } from "./messageState";
 import {
+  applyMetaToStreamStats,
+  buildEcoRequestBody,
+  extractFinishReasonFromMeta,
+} from "./requestBuilder";
+import type {
+  EnsureAssistantMessageFn,
+  InteractionMapAction,
+  RemoveEcoEntryFn,
+  StreamRunStats,
+  StreamSharedContext,
+} from "./types";
+import {
   applyChunkToMessages,
   extractText,
   extractSummaryRecord,
@@ -37,17 +49,28 @@ import {
   onPromptReady,
   processChunk,
 } from "./session/streamEvents";
+import {
+  StreamSession,
+  StreamFallbackManager,
+  createDefaultTimers,
+  createSseWatchdogs,
+  withTypingWatchdog,
+  resolveStreamGuardTimeoutMs,
+  abortControllerSafely,
+  TYPING_WATCHDOG_MS,
+  type StreamRunnerTimers,
+  type CloseReason,
+  type BeginStreamParams,
+} from "./session/StreamSession";
+export type {
+  StreamRunStats,
+  StreamSharedContext,
+  EnsureAssistantMessageFn,
+  RemoveEcoEntryFn,
+  InteractionMapAction,
+} from "./types";
+export type { StreamRunnerTimers, CloseReason, BeginStreamParams } from "./session/StreamSession";
 
-type WatchdogMode = "idle" | "first" | "steady";
-export type CloseReason =
-  | "server_done"
-  | "server_error"
-  | "ui_abort"
-  | "watchdog_first_token"
-  | "watchdog_heartbeat"
-  | "network_error";
-
-const DEFAULT_STREAM_GUARD_TIMEOUT_MS = 15_000;
 const FALLBACK_NO_CHUNK_REASONS = new Set<string>([
   "client_disconnect",
   "stream_aborted",
@@ -61,27 +84,6 @@ const FALLBACK_NO_CHUNK_REASONS = new Set<string>([
 
 const inflightControllers = new Map<string, AbortController>();
 const streamStartLogged = new Set<string>();
-
-export interface StreamRunnerTimers {
-  setTimeout: (
-    handler: (...args: any[]) => void,
-    timeout?: number,
-    ...args: any[]
-  ) => ReturnType<typeof setTimeout>;
-  clearTimeout: (handle: ReturnType<typeof setTimeout>) => void;
-}
-
-const createDefaultTimers = (): StreamRunnerTimers => {
-  const setTimeoutImpl: StreamRunnerTimers["setTimeout"] = ((
-    handler: (...args: any[]) => void,
-    timeout?: number,
-    ...args: any[]
-  ) => setTimeout(handler, timeout, ...args)) as StreamRunnerTimers["setTimeout"];
-  const clearTimeoutImpl: StreamRunnerTimers["clearTimeout"] = ((
-    handle: ReturnType<typeof setTimeout>,
-  ) => clearTimeout(handle)) as StreamRunnerTimers["clearTimeout"];
-  return { setTimeout: setTimeoutImpl, clearTimeout: clearTimeoutImpl };
-};
 
 let headProbeCompleted = false;
 let headProbePromise: Promise<void> | null = null;
@@ -169,32 +171,6 @@ const ensureHeadProbe = async (
   }
 };
 
-const TYPING_WATCHDOG_MS = 45_000;
-
-const withTypingWatchdog = (
-  id: string,
-  onTimeout: () => void,
-  timers: StreamRunnerTimers,
-) => {
-  if (TYPING_WATCHDOG_MS <= 0) {
-    return () => {
-      /* noop */
-    };
-  }
-
-  const timer = timers.setTimeout(() => {
-    try {
-      onTimeout();
-    } catch {
-      /* noop */
-    } finally {
-      inflightControllers.delete(id);
-    }
-  }, TYPING_WATCHDOG_MS);
-
-  return () => timers.clearTimeout(timer);
-};
-
 type AllowedAbortReason = "watchdog_timeout" | "user_cancel";
 
 const ALLOWED_ABORT_REASONS = new Set<AllowedAbortReason>(["watchdog_timeout", "user_cancel"]);
@@ -236,117 +212,6 @@ const abortControllerSafely = (
   }
   return false;
 };
-
-const resolveStreamGuardTimeoutMs = (): number => {
-  const envContainer = import.meta as { env?: Record<string, unknown> };
-  const envCandidates: unknown[] = [
-    envContainer?.env?.VITE_ECO_STREAM_GUARD_TIMEOUT_MS,
-    envContainer?.env?.VITE_STREAM_GUARD_TIMEOUT_MS,
-  ];
-  try {
-    const processEnv = (globalThis as typeof globalThis & {
-      process?: { env?: Record<string, unknown> };
-    }).process?.env;
-    if (processEnv) {
-      envCandidates.push(
-        processEnv.VITE_ECO_STREAM_GUARD_TIMEOUT_MS,
-        processEnv.VITE_STREAM_GUARD_TIMEOUT_MS,
-      );
-    }
-  } catch {
-    /* noop */
-  }
-
-  for (const candidate of envCandidates) {
-    if (candidate === undefined || candidate === null) continue;
-    if (typeof candidate === "number" && Number.isFinite(candidate)) {
-      if (candidate >= 0) return candidate;
-      continue;
-    }
-    if (typeof candidate === "string") {
-      const trimmed = candidate.trim();
-      if (!trimmed) continue;
-      const parsed = Number(trimmed);
-      if (Number.isFinite(parsed) && parsed >= 0) return parsed;
-    }
-  }
-
-  return DEFAULT_STREAM_GUARD_TIMEOUT_MS;
-};
-
-function now() {
-  return Date.now();
-}
-
-export function createSseWatchdogs(
-  id: string = "legacy",
-  timers: StreamRunnerTimers = createDefaultTimers(),
-) {
-  const previousClear = streamWatchdogRegistry.get(id);
-  if (previousClear) {
-    try {
-      previousClear();
-    } catch {
-      /* noop */
-    }
-  }
-
-  let t: ReturnType<typeof setTimeout> | null = null;
-  let mode: WatchdogMode = "idle";
-  let promptReadyAt = 0;
-  let lastHandler: ((reason: CloseReason) => void) | null = null;
-
-  const clear = () => {
-    if (t) {
-      timers.clearTimeout(t);
-      t = null;
-    }
-    mode = "idle";
-    const registered = streamWatchdogRegistry.get(id);
-    if (registered && registered === clear) {
-      streamWatchdogRegistry.delete(id);
-    }
-  };
-
-  const arm = (
-    m: Exclude<WatchdogMode, "idle">,
-    onTimeout?: (reason: CloseReason) => void,
-  ) => {
-    clear();
-    mode = m;
-    if (onTimeout) {
-      lastHandler = onTimeout;
-    }
-    const handler = onTimeout ?? lastHandler;
-    if (!handler) return;
-    const ms = 45_000;
-    t = timers.setTimeout(() => {
-      const registered = streamWatchdogRegistry.get(id);
-      if (registered && registered === clear) {
-        streamWatchdogRegistry.delete(id);
-      }
-      handler(m === "first" ? "watchdog_first_token" : "watchdog_heartbeat");
-    }, ms);
-    streamWatchdogRegistry.set(id, clear);
-  };
-
-  return {
-    markPromptReady(onTimeout?: (reason: CloseReason) => void) {
-      promptReadyAt = now();
-      arm("first", onTimeout);
-    },
-    bumpFirstToken(onTimeout?: (reason: CloseReason) => void) {
-      arm("steady", onTimeout);
-    },
-    bumpHeartbeat(onTimeout?: (reason: CloseReason) => void) {
-      arm("steady", onTimeout);
-    },
-    clear,
-    get sincePromptReadyMs() {
-      return promptReadyAt ? now() - promptReadyAt : 0;
-    },
-  };
-}
 
 export async function openEcoSseStream(opts: {
   url: string;
@@ -630,23 +495,6 @@ const diag = (...args: unknown[]) => {
   }
 };
 
-export interface StreamRunStats {
-  aggregatedLength: number;
-  gotAnyChunk: boolean;
-  lastMeta?: Record<string, unknown>;
-  finishReasonFromMeta?: string;
-  status?: "no_content";
-  timing?: { startedAt?: number; firstChunkAt?: number; totalMs?: number };
-  responseHeaders?: Record<string, string>;
-  noContentReason?: string;
-  clientFinishReason?: string;
-  streamId?: string;
-  guardTimeoutMs?: number;
-  guardFallbackTriggered?: boolean;
-  jsonFallbackAttempts?: number;
-  jsonFallbackSucceeded?: boolean;
-}
-
 export interface StreamRunnerFactoryOptions {
   fetchImpl?: typeof fetch;
   timers?: StreamRunnerTimers;
@@ -683,20 +531,6 @@ const resolveStreamRunnerDeps = (
   ) => withTypingWatchdog(id, onTimeout, timers);
   return { fetchImpl, timers, watchdogFactory, typingWatchdogFactory };
 };
-
-export type InteractionMapAction = {
-  type: "updateInteractionMap";
-  clientId: string;
-  interaction_id: string;
-};
-
-export type EnsureAssistantMessageFn = (
-  clientMessageId: string,
-  event?: EnsureAssistantEventMeta,
-  options?: { allowCreate?: boolean; draftMessages?: ChatMessageType[] },
-) => string | null | undefined;
-
-export type RemoveEcoEntryFn = (assistantMessageId?: string | null) => void;
 
 const formatAbortReason = (input: unknown): string => {
   if (typeof input === "string") {
@@ -742,161 +576,6 @@ const formatAbortReason = (input: unknown): string => {
 };
 
 const resolveAbortReason = (input: unknown): string => formatAbortReason(input);
-
-const mapHistoryMessage = (message: ChatMessageType) => {
-  if (!message) return { id: undefined, role: "assistant", content: "" };
-  const explicitRole = (message.role ?? undefined) as string | undefined;
-  const fallbackRole = message.sender === "user" ? "user" : "assistant";
-  const role = explicitRole === "eco" ? "assistant" : explicitRole ?? fallbackRole;
-  const rawContent =
-    typeof message.content === "string"
-      ? message.content
-      : typeof message.text === "string"
-      ? message.text
-      : message.content ?? message.text ?? "";
-  const content = typeof rawContent === "string" ? rawContent : String(rawContent ?? "");
-
-  return {
-    id: message.id,
-    role,
-    content,
-    client_message_id: message.client_message_id ?? (message as any)?.clientMessageId ?? message.id ?? undefined,
-  };
-};
-
-const extractFinishReasonFromMeta = (meta: unknown): string | undefined => {
-  if (!meta || typeof meta !== "object" || Array.isArray(meta)) return undefined;
-  const record = meta as Record<string, unknown> & {
-    finishReason?: unknown;
-    finish_reason?: unknown;
-    reason?: unknown;
-  };
-  const candidate =
-    record.finishReason ??
-    record.finish_reason ??
-    record.reason;
-  if (typeof candidate === "string") {
-    const trimmed = candidate.trim();
-    return trimmed ? trimmed : undefined;
-  }
-  return undefined;
-};
-
-const applyMetaToStreamStats = (
-  streamStats: StreamRunStats,
-  meta: Record<string, unknown> | undefined,
-) => {
-  if (!meta) return;
-  streamStats.lastMeta = meta;
-  const finishReason = extractFinishReasonFromMeta(meta);
-  streamStats.finishReasonFromMeta = finishReason;
-};
-
-const buildEcoRequestBody = ({
-  history,
-  clientMessageId,
-  systemHint,
-  userId,
-  userName,
-  guestId,
-  isGuest,
-}: {
-  history: ChatMessageType[];
-  clientMessageId: string;
-  systemHint?: string;
-  userId?: string;
-  userName?: string;
-  guestId?: string;
-  isGuest: boolean;
-}): Record<string, unknown> => {
-  const mappedHistory = history.map(mapHistoryMessage);
-  const mensagens = mappedHistory.filter(
-    (message) =>
-      Boolean(message?.role) && typeof message.content === "string" && message.content.trim().length > 0,
-  );
-
-  const recentMensagens = mensagens.slice(-3);
-  const lastUserMessage = [...recentMensagens].reverse().find((message) => message.role === "user");
-
-  const texto = (() => {
-    if (!lastUserMessage) return "";
-    const content = lastUserMessage.content;
-    return typeof content === "string" ? content.trim() : "";
-  })();
-
-  const resolvedUserId = (() => {
-    const normalizedUserId = typeof userId === "string" ? userId.trim() : "";
-    if (normalizedUserId) return normalizedUserId;
-    const normalizedGuestId = typeof guestId === "string" ? guestId.trim() : "";
-    return normalizedGuestId;
-  })();
-
-  const now = new Date();
-  const timezone = (() => {
-    try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone;
-    } catch {
-      return undefined;
-    }
-  })();
-
-  const contextPayload: Record<string, unknown> = {
-    origem: "web",
-    ts: Date.now(),
-  };
-
-  if (typeof clientMessageId === "string" && clientMessageId.trim().length > 0) {
-    contextPayload.client_message_id = clientMessageId;
-  }
-
-  const payload: Record<string, unknown> = {
-    history: mappedHistory,
-    mensagens: recentMensagens,
-    texto,
-    clientHour: now.getHours(),
-    clientTz: timezone,
-    clientMessageId,
-    contexto: contextPayload,
-  };
-
-  if (resolvedUserId) {
-    payload.usuario_id = resolvedUserId;
-  }
-  if (userName && userName.trim()) {
-    payload.nome_usuario = userName.trim();
-  }
-  if (userId) payload.userId = userId;
-  if (userName) payload.userName = userName;
-  if (guestId) payload.guestId = guestId;
-  if (typeof isGuest === "boolean") payload.isGuest = isGuest;
-  if (systemHint && systemHint.trim()) payload.systemHint = systemHint.trim();
-
-  return payload;
-};
-
-export interface StreamSharedContext {
-  clientMessageId: string;
-  normalizedClientId: string;
-  controller: AbortController;
-  ensureAssistantMessage: EnsureAssistantMessageFn;
-  setMessages: Dispatch<SetStateAction<ChatMessageType[]>>;
-  upsertMessage?: (message: ChatMessageType, options?: UpsertMessageOptions) => void;
-  activeAssistantIdRef: MutableRefObject<string | null>;
-  activeStreamClientIdRef: MutableRefObject<string | null>;
-  activeClientIdRef: MutableRefObject<string | null>;
-  hasFirstChunkRef: MutableRefObject<boolean>;
-  setDigitando: Dispatch<SetStateAction<boolean>>;
-  updateCurrentInteractionId: (next: string | null | undefined) => void;
-  streamTimersRef: MutableRefObject<Record<string, { startedAt: number; firstChunkAt?: number }>>;
-  logSse: (
-    phase: "open" | "start" | "first-chunk" | "delta" | "done" | "abort",
-    payload: Record<string, unknown>,
-  ) => void;
-  replyState: ReplyStateController;
-  tracking: MessageTrackingRefs;
-  interactionCacheDispatch?: (action: InteractionMapAction) => void;
-  streamStats: StreamRunStats;
-}
 
 interface DoneContext extends StreamSharedContext {
   event: EcoStreamDoneEvent | undefined;
@@ -1435,82 +1114,54 @@ export const handleControl = (
   }
 };
 
-
-  activeStreamClientIdRef: MutableRefObject<string | null>;
-  activeAssistantIdRef: MutableRefObject<string | null>;
-  streamActiveRef: MutableRefObject<boolean>;
-  activeClientIdRef: MutableRefObject<string | null>;
-  onFirstChunk?: () => void;
-  hasFirstChunkRef: MutableRefObject<boolean>;
-  setDigitando: Dispatch<SetStateAction<boolean>>;
-  setIsSending: Dispatch<SetStateAction<boolean>>;
-  setErroApi: Dispatch<SetStateAction<string | null>>;
-  activity?: { onSend?: () => void; onDone?: () => void };
-  ensureAssistantMessage: EnsureAssistantMessageFn;
-  removeEcoEntry: RemoveEcoEntryFn;
-  updateCurrentInteractionId: (next: string | null | undefined) => void;
-  logSse: (
-    phase: "open" | "start" | "first-chunk" | "delta" | "done" | "abort",
-    payload: Record<string, unknown>,
-  ) => void;
-  userId?: string;
-  userName?: string;
-  guestId?: string;
-  isGuest: boolean;
-  interactionCacheDispatch?: (action: InteractionMapAction) => void;
-  setMessages: Dispatch<SetStateAction<ChatMessageType[]>>;
-  upsertMessage?: (message: ChatMessageType, options?: UpsertMessageOptions) => void;
-  replyState: ReplyStateController;
-  tracking: MessageTrackingRefs;
-}
-
 const beginStreamInternal = (
-  {
-  history,
-  userMessage,
-  systemHint,
-  controllerOverride,
-  controllerRef,
-  streamTimersRef,
-  activeStreamClientIdRef,
-  activeAssistantIdRef,
-  streamActiveRef,
-  activeClientIdRef,
-  onFirstChunk,
-  hasFirstChunkRef,
-  setDigitando,
-  setIsSending,
-  setErroApi,
-  activity,
-  ensureAssistantMessage,
-  removeEcoEntry,
-  updateCurrentInteractionId,
-  logSse,
-  userId,
-  userName,
-  guestId,
-  isGuest,
-  interactionCacheDispatch,
-  setMessages,
-  upsertMessage,
-  replyState,
-  tracking,
-}: BeginStreamParams,
+  params: BeginStreamParams,
   deps: ResolvedStreamRunnerDeps,
 ): Promise<StreamRunStats> | void => {
+  const {
+    history,
+    userMessage,
+    systemHint,
+    controllerOverride,
+    controllerRef,
+    streamTimersRef,
+    activeStreamClientIdRef,
+    activeAssistantIdRef,
+    streamActiveRef,
+    activeClientIdRef,
+    onFirstChunk,
+    hasFirstChunkRef,
+    setDigitando,
+    setIsSending,
+    setErroApi,
+    activity,
+    ensureAssistantMessage,
+    removeEcoEntry,
+    updateCurrentInteractionId,
+    logSse,
+    userId,
+    userName,
+    guestId,
+    isGuest,
+    interactionCacheDispatch,
+    setMessages,
+    upsertMessage,
+    replyState,
+    tracking,
+  } = params;
   const { fetchImpl, timers, watchdogFactory, typingWatchdogFactory } = deps;
-  const clientMessageId = userMessage.id;
-  if (!clientMessageId) return;
-  const trimmedClientId = typeof clientMessageId === "string" ? clientMessageId.trim() : "";
-  const normalizedClientId = trimmedClientId || clientMessageId;
 
-  const existingInflight = inflightControllers.get(normalizedClientId);
-  if (existingInflight && !existingInflight.signal.aborted) {
-    try {
-      console.warn("duplicated stream", { clientMessageId: normalizedClientId });
-    } catch {
-      /* noop */
-    }
+  const session = new StreamSession({
+    params,
+    inflightControllers,
+    streamStartLogged,
+    logDev,
+    timers,
+    watchdogFactory,
+  });
+
+  const startResult = session.start();
+  if (!startResult) {
     return;
   }
 
@@ -1529,7 +1180,6 @@ const beginStreamInternal = (
     resolvedClientId,
   } = startResult;
 
-  const firstChunkState = { value: false };
   let triggerJsonFallback: ((reason: string) => void) | null = null;
   let startErrorTriggered = false;
   let startErrorMessage: string | null = null;
@@ -1628,7 +1278,12 @@ const beginStreamInternal = (
   };
 
   const beginFallback = (reason: string): boolean => {
-    return fallbackManager?.beginFallback(reason) ?? false;
+    const started = fallbackManager?.beginFallback(reason) ?? false;
+    if (started) {
+      streamState.fallbackRequested = true;
+      streamStats.clientFinishReason ??= reason;
+    }
+    return started;
   };
 
   const abortSseForFallback = (reason?: string) => {
@@ -1641,7 +1296,7 @@ const beginStreamInternal = (
     });
   };
 
-  clearTypingWatchdog = typingWatchdogFactory(normalizedClientId, () => {
+  const handleTypingWatchdogTimeout = () => {
     try {
       console.warn('[SSE] typing_watchdog_timeout', {
         clientMessageId: normalizedClientId,
@@ -1675,7 +1330,7 @@ const beginStreamInternal = (
     } catch {
       /* noop */
     }
-  });
+  };
 
   const existingAssistantForClient =
     tracking.assistantByClientRef.current[normalizedClientId] ??
@@ -1695,75 +1350,6 @@ const beginStreamInternal = (
     activeAssistantIdRef.current = placeholderAssistantId;
   }
 
-  const streamStats: StreamRunStats = {
-    aggregatedLength: 0,
-    gotAnyChunk: false,
-    lastMeta: undefined,
-    finishReasonFromMeta: undefined,
-  };
-
-  const guardTimeoutMs = resolveStreamGuardTimeoutMs();
-  let fallbackGuardTimer: ReturnType<typeof setTimeout> | null = null;
-  let fallbackGuardTriggered = false;
-  let triggerJsonFallback: ((reason: string) => void) | null = null;
-  let startErrorTriggered = false;
-  let startErrorMessage: string | null = null;
-  let startErrorAssistantId: string | null = null;
-
-  const watchdog = watchdogFactory(normalizedClientId);
-  let onWatchdogTimeout: ((reason: CloseReason) => void) | null = null;
-
-  const clearWatchdog = () => {
-    watchdog.clear();
-  };
-
-  const markPromptReadyWatchdog = () => {
-    watchdog.markPromptReady(onWatchdogTimeout ?? undefined);
-  };
-
-  const bumpFirstTokenWatchdog = () => {
-    watchdog.bumpFirstToken(onWatchdogTimeout ?? undefined);
-  };
-
-  const bumpHeartbeatWatchdog = () => {
-    watchdog.bumpHeartbeat(onWatchdogTimeout ?? undefined);
-  };
-
-  const identityHeaders = buildIdentityHeaders();
-  const resolveIdentityHeader = (key: string) => {
-    const exact = identityHeaders[key];
-    if (typeof exact === "string" && exact.trim().length > 0) return exact.trim();
-    const lower = identityHeaders[key.toLowerCase() as keyof typeof identityHeaders];
-    if (typeof lower === "string" && lower.trim().length > 0) return lower.trim();
-    return "";
-  };
-
-  const resolvedGuestId = resolveIdentityHeader("X-Eco-Guest-Id");
-  const resolvedSessionId = resolveIdentityHeader("X-Eco-Session-Id");
-  const effectiveGuestId = resolvedGuestId || getOrCreateGuestId();
-  const effectiveSessionId = resolvedSessionId || getOrCreateSessionId();
-
-  const diagForceJson =
-    typeof window !== "undefined" &&
-    Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
-  const requestMethod: "GET" | "POST" = diagForceJson ? "POST" : "GET";
-  const acceptHeader = diagForceJson ? "application/json" : "text/event-stream";
-  const fallbackEnabled = diagForceJson;
-
-  logDev("identifiers", {
-    guestId: effectiveGuestId,
-    sessionId: effectiveSessionId,
-    clientMessageId: normalizedClientId,
-    method: requestMethod,
-  });
-
-  streamTimersRef.current[normalizedClientId] = { startedAt: Date.now() };
-  logSse("start", {
-    clientMessageId: normalizedClientId,
-    guestId: effectiveGuestId,
-    sessionId: effectiveSessionId,
-    method: requestMethod,
-  });
   console.log("[SSE] Stream started", {
     timestamp: Date.now(),
     clientMessageId: normalizedClientId,
@@ -1956,112 +1542,6 @@ const beginStreamInternal = (
     streamStats,
   };
 
-  const clearFallbackGuardTimer = () => {
-    if (!fallbackGuardTimer) return;
-    try {
-      timers.clearTimeout(fallbackGuardTimer);
-    } catch {
-      try {
-        timers.clearTimeout(fallbackGuardTimer);
-      } catch {
-        /* noop */
-      }
-    }
-    fallbackGuardTimer = null;
-  };
-
-  const beginFallback = (reason: string): boolean => {
-    if (!fallbackEnabled) {
-      return false;
-    }
-    if (streamState.firstChunkDelivered || sharedContext.hasFirstChunkRef.current) {
-      return false;
-    }
-    if (streamState.fallbackRequested) {
-      return false;
-    }
-    streamState.fallbackRequested = true;
-    streamStats.clientFinishReason ??= reason;
-    clearFallbackGuardTimer();
-    clearTypingWatchdog();
-    clearWatchdog();
-    if (activeStreamClientIdRef.current === clientMessageId) {
-      streamActiveRef.current = false;
-      try {
-        console.debug('[DIAG] setStreamActive:before', {
-          clientMessageId,
-          value: false,
-          phase: 'fallback-init',
-        });
-      } catch {
-        /* noop */
-      }
-      setStreamActive(false);
-      try {
-        console.debug('[DIAG] setDigitando:before', {
-          clientMessageId,
-          value: false,
-          phase: 'fallback-init',
-        });
-      } catch {
-        /* noop */
-      }
-      setDigitando(false);
-    } else {
-      try {
-        console.debug('[DIAG] fallback-init:inactive', { clientMessageId });
-      } catch {
-        /* noop */
-      }
-    }
-    return true;
-  };
-
-  const abortSseForFallback = (reason?: string) => {
-    if (!fallbackEnabled) {
-      return;
-    }
-    const fallbackReason = typeof reason === "string" && reason.trim() ? reason : "json_fallback";
-    if (abortControllerSafely(controller, "watchdog_timeout")) {
-      try {
-        console.warn('[SSE] aborting_for_fallback', { clientMessageId, reason: fallbackReason });
-      } catch {
-        /* noop */
-      }
-    }
-  };
-
-  const startFallbackGuardTimer = () => {
-    if (!fallbackEnabled) return;
-    if (guardTimeoutMs <= 0) return;
-    clearFallbackGuardTimer();
-    fallbackGuardTimer = timers.setTimeout(() => {
-      if (controller.signal.aborted || sharedContext.hasFirstChunkRef.current) return;
-      if (streamState.firstChunkDelivered) return;
-      if (streamState.fallbackRequested) return;
-      fallbackGuardTriggered = true;
-      streamStats.guardFallbackTriggered = true;
-      streamStats.guardTimeoutMs = guardTimeoutMs;
-      diag("fallback_guard_timeout", { clientMessageId: normalizedClientId, timeoutMs: guardTimeoutMs });
-      try {
-        console.warn("[SSE] fallback_guard_timeout", {
-          clientMessageId,
-          timeoutMs: guardTimeoutMs,
-        });
-      } catch {
-        /* noop */
-      }
-      logSse("abort", {
-        clientMessageId: normalizedClientId,
-        reason: "fallback_guard_timeout",
-        timeoutMs: guardTimeoutMs,
-        source: "fallback-guard",
-      });
-      registerNoContent("fallback_guard_timeout");
-      triggerJsonFallback?.("fallback_guard_timeout");
-    }, guardTimeoutMs);
-  };
-
   let requestPayload: Record<string, unknown> | null = null;
   let baseHeadersCache: Record<string, string> | null = null;
 
@@ -2124,6 +1604,42 @@ const beginStreamInternal = (
       streamStats.streamId = streamId;
     }
 
+    let handleStreamDoneRef: (
+      rawEvent?: Record<string, unknown>,
+      options?: { reason?: string },
+    ) => void = () => {
+      /* noop */
+    };
+
+    fallbackManager = new StreamFallbackManager({
+      session,
+      sharedContext,
+      streamStats,
+      guardTimeoutMs,
+      fallbackEnabled,
+      logSse,
+      setDigitando,
+      setErroApi,
+      diag,
+      registerNoContent,
+      tracking,
+      streamActiveRef,
+      activeStreamClientIdRef,
+      clearWatchdog,
+      resolveAbortReason,
+      baseHeaders,
+      getRequestPayload: () => requestPayload,
+      handleChunk,
+      handleStreamDone: (event, options) => handleStreamDoneRef(event, options),
+      timers,
+      typingWatchdogFactory,
+      fallbackFetch: fetchImpl,
+    });
+    fallbackManager.initializeTypingWatchdog(handleTypingWatchdogTimeout);
+    runJsonFallbackRequest = (options = {}) =>
+      fallbackManager?.runJsonFallbackRequest(options) ?? Promise.resolve(false);
+    startFallbackGuardTimer();
+
       baseHeadersCache = headers;
 
       let response: Response | null = null;
@@ -2179,113 +1695,6 @@ const beginStreamInternal = (
         }
       }
       const shouldSkipFetchInTest = isTestEnv || isVitest;
-
-  runJsonFallbackRequest = async (options: {
-    reason?: string;
-    logError?: unknown;
-  } = {}): Promise<boolean> => {
-    if (!fallbackEnabled) {
-      return false;
-    }
-    if (streamState.firstChunkDelivered || sharedContext.hasFirstChunkRef.current) {
-      return false;
-    }
-      const fallbackFetch = fetchFn;
-      if (typeof fallbackFetch !== "function") {
-        return false;
-      }
-
-      const { reason = "json_fallback", logError } = options;
-      streamStats.jsonFallbackAttempts = (streamStats.jsonFallbackAttempts ?? 0) + 1;
-
-      if (logError !== undefined) {
-        console.error('[SSE] Stream failed, tentando JSON', logError);
-      }
-
-      try {
-        const fallbackUrl = buildAskEcoUrl(undefined, { clientMessageId });
-        const fallbackGuestId = effectiveGuestId;
-        const fallbackSessionId = effectiveSessionId;
-        const fallbackHeaders: Record<string, string> = {
-          ...baseHeaders(),
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "X-Eco-Guest-Id": fallbackGuestId,
-          "X-Eco-Session-Id": fallbackSessionId,
-          "X-Client-Id": resolvedClientId || "webapp",
-          ...(clientMessageId
-            ? { "X-Eco-Client-Message-Id": clientMessageId, "x-eco-client-message-id": clientMessageId }
-            : {}),
-        };
-
-        const fallbackController = new AbortController();
-        const res = await fallbackFetch(fallbackUrl, {
-          method: "POST",
-          headers: fallbackHeaders,
-          body: JSON.stringify(requestPayload),
-          signal: fallbackController.signal,
-        });
-        rememberIdsFromResponse(res);
-        if (!res.ok) {
-          const detail = await res.text().catch(() => "");
-          const trimmedDetail = detail.trim();
-          const message = trimmedDetail || `Eco fallback request failed (${res.status})`;
-          setErroApi(message);
-          logSse("abort", {
-            clientMessageId: normalizedClientId,
-            reason: "json_fallback_http_error",
-            status: res.status,
-            source: "json_fallback",
-          });
-          return false;
-        }
-
-        const data = await res.json().catch(() => null);
-        const fallbackText =
-          typeof data?.text === "string"
-            ? data.text
-            : typeof data?.content === "string"
-            ? data.content
-            : undefined;
-
-        if (fallbackText) {
-          sharedContext.hasFirstChunkRef.current = true;
-          streamState.firstChunkDelivered = true;
-          streamStats.gotAnyChunk = true;
-          streamStats.aggregatedLength += fallbackText.length;
-          streamStats.jsonFallbackSucceeded = true;
-          streamStats.clientFinishReason ??= reason;
-          const fallbackChunk: EcoStreamChunk = {
-            index: 0,
-            text: fallbackText,
-            isFirstChunk: true,
-            payload: {
-              source: "json_fallback",
-              patch: {
-                type: "json_fallback",
-                text: fallbackText,
-                content: fallbackText,
-              },
-            },
-          };
-          handleChunk(fallbackChunk, sharedContext);
-          handleStreamDone({
-            type: "control",
-            name: "done",
-            payload: {
-              text: fallbackText,
-              response: { text: fallbackText },
-              metadata: { finish_reason: "json_fallback", source: "json_fallback" },
-            },
-          });
-          return true;
-        }
-      } catch (fallbackErr) {
-        console.error('[SSE] Fallback JSON também falhou', fallbackErr);
-      }
-
-      return false;
-    };
 
     const tryJsonFallback = async (reason: string): Promise<boolean> => {
       if (!fallbackEnabled) return false;
@@ -2499,6 +1908,9 @@ const beginStreamInternal = (
       applyMetaToStreamStats,
       extractFinishReasonFromMeta,
     });
+
+    handleStreamDoneRef = handleStreamDone;
+    startFallbackGuardTimer();
 
     onWatchdogTimeout = (reason) => {
       if (!streamStats.gotAnyChunk) {

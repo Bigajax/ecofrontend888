@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { Dispatch, SetStateAction } from "react";
 import type { Message, UpsertMessageOptions } from "../../../contexts/ChatContext";
 import type { MessageTrackingRefs, ReplyStateController } from "../messageState";
-import { beginStream, handleDone, type StreamRunStats } from "../streamOrchestrator";
+import { beginStream, handleDone } from "../streamOrchestrator";
+import type { StreamRunStats } from "../types";
 
 const createRef = <T>(value: T) => ({ current: value });
 
