@@ -243,11 +243,11 @@ export interface BeginStreamParams {
   tracking: MessageTrackingRefs;
 }
 
-export type AllowedAbortReason = "watchdog_timeout" | "user_cancel" | "finalize";
+export type AllowedAbortReason = "watchdog_timeout" | "user_cancelled" | "finalize";
 
 const ALLOWED_ABORT_REASONS = new Set<AllowedAbortReason>([
   "watchdog_timeout",
-  "user_cancel",
+  "user_cancelled",
   "finalize",
 ]);
 
@@ -320,6 +320,16 @@ export class StreamSession {
   private readonly logDev: (label: string, payload: Record<string, unknown>) => void;
   private readonly timers: StreamRunnerTimers;
   private readonly watchdogFactory: (id: string) => ReturnType<typeof createSseWatchdogs>;
+  private readonly controllerRef: MutableRefObject<AbortController | null>;
+  private readonly activeStreamClientIdRef: MutableRefObject<string | null>;
+  private readonly activeAssistantIdRef: MutableRefObject<string | null>;
+  private readonly streamActiveRef: MutableRefObject<boolean>;
+  private readonly activeClientIdRef: MutableRefObject<string | null>;
+  private readonly hasFirstChunkRef: MutableRefObject<boolean>;
+  private readonly readyStateRef: MutableRefObject<boolean>;
+  private readonly streamTimersRef: MutableRefObject<
+    Record<string, { startedAt: number; firstChunkAt?: number }>
+  >;
 
   private controller: AbortController | null = null;
   private clientMessageId: string | null = null;
@@ -336,6 +346,8 @@ export class StreamSession {
   private streamStatsValue: StreamRunStats | null = null;
   private watchdog = createSseWatchdogs();
   private onWatchdogTimeout: ((reason: CloseReason) => void) | null = null;
+  private isStarting = false;
+  private isOpen = false;
 
   constructor(options: StreamSessionOptions) {
     this.params = options.params;
@@ -345,120 +357,76 @@ export class StreamSession {
     this.timers = options.timers;
     this.watchdogFactory =
       options.watchdogFactory ?? ((id: string) => createSseWatchdogs(id, this.timers));
+
+    const ensureMutableRef = <T>(
+      ref: MutableRefObject<T> | null | undefined,
+      fallback: T,
+    ): MutableRefObject<T> => {
+      if (ref && typeof ref === "object" && "current" in ref) {
+        return ref;
+      }
+      return { current: fallback } as MutableRefObject<T>;
+    };
+
+    const refDiagnostics = {
+      hasControllerRef: Boolean(options.params.controllerRef),
+      hasActiveStreamClientIdRef: Boolean(options.params.activeStreamClientIdRef),
+      hasActiveAssistantIdRef: Boolean(options.params.activeAssistantIdRef),
+      hasStreamActiveRef: Boolean(options.params.streamActiveRef),
+      hasActiveClientIdRef: Boolean(options.params.activeClientIdRef),
+      hasFirstChunkRef: Boolean(options.params.hasFirstChunkRef),
+      hasReadyStateRef: Boolean(options.params.readyStateRef),
+      hasStreamTimersRef: Boolean(options.params.streamTimersRef),
+    };
+
+    this.controllerRef = ensureMutableRef(options.params.controllerRef, null);
+    this.activeStreamClientIdRef = ensureMutableRef(options.params.activeStreamClientIdRef, null);
+    this.activeAssistantIdRef = ensureMutableRef(options.params.activeAssistantIdRef, null);
+    this.streamActiveRef = ensureMutableRef(options.params.streamActiveRef, false);
+    this.activeClientIdRef = ensureMutableRef(options.params.activeClientIdRef, null);
+    this.hasFirstChunkRef = ensureMutableRef(options.params.hasFirstChunkRef, false);
+    this.readyStateRef = ensureMutableRef(options.params.readyStateRef, false);
+    this.streamTimersRef = ensureMutableRef(options.params.streamTimersRef, {} as Record<
+      string,
+      { startedAt: number; firstChunkAt?: number }
+    >);
+
+    this.params.controllerRef = this.controllerRef;
+    this.params.activeStreamClientIdRef = this.activeStreamClientIdRef;
+    this.params.activeAssistantIdRef = this.activeAssistantIdRef;
+    this.params.streamActiveRef = this.streamActiveRef;
+    this.params.activeClientIdRef = this.activeClientIdRef;
+    this.params.hasFirstChunkRef = this.hasFirstChunkRef;
+    this.params.readyStateRef = this.readyStateRef;
+    this.params.streamTimersRef = this.streamTimersRef;
+
+    try {
+      console.log("[SSE-DEBUG] refs_init", {
+        ...refDiagnostics,
+        controllerRefReady: Boolean(this.controllerRef),
+        streamActiveRefReady: Boolean(this.streamActiveRef),
+        readyStateRefReady: Boolean(this.readyStateRef),
+      });
+    } catch {
+      /* noop */
+    }
   }
 
   start(): StreamSessionStartResult | null {
     const {
       userMessage,
       controllerOverride,
-      controllerRef,
-      activeStreamClientIdRef,
-      activeAssistantIdRef,
-      streamActiveRef,
-      hasFirstChunkRef,
-      readyStateRef,
       updateCurrentInteractionId,
       setDigitando,
       logSse,
       tracking,
-      streamTimersRef,
       setErroApi,
     } = this.params;
 
-    const clientMessageId = userMessage.id;
-    if (!clientMessageId) {
-      return null;
-    }
-
-    const trimmedClientId =
-      typeof clientMessageId === "string" ? clientMessageId.trim() : "";
-    const normalizedClientId = trimmedClientId || clientMessageId;
-
-    const existingInflight = this.inflightControllers.get(normalizedClientId);
-    if (existingInflight && !existingInflight.signal.aborted) {
+    if (this.isStarting || this.isOpen) {
       try {
-        console.warn("duplicated stream", { clientMessageId: normalizedClientId });
-      } catch {
-        /* noop */
-      }
-      return null;
-    }
-    if (existingInflight) {
-      this.inflightControllers.delete(normalizedClientId);
-    }
-
-    const normalizedUserText = sanitizeText(
-      userMessage.text ?? userMessage.content ?? "",
-    ).trim();
-    if (normalizedUserText) {
-      tracking.userTextByClientIdRef.current[clientMessageId] = normalizedUserText;
-    } else if (tracking.userTextByClientIdRef.current[clientMessageId]) {
-      delete tracking.userTextByClientIdRef.current[clientMessageId];
-    }
-
-    const activeId = activeStreamClientIdRef.current;
-    if (activeId && activeId !== clientMessageId) {
-      const normalizedActiveId =
-        typeof activeId === "string" && activeId
-          ? activeId.trim() || activeId
-          : activeId;
-      const activeController = controllerRef.current;
-      if (activeController && !activeController.signal.aborted) {
-        try {
-          streamActiveRef.current = false;
-          try {
-            console.debug("[DIAG] setStreamActive:before", {
-              clientMessageId: normalizedActiveId,
-              value: false,
-              phase: "abort-existing",
-            });
-          } catch {
-            /* noop */
-          }
-          setStreamActive(false);
-          try {
-            console.debug("[DIAG] controller.abort:before", {
-              clientMessageId: normalizedActiveId,
-              reason: "new-send",
-              timestamp: Date.now(),
-            });
-          } catch {
-            /* noop */
-          }
-          try {
-            console.info("[SSE] aborting_active_stream", {
-              clientMessageId: normalizedActiveId,
-              reason: "new-send",
-              timestamp: Date.now(),
-            });
-          } catch {
-            /* noop */
-          }
-          abortControllerSafely(activeController, "user_cancel");
-          if (typeof normalizedActiveId === "string" && normalizedActiveId) {
-            logSse("abort", {
-              clientMessageId: normalizedActiveId,
-              reason: "new-send",
-              source: "controller",
-            });
-          }
-        } catch {
-          /* noop */
-        }
-      }
-      if (typeof normalizedActiveId === "string" && normalizedActiveId) {
-        delete streamTimersRef.current[normalizedActiveId];
-      }
-      if (tracking.userTextByClientIdRef.current[activeId]) {
-        delete tracking.userTextByClientIdRef.current[activeId];
-      }
-    }
-
-    const existingController = this.inflightControllers.get(normalizedClientId);
-    if (existingController && !existingController.signal.aborted) {
-      try {
-        console.warn("[SSE] duplicate_stream_blocked", {
-          clientMessageId: normalizedClientId,
+        console.warn("[SSE-DEBUG] start_ignored:already_open", {
+          clientMessageId: userMessage?.id ?? null,
         });
       } catch {
         /* noop */
@@ -466,57 +434,163 @@ export class StreamSession {
       return null;
     }
 
-    const controller = controllerOverride ?? new AbortController();
-    controllerRef.current = controller;
-    this.inflightControllers.set(normalizedClientId, controller);
-    console.log("[DEBUG] Controller criado", {
-      isAborted: controller.signal.aborted,
-      reason: (controller.signal as any).reason,
-      stack: new Error().stack,
-    });
+    this.isStarting = true;
 
-    if (controller.signal.aborted) {
-      console.error("[ERROR] Controller CRIADO JÁ ABORTADO!", {
+    const clientMessageId = userMessage.id;
+    if (!clientMessageId) {
+      this.isStarting = false;
+      return null;
+    }
+
+    const trimmedClientId =
+      typeof clientMessageId === "string" ? clientMessageId.trim() : "";
+    const normalizedClientId = trimmedClientId || clientMessageId;
+
+    try {
+      const existingInflight = this.inflightControllers.get(normalizedClientId);
+      if (existingInflight && !existingInflight.signal.aborted) {
+        try {
+          console.warn("duplicated stream", { clientMessageId: normalizedClientId });
+        } catch {
+          /* noop */
+        }
+        return null;
+      }
+      if (existingInflight) {
+        this.inflightControllers.delete(normalizedClientId);
+      }
+
+      const normalizedUserText = sanitizeText(
+        userMessage.text ?? userMessage.content ?? "",
+      ).trim();
+      if (normalizedUserText) {
+        tracking.userTextByClientIdRef.current[clientMessageId] = normalizedUserText;
+      } else if (tracking.userTextByClientIdRef.current[clientMessageId]) {
+        delete tracking.userTextByClientIdRef.current[clientMessageId];
+      }
+
+      const activeStreamClientIdRef = this.activeStreamClientIdRef;
+      const activeId = activeStreamClientIdRef.current;
+      if (activeId && activeId !== clientMessageId) {
+        const normalizedActiveId =
+          typeof activeId === "string" && activeId
+            ? activeId.trim() || activeId
+            : activeId;
+        const activeController = this.controllerRef.current;
+        if (activeController && !activeController.signal.aborted) {
+          try {
+            this.streamActiveRef.current = false;
+            try {
+              console.debug("[DIAG] setStreamActive:before", {
+                clientMessageId: normalizedActiveId,
+                value: false,
+                phase: "abort-existing",
+              });
+            } catch {
+              /* noop */
+            }
+            setStreamActive(false);
+            try {
+              console.debug("[DIAG] controller.abort:before", {
+                clientMessageId: normalizedActiveId,
+                reason: "new-send",
+                timestamp: Date.now(),
+              });
+            } catch {
+              /* noop */
+            }
+            try {
+              console.info("[SSE] aborting_active_stream", {
+                clientMessageId: normalizedActiveId,
+                reason: "new-send",
+                timestamp: Date.now(),
+              });
+            } catch {
+              /* noop */
+            }
+            abortControllerSafely(activeController, "user_cancelled");
+            if (typeof normalizedActiveId === "string" && normalizedActiveId) {
+              logSse("abort", {
+                clientMessageId: normalizedActiveId,
+                reason: "new-send",
+                source: "controller",
+              });
+            }
+          } catch {
+            /* noop */
+          }
+        }
+        if (typeof normalizedActiveId === "string" && normalizedActiveId) {
+          delete this.streamTimersRef.current[normalizedActiveId];
+        }
+        if (tracking.userTextByClientIdRef.current[activeId]) {
+          delete tracking.userTextByClientIdRef.current[activeId];
+        }
+      }
+
+      const existingController = this.inflightControllers.get(normalizedClientId);
+      if (existingController && !existingController.signal.aborted) {
+        try {
+          console.warn("[SSE] duplicate_stream_blocked", {
+            clientMessageId: normalizedClientId,
+          });
+        } catch {
+          /* noop */
+        }
+        return null;
+      }
+
+      const controller = controllerOverride ?? new AbortController();
+      this.controllerRef.current = controller;
+      this.inflightControllers.set(normalizedClientId, controller);
+      console.log("[DEBUG] Controller criado", {
+        isAborted: controller.signal.aborted,
         reason: (controller.signal as any).reason,
         stack: new Error().stack,
       });
-    }
 
-    activeStreamClientIdRef.current = clientMessageId;
-    activeAssistantIdRef.current = null;
-    try {
-      console.debug("[DIAG] streamActiveRef:update", {
-        clientMessageId,
-        value: true,
-        phase: "beginStream:start",
-      });
-    } catch {
-      /* noop */
-    }
-    streamActiveRef.current = true;
-    hasFirstChunkRef.current = false;
-    readyStateRef.current = false;
+      if (controller.signal.aborted) {
+        console.error("[ERROR] Controller CRIADO JÁ ABORTADO!", {
+          reason: (controller.signal as any).reason,
+          stack: new Error().stack,
+        });
+      }
 
-    updateCurrentInteractionId(null);
+      this.activeStreamClientIdRef.current = clientMessageId;
+      this.activeAssistantIdRef.current = null;
+      try {
+        console.debug("[DIAG] streamActiveRef:update", {
+          clientMessageId,
+          value: true,
+          phase: "beginStream:start",
+        });
+      } catch {
+        /* noop */
+      }
+      this.streamActiveRef.current = true;
+      this.hasFirstChunkRef.current = false;
+      this.readyStateRef.current = false;
 
-    if (tracking.pendingAssistantMetaRef.current[clientMessageId]) {
-      delete tracking.pendingAssistantMetaRef.current[clientMessageId];
-    }
+      updateCurrentInteractionId(null);
 
-    const identityHeaders = buildIdentityHeaders();
-    this.identityHeaders = identityHeaders;
-    const resolveIdentityHeader = (key: string) => {
-      const exact = identityHeaders[key];
-      if (typeof exact === "string" && exact.trim().length > 0) return exact.trim();
-      const lower = identityHeaders[key.toLowerCase() as keyof typeof identityHeaders];
-      if (typeof lower === "string" && lower.trim().length > 0) return lower.trim();
-      return "";
-    };
+      if (tracking.pendingAssistantMetaRef.current[clientMessageId]) {
+        delete tracking.pendingAssistantMetaRef.current[clientMessageId];
+      }
 
-    const resolvedGuestId = resolveIdentityHeader("X-Eco-Guest-Id");
-    const resolvedSessionId = resolveIdentityHeader("X-Eco-Session-Id");
-    const effectiveGuestId = resolvedGuestId || getOrCreateGuestId();
-    const effectiveSessionId = resolvedSessionId || getOrCreateSessionId();
+      const identityHeaders = buildIdentityHeaders();
+      this.identityHeaders = identityHeaders;
+      const resolveIdentityHeader = (key: string) => {
+        const exact = identityHeaders[key];
+        if (typeof exact === "string" && exact.trim().length > 0) return exact.trim();
+        const lower = identityHeaders[key.toLowerCase() as keyof typeof identityHeaders];
+        if (typeof lower === "string" && lower.trim().length > 0) return lower.trim();
+        return "";
+      };
+
+      const resolvedGuestId = resolveIdentityHeader("X-Eco-Guest-Id");
+      const resolvedSessionId = resolveIdentityHeader("X-Eco-Session-Id");
+      const effectiveGuestId = resolvedGuestId || getOrCreateGuestId();
+      const effectiveSessionId = resolvedSessionId || getOrCreateSessionId();
 
     const resolvedClientId = (() => {
       const explicit = resolveIdentityHeader("X-Client-Id");
@@ -545,7 +619,7 @@ export class StreamSession {
       method: requestMethod,
     });
 
-    streamTimersRef.current[normalizedClientId] = { startedAt: Date.now() };
+      this.streamTimersRef.current[normalizedClientId] = { startedAt: Date.now() };
     logSse("start", {
       clientMessageId: normalizedClientId,
       guestId: effectiveGuestId,
@@ -579,45 +653,59 @@ export class StreamSession {
       }
     }
 
-    this.controller = controller;
-    this.clientMessageId = clientMessageId as string;
-    this.normalizedClientId = normalizedClientId as string;
-    this.guardTimeoutMs = resolveStreamGuardTimeoutMs();
-    this.diagForceJson = diagForceJson;
-    this.requestMethod = requestMethod;
-    this.acceptHeader = acceptHeader;
-    this.fallbackEnabled = fallbackEnabled;
-    this.effectiveGuestId = effectiveGuestId;
-    this.effectiveSessionId = effectiveSessionId;
+      this.controller = controller;
+      this.clientMessageId = clientMessageId as string;
+      this.normalizedClientId = normalizedClientId as string;
+      this.guardTimeoutMs = resolveStreamGuardTimeoutMs();
+      this.diagForceJson = diagForceJson;
+      this.requestMethod = requestMethod;
+      this.acceptHeader = acceptHeader;
+      this.fallbackEnabled = fallbackEnabled;
+      this.effectiveGuestId = effectiveGuestId;
+      this.effectiveSessionId = effectiveSessionId;
 
-    this.streamStatsValue = {
-      aggregatedLength: 0,
-      gotAnyChunk: false,
-      lastMeta: undefined,
-      finishReasonFromMeta: undefined,
-    };
+      this.streamStatsValue = {
+        aggregatedLength: 0,
+        gotAnyChunk: false,
+        lastMeta: undefined,
+        finishReasonFromMeta: undefined,
+      };
 
-    this.watchdog = this.watchdogFactory(this.normalizedClientId);
-    this.onWatchdogTimeout = null;
+      this.watchdog = this.watchdogFactory(this.normalizedClientId);
+      this.onWatchdogTimeout = null;
 
-    if (typeof setErroApi === "function") {
-      setErroApi((previous) => previous);
+      if (typeof setErroApi === "function") {
+        setErroApi((previous) => previous);
+      }
+
+      try {
+        console.log("[SSE-DEBUG] start_open", {
+          clientMessageId: this.clientMessageId,
+          method: this.requestMethod,
+        });
+      } catch {
+        /* noop */
+      }
+
+      this.isOpen = true;
+
+      return {
+        clientMessageId: this.clientMessageId,
+        normalizedClientId: this.normalizedClientId,
+        controller: this.controller,
+        streamStats: this.streamStatsValue,
+        guardTimeoutMs: this.guardTimeoutMs,
+        diagForceJson: this.diagForceJson,
+        requestMethod: this.requestMethod,
+        acceptHeader: this.acceptHeader,
+        fallbackEnabled: this.fallbackEnabled,
+        effectiveGuestId: this.effectiveGuestId,
+        effectiveSessionId: this.effectiveSessionId,
+        resolvedClientId: this.resolvedClientId,
+      };
+    } finally {
+      this.isStarting = false;
     }
-
-    return {
-      clientMessageId: this.clientMessageId,
-      normalizedClientId: this.normalizedClientId,
-      controller: this.controller,
-      streamStats: this.streamStatsValue,
-      guardTimeoutMs: this.guardTimeoutMs,
-      diagForceJson: this.diagForceJson,
-      requestMethod: this.requestMethod,
-      acceptHeader: this.acceptHeader,
-      fallbackEnabled: this.fallbackEnabled,
-      effectiveGuestId: this.effectiveGuestId,
-      effectiveSessionId: this.effectiveSessionId,
-      resolvedClientId: this.resolvedClientId,
-    };
   }
 
   getStreamStats(): StreamRunStats {
@@ -711,13 +799,9 @@ export class StreamSession {
     const {
       setDigitando,
       setIsSending,
-      activeAssistantIdRef,
-      activeStreamClientIdRef,
-      streamActiveRef,
-      readyStateRef,
     } = this.params;
 
-    streamActiveRef.current = false;
+    this.streamActiveRef.current = false;
     try {
       console.debug("[DIAG] setStreamActive:before", {
         clientMessageId: this.clientMessageId,
@@ -728,8 +812,8 @@ export class StreamSession {
       /* noop */
     }
     setStreamActive(false);
-    activeStreamClientIdRef.current = null;
-    activeAssistantIdRef.current = null;
+    this.activeStreamClientIdRef.current = null;
+    this.activeAssistantIdRef.current = null;
     try {
       setDigitando(false);
     } catch {
@@ -741,18 +825,23 @@ export class StreamSession {
       /* noop */
     }
     try {
-      readyStateRef.current = false;
+      this.readyStateRef.current = false;
     } catch {
       /* noop */
     }
     if (this.normalizedClientId) {
       this.inflightControllers.delete(this.normalizedClientId);
     }
+    this.isOpen = false;
   }
 
   handleAbort(reason: AllowedAbortReason): boolean {
     if (!this.controller) return false;
-    return abortControllerSafely(this.controller, reason);
+    const aborted = abortControllerSafely(this.controller, reason);
+    if (aborted) {
+      this.isOpen = false;
+    }
+    return aborted;
   }
 }
 
@@ -910,6 +999,7 @@ interface FallbackManagerOptions {
   timers: StreamRunnerTimers;
   typingWatchdogFactory: (id: string, onTimeout: () => void) => () => void;
   fallbackFetch?: typeof fetch;
+  abortStream?: (reason: AllowedAbortReason) => boolean;
 }
 
 export class StreamFallbackManager {
@@ -927,6 +1017,7 @@ export class StreamFallbackManager {
   private readonly streamActiveRef: MutableRefObject<boolean>;
   private readonly activeStreamClientIdRef: MutableRefObject<string | null>;
   private readonly clearWatchdogFn: () => void;
+  private readonly abortStream: (reason: AllowedAbortReason) => boolean;
   private readonly resolveAbortReason: (input: unknown) => string;
   private readonly baseHeaders: () => Record<string, string>;
   private readonly getRequestPayload: () => Record<string, unknown> | null;
@@ -961,6 +1052,7 @@ export class StreamFallbackManager {
     this.streamActiveRef = options.streamActiveRef;
     this.activeStreamClientIdRef = options.activeStreamClientIdRef;
     this.clearWatchdogFn = options.clearWatchdog;
+    this.abortStream = options.abortStream ?? ((reason: AllowedAbortReason) => this.session.handleAbort(reason));
     this.resolveAbortReason = options.resolveAbortReason;
     this.baseHeaders = options.baseHeaders;
     this.getRequestPayload = options.getRequestPayload;
@@ -1081,7 +1173,7 @@ export class StreamFallbackManager {
     }
     const fallbackReason =
       typeof reason === "string" && reason.trim() ? reason : "json_fallback";
-    if (this.session.handleAbort("watchdog_timeout")) {
+    if (this.abortStream("watchdog_timeout")) {
       try {
         console.warn("[SSE] aborting_for_fallback", {
           clientMessageId: this.session.getClientMessageId(),

@@ -242,7 +242,7 @@ export const processChunk = ({
           firstChunkHandler();
         } catch (error) {
           try {
-            console.warn("[SSE-DEBUG] onFirstChunk threw", { error });
+            console.warn("[SSE-DEBUG] onFirstChunk_error", { error });
           } catch {
             /* noop */
           }
@@ -286,7 +286,7 @@ export const processChunk = ({
         chunkHandler(chunk, sharedContext);
       } catch (error) {
         try {
-          console.warn("[SSE-DEBUG] onChunk threw", { error });
+          console.warn("[SSE-DEBUG] onChunk_error", { error });
         } catch {
           /* noop */
         }
@@ -343,13 +343,13 @@ export const onPromptReady = ({
         try {
           readyHandler();
         } catch (error) {
-          try {
-            console.warn("[SSE-DEBUG] onReady threw", { error });
-          } catch {
-            /* noop */
-          }
+        try {
+          console.warn("[SSE-DEBUG] onReady_error", { error });
+        } catch {
+          /* noop */
         }
       }
+    }
     }
     markPromptReadyWatchdog();
     const records = buildRecordChain(rawEvent);
@@ -378,7 +378,7 @@ export const onPromptReady = ({
         promptHandler(promptEvent, sharedContext);
       } catch (error) {
         try {
-          console.warn("[SSE-DEBUG] onPromptReady threw", { error });
+          console.warn("[SSE-DEBUG] onPromptReady_error", { error });
         } catch {
           /* noop */
         }
@@ -439,12 +439,12 @@ export const onControl = ({
       try {
         controlHandler(controlEvent, sharedContext);
       } catch (error) {
-        try {
-          console.warn("[SSE-DEBUG] onControl threw", { error });
-        } catch {
-          /* noop */
-        }
+      try {
+        console.warn("[SSE-DEBUG] onControl_error", { error });
+      } catch {
+        /* noop */
       }
+    }
     }
   };
 };
@@ -669,12 +669,12 @@ export const onDone = ({
       try {
         doneHandler(doneContext);
       } catch (error) {
-        try {
-          console.warn("[SSE-DEBUG] onDone threw", { error });
-        } catch {
-          /* noop */
-        }
+      try {
+        console.warn("[SSE-DEBUG] onDone_error", { error });
+      } catch {
+        /* noop */
       }
+    }
     }
   };
 };
@@ -738,12 +738,12 @@ export const onError = ({
         try {
           chunkHandler(nextIndex, messageText, syntheticEvent);
         } catch (error) {
-          try {
-            console.warn("[SSE-DEBUG] onError chunk handler threw", { error });
-          } catch {
-            /* noop */
-          }
+        try {
+          console.warn("[SSE-DEBUG] onError_chunk_error", { error });
+        } catch {
+          /* noop */
         }
+      }
       }
       sharedContext.streamStats.clientFinishReason = "internal_error";
       diag("stream_error_internal", { clientMessageId: normalizedClientId });
@@ -751,12 +751,12 @@ export const onError = ({
         try {
           doneHandler(undefined, { reason: "internal_error" });
         } catch (error) {
-          try {
-            console.warn("[SSE-DEBUG] onError done handler threw", { error });
-          } catch {
-            /* noop */
-          }
+        try {
+          console.warn("[SSE-DEBUG] onError_done_error", { error });
+        } catch {
+          /* noop */
         }
+      }
       }
       fatalErrorState.current = null;
       return;

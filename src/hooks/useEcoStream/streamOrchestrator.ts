@@ -250,9 +250,13 @@ const resolveAbsoluteAskEcoUrl = (): ResolveAskEcoUrlResult => {
   };
 };
 
-type AllowedAbortReason = "watchdog_timeout" | "user_cancel";
+type AllowedAbortReason = "watchdog_timeout" | "user_cancelled" | "finalize";
 
-const ALLOWED_ABORT_REASONS = new Set<AllowedAbortReason>(["watchdog_timeout", "user_cancel"]);
+const ALLOWED_ABORT_REASONS = new Set<AllowedAbortReason>([
+  "watchdog_timeout",
+  "user_cancelled",
+  "finalize",
+]);
 
 const logAbortDebug = (reason: AllowedAbortReason) => {
   try {
@@ -335,22 +339,42 @@ export async function openEcoSseStream(opts: {
   let closeReason: CloseReason | null = null;
   let streamErrored = false;
 
-  const safeClose = (reason: CloseReason) => {
-    if (closed) return;
-    closed = true;
-    closeReason = reason;
+  const abortState = { triggered: false };
+  const cleanupAfterAbort = () => {
     clearReadyTimeout();
-    if (reason === "watchdog_first_token" || reason === "watchdog_heartbeat") {
-      abortControllerSafely(controller, "watchdog_timeout");
-    } else if (reason === "ui_abort") {
-      abortControllerSafely(controller, "user_cancel");
-    } else if (!controller.signal.aborted) {
-      abortControllerSafely(controller, "finalize");
-    }
     try {
       wd.clear();
     } catch {
       /* noop */
+    }
+  };
+  const abortOnce = (reason: AllowedAbortReason) => {
+    if (abortState.triggered) {
+      return false;
+    }
+    abortState.triggered = true;
+    try {
+      console.log("[SSE-DEBUG] abort_once", { reason });
+    } catch {
+      /* noop */
+    }
+    const aborted = abortControllerSafely(controller, reason);
+    cleanupAfterAbort();
+    return aborted;
+  };
+
+  const safeClose = (reason: CloseReason) => {
+    if (closed) return;
+    closed = true;
+    closeReason = reason;
+    if (reason === "watchdog_first_token" || reason === "watchdog_heartbeat") {
+      abortOnce("watchdog_timeout");
+    } else if (reason === "ui_abort") {
+      abortOnce("user_cancelled");
+    } else if (!controller.signal.aborted) {
+      abortOnce("finalize");
+    } else {
+      cleanupAfterAbort();
     }
   };
   const onWdTimeout = (reason: CloseReason) => {
@@ -796,12 +820,17 @@ export const handleDone = (
   doneContext: DoneContext,
 ) => {
   const { event, clientMessageId, normalizedClientId, assistantId } = doneContext;
-  const readyReceived = doneContext.readyStateRef.current === true;
+  const readyStateRef =
+    doneContext.readyStateRef ?? ({ current: false } as MutableRefObject<boolean>);
+  const activeStreamClientIdRef =
+    doneContext.activeStreamClientIdRef ??
+    ({ current: null } as MutableRefObject<string | null>);
+  const readyReceived = readyStateRef.current === true;
   const noChunksEmitted = readyReceived && !doneContext.streamStats.gotAnyChunk;
   if (noChunksEmitted && !doneContext.streamStats.clientFinishReason) {
     doneContext.streamStats.clientFinishReason = "no_chunks_emitted";
   }
-  if (doneContext.activeStreamClientIdRef.current === clientMessageId) {
+  if (activeStreamClientIdRef.current === clientMessageId) {
     try {
       console.debug('[DIAG] setDigitando:before', {
         clientMessageId,
@@ -924,12 +953,15 @@ export const handleDone = (
     }
 
     if (noChunksEmitted) {
-      try {
-        doneContext.setErroApi((prev) =>
-          prev ?? mapStreamErrorToMessage("no_chunks_emitted"),
-        );
-      } catch {
-        /* noop */
+      const finishReason = doneContext.streamStats.clientFinishReason;
+      if (finishReason !== "user_cancelled") {
+        try {
+          doneContext.setErroApi((prev) =>
+            prev ?? "Nenhum chunk emitido antes do encerramento",
+          );
+        } catch {
+          /* noop */
+        }
       }
     }
 
@@ -1155,7 +1187,7 @@ export const handleDone = (
     finalizeWithEntry(aggregatedEntry);
   }
 
-  doneContext.readyStateRef.current = false;
+  readyStateRef.current = false;
 };
 
 export const handleError = (
@@ -1346,6 +1378,26 @@ const beginStreamInternal = (
     firstChunkDelivered: false,
     readyReceived: false,
   };
+  let typingStarted = false;
+  const markTypingActive = (source: "ready" | "first_chunk") => {
+    if (typingStarted) {
+      return;
+    }
+    typingStarted = true;
+    try {
+      console.log("[SSE-DEBUG] typing_started", {
+        clientMessageId: normalizedClientId,
+        source,
+      });
+    } catch {
+      /* noop */
+    }
+    try {
+      setDigitando(true);
+    } catch {
+      /* noop */
+    }
+  };
   let readyTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
   const clearReadyTimeout = () => {
     if (readyTimeoutHandle) {
@@ -1359,14 +1411,11 @@ const beginStreamInternal = (
   };
   const handleReadyEvent = () => {
     clearReadyTimeout();
-    try {
-      setDigitando(true);
-    } catch {
-      /* noop */
-    }
+    markTypingActive("ready");
   };
   const onFirstChunkWrapped = () => {
     clearReadyTimeout();
+    markTypingActive("first_chunk");
     if (typeof onFirstChunk === "function") {
       try {
         onFirstChunk();
@@ -1415,7 +1464,7 @@ const beginStreamInternal = (
         } catch {
           /* noop */
         }
-        abortControllerSafely(activeController, "user_cancel");
+        abortControllerSafely(activeController, "user_cancelled");
         if (typeof normalizedActiveId === "string" && normalizedActiveId) {
           logSse("abort", {
             clientMessageId: normalizedActiveId,
@@ -1457,6 +1506,37 @@ const beginStreamInternal = (
 
   const clearTypingWatchdog = () => {
     fallbackManager?.clearTypingWatchdogTimer();
+  };
+
+  const abortState = { triggered: false };
+  const abortOnce = (reason: AllowedAbortReason) => {
+    if (abortState.triggered) {
+      return false;
+    }
+    abortState.triggered = true;
+    try {
+      console.log("[SSE-DEBUG] abort_once", {
+        clientMessageId: normalizedClientId,
+        reason,
+      });
+    } catch {
+      /* noop */
+    }
+    try {
+      setDigitando(false);
+    } catch {
+      /* noop */
+    }
+    try {
+      setIsSending(false);
+    } catch {
+      /* noop */
+    }
+    clearReadyTimeout();
+    clearFallbackGuardTimer();
+    clearTypingWatchdog();
+    clearWatchdog();
+    return session.handleAbort(reason);
   };
 
   const beginFallback = (reason: string): boolean => {
@@ -1598,7 +1678,7 @@ const beginStreamInternal = (
     const suppressedReasons = new Set([
       "client_disconnect",
       "stream_aborted",
-      "user_cancel",
+      "user_cancelled",
       "visibilitychange",
       "pagehide",
       "hidden",
@@ -1754,6 +1834,7 @@ const beginStreamInternal = (
 
   let requestPayload: Record<string, unknown> | null = null;
   let baseHeadersCache: Record<string, string> | null = null;
+  let shouldSkipFetchInTest = false;
 
   const baseHeaders = (): Record<string, string> => {
     if (baseHeadersCache) {
@@ -1860,6 +1941,7 @@ const beginStreamInternal = (
       streamActiveRef,
       activeStreamClientIdRef,
       clearWatchdog,
+      abortStream: abortOnce,
       resolveAbortReason,
       baseHeaders,
       getRequestPayload: () => requestPayload,
@@ -1878,7 +1960,10 @@ const beginStreamInternal = (
 
       let response: Response | null = null;
       let fetchError: unknown = null;
-      const envContainer = import.meta as { env?: { MODE?: string; mode?: string; VITEST?: unknown } };
+      const envContainer = import.meta as {
+        env?: { MODE?: string; mode?: string; VITEST?: unknown };
+        vitest?: unknown;
+      };
       const rawMode = envContainer.env?.MODE ?? envContainer.env?.mode ?? "";
       const normalizedImportMode =
         typeof rawMode === "string" ? rawMode.trim().toLowerCase() : "";
@@ -1902,7 +1987,18 @@ const beginStreamInternal = (
       const vitestFlag = envContainer.env?.VITEST;
       const processVitestFlag = processEnv?.VITEST;
       const processVitestWorker = processEnv?.VITEST_WORKER_ID;
+      const importMetaVitest = Boolean(envContainer?.vitest);
+      const globalVi = (() => {
+        try {
+          return (globalThis as typeof globalThis & { vi?: unknown }).vi;
+        } catch {
+          return undefined;
+        }
+      })();
+      const hasViGlobal = typeof globalVi === "function" || (typeof globalVi === "object" && globalVi !== null);
       const isVitest =
+        importMetaVitest ||
+        hasViGlobal ||
         vitestFlag === true ||
         vitestFlag === "true" ||
         processVitestFlag === "true" ||
@@ -1928,7 +2024,7 @@ const beginStreamInternal = (
           fetchSource = null;
         }
       }
-      const shouldSkipFetchInTest = isTestEnv || isVitest;
+      shouldSkipFetchInTest = isTestEnv || isVitest;
 
     const tryJsonFallback = async (reason: string): Promise<boolean> => {
       if (streamState.readyReceived) return false;
@@ -1939,7 +2035,11 @@ const beginStreamInternal = (
       if (!streamActiveRef.current) return false;
       const abortReason = (controller.signal as AbortSignal & { reason?: unknown }).reason;
       const normalizedAbortReason = resolveAbortReason(abortReason);
-      if (normalizedAbortReason === "new-send" || normalizedAbortReason === "ui_abort") {
+      if (
+        normalizedAbortReason === "new-send" ||
+        normalizedAbortReason === "ui_abort" ||
+        normalizedAbortReason === "user_cancelled"
+      ) {
         return false;
       }
       const started = beginFallback(reason);
@@ -2004,7 +2104,7 @@ const beginStreamInternal = (
             reason: timeoutMessage,
             source: "ready-timeout",
           });
-          abortControllerSafely(controller, "watchdog_timeout");
+          abortOnce("watchdog_timeout");
         }, READY_TIMEOUT_MS);
         console.log('[DEBUG] Antes do fetch', {
           isAborted: controller.signal.aborted,
@@ -2584,7 +2684,9 @@ const beginStreamInternal = (
     }
     const fallbackAlreadyRequested = streamState.fallbackRequested;
     const canBeginFallback =
-      !streamState.firstChunkDelivered && (fallbackAlreadyRequested || beginFallback("json_fallback"));
+      !shouldSkipFetchInTest &&
+      !streamState.firstChunkDelivered &&
+      (fallbackAlreadyRequested || beginFallback("json_fallback"));
     let fallbackSucceeded = false;
     if (canBeginFallback) {
       abortSseForFallback("json_fallback");

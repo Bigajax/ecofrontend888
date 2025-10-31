@@ -442,7 +442,7 @@ export const useEcoStream = ({
         const normalizedReason = typeof resolvedReason === "string" ? resolvedReason.toLowerCase() : "";
         const expectedReasons = new Set([
           "finalize",
-          "user_cancel",
+          "user_cancelled",
           "watchdog_timeout",
           "visibilitychange",
           "pagehide",

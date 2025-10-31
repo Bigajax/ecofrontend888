@@ -52,7 +52,7 @@ class DebugAbortController extends OriginalAbortController {
     const normalizedReason = formatAbortReason(reason);
     const expectedReasons = new Set([
       'finalize',
-      'user_cancel',
+      'user_cancelled',
       'watchdog_timeout',
       'visibilitychange',
       'pagehide',
