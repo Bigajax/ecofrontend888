@@ -527,7 +527,7 @@ export class StreamSession {
     const diagForceJson =
       typeof window !== "undefined" &&
       Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
-    const requestMethod: "GET" | "POST" = diagForceJson ? "POST" : "GET";
+    const requestMethod: "GET" | "POST" = "POST";
     const acceptHeader = diagForceJson ? "application/json" : "text/event-stream";
     const fallbackEnabled = diagForceJson;
 
