@@ -8,7 +8,6 @@ import type {
   UpsertMessageOptions,
 } from "../../../contexts/ChatContext";
 import { ASK_ECO_ENDPOINT_PATH } from "@/api/askEcoUrl";
-import { API_BASE } from "@/api/config";
 import {
   getOrCreateGuestId,
   getOrCreateSessionId,
@@ -741,43 +740,118 @@ export class StreamSession {
   }
 }
 
-const resolveAbsoluteAskEcoUrl = (): string => {
+type ResolveAskEcoUrlResult = {
+  url: string;
+  base: string;
+  source: "VITE_API_URL" | "NEXT_PUBLIC_API_URL";
+  nodeEnv: string;
+};
+
+const resolveAbsoluteAskEcoUrl = (): ResolveAskEcoUrlResult => {
   const envContainer = import.meta as { env?: Record<string, string | undefined> };
   const env = envContainer.env ?? {};
-  const candidates: Array<unknown> = [env?.VITE_API_URL, env?.NEXT_PUBLIC_API_URL, API_BASE];
-  let base = "";
+  const processEnv = (() => {
+    try {
+      return (
+        (globalThis as typeof globalThis & {
+          process?: { env?: Record<string, string | undefined> };
+        }).process?.env ?? {}
+      );
+    } catch {
+      return {};
+    }
+  })();
+  const candidates: Array<{ value?: string; source: ResolveAskEcoUrlResult["source"] }> = [
+    { value: env?.VITE_API_URL ?? processEnv?.VITE_API_URL, source: "VITE_API_URL" },
+    {
+      value: env?.NEXT_PUBLIC_API_URL ?? processEnv?.NEXT_PUBLIC_API_URL,
+      source: "NEXT_PUBLIC_API_URL",
+    },
+  ];
+  let selected: { value: string; source: ResolveAskEcoUrlResult["source"] } | null = null;
   for (const candidate of candidates) {
-    if (typeof candidate !== "string") continue;
-    const trimmed = candidate.trim();
+    if (typeof candidate.value !== "string") continue;
+    const trimmed = candidate.value.trim();
     if (!trimmed) continue;
-    base = trimmed;
+    selected = { value: trimmed, source: candidate.source };
     break;
   }
-  const sanitizedBase = base.replace(/\/+$/, "");
-  const path = ASK_ECO_ENDPOINT_PATH.startsWith("/")
+  if (!selected) {
+    console.error("API_BASE missing");
+    throw new Error("API_BASE missing");
+  }
+
+  const nodeEnvRaw =
+    (typeof processEnv?.NODE_ENV === "string" ? processEnv.NODE_ENV.trim() : "") ||
+    (typeof env?.MODE === "string" ? env.MODE.trim() : "") ||
+    (typeof env?.mode === "string" ? env.mode.trim() : "");
+  const nodeEnv = nodeEnvRaw;
+
+  let base = selected.value.replace(/\/+$/, "");
+  let parsed: URL;
+  try {
+    parsed = new URL(base);
+  } catch {
+    console.error("[SSE] Invalid API_BASE", { base: selected.value, source: selected.source });
+    throw new Error("API_BASE invalid");
+  }
+
+  if (nodeEnv.toLowerCase() === "production") {
+    const host = parsed.hostname.toLowerCase();
+    if (host === "localhost" || host === "127.0.0.1") {
+      console.error("[SSE] API_BASE localhost blocked in production", {
+        base: parsed.toString(),
+        source: selected.source,
+      });
+      throw new Error("API_BASE localhost not allowed in production");
+    }
+  }
+
+  const isPageHttps = typeof window !== "undefined" && window.location?.protocol === "https:";
+  if (isPageHttps && parsed.protocol === "http:") {
+    const pageHost = window.location.hostname;
+    if (parsed.hostname === pageHost) {
+      console.error("[SSE] API_BASE forced to https", {
+        base: parsed.toString(),
+        source: selected.source,
+      });
+      parsed.protocol = "https:";
+      if (!window.location.port && parsed.port === "80") {
+        parsed.port = "";
+      }
+    } else {
+      console.error("[SSE] API_BASE insecure http blocked on https page", {
+        base: parsed.toString(),
+        source: selected.source,
+        pageHost,
+      });
+      throw new Error("API_BASE insecure on https page");
+    }
+  }
+
+  parsed.hash = "";
+  parsed.search = "";
+  parsed.pathname = parsed.pathname.replace(/\/+$/, "");
+  const normalizedBase = parsed.pathname
+    ? `${parsed.origin}${parsed.pathname}`
+    : parsed.origin;
+  const trimmedBase = normalizedBase.replace(/\/+$/, "");
+
+  const askEcoPath = ASK_ECO_ENDPOINT_PATH.startsWith("/")
     ? ASK_ECO_ENDPOINT_PATH
     : `/${ASK_ECO_ENDPOINT_PATH}`;
-  if (/^https?:\/\//i.test(sanitizedBase)) {
-    return `${sanitizedBase}${path}`;
-  }
-  let fallbackPath: string;
-  if (!sanitizedBase) {
-    fallbackPath = path;
-  } else if (sanitizedBase.endsWith("/api")) {
-    fallbackPath = `${sanitizedBase}${path.replace(/^\/api/, "")}`;
-  } else {
-    fallbackPath = `${sanitizedBase}${path}`;
-  }
-  try {
-    const origin =
-      typeof window !== "undefined" && window.location?.origin ? window.location.origin : undefined;
-    if (origin) {
-      return new URL(fallbackPath, origin).toString();
-    }
-  } catch {
-    /* noop */
-  }
-  return fallbackPath;
+  const normalizedPath = askEcoPath.replace(/\/+$/, "");
+  const pathSuffix = trimmedBase.endsWith("/api")
+    ? normalizedPath.replace(/^\/api/, "")
+    : normalizedPath;
+  const url = `${trimmedBase}${pathSuffix}`;
+
+  return {
+    url,
+    base: trimmedBase,
+    source: selected.source,
+    nodeEnv,
+  };
 };
 
 interface FallbackManagerOptions {
@@ -1022,9 +1096,16 @@ export class StreamFallbackManager {
     }
 
     try {
-      const fallbackUrl = resolveAbsoluteAskEcoUrl();
+      const endpointInfo = resolveAbsoluteAskEcoUrl();
+      const fallbackUrl = endpointInfo.url;
+      const apiBaseSource = endpointInfo.source;
+      const resolvedNodeEnv = endpointInfo.nodeEnv;
       try {
-        console.log("[SSE-DEBUG] resolved_fallback_url", { fallbackUrl });
+        console.log("[SSE-DEBUG] resolved_ask_eco_url", {
+          resolved_ask_eco_url: fallbackUrl,
+          api_base_source: apiBaseSource,
+          node_env: resolvedNodeEnv || null,
+        });
       } catch {
         /* noop */
       }
@@ -1062,6 +1143,15 @@ export class StreamFallbackManager {
       const fallbackFetch =
         this.fallbackFetch ??
         (typeof globalThis.fetch === "function" ? (globalThis.fetch as typeof fetch) : fetch);
+      try {
+        console.log("[SSE-DEBUG] fetch_endpoint_info", {
+          resolved_ask_eco_url: fallbackUrl,
+          api_base_source: apiBaseSource,
+          node_env: resolvedNodeEnv || null,
+        });
+      } catch {
+        /* noop */
+      }
       const res = await fallbackFetch(fallbackUrl, {
         method: "POST",
         headers: fallbackHeaders,

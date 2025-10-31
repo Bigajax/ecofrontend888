@@ -39,7 +39,6 @@ import {
 import { rememberGuestIdentityFromResponse, rememberSessionIdentityFromResponse } from "../../lib/guestId";
 import { setStreamActive } from "./streamStatus";
 import { NO_TEXT_ALERT_MESSAGE, showToast } from "../useEcoStream.helpers";
-import { API_BASE } from "@/api/config";
 import { ASK_ECO_ENDPOINT_PATH } from "@/api/askEcoUrl";
 import { getOrCreateGuestId, getOrCreateSessionId, rememberIdsFromResponse } from "@/utils/identity";
 import {
@@ -121,47 +120,118 @@ const logDev = (label: string, payload: Record<string, unknown>) => {
   }
 };
 
-const resolveAbsoluteAskEcoUrl = (): string => {
+type ResolveAskEcoUrlResult = {
+  url: string;
+  base: string;
+  source: "VITE_API_URL" | "NEXT_PUBLIC_API_URL";
+  nodeEnv: string;
+};
+
+const resolveAbsoluteAskEcoUrl = (): ResolveAskEcoUrlResult => {
   const envContainer = import.meta as { env?: Record<string, string | undefined> };
   const env = envContainer.env ?? {};
-  const candidates: Array<unknown> = [
-    env?.VITE_API_URL,
-    env?.NEXT_PUBLIC_API_URL,
-    API_BASE,
+  const processEnv = (() => {
+    try {
+      return (
+        (globalThis as typeof globalThis & {
+          process?: { env?: Record<string, string | undefined> };
+        }).process?.env ?? {}
+      );
+    } catch {
+      return {};
+    }
+  })();
+  const candidates: Array<{ value?: string; source: ResolveAskEcoUrlResult["source"] }> = [
+    { value: env?.VITE_API_URL ?? processEnv?.VITE_API_URL, source: "VITE_API_URL" },
+    {
+      value: env?.NEXT_PUBLIC_API_URL ?? processEnv?.NEXT_PUBLIC_API_URL,
+      source: "NEXT_PUBLIC_API_URL",
+    },
   ];
-  let base = "";
+  let selected: { value: string; source: ResolveAskEcoUrlResult["source"] } | null = null;
   for (const candidate of candidates) {
-    if (typeof candidate !== "string") continue;
-    const trimmed = candidate.trim();
+    if (typeof candidate.value !== "string") continue;
+    const trimmed = candidate.value.trim();
     if (!trimmed) continue;
-    base = trimmed;
+    selected = { value: trimmed, source: candidate.source };
     break;
   }
-  const sanitizedBase = base.replace(/\/+$/, "");
-  const path = ASK_ECO_ENDPOINT_PATH.startsWith("/")
+  if (!selected) {
+    console.error("API_BASE missing");
+    throw new Error("API_BASE missing");
+  }
+
+  const nodeEnvRaw =
+    (typeof processEnv?.NODE_ENV === "string" ? processEnv.NODE_ENV.trim() : "") ||
+    (typeof env?.MODE === "string" ? env.MODE.trim() : "") ||
+    (typeof env?.mode === "string" ? env.mode.trim() : "");
+  const nodeEnv = nodeEnvRaw;
+
+  let base = selected.value.replace(/\/+$/, "");
+  let parsed: URL;
+  try {
+    parsed = new URL(base);
+  } catch {
+    console.error("[SSE] Invalid API_BASE", { base: selected.value, source: selected.source });
+    throw new Error("API_BASE invalid");
+  }
+
+  if (nodeEnv.toLowerCase() === "production") {
+    const host = parsed.hostname.toLowerCase();
+    if (host === "localhost" || host === "127.0.0.1") {
+      console.error("[SSE] API_BASE localhost blocked in production", {
+        base: parsed.toString(),
+        source: selected.source,
+      });
+      throw new Error("API_BASE localhost not allowed in production");
+    }
+  }
+
+  const isPageHttps = typeof window !== "undefined" && window.location?.protocol === "https:";
+  if (isPageHttps && parsed.protocol === "http:") {
+    const pageHost = window.location.hostname;
+    if (parsed.hostname === pageHost) {
+      console.error("[SSE] API_BASE forced to https", {
+        base: parsed.toString(),
+        source: selected.source,
+      });
+      parsed.protocol = "https:";
+      if (!window.location.port && parsed.port === "80") {
+        parsed.port = "";
+      }
+    } else {
+      console.error("[SSE] API_BASE insecure http blocked on https page", {
+        base: parsed.toString(),
+        source: selected.source,
+        pageHost,
+      });
+      throw new Error("API_BASE insecure on https page");
+    }
+  }
+
+  parsed.hash = "";
+  parsed.search = "";
+  parsed.pathname = parsed.pathname.replace(/\/+$/, "");
+  const normalizedBase = parsed.pathname
+    ? `${parsed.origin}${parsed.pathname}`
+    : parsed.origin;
+  const trimmedBase = normalizedBase.replace(/\/+$/, "");
+
+  const askEcoPath = ASK_ECO_ENDPOINT_PATH.startsWith("/")
     ? ASK_ECO_ENDPOINT_PATH
     : `/${ASK_ECO_ENDPOINT_PATH}`;
-  if (/^https?:\/\//i.test(sanitizedBase)) {
-    return `${sanitizedBase}${path}`;
-  }
-  let fallbackPath: string;
-  if (!sanitizedBase) {
-    fallbackPath = path;
-  } else if (sanitizedBase.endsWith("/api")) {
-    fallbackPath = `${sanitizedBase}${path.replace(/^\/api/, "")}`;
-  } else {
-    fallbackPath = `${sanitizedBase}${path}`;
-  }
-  try {
-    const origin =
-      typeof window !== "undefined" && window.location?.origin ? window.location.origin : undefined;
-    if (origin) {
-      return new URL(fallbackPath, origin).toString();
-    }
-  } catch {
-    /* noop */
-  }
-  return fallbackPath;
+  const normalizedPath = askEcoPath.replace(/\/+$/, "");
+  const pathSuffix = trimmedBase.endsWith("/api")
+    ? normalizedPath.replace(/^\/api/, "")
+    : normalizedPath;
+  const url = `${trimmedBase}${pathSuffix}`;
+
+  return {
+    url,
+    base: trimmedBase,
+    source: selected.source,
+    nodeEnv,
+  };
 };
 
 type AllowedAbortReason = "watchdog_timeout" | "user_cancel";
@@ -207,7 +277,7 @@ const abortControllerSafely = (
 };
 
 export async function openEcoSseStream(opts: {
-  url: string;
+  url?: string;
   body: unknown;
   onPromptReady?: () => void;
   onChunk?: (delta: string) => void;
@@ -215,9 +285,10 @@ export async function openEcoSseStream(opts: {
   onDone?: (meta?: any) => void;
   onError?: (err: Error) => void;
   controller?: AbortController;
+  diagnostics?: ResolveAskEcoUrlResult;
 }) {
   const {
-    url,
+    url: legacyUrl,
     body: _body,
     onPromptReady,
     onChunk,
@@ -225,7 +296,23 @@ export async function openEcoSseStream(opts: {
     onDone,
     onError,
     controller = new AbortController(),
+    diagnostics,
   } = opts;
+
+  const endpointInfo = diagnostics ?? resolveAbsoluteAskEcoUrl();
+  const requestUrl = endpointInfo.url;
+  const apiBaseSource = endpointInfo.source;
+  const resolvedNodeEnv = endpointInfo.nodeEnv;
+  if (legacyUrl && legacyUrl !== requestUrl) {
+    try {
+      console.warn("[SSE] Ignoring legacy URL in favor of resolved endpoint", {
+        legacyUrl,
+        resolved_ask_eco_url: requestUrl,
+      });
+    } catch {
+      /* noop */
+    }
+  }
 
   const wd = createSseWatchdogs("legacy", createDefaultTimers());
   let closed = false;
@@ -268,14 +355,28 @@ export async function openEcoSseStream(opts: {
     "Content-Type": "application/json",
   };
 
-  console.log("[DIAG] start", { url, accept: acceptHeader, forcedJson, method: requestMethod });
+  console.log("[DIAG] start", {
+    url: requestUrl,
+    accept: acceptHeader,
+    forcedJson,
+    method: requestMethod,
+  });
+  try {
+    console.log("[SSE-DEBUG] fetch_endpoint_info", {
+      resolved_ask_eco_url: requestUrl,
+      api_base_source: apiBaseSource,
+      node_env: resolvedNodeEnv || null,
+    });
+  } catch {
+    /* noop */
+  }
   console.log("[SSE-DEBUG] Conectando", {
-    url,
+    url: requestUrl,
     method: requestMethod,
     headers: Object.keys(requestHeaders),
   });
 
-  const res = await fetch(url, {
+  const res = await fetch(requestUrl, {
     method: requestMethod,
     headers: requestHeaders,
     credentials: "omit",
@@ -1596,9 +1697,16 @@ const beginStreamInternal = (
 
     requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
 
-    const requestUrl = resolveAbsoluteAskEcoUrl();
+    const endpointInfo = resolveAbsoluteAskEcoUrl();
+    const requestUrl = endpointInfo.url;
+    const apiBaseSource = endpointInfo.source;
+    const resolvedNodeEnv = endpointInfo.nodeEnv;
     try {
-      console.log("[SSE-DEBUG] resolved_ask_eco_url", { requestUrl });
+      console.log("[SSE-DEBUG] resolved_ask_eco_url", {
+        resolved_ask_eco_url: requestUrl,
+        api_base_source: apiBaseSource,
+        node_env: resolvedNodeEnv || null,
+      });
     } catch {
       /* noop */
     }
@@ -1742,6 +1850,15 @@ const beginStreamInternal = (
             accept: acceptHeader,
             forcedJson: diagForceJson,
             method: requestMethod,
+          });
+        } catch {
+          /* noop */
+        }
+        try {
+          console.log("[SSE-DEBUG] fetch_endpoint_info", {
+            resolved_ask_eco_url: requestUrl,
+            api_base_source: apiBaseSource,
+            node_env: resolvedNodeEnv || null,
           });
         } catch {
           /* noop */
