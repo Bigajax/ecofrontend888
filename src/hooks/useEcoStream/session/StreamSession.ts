@@ -735,6 +735,9 @@ export class StreamSession {
     } catch {
       /* noop */
     }
+    if (this.normalizedClientId) {
+      this.inflightControllers.delete(this.normalizedClientId);
+    }
   }
 
   handleAbort(reason: AllowedAbortReason): boolean {

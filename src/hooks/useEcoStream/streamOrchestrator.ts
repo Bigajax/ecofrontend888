@@ -690,6 +690,19 @@ const formatAbortReason = (input: unknown): string => {
 
 const resolveAbortReason = (input: unknown): string => formatAbortReason(input);
 
+const mapStreamErrorToMessage = (code: string): string => {
+  switch (code) {
+    case "cors_preflight_failed":
+      return "Não foi possível iniciar a conexão com a Eco (CORS). Verifique sua internet ou tente novamente.";
+    case "sse_ready_timeout":
+      return "A Eco demorou para começar a responder. Tente novamente.";
+    case "no_chunks_emitted":
+      return "A Eco não enviou nenhum conteúdo. Tente novamente.";
+    default:
+      return code;
+  }
+};
+
 interface DoneContext extends StreamSharedContext {
   event: EcoStreamDoneEvent | undefined;
   setErroApi: Dispatch<SetStateAction<string | null>>;
@@ -784,6 +797,10 @@ export const handleDone = (
   doneContext: DoneContext,
 ) => {
   const { event, clientMessageId, normalizedClientId, assistantId } = doneContext;
+  const noChunksEmitted = !doneContext.streamStats.gotAnyChunk;
+  if (noChunksEmitted && !doneContext.streamStats.clientFinishReason) {
+    doneContext.streamStats.clientFinishReason = "no_chunks_emitted";
+  }
   if (doneContext.activeStreamClientIdRef.current === clientMessageId) {
     try {
       console.debug('[DIAG] setDigitando:before', {
@@ -906,9 +923,23 @@ export const handleDone = (
       }
     }
 
+    if (noChunksEmitted) {
+      try {
+        doneContext.setErroApi((prev) =>
+          prev ?? mapStreamErrorToMessage("no_chunks_emitted"),
+        );
+      } catch {
+        /* noop */
+      }
+    }
+
     const finalText = finalContent;
 
-    const finalStatus = doneContext.streamStats.status === "no_content" ? "no_content" : "done";
+    const finalStatus = noChunksEmitted
+      ? "error"
+      : doneContext.streamStats.status === "no_content"
+      ? "no_content"
+      : "done";
     const patch: ChatMessageType = {
       id: assistantId,
       streaming: false,
@@ -1306,6 +1337,7 @@ const beginStreamInternal = (
   let runJsonFallbackRequest: (
     options?: { reason?: string; logError?: unknown },
   ) => Promise<boolean> = async () => false;
+  const READY_TIMEOUT_MS = 7000;
   const streamState = {
     fallbackRequested: false,
     firstChunkDelivered: false,
@@ -1320,6 +1352,28 @@ const beginStreamInternal = (
         clearTimeout(readyTimeoutHandle);
       }
       readyTimeoutHandle = null;
+    }
+  };
+  const handleReadyEvent = () => {
+    clearReadyTimeout();
+    try {
+      setDigitando(true);
+    } catch {
+      /* noop */
+    }
+  };
+  const onFirstChunkWrapped = () => {
+    clearReadyTimeout();
+    if (typeof onFirstChunk === "function") {
+      try {
+        onFirstChunk();
+      } catch (error) {
+        try {
+          console.warn("[SSE-DEBUG] onFirstChunk callback threw", { error });
+        } catch {
+          /* noop */
+        }
+      }
     }
   };
 
@@ -1862,6 +1916,7 @@ const beginStreamInternal = (
         return false;
       }
 
+      clearReadyTimeout();
       abortSseForFallback(reason);
       const succeeded = await runJsonFallbackRequest({ reason });
       return succeeded;
@@ -1892,6 +1947,34 @@ const beginStreamInternal = (
         } catch {
           /* noop */
         }
+        try {
+          console.log("[SSE-DEBUG] preflight", {
+            method: requestMethod,
+            hasBody: Boolean(requestPayload),
+          });
+        } catch {
+          /* noop */
+        }
+        clearReadyTimeout();
+        readyTimeoutHandle = timers.setTimeout(() => {
+          if (streamState.readyReceived || controller.signal.aborted) return;
+          streamErrored = true;
+          const timeoutMessage = "sse_ready_timeout";
+          streamStats.clientFinishReason = timeoutMessage;
+          try {
+            console.warn("[SSE] ready_timeout", { clientMessageId: normalizedClientId });
+          } catch {
+            /* noop */
+          }
+          setDigitando(false);
+          setErroApi(mapStreamErrorToMessage(timeoutMessage));
+          logSse("abort", {
+            clientMessageId: normalizedClientId,
+            reason: timeoutMessage,
+            source: "ready-timeout",
+          });
+          abortControllerSafely(controller, "watchdog_timeout");
+        }, READY_TIMEOUT_MS);
         console.log('[DEBUG] Antes do fetch', {
           isAborted: controller.signal.aborted,
           reason: (controller.signal as any).reason,
@@ -1923,6 +2006,7 @@ const beginStreamInternal = (
         };
 
         response = await fetchFn(requestUrl, fetchInit);
+        clearReadyTimeout();
         if (!response.ok) {
           const httpError = new Error(`HTTP ${response.status}: ${response.statusText}`);
           fetchError = httpError;
@@ -1930,15 +2014,29 @@ const beginStreamInternal = (
           throw httpError;
         }
       } catch (error) {
+        clearReadyTimeout();
         fetchError = error;
         const formatted = formatAbortReason(error);
+        const normalizedFormatted = typeof formatted === "string" ? formatted : "";
+        const isPreflightFailure =
+          !streamState.readyReceived &&
+          (normalizedFormatted === "TypeError" ||
+            /Failed to fetch/i.test(String(error)) ||
+            /NetworkError/i.test(String(error)) ||
+            /^HTTP (0|520)/i.test(normalizedFormatted));
         logSse("abort", {
           clientMessageId: normalizedClientId,
-          reason: formatted,
+          reason: isPreflightFailure ? "cors_preflight_failed" : formatted,
           source: "fetch",
         });
+        if (isPreflightFailure) {
+          fetchError = new Error("cors_preflight_failed");
+          streamStats.clientFinishReason = "cors_preflight_failed";
+          setErroApi(mapStreamErrorToMessage("cors_preflight_failed"));
+        }
       }
     } else {
+      clearReadyTimeout();
       fetchError = new Error(shouldSkipFetchInTest ? "skipped_in_test_env" : "fetch_unavailable");
       logSse("abort", {
         clientMessageId: normalizedClientId,
@@ -1975,19 +2073,31 @@ const beginStreamInternal = (
       return toRecord(eventRecord?.payload) ?? undefined;
     };
 
+    const handlerDefaults = {
+      onPromptReady: () => {},
+      onChunk: () => {},
+      onDone: () => {},
+      onError: () => {},
+    } as const;
+    const safePromptHandler =
+      typeof handlePromptReady === "function" ? handlePromptReady : handlerDefaults.onPromptReady;
+    const safeChunkHandler =
+      typeof handleChunk === "function" ? handleChunk : handlerDefaults.onChunk;
+    const safeDoneHandler = typeof handleDone === "function" ? handleDone : handlerDefaults.onDone;
+
     const processChunkEvent = processChunk({
       controller,
       streamState,
       sharedContext,
       streamStats,
-      onFirstChunk,
+      onFirstChunk: onFirstChunkWrapped,
       clearFallbackGuardTimer,
       bumpFirstTokenWatchdog,
       bumpHeartbeatWatchdog,
       buildRecordChain,
       extractPayloadRecord,
       pickStringFromRecords,
-      handleChunk,
+      handleChunk: safeChunkHandler,
       toRecord,
     });
 
@@ -1995,12 +2105,13 @@ const beginStreamInternal = (
       controller,
       streamState,
       markPromptReadyWatchdog,
+      onReady: handleReadyEvent,
       buildRecordChain,
       pickStringFromRecords,
       extractPayloadRecord,
       diag,
       normalizedClientId,
-      handlePromptReady,
+      handlePromptReady: safePromptHandler,
       sharedContext,
     });
 
@@ -2050,14 +2161,17 @@ const beginStreamInternal = (
       registerNoContent,
       logSse,
       ensureAssistantForNoContent,
-      handleDone,
+      handleDone: safeDoneHandler,
       setErroApi,
       removeEcoEntry,
       applyMetaToStreamStats,
       extractFinishReasonFromMeta,
     });
 
-    handleStreamDoneRef = handleStreamDone;
+    handleStreamDoneRef = (event, options) => {
+      clearReadyTimeout();
+      handleStreamDone(event, options);
+    };
     startFallbackGuardTimer();
 
     onWatchdogTimeout = (reason) => {
@@ -2090,7 +2204,7 @@ const beginStreamInternal = (
       sharedContext,
       diag,
       normalizedClientId,
-      handleDone: handleStreamDone,
+      handleDone: handleStreamDoneRef,
       fatalErrorState,
       extractText,
       toRecord,

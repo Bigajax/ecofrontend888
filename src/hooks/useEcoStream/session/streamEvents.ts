@@ -62,14 +62,14 @@ type ProcessChunkDeps = {
   streamState: StreamState;
   sharedContext: StreamSharedContext;
   streamStats: StreamRunStats;
-  onFirstChunk?: () => void;
+  onFirstChunk?: (() => void) | null;
   clearFallbackGuardTimer: () => void;
   bumpFirstTokenWatchdog: () => void;
   bumpHeartbeatWatchdog: () => void;
   buildRecordChain: BuildRecordChainFn;
   extractPayloadRecord: ExtractPayloadRecordFn;
   pickStringFromRecords: PickStringFromRecords;
-  handleChunk: HandleChunkFn;
+  handleChunk?: HandleChunkFn | null;
   toRecord: (value: unknown) => Record<string, unknown> | undefined;
 };
 
@@ -77,13 +77,13 @@ type PromptReadyDeps = {
   controller: AbortController;
   streamState: StreamState;
   markPromptReadyWatchdog: () => void;
-  onReady: () => void;
+  onReady?: (() => void) | null;
   buildRecordChain: BuildRecordChainFn;
   pickStringFromRecords: PickStringFromRecords;
   extractPayloadRecord: ExtractPayloadRecordFn;
   diag: (...args: unknown[]) => void;
   normalizedClientId: string;
-  handlePromptReady: HandlePromptReadyFn;
+  handlePromptReady?: HandlePromptReadyFn | null;
   sharedContext: StreamSharedContext;
 };
 
@@ -96,7 +96,7 @@ type ControlDeps = {
   bumpHeartbeatWatchdog: () => void;
   diag: (...args: unknown[]) => void;
   normalizedClientId: string;
-  handleControl: HandleControlFn;
+  handleControl?: HandleControlFn | null;
   sharedContext: StreamSharedContext;
 };
 
@@ -133,7 +133,7 @@ type DoneDeps = {
   registerNoContent: RegisterNoContentFn;
   logSse: LogSseFn;
   ensureAssistantForNoContent: EnsureAssistantForNoContentFn;
-  handleDone: DoneHandler;
+  handleDone?: DoneHandler | null;
   setErroApi: Dispatch<SetStateAction<string | null>>;
   removeEcoEntry: RemoveEcoEntryFn;
   applyMetaToStreamStats: (streamStats: StreamRunStats, meta: Record<string, unknown> | undefined) => void;
@@ -147,11 +147,11 @@ type ErrorDeps = {
   replyState: ReplyStateController;
   tracking: MessageTrackingRefs;
   clientMessageId: string;
-  processChunk: (index: number, delta: string, rawEvent: Record<string, unknown>) => void;
+  processChunk?: ((index: number, delta: string, rawEvent: Record<string, unknown>) => void) | null;
   sharedContext: StreamSharedContext;
   diag: (...args: unknown[]) => void;
   normalizedClientId: string;
-  handleDone: HandleStreamDoneFn;
+  handleDone?: HandleStreamDoneFn | null;
   fatalErrorState: FatalErrorState;
   extractText: ExtractTextFn;
   toRecord: (value: unknown) => Record<string, unknown> | undefined;
@@ -172,6 +172,16 @@ export const processChunk = ({
   handleChunk,
   toRecord,
 }: ProcessChunkDeps) => {
+  const chunkHandler = typeof handleChunk === "function" ? handleChunk : null;
+  if (!chunkHandler) {
+    try {
+      console.debug("[SSE-DEBUG] onChunk missing");
+    } catch {
+      /* noop */
+    }
+  }
+  const firstChunkHandler = typeof onFirstChunk === "function" ? onFirstChunk : null;
+
   return (index: number, delta: string, rawEvent: Record<string, unknown>) => {
     if (controller.signal.aborted) return;
     if (streamState.fallbackRequested) return;
@@ -219,7 +229,25 @@ export const processChunk = ({
     if (!streamState.firstChunkDelivered) {
       streamState.firstChunkDelivered = true;
       clearFallbackGuardTimer();
-      onFirstChunk?.();
+      try {
+        console.log("[SSE-DEBUG] first_chunk_received", {
+          clientMessageId: sharedContext.clientMessageId,
+          streamId: sharedContext.streamStats.streamId ?? null,
+        });
+      } catch {
+        /* noop */
+      }
+      if (firstChunkHandler) {
+        try {
+          firstChunkHandler();
+        } catch (error) {
+          try {
+            console.warn("[SSE-DEBUG] onFirstChunk threw", { error });
+          } catch {
+            /* noop */
+          }
+        }
+      }
     } else {
       clearFallbackGuardTimer();
     }
@@ -253,7 +281,17 @@ export const processChunk = ({
       isFirstChunk: index === 0,
     };
 
-    handleChunk(chunk, sharedContext);
+    if (chunkHandler) {
+      try {
+        chunkHandler(chunk, sharedContext);
+      } catch (error) {
+        try {
+          console.warn("[SSE-DEBUG] onChunk threw", { error });
+        } catch {
+          /* noop */
+        }
+      }
+    }
   };
 };
 
@@ -270,12 +308,47 @@ export const onPromptReady = ({
   handlePromptReady,
   sharedContext,
 }: PromptReadyDeps) => {
+  const readyHandler = typeof onReady === "function" ? onReady : null;
+  if (!readyHandler) {
+    try {
+      console.debug("[SSE-DEBUG] onReady missing");
+    } catch {
+      /* noop */
+    }
+  }
+  const promptHandler = typeof handlePromptReady === "function" ? handlePromptReady : null;
+  if (!promptHandler) {
+    try {
+      console.debug("[SSE-DEBUG] onPromptReady missing");
+    } catch {
+      /* noop */
+    }
+  }
+
   return (rawEvent: Record<string, unknown>) => {
     if (controller.signal.aborted) return;
     if (streamState.fallbackRequested) return;
     if (!streamState.readyReceived) {
       streamState.readyReceived = true;
-      onReady();
+      try {
+        console.log("[SSE-DEBUG] ready_received", {
+          clientMessageId: sharedContext.clientMessageId,
+          streamId: sharedContext.streamStats.streamId ?? null,
+        });
+      } catch {
+        /* noop */
+      }
+      if (readyHandler) {
+        try {
+          readyHandler();
+        } catch (error) {
+          try {
+            console.warn("[SSE-DEBUG] onReady threw", { error });
+          } catch {
+            /* noop */
+          }
+        }
+      }
     }
     markPromptReadyWatchdog();
     const records = buildRecordChain(rawEvent);
@@ -299,7 +372,17 @@ export const onPromptReady = ({
       messageId: promptEvent.messageId ?? null,
     });
 
-    handlePromptReady(promptEvent, sharedContext);
+    if (promptHandler) {
+      try {
+        promptHandler(promptEvent, sharedContext);
+      } catch (error) {
+        try {
+          console.warn("[SSE-DEBUG] onPromptReady threw", { error });
+        } catch {
+          /* noop */
+        }
+      }
+    }
   };
 };
 
@@ -315,6 +398,15 @@ export const onControl = ({
   handleControl,
   sharedContext,
 }: ControlDeps) => {
+  const controlHandler = typeof handleControl === "function" ? handleControl : null;
+  if (!controlHandler) {
+    try {
+      console.debug("[SSE-DEBUG] onControl missing");
+    } catch {
+      /* noop */
+    }
+  }
+
   return (rawEvent: Record<string, unknown>) => {
     if (controller.signal.aborted) return;
     if (streamState.fallbackRequested) return;
@@ -342,7 +434,17 @@ export const onControl = ({
       diag("control_event", { name: normalizedName, clientMessageId: normalizedClientId });
     }
 
-    handleControl(controlEvent, sharedContext);
+    if (controlHandler) {
+      try {
+        controlHandler(controlEvent, sharedContext);
+      } catch (error) {
+        try {
+          console.warn("[SSE-DEBUG] onControl threw", { error });
+        } catch {
+          /* noop */
+        }
+      }
+    }
   };
 };
 
@@ -411,6 +513,15 @@ export const onDone = ({
   applyMetaToStreamStats,
   extractFinishReasonFromMeta,
 }: DoneDeps): HandleStreamDoneFn => {
+  const doneHandler = typeof handleDone === "function" ? handleDone : null;
+  if (!doneHandler) {
+    try {
+      console.debug("[SSE-DEBUG] onDone missing");
+    } catch {
+      /* noop */
+    }
+  }
+
   return (rawEvent?: Record<string, unknown>, options?: { reason?: string }) => {
     clearTypingWatchdog();
     if (controller.signal.aborted || doneState.value) return;
@@ -544,7 +655,26 @@ export const onDone = ({
       assistantId,
     };
 
-    handleDone(doneContext);
+    try {
+      console.log("[SSE-DEBUG] done_received", {
+        clientMessageId: sharedContext.clientMessageId,
+        streamId: sharedContext.streamStats.streamId ?? null,
+      });
+    } catch {
+      /* noop */
+    }
+
+    if (doneHandler) {
+      try {
+        doneHandler(doneContext);
+      } catch (error) {
+        try {
+          console.warn("[SSE-DEBUG] onDone threw", { error });
+        } catch {
+          /* noop */
+        }
+      }
+    }
   };
 };
 
@@ -564,6 +694,16 @@ export const onError = ({
   extractText,
   toRecord,
 }: ErrorDeps) => {
+  const chunkHandler = typeof processChunk === "function" ? processChunk : null;
+  const doneHandler = typeof handleDone === "function" ? handleDone : null;
+  if (!chunkHandler || !doneHandler) {
+    try {
+      console.debug("[SSE-DEBUG] onError missing");
+    } catch {
+      /* noop */
+    }
+  }
+
   return (rawEvent: Record<string, unknown>) => {
     bumpHeartbeatWatchdog();
     const records = buildRecordChain(rawEvent);
@@ -593,10 +733,30 @@ export const onError = ({
           message: messageText,
         },
       };
-      processChunk(nextIndex, messageText, syntheticEvent);
+      if (chunkHandler) {
+        try {
+          chunkHandler(nextIndex, messageText, syntheticEvent);
+        } catch (error) {
+          try {
+            console.warn("[SSE-DEBUG] onError chunk handler threw", { error });
+          } catch {
+            /* noop */
+          }
+        }
+      }
       sharedContext.streamStats.clientFinishReason = "internal_error";
       diag("stream_error_internal", { clientMessageId: normalizedClientId });
-      handleDone(undefined, { reason: "internal_error" });
+      if (doneHandler) {
+        try {
+          doneHandler(undefined, { reason: "internal_error" });
+        } catch (error) {
+          try {
+            console.warn("[SSE-DEBUG] onError done handler threw", { error });
+          } catch {
+            /* noop */
+          }
+        }
+      }
       fatalErrorState.current = null;
       return;
     }
