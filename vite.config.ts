@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => {
       'process.env.VITE_OPENROUTER_API_KEY': JSON.stringify(env.VITE_OPENROUTER_API_KEY),
       'process.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
       'process.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY),
+      __API_BASE__: JSON.stringify(env.VITE_API_URL || env.NEXT_PUBLIC_API_URL || ''),
     },
 
     optimizeDeps: {

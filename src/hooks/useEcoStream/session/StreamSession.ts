@@ -25,6 +25,8 @@ import type {
   StreamSharedContext,
 } from "../types";
 
+declare const __API_BASE__: string | undefined;
+
 export type WatchdogMode = "idle" | "first" | "steady";
 
 export type CloseReason =
@@ -743,7 +745,7 @@ export class StreamSession {
 type ResolveAskEcoUrlResult = {
   url: string;
   base: string;
-  source: "VITE_API_URL" | "NEXT_PUBLIC_API_URL";
+  source: "VITE_API_URL" | "NEXT_PUBLIC_API_URL" | "DEFINE_FALLBACK";
   nodeEnv: string;
 };
 
@@ -761,25 +763,30 @@ const resolveAbsoluteAskEcoUrl = (): ResolveAskEcoUrlResult => {
       return {};
     }
   })();
-  const candidates: Array<{ value?: string; source: ResolveAskEcoUrlResult["source"] }> = [
-    { value: env?.VITE_API_URL ?? processEnv?.VITE_API_URL, source: "VITE_API_URL" },
-    {
-      value: env?.NEXT_PUBLIC_API_URL ?? processEnv?.NEXT_PUBLIC_API_URL,
-      source: "NEXT_PUBLIC_API_URL",
-    },
-  ];
-  let selected: { value: string; source: ResolveAskEcoUrlResult["source"] } | null = null;
-  for (const candidate of candidates) {
-    if (typeof candidate.value !== "string") continue;
-    const trimmed = candidate.value.trim();
-    if (!trimmed) continue;
-    selected = { value: trimmed, source: candidate.source };
-    break;
+  const fromDefine =
+    (typeof __API_BASE__ !== "undefined" ? __API_BASE__ : "") ?? "";
+  const rawVite = env?.VITE_API_URL ?? processEnv?.VITE_API_URL ?? "";
+  const rawNext = env?.NEXT_PUBLIC_API_URL ?? processEnv?.NEXT_PUBLIC_API_URL ?? "";
+  const trimmedVite = typeof rawVite === "string" ? rawVite.trim() : "";
+  const trimmedNext = typeof rawNext === "string" ? rawNext.trim() : "";
+  const trimmedDefine = typeof fromDefine === "string" ? fromDefine.trim() : "";
+
+  try {
+    console.log("[SSE-DEBUG] env_probe", {
+      hasVite: trimmedVite.length > 0,
+      hasNextPub: trimmedNext.length > 0,
+      hasDefine: trimmedDefine.length > 0,
+    });
+  } catch {
+    /* noop */
   }
-  if (!selected) {
-    console.error("API_BASE missing");
-    throw new Error("API_BASE missing");
-  }
+
+  const baseCandidate = trimmedVite || trimmedNext || trimmedDefine;
+  const selectedSource: ResolveAskEcoUrlResult["source"] = trimmedVite
+    ? "VITE_API_URL"
+    : trimmedNext
+    ? "NEXT_PUBLIC_API_URL"
+    : "DEFINE_FALLBACK";
 
   const nodeEnvRaw =
     (typeof processEnv?.NODE_ENV === "string" ? processEnv.NODE_ENV.trim() : "") ||
@@ -787,12 +794,21 @@ const resolveAbsoluteAskEcoUrl = (): ResolveAskEcoUrlResult => {
     (typeof env?.mode === "string" ? env.mode.trim() : "");
   const nodeEnv = nodeEnvRaw;
 
-  let base = selected.value.replace(/\/+$/, "");
+  if (!baseCandidate) {
+    const message =
+      nodeEnv.toLowerCase() === "production"
+        ? "API_BASE missing: defina VITE_API_URL (ou NEXT_PUBLIC_API_URL) nas envs de Preview/Production e faça redeploy."
+        : "API_BASE missing";
+    console.error(message);
+    throw new Error(message);
+  }
+
+  let base = baseCandidate.replace(/\/+$/, "");
   let parsed: URL;
   try {
     parsed = new URL(base);
   } catch {
-    console.error("[SSE] Invalid API_BASE", { base: selected.value, source: selected.source });
+    console.error("[SSE] Invalid API_BASE", { base: baseCandidate, source: selectedSource });
     throw new Error("API_BASE invalid");
   }
 
@@ -801,7 +817,7 @@ const resolveAbsoluteAskEcoUrl = (): ResolveAskEcoUrlResult => {
     if (host === "localhost" || host === "127.0.0.1") {
       console.error("[SSE] API_BASE localhost blocked in production", {
         base: parsed.toString(),
-        source: selected.source,
+        source: selectedSource,
       });
       throw new Error("API_BASE localhost not allowed in production");
     }
@@ -813,7 +829,7 @@ const resolveAbsoluteAskEcoUrl = (): ResolveAskEcoUrlResult => {
     if (parsed.hostname === pageHost) {
       console.error("[SSE] API_BASE forced to https", {
         base: parsed.toString(),
-        source: selected.source,
+        source: selectedSource,
       });
       parsed.protocol = "https:";
       if (!window.location.port && parsed.port === "80") {
@@ -822,7 +838,7 @@ const resolveAbsoluteAskEcoUrl = (): ResolveAskEcoUrlResult => {
     } else {
       console.error("[SSE] API_BASE insecure http blocked on https page", {
         base: parsed.toString(),
-        source: selected.source,
+        source: selectedSource,
         pageHost,
       });
       throw new Error("API_BASE insecure on https page");
@@ -849,7 +865,7 @@ const resolveAbsoluteAskEcoUrl = (): ResolveAskEcoUrlResult => {
   return {
     url,
     base: trimmedBase,
-    source: selected.source,
+    source: selectedSource,
     nodeEnv,
   };
 };
