@@ -121,6 +121,49 @@ const logDev = (label: string, payload: Record<string, unknown>) => {
   }
 };
 
+const resolveAbsoluteAskEcoUrl = (): string => {
+  const envContainer = import.meta as { env?: Record<string, string | undefined> };
+  const env = envContainer.env ?? {};
+  const candidates: Array<unknown> = [
+    env?.VITE_API_URL,
+    env?.NEXT_PUBLIC_API_URL,
+    API_BASE,
+  ];
+  let base = "";
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string") continue;
+    const trimmed = candidate.trim();
+    if (!trimmed) continue;
+    base = trimmed;
+    break;
+  }
+  const sanitizedBase = base.replace(/\/+$/, "");
+  const path = ASK_ECO_ENDPOINT_PATH.startsWith("/")
+    ? ASK_ECO_ENDPOINT_PATH
+    : `/${ASK_ECO_ENDPOINT_PATH}`;
+  if (/^https?:\/\//i.test(sanitizedBase)) {
+    return `${sanitizedBase}${path}`;
+  }
+  let fallbackPath: string;
+  if (!sanitizedBase) {
+    fallbackPath = path;
+  } else if (sanitizedBase.endsWith("/api")) {
+    fallbackPath = `${sanitizedBase}${path.replace(/^\/api/, "")}`;
+  } else {
+    fallbackPath = `${sanitizedBase}${path}`;
+  }
+  try {
+    const origin =
+      typeof window !== "undefined" && window.location?.origin ? window.location.origin : undefined;
+    if (origin) {
+      return new URL(fallbackPath, origin).toString();
+    }
+  } catch {
+    /* noop */
+  }
+  return fallbackPath;
+};
+
 type AllowedAbortReason = "watchdog_timeout" | "user_cancel";
 
 const ALLOWED_ABORT_REASONS = new Set<AllowedAbortReason>(["watchdog_timeout", "user_cancel"]);
@@ -1553,8 +1596,12 @@ const beginStreamInternal = (
 
     requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
 
-    const normalizedBase = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
-    const requestUrl = normalizedBase ? `${normalizedBase}/ask-eco` : ASK_ECO_ENDPOINT_PATH;
+    const requestUrl = resolveAbsoluteAskEcoUrl();
+    try {
+      console.log("[SSE-DEBUG] resolved_ask_eco_url", { requestUrl });
+    } catch {
+      /* noop */
+    }
 
     const contexto = (requestBody as { contexto?: { stream_id?: unknown; streamId?: unknown } })?.contexto;
     const streamIdCandidates: unknown[] = [

@@ -741,6 +741,45 @@ export class StreamSession {
   }
 }
 
+const resolveAbsoluteAskEcoUrl = (): string => {
+  const envContainer = import.meta as { env?: Record<string, string | undefined> };
+  const env = envContainer.env ?? {};
+  const candidates: Array<unknown> = [env?.VITE_API_URL, env?.NEXT_PUBLIC_API_URL, API_BASE];
+  let base = "";
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string") continue;
+    const trimmed = candidate.trim();
+    if (!trimmed) continue;
+    base = trimmed;
+    break;
+  }
+  const sanitizedBase = base.replace(/\/+$/, "");
+  const path = ASK_ECO_ENDPOINT_PATH.startsWith("/")
+    ? ASK_ECO_ENDPOINT_PATH
+    : `/${ASK_ECO_ENDPOINT_PATH}`;
+  if (/^https?:\/\//i.test(sanitizedBase)) {
+    return `${sanitizedBase}${path}`;
+  }
+  let fallbackPath: string;
+  if (!sanitizedBase) {
+    fallbackPath = path;
+  } else if (sanitizedBase.endsWith("/api")) {
+    fallbackPath = `${sanitizedBase}${path.replace(/^\/api/, "")}`;
+  } else {
+    fallbackPath = `${sanitizedBase}${path}`;
+  }
+  try {
+    const origin =
+      typeof window !== "undefined" && window.location?.origin ? window.location.origin : undefined;
+    if (origin) {
+      return new URL(fallbackPath, origin).toString();
+    }
+  } catch {
+    /* noop */
+  }
+  return fallbackPath;
+};
+
 interface FallbackManagerOptions {
   session: StreamSession;
   sharedContext: StreamSharedContext;
@@ -983,8 +1022,12 @@ export class StreamFallbackManager {
     }
 
     try {
-      const normalizedBase = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
-      const fallbackUrl = normalizedBase ? `${normalizedBase}/ask-eco` : ASK_ECO_ENDPOINT_PATH;
+      const fallbackUrl = resolveAbsoluteAskEcoUrl();
+      try {
+        console.log("[SSE-DEBUG] resolved_fallback_url", { fallbackUrl });
+      } catch {
+        /* noop */
+      }
       const once = (value?: string | null): string => {
         if (typeof value !== "string") return "";
         const [head] = value.split(",");
