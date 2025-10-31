@@ -39,7 +39,7 @@ import {
 import { rememberGuestIdentityFromResponse, rememberSessionIdentityFromResponse } from "../../lib/guestId";
 import { setStreamActive } from "./streamStatus";
 import { NO_TEXT_ALERT_MESSAGE, showToast } from "../useEcoStream.helpers";
-import { buildAskEcoUrl } from "@/api/askEcoUrl";
+import { API_BASE } from "@/api/config";
 import { getOrCreateGuestId, getOrCreateSessionId, rememberIdsFromResponse } from "@/utils/identity";
 import {
   onControl,
@@ -1587,7 +1587,8 @@ const beginStreamInternal = (
 
     requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
 
-    const requestUrl = buildAskEcoUrl(undefined, { clientMessageId });
+    const normalizedBase = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
+    const requestUrl = `${normalizedBase || ""}/ask-eco`;
 
     const contexto = (requestBody as { contexto?: { stream_id?: unknown; streamId?: unknown } })?.contexto;
     const streamIdCandidates: unknown[] = [
