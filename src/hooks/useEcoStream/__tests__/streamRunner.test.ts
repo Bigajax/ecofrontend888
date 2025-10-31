@@ -359,6 +359,22 @@ describe("createStreamRunner", () => {
   });
 
   it("streams prompt, chunk and done events from a custom ReadableStream", async () => {
+    const assignDiagPayload = (payload: { forceJson?: boolean } | undefined) => {
+      (globalThis as typeof globalThis & { __ecoDiag?: { forceJson?: boolean } | undefined }).__ecoDiag =
+        payload;
+      if (typeof window !== "undefined") {
+        (window as typeof window & { __ecoDiag?: { forceJson?: boolean } | undefined }).__ecoDiag = payload;
+      }
+    };
+    const previousGlobalDiag = (globalThis as typeof globalThis & {
+      __ecoDiag?: { forceJson?: boolean };
+    }).__ecoDiag;
+    const previousWindowDiag =
+      typeof window !== "undefined"
+        ? (window as typeof window & { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag
+        : undefined;
+    assignDiagPayload({ forceJson: false });
+
     const { timers, runAll } = createManualTimers();
     const watchdogFactory = vi.fn(() => createWatchdogStub());
     const fetchImpl = vi.fn<NonNullable<StreamRunnerFactoryOptions["fetchImpl"]>>(async (_url, init) => {
@@ -378,31 +394,61 @@ describe("createStreamRunner", () => {
       ]);
     });
 
-    const runner = streamOrchestrator.createStreamRunner({ fetchImpl, timers, watchdogFactory });
-    const { params, context } = buildBaseParams({}, { clientId: "client-stream-success" });
+    try {
+      const runner = streamOrchestrator.createStreamRunner({ fetchImpl, timers, watchdogFactory });
+      const { params, context } = buildBaseParams({}, { clientId: "client-stream-success" });
 
-    const result = (await runner.beginStream(params)) as StreamRunStats;
+      const result = (await runner.beginStream(params)) as StreamRunStats;
 
-    runAll();
+      runAll();
 
-    expect(fetchImpl).toHaveBeenCalled();
-    expect(result.gotAnyChunk).toBe(true);
-    expect(result.aggregatedLength).toBeGreaterThanOrEqual(7);
-    expect(context.setDigitando).toHaveBeenCalledWith(false);
-    expect(context.setErroApi).not.toHaveBeenCalledWith(expect.any(String));
-    expect(watchdogFactory).toHaveBeenCalledTimes(1);
-    const [watchdogId, timersArg] = watchdogFactory.mock.calls[0];
-    expect(watchdogId).toBe(params.userMessage.id);
-    expect(timersArg).toMatchObject({
-      setTimeout: expect.any(Function),
-      clearTimeout: expect.any(Function),
-    });
-    const messages = context.messagesRef();
-    const assistantMessage = messages.find((message) => message.id === context.assistantId);
-    expect(assistantMessage).toBeTruthy();
-    expect(assistantMessage).toMatchObject({ streaming: false, status: "done" });
-    const renderedText = assistantMessage?.text ?? assistantMessage?.content;
-    expect(renderedText).toContain("Olá");
+      expect(fetchImpl).toHaveBeenCalled();
+      const streamCall = fetchImpl.mock.calls.find(([, init]) => {
+        const method = (init?.method ?? "GET").toString().toUpperCase();
+        return method !== "HEAD";
+      });
+      expect(streamCall).toBeTruthy();
+      if (!streamCall) throw new Error("streaming call not found");
+      const [, streamInit] = streamCall;
+      const streamMethod = (streamInit?.method ?? "GET").toString().toUpperCase();
+      expect(streamMethod).toBe("POST");
+      const headers = new Headers(streamInit?.headers as HeadersInit);
+      expect(headers.get("accept")).toBe("text/event-stream");
+      expect(headers.get("content-type")).toBe("application/json");
+      const body = streamInit?.body;
+      expect(typeof body).toBe("string");
+      const parsedBody = JSON.parse(body as string);
+      expect(parsedBody).toMatchObject({
+        clientMessageId: params.userMessage.id,
+        texto: params.userMessage.text,
+        isGuest: false,
+      });
+      expect(Array.isArray(parsedBody.history)).toBe(true);
+      expect(parsedBody.history?.length).toBeGreaterThan(0);
+      expect(result.gotAnyChunk).toBe(true);
+      expect(result.aggregatedLength).toBeGreaterThanOrEqual(7);
+      expect(context.setDigitando).toHaveBeenCalledWith(false);
+      expect(context.setErroApi).not.toHaveBeenCalledWith(expect.any(String));
+      expect(watchdogFactory).toHaveBeenCalledTimes(1);
+      const [watchdogId, timersArg] = watchdogFactory.mock.calls[0];
+      expect(watchdogId).toBe(params.userMessage.id);
+      expect(timersArg).toMatchObject({
+        setTimeout: expect.any(Function),
+        clearTimeout: expect.any(Function),
+      });
+      const messages = context.messagesRef();
+      const assistantMessage = messages.find((message) => message.id === context.assistantId);
+      expect(assistantMessage).toBeTruthy();
+      expect(assistantMessage).toMatchObject({ streaming: false, status: "done" });
+      const renderedText = assistantMessage?.text ?? assistantMessage?.content;
+      expect(renderedText).toContain("Olá");
+    } finally {
+      assignDiagPayload(previousGlobalDiag ?? undefined);
+      if (typeof window !== "undefined") {
+        (window as typeof window & { __ecoDiag?: { forceJson?: boolean } | undefined }).__ecoDiag =
+          previousWindowDiag ?? undefined;
+      }
+    }
   });
 
   it(

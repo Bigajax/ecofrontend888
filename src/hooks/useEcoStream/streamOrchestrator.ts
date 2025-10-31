@@ -1752,13 +1752,11 @@ const beginStreamInternal = (
           /* noop */
         }
 
-        const requestHeaders = { ...baseHeaders(), Accept: acceptHeader };
-        if (!diagForceJson) {
-          delete requestHeaders["Content-Type"];
-          delete requestHeaders["content-type"];
-        } else {
-          requestHeaders["Content-Type"] = "application/json";
-        }
+        const requestHeaders = {
+          ...baseHeaders(),
+          Accept: acceptHeader,
+          "Content-Type": "application/json",
+        };
 
         const fetchInit: RequestInit = {
           method: requestMethod,
@@ -1770,9 +1768,7 @@ const beginStreamInternal = (
           // keepalive: true,  // ❌ NÃO usar em SSE
         };
 
-        if (diagForceJson) {
-          fetchInit.body = JSON.stringify(requestPayload);
-        }
+        fetchInit.body = JSON.stringify(requestPayload);
 
         response = await fetchFn(requestUrl, fetchInit);
         if (!response.ok) {
