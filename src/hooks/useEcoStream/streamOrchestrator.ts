@@ -2536,8 +2536,6 @@ const beginStreamInternal = (
       toRecord,
     });
 
-    };
-
     const responseNonNull = response as Response;
     const headerEntries = Array.from(responseNonNull.headers.entries());
     const headerMap = headerEntries.reduce<Record<string, string>>((acc, [key, value]) => {
