@@ -85,9 +85,6 @@ const FALLBACK_NO_CHUNK_REASONS = new Set<string>([
 const inflightControllers = new Map<string, AbortController>();
 const streamStartLogged = new Set<string>();
 
-let headProbeCompleted = false;
-let headProbePromise: Promise<void> | null = null;
-
 const isDevelopmentEnv = (() => {
   try {
     const meta = import.meta as { env?: { DEV?: boolean; MODE?: string; mode?: string } };
@@ -120,54 +117,6 @@ const logDev = (label: string, payload: Record<string, unknown>) => {
     console.debug(`[EcoStream] ${label}`, payload);
   } catch {
     /* noop */
-  }
-};
-
-const ensureHeadProbe = async (
-  url: string,
-  guestId: string,
-  sessionId: string,
-  fetchImpl?: typeof fetch,
-) => {
-  if (headProbeCompleted) return;
-  const resolvedFetch =
-    fetchImpl ?? (typeof globalThis.fetch === "function" ? (globalThis.fetch as typeof fetch) : undefined);
-  if (typeof resolvedFetch !== "function") {
-    headProbeCompleted = true;
-    headProbePromise = null;
-    return;
-  }
-  if (headProbePromise) {
-    try {
-      await headProbePromise;
-    } catch {
-      /* noop */
-    }
-    return;
-  }
-  headProbePromise = (async () => {
-    try {
-      await resolvedFetch(url, {
-        method: "HEAD",
-        headers: {
-          "X-Eco-Guest-Id": guestId,
-          "X-Eco-Session-Id": sessionId,
-          "X-Client-Id": "webapp",
-        },
-      });
-    } catch (error) {
-      try {
-        console.debug("[EcoStream] HEAD probe failed", { error });
-      } catch {
-        /* noop */
-      }
-    }
-  })();
-  try {
-    await headProbePromise;
-  } finally {
-    headProbeCompleted = true;
-    headProbePromise = null;
   }
 };
 
@@ -225,7 +174,7 @@ export async function openEcoSseStream(opts: {
 }) {
   const {
     url,
-    body,
+    body: _body,
     onPromptReady,
     onChunk,
     onControl,
@@ -268,10 +217,9 @@ export async function openEcoSseStream(opts: {
 
   const acceptHeader = "text/event-stream";
   const forcedJson = false;
-  const requestMethod = "POST" as const;
+  const requestMethod = "GET" as const;
   const requestHeaders: Record<string, string> = {
-    "content-type": "application/json",
-    accept: acceptHeader,
+    Accept: acceptHeader,
   };
 
   console.log("[DIAG] start", { url, accept: acceptHeader, forcedJson, method: requestMethod });
@@ -284,7 +232,7 @@ export async function openEcoSseStream(opts: {
   const res = await fetch(url, {
     method: requestMethod,
     headers: requestHeaders,
-    body: JSON.stringify(body),
+    credentials: "omit",
     signal: controller.signal,
   });
 
@@ -1565,12 +1513,27 @@ const beginStreamInternal = (
         isGuest,
       });
 
+    const once = (value?: string | null): string => {
+      if (typeof value !== "string") return "";
+      const [head] = value.split(",");
+      return head.trim();
+    };
+
+    const sanitizedClientId = once(resolvedClientId);
+    const sanitizedGuestId = once(effectiveGuestId);
+    const sanitizedSessionId = once(effectiveSessionId);
+    const sanitizedClientMessageId = once(clientMessageId);
+
     const headers: Record<string, string> = {};
+    const seenHeaderKeys = new Set<string>();
     const appendHeader = (key: string, value: unknown) => {
       if (typeof value !== "string") return;
       const trimmed = value.trim();
       if (!trimmed) return;
+      const normalizedKey = key.toLowerCase();
+      if (seenHeaderKeys.has(normalizedKey)) return;
       headers[key] = trimmed;
+      seenHeaderKeys.add(normalizedKey);
     };
 
     const identityHeaders = session.getIdentityHeaders();
@@ -1578,17 +1541,26 @@ const beginStreamInternal = (
       appendHeader(key, value);
     }
 
-    appendHeader("X-Client-Id", resolvedClientId);
-    appendHeader("x-client-id", resolvedClientId);
-    appendHeader("X-Eco-Guest-Id", effectiveGuestId);
-    appendHeader("x-eco-guest-id", effectiveGuestId);
-    appendHeader("X-Eco-Session-Id", effectiveSessionId);
-    appendHeader("x-eco-session-id", effectiveSessionId);
+    appendHeader("X-Client-Id", sanitizedClientId);
+    appendHeader("X-Eco-Guest-Id", sanitizedGuestId);
+    appendHeader("X-Eco-Session-Id", sanitizedSessionId);
 
     requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
 
     const normalizedBase = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
     const requestUrl = `${normalizedBase || ""}/ask-eco`;
+    const queryParams = new URLSearchParams();
+    if (sanitizedGuestId) {
+      queryParams.set("guest_id", sanitizedGuestId);
+    }
+    if (sanitizedSessionId) {
+      queryParams.set("session_id", sanitizedSessionId);
+    }
+    if (sanitizedClientMessageId) {
+      queryParams.set("client_message_id", sanitizedClientMessageId);
+    }
+    const requestUrlWithParams =
+      queryParams.toString().length > 0 ? `${requestUrl}?${queryParams.toString()}` : requestUrl;
 
     const contexto = (requestBody as { contexto?: { stream_id?: unknown; streamId?: unknown } })?.contexto;
     const streamIdCandidates: unknown[] = [
@@ -1601,7 +1573,6 @@ const beginStreamInternal = (
       .find((candidate) => candidate.length > 0);
     if (streamId) {
       appendHeader("X-Stream-Id", streamId);
-      appendHeader("x-stream-id", streamId);
       streamStats.streamId = streamId;
     }
 
@@ -1726,7 +1697,7 @@ const beginStreamInternal = (
       try {
         try {
           console.debug('[DIAG] start', {
-            url: requestUrl,
+            url: requestUrlWithParams,
             accept: acceptHeader,
             forcedJson: diagForceJson,
             method: requestMethod,
@@ -1747,31 +1718,22 @@ const beginStreamInternal = (
           );
         }
 
-        try {
-          await ensureHeadProbe(requestUrl, effectiveGuestId, effectiveSessionId, fetchImpl);
-        } catch {
-          /* noop */
-        }
-
         const requestHeaders = {
           ...baseHeaders(),
           Accept: acceptHeader,
-          "Content-Type": "application/json",
         };
 
         const fetchInit: RequestInit = {
           method: requestMethod,
           mode: "cors",
-          credentials: "include",
+          credentials: "omit",
           headers: requestHeaders,
           signal: controller.signal,
           cache: "no-store",
           // keepalive: true,  // ❌ NÃO usar em SSE
         };
 
-        fetchInit.body = JSON.stringify(requestPayload);
-
-        response = await fetchFn(requestUrl, fetchInit);
+        response = await fetchFn(requestUrlWithParams, fetchInit);
         if (!response.ok) {
           const httpError = new Error(`HTTP ${response.status}: ${response.statusText}`);
           fetchError = httpError;

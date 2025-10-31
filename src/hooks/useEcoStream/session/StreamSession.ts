@@ -527,8 +527,8 @@ export class StreamSession {
     const diagForceJson =
       typeof window !== "undefined" &&
       Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
-    const requestMethod: "GET" | "POST" = "POST";
-    const acceptHeader = diagForceJson ? "application/json" : "text/event-stream";
+    const requestMethod: "GET" | "POST" = "GET";
+    const acceptHeader = "text/event-stream";
     const fallbackEnabled = diagForceJson;
 
     this.logDev("identifiers", {
@@ -985,22 +985,34 @@ export class StreamFallbackManager {
       const fallbackUrl = buildAskEcoUrl(undefined, {
         clientMessageId: this.session.getClientMessageId(),
       });
-      const fallbackGuestId = this.session.getEffectiveGuestId();
-      const fallbackSessionId = this.session.getEffectiveSessionId();
+      const once = (value?: string | null): string => {
+        if (typeof value !== "string") return "";
+        const [head] = value.split(",");
+        return head.trim();
+      };
+      const fallbackGuestId = once(this.session.getEffectiveGuestId());
+      const fallbackSessionId = once(this.session.getEffectiveSessionId());
+      const fallbackClientId = once(this.session.getNormalizedClientId());
+      const fallbackClientMessageId = once(this.session.getClientMessageId());
       const fallbackHeaders: Record<string, string> = {
         ...this.baseHeaders(),
         Accept: "application/json",
         "Content-Type": "application/json",
-        "X-Eco-Guest-Id": fallbackGuestId,
-        "X-Eco-Session-Id": fallbackSessionId,
-        "X-Client-Id": this.session.getNormalizedClientId() || "webapp",
-        ...(this.session.getClientMessageId()
-          ? {
-              "X-Eco-Client-Message-Id": this.session.getClientMessageId(),
-              "x-eco-client-message-id": this.session.getClientMessageId(),
-            }
-          : {}),
       };
+      if (fallbackGuestId) {
+        fallbackHeaders["X-Eco-Guest-Id"] = fallbackGuestId;
+      }
+      if (fallbackSessionId) {
+        fallbackHeaders["X-Eco-Session-Id"] = fallbackSessionId;
+      }
+      if (fallbackClientId) {
+        fallbackHeaders["X-Client-Id"] = fallbackClientId;
+      } else if (!fallbackHeaders["X-Client-Id"]) {
+        fallbackHeaders["X-Client-Id"] = "webapp";
+      }
+      if (fallbackClientMessageId) {
+        fallbackHeaders["X-Eco-Client-Message-Id"] = fallbackClientMessageId;
+      }
 
       const fallbackController = new AbortController();
       const payload = this.getRequestPayload();
