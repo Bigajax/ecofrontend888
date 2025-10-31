@@ -10,13 +10,13 @@ import {
   useMessageTracking,
   useReplyState,
 } from "./useEcoStream/messageState";
-import {
-  beginStream,
-  type EnsureAssistantMessageFn,
-  type InteractionMapAction,
-  type RemoveEcoEntryFn,
-  type StreamRunStats,
-} from "./useEcoStream/streamOrchestrator";
+import { beginStream } from "./useEcoStream/streamOrchestrator";
+import type {
+  EnsureAssistantMessageFn,
+  InteractionMapAction,
+  RemoveEcoEntryFn,
+  StreamRunStats,
+} from "./useEcoStream/types";
 import { safeDebug } from "./useEcoStream/utils";
 import { setStreamActive } from "./useEcoStream/streamStatus";
 

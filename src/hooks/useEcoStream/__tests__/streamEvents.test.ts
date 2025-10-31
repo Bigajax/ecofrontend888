@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { collectTexts } from "../../../api/askEcoResponse";
 import { pickStringFromRecords, toRecord } from "../utils";
-import type { StreamRunStats, StreamSharedContext } from "../streamOrchestrator";
+import type { StreamRunStats, StreamSharedContext } from "../types";
 import { onDone, onError, onMessage, onPromptReady, processChunk } from "../session/streamEvents";
 import type { MessageTrackingRefs, ReplyStateController } from "../messageState";
 

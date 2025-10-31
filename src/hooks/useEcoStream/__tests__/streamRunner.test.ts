@@ -5,11 +5,8 @@ import type { Dispatch, SetStateAction } from "react";
 import type { Message, UpsertMessageOptions } from "../../../contexts/ChatContext";
 import type { MessageTrackingRefs, ReplyStateController } from "../messageState";
 import * as streamOrchestrator from "../streamOrchestrator";
-import type {
-  StreamRunStats,
-  StreamRunnerFactoryOptions,
-  StreamRunnerTimers,
-} from "../streamOrchestrator";
+import type { StreamRunnerFactoryOptions, StreamRunnerTimers } from "../streamOrchestrator";
+import type { StreamRunStats } from "../types";
 
 type BeginStreamParams = Parameters<typeof streamOrchestrator.beginStream>[0];
 
