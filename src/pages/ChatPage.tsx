@@ -455,7 +455,7 @@ function ChatPage() {
     (msg) => isEcoMessage(msg) && (msg.streaming === true || msg.status === 'streaming'),
   );
   const shouldShowGlobalTyping =
-    isWaitingForEco || hasEcoStreamingMessage || isEcoStreamTyping === true;
+    hasEcoStreamingMessage || isEcoStreamTyping === true;
   const [globalTypingVisible, setGlobalTypingVisible] = useState(false);
   const [globalTypingState, setGlobalTypingState] = useState<'hidden' | 'enter' | 'visible' | 'exit'>('hidden');
   const globalTypingShowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -85,27 +85,92 @@ export async function safeFetch(input: RequestInfo | URL, init: RequestInit = {}
     fetchInit.keepalive = keepalive;
   }
 
+  const formatAbortReason = (value: unknown): string => {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) return trimmed;
+    }
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+    if (value instanceof DOMException) {
+      const domReason = (value as DOMException & { reason?: unknown }).reason;
+      if (typeof domReason === "string" && domReason.trim()) {
+        return domReason.trim();
+      }
+      if (typeof value.message === "string" && value.message.trim()) {
+        return value.message.trim();
+      }
+      if (typeof value.name === "string" && value.name.trim()) {
+        return value.name.trim();
+      }
+      return "DOMException";
+    }
+    if (value instanceof Error) {
+      if (typeof value.message === "string" && value.message.trim()) {
+        return value.message.trim();
+      }
+      if (typeof value.name === "string" && value.name.trim()) {
+        return value.name.trim();
+      }
+      return "Error";
+    }
+    if (typeof value === "object" && value !== null) {
+      const nested = (value as { reason?: unknown }).reason;
+      if (nested !== undefined) {
+        const formattedNested = formatAbortReason(nested);
+        if (formattedNested !== "unknown") {
+          return formattedNested;
+        }
+      }
+      try {
+        const serialized = JSON.stringify(value);
+        if (serialized && serialized !== "{}") {
+          return serialized;
+        }
+      } catch {
+        /* noop */
+      }
+    }
+    return "unknown";
+  };
+
+  const pickAbortReason = (): unknown =>
+    (controller.signal as AbortSignal & { reason?: unknown }).reason ??
+    (init.signal as AbortSignal & { reason?: unknown })?.reason;
+
   try {
     const response = await fetch(input, fetchInit);
     return { ok: response.ok, response };
   } catch (error) {
     const aborted = (error as DOMException)?.name === "AbortError";
-    if (aborted) {
+    const rawReason = pickAbortReason();
+    const normalizedReason = formatAbortReason(rawReason).toLowerCase();
+    const expectedReasons = new Set([
+      "timeout",
+      "visibilitychange",
+      "pagehide",
+      "hidden",
+      "finalize",
+      "watchdog_timeout",
+      "user_cancel",
+    ]);
+    const logPayload = {
+      method,
+      url: requestUrl ?? null,
+      aborted,
+      reason: rawReason ?? null,
+      normalizedReason: normalizedReason || null,
+    };
+    if (aborted || expectedReasons.has(normalizedReason)) {
       try {
-        console.debug("[safeFetch] aborted", {
-          method,
-          url: requestUrl ?? null,
-          reason:
-            (controller.signal as AbortSignal & { reason?: unknown }).reason ??
-            (init.signal as AbortSignal & { reason?: unknown })?.reason ??
-            null,
-        });
+        console.debug("[safeFetch] aborted", logPayload);
       } catch {
         /* noop */
       }
     } else {
       try {
-        console.error("[safeFetch] fetch_failed", { method, url: requestUrl ?? null, error });
+        console.error("[safeFetch] fetch_failed", { ...logPayload, error });
       } catch {
         /* noop */
       }

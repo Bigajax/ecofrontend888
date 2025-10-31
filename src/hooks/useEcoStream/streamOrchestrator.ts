@@ -1564,10 +1564,16 @@ const beginStreamInternal = (
   const registerNoContent = (reason: string) => {
     clearFallbackGuardTimer();
     if (streamStats.status === "no_content") return;
+    const normalizedReason = typeof reason === "string" ? reason.trim().toLowerCase() : "";
     streamStats.status = "no_content";
     streamStats.noContentReason = reason;
-    if (!streamStats.clientFinishReason) {
-      streamStats.clientFinishReason = "no_content";
+    const readyConfirmed = streamState.readyReceived || hasReadyRef.current === true;
+    const gotRenderableChunk =
+      streamStats.gotAnyChunk || sharedContext.hasFirstChunkRef.current === true;
+    if (readyConfirmed && !gotRenderableChunk) {
+      streamStats.clientFinishReason = "no_chunks_emitted";
+    } else if (!streamStats.clientFinishReason) {
+      streamStats.clientFinishReason = normalizedReason || "no_content";
     }
     const metrics = streamTimersRef.current[normalizedClientId];
     const now = Date.now();
@@ -1589,10 +1595,31 @@ const beginStreamInternal = (
     } catch {
       /* noop */
     }
-    try {
-      setErroApi(NO_CONTENT_MESSAGE);
-    } catch {
-      /* noop */
+    const suppressedReasons = new Set([
+      "client_disconnect",
+      "stream_aborted",
+      "user_cancel",
+      "visibilitychange",
+      "pagehide",
+      "hidden",
+      "finalize",
+      "watchdog_timeout",
+    ]);
+    const errorMessage = (() => {
+      if (readyConfirmed && !gotRenderableChunk) {
+        return mapStreamErrorToMessage("no_chunks_emitted");
+      }
+      if (suppressedReasons.has(normalizedReason)) {
+        return null;
+      }
+      return NO_CONTENT_MESSAGE;
+    })();
+    if (errorMessage) {
+      try {
+        setErroApi(errorMessage);
+      } catch {
+        /* noop */
+      }
     }
     if (
       fallbackEnabled &&
