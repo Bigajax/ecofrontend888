@@ -451,6 +451,18 @@ export class StreamSession {
       }
     }
 
+    const existingController = this.inflightControllers.get(normalizedClientId);
+    if (existingController && !existingController.signal.aborted) {
+      try {
+        console.warn("[SSE] duplicate_stream_blocked", {
+          clientMessageId: normalizedClientId,
+        });
+      } catch {
+        /* noop */
+      }
+      return null;
+    }
+
     const controller = controllerOverride ?? new AbortController();
     controllerRef.current = controller;
     this.inflightControllers.set(normalizedClientId, controller);
@@ -486,17 +498,6 @@ export class StreamSession {
     if (tracking.pendingAssistantMetaRef.current[clientMessageId]) {
       delete tracking.pendingAssistantMetaRef.current[clientMessageId];
     }
-
-    try {
-      console.debug("[DIAG] setDigitando:before", {
-        clientMessageId,
-        value: true,
-        phase: "beginStream:start",
-      });
-    } catch {
-      /* noop */
-    }
-    setDigitando(true);
 
     const identityHeaders = buildIdentityHeaders();
     this.identityHeaders = identityHeaders;

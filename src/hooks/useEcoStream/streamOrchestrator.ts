@@ -1309,6 +1309,18 @@ const beginStreamInternal = (
   const streamState = {
     fallbackRequested: false,
     firstChunkDelivered: false,
+    readyReceived: false,
+  };
+  let readyTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  const clearReadyTimeout = () => {
+    if (readyTimeoutHandle) {
+      try {
+        timers.clearTimeout(readyTimeoutHandle);
+      } catch {
+        clearTimeout(readyTimeoutHandle);
+      }
+      readyTimeoutHandle = null;
+    }
   };
 
   const activeId = activeStreamClientIdRef.current;
@@ -1834,6 +1846,7 @@ const beginStreamInternal = (
       const shouldSkipFetchInTest = isTestEnv || isVitest;
 
     const tryJsonFallback = async (reason: string): Promise<boolean> => {
+      if (streamState.readyReceived) return false;
       if (!fallbackEnabled) return false;
       if (streamState.firstChunkDelivered) return false;
       if (streamStats.gotAnyChunk) return false;

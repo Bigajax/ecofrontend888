@@ -45,6 +45,7 @@ type ExtractTextFn = (event: Record<string, unknown>) => string | undefined;
 type StreamState = {
   fallbackRequested: boolean;
   firstChunkDelivered: boolean;
+  readyReceived: boolean;
 };
 
 type DoneState = { value: boolean };
@@ -76,6 +77,7 @@ type PromptReadyDeps = {
   controller: AbortController;
   streamState: StreamState;
   markPromptReadyWatchdog: () => void;
+  onReady: () => void;
   buildRecordChain: BuildRecordChainFn;
   pickStringFromRecords: PickStringFromRecords;
   extractPayloadRecord: ExtractPayloadRecordFn;
@@ -259,6 +261,7 @@ export const onPromptReady = ({
   controller,
   streamState,
   markPromptReadyWatchdog,
+  onReady,
   buildRecordChain,
   pickStringFromRecords,
   extractPayloadRecord,
@@ -270,6 +273,10 @@ export const onPromptReady = ({
   return (rawEvent: Record<string, unknown>) => {
     if (controller.signal.aborted) return;
     if (streamState.fallbackRequested) return;
+    if (!streamState.readyReceived) {
+      streamState.readyReceived = true;
+      onReady();
+    }
     markPromptReadyWatchdog();
     const records = buildRecordChain(rawEvent);
     const interactionId =
