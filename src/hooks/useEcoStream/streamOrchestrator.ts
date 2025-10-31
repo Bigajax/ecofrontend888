@@ -106,9 +106,16 @@ const logDev = (label: string, payload: Record<string, unknown>) => {
   }
 };
 
-const ensureHeadProbe = async (url: string, guestId: string, sessionId: string) => {
+const ensureHeadProbe = async (
+  url: string,
+  guestId: string,
+  sessionId: string,
+  fetchImpl?: typeof fetch,
+) => {
   if (headProbeCompleted) return;
-  if (typeof fetch !== "function") {
+  const resolvedFetch =
+    fetchImpl ?? (typeof globalThis.fetch === "function" ? (globalThis.fetch as typeof fetch) : undefined);
+  if (typeof resolvedFetch !== "function") {
     headProbeCompleted = true;
     headProbePromise = null;
     return;
@@ -123,7 +130,7 @@ const ensureHeadProbe = async (url: string, guestId: string, sessionId: string) 
   }
   headProbePromise = (async () => {
     try {
-      await fetch(url, {
+      await resolvedFetch(url, {
         method: "HEAD",
         headers: {
           "X-Eco-Guest-Id": guestId,
@@ -168,7 +175,7 @@ export async function openEcoSseStream(opts: {
     controller = new AbortController(),
   } = opts;
 
-  const wd = createSseWatchdogs();
+  const wd = createSseWatchdogs("legacy", createDefaultTimers());
   let closed = false;
   let closeReason: CloseReason | null = null;
   let streamErrored = false;
@@ -472,6 +479,8 @@ const formatAbortReason = (input: unknown): string => {
   return "unknown";
 };
 
+const resolveAbortReason = (input: unknown): string => formatAbortReason(input);
+
 const mapHistoryMessage = (message: ChatMessageType) => {
   if (!message) return { id: undefined, role: "assistant", content: "" };
   const explicitRole = (message.role ?? undefined) as string | undefined;
@@ -603,7 +612,7 @@ const buildEcoRequestBody = ({
   return payload;
 };
 
-interface StreamSharedContext {
+export interface StreamSharedContext {
   clientMessageId: string;
   normalizedClientId: string;
   controller: AbortController;
@@ -1570,8 +1579,7 @@ export const beginStream = (params: BeginStreamParams): Promise<StreamRunStats> 
       }
       setStreamActive(true);
 
-      const fetchFn: typeof fetch | undefined =
-        typeof globalThis.fetch === "function" ? (globalThis.fetch as typeof fetch) : undefined;
+      const fetchFn = fetchImpl;
       let fetchSource: string | null = null;
       if (fetchFn) {
         try {
@@ -1633,7 +1641,7 @@ export const beginStream = (params: BeginStreamParams): Promise<StreamRunStats> 
         }
 
         try {
-          await ensureHeadProbe(requestUrl, effectiveGuestId, effectiveSessionId);
+          await ensureHeadProbe(requestUrl, effectiveGuestId, effectiveSessionId, fetchImpl);
         } catch {
           /* noop */
         }
@@ -1689,12 +1697,12 @@ export const beginStream = (params: BeginStreamParams): Promise<StreamRunStats> 
       throw fetchError ?? new Error('Eco stream request failed to start.');
     }
 
-    let fatalError: Error | null = null;
+    const fatalErrorState: { current: Error | null } = { current: null };
     let handledReaderError = false;
 
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
-    let doneReceived = false;
+    const doneState = { value: false };
 
     const buildRecordChain = (rawEvent?: Record<string, unknown>): Record<string, unknown>[] => {
       const eventRecord = toRecord(rawEvent) ?? undefined;
@@ -2001,25 +2009,71 @@ export const beginStream = (params: BeginStreamParams): Promise<StreamRunStats> 
       const assistantId = ensureAssistantMessage(clientMessageId, ensureMeta);
       if (!assistantId) return;
 
-      activeAssistantIdRef.current = assistantId;
+    const handlePromptEvent = onPromptReady({
+      controller,
+      streamState,
+      markPromptReadyWatchdog,
+      buildRecordChain,
+      pickStringFromRecords,
+      extractPayloadRecord,
+      diag,
+      normalizedClientId,
+      handlePromptReady,
+      sharedContext,
+    });
 
-      const doneEvent: EcoStreamDoneEvent = {
-        interactionId: interactionId ?? undefined,
-        messageId: messageId ?? undefined,
-        createdAt: createdAt ?? undefined,
-        payload: payloadRecord ?? toRecord(rawEvent) ?? undefined,
-      };
+    const handleControlEvent = onControl({
+      controller,
+      streamState,
+      buildRecordChain,
+      extractPayloadRecord,
+      pickStringFromRecords,
+      bumpHeartbeatWatchdog,
+      diag,
+      normalizedClientId,
+      handleControl,
+      sharedContext,
+    });
 
-      const doneContext: DoneContext = {
-        ...sharedContext,
-        event: doneEvent,
-        setErroApi,
-        removeEcoEntry,
-        assistantId,
-      };
+    const handleMessageEvent = onMessage({
+      controller,
+      streamState,
+      extractPayloadRecord,
+      buildRecordChain,
+      pickStringFromRecords,
+      collectTexts,
+      sharedContext,
+      streamStats,
+      clearFallbackGuardTimer,
+      bumpFirstTokenWatchdog,
+      bumpHeartbeatWatchdog,
+    });
 
-      handleDone(doneContext);
-    };
+    const handleStreamDone = onDone({
+      clearTypingWatchdog,
+      controller,
+      doneState,
+      clearWatchdog,
+      streamActiveRef,
+      clientMessageId,
+      setStreamActive,
+      buildRecordChain,
+      pickStringFromRecords,
+      extractPayloadRecord,
+      toRecord,
+      streamTimersRef,
+      normalizedClientId,
+      streamStats,
+      sharedContext,
+      registerNoContent,
+      logSse,
+      ensureAssistantForNoContent,
+      handleDone,
+      setErroApi,
+      removeEcoEntry,
+      applyMetaToStreamStats,
+      extractFinishReasonFromMeta,
+    });
 
     onWatchdogTimeout = (reason) => {
       if (!streamStats.gotAnyChunk) {
@@ -2139,12 +2193,6 @@ export const beginStream = (params: BeginStreamParams): Promise<StreamRunStats> 
         return;
       }
 
-      const extractedMessage = extractText(rawEvent);
-      const message =
-        extractedMessage ||
-        pickStringFromRecords(records, ["message", "error", "detail", "reason"]) ||
-        "Erro na stream SSE da Eco.";
-      fatalError = new Error(message);
     };
 
     const responseNonNull = response as Response;
@@ -2340,7 +2388,7 @@ export const beginStream = (params: BeginStreamParams): Promise<StreamRunStats> 
       }
 
       processSseLine(payloadForParse, handlers, { eventName: currentEventName });
-      if (fatalError) return;
+      if (fatalErrorState.current) return;
     };
 
     while (true) {
@@ -2377,10 +2425,11 @@ export const beginStream = (params: BeginStreamParams): Promise<StreamRunStats> 
           break;
         }
         handledReaderError = true;
-        fatalError = error instanceof Error ? error : new Error(String(error ?? "reader_error"));
+        fatalErrorState.current =
+          error instanceof Error ? error : new Error(String(error ?? "reader_error"));
         diag("reader_read_failed", {
           clientMessageId: normalizedClientId,
-          message: fatalError.message,
+          message: fatalErrorState.current?.message,
         });
         try {
           setErroApi("Falha no stream, tente novamente");
@@ -2400,9 +2449,9 @@ export const beginStream = (params: BeginStreamParams): Promise<StreamRunStats> 
           const eventBlock = buffer.slice(0, delimiter.index);
           buffer = buffer.slice(delimiter.index + delimiter.length);
           processEventBlock(eventBlock);
-          if (fatalError) break;
+          if (fatalErrorState.current) break;
         }
-        if (!fatalError && buffer) {
+        if (!fatalErrorState.current && buffer) {
           processEventBlock(buffer);
           buffer = "";
         }
@@ -2417,28 +2466,28 @@ export const beginStream = (params: BeginStreamParams): Promise<StreamRunStats> 
           const eventBlock = buffer.slice(0, delimiter.index);
           buffer = buffer.slice(delimiter.index + delimiter.length);
           processEventBlock(eventBlock);
-          if (fatalError) break;
+          if (fatalErrorState.current) break;
         }
       }
 
-      if (fatalError) break;
+      if (fatalErrorState.current) break;
     }
 
     console.log('[DEBUG] ===== LOOP DE LEITURA FINALIZADO =====', {
       totalIterations: loopIteration,
     });
 
-    if (fatalError) {
+    if (fatalErrorState.current) {
       if (!handledReaderError) {
-        throw fatalError;
+        throw fatalErrorState.current;
       }
       diag("reader_error_handled", {
         clientMessageId: normalizedClientId,
-        message: fatalError.message,
+        message: fatalErrorState.current.message,
       });
     }
 
-    if (!doneReceived && !controller.signal.aborted) {
+    if (!doneState.value && !controller.signal.aborted) {
       handleStreamDone();
     }
 
@@ -2692,5 +2741,20 @@ export const beginStream = (params: BeginStreamParams): Promise<StreamRunStats> 
   });
 
   return streamPromise;
+};
+
+export const beginStream = (
+  params: BeginStreamParams,
+  options?: StreamRunnerFactoryOptions,
+): Promise<StreamRunStats> | void => {
+  const deps = resolveStreamRunnerDeps(options);
+  return beginStreamInternal(params, deps);
+};
+
+export const createStreamRunner = (options: StreamRunnerFactoryOptions = {}) => {
+  const deps = resolveStreamRunnerDeps(options);
+  return {
+    beginStream: (params: BeginStreamParams) => beginStreamInternal(params, deps),
+  };
 };
 
