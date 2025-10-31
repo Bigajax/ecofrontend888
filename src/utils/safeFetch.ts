@@ -153,7 +153,7 @@ export async function safeFetch(input: RequestInfo | URL, init: RequestInit = {}
       "hidden",
       "finalize",
       "watchdog_timeout",
-      "user_cancel",
+      "user_cancelled",
     ]);
     const logPayload = {
       method,
