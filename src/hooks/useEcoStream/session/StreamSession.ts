@@ -7,7 +7,8 @@ import type {
   Message as ChatMessageType,
   UpsertMessageOptions,
 } from "../../../contexts/ChatContext";
-import { buildAskEcoUrl } from "@/api/askEcoUrl";
+import { ASK_ECO_ENDPOINT_PATH } from "@/api/askEcoUrl";
+import { API_BASE } from "@/api/config";
 import {
   getOrCreateGuestId,
   getOrCreateSessionId,
@@ -322,7 +323,7 @@ export class StreamSession {
   private normalizedClientId: string | null = null;
   private guardTimeoutMs = DEFAULT_STREAM_GUARD_TIMEOUT_MS;
   private diagForceJson = false;
-  private requestMethod: "GET" | "POST" = "GET";
+  private requestMethod: "GET" | "POST" = "POST";
   private acceptHeader = "text/event-stream";
   private fallbackEnabled = false;
   private effectiveGuestId = "";
@@ -527,7 +528,7 @@ export class StreamSession {
     const diagForceJson =
       typeof window !== "undefined" &&
       Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
-    const requestMethod: "GET" | "POST" = "GET";
+    const requestMethod: "GET" | "POST" = "POST";
     const acceptHeader = "text/event-stream";
     const fallbackEnabled = diagForceJson;
 
@@ -982,9 +983,8 @@ export class StreamFallbackManager {
     }
 
     try {
-      const fallbackUrl = buildAskEcoUrl(undefined, {
-        clientMessageId: this.session.getClientMessageId(),
-      });
+      const normalizedBase = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
+      const fallbackUrl = normalizedBase ? `${normalizedBase}/ask-eco` : ASK_ECO_ENDPOINT_PATH;
       const once = (value?: string | null): string => {
         if (typeof value !== "string") return "";
         const [head] = value.split(",");

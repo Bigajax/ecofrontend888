@@ -40,6 +40,7 @@ import { rememberGuestIdentityFromResponse, rememberSessionIdentityFromResponse 
 import { setStreamActive } from "./streamStatus";
 import { NO_TEXT_ALERT_MESSAGE, showToast } from "../useEcoStream.helpers";
 import { API_BASE } from "@/api/config";
+import { ASK_ECO_ENDPOINT_PATH } from "@/api/askEcoUrl";
 import { getOrCreateGuestId, getOrCreateSessionId, rememberIdsFromResponse } from "@/utils/identity";
 import {
   onControl,
@@ -217,9 +218,11 @@ export async function openEcoSseStream(opts: {
 
   const acceptHeader = "text/event-stream";
   const forcedJson = false;
-  const requestMethod = "GET" as const;
+  const requestMethod = "POST" as const;
+  const requestBody = _body === undefined ? undefined : JSON.stringify(_body);
   const requestHeaders: Record<string, string> = {
     Accept: acceptHeader,
+    "Content-Type": "application/json",
   };
 
   console.log("[DIAG] start", { url, accept: acceptHeader, forcedJson, method: requestMethod });
@@ -233,7 +236,9 @@ export async function openEcoSseStream(opts: {
     method: requestMethod,
     headers: requestHeaders,
     credentials: "omit",
+    mode: "cors",
     signal: controller.signal,
+    body: requestBody,
   });
 
   const responseHeaders = (() => {
@@ -1544,23 +1549,12 @@ const beginStreamInternal = (
     appendHeader("X-Client-Id", sanitizedClientId);
     appendHeader("X-Eco-Guest-Id", sanitizedGuestId);
     appendHeader("X-Eco-Session-Id", sanitizedSessionId);
+    appendHeader("X-Eco-Client-Message-Id", sanitizedClientMessageId);
 
     requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
 
     const normalizedBase = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
-    const requestUrl = `${normalizedBase || ""}/ask-eco`;
-    const queryParams = new URLSearchParams();
-    if (sanitizedGuestId) {
-      queryParams.set("guest_id", sanitizedGuestId);
-    }
-    if (sanitizedSessionId) {
-      queryParams.set("session_id", sanitizedSessionId);
-    }
-    if (sanitizedClientMessageId) {
-      queryParams.set("client_message_id", sanitizedClientMessageId);
-    }
-    const requestUrlWithParams =
-      queryParams.toString().length > 0 ? `${requestUrl}?${queryParams.toString()}` : requestUrl;
+    const requestUrl = normalizedBase ? `${normalizedBase}/ask-eco` : ASK_ECO_ENDPOINT_PATH;
 
     const contexto = (requestBody as { contexto?: { stream_id?: unknown; streamId?: unknown } })?.contexto;
     const streamIdCandidates: unknown[] = [
@@ -1697,7 +1691,7 @@ const beginStreamInternal = (
       try {
         try {
           console.debug('[DIAG] start', {
-            url: requestUrlWithParams,
+            url: requestUrl,
             accept: acceptHeader,
             forcedJson: diagForceJson,
             method: requestMethod,
@@ -1722,6 +1716,7 @@ const beginStreamInternal = (
           ...baseHeaders(),
           Accept: acceptHeader,
         };
+        requestHeaders["Content-Type"] = "application/json";
 
         const fetchInit: RequestInit = {
           method: requestMethod,
@@ -1730,10 +1725,11 @@ const beginStreamInternal = (
           headers: requestHeaders,
           signal: controller.signal,
           cache: "no-store",
+          body: requestPayload === null ? undefined : JSON.stringify(requestPayload),
           // keepalive: true,  // ❌ NÃO usar em SSE
         };
 
-        response = await fetchFn(requestUrlWithParams, fetchInit);
+        response = await fetchFn(requestUrl, fetchInit);
         if (!response.ok) {
           const httpError = new Error(`HTTP ${response.status}: ${response.statusText}`);
           fetchError = httpError;
