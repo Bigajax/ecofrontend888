@@ -339,16 +339,13 @@ export async function openEcoSseStream(opts: {
     if (closed) return;
     closed = true;
     closeReason = reason;
+    clearReadyTimeout();
     if (reason === "watchdog_first_token" || reason === "watchdog_heartbeat") {
       abortControllerSafely(controller, "watchdog_timeout");
     } else if (reason === "ui_abort") {
       abortControllerSafely(controller, "user_cancel");
     } else if (!controller.signal.aborted) {
-      try {
-        console.warn('[SSE] abort_ignored', { reason });
-      } catch {
-        /* noop */
-      }
+      abortControllerSafely(controller, "finalize");
     }
     try {
       wd.clear();
@@ -693,11 +690,13 @@ const resolveAbortReason = (input: unknown): string => formatAbortReason(input);
 const mapStreamErrorToMessage = (code: string): string => {
   switch (code) {
     case "cors_preflight_failed":
-      return "Não foi possível iniciar a conexão com a Eco (CORS). Verifique sua internet ou tente novamente.";
+      return "Nao foi possivel iniciar a conexao com a Eco (CORS). Verifique sua internet ou tente novamente.";
     case "sse_ready_timeout":
-      return "A Eco demorou para começar a responder. Tente novamente.";
+      return "A Eco demorou para comecar a responder. Tente novamente.";
     case "no_chunks_emitted":
-      return "A Eco não enviou nenhum conteúdo. Tente novamente.";
+      return "A Eco nao enviou nenhum conteudo. Tente novamente.";
+    case "no_text_before_done":
+      return "A Eco terminou sem enviar conteudo. Tente novamente.";
     default:
       return code;
   }
@@ -797,7 +796,8 @@ export const handleDone = (
   doneContext: DoneContext,
 ) => {
   const { event, clientMessageId, normalizedClientId, assistantId } = doneContext;
-  const noChunksEmitted = !doneContext.streamStats.gotAnyChunk;
+  const readyReceived = doneContext.readyStateRef.current === true;
+  const noChunksEmitted = readyReceived && !doneContext.streamStats.gotAnyChunk;
   if (noChunksEmitted && !doneContext.streamStats.clientFinishReason) {
     doneContext.streamStats.clientFinishReason = "no_chunks_emitted";
   }
@@ -910,7 +910,7 @@ export const handleDone = (
       }
     }
 
-    if (aggregatedLength === 0 && !doneHasRenderableText) {
+    if (readyReceived && aggregatedLength === 0 && !doneHasRenderableText) {
       if (!doneContext.streamStats.clientFinishReason) {
         doneContext.streamStats.clientFinishReason = "no_text_before_done";
       }
@@ -1154,6 +1154,8 @@ export const handleDone = (
   } else {
     finalizeWithEntry(aggregatedEntry);
   }
+
+  doneContext.readyStateRef.current = false;
 };
 
 export const handleError = (
@@ -1275,6 +1277,7 @@ const beginStreamInternal = (
     activeClientIdRef,
     onFirstChunk,
     hasFirstChunkRef,
+    hasReadyRef,
     setDigitando,
     setIsSending,
     setErroApi,
@@ -1711,6 +1714,7 @@ const beginStreamInternal = (
     activeStreamClientIdRef,
     activeClientIdRef,
     hasFirstChunkRef,
+    readyStateRef: hasReadyRef,
     setDigitando,
     updateCurrentInteractionId,
     streamTimersRef,
@@ -2319,7 +2323,17 @@ const beginStreamInternal = (
 
       initialChunk = testResult;
     } catch (e) {
-      console.error('[DEBUG] ERRO ao testar reader:', e);
+      if (e instanceof DOMException && e.name === "AbortError") {
+        try {
+          console.debug("[SSE-DEBUG] reader_test_aborted", {
+            clientMessageId: normalizedClientId,
+          });
+        } catch {
+          /* noop */
+        }
+      } else {
+        console.error("[DEBUG] ERRO ao testar reader:", e);
+      }
     }
 
     (globalThis as any).__ecoActiveReader = reader;
@@ -2435,10 +2449,19 @@ const beginStreamInternal = (
           });
         }
       } catch (error: any) {
-        console.error('[DEBUG] reader.read() ERRO:', error);
-        if (controller.signal.aborted || error?.name === "AbortError") {
+        const isAbortError = error instanceof DOMException && error.name === "AbortError";
+        if (isAbortError || controller.signal.aborted) {
+          try {
+            console.debug("[SSE-DEBUG] reader_loop_aborted", {
+              clientMessageId: normalizedClientId,
+              reason: (controller.signal as AbortSignal & { reason?: unknown }).reason ?? null,
+            });
+          } catch {
+            /* noop */
+          }
           break;
         }
+        console.error("[DEBUG] reader.read() ERRO:", error);
         handledReaderError = true;
         fatalErrorState.current =
           error instanceof Error ? error : new Error(String(error ?? "reader_error"));

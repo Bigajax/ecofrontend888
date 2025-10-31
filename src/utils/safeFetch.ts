@@ -72,6 +72,7 @@ export async function safeFetch(input: RequestInfo | URL, init: RequestInit = {}
   }
 
   const method = resolveRequestMethod(input, init).toUpperCase();
+  const requestUrl = resolveRequestUrl(input);
   const keepalive = shouldKeepAlive(input, method) ? true : init.keepalive;
 
   const fetchInit: RequestInit = {
@@ -89,6 +90,26 @@ export async function safeFetch(input: RequestInfo | URL, init: RequestInit = {}
     return { ok: response.ok, response };
   } catch (error) {
     const aborted = (error as DOMException)?.name === "AbortError";
+    if (aborted) {
+      try {
+        console.debug("[safeFetch] aborted", {
+          method,
+          url: requestUrl ?? null,
+          reason:
+            (controller.signal as AbortSignal & { reason?: unknown }).reason ??
+            (init.signal as AbortSignal & { reason?: unknown })?.reason ??
+            null,
+        });
+      } catch {
+        /* noop */
+      }
+    } else {
+      try {
+        console.error("[safeFetch] fetch_failed", { method, url: requestUrl ?? null, error });
+      } catch {
+        /* noop */
+      }
+    }
     return { ok: false, aborted, error };
   } finally {
     cleanups.forEach((cleanup) => {

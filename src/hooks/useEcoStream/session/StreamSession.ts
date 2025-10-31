@@ -220,6 +220,7 @@ export interface BeginStreamParams {
   activeClientIdRef: MutableRefObject<string | null>;
   onFirstChunk?: () => void;
   hasFirstChunkRef: MutableRefObject<boolean>;
+  readyStateRef: MutableRefObject<boolean>;
   setDigitando: Dispatch<SetStateAction<boolean>>;
   setIsSending: Dispatch<SetStateAction<boolean>>;
   setErroApi: Dispatch<SetStateAction<string | null>>;
@@ -242,11 +243,12 @@ export interface BeginStreamParams {
   tracking: MessageTrackingRefs;
 }
 
-export type AllowedAbortReason = "watchdog_timeout" | "user_cancel";
+export type AllowedAbortReason = "watchdog_timeout" | "user_cancel" | "finalize";
 
 const ALLOWED_ABORT_REASONS = new Set<AllowedAbortReason>([
   "watchdog_timeout",
   "user_cancel",
+  "finalize",
 ]);
 
 const logAbortDebug = (reason: AllowedAbortReason) => {
@@ -354,6 +356,7 @@ export class StreamSession {
       activeAssistantIdRef,
       streamActiveRef,
       hasFirstChunkRef,
+      readyStateRef,
       updateCurrentInteractionId,
       setDigitando,
       logSse,
@@ -492,6 +495,7 @@ export class StreamSession {
     }
     streamActiveRef.current = true;
     hasFirstChunkRef.current = false;
+    readyStateRef.current = false;
 
     updateCurrentInteractionId(null);
 
@@ -710,6 +714,7 @@ export class StreamSession {
       activeAssistantIdRef,
       activeStreamClientIdRef,
       streamActiveRef,
+      readyStateRef,
     } = this.params;
 
     streamActiveRef.current = false;
@@ -732,6 +737,11 @@ export class StreamSession {
     }
     try {
       setIsSending(false);
+    } catch {
+      /* noop */
+    }
+    try {
+      readyStateRef.current = false;
     } catch {
       /* noop */
     }
@@ -1203,6 +1213,12 @@ export class StreamFallbackManager {
 
       if (fallbackText) {
         this.sharedContext.hasFirstChunkRef.current = true;
+        this.sharedContext.readyStateRef.current = true;
+        try {
+          this.setDigitando(true);
+        } catch {
+          /* noop */
+        }
         this.streamStats.gotAnyChunk = true;
         this.streamStats.aggregatedLength += fallbackText.length;
         this.streamStats.jsonFallbackSucceeded = true;

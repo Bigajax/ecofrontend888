@@ -52,6 +52,7 @@ export interface StreamSharedContext {
   activeStreamClientIdRef: MutableRefObject<string | null>;
   activeClientIdRef: MutableRefObject<string | null>;
   hasFirstChunkRef: MutableRefObject<boolean>;
+  readyStateRef: MutableRefObject<boolean>;
   setDigitando: Dispatch<SetStateAction<boolean>>;
   updateCurrentInteractionId: (next: string | null | undefined) => void;
   streamTimersRef: MutableRefObject<Record<string, { startedAt: number; firstChunkAt?: number }>>;

@@ -338,6 +338,7 @@ export const onPromptReady = ({
       } catch {
         /* noop */
       }
+      sharedContext.readyStateRef.current = true;
       if (readyHandler) {
         try {
           readyHandler();

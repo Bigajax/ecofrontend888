@@ -108,6 +108,7 @@ export const useEcoStream = ({
     isMountedRef = useRef(true),
     streamLockRef = useRef(false),
     hasFirstChunkRef = useRef(false),
+    hasReadyRef = useRef(false),
     pendingSendRef = useRef<
       | {
           clientMessageId: string;
@@ -140,6 +141,7 @@ export const useEcoStream = ({
       activeAssistantIdRef,
       streamActiveRef,
       hasFirstChunkRef,
+      hasReadyRef,
       activeClientIdRef,
     }),
     [],
@@ -437,15 +439,37 @@ export const useEcoStream = ({
         const signalWithReason = controller.signal as AbortSignal & { reason?: unknown };
         const rawReason = signalWithReason.reason ?? (controller as unknown as { reason?: unknown }).reason;
         const resolvedReason = resolveAbortReason(rawReason);
-        log.warn("[EcoStream] aborted", {
+        const normalizedReason = typeof resolvedReason === "string" ? resolvedReason.toLowerCase() : "";
+        const expectedReasons = new Set([
+          "finalize",
+          "user_cancel",
+          "watchdog_timeout",
+          "visibilitychange",
+          "pagehide",
+          "hidden",
+          "sse_ready_timeout",
+          "cors_preflight_failed",
+          "no_chunks_emitted",
+        ]);
+        const isExpectedAbort = expectedReasons.has(normalizedReason);
+        const logPayload = {
           clientMessageId,
           reason: resolvedReason,
-        });
-        logSse("abort", {
-          clientMessageId,
-          reason: resolvedReason,
-          source: "controller.signal",
-        });
+        };
+        if (isExpectedAbort) {
+          log.debug("[EcoStream] aborted", logPayload);
+          try {
+            console.debug("[SSE-DEBUG] abort_expected", logPayload);
+          } catch {
+            /* noop */
+          }
+        } else {
+          log.warn("[EcoStream] aborted", logPayload);
+          logSse("abort", {
+            ...logPayload,
+            source: "controller.signal",
+          });
+        }
       },
       { once: true },
     );
@@ -457,6 +481,7 @@ export const useEcoStream = ({
     let lastMetaFromStream: Record<string, unknown> | undefined;
     try {
       hasFirstChunkRef.current = false;
+      hasReadyRef.current = false;
       streamPromise = beginStreamSafely(payload, controller, () => {
         gotAnyChunk = true;
         hasFirstChunkRef.current = true;
