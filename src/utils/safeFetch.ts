@@ -1,3 +1,4 @@
+// safeFetch.ts
 export type SafeFetchResult = {
   ok: boolean;
   response?: Response;
@@ -7,32 +8,103 @@ export type SafeFetchResult = {
 
 const FIVE_SECONDS = 5000;
 
+/** Try to stringify whatever RequestInfo we got */
 const resolveRequestUrl = (input: RequestInfo | URL): string | undefined => {
   if (typeof input === "string") return input;
   if (input instanceof URL) return input.toString();
-  if (typeof Request !== "undefined" && input instanceof Request) {
-    return input.url;
-  }
+  if (typeof Request !== "undefined" && input instanceof Request) return input.url;
   return undefined;
 };
 
+/** Resolve HTTP method, defaulting to GET */
 const resolveRequestMethod = (input: RequestInfo | URL, init?: RequestInit): string => {
   const explicit = init?.method;
   if (explicit) return explicit;
-  if (typeof Request !== "undefined" && input instanceof Request) {
-    return input.method;
-  }
+  if (typeof Request !== "undefined" && input instanceof Request) return input.method;
   return "GET";
 };
 
+/** Health checks should prefer keepalive=TRUE on GET */
 const shouldKeepAlive = (input: RequestInfo | URL, method: string): boolean => {
   if (method.toUpperCase() !== "GET") return false;
   const target = resolveRequestUrl(input);
   if (!target) return false;
-  return /\/(?:api\/)?health(?:\b|\?|$|\/)/.test(target);
+  return /\/(?:api\/)?health(?:\b|\/|\?|$)/.test(target);
 };
 
-export async function safeFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<SafeFetchResult> {
+/** If dev accidentally used https://api/... try to swap to VITE_API_URL */
+const coerceApiHost = (urlStr: string): string => {
+  try {
+    // absolute URL?
+    const u = new URL(urlStr);
+    const looksLikeBareApi =
+      u.hostname === "api" || /^https?:\/\/api(?=\/|:|$)/i.test(urlStr);
+
+    if (looksLikeBareApi) {
+      // Prefer environment override when available (Vite)
+      // Falls back to original URL if not present.
+      const base = (import.meta as any)?.env?.VITE_API_URL as string | undefined;
+      if (base && /^https?:\/\//i.test(base)) {
+        const b = new URL(base);
+        const rebuilt = new URL(u.pathname + u.search + u.hash, b);
+        return rebuilt.toString();
+      } else {
+        try {
+          console.error(
+            "[safeFetch] Invalid API host 'api'. Set VITE_API_URL to your backend origin.",
+            { url: urlStr }
+          );
+        } catch {
+          /* noop */
+        }
+      }
+    }
+    return urlStr;
+  } catch {
+    // Not an absolute URL — leave as-is (browser will resolve relative paths)
+    return urlStr;
+  }
+};
+
+/** Normalize abort reasons into a few canonical buckets */
+const normalizeAbortReason = (value: unknown): string => {
+  const toStr = (v: unknown): string | undefined => {
+    if (typeof v === "string") return v.trim();
+    if (typeof v === "number" && Number.isFinite(v)) return String(v);
+    if (v instanceof DOMException) return (v.message || v.name || "DOMException").trim();
+    if (v instanceof Error) return (v.message || v.name || "Error").trim();
+    if (v && typeof v === "object") {
+      const nested = (v as any).reason;
+      const nestedStr = toStr(nested);
+      if (nestedStr) return nestedStr;
+      try {
+        const s = JSON.stringify(v);
+        if (s && s !== "{}") return s;
+      } catch {/* noop */}
+    }
+    return undefined;
+  };
+
+  const raw = (toStr(value) || "unknown").toLowerCase();
+
+  // Map common phrasings to canonical tokens
+  if (raw.includes("timed out") || raw.includes("timeouterror") || raw === "timeout") {
+    return "timeout";
+  }
+  if (raw.includes("visibilitychange") || raw.includes("pagehide") || raw.includes("hidden")) {
+    return "visibilitychange";
+  }
+  if (raw.includes("watchdog")) return "watchdog_timeout";
+  if (raw.includes("user_cancel")) return "user_cancelled";
+  if (raw === "domexception" || raw === "error") return "unknown";
+
+  return raw || "unknown";
+};
+
+export async function safeFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {}
+): Promise<SafeFetchResult> {
   const controller = new AbortController();
   const abort = (reason?: unknown) => {
     if (!controller.signal.aborted) {
@@ -46,6 +118,7 @@ export async function safeFetch(input: RequestInfo | URL, init: RequestInit = {}
 
   const cleanups: Array<() => void> = [];
 
+  // Propagate user-provided AbortSignal
   const userSignal = init.signal;
   if (userSignal) {
     if (userSignal.aborted) {
@@ -57,6 +130,7 @@ export async function safeFetch(input: RequestInfo | URL, init: RequestInit = {}
     }
   }
 
+  // Add timeout guard
   if (typeof AbortSignal !== "undefined" && typeof (AbortSignal as any).timeout === "function") {
     const timeoutSignal: AbortSignal = (AbortSignal as any).timeout(FIVE_SECONDS);
     if (timeoutSignal.aborted) {
@@ -67,72 +141,27 @@ export async function safeFetch(input: RequestInfo | URL, init: RequestInit = {}
       cleanups.push(() => timeoutSignal.removeEventListener("abort", onTimeout));
     }
   } else {
-    const timeoutId = setTimeout(() => abort(), FIVE_SECONDS);
+    const timeoutId = setTimeout(() => abort("timeout"), FIVE_SECONDS);
     cleanups.push(() => clearTimeout(timeoutId));
   }
 
   const method = resolveRequestMethod(input, init).toUpperCase();
-  const requestUrl = resolveRequestUrl(input);
-  const keepalive = shouldKeepAlive(input, method) ? true : init.keepalive;
+
+  // Coerce bad absolute host `https://api/...` → VITE_API_URL when available
+  const originalUrlStr = resolveRequestUrl(input);
+  const coercedUrlStr = originalUrlStr ? coerceApiHost(originalUrlStr) : undefined;
+
+  // If we changed the URL string, use it as the actual fetch input
+  const inputForFetch: RequestInfo | URL =
+    coercedUrlStr && coercedUrlStr !== originalUrlStr ? coercedUrlStr : input;
+
+  const ka = shouldKeepAlive(inputForFetch, method) ? true : init.keepalive;
 
   const fetchInit: RequestInit = {
     ...init,
     method,
     signal: controller.signal,
-  };
-
-  if (typeof keepalive === "boolean") {
-    fetchInit.keepalive = keepalive;
-  }
-
-  const formatAbortReason = (value: unknown): string => {
-    if (typeof value === "string") {
-      const trimmed = value.trim();
-      if (trimmed) return trimmed;
-    }
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return String(value);
-    }
-    if (value instanceof DOMException) {
-      const domReason = (value as DOMException & { reason?: unknown }).reason;
-      if (typeof domReason === "string" && domReason.trim()) {
-        return domReason.trim();
-      }
-      if (typeof value.message === "string" && value.message.trim()) {
-        return value.message.trim();
-      }
-      if (typeof value.name === "string" && value.name.trim()) {
-        return value.name.trim();
-      }
-      return "DOMException";
-    }
-    if (value instanceof Error) {
-      if (typeof value.message === "string" && value.message.trim()) {
-        return value.message.trim();
-      }
-      if (typeof value.name === "string" && value.name.trim()) {
-        return value.name.trim();
-      }
-      return "Error";
-    }
-    if (typeof value === "object" && value !== null) {
-      const nested = (value as { reason?: unknown }).reason;
-      if (nested !== undefined) {
-        const formattedNested = formatAbortReason(nested);
-        if (formattedNested !== "unknown") {
-          return formattedNested;
-        }
-      }
-      try {
-        const serialized = JSON.stringify(value);
-        if (serialized && serialized !== "{}") {
-          return serialized;
-        }
-      } catch {
-        /* noop */
-      }
-    }
-    return "unknown";
+    ...(typeof ka === "boolean" ? { keepalive: ka } : {}),
   };
 
   const pickAbortReason = (): unknown =>
@@ -140,13 +169,12 @@ export async function safeFetch(input: RequestInfo | URL, init: RequestInit = {}
     (init.signal as AbortSignal & { reason?: unknown })?.reason;
 
   try {
-    const response = await fetch(input, fetchInit);
+    const response = await fetch(inputForFetch, fetchInit);
     return { ok: response.ok, response };
   } catch (error) {
     const aborted = (error as DOMException)?.name === "AbortError";
-    const rawReason = pickAbortReason();
-    const normalizedReason = formatAbortReason(rawReason).toLowerCase();
-    const expectedReasons = new Set([
+    const normalizedReason = normalizeAbortReason(pickAbortReason());
+    const expected = new Set([
       "timeout",
       "visibilitychange",
       "pagehide",
@@ -155,34 +183,33 @@ export async function safeFetch(input: RequestInfo | URL, init: RequestInit = {}
       "watchdog_timeout",
       "user_cancelled",
     ]);
+
     const logPayload = {
       method,
-      url: requestUrl ?? null,
+      url: coercedUrlStr ?? originalUrlStr ?? null,
       aborted,
-      reason: rawReason ?? null,
+      reason: (controller.signal as any)?.reason ?? null,
       normalizedReason: normalizedReason || null,
     };
-    if (aborted || expectedReasons.has(normalizedReason)) {
-      try {
+
+    try {
+      if (aborted || expected.has(normalizedReason)) {
         console.debug("[safeFetch] aborted", logPayload);
-      } catch {
-        /* noop */
-      }
-    } else {
-      try {
+      } else {
         console.error("[safeFetch] fetch_failed", { ...logPayload, error });
+      }
+    } catch {
+      /* noop */
+    }
+
+    return { ok: false, aborted, error };
+  } finally {
+    for (const fn of cleanups) {
+      try {
+        fn();
       } catch {
         /* noop */
       }
     }
-    return { ok: false, aborted, error };
-  } finally {
-    cleanups.forEach((cleanup) => {
-      try {
-        cleanup();
-      } catch {
-        // ignore cleanup errors
-      }
-    });
   }
 }
