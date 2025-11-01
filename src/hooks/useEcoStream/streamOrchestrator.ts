@@ -385,12 +385,13 @@ export async function openEcoSseStream(opts: {
 
   const acceptHeader = "text/event-stream";
   const forcedJson = false;
-  const requestMethod = "POST" as const;
-  const requestBody = _body === undefined ? undefined : JSON.stringify(_body);
+  // SSE deve ser GET sem body para evitar preflight e caches estranhos
+  const requestMethod = "GET" as const;
+  const requestBody = undefined;
   const requestHeaders: Record<string, string> = {
-    Accept: acceptHeader,
-    "Content-Type": "application/json",
+    Accept: acceptHeader, // ⚠️ sem Content-Type no handshake SSE
   };
+
 
   console.log("[DIAG] start", {
     url: requestUrl,
@@ -414,13 +415,15 @@ export async function openEcoSseStream(opts: {
   });
 
   const res = await fetch(requestUrl, {
-    method: requestMethod,
-    headers: requestHeaders,
+    method: requestMethod,          // GET
+    headers: requestHeaders,        // só Accept
     credentials: "omit",
     mode: "cors",
     signal: controller.signal,
-    body: requestBody,
+    // ⚠️ sem body no GET SSE
+    cache: "no-store",
   });
+
 
   const responseHeaders = (() => {
     try {
@@ -2078,10 +2081,10 @@ const beginStreamInternal = (
         } catch {
           /* noop */
         }
-        try {
+                try {
           console.log("[SSE-DEBUG] preflight", {
-            method: requestMethod,
-            hasBody: Boolean(requestPayload),
+            method: "GET",
+            hasBody: false, // GET SSE não tem body
           });
         } catch {
           /* noop */
@@ -2119,21 +2122,23 @@ const beginStreamInternal = (
           );
         }
 
-        const requestHeaders = {
+                const requestHeaders = {
           ...baseHeaders(),
-          Accept: acceptHeader,
+          Accept: acceptHeader,           // text/event-stream
         };
-        requestHeaders["Content-Type"] = "application/json";
+        // ⚠️ NÃO definir Content-Type no SSE GET
+        if (requestHeaders["Content-Type"]) {
+          delete (requestHeaders as Record<string, string>)["Content-Type"];
+        }
 
         const fetchInit: RequestInit = {
-          method: requestMethod,
+          method: "GET",                   // ⚠️ Força GET no handshake SSE
           mode: "cors",
           credentials: "omit",
           headers: requestHeaders,
           signal: controller.signal,
           cache: "no-store",
-          body: requestPayload === null ? undefined : JSON.stringify(requestPayload),
-          // keepalive: true,  // ❌ NÃO usar em SSE
+          // ⚠️ sem body no GET SSE
         };
 
         response = await fetchFn(requestUrl, fetchInit);
