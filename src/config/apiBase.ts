@@ -53,7 +53,8 @@ export const RAW_API_BASE = rawEnvApiBase;
 
 const REMOTE_API_BASE_FALLBACK = "https://ecobackend888.onrender.com";
 
-const DEFAULT_BROWSER_API_BASE = "";
+// ✅ CORREÇÃO: Usar o fallback também no browser
+const DEFAULT_BROWSER_API_BASE = REMOTE_API_BASE_FALLBACK;
 const DEFAULT_NON_BROWSER_API_BASE = REMOTE_API_BASE_FALLBACK;
 
 export const DEFAULT_API_BASE = typeof window === "undefined"
