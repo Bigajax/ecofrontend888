@@ -4,13 +4,13 @@ import React, {
   useEffect,
   useImperativeHandle,
   forwardRef,
-} from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Mic } from 'lucide-react';
-import clsx from 'clsx';
+} from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Send, Mic } from "lucide-react";
+import clsx from "clsx";
 
-import { toast } from '../utils/toast';
-import mixpanel from '../lib/mixpanel';
+import { toast } from "../utils/toast";
+import mixpanel from "../lib/mixpanel";
 
 type Props = {
   onSendMessage: (t: string) => void | Promise<void>;
@@ -27,7 +27,7 @@ export type ChatInputHandle = {
   focus: () => void;
 };
 
-const CTA_TEXT = 'Converse com a Eco...';
+const CTA_TEXT = "Converse com a Eco...";
 
 const ChatInput = forwardRef<ChatInputHandle, Props>(
   (
@@ -43,13 +43,18 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
     },
     ref,
   ) => {
-    const [inputMessage, setInputMessage] = useState(value ?? '');
+    const [inputMessage, setInputMessage] = useState(value ?? "");
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const sendButtonRef = useRef<HTMLButtonElement>(null);
     const wrapperRef = useRef<HTMLFormElement>(null);
 
     const isBusy = disabled || isSending;
-    const hasText = inputMessage.trim().length > 0;
+
+    // --- sanitização/validação mínima (preserva "oi") ---
+    const MIN_NON_WS = 1;
+    const sanitize = (t: string) => t.replace(/\s+/g, " ").trim();
+
+    const hasText = sanitize(inputMessage).length >= MIN_NON_WS;
 
     useImperativeHandle(ref, () => ({
       focus: () => {
@@ -58,7 +63,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
     }));
 
     useEffect(() => {
-      if (typeof value !== 'string') return;
+      if (typeof value !== "string") return;
       if (value === inputMessage) return;
       setInputMessage(value);
     }, [value, inputMessage]);
@@ -68,34 +73,52 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
       if (!textarea) return;
       const MIN_HEIGHT = 44;
       const MAX_HEIGHT = 152;
-      textarea.style.height = 'auto';
+      textarea.style.height = "auto";
       const nextHeight = Math.max(
         MIN_HEIGHT,
         Math.min(MAX_HEIGHT, textarea.scrollHeight),
       );
       textarea.style.height = `${nextHeight}px`;
       textarea.style.overflowY =
-        textarea.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
+        textarea.scrollHeight > MAX_HEIGHT ? "auto" : "hidden";
     }, [inputMessage]);
 
     const trySendMessage = async () => {
       if (isBusy) return;
+
       const raw = inputMessage;
-      if (!raw.trim()) return;
+      const sanitized = sanitize(raw);
+
+      if (import.meta.env?.DEV) {
+        console.debug("[ChatInput] willSend", {
+          raw,
+          sanitized,
+          rawLen: raw.length,
+          sanitizedLen: sanitized.length,
+        });
+      }
+
+      if (sanitized.length < MIN_NON_WS) {
+        if (import.meta.env?.DEV)
+          console.warn("[ChatInput] blocked: empty after sanitize");
+        toast.error("Escreva algo para enviar.");
+        return;
+      }
 
       try {
-        await onSendMessage(raw);
-        setInputMessage('');
-        onTextChange?.('');
-        mixpanel?.track?.('ui_input_cleared');
+        await onSendMessage(sanitized);
 
-        sendButtonRef.current?.classList.add('scale-90');
-        setTimeout(() => sendButtonRef.current?.classList.remove('scale-90'), 120);
+        setInputMessage("");
+        onTextChange?.("");
+        mixpanel?.track?.("ui_input_cleared");
+
+        sendButtonRef.current?.classList.add("scale-90");
+        setTimeout(() => sendButtonRef.current?.classList.remove("scale-90"), 120);
         requestAnimationFrame(() => textareaRef.current?.focus());
       } catch (err) {
-        console.error('Erro ao enviar mensagem:', err);
+        console.error("Erro ao enviar mensagem:", err);
         const fallbackMessage =
-          'Não foi possível enviar a mensagem. Tente novamente.';
+          "Não foi possível enviar a mensagem. Tente novamente.";
         const detail =
           err instanceof Error && err.message ? err.message : undefined;
         toast.error(detail ? `${fallbackMessage} (${detail})` : fallbackMessage);
@@ -113,21 +136,21 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
         className="relative w-full"
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+        transition={{ type: "spring", stiffness: 120, damping: 18 }}
         aria-disabled={isBusy}
         aria-busy={isSending}
         role="group"
-        style={{ overflowAnchor: 'none' }}
+        style={{ overflowAnchor: "none" }}
         onSubmit={handleSubmit}
       >
         <div className="flex w-full items-center gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-1">
             <div
               className={clsx(
-                'group flex w-full min-w-0 items-center gap-3 rounded-2xl border border-[rgba(0,0,0,0.08)] bg-white px-5 py-2.5 transition-all duration-200',
-                'focus-within:border-[#007AFF] focus-within:ring-1 focus-within:ring-[#007AFF]/30',
-                'hover:border-[rgba(0,0,0,0.12)]',
-                isBusy ? 'opacity-80 cursor-not-allowed' : '',
+                "group flex w-full min-w-0 items-center gap-3 rounded-2xl border border-[rgba(0,0,0,0.08)] bg-white px-5 py-2.5 transition-all duration-200",
+                "focus-within:border-[#007AFF] focus-within:ring-1 focus-within:ring-[#007AFF]/30",
+                "hover:border-[rgba(0,0,0,0.12)]",
+                isBusy ? "opacity-80 cursor-not-allowed" : "",
               )}
             >
               <textarea
@@ -150,12 +173,13 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 className="w-full min-w-0 max-h-[9.5rem] min-h-[2.9rem] resize-none border-0 bg-transparent text-[15px] leading-[1.6] text-slate-800 placeholder:text-slate-400/80 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-[rgba(71,85,105,0.55)] sm:text-[16px]"
                 onKeyDown={(event) => {
                   if (
-                    event.key === 'Enter' &&
+                    event.key === "Enter" &&
                     !event.shiftKey &&
-                    !(event.nativeEvent as unknown as { isComposing?: boolean }).isComposing
+                    !(event.nativeEvent as unknown as { isComposing?: boolean })
+                      .isComposing
                   ) {
                     event.preventDefault();
-                    event.currentTarget.form?.requestSubmit(); // FIX: delega o envio apenas ao submit do formulário
+                    event.currentTarget.form?.requestSubmit();
                   }
                 }}
               />
@@ -168,17 +192,17 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 }}
                 disabled={isBusy || isMicActive}
                 className={clsx(
-                  'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgba(0,0,0,0.08)] bg-white text-slate-700 transition-all duration-200',
-                  'hover:border-[rgba(0,0,0,0.12)] hover:bg-slate-50',
-                  'focus-visible:ring-2 focus-visible:ring-[#007AFF]/40 focus-visible:outline-none',
+                  "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgba(0,0,0,0.08)] bg-white text-slate-700 transition-all duration-200",
+                  "hover:border-[rgba(0,0,0,0.12)] hover:bg-slate-50",
+                  "focus-visible:ring-2 focus-visible:ring-[#007AFF]/40 focus-visible:outline-none",
                   isBusy
-                    ? 'cursor-not-allowed opacity-60'
+                    ? "cursor-not-allowed opacity-60"
                     : isMicActive
-                    ? 'cursor-wait opacity-80'
-                    : '',
+                    ? "cursor-wait opacity-80"
+                    : "",
                 )}
                 aria-label={
-                  isMicActive ? 'Gravação em andamento' : 'Abrir painel de voz'
+                  isMicActive ? "Gravação em andamento" : "Abrir painel de voz"
                 }
               >
                 <Mic size={18} strokeWidth={1.7} />
@@ -198,13 +222,13 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 exit={{ opacity: 0, scale: 0.9, x: 8 }}
                 transition={{ duration: 0.18 }}
                 className={clsx(
-                  'inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#007AFF] text-white transition-transform duration-200',
-                  'hover:-translate-y-[1px] active:scale-[0.97]',
-                  'focus-visible:ring-2 focus-visible:ring-[#007AFF]/40 focus-visible:outline-none',
-                  isBusy ? 'cursor-not-allowed opacity-70 hover:translate-y-0' : null,
+                  "inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#007AFF] text-white transition-transform duration-200",
+                  "hover:-translate-y-[1px] active:scale-[0.97]",
+                  "focus-visible:ring-2 focus-visible:ring-[#007AFF]/40 focus-visible:outline-none",
+                  isBusy ? "cursor-not-allowed opacity-70 hover:translate-y-0" : null,
                 )}
                 aria-label="Enviar mensagem"
-                title={isBusy ? 'Aguarde a resposta da Eco' : 'Enviar mensagem'}
+                title={isBusy ? "Aguarde a resposta da Eco" : "Enviar mensagem"}
               >
                 <Send size={16} strokeWidth={1.6} />
               </motion.button>
@@ -216,6 +240,6 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
   },
 );
 
-ChatInput.displayName = 'ChatInput';
+ChatInput.displayName = "ChatInput";
 
 export default ChatInput;
