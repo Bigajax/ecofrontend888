@@ -39,22 +39,25 @@ const toAbsoluteUrl = (rawUrl: string): URL => {
   return new URL(rawUrl, REMOTE_API_FALLBACK);
 };
 
+// Simplificada: retorna apenas a URL base
 export const buildAskEcoUrl = (
   path: string = ASK_ECO_ENDPOINT_PATH,
-  options: { clientMessageId?: string | null } = {},
 ): string => {
-  // resolveApiUrl já aplica a base consolidada; se vier relativo, toAbsoluteUrl aplica API_BASE_URL
   const resolved = resolveApiUrl(path);
   const url = toAbsoluteUrl(resolved);
+  return url.toString();
+};
 
+// Nova função para construir headers
+export const buildAskEcoHeaders = (clientMessageId?: string) => {
   const guestId = getOrCreateGuestId();
   const sessionId = getOrCreateSessionId();
-  const clientMessageId =
-    typeof options.clientMessageId === "string" ? options.clientMessageId.trim() : "";
 
-  if (guestId) url.searchParams.set("guest_id", guestId);
-  if (sessionId) url.searchParams.set("session_id", sessionId);
-  if (clientMessageId) url.searchParams.set("client_message_id", clientMessageId);
-
-  return url.toString();
+  return {
+    'Content-Type': 'application/json',
+    'Accept': 'text/event-stream',
+    'x-eco-guest-id': guestId || '',
+    'x-eco-session-id': sessionId || '',
+    'x-eco-client-message-id': clientMessageId || '',
+  };
 };
