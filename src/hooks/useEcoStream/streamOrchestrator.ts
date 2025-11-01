@@ -1,2949 +1,2962 @@
-// === streamOrchestrator.ts (parte 1/4) ===
+  // === streamOrchestrator.ts (parte 1/4) ===
 
-import type { Dispatch, MutableRefObject, SetStateAction } from "react";
+  import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 
-import {
-  type EcoStreamChunk,
-  type EcoStreamControlEvent,
-  type EcoStreamDoneEvent,
-  type EcoStreamPromptReadyEvent,
-} from "../../api/ecoStream";
-import { collectTexts } from "../../api/askEcoResponse";
-import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
-import type { EnsureAssistantEventMeta, MessageTrackingRefs, ReplyStateController } from "./messageState";
-import {
-  applyMetaToStreamStats,
-  buildEcoRequestBody,
-  extractFinishReasonFromMeta,
-} from "./requestBuilder";
-import type {
-  EnsureAssistantMessageFn,
-  InteractionMapAction,
-  RemoveEcoEntryFn,
-  StreamRunStats,
-  StreamSharedContext,
-} from "./types";
-import {
-  applyChunkToMessages,
-  extractText,
-  extractSummaryRecord,
-  mergeReplyMetadata,
-  processSseLine,
-  type ProcessSseHandlers,
-} from "./chunkProcessor";
-import {
-  pickNumberFromRecords,
-  pickStringArrayFromRecords,
-  pickStringFromRecords,
-  toCleanString,
-  toRecord,
-} from "./utils";
-import { rememberGuestIdentityFromResponse, rememberSessionIdentityFromResponse } from "../../lib/guestId";
-import { setStreamActive } from "./streamStatus";
-import { NO_TEXT_ALERT_MESSAGE, showToast } from "../useEcoStream.helpers";
-import { ASK_ECO_ENDPOINT_PATH } from "@/api/askEcoUrl";
-import { getOrCreateGuestId, getOrCreateSessionId, rememberIdsFromResponse } from "@/utils/identity";
-import {
-  onControl,
-  onDone,
-  onError,
-  onMessage,
-  onPromptReady,
-  processChunk,
-} from "./session/streamEvents";
-import {
-  StreamSession,
-  StreamFallbackManager,
-  createDefaultTimers,
-  createSseWatchdogs,
-  withTypingWatchdog,
-  resolveStreamGuardTimeoutMs,
-  abortControllerSafely,
-  TYPING_WATCHDOG_MS,
-  type StreamRunnerTimers,
-  type CloseReason,
-  type BeginStreamParams,
-} from "./session/StreamSession";
+  import {
+    type EcoStreamChunk,
+    type EcoStreamControlEvent,
+    type EcoStreamDoneEvent,
+    type EcoStreamPromptReadyEvent,
+  } from "../../api/ecoStream";
+  import { collectTexts } from "../../api/askEcoResponse";
+  import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
+  import type { EnsureAssistantEventMeta, MessageTrackingRefs, ReplyStateController } from "./messageState";
+  import {
+    applyMetaToStreamStats,
+    buildEcoRequestBody,
+    extractFinishReasonFromMeta,
+  } from "./requestBuilder";
+  import type {
+    EnsureAssistantMessageFn,
+    InteractionMapAction,
+    RemoveEcoEntryFn,
+    StreamRunStats,
+    StreamSharedContext,
+  } from "./types";
+  import {
+    applyChunkToMessages,
+    extractText,
+    extractSummaryRecord,
+    mergeReplyMetadata,
+    processSseLine,
+    type ProcessSseHandlers,
+  } from "./chunkProcessor";
+  import {
+    pickNumberFromRecords,
+    pickStringArrayFromRecords,
+    pickStringFromRecords,
+    toCleanString,
+    toRecord,
+  } from "./utils";
+  import { rememberGuestIdentityFromResponse, rememberSessionIdentityFromResponse } from "../../lib/guestId";
+  import { setStreamActive } from "./streamStatus";
+  import { NO_TEXT_ALERT_MESSAGE, showToast } from "../useEcoStream.helpers";
+  import { ASK_ECO_ENDPOINT_PATH } from "@/api/askEcoUrl";
+  import { getOrCreateGuestId, getOrCreateSessionId, rememberIdsFromResponse } from "@/utils/identity";
+  import {
+    onControl,
+    onDone,
+    onError,
+    onMessage,
+    onPromptReady,
+    processChunk,
+  } from "./session/streamEvents";
+  import {
+    StreamSession,
+    StreamFallbackManager,
+    createDefaultTimers,
+    createSseWatchdogs,
+    withTypingWatchdog,
+    resolveStreamGuardTimeoutMs,
+    abortControllerSafely,
+    TYPING_WATCHDOG_MS,
+    type StreamRunnerTimers,
+    type CloseReason,
+    type BeginStreamParams,
+  } from "./session/StreamSession";
 
-export type {
-  StreamRunStats,
-  StreamSharedContext,
-  EnsureAssistantMessageFn,
-  RemoveEcoEntryFn,
-  InteractionMapAction,
-} from "./types";
-export type { StreamRunnerTimers, CloseReason, BeginStreamParams } from "./session/StreamSession";
+  export type {
+    StreamRunStats,
+    StreamSharedContext,
+    EnsureAssistantMessageFn,
+    RemoveEcoEntryFn,
+    InteractionMapAction,
+  } from "./types";
+  export type { StreamRunnerTimers, CloseReason, BeginStreamParams } from "./session/StreamSession";
 
-// ------------------- CONFIGURAÇÕES GERAIS -------------------
+  // ------------------- CONFIGURAÇÕES GERAIS -------------------
 
-const FALLBACK_NO_CHUNK_REASONS = new Set<string>([
-  "client_disconnect",
-  "stream_aborted",
-  "watchdog_first_token",
-  "watchdog_heartbeat",
-  "fallback_guard_timeout",
-  "server-done-empty",
-  "missing-event",
-  "start-error",
-]);
+  const FALLBACK_NO_CHUNK_REASONS = new Set<string>([
+    "client_disconnect",
+    "stream_aborted",
+    "watchdog_first_token",
+    "watchdog_heartbeat",
+    "fallback_guard_timeout",
+    "server-done-empty",
+    "missing-event",
+    "start-error",
+  ]);
 
-const inflightControllers = new Map<string, AbortController>();
-const streamStartLogged = new Set<string>();
+  const inflightControllers = new Map<string, AbortController>();
+  const streamStartLogged = new Set<string>();
 
-const isDevelopmentEnv = (() => {
-  try {
-    const meta = import.meta as { env?: { DEV?: boolean; MODE?: string; mode?: string } };
-    if (typeof meta?.env?.DEV === "boolean") {
-      return meta.env.DEV;
-    }
-    const mode = meta?.env?.MODE ?? meta?.env?.mode;
-    if (typeof mode === "string" && mode.trim()) {
-      return mode.trim().toLowerCase() === "development";
-    }
-  } catch {}
-  try {
-    const nodeEnv = (
-      globalThis as typeof globalThis & { process?: { env?: Record<string, string | undefined> } }
-    ).process?.env?.NODE_ENV;
-    if (typeof nodeEnv === "string" && nodeEnv.trim()) {
-      return nodeEnv.trim().toLowerCase() === "development";
-    }
-  } catch {}
-  return false;
-})();
-
-const logDev = (label: string, payload: Record<string, unknown>) => {
-  if (!isDevelopmentEnv) return;
-  try {
-    console.debug(`[EcoStream] ${label}`, payload);
-  } catch {}
-};
-
-// ------------------- URL RESOLVER -------------------
-
-declare const __API_BASE__: string | undefined;
-
-type ResolveAskEcoUrlResult = {
-  url: string;
-  base: string;
-  source: "VITE_API_URL" | "NEXT_PUBLIC_API_URL" | "DEFINE_FALLBACK";
-  nodeEnv: string;
-};
-
-const resolveAbsoluteAskEcoUrl = (): ResolveAskEcoUrlResult => {
-  const envContainer = import.meta as { env?: Record<string, string | undefined> };
-  const env = envContainer.env ?? {};
-  const processEnv = (() => {
+  const isDevelopmentEnv = (() => {
     try {
-      return (
-        (globalThis as typeof globalThis & {
-          process?: { env?: Record<string, string | undefined> };
-        }).process?.env ?? {}
-      );
-    } catch {
-      return {};
-    }
+      const meta = import.meta as { env?: { DEV?: boolean; MODE?: string; mode?: string } };
+      if (typeof meta?.env?.DEV === "boolean") {
+        return meta.env.DEV;
+      }
+      const mode = meta?.env?.MODE ?? meta?.env?.mode;
+      if (typeof mode === "string" && mode.trim()) {
+        return mode.trim().toLowerCase() === "development";
+      }
+    } catch {}
+    try {
+      const nodeEnv = (
+        globalThis as typeof globalThis & { process?: { env?: Record<string, string | undefined> } }
+      ).process?.env?.NODE_ENV;
+      if (typeof nodeEnv === "string" && nodeEnv.trim()) {
+        return nodeEnv.trim().toLowerCase() === "development";
+      }
+    } catch {}
+    return false;
   })();
 
-  const fromDefine = (typeof __API_BASE__ !== "undefined" ? __API_BASE__ : "") ?? "";
-  const rawVite = env?.VITE_API_URL ?? processEnv?.VITE_API_URL ?? "";
-  const rawNext = env?.NEXT_PUBLIC_API_URL ?? processEnv?.NEXT_PUBLIC_API_URL ?? "";
-  const trimmedVite = typeof rawVite === "string" ? rawVite.trim() : "";
-  const trimmedNext = typeof rawNext === "string" ? rawNext.trim() : "";
-  const trimmedDefine = typeof fromDefine === "string" ? fromDefine.trim() : "";
-
-  console.log("[SSE-DEBUG] env_probe", {
-    hasVite: trimmedVite.length > 0,
-    hasNextPub: trimmedNext.length > 0,
-    hasDefine: trimmedDefine.length > 0,
-  });
-
-  const baseCandidate = trimmedVite || trimmedNext || trimmedDefine;
-  const selectedSource: ResolveAskEcoUrlResult["source"] = trimmedVite
-    ? "VITE_API_URL"
-    : trimmedNext
-    ? "NEXT_PUBLIC_API_URL"
-    : "DEFINE_FALLBACK";
-
-  const nodeEnvRaw =
-    (typeof processEnv?.NODE_ENV === "string" ? processEnv.NODE_ENV.trim() : "") ||
-    (typeof env?.MODE === "string" ? env.MODE.trim() : "") ||
-    (typeof env?.mode === "string" ? env.mode.trim() : "");
-  const nodeEnv = nodeEnvRaw;
-
-  if (!baseCandidate) {
-    const message =
-      nodeEnv.toLowerCase() === "production"
-        ? "API_BASE missing: defina VITE_API_URL (ou NEXT_PUBLIC_API_URL) nas envs de Preview/Production e faça redeploy."
-        : "API_BASE missing";
-    console.error(message);
-    throw new Error(message);
-  }
-
-  let base = baseCandidate.replace(/\/+$/, "");
-  let parsed: URL;
-  try {
-    parsed = new URL(base);
-  } catch {
-    console.error("[SSE] Invalid API_BASE", { base: baseCandidate, source: selectedSource });
-    throw new Error("API_BASE invalid");
-  }
-
-  if (nodeEnv.toLowerCase() === "production") {
-    const host = parsed.hostname.toLowerCase();
-    if (host === "localhost" || host === "127.0.0.1") {
-      console.error("[SSE] API_BASE localhost blocked in production", {
-        base: parsed.toString(),
-        source: selectedSource,
-      });
-      throw new Error("API_BASE localhost not allowed in production");
-    }
-  }
-
-  const isPageHttps = typeof window !== "undefined" && window.location?.protocol === "https:";
-  if (isPageHttps && parsed.protocol === "http:") {
-    const pageHost = window.location.hostname;
-    if (parsed.hostname === pageHost) {
-      console.error("[SSE] API_BASE forced to https", {
-        base: parsed.toString(),
-        source: selectedSource,
-      });
-      parsed.protocol = "https:";
-      if (!window.location.port && parsed.port === "80") {
-        parsed.port = "";
-      }
-    } else {
-      console.error("[SSE] API_BASE insecure http blocked on https page", {
-        base: parsed.toString(),
-        source: selectedSource,
-        pageHost,
-      });
-      throw new Error("API_BASE insecure on https page");
-    }
-  }
-
-  parsed.hash = "";
-  parsed.search = "";
-  parsed.pathname = parsed.pathname.replace(/\/+$/, "");
-  const normalizedBase = parsed.pathname
-    ? `${parsed.origin}${parsed.pathname}`
-    : parsed.origin;
-  const trimmedBase = normalizedBase.replace(/\/+$/, "");
-
-  const askEcoPath = ASK_ECO_ENDPOINT_PATH.startsWith("/")
-    ? ASK_ECO_ENDPOINT_PATH
-    : `/${ASK_ECO_ENDPOINT_PATH}`;
-  const normalizedPath = askEcoPath.replace(/\/+$/, "");
-  const pathSuffix = trimmedBase.endsWith("/api")
-    ? normalizedPath.replace(/^\/api/, "")
-    : normalizedPath;
-  const url = `${trimmedBase}${pathSuffix}`;
-
-  return {
-    url,
-    base: trimmedBase,
-    source: selectedSource,
-    nodeEnv,
+  const logDev = (label: string, payload: Record<string, unknown>) => {
+    if (!isDevelopmentEnv) return;
+    try {
+      console.debug(`[EcoStream] ${label}`, payload);
+    } catch {}
   };
-};
 
-// === fim da parte 1/4 ===
-// === streamOrchestrator.ts (parte 2/4) ===
+  // ------------------- URL RESOLVER -------------------
 
-// Abort reasons aceitas durante o ciclo do stream
-type AllowedAbortReason = "watchdog_timeout" | "user_cancelled" | "finalize";
+  declare const __API_BASE__: string | undefined;
 
-const logAbortDebug = (reason: AllowedAbortReason) => {
-  try {
-    console.log("[DEBUG] Abortando conexão", { reason, stack: new Error().stack });
-  } catch {
-    /* noop */
-  }
-};
-
-/**
- * Abre um stream SSE **via GET** (sem body), somente com `Accept: text/event-stream`.
- * - Sem `Content-Type` no handshake
- * - `credentials: "omit"`
- * - `cache: "no-store"`
- * - `mode: "cors"`
- *
- * Útil para smoke-test e compatibilidade com chamadas antigas.
- */
-export async function openEcoSseStream(opts: {
-  url?: string;
-  body: unknown; // mantido por compat, mas **NÃO** é enviado no GET
-  onPromptReady?: () => void;
-  onChunk?: (delta: string) => void;
-  onControl?: (name: string, payload?: any) => void;
-  onDone?: (meta?: any) => void;
-  onError?: (err: Error) => void;
-  controller?: AbortController;
-  diagnostics?: {
+  type ResolveAskEcoUrlResult = {
     url: string;
     base: string;
     source: "VITE_API_URL" | "NEXT_PUBLIC_API_URL" | "DEFINE_FALLBACK";
     nodeEnv: string;
   };
-}) {
-  const {
-    url: legacyUrl,
-    body: _body, // não usado no GET
-    onPromptReady,
-    onChunk,
-    onControl,
-    onDone,
-    onError,
-    controller = new AbortController(),
-    diagnostics,
-  } = opts;
 
-  const endpointInfo = diagnostics ?? resolveAbsoluteAskEcoUrl();
-  const requestUrl = endpointInfo.url;
-  const apiBaseSource = endpointInfo.source;
-  const resolvedNodeEnv = endpointInfo.nodeEnv;
-
-  if (legacyUrl && legacyUrl !== requestUrl) {
-    try {
-      console.warn("[SSE] Ignorando URL legada em favor da URL resolvida", {
-        legacyUrl,
-        resolved_ask_eco_url: requestUrl,
-      });
-    } catch {
-      /* noop */
-    }
-  }
-
-  const wd = createSseWatchdogs("legacy", createDefaultTimers());
-  let closed = false as boolean;
-  let closeReason: CloseReason | null = null;
-  let streamErrored = false;
-
-  // Utilitários de aborto (usa abortControllerSafely importada do Session)
-  const abortState = { triggered: false };
-  const cleanupAfterAbort = () => {
-    try {
-      wd.clear();
-    } catch {
-      /* noop */
-    }
-  };
-  const abortOnce = (reason: AllowedAbortReason) => {
-    if (abortState.triggered) return false;
-    abortState.triggered = true;
-    try {
-      console.log("[SSE-DEBUG] abort_once", { reason });
-    } catch {
-      /* noop */
-    }
-    logAbortDebug(reason);
-    const aborted = abortControllerSafely(controller, reason);
-    cleanupAfterAbort();
-    return aborted;
-  };
-
-  const safeClose = (reason: CloseReason) => {
-    if (closed) return;
-    closed = true;
-    closeReason = reason;
-    if (reason === "watchdog_first_token" || reason === "watchdog_heartbeat") {
-      abortOnce("watchdog_timeout");
-    } else if (reason === "ui_abort") {
-      abortOnce("user_cancelled");
-    } else if (!controller.signal.aborted) {
-      abortOnce("finalize");
-    } else {
-      cleanupAfterAbort();
-    }
-  };
-
-  const onWdTimeout = (reason: CloseReason) => {
-    safeClose(reason);
-    streamErrored = true;
-    onError?.(new Error(`SSE watchdog timeout: ${reason}`));
-  };
-
-  // Handshake SSE deve ser GET, sem body e sem Content-Type
-  const acceptHeader = "text/event-stream";
-  const requestMethod = "GET" as const;
-
-  console.log("[DIAG] start", {
-    url: requestUrl,
-    accept: acceptHeader,
-    forcedJson: false,
-    method: requestMethod,
-  });
-  try {
-    console.log("[SSE-DEBUG] fetch_endpoint_info", {
-      resolved_ask_eco_url: requestUrl,
-      api_base_source: apiBaseSource,
-      node_env: resolvedNodeEnv || null,
-    });
-  } catch {
-    /* noop */
-  }
-  console.log("[SSE-DEBUG] Conectando", {
-    url: requestUrl,
-    method: requestMethod,
-    headers: ["Accept"],
-  });
-
-  const res = await fetch(requestUrl, {
-    method: requestMethod,
-    headers: { Accept: acceptHeader }, // ⚠️ sem Content-Type aqui
-    credentials: "omit",
-    mode: "cors",
-    signal: controller.signal,
-    cache: "no-store",
-  });
-
-  const responseHeaders = (() => {
-    try {
-      return Object.fromEntries(res.headers.entries());
-    } catch {
-      return {} as Record<string, string>;
-    }
-  })();
-
-  console.log("[DIAG] response", {
-    ok: res.ok,
-    status: res.status,
-    ct: res.headers.get("content-type"),
-    xab: res.headers.get("x-accel-buffering"),
-    headers: responseHeaders,
-  });
-
-  if (!res.ok || !res.body) {
-    streamErrored = true;
-    onError?.(new Error(`SSE failed: ${res.status}`));
-    safeClose("network_error");
-    return { abort: () => safeClose("ui_abort") } as const;
-  }
-
-  const reader = res.body.getReader();
-  const dec = new TextDecoder();
-  let buf = "";
-  let bytes = 0;
-  let chunks = 0;
-
-  const markPromptReady = () => {
-    onPromptReady?.();
-    wd.markPromptReady(onWdTimeout);
-  };
-
-  const readLoop = async () => {
-    try {
-      while (!closed) {
-        const { value, done } = await reader.read();
-        if (value && value.byteLength > 0) {
-          bytes += value.byteLength;
-          chunks += 1;
-        }
-        if (done) break;
-        if (value) buf += dec.decode(value, { stream: true });
-
-        let idx: number;
-        while ((idx = buf.indexOf("\n")) >= 0) {
-          const line = buf.slice(0, idx).trim();
-          buf = buf.slice(idx + 1);
-          if (!line || line.startsWith(":")) continue;
-
-          if (line.startsWith("data:")) {
-            const json = line.slice(5).trim();
-            try {
-              const evt = JSON.parse(json);
-              const type = evt?.type ?? evt?.event ?? "chunk";
-
-              // Log leve de diagnóstico
-              try {
-                const previewSource =
-                  typeof evt?.delta === "string"
-                    ? evt.delta
-                    : typeof evt?.text === "string"
-                    ? evt.text
-                    : typeof evt?.payload?.text === "string"
-                    ? evt.payload.text
-                    : typeof evt?.data === "string"
-                    ? evt.data
-                    : undefined;
-                console.log("[SSE-DEBUG] Evento", {
-                  type: evt?.event ?? evt?.name ?? type,
-                  hasData: Boolean(evt?.data ?? evt?.delta ?? evt?.text ?? evt?.payload),
-                  preview: typeof previewSource === "string" ? previewSource.slice(0, 50) : undefined,
-                });
-              } catch {
-                /* noop */
-              }
-
-              // Controles principais
-              if (type === "control" && evt?.name === "prompt_ready") {
-                markPromptReady();
-                continue;
-              }
-              if (type === "control" && evt?.name === "ping") {
-                wd.bumpHeartbeat(onWdTimeout);
-                continue;
-              }
-              if (type === "control" && evt?.name === "guard_fallback_trigger") {
-                onControl?.("guard_fallback_trigger", evt?.payload);
-                wd.bumpHeartbeat(onWdTimeout);
-                continue;
-              }
-
-              if (type === "control" && evt?.name === "done") {
-                if (chunks === 0) {
-                  // Tenta extrair texto final do payload caso nenhum chunk tenha vindo
-                  const payloadText =
-                    typeof evt?.payload?.text === "string" ? evt.payload.text : undefined;
-                  const dataText = (() => {
-                    if (typeof evt?.data === "string") return evt.data;
-                    if (evt?.data && typeof evt.data === "object") {
-                      const nestedText = (evt.data as { text?: unknown }).text;
-                      if (typeof nestedText === "string") return nestedText;
-                    }
-                    return undefined;
-                  })();
-                  const directText = typeof evt?.text === "string" ? evt.text : undefined;
-                  const collected = collectTexts(evt?.payload);
-                  const collectedText =
-                    Array.isArray(collected) && collected.length > 0 ? collected.join("") : undefined;
-                  const finalText = payloadText || dataText || directText || collectedText;
-
-                  if (finalText) {
-                    try {
-                      console.warn("[SSE] Resposta completa recebida no done (sem chunks)");
-                    } catch {
-                      /* noop */
-                    }
-                    onChunk?.(String(finalText));
-                    wd.bumpFirstToken(onWdTimeout);
-                    chunks = 1;
-
-                    const donePayload = (() => {
-                      if (evt?.payload && typeof evt.payload === "object") {
-                        const basePayload = { ...(evt.payload as Record<string, unknown>) };
-                        if (typeof basePayload.text !== "string") {
-                          basePayload.text = String(finalText);
-                        }
-                        return basePayload;
-                      }
-                      if (evt?.payload !== undefined) {
-                        return { value: evt.payload, text: String(finalText) };
-                      }
-                      return { text: String(finalText) };
-                    })();
-
-                    onDone?.(donePayload);
-                    safeClose("server_done");
-                  } else {
-                    streamErrored = true;
-                    onError?.(new Error("Stream vazio: backend finalizou sem enviar chunks."));
-                    safeClose("server_error");
-                  }
-                } else {
-                  onDone?.(evt?.payload);
-                  safeClose("server_done");
-                }
-                break;
-              }
-
-              if (type === "chunk") {
-                if (evt?.delta) onChunk?.(String(evt.delta));
-                wd.bumpFirstToken(onWdTimeout);
-                continue;
-              }
-
-              if (type === "control") {
-                onControl?.(evt?.name ?? "control", evt?.payload);
-                wd.bumpHeartbeat(onWdTimeout);
-                continue;
-              }
-            } catch {
-              // linha parcial: ignora
-            }
-          }
-        }
-      }
-    } catch (e: any) {
-      if (!closed && e?.name !== "AbortError") {
-        streamErrored = true;
-        onError?.(e instanceof Error ? e : new Error(String(e)));
-        safeClose("server_error");
-      }
-    } finally {
-      console.log("[DIAG] stream:end", { bytes, chunks });
-
-      const endedByUiAbort = closeReason === "ui_abort";
-      const endedByWatchdog =
-        closeReason === "watchdog_first_token" || closeReason === "watchdog_heartbeat";
-
-      if (!streamErrored && chunks === 0 && !endedByUiAbort && !endedByWatchdog) {
-        streamErrored = true;
-        onError?.(new Error("Stream vazio: backend finalizou sem enviar chunks."));
-      }
+  const resolveAbsoluteAskEcoUrl = (): ResolveAskEcoUrlResult => {
+    const envContainer = import.meta as { env?: Record<string, string | undefined> };
+    const env = envContainer.env ?? {};
+    const processEnv = (() => {
       try {
-        await reader.cancel();
-      } catch {
-        /* noop */
-      }
-      wd.clear();
-      if (!closed) safeClose("server_error");
-      try {
-        console.info("[FE] sse:finalize", { reason: closeReason });
-      } catch {
-        /* noop */
-      }
-    }
-  };
-
-  void readLoop();
-
-  return {
-    abort: () => safeClose("ui_abort"),
-    get closed() {
-      return closed;
-    },
-  } as const;
-}
-
-// === fim da parte 2/4 ===
-// === streamOrchestrator.ts (parte 3/4) ===
-
-const diag = (...args: unknown[]) => {
-  try {
-    const envContainer = import.meta as { env?: Record<string, unknown> };
-    const isDev = Boolean(envContainer?.env?.DEV);
-    const hasDebug =
-      typeof window !== "undefined" && Boolean((window as { ECO_DEBUG?: boolean }).ECO_DEBUG);
-    if (isDev || hasDebug) {
-      console.log("[eco-stream]", ...args);
-    }
-  } catch {
-    /* noop */
-  }
-};
-
-export interface StreamRunnerFactoryOptions {
-  fetchImpl?: typeof fetch;
-  timers?: StreamRunnerTimers;
-  watchdogFactory?: (
-    id: string,
-    timers: StreamRunnerTimers,
-  ) => ReturnType<typeof createSseWatchdogs>;
-}
-
-interface ResolvedStreamRunnerDeps {
-  fetchImpl?: typeof fetch;
-  timers: StreamRunnerTimers;
-  watchdogFactory: (id: string) => ReturnType<typeof createSseWatchdogs>;
-  typingWatchdogFactory: (id: string, onTimeout: () => void) => () => void;
-}
-
-const resolveStreamRunnerDeps = (
-  options?: StreamRunnerFactoryOptions,
-): ResolvedStreamRunnerDeps => {
-  const timers = options?.timers ?? createDefaultTimers();
-  const fetchImpl =
-    typeof options?.fetchImpl === "function"
-      ? options.fetchImpl
-      : typeof globalThis.fetch === "function"
-      ? (globalThis.fetch as typeof fetch)
-      : undefined;
-
-  const watchdogFactory: ResolvedStreamRunnerDeps["watchdogFactory"] =
-    typeof options?.watchdogFactory === "function"
-      ? (id: string) => options.watchdogFactory!(id, timers)
-      : (id: string) => createSseWatchdogs(id, timers);
-
-  const typingWatchdogFactory: ResolvedStreamRunnerDeps["typingWatchdogFactory"] = (
-    id: string,
-    onTimeout: () => void,
-  ) => withTypingWatchdog(id, onTimeout, timers);
-
-  return { fetchImpl, timers, watchdogFactory, typingWatchdogFactory };
-};
-
-const formatAbortReason = (input: unknown): string => {
-  if (typeof input === "string") {
-    const trimmed = input.trim();
-    if (trimmed.length > 0) return trimmed;
-  }
-  if (typeof input === "number" && Number.isFinite(input)) {
-    return String(input);
-  }
-  if (input instanceof DOMException) {
-    const domReason =
-      typeof (input as DOMException & { reason?: unknown }).reason === "string"
-        ? ((input as DOMException & { reason?: unknown }).reason as string).trim()
-        : "";
-    if (domReason) return domReason;
-    const domMessage = typeof input.message === "string" ? input.message.trim() : "";
-    if (domMessage) return domMessage;
-    const domName = typeof input.name === "string" ? input.name.trim() : "";
-    if (domName) return domName;
-    return "DOMException";
-  }
-  if (input instanceof Error) {
-    const errorMessage = typeof input.message === "string" ? input.message.trim() : "";
-    if (errorMessage) return errorMessage;
-    const errorName = typeof input.name === "string" ? input.name.trim() : "";
-    if (errorName) return errorName;
-    return "Error";
-  }
-  if (typeof input === "object" && input !== null) {
-    const maybeReason = (input as { reason?: unknown }).reason;
-    if (maybeReason !== undefined) {
-      const nested = formatAbortReason(maybeReason);
-      if (nested !== "unknown") return nested;
-    }
-    try {
-      const serialized = JSON.stringify(input);
-      if (serialized && serialized !== "{}") return serialized;
-    } catch {
-      /* noop */
-    }
-  }
-  return "unknown";
-};
-
-const resolveAbortReason = (input: unknown): string => formatAbortReason(input);
-
-const mapStreamErrorToMessage = (code: string): string => {
-  switch (code) {
-    case "cors_preflight_failed":
-      return "Nao foi possivel iniciar a conexao com a Eco (CORS). Verifique sua internet ou tente novamente.";
-    case "sse_ready_timeout":
-      return "A Eco demorou para comecar a responder. Tente novamente.";
-    case "no_chunks_emitted":
-      return "A Eco nao enviou nenhum conteudo. Tente novamente.";
-    case "no_text_before_done":
-      return "A Eco terminou sem enviar conteudo. Tente novamente.";
-    default:
-      return code;
-  }
-};
-
-interface DoneContext extends StreamSharedContext {
-  event: EcoStreamDoneEvent | undefined;
-  setErroApi: Dispatch<SetStateAction<string | null>>;
-  removeEcoEntry: RemoveEcoEntryFn;
-  assistantId: string;
-}
-
-export const handlePromptReady = (
-  event: EcoStreamPromptReadyEvent | undefined,
-  context: StreamSharedContext,
-) => {
-  if (!context.ensureAssistantMessage) return;
-  const assistantId = context.ensureAssistantMessage(
-    context.clientMessageId,
-    {
-      interactionId: event?.interactionId,
-      messageId: event?.messageId,
-      createdAt: event?.createdAt,
-    },
-    { allowCreate: false },
-  );
-
-  if (!assistantId) return;
-
-  context.activeAssistantIdRef.current = assistantId;
-  if (event?.interactionId) {
-    context.updateCurrentInteractionId(event.interactionId);
-  }
-  const timestamp = typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
-  const updatedAt = timestamp || new Date().toISOString();
-
-  context.setMessages((prev) =>
-    prev.map((m) => {
-      if (m.id !== assistantId) return m;
-      try {
-        console.debug("[DIAG] setMessages:update:before", {
-          targetId: assistantId,
-          role: m.role ?? m.sender ?? "unknown",
-          status: m.status,
-          phase: "prompt",
-        });
-      } catch {
-        /* noop */
-      }
-      const next: ChatMessageType = {
-        ...m,
-        streaming: true,
-        status: "streaming",
-        updatedAt,
-        createdAt: m.createdAt ?? updatedAt,
-        message_id: event?.messageId || m.message_id,
-        interaction_id: event?.interactionId || m.interaction_id,
-        interactionId: event?.interactionId || m.interactionId,
-      };
-      try {
-        console.debug("[DIAG] setMessages:update:after", {
-          targetId: assistantId,
-          role: next.role ?? next.sender ?? "unknown",
-          status: next.status,
-          phase: "prompt",
-        });
-      } catch {
-        /* noop */
-      }
-      return next;
-    }),
-  );
-};
-
-export const handleChunk = (chunk: EcoStreamChunk, context: StreamSharedContext) => {
-  applyChunkToMessages({
-    clientMessageId: context.clientMessageId,
-    chunk,
-    ensureAssistantMessage: context.ensureAssistantMessage,
-    setDigitando: context.setDigitando,
-    logSse: context.logSse,
-    streamTimersRef: context.streamTimersRef,
-    assistantByClientRef: context.tracking.assistantByClientRef,
-    activeStreamClientIdRef: context.activeStreamClientIdRef,
-    activeAssistantIdRef: context.activeAssistantIdRef,
-    setMessages: context.setMessages,
-    upsertMessage: context.upsertMessage,
-    replyState: context.replyState,
-    tracking: context.tracking,
-  });
-};
-
-export const handleDone = (doneContext: DoneContext) => {
-  const { event, clientMessageId, normalizedClientId, assistantId } = doneContext;
-
-  const readyStateRef =
-    doneContext.readyStateRef ?? ({ current: false } as MutableRefObject<boolean>);
-  const activeStreamClientIdRef =
-    doneContext.activeStreamClientIdRef ??
-    ({ current: null } as MutableRefObject<string | null>);
-
-  const readyReceived = readyStateRef.current === true;
-  const noChunksEmitted = readyReceived && !doneContext.streamStats.gotAnyChunk;
-  if (noChunksEmitted && !doneContext.streamStats.clientFinishReason) {
-    doneContext.streamStats.clientFinishReason = "no_chunks_emitted";
-  }
-
-  if (activeStreamClientIdRef.current === clientMessageId) {
-    try {
-      console.debug("[DIAG] setDigitando:before", {
-        clientMessageId,
-        value: false,
-        phase: "handleDone",
-      });
-    } catch {
-      /* noop */
-    }
-    doneContext.setDigitando(false);
-  }
-
-  if (event?.interactionId) {
-    doneContext.updateCurrentInteractionId(event.interactionId);
-  }
-
-  if (doneContext.tracking.userTextByClientIdRef.current[clientMessageId]) {
-    delete doneContext.tracking.userTextByClientIdRef.current[clientMessageId];
-  }
-
-  const timestamp = typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
-  const updatedAt = timestamp || new Date().toISOString();
-  const donePayload = event?.payload;
-  const payloadRecord = toRecord(donePayload);
-  const summaryRecord = extractSummaryRecord(donePayload);
-  const responseRecord = toRecord(payloadRecord?.response);
-  const metadataRecord = toRecord(payloadRecord?.metadata);
-  const contextRecord = toRecord(payloadRecord?.context);
-  const recordSources = [summaryRecord, responseRecord, metadataRecord, contextRecord, payloadRecord];
-
-  const metadataBase =
-    payloadRecord?.metadata !== undefined
-      ? (payloadRecord?.metadata as unknown)
-      : payloadRecord?.response !== undefined
-      ? (payloadRecord?.response as unknown)
-      : undefined;
-
-  const interactionFromSummary = pickStringFromRecords(recordSources, [
-    "interaction_id",
-    "interactionId",
-    "interactionID",
-  ]);
-  const fallbackInteractionFromIds = pickStringFromRecords(recordSources, [
-    "id",
-    "message_id",
-    "messageId",
-  ]);
-  const eventInteractionId = toCleanString(event?.interactionId);
-  const resolvedInteractionId = interactionFromSummary ?? eventInteractionId ?? fallbackInteractionFromIds;
-
-  const resolvedMessageId =
-    pickStringFromRecords(recordSources, ["message_id", "messageId", "id"]) ??
-    toCleanString(event?.messageId);
-
-  const latencyCandidate = pickNumberFromRecords(recordSources, ["latency_ms", "latencyMs"]);
-  const normalizedLatency =
-    typeof latencyCandidate === "number" ? Math.max(0, Math.round(latencyCandidate)) : undefined;
-
-  const moduleCombo = pickStringArrayFromRecords(recordSources, [
-    "module_combo",
-    "moduleCombo",
-    "modules",
-    "selected_modules",
-    "selectedModules",
-  ]);
-  const promptHash = pickStringFromRecords(recordSources, ["prompt_hash", "promptHash"]);
-  const ecoScore = pickNumberFromRecords(recordSources, ["eco_score", "ecoScore"]);
-
-  const finalizeWithEntry = (entry: { text: string; chunkIndexMax: number } | undefined) => {
-    const aggregatedTextValue = entry?.text ?? "";
-    const aggregatedLength = aggregatedTextValue.length;
-    const doneTexts = collectTexts(donePayload);
-    const doneContentCandidate =
-      Array.isArray(doneTexts) && doneTexts.length > 0 ? doneTexts.join("") : undefined;
-
-    const normalizedAggregated = aggregatedTextValue.replace(/\s+/g, " ").trim();
-    const normalizedDone =
-      typeof doneContentCandidate === "string"
-        ? doneContentCandidate.replace(/\s+/g, " ").trim()
-        : "";
-    const doneHasRenderableText =
-      typeof doneContentCandidate === "string" && doneContentCandidate.length > 0;
-
-    const hasStructuredDonePayload = (() => {
-      if (!payloadRecord) return false;
-      const responseRecord = toRecord(payloadRecord.response);
-      if (responseRecord && Object.keys(responseRecord).length > 0) return true;
-      const responseBodyRecord = toRecord(payloadRecord.responseBody);
-      if (responseBodyRecord && Object.keys(responseBodyRecord).length > 0) return true;
-      const altResponseBody = toRecord((payloadRecord as { response_body?: unknown }).response_body);
-      if (altResponseBody && Object.keys(altResponseBody).length > 0) return true;
-      const maybeMessages = (payloadRecord as { messages?: unknown }).messages;
-      return Array.isArray(maybeMessages) && maybeMessages.length > 0;
-    })();
-
-    let finalContent = aggregatedTextValue;
-    if (doneHasRenderableText) {
-      if (!normalizedAggregated) {
-        finalContent = doneContentCandidate!;
-      } else if (normalizedAggregated !== normalizedDone) {
-        finalContent = doneContentCandidate!;
-      }
-    } else if (aggregatedLength > 0 && !hasStructuredDonePayload) {
-      try {
-        console.debug("[DIAG] done:fallback-aggregated", {
-          clientMessageId,
-          assistantId,
-          aggregatedLength,
-        });
-      } catch {
-        /* noop */
-      }
-    }
-
-    if (readyReceived && aggregatedLength === 0 && !doneHasRenderableText) {
-      if (!doneContext.streamStats.clientFinishReason) {
-        doneContext.streamStats.clientFinishReason = "no_text_before_done";
-      }
-      if (doneContext.streamStats.clientFinishReason === "no_text_before_done") {
-        try {
-          showToast(NO_TEXT_ALERT_MESSAGE);
-        } catch {
-          /* noop */
-        }
-      }
-    }
-
-    if (noChunksEmitted) {
-      const finishReason = doneContext.streamStats.clientFinishReason;
-      if (finishReason !== "user_cancelled") {
-        try {
-          doneContext.setErroApi((prev) => prev ?? "Nenhum chunk emitido antes do encerramento");
-        } catch {
-          /* noop */
-        }
-      }
-    }
-
-    const finalText = finalContent;
-
-    const finalStatus = noChunksEmitted
-      ? "error"
-      : doneContext.streamStats.status === "no_content"
-      ? "no_content"
-      : "done";
-
-    const patch: ChatMessageType = {
-      id: assistantId,
-      streaming: false,
-      status: finalStatus,
-      updatedAt,
-    };
-
-    patch.content = finalText;
-    patch.text = finalText;
-
-    patch.metadata = mergeReplyMetadata(metadataBase, normalizedClientId);
-
-    const finishReasonSource = (() => {
-      const streamMeta = toRecord(doneContext.streamStats?.lastMeta);
-      if (streamMeta && typeof streamMeta === "object") {
-        return streamMeta;
-      }
-      const metadataRecord = toRecord(metadataBase);
-      if (metadataRecord && typeof metadataRecord === "object") {
-        return metadataRecord;
-      }
-      return undefined;
-    })();
-
-    const finishReasonValue = (() => {
-      if (!finishReasonSource) return undefined;
-      const direct =
-        (finishReasonSource as Record<string, unknown>).finishReason ??
-        (finishReasonSource as Record<string, unknown>).finish_reason;
-      if (typeof direct === "string" && direct.trim().length > 0) return direct.trim();
-      return direct;
-    })();
-
-    const annotateWithFinishReason = (metadata: unknown): unknown => {
-      const shouldAnnotateFinishReason = aggregatedLength === 0 && finishReasonValue !== undefined;
-      const clientFinishReason = doneContext.streamStats.clientFinishReason;
-      if (!shouldAnnotateFinishReason && !clientFinishReason) return metadata;
-
-      const finishAnnotations: Record<string, unknown> = {};
-      if (shouldAnnotateFinishReason && finishReasonValue !== undefined) {
-        finishAnnotations.finishReason = finishReasonValue;
-      }
-      if (clientFinishReason) {
-        finishAnnotations.clientFinishReason = clientFinishReason;
-      }
-
-      if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
-        return { ...(metadata as Record<string, unknown>), ...finishAnnotations };
-      }
-      if (metadata === undefined) return finishAnnotations;
-      return { ...finishAnnotations, value: metadata };
-    };
-
-    patch.metadata = annotateWithFinishReason(patch.metadata);
-    if (donePayload !== undefined) patch.donePayload = donePayload;
-    if (resolvedInteractionId) {
-      patch.interaction_id = resolvedInteractionId;
-      patch.interactionId = resolvedInteractionId;
-    }
-    if (resolvedMessageId) patch.message_id = resolvedMessageId;
-    if (typeof normalizedLatency === "number") patch.latencyMs = normalizedLatency;
-    if (moduleCombo && moduleCombo.length > 0) patch.module_combo = moduleCombo;
-    if (promptHash) patch.prompt_hash = promptHash;
-    if (typeof ecoScore === "number" && Number.isFinite(ecoScore)) patch.eco_score = ecoScore;
-
-    try {
-      console.debug("[DIAG] done", {
-        ecoMsgId: assistantId,
-        clientMessageId,
-        aggregatedLength,
-        finalLength: typeof finalText === "string" ? finalText.length : 0,
-      });
-    } catch {
-      /* noop */
-    }
-
-    const allowedKeys = [
-      "status",
-      "streaming",
-      "updatedAt",
-      "metadata",
-      "donePayload",
-      "interaction_id",
-      "interactionId",
-      "message_id",
-      "latencyMs",
-      "module_combo",
-      "prompt_hash",
-      "eco_score",
-      "content",
-      "text",
-    ];
-
-    if (doneContext.upsertMessage) {
-      doneContext.upsertMessage(patch, { patchSource: "stream_done", allowedKeys });
-    } else {
-      doneContext.setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id === assistantId) {
-            try {
-              console.debug("[DIAG] setMessages:update:before", {
-                targetId: assistantId,
-                role: m.role ?? m.sender ?? "unknown",
-                status: m.status,
-                phase: "done",
-              });
-            } catch {
-              /* noop */
-            }
-            const next: ChatMessageType = {
-              ...m,
-              streaming: false,
-              status: finalStatus,
-              updatedAt,
-              content: finalText,
-              text: finalText,
-            };
-            next.metadata = mergeReplyMetadata(metadataBase, normalizedClientId);
-            next.metadata = annotateWithFinishReason(next.metadata);
-            if (donePayload !== undefined) next.donePayload = donePayload;
-            if (resolvedInteractionId) {
-              next.interaction_id = resolvedInteractionId;
-              next.interactionId = resolvedInteractionId;
-            }
-            if (resolvedMessageId) next.message_id = resolvedMessageId;
-            if (typeof normalizedLatency === "number") next.latencyMs = normalizedLatency;
-            if (moduleCombo && moduleCombo.length > 0) next.module_combo = moduleCombo;
-            if (promptHash) next.prompt_hash = promptHash;
-            if (typeof ecoScore === "number" && Number.isFinite(ecoScore)) next.eco_score = ecoScore;
-            try {
-              console.debug("[DIAG] setMessages:update:after", {
-                targetId: assistantId,
-                role: next.role ?? next.sender ?? "unknown",
-                status: next.status,
-                nextLength: typeof next.text === "string" ? next.text.length : 0,
-                phase: "done",
-              });
-            } catch {
-              /* noop */
-            }
-            return next;
-          }
-          return m;
-        }),
-      );
-    }
-
-    if (
-      doneContext.interactionCacheDispatch &&
-      normalizedClientId &&
-      resolvedInteractionId &&
-      typeof resolvedInteractionId === "string"
-    ) {
-      doneContext.interactionCacheDispatch({
-        type: "updateInteractionMap",
-        clientId: normalizedClientId,
-        interaction_id: resolvedInteractionId,
-      });
-    }
-  };
-
-  const aggregatedEntry = doneContext.replyState.ecoReplyStateRef.current[assistantId];
-  const hasChunks = aggregatedEntry?.chunkIndexMax !== undefined && aggregatedEntry.chunkIndexMax >= 0;
-  const aggregatedEntryLength = aggregatedEntry?.text ? aggregatedEntry.text.length : 0;
-
-  if (!hasChunks || aggregatedEntryLength === 0) {
-    const scheduleFinalize = () => {
-      const latestEntry = doneContext.replyState.ecoReplyStateRef.current[assistantId];
-      finalizeWithEntry(latestEntry);
-    };
-
-    if (typeof queueMicrotask === "function") {
-      queueMicrotask(scheduleFinalize);
-    } else {
-      void Promise.resolve()
-        .then(scheduleFinalize)
-        .catch(() => {
-          scheduleFinalize();
-        });
-    }
-  } else {
-    finalizeWithEntry(aggregatedEntry);
-  }
-
-  readyStateRef.current = false;
-};
-
-export const handleError = (error: unknown, context: DoneContext) => {
-  const message =
-    error instanceof Error ? error.message : "Não foi possível concluir a resposta da Eco.";
-  context.setErroApi(message);
-  if (!context.streamStats.clientFinishReason) {
-    context.streamStats.clientFinishReason = "error";
-  }
-  context.logSse("abort", {
-    clientMessageId: context.normalizedClientId,
-    reason: "error",
-    message,
-    source: "error-handler",
-  });
-  delete context.streamTimersRef.current[context.normalizedClientId];
-  if (context.tracking.userTextByClientIdRef.current[context.clientMessageId]) {
-    delete context.tracking.userTextByClientIdRef.current[context.clientMessageId];
-  }
-  try {
-    console.debug("[DIAG] error", {
-      clientMessageId: context.clientMessageId,
-      error: message,
-    });
-  } catch {
-    /* noop */
-  }
-  const assistantIdOnError =
-    context.tracking.assistantByClientRef.current[context.clientMessageId];
-  if (assistantIdOnError) {
-    context.removeEcoEntry(assistantIdOnError);
-  }
-};
-
-export const handleControl = (event: EcoStreamControlEvent, context: StreamSharedContext) => {
-  const explicit = toCleanString(event?.interactionId);
-  const payloadRecord = toRecord(event?.payload);
-  const resolvedName = (() => {
-    const candidates = [toRecord(event) ?? {}, payloadRecord ?? {}];
-    const rawName = pickStringFromRecords(candidates, ["name", "event", "type"]);
-    return typeof rawName === "string" ? rawName.trim().toLowerCase() : undefined;
-  })();
-
-  const extractMetaRecord = (): Record<string, unknown> | undefined => {
-    const metaCandidate =
-      toRecord(payloadRecord?.meta) ??
-      toRecord(payloadRecord?.metadata) ??
-      toRecord(payloadRecord);
-    if (metaCandidate && typeof metaCandidate === "object" && !Array.isArray(metaCandidate)) {
-      return metaCandidate;
-    }
-    return undefined;
-  };
-
-  const payloadInteraction =
-    toCleanString(payloadRecord?.interaction_id) ||
-    toCleanString(payloadRecord?.interactionId) ||
-    toCleanString(payloadRecord?.id);
-  const resolved = explicit ?? payloadInteraction;
-  if (resolved) {
-    context.updateCurrentInteractionId(resolved);
-  }
-  try {
-    console.debug("[DIAG] control", {
-      clientMessageId: context.clientMessageId,
-      assistantMessageId: context.activeAssistantIdRef.current,
-      interactionId: resolved ?? null,
-    });
-  } catch {
-    /* noop */
-  }
-
-  if (resolvedName === "meta") {
-    const meta = extractMetaRecord();
-    try {
-      console.debug("[SSE] meta", meta ?? null);
-    } catch {
-      /* noop */
-    }
-    if (meta) {
-      applyMetaToStreamStats(context.streamStats, meta);
-    }
-  }
-
-  if (resolvedName === "done") {
-    const meta = extractMetaRecord();
-    try {
-      const metaForLog = meta as
-        | (Record<string, unknown> & { finishReason?: unknown; usage?: unknown; modelo?: unknown })
-        | undefined;
-      console.debug("[SSE] done", {
-        finishReason: metaForLog?.finishReason,
-        usage: metaForLog?.usage,
-        modelo: metaForLog?.modelo,
-      });
-    } catch {
-      /* noop */
-    }
-    if (meta) {
-      applyMetaToStreamStats(context.streamStats, meta);
-    }
-  }
-};
-
-// --- Início do motor do stream (beginStreamInternal) ---
-
-const beginStreamInternal = (
-  params: BeginStreamParams,
-  deps: ResolvedStreamRunnerDeps,
-): Promise<StreamRunStats> | void => {
-  const {
-    history,
-    userMessage,
-    systemHint,
-    controllerOverride,
-    controllerRef,
-    streamTimersRef,
-    activeStreamClientIdRef,
-    activeAssistantIdRef,
-    streamActiveRef,
-    activeClientIdRef,
-    onFirstChunk,
-    hasFirstChunkRef,
-    hasReadyRef,
-    setDigitando,
-    setIsSending,
-    setErroApi,
-    activity,
-    ensureAssistantMessage,
-    removeEcoEntry,
-    updateCurrentInteractionId,
-    logSse,
-    userId,
-    userName,
-    guestId,
-    isGuest,
-    interactionCacheDispatch,
-    setMessages,
-    upsertMessage,
-    replyState,
-    tracking,
-  } = params;
-
-  const { fetchImpl, timers, watchdogFactory, typingWatchdogFactory } = deps;
-
-  const session = new StreamSession({
-    params,
-    inflightControllers,
-    streamStartLogged,
-    logDev,
-    timers,
-    watchdogFactory,
-  });
-
-  const startResult = session.start();
-  if (!startResult) {
-    return;
-  }
-
-  const {
-    clientMessageId,
-    normalizedClientId,
-    controller,
-    streamStats,
-    guardTimeoutMs,
-    diagForceJson,
-    requestMethod,
-    acceptHeader,
-    fallbackEnabled,
-    effectiveGuestId,
-    effectiveSessionId,
-    resolvedClientId,
-  } = startResult;
-
-// === fim da parte 3/4 ===
-// === streamOrchestrator.ts (parte 4/4) ===
-
-  let triggerJsonFallback: ((reason: string) => void) | null = null;
-  let startErrorTriggered = false;
-  let startErrorMessage: string | null = null;
-  let startErrorAssistantId: string | null = null;
-
-  session.setWatchdogTimeoutHandler(null);
-
-  const markPromptReadyWatchdog = () => {
-    session.markPromptReadyWatchdog();
-  };
-
-  let runJsonFallbackRequest: (
-    options?: { reason?: string; logError?: unknown },
-  ) => Promise<boolean> = async () => false;
-
-  const READY_TIMEOUT_MS = 7000;
-
-  const streamState = {
-    fallbackRequested: false,
-    firstChunkDelivered: false,
-    readyReceived: false,
-  };
-
-  let typingStarted = false;
-  const markTypingActive = (source: "ready" | "first_chunk") => {
-    if (typingStarted) return;
-    typingStarted = true;
-    try {
-      console.log("[SSE-DEBUG] typing_started", {
-        clientMessageId: normalizedClientId,
-        source,
-      });
-    } catch {
-      /* noop */
-    }
-    try {
-      setDigitando(true);
-    } catch {
-      /* noop */
-    }
-  };
-
-  let readyTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
-  const clearReadyTimeout = () => {
-    if (readyTimeoutHandle) {
-      try {
-        timers.clearTimeout(readyTimeoutHandle);
-      } catch {
-        clearTimeout(readyTimeoutHandle);
-      }
-      readyTimeoutHandle = null;
-    }
-  };
-
-  const handleReadyEvent = () => {
-    clearReadyTimeout();
-    markTypingActive("ready");
-  };
-
-  const onFirstChunkWrapped = () => {
-    clearReadyTimeout();
-    markTypingActive("first_chunk");
-    if (typeof onFirstChunk === "function") {
-      try {
-        onFirstChunk();
-      } catch (error) {
-        try {
-          console.warn("[SSE-DEBUG] onFirstChunk callback threw", { error });
-        } catch {
-          /* noop */
-        }
-      }
-    }
-  };
-
-  const activeId = activeStreamClientIdRef.current;
-  if (activeId && activeId !== clientMessageId) {
-    const normalizedActiveId =
-      typeof activeId === "string" && activeId ? activeId.trim() || activeId : activeId;
-    const activeController = controllerRef.current;
-    if (activeController && !activeController.signal.aborted) {
-      try {
-        streamActiveRef.current = false;
-        try {
-          console.debug("[DIAG] setStreamActive:before", {
-            clientMessageId: normalizedActiveId,
-            value: false,
-            phase: "abort-existing",
-          });
-        } catch {
-          /* noop */
-        }
-        setStreamActive(false);
-        try {
-          console.debug("[DIAG] controller.abort:before", {
-            clientMessageId: normalizedActiveId,
-            reason: "new-send",
-            timestamp: Date.now(),
-          });
-        } catch {
-          /* noop */
-        }
-        try {
-          console.info("[SSE] aborting_active_stream", {
-            clientMessageId: normalizedActiveId,
-            reason: "new-send",
-            timestamp: Date.now(),
-          });
-        } catch {
-          /* noop */
-        }
-        abortControllerSafely(activeController, "user_cancelled");
-        if (typeof normalizedActiveId === "string" && normalizedActiveId) {
-          logSse("abort", {
-            clientMessageId: normalizedActiveId,
-            reason: "new-send",
-            source: "controller",
-          });
-        }
-      } catch {
-        /* noop */
-      }
-    }
-    if (typeof normalizedActiveId === "string" && normalizedActiveId) {
-      delete streamTimersRef.current[normalizedActiveId];
-    }
-    if (tracking.userTextByClientIdRef.current[activeId]) {
-      delete tracking.userTextByClientIdRef.current[activeId];
-    }
-  }
-
-  const bumpFirstTokenWatchdog = () => {
-    session.bumpFirstTokenWatchdog();
-  };
-  const bumpHeartbeatWatchdog = () => {
-    session.bumpHeartbeatWatchdog();
-  };
-  const clearWatchdog = () => {
-    session.clearWatchdog();
-  };
-
-  let onWatchdogTimeout: ((reason: CloseReason) => void) | null = null;
-
-  let fallbackManager: StreamFallbackManager | null = null;
-
-  const clearFallbackGuardTimer = () => {
-    fallbackManager?.clearFallbackGuardTimer();
-  };
-
-  const clearTypingWatchdog = () => {
-    fallbackManager?.clearTypingWatchdogTimer();
-  };
-
-  const abortState = { triggered: false };
-  const abortOnce = (reason: AllowedAbortReason) => {
-    if (abortState.triggered) return false;
-    abortState.triggered = true;
-    try {
-      console.log("[SSE-DEBUG] abort_once", { clientMessageId: normalizedClientId, reason });
-    } catch {
-      /* noop */
-    }
-    try {
-      setDigitando(false);
-    } catch {
-      /* noop */
-    }
-    try {
-      setIsSending(false);
-    } catch {
-      /* noop */
-    }
-    clearReadyTimeout();
-    clearFallbackGuardTimer();
-    clearTypingWatchdog();
-    clearWatchdog();
-    return session.handleAbort(reason);
-  };
-
-  const beginFallback = (reason: string): boolean => {
-    const started = fallbackManager?.beginFallback(reason) ?? false;
-    if (started) {
-      streamState.fallbackRequested = true;
-      streamStats.clientFinishReason ??= reason;
-    }
-    return started;
-  };
-
-  const abortSseForFallback = (reason?: string) => {
-    fallbackManager?.abortSseForFallback(reason);
-  };
-
-  const startFallbackGuardTimer = () => {
-    fallbackManager?.startFallbackGuardTimer((reason) => {
-      triggerJsonFallback?.(reason);
-    });
-  };
-
-  const handleTypingWatchdogTimeout = () => {
-    try {
-      console.warn("[SSE] typing_watchdog_timeout", {
-        clientMessageId: normalizedClientId,
-        timeoutMs: TYPING_WATCHDOG_MS,
-      });
-    } catch {
-      /* noop */
-    }
-    try {
-      setDigitando(false);
-    } catch {
-      /* noop */
-    }
-    try {
-      setErroApi((previous) => {
-        if (typeof previous === "string" && previous.trim().length > 0) return previous;
-        return "Tempo limite atingido. Tente novamente.";
-      });
-    } catch {
-      /* noop */
-    }
-    try {
-      logSse("abort", {
-        clientMessageId: normalizedClientId,
-        reason: "typing_watchdog",
-        source: "typing-watchdog",
-        timeoutMs: TYPING_WATCHDOG_MS,
-      });
-    } catch {
-      /* noop */
-    }
-  };
-
-  const existingAssistantForClient =
-    tracking.assistantByClientRef.current[normalizedClientId] ??
-    tracking.assistantByClientRef.current[clientMessageId];
-
-  let placeholderAssistantId: string | null | undefined = null;
-  if (existingAssistantForClient) {
-    placeholderAssistantId =
-      ensureAssistantMessage(clientMessageId, undefined, { allowCreate: false }) ??
-      existingAssistantForClient;
-  } else {
-    placeholderAssistantId = ensureAssistantMessage(clientMessageId, undefined, {
-      allowCreate: true,
-    });
-  }
-  if (placeholderAssistantId) {
-    activeAssistantIdRef.current = placeholderAssistantId;
-  }
-
-  console.log("[SSE] Stream started", {
-    timestamp: Date.now(),
-    clientMessageId: normalizedClientId,
-    guestId: effectiveGuestId,
-    sessionId: effectiveSessionId,
-    method: requestMethod,
-  });
-
-  if (streamStartLogged.has(normalizedClientId)) {
-    try {
-      console.warn("duplicated stream", { clientMessageId: normalizedClientId });
-    } catch {
-      /* noop */
-    }
-  } else {
-    streamStartLogged.add(normalizedClientId);
-    try {
-      console.debug("[DIAG] stream:start", {
-        clientMessageId,
-        historyLength: history.length,
-        systemHint: systemHint ?? null,
-      });
-    } catch {
-      /* noop */
-    }
-  }
-
-  const NO_CONTENT_MESSAGE = "A Eco não chegou a enviar nada. Tente novamente.";
-
-  const registerNoContent = (reason: string) => {
-    clearFallbackGuardTimer();
-    if (streamStats.status === "no_content") return;
-    const normalizedReason = typeof reason === "string" ? reason.trim().toLowerCase() : "";
-    streamStats.status = "no_content";
-    streamStats.noContentReason = reason;
-
-    const readyConfirmed = streamState.readyReceived || hasReadyRef.current === true;
-    const gotRenderableChunk =
-      streamStats.gotAnyChunk || sharedContext.hasFirstChunkRef.current === true;
-
-    if (readyConfirmed && !gotRenderableChunk) {
-      streamStats.clientFinishReason = "no_chunks_emitted";
-    } else if (!streamStats.clientFinishReason) {
-      streamStats.clientFinishReason = normalizedReason || "no_content";
-    }
-
-    const metrics = streamTimersRef.current[normalizedClientId];
-    const now = Date.now();
-    const totalMs = metrics ? now - metrics.startedAt : streamStats.timing?.totalMs;
-    streamStats.timing = {
-      startedAt: metrics?.startedAt ?? streamStats.timing?.startedAt,
-      firstChunkAt: metrics?.firstChunkAt ?? streamStats.timing?.firstChunkAt,
-      totalMs,
-    };
-
-    const telemetry = {
-      clientMessageId: normalizedClientId,
-      reason,
-      timing: streamStats.timing ?? {},
-      headers: streamStats.responseHeaders ?? {},
-    };
-    diag("eco_stream_no_content", telemetry);
-    try {
-      console.info("[EcoStream] eco_stream_no_content", telemetry);
-    } catch {
-      /* noop */
-    }
-
-    const suppressedReasons = new Set([
-      "client_disconnect",
-      "stream_aborted",
-      "user_cancelled",
-      "visibilitychange",
-      "pagehide",
-      "hidden",
-      "finalize",
-      "watchdog_timeout",
-    ]);
-
-    const errorMessage = (() => {
-      if (readyConfirmed && !gotRenderableChunk) {
-        return mapStreamErrorToMessage("no_chunks_emitted");
-      }
-      if (suppressedReasons.has(normalizedReason)) {
-        return null;
-      }
-      return NO_CONTENT_MESSAGE;
-    })();
-
-    if (errorMessage) {
-      try {
-        setErroApi(errorMessage);
-      } catch {
-        /* noop */
-      }
-    }
-
-    if (
-      fallbackEnabled &&
-      !streamStats.gotAnyChunk &&
-      triggerJsonFallback &&
-      FALLBACK_NO_CHUNK_REASONS.has(reason)
-    ) {
-      triggerJsonFallback(reason);
-    }
-  };
-
-  const patchAssistantNoContent = (assistantId: string | null | undefined) => {
-    if (!assistantId) return;
-    const updatedAt = new Date().toISOString();
-    const fallbackText = NO_CONTENT_MESSAGE;
-    const patch: ChatMessageType = {
-      id: assistantId,
-      streaming: false,
-      status: "no_content",
-      updatedAt,
-      content: fallbackText,
-      text: fallbackText,
-    };
-    const allowedKeys = ["status", "streaming", "updatedAt", "content", "text"] as string[];
-    if (upsertMessage) {
-      upsertMessage(patch, { patchSource: "stream_no_content", allowedKeys });
-      return;
-    }
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== assistantId) return m;
-        const existingText = (() => {
-          if (typeof m.text === "string") {
-            const trimmed = m.text.trim();
-            if (trimmed) return trimmed;
-          }
-          if (typeof m.content === "string") {
-            const trimmed = m.content.trim();
-            if (trimmed) return trimmed;
-          }
-          return "";
-        })();
-        if (existingText) {
-          return {
-            ...m,
-            streaming: false,
-            status: "no_content",
-            updatedAt,
-          };
-        }
-        return {
-          ...m,
-          streaming: false,
-          status: "no_content",
-          updatedAt,
-          content: fallbackText,
-          text: fallbackText,
-        };
-      }),
-    );
-  };
-
-  const patchAssistantStartError = (
-    assistantId: string | null | undefined,
-    fallbackText: string | undefined,
-  ) => {
-    if (!assistantId) return;
-    const updatedAt = new Date().toISOString();
-    const resolvedText = (() => {
-      if (typeof fallbackText === "string") {
-        const trimmed = fallbackText.trim();
-        if (trimmed) return trimmed;
-      }
-      return "Falha ao iniciar a resposta da Eco.";
-    })();
-    const patch: ChatMessageType = {
-      id: assistantId,
-      streaming: false,
-      status: "error",
-      updatedAt,
-      content: resolvedText,
-      text: resolvedText,
-    };
-    const allowedKeys = ["status", "streaming", "updatedAt", "content", "text"] as string[];
-    if (upsertMessage) {
-      upsertMessage(patch, { patchSource: "stream_start_error", allowedKeys });
-      return;
-    }
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== assistantId) return m;
-        return {
-          ...m,
-          streaming: false,
-          status: "error",
-          updatedAt,
-          content: resolvedText,
-          text: resolvedText,
-        };
-      }),
-    );
-  };
-
-  const ensureAssistantForNoContent = (meta?: EnsureAssistantEventMeta) => {
-    const assistantId = ensureAssistantMessage(clientMessageId, meta, { allowCreate: true });
-    if (!assistantId) return null;
-    patchAssistantNoContent(assistantId);
-    return assistantId;
-  };
-
-  const sharedContext: StreamSharedContext = {
-    clientMessageId,
-    normalizedClientId,
-    controller,
-    ensureAssistantMessage,
-    setMessages,
-    upsertMessage,
-    activeAssistantIdRef,
-    activeStreamClientIdRef,
-    activeClientIdRef,
-    hasFirstChunkRef,
-    readyStateRef: hasReadyRef,
-    setDigitando,
-    updateCurrentInteractionId,
-    streamTimersRef,
-    logSse,
-    replyState,
-    tracking,
-    interactionCacheDispatch,
-    streamStats,
-  };
-
-  let requestPayload: Record<string, unknown> | null = null;
-  let baseHeadersCache: Record<string, string> | null = null;
-  let shouldSkipFetchInTest = false;
-
-  const baseHeaders = (): Record<string, string> => {
-    if (baseHeadersCache) return { ...baseHeadersCache };
-    return {};
-  };
-
-  let streamPromise: Promise<StreamRunStats>;
-  try {
-    streamPromise = (async () => {
-      const requestBody = buildEcoRequestBody({
-        history,
-        clientMessageId,
-        systemHint,
-        userId,
-        userName,
-        guestId,
-        isGuest,
-      });
-
-      const once = (value?: string | null): string => {
-        if (typeof value !== "string") return "";
-        const [head] = value.split(",");
-        return head.trim();
-      };
-
-      const sanitizedClientId = once(resolvedClientId);
-      const sanitizedGuestId = once(effectiveGuestId);
-      const sanitizedSessionId = once(effectiveSessionId);
-      const sanitizedClientMessageId = once(clientMessageId);
-
-      const headers: Record<string, string> = {};
-      const seenHeaderKeys = new Set<string>();
-      const appendHeader = (key: string, value: unknown) => {
-        if (typeof value !== "string") return;
-        const trimmed = value.trim();
-        if (!trimmed) return;
-        const normalizedKey = key.toLowerCase();
-        if (seenHeaderKeys.has(normalizedKey)) return;
-        headers[key] = trimmed;
-        seenHeaderKeys.add(normalizedKey);
-      };
-
-      const identityHeaders = session.getIdentityHeaders();
-      for (const [key, value] of Object.entries(identityHeaders)) {
-        appendHeader(key, value);
-      }
-
-      appendHeader("X-Client-Id", sanitizedClientId);
-      appendHeader("X-Eco-Guest-Id", sanitizedGuestId);
-      appendHeader("X-Eco-Session-Id", sanitizedSessionId);
-      appendHeader("X-Eco-Client-Message-Id", sanitizedClientMessageId);
-
-      requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
-
-      const endpointInfo = resolveAbsoluteAskEcoUrl();
-      const requestUrl = endpointInfo.url;
-      const apiBaseSource = endpointInfo.source;
-      const resolvedNodeEnv = endpointInfo.nodeEnv;
-      try {
-        console.log("[SSE-DEBUG] resolved_ask_eco_url", {
-          resolved_ask_eco_url: requestUrl,
-          api_base_source: apiBaseSource,
-          node_env: resolvedNodeEnv || null,
-        });
-      } catch {
-        /* noop */
-      }
-
-      const contexto = (requestBody as {
-        contexto?: { stream_id?: unknown; streamId?: unknown };
-      })?.contexto;
-
-      const streamIdCandidates: unknown[] = [
-        (requestBody as { streamId?: unknown })?.streamId,
-        contexto?.stream_id,
-        contexto?.streamId,
-      ];
-      const streamId = streamIdCandidates
-        .map((c) => (typeof c === "string" ? c.trim() : ""))
-        .find((c) => c.length > 0);
-
-      if (streamId) {
-        appendHeader("X-Stream-Id", streamId);
-        streamStats.streamId = streamId;
-      }
-
-      let handleStreamDoneRef: (
-        rawEvent?: Record<string, unknown>,
-        options?: { reason?: string },
-      ) => void = () => {
-        /* noop */
-      };
-
-      fallbackManager = new StreamFallbackManager({
-        session,
-        sharedContext,
-        streamStats,
-        guardTimeoutMs,
-        fallbackEnabled,
-        logSse,
-        setDigitando,
-        setErroApi,
-        diag,
-        registerNoContent,
-        tracking,
-        streamActiveRef,
-        activeStreamClientIdRef,
-        clearWatchdog,
-        abortStream: abortOnce,
-        resolveAbortReason,
-        baseHeaders,
-        getRequestPayload: () => requestPayload,
-        handleChunk,
-        handleStreamDone: (event, options) => handleStreamDoneRef(event, options),
-        timers,
-        typingWatchdogFactory,
-        fallbackFetch: fetchImpl,
-      });
-
-      fallbackManager.initializeTypingWatchdog(handleTypingWatchdogTimeout);
-      runJsonFallbackRequest = (options = {}) =>
-        fallbackManager?.runJsonFallbackRequest(options) ?? Promise.resolve(false);
-      startFallbackGuardTimer();
-
-      baseHeadersCache = headers;
-
-      let response: Response | null = null;
-      let fetchError: unknown = null;
-
-      const envContainer = import.meta as {
-        env?: { MODE?: string; mode?: string; VITEST?: unknown };
-        vitest?: unknown;
-      };
-      const rawMode = envContainer.env?.MODE ?? envContainer.env?.mode ?? "";
-      const normalizedImportMode =
-        typeof rawMode === "string" ? rawMode.trim().toLowerCase() : "";
-
-      const processEnv = (() => {
-        try {
-          const candidate = (globalThis as typeof globalThis & {
+        return (
+          (globalThis as typeof globalThis & {
             process?: { env?: Record<string, string | undefined> };
-          }).process;
-          return candidate?.env ?? undefined;
-        } catch {
-          return undefined;
-        }
-      })();
-
-      const processModeRaw =
-        (processEnv?.NODE_ENV && processEnv.NODE_ENV.trim().length > 0
-          ? processEnv.NODE_ENV
-          : processEnv?.MODE) ?? "";
-      const normalizedProcessMode =
-        typeof processModeRaw === "string" ? processModeRaw.trim().toLowerCase() : "";
-
-      const isTestEnv = normalizedImportMode === "test" || normalizedProcessMode === "test";
-      const vitestFlag = envContainer.env?.VITEST;
-      const processVitestFlag = processEnv?.VITEST;
-      const processVitestWorker = processEnv?.VITEST_WORKER_ID;
-      const importMetaVitest = Boolean(envContainer?.vitest);
-      const globalVi = (() => {
-        try {
-          return (globalThis as typeof globalThis & { vi?: unknown }).vi;
-        } catch {
-          return undefined;
-        }
-      })();
-      const hasViGlobal =
-        typeof globalVi === "function" || (typeof globalVi === "object" && globalVi !== null);
-      const isVitest =
-        importMetaVitest ||
-        hasViGlobal ||
-        vitestFlag === true ||
-        vitestFlag === "true" ||
-        processVitestFlag === "true" ||
-        processVitestFlag === "1" ||
-        typeof processVitestWorker === "string";
-
-      try {
-        console.debug("[DIAG] setStreamActive:before", {
-          clientMessageId,
-          value: true,
-          phase: "fetch:before",
-        });
+          }).process?.env ?? {}
+        );
       } catch {
-        /* noop */
+        return {};
       }
+    })();
 
-      setStreamActive(true);
+    const fromDefine = (typeof __API_BASE__ !== "undefined" ? __API_BASE__ : "") ?? "";
+    const rawVite = env?.VITE_API_URL ?? processEnv?.VITE_API_URL ?? "";
+    const rawNext = env?.NEXT_PUBLIC_API_URL ?? processEnv?.NEXT_PUBLIC_API_URL ?? "";
+    const trimmedVite = typeof rawVite === "string" ? rawVite.trim() : "";
+    const trimmedNext = typeof rawNext === "string" ? rawNext.trim() : "";
+    const trimmedDefine = typeof fromDefine === "string" ? fromDefine.trim() : "";
 
-      const fetchFn = fetchImpl;
-      let fetchSource: string | null = null;
-      if (fetchFn) {
-        try {
-          fetchSource = Function.prototype.toString.call(fetchFn);
-        } catch {
-          fetchSource = null;
-        }
+    console.log("[SSE-DEBUG] env_probe", {
+      hasVite: trimmedVite.length > 0,
+      hasNextPub: trimmedNext.length > 0,
+      hasDefine: trimmedDefine.length > 0,
+    });
+
+    const baseCandidate = trimmedVite || trimmedNext || trimmedDefine;
+    const selectedSource: ResolveAskEcoUrlResult["source"] = trimmedVite
+      ? "VITE_API_URL"
+      : trimmedNext
+      ? "NEXT_PUBLIC_API_URL"
+      : "DEFINE_FALLBACK";
+
+    const nodeEnvRaw =
+      (typeof processEnv?.NODE_ENV === "string" ? processEnv.NODE_ENV.trim() : "") ||
+      (typeof env?.MODE === "string" ? env.MODE.trim() : "") ||
+      (typeof env?.mode === "string" ? env.mode.trim() : "");
+    const nodeEnv = nodeEnvRaw;
+
+    if (!baseCandidate) {
+      const message =
+        nodeEnv.toLowerCase() === "production"
+          ? "API_BASE missing: defina VITE_API_URL (ou NEXT_PUBLIC_API_URL) nas envs de Preview/Production e faça redeploy."
+          : "API_BASE missing";
+      console.error(message);
+      throw new Error(message);
+    }
+
+    let base = baseCandidate.replace(/\/+$/, "");
+    let parsed: URL;
+    try {
+      parsed = new URL(base);
+    } catch {
+      console.error("[SSE] Invalid API_BASE", { base: baseCandidate, source: selectedSource });
+      throw new Error("API_BASE invalid");
+    }
+
+    if (nodeEnv.toLowerCase() === "production") {
+      const host = parsed.hostname.toLowerCase();
+      if (host === "localhost" || host === "127.0.0.1") {
+        console.error("[SSE] API_BASE localhost blocked in production", {
+          base: parsed.toString(),
+          source: selectedSource,
+        });
+        throw new Error("API_BASE localhost not allowed in production");
       }
+    }
 
-      shouldSkipFetchInTest = isTestEnv || isVitest;
-
-      const tryJsonFallback = async (reason: string): Promise<boolean> => {
-        if (streamState.readyReceived) return false;
-        if (!fallbackEnabled) return false;
-        if (streamState.firstChunkDelivered) return false;
-        if (streamStats.gotAnyChunk) return false;
-        if (activeStreamClientIdRef.current !== clientMessageId) return false;
-        if (!streamActiveRef.current) return false;
-
-        const abortReason = (controller.signal as AbortSignal & { reason?: unknown }).reason;
-        const normalizedAbortReason = resolveAbortReason(abortReason);
-
-        if (
-          normalizedAbortReason === "new-send" ||
-          normalizedAbortReason === "ui_abort" ||
-          normalizedAbortReason === "user_cancelled"
-        ) {
-          return false;
-        }
-
-        const started = beginFallback(reason);
-        if (!started) return false;
-
-        clearReadyTimeout();
-        abortSseForFallback(reason);
-
-        const succeeded = await runJsonFallbackRequest({ reason });
-        return succeeded;
-      };
-
-      triggerJsonFallback = (reason: string) => {
-        void tryJsonFallback(reason);
-      };
-
-      if (fetchFn && !shouldSkipFetchInTest) {
-        try {
-          try {
-            console.debug("[DIAG] start", {
-              url: requestUrl,
-              accept: acceptHeader,
-              forcedJson: diagForceJson,
-              method: requestMethod,
-            });
-          } catch {
-            /* noop */
-          }
-          try {
-            console.log("[SSE-DEBUG] fetch_endpoint_info", {
-              resolved_ask_eco_url: requestUrl,
-              api_base_source: apiBaseSource,
-              node_env: resolvedNodeEnv || null,
-            });
-          } catch {
-            /* noop */
-          }
-          try {
-            console.log("[SSE-DEBUG] preflight", {
-              method: "GET",
-              hasBody: false,
-            });
-          } catch {
-            /* noop */
-          }
-
-          clearReadyTimeout();
-          readyTimeoutHandle = timers.setTimeout(() => {
-            if (streamState.readyReceived || controller.signal.aborted) return;
-            const timeoutMessage = "sse_ready_timeout";
-            streamStats.clientFinishReason = timeoutMessage;
-            try {
-              console.warn("[SSE] ready_timeout", { clientMessageId: normalizedClientId });
-            } catch {
-              /* noop */
-            }
-            setDigitando(false);
-            setErroApi(mapStreamErrorToMessage(timeoutMessage));
-            logSse("abort", {
-              clientMessageId: normalizedClientId,
-              reason: timeoutMessage,
-              source: "ready-timeout",
-            });
-            abortOnce("watchdog_timeout");
-          }, READY_TIMEOUT_MS);
-
-          console.log("[DEBUG] Antes do fetch", {
-            isAborted: controller.signal.aborted,
-            reason: (controller.signal as any).reason,
-          });
-
-          if (controller.signal.aborted) {
-            throw new Error(
-              `Signal já abortado antes do fetch: ${
-                (controller.signal as any).reason || "no reason"
-              }`,
-            );
-          }
-
-          const requestHeaders = {
-            ...baseHeaders(),
-            Accept: acceptHeader, // text/event-stream
-          };
-          if (requestHeaders["Content-Type"]) {
-            delete (requestHeaders as Record<string, string>)["Content-Type"];
-          }
-
-          const fetchInit: RequestInit = {
-            method: "GET", // GET no handshake SSE
-            mode: "cors",
-            credentials: "omit",
-            headers: requestHeaders,
-            signal: controller.signal,
-            cache: "no-store",
-          };
-
-          response = await fetchFn(requestUrl, fetchInit);
-          clearReadyTimeout();
-
-          if (!response.ok) {
-            const httpError = new Error(`HTTP ${response.status}: ${response.statusText}`);
-            fetchError = httpError;
-            response = null;
-            throw httpError;
-          }
-        } catch (error) {
-          clearReadyTimeout();
-          fetchError = error;
-          const formatted = formatAbortReason(error);
-          const normalizedFormatted = typeof formatted === "string" ? formatted : "";
-          const isPreflightFailure =
-            !streamState.readyReceived &&
-            (normalizedFormatted === "TypeError" ||
-              /Failed to fetch/i.test(String(error)) ||
-              /NetworkError/i.test(String(error)) ||
-              /^HTTP (0|520)/i.test(normalizedFormatted));
-
-          logSse("abort", {
-            clientMessageId: normalizedClientId,
-            reason: isPreflightFailure ? "cors_preflight_failed" : formatted,
-            source: "fetch",
-          });
-
-          if (isPreflightFailure) {
-            fetchError = new Error("cors_preflight_failed");
-            streamStats.clientFinishReason = "cors_preflight_failed";
-            setErroApi(mapStreamErrorToMessage("cors_preflight_failed"));
-          }
+    const isPageHttps = typeof window !== "undefined" && window.location?.protocol === "https:";
+    if (isPageHttps && parsed.protocol === "http:") {
+      const pageHost = window.location.hostname;
+      if (parsed.hostname === pageHost) {
+        console.error("[SSE] API_BASE forced to https", {
+          base: parsed.toString(),
+          source: selectedSource,
+        });
+        parsed.protocol = "https:";
+        if (!window.location.port && parsed.port === "80") {
+          parsed.port = "";
         }
       } else {
-        clearReadyTimeout();
-        fetchError = new Error(shouldSkipFetchInTest ? "skipped_in_test_env" : "fetch_unavailable");
-        logSse("abort", {
-          clientMessageId: normalizedClientId,
-          reason: shouldSkipFetchInTest ? "skipped_in_test_env" : "fetch_unavailable",
-          source: "fetch",
+        console.error("[SSE] API_BASE insecure http blocked on https page", {
+          base: parsed.toString(),
+          source: selectedSource,
+          pageHost,
         });
+        throw new Error("API_BASE insecure on https page");
+      }
+    }
+
+    parsed.hash = "";
+    parsed.search = "";
+    parsed.pathname = parsed.pathname.replace(/\/+$/, "");
+    const normalizedBase = parsed.pathname
+      ? `${parsed.origin}${parsed.pathname}`
+      : parsed.origin;
+    const trimmedBase = normalizedBase.replace(/\/+$/, "");
+
+    const askEcoPath = ASK_ECO_ENDPOINT_PATH.startsWith("/")
+      ? ASK_ECO_ENDPOINT_PATH
+      : `/${ASK_ECO_ENDPOINT_PATH}`;
+    const normalizedPath = askEcoPath.replace(/\/+$/, "");
+    const pathSuffix = trimmedBase.endsWith("/api")
+      ? normalizedPath.replace(/^\/api/, "")
+      : normalizedPath;
+    const url = `${trimmedBase}${pathSuffix}`;
+
+    return {
+      url,
+      base: trimmedBase,
+      source: selectedSource,
+      nodeEnv,
+    };
+  };
+
+  // === fim da parte 1/4 ===
+  // === streamOrchestrator.ts (parte 2/4) ===
+
+  // Abort reasons aceitas durante o ciclo do stream
+  type AllowedAbortReason = "watchdog_timeout" | "user_cancelled" | "finalize";
+
+  const logAbortDebug = (reason: AllowedAbortReason) => {
+    try {
+      console.log("[DEBUG] Abortando conexão", { reason, stack: new Error().stack });
+    } catch {
+      /* noop */
+    }
+  };
+
+  /**
+   * Abre um stream SSE **via GET** (sem body), somente com `Accept: text/event-stream`.
+   * - Sem `Content-Type` no handshake
+   * - `credentials: "omit"`
+   * - `cache: "no-store"`
+   * - `mode: "cors"`
+   *
+   * Útil para smoke-test e compatibilidade com chamadas antigas.
+   */
+  export async function openEcoSseStream(opts: {
+    url?: string;
+    body: unknown; // mantido por compat, mas **NÃO** é enviado no GET
+    onPromptReady?: () => void;
+    onChunk?: (delta: string) => void;
+    onControl?: (name: string, payload?: any) => void;
+    onDone?: (meta?: any) => void;
+    onError?: (err: Error) => void;
+    controller?: AbortController;
+    diagnostics?: {
+      url: string;
+      base: string;
+      source: "VITE_API_URL" | "NEXT_PUBLIC_API_URL" | "DEFINE_FALLBACK";
+      nodeEnv: string;
+    };
+  }) {
+    const {
+      url: legacyUrl,
+      body: _body, // não usado no GET
+      onPromptReady,
+      onChunk,
+      onControl,
+      onDone,
+      onError,
+      controller = new AbortController(),
+      diagnostics,
+    } = opts;
+
+    const endpointInfo = diagnostics ?? resolveAbsoluteAskEcoUrl();
+    const requestUrl = endpointInfo.url;
+    const apiBaseSource = endpointInfo.source;
+    const resolvedNodeEnv = endpointInfo.nodeEnv;
+
+    if (legacyUrl && legacyUrl !== requestUrl) {
+      try {
+        console.warn("[SSE] Ignorando URL legada em favor da URL resolvida", {
+          legacyUrl,
+          resolved_ask_eco_url: requestUrl,
+        });
+      } catch {
+        /* noop */
+      }
+    }
+
+    const wd = createSseWatchdogs("legacy", createDefaultTimers());
+    let closed = false as boolean;
+    let closeReason: CloseReason | null = null;
+    let streamErrored = false;
+
+    // Utilitários de aborto (usa abortControllerSafely importada do Session)
+    const abortState = { triggered: false };
+    const cleanupAfterAbort = () => {
+      try {
+        wd.clear();
+      } catch {
+        /* noop */
+      }
+    };
+    const abortOnce = (reason: AllowedAbortReason) => {
+      if (abortState.triggered) return false;
+      abortState.triggered = true;
+      try {
+        console.log("[SSE-DEBUG] abort_once", { reason });
+      } catch {
+        /* noop */
+      }
+      logAbortDebug(reason);
+      const aborted = abortControllerSafely(controller, reason);
+      cleanupAfterAbort();
+      return aborted;
+    };
+
+    const safeClose = (reason: CloseReason) => {
+      if (closed) return;
+      closed = true;
+      closeReason = reason;
+      if (reason === "watchdog_first_token" || reason === "watchdog_heartbeat") {
+        abortOnce("watchdog_timeout");
+      } else if (reason === "ui_abort") {
+        abortOnce("user_cancelled");
+      } else if (!controller.signal.aborted) {
+        abortOnce("finalize");
+      } else {
+        cleanupAfterAbort();
+      }
+    };
+
+    const onWdTimeout = (reason: CloseReason) => {
+      safeClose(reason);
+      streamErrored = true;
+      onError?.(new Error(`SSE watchdog timeout: ${reason}`));
+    };
+
+    // Handshake SSE deve ser GET, sem body e sem Content-Type
+    const acceptHeader = "text/event-stream";
+    const requestMethod = "POST" as const;
+
+    console.log("[DIAG] start", {
+      url: requestUrl,
+      accept: acceptHeader,
+      forcedJson: false,
+      method: requestMethod,
+    });
+    try {
+      console.log("[SSE-DEBUG] fetch_endpoint_info", {
+        resolved_ask_eco_url: requestUrl,
+        api_base_source: apiBaseSource,
+        node_env: resolvedNodeEnv || null,
+      });
+    } catch {
+      /* noop */
+    }
+    console.log("[SSE-DEBUG] Conectando", {
+      url: requestUrl,
+      method: requestMethod,
+      headers: ["Accept"],
+    });
+
+    const res = await fetch(requestUrl, {
+  method: requestMethod,
+  headers: { 
+    'Content-Type': 'application/json',
+    Accept: acceptHeader 
+  },
+  body: JSON.stringify(_body), // Agora vai usar o body
+  credentials: "omit",
+  mode: "cors",
+  signal: controller.signal,
+  cache: "no-store",
+});
+
+    const responseHeaders = (() => {
+      try {
+        return Object.fromEntries(res.headers.entries());
+      } catch {
+        return {} as Record<string, string>;
+      }
+    })();
+
+    console.log("[DIAG] response", {
+      ok: res.ok,
+      status: res.status,
+      ct: res.headers.get("content-type"),
+      xab: res.headers.get("x-accel-buffering"),
+      headers: responseHeaders,
+    });
+
+    if (!res.ok || !res.body) {
+      streamErrored = true;
+      onError?.(new Error(`SSE failed: ${res.status}`));
+      safeClose("network_error");
+      return { abort: () => safeClose("ui_abort") } as const;
+    }
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    let bytes = 0;
+    let chunks = 0;
+
+    const markPromptReady = () => {
+      onPromptReady?.();
+      wd.markPromptReady(onWdTimeout);
+    };
+
+    const readLoop = async () => {
+      try {
+        while (!closed) {
+          const { value, done } = await reader.read();
+          if (value && value.byteLength > 0) {
+            bytes += value.byteLength;
+            chunks += 1;
+          }
+          if (done) break;
+          if (value) buf += dec.decode(value, { stream: true });
+
+          let idx: number;
+          while ((idx = buf.indexOf("\n")) >= 0) {
+            const line = buf.slice(0, idx).trim();
+            buf = buf.slice(idx + 1);
+            if (!line || line.startsWith(":")) continue;
+
+            if (line.startsWith("data:")) {
+              const json = line.slice(5).trim();
+              try {
+                const evt = JSON.parse(json);
+                const type = evt?.type ?? evt?.event ?? "chunk";
+
+                // Log leve de diagnóstico
+                try {
+                  const previewSource =
+                    typeof evt?.delta === "string"
+                      ? evt.delta
+                      : typeof evt?.text === "string"
+                      ? evt.text
+                      : typeof evt?.payload?.text === "string"
+                      ? evt.payload.text
+                      : typeof evt?.data === "string"
+                      ? evt.data
+                      : undefined;
+                  console.log("[SSE-DEBUG] Evento", {
+                    type: evt?.event ?? evt?.name ?? type,
+                    hasData: Boolean(evt?.data ?? evt?.delta ?? evt?.text ?? evt?.payload),
+                    preview: typeof previewSource === "string" ? previewSource.slice(0, 50) : undefined,
+                  });
+                } catch {
+                  /* noop */
+                }
+
+                // Controles principais
+                if (type === "control" && evt?.name === "prompt_ready") {
+                  markPromptReady();
+                  continue;
+                }
+                if (type === "control" && evt?.name === "ping") {
+                  wd.bumpHeartbeat(onWdTimeout);
+                  continue;
+                }
+                if (type === "control" && evt?.name === "guard_fallback_trigger") {
+                  onControl?.("guard_fallback_trigger", evt?.payload);
+                  wd.bumpHeartbeat(onWdTimeout);
+                  continue;
+                }
+
+                if (type === "control" && evt?.name === "done") {
+                  if (chunks === 0) {
+                    // Tenta extrair texto final do payload caso nenhum chunk tenha vindo
+                    const payloadText =
+                      typeof evt?.payload?.text === "string" ? evt.payload.text : undefined;
+                    const dataText = (() => {
+                      if (typeof evt?.data === "string") return evt.data;
+                      if (evt?.data && typeof evt.data === "object") {
+                        const nestedText = (evt.data as { text?: unknown }).text;
+                        if (typeof nestedText === "string") return nestedText;
+                      }
+                      return undefined;
+                    })();
+                    const directText = typeof evt?.text === "string" ? evt.text : undefined;
+                    const collected = collectTexts(evt?.payload);
+                    const collectedText =
+                      Array.isArray(collected) && collected.length > 0 ? collected.join("") : undefined;
+                    const finalText = payloadText || dataText || directText || collectedText;
+
+                    if (finalText) {
+                      try {
+                        console.warn("[SSE] Resposta completa recebida no done (sem chunks)");
+                      } catch {
+                        /* noop */
+                      }
+                      onChunk?.(String(finalText));
+                      wd.bumpFirstToken(onWdTimeout);
+                      chunks = 1;
+
+                      const donePayload = (() => {
+                        if (evt?.payload && typeof evt.payload === "object") {
+                          const basePayload = { ...(evt.payload as Record<string, unknown>) };
+                          if (typeof basePayload.text !== "string") {
+                            basePayload.text = String(finalText);
+                          }
+                          return basePayload;
+                        }
+                        if (evt?.payload !== undefined) {
+                          return { value: evt.payload, text: String(finalText) };
+                        }
+                        return { text: String(finalText) };
+                      })();
+
+                      onDone?.(donePayload);
+                      safeClose("server_done");
+                    } else {
+                      streamErrored = true;
+                      onError?.(new Error("Stream vazio: backend finalizou sem enviar chunks."));
+                      safeClose("server_error");
+                    }
+                  } else {
+                    onDone?.(evt?.payload);
+                    safeClose("server_done");
+                  }
+                  break;
+                }
+
+                if (type === "chunk") {
+                  if (evt?.delta) onChunk?.(String(evt.delta));
+                  wd.bumpFirstToken(onWdTimeout);
+                  continue;
+                }
+
+                if (type === "control") {
+                  onControl?.(evt?.name ?? "control", evt?.payload);
+                  wd.bumpHeartbeat(onWdTimeout);
+                  continue;
+                }
+              } catch {
+                // linha parcial: ignora
+              }
+            }
+          }
+        }
+      } catch (e: any) {
+        if (!closed && e?.name !== "AbortError") {
+          streamErrored = true;
+          onError?.(e instanceof Error ? e : new Error(String(e)));
+          safeClose("server_error");
+        }
+      } finally {
+        console.log("[DIAG] stream:end", { bytes, chunks });
+
+        const endedByUiAbort = closeReason === "ui_abort";
+        const endedByWatchdog =
+          closeReason === "watchdog_first_token" || closeReason === "watchdog_heartbeat";
+
+        if (!streamErrored && chunks === 0 && !endedByUiAbort && !endedByWatchdog) {
+          streamErrored = true;
+          onError?.(new Error("Stream vazio: backend finalizou sem enviar chunks."));
+        }
+        try {
+          await reader.cancel();
+        } catch {
+          /* noop */
+        }
+        wd.clear();
+        if (!closed) safeClose("server_error");
+        try {
+          console.info("[FE] sse:finalize", { reason: closeReason });
+        } catch {
+          /* noop */
+        }
+      }
+    };
+
+    void readLoop();
+
+    return {
+      abort: () => safeClose("ui_abort"),
+      get closed() {
+        return closed;
+      },
+    } as const;
+  }
+
+  // === fim da parte 2/4 ===
+  // === streamOrchestrator.ts (parte 3/4) ===
+
+  const diag = (...args: unknown[]) => {
+    try {
+      const envContainer = import.meta as { env?: Record<string, unknown> };
+      const isDev = Boolean(envContainer?.env?.DEV);
+      const hasDebug =
+        typeof window !== "undefined" && Boolean((window as { ECO_DEBUG?: boolean }).ECO_DEBUG);
+      if (isDev || hasDebug) {
+        console.log("[eco-stream]", ...args);
+      }
+    } catch {
+      /* noop */
+    }
+  };
+
+  export interface StreamRunnerFactoryOptions {
+    fetchImpl?: typeof fetch;
+    timers?: StreamRunnerTimers;
+    watchdogFactory?: (
+      id: string,
+      timers: StreamRunnerTimers,
+    ) => ReturnType<typeof createSseWatchdogs>;
+  }
+
+  interface ResolvedStreamRunnerDeps {
+    fetchImpl?: typeof fetch;
+    timers: StreamRunnerTimers;
+    watchdogFactory: (id: string) => ReturnType<typeof createSseWatchdogs>;
+    typingWatchdogFactory: (id: string, onTimeout: () => void) => () => void;
+  }
+
+  const resolveStreamRunnerDeps = (
+    options?: StreamRunnerFactoryOptions,
+  ): ResolvedStreamRunnerDeps => {
+    const timers = options?.timers ?? createDefaultTimers();
+    const fetchImpl =
+      typeof options?.fetchImpl === "function"
+        ? options.fetchImpl
+        : typeof globalThis.fetch === "function"
+        ? (globalThis.fetch as typeof fetch)
+        : undefined;
+
+    const watchdogFactory: ResolvedStreamRunnerDeps["watchdogFactory"] =
+      typeof options?.watchdogFactory === "function"
+        ? (id: string) => options.watchdogFactory!(id, timers)
+        : (id: string) => createSseWatchdogs(id, timers);
+
+    const typingWatchdogFactory: ResolvedStreamRunnerDeps["typingWatchdogFactory"] = (
+      id: string,
+      onTimeout: () => void,
+    ) => withTypingWatchdog(id, onTimeout, timers);
+
+    return { fetchImpl, timers, watchdogFactory, typingWatchdogFactory };
+  };
+
+  const formatAbortReason = (input: unknown): string => {
+    if (typeof input === "string") {
+      const trimmed = input.trim();
+      if (trimmed.length > 0) return trimmed;
+    }
+    if (typeof input === "number" && Number.isFinite(input)) {
+      return String(input);
+    }
+    if (input instanceof DOMException) {
+      const domReason =
+        typeof (input as DOMException & { reason?: unknown }).reason === "string"
+          ? ((input as DOMException & { reason?: unknown }).reason as string).trim()
+          : "";
+      if (domReason) return domReason;
+      const domMessage = typeof input.message === "string" ? input.message.trim() : "";
+      if (domMessage) return domMessage;
+      const domName = typeof input.name === "string" ? input.name.trim() : "";
+      if (domName) return domName;
+      return "DOMException";
+    }
+    if (input instanceof Error) {
+      const errorMessage = typeof input.message === "string" ? input.message.trim() : "";
+      if (errorMessage) return errorMessage;
+      const errorName = typeof input.name === "string" ? input.name.trim() : "";
+      if (errorName) return errorName;
+      return "Error";
+    }
+    if (typeof input === "object" && input !== null) {
+      const maybeReason = (input as { reason?: unknown }).reason;
+      if (maybeReason !== undefined) {
+        const nested = formatAbortReason(maybeReason);
+        if (nested !== "unknown") return nested;
+      }
+      try {
+        const serialized = JSON.stringify(input);
+        if (serialized && serialized !== "{}") return serialized;
+      } catch {
+        /* noop */
+      }
+    }
+    return "unknown";
+  };
+
+  const resolveAbortReason = (input: unknown): string => formatAbortReason(input);
+
+  const mapStreamErrorToMessage = (code: string): string => {
+    switch (code) {
+      case "cors_preflight_failed":
+        return "Nao foi possivel iniciar a conexao com a Eco (CORS). Verifique sua internet ou tente novamente.";
+      case "sse_ready_timeout":
+        return "A Eco demorou para comecar a responder. Tente novamente.";
+      case "no_chunks_emitted":
+        return "A Eco nao enviou nenhum conteudo. Tente novamente.";
+      case "no_text_before_done":
+        return "A Eco terminou sem enviar conteudo. Tente novamente.";
+      default:
+        return code;
+    }
+  };
+
+  interface DoneContext extends StreamSharedContext {
+    event: EcoStreamDoneEvent | undefined;
+    setErroApi: Dispatch<SetStateAction<string | null>>;
+    removeEcoEntry: RemoveEcoEntryFn;
+    assistantId: string;
+  }
+
+  export const handlePromptReady = (
+    event: EcoStreamPromptReadyEvent | undefined,
+    context: StreamSharedContext,
+  ) => {
+    if (!context.ensureAssistantMessage) return;
+    const assistantId = context.ensureAssistantMessage(
+      context.clientMessageId,
+      {
+        interactionId: event?.interactionId,
+        messageId: event?.messageId,
+        createdAt: event?.createdAt,
+      },
+      { allowCreate: false },
+    );
+
+    if (!assistantId) return;
+
+    context.activeAssistantIdRef.current = assistantId;
+    if (event?.interactionId) {
+      context.updateCurrentInteractionId(event.interactionId);
+    }
+    const timestamp = typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
+    const updatedAt = timestamp || new Date().toISOString();
+
+    context.setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== assistantId) return m;
+        try {
+          console.debug("[DIAG] setMessages:update:before", {
+            targetId: assistantId,
+            role: m.role ?? m.sender ?? "unknown",
+            status: m.status,
+            phase: "prompt",
+          });
+        } catch {
+          /* noop */
+        }
+        const next: ChatMessageType = {
+          ...m,
+          streaming: true,
+          status: "streaming",
+          updatedAt,
+          createdAt: m.createdAt ?? updatedAt,
+          message_id: event?.messageId || m.message_id,
+          interaction_id: event?.interactionId || m.interaction_id,
+          interactionId: event?.interactionId || m.interactionId,
+        };
+        try {
+          console.debug("[DIAG] setMessages:update:after", {
+            targetId: assistantId,
+            role: next.role ?? next.sender ?? "unknown",
+            status: next.status,
+            phase: "prompt",
+          });
+        } catch {
+          /* noop */
+        }
+        return next;
+      }),
+    );
+  };
+
+  export const handleChunk = (chunk: EcoStreamChunk, context: StreamSharedContext) => {
+    applyChunkToMessages({
+      clientMessageId: context.clientMessageId,
+      chunk,
+      ensureAssistantMessage: context.ensureAssistantMessage,
+      setDigitando: context.setDigitando,
+      logSse: context.logSse,
+      streamTimersRef: context.streamTimersRef,
+      assistantByClientRef: context.tracking.assistantByClientRef,
+      activeStreamClientIdRef: context.activeStreamClientIdRef,
+      activeAssistantIdRef: context.activeAssistantIdRef,
+      setMessages: context.setMessages,
+      upsertMessage: context.upsertMessage,
+      replyState: context.replyState,
+      tracking: context.tracking,
+    });
+  };
+
+  export const handleDone = (doneContext: DoneContext) => {
+    const { event, clientMessageId, normalizedClientId, assistantId } = doneContext;
+
+    const readyStateRef =
+      doneContext.readyStateRef ?? ({ current: false } as MutableRefObject<boolean>);
+    const activeStreamClientIdRef =
+      doneContext.activeStreamClientIdRef ??
+      ({ current: null } as MutableRefObject<string | null>);
+
+    const readyReceived = readyStateRef.current === true;
+    const noChunksEmitted = readyReceived && !doneContext.streamStats.gotAnyChunk;
+    if (noChunksEmitted && !doneContext.streamStats.clientFinishReason) {
+      doneContext.streamStats.clientFinishReason = "no_chunks_emitted";
+    }
+
+    if (activeStreamClientIdRef.current === clientMessageId) {
+      try {
+        console.debug("[DIAG] setDigitando:before", {
+          clientMessageId,
+          value: false,
+          phase: "handleDone",
+        });
+      } catch {
+        /* noop */
+      }
+      doneContext.setDigitando(false);
+    }
+
+    if (event?.interactionId) {
+      doneContext.updateCurrentInteractionId(event.interactionId);
+    }
+
+    if (doneContext.tracking.userTextByClientIdRef.current[clientMessageId]) {
+      delete doneContext.tracking.userTextByClientIdRef.current[clientMessageId];
+    }
+
+    const timestamp = typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
+    const updatedAt = timestamp || new Date().toISOString();
+    const donePayload = event?.payload;
+    const payloadRecord = toRecord(donePayload);
+    const summaryRecord = extractSummaryRecord(donePayload);
+    const responseRecord = toRecord(payloadRecord?.response);
+    const metadataRecord = toRecord(payloadRecord?.metadata);
+    const contextRecord = toRecord(payloadRecord?.context);
+    const recordSources = [summaryRecord, responseRecord, metadataRecord, contextRecord, payloadRecord];
+
+    const metadataBase =
+      payloadRecord?.metadata !== undefined
+        ? (payloadRecord?.metadata as unknown)
+        : payloadRecord?.response !== undefined
+        ? (payloadRecord?.response as unknown)
+        : undefined;
+
+    const interactionFromSummary = pickStringFromRecords(recordSources, [
+      "interaction_id",
+      "interactionId",
+      "interactionID",
+    ]);
+    const fallbackInteractionFromIds = pickStringFromRecords(recordSources, [
+      "id",
+      "message_id",
+      "messageId",
+    ]);
+    const eventInteractionId = toCleanString(event?.interactionId);
+    const resolvedInteractionId = interactionFromSummary ?? eventInteractionId ?? fallbackInteractionFromIds;
+
+    const resolvedMessageId =
+      pickStringFromRecords(recordSources, ["message_id", "messageId", "id"]) ??
+      toCleanString(event?.messageId);
+
+    const latencyCandidate = pickNumberFromRecords(recordSources, ["latency_ms", "latencyMs"]);
+    const normalizedLatency =
+      typeof latencyCandidate === "number" ? Math.max(0, Math.round(latencyCandidate)) : undefined;
+
+    const moduleCombo = pickStringArrayFromRecords(recordSources, [
+      "module_combo",
+      "moduleCombo",
+      "modules",
+      "selected_modules",
+      "selectedModules",
+    ]);
+    const promptHash = pickStringFromRecords(recordSources, ["prompt_hash", "promptHash"]);
+    const ecoScore = pickNumberFromRecords(recordSources, ["eco_score", "ecoScore"]);
+
+    const finalizeWithEntry = (entry: { text: string; chunkIndexMax: number } | undefined) => {
+      const aggregatedTextValue = entry?.text ?? "";
+      const aggregatedLength = aggregatedTextValue.length;
+      const doneTexts = collectTexts(donePayload);
+      const doneContentCandidate =
+        Array.isArray(doneTexts) && doneTexts.length > 0 ? doneTexts.join("") : undefined;
+
+      const normalizedAggregated = aggregatedTextValue.replace(/\s+/g, " ").trim();
+      const normalizedDone =
+        typeof doneContentCandidate === "string"
+          ? doneContentCandidate.replace(/\s+/g, " ").trim()
+          : "";
+      const doneHasRenderableText =
+        typeof doneContentCandidate === "string" && doneContentCandidate.length > 0;
+
+      const hasStructuredDonePayload = (() => {
+        if (!payloadRecord) return false;
+        const responseRecord = toRecord(payloadRecord.response);
+        if (responseRecord && Object.keys(responseRecord).length > 0) return true;
+        const responseBodyRecord = toRecord(payloadRecord.responseBody);
+        if (responseBodyRecord && Object.keys(responseBodyRecord).length > 0) return true;
+        const altResponseBody = toRecord((payloadRecord as { response_body?: unknown }).response_body);
+        if (altResponseBody && Object.keys(altResponseBody).length > 0) return true;
+        const maybeMessages = (payloadRecord as { messages?: unknown }).messages;
+        return Array.isArray(maybeMessages) && maybeMessages.length > 0;
+      })();
+
+      let finalContent = aggregatedTextValue;
+      if (doneHasRenderableText) {
+        if (!normalizedAggregated) {
+          finalContent = doneContentCandidate!;
+        } else if (normalizedAggregated !== normalizedDone) {
+          finalContent = doneContentCandidate!;
+        }
+      } else if (aggregatedLength > 0 && !hasStructuredDonePayload) {
+        try {
+          console.debug("[DIAG] done:fallback-aggregated", {
+            clientMessageId,
+            assistantId,
+            aggregatedLength,
+          });
+        } catch {
+          /* noop */
+        }
       }
 
-      if (!response) {
-        throw fetchError ?? new Error("Eco stream request failed to start.");
-      }
-
-      const fatalErrorState: { current: Error | null } = { current: null };
-      let handledReaderError = false;
-
-      const decoder = new TextDecoder("utf-8");
-      let buffer = "";
-      const doneState = { value: false };
-
-      const buildRecordChain = (rawEvent?: Record<string, unknown>): Record<string, unknown>[] => {
-        const eventRecord = toRecord(rawEvent) ?? undefined;
-        const payloadRecord = toRecord(eventRecord?.payload) ?? undefined;
-        const metaRecord = toRecord(eventRecord?.meta) ?? undefined;
-        const metadataRecord =
-          toRecord(payloadRecord?.metadata) ?? toRecord(eventRecord?.metadata) ?? undefined;
-        const responseRecord = toRecord(payloadRecord?.response) ?? undefined;
-        const contextRecord = toRecord(payloadRecord?.context) ?? undefined;
-        return [metadataRecord, metaRecord, responseRecord, payloadRecord, contextRecord, eventRecord].filter(
-          Boolean,
-        ) as Record<string, unknown>[];
-      };
-
-      const extractPayloadRecord = (rawEvent?: Record<string, unknown>) => {
-        const eventRecord = toRecord(rawEvent);
-        return toRecord(eventRecord?.payload) ?? undefined;
-      };
-
-      const handlerDefaults = {
-        onPromptReady: () => {},
-        onChunk: () => {},
-        onDone: () => {},
-        onError: () => {},
-      } as const;
-
-      const safePromptHandler =
-        typeof handlePromptReady === "function" ? handlePromptReady : handlerDefaults.onPromptReady;
-      const safeChunkHandler =
-        typeof handleChunk === "function" ? handleChunk : handlerDefaults.onChunk;
-      const safeDoneHandler =
-        typeof handleDone === "function" ? handleDone : handlerDefaults.onDone;
-
-      const processChunkEvent = processChunk({
-        controller,
-        streamState,
-        sharedContext,
-        streamStats,
-        onFirstChunk: onFirstChunkWrapped,
-        clearFallbackGuardTimer,
-        bumpFirstTokenWatchdog,
-        bumpHeartbeatWatchdog,
-        buildRecordChain,
-        extractPayloadRecord,
-        pickStringFromRecords,
-        handleChunk: safeChunkHandler,
-        toRecord,
-      });
-
-      const handlePromptEvent = onPromptReady({
-        controller,
-        streamState,
-        markPromptReadyWatchdog,
-        onReady: handleReadyEvent,
-        buildRecordChain,
-        pickStringFromRecords,
-        extractPayloadRecord,
-        diag,
-        normalizedClientId,
-        handlePromptReady: safePromptHandler,
-        sharedContext,
-      });
-
-      const handleControlEvent = onControl({
-        controller,
-        streamState,
-        buildRecordChain,
-        extractPayloadRecord,
-        pickStringFromRecords,
-        bumpHeartbeatWatchdog,
-        diag,
-        normalizedClientId,
-        handleControl,
-        sharedContext,
-      });
-
-      const handleMessageEvent = onMessage({
-        controller,
-        streamState,
-        extractPayloadRecord,
-        buildRecordChain,
-        pickStringFromRecords,
-        collectTexts,
-        sharedContext,
-        streamStats,
-        clearFallbackGuardTimer,
-        bumpFirstTokenWatchdog,
-        bumpHeartbeatWatchdog,
-      });
-
-      const handleStreamDone = onDone({
-        clearTypingWatchdog,
-        controller,
-        doneState,
-        clearWatchdog,
-        streamActiveRef,
-        clientMessageId,
-        setStreamActive,
-        buildRecordChain,
-        pickStringFromRecords,
-        extractPayloadRecord,
-        toRecord,
-        streamTimersRef,
-        normalizedClientId,
-        streamStats,
-        sharedContext,
-        registerNoContent,
-        logSse,
-        ensureAssistantForNoContent,
-        handleDone: safeDoneHandler,
-        setErroApi,
-        removeEcoEntry,
-        applyMetaToStreamStats,
-        extractFinishReasonFromMeta,
-      });
-
-      handleStreamDoneRef = (event, options) => {
-        clearReadyTimeout();
-        handleStreamDone(event, options);
-      };
-
-      startFallbackGuardTimer();
-
-      onWatchdogTimeout = (reason) => {
-        if (!streamStats.gotAnyChunk) {
-          diag("watchdog_timeout_no_chunk", { reason, clientMessageId: normalizedClientId });
-          streamStats.clientFinishReason = "no_content";
-          registerNoContent(reason);
+      if (readyReceived && aggregatedLength === 0 && !doneHasRenderableText) {
+        if (!doneContext.streamStats.clientFinishReason) {
+          doneContext.streamStats.clientFinishReason = "no_text_before_done";
+        }
+        if (doneContext.streamStats.clientFinishReason === "no_text_before_done") {
           try {
             showToast(NO_TEXT_ALERT_MESSAGE);
           } catch {
             /* noop */
           }
-        } else {
-          diag("watchdog_timeout", { reason, clientMessageId: normalizedClientId });
-          if (!streamStats.clientFinishReason) {
-            streamStats.clientFinishReason = reason;
+        }
+      }
+
+      if (noChunksEmitted) {
+        const finishReason = doneContext.streamStats.clientFinishReason;
+        if (finishReason !== "user_cancelled") {
+          try {
+            doneContext.setErroApi((prev) => prev ?? "Nenhum chunk emitido antes do encerramento");
+          } catch {
+            /* noop */
           }
         }
-        handleStreamDone(undefined, { reason });
+      }
+
+      const finalText = finalContent;
+
+      const finalStatus = noChunksEmitted
+        ? "error"
+        : doneContext.streamStats.status === "no_content"
+        ? "no_content"
+        : "done";
+
+      const patch: ChatMessageType = {
+        id: assistantId,
+        streaming: false,
+        status: finalStatus,
+        updatedAt,
       };
 
-      const handleErrorEvent = onError({
-        bumpHeartbeatWatchdog,
-        buildRecordChain,
-        pickStringFromRecords,
-        replyState,
-        tracking,
-        clientMessageId,
-        processChunk: processChunkEvent,
-        sharedContext,
-        diag,
-        normalizedClientId,
-        handleDone: handleStreamDoneRef,
-        fatalErrorState,
-        extractText,
-        toRecord,
-      });
+      patch.content = finalText;
+      patch.text = finalText;
 
-      const responseNonNull = response as Response;
-      const headerEntries = Array.from(responseNonNull.headers.entries());
-      const headerMap = headerEntries.reduce<Record<string, string>>((acc, [key, value]) => {
-        acc[key.toLowerCase()] = value;
-        return acc;
-      }, {});
-      rememberGuestIdentityFromResponse(responseNonNull.headers);
-      rememberSessionIdentityFromResponse(responseNonNull.headers);
-      rememberIdsFromResponse(responseNonNull);
-      streamStats.responseHeaders = { ...headerMap };
-      const contentType = headerMap["content-type"]?.toLowerCase() ?? "";
+      patch.metadata = mergeReplyMetadata(metadataBase, normalizedClientId);
 
-      logSse("open", {
-        clientMessageId: normalizedClientId,
-        status: responseNonNull.status,
-        contentType,
-      });
-      startFallbackGuardTimer();
-      bumpHeartbeatWatchdog();
+      const finishReasonSource = (() => {
+        const streamMeta = toRecord(doneContext.streamStats?.lastMeta);
+        if (streamMeta && typeof streamMeta === "object") {
+          return streamMeta;
+        }
+        const metadataRecord = toRecord(metadataBase);
+        if (metadataRecord && typeof metadataRecord === "object") {
+          return metadataRecord;
+        }
+        return undefined;
+      })();
+
+      const finishReasonValue = (() => {
+        if (!finishReasonSource) return undefined;
+        const direct =
+          (finishReasonSource as Record<string, unknown>).finishReason ??
+          (finishReasonSource as Record<string, unknown>).finish_reason;
+        if (typeof direct === "string" && direct.trim().length > 0) return direct.trim();
+        return direct;
+      })();
+
+      const annotateWithFinishReason = (metadata: unknown): unknown => {
+        const shouldAnnotateFinishReason = aggregatedLength === 0 && finishReasonValue !== undefined;
+        const clientFinishReason = doneContext.streamStats.clientFinishReason;
+        if (!shouldAnnotateFinishReason && !clientFinishReason) return metadata;
+
+        const finishAnnotations: Record<string, unknown> = {};
+        if (shouldAnnotateFinishReason && finishReasonValue !== undefined) {
+          finishAnnotations.finishReason = finishReasonValue;
+        }
+        if (clientFinishReason) {
+          finishAnnotations.clientFinishReason = clientFinishReason;
+        }
+
+        if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
+          return { ...(metadata as Record<string, unknown>), ...finishAnnotations };
+        }
+        if (metadata === undefined) return finishAnnotations;
+        return { ...finishAnnotations, value: metadata };
+      };
+
+      patch.metadata = annotateWithFinishReason(patch.metadata);
+      if (donePayload !== undefined) patch.donePayload = donePayload;
+      if (resolvedInteractionId) {
+        patch.interaction_id = resolvedInteractionId;
+        patch.interactionId = resolvedInteractionId;
+      }
+      if (resolvedMessageId) patch.message_id = resolvedMessageId;
+      if (typeof normalizedLatency === "number") patch.latencyMs = normalizedLatency;
+      if (moduleCombo && moduleCombo.length > 0) patch.module_combo = moduleCombo;
+      if (promptHash) patch.prompt_hash = promptHash;
+      if (typeof ecoScore === "number" && Number.isFinite(ecoScore)) patch.eco_score = ecoScore;
+
       try {
-        console.info("[EcoStream] onStreamOpen", {
+        console.debug("[DIAG] done", {
+          ecoMsgId: assistantId,
           clientMessageId,
-          status: responseNonNull.status ?? null,
-          contentType,
+          aggregatedLength,
+          finalLength: typeof finalText === "string" ? finalText.length : 0,
         });
       } catch {
         /* noop */
       }
 
-      if (!responseNonNull.ok) {
-        let detail = "";
-        try {
-          detail = await responseNonNull.text();
-        } catch {
-          detail = "";
-        }
-        const trimmed = detail.trim();
-        const preview = trimmed.slice(0, 200);
-        const message = trimmed.startsWith("<!DOCTYPE")
-          ? `Gateway/edge retornou HTML (${responseNonNull.status}). Ver backlogs. Trecho: ${preview}...`
-          : trimmed || `Eco stream request failed (${responseNonNull.status})`;
-        throw new Error(message);
+      const allowedKeys = [
+        "status",
+        "streaming",
+        "updatedAt",
+        "metadata",
+        "donePayload",
+        "interaction_id",
+        "interactionId",
+        "message_id",
+        "latencyMs",
+        "module_combo",
+        "prompt_hash",
+        "eco_score",
+        "content",
+        "text",
+      ];
+
+      if (doneContext.upsertMessage) {
+        doneContext.upsertMessage(patch, { patchSource: "stream_done", allowedKeys });
+      } else {
+        doneContext.setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id === assistantId) {
+              try {
+                console.debug("[DIAG] setMessages:update:before", {
+                  targetId: assistantId,
+                  role: m.role ?? m.sender ?? "unknown",
+                  status: m.status,
+                  phase: "done",
+                });
+              } catch {
+                /* noop */
+              }
+              const next: ChatMessageType = {
+                ...m,
+                streaming: false,
+                status: finalStatus,
+                updatedAt,
+                content: finalText,
+                text: finalText,
+              };
+              next.metadata = mergeReplyMetadata(metadataBase, normalizedClientId);
+              next.metadata = annotateWithFinishReason(next.metadata);
+              if (donePayload !== undefined) next.donePayload = donePayload;
+              if (resolvedInteractionId) {
+                next.interaction_id = resolvedInteractionId;
+                next.interactionId = resolvedInteractionId;
+              }
+              if (resolvedMessageId) next.message_id = resolvedMessageId;
+              if (typeof normalizedLatency === "number") next.latencyMs = normalizedLatency;
+              if (moduleCombo && moduleCombo.length > 0) next.module_combo = moduleCombo;
+              if (promptHash) next.prompt_hash = promptHash;
+              if (typeof ecoScore === "number" && Number.isFinite(ecoScore)) next.eco_score = ecoScore;
+              try {
+                console.debug("[DIAG] setMessages:update:after", {
+                  targetId: assistantId,
+                  role: next.role ?? next.sender ?? "unknown",
+                  status: next.status,
+                  nextLength: typeof next.text === "string" ? next.text.length : 0,
+                  phase: "done",
+                });
+              } catch {
+                /* noop */
+              }
+              return next;
+            }
+            return m;
+          }),
+        );
       }
 
-      if (!contentType.includes("text/event-stream")) {
-        if (diagForceJson && contentType.includes("application/json")) {
-          let jsonPayload: unknown;
+      if (
+        doneContext.interactionCacheDispatch &&
+        normalizedClientId &&
+        resolvedInteractionId &&
+        typeof resolvedInteractionId === "string"
+      ) {
+        doneContext.interactionCacheDispatch({
+          type: "updateInteractionMap",
+          clientId: normalizedClientId,
+          interaction_id: resolvedInteractionId,
+        });
+      }
+    };
+
+    const aggregatedEntry = doneContext.replyState.ecoReplyStateRef.current[assistantId];
+    const hasChunks = aggregatedEntry?.chunkIndexMax !== undefined && aggregatedEntry.chunkIndexMax >= 0;
+    const aggregatedEntryLength = aggregatedEntry?.text ? aggregatedEntry.text.length : 0;
+
+    if (!hasChunks || aggregatedEntryLength === 0) {
+      const scheduleFinalize = () => {
+        const latestEntry = doneContext.replyState.ecoReplyStateRef.current[assistantId];
+        finalizeWithEntry(latestEntry);
+      };
+
+      if (typeof queueMicrotask === "function") {
+        queueMicrotask(scheduleFinalize);
+      } else {
+        void Promise.resolve()
+          .then(scheduleFinalize)
+          .catch(() => {
+            scheduleFinalize();
+          });
+      }
+    } else {
+      finalizeWithEntry(aggregatedEntry);
+    }
+
+    readyStateRef.current = false;
+  };
+
+  export const handleError = (error: unknown, context: DoneContext) => {
+    const message =
+      error instanceof Error ? error.message : "Não foi possível concluir a resposta da Eco.";
+    context.setErroApi(message);
+    if (!context.streamStats.clientFinishReason) {
+      context.streamStats.clientFinishReason = "error";
+    }
+    context.logSse("abort", {
+      clientMessageId: context.normalizedClientId,
+      reason: "error",
+      message,
+      source: "error-handler",
+    });
+    delete context.streamTimersRef.current[context.normalizedClientId];
+    if (context.tracking.userTextByClientIdRef.current[context.clientMessageId]) {
+      delete context.tracking.userTextByClientIdRef.current[context.clientMessageId];
+    }
+    try {
+      console.debug("[DIAG] error", {
+        clientMessageId: context.clientMessageId,
+        error: message,
+      });
+    } catch {
+      /* noop */
+    }
+    const assistantIdOnError =
+      context.tracking.assistantByClientRef.current[context.clientMessageId];
+    if (assistantIdOnError) {
+      context.removeEcoEntry(assistantIdOnError);
+    }
+  };
+
+  export const handleControl = (event: EcoStreamControlEvent, context: StreamSharedContext) => {
+    const explicit = toCleanString(event?.interactionId);
+    const payloadRecord = toRecord(event?.payload);
+    const resolvedName = (() => {
+      const candidates = [toRecord(event) ?? {}, payloadRecord ?? {}];
+      const rawName = pickStringFromRecords(candidates, ["name", "event", "type"]);
+      return typeof rawName === "string" ? rawName.trim().toLowerCase() : undefined;
+    })();
+
+    const extractMetaRecord = (): Record<string, unknown> | undefined => {
+      const metaCandidate =
+        toRecord(payloadRecord?.meta) ??
+        toRecord(payloadRecord?.metadata) ??
+        toRecord(payloadRecord);
+      if (metaCandidate && typeof metaCandidate === "object" && !Array.isArray(metaCandidate)) {
+        return metaCandidate;
+      }
+      return undefined;
+    };
+
+    const payloadInteraction =
+      toCleanString(payloadRecord?.interaction_id) ||
+      toCleanString(payloadRecord?.interactionId) ||
+      toCleanString(payloadRecord?.id);
+    const resolved = explicit ?? payloadInteraction;
+    if (resolved) {
+      context.updateCurrentInteractionId(resolved);
+    }
+    try {
+      console.debug("[DIAG] control", {
+        clientMessageId: context.clientMessageId,
+        assistantMessageId: context.activeAssistantIdRef.current,
+        interactionId: resolved ?? null,
+      });
+    } catch {
+      /* noop */
+    }
+
+    if (resolvedName === "meta") {
+      const meta = extractMetaRecord();
+      try {
+        console.debug("[SSE] meta", meta ?? null);
+      } catch {
+        /* noop */
+      }
+      if (meta) {
+        applyMetaToStreamStats(context.streamStats, meta);
+      }
+    }
+
+    if (resolvedName === "done") {
+      const meta = extractMetaRecord();
+      try {
+        const metaForLog = meta as
+          | (Record<string, unknown> & { finishReason?: unknown; usage?: unknown; modelo?: unknown })
+          | undefined;
+        console.debug("[SSE] done", {
+          finishReason: metaForLog?.finishReason,
+          usage: metaForLog?.usage,
+          modelo: metaForLog?.modelo,
+        });
+      } catch {
+        /* noop */
+      }
+      if (meta) {
+        applyMetaToStreamStats(context.streamStats, meta);
+      }
+    }
+  };
+
+  // --- Início do motor do stream (beginStreamInternal) ---
+
+  const beginStreamInternal = (
+    params: BeginStreamParams,
+    deps: ResolvedStreamRunnerDeps,
+  ): Promise<StreamRunStats> | void => {
+    const {
+      history,
+      userMessage,
+      systemHint,
+      controllerOverride,
+      controllerRef,
+      streamTimersRef,
+      activeStreamClientIdRef,
+      activeAssistantIdRef,
+      streamActiveRef,
+      activeClientIdRef,
+      onFirstChunk,
+      hasFirstChunkRef,
+      hasReadyRef,
+      setDigitando,
+      setIsSending,
+      setErroApi,
+      activity,
+      ensureAssistantMessage,
+      removeEcoEntry,
+      updateCurrentInteractionId,
+      logSse,
+      userId,
+      userName,
+      guestId,
+      isGuest,
+      interactionCacheDispatch,
+      setMessages,
+      upsertMessage,
+      replyState,
+      tracking,
+    } = params;
+
+    const { fetchImpl, timers, watchdogFactory, typingWatchdogFactory } = deps;
+
+    const session = new StreamSession({
+      params,
+      inflightControllers,
+      streamStartLogged,
+      logDev,
+      timers,
+      watchdogFactory,
+    });
+
+    const startResult = session.start();
+    if (!startResult) {
+      return;
+    }
+
+    const {
+      clientMessageId,
+      normalizedClientId,
+      controller,
+      streamStats,
+      guardTimeoutMs,
+      diagForceJson,
+      requestMethod,
+      acceptHeader,
+      fallbackEnabled,
+      effectiveGuestId,
+      effectiveSessionId,
+      resolvedClientId,
+    } = startResult;
+
+  // === fim da parte 3/4 ===
+  // === streamOrchestrator.ts (parte 4/4) ===
+
+    let triggerJsonFallback: ((reason: string) => void) | null = null;
+    let startErrorTriggered = false;
+    let startErrorMessage: string | null = null;
+    let startErrorAssistantId: string | null = null;
+
+    session.setWatchdogTimeoutHandler(null);
+
+    const markPromptReadyWatchdog = () => {
+      session.markPromptReadyWatchdog();
+    };
+
+    let runJsonFallbackRequest: (
+      options?: { reason?: string; logError?: unknown },
+    ) => Promise<boolean> = async () => false;
+
+    const READY_TIMEOUT_MS = 7000;
+
+    const streamState = {
+      fallbackRequested: false,
+      firstChunkDelivered: false,
+      readyReceived: false,
+    };
+
+    let typingStarted = false;
+    const markTypingActive = (source: "ready" | "first_chunk") => {
+      if (typingStarted) return;
+      typingStarted = true;
+      try {
+        console.log("[SSE-DEBUG] typing_started", {
+          clientMessageId: normalizedClientId,
+          source,
+        });
+      } catch {
+        /* noop */
+      }
+      try {
+        setDigitando(true);
+      } catch {
+        /* noop */
+      }
+    };
+
+    let readyTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
+    const clearReadyTimeout = () => {
+      if (readyTimeoutHandle) {
+        try {
+          timers.clearTimeout(readyTimeoutHandle);
+        } catch {
+          clearTimeout(readyTimeoutHandle);
+        }
+        readyTimeoutHandle = null;
+      }
+    };
+
+    const handleReadyEvent = () => {
+      clearReadyTimeout();
+      markTypingActive("ready");
+    };
+
+    const onFirstChunkWrapped = () => {
+      clearReadyTimeout();
+      markTypingActive("first_chunk");
+      if (typeof onFirstChunk === "function") {
+        try {
+          onFirstChunk();
+        } catch (error) {
           try {
-            jsonPayload = await responseNonNull.json();
-          } catch {
-            jsonPayload = undefined;
-          }
-          try {
-            console.debug("[DIAG] json_response", jsonPayload);
+            console.warn("[SSE-DEBUG] onFirstChunk callback threw", { error });
           } catch {
             /* noop */
           }
-          const recordPayload =
-            toRecord(jsonPayload) ??
-            (typeof jsonPayload === "object" && jsonPayload
-              ? (jsonPayload as Record<string, unknown>)
-              : undefined);
-          handleStreamDone(recordPayload);
-          return streamStats;
         }
+      }
+    };
 
-        let detail = "";
+    const activeId = activeStreamClientIdRef.current;
+    if (activeId && activeId !== clientMessageId) {
+      const normalizedActiveId =
+        typeof activeId === "string" && activeId ? activeId.trim() || activeId : activeId;
+      const activeController = controllerRef.current;
+      if (activeController && !activeController.signal.aborted) {
         try {
-          detail = await responseNonNull.text();
-        } catch {
-          detail = "";
-        }
-        const trimmed = detail.trim();
-        const preview = trimmed.slice(0, 200);
-        const baseMessage = `Resposta inválida: status=${responseNonNull.status} content-type=${
-          contentType || "<desconhecido>"
-        }`;
-        const message = trimmed.startsWith("<!DOCTYPE")
-          ? `Gateway/edge retornou HTML (${responseNonNull.status}). Ver backlogs. Trecho: ${preview}...`
-          : `${baseMessage}${preview ? ` body=${preview}...` : ""}`;
-        throw new Error(message);
-      }
-
-      const reader = responseNonNull.body?.getReader();
-      console.log("[DEBUG] Reader obtido");
-      console.log("[DEBUG] ===== INICIANDO LOOP DE LEITURA =====");
-
-      let loopIteration = 0;
-
-      if (!reader) {
-        throw new Error("Eco stream response has no readable body.");
-      }
-
-      let initialChunk: ReadableStreamReadResult<Uint8Array> | null = null;
-
-      try {
-        console.log("[DEBUG] Testando reader.read()...");
-        const testRead = reader.read();
-        console.log("[DEBUG] reader.read() retornou Promise:", testRead);
-
-        const testResult = await testRead;
-        console.log("[DEBUG] Primeiro read() resultado:", {
-          done: testResult.done,
-          hasValue: !!testResult.value,
-          valueLength: testResult.value?.length,
-          valuePreview: testResult.value
-            ? new TextDecoder().decode(testResult.value.slice(0, 100))
-            : null,
-        });
-
-        initialChunk = testResult;
-      } catch (e) {
-        if (e instanceof DOMException && e.name === "AbortError") {
+          streamActiveRef.current = false;
           try {
-            console.debug("[SSE-DEBUG] reader_test_aborted", {
-              clientMessageId: normalizedClientId,
+            console.debug("[DIAG] setStreamActive:before", {
+              clientMessageId: normalizedActiveId,
+              value: false,
+              phase: "abort-existing",
             });
           } catch {
             /* noop */
           }
-        } else {
-          console.error("[DEBUG] ERRO ao testar reader:", e);
+          setStreamActive(false);
+          try {
+            console.debug("[DIAG] controller.abort:before", {
+              clientMessageId: normalizedActiveId,
+              reason: "new-send",
+              timestamp: Date.now(),
+            });
+          } catch {
+            /* noop */
+          }
+          try {
+            console.info("[SSE] aborting_active_stream", {
+              clientMessageId: normalizedActiveId,
+              reason: "new-send",
+              timestamp: Date.now(),
+            });
+          } catch {
+            /* noop */
+          }
+          abortControllerSafely(activeController, "user_cancelled");
+          if (typeof normalizedActiveId === "string" && normalizedActiveId) {
+            logSse("abort", {
+              clientMessageId: normalizedActiveId,
+              reason: "new-send",
+              source: "controller",
+            });
+          }
+        } catch {
+          /* noop */
+        }
+      }
+      if (typeof normalizedActiveId === "string" && normalizedActiveId) {
+        delete streamTimersRef.current[normalizedActiveId];
+      }
+      if (tracking.userTextByClientIdRef.current[activeId]) {
+        delete tracking.userTextByClientIdRef.current[activeId];
+      }
+    }
+
+    const bumpFirstTokenWatchdog = () => {
+      session.bumpFirstTokenWatchdog();
+    };
+    const bumpHeartbeatWatchdog = () => {
+      session.bumpHeartbeatWatchdog();
+    };
+    const clearWatchdog = () => {
+      session.clearWatchdog();
+    };
+
+    let onWatchdogTimeout: ((reason: CloseReason) => void) | null = null;
+
+    let fallbackManager: StreamFallbackManager | null = null;
+
+    const clearFallbackGuardTimer = () => {
+      fallbackManager?.clearFallbackGuardTimer();
+    };
+
+    const clearTypingWatchdog = () => {
+      fallbackManager?.clearTypingWatchdogTimer();
+    };
+
+    const abortState = { triggered: false };
+    const abortOnce = (reason: AllowedAbortReason) => {
+      if (abortState.triggered) return false;
+      abortState.triggered = true;
+      try {
+        console.log("[SSE-DEBUG] abort_once", { clientMessageId: normalizedClientId, reason });
+      } catch {
+        /* noop */
+      }
+      try {
+        setDigitando(false);
+      } catch {
+        /* noop */
+      }
+      try {
+        setIsSending(false);
+      } catch {
+        /* noop */
+      }
+      clearReadyTimeout();
+      clearFallbackGuardTimer();
+      clearTypingWatchdog();
+      clearWatchdog();
+      return session.handleAbort(reason);
+    };
+
+    const beginFallback = (reason: string): boolean => {
+      const started = fallbackManager?.beginFallback(reason) ?? false;
+      if (started) {
+        streamState.fallbackRequested = true;
+        streamStats.clientFinishReason ??= reason;
+      }
+      return started;
+    };
+
+    const abortSseForFallback = (reason?: string) => {
+      fallbackManager?.abortSseForFallback(reason);
+    };
+
+    const startFallbackGuardTimer = () => {
+      fallbackManager?.startFallbackGuardTimer((reason) => {
+        triggerJsonFallback?.(reason);
+      });
+    };
+
+    const handleTypingWatchdogTimeout = () => {
+      try {
+        console.warn("[SSE] typing_watchdog_timeout", {
+          clientMessageId: normalizedClientId,
+          timeoutMs: TYPING_WATCHDOG_MS,
+        });
+      } catch {
+        /* noop */
+      }
+      try {
+        setDigitando(false);
+      } catch {
+        /* noop */
+      }
+      try {
+        setErroApi((previous) => {
+          if (typeof previous === "string" && previous.trim().length > 0) return previous;
+          return "Tempo limite atingido. Tente novamente.";
+        });
+      } catch {
+        /* noop */
+      }
+      try {
+        logSse("abort", {
+          clientMessageId: normalizedClientId,
+          reason: "typing_watchdog",
+          source: "typing-watchdog",
+          timeoutMs: TYPING_WATCHDOG_MS,
+        });
+      } catch {
+        /* noop */
+      }
+    };
+
+    const existingAssistantForClient =
+      tracking.assistantByClientRef.current[normalizedClientId] ??
+      tracking.assistantByClientRef.current[clientMessageId];
+
+    let placeholderAssistantId: string | null | undefined = null;
+    if (existingAssistantForClient) {
+      placeholderAssistantId =
+        ensureAssistantMessage(clientMessageId, undefined, { allowCreate: false }) ??
+        existingAssistantForClient;
+    } else {
+      placeholderAssistantId = ensureAssistantMessage(clientMessageId, undefined, {
+        allowCreate: true,
+      });
+    }
+    if (placeholderAssistantId) {
+      activeAssistantIdRef.current = placeholderAssistantId;
+    }
+
+    console.log("[SSE] Stream started", {
+      timestamp: Date.now(),
+      clientMessageId: normalizedClientId,
+      guestId: effectiveGuestId,
+      sessionId: effectiveSessionId,
+      method: requestMethod,
+    });
+
+    if (streamStartLogged.has(normalizedClientId)) {
+      try {
+        console.warn("duplicated stream", { clientMessageId: normalizedClientId });
+      } catch {
+        /* noop */
+      }
+    } else {
+      streamStartLogged.add(normalizedClientId);
+      try {
+        console.debug("[DIAG] stream:start", {
+          clientMessageId,
+          historyLength: history.length,
+          systemHint: systemHint ?? null,
+        });
+      } catch {
+        /* noop */
+      }
+    }
+
+    const NO_CONTENT_MESSAGE = "A Eco não chegou a enviar nada. Tente novamente.";
+
+    const registerNoContent = (reason: string) => {
+      clearFallbackGuardTimer();
+      if (streamStats.status === "no_content") return;
+      const normalizedReason = typeof reason === "string" ? reason.trim().toLowerCase() : "";
+      streamStats.status = "no_content";
+      streamStats.noContentReason = reason;
+
+      const readyConfirmed = streamState.readyReceived || hasReadyRef.current === true;
+      const gotRenderableChunk =
+        streamStats.gotAnyChunk || sharedContext.hasFirstChunkRef.current === true;
+
+      if (readyConfirmed && !gotRenderableChunk) {
+        streamStats.clientFinishReason = "no_chunks_emitted";
+      } else if (!streamStats.clientFinishReason) {
+        streamStats.clientFinishReason = normalizedReason || "no_content";
+      }
+
+      const metrics = streamTimersRef.current[normalizedClientId];
+      const now = Date.now();
+      const totalMs = metrics ? now - metrics.startedAt : streamStats.timing?.totalMs;
+      streamStats.timing = {
+        startedAt: metrics?.startedAt ?? streamStats.timing?.startedAt,
+        firstChunkAt: metrics?.firstChunkAt ?? streamStats.timing?.firstChunkAt,
+        totalMs,
+      };
+
+      const telemetry = {
+        clientMessageId: normalizedClientId,
+        reason,
+        timing: streamStats.timing ?? {},
+        headers: streamStats.responseHeaders ?? {},
+      };
+      diag("eco_stream_no_content", telemetry);
+      try {
+        console.info("[EcoStream] eco_stream_no_content", telemetry);
+      } catch {
+        /* noop */
+      }
+
+      const suppressedReasons = new Set([
+        "client_disconnect",
+        "stream_aborted",
+        "user_cancelled",
+        "visibilitychange",
+        "pagehide",
+        "hidden",
+        "finalize",
+        "watchdog_timeout",
+      ]);
+
+      const errorMessage = (() => {
+        if (readyConfirmed && !gotRenderableChunk) {
+          return mapStreamErrorToMessage("no_chunks_emitted");
+        }
+        if (suppressedReasons.has(normalizedReason)) {
+          return null;
+        }
+        return NO_CONTENT_MESSAGE;
+      })();
+
+      if (errorMessage) {
+        try {
+          setErroApi(errorMessage);
+        } catch {
+          /* noop */
         }
       }
 
-      (globalThis as any).__ecoActiveReader = reader;
+      if (
+        fallbackEnabled &&
+        !streamStats.gotAnyChunk &&
+        triggerJsonFallback &&
+        FALLBACK_NO_CHUNK_REASONS.has(reason)
+      ) {
+        triggerJsonFallback(reason);
+      }
+    };
 
-      const handlers: ProcessSseHandlers = {
-        appendAssistantDelta: (index, delta, event) => processChunkEvent(index, delta, event),
-        onStreamDone: (event) => handleStreamDone(event),
-        onPromptReady: (event) => handlePromptEvent(event),
-        onControl: (event) => handleControlEvent(event),
-        onError: (event) => handleErrorEvent(event),
-        onMessage: (event) => handleMessageEvent(event),
+    const patchAssistantNoContent = (assistantId: string | null | undefined) => {
+      if (!assistantId) return;
+      const updatedAt = new Date().toISOString();
+      const fallbackText = NO_CONTENT_MESSAGE;
+      const patch: ChatMessageType = {
+        id: assistantId,
+        streaming: false,
+        status: "no_content",
+        updatedAt,
+        content: fallbackText,
+        text: fallbackText,
       };
-
-      const findEventDelimiter = (input: string): { index: number; length: number } | null => {
-        const crlfIndex = input.indexOf("\r\n\r\n");
-        const lfIndex = input.indexOf("\n\n");
-        if (crlfIndex === -1 && lfIndex === -1) return null;
-        if (crlfIndex === -1) return { index: lfIndex, length: 2 };
-        if (lfIndex === -1) return { index: crlfIndex, length: 4 };
-        return crlfIndex <= lfIndex
-          ? { index: crlfIndex, length: 4 }
-          : { index: lfIndex, length: 2 };
-      };
-
-      const processEventBlock = (block: string) => {
-        if (!block) return;
-        if (streamState.fallbackRequested) return;
-
-        const normalizedBlock = block.replace(/\r\n/g, "\n");
-        const lines = normalizedBlock.split("\n");
-
-        let currentEventName: string | undefined;
-        const dataParts: string[] = [];
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
-          if (trimmed.startsWith(":")) {
-            const comment = trimmed.slice(1).trim();
-            bumpHeartbeatWatchdog();
-            if (comment) {
-              try {
-                console.info("[SSE] comment", { comment });
-              } catch {
-                /* noop */
-              }
+      const allowedKeys = ["status", "streaming", "updatedAt", "content", "text"] as string[];
+      if (upsertMessage) {
+        upsertMessage(patch, { patchSource: "stream_no_content", allowedKeys });
+        return;
+      }
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== assistantId) return m;
+          const existingText = (() => {
+            if (typeof m.text === "string") {
+              const trimmed = m.text.trim();
+              if (trimmed) return trimmed;
             }
-            continue;
+            if (typeof m.content === "string") {
+              const trimmed = m.content.trim();
+              if (trimmed) return trimmed;
+            }
+            return "";
+          })();
+          if (existingText) {
+            return {
+              ...m,
+              streaming: false,
+              status: "no_content",
+              updatedAt,
+            };
           }
-          if (trimmed.startsWith("event:")) {
-            const declaredEvent = trimmed.slice(6).trim();
-            currentEventName = declaredEvent || undefined;
-            continue;
-          }
-          if (!trimmed.startsWith("data:")) continue;
+          return {
+            ...m,
+            streaming: false,
+            status: "no_content",
+            updatedAt,
+            content: fallbackText,
+            text: fallbackText,
+          };
+        }),
+      );
+    };
 
-          const dataIndex = line.indexOf("data:");
-          const rawValue = dataIndex >= 0 ? line.slice(dataIndex + 5) : line.slice(5);
-          const normalizedValue = rawValue.startsWith(" ") ? rawValue.slice(1) : rawValue;
-          if (!normalizedValue.trim()) continue;
-          dataParts.push(normalizedValue);
+    const patchAssistantStartError = (
+      assistantId: string | null | undefined,
+      fallbackText: string | undefined,
+    ) => {
+      if (!assistantId) return;
+      const updatedAt = new Date().toISOString();
+      const resolvedText = (() => {
+        if (typeof fallbackText === "string") {
+          const trimmed = fallbackText.trim();
+          if (trimmed) return trimmed;
+        }
+        return "Falha ao iniciar a resposta da Eco.";
+      })();
+      const patch: ChatMessageType = {
+        id: assistantId,
+        streaming: false,
+        status: "error",
+        updatedAt,
+        content: resolvedText,
+        text: resolvedText,
+      };
+      const allowedKeys = ["status", "streaming", "updatedAt", "content", "text"] as string[];
+      if (upsertMessage) {
+        upsertMessage(patch, { patchSource: "stream_start_error", allowedKeys });
+        return;
+      }
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== assistantId) return m;
+          return {
+            ...m,
+            streaming: false,
+            status: "error",
+            updatedAt,
+            content: resolvedText,
+            text: resolvedText,
+          };
+        }),
+      );
+    };
+
+    const ensureAssistantForNoContent = (meta?: EnsureAssistantEventMeta) => {
+      const assistantId = ensureAssistantMessage(clientMessageId, meta, { allowCreate: true });
+      if (!assistantId) return null;
+      patchAssistantNoContent(assistantId);
+      return assistantId;
+    };
+
+    const sharedContext: StreamSharedContext = {
+      clientMessageId,
+      normalizedClientId,
+      controller,
+      ensureAssistantMessage,
+      setMessages,
+      upsertMessage,
+      activeAssistantIdRef,
+      activeStreamClientIdRef,
+      activeClientIdRef,
+      hasFirstChunkRef,
+      readyStateRef: hasReadyRef,
+      setDigitando,
+      updateCurrentInteractionId,
+      streamTimersRef,
+      logSse,
+      replyState,
+      tracking,
+      interactionCacheDispatch,
+      streamStats,
+    };
+
+    let requestPayload: Record<string, unknown> | null = null;
+    let baseHeadersCache: Record<string, string> | null = null;
+    let shouldSkipFetchInTest = false;
+
+    const baseHeaders = (): Record<string, string> => {
+      if (baseHeadersCache) return { ...baseHeadersCache };
+      return {};
+    };
+
+    let streamPromise: Promise<StreamRunStats>;
+    try {
+      streamPromise = (async () => {
+        const requestBody = buildEcoRequestBody({
+          history,
+          clientMessageId,
+          systemHint,
+          userId,
+          userName,
+          guestId,
+          isGuest,
+        });
+
+        const once = (value?: string | null): string => {
+          if (typeof value !== "string") return "";
+          const [head] = value.split(",");
+          return head.trim();
+        };
+
+        const sanitizedClientId = once(resolvedClientId);
+        const sanitizedGuestId = once(effectiveGuestId);
+        const sanitizedSessionId = once(effectiveSessionId);
+        const sanitizedClientMessageId = once(clientMessageId);
+
+        const headers: Record<string, string> = {};
+        const seenHeaderKeys = new Set<string>();
+        const appendHeader = (key: string, value: unknown) => {
+          if (typeof value !== "string") return;
+          const trimmed = value.trim();
+          if (!trimmed) return;
+          const normalizedKey = key.toLowerCase();
+          if (seenHeaderKeys.has(normalizedKey)) return;
+          headers[key] = trimmed;
+          seenHeaderKeys.add(normalizedKey);
+        };
+
+        const identityHeaders = session.getIdentityHeaders();
+        for (const [key, value] of Object.entries(identityHeaders)) {
+          appendHeader(key, value);
         }
 
-        if (dataParts.length === 0) return;
+        appendHeader("X-Client-Id", sanitizedClientId);
+        appendHeader("X-Eco-Guest-Id", sanitizedGuestId);
+        appendHeader("X-Eco-Session-Id", sanitizedSessionId);
+        appendHeader("X-Eco-Client-Message-Id", sanitizedClientMessageId);
 
-        const payload = dataParts.join("\n");
-        const payloadForParse = payload.trim();
-        if (!payloadForParse) return;
+        requestPayload = diagForceJson ? { ...requestBody, stream: false } : requestBody;
 
+        const endpointInfo = resolveAbsoluteAskEcoUrl();
+        const requestUrl = endpointInfo.url;
+        const apiBaseSource = endpointInfo.source;
+        const resolvedNodeEnv = endpointInfo.nodeEnv;
         try {
-          console.info("[SSE] event_data", {
-            event: currentEventName ?? "message",
-            data: payloadForParse,
+          console.log("[SSE-DEBUG] resolved_ask_eco_url", {
+            resolved_ask_eco_url: requestUrl,
+            api_base_source: apiBaseSource,
+            node_env: resolvedNodeEnv || null,
           });
         } catch {
           /* noop */
         }
 
-        processSseLine(payloadForParse, handlers, { eventName: currentEventName });
-        if (fatalErrorState.current) return;
-      };
+        const contexto = (requestBody as {
+          contexto?: { stream_id?: unknown; streamId?: unknown };
+        })?.contexto;
 
-      while (true) {
-        loopIteration++;
-        console.log(`[DEBUG] Loop iteração ${loopIteration}`);
+        const streamIdCandidates: unknown[] = [
+          (requestBody as { streamId?: unknown })?.streamId,
+          contexto?.stream_id,
+          contexto?.streamId,
+        ];
+        const streamId = streamIdCandidates
+          .map((c) => (typeof c === "string" ? c.trim() : ""))
+          .find((c) => c.length > 0);
 
-        if (controller.signal.aborted) {
-          console.log("[DEBUG] Loop abortado pelo controller.signal");
-          break;
+        if (streamId) {
+          appendHeader("X-Stream-Id", streamId);
+          streamStats.streamId = streamId;
         }
 
-        let chunk: ReadableStreamReadResult<Uint8Array>;
-        try {
-          if (initialChunk) {
-            console.log("[DEBUG] Utilizando chunk pré-lido do teste", {
-              done: initialChunk.done,
-              hasValue: !!initialChunk.value,
-              valueLength: initialChunk.value?.length,
-            });
-            chunk = initialChunk;
-            initialChunk = null;
-          } else {
-            console.log("[DEBUG] Chamando reader.read()...");
-            chunk = await reader.read();
-            console.log("[DEBUG] reader.read() retornou:", {
-              done: chunk.done,
-              hasValue: !!chunk.value,
-              valueLength: chunk.value?.length,
-            });
+        let handleStreamDoneRef: (
+          rawEvent?: Record<string, unknown>,
+          options?: { reason?: string },
+        ) => void = () => {
+          /* noop */
+        };
+
+        fallbackManager = new StreamFallbackManager({
+          session,
+          sharedContext,
+          streamStats,
+          guardTimeoutMs,
+          fallbackEnabled,
+          logSse,
+          setDigitando,
+          setErroApi,
+          diag,
+          registerNoContent,
+          tracking,
+          streamActiveRef,
+          activeStreamClientIdRef,
+          clearWatchdog,
+          abortStream: abortOnce,
+          resolveAbortReason,
+          baseHeaders,
+          getRequestPayload: () => requestPayload,
+          handleChunk,
+          handleStreamDone: (event, options) => handleStreamDoneRef(event, options),
+          timers,
+          typingWatchdogFactory,
+          fallbackFetch: fetchImpl,
+        });
+
+        fallbackManager.initializeTypingWatchdog(handleTypingWatchdogTimeout);
+        runJsonFallbackRequest = (options = {}) =>
+          fallbackManager?.runJsonFallbackRequest(options) ?? Promise.resolve(false);
+        startFallbackGuardTimer();
+
+        baseHeadersCache = headers;
+
+        let response: Response | null = null;
+        let fetchError: unknown = null;
+
+        const envContainer = import.meta as {
+          env?: { MODE?: string; mode?: string; VITEST?: unknown };
+          vitest?: unknown;
+        };
+        const rawMode = envContainer.env?.MODE ?? envContainer.env?.mode ?? "";
+        const normalizedImportMode =
+          typeof rawMode === "string" ? rawMode.trim().toLowerCase() : "";
+
+        const processEnv = (() => {
+          try {
+            const candidate = (globalThis as typeof globalThis & {
+              process?: { env?: Record<string, string | undefined> };
+            }).process;
+            return candidate?.env ?? undefined;
+          } catch {
+            return undefined;
           }
-        } catch (error: any) {
-          const isAbortError = error instanceof DOMException && error.name === "AbortError";
-          if (isAbortError || controller.signal.aborted) {
+        })();
+
+        const processModeRaw =
+          (processEnv?.NODE_ENV && processEnv.NODE_ENV.trim().length > 0
+            ? processEnv.NODE_ENV
+            : processEnv?.MODE) ?? "";
+        const normalizedProcessMode =
+          typeof processModeRaw === "string" ? processModeRaw.trim().toLowerCase() : "";
+
+        const isTestEnv = normalizedImportMode === "test" || normalizedProcessMode === "test";
+        const vitestFlag = envContainer.env?.VITEST;
+        const processVitestFlag = processEnv?.VITEST;
+        const processVitestWorker = processEnv?.VITEST_WORKER_ID;
+        const importMetaVitest = Boolean(envContainer?.vitest);
+        const globalVi = (() => {
+          try {
+            return (globalThis as typeof globalThis & { vi?: unknown }).vi;
+          } catch {
+            return undefined;
+          }
+        })();
+        const hasViGlobal =
+          typeof globalVi === "function" || (typeof globalVi === "object" && globalVi !== null);
+        const isVitest =
+          importMetaVitest ||
+          hasViGlobal ||
+          vitestFlag === true ||
+          vitestFlag === "true" ||
+          processVitestFlag === "true" ||
+          processVitestFlag === "1" ||
+          typeof processVitestWorker === "string";
+
+        try {
+          console.debug("[DIAG] setStreamActive:before", {
+            clientMessageId,
+            value: true,
+            phase: "fetch:before",
+          });
+        } catch {
+          /* noop */
+        }
+
+        setStreamActive(true);
+
+        const fetchFn = fetchImpl;
+        let fetchSource: string | null = null;
+        if (fetchFn) {
+          try {
+            fetchSource = Function.prototype.toString.call(fetchFn);
+          } catch {
+            fetchSource = null;
+          }
+        }
+
+        shouldSkipFetchInTest = isTestEnv || isVitest;
+
+        const tryJsonFallback = async (reason: string): Promise<boolean> => {
+          if (streamState.readyReceived) return false;
+          if (!fallbackEnabled) return false;
+          if (streamState.firstChunkDelivered) return false;
+          if (streamStats.gotAnyChunk) return false;
+          if (activeStreamClientIdRef.current !== clientMessageId) return false;
+          if (!streamActiveRef.current) return false;
+
+          const abortReason = (controller.signal as AbortSignal & { reason?: unknown }).reason;
+          const normalizedAbortReason = resolveAbortReason(abortReason);
+
+          if (
+            normalizedAbortReason === "new-send" ||
+            normalizedAbortReason === "ui_abort" ||
+            normalizedAbortReason === "user_cancelled"
+          ) {
+            return false;
+          }
+
+          const started = beginFallback(reason);
+          if (!started) return false;
+
+          clearReadyTimeout();
+          abortSseForFallback(reason);
+
+          const succeeded = await runJsonFallbackRequest({ reason });
+          return succeeded;
+        };
+
+        triggerJsonFallback = (reason: string) => {
+          void tryJsonFallback(reason);
+        };
+
+        if (fetchFn && !shouldSkipFetchInTest) {
+          try {
             try {
-              console.debug("[SSE-DEBUG] reader_loop_aborted", {
-                clientMessageId: normalizedClientId,
-                reason: (controller.signal as AbortSignal & { reason?: unknown }).reason ?? null,
+              console.debug("[DIAG] start", {
+                url: requestUrl,
+                accept: acceptHeader,
+                forcedJson: diagForceJson,
+                method: requestMethod,
               });
             } catch {
               /* noop */
             }
-            break;
+            try {
+              console.log("[SSE-DEBUG] fetch_endpoint_info", {
+                resolved_ask_eco_url: requestUrl,
+                api_base_source: apiBaseSource,
+                node_env: resolvedNodeEnv || null,
+              });
+            } catch {
+              /* noop */
+            }
+            try {
+              console.log("[SSE-DEBUG] preflight", {
+                method: "GET",
+                hasBody: false,
+              });
+            } catch {
+              /* noop */
+            }
+
+            clearReadyTimeout();
+            readyTimeoutHandle = timers.setTimeout(() => {
+              if (streamState.readyReceived || controller.signal.aborted) return;
+              const timeoutMessage = "sse_ready_timeout";
+              streamStats.clientFinishReason = timeoutMessage;
+              try {
+                console.warn("[SSE] ready_timeout", { clientMessageId: normalizedClientId });
+              } catch {
+                /* noop */
+              }
+              setDigitando(false);
+              setErroApi(mapStreamErrorToMessage(timeoutMessage));
+              logSse("abort", {
+                clientMessageId: normalizedClientId,
+                reason: timeoutMessage,
+                source: "ready-timeout",
+              });
+              abortOnce("watchdog_timeout");
+            }, READY_TIMEOUT_MS);
+
+            console.log("[DEBUG] Antes do fetch", {
+              isAborted: controller.signal.aborted,
+              reason: (controller.signal as any).reason,
+            });
+
+            if (controller.signal.aborted) {
+              throw new Error(
+                `Signal já abortado antes do fetch: ${
+                  (controller.signal as any).reason || "no reason"
+                }`,
+              );
+            }
+
+            const requestHeaders = {
+  ...baseHeaders(),
+  'Content-Type': 'application/json', // ✅ ADICIONAR
+  Accept: acceptHeader, // text/event-stream
+};
+
+// ✅ Preparar o body com as mensagens
+const requestBody = JSON.stringify(requestPayload);
+
+const fetchInit: RequestInit = {
+  method: 'POST', // ✅ CORRETO: usar POST
+  mode: "cors",
+  credentials: "omit",
+  headers: requestHeaders,
+  body: requestBody, // ✅ ADICIONAR O BODY
+  signal: controller.signal,
+  cache: "no-store",
+};
+
+console.log('[SSE-DEBUG] Enviando POST com body', {
+  method: 'POST',
+  hasBody: true,
+  bodyLength: requestBody.length,
+  headers: Object.keys(requestHeaders),
+});
+
+response = await fetchFn(requestUrl, fetchInit);
+            clearReadyTimeout();
+
+            if (!response.ok) {
+              const httpError = new Error(`HTTP ${response.status}: ${response.statusText}`);
+              fetchError = httpError;
+              response = null;
+              throw httpError;
+            }
+          } catch (error) {
+            clearReadyTimeout();
+            fetchError = error;
+            const formatted = formatAbortReason(error);
+            const normalizedFormatted = typeof formatted === "string" ? formatted : "";
+            const isPreflightFailure =
+              !streamState.readyReceived &&
+              (normalizedFormatted === "TypeError" ||
+                /Failed to fetch/i.test(String(error)) ||
+                /NetworkError/i.test(String(error)) ||
+                /^HTTP (0|520)/i.test(normalizedFormatted));
+
+            logSse("abort", {
+              clientMessageId: normalizedClientId,
+              reason: isPreflightFailure ? "cors_preflight_failed" : formatted,
+              source: "fetch",
+            });
+
+            if (isPreflightFailure) {
+              fetchError = new Error("cors_preflight_failed");
+              streamStats.clientFinishReason = "cors_preflight_failed";
+              setErroApi(mapStreamErrorToMessage("cors_preflight_failed"));
+            }
           }
-          console.error("[DEBUG] reader.read() ERRO:", error);
-          handledReaderError = true;
-          fatalErrorState.current =
-            error instanceof Error ? error : new Error(String(error ?? "reader_error"));
-          diag("reader_read_failed", {
+        } else {
+          clearReadyTimeout();
+          fetchError = new Error(shouldSkipFetchInTest ? "skipped_in_test_env" : "fetch_unavailable");
+          logSse("abort", {
             clientMessageId: normalizedClientId,
-            message: fatalErrorState.current?.message,
+            reason: shouldSkipFetchInTest ? "skipped_in_test_env" : "fetch_unavailable",
+            source: "fetch",
           });
+        }
+
+        if (!response) {
+          throw fetchError ?? new Error("Eco stream request failed to start.");
+        }
+
+        const fatalErrorState: { current: Error | null } = { current: null };
+        let handledReaderError = false;
+
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+        const doneState = { value: false };
+
+        const buildRecordChain = (rawEvent?: Record<string, unknown>): Record<string, unknown>[] => {
+          const eventRecord = toRecord(rawEvent) ?? undefined;
+          const payloadRecord = toRecord(eventRecord?.payload) ?? undefined;
+          const metaRecord = toRecord(eventRecord?.meta) ?? undefined;
+          const metadataRecord =
+            toRecord(payloadRecord?.metadata) ?? toRecord(eventRecord?.metadata) ?? undefined;
+          const responseRecord = toRecord(payloadRecord?.response) ?? undefined;
+          const contextRecord = toRecord(payloadRecord?.context) ?? undefined;
+          return [metadataRecord, metaRecord, responseRecord, payloadRecord, contextRecord, eventRecord].filter(
+            Boolean,
+          ) as Record<string, unknown>[];
+        };
+
+        const extractPayloadRecord = (rawEvent?: Record<string, unknown>) => {
+          const eventRecord = toRecord(rawEvent);
+          return toRecord(eventRecord?.payload) ?? undefined;
+        };
+
+        const handlerDefaults = {
+          onPromptReady: () => {},
+          onChunk: () => {},
+          onDone: () => {},
+          onError: () => {},
+        } as const;
+
+        const safePromptHandler =
+          typeof handlePromptReady === "function" ? handlePromptReady : handlerDefaults.onPromptReady;
+        const safeChunkHandler =
+          typeof handleChunk === "function" ? handleChunk : handlerDefaults.onChunk;
+        const safeDoneHandler =
+          typeof handleDone === "function" ? handleDone : handlerDefaults.onDone;
+
+        const processChunkEvent = processChunk({
+          controller,
+          streamState,
+          sharedContext,
+          streamStats,
+          onFirstChunk: onFirstChunkWrapped,
+          clearFallbackGuardTimer,
+          bumpFirstTokenWatchdog,
+          bumpHeartbeatWatchdog,
+          buildRecordChain,
+          extractPayloadRecord,
+          pickStringFromRecords,
+          handleChunk: safeChunkHandler,
+          toRecord,
+        });
+
+        const handlePromptEvent = onPromptReady({
+          controller,
+          streamState,
+          markPromptReadyWatchdog,
+          onReady: handleReadyEvent,
+          buildRecordChain,
+          pickStringFromRecords,
+          extractPayloadRecord,
+          diag,
+          normalizedClientId,
+          handlePromptReady: safePromptHandler,
+          sharedContext,
+        });
+
+        const handleControlEvent = onControl({
+          controller,
+          streamState,
+          buildRecordChain,
+          extractPayloadRecord,
+          pickStringFromRecords,
+          bumpHeartbeatWatchdog,
+          diag,
+          normalizedClientId,
+          handleControl,
+          sharedContext,
+        });
+
+        const handleMessageEvent = onMessage({
+          controller,
+          streamState,
+          extractPayloadRecord,
+          buildRecordChain,
+          pickStringFromRecords,
+          collectTexts,
+          sharedContext,
+          streamStats,
+          clearFallbackGuardTimer,
+          bumpFirstTokenWatchdog,
+          bumpHeartbeatWatchdog,
+        });
+
+        const handleStreamDone = onDone({
+          clearTypingWatchdog,
+          controller,
+          doneState,
+          clearWatchdog,
+          streamActiveRef,
+          clientMessageId,
+          setStreamActive,
+          buildRecordChain,
+          pickStringFromRecords,
+          extractPayloadRecord,
+          toRecord,
+          streamTimersRef,
+          normalizedClientId,
+          streamStats,
+          sharedContext,
+          registerNoContent,
+          logSse,
+          ensureAssistantForNoContent,
+          handleDone: safeDoneHandler,
+          setErroApi,
+          removeEcoEntry,
+          applyMetaToStreamStats,
+          extractFinishReasonFromMeta,
+        });
+
+        handleStreamDoneRef = (event, options) => {
+          clearReadyTimeout();
+          handleStreamDone(event, options);
+        };
+
+        startFallbackGuardTimer();
+
+        onWatchdogTimeout = (reason) => {
+          if (!streamStats.gotAnyChunk) {
+            diag("watchdog_timeout_no_chunk", { reason, clientMessageId: normalizedClientId });
+            streamStats.clientFinishReason = "no_content";
+            registerNoContent(reason);
+            try {
+              showToast(NO_TEXT_ALERT_MESSAGE);
+            } catch {
+              /* noop */
+            }
+          } else {
+            diag("watchdog_timeout", { reason, clientMessageId: normalizedClientId });
+            if (!streamStats.clientFinishReason) {
+              streamStats.clientFinishReason = reason;
+            }
+          }
+          handleStreamDone(undefined, { reason });
+        };
+
+        const handleErrorEvent = onError({
+          bumpHeartbeatWatchdog,
+          buildRecordChain,
+          pickStringFromRecords,
+          replyState,
+          tracking,
+          clientMessageId,
+          processChunk: processChunkEvent,
+          sharedContext,
+          diag,
+          normalizedClientId,
+          handleDone: handleStreamDoneRef,
+          fatalErrorState,
+          extractText,
+          toRecord,
+        });
+
+        const responseNonNull = response as Response;
+        const headerEntries = Array.from(responseNonNull.headers.entries());
+        const headerMap = headerEntries.reduce<Record<string, string>>((acc, [key, value]) => {
+          acc[key.toLowerCase()] = value;
+          return acc;
+        }, {});
+        rememberGuestIdentityFromResponse(responseNonNull.headers);
+        rememberSessionIdentityFromResponse(responseNonNull.headers);
+        rememberIdsFromResponse(responseNonNull);
+        streamStats.responseHeaders = { ...headerMap };
+        const contentType = headerMap["content-type"]?.toLowerCase() ?? "";
+
+        logSse("open", {
+          clientMessageId: normalizedClientId,
+          status: responseNonNull.status,
+          contentType,
+        });
+        startFallbackGuardTimer();
+        bumpHeartbeatWatchdog();
+        try {
+          console.info("[EcoStream] onStreamOpen", {
+            clientMessageId,
+            status: responseNonNull.status ?? null,
+            contentType,
+          });
+        } catch {
+          /* noop */
+        }
+
+        if (!responseNonNull.ok) {
+          let detail = "";
           try {
-            setErroApi("Falha no stream, tente novamente");
+            detail = await responseNonNull.text();
+          } catch {
+            detail = "";
+          }
+          const trimmed = detail.trim();
+          const preview = trimmed.slice(0, 200);
+          const message = trimmed.startsWith("<!DOCTYPE")
+            ? `Gateway/edge retornou HTML (${responseNonNull.status}). Ver backlogs. Trecho: ${preview}...`
+            : trimmed || `Eco stream request failed (${responseNonNull.status})`;
+          throw new Error(message);
+        }
+
+        if (!contentType.includes("text/event-stream")) {
+          if (diagForceJson && contentType.includes("application/json")) {
+            let jsonPayload: unknown;
+            try {
+              jsonPayload = await responseNonNull.json();
+            } catch {
+              jsonPayload = undefined;
+            }
+            try {
+              console.debug("[DIAG] json_response", jsonPayload);
+            } catch {
+              /* noop */
+            }
+            const recordPayload =
+              toRecord(jsonPayload) ??
+              (typeof jsonPayload === "object" && jsonPayload
+                ? (jsonPayload as Record<string, unknown>)
+                : undefined);
+            handleStreamDone(recordPayload);
+            return streamStats;
+          }
+
+          let detail = "";
+          try {
+            detail = await responseNonNull.text();
+          } catch {
+            detail = "";
+          }
+          const trimmed = detail.trim();
+          const preview = trimmed.slice(0, 200);
+          const baseMessage = `Resposta inválida: status=${responseNonNull.status} content-type=${
+            contentType || "<desconhecido>"
+          }`;
+          const message = trimmed.startsWith("<!DOCTYPE")
+            ? `Gateway/edge retornou HTML (${responseNonNull.status}). Ver backlogs. Trecho: ${preview}...`
+            : `${baseMessage}${preview ? ` body=${preview}...` : ""}`;
+          throw new Error(message);
+        }
+
+        const reader = responseNonNull.body?.getReader();
+        console.log("[DEBUG] Reader obtido");
+        console.log("[DEBUG] ===== INICIANDO LOOP DE LEITURA =====");
+
+        let loopIteration = 0;
+
+        if (!reader) {
+          throw new Error("Eco stream response has no readable body.");
+        }
+
+        let initialChunk: ReadableStreamReadResult<Uint8Array> | null = null;
+
+        try {
+          console.log("[DEBUG] Testando reader.read()...");
+          const testRead = reader.read();
+          console.log("[DEBUG] reader.read() retornou Promise:", testRead);
+
+          const testResult = await testRead;
+          console.log("[DEBUG] Primeiro read() resultado:", {
+            done: testResult.done,
+            hasValue: !!testResult.value,
+            valueLength: testResult.value?.length,
+            valuePreview: testResult.value
+              ? new TextDecoder().decode(testResult.value.slice(0, 100))
+              : null,
+          });
+
+          initialChunk = testResult;
+        } catch (e) {
+          if (e instanceof DOMException && e.name === "AbortError") {
+            try {
+              console.debug("[SSE-DEBUG] reader_test_aborted", {
+                clientMessageId: normalizedClientId,
+              });
+            } catch {
+              /* noop */
+            }
+          } else {
+            console.error("[DEBUG] ERRO ao testar reader:", e);
+          }
+        }
+
+        (globalThis as any).__ecoActiveReader = reader;
+
+        const handlers: ProcessSseHandlers = {
+          appendAssistantDelta: (index, delta, event) => processChunkEvent(index, delta, event),
+          onStreamDone: (event) => handleStreamDone(event),
+          onPromptReady: (event) => handlePromptEvent(event),
+          onControl: (event) => handleControlEvent(event),
+          onError: (event) => handleErrorEvent(event),
+          onMessage: (event) => handleMessageEvent(event),
+        };
+
+        const findEventDelimiter = (input: string): { index: number; length: number } | null => {
+          const crlfIndex = input.indexOf("\r\n\r\n");
+          const lfIndex = input.indexOf("\n\n");
+          if (crlfIndex === -1 && lfIndex === -1) return null;
+          if (crlfIndex === -1) return { index: lfIndex, length: 2 };
+          if (lfIndex === -1) return { index: crlfIndex, length: 4 };
+          return crlfIndex <= lfIndex
+            ? { index: crlfIndex, length: 4 }
+            : { index: lfIndex, length: 2 };
+        };
+
+        const processEventBlock = (block: string) => {
+          if (!block) return;
+          if (streamState.fallbackRequested) return;
+
+          const normalizedBlock = block.replace(/\r\n/g, "\n");
+          const lines = normalizedBlock.split("\n");
+
+          let currentEventName: string | undefined;
+          const dataParts: string[] = [];
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            if (trimmed.startsWith(":")) {
+              const comment = trimmed.slice(1).trim();
+              bumpHeartbeatWatchdog();
+              if (comment) {
+                try {
+                  console.info("[SSE] comment", { comment });
+                } catch {
+                  /* noop */
+                }
+              }
+              continue;
+            }
+            if (trimmed.startsWith("event:")) {
+              const declaredEvent = trimmed.slice(6).trim();
+              currentEventName = declaredEvent || undefined;
+              continue;
+            }
+            if (!trimmed.startsWith("data:")) continue;
+
+            const dataIndex = line.indexOf("data:");
+            const rawValue = dataIndex >= 0 ? line.slice(dataIndex + 5) : line.slice(5);
+            const normalizedValue = rawValue.startsWith(" ") ? rawValue.slice(1) : rawValue;
+            if (!normalizedValue.trim()) continue;
+            dataParts.push(normalizedValue);
+          }
+
+          if (dataParts.length === 0) return;
+
+          const payload = dataParts.join("\n");
+          const payloadForParse = payload.trim();
+          if (!payloadForParse) return;
+
+          try {
+            console.info("[SSE] event_data", {
+              event: currentEventName ?? "message",
+              data: payloadForParse,
+            });
           } catch {
             /* noop */
           }
-          handleStreamDone(undefined, { reason: "reader_error" });
-          break;
-        }
 
-        const { value, done } = chunk;
-        if (done) {
-          buffer += decoder.decode();
-          while (true) {
-            const delimiter = findEventDelimiter(buffer);
-            if (!delimiter) break;
-            const eventBlock = buffer.slice(0, delimiter.index);
-            buffer = buffer.slice(delimiter.index + delimiter.length);
-            processEventBlock(eventBlock);
-            if (fatalErrorState.current) break;
+          processSseLine(payloadForParse, handlers, { eventName: currentEventName });
+          if (fatalErrorState.current) return;
+        };
+
+        while (true) {
+          loopIteration++;
+          console.log(`[DEBUG] Loop iteração ${loopIteration}`);
+
+          if (controller.signal.aborted) {
+            console.log("[DEBUG] Loop abortado pelo controller.signal");
+            break;
           }
-          if (!fatalErrorState.current && buffer) {
-            processEventBlock(buffer);
-            buffer = "";
+
+          let chunk: ReadableStreamReadResult<Uint8Array>;
+          try {
+            if (initialChunk) {
+              console.log("[DEBUG] Utilizando chunk pré-lido do teste", {
+                done: initialChunk.done,
+                hasValue: !!initialChunk.value,
+                valueLength: initialChunk.value?.length,
+              });
+              chunk = initialChunk;
+              initialChunk = null;
+            } else {
+              console.log("[DEBUG] Chamando reader.read()...");
+              chunk = await reader.read();
+              console.log("[DEBUG] reader.read() retornou:", {
+                done: chunk.done,
+                hasValue: !!chunk.value,
+                valueLength: chunk.value?.length,
+              });
+            }
+          } catch (error: any) {
+            const isAbortError = error instanceof DOMException && error.name === "AbortError";
+            if (isAbortError || controller.signal.aborted) {
+              try {
+                console.debug("[SSE-DEBUG] reader_loop_aborted", {
+                  clientMessageId: normalizedClientId,
+                  reason: (controller.signal as AbortSignal & { reason?: unknown }).reason ?? null,
+                });
+              } catch {
+                /* noop */
+              }
+              break;
+            }
+            console.error("[DEBUG] reader.read() ERRO:", error);
+            handledReaderError = true;
+            fatalErrorState.current =
+              error instanceof Error ? error : new Error(String(error ?? "reader_error"));
+            diag("reader_read_failed", {
+              clientMessageId: normalizedClientId,
+              message: fatalErrorState.current?.message,
+            });
+            try {
+              setErroApi("Falha no stream, tente novamente");
+            } catch {
+              /* noop */
+            }
+            handleStreamDone(undefined, { reason: "reader_error" });
+            break;
           }
-          break;
-        }
 
-        if (value) {
-          buffer += decoder.decode(value, { stream: true });
-          while (true) {
-            const delimiter = findEventDelimiter(buffer);
-            if (!delimiter) break;
-            const eventBlock = buffer.slice(0, delimiter.index);
-            buffer = buffer.slice(delimiter.index + delimiter.length);
-            processEventBlock(eventBlock);
-            if (fatalErrorState.current) break;
+          const { value, done } = chunk;
+          if (done) {
+            buffer += decoder.decode();
+            while (true) {
+              const delimiter = findEventDelimiter(buffer);
+              if (!delimiter) break;
+              const eventBlock = buffer.slice(0, delimiter.index);
+              buffer = buffer.slice(delimiter.index + delimiter.length);
+              processEventBlock(eventBlock);
+              if (fatalErrorState.current) break;
+            }
+            if (!fatalErrorState.current && buffer) {
+              processEventBlock(buffer);
+              buffer = "";
+            }
+            break;
           }
+
+          if (value) {
+            buffer += decoder.decode(value, { stream: true });
+            while (true) {
+              const delimiter = findEventDelimiter(buffer);
+              if (!delimiter) break;
+              const eventBlock = buffer.slice(0, delimiter.index);
+              buffer = buffer.slice(delimiter.index + delimiter.length);
+              processEventBlock(eventBlock);
+              if (fatalErrorState.current) break;
+            }
+          }
+
+          if (fatalErrorState.current) break;
         }
 
-        if (fatalErrorState.current) break;
-      }
-
-      console.log("[DEBUG] ===== LOOP DE LEITURA FINALIZADO =====", {
-        totalIterations: loopIteration,
-      });
-
-      if (fatalErrorState.current) {
-        if (!handledReaderError) {
-          throw fatalErrorState.current;
-        }
-        diag("reader_error_handled", {
-          clientMessageId: normalizedClientId,
-          message: fatalErrorState.current.message,
+        console.log("[DEBUG] ===== LOOP DE LEITURA FINALIZADO =====", {
+          totalIterations: loopIteration,
         });
+
+        if (fatalErrorState.current) {
+          if (!handledReaderError) {
+            throw fatalErrorState.current;
+          }
+          diag("reader_error_handled", {
+            clientMessageId: normalizedClientId,
+            message: fatalErrorState.current.message,
+          });
+        }
+
+        if (!doneState.value && !controller.signal.aborted) {
+          handleStreamDone();
+        }
+
+        return streamStats;
+      })();
+    } catch (error) {
+      clearTypingWatchdog();
+      inflightControllers.delete(normalizedClientId);
+      throw error;
+    }
+
+    streamPromise.catch(async (error) => {
+      startErrorTriggered = true;
+      if (controller.signal.aborted) return;
+
+      clearTypingWatchdog();
+      clearWatchdog();
+
+      if (activeStreamClientIdRef.current === clientMessageId) {
+        streamActiveRef.current = false;
+        try {
+          console.debug("[DIAG] setStreamActive:before", {
+            clientMessageId,
+            value: false,
+            phase: "streamPromise:catch",
+          });
+        } catch {
+          /* noop */
+        }
+        setStreamActive(false);
       }
 
-      if (!doneState.value && !controller.signal.aborted) {
-        handleStreamDone();
+      const fallbackAlreadyRequested = streamState.fallbackRequested;
+      const canBeginFallback =
+        !shouldSkipFetchInTest &&
+        !streamState.firstChunkDelivered &&
+        (fallbackAlreadyRequested || beginFallback("json_fallback"));
+
+      let fallbackSucceeded = false;
+      if (canBeginFallback) {
+        abortSseForFallback("json_fallback");
+        fallbackSucceeded = await runJsonFallbackRequest({
+          reason: "json_fallback",
+          logError: error,
+        });
+        if (fallbackSucceeded) return;
       }
 
-      return streamStats;
-    })();
-  } catch (error) {
-    clearTypingWatchdog();
-    inflightControllers.delete(normalizedClientId);
-    throw error;
-  }
+      const message =
+        error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
+      startErrorMessage = message;
+      streamStats.clientFinishReason = "start_error";
+      streamStats.status = "error";
 
-  streamPromise.catch(async (error) => {
-    startErrorTriggered = true;
-    if (controller.signal.aborted) return;
-
-    clearTypingWatchdog();
-    clearWatchdog();
-
-    if (activeStreamClientIdRef.current === clientMessageId) {
-      streamActiveRef.current = false;
       try {
-        console.debug("[DIAG] setStreamActive:before", {
+        console.debug("[DIAG] setErroApi:before", {
           clientMessageId,
-          value: false,
+          value: message,
           phase: "streamPromise:catch",
         });
       } catch {
         /* noop */
       }
-      setStreamActive(false);
-    }
 
-    const fallbackAlreadyRequested = streamState.fallbackRequested;
-    const canBeginFallback =
-      !shouldSkipFetchInTest &&
-      !streamState.firstChunkDelivered &&
-      (fallbackAlreadyRequested || beginFallback("json_fallback"));
-
-    let fallbackSucceeded = false;
-    if (canBeginFallback) {
-      abortSseForFallback("json_fallback");
-      fallbackSucceeded = await runJsonFallbackRequest({
-        reason: "json_fallback",
-        logError: error,
+      setErroApi(message);
+      logSse("abort", {
+        clientMessageId: normalizedClientId,
+        reason: "start-error",
+        message,
+        source: "start",
       });
-      if (fallbackSucceeded) return;
-    }
+      delete streamTimersRef.current[normalizedClientId];
 
-    const message =
-      error instanceof Error ? error.message : "Falha ao iniciar a resposta da Eco.";
-    startErrorMessage = message;
-    streamStats.clientFinishReason = "start_error";
-    streamStats.status = "error";
-
-    try {
-      console.debug("[DIAG] setErroApi:before", {
-        clientMessageId,
-        value: message,
-        phase: "streamPromise:catch",
-      });
-    } catch {
-      /* noop */
-    }
-
-    setErroApi(message);
-    logSse("abort", {
-      clientMessageId: normalizedClientId,
-      reason: "start-error",
-      message,
-      source: "start",
-    });
-    delete streamTimersRef.current[normalizedClientId];
-
-    try {
-      console.debug("[DIAG] error", {
-        clientMessageId,
-        error: message,
-        phase: "start",
-      });
-    } catch {
-      /* noop */
-    }
-
-    const assistantIdOnStartError =
-      tracking.assistantByClientRef.current[clientMessageId] ??
-      tracking.assistantByClientRef.current[normalizedClientId] ??
-      activeAssistantIdRef.current ??
-      ensureAssistantMessage(clientMessageId, undefined, { allowCreate: false });
-
-    startErrorAssistantId = assistantIdOnStartError ?? startErrorAssistantId;
-
-    const applyStartErrorPatch = () => {
-      patchAssistantStartError(assistantIdOnStartError, message);
-    };
-
-    applyStartErrorPatch();
-    try {
-      if (typeof queueMicrotask === "function") {
-        queueMicrotask(applyStartErrorPatch);
-      } else {
-        void Promise.resolve()
-          .then(applyStartErrorPatch)
-          .catch(() => {
-            applyStartErrorPatch();
-          });
-      }
-    } catch {
       try {
-        applyStartErrorPatch();
+        console.debug("[DIAG] error", {
+          clientMessageId,
+          error: message,
+          phase: "start",
+        });
       } catch {
         /* noop */
       }
-    }
 
-    if (assistantIdOnStartError) {
-      removeEcoEntry(assistantIdOnStartError);
-    }
-  });
+      const assistantIdOnStartError =
+        tracking.assistantByClientRef.current[clientMessageId] ??
+        tracking.assistantByClientRef.current[normalizedClientId] ??
+        activeAssistantIdRef.current ??
+        ensureAssistantMessage(clientMessageId, undefined, { allowCreate: false });
 
-  streamPromise.finally(() => {
-    clearTypingWatchdog();
-    inflightControllers.delete(normalizedClientId);
-    clearWatchdog();
-    clearFallbackGuardTimer();
-    triggerJsonFallback = null;
+      startErrorAssistantId = assistantIdOnStartError ?? startErrorAssistantId;
 
-    const isCurrentClient = activeClientIdRef.current === clientMessageId;
-    if (isCurrentClient && controllerRef.current === controller) {
-      controllerRef.current = null;
-    }
+      const applyStartErrorPatch = () => {
+        patchAssistantStartError(assistantIdOnStartError, message);
+      };
 
-    let assistantId = tracking.assistantByClientRef.current[clientMessageId];
-    delete streamTimersRef.current[normalizedClientId];
-
-    const isActiveStream = activeStreamClientIdRef.current === clientMessageId;
-    const wasAborted = controller.signal.aborted;
-
-    if (isCurrentClient) {
-      if (!wasAborted) {
-        const finishReasonFromMeta =
-          sharedContext.streamStats.finishReasonFromMeta ??
-          (() => {
-            const meta = sharedContext.streamStats.lastMeta;
-            if (meta && typeof meta === "object" && !Array.isArray(meta)) {
-              const record = meta as Record<string, unknown> & {
-                finishReason?: unknown;
-                finish_reason?: unknown;
-                reason?: unknown;
-              };
-              const candidate = record.finishReason ?? record.finish_reason ?? record.reason;
-              if (typeof candidate === "string") {
-                const trimmed = candidate.trim();
-                return trimmed ? trimmed : undefined;
-              }
-            }
-            return undefined;
-          })();
-
-        const logPayload: Record<string, unknown> = {
-          clientMessageId,
-          assistantId: assistantId ?? null,
-          streamId: streamStats.streamId ?? null,
-          gotAnyChunk: streamStats.gotAnyChunk,
-          aggregatedLength: streamStats.aggregatedLength,
-        };
-        if (finishReasonFromMeta !== undefined) logPayload.finishReasonFromMeta = finishReasonFromMeta;
-        if (streamStats.clientFinishReason) logPayload.clientFinishReason = streamStats.clientFinishReason;
-
+      applyStartErrorPatch();
+      try {
+        if (typeof queueMicrotask === "function") {
+          queueMicrotask(applyStartErrorPatch);
+        } else {
+          void Promise.resolve()
+            .then(applyStartErrorPatch)
+            .catch(() => {
+              applyStartErrorPatch();
+            });
+        }
+      } catch {
         try {
-          console.info("[EcoStream] stream_completed", logPayload);
+          applyStartErrorPatch();
         } catch {
           /* noop */
         }
       }
-      activeClientIdRef.current = null;
-    } else {
-      try {
-        console.debug("[EcoStream] stream_final_ignored", { clientMessageId });
-      } catch {
-        /* noop */
+
+      if (assistantIdOnStartError) {
+        removeEcoEntry(assistantIdOnStartError);
       }
-    }
+    });
 
-    if (isActiveStream) {
-      if (startErrorTriggered) {
-        const assistantForError =
-          startErrorAssistantId ??
-          assistantId ??
-          tracking.assistantByClientRef.current[clientMessageId] ??
-          tracking.assistantByClientRef.current[normalizedClientId] ??
-          sharedContext.activeAssistantIdRef.current;
+    streamPromise.finally(() => {
+      clearTypingWatchdog();
+      inflightControllers.delete(normalizedClientId);
+      clearWatchdog();
+      clearFallbackGuardTimer();
+      triggerJsonFallback = null;
 
-        patchAssistantStartError(assistantForError, startErrorMessage ?? "Falha ao iniciar a resposta da Eco.");
-      } else if (
-        wasAborted &&
-        !sharedContext.hasFirstChunkRef.current &&
-        !startErrorTriggered &&
-        streamStats.clientFinishReason !== "start_error"
-      ) {
-        registerNoContent("stream_aborted");
-        const ensuredAssistantId = ensureAssistantForNoContent();
-        if (ensuredAssistantId) {
-          assistantId = ensuredAssistantId;
-          sharedContext.activeAssistantIdRef.current = ensuredAssistantId;
+      const isCurrentClient = activeClientIdRef.current === clientMessageId;
+      if (isCurrentClient && controllerRef.current === controller) {
+        controllerRef.current = null;
+      }
+
+      let assistantId = tracking.assistantByClientRef.current[clientMessageId];
+      delete streamTimersRef.current[normalizedClientId];
+
+      const isActiveStream = activeStreamClientIdRef.current === clientMessageId;
+      const wasAborted = controller.signal.aborted;
+
+      if (isCurrentClient) {
+        if (!wasAborted) {
+          const finishReasonFromMeta =
+            sharedContext.streamStats.finishReasonFromMeta ??
+            (() => {
+              const meta = sharedContext.streamStats.lastMeta;
+              if (meta && typeof meta === "object" && !Array.isArray(meta)) {
+                const record = meta as Record<string, unknown> & {
+                  finishReason?: unknown;
+                  finish_reason?: unknown;
+                  reason?: unknown;
+                };
+                const candidate = record.finishReason ?? record.finish_reason ?? record.reason;
+                if (typeof candidate === "string") {
+                  const trimmed = candidate.trim();
+                  return trimmed ? trimmed : undefined;
+                }
+              }
+              return undefined;
+            })();
+
+          const logPayload: Record<string, unknown> = {
+            clientMessageId,
+            assistantId: assistantId ?? null,
+            streamId: streamStats.streamId ?? null,
+            gotAnyChunk: streamStats.gotAnyChunk,
+            aggregatedLength: streamStats.aggregatedLength,
+          };
+          if (finishReasonFromMeta !== undefined) logPayload.finishReasonFromMeta = finishReasonFromMeta;
+          if (streamStats.clientFinishReason) logPayload.clientFinishReason = streamStats.clientFinishReason;
+
+          try {
+            console.info("[EcoStream] stream_completed", logPayload);
+          } catch {
+            /* noop */
+          }
+        }
+        activeClientIdRef.current = null;
+      } else {
+        try {
+          console.debug("[EcoStream] stream_final_ignored", { clientMessageId });
+        } catch {
+          /* noop */
         }
       }
 
-      const closeReason = wasAborted ? "stream_aborted" : "stream_completed";
-      try {
-        console.info("[SSE] event_source_close:pre", {
-          clientMessageId,
-          reason: closeReason,
-          timestamp: Date.now(),
-        });
-      } catch {
-        /* noop */
-      }
+      if (isActiveStream) {
+        if (startErrorTriggered) {
+          const assistantForError =
+            startErrorAssistantId ??
+            assistantId ??
+            tracking.assistantByClientRef.current[clientMessageId] ??
+            tracking.assistantByClientRef.current[normalizedClientId] ??
+            sharedContext.activeAssistantIdRef.current;
 
-      session.finalize();
+          patchAssistantStartError(assistantForError, startErrorMessage ?? "Falha ao iniciar a resposta da Eco.");
+        } else if (
+          wasAborted &&
+          !sharedContext.hasFirstChunkRef.current &&
+          !startErrorTriggered &&
+          streamStats.clientFinishReason !== "start_error"
+        ) {
+          registerNoContent("stream_aborted");
+          const ensuredAssistantId = ensureAssistantForNoContent();
+          if (ensuredAssistantId) {
+            assistantId = ensuredAssistantId;
+            sharedContext.activeAssistantIdRef.current = ensuredAssistantId;
+          }
+        }
 
-      try {
-        console.info("[SSE] event_source_close", {
-          clientMessageId,
-          reason: closeReason,
-          timestamp: Date.now(),
-        });
-      } catch {
-        /* noop */
-      }
+        const closeReason = wasAborted ? "stream_aborted" : "stream_completed";
+        try {
+          console.info("[SSE] event_source_close:pre", {
+            clientMessageId,
+            reason: closeReason,
+            timestamp: Date.now(),
+          });
+        } catch {
+          /* noop */
+        }
 
-      if (wasAborted && assistantId) {
-        if (streamStats.status === "no_content") {
-          patchAssistantNoContent(assistantId);
-        } else {
-          removeEcoEntry(assistantId);
+        session.finalize();
+
+        try {
+          console.info("[SSE] event_source_close", {
+            clientMessageId,
+            reason: closeReason,
+            timestamp: Date.now(),
+          });
+        } catch {
+          /* noop */
+        }
+
+        if (wasAborted && assistantId) {
+          if (streamStats.status === "no_content") {
+            patchAssistantNoContent(assistantId);
+          } else {
+            removeEcoEntry(assistantId);
+          }
+        }
+
+        activity?.onDone?.();
+
+        try {
+          console.debug("[DIAG] done/abort", {
+            clientMessageId,
+            assistantMessageId: assistantId ?? null,
+            reason: wasAborted ? "stream_aborted" : "stream_completed",
+          });
+        } catch {
+          /* noop */
+        }
+      } else if (wasAborted && assistantId) {
+        removeEcoEntry(assistantId);
+        try {
+          console.debug("[DIAG] done/abort", {
+            clientMessageId,
+            assistantMessageId: assistantId ?? null,
+            reason: "stream_aborted_inactive",
+          });
+        } catch {
+          /* noop */
+        }
+      } else {
+        try {
+          console.debug("[DIAG] done/abort", {
+            clientMessageId,
+            assistantMessageId: assistantId ?? null,
+            reason: "stream_completed_inactive",
+          });
+        } catch {
+          /* noop */
         }
       }
+    });
 
-      activity?.onDone?.();
-
-      try {
-        console.debug("[DIAG] done/abort", {
-          clientMessageId,
-          assistantMessageId: assistantId ?? null,
-          reason: wasAborted ? "stream_aborted" : "stream_completed",
-        });
-      } catch {
-        /* noop */
-      }
-    } else if (wasAborted && assistantId) {
-      removeEcoEntry(assistantId);
-      try {
-        console.debug("[DIAG] done/abort", {
-          clientMessageId,
-          assistantMessageId: assistantId ?? null,
-          reason: "stream_aborted_inactive",
-        });
-      } catch {
-        /* noop */
-      }
-    } else {
-      try {
-        console.debug("[DIAG] done/abort", {
-          clientMessageId,
-          assistantMessageId: assistantId ?? null,
-          reason: "stream_completed_inactive",
-        });
-      } catch {
-        /* noop */
-      }
-    }
-  });
-
-  return streamPromise;
-};
-
-// --- APIs públicas ---
-
-export const beginStream = (
-  params: BeginStreamParams,
-  options?: StreamRunnerFactoryOptions,
-): Promise<StreamRunStats> | void => {
-  const deps = resolveStreamRunnerDeps(options);
-  return beginStreamInternal(params, deps);
-};
-
-export const createStreamRunner = (options: StreamRunnerFactoryOptions = {}) => {
-  const deps = resolveStreamRunnerDeps(options);
-  return {
-    beginStream: (params: BeginStreamParams) => beginStreamInternal(params, deps),
+    return streamPromise;
   };
-};
 
-// === FIM do arquivo ===
+  // --- APIs públicas ---
+
+  export const beginStream = (
+    params: BeginStreamParams,
+    options?: StreamRunnerFactoryOptions,
+  ): Promise<StreamRunStats> | void => {
+    const deps = resolveStreamRunnerDeps(options);
+    return beginStreamInternal(params, deps);
+  };
+
+  export const createStreamRunner = (options: StreamRunnerFactoryOptions = {}) => {
+    const deps = resolveStreamRunnerDeps(options);
+    return {
+      beginStream: (params: BeginStreamParams) => beginStreamInternal(params, deps),
+    };
+  };
+
+  // === FIM do arquivo ===
