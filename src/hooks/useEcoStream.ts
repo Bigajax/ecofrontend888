@@ -532,8 +532,12 @@ export const useEcoStream = ({
         .then((result) => {
           lastMetaFromStream = result?.lastMeta;
         })
-        .catch(() => {
+        .catch((error) => {
           lastMetaFromStream = undefined;
+          if (isMountedRef.current) {
+            setErroApi("Falha durante a comunicação com a Eco.");
+          }
+          console.error("[EcoStream] stream_promise_rejected", { error });
         })
         .finally(() => finalize(lastMetaFromStream));
     } else {

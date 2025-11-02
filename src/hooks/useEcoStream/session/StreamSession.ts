@@ -148,7 +148,7 @@ export function createSseWatchdogs(
     }
     const handler = onTimeout ?? lastHandler;
     if (!handler) return;
-    const timeoutMs = nextMode === "first" ? 25_000 : 30_000;
+    const timeoutMs = nextMode === "first" ? 30_000 : 45_000;
     t = timers.setTimeout(() => {
       const registered = streamWatchdogRegistry.get(id);
       if (registered && registered === clear) {
@@ -608,7 +608,7 @@ export class StreamSession {
     const diagForceJson =
       typeof window !== "undefined" &&
       Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
-    const requestMethod: "GET" | "POST" = "POST";
+    const requestMethod: "GET" | "POST" = "GET";
     const acceptHeader = "text/event-stream";
     const fallbackEnabled = diagForceJson;
 
@@ -1129,6 +1129,12 @@ export class StreamFallbackManager {
       return false;
     }
     this.fallbackRequested = true;
+    this.logSse("abort", {
+        clientMessageId: this.session.getNormalizedClientId(),
+        reason: "fallback_triggered",
+        transport: "POST",
+        fallback_reason: reason,
+    });
     this.streamStats.clientFinishReason ??= reason;
     this.clearFallbackGuardTimer();
     this.clearTypingWatchdog();
@@ -1291,6 +1297,8 @@ export class StreamFallbackManager {
           reason: "json_fallback_http_error",
           status: res.status,
           source: "json_fallback",
+          transport: "POST",
+          fallback_reason: "http_error",
         });
         return false;
       }

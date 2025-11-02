@@ -1588,12 +1588,13 @@
       activeAssistantIdRef.current = placeholderAssistantId;
     }
 
-    console.log("[SSE] Stream started", {
-      timestamp: Date.now(),
+    logSse("start", {
       clientMessageId: normalizedClientId,
       guestId: effectiveGuestId,
       sessionId: effectiveSessionId,
       method: requestMethod,
+      transport: requestMethod,
+      reason: "primary",
     });
 
     if (streamStartLogged.has(normalizedClientId)) {
@@ -2513,8 +2514,8 @@ response = await fetchFn(requestUrl, fetchInit);
           const dataParts: string[] = [];
 
           for (const line of lines) {
+            if (!line) continue;
             const trimmed = line.trim();
-            if (!trimmed) continue;
             if (trimmed.startsWith(":")) {
               const comment = trimmed.slice(1).trim();
               bumpHeartbeatWatchdog();
@@ -2532,31 +2533,28 @@ response = await fetchFn(requestUrl, fetchInit);
               currentEventName = declaredEvent || undefined;
               continue;
             }
-            if (!trimmed.startsWith("data:")) continue;
-
-            const dataIndex = line.indexOf("data:");
-            const rawValue = dataIndex >= 0 ? line.slice(dataIndex + 5) : line.slice(5);
-            const normalizedValue = rawValue.startsWith(" ") ? rawValue.slice(1) : rawValue;
-            if (!normalizedValue.trim()) continue;
-            dataParts.push(normalizedValue);
+            if (line.startsWith("data:")) {
+              const rawValue = line.substring(5);
+              const normalizedValue = rawValue.startsWith(" ") ? rawValue.substring(1) : rawValue;
+              dataParts.push(normalizedValue);
+            }
           }
 
           if (dataParts.length === 0) return;
 
           const payload = dataParts.join("\n");
-          const payloadForParse = payload.trim();
-          if (!payloadForParse) return;
+          if (!payload) return;
 
           try {
             console.info("[SSE] event_data", {
               event: currentEventName ?? "message",
-              data: payloadForParse,
+              data: payload,
             });
           } catch {
             /* noop */
           }
 
-          processSseLine(payloadForParse, handlers, { eventName: currentEventName });
+          processSseLine(payload, handlers, { eventName: currentEventName });
           if (fatalErrorState.current) return;
         };
 
