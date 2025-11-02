@@ -73,7 +73,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
   const showTypingPlaceholder = (normalizedRole === "assistant" || isEco) && isStreaming && !hasVisibleText;
 
   const finishReasonLabel = (() => {
-    if (!isEco) return undefined;
+    if (!isEco && normalizedRole !== "assistant") return undefined;
     if (isStreaming) return undefined;
     if (hasVisibleText) return undefined;
     const meta = message?.metadata;
