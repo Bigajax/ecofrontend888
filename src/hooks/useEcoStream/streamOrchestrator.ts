@@ -37,6 +37,7 @@
     pickStringFromRecords,
     toCleanString,
     toRecord,
+    toRecordSafe,
   } from "./utils";
   import { rememberGuestIdentityFromResponse, rememberSessionIdentityFromResponse } from "../../lib/guestId";
   import { setStreamActive } from "./streamStatus";
@@ -853,11 +854,11 @@
     const timestamp = typeof event?.createdAt === "string" ? event.createdAt.trim() : undefined;
     const updatedAt = timestamp || new Date().toISOString();
     const donePayload = event?.payload;
-    const payloadRecord = toRecord(donePayload);
+    const payloadRecord = toRecordSafe(donePayload);
     const summaryRecord = extractSummaryRecord(donePayload);
-    const responseRecord = toRecord(payloadRecord?.response);
-    const metadataRecord = toRecord(payloadRecord?.metadata);
-    const contextRecord = toRecord(payloadRecord?.context);
+    const responseRecord = toRecordSafe(payloadRecord?.response);
+    const metadataRecord = toRecordSafe(payloadRecord?.metadata);
+    const contextRecord = toRecordSafe(payloadRecord?.context);
     const recordSources = [summaryRecord, responseRecord, metadataRecord, contextRecord, payloadRecord];
 
     const metadataBase =
@@ -915,11 +916,11 @@
 
       const hasStructuredDonePayload = (() => {
         if (!payloadRecord) return false;
-        const responseRecord = toRecord(payloadRecord.response);
+        const responseRecord = toRecordSafe(payloadRecord.response);
         if (responseRecord && Object.keys(responseRecord).length > 0) return true;
-        const responseBodyRecord = toRecord(payloadRecord.responseBody);
+        const responseBodyRecord = toRecordSafe(payloadRecord.responseBody);
         if (responseBodyRecord && Object.keys(responseBodyRecord).length > 0) return true;
-        const altResponseBody = toRecord((payloadRecord as { response_body?: unknown }).response_body);
+        const altResponseBody = toRecordSafe((payloadRecord as { response_body?: unknown }).response_body);
         if (altResponseBody && Object.keys(altResponseBody).length > 0) return true;
         const maybeMessages = (payloadRecord as { messages?: unknown }).messages;
         return Array.isArray(maybeMessages) && maybeMessages.length > 0;
@@ -989,11 +990,11 @@
       patch.metadata = mergeReplyMetadata(metadataBase, normalizedClientId);
 
       const finishReasonSource = (() => {
-        const streamMeta = toRecord(doneContext.streamStats?.lastMeta);
+        const streamMeta = toRecordSafe(doneContext.streamStats?.lastMeta);
         if (streamMeta && typeof streamMeta === "object") {
           return streamMeta;
         }
-        const metadataRecord = toRecord(metadataBase);
+        const metadataRecord = toRecordSafe(metadataBase);
         if (metadataRecord && typeof metadataRecord === "object") {
           return metadataRecord;
         }
@@ -1197,18 +1198,18 @@
 
   export const handleControl = (event: EcoStreamControlEvent, context: StreamSharedContext) => {
     const explicit = toCleanString(event?.interactionId);
-    const payloadRecord = toRecord(event?.payload);
+    const payloadRecord = toRecordSafe(event?.payload);
     const resolvedName = (() => {
-      const candidates = [toRecord(event) ?? {}, payloadRecord ?? {}];
+      const candidates = [toRecordSafe(event) ?? {}, payloadRecord ?? {}];
       const rawName = pickStringFromRecords(candidates, ["name", "event", "type"]);
       return typeof rawName === "string" ? rawName.trim().toLowerCase() : undefined;
     })();
 
     const extractMetaRecord = (): Record<string, unknown> | undefined => {
       const metaCandidate =
-        toRecord(payloadRecord?.meta) ??
-        toRecord(payloadRecord?.metadata) ??
-        toRecord(payloadRecord);
+        toRecordSafe(payloadRecord?.meta) ??
+        toRecordSafe(payloadRecord?.metadata) ??
+        toRecordSafe(payloadRecord);
       if (metaCandidate && typeof metaCandidate === "object" && !Array.isArray(metaCandidate)) {
         return metaCandidate;
       }
@@ -2199,21 +2200,21 @@ response = await fetchFn(requestUrl, fetchInit);
         const doneState = { value: false };
 
         const buildRecordChain = (rawEvent?: Record<string, unknown>): Record<string, unknown>[] => {
-          const eventRecord = toRecord(rawEvent) ?? undefined;
-          const payloadRecord = toRecord(eventRecord?.payload) ?? undefined;
-          const metaRecord = toRecord(eventRecord?.meta) ?? undefined;
+          const eventRecord = toRecordSafe(rawEvent) ?? undefined;
+          const payloadRecord = toRecordSafe(eventRecord?.payload) ?? undefined;
+          const metaRecord = toRecordSafe(eventRecord?.meta) ?? undefined;
           const metadataRecord =
-            toRecord(payloadRecord?.metadata) ?? toRecord(eventRecord?.metadata) ?? undefined;
-          const responseRecord = toRecord(payloadRecord?.response) ?? undefined;
-          const contextRecord = toRecord(payloadRecord?.context) ?? undefined;
+            toRecordSafe(payloadRecord?.metadata) ?? toRecordSafe(eventRecord?.metadata) ?? undefined;
+          const responseRecord = toRecordSafe(payloadRecord?.response) ?? undefined;
+          const contextRecord = toRecordSafe(payloadRecord?.context) ?? undefined;
           return [metadataRecord, metaRecord, responseRecord, payloadRecord, contextRecord, eventRecord].filter(
             Boolean,
           ) as Record<string, unknown>[];
         };
 
         const extractPayloadRecord = (rawEvent?: Record<string, unknown>) => {
-          const eventRecord = toRecord(rawEvent);
-          return toRecord(eventRecord?.payload) ?? undefined;
+          const eventRecord = toRecordSafe(rawEvent);
+          return toRecordSafe(eventRecord?.payload) ?? undefined;
         };
 
         const handlerDefaults = {
@@ -2243,7 +2244,7 @@ response = await fetchFn(requestUrl, fetchInit);
           extractPayloadRecord,
           pickStringFromRecords,
           handleChunk: safeChunkHandler,
-          toRecord,
+          toRecordSafe,
         });
 
         const handlePromptEvent = onPromptReady({
@@ -2271,6 +2272,7 @@ response = await fetchFn(requestUrl, fetchInit);
           normalizedClientId,
           handleControl,
           sharedContext,
+          toRecordSafe,
         });
 
         const handleMessageEvent = onMessage({
@@ -2298,7 +2300,7 @@ response = await fetchFn(requestUrl, fetchInit);
           buildRecordChain,
           pickStringFromRecords,
           extractPayloadRecord,
-          toRecord,
+          toRecordSafe,
           streamTimersRef,
           normalizedClientId,
           streamStats,
@@ -2353,7 +2355,7 @@ response = await fetchFn(requestUrl, fetchInit);
           handleDone: handleStreamDoneRef,
           fatalErrorState,
           extractText,
-          toRecord,
+          toRecordSafe,
         });
 
         const responseNonNull = response as Response;
@@ -2414,7 +2416,7 @@ response = await fetchFn(requestUrl, fetchInit);
               /* noop */
             }
             const recordPayload =
-              toRecord(jsonPayload) ??
+              toRecordSafe(jsonPayload) ??
               (typeof jsonPayload === "object" && jsonPayload
                 ? (jsonPayload as Record<string, unknown>)
                 : undefined);
