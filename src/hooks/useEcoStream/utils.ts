@@ -5,6 +5,23 @@ export const toRecord = (value: unknown): Record<string, unknown> | undefined =>
   return value as Record<string, unknown>;
 };
 
+export const toRecordSafe = (input: unknown): Record<string, unknown> => {
+  if (input && typeof input === "object" && !Array.isArray(input)) {
+    return input as Record<string, unknown>;
+  }
+  if (typeof input === "string") {
+    try {
+      const parsed = JSON.parse(input);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      return {};
+    }
+  }
+  return {};
+};
+
 export const toCleanString = (value: unknown): string | undefined => {
   if (typeof value === "string") {
     const trimmed = value.trim();
