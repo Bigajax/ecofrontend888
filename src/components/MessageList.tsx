@@ -1,9 +1,10 @@
+// src/components/MessageList.tsx
 import React, { RefObject, useMemo } from "react";
 import { motion } from "framer-motion";
 
 import ChatMessage from "./ChatMessage";
 import EcoMessageWithAudio from "./EcoMessageWithAudio";
-import TypingDots from "./TypingDots"; // ✅ garante o componente
+import TypingDots from "./TypingDots"; // garante o componente
 
 import type { Message } from "../contexts/ChatContext";
 import { isEcoMessage, resolveMessageSender } from "../utils/chat/messages";
@@ -22,12 +23,37 @@ const extractClientMessageId = (message: Message | undefined): string | undefine
   return undefined;
 };
 
-type MessageListProps = {
+const hasVisibleText = (m: Message | undefined): boolean => {
+  if (!m) return false;
+  const raw =
+    typeof m.content === "string"
+      ? m.content
+      : typeof (m as any).text === "string"
+      ? (m as any).text
+      : "";
+  return raw.trim().length > 0;
+};
+
+const isStreaming = (m: Message | undefined): boolean => {
+  if (!m) return false;
+  return (m as any)?.streaming === true || (m as any)?.status === "streaming";
+};
+
+// Se a última mensagem for da Eco, estiver streamando e ainda sem texto,
+// o ChatMessage já mostra os três pontinhos dentro da bolha.
+// Então evitamos repetir o indicador global "Eco refletindo..." no rodapé.
+const lastEcoIsTypingInsideBubble = (list: Message[]): boolean => {
+  if (!Array.isArray(list) || list.length === 0) return false;
+  const last = list[list.length - 1];
+  return isEcoMessage(last) && isStreaming(last) && !hasVisibleText(last);
+};
+
+export type MessageListProps = {
   messages: Message[];
   prefersReducedMotion: boolean;
   ecoActivityTTS?: (payload: any) => void;
   isEcoTyping?: boolean;
-  feedbackPrompt?: React.ReactNode; // ✅ tipado
+  feedbackPrompt?: React.ReactNode; // tipado
   endRef?: RefObject<HTMLDivElement>;
 };
 
@@ -42,23 +68,23 @@ const MessageList: React.FC<MessageListProps> = ({
   const handleTTS = ecoActivityTTS ?? (() => {});
 
   const buildMessageKey = (message: Message, index: number): string => {
-    const role = message.role ?? resolveMessageSender(message) ?? message.sender ?? "unknown";
+    const role = message.role ?? resolveMessageSender(message) ?? (message as any).sender ?? "unknown";
     const normalizedRole = typeof role === "string" && role.trim().length > 0 ? role.trim() : "unknown";
     const clientMessageId = extractClientMessageId(message);
     if (clientMessageId) {
       return `${normalizedRole}:${clientMessageId}`;
     }
     const messageId =
-      (typeof message.id === "string" && message.id.trim()) ||
+      (typeof (message as any).id === "string" && (message as any).id.trim()) ||
       (typeof (message as { message_id?: unknown }).message_id === "string"
-        ? ((message as { message_id?: string }).message_id ?? "").trim()
+        ? (((message as { message_id?: string }).message_id as string) ?? "").trim()
         : "");
     if (messageId) {
       return `${normalizedRole}:${messageId}`;
     }
     const interactionId =
-      (typeof message.interaction_id === "string" && message.interaction_id.trim()) ||
-      (typeof message.interactionId === "string" && message.interactionId.trim()) ||
+      (typeof (message as any).interaction_id === "string" && (message as any).interaction_id.trim()) ||
+      (typeof (message as any).interactionId === "string" && (message as any).interactionId.trim()) ||
       "";
     if (interactionId) {
       return `${normalizedRole}:${interactionId}`;
@@ -78,18 +104,20 @@ const MessageList: React.FC<MessageListProps> = ({
     });
   }, [messages]);
 
+  const showGlobalTyping = Boolean(isEcoTyping) && !lastEcoIsTypingInsideBubble(uniqueMessages);
+
   try {
     console.debug(
       "[DIAG] render:list",
       messages.map((message) => ({
-        id: message?.id ?? null,
-        role: message?.role ?? message?.sender ?? "unknown",
-        status: message?.status ?? null,
+        id: (message as any)?.id ?? null,
+        role: (message as any)?.role ?? (message as any)?.sender ?? "unknown",
+        status: (message as any)?.status ?? null,
         len:
-          typeof message?.text === "string"
-            ? message.text.length
-            : message?.content
-            ? String(message.content).length
+          typeof (message as any)?.text === "string"
+            ? (message as any).text.length
+            : (message as any)?.content
+            ? String((message as any).content).length
             : 0,
       })),
     );
@@ -115,7 +143,8 @@ const MessageList: React.FC<MessageListProps> = ({
             {isEcoMessage(message) ? (
               <EcoMessageWithAudio message={message as any} onActivityTTS={handleTTS} />
             ) : (
-              <ChatMessage message={message} />
+              // Passa isEcoTyping para o ChatMessage para que ele controle os três pontinhos na bolha
+              <ChatMessage message={message} isEcoTyping={isEcoTyping} />
             )}
           </motion.div>
         );
@@ -123,8 +152,8 @@ const MessageList: React.FC<MessageListProps> = ({
 
       {feedbackPrompt}
 
-      {isEcoTyping && (
-        <div className="flex items-center gap-2 mt-1">
+      {showGlobalTyping && (
+        <div className="flex items-center gap-2 mt-1" role="status" aria-live="polite">
           <TypingDots variant="bubble" size="md" tone="auto" />
           <span className="text-gray-500 italic">Eco refletindo...</span>
         </div>

@@ -70,7 +70,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
 
   // mostra os três pontinhos dentro da bolha enquanto streama e ainda não há texto
   const showTypingDots = isEco && isStreaming && !hasVisibleText;
-  const showTypingPlaceholder = (normalizedRole === "assistant" || isEco) && isStreaming && !hasVisibleText;
+
+  // Evita duplicidade: só renderiza o aviso “Eco refletindo…” se não estiver mostrando os pontinhos
+  const showTypingFooter = isStreaming && !hasVisibleText && !showTypingDots;
 
   const finishReasonLabel = (() => {
     if (!isEco && normalizedRole !== "assistant") return undefined;
@@ -119,17 +121,18 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
             {showTypingDots ? (
               <span aria-live="polite" className="inline-flex items-center gap-2 text-gray-600">
                 <TypingDots />
-
               </span>
             ) : (
               <span className="chat-message-text">{textToShow}</span>
             )}
           </div>
-          {isStreaming && !hasVisibleText && (
-            <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 italic">
+
+          {showTypingFooter && (
+            <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 italic" role="status" aria-live="polite">
               <span>Eco refletindo...</span>
             </div>
           )}
+
           {finishReasonLabel && (
             <div className="mt-1 pl-1 text-xs text-gray-500">
               <span className="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-medium text-gray-600">
