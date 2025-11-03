@@ -3,17 +3,18 @@ import { motion } from 'framer-motion';
 
 import ChatMessage from './ChatMessage';
 import EcoMessageWithAudio from './EcoMessageWithAudio';
+import TypingDots from '../components/TypingDots';
 import type { Message } from '../contexts/ChatContext';
 import { isEcoMessage, resolveMessageSender } from '../utils/chat/messages';
 
 const extractClientMessageId = (message: Message | undefined): string | undefined => {
   if (!message) return undefined;
-  if (typeof message.client_message_id === "string") {
+  if (typeof message.client_message_id === 'string') {
     const trimmed = message.client_message_id.trim();
     if (trimmed) return trimmed;
   }
   const camelCaseId = (message as { clientMessageId?: unknown }).clientMessageId;
-  if (typeof camelCaseId === "string") {
+  if (typeof camelCaseId === 'string') {
     const trimmed = camelCaseId.trim();
     if (trimmed) return trimmed;
   }
@@ -24,8 +25,12 @@ type MessageListProps = {
   messages: Message[];
   prefersReducedMotion: boolean;
   ecoActivityTTS?: (payload: any) => void;
+  /** Controla exibição do indicador global de digitação */
   isEcoTyping?: boolean;
-
+  /** Nó opcional injetado pelo pai para indicador de digitação; se ausente, usa <TypingDots/> */
+  typingIndicator?: React.ReactNode;
+  /** Nó opcional com o prompt de feedback (renderizado após a lista) */
+  feedbackPrompt?: React.ReactNode;
   endRef?: RefObject<HTMLDivElement>;
 };
 
@@ -35,6 +40,7 @@ const MessageList: React.FC<MessageListProps> = ({
   ecoActivityTTS,
   feedbackPrompt,
   isEcoTyping,
+  typingIndicator,
   endRef,
 }) => {
   const handleTTS = ecoActivityTTS ?? (() => {});
@@ -88,9 +94,12 @@ const MessageList: React.FC<MessageListProps> = ({
         id: message?.id ?? null,
         role: message?.role ?? message?.sender ?? 'unknown',
         status: message?.status ?? null,
-        len: typeof message?.text === 'string' ? message.text.length : message?.content
-          ? String(message.content).length
-          : 0,
+        len:
+          typeof message?.text === 'string'
+            ? message.text.length
+            : message?.content
+            ? String(message.content).length
+            : 0,
       })),
     );
   } catch {
@@ -129,10 +138,7 @@ const MessageList: React.FC<MessageListProps> = ({
             }}
           >
             {isEcoMessage(message) ? (
-              <EcoMessageWithAudio
-                message={message as any}
-                onActivityTTS={handleTTS}
-              />
+              <EcoMessageWithAudio message={message as any} onActivityTTS={handleTTS} />
             ) : (
               <ChatMessage message={message} />
             )}
@@ -144,7 +150,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
       {isEcoTyping && (
         <div className="flex items-center gap-2 mt-1">
-          <TypingDots variant="bubble" size="md" tone="auto" />
+          {typingIndicator ?? <TypingDots variant="bubble" size="md" tone="auto" />}
           <span className="text-gray-500 italic">Eco refletindo...</span>
         </div>
       )}
