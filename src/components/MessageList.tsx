@@ -24,8 +24,8 @@ type MessageListProps = {
   messages: Message[];
   prefersReducedMotion: boolean;
   ecoActivityTTS?: (payload: any) => void;
-  feedbackPrompt?: React.ReactNode;
-  typingIndicator?: React.ReactNode;
+  isEcoTyping?: boolean;
+
   endRef?: RefObject<HTMLDivElement>;
 };
 
@@ -34,7 +34,7 @@ const MessageList: React.FC<MessageListProps> = ({
   prefersReducedMotion,
   ecoActivityTTS,
   feedbackPrompt,
-  typingIndicator,
+  isEcoTyping,
   endRef,
 }) => {
   const handleTTS = ecoActivityTTS ?? (() => {});
@@ -142,7 +142,12 @@ const MessageList: React.FC<MessageListProps> = ({
 
       {feedbackPrompt}
 
-      {typingIndicator}
+      {isEcoTyping && (
+        <div className="flex items-center gap-2 mt-1">
+          <TypingDots variant="bubble" size="md" tone="auto" />
+          <span className="text-gray-500 italic">Eco refletindo...</span>
+        </div>
+      )}
 
       <div ref={endRef} className="anchor-end h-px" />
     </div>

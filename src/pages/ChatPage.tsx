@@ -614,33 +614,7 @@ function ChatPage() {
       />
     ) : null;
 
-  const typingIndicatorNode = shouldRenderGlobalTyping ? (
-    <div className="w-full flex justify-start" aria-live="polite">
-      <div className="max-w-[800px] w-full min-w-0 flex items-center gap-2">
-        <div className="flex-shrink-0 translate-y-[1px]">
-          <EcoBubbleOneEye variant="message" state="thinking" size={30} />
-        </div>
-        <div className="min-w-0 text-sm text-slate-500">
-          {isSynthesizingAudio ? (
-            <span className="inline-flex items-center gap-2">
-              <span aria-hidden>🎧</span>
-              <span>preparando áudio…</span>
-              <span className="sr-only">Eco está preparando áudio</span>
-            </span>
-          ) : (
-            <div
-              className="opacity-0 translate-y-1 transition-opacity transition-transform duration-[160ms] ease-out data-[state=enter]:opacity-100 data-[state=visible]:opacity-100 data-[state=enter]:translate-y-0 data-[state=visible]:translate-y-0 data-[state=exit]:opacity-0 data-[state=exit]:translate-y-1"
-              data-state={globalTypingState === 'hidden' ? undefined : globalTypingState}
-            >
-              <span data-testid="typing-dots" className="                Eco refletindo…
-              </span>
-              <TypingDots variant="bubble" size="md" tone="auto" />
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  ) : null;
+
 
   const mainTopPadding = 'calc(var(--eco-topbar-h,56px) + 12px)';
   const mainScrollPadding = 'calc(var(--footer-h,72px) + env(safe-area-inset-bottom))';
@@ -720,6 +694,7 @@ function ChatPage() {
                   ecoActivityTTS={ecoActivity.onTTS}
                   feedbackPrompt={feedbackPromptNode}
                   typingIndicator={typingIndicatorNode}
+                  isEcoTyping={isEcoStreamTyping}
                   endRef={endRef}
                 />
               </div>
