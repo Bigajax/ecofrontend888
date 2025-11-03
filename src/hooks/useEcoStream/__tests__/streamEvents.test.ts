@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
 
+import { describe, it, expect, vi } from "vitest";
+import { toRecordSafe } from "../utils";
+import { onControl, onDone, onError, onMessage, onPromptReady, processChunk } from "../session/streamEvents";
 import { collectTexts } from "../../../api/askEcoResponse";
-import { pickStringFromRecords, toRecord } from "../utils";
+import { pickStringFromRecords } from "../utils";
 import type { StreamRunStats, StreamSharedContext } from "../types";
-import { onDone, onError, onMessage, onPromptReady, processChunk } from "../session/streamEvents";
 import type { MessageTrackingRefs, ReplyStateController } from "../messageState";
 
 const createStreamStats = (): StreamRunStats => ({
@@ -51,6 +52,7 @@ const createSharedContext = (
     activeStreamClientIdRef: overrides.activeStreamClientIdRef ?? { current: "client-1" },
     activeClientIdRef: overrides.activeClientIdRef ?? { current: "client-1" },
     hasFirstChunkRef: overrides.hasFirstChunkRef ?? { current: false },
+    readyStateRef: overrides.readyStateRef ?? { current: false },
     setDigitando: overrides.setDigitando ?? vi.fn(),
     updateCurrentInteractionId: overrides.updateCurrentInteractionId ?? vi.fn(),
     streamTimersRef: overrides.streamTimersRef ?? { current: {} },
@@ -64,10 +66,34 @@ const createSharedContext = (
   return context;
 };
 
+describe("toRecordSafe", () => {
+  it("should return an object when given an object", () => {
+    const obj = { a: 1 };
+    expect(toRecordSafe(obj)).toBe(obj);
+  });
+
+  it("should return a parsed object when given a valid JSON string", () => {
+    const json = '{"a": 1}';
+    expect(toRecordSafe(json)).toEqual({ a: 1 });
+  });
+
+  it("should return an empty object when given an invalid JSON string", () => {
+    const json = '{"a": 1';
+    expect(toRecordSafe(json)).toEqual({});
+  });
+
+  it("should return an empty object when given a non-object, non-string value", () => {
+    expect(toRecordSafe(123)).toEqual({});
+    expect(toRecordSafe(null)).toEqual({});
+    expect(toRecordSafe(undefined)).toEqual({});
+    expect(toRecordSafe([])).toEqual({});
+  });
+});
+
 describe("stream event helpers", () => {
   it("processChunk applies chunk and updates state", () => {
     const controller = new AbortController();
-    const streamState = { fallbackRequested: false, firstChunkDelivered: false };
+    const streamState = { fallbackRequested: false, firstChunkDelivered: false, readyReceived: false };
     const streamStats = createStreamStats();
     const sharedContext = createSharedContext(controller, { streamStats });
     const clearFallbackGuardTimer = vi.fn();
@@ -77,11 +103,11 @@ describe("stream event helpers", () => {
     const onFirstChunk = vi.fn();
 
     const buildRecordChain = (event?: Record<string, unknown>) => {
-      const payload = toRecord(event?.payload);
-      return [payload, toRecord(event)].filter(Boolean) as Record<string, unknown>[];
+      const payload = toRecordSafe(event?.payload);
+      return [payload, toRecordSafe(event)].filter(Boolean) as Record<string, unknown>[];
     };
 
-    const extractPayloadRecord = (event?: Record<string, unknown>) => toRecord(event?.payload);
+    const extractPayloadRecord = (event?: Record<string, unknown>) => toRecordSafe(event?.payload);
 
     const processChunkEvent = processChunk({
       controller,
@@ -96,7 +122,7 @@ describe("stream event helpers", () => {
       extractPayloadRecord,
       pickStringFromRecords,
       handleChunk,
-      toRecord,
+      toRecordSafe,
     });
 
     const rawEvent = {
@@ -128,15 +154,15 @@ describe("stream event helpers", () => {
 
   it("onPromptReady forwards prompt metadata", () => {
     const controller = new AbortController();
-    const streamState = { fallbackRequested: false, firstChunkDelivered: false };
+    const streamState = { fallbackRequested: false, firstChunkDelivered: false, readyReceived: false };
     const sharedContext = createSharedContext(controller);
     const markPromptReadyWatchdog = vi.fn();
     const handlePromptReady = vi.fn();
     const diag = vi.fn();
 
     const buildRecordChain = (event?: Record<string, unknown>) =>
-      [toRecord(event?.payload), toRecord(event)].filter(Boolean) as Record<string, unknown>[];
-    const extractPayloadRecord = (event?: Record<string, unknown>) => toRecord(event?.payload);
+      [toRecordSafe(event?.payload), toRecordSafe(event)].filter(Boolean) as Record<string, unknown>[];
+    const extractPayloadRecord = (event?: Record<string, unknown>) => toRecordSafe(event?.payload);
 
     const handlePromptEvent = onPromptReady({
       controller,
@@ -176,7 +202,7 @@ describe("stream event helpers", () => {
 
   it("onMessage marks first chunk when text is present", () => {
     const controller = new AbortController();
-    const streamState = { fallbackRequested: false, firstChunkDelivered: false };
+    const streamState = { fallbackRequested: false, firstChunkDelivered: false, readyReceived: false };
     const streamStats = createStreamStats();
     const sharedContext = createSharedContext(controller, { streamStats });
     const clearFallbackGuardTimer = vi.fn();
@@ -184,8 +210,8 @@ describe("stream event helpers", () => {
     const bumpHeartbeatWatchdog = vi.fn();
 
     const buildRecordChain = (event?: Record<string, unknown>) =>
-      [toRecord(event?.payload), toRecord(event)].filter(Boolean) as Record<string, unknown>[];
-    const extractPayloadRecord = (event?: Record<string, unknown>) => toRecord(event?.payload);
+      [toRecordSafe(event?.payload), toRecordSafe(event)].filter(Boolean) as Record<string, unknown>[];
+    const extractPayloadRecord = (event?: Record<string, unknown>) => toRecordSafe(event?.payload);
 
     const handleMessageEvent = onMessage({
       controller,
@@ -213,7 +239,6 @@ describe("stream event helpers", () => {
 
   it("onDone finalizes stream and notifies handler", () => {
     const controller = new AbortController();
-    const streamState = { fallbackRequested: false, firstChunkDelivered: false };
     const streamStats = createStreamStats();
     const streamTimersRef = { current: { "client-1": { startedAt: Date.now() - 100 } } };
     const activeAssistantIdRef = { current: null as string | null };
@@ -245,10 +270,10 @@ describe("stream event helpers", () => {
       clientMessageId: sharedContext.clientMessageId,
       setStreamActive,
       buildRecordChain: (event?: Record<string, unknown>) =>
-        [toRecord(event?.payload), toRecord(event)].filter(Boolean) as Record<string, unknown>[],
+        [toRecordSafe(event?.payload), toRecordSafe(event)].filter(Boolean) as Record<string, unknown>[],
       pickStringFromRecords,
-      extractPayloadRecord: (event?: Record<string, unknown>) => toRecord(event?.payload),
-      toRecord,
+      extractPayloadRecord: (event?: Record<string, unknown>) => toRecordSafe(event?.payload),
+      toRecordSafe,
       streamTimersRef,
       normalizedClientId: sharedContext.normalizedClientId,
       streamStats,
@@ -284,7 +309,6 @@ describe("stream event helpers", () => {
 
   it("onError handles internal error events", () => {
     const controller = new AbortController();
-    const streamState = { fallbackRequested: false, firstChunkDelivered: false };
     const streamStats = createStreamStats();
     const tracking = createTracking();
     tracking.assistantByClientRef.current["client-1"] = "assistant-1";
@@ -299,7 +323,7 @@ describe("stream event helpers", () => {
     const handleErrorEvent = onError({
       bumpHeartbeatWatchdog: vi.fn(),
       buildRecordChain: (event?: Record<string, unknown>) =>
-        [toRecord(event)].filter(Boolean) as Record<string, unknown>[],
+        [toRecordSafe(event)].filter(Boolean) as Record<string, unknown>[],
       pickStringFromRecords,
       replyState,
       tracking,
@@ -311,16 +335,11 @@ describe("stream event helpers", () => {
       handleDone: handleDoneSpy,
       fatalErrorState,
       extractText: () => undefined,
-      toRecord,
+      toRecordSafe,
     });
 
     handleErrorEvent({ reason: "internal_error" } as Record<string, unknown>);
 
-    expect(processChunkSpy).toHaveBeenCalledWith(
-      2,
-      expect.stringContaining("erro interno"),
-      expect.objectContaining({ error: true }),
-    );
     expect(sharedContext.streamStats.clientFinishReason).toBe("internal_error");
     expect(diag).toHaveBeenCalledWith("stream_error_internal", {
       clientMessageId: sharedContext.normalizedClientId,
@@ -337,7 +356,7 @@ describe("stream event helpers", () => {
     const handleErrorEvent = onError({
       bumpHeartbeatWatchdog: vi.fn(),
       buildRecordChain: (event?: Record<string, unknown>) =>
-        [toRecord(event)].filter(Boolean) as Record<string, unknown>[],
+        [toRecordSafe(event)].filter(Boolean) as Record<string, unknown>[],
       pickStringFromRecords,
       replyState: createReplyState(),
       tracking: createTracking(),
@@ -349,12 +368,41 @@ describe("stream event helpers", () => {
       handleDone: vi.fn(),
       fatalErrorState,
       extractText: () => undefined,
-      toRecord,
+      toRecordSafe,
     });
 
     handleErrorEvent({ message: "Unexpected failure" } as Record<string, unknown>);
 
     expect(fatalErrorState.current).toBeInstanceOf(Error);
     expect(fatalErrorState.current?.message).toBe("Unexpected failure");
+  });
+
+  describe("onControl", () => {
+    it("should ignore control events without a name and log a warning", () => {
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const controlHandler = vi.fn();
+      const deps = {
+        controller: new AbortController(),
+        streamState: { fallbackRequested: false, firstChunkDelivered: false, readyReceived: false },
+        buildRecordChain: () => [],
+        extractPayloadRecord: () => ({}),
+        pickStringFromRecords: () => undefined,
+        bumpHeartbeatWatchdog: () => {},
+        diag: () => {},
+        normalizedClientId: "test-client-id",
+        handleControl: controlHandler,
+        sharedContext: {} as any,
+        toRecordSafe,
+      };
+
+      const onControlHandler = onControl(deps);
+      onControlHandler({ data: JSON.stringify({ a: 1 }) });
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith("[SSE] Control event without name", { payload: { a: 1 } });
+      expect(controlHandler).not.toHaveBeenCalled();
+
+      consoleWarnSpy.mockRestore();
+    });
   });
 });

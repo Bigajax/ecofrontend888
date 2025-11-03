@@ -1215,7 +1215,6 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
     const explicit = toCleanString(event?.interactionId);
     const payloadRecord = toRecordSafe(event?.payload);
     const resolvedName = (() => {
-      const candidates = [toRecordSafe(event), payloadRecord ?? {}];
       const rawName = pickStringFromRecords(candidates, ["name", "event", "type"]);
       return typeof rawName === "string" ? rawName.trim().toLowerCase() : undefined;
     })();
@@ -2286,6 +2285,7 @@ response = await fetchFn(requestUrl, fetchInit);
           normalizedClientId,
           handleControl,
           sharedContext,
+          toRecordSafe,
         });
 
         const handleMessageEvent = onMessage({

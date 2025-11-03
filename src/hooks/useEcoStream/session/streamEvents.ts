@@ -87,6 +87,7 @@ type ProcessChunkDeps = {
   extractPayloadRecord: ExtractPayloadRecordFn;
   pickStringFromRecords: PickStringFromRecords;
   handleChunk?: HandleChunkFn | null;
+  toRecordSafe: (value: unknown) => Record<string, unknown>;
 };
 
 type PromptReadyDeps = {
@@ -114,6 +115,7 @@ type ControlDeps = {
   normalizedClientId: string;
   handleControl?: HandleControlFn | null;
   sharedContext: StreamSharedContext;
+  toRecordSafe: (value: unknown) => Record<string, unknown>;
 };
 
 type MessageDeps = {
@@ -152,7 +154,7 @@ type DoneDeps = {
   setErroApi: Dispatch<SetStateAction<string | null>>;
   removeEcoEntry: RemoveEcoEntryFn;
   applyMetaToStreamStats: (streamStats: StreamRunStats, meta: Record<string, unknown> | undefined) => void;
-  extractFinishReasonFromMeta: (meta: unknown) => string | undefined;
+  toRecordSafe: (value: unknown) => Record<string, unknown>;
 };
 
 type ErrorDeps = {
@@ -169,6 +171,7 @@ type ErrorDeps = {
   handleDone?: HandleStreamDoneFn | null;
   fatalErrorState: FatalErrorState;
   extractText: ExtractTextFn;
+  toRecord: (value: unknown) => Record<string, unknown> | undefined;
 };
 
 export const processChunk = ({
@@ -184,6 +187,7 @@ export const processChunk = ({
   extractPayloadRecord,
   pickStringFromRecords,
   handleChunk,
+  toRecord,
 }: ProcessChunkDeps) => {
   const chunkHandler = typeof handleChunk === "function" ? handleChunk : null;
   if (!chunkHandler) {
@@ -411,6 +415,7 @@ export const onControl = ({
   normalizedClientId,
   handleControl,
   sharedContext,
+  toRecordSafe,
 }: ControlDeps) => {
   const controlHandler = typeof handleControl === "function" ? handleControl : null;
   if (!controlHandler) {
@@ -424,47 +429,34 @@ export const onControl = ({
   return (rawEvent: Record<string, unknown>) => {
     if (controller.signal.aborted) return;
     if (streamState.fallbackRequested) return;
-
-    const payload = toRecordSafe(rawEvent.payload);
-    const eventRecord = toRecordSafe(rawEvent);
-
-    const name = (typeof payload.name === "string" ? payload.name : typeof eventRecord.name === "string" ? eventRecord.name : "") as string;
-
-    if (!name) {
-      console.warn("[SSE-DEBUG] onControl event without name", { event: rawEvent });
-      return;
-    }
-    
     const records = buildRecordChain(rawEvent);
     const interactionId =
       pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
     const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
-    
-    const normalizedName = name.trim().toLowerCase();
+    const payloadRecord = extractPayloadRecord(rawEvent);
+    const name =
+      pickStringFromRecords([toRecord(rawEvent) ?? {}, payloadRecord ?? {}], ["name", "event", "type"]) ??
+      undefined;
+
+    const normalizedName = typeof name === "string" ? name.trim().toLowerCase() : undefined;
 
     const controlEvent: EcoStreamControlEvent = {
       name,
       interactionId,
       messageId,
-      payload: payload ?? rawEvent,
+      payload: payloadRecord ?? rawEvent,
     };
 
     bumpHeartbeatWatchdog();
 
-    if (normalizedName) {
-      diag("control_event", { name: normalizedName, clientMessageId: normalizedClientId });
-    }
+    diag("control_event", { name, clientMessageId: normalizedClientId });
 
     if (controlHandler) {
       try {
         controlHandler(controlEvent, sharedContext);
       } catch (error) {
-      try {
         console.warn("[SSE-DEBUG] onControl_error", { error });
-      } catch {
-        /* noop */
       }
-    }
     }
   };
 };
@@ -520,6 +512,7 @@ export const onDone = ({
   buildRecordChain,
   pickStringFromRecords,
   extractPayloadRecord,
+  toRecord,
   streamTimersRef,
   normalizedClientId,
   streamStats,
@@ -712,6 +705,7 @@ export const onError = ({
   handleDone,
   fatalErrorState,
   extractText,
+  toRecord,
 }: ErrorDeps) => {
   const chunkHandler = typeof processChunk === "function" ? processChunk : null;
   const doneHandler = typeof handleDone === "function" ? handleDone : null;
@@ -731,6 +725,38 @@ export const onError = ({
     const normalizedReason = typeof reasonRaw === "string" ? reasonRaw.trim().toLowerCase() : undefined;
 
     if (normalizedReason === "internal_error") {
+      const assistantId = tracking.assistantByClientRef.current[clientMessageId];
+      const currentEntry = assistantId
+        ? replyState.ecoReplyStateRef.current[assistantId]
+        : undefined;
+      const nextIndex =
+        typeof currentEntry?.chunkIndexMax === "number" ? currentEntry.chunkIndexMax + 1 : 0;
+      const messageText = "⚠️ Ocorreu um erro interno. Tente novamente.";
+      const syntheticEvent: Record<string, unknown> = {
+        ...rawEvent,
+        error: true,
+        text: messageText,
+        delta: messageText,
+        message: messageText,
+        payload: {
+          ...(toRecord((rawEvent as { payload?: unknown }).payload) ?? {}),
+          error: true,
+          text: messageText,
+          delta: messageText,
+          message: messageText,
+        },
+      };
+      if (chunkHandler) {
+        try {
+          chunkHandler(nextIndex, messageText, syntheticEvent);
+        } catch (error) {
+        try {
+          console.warn("[SSE-DEBUG] onError_chunk_error", { error });
+        } catch {
+          /* noop */
+        }
+      }
+      }
       sharedContext.streamStats.clientFinishReason = "internal_error";
       diag("stream_error_internal", { clientMessageId: normalizedClientId });
       if (doneHandler) {

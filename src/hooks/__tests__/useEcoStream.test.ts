@@ -2,30 +2,14 @@ import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import * as ecoStreamApi from '../../api/ecoStream';
+import * as streamOrchestrator from '../useEcoStream/streamOrchestrator';
 import type { Message } from '../../contexts/ChatContext';
 import { useEcoStream } from '../useEcoStream';
 import { processSseLine, type ProcessSseHandlers } from '../useEcoStream/chunkProcessor';
 
 describe('useEcoStream.handleSendMessage', () => {
   it('appends a done user message stamped with a numeric createdAt', async () => {
-    const streamResponse = new Response(
-      new ReadableStream<Uint8Array>({
-        start(controller) {
-          controller.close();
-        },
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      },
-    );
-
-    const fetchMock = vi
-      .spyOn(globalThis as { fetch: typeof fetch }, 'fetch')
-      .mockResolvedValue(streamResponse);
-
-    const startEcoStreamSpy = vi.spyOn(ecoStreamApi, 'startEcoStream').mockResolvedValue();
+    const beginStreamSpy = vi.spyOn(streamOrchestrator, 'beginStream').mockResolvedValue({} as any);
 
     try {
       const { result } = renderHook(() => {
@@ -46,10 +30,8 @@ describe('useEcoStream.handleSendMessage', () => {
       });
 
       await waitFor(() => {
-        expect(startEcoStreamSpy).toHaveBeenCalledTimes(1);
+        expect(beginStreamSpy).toHaveBeenCalledTimes(1);
       });
-
-      expect(fetchMock).not.toHaveBeenCalled();
 
       const userMessage = result.current.messages.find((message) => message.sender === 'user');
 
@@ -62,8 +44,7 @@ describe('useEcoStream.handleSendMessage', () => {
         expect(createdAt).toBeGreaterThan(0);
       }
     } finally {
-      fetchMock.mockRestore();
-      startEcoStreamSpy.mockRestore();
+      beginStreamSpy.mockRestore();
     }
   });
 });
