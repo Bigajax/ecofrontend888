@@ -556,9 +556,14 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
                       onDone?.(donePayload);
                       safeClose("server_done");
                     } else {
-                      streamErrored = true;
-                      onError?.(new Error("Stream vazio: backend finalizou sem enviar chunks."));
-                      safeClose("server_error");
+                      // Silenciosamente finalizar. O backend pode fazer isso em casos de no-content.
+                      try {
+                        console.log(
+                          "[SSE] Stream (legacy) finalizado sem chunks e sem texto no 'done'. Tratado como no-content.",
+                        );
+                      } catch {}
+                      onDone?.(evt?.payload); // Passa o payload para o handler de done
+                      safeClose("server_done_no_content"); // Usa um novo motivo de fechamento
                     }
                   } else {
                     onDone?.(evt?.payload);
@@ -598,8 +603,13 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
           closeReason === "watchdog_first_token" || closeReason === "watchdog_heartbeat";
 
         if (!streamErrored && chunks === 0 && !endedByUiAbort && !endedByWatchdog) {
-          streamErrored = true;
-          onError?.(new Error("Stream vazio: backend finalizou sem enviar chunks."));
+          // Não tratar mais como erro, apenas logar.
+          try {
+            console.log(
+              "[SSE] Stream (legacy) finalizado sem emitir chunks. Finalizando silenciosamente.",
+            );
+          } catch {}
+          // A lógica de 'done' agora decide se isso é um erro ou um no-content.
         }
         try {
           await reader.cancel();
@@ -728,16 +738,17 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
 
   const resolveAbortReason = (input: unknown): string => formatAbortReason(input);
 
-  const mapStreamErrorToMessage = (code: string): string => {
+  const mapStreamErrorToMessage = (code: string): string | null => {
     switch (code) {
       case "cors_preflight_failed":
         return "Nao foi possivel iniciar a conexao com a Eco (CORS). Verifique sua internet ou tente novamente.";
       case "sse_ready_timeout":
         return "A Eco demorou para comecar a responder. Tente novamente.";
+      // Esses casos agora são tratados silenciosamente ou com retry. Retornar null suprime o toast/erro.
       case "no_chunks_emitted":
-        return "A Eco nao enviou nenhum conteudo. Tente novamente.";
       case "no_text_before_done":
-        return "A Eco terminou sem enviar conteudo. Tente novamente.";
+      case "no_content":
+        return null;
       default:
         return code;
     }
@@ -964,24 +975,18 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
         if (!doneContext.streamStats.clientFinishReason) {
           doneContext.streamStats.clientFinishReason = "no_text_before_done";
         }
-        if (doneContext.streamStats.clientFinishReason === "no_text_before_done") {
-          try {
-            showToast(NO_TEXT_ALERT_MESSAGE);
-          } catch {
-            /* noop */
-          }
-        }
+        // A lógica de retry e supressão de erro é agora tratada centralmente.
       }
 
       if (noChunksEmitted) {
         const finishReason = doneContext.streamStats.clientFinishReason;
-        if (finishReason !== "user_cancelled") {
-          try {
-            doneContext.setErroApi((prev) => prev ?? "Nenhum chunk emitido antes do encerramento");
-          } catch {
-            /* noop */
-          }
+        if (finishReason !== "user_cancelled" && isDevelopmentEnv) {
+          console.warn(
+            `[EcoStream] Nenhum chunk emitido antes do encerramento. Finalizando silenciosamente.`,
+            { clientMessageId },
+          );
         }
+        // A chamada a setErroApi foi removida para suprimir a bolha de erro.
       }
 
       const finalText = finalContent;
@@ -1285,6 +1290,7 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
   const beginStreamInternal = (
     params: BeginStreamParams,
     deps: ResolvedStreamRunnerDeps,
+    isRetry = false,
   ): Promise<StreamRunStats> | void => {
     const {
       history,
@@ -1690,12 +1696,16 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
         if (suppressedReasons.has(normalizedReason)) {
           return null;
         }
-        return NO_CONTENT_MESSAGE;
+        // return NO_CONTENT_MESSAGE; // Removido para evitar mensagens de erro genéricas
+        return null;
       })();
 
       if (errorMessage) {
         try {
-          setErroApi(errorMessage);
+          if (isDevelopmentEnv) {
+            console.warn("[EcoStream] No content, error suprimido:", { reason, errorMessage });
+          }
+          // setErroApi(errorMessage); // A lógica de erro foi suprimida da UI
         } catch {
           /* noop */
         }
@@ -2302,6 +2312,29 @@ response = await fetchFn(requestUrl, fetchInit);
           bumpHeartbeatWatchdog,
         });
 
+        let retriedNoChunk = isRetry;
+        const retry = () => {
+          if (retriedNoChunk) {
+            if (isDevelopmentEnv) {
+              console.warn("[EcoStream] Retry já tentado, não tentar novamente.");
+            }
+            return;
+          }
+          retriedNoChunk = true;
+          if (isDevelopmentEnv) {
+            console.warn("[EcoStream] Acionando retry em 300ms.");
+          }
+          timers.setTimeout(() => {
+            if (controller.signal.aborted) {
+              if (isDevelopmentEnv) {
+                console.log("[EcoStream] Retry cancelado pois o AbortController foi acionado.");
+              }
+              return;
+            }
+            beginStreamInternal(params, deps, true);
+          }, 300);
+        };
+
         const handleStreamDone = onDone({
           clearTypingWatchdog,
           controller,
@@ -2325,6 +2358,11 @@ response = await fetchFn(requestUrl, fetchInit);
           removeEcoEntry,
           applyMetaToStreamStats,
           extractFinishReasonFromMeta,
+          // Deps para retry
+          collectTexts,
+          processChunk: processChunkEvent,
+          retry,
+          retriedNoChunk,
         });
 
         handleStreamDoneRef = (event, options) => {

@@ -174,6 +174,11 @@ type DoneDeps = {
   removeEcoEntry: RemoveEcoEntryFn;
   applyMetaToStreamStats: (streamStats: StreamRunStats, meta: Record<string, unknown> | undefined) => void;
   extractFinishReasonFromMeta: (event?: Record<string, unknown>) => string | undefined;
+  // Novas dependências para o fluxo de retry
+  collectTexts: CollectTextsFn;
+  processChunk?: ((index: number, delta: string, rawEvent: Record<string, unknown>) => void) | null;
+  retry: () => void;
+  retriedNoChunk: boolean;
 };
 
 type ErrorDeps = {
@@ -594,6 +599,51 @@ export const onDone = ({
       firstChunkAt: metrics?.firstChunkAt ?? streamStats.timing?.firstChunkAt,
       totalMs,
     };
+
+    const endedBeforeFirstChunk = !sharedContext.streamStats.gotAnyChunk;
+
+    if (endedBeforeFirstChunk) {
+      const doneTexts = collectTexts(payloadRecord);
+      const fallbackText =
+        pickStringFromRecords(records, ["text", "finalText"]) ||
+        (Array.isArray(doneTexts) && doneTexts.length > 0 ? doneTexts.join("") : undefined);
+
+      if (fallbackText) {
+        // Encontrou texto no done, processa como um chunk e finaliza normalmente.
+        try {
+          console.log("[SSE] Texto encontrado no evento 'done', usando como fallback.", {
+            length: fallbackText.length,
+          });
+        } catch {}
+        if (typeof processChunk === "function") {
+          processChunk(9999, fallbackText, rawEvent || {});
+          sharedContext.streamStats.gotAnyChunk = true; // Marca que tivemos conteúdo
+        }
+      } else {
+        // Nenhum chunk e nenhum texto no done.
+        if (!retriedNoChunk) {
+          try {
+            console.warn(
+              "[SSE] Stream finalizado sem chunks. Tentando 1 retry silencioso.",
+              { clientMessageId },
+            );
+          } catch {}
+          streamStats.clientFinishReason = "no_chunks_emitted_retry";
+          retry(); // Aciona o retry
+          return; // Interrompe o fluxo de 'done' atual
+        } else {
+          // Já tentou o retry, finaliza silenciosamente.
+          try {
+            console.warn(
+              "[SSE] Retry não produziu chunks. Finalizando como no_content.",
+              { clientMessageId },
+            );
+          } catch {}
+          registerNoContent("no_text_after_retry");
+          streamStats.clientFinishReason = "no_text_before_done";
+        }
+      }
+    }
 
     if (
       !sharedContext.hasFirstChunkRef.current &&
