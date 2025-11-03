@@ -1,3 +1,20 @@
+const toRecordSafe = (input: unknown): Record<string, unknown> => {
+  if (input && typeof input === 'object' && !Array.isArray(input)) {
+    return input as Record<string, unknown>;
+  }
+  if (typeof input === 'string') {
+    try {
+      const parsed = JSON.parse(input);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch (e) {
+      // Not a JSON string, fall through to return empty object
+    }
+  }
+  return {};
+};
+
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 
 import type {
@@ -70,7 +87,6 @@ type ProcessChunkDeps = {
   extractPayloadRecord: ExtractPayloadRecordFn;
   pickStringFromRecords: PickStringFromRecords;
   handleChunk?: HandleChunkFn | null;
-  toRecord: (value: unknown) => Record<string, unknown> | undefined;
 };
 
 type PromptReadyDeps = {
@@ -125,7 +141,6 @@ type DoneDeps = {
   buildRecordChain: BuildRecordChainFn;
   pickStringFromRecords: PickStringFromRecords;
   extractPayloadRecord: ExtractPayloadRecordFn;
-  toRecord: (value: unknown) => Record<string, unknown> | undefined;
   streamTimersRef: MutableRefObject<Record<string, { startedAt: number; firstChunkAt?: number }>>;
   normalizedClientId: string;
   streamStats: StreamRunStats;
@@ -154,7 +169,6 @@ type ErrorDeps = {
   handleDone?: HandleStreamDoneFn | null;
   fatalErrorState: FatalErrorState;
   extractText: ExtractTextFn;
-  toRecord: (value: unknown) => Record<string, unknown> | undefined;
 };
 
 export const processChunk = ({
@@ -170,7 +184,6 @@ export const processChunk = ({
   extractPayloadRecord,
   pickStringFromRecords,
   handleChunk,
-  toRecord,
 }: ProcessChunkDeps) => {
   const chunkHandler = typeof handleChunk === "function" ? handleChunk : null;
   if (!chunkHandler) {
@@ -263,7 +276,7 @@ export const processChunk = ({
     }
 
     const metadataRecord =
-      toRecord(payloadRecord?.metadata) ?? toRecord((rawEvent as Record<string, unknown>)?.metadata);
+      toRecordSafe(payloadRecord?.metadata) ?? toRecordSafe((rawEvent as Record<string, unknown>)?.metadata);
     const interactionId =
       pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
     const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
@@ -411,22 +424,29 @@ export const onControl = ({
   return (rawEvent: Record<string, unknown>) => {
     if (controller.signal.aborted) return;
     if (streamState.fallbackRequested) return;
+
+    const payload = toRecordSafe(rawEvent.payload);
+    const eventRecord = toRecordSafe(rawEvent);
+
+    const name = (typeof payload.name === "string" ? payload.name : typeof eventRecord.name === "string" ? eventRecord.name : "") as string;
+
+    if (!name) {
+      console.warn("[SSE-DEBUG] onControl event without name", { event: rawEvent });
+      return;
+    }
+    
     const records = buildRecordChain(rawEvent);
     const interactionId =
       pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
     const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
-    const payloadRecord = extractPayloadRecord(rawEvent);
-    const name =
-      pickStringFromRecords([toRecord(rawEvent) ?? {}, payloadRecord ?? {}], ["name", "event", "type"]) ??
-      undefined;
-
-    const normalizedName = typeof name === "string" ? name.trim().toLowerCase() : undefined;
+    
+    const normalizedName = name.trim().toLowerCase();
 
     const controlEvent: EcoStreamControlEvent = {
       name,
       interactionId,
       messageId,
-      payload: payloadRecord ?? rawEvent,
+      payload: payload ?? rawEvent,
     };
 
     bumpHeartbeatWatchdog();
@@ -500,7 +520,6 @@ export const onDone = ({
   buildRecordChain,
   pickStringFromRecords,
   extractPayloadRecord,
-  toRecord,
   streamTimersRef,
   normalizedClientId,
   streamStats,
@@ -543,7 +562,7 @@ export const onDone = ({
       setStreamActive(false);
     }
 
-    const eventRecord = toRecord(rawEvent) ?? undefined;
+    const eventRecord = toRecordSafe(rawEvent) ?? undefined;
     const records = buildRecordChain(rawEvent);
     const interactionId =
       pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
@@ -553,7 +572,7 @@ export const onDone = ({
     const clientMetaId =
       pickStringFromRecords(records, ["client_message_id", "clientMessageId"]) ?? undefined;
     const payloadRecord = extractPayloadRecord(rawEvent);
-    const eventMetaRecord = toRecord(eventRecord?.meta) ?? undefined;
+    const eventMetaRecord = toRecordSafe(eventRecord?.meta) ?? undefined;
 
     const now = Date.now();
     const metrics = streamTimersRef.current[normalizedClientId];
@@ -592,11 +611,11 @@ export const onDone = ({
     };
 
     const doneMetaRecord =
-      toRecord(payloadRecord?.meta) ??
-      toRecord(payloadRecord?.metadata) ??
+      toRecordSafe(payloadRecord?.meta) ??
+      toRecordSafe(payloadRecord?.metadata) ??
       eventMetaRecord ??
-      toRecord(eventRecord?.metadata) ??
-      toRecord(payloadRecord);
+      toRecordSafe(eventRecord?.metadata) ??
+      toRecordSafe(payloadRecord);
     if (doneMetaRecord) {
       applyMetaToStreamStats(sharedContext.streamStats, doneMetaRecord);
     } else if (eventMetaRecord) {
@@ -645,7 +664,7 @@ export const onDone = ({
       interactionId: interactionId ?? undefined,
       messageId: messageId ?? undefined,
       createdAt: createdAt ?? undefined,
-      payload: payloadRecord ?? toRecord(rawEvent) ?? undefined,
+      payload: payloadRecord ?? toRecordSafe(rawEvent) ?? undefined,
     };
 
     const doneContext = {
@@ -693,7 +712,6 @@ export const onError = ({
   handleDone,
   fatalErrorState,
   extractText,
-  toRecord,
 }: ErrorDeps) => {
   const chunkHandler = typeof processChunk === "function" ? processChunk : null;
   const doneHandler = typeof handleDone === "function" ? handleDone : null;
@@ -713,38 +731,6 @@ export const onError = ({
     const normalizedReason = typeof reasonRaw === "string" ? reasonRaw.trim().toLowerCase() : undefined;
 
     if (normalizedReason === "internal_error") {
-      const assistantId = tracking.assistantByClientRef.current[clientMessageId];
-      const currentEntry = assistantId
-        ? replyState.ecoReplyStateRef.current[assistantId]
-        : undefined;
-      const nextIndex =
-        typeof currentEntry?.chunkIndexMax === "number" ? currentEntry.chunkIndexMax + 1 : 0;
-      const messageText = "⚠️ Ocorreu um erro interno. Tente novamente.";
-      const syntheticEvent: Record<string, unknown> = {
-        ...rawEvent,
-        error: true,
-        text: messageText,
-        delta: messageText,
-        message: messageText,
-        payload: {
-          ...(toRecord((rawEvent as { payload?: unknown }).payload) ?? {}),
-          error: true,
-          text: messageText,
-          delta: messageText,
-          message: messageText,
-        },
-      };
-      if (chunkHandler) {
-        try {
-          chunkHandler(nextIndex, messageText, syntheticEvent);
-        } catch (error) {
-        try {
-          console.warn("[SSE-DEBUG] onError_chunk_error", { error });
-        } catch {
-          /* noop */
-        }
-      }
-      }
       sharedContext.streamStats.clientFinishReason = "internal_error";
       diag("stream_error_internal", { clientMessageId: normalizedClientId });
       if (doneHandler) {
