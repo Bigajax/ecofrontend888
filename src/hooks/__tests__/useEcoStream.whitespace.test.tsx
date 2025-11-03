@@ -4,24 +4,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEcoStream } from '../useEcoStream';
 import type { Message as ChatMessageType } from '../../contexts/ChatContext';
-import type { StartEcoStreamOptions } from '../../api/ecoStream';
+import type { BeginStreamParams } from '../useEcoStream/streamOrchestrator';
+import { applyChunkToMessages } from '../useEcoStream/chunkProcessor';
 
-let lastStartOptions: StartEcoStreamOptions | null = null;
+let lastStartOptions: BeginStreamParams | null = null;
 
-vi.mock('../../api/ecoStream', async () => {
-  const actual = await vi.importActual<typeof import('../../api/ecoStream')>(
-    '../../api/ecoStream',
+vi.mock('../useEcoStream/streamOrchestrator', async () => {
+  const actual = await vi.importActual<typeof import('../useEcoStream/streamOrchestrator')>(
+    '../useEcoStream/streamOrchestrator',
   );
   return {
     ...actual,
-    startEcoStream: vi.fn(async (options: StartEcoStreamOptions) => {
+    beginStream: vi.fn(async (options: BeginStreamParams) => {
       lastStartOptions = options;
+      options.ensureAssistantMessage(options.userMessage.id, {}, { allowCreate: true });
     }),
   };
 });
 
-const startEcoStreamMock = vi.mocked(
-  (await import('../../api/ecoStream')).startEcoStream,
+const beginStreamMock = vi.mocked(
+  (await import('../useEcoStream/streamOrchestrator')).beginStream,
 );
 
 type HarnessHandle = {
@@ -63,7 +65,7 @@ describe('useEcoStream whitespace handling', () => {
 
   beforeEach(() => {
     lastStartOptions = null;
-    startEcoStreamMock.mockClear();
+    beginStreamMock.mockClear();
   });
 
   it('preserves whitespace from user messages when rendering', async () => {
@@ -88,15 +90,30 @@ describe('useEcoStream whitespace handling', () => {
     });
 
     await waitFor(() => {
-      expect(startEcoStreamMock).toHaveBeenCalled();
+      expect(beginStreamMock).toHaveBeenCalled();
     });
     expect(lastStartOptions).toBeTruthy();
 
     await act(async () => {
-      lastStartOptions?.onChunk?.({
-        index: 0,
-        text: 'Primeira linha\r\n\r\n  Segunda linha  com  espaços  internos',
-      } as any);
+      if (!lastStartOptions) throw new Error('beginStream not called');
+      applyChunkToMessages({
+        clientMessageId: lastStartOptions.userMessage.id,
+        chunk: {
+          index: 0,
+          text: 'Primeira linha\r\n\r\n  Segunda linha  com  espaços  internos',
+        },
+        ensureAssistantMessage: lastStartOptions.ensureAssistantMessage,
+        setDigitando: lastStartOptions.setDigitando,
+        logSse: lastStartOptions.logSse,
+        streamTimersRef: lastStartOptions.streamTimersRef,
+        assistantByClientRef: lastStartOptions.tracking.assistantByClientRef,
+        activeStreamClientIdRef: lastStartOptions.activeStreamClientIdRef,
+        activeAssistantIdRef: lastStartOptions.activeAssistantIdRef,
+        setMessages: lastStartOptions.setMessages,
+        upsertMessage: lastStartOptions.upsertMessage,
+        replyState: lastStartOptions.replyState,
+        tracking: lastStartOptions.tracking,
+      });
     });
 
     const ecoBubbles = await screen.findAllByTestId(/eco-/);
@@ -113,7 +130,7 @@ describe('useEcoStream whitespace handling', () => {
     });
 
     await waitFor(() => {
-      expect(startEcoStreamMock).toHaveBeenCalled();
+      expect(beginStreamMock).toHaveBeenCalled();
     });
     expect(lastStartOptions).toBeTruthy();
 
@@ -122,7 +139,22 @@ describe('useEcoStream whitespace handling', () => {
     expect(latestUserBubble.textContent).toBe('estou bem');
 
     await act(async () => {
-      lastStartOptions?.onChunk?.({ index: 0, text: 'Que bom saber!' } as any);
+      if (!lastStartOptions) throw new Error('beginStream not called');
+      applyChunkToMessages({
+        clientMessageId: lastStartOptions.userMessage.id,
+        chunk: { index: 0, text: 'Que bom saber!' },
+        ensureAssistantMessage: lastStartOptions.ensureAssistantMessage,
+        setDigitando: lastStartOptions.setDigitando,
+        logSse: lastStartOptions.logSse,
+        streamTimersRef: lastStartOptions.streamTimersRef,
+        assistantByClientRef: lastStartOptions.tracking.assistantByClientRef,
+        activeStreamClientIdRef: lastStartOptions.activeStreamClientIdRef,
+        activeAssistantIdRef: lastStartOptions.activeAssistantIdRef,
+        setMessages: lastStartOptions.setMessages,
+        upsertMessage: lastStartOptions.upsertMessage,
+        replyState: lastStartOptions.replyState,
+        tracking: lastStartOptions.tracking,
+      });
     });
 
     const updatedUserBubbles = await screen.findAllByTestId(/user-/);
@@ -139,14 +171,29 @@ describe('useEcoStream whitespace handling', () => {
     });
 
     await waitFor(() => {
-      expect(startEcoStreamMock).toHaveBeenCalled();
+      expect(beginStreamMock).toHaveBeenCalled();
     });
     expect(lastStartOptions).toBeTruthy();
 
     await act(async () => {
-      lastStartOptions?.onChunk?.({ index: 0, text: 'Bom' } as any);
-      lastStartOptions?.onChunk?.({ index: 1, text: ' dia, ' } as any);
-      lastStartOptions?.onChunk?.({ index: 2, text: 'Rafa.' } as any);
+      if (!lastStartOptions) throw new Error('beginStream not called');
+      const baseParams = {
+        clientMessageId: lastStartOptions.userMessage.id,
+        ensureAssistantMessage: lastStartOptions.ensureAssistantMessage,
+        setDigitando: lastStartOptions.setDigitando,
+        logSse: lastStartOptions.logSse,
+        streamTimersRef: lastStartOptions.streamTimersRef,
+        assistantByClientRef: lastStartOptions.tracking.assistantByClientRef,
+        activeStreamClientIdRef: lastStartOptions.activeStreamClientIdRef,
+        activeAssistantIdRef: lastStartOptions.activeAssistantIdRef,
+        setMessages: lastStartOptions.setMessages,
+        upsertMessage: lastStartOptions.upsertMessage,
+        replyState: lastStartOptions.replyState,
+        tracking: lastStartOptions.tracking,
+      };
+      applyChunkToMessages({ ...baseParams, chunk: { index: 0, text: 'Bom' } });
+      applyChunkToMessages({ ...baseParams, chunk: { index: 1, text: ' dia, ' } });
+      applyChunkToMessages({ ...baseParams, chunk: { index: 2, text: 'Rafa.' } });
     });
 
     const ecoBubbles = await screen.findAllByTestId(/eco-/);
