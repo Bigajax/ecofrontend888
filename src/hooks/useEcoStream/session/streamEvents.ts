@@ -541,6 +541,11 @@ export const onDone = ({
   removeEcoEntry,
   applyMetaToStreamStats,
   extractFinishReasonFromMeta,
+  // ✅ novas deps exigidas pelo tipo DoneDeps
+  collectTexts,
+  processChunk,
+  retry,
+  retriedNoChunk,
 }: DoneDeps): HandleStreamDoneFn => {
   const doneHandler = typeof handleDone === "function" ? handleDone : null;
   if (!doneHandler) {
@@ -567,7 +572,7 @@ export const onDone = ({
       setStreamActive(false);
     }
 
-    const eventRecord = toRecordSafe(rawEvent) ?? undefined;
+    const eventRecord = toRecordSafe(rawEvent) || undefined;
 
     const records = buildRecordChain(rawEvent);
     const interactionId =
@@ -579,7 +584,7 @@ export const onDone = ({
       pickStringFromRecords(records, ["client_message_id", "clientMessageId"]) ?? undefined;
     const payloadRecord = extractPayloadRecord(rawEvent);
 
-    const eventMetaRecord = toRecordSafe((eventRecord as any)?.meta) ?? undefined;
+    const eventMetaRecord = toRecordSafe((eventRecord as any)?.meta) || undefined;
 
     const now = Date.now();
     const metrics = streamTimersRef.current[normalizedClientId];
@@ -600,6 +605,7 @@ export const onDone = ({
       totalMs,
     };
 
+    // ✅ calcular UMA vez e reutilizar
     const endedBeforeFirstChunk = !sharedContext.streamStats.gotAnyChunk;
 
     if (endedBeforeFirstChunk) {
@@ -609,60 +615,33 @@ export const onDone = ({
         (Array.isArray(doneTexts) && doneTexts.length > 0 ? doneTexts.join("") : undefined);
 
       if (fallbackText) {
-        // Encontrou texto no done, processa como um chunk e finaliza normalmente.
         try {
           console.log("[SSE] Texto encontrado no evento 'done', usando como fallback.", {
             length: fallbackText.length,
           });
         } catch {}
         if (typeof processChunk === "function") {
+          // index alto proposital para não colidir com a sequência real
           processChunk(9999, fallbackText, rawEvent || {});
-          sharedContext.streamStats.gotAnyChunk = true; // Marca que tivemos conteúdo
+          sharedContext.streamStats.gotAnyChunk = true;
         }
       } else {
-        // Nenhum chunk e nenhum texto no done.
         if (!retriedNoChunk) {
           try {
-            console.warn(
-              "[SSE] Stream finalizado sem chunks. Tentando 1 retry silencioso.",
-              { clientMessageId },
-            );
+            console.warn("[SSE] Stream finalizado sem chunks. Tentando 1 retry silencioso.", { clientMessageId });
           } catch {}
           streamStats.clientFinishReason = "no_chunks_emitted_retry";
-          retry(); // Aciona o retry
-          return; // Interrompe o fluxo de 'done' atual
+          retry();
+          return; // interrompe este ciclo de done — o retry assumirá
         } else {
-          // Já tentou o retry, finaliza silenciosamente.
           try {
-            console.warn(
-              "[SSE] Retry não produziu chunks. Finalizando como no_content.",
-              { clientMessageId },
-            );
+            console.warn("[SSE] Retry não produziu chunks. Finalizando como no_content.", { clientMessageId });
           } catch {}
           registerNoContent("no_text_after_retry");
           streamStats.clientFinishReason = "no_text_before_done";
         }
       }
     }
-
-    if (
-      !sharedContext.hasFirstChunkRef.current &&
-      (doneReason === "done_message_compat" || doneReason === "stream_aborted")
-    ) {
-      registerNoContent(doneReason);
-    }
-
-    logSse("done", { clientMessageId: normalizedClientId, totalMs, reason: doneReason });
-    delete streamTimersRef.current[normalizedClientId];
-
-    const ensureMeta: EnsureAssistantEventMeta = {
-      interactionId: interactionId ?? null,
-      messageId: messageId ?? null,
-      message_id: messageId ?? null,
-      clientMessageId: clientMetaId ?? null,
-      client_message_id: clientMetaId ?? null,
-      createdAt: createdAt ?? null,
-    };
 
     const doneMetaRecord =
       toRecordSafe((payloadRecord as any)?.meta) ||
@@ -692,7 +671,6 @@ export const onDone = ({
       return undefined;
     })();
 
-    const endedBeforeFirstChunk = !sharedContext.streamStats.gotAnyChunk;
     const serverReportedClientDisconnect = finishReasonNormalized === "client_disconnect";
     if (endedBeforeFirstChunk && serverReportedClientDisconnect) {
       try {
@@ -703,13 +681,30 @@ export const onDone = ({
         });
       } catch {}
       registerNoContent("client_disconnect");
-      const ensuredAssistantId = ensureAssistantForNoContent(ensureMeta);
+      const ensuredAssistantId = ensureAssistantForNoContent({
+        interactionId: interactionId ?? null,
+        messageId: messageId ?? null,
+        message_id: messageId ?? null,
+        clientMessageId: clientMetaId ?? null,
+        client_message_id: clientMetaId ?? null,
+        createdAt: createdAt ?? null,
+      });
       if (ensuredAssistantId) {
         sharedContext.activeAssistantIdRef.current = ensuredAssistantId;
       }
     }
 
-    const assistantId = sharedContext.ensureAssistantMessage(clientMessageId, ensureMeta);
+    logSse("done", { clientMessageId: normalizedClientId, totalMs, reason: doneReason });
+    delete streamTimersRef.current[normalizedClientId];
+
+    const assistantId = sharedContext.ensureAssistantMessage(clientMessageId, {
+      interactionId: interactionId ?? null,
+      messageId: messageId ?? null,
+      message_id: messageId ?? null,
+      clientMessageId: clientMetaId ?? null,
+      client_message_id: clientMetaId ?? null,
+      createdAt: createdAt ?? null,
+    });
     if (!assistantId) return;
 
     sharedContext.activeAssistantIdRef.current = assistantId;
