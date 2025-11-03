@@ -43,7 +43,7 @@ const TypingDots: React.FC<Props> = ({
   tone = "auto",
   paused = false,
   speed = 1,
-  ariaLabel = "Eco está digitando",
+  ariaLabel = "Eco refletindo…",
   density = "airy",
 }) => {
   void tone;

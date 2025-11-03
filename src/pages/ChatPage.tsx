@@ -632,8 +632,7 @@ function ChatPage() {
               className="opacity-0 translate-y-1 transition-opacity transition-transform duration-[160ms] ease-out data-[state=enter]:opacity-100 data-[state=visible]:opacity-100 data-[state=enter]:translate-y-0 data-[state=visible]:translate-y-0 data-[state=exit]:opacity-0 data-[state=exit]:translate-y-1"
               data-state={globalTypingState === 'hidden' ? undefined : globalTypingState}
             >
-              <span data-testid="typing-dots" className="sr-only">
-                digitando…
+              <span data-testid="typing-dots" className="                Eco refletindo…
               </span>
               <TypingDots variant="bubble" size="md" tone="auto" />
             </div>
@@ -711,9 +710,9 @@ function ChatPage() {
 
               <div className="mt-8 w-full max-w-[min(700px,92vw)] text-left sm:mt-10">
                 {(shouldShowGlobalTyping || isEcoStreamTyping) && (
-                  <span data-testid="typing-dots" className="sr-only" aria-hidden>
-                    digitando…
-                  </span>
+              <span data-testid="typing-dots" className="sr-only">
+                Eco refletindo…
+              </span>
                 )}
                 <MessageList
                   messages={messages}

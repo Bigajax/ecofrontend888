@@ -119,18 +119,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
             {showTypingDots ? (
               <span aria-live="polite" className="inline-flex items-center gap-2 text-gray-600">
                 <TypingDots />
-                {showTypingPlaceholder && <span>digitando…</span>}
+
               </span>
             ) : (
               <span className="chat-message-text">{textToShow}</span>
             )}
           </div>
           {isStreaming && !hasVisibleText && (
-            <div className="mt-1 flex items-center gap-2 text-gray-500">
-              <span>digitando...</span>
-              <span className="text-xs">
-                (aguardando resposta... {streamingSeconds ?? 0}s)
-              </span>
+            <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 italic">
+              <span>Eco refletindo...</span>
             </div>
           )}
           {finishReasonLabel && (
