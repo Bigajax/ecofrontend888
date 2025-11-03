@@ -621,7 +621,20 @@ function ChatPage() {
   const footerStyle: CSSProperties = {
     paddingBottom: safeAreaBottom + 16,
     '--footer-h': `${computedInputHeight}px`,
-  };
+  } as CSSProperties & { ['--footer-h']?: string };
+
+  // ---------------------------------------------------------------------------
+  // ÚNICO indicador global de "digitando" (evita duplicidade)
+  // ---------------------------------------------------------------------------
+  const typingIndicatorNode = useMemo(() => {
+    if (!(shouldShowGlobalTyping || isEcoStreamTyping)) return null;
+    return (
+      <div className="flex items-center gap-2 mt-1" role="status" aria-live="polite">
+        <TypingDots variant="bubble" size="md" tone="auto" />
+        <span className="text-gray-500 italic">Eco refletindo…</span>
+      </div>
+    );
+  }, [shouldShowGlobalTyping, isEcoStreamTyping]);
 
   return (
     <div
@@ -683,11 +696,6 @@ function ChatPage() {
               )}
 
               <div className="mt-8 w-full max-w-[min(700px,92vw)] text-left sm:mt-10">
-                {(shouldShowGlobalTyping || isEcoStreamTyping) && (
-              <span data-testid="typing-dots" className="sr-only">
-                Eco refletindo…
-              </span>
-                )}
                 <MessageList
                   messages={messages}
                   prefersReducedMotion={prefersReducedMotion}
