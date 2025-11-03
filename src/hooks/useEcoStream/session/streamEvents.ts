@@ -1,41 +1,41 @@
 /* -------------------------------------------------------------------------- */
-/*  streamEvents.ts — correção de referência a toRecord (usa toRecordSafe)   */
+/*  streamEvents.ts — correção de referência a toRecord (usa helper local)    */
 /* -------------------------------------------------------------------------- */
 
 // Helper local para normalizar qualquer valor em Record<string, unknown>
 export const toRecordSafe = (input: unknown): Record<string, unknown> => {
-  if (input && typeof input === 'object' && !Array.isArray(input)) {
+  if (input && typeof input === "object" && !Array.isArray(input)) {
     return input as Record<string, unknown>;
   }
-  if (typeof input === 'string') {
+  if (typeof input === "string") {
     try {
       const parsed = JSON.parse(input);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         return parsed as Record<string, unknown>;
       }
     } catch {
-      // não é JSON; segue para retorno padrão
+      /* não é JSON; segue */
     }
   }
   return {};
 };
 
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
+import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 
 import type {
   EcoStreamChunk,
   EcoStreamControlEvent,
   EcoStreamDoneEvent,
   EcoStreamPromptReadyEvent,
-} from '../../../api/ecoStream';
+} from "../../../api/ecoStream";
 import type {
   EnsureAssistantEventMeta,
   MessageTrackingRefs,
   ReplyStateController,
-} from '../messageState';
-import type { StreamRunStats, StreamSharedContext, RemoveEcoEntryFn } from '../types';
+} from "../messageState";
+import type { StreamRunStats, StreamSharedContext, RemoveEcoEntryFn } from "../types";
 
-// ---------- Tipagens utilitárias ----------
+/* ------------------------------ Tipagens util ----------------------------- */
 
 type PickStringFromRecords = (
   records: Array<Record<string, unknown> | undefined>,
@@ -44,9 +44,7 @@ type PickStringFromRecords = (
 
 type BuildRecordChainFn = (event?: Record<string, unknown>) => Record<string, unknown>[];
 
-type ExtractPayloadRecordFn = (
-  event?: Record<string, unknown>,
-) => Record<string, unknown> | undefined;
+type ExtractPayloadRecordFn = (event?: Record<string, unknown>) => Record<string, unknown> | undefined;
 
 type CollectTextsFn = (payload: unknown) => string[] | undefined;
 
@@ -72,14 +70,11 @@ type DoneHandler = (
   },
 ) => void;
 
-type HandleStreamDoneFn = (
-  rawEvent?: Record<string, unknown>,
-  options?: { reason?: string },
-) => void;
+type HandleStreamDoneFn = (rawEvent?: Record<string, unknown>, options?: { reason?: string }) => void;
 
 type ExtractTextFn = (event: Record<string, unknown>) => string | undefined;
 
-// ---------- Estados internos ----------
+/* --------------------------------- Estados -------------------------------- */
 
 type StreamState = {
   fallbackRequested: boolean;
@@ -91,14 +86,14 @@ type DoneState = { value: boolean };
 
 type FatalErrorState = { current: Error | null };
 
-// ---------- Funções passadas por dependências ----------
+/* --------------------------------- Logs SSE -------------------------------- */
 
 type LogSseFn = (
-  phase: 'open' | 'start' | 'first-chunk' | 'delta' | 'done' | 'abort',
+  phase: "open" | "start" | "first-chunk" | "delta" | "done" | "abort",
   payload: Record<string, unknown>,
 ) => void;
 
-// ---------- Conjuntos de dependências por handler ----------
+/* -------------------- Conjuntos de dependências por handler -------------------- */
 
 type ProcessChunkDeps = {
   controller: AbortController;
@@ -113,7 +108,6 @@ type ProcessChunkDeps = {
   extractPayloadRecord: ExtractPayloadRecordFn;
   pickStringFromRecords: PickStringFromRecords;
   handleChunk?: HandleChunkFn | null;
-  toRecordSafe: (value: unknown) => Record<string, unknown>;
 };
 
 type PromptReadyDeps = {
@@ -141,7 +135,6 @@ type ControlDeps = {
   normalizedClientId: string;
   handleControl?: HandleControlFn | null;
   sharedContext: StreamSharedContext;
-  toRecordSafe: (value: unknown) => Record<string, unknown>;
 };
 
 type MessageDeps = {
@@ -179,11 +172,7 @@ type DoneDeps = {
   handleDone?: DoneHandler | null;
   setErroApi: Dispatch<SetStateAction<string | null>>;
   removeEcoEntry: RemoveEcoEntryFn;
-  applyMetaToStreamStats: (
-    streamStats: StreamRunStats,
-    meta: Record<string, unknown> | undefined,
-  ) => void;
-  toRecordSafe: (value: unknown) => Record<string, unknown>;
+  applyMetaToStreamStats: (streamStats: StreamRunStats, meta: Record<string, unknown> | undefined) => void;
   extractFinishReasonFromMeta: (event?: Record<string, unknown>) => string | undefined;
 };
 
@@ -201,10 +190,9 @@ type ErrorDeps = {
   handleDone?: HandleStreamDoneFn | null;
   fatalErrorState: FatalErrorState;
   extractText: ExtractTextFn;
-  toRecordSafe: (value: unknown) => Record<string, unknown>;
 };
 
-// ===================== Handlers =====================
+/* ============================= Handlers principais ============================= */
 
 export const processChunk = ({
   controller,
@@ -219,17 +207,14 @@ export const processChunk = ({
   extractPayloadRecord,
   pickStringFromRecords,
   handleChunk,
-  toRecordSafe,
 }: ProcessChunkDeps) => {
-  const chunkHandler = typeof handleChunk === 'function' ? handleChunk : null;
+  const chunkHandler = typeof handleChunk === "function" ? handleChunk : null;
   if (!chunkHandler) {
     try {
-      console.debug('[SSE-DEBUG] onChunk missing');
-    } catch {
-      /* noop */
-    }
+      console.debug("[SSE-DEBUG] onChunk missing");
+    } catch {}
   }
-  const firstChunkHandler = typeof onFirstChunk === 'function' ? onFirstChunk : null;
+  const firstChunkHandler = typeof onFirstChunk === "function" ? onFirstChunk : null;
 
   return (index: number, delta: string, rawEvent: Record<string, unknown>) => {
     if (controller.signal.aborted) return;
@@ -238,21 +223,21 @@ export const processChunk = ({
     const payloadRecord = extractPayloadRecord(rawEvent);
     const records = buildRecordChain(rawEvent);
 
-    let effectiveDelta = typeof delta === 'string' ? delta : '';
+    let effectiveDelta = typeof delta === "string" ? delta : "";
     let trimmedDelta = effectiveDelta.trim();
 
     if (!trimmedDelta) {
       const fallbackText =
-        pickStringFromRecords(records, ['message', 'detail', 'reason', 'warning', 'warn']) ??
+        pickStringFromRecords(records, ["message", "detail", "reason", "warning", "warn"]) ??
         (() => {
           const payloadMessage =
-            typeof payloadRecord === 'object' && payloadRecord
-              ? pickStringFromRecords([payloadRecord], ['message', 'detail', 'reason'])
+            typeof payloadRecord === "object" && payloadRecord
+              ? pickStringFromRecords([payloadRecord], ["message", "detail", "reason"])
               : undefined;
           return payloadMessage ?? undefined;
         })();
 
-      const normalizedFallback = typeof fallbackText === 'string' ? fallbackText.trim() : '';
+      const normalizedFallback = typeof fallbackText === "string" ? fallbackText.trim() : "";
       if (normalizedFallback) {
         const hasAlertFlag =
           (rawEvent as { error?: unknown }).error === true ||
@@ -275,49 +260,47 @@ export const processChunk = ({
     sharedContext.hasFirstChunkRef.current = true;
     streamStats.gotAnyChunk = true;
     streamStats.aggregatedLength += effectiveDelta.length;
+
     if (!streamState.firstChunkDelivered) {
       streamState.firstChunkDelivered = true;
       clearFallbackGuardTimer();
       try {
-        console.log('[SSE-DEBUG] first_chunk_received', {
+        console.log("[SSE-DEBUG] first_chunk_received", {
           clientMessageId: sharedContext.clientMessageId,
           streamId: sharedContext.streamStats.streamId ?? null,
         });
-      } catch {
-        /* noop */
-      }
+      } catch {}
       if (firstChunkHandler) {
         try {
           firstChunkHandler();
         } catch (error) {
           try {
-            console.warn('[SSE-DEBUG] onFirstChunk_error', { error });
-          } catch {
-            /* noop */
-          }
+            console.warn("[SSE-DEBUG] onFirstChunk_error", { error });
+          } catch {}
         }
       }
     } else {
       clearFallbackGuardTimer();
     }
+
     bumpFirstTokenWatchdog();
+
     try {
-      console.debug('[SSE] chunk', {
+      console.debug("[SSE] chunk", {
         idx: index,
         len: effectiveDelta.length,
         sample: effectiveDelta.slice(0, 40),
       });
-    } catch {
-      /* noop */
-    }
+    } catch {}
 
     const metadataRecord =
       toRecordSafe((payloadRecord as any)?.metadata) ?? toRecordSafe((rawEvent as any)?.metadata);
+
     const interactionId =
-      pickStringFromRecords(records, ['interaction_id', 'interactionId', 'interactionID']) ?? undefined;
-    const messageId = pickStringFromRecords(records, ['message_id', 'messageId', 'id']) ?? undefined;
+      pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
+    const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
     const createdAt =
-      pickStringFromRecords(records, ['created_at', 'createdAt', 'timestamp']) ?? undefined;
+      pickStringFromRecords(records, ["created_at", "createdAt", "timestamp"]) ?? undefined;
 
     const chunk: EcoStreamChunk = {
       index,
@@ -335,10 +318,8 @@ export const processChunk = ({
         chunkHandler(chunk, sharedContext);
       } catch (error) {
         try {
-          console.warn('[SSE-DEBUG] onChunk_error', { error });
-        } catch {
-          /* noop */
-        }
+          console.warn("[SSE-DEBUG] onChunk_error", { error });
+        } catch {}
       }
     }
   };
@@ -357,56 +338,51 @@ export const onPromptReady = ({
   handlePromptReady,
   sharedContext,
 }: PromptReadyDeps) => {
-  const readyHandler = typeof onReady === 'function' ? onReady : null;
+  const readyHandler = typeof onReady === "function" ? onReady : null;
   if (!readyHandler) {
     try {
-      console.debug('[SSE-DEBUG] onReady missing');
-    } catch {
-      /* noop */
-    }
+      console.debug("[SSE-DEBUG] onReady missing");
+    } catch {}
   }
-  const promptHandler = typeof handlePromptReady === 'function' ? handlePromptReady : null;
+  const promptHandler = typeof handlePromptReady === "function" ? handlePromptReady : null;
   if (!promptHandler) {
     try {
-      console.debug('[SSE-DEBUG] onPromptReady missing');
-    } catch {
-      /* noop */
-    }
+      console.debug("[SSE-DEBUG] onPromptReady missing");
+    } catch {}
   }
 
   return (rawEvent: Record<string, unknown>) => {
     if (controller.signal.aborted) return;
     if (streamState.fallbackRequested) return;
+
     if (!streamState.readyReceived) {
       streamState.readyReceived = true;
       try {
-        console.log('[SSE-DEBUG] ready_received', {
+        console.log("[SSE-DEBUG] ready_received", {
           clientMessageId: sharedContext.clientMessageId,
           streamId: sharedContext.streamStats.streamId ?? null,
         });
-      } catch {
-        /* noop */
-      }
+      } catch {}
       sharedContext.readyStateRef.current = true;
       if (readyHandler) {
         try {
           readyHandler();
         } catch (error) {
           try {
-            console.warn('[SSE-DEBUG] onReady_error', { error });
-          } catch {
-            /* noop */
-          }
+            console.warn("[SSE-DEBUG] onReady_error", { error });
+          } catch {}
         }
       }
     }
+
     markPromptReadyWatchdog();
+
     const records = buildRecordChain(rawEvent);
     const interactionId =
-      pickStringFromRecords(records, ['interaction_id', 'interactionId', 'interactionID']) ?? undefined;
-    const messageId = pickStringFromRecords(records, ['message_id', 'messageId', 'id']) ?? undefined;
+      pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
+    const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
     const createdAt =
-      pickStringFromRecords(records, ['created_at', 'createdAt', 'timestamp']) ?? undefined;
+      pickStringFromRecords(records, ["created_at", "createdAt", "timestamp"]) ?? undefined;
     const payloadRecord = extractPayloadRecord(rawEvent);
 
     const promptEvent: EcoStreamPromptReadyEvent = {
@@ -416,7 +392,7 @@ export const onPromptReady = ({
       payload: payloadRecord ?? rawEvent,
     };
 
-    diag('prompt_ready', {
+    diag("prompt_ready", {
       clientMessageId: normalizedClientId,
       interactionId: promptEvent.interactionId ?? null,
       messageId: promptEvent.messageId ?? null,
@@ -427,10 +403,8 @@ export const onPromptReady = ({
         promptHandler(promptEvent, sharedContext);
       } catch (error) {
         try {
-          console.warn('[SSE-DEBUG] onPromptReady_error', { error });
-        } catch {
-          /* noop */
-        }
+          console.warn("[SSE-DEBUG] onPromptReady_error", { error });
+        } catch {}
       }
     }
   };
@@ -447,30 +421,31 @@ export const onControl = ({
   normalizedClientId,
   handleControl,
   sharedContext,
-  toRecordSafe,
 }: ControlDeps) => {
-  const controlHandler = typeof handleControl === 'function' ? handleControl : null;
+  const controlHandler = typeof handleControl === "function" ? handleControl : null;
   if (!controlHandler) {
     try {
-      console.debug('[SSE-DEBUG] onControl missing');
-    } catch {
-      /* noop */
-    }
+      console.debug("[SSE-DEBUG] onControl missing");
+    } catch {}
   }
 
   return (rawEvent: Record<string, unknown>) => {
     if (controller.signal.aborted) return;
     if (streamState.fallbackRequested) return;
+
     const records = buildRecordChain(rawEvent);
     const interactionId =
-      pickStringFromRecords(records, ['interaction_id', 'interactionId', 'interactionID']) ?? undefined;
-    const messageId = pickStringFromRecords(records, ['message_id', 'messageId', 'id']) ?? undefined;
+      pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
+    const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
     const payloadRecord = extractPayloadRecord(rawEvent);
-    const name =
-      pickStringFromRecords([toRecordSafe(rawEvent), payloadRecord ?? {}], ['name', 'event', 'type']) ??
-      undefined;
 
-    const normalizedName = typeof name === 'string' ? name.trim().toLowerCase() : undefined;
+    const name =
+      pickStringFromRecords(
+        [toRecordSafe(rawEvent), payloadRecord ?? {}],
+        ["name", "event", "type"],
+      ) ?? undefined;
+
+    const normalizedName = typeof name === "string" ? name.trim().toLowerCase() : undefined;
 
     const controlEvent: EcoStreamControlEvent = {
       name,
@@ -480,18 +455,15 @@ export const onControl = ({
     };
 
     bumpHeartbeatWatchdog();
-
-    diag('control_event', { name: normalizedName ?? name, clientMessageId: normalizedClientId });
+    diag("control_event", { name: normalizedName ?? name, clientMessageId: normalizedClientId });
 
     if (controlHandler) {
       try {
         controlHandler(controlEvent, sharedContext);
       } catch (error) {
         try {
-          console.warn('[SSE-DEBUG] onControl_error', { error });
-        } catch {
-          /* noop */
-        }
+          console.warn("[SSE-DEBUG] onControl_error", { error });
+        } catch {}
       }
     }
   };
@@ -513,18 +485,21 @@ export const onMessage = ({
   return (rawEvent: Record<string, unknown>) => {
     if (controller.signal.aborted) return;
     if (streamState.fallbackRequested) return;
+
     const payloadRecord = extractPayloadRecord(rawEvent);
     const records = buildRecordChain(rawEvent);
+
     const directText =
-      pickStringFromRecords(records, ['text', 'delta', 'content']) ??
+      pickStringFromRecords(records, ["text", "delta", "content"]) ??
       (() => {
         const collected = collectTexts(payloadRecord);
         if (Array.isArray(collected) && collected.length > 0) {
-          return collected.join('');
+          return collected.join("");
         }
         return undefined;
       })();
-    const normalized = typeof directText === 'string' ? directText.trim() : '';
+
+    const normalized = typeof directText === "string" ? directText.trim() : "";
     if (normalized) {
       sharedContext.hasFirstChunkRef.current = true;
       streamState.firstChunkDelivered = true;
@@ -533,6 +508,7 @@ export const onMessage = ({
       bumpFirstTokenWatchdog();
       return;
     }
+
     bumpHeartbeatWatchdog();
   };
 };
@@ -559,16 +535,13 @@ export const onDone = ({
   setErroApi,
   removeEcoEntry,
   applyMetaToStreamStats,
-  toRecordSafe,
   extractFinishReasonFromMeta,
 }: DoneDeps): HandleStreamDoneFn => {
-  const doneHandler = typeof handleDone === 'function' ? handleDone : null;
+  const doneHandler = typeof handleDone === "function" ? handleDone : null;
   if (!doneHandler) {
     try {
-      console.debug('[SSE-DEBUG] onDone missing');
-    } catch {
-      /* noop */
-    }
+      console.debug("[SSE-DEBUG] onDone missing");
+    } catch {}
   }
 
   return (rawEvent?: Record<string, unknown>, options?: { reason?: string }) => {
@@ -580,51 +553,56 @@ export const onDone = ({
     if (sharedContext.activeStreamClientIdRef.current === clientMessageId) {
       streamActiveRef.current = false;
       try {
-        console.debug('[DIAG] setStreamActive:before', {
+        console.debug("[DIAG] setStreamActive:before", {
           clientMessageId,
           value: false,
-          phase: 'handleStreamDone',
+          phase: "handleStreamDone",
         });
-      } catch {
-        /* noop */
-      }
+      } catch {}
       setStreamActive(false);
     }
 
     const eventRecord = toRecordSafe(rawEvent) ?? undefined;
+
     const records = buildRecordChain(rawEvent);
     const interactionId =
-      pickStringFromRecords(records, ['interaction_id', 'interactionId', 'interactionID']) ?? undefined;
-    const messageId = pickStringFromRecords(records, ['message_id', 'messageId', 'id']) ?? undefined;
+      pickStringFromRecords(records, ["interaction_id", "interactionId", "interactionID"]) ?? undefined;
+    const messageId = pickStringFromRecords(records, ["message_id", "messageId", "id"]) ?? undefined;
     const createdAt =
-      pickStringFromRecords(records, ['created_at', 'createdAt', 'timestamp']) ?? undefined;
+      pickStringFromRecords(records, ["created_at", "createdAt", "timestamp"]) ?? undefined;
     const clientMetaId =
-      pickStringFromRecords(records, ['client_message_id', 'clientMessageId']) ?? undefined;
+      pickStringFromRecords(records, ["client_message_id", "clientMessageId"]) ?? undefined;
     const payloadRecord = extractPayloadRecord(rawEvent);
+
     const eventMetaRecord = toRecordSafe((eventRecord as any)?.meta) ?? undefined;
 
     const now = Date.now();
     const metrics = streamTimersRef.current[normalizedClientId];
     const totalMs = metrics ? now - metrics.startedAt : undefined;
+
     const doneReason = (() => {
       if (options?.reason) return options.reason;
       if (rawEvent) {
-        if ((rawEvent as { done?: unknown }).done === true) {
-          return 'done_message_compat';
-        }
-        return payloadRecord ? 'server-done' : 'server-done-empty';
+        if ((rawEvent as { done?: unknown }).done === true) return "done_message_compat";
+        return payloadRecord ? "server-done" : "server-done-empty";
       }
-      return 'missing-event';
+      return "missing-event";
     })();
+
     streamStats.timing = {
       startedAt: metrics?.startedAt ?? streamStats.timing?.startedAt,
       firstChunkAt: metrics?.firstChunkAt ?? streamStats.timing?.firstChunkAt,
       totalMs,
     };
-    if (!sharedContext.hasFirstChunkRef.current && (doneReason === 'done_message_compat' || doneReason === 'stream_aborted')) {
+
+    if (
+      !sharedContext.hasFirstChunkRef.current &&
+      (doneReason === "done_message_compat" || doneReason === "stream_aborted")
+    ) {
       registerNoContent(doneReason);
     }
-    logSse('done', { clientMessageId: normalizedClientId, totalMs, reason: doneReason });
+
+    logSse("done", { clientMessageId: normalizedClientId, totalMs, reason: doneReason });
     delete streamTimersRef.current[normalizedClientId];
 
     const ensureMeta: EnsureAssistantEventMeta = {
@@ -642,6 +620,7 @@ export const onDone = ({
       eventMetaRecord ||
       toRecordSafe((eventRecord as any)?.metadata) ||
       toRecordSafe(payloadRecord);
+
     if (doneMetaRecord) {
       applyMetaToStreamStats(sharedContext.streamStats, doneMetaRecord);
     } else if (eventMetaRecord) {
@@ -656,25 +635,24 @@ export const onDone = ({
 
     const finishReasonNormalized = (() => {
       const finishReason = sharedContext.streamStats.finishReasonFromMeta;
-      if (typeof finishReason === 'string') {
+      if (typeof finishReason === "string") {
         const trimmed = finishReason.trim().toLowerCase();
         return trimmed || undefined;
       }
       return undefined;
     })();
+
     const endedBeforeFirstChunk = !sharedContext.streamStats.gotAnyChunk;
-    const serverReportedClientDisconnect = finishReasonNormalized === 'client_disconnect';
+    const serverReportedClientDisconnect = finishReasonNormalized === "client_disconnect";
     if (endedBeforeFirstChunk && serverReportedClientDisconnect) {
       try {
-        console.warn('[DIAG] server_reported_client_disconnect', {
+        console.warn("[DIAG] server_reported_client_disconnect", {
           clientMessageId,
           totalMs,
           finishReason: sharedContext.streamStats.finishReasonFromMeta ?? null,
         });
-      } catch {
-        /* noop */
-      }
-      registerNoContent('client_disconnect');
+      } catch {}
+      registerNoContent("client_disconnect");
       const ensuredAssistantId = ensureAssistantForNoContent(ensureMeta);
       if (ensuredAssistantId) {
         sharedContext.activeAssistantIdRef.current = ensuredAssistantId;
@@ -702,23 +680,19 @@ export const onDone = ({
     };
 
     try {
-      console.log('[SSE-DEBUG] done_received', {
+      console.log("[SSE-DEBUG] done_received", {
         clientMessageId: sharedContext.clientMessageId,
         streamId: sharedContext.streamStats.streamId ?? null,
       });
-    } catch {
-      /* noop */
-    }
+    } catch {}
 
     if (doneHandler) {
       try {
         doneHandler(doneContext);
       } catch (error) {
         try {
-          console.warn('[SSE-DEBUG] onDone_error', { error });
-        } catch {
-          /* noop */
-        }
+          console.warn("[SSE-DEBUG] onDone_error", { error });
+        } catch {}
       }
     }
   };
@@ -738,30 +712,30 @@ export const onError = ({
   handleDone,
   fatalErrorState,
   extractText,
-  toRecordSafe,
 }: ErrorDeps) => {
-  const chunkHandler = typeof processChunk === 'function' ? processChunk : null;
-  const doneHandler = typeof handleDone === 'function' ? handleDone : null;
+  const chunkHandler = typeof processChunk === "function" ? processChunk : null;
+  const doneHandler = typeof handleDone === "function" ? handleDone : null;
   if (!chunkHandler || !doneHandler) {
     try {
-      console.debug('[SSE-DEBUG] onError missing');
-    } catch {
-      /* noop */
-    }
+      console.debug("[SSE-DEBUG] onError missing");
+    } catch {}
   }
 
   return (rawEvent: Record<string, unknown>) => {
     bumpHeartbeatWatchdog();
-    const records = buildRecordChain(rawEvent);
-    const reasonRaw = pickStringFromRecords(records, ['reason', 'error', 'code', 'type']) ?? undefined;
-    const normalizedReason = typeof reasonRaw === 'string' ? reasonRaw.trim().toLowerCase() : undefined;
 
-    if (normalizedReason === 'internal_error') {
+    const records = buildRecordChain(rawEvent);
+    const reasonRaw = pickStringFromRecords(records, ["reason", "error", "code", "type"]) ?? undefined;
+    const normalizedReason = typeof reasonRaw === "string" ? reasonRaw.trim().toLowerCase() : undefined;
+
+    if (normalizedReason === "internal_error") {
       const assistantId = tracking.assistantByClientRef.current[clientMessageId];
       const currentEntry = assistantId ? replyState.ecoReplyStateRef.current[assistantId] : undefined;
       const nextIndex =
-        typeof currentEntry?.chunkIndexMax === 'number' ? currentEntry.chunkIndexMax + 1 : 0;
-      const messageText = '⚠️ Ocorreu um erro interno. Tente novamente.';
+        typeof currentEntry?.chunkIndexMax === "number" ? currentEntry.chunkIndexMax + 1 : 0;
+
+      const messageText = "⚠️ Ocorreu um erro interno. Tente novamente.";
+
       const syntheticEvent: Record<string, unknown> = {
         ...rawEvent,
         error: true,
@@ -769,37 +743,37 @@ export const onError = ({
         delta: messageText,
         message: messageText,
         payload: {
-          ...toRecordSafe((rawEvent as { payload?: unknown }).payload),
+          ...(toRecordSafe((rawEvent as { payload?: unknown }).payload) ?? {}),
           error: true,
           text: messageText,
           delta: messageText,
           message: messageText,
         },
       };
+
       if (chunkHandler) {
         try {
           chunkHandler(nextIndex, messageText, syntheticEvent);
         } catch (error) {
           try {
-            console.warn('[SSE-DEBUG] onError_chunk_error', { error });
-          } catch {
-            /* noop */
-          }
+            console.warn("[SSE-DEBUG] onError_chunk_error", { error });
+          } catch {}
         }
       }
-      sharedContext.streamStats.clientFinishReason = 'internal_error';
-      diag('stream_error_internal', { clientMessageId: normalizedClientId });
+
+      sharedContext.streamStats.clientFinishReason = "internal_error";
+      diag("stream_error_internal", { clientMessageId: normalizedClientId });
+
       if (doneHandler) {
         try {
-          doneHandler(undefined, { reason: 'internal_error' });
+          doneHandler(undefined, { reason: "internal_error" });
         } catch (error) {
           try {
-            console.warn('[SSE-DEBUG] onError_done_error', { error });
-          } catch {
-            /* noop */
-          }
+            console.warn("[SSE-DEBUG] onError_done_error", { error });
+          } catch {}
         }
       }
+
       fatalErrorState.current = null;
       return;
     }
@@ -807,8 +781,8 @@ export const onError = ({
     const extractedMessage = extractText(rawEvent);
     const message =
       extractedMessage ||
-      pickStringFromRecords(records, ['message', 'error', 'detail', 'reason']) ||
-      'Erro na stream SSE da Eco.';
+      pickStringFromRecords(records, ["message", "error", "detail", "reason"]) ||
+      "Erro na stream SSE da Eco.";
     fatalErrorState.current = new Error(message);
   };
 };
