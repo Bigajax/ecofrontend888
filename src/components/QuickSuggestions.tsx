@@ -182,19 +182,32 @@ function QuickSuggestionsComp({
 
       <div
         className={clsx(
-          "quick-suggestions-grid grid w-full place-items-center",
-          isFooter
-            ? "mt-2 grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2 sm:gap-1"
-            : "mt-3 grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3 sm:gap-2"
+          "quick-suggestions-scroll flex w-full overflow-x-auto no-scrollbar",
+          "scroll-smooth snap-x snap-mandatory",
+          isFooter ? "mt-2 gap-2" : "mt-3 gap-3",
+          "px-1"
         )}
         role="list"
+        style={{
+          scrollPaddingInline: '0.5rem',
+          WebkitOverflowScrolling: 'touch',
+        }}
       >
         {suggestions.map((s, index) => (
           <button
             key={s.id}
             onClick={() => emitPick(s, { source: "pill", index })}
             className={clsx(
-              "inline-flex w-full shrink-0 snap-center items-center justify-center gap-2 rounded-2xl bg-white/90 text-slate-900/95 ring-1 ring-slate-900/5 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 active:translate-y-[1px]",
+              "inline-flex shrink-0 snap-center items-center justify-center gap-2",
+              "rounded-2xl backdrop-blur-md border",
+              "bg-white/60 border-[var(--eco-line)]",
+              "text-[var(--eco-text)]",
+              "shadow-[0_4px_30px_rgba(0,0,0,0.04)]",
+              "transition-all duration-300 ease-out",
+              "hover:bg-white/80 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]",
+              "hover:-translate-y-0.5",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--eco-accent)]/40",
+              "active:translate-y-0",
               isFooter
                 ? "min-h-[44px] min-w-[180px] px-3.5 py-2.5"
                 : "min-h-[48px] min-w-[240px] px-4 py-3",
@@ -210,7 +223,7 @@ function QuickSuggestionsComp({
             {s.icon && (
               <span
                 className={clsx(
-                  "leading-none",
+                  "leading-none opacity-80",
                   isFooter ? "text-[14px]" : "text-[15px] md:text-[17px]"
                 )}
                 aria-hidden

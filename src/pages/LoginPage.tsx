@@ -12,11 +12,11 @@ import { supabase } from '@/lib/supabaseClient';
 /* Divisor com traço mais marcado */
 const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
   <div className="flex items-center gap-3" aria-hidden="true">
-    <span className="h-px flex-1 bg-slate-200" />
-    <span className="text-xs uppercase tracking-[0.4em] text-slate-400">
+    <span className="h-px flex-1 bg-[var(--eco-line)]" />
+    <span className="text-xs uppercase tracking-[0.4em] text-[var(--eco-muted)] font-normal">
       {label}
     </span>
-    <span className="h-px flex-1 bg-slate-200" />
+    <span className="h-px flex-1 bg-[var(--eco-line)]" />
   </div>
 );
 
@@ -185,18 +185,23 @@ const LoginPage: React.FC = () => {
           <motion.div
             initial={{ y: 12, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="w-full max-w-md space-y-8 rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8"
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            className="w-full max-w-md space-y-8 rounded-3xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8"
           >
             {/* Header */}
             <div className="space-y-4 text-center">
               <span
-                className="mx-auto inline-flex items-center justify-center rounded-full border border-black/5 bg-white/50 px-4 py-1 text-[13.5px] font-medium text-[#1C1C1E]/60"
-                style={{ fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
+                className="mx-auto inline-flex items-center justify-center rounded-full border border-[var(--eco-line)] bg-white/50 backdrop-blur-sm px-4 py-1 text-[13.5px] font-normal text-[var(--eco-muted)]"
+                style={{ fontFamily: 'var(--font-primary)' }}
               >
                 Autoconhecimento Guiado
               </span>
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">ECO</h1>
+              <h1
+                className="text-3xl font-normal tracking-tight sm:text-4xl text-[var(--eco-text)]"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                ECO
+              </h1>
             </div>
 
             {/* Form */}
@@ -219,7 +224,7 @@ const LoginPage: React.FC = () => {
                     inputMode="email"
                     aria-invalid={Boolean(error)}
                     aria-describedby={error ? 'login-error' : undefined}
-                    className="w-full h-12 rounded-2xl border border-slate-200 bg-white px-4 text-base text-slate-900 placeholder:text-slate-400 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#007AFF]"
+                    className="w-full h-12 rounded-xl border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm px-4 text-base text-[var(--eco-text)] placeholder:text-[var(--eco-muted)] transition-all duration-300 ease-out focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40"
                   />
                 </div>
 
@@ -238,12 +243,12 @@ const LoginPage: React.FC = () => {
                       autoComplete="current-password"
                       aria-invalid={Boolean(error)}
                       aria-describedby={error ? 'login-error' : undefined}
-                      className="w-full h-12 rounded-2xl border border-slate-200 bg-white px-4 pr-12 text-base text-slate-900 placeholder:text-slate-400 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#007AFF]"
+                      className="w-full h-12 rounded-xl border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm px-4 pr-12 text-base text-[var(--eco-text)] placeholder:text-[var(--eco-muted)] transition-all duration-300 ease-out focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      className="absolute inset-y-0 right-1.5 my-1.5 flex items-center rounded-xl px-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30"
+                      className="absolute inset-y-0 right-1.5 my-1.5 flex items-center rounded-xl px-2 text-[var(--eco-muted)] transition-all duration-300 ease-out hover:bg-[var(--eco-bubble)] hover:text-[var(--eco-text)] focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40"
                       aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                       aria-pressed={showPassword}
                       title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
@@ -260,7 +265,7 @@ const LoginPage: React.FC = () => {
                   onClick={handleForgotPassword}
                   disabled={forgotLoading}
                   title="Enviaremos um link para o seu e-mail"
-                  className="text-sm font-medium text-slate-600 underline-offset-4 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="text-sm font-normal text-[var(--eco-muted)] underline-offset-4 transition-all duration-300 ease-out hover:text-[var(--eco-text)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {forgotLoading ? 'Enviando…' : 'Redefinir senha'}
                 </button>
@@ -279,8 +284,12 @@ const LoginPage: React.FC = () => {
                   type="submit"
                   disabled={!canSubmit}
                   className={[
-                    'flex h-12 w-full items-center justify-center rounded-2xl bg-[#007AFF] text-sm font-semibold text-white transition-colors',
-                    'hover:bg-[#1a84ff] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/50 focus:ring-offset-2 focus:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-60',
+                    'flex h-12 w-full items-center justify-center rounded-xl text-sm font-normal transition-all duration-300 ease-out',
+                    'bg-[var(--eco-user)] text-white shadow-[0_4px_30px_rgba(0,0,0,0.04)]',
+                    'hover:bg-gradient-to-r hover:from-[var(--eco-user)] hover:to-[var(--eco-accent)] hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]',
+                    'focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40 focus:ring-offset-2',
+                    'active:translate-y-0',
+                    'disabled:cursor-not-allowed disabled:opacity-60 disabled:transform-none',
                   ].join(' ')}
                 >
                   {loading ? 'Entrando…' : 'Entrar'}
@@ -290,7 +299,7 @@ const LoginPage: React.FC = () => {
                   type="button"
                   onClick={handleGoogleLogin}
                   disabled={loading}
-                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm text-sm font-normal text-[var(--eco-text)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-300 ease-out hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <GoogleIcon />
                   Entrar com Google
@@ -300,7 +309,7 @@ const LoginPage: React.FC = () => {
                   type="button"
                   onClick={() => navigate('/register')}
                   disabled={loading}
-                  className="flex h-12 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-12 w-full items-center justify-center rounded-xl border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm text-sm font-normal text-[var(--eco-text)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-300 ease-out hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Criar uma nova conta
                 </button>
@@ -311,7 +320,7 @@ const LoginPage: React.FC = () => {
                   type="button"
                   onClick={() => setIsTourActive(true)}
                   disabled={loading}
-                  className="flex h-12 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-12 w-full items-center justify-center rounded-xl border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm text-sm font-normal text-[var(--eco-text)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-300 ease-out hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Iniciar Tour
                 </button>
