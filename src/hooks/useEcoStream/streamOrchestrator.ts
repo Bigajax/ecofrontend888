@@ -2769,17 +2769,37 @@ response = await fetchFn(requestUrl, fetchInit);
       streamStats.clientFinishReason = "start_error";
       streamStats.status = "error";
 
-      try {
-        console.debug("[DIAG] setErroApi:before", {
-          clientMessageId,
-          value: message,
-          phase: "streamPromise:catch",
-        });
-      } catch {
-        /* noop */
-      }
+      // Verificar se é erro benigno antes de setar erro na UI
+      const isBenignError =
+        error?.name === 'AbortError' ||
+        (typeof message === 'string' && (
+          message.includes('no_chunks_emitted') ||
+          message.includes('no_text_before_done') ||
+          message.includes('no_content')
+        ));
 
-      setErroApi(message);
+      if (!isBenignError) {
+        try {
+          console.debug("[DIAG] setErroApi:before", {
+            clientMessageId,
+            value: message,
+            phase: "streamPromise:catch",
+          });
+        } catch {
+          /* noop */
+        }
+        setErroApi(message);
+      } else {
+        try {
+          console.debug("[DIAG] benign_error_suppressed", {
+            clientMessageId,
+            error: message,
+            phase: "streamPromise:catch",
+          });
+        } catch {
+          /* noop */
+        }
+      }
       logSse("abort", {
         clientMessageId: normalizedClientId,
         reason: "start-error",

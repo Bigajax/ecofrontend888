@@ -626,7 +626,33 @@ export const onDone = ({
           sharedContext.streamStats.gotAnyChunk = true;
         }
       } else {
-        if (!retriedNoChunk) {
+        // Verificar se há finishReason benigno antes de tratar como erro
+        const finishReasonFromMeta = sharedContext.streamStats.finishReasonFromMeta;
+        const normalizedFinishReason = typeof finishReasonFromMeta === "string"
+          ? finishReasonFromMeta.trim().toLowerCase()
+          : "";
+
+        const benignFinishReasons = new Set([
+          "stop",
+          "end",
+          "completed",
+          "greeting",
+          "shortcut",
+          "filtered",
+          "length",
+          "content_filter",
+        ]);
+
+        const isBenignFinishReason = benignFinishReasons.has(normalizedFinishReason);
+
+        if (isBenignFinishReason) {
+          // FinishReason benigno sem chunks: finalizar silenciosamente sem erro
+          try {
+            console.log("[SSE] Stream finalizado sem chunks mas com finishReason benigno:", normalizedFinishReason);
+          } catch {}
+          streamStats.clientFinishReason = normalizedFinishReason || "no_content_benign";
+          // Não registrar como no_content nem fazer retry
+        } else if (!retriedNoChunk) {
           try {
             console.warn("[SSE] Stream finalizado sem chunks. Tentando 1 retry silencioso.", { clientMessageId });
           } catch {}

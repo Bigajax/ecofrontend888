@@ -534,10 +534,57 @@ export const useEcoStream = ({
         })
         .catch((error) => {
           lastMetaFromStream = undefined;
-          if (isMountedRef.current) {
+
+          // Verificar se é um erro benigno que não deve mostrar banner
+          const isBenignError = (() => {
+            // 1. AbortError / Cancelamento do usuário
+            if (error?.name === 'AbortError') {
+              console.debug('[EcoStream] Aborted by user, not an error');
+              return true;
+            }
+
+            // 2. Verificar se o signal foi abortado
+            const abortedController = controllerRef.current;
+            if (abortedController?.signal?.aborted) {
+              const abortReason = (abortedController.signal as any)?.reason;
+              const reasonStr = typeof abortReason === 'string' ? abortReason.toLowerCase() : '';
+
+              // Razões benignas de abort
+              const benignAbortReasons = [
+                'finalize',
+                'user_cancelled',
+                'visibilitychange',
+                'pagehide',
+                'hidden',
+              ];
+
+              if (benignAbortReasons.some(r => reasonStr.includes(r))) {
+                console.debug('[EcoStream] Benign abort reason:', abortReason);
+                return true;
+              }
+            }
+
+            // 3. Verificar mensagem do erro para casos benignos
+            const errorMsg = error?.message || '';
+            if (
+              errorMsg.includes('no_chunks_emitted') ||
+              errorMsg.includes('no_text_before_done') ||
+              errorMsg.includes('no_content')
+            ) {
+              // Esses casos são tratados internamente pelo streamOrchestrator
+              console.debug('[EcoStream] Benign error (no content):', errorMsg);
+              return true;
+            }
+
+            return false;
+          })();
+
+          if (!isBenignError && isMountedRef.current) {
             setErroApi("Falha durante a comunicação com a Eco.");
+            console.error("[EcoStream] stream_promise_rejected", { error });
+          } else {
+            console.debug("[EcoStream] stream_completed_with_benign_error", { error });
           }
-          console.error("[EcoStream] stream_promise_rejected", { error });
         })
         .finally(() => finalize(lastMetaFromStream));
     } else {
