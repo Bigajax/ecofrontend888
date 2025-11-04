@@ -259,21 +259,38 @@ const logAbortDebug = (reason: AllowedAbortReason) => {
   }
 };
 
+// WeakMap to track if we've already aborted a controller (idempotent guard)
+const abortedControllers = new WeakMap<AbortController, boolean>();
+
 export const abortControllerSafely = (
   controller: AbortController,
   reason: AllowedAbortReason,
 ): boolean => {
-  if (controller.signal.aborted) {
-    return false;
-  }
-  if (!ALLOWED_ABORT_REASONS.has(reason)) {
+  // Idempotent check: don't abort twice
+  if (controller.signal.aborted || abortedControllers.get(controller)) {
     try {
-      console.warn("[SSE] abort_ignored", { reason });
+      console.debug("[SSE] abort_skipped_already_aborted", {
+        reason,
+        wasAlreadyMarked: abortedControllers.get(controller) === true,
+      });
     } catch {
       /* noop */
     }
     return false;
   }
+
+  if (!ALLOWED_ABORT_REASONS.has(reason)) {
+    try {
+      console.warn("[SSE] abort_ignored_invalid_reason", { reason });
+    } catch {
+      /* noop */
+    }
+    return false;
+  }
+
+  // Mark as aborted BEFORE calling abort to ensure idempotence
+  abortedControllers.set(controller, true);
+
   logAbortDebug(reason);
   try {
     controller.abort(reason);
@@ -450,10 +467,17 @@ export class StreamSession {
       const existingInflight = this.inflightControllers.get(normalizedClientId);
       if (existingInflight && !existingInflight.signal.aborted) {
         try {
-          console.warn("duplicated stream", { clientMessageId: normalizedClientId });
+          console.warn("[EcoStream] skipped duplicate", {
+            clientMessageId: normalizedClientId,
+            reason: "inflight_guard_active"
+          });
         } catch {
           /* noop */
         }
+        this.logDev("duplicate_stream_blocked", {
+          clientMessageId: normalizedClientId,
+          inFlightCount: this.inflightControllers.size,
+        });
         return null;
       }
       if (existingInflight) {
@@ -531,12 +555,16 @@ export class StreamSession {
       const existingController = this.inflightControllers.get(normalizedClientId);
       if (existingController && !existingController.signal.aborted) {
         try {
-          console.warn("[SSE] duplicate_stream_blocked", {
+          console.warn("[EcoStream] skipped duplicate", {
             clientMessageId: normalizedClientId,
+            reason: "inflight_guard_duplicate_check"
           });
         } catch {
           /* noop */
         }
+        this.logDev("duplicate_stream_blocked_second_check", {
+          clientMessageId: normalizedClientId,
+        });
         return null;
       }
 

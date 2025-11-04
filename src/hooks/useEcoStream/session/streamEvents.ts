@@ -466,9 +466,44 @@ export const onControl = ({
       try {
         controlHandler(controlEvent, sharedContext);
       } catch (error) {
-        try {
-          console.warn("[SSE-DEBUG] onControl_error", { error });
-        } catch {}
+        // Verificar se é erro benigno antes de propagar para UI
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isBenignError =
+          (error as any)?.name === 'AbortError' ||
+          controller.signal.aborted ||
+          (typeof errorMessage === 'string' && (
+            errorMessage.includes('no_chunks_emitted') ||
+            errorMessage.includes('no_text_before_done') ||
+            errorMessage.includes('no_content') ||
+            errorMessage.includes('benign_no_output') ||
+            errorMessage.includes('final_text_only')
+          ));
+
+        // Verificar se já existe texto final acumulado
+        const hasFinalText = sharedContext.streamStats.aggregatedLength > 0;
+
+        if (!isBenignError && !hasFinalText) {
+          // Erro real sem texto: propagar para UI
+          try {
+            console.error("[SSE-DEBUG] onControl_error_critical", {
+              error: errorMessage,
+              clientMessageId: normalizedClientId,
+              hasFinalText,
+            });
+          } catch {}
+          // Aqui poderia chamar setErroApi se tivesse acesso, mas o contexto atual
+          // já tem tratamento de erros no nível superior
+        } else {
+          // Erro benigno ou já tem texto: apenas logar
+          try {
+            console.debug("[SSE-DEBUG] onControl_error_benign_or_has_text", {
+              error: errorMessage,
+              isBenignError,
+              hasFinalText,
+              aggregatedLength: sharedContext.streamStats.aggregatedLength,
+            });
+          } catch {}
+        }
       }
     }
   };
