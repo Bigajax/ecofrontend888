@@ -48,6 +48,8 @@ export interface ProcessSseHandlers {
   onPromptReady?: (event: Record<string, unknown>) => void;
   onError?: (event: Record<string, unknown>) => void;
   onMessage?: (event: Record<string, unknown>, info?: { eventName?: string | null }) => void;
+  onStart?: (event: Record<string, unknown>) => void;
+  onEmpty?: (event: Record<string, unknown>) => void;
 }
 
 export interface ProcessSseLineOptions {
@@ -199,6 +201,19 @@ export const processSseLine = (
   }
 
   const normalizedEventKey = normalizedPayloadName ?? type ?? fallbackEvent;
+
+  // Tratar evento 'start'
+  if (normalizedEventKey === "start" || type === "start") {
+    handlers.onStart?.(event);
+    return;
+  }
+
+  // Tratar evento 'empty'
+  if (normalizedEventKey === "empty" || type === "empty") {
+    handlers.onEmpty?.(event);
+    return;
+  }
+
   if (normalizedEventKey === "message") {
     handlers.onMessage?.(event, { eventName: options?.eventName ?? null });
     return;
