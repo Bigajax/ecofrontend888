@@ -518,6 +518,53 @@ export const onMessage = ({
   };
 };
 
+/**
+ * Handler para evento 'start' do SSE
+ * Confirma que o stream foi inicializado no backend
+ */
+export const onStart = ({
+  bumpHeartbeatWatchdog,
+  diag,
+  normalizedClientId,
+}: {
+  bumpHeartbeatWatchdog: () => void;
+  diag: (...args: unknown[]) => void;
+  normalizedClientId: string;
+}) => {
+  return (rawEvent: Record<string, unknown>) => {
+    bumpHeartbeatWatchdog();
+    diag("start_event", { clientMessageId: normalizedClientId, status: "initialized" });
+    try {
+      console.log("[SSE] Stream inicializado no backend", { clientMessageId: normalizedClientId });
+    } catch {}
+  };
+};
+
+/**
+ * Handler para evento 'empty' do SSE
+ * Trata streams que não retornaram dados
+ */
+export const onEmpty = ({
+  bumpHeartbeatWatchdog,
+  diag,
+  normalizedClientId,
+}: {
+  bumpHeartbeatWatchdog: () => void;
+  diag: (...args: unknown[]) => void;
+  normalizedClientId: string;
+}) => {
+  return (rawEvent: Record<string, unknown>) => {
+    bumpHeartbeatWatchdog();
+    diag("empty_event", { clientMessageId: normalizedClientId });
+    try {
+      console.warn("[SSE] Stream vazio recebido do backend", {
+        clientMessageId: normalizedClientId,
+        event: rawEvent
+      });
+    } catch {}
+  };
+};
+
 export const onDone = ({
   clearTypingWatchdog,
   controller,

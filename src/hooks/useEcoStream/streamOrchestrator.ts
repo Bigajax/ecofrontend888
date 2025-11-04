@@ -66,6 +66,8 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
     onMessage,
     onPromptReady,
     processChunk,
+    onStart,
+    onEmpty,
   } from "./session/streamEvents";
   import {
     StreamSession,
@@ -2312,6 +2314,18 @@ response = await fetchFn(requestUrl, fetchInit);
           bumpHeartbeatWatchdog,
         });
 
+        const handleStartEvent = onStart({
+          bumpHeartbeatWatchdog,
+          diag,
+          normalizedClientId,
+        });
+
+        const handleEmptyEvent = onEmpty({
+          bumpHeartbeatWatchdog,
+          diag,
+          normalizedClientId,
+        });
+
         let retriedNoChunk = isRetry;
         const retry = () => {
           if (retriedNoChunk) {
@@ -2373,8 +2387,27 @@ response = await fetchFn(requestUrl, fetchInit);
         startFallbackGuardTimer();
 
         onWatchdogTimeout = (reason) => {
+          const metrics = streamTimersRef.current[normalizedClientId];
+          const elapsedMs = metrics ? Date.now() - metrics.startedAt : undefined;
+
           if (!streamStats.gotAnyChunk) {
-            diag("watchdog_timeout_no_chunk", { reason, clientMessageId: normalizedClientId });
+            diag("watchdog_timeout_no_chunk", {
+              reason,
+              clientMessageId: normalizedClientId,
+              elapsedMs,
+              readyReceived: streamState.readyReceived
+            });
+
+            try {
+              console.warn("[SSE] ⚠️ Timeout sem chunks recebidos", {
+                reason,
+                clientMessageId: normalizedClientId,
+                elapsedMs,
+                timeoutSeconds: elapsedMs ? (elapsedMs / 1000).toFixed(1) : '?',
+                readyReceived: streamState.readyReceived
+              });
+            } catch {}
+
             streamStats.clientFinishReason = "no_content";
             registerNoContent(reason);
             try {
@@ -2383,7 +2416,22 @@ response = await fetchFn(requestUrl, fetchInit);
               /* noop */
             }
           } else {
-            diag("watchdog_timeout", { reason, clientMessageId: normalizedClientId });
+            diag("watchdog_timeout", {
+              reason,
+              clientMessageId: normalizedClientId,
+              elapsedMs,
+              aggregatedLength: streamStats.aggregatedLength
+            });
+
+            try {
+              console.warn("[SSE] Timeout durante streaming", {
+                reason,
+                clientMessageId: normalizedClientId,
+                elapsedMs,
+                receivedChars: streamStats.aggregatedLength
+              });
+            } catch {}
+
             if (!streamStats.clientFinishReason) {
               streamStats.clientFinishReason = reason;
             }
@@ -2426,6 +2474,29 @@ response = await fetchFn(requestUrl, fetchInit);
         });
         startFallbackGuardTimer();
         bumpHeartbeatWatchdog();
+
+        // Timer de warning após 5 segundos sem chunks
+        const WARNING_TIMEOUT_MS = 5000;
+        let warningTimerHandle: ReturnType<typeof setTimeout> | null = null;
+        const clearWarningTimer = () => {
+          if (warningTimerHandle) {
+            clearTimeout(warningTimerHandle);
+            warningTimerHandle = null;
+          }
+        };
+
+        warningTimerHandle = timers.setTimeout(() => {
+          if (!streamStats.gotAnyChunk && !controller.signal.aborted) {
+            try {
+              console.warn("[SSE] ⏳ 5 segundos sem receber chunks", {
+                clientMessageId: normalizedClientId,
+                readyReceived: streamState.readyReceived,
+                contentType
+              });
+            } catch {}
+          }
+        }, WARNING_TIMEOUT_MS);
+
         try {
           console.info("[EcoStream] onStreamOpen", {
             clientMessageId,
@@ -2541,6 +2612,8 @@ response = await fetchFn(requestUrl, fetchInit);
           onControl: (event) => handleControlEvent(event),
           onError: (event) => handleErrorEvent(event),
           onMessage: (event) => handleMessageEvent(event),
+          onStart: (event) => handleStartEvent(event),
+          onEmpty: (event) => handleEmptyEvent(event),
         };
 
         const findEventDelimiter = (input: string): { index: number; length: number } | null => {
@@ -2718,10 +2791,12 @@ response = await fetchFn(requestUrl, fetchInit);
           handleStreamDone();
         }
 
+        clearWarningTimer();
         return streamStats;
       })();
     } catch (error) {
       clearTypingWatchdog();
+      clearWarningTimer();
       inflightControllers.delete(normalizedClientId);
       throw error;
     }
