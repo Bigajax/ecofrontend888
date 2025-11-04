@@ -6,21 +6,31 @@ const glassStroke = tokens.stroke.glass
 const glassBackground = tokens.colors.bg.surface
 const glassBlur = tokens.blur.glass
 const glassBlurStrong = tokens.blur.glassStrong
-const glassShadow = tokens.shadows.glass
-const floatingShadow = tokens.shadows.floating
+const minimalShadow = tokens.shadows.minimal
+const subtleShadow = tokens.shadows.subtle
 
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
-      /* Tipografia — SF Pro com fallbacks (Inter fica como fallback também) */
+      /* Tipografia — Inter (primária) + Playfair Display (display) */
       fontFamily: {
         sans: [
-          'SF Pro Display','SF Pro Text',       // macOS/iOS
-          '-apple-system','BlinkMacSystemFont', // Apple stack
-          'Segoe UI','Inter','system-ui','Roboto',
+          'Inter',
+          '-apple-system','BlinkMacSystemFont',
+          'Segoe UI','system-ui','Roboto',
           'Helvetica Neue','Arial','sans-serif'
         ],
+        display: [
+          'Playfair Display',
+          'Georgia', 'serif'
+        ],
+      },
+
+      fontWeight: {
+        light: 300,
+        normal: 400,
+        medium: 500,
       },
 
       colors: {
@@ -32,13 +42,14 @@ export default {
         'glass-surface': glassBackground,
         'text-primary': tokens.colors.text.primary,
         'text-muted': tokens.colors.text.muted,
+        'bubble-eco': tokens.colors.bubble.eco,
+        'bubble-user': tokens.colors.bubble.user,
+        'line': tokens.colors.line,
       },
 
       backgroundImage: {
-        'orb-surface':
-          'radial-gradient(680px_560px_at_16%_-12%,rgba(0,122,255,0.06),transparent_58%),' +
-          'radial-gradient(540px_420px_at_88%_-6%,rgba(168,85,247,0.045),transparent_62%),' +
-          'radial-gradient(720px_620px_at_50%_120%,rgba(14,165,233,0.035),transparent_70%)',
+        'eco-gradient': tokens.colors.bg.gradient,
+        'orb-pearl': 'radial-gradient(circle at 30% 30%, #E6EBEF, #F3EEE7)',
       },
 
       backdropBlur: {
@@ -47,18 +58,44 @@ export default {
       },
 
       borderRadius: {
+        'bubble': tokens.radius.bubble,
+        'input': tokens.radius.input,
+        'card': tokens.radius.card,
         xl: tokens.radius.xl,
         '2xl': tokens.radius['2xl'],
       },
 
       boxShadow: {
-        glass: glassShadow,
-        floating: floatingShadow,
-        'accent-glow': '0 0 0 6px rgba(0, 122, 255, 0.15)',
+        minimal: minimalShadow,
+        subtle: subtleShadow,
+        glow: tokens.shadows.glow,
+        'eco-glow': '0 0 20px rgba(163, 145, 126, 0.25)',
       },
 
-      /* Animações já existentes */
+      transitionDuration: {
+        calm: tokens.motion.calm,
+        breath: tokens.motion.breath,
+      },
+
+      /* Animações Soft Minimal */
       keyframes: {
+        ecoPulse: {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.9' },
+          '50%': { transform: 'scale(1.04)', opacity: '1' },
+        },
+        wave: {
+          '0%': { transform: 'scale(1)', opacity: '0.9' },
+          '50%': { transform: 'scale(1.1)', opacity: '1' },
+          '100%': { transform: 'scale(1)', opacity: '0.9' },
+        },
+        breathe: {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.95' },
+          '50%': { transform: 'scale(1.02)', opacity: '1' },
+        },
+        fadeExpand: {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
         ripple: {
           '0%':   { transform: 'scale(0.8)', opacity: '1' },
           '100%': { transform: 'scale(1.4)', opacity: '0' },
@@ -73,26 +110,20 @@ export default {
           '50%':  { transform: 'scale(1)', opacity: '1' },
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
-        pulseSlow: {
-          '0%, 100%': { transform: 'scale(1)' },
-          '50%': { transform: 'scale(1.05)' },
-        },
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-6px)' },
         },
-        spinSlow: {
-          '0%': { transform: 'rotate(0deg)' },
-          '100%': { transform: 'rotate(360deg)' },
-        },
       },
       animation: {
+        'eco-pulse': 'ecoPulse 6s ease-in-out infinite',
+        'wave': 'wave 3s ease-in-out infinite',
+        'breathe': 'breathe 4s ease-in-out infinite',
+        'fade-expand': 'fadeExpand 300ms ease-out',
         ripple: 'ripple 1.5s infinite ease-in-out',
         pulseListen: 'pulseListen 1.2s ease-in-out infinite',
         pulseTalk: 'pulseTalk 3s ease-in-out infinite',
-        pulseSlow: 'pulseSlow 6s ease-in-out infinite',
         float: 'float 9s ease-in-out infinite',
-        spinSlow: 'spinSlow 18s linear infinite',
       },
     },
   },
@@ -105,7 +136,7 @@ export default {
           'border': glassStroke,
           'backdrop-filter': `blur(${glassBlur})`,
           '-webkit-backdrop-filter': `blur(${glassBlur})`,
-          'box-shadow': glassShadow,
+          'box-shadow': minimalShadow,
           'position': 'relative',
           'overflow': 'hidden',
         },
@@ -119,11 +150,11 @@ export default {
           'pointer-events': 'none',
         },
         '.glass-shell-strong': {
-          'background': 'rgba(255, 255, 255, 0.75)',
+          'background': 'rgba(243, 238, 231, 0.75)',
           'border': glassStroke,
           'backdrop-filter': `blur(${glassBlurStrong})`,
           '-webkit-backdrop-filter': `blur(${glassBlurStrong})`,
-          'box-shadow': floatingShadow,
+          'box-shadow': subtleShadow,
         },
       })
     }),

@@ -1,0 +1,599 @@
+/**
+ * ECO Design System — Soft Minimal
+ * "A interface deve desaparecer para que o silêncio fale."
+ *
+ * Paleta: Areia, argila, terra • Translúcido • Natural • Calmo
+ * Referências: Apple, Claude, Meditopia, Notion Calm
+ */
+
+/* ============================================
+   FUNDAMENTOS
+   ============================================ */
+
+:root {
+  /* Cores Soft Minimal */
+  --eco-bg: #FAF9F7;
+  --eco-bubble: #F3EEE7;
+  --eco-user: #A7846C;
+  --eco-text: #38322A;
+  --eco-muted: #9C938A;
+  --eco-line: #E8E3DD;
+  --eco-accent: #C6A995;
+
+  /* Tipografia */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+
+  /* Sombras mínimas */
+  --shadow-minimal: 0 4px 30px rgba(0, 0, 0, 0.04);
+  --shadow-subtle: 0 2px 12px rgba(0, 0, 0, 0.03);
+  --shadow-glow: 0 0 20px rgba(163, 145, 126, 0.25);
+
+  /* Motion */
+  --ease-calm: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-micro: 200ms;
+  --duration-calm: 300ms;
+  --duration-breath: 6s;
+}
+
+/* ============================================
+   TIPOGRAFIA
+   ============================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--eco-text);
+  line-height: 1.3;
+}
+
+h1 {
+  font-size: clamp(28px, 5vw, 42px);
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: clamp(22px, 4vw, 32px);
+}
+
+h3 {
+  font-size: clamp(18px, 3vw, 24px);
+}
+
+p, span, div {
+  font-family: var(--font-primary);
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--eco-text);
+}
+
+.text-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+}
+
+.text-muted {
+  color: var(--eco-muted);
+}
+
+/* ============================================
+   CHAT BUBBLES
+   ============================================ */
+
+.chat-bubble {
+  background: var(--eco-bubble);
+  border-radius: 10px;
+  padding: 14px 18px;
+  box-shadow: var(--shadow-minimal);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all var(--duration-calm) var(--ease-calm);
+  animation: fadeExpand var(--duration-calm) ease-out;
+}
+
+.chat-bubble.user {
+  background: var(--eco-user);
+  color: #FAF9F7;
+}
+
+.chat-bubble.eco {
+  background: var(--eco-bubble);
+  color: var(--eco-text);
+}
+
+.chat-bubble:hover {
+  box-shadow: var(--shadow-subtle);
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   BOLHA ECO (IA)
+   ============================================ */
+
+.eco-bubble {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #E6EBEF, #F3EEE7);
+  box-shadow: var(--shadow-glow);
+  animation: ecoPulse var(--duration-breath) ease-in-out infinite;
+  position: relative;
+}
+
+.eco-bubble::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(230, 235, 239, 0.4), transparent);
+  animation: ecoPulse var(--duration-breath) ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+/* Estados da bolha */
+.eco-bubble.listening {
+  animation: wave 3s ease-in-out infinite;
+  box-shadow: 0 0 30px rgba(163, 145, 126, 0.4);
+}
+
+.eco-bubble.thinking {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+/* ============================================
+   INPUTS E FORMS
+   ============================================ */
+
+.input-box,
+.input-glass {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  border: 1px solid var(--eco-line);
+  padding: 12px 18px;
+  box-shadow: var(--shadow-subtle);
+  font-family: var(--font-primary);
+  font-weight: 300;
+  color: var(--eco-text);
+  transition: all var(--duration-calm) var(--ease-calm);
+}
+
+.input-box:focus,
+.input-glass:focus {
+  outline: none;
+  border-color: var(--eco-accent);
+  box-shadow: 0 0 0 3px rgba(198, 169, 149, 0.15);
+}
+
+.input-box::placeholder,
+.input-glass::placeholder {
+  color: var(--eco-muted);
+  font-weight: 300;
+}
+
+textarea.input-box,
+textarea.input-glass {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.6;
+}
+
+/* ============================================
+   BOTÕES
+   ============================================ */
+
+button.primary,
+.btn-primary {
+  background: var(--eco-user);
+  color: #FAF9F7;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-family: var(--font-primary);
+  font-weight: 400;
+  border: none;
+  box-shadow: var(--shadow-minimal);
+  transition: all var(--duration-calm) var(--ease-calm);
+  cursor: pointer;
+}
+
+button.primary:hover,
+.btn-primary:hover {
+  background: linear-gradient(90deg, #A7846C, #C6A995);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-subtle);
+}
+
+button.primary:active,
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+button.secondary,
+.btn-secondary {
+  background: transparent;
+  color: var(--eco-user);
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-family: var(--font-primary);
+  font-weight: 400;
+  border: 1px solid var(--eco-line);
+  transition: all var(--duration-calm) var(--ease-calm);
+  cursor: pointer;
+}
+
+button.secondary:hover,
+.btn-secondary:hover {
+  background: rgba(167, 132, 108, 0.08);
+  border-color: var(--eco-accent);
+  transform: translateY(-1px);
+}
+
+button:disabled,
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================
+   CARDS E SURFACES
+   ============================================ */
+
+.card,
+.glass-card {
+  background: rgba(243, 238, 231, 0.6);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: var(--shadow-minimal);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--eco-line);
+  transition: all var(--duration-calm) var(--ease-calm);
+}
+
+.card:hover,
+.glass-card:hover {
+  box-shadow: var(--shadow-subtle);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   LAYOUT CONTAINERS
+   ============================================ */
+
+.eco-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.eco-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.eco-stack-lg {
+  gap: 24px;
+}
+
+.eco-stack-sm {
+  gap: 8px;
+}
+
+/* ============================================
+   MICROINTERAÇÕES
+   ============================================ */
+
+/* Digitando... */
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--eco-bubble);
+  border-radius: 10px;
+  box-shadow: var(--shadow-subtle);
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--eco-muted);
+  animation: typingDot 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingDot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* Gravação de voz */
+.voice-recording {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #E6EBEF, var(--eco-bubble));
+  box-shadow: var(--shadow-glow);
+  animation: wave 3s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.voice-recording::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid var(--eco-accent);
+  opacity: 0.3;
+  animation: wave 3s ease-in-out infinite;
+}
+
+/* ============================================
+   DIVIDERS E SEPARADORES
+   ============================================ */
+
+.divider {
+  height: 1px;
+  background: var(--eco-line);
+  margin: 24px 0;
+}
+
+.divider-soft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+  color: var(--eco-muted);
+  font-size: 14px;
+  font-weight: 300;
+}
+
+.divider-soft::before,
+.divider-soft::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--eco-line);
+}
+
+/* ============================================
+   BADGES E PILLS
+   ============================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 400;
+  background: rgba(167, 132, 108, 0.12);
+  color: var(--eco-user);
+}
+
+.pill-ambient {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--eco-line);
+  box-shadow: var(--shadow-subtle);
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  color: var(--eco-text);
+  font-weight: 300;
+  text-decoration: none;
+  transition: all var(--duration-micro) var(--ease-calm);
+}
+
+.nav-link:hover {
+  background: rgba(167, 132, 108, 0.08);
+  color: var(--eco-user);
+}
+
+.nav-link.active {
+  background: rgba(167, 132, 108, 0.12);
+  color: var(--eco-user);
+  font-weight: 400;
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--eco-line);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--eco-muted);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--eco-line) transparent;
+}
+
+/* ============================================
+   ANIMAÇÕES KEYFRAMES
+   ============================================ */
+
+@keyframes ecoPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+@keyframes wave {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeExpand {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   ACESSIBILIDADE
+   ============================================ */
+
+:focus-visible {
+  outline: 2px solid var(--eco-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .chat-bubble,
+  .card,
+  .glass-card,
+  .input-box {
+    border-width: 2px;
+    border-color: var(--eco-user);
+  }
+}
+
+/* ============================================
+   RESPONSIVIDADE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .eco-container {
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+
+  .chat-bubble {
+    padding: 12px 16px;
+  }
+
+  button.primary,
+  button.secondary,
+  .btn-primary,
+  .btn-secondary {
+    padding: 10px 20px;
+  }
+}
+
+/* ============================================
+   UTILIDADES
+   ============================================ */
+
+.calm-hover {
+  transition: all var(--duration-calm) var(--ease-calm);
+}
+
+.calm-hover:hover {
+  transform: translateY(-2px);
+}
+
+.breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.fade-in {
+  animation: fadeExpand var(--duration-calm) ease-out;
+}
+
+.text-gradient-eco {
+  background: linear-gradient(90deg, var(--eco-user), var(--eco-accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* ============================================
+   FIM DO DESIGN SYSTEM
+   "Nada grita. Tudo convida."
+   "O toque humano em uma mente digital."
+   ============================================ */

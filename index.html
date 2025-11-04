@@ -15,25 +15,20 @@
     />
 
     <!-- Aparência em apps móveis -->
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#FAF9F7" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no" />
 
     <title>ECO - Espelho Emocional e Comportamental</title>
 
-    <!--
-      Se quiser manter Inter como fallback via CDN, descomente abaixo.
-      A stack do Tailwind já inclui Inter; em macOS/iOS, SF Pro será usada.
-    -->
-    <!--
+    <!-- Fontes Soft Minimal: Inter + Playfair Display -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    -->
 
     <!-- Helpers: --vh para 100vh e feature flag de backdrop-filter -->
     <script>
@@ -59,12 +54,13 @@
       html, body, #root { height: 100%; }
       body {
         margin: 0;
-        /* usa sua util bg-eco-vibe também no body para evitar flash branco */
+        /* Soft Minimal: areia clara com orbs pastéis suaves */
         background:
-          radial-gradient(1200px 600px at 20% -10%, #E9E8FF, transparent 55%),
-          radial-gradient(900px 600px at 85% -5%, #FFE7E1, transparent 60%),
-          linear-gradient(120deg, #EEF3FF 0%, #FFF8F3 70%);
-        color: #0f172a; /* slate-900 */
+          radial-gradient(680px 560px at 16% -12%, rgba(198, 169, 149, 0.04), transparent 58%),
+          radial-gradient(540px 420px at 88% -6%, rgba(230, 235, 239, 0.035), transparent 62%),
+          radial-gradient(720px 620px at 50% 120%, rgba(243, 238, 231, 0.03), transparent 70%),
+          linear-gradient(180deg, #FAF9F7 0%, #F3EEE7 100%);
+        color: #38322A; /* Terra úmida */
       }
       /* fallback p/ browsers sem svh: 100*var(--vh) */
       .min-h-viewport {
