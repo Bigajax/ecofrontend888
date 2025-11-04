@@ -27,21 +27,19 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <>
-      {/* AUTO = TopBar no mobile / Sidebar no desktop */}
+      {/* Sidebar fixo no desktop + TopBar mobile */}
       <Header
         title={pageTitle}
-        variant="auto"
         onLogout={user ? handleLogout : undefined}
       />
 
-      {/* Espaçamento controlado pelas CSS vars definidas no Header. */}
-      {/* Variantes com sidebar devem definir explicitamente --eco-sidebar-w quando existirem. */}
+      {/* Main com padding para sidebar no desktop */}
       <main
         className="
           min-h-[100svh] md:min-h-[100dvh]
-          pt-[var(--eco-topbar-h,56px)] md:pt-0
-          pl-0 md:pl-[var(--eco-sidebar-w,0px)]
-          transition-[padding] duration-200 ease-out
+          pt-[72px] md:pt-0
+          pl-0 md:pl-[260px]
+          transition-[padding] duration-300 ease-out
           bg-transparent text-[color:var(--color-text-primary)]
         "
       >
