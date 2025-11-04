@@ -1,8 +1,8 @@
-// Header.tsx — AppBar “pill” + Drawer lateral (ChatGPT-like, apple-ish)
+// Header.tsx — Sidebar Desktop (Claude-like, Soft Minimal Pastel) + TopBar Mobile
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, NavLink, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, BarChart3, MessageSquare } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, BarChart3, MessageSquare, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrolled } from '@/hooks/useScrolled';
 import EcoBubbleOneEye from './EcoBubbleOneEye';
@@ -21,6 +21,7 @@ const labelCls =
 const iconButtonClass =
   'glass-chip h-11 w-11 flex items-center justify-center transition-transform duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]';
 
+// Estilos do menu drawer mobile (mantém estilo atual)
 const navItem = (active: boolean) =>
   [
     'group flex items-center gap-3 px-4 py-3 h-12 min-h-[48px] rounded-2xl border border-black/10',
@@ -31,6 +32,18 @@ const navItem = (active: boolean) =>
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white',
   ].join(' ');
 
+// Estilos do sidebar desktop (Soft Minimal Pastel - estilo Claude)
+const sidebarNavItem = (active: boolean) =>
+  [
+    'group relative flex items-center gap-3 px-4 py-3 rounded-lg',
+    'text-[15px] font-[\'Inter\'] font-normal',
+    'transition-all duration-300 ease-out',
+    active
+      ? 'bg-[#EDE4DC] text-[var(--eco-text)] font-medium border-l-[3px] border-l-[var(--eco-accent)]'
+      : 'text-[var(--eco-text)] hover:bg-[#A7846C]/5 hover:translate-x-[2px] hover:shadow-[0_2px_12px_rgba(0,0,0,0.04)]',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--eco-accent)] focus-visible:ring-offset-2',
+  ].join(' ');
+
 const drawerIconButtonClass = [
   'inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-[#0b0b0f]',
   'transition-transform duration-200 hover:-translate-y-[1px]',
@@ -39,6 +52,129 @@ const drawerIconButtonClass = [
 
 const FEEDBACK_URL = 'https://feedback777.vercel.app/';
 
+// ================= DESKTOP SIDEBAR (Soft Minimal Pastel) =================
+interface DesktopSidebarProps {
+  onLogout?: () => void;
+}
+
+const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onLogout }) => {
+  const location = useLocation();
+
+  return (
+    <aside
+      className="
+        hidden md:flex md:flex-col
+        fixed left-0 top-0 z-40 h-screen w-[260px]
+        bg-[var(--eco-bg)] border-r border-[#E8E3DD]/60
+        transition-all duration-300 ease-out
+      "
+    >
+      {/* Header com bolha Eco translúcida */}
+      <div className="flex items-center gap-3 px-6 py-6 border-b border-[var(--eco-line)]/40">
+        <div className="relative">
+          <EcoBubbleOneEye variant="icon" size={32} state="idle" />
+        </div>
+        <h1 className="text-[22px] font-['Playfair_Display'] font-normal text-[var(--eco-text)] tracking-tight">
+          ECO
+        </h1>
+      </div>
+
+      {/* Navegação principal */}
+      <nav className="flex-1 px-6 py-6 space-y-2">
+        <NavLink
+          to="/app"
+          end
+          className={({ isActive }) => sidebarNavItem(isActive)}
+        >
+          {({ isActive }) => (
+            <>
+              <MessageSquare
+                size={20}
+                strokeWidth={1.5}
+                className={isActive ? 'text-[var(--eco-accent)]' : 'text-[var(--eco-text)]'}
+              />
+              <span>Chat</span>
+            </>
+          )}
+        </NavLink>
+
+        <NavLink
+          to="/app/memory"
+          end
+          className={({ isActive }) => sidebarNavItem(isActive)}
+        >
+          {({ isActive }) => (
+            <>
+              <BookOpen
+                size={20}
+                strokeWidth={1.5}
+                className={isActive ? 'text-[var(--eco-accent)]' : 'text-[var(--eco-text)]'}
+              />
+              <span>Memórias</span>
+            </>
+          )}
+        </NavLink>
+
+        <NavLink
+          to="/app/memory/profile"
+          className={({ isActive }) => sidebarNavItem(isActive)}
+        >
+          {({ isActive }) => (
+            <>
+              <Brain
+                size={20}
+                strokeWidth={1.5}
+                className={isActive ? 'text-[var(--eco-accent)]' : 'text-[var(--eco-text)]'}
+              />
+              <span>Perfil Emocional</span>
+            </>
+          )}
+        </NavLink>
+
+        <NavLink
+          to="/app/memory/report"
+          className={({ isActive }) => sidebarNavItem(isActive)}
+        >
+          {({ isActive }) => (
+            <>
+              <BarChart3
+                size={20}
+                strokeWidth={1.5}
+                className={isActive ? 'text-[var(--eco-accent)]' : 'text-[var(--eco-text)]'}
+              />
+              <span>Relatórios</span>
+            </>
+          )}
+        </NavLink>
+      </nav>
+
+      {/* Footer com botão Sair */}
+      <div className="px-6 py-6 border-t border-[var(--eco-line)]/40 space-y-3">
+        <div className="flex items-center justify-between text-[10px] text-[var(--eco-muted)] tabular-nums">
+          <span>v{VERSION}</span>
+        </div>
+
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="
+              flex items-center gap-3 px-4 py-3 rounded-lg w-full
+              text-[15px] font-['Inter'] font-normal
+              text-[var(--eco-muted)] hover:text-[var(--eco-text)]
+              transition-all duration-300 ease-out
+              hover:bg-[var(--eco-line)]/30
+            "
+          >
+            <LogOut size={20} strokeWidth={1.5} />
+            <span>Sair</span>
+          </button>
+        )}
+      </div>
+    </aside>
+  );
+};
+
+// ================= HEADER PRINCIPAL (Mobile TopBar + Drawer) =================
 const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -273,7 +409,13 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
 
   return (
     <>
+      {/* Sidebar fixo no desktop */}
+      <DesktopSidebar onLogout={onLogout} />
+
+      {/* TopBar mobile */}
       {TopBar}
+
+      {/* Drawer mobile */}
       {Drawer}
     </>
   );
