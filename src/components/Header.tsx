@@ -23,12 +23,12 @@ const iconButtonClass =
 
 const navItem = (active: boolean) =>
   [
-    'group flex items-center gap-3 px-4 py-3 h-12 min-h-[48px] rounded-2xl border border-black/10',
-    'transition duration-200 ease-out',
+    'group flex items-center gap-3 px-4 py-3 h-12 min-h-[48px] rounded-lg',
+    'transition duration-200 ease-out relative',
     active
-      ? 'bg-black text-white'
-      : 'bg-white text-[#0b0b0f] hover:-translate-y-[1px] hover:bg-black/[0.04] hover:text-[#050505]',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white',
+      ? 'bg-[#EDE4DC] text-[#38322A] border-l-4 border-[#A7846C] pl-[14px]'
+      : 'text-[#38322A]/80 hover:bg-[#A7846C]/5',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/30',
   ].join(' ');
 
 const drawerIconButtonClass = [
@@ -186,7 +186,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
             transition={{ type: 'spring', stiffness: 380, damping: 38 }}
             className="
               fixed top-0 left-0 z-[80] h-dvh w-screen sm:w-[420px]
-              flex flex-col overflow-y-auto border-r border-black/10 bg-white text-[#050505]
+              flex flex-col overflow-y-auto border-r border-[#E8E3DD]/60 bg-[#FAF9F7] text-[#38322A]
               font-['SF Pro Display','SF Pro Text','-apple-system','BlinkMacSystemFont','Segoe UI',sans-serif]
               pt-[env(safe-area-inset-top)] sm:rounded-r-[28px]
             "
@@ -194,12 +194,14 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/10 bg-white px-5 py-4">
-              <span className={`${labelCls} text-[16px] md:text-[17px]`}>ECO</span>
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#E8E3DD]/60 bg-[#FAF9F7] px-5 py-4">
+              <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-[#38322A]/5 backdrop-blur-sm">
+                <span className="text-2xl font-display font-normal text-[#38322A] tracking-tight">ECO</span>
+              </div>
               <button
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Fechar menu"
-                className={drawerIconButtonClass}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#E8E3DD] bg-[#FAF9F7] text-[#38322A] transition-transform duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/30"
               >
                 <EcoBubbleOneEye variant="icon" size={22} state="focus" />
               </button>
@@ -207,8 +209,12 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
 
             <nav className="flex flex-col gap-2 px-4 py-5">
               <NavLink to="/app" end onClick={() => setDrawerOpen(false)} className={({ isActive }) => navItem(isActive)}>
-                <MessageSquare className={iconCls} strokeWidth={1.75} />
-                <span className={labelCls}>Chat</span>
+                {({ isActive }) => (
+                  <>
+                    <MessageSquare className={iconCls} strokeWidth={1.5} style={{ color: isActive ? '#A7846C' : 'rgba(56, 50, 42, 0.6)' }} />
+                    <span className={labelCls}>Chat</span>
+                  </>
+                )}
               </NavLink>
 
               <NavLink
@@ -217,24 +223,36 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
                 onClick={() => setDrawerOpen(false)}
                 className={({ isActive }) => navItem(isActive)}
               >
-                <BookOpen className={iconCls} strokeWidth={1.75} />
-                <span className={labelCls}>Memórias</span>
+                {({ isActive }) => (
+                  <>
+                    <BookOpen className={iconCls} strokeWidth={1.5} style={{ color: isActive ? '#A7846C' : 'rgba(56, 50, 42, 0.6)' }} />
+                    <span className={labelCls}>Memórias</span>
+                  </>
+                )}
               </NavLink>
               <NavLink
                 to="/app/memory/profile"
                 onClick={() => setDrawerOpen(false)}
                 className={({ isActive }) => navItem(isActive)}
               >
-                <Brain className={iconCls} strokeWidth={1.75} />
-                <span className={labelCls}>Perfil Emocional</span>
+                {({ isActive }) => (
+                  <>
+                    <Brain className={iconCls} strokeWidth={1.5} style={{ color: isActive ? '#A7846C' : 'rgba(56, 50, 42, 0.6)' }} />
+                    <span className={labelCls}>Perfil Emocional</span>
+                  </>
+                )}
               </NavLink>
               <NavLink
                 to="/app/memory/report"
                 onClick={() => setDrawerOpen(false)}
                 className={({ isActive }) => navItem(isActive)}
               >
-                <BarChart3 className={iconCls} strokeWidth={1.75} />
-                <span className={labelCls}>Relatórios</span>
+                {({ isActive }) => (
+                  <>
+                    <BarChart3 className={iconCls} strokeWidth={1.5} style={{ color: isActive ? '#A7846C' : 'rgba(56, 50, 42, 0.6)' }} />
+                    <span className={labelCls}>Relatórios</span>
+                  </>
+                )}
               </NavLink>
 
               {showBackButton && (
@@ -245,23 +263,26 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
                   }}
                   className={navItem(false)}
                 >
-                  <ArrowLeft className={iconCls} strokeWidth={1.75} />
+                  <ArrowLeft className={iconCls} strokeWidth={1.5} style={{ color: 'rgba(56, 50, 42, 0.6)' }} />
                   <span className={labelCls}>Voltar</span>
                 </button>
               )}
             </nav>
 
-            <div className="mt-auto flex items-center justify-between border-t border-black/10 px-5 py-5">
-              <span className="select-none text-[10px] leading-none text-black/50 tabular-nums">{VERSION}</span>
+            <div className="mt-auto flex items-center justify-between border-t border-[#E8E3DD]/60 px-4 py-5">
+              <span className="select-none text-[10px] leading-none text-[#38322A]/50 tabular-nums">{VERSION}</span>
               {onLogout && (
                 <button
                   onClick={() => {
                     setDrawerOpen(false);
                     onLogout();
                   }}
-                  className="inline-flex h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-[#050505] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-[15px] font-inter font-normal text-[#38322A]/80 hover:bg-[#A7846C]/5 transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/30"
                 >
-                  Sair
+                  <svg className="h-[22px] w-[22px]" strokeWidth={1.5} fill="none" viewBox="0 0 24 24" stroke="rgba(56, 50, 42, 0.6)">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                  </svg>
+                  <span>Sair</span>
                 </button>
               )}
             </div>
