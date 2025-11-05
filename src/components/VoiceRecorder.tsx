@@ -155,7 +155,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   const renderMicButton = () => {
     if (isProcessing) {
       return (
-        <div className="flex items-center justify-center p-3 rounded-full bg-blue-500 text-white animate-pulse">
+        <div className="flex items-center justify-center p-3 rounded-full bg-gradient-to-br from-eco-baby to-eco-babyDark text-white animate-pulse">
           <Loader size={24} className="animate-spin" />
         </div>
       );
@@ -173,7 +173,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       return (
         <button
           onClick={toggleRecording}
-          className="p-3 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75"
+          className="p-3 rounded-full bg-gradient-to-br from-eco-baby to-eco-babyDark text-white hover:shadow-ecoHover transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-eco-baby/40"
           aria-label="Iniciar gravação"
         >
           <Mic size={24} />

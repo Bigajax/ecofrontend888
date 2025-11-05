@@ -92,9 +92,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
     "text-[15px] sm:text-[15px]",
     "max-w-[min(72ch,90vw)] md:max-w-[min(68ch,70vw)]",
     isUser
-      ? "bg-[#007AFF] text-white"
+      ? "bg-gradient-to-br from-eco-baby to-eco-babyDark text-white shadow-ecoSm"
       : // contraste suave no fundo branco para a bolha da Eco
-        "bg-white text-gray-900 border border-gray-100"
+        "bg-white/70 backdrop-blur-md border border-eco-line/60 text-eco-text shadow-ecoSm"
   );
 
   const wrapperClass = clsx("flex w-full", isUser ? "justify-end" : "justify-start");

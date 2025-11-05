@@ -147,9 +147,9 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
           <div className="flex min-w-0 flex-1">
             <div
               className={clsx(
-                "group flex w-full min-w-0 items-center gap-3 rounded-2xl border border-[rgba(0,0,0,0.08)] bg-white px-5 py-2.5 transition-all duration-200",
-                "focus-within:border-[#007AFF] focus-within:ring-1 focus-within:ring-[#007AFF]/30",
-                "hover:border-[rgba(0,0,0,0.12)]",
+                "group flex w-full min-w-0 items-center gap-3 rounded-2xl border border-eco-line/60 bg-white/70 backdrop-blur-md px-5 py-2.5 transition-all duration-200 shadow-ecoSm",
+                "focus-within:border-eco-baby focus-within:ring-2 focus-within:ring-eco-baby/30",
+                "hover:border-eco-line",
                 isBusy ? "opacity-80 cursor-not-allowed" : "",
               )}
             >
@@ -192,9 +192,9 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 }}
                 disabled={isBusy || isMicActive}
                 className={clsx(
-                  "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgba(0,0,0,0.08)] bg-white text-slate-700 transition-all duration-200",
-                  "hover:border-[rgba(0,0,0,0.12)] hover:bg-slate-50",
-                  "focus-visible:ring-2 focus-visible:ring-[#007AFF]/40 focus-visible:outline-none",
+                  "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-eco-baby/30 bg-eco-babySoft text-eco-baby transition-all duration-200 shadow-ecoSm",
+                  "hover:bg-eco-baby/15",
+                  "focus-visible:ring-2 focus-visible:ring-eco-baby/40 focus-visible:outline-none",
                   isBusy
                     ? "cursor-not-allowed opacity-60"
                     : isMicActive
@@ -222,10 +222,11 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 exit={{ opacity: 0, scale: 0.9, x: 8 }}
                 transition={{ duration: 0.18 }}
                 className={clsx(
-                  "inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#007AFF] text-white transition-transform duration-200",
-                  "hover:-translate-y-[1px] active:scale-[0.97]",
-                  "focus-visible:ring-2 focus-visible:ring-[#007AFF]/40 focus-visible:outline-none",
-                  isBusy ? "cursor-not-allowed opacity-70 hover:translate-y-0" : null,
+                  "inline-flex h-10 w-10 items-center justify-center rounded-full text-white transition-all duration-200 shadow-ecoSm",
+                  "bg-gradient-to-br from-eco-baby to-eco-babyDark",
+                  "hover:shadow-ecoHover active:scale-[0.98]",
+                  "focus-visible:ring-2 focus-visible:ring-eco-baby/40 focus-visible:outline-none",
+                  isBusy ? "cursor-not-allowed opacity-70 hover:shadow-ecoSm" : null,
                 )}
                 aria-label="Enviar mensagem"
                 title={isBusy ? "Aguarde a resposta da Eco" : "Enviar mensagem"}

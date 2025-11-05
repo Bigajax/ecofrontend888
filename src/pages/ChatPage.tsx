@@ -728,7 +728,7 @@ function ChatPage() {
             <button
               type="button"
               onClick={handleJumpToBottom}
-              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300/60"
+              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-eco-baby/60"
             >
               Novas mensagens
             </button>
