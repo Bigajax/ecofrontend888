@@ -30,6 +30,7 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
   const [status, setStatus] = useState<FeedbackCardStatus>("idle");
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [activeVote, setActiveVote] = useState<"up" | "down" | null>(null);
   const dislikeButtonRef = useRef<HTMLButtonElement | null>(null);
   const sessionIdRef = useRef<string | null | undefined>(undefined);
   const { sendFeedback } = useSendFeedback();
@@ -130,6 +131,13 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
     if (!hasInteraction || disableActions) {
       return;
     }
+
+    // Toggle: se já está ativo, apenas desativa visualmente
+    if (activeVote === "up") {
+      setActiveVote(null);
+      return;
+    }
+
     setStatus("sending");
     try {
       const result = await sendFeedback({
@@ -148,7 +156,9 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
         return;
       }
       if (result.ok) {
-        handleSuccess(result.status);
+        setActiveVote("up");
+        setStatus("idle");
+        toast.success(`Feedback enviado (${result.status})`);
       } else {
         handleError({ status: result.status });
       }
@@ -156,16 +166,23 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
       console.error("feedback_like_error", error);
       handleError(error);
     }
-  }, [disableActions, handleError, handleSuccess, hasInteraction, interactionId, meta, resolveSessionId, sendFeedback, userId]);
+  }, [activeVote, disableActions, handleError, hasInteraction, interactionId, lastActivatedModuleKey, meta, resolveSessionId, sendFeedback, userId]);
 
   const openPopover = useCallback(() => {
     if (!hasInteraction || status === "sending") {
       return;
     }
+
+    // Toggle: se já está ativo, apenas desativa visualmente
+    if (activeVote === "down") {
+      setActiveVote(null);
+      return;
+    }
+
     setSelectedReason(null);
     setStatus("selecting");
     setIsPopoverOpen(true);
-  }, [hasInteraction, status]);
+  }, [activeVote, hasInteraction, status]);
 
   const handleConfirmDislike = useCallback(async () => {
     if (!hasInteraction || !selectedReason) {
@@ -189,7 +206,10 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
         return;
       }
       if (result.ok) {
-        handleSuccess(result.status);
+        setActiveVote("down");
+        resetPopoverState();
+        setStatus("idle");
+        toast.success(`Feedback enviado (${result.status})`);
       } else {
         handleError({ status: result.status });
       }
@@ -197,7 +217,7 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
       console.error("feedback_dislike_error", error);
       handleError(error);
     }
-  }, [handleSuccess, hasInteraction, interactionId, meta, resolveSessionId, selectedReason, sendFeedback, userId]);
+  }, [handleError, hasInteraction, interactionId, lastActivatedModuleKey, meta, resetPopoverState, resolveSessionId, selectedReason, sendFeedback, userId]);
 
   if (!showCard) {
     if (status === "success") {
@@ -219,7 +239,11 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="rounded-full border border-slate-200 px-3 py-1 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className={`rounded-full border px-3 py-1 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${
+            activeVote === "up"
+              ? "border-eco-baby bg-eco-babySoft"
+              : "border-eco-line bg-transparent hover:border-eco-baby/60"
+          }`}
           onClick={handleLike}
           disabled={disableActions}
           aria-busy={status === "sending"}
@@ -229,7 +253,11 @@ export function FeedbackCard({ message }: FeedbackCardProps) {
         <button
           ref={dislikeButtonRef}
           type="button"
-          className="rounded-full border border-slate-200 px-3 py-1 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className={`rounded-full border px-3 py-1 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${
+            activeVote === "down"
+              ? "border-eco-baby bg-eco-babySoft"
+              : "border-eco-line bg-transparent hover:border-eco-baby/60"
+          }`}
           onClick={openPopover}
           disabled={disableActions}
           aria-busy={status === "sending"}
