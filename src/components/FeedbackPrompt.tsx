@@ -34,6 +34,7 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<ReasonKey | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeVote, setActiveVote] = useState<"up" | "down" | null>(null);
   const sessionIdRef = useRef<string | null | undefined>(undefined);
   const { interactionId, moduleCombo, promptHash, messageId: contextMessageId, latencyMs } =
     useMessageFeedbackContext(message);
@@ -124,6 +125,7 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
         arm: lastActivatedModuleKey ?? null,
       });
       trackFeedbackEvent("FE: Feedback Prompt Sent", payload);
+      setActiveVote(vote);
       setMode("done");
       onSubmitted?.();
       return true;
@@ -214,24 +216,42 @@ export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptP
         <button
           disabled={loading}
           onClick={() => {
+            // Toggle: se já está ativo, desativa
+            if (activeVote === "up") {
+              setActiveVote(null);
+              return;
+            }
             const payload = buildPayload("up");
             trackFeedbackEvent("FE: Feedback Prompt Click", payload);
             void send("up");
           }}
-          className="rounded-full border px-3 py-1 text-sm hover:bg-gray-50"
+          className={`rounded-full border px-3 py-1 text-sm transition-all duration-200 ${
+            activeVote === "up"
+              ? "border-eco-baby bg-eco-babySoft"
+              : "border-eco-line bg-transparent hover:border-eco-baby/60"
+          }`}
         >
           👍
         </button>
         <button
           disabled={loading}
           onClick={() => {
+            // Toggle: se já está ativo, desativa
+            if (activeVote === "down") {
+              setActiveVote(null);
+              return;
+            }
             const payload = buildPayload("down");
             trackFeedbackEvent("FE: Feedback Prompt Open Reasons", payload);
             setSelected(null);
             setError(null);
             setMode("reasons");
           }}
-          className="rounded-full border px-3 py-1 text-sm hover:bg-gray-50"
+          className={`rounded-full border px-3 py-1 text-sm transition-all duration-200 ${
+            activeVote === "down"
+              ? "border-eco-baby bg-eco-babySoft"
+              : "border-eco-line bg-transparent hover:border-eco-baby/60"
+          }`}
         >
           👎
         </button>
