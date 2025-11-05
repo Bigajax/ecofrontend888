@@ -145,7 +145,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
               href={FEEDBACK_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center justify-center rounded-full bg-[color:var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
+              className="hidden sm:inline-flex items-center justify-center rounded-full bg-eco-babySoft px-4 py-2 text-sm font-semibold text-eco-babyDark transition-all duration-200 hover:bg-eco-baby hover:text-white hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
             >
               Feedback
             </a>
