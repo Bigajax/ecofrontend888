@@ -126,7 +126,7 @@ const MessageList: React.FC<MessageListProps> = ({
   }
 
   return (
-    <div className="w-full space-y-3 md:space-y-4">
+    <div className="w-full space-y-2 md:space-y-3">
       {uniqueMessages.map((message, index) => {
         const messageKey = buildMessageKey(message, index);
         return (

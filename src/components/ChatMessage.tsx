@@ -88,9 +88,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
   })();
 
   const bubbleClass = clsx(
-    "min-w-0 rounded-2xl px-4 py-3 text-left whitespace-pre-wrap break-words leading-relaxed",
-    "text-[15px] sm:text-[15px]",
-    "max-w-[min(72ch,90vw)] md:max-w-[min(68ch,70vw)]",
+    "min-w-0 rounded-2xl px-3 py-2 md:px-4 md:py-3 text-left whitespace-pre-wrap break-words [word-break:anywhere] leading-[1.35]",
+    "text-[15px] md:text-[16px]",
+    "max-w-[min(70ch,88vw)] md:max-w-[70ch]",
     isUser
       ? "bg-gradient-to-br from-eco-baby to-eco-babyDark text-white shadow-ecoSm"
       : // contraste suave no fundo branco para a bolha da Eco
