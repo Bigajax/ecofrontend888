@@ -468,6 +468,14 @@ export const onControl = ({
       } catch (error) {
         // Verificar se é erro benigno antes de propagar para UI
         const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorName = error instanceof Error ? error.name : 'Unknown';
+
+        // Detectar erros específicos do backend
+        const isBackendError =
+          errorMessage.includes('is not defined') ||
+          errorMessage.includes('ReferenceError') ||
+          errorMessage.includes('TypeError');
+
         const isBenignError =
           (error as any)?.name === 'AbortError' ||
           controller.signal.aborted ||
@@ -487,8 +495,13 @@ export const onControl = ({
           try {
             console.error("[SSE-DEBUG] onControl_error_critical", {
               error: errorMessage,
+              errorName,
               clientMessageId: normalizedClientId,
               hasFinalText,
+              isBackendError,
+              suggestion: isBackendError
+                ? "Backend error - check server logs for 'is not defined' errors"
+                : undefined,
             });
           } catch {}
           // Aqui poderia chamar setErroApi se tivesse acesso, mas o contexto atual

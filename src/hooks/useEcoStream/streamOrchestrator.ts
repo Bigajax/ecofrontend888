@@ -982,10 +982,17 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
 
       if (noChunksEmitted) {
         const finishReason = doneContext.streamStats.clientFinishReason;
-        if (finishReason !== "user_cancelled" && isDevelopmentEnv) {
+        const lastError = doneContext.streamStats?.lastError;
+
+        if (finishReason !== "user_cancelled") {
           console.warn(
-            `[EcoStream] Nenhum chunk emitido antes do encerramento. Finalizando silenciosamente.`,
-            { clientMessageId },
+            `[EcoStream] Nenhum chunk emitido antes do encerramento. Backend pode estar tendo problemas.`,
+            {
+              clientMessageId,
+              finishReason,
+              lastError,
+              isDevelopment: isDevelopmentEnv
+            },
           );
         }
         // A chamada a setErroApi foi removida para suprimir a bolha de erro.
