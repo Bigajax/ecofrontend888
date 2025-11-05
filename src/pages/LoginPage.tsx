@@ -285,9 +285,9 @@ const LoginPage: React.FC = () => {
                   disabled={!canSubmit}
                   className={[
                     'flex h-12 w-full items-center justify-center rounded-xl text-sm font-normal transition-all duration-300 ease-out',
-                    'bg-[var(--eco-user)] text-white shadow-[0_4px_30px_rgba(0,0,0,0.04)]',
-                    'hover:bg-gradient-to-r hover:from-[var(--eco-user)] hover:to-[var(--eco-accent)] hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]',
-                    'focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40 focus:ring-offset-2',
+                    'bg-eco-baby text-white shadow-[0_4px_30px_rgba(0,0,0,0.04)]',
+                    'hover:bg-gradient-to-r hover:from-eco-babyDark hover:to-eco-baby hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]',
+                    'focus:outline-none focus:ring-2 focus:ring-eco-baby/40 focus:ring-offset-2',
                     'active:translate-y-0',
                     'disabled:cursor-not-allowed disabled:opacity-60 disabled:transform-none',
                   ].join(' ')}
