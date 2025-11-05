@@ -1,24 +1,30 @@
-# ECO Frontend - Claude Developer Guide
+# CLAUDE.md
 
-## Quick Start
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## ECO Frontend - Quick Start
 
 This is a React 18 + TypeScript frontend application for ECO, an emotional AI assistant. The app provides real-time streaming chat with SSE support, voice interactions, and emotional memory management.
 
-```bash
-# Install and run
-npm install
-npm run dev
-
-# Production build
-npm run build
-npm run preview
-```
-
-## Project Overview
-
-**Stack**: React 18, TypeScript, Vite 5, Tailwind CSS, Supabase Auth
+**Stack**: React 18, TypeScript, Vite 5, Tailwind CSS, Supabase Auth, Nivo/Recharts, Three.js
 **Architecture**: Context-based state management with SSE streaming orchestration
 **Design**: Apple-inspired glassmorphism with accessibility support
+
+## Common Commands
+
+```bash
+# Development
+npm install
+npm run dev              # Start dev server on http://localhost:5173
+npm run lint             # Run ESLint checks
+npm run test             # Run all unit tests with Vitest
+npm run test -- <file>   # Run specific test file
+npm run smoke            # Test CORS and API connectivity
+
+# Production
+npm run build            # Build to dist/ with sourcemaps
+npm run preview          # Test production build locally
+```
 
 ## Critical Files to Read First
 
@@ -201,23 +207,50 @@ upsertMessage({
 
 ## UI/UX Guidelines
 
-### Design System
-- **Glassmorphism**: Translucent surfaces with backdrop-blur
-- **Color Tokens**: CSS variables in `:root` for consistency
-- **Typography**: SF Pro with system fallbacks
-- **Accessibility**: Respects `prefers-reduced-motion`, `prefers-contrast`
+### Design System (tokens.json)
+
+**Colors**:
+- `bg`: Background colors (light, medium, dark)
+- `glass`: Glassmorphic surface colors
+- `text`: Text colors by hierarchy
+- `bubble`: User/AI message bubbles
+- `accent`, `success`, `warn`, `danger`: Semantic colors
+- `eco`: Brand colors (from light to dark shades)
+
+**Typography**:
+- Primary: Inter (sans-serif) for UI text
+- Display: Playfair Display for headings
+
+**Effects**:
+- `blur.glass`: 12px (standard glass effect)
+- `blur.glassStrong`: 18px (emphasized glass effect)
+- `shadows.minimal`, `subtle`, `glow`: Layered elevation
+- `radius.bubble`, `input`, `card`, `xl`: Consistent border radius
+
+**Motion**:
+- `motion.calm`: 300ms (standard transitions)
+- `motion.breath`: 6s (ambient animations)
 
 ### Component Styling
-```css
-/* Glass effect pattern */
-.glass-component {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-}
 
-/* Focus states */
+**Glassmorphism Pattern**:
+Use Tailwind utilities: `.glass-shell`, `.glass-shell-strong`
+```tsx
+<div className="glass-shell rounded-xl p-4 backdrop-blur-[12px]">
+  Content with glass effect
+</div>
+```
+
+**Custom Blur Classes** (tailwind.config.js):
+```typescript
+backdropBlur: {
+  glass: '12px',
+  glassStrong: '18px'
+}
+```
+
+**Focus States**:
+```css
 :focus-visible {
   outline: 2px solid #007AFF;
   outline-offset: 2px;
@@ -225,10 +258,87 @@ upsertMessage({
 ```
 
 ### Animation Patterns
-- Spring animations via Framer Motion
-- Typing dots for loading states
-- Scale on tap for buttons
-- Smooth scroll with `scrollIntoView`
+- **Framer Motion**: Spring animations for interactive elements
+- **Typing Indicators**: Dot animation during streaming
+- **Button Interactions**: Scale on tap/click
+- **Scroll Behavior**: Smooth `scrollIntoView` for message focus
+- **Accessible**: Respects `prefers-reduced-motion` media query
+
+## Code Style & Patterns
+
+### Naming Conventions
+
+**Components** (src/components/):
+- PascalCase files: `ChatMessage.tsx`, `EcoSidebar.tsx`, `AudioPlayerOverlay.tsx`
+- Feature-based subdirectories: `feedback/`, `memory/` group related components
+- Path alias available: `@/components/...` resolves to `src/components/...`
+
+**Hooks** (src/hooks/):
+- camelCase with `use` prefix: `useEcoStream.ts`, `useChatScroll.ts`, `useFeedbackPrompt.ts`
+- Complex hooks use subdirectories: `useEcoStream/` contains orchestration logic
+
+**API Clients** (src/api/):
+- Feature-based: `ecoApi.ts`, `voiceApi.ts`, `memoriaApi.ts`, `feedback.ts`
+- Organized subdirectories: `ecoStream/` for SSE components
+
+**Utilities** (src/utils/):
+- Feature-specific subdirectories: `chat/` for chat utilities
+- Clear naming: `sanitizeEcoText.ts`, `generatePrompt.ts`
+
+**Test Files**:
+- Colocation pattern: `__tests__/` subdirectories parallel to source
+- Naming: `<component>.test.tsx`, `<hook>.test.ts`, `<utility>.test.ts`
+- Descriptive names: `ChatMessage.layout.test.tsx`, `streamOrchestrator.test.ts`
+
+### TypeScript Configuration
+
+Strict settings enforced via `tsconfig.app.json`:
+- `target: "ES2021"`, `strict: true`
+- `noUnusedLocals: true`, `noUnusedParameters: true`
+- `noImplicitReturns: true`, `noFallthroughCasesInSwitch: true`
+- Path alias: `@/*` → `src/*`
+
+ESLint enforces:
+- React Hooks rules (hooks/recommended)
+- No variable shadowing
+- No implicit returns in TypeScript functions
+
+## Testing
+
+### Test Setup
+
+**Framework**: Vitest 2.1.3 with React Testing Library 16.0.1
+**Environment**: jsdom (browser-like DOM)
+**Coverage**: 23 test files across API, components, hooks, pages, and utilities
+
+**Run tests**:
+```bash
+npm run test                      # All tests
+npm run test -- <pattern>         # Specific file/pattern
+npm run test -- --watch          # Watch mode
+npm run test -- --coverage       # Coverage report
+```
+
+### Testing Patterns
+
+1. **Component Testing**: Use React Testing Library queries, avoid implementation details
+2. **Hook Testing**: Test hook behavior in isolation using test wrapper functions
+3. **SSE Testing**: Specialized tests in `useEcoStream/__tests__/` for streaming orchestration
+4. **Integration Focus**: Test components + hooks together rather than in isolation
+
+### Key Test Files
+
+**Streaming** (most complex):
+- `src/hooks/useEcoStream/__tests__/streamOrchestrator.test.ts` - Core orchestration logic
+- `src/hooks/useEcoStream/__tests__/streamRunner.test.ts` - Event runner
+- `src/api/__tests__/ecoStream.test.ts` - SSE client
+
+**Components**:
+- `src/components/__tests__/ChatMessage.test.tsx` - Main chat bubble
+- `src/components/__tests__/ChatMessage.normalize.test.tsx` - Text normalization
+
+**Pages**:
+- `src/pages/__tests__/ChatPage.typingIndicator.test.tsx` - UI feedback
 
 ## Development Workflow
 
@@ -236,12 +346,13 @@ upsertMessage({
 ```bash
 # Environment variables
 cp .env.example .env
-# Configure Supabase, API URLs, and optional services
+# Configure: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL, etc.
 
 # Development
-npm run dev         # Hot reload on :5173
-npm run lint        # ESLint + Prettier
+npm run dev         # Hot reload on http://localhost:5173
+npm run lint        # ESLint checks
 npm run test        # Vitest unit tests
+npm run test -- --watch  # Watch for changes
 ```
 
 ### Build & Deploy
@@ -393,6 +504,54 @@ console.log({
 - Upgrade to React 19 when stable
 - Consider Zustand for complex state
 
+## Environment Variables
+
+Configure in `.env` file (see `.env.example`):
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `VITE_APP_URL` | Auth redirect base URL | `http://localhost:5173` |
+| `VITE_SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Supabase public key | `eyJ...` |
+| `VITE_API_URL` | Backend API base URL | `http://localhost:3001` |
+| `VITE_ELEVENLABS_VOICE_ID` | TTS voice identifier | (optional) |
+| `VITE_MIXPANEL_TOKEN` | Analytics token | (optional) |
+| `VITE_FB_PIXEL_ID` | Facebook Pixel ID | (optional) |
+
+**Dev Note**: Vite injects these as `import.meta.env.VITE_*` at build time.
+
+## Project Statistics
+
+| Metric | Count |
+|--------|-------|
+| TypeScript/TSX Files | 208 |
+| TSX Components | ~77 |
+| TS Hooks/Utilities/API | ~131 |
+| Test Files | 23 (in `__tests__/` subdirectories) |
+| NPM Dependencies | 56 |
+| Dev Dependencies | 21 |
+
+## Deployment
+
+### Vercel Configuration (vercel.json)
+
+API requests are rewritten to the backend:
+```json
+{
+  "rewrites": [
+    { "source": "/health", "destination": "https://ecobackend888.onrender.com/health" },
+    { "source": "/api/:path*", "destination": "https://ecobackend888.onrender.com/api/:path*" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ]
+}
+```
+
+**Deploy Steps**:
+1. Push to GitHub (auto-deploys to Vercel)
+2. Vercel runs: `npm run build` → outputs `dist/`
+3. Set env vars in Vercel dashboard (prefix: `VITE_`)
+4. Test with `npm run smoke` before deploying
+
 ## Resources
 
 ### Internal Documentation
@@ -410,6 +569,8 @@ console.log({
 - [React 18 Docs](https://react.dev)
 - [Tailwind CSS](https://tailwindcss.com)
 - [Framer Motion](https://www.framer.com/motion/)
+- [Vitest](https://vitest.dev/)
+- [React Testing Library](https://testing-library.com/react)
 
 ## Quick Reference
 
@@ -468,5 +629,24 @@ export function Component({ required, optional = false, onAction }: Props) {
 
 ---
 
-*Last updated: November 2024*
+*Last updated: November 2025*
 *ECO Frontend v1.0*
+
+## What Changed in This Update
+
+**Added**:
+- Common commands section with all npm scripts
+- Code style & naming conventions for all file types
+- TypeScript configuration details and ESLint rules
+- Comprehensive testing section with Vitest/RTL patterns
+- Design system tokens (colors, typography, effects, motion)
+- Environment variables table with examples
+- Project statistics and file counts
+- Deployment and Vercel configuration details
+- Updated resources with Vitest and React Testing Library links
+
+**Improved**:
+- Reorganized Quick Start for clarity
+- Expanded UI/UX Guidelines with design tokens
+- Enhanced Development Workflow with testing examples
+- Better structure for future Claude instances
