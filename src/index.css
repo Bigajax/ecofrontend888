@@ -2,10 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Evita “font boosting” no iOS/Android e melhora renderização */
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; text-rendering: optimizeLegibility; }
+/* Evita "font boosting" no iOS/Android e melhora renderização */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; text-rendering: optimizeLegibility; background: #FAF9F7; }
 
 html, body, #root { height: 100%; }
+
+body { background: #FAF9F7; }
 
 .chat-message-text {
   white-space: pre-wrap;

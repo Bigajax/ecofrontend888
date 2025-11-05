@@ -36,7 +36,7 @@ const Input: React.FC<InputProps> = ({
         required={required}
         autoComplete={autoComplete}
         className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800
-                   focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent
+                   focus:outline-none focus:ring-2 focus:ring-eco-baby/40 focus:border-transparent
                    placeholder-gray-400 transition-all duration-200"
       />
     </motion.div>

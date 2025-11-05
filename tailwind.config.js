@@ -45,6 +45,14 @@ export default {
         'bubble-eco': tokens.colors.bubble.eco,
         'bubble-user': tokens.colors.bubble.user,
         'line': tokens.colors.line,
+        eco: {
+          bg: '#FAF9F7',
+          line: '#E8E3DD',
+          text: '#38322A',
+          baby: '#6EC8FF',
+          babyDark: '#36B3FF',
+          babySoft: '#E9F6FF',
+        },
       },
 
       backgroundImage: {
@@ -63,6 +71,8 @@ export default {
         'card': tokens.radius.card,
         xl: tokens.radius.xl,
         '2xl': tokens.radius['2xl'],
+        eco: '12px',
+        pill: '999px',
       },
 
       boxShadow: {
@@ -70,6 +80,9 @@ export default {
         subtle: subtleShadow,
         glow: tokens.shadows.glow,
         'eco-glow': '0 0 20px rgba(163, 145, 126, 0.25)',
+        eco: '0 4px 30px rgba(0,0,0,0.04)',
+        ecoSm: '0 2px 12px rgba(0,0,0,0.04)',
+        ecoHover: '0 6px 16px rgba(0,0,0,0.06)',
       },
 
       transitionDuration: {

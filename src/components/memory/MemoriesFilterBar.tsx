@@ -33,7 +33,7 @@ const MemoriesFilterBar: React.FC<MemoriesFilterBarProps> = ({
           id="emotion-filter"
           value={filters.emotion}
           onChange={(event) => onEmotionChange(event.target.value)}
-          className="w-full h-11 rounded-xl px-4 bg-white/90 backdrop-blur-sm border border-black/[0.06] text-[15px] text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-150"
+          className="w-full h-11 rounded-xl px-4 bg-white/90 backdrop-blur-sm border border-black/[0.06] text-[15px] text-gray-700 focus:border-eco-baby focus:ring-2 focus:ring-eco-baby/30 transition-all duration-150"
         >
           <option value="all">Todas as emoções</option>
           {emotionOptions.map((emo) => (
@@ -54,7 +54,7 @@ const MemoriesFilterBar: React.FC<MemoriesFilterBarProps> = ({
           value={filters.query}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Buscar em reflexões, tags, domínios..."
-          className="w-full h-11 rounded-xl px-4 bg-white/90 backdrop-blur-sm border border-black/[0.06] text-[15px] text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-150"
+          className="w-full h-11 rounded-xl px-4 bg-white/90 backdrop-blur-sm border border-black/[0.06] text-[15px] text-gray-700 placeholder-gray-400 focus:border-eco-baby focus:ring-2 focus:ring-eco-baby/30 transition-all duration-150"
         />
       </div>
 

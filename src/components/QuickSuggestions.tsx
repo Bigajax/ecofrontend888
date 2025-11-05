@@ -200,13 +200,13 @@ function QuickSuggestionsComp({
             className={clsx(
               "inline-flex shrink-0 snap-center items-center justify-center gap-2",
               "rounded-2xl backdrop-blur-md border",
-              "bg-white/60 border-[var(--eco-line)]",
-              "text-[var(--eco-text)]",
-              "shadow-[0_4px_30px_rgba(0,0,0,0.04)]",
+              "bg-eco-babySoft border-eco-baby/30",
+              "text-[#1F6F9B]",
+              "shadow-ecoSm",
               "transition-all duration-300 ease-out",
-              "hover:bg-white/80 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]",
+              "hover:bg-eco-baby/10 hover:shadow-ecoHover",
               "hover:-translate-y-0.5",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--eco-accent)]/40",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-eco-baby/40",
               "active:translate-y-0",
               isFooter
                 ? "min-h-[44px] min-w-[180px] px-3.5 py-2.5"
