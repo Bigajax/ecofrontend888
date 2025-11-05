@@ -94,7 +94,7 @@ p, span, div {
 
 .chat-bubble.user {
   background: var(--eco-user);
-  color: #FAF9F7;
+  color: #ffffff;
 }
 
 .chat-bubble.eco {
@@ -185,7 +185,7 @@ textarea.input-glass {
 button.primary,
 .btn-primary {
   background: var(--eco-user);
-  color: #FAF9F7;
+  color: #ffffff;
   border-radius: 10px;
   padding: 12px 24px;
   font-family: var(--font-primary);
