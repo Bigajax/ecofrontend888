@@ -29,7 +29,7 @@ export interface StreamRunStats {
   gotAnyChunk: boolean;
   lastMeta?: Record<string, unknown>;
   finishReasonFromMeta?: string;
-  status?: "no_content";
+  status?: "no_content" | "error" | "aborted" | "benign_no_output" | "final_text_only" | "completed";
   timing?: { startedAt?: number; firstChunkAt?: number; totalMs?: number };
   responseHeaders?: Record<string, string>;
   noContentReason?: string;
@@ -39,6 +39,8 @@ export interface StreamRunStats {
   guardFallbackTriggered?: boolean;
   jsonFallbackAttempts?: number;
   jsonFallbackSucceeded?: boolean;
+  benignError?: boolean; // Flag to indicate if error should not trigger UI banner
+  errorMessage?: string; // Store error message for debugging
 }
 
 export interface StreamSharedContext {

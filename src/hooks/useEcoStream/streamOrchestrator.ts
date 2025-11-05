@@ -2798,6 +2798,38 @@ response = await fetchFn(requestUrl, fetchInit);
       clearTypingWatchdog();
       clearWarningTimer();
       inflightControllers.delete(normalizedClientId);
+
+      // Verificar se é erro benigno que não deve rejeitar a Promise
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isBenignError =
+        (error as any)?.name === 'AbortError' ||
+        controller.signal.aborted ||
+        (typeof errorMessage === 'string' && (
+          errorMessage.includes('no_chunks_emitted') ||
+          errorMessage.includes('no_text_before_done') ||
+          errorMessage.includes('no_content') ||
+          errorMessage.includes('aborted') ||
+          errorMessage.includes('benign_no_output') ||
+          errorMessage.includes('final_text_only')
+        ));
+
+      if (isBenignError) {
+        // Resolver com status discriminado ao invés de rejeitar
+        streamStats.benignError = true;
+        streamStats.errorMessage = errorMessage;
+        streamStats.status = controller.signal.aborted ? "aborted" : "benign_no_output";
+        try {
+          console.debug("[EcoStream] benign_error_resolved_not_rejected", {
+            clientMessageId: normalizedClientId,
+            error: errorMessage,
+            status: streamStats.status,
+          });
+        } catch {
+          /* noop */
+        }
+        return streamStats; // Resolve instead of reject for benign errors
+      }
+
       throw error;
     }
 

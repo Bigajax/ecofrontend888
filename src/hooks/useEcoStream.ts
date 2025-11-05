@@ -528,9 +528,23 @@ export const useEcoStream = ({
       typeof (streamPromise as Promise<StreamRunStats>).then === "function" &&
       typeof (streamPromise as Promise<StreamRunStats>).finally === "function"
     ) {
+      // ALWAYS use try/catch to prevent unhandledrejection
       (streamPromise as Promise<StreamRunStats>)
         .then((result) => {
           lastMetaFromStream = result?.lastMeta;
+
+          // Verificar se resultado indica erro benigno
+          if (result?.benignError) {
+            try {
+              console.debug('[EcoStream] stream_completed_with_benign_status', {
+                clientMessageId,
+                status: result.status,
+                errorMessage: result.errorMessage,
+              });
+            } catch {
+              /* noop */
+            }
+          }
         })
         .catch((error) => {
           lastMetaFromStream = undefined;
@@ -569,7 +583,9 @@ export const useEcoStream = ({
             if (
               errorMsg.includes('no_chunks_emitted') ||
               errorMsg.includes('no_text_before_done') ||
-              errorMsg.includes('no_content')
+              errorMsg.includes('no_content') ||
+              errorMsg.includes('benign_no_output') ||
+              errorMsg.includes('final_text_only')
             ) {
               // Esses casos são tratados internamente pelo streamOrchestrator
               console.debug('[EcoStream] Benign error (no content):', errorMsg);

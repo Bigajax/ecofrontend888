@@ -312,6 +312,11 @@ function ChatPage() {
   const streamAndPersist = useCallback(
     async (text: string, systemHint?: string) => {
       if (pending || streaming) {
+        // InFlight guard: bloquear envios duplicados enquanto stream ativo
+        console.warn('[EcoStream] skipped duplicate', {
+          reason: pending ? 'pending' : 'streaming_active',
+          textPreview: text.slice(0, 60),
+        });
         devLog('[ChatPage] stream_guard_blocked', {
           reason: pending ? 'pending' : 'streaming',
           preview: text.slice(0, 60),
@@ -345,6 +350,11 @@ function ChatPage() {
         return null;
       })();
       if (blockReason) {
+        // InFlight guard: bloquear envios duplicados no sendWithGuards
+        console.warn('[EcoStream] skipped duplicate', {
+          reason: blockReason,
+          textPreview: trimmed.slice(0, 60),
+        });
         devLog('[ChatPage] send_blocked', {
           reason: blockReason,
           preview: trimmed.slice(0, 60),
