@@ -199,12 +199,12 @@ function QuickSuggestionsComp({
             onClick={() => emitPick(s, { source: "pill", index })}
             className={clsx(
               "inline-flex shrink-0 snap-center items-center justify-center gap-2",
-              "rounded-2xl backdrop-blur-md border",
-              "bg-eco-babySoft border-eco-baby/30",
-              "text-[#1F6F9B]",
+              "rounded-2xl border",
+              "bg-white border-eco-baby/50",
+              "text-slate-700",
               "shadow-ecoSm",
               "transition-all duration-300 ease-out",
-              "hover:bg-eco-baby/10 hover:shadow-ecoHover",
+              "hover:bg-eco-baby/5 hover:border-eco-baby/70 hover:shadow-ecoHover",
               "hover:-translate-y-0.5",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-eco-baby/40",
               "active:translate-y-0",
