@@ -69,7 +69,8 @@ export function sanitizeEcoText(full: string): string {
     .replace(SPACE_BEFORE_PUNCT, "$1")
     .trim();
 
-  sanitized = sanitizeText(sanitized);
+  // Preserve spacing when sanitizing - don't collapse multiple spaces
+  sanitized = sanitizeText(sanitized, { collapseWhitespace: false });
 
   if (json) {
     const trimmedJson = json.trim();
