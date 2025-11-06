@@ -5,6 +5,7 @@ import { collectTexts } from "../../api/askEcoResponse";
 import { mapResponseEventType, normalizeControlName } from "../../api/ecoStream/eventMapper";
 import { sanitizeText } from "../../utils/sanitizeText";
 import { smartJoin } from "../../utils/streamJoin";
+import { normalizeChunk } from "../../utils/StreamTextNormalizer";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
 import type { ReplyStateController, MessageTrackingRefs, EcoReplyState } from "./messageState";
 import {
@@ -505,12 +506,17 @@ export const applyChunkToMessages = ({
     /* noop */
   }
 
-  const combinedText = smartJoin(currentEntry.text ?? "", appendedSource);
+  // Normalizar chunk com context de tail para espaçamento correto
+  const prevTail = normalizerTailByMessageId.get(assistantId) ?? "";
+  const { safe: normalizedDelta, tail: newTail } = normalizeChunk(prevTail, appendedSource);
+  normalizerTailByMessageId.set(assistantId, newTail);
+
+  const combinedText = smartJoin(currentEntry.text ?? "", normalizedDelta);
 
   // DEBUG: Log the join operation to diagnose spacing
   try {
     const prevPreview = (currentEntry.text ?? "").slice(-20);
-    const nextPreview = appendedSource.slice(0, 20);
+    const nextPreview = normalizedDelta.slice(0, 20);
     const combinedPreview = combinedText.slice(-40);
     console.log(
       `[JOIN_DEBUG] prev="${prevPreview}" + next="${nextPreview}" → combined ends with="${combinedPreview}"`
@@ -684,6 +690,9 @@ export type SummaryExtraction = {
   promptHash?: string;
   moduleCombo?: string[];
 };
+
+// Normalizer state: track tail for each message to maintain context across chunks
+const normalizerTailByMessageId = new Map<string, string>();
 
 export const extractSummaryData = (payload: unknown): SummaryExtraction => {
   const summaryRecord = extractSummaryRecord(payload);

@@ -1,5 +1,5 @@
 // src/components/ChatMessage.tsx
-import React from "react";
+import React, { useMemo } from "react";
 import clsx from "clsx";
 
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
@@ -77,7 +77,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
   const showTypingFooter = isStreaming && !hasVisibleText && !showTypingDots;
 
   // Aplica correção de espaços indevidos (fallback conservador para espaços em mid-word)
-  const displayText = isEco && hasVisibleText ? fixIntrawordSpaces(textToShow) : textToShow;
+  // Memoizada para evitar reprocessar em cada render
+  const displayText = useMemo(() => {
+    if (!isEco || !hasVisibleText) return textToShow;
+    return fixIntrawordSpaces(textToShow);
+  }, [textToShow, isEco, hasVisibleText]);
 
   const finishReasonLabel = (() => {
     if (!isEco && normalizedRole !== "assistant") return undefined;
@@ -93,9 +97,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
   })();
 
   const bubbleClass = clsx(
-    "min-w-0 rounded-2xl px-3 py-2 md:px-4 md:py-3 text-left whitespace-pre-wrap break-words [word-break:anywhere] leading-[1.35]",
+    "min-w-0 rounded-2xl px-3 py-2 md:px-4 md:py-3 text-left leading-[1.6]",
     "text-[15px] md:text-[16px]",
     "max-w-[min(70ch,88vw)] md:max-w-[70ch]",
+    "whitespace-pre-wrap break-words overflow-wrap-anywhere",
     isUser
       ? "bg-gradient-to-br from-eco-baby to-eco-babyDark text-white shadow-ecoSm"
       : // contraste suave no fundo branco para a bolha da Eco
