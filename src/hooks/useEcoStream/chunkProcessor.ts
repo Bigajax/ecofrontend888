@@ -4,6 +4,7 @@ import type { EcoStreamChunk } from "../../api/ecoStream";
 import { collectTexts } from "../../api/askEcoResponse";
 import { mapResponseEventType, normalizeControlName } from "../../api/ecoStream/eventMapper";
 import { sanitizeText } from "../../utils/sanitizeText";
+import { smartJoin } from "../../utils/streamJoin";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
 import type { ReplyStateController, MessageTrackingRefs, EcoReplyState } from "./messageState";
 import {
@@ -184,7 +185,11 @@ export const processSseLine = (
           if (collected.length === 0) {
             continue;
           }
-          const joined = collected.join("");
+          // FIX: Use smartJoin instead of join("") to properly handle word boundaries
+          // This fixes "Umaforçainterior" → "Uma força interior" when Sonnet sends nested chunks
+          const joined = collected.reduce((acc: string, fragment: string) => {
+            return acc ? smartJoin(acc, fragment) : fragment;
+          }, "");
           if (joined.trim().length > 0) {
             return joined;
           }
@@ -196,6 +201,17 @@ export const processSseLine = (
     if (!partCandidate) {
       return;
     }
+
+    // DEBUG: Log raw chunks to diagnose spacing issues
+    try {
+      const chunkPreview = partCandidate.length > 100 ? partCandidate.slice(0, 100) + "..." : partCandidate;
+      console.log(
+        `[CHUNK_DEBUG] idx=${indexCandidate} len=${partCandidate.length} preview="${chunkPreview}" hasSpaces=${/\s/.test(partCandidate)}`
+      );
+    } catch (e) {
+      /* noop */
+    }
+
     handlers.appendAssistantDelta(indexCandidate ?? 0, partCandidate, event);
     return;
   }
@@ -257,8 +273,6 @@ export const smartJoinText = (previous: string, next: string): string => {
 
   const lastChar = prev[prev.length - 1];
   const firstChar = nxt[0];
-  const secondLastChar = prev.length > 1 ? prev[prev.length - 2] : "";
-  const secondChar = nxt.length > 1 ? nxt[1] : "";
 
   // If there's already whitespace at the boundary, don't add more
   if (lastChar === " " || lastChar === "\n" || firstChar === " " || firstChar === "\n") {
@@ -283,7 +297,7 @@ export const smartJoinText = (previous: string, next: string): string => {
     return prev + nxt;
   }
 
-  // Rule: If previous ends with a vowel and next starts with a consonant (new syllable)
+  // Rule: Check character types for word boundary detection
   const prevEndsVowel = /[aeiouáéíóúâêôãõ]$/i.test(prev);
   const prevEndsConsonant = /[bcdfghjklmnpqrstvwxyzç]$/i.test(prev);
   const nextStartsConsonant = /^[bcdfghjklmnpqrstvwxyzç]/i.test(nxt);
@@ -295,11 +309,21 @@ export const smartJoinText = (previous: string, next: string): string => {
     return prev + " " + nxt;
   }
 
-  // If previous ends with common word-ending consonants (m, s, r, z, d) AND next starts with vowel
+  // If previous ends with common word-ending consonants (m, s, r, z, d, n) AND next starts with vowel
   // This catches: "com" + "outras", "para" + "ele"
   const commonWordEndings = /[msrzdn]$/i;
   if (prevEndsConsonant && commonWordEndings.test(prev) && nextStartsVowel) {
     return prev + " " + nxt;
+  }
+
+  // NEW RULE: If previous ends with vowel and next starts with vowel, likely a word boundary
+  // This handles: "força" + "interior", "uma" + "explicação"
+  // EXCEPT when next is just an accent vowel (e.g., "conex" + "ão")
+  if (prevEndsVowel && nextStartsVowel) {
+    // But exclude if next starts with an accent vowel (indicates mid-word accent join)
+    if (!/^[àáâãäåèéêëìíîïòóôõöùúûüýÿ]/i.test(firstChar)) {
+      return prev + " " + nxt;
+    }
   }
 
   // Default: concatenate directly (conservative for mid-word UTF-8 splits)
@@ -472,6 +496,19 @@ export const applyChunkToMessages = ({
   }
 
   const combinedText = smartJoinText(currentEntry.text ?? "", appendedSource);
+
+  // DEBUG: Log the join operation to diagnose spacing
+  try {
+    const prevPreview = (currentEntry.text ?? "").slice(-20);
+    const nextPreview = appendedSource.slice(0, 20);
+    const combinedPreview = combinedText.slice(-40);
+    console.log(
+      `[JOIN_DEBUG] prev="${prevPreview}" + next="${nextPreview}" → combined ends with="${combinedPreview}"`
+    );
+  } catch (e) {
+    /* noop */
+  }
+
   const hasVisibleText = /\S/.test(combinedText);
   const nextEntry = {
     chunkIndexMax: chunk.index,
