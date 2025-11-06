@@ -507,11 +507,12 @@ export const applyChunkToMessages = ({
   }
 
   // Normalizar chunk com context de tail para espaçamento correto
-  const prevTail = normalizerTailByMessageId.get(assistantId) ?? "";
+  // Usar últimos 3 caracteres do buffer atual como contexto (mais confiável que Map)
+  const currentBuffer = currentEntry.text ?? "";
+  const prevTail = currentBuffer.length > 0 ? currentBuffer.slice(-3) : "";
   const { safe: normalizedDelta, tail: newTail } = normalizeChunk(prevTail, appendedSource);
-  normalizerTailByMessageId.set(assistantId, newTail);
 
-  const combinedText = smartJoin(currentEntry.text ?? "", normalizedDelta);
+  const combinedText = smartJoin(currentBuffer, normalizedDelta);
 
   // DEBUG: Log the join operation to diagnose spacing
   try {
@@ -690,9 +691,6 @@ export type SummaryExtraction = {
   promptHash?: string;
   moduleCombo?: string[];
 };
-
-// Normalizer state: track tail for each message to maintain context across chunks
-const normalizerTailByMessageId = new Map<string, string>();
 
 export const extractSummaryData = (payload: unknown): SummaryExtraction => {
   const summaryRecord = extractSummaryRecord(payload);
