@@ -232,6 +232,19 @@ function AppChrome() {
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       event.preventDefault?.();
+      // Suppress AbortError rejections - they're benign and expected during normal stream cancellation
+      const isAbortError =
+        event.reason?.name === 'AbortError' ||
+        event.reason?.message?.includes('aborted') ||
+        (event.reason instanceof DOMException && event.reason.name === 'AbortError');
+
+      if (isAbortError) {
+        try {
+          console.debug("[App] benign_abort_rejection_suppressed", event.reason);
+        } catch {}
+        return;
+      }
+
       console.debug("[App] onunhandledrejection", event.reason);
       console.error("[App] window.unhandledrejection capturado", event.reason, event);
       setHasCapturedError(true);

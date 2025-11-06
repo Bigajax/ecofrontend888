@@ -37,9 +37,9 @@ export type CloseReason =
   | "watchdog_heartbeat"
   | "network_error";
 
-const DEFAULT_STREAM_GUARD_TIMEOUT_MS = 15_000;
+const DEFAULT_STREAM_GUARD_TIMEOUT_MS = 12_000;
 
-export const TYPING_WATCHDOG_MS = 45_000;
+export const TYPING_WATCHDOG_MS = 90_000;
 
 const streamWatchdogRegistry = new Map<string, () => void>();
 
@@ -148,7 +148,7 @@ export function createSseWatchdogs(
     }
     const handler = onTimeout ?? lastHandler;
     if (!handler) return;
-    const timeoutMs = nextMode === "first" ? 30_000 : 45_000;
+    const timeoutMs = nextMode === "first" ? 20_000 : 60_000;
     t = timers.setTimeout(() => {
       const registered = streamWatchdogRegistry.get(id);
       if (registered && registered === clear) {
@@ -464,6 +464,7 @@ export class StreamSession {
     const normalizedClientId = trimmedClientId || clientMessageId;
 
     try {
+      // ATOMIC: Check for existing, abort if active, and delete - all in one go to prevent race
       const existingInflight = this.inflightControllers.get(normalizedClientId);
       if (existingInflight && !existingInflight.signal.aborted) {
         try {
@@ -480,6 +481,7 @@ export class StreamSession {
         });
         return null;
       }
+      // Delete old controller immediately after checking
       if (existingInflight) {
         this.inflightControllers.delete(normalizedClientId);
       }
@@ -552,22 +554,7 @@ export class StreamSession {
         }
       }
 
-      const existingController = this.inflightControllers.get(normalizedClientId);
-      if (existingController && !existingController.signal.aborted) {
-        try {
-          console.warn("[EcoStream] skipped duplicate", {
-            clientMessageId: normalizedClientId,
-            reason: "inflight_guard_duplicate_check"
-          });
-        } catch {
-          /* noop */
-        }
-        this.logDev("duplicate_stream_blocked_second_check", {
-          clientMessageId: normalizedClientId,
-        });
-        return null;
-      }
-
+      // Create new controller (atomic insertion prevents race with concurrent beginStream calls)
       const controller = controllerOverride ?? new AbortController();
       this.controllerRef.current = controller;
       this.inflightControllers.set(normalizedClientId, controller);
@@ -859,6 +846,8 @@ export class StreamSession {
     }
     if (this.normalizedClientId) {
       this.inflightControllers.delete(this.normalizedClientId);
+      // Clear logging set to prevent unbounded growth (memory leak protection)
+      this.streamStartLogged.delete(this.normalizedClientId);
     }
     this.isOpen = false;
   }

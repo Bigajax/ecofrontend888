@@ -108,6 +108,7 @@ type ProcessChunkDeps = {
   extractPayloadRecord: ExtractPayloadRecordFn;
   pickStringFromRecords: PickStringFromRecords;
   handleChunk?: HandleChunkFn | null;
+  doneState?: { value: boolean } | null;
 };
 
 type PromptReadyDeps = {
@@ -224,6 +225,8 @@ export const processChunk = ({
   return (index: number, delta: string, rawEvent: Record<string, unknown>) => {
     if (controller.signal.aborted) return;
     if (streamState.fallbackRequested) return;
+    // Prevent orphaned chunks after done event (guards against late/duplicate SSE events)
+    if (doneState?.value) return;
 
     const payloadRecord = extractPayloadRecord(rawEvent);
     const records = buildRecordChain(rawEvent);

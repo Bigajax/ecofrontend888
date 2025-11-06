@@ -1383,7 +1383,7 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
       options?: { reason?: string; logError?: unknown },
     ) => Promise<boolean> = async () => false;
 
-    const READY_TIMEOUT_MS = 7000;
+    const READY_TIMEOUT_MS = 10000;
 
     const streamState = {
       fallbackRequested: false,
@@ -2277,6 +2277,7 @@ response = await fetchFn(requestUrl, fetchInit);
           extractPayloadRecord,
           pickStringFromRecords,
           handleChunk: safeChunkHandler,
+          doneState,
         });
 
         const handlePromptEvent = onPromptReady({
