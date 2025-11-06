@@ -303,6 +303,16 @@ export const smartJoinText = (previous: string, next: string): string => {
   const nextStartsConsonant = /^[bcdfghjklmnpqrstvwxyzç]/i.test(nxt);
   const nextStartsVowel = /^[aeiouáéíóúâêôãõ]/i.test(nxt);
 
+  // PRIORITY: Check if this looks like a backend-forced mid-word split BEFORE other rules
+  // This must happen before the "common word endings" rule
+  const lastWordInPrev = prev.trim().split(/\s+/).pop() ?? "";
+  const isLikelyMidWordChunk = lastWordInPrev.length < 6 && lastWordInPrev.length > 0;
+  const commonCompleteWords = /\b(com|para|sem|até|são|das|dos|pela|pelo)$/i;
+  if (isLikelyMidWordChunk && nextStartsVowel && !commonCompleteWords.test(lastWordInPrev)) {
+    // This looks like "pes" + "ada" → concatenate directly
+    return prev + nxt;
+  }
+
   // If previous ends with vowel AND next starts with consonant (except 'h'), add space
   // This catches: "está" + "buscando", "ele" + "disse"
   if (prevEndsVowel && nextStartsConsonant && !/^h/i.test(nxt)) {
