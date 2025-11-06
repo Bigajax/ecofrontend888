@@ -257,6 +257,8 @@ export const smartJoinText = (previous: string, next: string): string => {
 
   const lastChar = prev[prev.length - 1];
   const firstChar = nxt[0];
+  const secondLastChar = prev.length > 1 ? prev[prev.length - 2] : "";
+  const secondChar = nxt.length > 1 ? nxt[1] : "";
 
   // If there's already whitespace at the boundary, don't add more
   if (lastChar === " " || lastChar === "\n" || firstChar === " " || firstChar === "\n") {
@@ -264,11 +266,43 @@ export const smartJoinText = (previous: string, next: string): string => {
   }
 
   // If previous ends with punctuation followed by next starting with letter, add space
-  if (/[.!?;:…]$/.test(prev) && /^[a-zA-Z]/.test(nxt)) {
+  if (/[.!?;:…]$/.test(prev) && /^[a-záéíóúâêôãõ]/i.test(nxt)) {
     return prev + " " + nxt;
   }
 
-  // Otherwise, concatenate directly (for UTF-8 mid-word chunks like "conex" + "ão")
+  // Rule: If next starts with uppercase, it's likely a new sentence/word → add space
+  if (/^[A-ZÁÉÍÓÚÂÊÔÃÕ]/.test(nxt)) {
+    return prev + " " + nxt;
+  }
+
+  // Rule: Avoid breaking accented character combinations
+  // Portuguese/Spanish accents: "conex" + "ão", "padr" + "ões"
+  // These typically have pattern: consonant cluster + accent vowel
+  const isAccentCombination = /[^aeiouáéíóúâêôãõ]$/i.test(prev) && /^[àáâãäåèéêëìíîïòóôõöùúûüýÿ]/i.test(nxt);
+  if (isAccentCombination) {
+    return prev + nxt;
+  }
+
+  // Rule: If previous ends with a vowel and next starts with a consonant (new syllable)
+  const prevEndsVowel = /[aeiouáéíóúâêôãõ]$/i.test(prev);
+  const prevEndsConsonant = /[bcdfghjklmnpqrstvwxyzç]$/i.test(prev);
+  const nextStartsConsonant = /^[bcdfghjklmnpqrstvwxyzç]/i.test(nxt);
+  const nextStartsVowel = /^[aeiouáéíóúâêôãõ]/i.test(nxt);
+
+  // If previous ends with vowel AND next starts with consonant (except 'h'), add space
+  // This catches: "está" + "buscando", "ele" + "disse"
+  if (prevEndsVowel && nextStartsConsonant && !/^h/i.test(nxt)) {
+    return prev + " " + nxt;
+  }
+
+  // If previous ends with common word-ending consonants (m, s, r, z, d) AND next starts with vowel
+  // This catches: "com" + "outras", "para" + "ele"
+  const commonWordEndings = /[msrzdn]$/i;
+  if (prevEndsConsonant && commonWordEndings.test(prev) && nextStartsVowel) {
+    return prev + " " + nxt;
+  }
+
+  // Default: concatenate directly (conservative for mid-word UTF-8 splits)
   return prev + nxt;
 };
 
