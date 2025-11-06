@@ -66,7 +66,8 @@ describe('StreamTextNormalizer', () => {
 
     it('retorna tail com menos de 3 caracteres se combinado < 3', () => {
       const result = normalizeChunk('a', 'b');
-      expect(result.tail).toBe('ab');
+      // When space is inserted, tail becomes 'a b' (preserves the space for context)
+      expect(result.tail).toBe('a b');
     });
 
     it('colapsa múltiplos espaços fora de código', () => {

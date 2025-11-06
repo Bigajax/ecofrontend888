@@ -512,6 +512,18 @@ export const applyChunkToMessages = ({
   const prevTail = currentBuffer.length > 0 ? currentBuffer.slice(-3) : "";
   const { safe: normalizedDelta, tail: newTail } = normalizeChunk(prevTail, appendedSource);
 
+  // DEBUG: Verificar se normalizeChunk está inserindo espaço
+  if (localStorage.getItem('ECO_DEBUG_SPACE') === 'true') {
+    const preview = appendedSource.slice(0, 30);
+    console.log('[CHUNK_PROC]', {
+      bufferLen: currentBuffer.length,
+      prevTail: JSON.stringify(prevTail),
+      appendedSource: JSON.stringify(preview),
+      normalizedDelta: JSON.stringify(normalizedDelta.slice(0, 30)),
+      spacesAdded: normalizedDelta.startsWith(' ') ? 1 : 0
+    });
+  }
+
   const combinedText = smartJoin(currentBuffer, normalizedDelta);
 
   // DEBUG: Log the join operation to diagnose spacing

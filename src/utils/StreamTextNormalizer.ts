@@ -208,7 +208,14 @@ export function normalizeChunk(prevTail: string, chunk: string): NormalizeChunkR
 
   // Step 5: Inserir espaço entre palavras se necessário
   let processed = normalized;
-  if (shouldInsertSpace(prevTail, normalized)) {
+  const shouldAdd = shouldInsertSpace(prevTail, normalized);
+
+  // DEBUG
+  if (process.env.NODE_ENV === 'development' && localStorage.getItem('ECO_DEBUG_SPACE') === 'true') {
+    console.log('[NORM] prevTail:', JSON.stringify(prevTail), 'chunk:', JSON.stringify(chunk.slice(0, 20)), 'shouldAdd:', shouldAdd);
+  }
+
+  if (shouldAdd) {
     processed = ' ' + normalized;
   }
 
