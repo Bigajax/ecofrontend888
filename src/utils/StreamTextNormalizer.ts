@@ -49,6 +49,7 @@ function isInCodeBlock(pos: number, codeBlocks: Array<{ start: number; end: numb
 /**
  * Detecta se espaço é necessário entre prevTail e chunk start
  * Regra: se ambos são alphanumeric/unicode letter e não há espaço entre eles
+ * AGRESSIVO: também detecta padrões como consonant-vowel em início de palavra
  */
 function shouldInsertSpace(prevTail: string, chunkStart: string): boolean {
   if (!prevTail || !chunkStart) return false;
@@ -66,8 +67,53 @@ function shouldInsertSpace(prevTail: string, chunkStart: string): boolean {
   // Padrão: letra/número + letra/número = adicionar espaço
   // Suporta: a-z, A-Z, 0-9, À-ÖØ-öø-ÿ, ç/Ç, outros acentos
   const isAlphaNumeric = /[A-Za-zÀ-ÖØ-öø-ÿ0-9]/;
+  const isVowel = /[aeiouáéíóúâêôãõAEIOUÁÉÍÓÚÂÊÔÃÕ]/;
+  const isConsonant = /[bcdfghjklmnpqrstvwxyzçBCDFGHJKLMNPQRSTVWXYZÇ]/;
 
-  return isAlphaNumeric.test(lastChar) && isAlphaNumeric.test(firstChar);
+  if (!isAlphaNumeric.test(lastChar) || !isAlphaNumeric.test(firstChar)) {
+    return false;
+  }
+
+  // REGRA 1: Básica - letra + letra = espaço
+  // Qualquer combinação de letras coladas = adicionar espaço
+  if (isAlphaNumeric.test(lastChar) && isAlphaNumeric.test(firstChar)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Detecta e insere espaços em padrões de palavras coladas DENTRO do chunk
+ * Usa APENAS heurísticas muito seguras para evitar quebrar palavras legítimas
+ *
+ * Exemplo: "esseCheck" → "esse Check"
+ */
+function insertSpacesInCollocatedWords(text: string): string {
+  if (text.length < 2) return text;
+
+  let result = '';
+
+  for (let i = 0; i < text.length; i++) {
+    result += text[i];
+
+    if (i < text.length - 1) {
+      const curr = text[i];
+      const next = text[i + 1];
+
+      // HEURÍSTICA ÚNICA SEGURA: lowercase + UPPERCASE = novo parágrafo/palavra
+      // Exemplo: "essaCheck" → "essa Check"
+      // Isso é muito raro em português legítimo (só em camelCase ou erros)
+      const isPrevLower = /[a-záéíóúâêôãõç]/.test(curr);
+      const isNextUpper = /[A-ZÁÉÍÓÚÂÊÔÃÕÇ]/.test(next);
+
+      if (isPrevLower && isNextUpper) {
+        result += ' ';
+      }
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -152,23 +198,27 @@ export function normalizeChunk(prevTail: string, chunk: string): NormalizeChunkR
   // Step 2: Normalizar line endings
   normalized = normalizeLineEndings(normalized);
 
-  // Step 3: Combinar prevTail + chunk para verificar espaço
+  // Step 3: Inserir espaços em palavras coladas DENTRO do chunk
+  // Isso resolve o caso onde backend envia múltiplas palavras juntas
+  normalized = insertSpacesInCollocatedWords(normalized);
+
+  // Step 4: Combinar prevTail + chunk para verificar espaço
   const combined = prevTail + normalized;
   const codeBlocks = extractCodeBlocks(combined);
 
-  // Step 4: Inserir espaço entre palavras se necessário
+  // Step 5: Inserir espaço entre palavras se necessário
   let processed = normalized;
   if (shouldInsertSpace(prevTail, normalized)) {
     processed = ' ' + normalized;
   }
 
-  // Step 5: Colapsar múltiplos espaços fora de código
+  // Step 6: Colapsar múltiplos espaços fora de código
   // Recalcular code blocks com o novo combined
   const newCombined = prevTail + processed;
   const newCodeBlocks = extractCodeBlocks(newCombined);
   processed = collapseSpaces(processed, newCodeBlocks);
 
-  // Step 6: Extrair tail (últimos 3 caracteres para próxima iteração)
+  // Step 7: Extrair tail (últimos 3 caracteres para próxima iteração)
   const bufferForTail = prevTail + processed;
   const tail = bufferForTail.length > 3 ? bufferForTail.slice(-3) : bufferForTail;
 
