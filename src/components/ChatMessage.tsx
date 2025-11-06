@@ -4,6 +4,7 @@ import clsx from "clsx";
 
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
 import TypingDots from "./TypingDots";
+import MarkdownRenderer from "./MarkdownRenderer";
 import type { Message } from "../contexts/ChatContext";
 import { resolveMessageSender, isUserMessage, isEcoMessage } from "../utils/chat/messages";
 
@@ -123,7 +124,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
                 <TypingDots />
               </span>
             ) : (
-              <span className="chat-message-text">{textToShow}</span>
+              <div className="chat-message-text">
+                {isEco ? (
+                  <MarkdownRenderer content={textToShow} />
+                ) : (
+                  <span>{textToShow}</span>
+                )}
+              </div>
             )}
           </div>
 

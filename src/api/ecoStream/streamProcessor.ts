@@ -495,7 +495,7 @@ export const processEventStream = async (
         (unwrappedPayload as any)?.message ??
         unwrappedPayload;
       const texts = collectTexts(source);
-      const chunkText = texts.join("");
+      const chunkText = texts.join(" ");
       const resolvedText = chunkText.length > 0 ? chunkText : fallbackText;
       if (shouldIgnoreText(resolvedText)) {
         if (isDev) {
@@ -551,7 +551,7 @@ export const processEventStream = async (
         (unwrappedPayload as any)?.message ??
         unwrappedPayload;
       const texts = collectTexts(source);
-      const chunkText = texts.join("");
+      const chunkText = texts.join(" ");
       const resolvedText = chunkText.length > 0 ? chunkText : fallbackText;
       if (shouldIgnoreText(resolvedText)) {
         if (isDev) {
@@ -669,7 +669,7 @@ export const processEventStream = async (
         (unwrappedPayload as any)?.message ??
         (unwrappedPayload as any)?.response;
       const texts = collectTexts(source);
-      const doneText = texts.join("");
+      const doneText = texts.join(" ");
       if (doneText.length > 0 && aggregatedParts.length === 0) {
         pushAggregatedPart(doneText);
       } else if (!doneText && fallbackText && aggregatedParts.length === 0) {
@@ -805,7 +805,7 @@ export const processEventStream = async (
       });
     }
 
-    let texto = aggregatedText || aggregatedParts.join("");
+    let texto = aggregatedText || aggregatedParts.join(" ");
     if (!texto.trim() && lastNonEmptyText) {
       texto = lastNonEmptyText;
     }

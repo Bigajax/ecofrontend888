@@ -528,7 +528,7 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
                     const directText = typeof evt?.text === "string" ? evt.text : undefined;
                     const collected = collectTexts(evt?.payload);
                     const collectedText =
-                      Array.isArray(collected) && collected.length > 0 ? collected.join("") : undefined;
+                      Array.isArray(collected) && collected.length > 0 ? collected.join(" ") : undefined;
                     const finalText = payloadText || dataText || directText || collectedText;
 
                     if (finalText) {
@@ -932,7 +932,7 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
       const aggregatedLength = aggregatedTextValue.length;
       const doneTexts = collectTexts(donePayload);
       const doneContentCandidate =
-        Array.isArray(doneTexts) && doneTexts.length > 0 ? doneTexts.join("") : undefined;
+        Array.isArray(doneTexts) && doneTexts.length > 0 ? doneTexts.join(" ") : undefined;
 
       const normalizedAggregated = aggregatedTextValue.replace(/\s+/g, " ").trim();
       const normalizedDone =

@@ -551,7 +551,7 @@ export const onMessage = ({
       (() => {
         const collected = collectTexts(payloadRecord);
         if (Array.isArray(collected) && collected.length > 0) {
-          return collected.join("");
+          return collected.join(" ");
         }
         return undefined;
       })();
