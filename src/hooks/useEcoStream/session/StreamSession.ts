@@ -924,7 +924,7 @@ const resolveAbsoluteAskEcoUrl = (): ResolveAskEcoUrlResult => {
     throw new Error(message);
   }
 
-  let base = baseCandidate.replace(/\/+$/, "");
+  const base = baseCandidate.replace(/\/+$/, "");
   let parsed: URL;
   try {
     parsed = new URL(base);

@@ -198,7 +198,7 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
       throw new Error(message);
     }
 
-    let base = baseCandidate.replace(/\/+$/, "");
+    const base = baseCandidate.replace(/\/+$/, "");
     let parsed: URL;
     try {
       parsed = new URL(base);

@@ -4,6 +4,7 @@ import type { EcoStreamChunk } from "../../api/ecoStream";
 import { collectTexts } from "../../api/askEcoResponse";
 import { mapResponseEventType, normalizeControlName } from "../../api/ecoStream/eventMapper";
 import { sanitizeText } from "../../utils/sanitizeText";
+import { smartJoin } from "../../utils/streamJoin";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
 import type { ReplyStateController, MessageTrackingRefs, EcoReplyState } from "./messageState";
 import {
@@ -249,13 +250,7 @@ export function extractText(evt: any): string {
   return "";
 }
 
-export const smartJoinText = (previous: string, next: string): string => {
-  const parts: string[] = [];
-  if (previous) parts.push(previous);
-  if (next) parts.push(next);
-  if (parts.length === 0) return "";
-  return parts.join("");
-};
+// Use smartJoin from utils/streamJoin instead - it properly handles spacing between chunks
 
 export const mergeReplyMetadata = (metadata: unknown, replyTo: string): unknown => {
   if (!replyTo) return metadata;
@@ -422,7 +417,7 @@ export const applyChunkToMessages = ({
     /* noop */
   }
 
-  const combinedText = smartJoinText(currentEntry.text ?? "", appendedSource);
+  const combinedText = smartJoin(currentEntry.text ?? "", appendedSource);
   const hasVisibleText = /\S/.test(combinedText);
   const nextEntry = {
     chunkIndexMax: chunk.index,

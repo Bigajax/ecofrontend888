@@ -2,7 +2,7 @@ import { ensureHttpsUrl } from "../utils/ensureHttpsUrl";
 import { stripTrailingApiSegments } from "../utils/stripTrailingApiSegments";
 import { API_BASE as SIMPLE_API_BASE } from "../api/config";
 
-/* eslint-disable no-underscore-dangle */
+ 
 declare const __API_BASE__: string | undefined;
 
 // ---------- utils ----------

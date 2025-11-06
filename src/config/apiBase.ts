@@ -1,7 +1,7 @@
 import { ensureHttpsUrl } from "../utils/ensureHttpsUrl";
 import { stripTrailingApiSegments } from "../utils/stripTrailingApiSegments";
 
-/* eslint-disable no-underscore-dangle */
+ 
 declare const __API_BASE__: string | undefined; // pode não existir
 
 // ---- leitura de envs em diferentes contextos -------------------------------
@@ -117,6 +117,6 @@ const isLocalhost = (() => {
 export const SHOW_API_BASE_WARNING = IS_API_BASE_EMPTY && isLocalhost;
 if (SHOW_API_BASE_WARNING) {
   // log temporário
-  // eslint-disable-next-line no-console
+   
   console.warn("[ECO] API_BASE vazio nas envs; usando fallback:", API_BASE);
 }
