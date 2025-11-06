@@ -213,6 +213,7 @@ export const processChunk = ({
   extractPayloadRecord,
   pickStringFromRecords,
   handleChunk,
+  doneState,
 }: ProcessChunkDeps) => {
   const chunkHandler = typeof handleChunk === "function" ? handleChunk : null;
   if (!chunkHandler) {
