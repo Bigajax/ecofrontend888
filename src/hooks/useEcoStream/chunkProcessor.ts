@@ -505,7 +505,7 @@ export const applyChunkToMessages = ({
     /* noop */
   }
 
-  const combinedText = smartJoinText(currentEntry.text ?? "", appendedSource);
+  const combinedText = smartJoin(currentEntry.text ?? "", appendedSource);
 
   // DEBUG: Log the join operation to diagnose spacing
   try {

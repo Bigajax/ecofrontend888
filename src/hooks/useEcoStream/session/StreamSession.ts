@@ -1100,6 +1100,9 @@ export class StreamFallbackManager {
       clearTimeout(this.fallbackGuardTimer);
     }
     this.fallbackGuardTimer = null;
+    // Reset the guard flag when timer is cleared (stream started successfully)
+    this.fallbackGuardTriggered = false;
+    this.streamStats.guardFallbackTriggered = false;
   }
 
   startFallbackGuardTimer(triggerJsonFallback: (reason: string) => void) {
