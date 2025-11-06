@@ -4,7 +4,6 @@ import type { EcoStreamChunk } from "../../api/ecoStream";
 import { collectTexts } from "../../api/askEcoResponse";
 import { mapResponseEventType, normalizeControlName } from "../../api/ecoStream/eventMapper";
 import { sanitizeText } from "../../utils/sanitizeText";
-import { smartJoin } from "../../utils/streamJoin";
 import type { Message as ChatMessageType, UpsertMessageOptions } from "../../contexts/ChatContext";
 import type { ReplyStateController, MessageTrackingRefs, EcoReplyState } from "./messageState";
 import {
@@ -250,7 +249,28 @@ export function extractText(evt: any): string {
   return "";
 }
 
-// Use smartJoin from utils/streamJoin instead - it properly handles spacing between chunks
+export const smartJoinText = (previous: string, next: string): string => {
+  const prev = previous ?? "";
+  const nxt = next ?? "";
+
+  if (!prev || !nxt) return prev + nxt;
+
+  const lastChar = prev[prev.length - 1];
+  const firstChar = nxt[0];
+
+  // If there's already whitespace at the boundary, don't add more
+  if (lastChar === " " || lastChar === "\n" || firstChar === " " || firstChar === "\n") {
+    return prev + nxt;
+  }
+
+  // If previous ends with punctuation followed by next starting with letter, add space
+  if (/[.!?;:…]$/.test(prev) && /^[a-zA-Z]/.test(nxt)) {
+    return prev + " " + nxt;
+  }
+
+  // Otherwise, concatenate directly (for UTF-8 mid-word chunks like "conex" + "ão")
+  return prev + nxt;
+};
 
 export const mergeReplyMetadata = (metadata: unknown, replyTo: string): unknown => {
   if (!replyTo) return metadata;
@@ -417,7 +437,7 @@ export const applyChunkToMessages = ({
     /* noop */
   }
 
-  const combinedText = smartJoin(currentEntry.text ?? "", appendedSource);
+  const combinedText = smartJoinText(currentEntry.text ?? "", appendedSource);
   const hasVisibleText = /\S/.test(combinedText);
   const nextEntry = {
     chunkIndexMax: chunk.index,

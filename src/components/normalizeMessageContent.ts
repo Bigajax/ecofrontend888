@@ -52,6 +52,7 @@ export const normalizeMessageContent = (
         if (!fragment) {
           continue;
         }
+        // For arrays, keep text parts together with smartJoin (e.g., array of strings)
         combined = combined ? smartJoin(combined, fragment) : fragment;
       }
       return combined;
@@ -62,25 +63,20 @@ export const normalizeMessageContent = (
 
     for (const key of TEXTUAL_KEYS) {
       if (key in obj) {
-        const fragment = normalizeMessageContent(obj[key], visited);
-        aggregated = aggregated ? smartJoin(aggregated, fragment) : fragment;
+        aggregated += normalizeMessageContent(obj[key], visited);
       }
     }
 
     for (const key of NESTED_KEYS) {
       if (key in obj) {
-        const fragment = normalizeMessageContent(obj[key], visited);
-        aggregated = aggregated ? smartJoin(aggregated, fragment) : fragment;
+        aggregated += normalizeMessageContent(obj[key], visited);
       }
     }
 
     if (Array.isArray(obj.choices)) {
-      const choicesText = obj.choices
+      aggregated += obj.choices
         .map((choice) => normalizeMessageContent(choice, visited))
-        .reduce((acc: string, fragment: string) => {
-          return acc ? smartJoin(acc, fragment) : fragment;
-        }, "");
-      aggregated = aggregated ? smartJoin(aggregated, choicesText) : choicesText;
+        .join("");
     }
 
     return aggregated;
