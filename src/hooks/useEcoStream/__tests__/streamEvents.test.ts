@@ -288,6 +288,10 @@ describe("stream event helpers", () => {
         stats.lastMeta = meta;
       },
       extractFinishReasonFromMeta: () => undefined,
+      collectTexts,
+      processChunk: vi.fn(),
+      retry: vi.fn(),
+      retriedNoChunk: false,
     });
 
     handleStreamDone({ payload: {} } as Record<string, unknown>);

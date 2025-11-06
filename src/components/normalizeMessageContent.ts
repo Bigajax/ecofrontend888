@@ -63,20 +63,23 @@ export const normalizeMessageContent = (
 
     for (const key of TEXTUAL_KEYS) {
       if (key in obj) {
-        aggregated += normalizeMessageContent(obj[key], visited);
+        const textValue = normalizeMessageContent(obj[key], visited);
+        aggregated = aggregated ? smartJoin(aggregated, textValue) : textValue;
       }
     }
 
     for (const key of NESTED_KEYS) {
       if (key in obj) {
-        aggregated += normalizeMessageContent(obj[key], visited);
+        const nestedValue = normalizeMessageContent(obj[key], visited);
+        aggregated = aggregated ? smartJoin(aggregated, nestedValue) : nestedValue;
       }
     }
 
     if (Array.isArray(obj.choices)) {
-      aggregated += obj.choices
+      const choicesText = obj.choices
         .map((choice) => normalizeMessageContent(choice, visited))
-        .join("");
+        .reduce((acc: string, text: string) => acc ? smartJoin(acc, text) : text, "");
+      aggregated = aggregated ? smartJoin(aggregated, choicesText) : choicesText;
     }
 
     return aggregated;

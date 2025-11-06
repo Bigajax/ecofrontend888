@@ -711,7 +711,7 @@ export const onDone = ({
       const doneTexts = collectTexts(payloadRecord);
       const fallbackText =
         pickStringFromRecords(records, ["text", "finalText"]) ||
-        (Array.isArray(doneTexts) && doneTexts.length > 0 ? doneTexts.join("") : undefined);
+        (Array.isArray(doneTexts) && doneTexts.length > 0 ? doneTexts.reduce((acc: string, text: string) => acc ? `${acc} ${text}` : text, "") : undefined);
 
       if (fallbackText) {
         try {
