@@ -7,6 +7,7 @@ import TypingDots from "./TypingDots";
 import MarkdownRenderer from "./MarkdownRenderer";
 import type { Message } from "../contexts/ChatContext";
 import { resolveMessageSender, isUserMessage, isEcoMessage } from "../utils/chat/messages";
+import { fixIntrawordSpaces } from "../utils/fixIntrawordSpaces";
 
 interface ChatMessageProps {
   message: Message;
@@ -72,8 +73,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
   // mostra os três pontinhos dentro da bolha enquanto streama e ainda não há texto
   const showTypingDots = isEco && isStreaming && !hasVisibleText;
 
-  // Evita duplicidade: só renderiza o aviso “Eco refletindo…” se não estiver mostrando os pontinhos
+  // Evita duplicidade: só renderiza o aviso "Eco refletindo…" se não estiver mostrando os pontinhos
   const showTypingFooter = isStreaming && !hasVisibleText && !showTypingDots;
+
+  // Aplica correção de espaços indevidos (fallback conservador para espaços em mid-word)
+  const displayText = isEco && hasVisibleText ? fixIntrawordSpaces(textToShow) : textToShow;
 
   const finishReasonLabel = (() => {
     if (!isEco && normalizedRole !== "assistant") return undefined;
@@ -126,9 +130,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
             ) : (
               <div className="chat-message-text">
                 {isEco ? (
-                  <MarkdownRenderer content={textToShow} />
+                  <MarkdownRenderer content={displayText} />
                 ) : (
-                  <span>{textToShow}</span>
+                  <span>{displayText}</span>
                 )}
               </div>
             )}
