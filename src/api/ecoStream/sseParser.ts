@@ -12,7 +12,12 @@ export const parseSseEvent = (
   const firstNonEmptyLine = normalizedLines.find((line) => line.length > 0);
 
   if (firstNonEmptyLine?.startsWith(":")) {
-    console.log("[SSE] Heartbeat received");
+    // ✅ Keepalive comment (heartbeat) - enviado a cada 12s do backend
+    if (process.env.NODE_ENV === "development" || (typeof window !== "undefined" && (window as any).__ecoDebug)) {
+      try {
+        console.debug("[SSE] :keepalive comentário recebido (stream ativo)");
+      } catch {}
+    }
     return undefined;
   }
 

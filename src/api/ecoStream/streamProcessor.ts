@@ -919,11 +919,29 @@ const dispatchSseBlock = (
     onDone?: (event: EcoStreamDoneEvent) => void;
     onPromptReady?: (event: EcoStreamPromptReadyEvent) => void;
     onControl?: (event: EcoStreamControlEvent) => void;
+    expectedStreamId?: string; // ✅ Novo: validar streamId do evento
   },
 ) => {
   const normalizedBlock = normalizeSseNewlines(block);
   const parsed = parseSseEvent(normalizedBlock);
   if (!parsed) return;
+
+  // ✅ Filtro de streamId: ignorar eventos órfãos de streams antigos
+  if (context.expectedStreamId) {
+    const eventStreamId = (parsed.payload as any)?.streamId;
+    if (eventStreamId && eventStreamId !== context.expectedStreamId) {
+      if (isDev) {
+        try {
+          console.debug("[SSE] Evento órfão ignorado (streamId mismatch)", {
+            expected: context.expectedStreamId.slice(0, 8) + "...",
+            received: eventStreamId.slice(0, 8) + "...",
+            type: parsed.type,
+          });
+        } catch {}
+      }
+      return; // Ignorar este evento
+    }
+  }
 
   const rawType = parsed.type;
   const payload = parsed.payload ?? {};
@@ -1106,12 +1124,33 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     );
   }
 
+  // ✅ Suporte para retry: recuperar streamId anterior se existir
+  const previousStreamId = (() => {
+    if (typeof sessionStorage === "undefined") return undefined;
+    try {
+      const stored = sessionStorage.getItem(`eco.stream.${clientMessageId}`);
+      return stored ? JSON.parse(stored) : undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+
   const baseHeaders: Record<string, string> = {
     Accept: "text/event-stream",
     "Content-Type": "application/json",
     ...buildIdentityHeaders(),
     ...(headers ?? {}),
   };
+
+  // ✅ Enviar X-Stream-Id se houver streamId anterior (para resume/retry)
+  if (previousStreamId) {
+    baseHeaders["X-Stream-Id"] = previousStreamId;
+    if (isDev) {
+      try {
+        console.log("[SSE] Enviando X-Stream-Id anterior (retry):", previousStreamId.slice(0, 8) + "...");
+      } catch {}
+    }
+  }
 
   const mappedHistory = history.map(mapHistoryMessage);
 
@@ -1213,6 +1252,24 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
     rememberGuestIdentityFromResponse(response.headers);
     rememberSessionIdentityFromResponse(response.headers);
     rememberIdsFromResponse(response);
+
+    // ✅ Capturar X-Stream-Id do header da resposta (novo alinhamento backend)
+    const responseStreamId = headerMap["x-stream-id"];
+    if (responseStreamId && isDev) {
+      try {
+        console.log("[SSE] Stream ID capturado do header:", responseStreamId.slice(0, 8) + "...");
+      } catch {}
+    }
+
+    // ✅ Armazenar streamId em sessionStorage para possíveis retries
+    if (responseStreamId && clientMessageId) {
+      try {
+        sessionStorage.setItem(`eco.stream.${clientMessageId}`, JSON.stringify(responseStreamId));
+      } catch {
+        /* noop - sessionStorage pode não estar disponível */
+      }
+    }
+
     const contentType = headerMap["content-type"]?.toLowerCase() ?? "";
     const isSseResponse = contentType.includes("text/event-stream");
 
@@ -1357,6 +1414,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
             onDone: wrappedOnDone,
             onPromptReady,
             onControl,
+            expectedStreamId: responseStreamId, // ✅ Passar streamId para validação
           });
         }
         searchIndex = buffer.indexOf("\n\n");
@@ -1369,6 +1427,7 @@ export const startEcoStream = async (options: StartEcoStreamOptions): Promise<vo
           onDone: wrappedOnDone,
           onPromptReady,
           onControl,
+          expectedStreamId: responseStreamId, // ✅ Passar streamId para validação
         });
         buffer = "";
       }

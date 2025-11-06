@@ -739,6 +739,7 @@ export const onDone = ({
           "filtered",
           "length",
           "content_filter",
+          "replaced_by_new_stream", // ✅ Benigno: stream foi substituída por outra (novo alinhamento backend)
         ]);
 
         const isBenignFinishReason = benignFinishReasons.has(normalizedFinishReason);
@@ -746,7 +747,14 @@ export const onDone = ({
         if (isBenignFinishReason) {
           // FinishReason benigno sem chunks: finalizar silenciosamente sem erro
           try {
-            console.log("[SSE] Stream finalizado sem chunks mas com finishReason benigno:", normalizedFinishReason);
+            if (normalizedFinishReason === "replaced_by_new_stream") {
+              console.log("[SSE] Stream substituída por outra (comportamento esperado)", {
+                clientMessageId,
+                reason: "replaced_by_new_stream",
+              });
+            } else {
+              console.log("[SSE] Stream finalizado sem chunks mas com finishReason benigno:", normalizedFinishReason);
+            }
           } catch {}
           streamStats.clientFinishReason = normalizedFinishReason || "no_content_benign";
           // Não registrar como no_content nem fazer retry

@@ -148,7 +148,8 @@ export function createSseWatchdogs(
     }
     const handler = onTimeout ?? lastHandler;
     if (!handler) return;
-    const timeoutMs = nextMode === "first" ? 20_000 : 60_000;
+    // ✅ Alinhado com backend: 12s first token, 30s heartbeat
+    const timeoutMs = nextMode === "first" ? 12_000 : 30_000;
     t = timers.setTimeout(() => {
       const registered = streamWatchdogRegistry.get(id);
       if (registered && registered === clear) {
