@@ -31,7 +31,8 @@ export const slides: OnboardingSlideData[] = [
       'A cada conversa, a Eco percebe padrões e emoções que se repetem.',
       'Quando algo é intenso, ela transforma em uma memória emocional — devolvendo um mapa vivo da sua evolução interior.',
     ],
-    visual: 'mirror',
+    visual: 'image',
+    imageSrc: '/ECO conexão.png',
     badges: [
       { icon: '💫', label: 'Memórias' },
       { icon: '💭', label: 'Emoções' },
