@@ -11,6 +11,9 @@ interface HeaderProps {
   title?: string;
   showBackButton?: boolean;
   onLogout?: () => void;
+  isGuest?: boolean;
+  guestLimitReached?: boolean;
+  onLoginClick?: () => void;
 }
 
 const VERSION = '222';
@@ -39,7 +42,14 @@ const drawerIconButtonClass = [
 
 const FEEDBACK_URL = 'https://feedback777.vercel.app/';
 
-const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({
+  title,
+  showBackButton = false,
+  onLogout,
+  isGuest = false,
+  guestLimitReached = false,
+  onLoginClick,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -149,6 +159,15 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onLogout
             >
               Feedback
             </a>
+
+            {isGuest && guestLimitReached && onLoginClick && (
+              <button
+                onClick={onLoginClick}
+                className="inline-flex items-center justify-center rounded-full bg-[#A7846C] px-5 py-2 h-11 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
+              >
+                Fazer login
+              </button>
+            )}
 
             {onLogout && (
               <button

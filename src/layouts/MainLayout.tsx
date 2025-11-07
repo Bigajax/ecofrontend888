@@ -4,12 +4,17 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
+import { useGuestGate } from '../hooks/useGuestGate';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const { clearMessages } = useChat();
+
+  // Guest gate para controlar limite de mensagens
+  const isGuest = !user;
+  const guestGate = useGuestGate(isGuest);
 
   const pageTitle =
     location.pathname.startsWith('/app/memory') ? 'Memórias' :
@@ -25,6 +30,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
   };
 
+  const handleLoginClick = () => {
+    navigate('/login');
+  };
+
   return (
     <>
       {/* AUTO = TopBar no mobile / Sidebar no desktop */}
@@ -32,6 +41,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         title={pageTitle}
         variant="auto"
         onLogout={user ? handleLogout : undefined}
+        isGuest={isGuest}
+        guestLimitReached={guestGate.reachedLimit}
+        onLoginClick={handleLoginClick}
       />
 
       {/* Espaçamento controlado pelas CSS vars definidas no Header. */}
