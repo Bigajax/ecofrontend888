@@ -198,16 +198,20 @@ export function normalizeChunk(prevTail: string, chunk: string): NormalizeChunkR
   // Step 2: Normalizar line endings
   normalized = normalizeLineEndings(normalized);
 
-  // Step 2.5: Remover espaço indevido no INÍCIO do chunk se tail é muito curta
-  // Isso resolve chunks quebrados: "V" + " ejo" → remover espaço → "ejo" → depois inserir "V ejo"
-  // Padrão: tail tem 1-2 letras + chunk começa com espaço + chunk tem mais letras
+  // Step 2.5: Remover espaço indevido no INÍCIO do chunk se parece ser chunk break
+  // Padrão de chunk break: chunk começa com espaço(ões) + depois vem 3+ letras sem espaço
+  // Exemplos: " dam", " agem", " ietação" (resto de palavra quebrada)
+  // Vs legítimo: " para você" (espaço entre palavras)
+  let removedLeadingSpace = false;
+  const leadingSpaceMatch = normalized.match(/^(\s+)([a-záéíóúâêôãõç]+)/);
   if (
-    prevTail.length <= 2 &&
+    leadingSpaceMatch &&
     /[a-záéíóúâêôãõç]/.test(prevTail) &&
-    /^\s+[a-záéíóúâêôãõç]/.test(normalized)
+    leadingSpaceMatch[2].length >= 3 // Resto da palavra tem 3+ letras
   ) {
-    // Remove espaços iniciais - será re-inserido por shouldInsertSpace se necessário
-    normalized = normalized.replace(/^\s+/, '');
+    // É muito provável ser um chunk break - remover espaço inicial
+    normalized = normalized.substring(leadingSpaceMatch[1].length);
+    removedLeadingSpace = true;
   }
 
   // Step 3: Inserir espaços em palavras coladas DENTRO do chunk
@@ -218,9 +222,9 @@ export function normalizeChunk(prevTail: string, chunk: string): NormalizeChunkR
   const combined = prevTail + normalized;
   const codeBlocks = extractCodeBlocks(combined);
 
-  // Step 5: Inserir espaço entre palavras se necessário
+  // Step 5: Inserir espaço entre palavras se necessário (mas só se não removemos espaço indevido)
   let processed = normalized;
-  const shouldAdd = shouldInsertSpace(prevTail, normalized);
+  const shouldAdd = !removedLeadingSpace && shouldInsertSpace(prevTail, normalized);
 
   // DEBUG
   if (process.env.NODE_ENV === 'development') {
