@@ -86,12 +86,15 @@ export const useAutoScroll = <T extends HTMLElement>(
   );
 
   // Keyboard detection for iOS/Android (visualViewport API)
+  // NOTE: Desabilitado por padrão devido a loops infinitos com textarea resize
+  // Pode ser ativado se necessário com detectKeyboard={true}
   useEffect(() => {
     if (!detectKeyboard || typeof window === 'undefined') return;
 
     const viewport = window.visualViewport;
     if (!viewport) return;
 
+    let lastVhOffset = 0;
     const handleResize = () => {
       // Debounce keyboard detection
       if (debounceTimerRef.current) {
@@ -100,27 +103,32 @@ export const useAutoScroll = <T extends HTMLElement>(
 
       debounceTimerRef.current = setTimeout(() => {
         const vhOffset = window.innerHeight - viewport.height;
-        setKeyboardHeight(Math.max(0, vhOffset));
 
-        // If user is at bottom and keyboard opened, re-scroll to bottom
-        if (isAtBottom) {
-          requestAnimationFrame(() => {
-            const el = scrollerRef.current;
-            if (el) {
-              const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
-              if (distance > bottomThreshold + 50) {
-                // Keyboard opened, scroll down
-                setTimeout(() => {
-                  el.scrollTop = el.scrollHeight;
-                }, 0);
+        // Only update if significant change (avoid loops from textarea resize)
+        if (Math.abs(vhOffset - lastVhOffset) > 30) {
+          lastVhOffset = vhOffset;
+          setKeyboardHeight(Math.max(0, vhOffset));
+
+          // If user is at bottom and keyboard opened, re-scroll to bottom
+          if (isAtBottom) {
+            requestAnimationFrame(() => {
+              const el = scrollerRef.current;
+              if (el) {
+                const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
+                if (distance > bottomThreshold + 50) {
+                  // Keyboard opened, scroll down
+                  setTimeout(() => {
+                    el.scrollTop = el.scrollHeight;
+                  }, 0);
+                }
               }
-            }
-          });
+            });
+          }
         }
-      }, 50);
+      }, 100);  // Increased debounce from 50ms to 100ms
     };
 
-    viewport.addEventListener('resize', handleResize);
+    viewport.addEventListener('resize', handleResize, { passive: true });
 
     return () => {
       viewport.removeEventListener('resize', handleResize);
@@ -145,17 +153,21 @@ export const useAutoScroll = <T extends HTMLElement>(
     requestAnimationFrame(checkPosition);
 
     // ResizeObserver to handle image load and content changes
+    // Only update if user is at bottom (avoid spam during typing)
+    let lastScrolledTime = 0;
     const resizeObserver = new ResizeObserver(() => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
 
       debounceTimerRef.current = setTimeout(() => {
-        if (isAtBottom) {
+        checkPosition();
+        // Only auto-scroll if recently was at bottom and enough time passed
+        if (isAtBottom && Date.now() - lastScrolledTime > 500) {
+          lastScrolledTime = Date.now();
           scrollToBottom(false);
         }
-        checkPosition();
-      }, 100);
+      }, 200);  // Increased debounce from 100ms to 200ms
     });
 
     resizeObserver.observe(el);

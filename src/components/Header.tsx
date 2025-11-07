@@ -163,7 +163,7 @@ const Header: React.FC<HeaderProps> = ({
             {isGuest && guestLimitReached && onLoginClick && (
               <button
                 onClick={onLoginClick}
-                className="inline-flex items-center justify-center rounded-full bg-[#A7846C] px-5 py-2 h-11 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
+                className="hidden sm:inline-flex items-center justify-center rounded-full bg-[#A7846C] px-5 py-2 h-11 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
               >
                 Fazer login
               </button>

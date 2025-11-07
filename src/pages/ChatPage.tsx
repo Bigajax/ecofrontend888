@@ -216,12 +216,12 @@ function ChatPage() {
   const [heroSubtitle, setHeroSubtitle] = useState<string>(() => pickHeroSubtitle());
 
   const chatRef = useRef<HTMLElement | null>(null);
-  const { scrollerRef, endRef, isAtBottom, showScrollBtn, scrollToBottom, keyboardHeight: autoScrollKeyboardHeight } =
+  const { scrollerRef, endRef, isAtBottom, showScrollBtn, scrollToBottom } =
     useAutoScroll<HTMLElement>({
       items: [messages],
       externalRef: chatRef,
       bottomThreshold: 120,
-      detectKeyboard: true,  // Enable mobile keyboard detection
+      detectKeyboard: false,  // Desabilitado para evitar loop com textarea resize
     });
 
   const chatInputWrapperRef = useRef<HTMLDivElement | null>(null);
