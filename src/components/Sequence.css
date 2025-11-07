@@ -1,12 +1,24 @@
 .onboarding-shell {
-  --onboarding-bg: #ffffff;
-  --onboarding-ink: #0b1220;
-  --onboarding-muted: #5e6a7d;
-  --onboarding-line: #e9eef5;
-  --onboarding-accent: #007aff;
+  --eco-bg: #FAF9F7;
+  --eco-bubble: #F3EEE7;
+  --eco-user: #A7846C;
+  --eco-text: #38322A;
+  --eco-muted: #9C938A;
+  --eco-line: #E8E3DD;
+  --eco-accent: #C6A995;
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --shadow-minimal: 0 4px 30px rgba(0, 0, 0, 0.04);
+  --shadow-subtle: 0 2px 12px rgba(0, 0, 0, 0.03);
+
+  --onboarding-bg: var(--eco-bg);
+  --onboarding-ink: var(--eco-text);
+  --onboarding-muted: var(--eco-muted);
+  --onboarding-line: var(--eco-line);
+  --onboarding-accent: var(--eco-user);
   --onboarding-radius-lg: 24px;
   --onboarding-radius-xl: 28px;
-  --onboarding-shadow: none;
+  --onboarding-shadow: var(--shadow-minimal);
   --onboarding-container-padding: clamp(12px, 3vw, 40px);
   --onboarding-vertical-padding: clamp(16px, 4vw, 72px);
   --onboarding-panel-padding: clamp(16px, 3.5vw, 56px);
@@ -48,21 +60,22 @@
   height: clamp(40px, 10vw, 44px);
   width: clamp(40px, 10vw, 44px);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid var(--onboarding-line);
-  box-shadow: none;
+  background: rgba(243, 238, 231, 0.95);
+  border: 1px solid var(--eco-line);
+  box-shadow: var(--shadow-subtle);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--onboarding-muted);
-  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+  color: var(--eco-muted);
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
 }
 
 .onboarding-close:hover {
-  transform: translateY(-1px);
-  background: #ffffff;
-  color: var(--onboarding-ink);
+  transform: translateY(-2px);
+  background: rgba(243, 238, 231, 0.99);
+  color: var(--eco-text);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .onboarding-close:focus-visible {
@@ -73,10 +86,10 @@
 .onboarding-panel {
   width: 100%;
   max-width: 1100px;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(243, 238, 231, 0.6);
   border-radius: clamp(20px, 4vw, 28px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(233, 238, 245, 0.5);
+  box-shadow: var(--shadow-minimal);
+  border: 1px solid var(--eco-line);
   backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
@@ -98,7 +111,7 @@
 }
 
 .onboarding-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(11, 18, 32, 0.12);
+  background-color: rgba(56, 50, 42, 0.12);
   border-radius: 999px;
 }
 
@@ -110,12 +123,12 @@
 }
 
 .onboarding-headline {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-display);
   font-size: clamp(24px, 5.5vw, 52px);
   line-height: 1.25;
   letter-spacing: -0.015em;
-  font-weight: 600;
-  color: rgba(11, 18, 32, 0.9);
+  font-weight: 400;
+  color: var(--eco-text);
   margin: 0;
 }
 
@@ -127,11 +140,13 @@
 }
 
 .onboarding-body-text {
+  font-family: var(--font-primary);
   font-size: clamp(15px, 2vw, 20px);
   line-height: 1.7;
-  color: rgba(94, 106, 125, 0.7);
+  color: var(--eco-muted);
   margin: 0;
   max-width: 32rem;
+  font-weight: 400;
 }
 
 .onboarding-layout {
@@ -159,19 +174,21 @@
   gap: 10px;
   min-height: 44px;
   border-radius: 999px;
-  border: 1px solid rgba(233, 238, 245, 0.6);
-  background: rgba(245, 249, 255, 0.7);
-  color: rgba(94, 106, 125, 0.8);
+  border: 1px solid var(--eco-line);
+  background: rgba(243, 238, 231, 0.7);
+  color: var(--eco-muted);
+  font-family: var(--font-primary);
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 400;
   padding: 8px 20px;
-  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .onboarding-badge:hover {
-  background: rgba(230, 241, 255, 0.9);
-  color: rgba(11, 18, 32, 0.9);
+  background: rgba(243, 238, 231, 0.95);
+  color: var(--eco-text);
   transform: translateY(-2px);
+  box-shadow: var(--shadow-subtle);
 }
 
 .onboarding-visual-column {
@@ -241,7 +258,7 @@
   position: absolute;
   inset: 12%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(0, 122, 255, 0.12), transparent 70%);
+  background: radial-gradient(circle, rgba(167, 132, 108, 0.15), transparent 70%);
   opacity: 0.1;
   animation: onboarding-halo-breathe 3s ease-in-out infinite;
 }
@@ -258,12 +275,12 @@
 }
 
 .onboarding-visual__halo--cool {
-  background: radial-gradient(circle, rgba(0, 122, 255, 0.12), transparent 70%);
+  background: radial-gradient(circle, rgba(198, 169, 149, 0.15), transparent 70%);
   animation: onboarding-halo-breathe 3s ease-in-out infinite;
 }
 
 .onboarding-visual__halo--warm {
-  background: radial-gradient(circle, rgba(255, 163, 26, 0.12), transparent 70%);
+  background: radial-gradient(circle, rgba(167, 132, 108, 0.15), transparent 70%);
   animation: onboarding-halo-breathe 3s ease-in-out infinite;
 }
 
@@ -275,8 +292,8 @@
   width: 80%;
   height: 80%;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f5f9ff 0%, #ffffff 60%);
-  border: 1px solid rgba(233, 238, 245, 0.8);
+  background: linear-gradient(135deg, rgba(243, 238, 231, 0.8) 0%, #ffffff 60%);
+  border: 1px solid rgba(232, 227, 221, 0.8);
   box-shadow: none;
 }
 
@@ -286,14 +303,15 @@
 
 .onboarding-visual__core--mirror {
   border-radius: 24px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(233, 238, 245, 0.65));
+  background: linear-gradient(135deg, rgba(243, 238, 231, 0.85), rgba(255, 255, 255, 0.7));
   box-shadow: none;
+  border: 1px solid rgba(232, 227, 221, 0.6);
 }
 
 .onboarding-visual__ring {
   position: absolute;
   border-radius: 50%;
-  border: 1px solid rgba(233, 238, 245, 0.9);
+  border: 1px solid rgba(232, 227, 221, 0.8);
 }
 
 .onboarding-visual__ring--solid {
@@ -302,12 +320,12 @@
 
 .onboarding-visual__ring--soft {
   inset: 32%;
-  border-color: rgba(0, 122, 255, 0.15);
+  border-color: rgba(198, 169, 149, 0.15);
 }
 
 .onboarding-visual__ring--accent {
   inset: 50%;
-  background: radial-gradient(circle, rgba(0, 122, 255, 0.16), transparent 70%);
+  background: radial-gradient(circle, rgba(167, 132, 108, 0.12), transparent 70%);
   border: none;
 }
 
@@ -316,8 +334,8 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: rgba(0, 122, 255, 0.6);
-  box-shadow: 0 0 8px rgba(0, 122, 255, 0.4);
+  background: rgba(167, 132, 108, 0.6);
+  box-shadow: 0 0 8px rgba(167, 132, 108, 0.4);
   animation: onboarding-marker-float 4s ease-in-out infinite;
 }
 
@@ -360,10 +378,10 @@
   width: 80%;
   height: 80%;
   border-radius: var(--onboarding-radius-lg);
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(233, 238, 245, 0.6);
+  background: rgba(243, 238, 231, 0.7);
+  border: 1px solid var(--eco-line);
   backdrop-filter: blur(6px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-subtle);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -392,9 +410,10 @@
 }
 
 .onboarding-visual__card-caption {
+  font-family: var(--font-primary);
   font-size: 0.95rem;
-  font-weight: 600;
-  color: rgba(94, 106, 125, 0.75);
+  font-weight: 400;
+  color: var(--eco-muted);
   margin: 0;
   letter-spacing: 0.3px;
 }
@@ -411,13 +430,15 @@
 }
 
 .onboarding-subtext {
+  font-family: var(--font-primary);
   font-size: 0.875rem;
   line-height: 1.6;
-  color: rgba(94, 106, 125, 0.6);
+  color: var(--eco-muted);
   text-align: center;
   margin: 0;
   margin-top: clamp(12px, 3vw, 20px);
   letter-spacing: 0.2px;
+  font-weight: 400;
 }
 
 .onboarding-footer {
@@ -428,9 +449,9 @@
   padding: clamp(12px, 3vw, 20px) var(--onboarding-panel-padding);
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(12px, 2vw, 20px));
   border-radius: 0;
-  border-top: 1px solid rgba(233, 238, 245, 0.5);
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  border-top: 1px solid var(--eco-line);
+  background: rgba(243, 238, 231, 0.95);
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.04);
   backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
@@ -464,7 +485,7 @@
   height: 8px;
   width: 8px;
   border-radius: 50%;
-  background: rgba(11, 18, 32, 0.25);
+  background: rgba(56, 50, 42, 0.2);
   transition: background 0.2s ease, transform 0.2s ease;
 }
 
@@ -479,7 +500,7 @@
 }
 
 .onboarding-dot:hover::before {
-  background: rgba(11, 18, 32, 0.5);
+  background: rgba(56, 50, 42, 0.4);
 }
 
 .onboarding-actions {
@@ -504,40 +525,49 @@
 }
 
 .onboarding-button--secondary {
-  background: rgba(11, 18, 32, 0.05);
-  color: var(--onboarding-muted);
-  border-color: rgba(11, 18, 32, 0.08);
+  background: rgba(243, 238, 231, 0.7);
+  color: var(--eco-muted);
+  border-color: var(--eco-line);
+  font-family: var(--font-primary);
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .onboarding-button--secondary:hover {
-  background: rgba(11, 18, 32, 0.08);
-  color: var(--onboarding-ink);
+  background: rgba(243, 238, 231, 0.95);
+  color: var(--eco-text);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-subtle);
 }
 
 .onboarding-button--primary {
-  background: var(--onboarding-accent);
+  background: var(--eco-user);
   color: #ffffff;
-  box-shadow: none;
+  box-shadow: var(--shadow-subtle);
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .onboarding-button--primary:hover {
-  background: #006ae0;
+  background: linear-gradient(90deg, var(--eco-user), var(--eco-accent));
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
 
 .onboarding-button--primary-final {
-  background: #007aff;
+  background: var(--eco-user);
   border-radius: 999px;
   padding: 10px 24px;
-  font-weight: 700;
+  font-weight: 600;
+  font-family: var(--font-primary);
   letter-spacing: 0.2px;
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);
-  transition: all 0.2s ease;
+  box-shadow: var(--shadow-subtle);
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  color: #ffffff;
 }
 
 .onboarding-button--primary-final:hover {
-  background: #0064cc;
-  box-shadow: 0 6px 16px rgba(0, 122, 255, 0.35);
-  transform: translateY(-1px);
+  background: linear-gradient(90deg, var(--eco-user), var(--eco-accent));
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
 
 .onboarding-button:focus-visible {
