@@ -199,19 +199,22 @@ export function normalizeChunk(prevTail: string, chunk: string): NormalizeChunkR
   normalized = normalizeLineEndings(normalized);
 
   // Step 2.5: Remover espaço indevido no INÍCIO do chunk se parece ser chunk break
-  // Padrão de chunk break: chunk começa com espaço(ões) + depois vem 3+ letras sem espaço
-  // Exemplos: " dam", " agem", " ietação" (resto de palavra quebrada)
-  // Vs legítimo: " para você" (espaço entre palavras)
+  // Heurística robusto para detectar chunk breaks vs espaços legítimos:
+  // - Se tail é muito curto (1-2 chars) + espaço + letra = sempre remove (chunk break seguro)
+  // - Se tail é normal (3+ chars) + espaço + 3+ letras = remove (provavelmente chunk break)
+  // - Se tail é normal (3+ chars) + espaço + 1-2 letras = NÃO remove (provavelmente "fim a" legítimo)
   let removedLeadingSpace = false;
   const leadingSpaceMatch = normalized.match(/^(\s+)([a-záéíóúâêôãõç]+)/);
-  if (
-    leadingSpaceMatch &&
-    /[a-záéíóúâêôãõç]/.test(prevTail) &&
-    leadingSpaceMatch[2].length >= 3 // Resto da palavra tem 3+ letras
-  ) {
-    // É muito provável ser um chunk break - remover espaço inicial
-    normalized = normalized.substring(leadingSpaceMatch[1].length);
-    removedLeadingSpace = true;
+  if (leadingSpaceMatch && /[a-záéíóúâêôãõç]$/.test(prevTail)) {
+    const restOfWord = leadingSpaceMatch[2];
+    const isShorterTail = prevTail.length <= 2;
+    const isLongerRest = restOfWord.length >= 3;
+
+    if (isShorterTail || isLongerRest) {
+      // Chunk break: remove espaço
+      normalized = normalized.substring(leadingSpaceMatch[1].length);
+      removedLeadingSpace = true;
+    }
   }
 
   // Step 3: Inserir espaços em palavras coladas DENTRO do chunk
@@ -222,9 +225,12 @@ export function normalizeChunk(prevTail: string, chunk: string): NormalizeChunkR
   const combined = prevTail + normalized;
   const codeBlocks = extractCodeBlocks(combined);
 
-  // Step 5: Inserir espaço entre palavras se necessário (mas só se não removemos espaço indevido)
+  // Step 5: Inserir espaço entre palavras se necessário
+  // Importante: só adicionar espaço se chunk começou com espaço
+  // Se não começou com espaço, é continuação da palavra anterior (não adicionar espaço)
   let processed = normalized;
-  const shouldAdd = !removedLeadingSpace && shouldInsertSpace(prevTail, normalized);
+  const chunkStartedWithSpace = /^\s/.test(chunk);
+  const shouldAdd = !removedLeadingSpace && chunkStartedWithSpace && shouldInsertSpace(prevTail, normalized);
 
   // DEBUG
   if (process.env.NODE_ENV === 'development') {
