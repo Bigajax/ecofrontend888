@@ -1,10 +1,11 @@
 // src/components/ChatMessage.tsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import clsx from "clsx";
 
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
 import TypingDots from "./TypingDots";
 import MarkdownRenderer from "./MarkdownRenderer";
+import CollapsibleMessage from "./CollapsibleMessage";
 import type { Message } from "../contexts/ChatContext";
 import { resolveMessageSender, isUserMessage, isEcoMessage } from "../utils/chat/messages";
 import { fixIntrawordSpaces } from "../utils/fixIntrawordSpaces";
@@ -83,6 +84,37 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
     return fixIntrawordSpaces(textToShow);
   }, [textToShow, isEco, hasVisibleText]);
 
+  // Mobile detection for collapsible messages
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 640px)');
+    setIsMobile(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches);
+    };
+
+    if (mediaQuery.addListener) {
+      mediaQuery.addListener(handleChange);
+      return () => mediaQuery.removeListener(handleChange);
+    } else {
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, []);
+
+  // Determine if message should be collapsible (Eco, long, not streaming)
+  const shouldBeCollapsible = useMemo(() => {
+    return (
+      isEco &&
+      isMobile &&
+      hasVisibleText &&
+      !isStreaming &&
+      displayText.length > 1000
+    );
+  }, [isEco, isMobile, hasVisibleText, isStreaming, displayText]);
+
   const finishReasonLabel = (() => {
     if (!isEco && normalizedRole !== "assistant") return undefined;
     if (isStreaming) return undefined;
@@ -127,21 +159,36 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
           />
         )}
         <div className="flex min-w-0 flex-col">
-          <div className={bubbleClass} data-sender={sender}>
-            {showTypingDots ? (
-              <span aria-live="polite" className="inline-flex items-center gap-2 text-gray-600">
-                <TypingDots />
-              </span>
-            ) : (
-              <div className="chat-message-text">
-                {isEco ? (
-                  <MarkdownRenderer content={displayText} />
-                ) : (
-                  <span>{displayText}</span>
-                )}
+          {/* Bubble content - optionally wrapped in CollapsibleMessage */}
+          {shouldBeCollapsible ? (
+            <CollapsibleMessage maxHeightMobile={360} initiallyCollapsed={true}>
+              <div className={bubbleClass} data-sender={sender}>
+                <div className="chat-message-text">
+                  {isEco ? (
+                    <MarkdownRenderer content={displayText} />
+                  ) : (
+                    <span>{displayText}</span>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
+            </CollapsibleMessage>
+          ) : (
+            <div className={bubbleClass} data-sender={sender}>
+              {showTypingDots ? (
+                <span aria-live="polite" className="inline-flex items-center gap-2 text-gray-600">
+                  <TypingDots />
+                </span>
+              ) : (
+                <div className="chat-message-text">
+                  {isEco ? (
+                    <MarkdownRenderer content={displayText} />
+                  ) : (
+                    <span>{displayText}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {showTypingFooter && (
             <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 italic" role="status" aria-live="polite">

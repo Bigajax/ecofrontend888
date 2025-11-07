@@ -70,6 +70,28 @@ body::before {
   scroll-padding-inline: 0.25rem;
 }
 
+/* Collapsible Message Utilities */
+.collapsible-gradient-mask {
+  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+
+.collapsible-fade-bottom {
+  position: relative;
+}
+
+.collapsible-fade-bottom::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.7) 60%, rgba(255, 255, 255, 1) 100%);
+  pointer-events: none;
+  border-radius: 0 0 1rem 1rem;
+}
+
 @media (max-height: 640px) {
   .quick-suggestions-grid {
     display: flex !important;

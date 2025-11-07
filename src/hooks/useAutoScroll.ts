@@ -23,18 +23,24 @@ export interface UseAutoScrollOptions<T extends HTMLElement = HTMLElement> {
    * Enables consumers to run custom effects on the same DOM node.
    */
   externalRef?: MutableRefObject<T | null> | null;
+  /**
+   * Enable keyboard detection for mobile (iOS/Android)
+   */
+  detectKeyboard?: boolean;
 }
 
 export const useAutoScroll = <T extends HTMLElement>(
   options: UseAutoScrollOptions<T> = {},
 ) => {
-  const { items = [], bottomThreshold = 80, externalRef = null } = options;
+  const { items = [], bottomThreshold = 80, externalRef = null, detectKeyboard = true } = options;
   const fallbackRef = useRef<T | null>(null);
   const scrollerRef = externalRef ?? fallbackRef;
   const endRef = useRef<HTMLDivElement | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const getDistanceFromBottom = useCallback((el: HTMLElement) => {
     return el.scrollHeight - (el.scrollTop + el.clientHeight);
@@ -79,6 +85,51 @@ export const useAutoScroll = <T extends HTMLElement>(
     [checkPosition],
   );
 
+  // Keyboard detection for iOS/Android (visualViewport API)
+  useEffect(() => {
+    if (!detectKeyboard || typeof window === 'undefined') return;
+
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const handleResize = () => {
+      // Debounce keyboard detection
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(() => {
+        const vhOffset = window.innerHeight - viewport.height;
+        setKeyboardHeight(Math.max(0, vhOffset));
+
+        // If user is at bottom and keyboard opened, re-scroll to bottom
+        if (isAtBottom) {
+          requestAnimationFrame(() => {
+            const el = scrollerRef.current;
+            if (el) {
+              const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
+              if (distance > bottomThreshold + 50) {
+                // Keyboard opened, scroll down
+                setTimeout(() => {
+                  el.scrollTop = el.scrollHeight;
+                }, 0);
+              }
+            }
+          });
+        }
+      }, 50);
+    };
+
+    viewport.addEventListener('resize', handleResize);
+
+    return () => {
+      viewport.removeEventListener('resize', handleResize);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [isAtBottom, bottomThreshold, detectKeyboard]);
+
   useLayoutEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -87,13 +138,36 @@ export const useAutoScroll = <T extends HTMLElement>(
       requestAnimationFrame(checkPosition);
     };
 
+    // Use overflow-anchor to prevent scroll jank
+    el.style.overflowAnchor = 'auto';
+
     el.addEventListener('scroll', handleScroll, { passive: true });
     requestAnimationFrame(checkPosition);
 
+    // ResizeObserver to handle image load and content changes
+    const resizeObserver = new ResizeObserver(() => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(() => {
+        if (isAtBottom) {
+          scrollToBottom(false);
+        }
+        checkPosition();
+      }, 100);
+    });
+
+    resizeObserver.observe(el);
+
     return () => {
       el.removeEventListener('scroll', handleScroll);
+      resizeObserver.disconnect();
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
     };
-  }, [checkPosition]);
+  }, [checkPosition, isAtBottom, scrollToBottom]);
 
   useLayoutEffect(() => {
     if (!Array.isArray(items) || items.length === 0) {
@@ -117,6 +191,7 @@ export const useAutoScroll = <T extends HTMLElement>(
     isAtBottom,
     showScrollBtn,
     scrollToBottom,
+    keyboardHeight,
   } as const;
 };
 
