@@ -7,11 +7,11 @@
   --onboarding-radius-lg: 24px;
   --onboarding-radius-xl: 28px;
   --onboarding-shadow: none;
-  --onboarding-container-padding: clamp(16px, 4vw, 40px);
-  --onboarding-vertical-padding: clamp(24px, 6vw, 72px);
-  --onboarding-panel-padding: clamp(20px, 4vw, 56px);
-  --onboarding-footer-gap: clamp(16px, 3vw, 24px);
-  --onboarding-footer-height: 128px;
+  --onboarding-container-padding: clamp(12px, 3vw, 40px);
+  --onboarding-vertical-padding: clamp(16px, 4vw, 72px);
+  --onboarding-panel-padding: clamp(16px, 3.5vw, 56px);
+  --onboarding-footer-gap: clamp(12px, 2.5vw, 24px);
+  --onboarding-footer-height: 120px;
   min-height: 100dvh;
   width: 100%;
   background: var(--onboarding-bg);
@@ -43,10 +43,10 @@
 
 .onboarding-close {
   position: absolute;
-  top: calc(env(safe-area-inset-top, 0px) + clamp(16px, 4vw, 32px));
-  right: clamp(16px, 4vw, 40px);
-  height: 44px;
-  width: 44px;
+  top: calc(env(safe-area-inset-top, 0px) + clamp(12px, 3vw, 32px));
+  right: clamp(12px, 3vw, 40px);
+  height: clamp(40px, 10vw, 44px);
+  width: clamp(40px, 10vw, 44px);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid var(--onboarding-line);
@@ -56,6 +56,7 @@
   justify-content: center;
   color: var(--onboarding-muted);
   transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+  z-index: 10;
 }
 
 .onboarding-close:hover {
@@ -73,14 +74,14 @@
   width: 100%;
   max-width: 1100px;
   background: rgba(255, 255, 255, 0.5);
-  border-radius: var(--onboarding-radius-xl);
+  border-radius: clamp(20px, 4vw, 28px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(233, 238, 245, 0.5);
   backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: min(96dvh, 820px);
+  max-height: min(98dvh, 90vh);
 }
 
 .onboarding-scroll {
@@ -110,8 +111,8 @@
 
 .onboarding-headline {
   font-family: 'Playfair Display', serif;
-  font-size: clamp(28px, 4.5vw, 52px);
-  line-height: 1.2;
+  font-size: clamp(24px, 5.5vw, 52px);
+  line-height: 1.25;
   letter-spacing: -0.015em;
   font-weight: 600;
   color: rgba(11, 18, 32, 0.9);
@@ -126,8 +127,8 @@
 }
 
 .onboarding-body-text {
-  font-size: clamp(16px, 1.8vw, 20px);
-  line-height: 1.75;
+  font-size: clamp(15px, 2vw, 20px);
+  line-height: 1.7;
   color: rgba(94, 106, 125, 0.7);
   margin: 0;
   max-width: 32rem;
@@ -187,26 +188,34 @@
   align-items: center;
   justify-content: center;
   aspect-ratio: 1 / 1;
-  width: clamp(200px, 55vw, 300px);
-  max-height: clamp(200px, 55vw, 300px);
+  width: clamp(160px, 50vw, 280px);
+  max-height: clamp(160px, 50vw, 280px);
   isolation: isolate;
+}
+
+@media (min-width: 480px) {
+  .onboarding-visual {
+    width: clamp(180px, 45vw, 300px);
+    max-height: clamp(180px, 45vw, 300px);
+  }
 }
 
 @media (min-width: 768px) {
   .onboarding-visual {
-    width: clamp(260px, 42vw, 360px);
-    max-height: clamp(260px, 42vw, 360px);
+    width: clamp(240px, 40vw, 340px);
+    max-height: clamp(240px, 40vw, 340px);
   }
 }
 
 @media (min-width: 1024px) {
   .onboarding-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
     align-items: start;
+    gap: clamp(24px, 5vw, 48px);
   }
   .onboarding-visual {
-    width: clamp(320px, 34vw, 420px);
-    max-height: clamp(320px, 34vw, 420px);
+    width: clamp(300px, 32vw, 400px);
+    max-height: clamp(300px, 32vw, 400px);
   }
 }
 
@@ -395,15 +404,16 @@
 
 .onboarding-footer {
   position: sticky;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
-  margin: 0 var(--onboarding-panel-padding);
+  bottom: 0;
+  margin: 0;
   margin-top: auto;
-  padding: clamp(16px, 3vw, 24px);
-  border-radius: calc(var(--onboarding-radius-lg) + 4px);
-  border: 1px solid var(--onboarding-line);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: none;
-  backdrop-filter: blur(18px);
+  padding: clamp(12px, 3vw, 20px) var(--onboarding-panel-padding);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(12px, 2vw, 20px));
+  border-radius: 0;
+  border-top: 1px solid rgba(233, 238, 245, 0.5);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
   gap: var(--onboarding-footer-gap);
@@ -413,8 +423,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 12px;
-  margin-bottom: clamp(16px, 4vw, 24px);
+  gap: clamp(8px, 2vw, 12px);
+  margin-bottom: clamp(12px, 3vw, 20px);
 }
 
 .onboarding-dot {
@@ -461,15 +471,15 @@
 }
 
 .onboarding-button {
-  min-height: 48px;
-  border-radius: var(--onboarding-radius-lg);
+  min-height: clamp(44px, 11vw, 48px);
+  border-radius: clamp(12px, 3vw, 24px);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: clamp(0.875rem, 2vw, 0.95rem);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 0 20px;
+  gap: 8px;
+  padding: 0 clamp(16px, 3vw, 20px);
   border: 1px solid transparent;
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   width: 100%;
@@ -539,19 +549,97 @@
   }
 }
 
+@media (max-width: 480px) {
+  .onboarding-headline {
+    font-size: clamp(22px, 5vw, 28px);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  .onboarding-header {
+    gap: clamp(14px, 5vw, 20px);
+    margin-bottom: clamp(20px, 6vw, 32px);
+  }
+
+  .onboarding-body-copy {
+    gap: clamp(12px, 4vw, 18px);
+  }
+
+  .onboarding-body-text {
+    font-size: clamp(14px, 1.8vw, 16px);
+    line-height: 1.65;
+  }
+
+  .onboarding-badges {
+    gap: clamp(8px, 3vw, 12px);
+  }
+
+  .onboarding-badge {
+    min-height: 40px;
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    gap: 8px;
+  }
+
+  .onboarding-visual__card-icons {
+    gap: 12px;
+    font-size: clamp(24px, 4vw, 32px);
+  }
+
+  .onboarding-visual__card {
+    gap: 16px;
+    padding: 24px 16px;
+  }
+
+  .onboarding-subtext {
+    font-size: 0.8rem;
+    margin-top: clamp(8px, 2vw, 12px);
+  }
+
+  .onboarding-actions {
+    gap: clamp(8px, 2vw, 12px);
+  }
+
+  .onboarding-scroll {
+    padding-top: clamp(12px, 4vw, 20px);
+  }
+}
+
 @media (max-width: 375px) {
   .onboarding-headline {
-    letter-spacing: 0;
+    font-size: clamp(20px, 4.5vw, 24px);
   }
-  .onboarding-header {
-    gap: clamp(12px, 6vw, 20px);
-    margin-bottom: clamp(16px, 8vw, 28px);
+
+  .onboarding-body-text {
+    font-size: clamp(13px, 1.5vw, 14px);
+    line-height: 1.6;
   }
-  .onboarding-body-copy {
-    gap: clamp(10px, 5vw, 18px);
+
+  .onboarding-badge {
+    min-height: 38px;
+    padding: 5px 14px;
+    font-size: 0.8rem;
   }
-  .onboarding-scroll {
-    padding-top: clamp(16px, 6vw, 28px);
+
+  .onboarding-visual__card {
+    padding: 20px 14px;
+  }
+
+  .onboarding-button {
+    min-height: 42px;
+    font-size: 0.85rem;
+  }
+
+  .onboarding-button--primary-final {
+    padding: 8px 20px;
+  }
+
+  .onboarding-footer {
+    padding: 10px var(--onboarding-panel-padding);
+  }
+
+  .onboarding-subtext {
+    font-size: 0.75rem;
   }
 }
 
