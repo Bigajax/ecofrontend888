@@ -3,10 +3,11 @@ export interface OnboardingSlideData {
   id: 'eco' | 'espelho' | 'uso';
   title: string;
   paragraphs: string[];
-  visual: 'orb' | 'mirror' | 'usage';
+  visual: 'orb' | 'mirror' | 'usage' | 'image';
   ctaLabel: string;
   subtext?: string;
   badges?: { icon: string; label: string }[];
+  imageSrc?: string;
 }
 
 export const slides: OnboardingSlideData[] = [
@@ -19,7 +20,8 @@ export const slides: OnboardingSlideData[] = [
       'Sem pressa. Sem julgamentos. Só presença e reflexão.',
     ],
     subtext: 'Sua jornada começa com uma conversa.',
-    visual: 'orb',
+    visual: 'image',
+    imageSrc: '/ECO.png',
     ctaLabel: 'Entendi →',
   },
   {

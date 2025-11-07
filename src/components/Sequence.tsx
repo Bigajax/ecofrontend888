@@ -186,6 +186,17 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
             </motion.div>
           </div>
         );
+      case 'image':
+        return (
+          <div className="onboarding-visual onboarding-visual--image" role="presentation">
+            <img
+              src={slide.imageSrc}
+              alt={slide.title}
+              className="onboarding-visual__image"
+              loading="lazy"
+            />
+          </div>
+        );
       default:
         return null;
     }
