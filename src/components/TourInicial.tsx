@@ -30,16 +30,26 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose, reason, nextPath, on
   }, [onClose]);
 
   const handleComplete = useCallback(() => {
+    console.log('[TourInicial] handleComplete called');
     mixpanel.track('Front-end: Tour Concluído');
-    onBeforeNavigate?.();
+    try {
+      console.log('[TourInicial] Calling onBeforeNavigate');
+      onBeforeNavigate?.();
+    } catch (error) {
+      console.error('[TourInicial] Error in onBeforeNavigate:', error);
+    }
+
     const targetPath = nextPath ?? '/app';
+    console.log('[TourInicial] Navigating to:', targetPath);
 
     if (typeof navigate === 'function') {
+      console.log('[TourInicial] Using navigate hook');
       navigate(targetPath, { replace: true });
       return;
     }
 
     if (typeof window !== 'undefined') {
+      console.log('[TourInicial] Using window.location.assign');
       window.location.assign(targetPath);
     }
   }, [navigate, nextPath, onBeforeNavigate]);

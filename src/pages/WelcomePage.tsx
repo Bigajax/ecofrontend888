@@ -18,7 +18,14 @@ export default function WelcomePage() {
   }, [shouldShow]);
 
   const goNext = () => {
-    markSeen();
+    console.log('[WelcomePage] goNext called');
+    try {
+      markSeen();
+      console.log('[WelcomePage] markSeen executed');
+    } catch (error) {
+      console.error('[WelcomePage] Error in markSeen:', error);
+    }
+    console.log('[WelcomePage] Navigating to /app');
     navigate('/app', { replace: true });
   };
 

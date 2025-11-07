@@ -65,8 +65,14 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
       return;
     }
 
+    console.log('[Tour] handleNext: Last slide reached, calling onComplete');
     mixpanel.track('Front-end: Tour CTA Final Click', { id: currentSlideData?.id });
-    onComplete();
+    try {
+      onComplete();
+    } catch (error) {
+      console.error('[Tour] Error in onComplete:', error);
+      navLockRef.current = false;
+    }
   }, [currentSlideData?.id, onComplete, slideIndex, totalSlides, unlockNavigation]);
 
   const handlePrev = useCallback(() => {
