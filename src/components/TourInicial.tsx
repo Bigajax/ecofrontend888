@@ -9,9 +9,10 @@ interface TourInicialProps {
   onClose: () => void;
   reason?: string | null;
   nextPath?: string;
+  onBeforeNavigate?: () => void;
 }
 
-const TourInicial: React.FC<TourInicialProps> = ({ onClose, reason, nextPath }) => {
+const TourInicial: React.FC<TourInicialProps> = ({ onClose, reason, nextPath, onBeforeNavigate }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,7 +31,7 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose, reason, nextPath }) 
 
   const handleComplete = useCallback(() => {
     mixpanel.track('Front-end: Tour Concluído');
-    onClose();
+    onBeforeNavigate?.();
     const targetPath = nextPath ?? '/app';
 
     if (typeof navigate === 'function') {
@@ -41,7 +42,7 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose, reason, nextPath }) 
     if (typeof window !== 'undefined') {
       window.location.assign(targetPath);
     }
-  }, [navigate, nextPath, onClose]);
+  }, [navigate, nextPath, onBeforeNavigate]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

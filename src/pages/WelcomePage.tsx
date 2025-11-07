@@ -19,7 +19,7 @@ export default function WelcomePage() {
 
   const goNext = () => {
     markSeen();
-    navigate(user ? '/app' : '/', { replace: true });
+    navigate('/app', { replace: true });
   };
 
   if (!open) return null;
@@ -29,6 +29,7 @@ export default function WelcomePage() {
       reason={reason}
       nextPath="/app"
       onClose={goNext}
+      onBeforeNavigate={markSeen}
     />
   );
 }
