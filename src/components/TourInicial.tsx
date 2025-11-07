@@ -39,7 +39,8 @@ const TourInicial: React.FC<TourInicialProps> = ({ onClose, reason, nextPath, on
       console.error('[TourInicial] Error in onBeforeNavigate:', error);
     }
 
-    const targetPath = nextPath ?? '/app';
+    // Always default to /app for guest flow, even if nextPath is /
+    const targetPath = (nextPath && nextPath !== '/') ? nextPath : '/app';
     console.log('[TourInicial] Navigating to:', targetPath);
 
     if (typeof navigate === 'function') {
