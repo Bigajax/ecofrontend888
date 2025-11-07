@@ -24,10 +24,9 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
   useEffect(() => {
     if (loading) {
       setStatus('loading');
-    } else if (user) {
-      setStatus('authenticated');
     } else {
-      setStatus('unauthenticated');
+      // Allow both authenticated and unauthenticated (guest) users
+      setStatus('authenticated');
     }
   }, [loading, user]);
 
@@ -37,8 +36,6 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
         return loadingSkeleton;
       case 'authenticated':
         return <>{children}</>;
-      case 'unauthenticated':
-        return <Navigate to="/" replace />;
       default:
         return loadingSkeleton;
     }

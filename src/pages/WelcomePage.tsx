@@ -27,7 +27,7 @@ export default function WelcomePage() {
   return (
     <TourInicial
       reason={reason}
-      nextPath={user ? '/app' : '/'}
+      nextPath="/app"
       onClose={goNext}
     />
   );
