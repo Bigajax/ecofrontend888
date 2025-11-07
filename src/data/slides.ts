@@ -12,11 +12,11 @@ export interface OnboardingSlideData {
 export const slides: OnboardingSlideData[] = [
   {
     id: 'eco',
-    title: 'A Eco é uma inteligência que reflete você.',
+    title: 'A Eco é uma inteligência que reflete o que há em você.',
     paragraphs: [
-      'Um espaço guiado de autoconhecimento.',
-      'A Eco conversa com você, entende o que sente e transforma suas palavras em clareza emocional.',
-      'Sem julgamentos. Só reflexão.',
+      'Um espaço de autoconhecimento guiado pela escuta.',
+      'A Eco conversa com você, compreende o que sente e traduz isso em clareza emocional.',
+      'Sem pressa. Sem julgamentos. Só presença e reflexão.',
     ],
     subtext: 'Sua jornada começa com uma conversa.',
     visual: 'orb',
@@ -24,28 +24,29 @@ export const slides: OnboardingSlideData[] = [
   },
   {
     id: 'espelho',
-    title: 'Ela cria um espelho emocional.',
+    title: 'Ela transforma o que você sente em um espelho emocional.',
     paragraphs: [
-      'A cada conversa, a Eco registra padrões e sentimentos para ajudar você a perceber o que muda com o tempo.',
-      'Quando algo for intenso, ela transforma em uma memória emocional — e devolve isso como um mapa do seu crescimento.',
+      'A cada conversa, a Eco percebe padrões e emoções que se repetem.',
+      'Quando algo é intenso, ela transforma em uma memória emocional — devolvendo um mapa vivo da sua evolução interior.',
     ],
     visual: 'mirror',
     badges: [
-      { icon: '🧠', label: 'Memórias' },
+      { icon: '💫', label: 'Memórias' },
       { icon: '💭', label: 'Emoções' },
-      { icon: '🔄', label: 'Evolução' },
+      { icon: '🌱', label: 'Evolução' },
     ],
     ctaLabel: 'Próximo →',
   },
   {
     id: 'uso',
-    title: 'Fale, escreva ou apenas sinta.',
+    title: 'Fale, escreva ou simplesmente sinta.',
     paragraphs: [
-      'Você pode conversar por texto ou voz.',
-      'A Eco escuta, reflete e te responde de forma calma, ajudando a organizar o que está dentro.',
-      'Tudo é criptografado, privado e seu.',
+      'Converse por texto, voz — ou apenas em silêncio.',
+      'A Eco reflete o que ouve e te responde com calma, ajudando a organizar o que está dentro.',
+      'Tudo é seu: criptografado, privado e protegido.',
     ],
     visual: 'usage',
     ctaLabel: 'Começar agora →',
+    subtext: 'A jornada começa com um simples respiro.',
   },
 ];

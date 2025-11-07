@@ -65,7 +65,6 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
       return;
     }
 
-    console.log('[Tour] handleNext: Last slide reached, calling onComplete');
     mixpanel.track('Front-end: Tour CTA Final Click', { id: currentSlideData?.id });
     try {
       onComplete();
