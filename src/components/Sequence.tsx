@@ -188,7 +188,7 @@ const Sequence: React.FC<SequenceProps> = ({ onClose, onComplete }) => {
         );
       case 'image':
         return (
-          <div className="onboarding-visual onboarding-visual--image" role="presentation">
+          <div className={`onboarding-visual onboarding-visual--image onboarding-visual--${slide.id}`} role="presentation">
             <img
               src={slide.imageSrc}
               alt={slide.title}

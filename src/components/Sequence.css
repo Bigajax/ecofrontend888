@@ -198,12 +198,24 @@
     width: clamp(180px, 45vw, 300px);
     max-height: clamp(180px, 45vw, 300px);
   }
+
+  .onboarding-visual--espelho {
+    width: clamp(220px, 55vw, 320px) !important;
+    max-width: clamp(220px, 55vw, 320px) !important;
+    max-height: clamp(220px, 55vw, 320px) !important;
+  }
 }
 
 @media (min-width: 768px) {
   .onboarding-visual {
     width: clamp(240px, 40vw, 340px);
     max-height: clamp(240px, 40vw, 340px);
+  }
+
+  .onboarding-visual--espelho {
+    width: clamp(280px, 50vw, 360px) !important;
+    max-width: clamp(280px, 50vw, 360px) !important;
+    max-height: clamp(280px, 50vw, 360px) !important;
   }
 }
 
@@ -216,6 +228,12 @@
   .onboarding-visual {
     width: clamp(300px, 32vw, 400px);
     max-height: clamp(300px, 32vw, 400px);
+  }
+
+  .onboarding-visual--espelho {
+    width: clamp(340px, 38vw, 440px) !important;
+    max-width: clamp(340px, 38vw, 440px) !important;
+    max-height: clamp(340px, 38vw, 440px) !important;
   }
 }
 
@@ -646,6 +664,12 @@
 .onboarding-visual--image {
   overflow: hidden;
   background: transparent;
+}
+
+.onboarding-visual--espelho {
+  width: clamp(200px, 60vw, 350px) !important;
+  max-width: clamp(200px, 60vw, 350px) !important;
+  max-height: clamp(200px, 60vw, 350px) !important;
 }
 
 .onboarding-visual__image {
