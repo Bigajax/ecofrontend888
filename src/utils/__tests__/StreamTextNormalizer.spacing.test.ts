@@ -74,6 +74,58 @@ describe('StreamTextNormalizer - Spacing Issue (User Reported)', () => {
     });
   });
 
+  describe('Case 2.5: Chunks with leading spaces (broken words)', () => {
+    it('should remove space when tail is 1 letter and chunk starts with space', () => {
+      // Chunk broken as "V" + " ejo"
+      const tail = 'V';
+      const chunk = ' ejo';
+      const result = normalizeChunk(tail, chunk);
+      expect(result.safe).toBe(' ejo'); // Space inserted between V and ejo (not in ejo)
+      expect(result.safe).not.toContain('V ejo'); // Not "V ejo"
+    });
+
+    it('should handle "V ejo que você"', () => {
+      let buffer = '';
+      const chunks = ['V', ' ejo que você'];
+
+      for (const chunk of chunks) {
+        const tail = buffer.length > 0 ? buffer.slice(-3) : '';
+        const normalized = normalizeChunk(tail, chunk);
+        buffer = smartJoin(buffer, normalized.safe);
+      }
+
+      expect(buffer).toBe('V ejo que você');
+      expect(buffer).not.toContain('V ejo'); // No space in middle of "ejo"
+    });
+
+    it('should handle multi-character tail correctly', () => {
+      // Chunk broken as "fim" + " icio"
+      // With 3-letter tail, should keep space (might be legitimate word boundary)
+      const tail = 'fim';
+      const chunk = ' icio';
+      const result = normalizeChunk(tail, chunk);
+      // Should NOT remove space since tail > 2
+      expect(result.safe).toBe(' icio');
+    });
+
+    it('should process real problematic case: "V ejo tro uxe"', () => {
+      let buffer = '';
+      // Simulating chunks that arrive broken mid-word
+      const chunks = ['V', ' ejo tro', ' uxe'];
+
+      for (const chunk of chunks) {
+        const tail = buffer.length > 0 ? buffer.slice(-3) : '';
+        const normalized = normalizeChunk(tail, chunk);
+        buffer = smartJoin(buffer, normalized.safe);
+      }
+
+      // Should fix "V ejo" to "V ejo" (space between V and ejo)
+      // "tro uxe" should become "tro uxe" (space properly handled)
+      expect(buffer).toContain('V ejo');
+      expect(buffer).not.toContain('Vejotro'); // Not concatenated
+    });
+  });
+
   describe('Case 3: "Você está sentindo"', () => {
     it('should space between "você" and "está"', () => {
       const tail = 'cê'; // Last 2 chars of "você"

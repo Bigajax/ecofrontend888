@@ -198,6 +198,18 @@ export function normalizeChunk(prevTail: string, chunk: string): NormalizeChunkR
   // Step 2: Normalizar line endings
   normalized = normalizeLineEndings(normalized);
 
+  // Step 2.5: Remover espaço indevido no INÍCIO do chunk se tail é muito curta
+  // Isso resolve chunks quebrados: "V" + " ejo" → remover espaço → "ejo" → depois inserir "V ejo"
+  // Padrão: tail tem 1-2 letras + chunk começa com espaço + chunk tem mais letras
+  if (
+    prevTail.length <= 2 &&
+    /[a-záéíóúâêôãõç]/.test(prevTail) &&
+    /^\s+[a-záéíóúâêôãõç]/.test(normalized)
+  ) {
+    // Remove espaços iniciais - será re-inserido por shouldInsertSpace se necessário
+    normalized = normalized.replace(/^\s+/, '');
+  }
+
   // Step 3: Inserir espaços em palavras coladas DENTRO do chunk
   // Isso resolve o caso onde backend envia múltiplas palavras juntas
   normalized = insertSpacesInCollocatedWords(normalized);
