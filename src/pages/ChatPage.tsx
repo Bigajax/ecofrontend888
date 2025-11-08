@@ -602,6 +602,20 @@ function ChatPage() {
     scrollToBottom(false);
   }, [shouldRenderGlobalTyping, isAtBottom, scrollToBottom]);
 
+  // Scroll para o input quando o teclado abre
+  useEffect(() => {
+    if (!isKeyboardOpen || !chatInputWrapperRef.current) return;
+
+    const timeoutId = setTimeout(() => {
+      chatInputWrapperRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end'
+      });
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [isKeyboardOpen]);
+
   const feedbackPromptNode =
     showFeedback && lastEcoInfo?.msg ? (
       <FeedbackPrompt
@@ -653,6 +667,9 @@ function ChatPage() {
         'chat-page grid min-h-[100dvh] w-full grid-rows-[auto_minmax(0,1fr)_auto] bg-[color:var(--color-bg-base)] text-[color:var(--color-text-primary)]',
         { 'keyboard-open': isKeyboardOpen },
       )}
+      style={{
+        '--keyboard-height': `${keyboardHeight}px`,
+      } as React.CSSProperties & { '--keyboard-height': string }}
     >
       <header aria-hidden className="sr-only" />
       <main
@@ -661,7 +678,7 @@ function ChatPage() {
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehaviorY: 'contain',
-          paddingBottom: scrollInset,
+          paddingBottom: Math.max(scrollInset, keyboardHeight + computedInputHeight + 16),
           scrollPaddingTop: mainTopPadding,
           scrollPaddingBottom: mainScrollPadding,
         }}
@@ -739,8 +756,11 @@ function ChatPage() {
 
       <footer
         ref={chatInputWrapperRef}
-        className="composer sticky bottom-0 z-40 px-4 pb-[env(safe-area-inset-bottom)] pt-4 sm:px-6 sm:pt-5 lg:px-10"
-        style={footerStyle}
+        className="composer fixed bottom-0 left-0 right-0 z-40 w-full px-4 pt-4 sm:px-6 sm:pt-5 lg:px-10 bg-white"
+        style={{
+          ...footerStyle,
+          paddingBottom: `calc(${safeAreaBottom + 16}px + env(safe-area-inset-bottom))`,
+        }}
       >
         <div className="mx-auto w-full max-w-[min(700px,92vw)] space-y-2">
           {/* QuickSuggestions compactas + rotativo acima do input */}
