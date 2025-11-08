@@ -14,7 +14,7 @@ const LoginGateModal: React.FC<LoginGateModalProps> = ({ open, onClose, onSignup
   const navigate = useNavigate();
 
   const handleCreateAccount = () => {
-    navigate('/create-profile');
+    navigate('/register');
   };
 
   if (!open) return null;

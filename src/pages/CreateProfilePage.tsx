@@ -116,10 +116,9 @@ const CreateProfilePage: React.FC = () => {
 
   const handleGoogleSignUp = async () => {
     setError('');
-    setLoading(true);
     try {
       mixpanel.track('Front-end: Google Sign-up Iniciado');
-      const { data, error: authError } = await supabaseClient.auth.signInWithOAuth({
+      const { error: authError } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/app`,
@@ -135,8 +134,6 @@ const CreateProfilePage: React.FC = () => {
       const translatedError = translateRegisterError(err);
       mixpanel.track('Front-end: Google Sign-up Falhou', { reason: translatedError });
       setError(translatedError);
-    } finally {
-      setLoading(false);
     }
   };
 
