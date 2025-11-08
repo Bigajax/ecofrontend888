@@ -15,8 +15,12 @@ type Props = {
   speed?: number;
   /** Rótulo acessível (sr-only). Default: "Eco está digitando" */
   ariaLabel?: string;
-  /** Aumenta espaçamento/padding para dar “respiro” */
+  /** Aumenta espaçamento/padding para dar "respiro" */
   density?: Density;
+  /** Mostrar com label "Eco está digitando..." */
+  withLabel?: boolean;
+  /** Tempo em segundos que está digitando */
+  elapsedTime?: number;
 };
 
 const DOT_DELAYS = [0, 120, 240];
@@ -45,6 +49,8 @@ const TypingDots: React.FC<Props> = ({
   speed = 1,
   ariaLabel = "Eco refletindo…",
   density = "airy",
+  withLabel = false,
+  elapsedTime = 0,
 }) => {
   void tone;
   void density;
@@ -63,36 +69,92 @@ const TypingDots: React.FC<Props> = ({
 
   const containerClasses = [
     resolvedVariant === "inline"
-      ? "inline-flex items-center gap-1.5 align-middle"
-      : "inline-flex h-6 min-w-[56px] items-center justify-center gap-1.5 rounded-full px-2 bg-white/70 backdrop-blur border border-zinc-200/60",
-    "transition-colors duration-150 ease-out",
+      ? "inline-flex items-center gap-2 align-middle"
+      : "inline-flex items-center gap-2.5 rounded-full px-3 py-1.5 bg-gradient-to-r from-eco-babySoft to-eco-babySoft/80 backdrop-blur border border-eco-baby/20 shadow-[0_2px_8px_rgba(10,122,255,0.12)]",
+    "transition-all duration-200 ease-out",
     className,
   ]
     .filter(Boolean)
     .join(" ");
 
   const dotClass = [
-    "rounded-full bg-[#0A7AFF]",
+    "rounded-full bg-eco-baby",
     DOT_SIZES[size] ?? DOT_SIZES.md,
   ].join(" ");
+
+  const pulseKeyframes = `
+    @keyframes ecoDot {
+      0%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+      }
+      50% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    @keyframes ecoBreathing {
+      0%, 100% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 0.9;
+      }
+    }
+  `;
+
+  // Adicionar estilos de animação dinamicamente
+  if (typeof document !== 'undefined') {
+    let styleEl = document.getElementById('typing-dots-styles');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'typing-dots-styles';
+      styleEl.textContent = pulseKeyframes;
+      document.head.appendChild(styleEl);
+    }
+  }
 
   return (
     <div className={containerClasses} aria-live="polite" role="status">
       <span className={srOnly}>{ariaLabel}</span>
-      {DOT_DELAYS.map((delay, index) => (
-        <span
-          key={delay + index}
-          role="presentation"
-          aria-hidden="true"
-          className={dotClass}
-          style={{
-            animation: `ecoDot ${animationDuration}s ease-in-out infinite`,
-            animationDelay: `${delay}ms`,
-            animationPlayState: playState,
-            opacity: 0.8,
-          }}
-        />
-      ))}
+
+      {/* Dots com animação sofisticada */}
+      <div className="flex items-center gap-1.5">
+        {DOT_DELAYS.map((delay, index) => (
+          <span
+            key={delay + index}
+            role="presentation"
+            aria-hidden="true"
+            className={dotClass}
+            style={{
+              animation: `ecoDot ${animationDuration}s ease-in-out infinite`,
+              animationDelay: `${delay}ms`,
+              animationPlayState: playState,
+              willChange: 'transform, opacity',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Label com tempo decorrido */}
+      {withLabel && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-eco-text/80 whitespace-nowrap">
+            Eco está digitando
+          </span>
+          {elapsedTime > 0 && elapsedTime < 60 && (
+            <span
+              className="text-xs text-eco-muted/60 font-light"
+              style={{
+                animation: 'ecoBreathing 2s ease-in-out infinite',
+                animationPlayState: playState,
+              }}
+            >
+              ({Math.round(elapsedTime)}s)
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 };

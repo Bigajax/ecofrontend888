@@ -25,6 +25,7 @@ import { useFeedbackPrompt } from '../hooks/useFeedbackPrompt';
 import { useQuickSuggestionsVisibility } from '../hooks/useQuickSuggestionsVisibility';
 import { useEcoActivity } from '../hooks/useEcoActivity';
 import { useKeyboardInsets } from '../hooks/useKeyboardInsets';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { ensureSessionId } from '../utils/chat/session';
 import { saudacaoDoDiaFromHour } from '../utils/chat/greetings';
 import { isEcoMessage } from '../utils/chat/messages';
@@ -90,8 +91,11 @@ function ChatPage() {
   const [composerValue, setComposerValue] = useState('');
   const [lastAttempt, setLastAttempt] = useState<{ text: string; hint?: string } | null>(null);
   const [voicePanelOpen, setVoicePanelOpen] = useState(false);
+  const [ecoTypingStartedAt, setEcoTypingStartedAt] = useState<number | null>(null);
+  const [ecoTypingElapsed, setEcoTypingElapsed] = useState(0);
   const sendingRef = useRef(false); // FIX: guard síncrono para bloquear envios concorrentes
   const ecoActivity = useEcoActivity();
+  const haptic = useHapticFeedback({ enabled: true });
 
   const behaviorTrackerRef = useRef({
     lastLength: 0,
@@ -370,8 +374,10 @@ function ChatPage() {
         });
         setIsComposerSending(true);
         setLastAttempt({ text: trimmed, hint: systemHint });
+        haptic.medium(); // Feedback ao enviar
         try {
           await streamAndPersist(trimmed, systemHint);
+          haptic.success(); // Feedback de sucesso
           finalizeBehaviorMetrics();
           setLastAttempt(null);
         } finally {
@@ -616,6 +622,30 @@ function ChatPage() {
     return () => clearTimeout(timeoutId);
   }, [isKeyboardOpen]);
 
+  // Haptic feedback quando Eco começa/termina de digitar
+  useEffect(() => {
+    if (isEcoStreamTyping) {
+      haptic.light(); // Feedback leve ao começar a digitar
+      setEcoTypingStartedAt(Date.now());
+      setEcoTypingElapsed(0);
+    } else {
+      setEcoTypingStartedAt(null);
+      setEcoTypingElapsed(0);
+    }
+  }, [isEcoStreamTyping, haptic]);
+
+  // Timer para atualizar tempo de digitação da Eco
+  useEffect(() => {
+    if (!isEcoStreamTyping || !ecoTypingStartedAt) return;
+
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - ecoTypingStartedAt) / 1000);
+      setEcoTypingElapsed(elapsed);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isEcoStreamTyping, ecoTypingStartedAt]);
+
   const feedbackPromptNode =
     showFeedback && lastEcoInfo?.msg ? (
       <FeedbackPrompt
@@ -654,12 +684,17 @@ function ChatPage() {
   const typingIndicatorNode = useMemo(() => {
     if (!(shouldShowGlobalTyping || isEcoStreamTyping)) return null;
     return (
-      <div className="flex items-center gap-2 mt-1" role="status" aria-live="polite">
-        <TypingDots variant="bubble" size="md" tone="auto" />
-        <span className="text-gray-500 italic">Eco refletindo…</span>
+      <div className="mt-1" role="status" aria-live="polite">
+        <TypingDots
+          variant="bubble"
+          size="md"
+          tone="auto"
+          withLabel={true}
+          elapsedTime={ecoTypingElapsed}
+        />
       </div>
     );
-  }, [shouldShowGlobalTyping, isEcoStreamTyping]);
+  }, [shouldShowGlobalTyping, isEcoStreamTyping, ecoTypingElapsed]);
 
   return (
     <div

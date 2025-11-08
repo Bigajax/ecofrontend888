@@ -11,6 +11,7 @@ import clsx from "clsx";
 
 import { toast } from "../utils/toast";
 import mixpanel from "../lib/mixpanel";
+import { useHapticFeedback } from "../hooks/useHapticFeedback";
 
 type Props = {
   onSendMessage: (t: string) => void | Promise<void>;
@@ -47,6 +48,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const sendButtonRef = useRef<HTMLButtonElement>(null);
     const wrapperRef = useRef<HTMLFormElement>(null);
+    const haptic = useHapticFeedback({ enabled: true });
 
     const isBusy = disabled || isSending;
 
@@ -162,6 +164,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                   setInputMessage(next);
                   onTextChange?.(next);
                 }}
+                onFocus={() => haptic.light()}
                 placeholder={placeholder}
                 rows={1}
                 inputMode="text"
@@ -188,6 +191,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 type="button"
                 onClick={() => {
                   if (isBusy || isMicActive) return;
+                  haptic.medium();
                   onMicPress?.();
                 }}
                 disabled={isBusy || isMicActive}
