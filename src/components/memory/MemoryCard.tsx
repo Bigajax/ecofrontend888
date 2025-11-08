@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, Bookmark, Share2 } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 import EcoEyeBadge from '../EcoEyeBadge';
 import type { MemoryCardDTO } from '../../pages/memory/memoryCardDto';
@@ -18,23 +18,6 @@ const toRgb = (hex?: string) => {
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-
-// Helper para gerar gradiente sutil baseado na cor principal
-const getGradientBg = (accentColor?: string) => {
-  if (!accentColor) return 'from-slate-50 to-slate-100/50';
-
-  const colorMap: Record<string, string> = {
-    '#10b981': 'from-emerald-50/60 to-emerald-100/30',
-    '#64748b': 'from-slate-50/60 to-slate-100/30',
-    '#e11d48': 'from-rose-50/60 to-rose-100/30',
-    '#4f46e5': 'from-indigo-50/60 to-indigo-100/30',
-    '#f97316': 'from-orange-50/60 to-orange-100/30',
-    '#8b5cf6': 'from-violet-50/60 to-violet-100/30',
-    '#0ea5e9': 'from-sky-50/60 to-sky-100/30',
-  };
-
-  return colorMap[accentColor] || 'from-slate-50 to-slate-100/50';
-};
 
 const CONTEXT_PREVIEW_LIMIT = 260;
 const TAG_DISPLAY_LIMIT = 5;
@@ -119,19 +102,25 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
     <motion.li
       layout
       className={clsx(
-        'group relative flex flex-col rounded-2xl border border-black/5 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-sky-500/40',
-        `bg-gradient-to-br ${getGradientBg(mem.accent)}`,
-        isFavorite && 'ring-2 ring-sky-400/60 shadow-md',
+        'group relative flex flex-col rounded-2xl border border-[#E8E3DD] bg-white/60 backdrop-blur-md',
+        'transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)',
+        'hover:shadow-[0_4px_30px_rgba(0,0,0,0.08)] hover:-translate-y-0.5',
+        'focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#A7846C]/40',
+        'shadow-[0_4px_30px_rgba(0,0,0,0.04)]',
+        isFavorite && 'ring-1 ring-[#C6A995]/60 shadow-[0_4px_30px_rgba(0,0,0,0.08)]',
       )}
     >
-      {/* Header com emoção + actions */}
-      <div className="flex items-start justify-between gap-3 border-b border-black/5 px-4 pt-4 pb-3 md:px-5 md:pt-5">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <EcoEyeBadge emotion={mem.emocao} className="shrink-0 mt-1" size={40} />
-          <div className="min-w-0 flex-1">
-            <h3 className="break-words text-lg font-bold leading-tight text-slate-900">{mem.titulo || mem.emocao}</h3>
-            <p className="mt-1 text-xs font-medium text-slate-600">{mem.timeAgo || mem.fallbackDate}</p>
-          </div>
+      {/* Header: Emoção + Título + Data */}
+      <div className="flex items-start gap-4 px-5 pt-5 pb-4 border-b border-[#E8E3DD]/60">
+        <EcoEyeBadge emotion={mem.emocao} className="shrink-0" size={36} />
+
+        <div className="flex-1 min-w-0">
+          <h3 className="font-display text-lg font-normal text-[#38322A] leading-tight break-words">
+            {mem.titulo || mem.emocao}
+          </h3>
+          <p className="mt-2 text-xs text-[#9C938A] font-primary">
+            {mem.timeAgo || mem.fallbackDate}
+          </p>
         </div>
 
         <button
@@ -140,24 +129,31 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
           aria-expanded={detailsOpen}
           aria-controls={detailsId}
           aria-label={detailsOpen ? 'Recolher detalhes da memória' : 'Expandir detalhes da memória'}
-          className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full border border-black/5 text-slate-500 transition-all duration-150 hover:bg-white/50 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500/40"
+          className={clsx(
+            'shrink-0 mt-0.5 rounded-full p-1.5 text-[#A7846C]',
+            'transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)',
+            'hover:bg-white/60 hover:text-[#38322A]',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A7846C]/40'
+          )}
         >
-          <ChevronDown className={clsx('h-4 w-4 transition-transform duration-300', detailsOpen && 'rotate-180')} />
+          <ChevronDown
+            className={clsx('h-5 w-5 transition-transform duration-300', detailsOpen && 'rotate-180')}
+            strokeWidth={1.5}
+          />
         </button>
       </div>
 
-      {/* Intensidade - Visual Prominente */}
-      <div className="space-y-2 px-4 pt-3 pb-4 md:px-5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-700">Intensidade</span>
-          <span
-            className="inline-flex items-center justify-center rounded-full font-bold text-white w-10 h-10"
-            style={{ backgroundColor: mem.accent || '#64748b' }}
-          >
-            {mem.intensidade ?? '—'}
+      {/* Intensidade */}
+      <div className="px-5 pt-4 pb-3 border-b border-[#E8E3DD]/60">
+        <div className="flex items-center justify-between gap-3 mb-2.5">
+          <label htmlFor={intensityLabelId} className="text-xs font-display font-normal text-[#A7846C] uppercase tracking-wide">
+            Intensidade
+          </label>
+          <span id={intensityLabelId} className="text-sm font-primary font-semibold text-[#38322A]">
+            {intensityLabel}
           </span>
         </div>
-        <div className="h-2 w-full rounded-full bg-black/10 overflow-hidden">
+        <div className="h-1.5 w-full rounded-full bg-[#E8E3DD] overflow-hidden">
           <div
             role="progressbar"
             aria-labelledby={intensityLabelId}
@@ -171,34 +167,30 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
             )}
             style={{
               width: `${intensityPercent}%`,
-              background: mem.accent || '#64748b',
+              background: mem.accent || '#A7846C',
             }}
           />
         </div>
       </div>
 
-      {/* Domínio, Categoria, Padrão - Badges Estruturados */}
-      <div className="flex flex-wrap gap-2 border-b border-black/5 px-4 py-3 md:px-5">
-        {mem.domain && (
-          <div className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium" style={{
-            backgroundColor: `${mem.accent}20`,
-            color: mem.accent,
-            border: `1px solid ${mem.accent}40`,
-          }}>
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: mem.accent }} />
-            <span className="font-semibold capitalize">{mem.domain}</span>
-          </div>
-        )}
-        {mem.categoria && (
-          <div className="inline-flex items-center gap-2 rounded-lg bg-purple-100/70 px-3 py-1.5 text-xs font-medium text-purple-700 border border-purple-200/60">
-            <span>📁</span>
-            <span className="capitalize">{mem.categoria}</span>
-          </div>
-        )}
-      </div>
+      {/* Domínio + Categoria */}
+      {(mem.domain || mem.categoria) && (
+        <div className="flex flex-wrap gap-2 px-5 py-3 border-b border-[#E8E3DD]/60">
+          {mem.domain && (
+            <span className="inline-flex items-center gap-2 rounded-lg px-3 py-1 text-xs font-primary font-medium text-[#A7846C] bg-[#F3EEE7]/60 border border-[#E8E3DD]">
+              {mem.domain}
+            </span>
+          )}
+          {mem.categoria && (
+            <span className="inline-flex items-center gap-2 rounded-lg px-3 py-1 text-xs font-primary font-medium text-[#A7846C] bg-[#F3EEE7]/60 border border-[#E8E3DD]">
+              {mem.categoria}
+            </span>
+          )}
+        </div>
+      )}
 
-      {/* Contexto e Tags */}
-      <div className="space-y-3 px-4 py-3 md:px-5 flex-1 min-w-0">
+      {/* Contexto + Tags */}
+      <div className="px-5 py-4 space-y-3 flex-1 min-w-0">
         {hasExcerpt ? (
           <motion.div
             layout
@@ -208,7 +200,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
           >
             <p
               className={clsx(
-                'text-sm leading-relaxed text-slate-700 whitespace-pre-line',
+                'text-sm font-primary font-light text-[#38322A] leading-relaxed whitespace-pre-line',
                 !excerptExpanded &&
                   'overflow-hidden [display:-webkit-box] [-webkit-line-clamp:3] [-webkit-box-orient:vertical]',
               )}
@@ -219,7 +211,11 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
               <button
                 type="button"
                 onClick={() => setExcerptExpanded((value) => !value)}
-                className="mt-2 text-xs font-semibold text-slate-600 underline underline-offset-2 transition-colors duration-150 hover:text-slate-800"
+                className={clsx(
+                  'mt-2 text-xs font-primary font-medium text-[#A7846C]',
+                  'transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)',
+                  'hover:text-[#38322A]'
+                )}
                 aria-expanded={excerptExpanded}
                 aria-controls={excerptId}
               >
@@ -234,13 +230,18 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
             {normalizedTags.map((tag, index) => (
               <span
                 key={`${tag}-${index}`}
-                className="inline-flex items-center gap-1 rounded-full bg-white/70 border border-black/5 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-white/90 transition-colors"
+                className={clsx(
+                  'inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-primary font-medium',
+                  'bg-[#F3EEE7]/60 border border-[#E8E3DD] text-[#A7846C]',
+                  'transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)',
+                  'hover:bg-[#F3EEE7]/80 hover:-translate-y-0.5'
+                )}
               >
                 #{tag.toLowerCase()}
               </span>
             ))}
             {extraTags > 0 ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/70 border border-black/5 px-3 py-1.5 text-xs font-medium text-slate-600">
+              <span className="inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-primary font-medium bg-[#F3EEE7]/60 border border-[#E8E3DD] text-[#9C938A]">
                 +{extraTags}
               </span>
             ) : null}
@@ -257,21 +258,21 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="space-y-3 border-t border-black/5 px-4 pt-4 pb-4 md:px-5"
+            className="space-y-3 border-t border-[#E8E3DD]/60 px-5 pt-4 pb-5"
           >
             {mem.padrao ? (
-              <div className="space-y-2 rounded-xl border border-black/5 bg-white/50 p-3.5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-700 block">Padrão comportamental</span>
-                <p className="text-sm leading-relaxed text-slate-700">{mem.padrao}</p>
+              <div className="space-y-2 rounded-lg border border-[#E8E3DD] bg-[#F3EEE7]/40 p-3.5">
+                <span className="text-xs font-display font-normal text-[#A7846C] uppercase tracking-wide block">Padrão</span>
+                <p className="text-sm font-primary font-light text-[#38322A] leading-relaxed">{mem.padrao}</p>
               </div>
             ) : null}
 
             {mem.resumo ? (
-              <div className="space-y-2 rounded-xl border border-black/5 bg-white/50 p-3.5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-700 block">Análise da ECO</span>
-                <p className="text-sm leading-relaxed text-slate-700">{mem.resumo}</p>
+              <div className="space-y-2 rounded-lg border border-[#E8E3DD] bg-[#F3EEE7]/40 p-3.5">
+                <span className="text-xs font-display font-normal text-[#A7846C] uppercase tracking-wide block">Análise</span>
+                <p className="text-sm font-primary font-light text-[#38322A] leading-relaxed">{mem.resumo}</p>
                 {mem.resumoCompleto && mem.resumoCompleto !== mem.resumo ? (
-                  <p className="text-xs text-slate-500 italic">→ Texto encurtado para caber no cartão</p>
+                  <p className="text-xs text-[#9C938A] italic">→ Resumido</p>
                 ) : null}
               </div>
             ) : null}
@@ -281,36 +282,46 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
                 type="button"
                 onClick={handleOpenChat}
                 className={clsx(
-                  'inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500/40',
-                  'border border-black/10 bg-white text-slate-700 hover:bg-slate-50 active:scale-95'
+                  'flex-1 px-4 py-2.5 rounded-lg text-sm font-primary font-medium',
+                  'border border-[#E8E3DD] bg-white/60 text-[#A7846C]',
+                  'transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)',
+                  'hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A7846C]/40'
                 )}
                 aria-label="Abrir memória no chat"
               >
-                💬 Abrir no chat
+                Abrir no chat
               </button>
               <button
                 type="button"
                 onClick={handleToggleFavorite}
                 className={clsx(
-                  'inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500/40 active:scale-95',
+                  'flex-1 px-4 py-2.5 rounded-lg text-sm font-primary font-medium',
+                  'transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)',
+                  'hover:-translate-y-0.5',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A7846C]/40',
                   isFavorite
-                    ? 'border border-sky-300/70 bg-sky-100/60 text-sky-700 hover:bg-sky-100'
-                    : 'border border-black/10 bg-white text-slate-700 hover:bg-slate-50',
+                    ? 'border border-[#C6A995] bg-[#F3EEE7]/60 text-[#A7846C] hover:bg-[#F3EEE7]/80 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]'
+                    : 'border border-[#E8E3DD] bg-white/60 text-[#A7846C] hover:bg-white hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]',
                 )}
                 aria-label={isFavorite ? 'Remover memória dos favoritos' : 'Marcar memória como favorita'}
               >
-                {isFavorite ? '⭐ Favorita' : '☆ Favoritar'}
+                {isFavorite ? 'Desfavoritar' : 'Favoritar'}
               </button>
               {onEditTags ? (
                 <button
                   type="button"
                   onClick={handleEditTags}
                   className={clsx(
-                    'inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-150 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500/40 active:scale-95'
+                    'flex-1 px-4 py-2.5 rounded-lg text-sm font-primary font-medium',
+                    'border border-[#E8E3DD] bg-white/60 text-[#A7846C]',
+                    'transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)',
+                    'hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A7846C]/40'
                   )}
                   aria-label="Editar tags da memória"
                 >
-                  ✏️ Tags
+                  Editar tags
                 </button>
               ) : null}
             </div>
