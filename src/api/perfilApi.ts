@@ -1,5 +1,8 @@
 // src/api/perfilApi.ts
-import { ApiFetchError, apiFetchJson } from "./apiFetch";
+import { apiFetchJson } from "../lib/apiFetch";
+import type { ApiFetchJsonResult } from "../lib/apiFetch";
+import { buildIdentityHeaders, syncGuestId } from "../lib/guestId";
+import { resolveApiUrl } from "../constants/api";
 import { MissingUserIdError } from "./errors";
 
 export interface PerfilEmocional {
@@ -63,27 +66,59 @@ export async function buscarPerfilEmocional(
     throw new MissingUserIdError(PERFIL_ENDPOINT);
   }
 
-  const timeoutMs = opts?.timeoutMs ?? 12_000;
-
   const cacheKey = `perfil:${userId}`;
   const cached = getCache(cacheKey);
   if (cached !== undefined) return cached;
 
   try {
     const url = buildPerfilUrl(userId);
-    const payload = await apiFetchJson<any>(url, { method: 'GET', timeoutMs });
-    const parsed = unwrapPerfil(payload);
+
+    // Preparar headers com identidade
+    const identityHeaders = buildIdentityHeaders();
+    const headers = new Headers({
+      ...identityHeaders,
+      Accept: 'application/json',
+    });
+
+    const result = await apiFetchJson<any>(url, {
+      method: 'GET',
+      headers,
+      timeoutMs: opts?.timeoutMs ?? 12_000,
+    });
+
+    // Sincronizar guest ID se recebido
+    if (result.ok && result.headers) {
+      const guestId = result.headers.get('x-eco-guest-id') ?? result.headers.get('x-guest-id');
+      if (guestId) {
+        syncGuestId(guestId);
+      }
+    }
+
+    // Verificar se a requisição foi bem-sucedida
+    if (!result.ok) {
+      const errorMsg = result.status === 0
+        ? result.message
+        : `HTTP ${result.status}`;
+
+      console.error(
+        '❌ Erro ao buscar perfil emocional:',
+        { status: result.status, data: result.data, message: errorMsg }
+      );
+
+      if (result.status === 404 || result.status === 400) {
+        setCache(cacheKey, null);
+      }
+
+      throw new Error(errorMsg);
+    }
+
+    const parsed = unwrapPerfil(result.data);
     setCache(cacheKey, parsed);
     return parsed;
   } catch (error) {
-    if (error instanceof ApiFetchError && (error.status === 404 || error.status === 400)) {
-      setCache(cacheKey, null);
-      throw error;
-    }
-
     console.error(
       '❌ Erro ao buscar perfil emocional:',
-      (error as any)?.response?.data || (error as Error)?.message || error
+      (error as Error)?.message || error
     );
     setCache(cacheKey, null);
     throw error;

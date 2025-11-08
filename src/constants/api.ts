@@ -66,8 +66,16 @@ const REMOTE_API_BASE_FALLBACK = "https://ecobackend888.onrender.com";
 const rawEnv = readEnvApiUrl();
 const normalizedEnv = normalizeHostPath(rawEnv);
 
-// No browser, não use base vazia (evita caminhos relativos/CORS surpresa)
-const DEFAULT_BROWSER_API_BASE = REMOTE_API_BASE_FALLBACK;
+// Detectar se está em localhost para usar o proxy do Vite
+const isLocalhost = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname;
+  return host === "localhost" || host === "127.0.0.1";
+};
+
+// Em localhost: base vazia para que o Vite proxy redirecione para localhost:3001
+// Em produção: use o backend remoto
+const DEFAULT_BROWSER_API_BASE = isLocalhost() ? "" : REMOTE_API_BASE_FALLBACK;
 // Em Node/testes, pode ser o mesmo fallback (ou ajuste se quiser localhost)
 const DEFAULT_NON_BROWSER_API_BASE = REMOTE_API_BASE_FALLBACK;
 

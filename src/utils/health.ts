@@ -9,7 +9,7 @@ export type HealthCheckResult = {
   responseOk: boolean;
 };
 
-const resolveHealthUrl = () => buildApiUrl("/health");
+const resolveHealthUrl = () => buildApiUrl("/api/health");
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
