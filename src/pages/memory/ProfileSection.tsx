@@ -42,12 +42,42 @@ const pastel = (str: string) => `hsl(${hashHue(str)}, 40%, 82%)`;
 
 /* ---------- UI ---------- */
 const Card: FC<PropsWithChildren<{ title: string; subtitle?: string; id?: string }>> = ({ title, subtitle, id, children }) => (
-  <section id={id} className="bg-white rounded-[24px] border border-black/10 p-6 md:p-7" role="region" aria-label={title}>
+  <section
+    id={id}
+    className="rounded-2xl border backdrop-blur-md p-6 md:p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]"
+    style={{
+      backgroundColor: 'rgba(243, 238, 231, 0.6)',
+      borderColor: 'var(--eco-line, #E8E3DD)',
+      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.04)',
+    }}
+    role="region"
+    aria-label={title}
+  >
     <header className="mb-4">
-      <h3 className="text-[20px] md:text-[22px] font-semibold text-neutral-900">{title}</h3>
-      {subtitle && <p className="text-[13px] text-neutral-500 mt-0.5">{subtitle}</p>}
+      <h3
+        className="text-[20px] md:text-[22px] font-normal md:font-semibold transition-colors duration-300"
+        style={{
+          color: 'var(--eco-text, #38322A)',
+          fontFamily: 'var(--font-display, Playfair Display, Georgia, serif)',
+        }}
+      >
+        {title}
+      </h3>
+      {subtitle && (
+        <p
+          className="text-[13px] mt-0.5"
+          style={{ color: 'var(--eco-muted, #9C938A)' }}
+        >
+          {subtitle}
+        </p>
+      )}
     </header>
-    <div className="border-t border-neutral-100/80 pt-4">{children}</div>
+    <div
+      className="border-t pt-4"
+      style={{ borderColor: 'var(--eco-line, #E8E3DD)' }}
+    >
+      {children}
+    </div>
   </section>
 );
 
@@ -129,12 +159,40 @@ function buildSparklineData(memories: Memoria[], days: Period) {
 
 /* toggle segmentado */
 const SegmentedControl: FC<{ value: Period; onChange: (p: Period)=>void }> = ({ value, onChange }) => {
-  const base = 'px-4 h-9 rounded-full text-[14px] font-medium transition';
-  const item = (p: Period) => `${base} ${value===p ? 'bg-neutral-900 text-white' : 'text-neutral-700 hover:bg-neutral-100'}`;
+  const base = 'px-4 h-9 rounded-full text-[14px] font-medium transition-all duration-300';
+  const item = (p: Period) => `${base} ${
+    value===p
+      ? 'text-white shadow-[0_2px_12px_rgba(0,0,0,0.08)]'
+      : 'hover:-translate-y-0.5'
+  }`;
   return (
-    <div role="tablist" aria-label="Período" className="inline-flex p-1 rounded-full border border-black/10 bg-white gap-1">
+    <div
+      role="tablist"
+      aria-label="Período"
+      className="inline-flex p-1 rounded-full border gap-1 backdrop-blur-sm"
+      style={{
+        backgroundColor: 'rgba(255, 255, 255, 0.6)',
+        borderColor: 'var(--eco-line, #E8E3DD)',
+      }}
+    >
       {[7,28,90].map(p => (
-        <button key={p} role="tab" aria-selected={value===p} className={item(p as Period)} onClick={()=>onChange(p as Period)}>
+        <button
+          key={p}
+          role="tab"
+          aria-selected={value===p}
+          className={item(p as Period)}
+          onClick={()=>onChange(p as Period)}
+          style={
+            value === p
+              ? {
+                  background: 'linear-gradient(90deg, var(--eco-user, #A7846C), var(--eco-accent, #C6A995))',
+                  color: 'white',
+                }
+              : {
+                  color: 'var(--eco-text, #38322A)',
+                }
+          }
+        >
           {PERIOD_LABEL[p as Period]}
         </button>
       ))}
@@ -226,10 +284,20 @@ const ProfileSection: FC = () => {
   const noRemoteData = (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) && (allMemories.length === 0);
 
   return (
-    <div className="min-h-0 h-[calc(100vh-96px)] overflow-y-auto">
+    <div
+      className="min-h-0 h-[calc(100vh-96px)] overflow-y-auto transition-colors duration-300"
+      style={{ backgroundColor: 'var(--eco-bg, #FAF9F7)' }}
+    >
       {noRemoteData && (
         <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 pt-4">
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm">
+          <div
+            className="rounded-2xl border px-4 py-3 text-sm backdrop-blur-sm"
+            style={{
+              backgroundColor: 'rgba(217, 119, 6, 0.08)',
+              borderColor: 'rgba(217, 119, 6, 0.3)',
+              color: 'var(--eco-text, #38322A)',
+            }}
+          >
             Não consegui carregar dados do servidor agora (offline/indisponível). Quando voltar, os gráficos se atualizam.
           </div>
         </div>
@@ -237,7 +305,13 @@ const ProfileSection: FC = () => {
 
       <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-10">
         {(perfilLoading || memoriesLoading || fetchingLocal) && (
-          <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-10 grid place-items-center">
+          <div
+            className="rounded-2xl border px-4 py-10 grid place-items-center backdrop-blur-sm"
+            style={{
+              backgroundColor: 'rgba(243, 238, 231, 0.6)',
+              borderColor: 'var(--eco-line, #E8E3DD)',
+            }}
+          >
             <EcoBubbleLoading size={72} text="Carregando…" />
           </div>
         )}
@@ -250,12 +324,22 @@ const ProfileSection: FC = () => {
           if (!messages.length) return null;
 
           return (
-            <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-600 space-y-2">
+            <div
+              className="rounded-2xl border px-4 py-3 text-sm space-y-2 backdrop-blur-sm"
+              style={{
+                backgroundColor: 'rgba(217, 119, 6, 0.08)',
+                borderColor: 'rgba(217, 119, 6, 0.3)',
+                color: 'var(--eco-text, #38322A)',
+              }}
+            >
               {messages.map(({ message, details }, index) => (
                 <div key={`${message}-${index}`}>
                   <p className="font-medium">{message}</p>
                   {details?.status || details?.message ? (
-                    <p className="mt-1 text-[12px] text-rose-500/80">
+                    <p
+                      className="mt-1 text-[12px]"
+                      style={{ color: 'var(--eco-muted, #9C938A)' }}
+                    >
                       Detalhes técnicos:{' '}
                       {details?.status
                         ? `${details.status}${details.statusText ? ` ${details.statusText}` : ''}`
@@ -273,21 +357,57 @@ const ProfileSection: FC = () => {
         <Card title="Resumo" id="resumo">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="pb-2">
-              <p className="text-[15px] md:text-[16px] text-neutral-700">{insight}</p>
-              {comp && <p className="mt-1 text-[13px] text-neutral-500">{comp}</p>}
+              <p
+                className="text-[15px] md:text-[16px] transition-colors duration-300"
+                style={{ color: 'var(--eco-text, #38322A)' }}
+              >
+                {insight}
+              </p>
+              {comp && (
+                <p
+                  className="mt-1 text-[13px]"
+                  style={{ color: 'var(--eco-muted, #9C938A)' }}
+                >
+                  {comp}
+                </p>
+              )}
               <div className="mt-3">
-                <div className="text-[13px] text-neutral-500">Média diária (28d)</div>
-                <div className="text-[32px] leading-[1.1] font-semibold text-neutral-900">
-                  {media28?.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
-                  <span className="ml-1 text-[14px] font-normal text-neutral-400">reg/dia</span>
+                <div
+                  className="text-[13px]"
+                  style={{ color: 'var(--eco-muted, #9C938A)' }}
+                >
+                  Média diária (28d)
                 </div>
-                <div className="mt-1 text-[13px] text-neutral-500">Período {periodLabel}: {totalPeriodo} registros</div>
+                <div
+                  className="text-[32px] leading-[1.1] font-semibold transition-colors duration-300"
+                  style={{
+                    color: 'var(--eco-user, #A7846C)',
+                    fontFamily: 'var(--font-display, Playfair Display, Georgia, serif)',
+                  }}
+                >
+                  {media28?.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+                  <span
+                    className="ml-1 text-[14px] font-normal transition-colors duration-300"
+                    style={{ color: 'var(--eco-muted, #9C938A)' }}
+                  >
+                    reg/dia
+                  </span>
+                </div>
+                <div
+                  className="mt-1 text-[13px]"
+                  style={{ color: 'var(--eco-muted, #9C938A)' }}
+                >
+                  Período {periodLabel}: {totalPeriodo} registros
+                </div>
               </div>
             </div>
             <div className="sticky top-2"><SegmentedControl value={period} onChange={setPeriod} /></div>
           </div>
 
-          <div className="mt-4 border-t border-neutral-100/80 pt-4">
+          <div
+            className="mt-4 border-t pt-4"
+            style={{ borderColor: 'var(--eco-line, #E8E3DD)' }}
+          >
             <div className="h-[96px]">
               {isClient && hasLinePoints ? (
                 <ChartErrorBoundary>
@@ -309,10 +429,29 @@ const ProfileSection: FC = () => {
                       enableGridX={false}
                       enableGridY
                       curve="monotoneX"
-                      colors={['#111827']}
-                      theme={{ grid: { line: { stroke: '#F3F4F6' } }, tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } } }}
+                      colors={['var(--eco-user, #A7846C)']}
+                      theme={{
+                        grid: { line: { stroke: 'var(--eco-line, #E8E3DD)' } },
+                        tooltip: {
+                          container: {
+                            fontSize: 12,
+                            borderRadius: 10,
+                            boxShadow: '0 8px 24px rgba(0,0,0,.08)',
+                            backgroundColor: 'rgba(243, 238, 231, 0.95)',
+                            color: 'var(--eco-text, #38322A)',
+                            borderColor: 'var(--eco-line, #E8E3DD)',
+                          },
+                        },
+                      }}
                       tooltip={({ point }: any) => (
-                        <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                        <div
+                          className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
+                          style={{
+                            backgroundColor: 'rgba(243, 238, 231, 0.95)',
+                            borderColor: 'var(--eco-line, #E8E3DD)',
+                            color: 'var(--eco-text, #38322A)',
+                          }}
+                        >
                           <div className="font-medium">{String(point?.data?.xFormatted ?? '')}</div>
                           <div>{String(point?.data?.y ?? '')} registro{Number(point?.data?.y) === 1 ? '' : 's'}</div>
                         </div>
@@ -321,7 +460,12 @@ const ProfileSection: FC = () => {
                   </Suspense>
                 </ChartErrorBoundary>
               ) : (
-                <div className="w-full h-full grid place-items-center text-neutral-400 text-sm">Sem dados no período</div>
+                <div
+                  className="w-full h-full grid place-items-center text-sm"
+                  style={{ color: 'var(--eco-muted, #9C938A)' }}
+                >
+                  Sem dados no período
+                </div>
               )}
             </div>
           </div>
@@ -350,11 +494,26 @@ const ProfileSection: FC = () => {
                     enableGridY
                     enableLabel={false}
                     theme={{
-                      grid: { line: { stroke: '#F3F4F6' } },
-                      tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } },
+                      grid: { line: { stroke: 'var(--eco-line, #E8E3DD)' } },
+                      tooltip: {
+                        container: {
+                          fontSize: 12,
+                          borderRadius: 10,
+                          boxShadow: '0 8px 24px rgba(0,0,0,.08)',
+                          backgroundColor: 'rgba(243, 238, 231, 0.95)',
+                          color: 'var(--eco-text, #38322A)',
+                        },
+                      },
                     }}
                     tooltip={({ indexValue, value, color }: any) => (
-                      <div className="rounded-xl bg-white/95 border px-3 py-2 text-[12px]" style={{ borderColor: color }}>
+                      <div
+                        className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
+                        style={{
+                          backgroundColor: 'rgba(243, 238, 231, 0.95)',
+                          borderColor: color,
+                          color: 'var(--eco-text, #38322A)',
+                        }}
+                      >
                         <div className="font-medium">{String(indexValue)}</div>
                         <div>{String(value)}</div>
                       </div>
@@ -364,9 +523,17 @@ const ProfileSection: FC = () => {
               </ChartErrorBoundary>
             </div>
           ) : (
-            <div className="grid place-items-center text-neutral-500 h-[240px]">
+            <div
+              className="grid place-items-center h-[240px]"
+              style={{ color: 'var(--eco-muted, #9C938A)' }}
+            >
               <div className="text-center">
-                <p className="text-neutral-900 font-medium">Sem dados no período</p>
+                <p
+                  className="font-medium"
+                  style={{ color: 'var(--eco-text, #38322A)' }}
+                >
+                  Sem dados no período
+                </p>
                 <p className="text-sm">Registre memórias para ver seu perfil aqui.</p>
               </div>
             </div>
@@ -396,9 +563,27 @@ const ProfileSection: FC = () => {
                     axisBottom={null}
                     enableGridX
                     labelSkipWidth={9999}
-                    theme={{ grid: { line: { stroke: '#F3F4F6' } }, tooltip: { container: { fontSize: 12, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.08)' } } }}
+                    theme={{
+                      grid: { line: { stroke: 'var(--eco-line, #E8E3DD)' } },
+                      tooltip: {
+                        container: {
+                          fontSize: 12,
+                          borderRadius: 10,
+                          boxShadow: '0 8px 24px rgba(0,0,0,.08)',
+                          backgroundColor: 'rgba(243, 238, 231, 0.95)',
+                          color: 'var(--eco-text, #38322A)',
+                        },
+                      },
+                    }}
                     tooltip={({ indexValue, value }: any) => (
-                      <div className="rounded-xl bg-white/95 border border-black/10 px-3 py-2 text-[12px]">
+                      <div
+                        className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
+                        style={{
+                          backgroundColor: 'rgba(243, 238, 231, 0.95)',
+                          borderColor: 'var(--eco-line, #E8E3DD)',
+                          color: 'var(--eco-text, #38322A)',
+                        }}
+                      >
                         <div className="font-medium">{String(indexValue)}</div>
                         <div>{String(value)}</div>
                       </div>
@@ -408,9 +593,17 @@ const ProfileSection: FC = () => {
               </ChartErrorBoundary>
             </div>
           ) : (
-            <div className="grid place-items-center text-neutral-500 h-[240px]">
+            <div
+              className="grid place-items-center h-[240px]"
+              style={{ color: 'var(--eco-muted, #9C938A)' }}
+            >
               <div className="text-center">
-                <p className="text-neutral-900 font-medium">Sem dados no período</p>
+                <p
+                  className="font-medium"
+                  style={{ color: 'var(--eco-text, #38322A)' }}
+                >
+                  Sem dados no período
+                </p>
                 <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
               </div>
             </div>
