@@ -49,6 +49,10 @@ export default {
           bg: '#FAF9F7',
           line: '#E8E3DD',
           text: '#38322A',
+          muted: '#9C938A',
+          user: '#A7846C',
+          bubble: '#F3EEE7',
+          accent: '#C6A995',
           baby: '#6EC8FF',
           babyDark: '#36B3FF',
           babySoft: '#E9F6FF',
@@ -88,6 +92,10 @@ export default {
       transitionDuration: {
         calm: tokens.motion.calm,
         breath: tokens.motion.breath,
+      },
+
+      transitionTimingFunction: {
+        calm: 'cubic-bezier(0.4, 0, 0.2, 1)',
       },
 
       /* Animações Soft Minimal */

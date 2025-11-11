@@ -283,7 +283,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-eco-baby/50 disabled:cursor-not-allowed disabled:opacity-50"
+      className="group inline-flex h-9 w-9 items-center justify-center rounded-full text-eco-muted transition-all duration-300 ease-out hover:-translate-y-0.5 hover:text-eco-user hover:shadow-subtle focus:outline-none focus:ring-2 focus:ring-eco-accent/40 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
       aria-label={label}
     >
       {children}
@@ -332,26 +332,28 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
   const progress = duration ? Math.min(100, (currentTime / duration) * 100) : 0;
 
   return (
-    <div className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+72px)] z-[80] flex justify-center px-3">
+    <div className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+72px)] z-[80] flex justify-center px-3 sm:px-4">
       <div
         ref={cardRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Reprodutor de áudio"
-        className="pointer-events-auto relative flex w-full max-w-[min(520px,92vw)] flex-col gap-4 rounded-2xl border border-slate-200 bg-white/95 px-4 py-4 text-slate-900 backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-eco-baby/60"
+        className="pointer-events-auto relative flex w-full max-w-[min(460px,94vw)] flex-col gap-3 rounded-xl border border-eco-line bg-eco-bubble/60 px-3 py-3 sm:px-4 sm:py-4 text-eco-text backdrop-blur-glass shadow-minimal transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-eco-accent/50"
       >
         <button
           type="button"
           onClick={handleClose}
-          className="absolute right-2.5 top-2.5 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-eco-baby/40"
+          className="group absolute right-2.5 top-2.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-eco-muted transition-all duration-300 ease-out hover:text-eco-user hover:bg-white/40 focus:outline-none focus:ring-2 focus:ring-eco-accent/40"
+          aria-label="Fechar"
         >
-          <X className="h-4 w-4" strokeWidth={1.6} />
+          <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={1.8} />
           <span className="sr-only">Fechar</span>
         </button>
 
-        <div className="flex flex-col gap-3 pr-6 sm:flex-row sm:items-center sm:gap-5">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-3 sm:gap-2">
+          {/* Play button + Progress bar */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <IconBtn onClick={togglePlay} label={isPlaying ? "Pausar" : "Tocar"}>
               {isPlaying ? <PauseIcon /> : <PlayIcon />}
             </IconBtn>
@@ -360,15 +362,15 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
               <button
                 type="button"
                 onClick={handleManualStart}
-                className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-eco-baby/60"
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-eco-user px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-subtle focus:outline-none focus:ring-2 focus:ring-eco-accent/50 active:translate-y-0"
               >
                 <PlayIcon />
                 <span>Tocar</span>
               </button>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex flex-1 items-center gap-2 sm:gap-2.5">
                 <div
-                  className="relative h-2 w-40 cursor-pointer rounded-full bg-slate-200 transition-colors hover:bg-slate-300"
+                  className="group relative h-1.5 flex-1 min-w-[60px] cursor-pointer rounded-full bg-eco-line/40 transition-all duration-300 ease-out hover:h-2 hover:bg-eco-line/60"
                   onClick={onProgressClick}
                   role="slider"
                   aria-valuemin={0}
@@ -377,19 +379,19 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
                   aria-label="Posição do áudio"
                 >
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-slate-900 transition-all"
+                    className="absolute inset-y-0 left-0 rounded-full bg-eco-user transition-all duration-100"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-xs font-mono text-slate-600">
-                  {formatTime(currentTime)}
-                  {duration ? ` / ${formatTime(duration)}` : ""}
+                <span className="text-[9px] sm:text-xs font-mono text-eco-muted whitespace-nowrap flex-shrink-0">
+                  {formatTime(currentTime)}/{formatTime(duration)}
                 </span>
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2 sm:ml-auto">
+          {/* Navigation buttons */}
+          <div className="flex items-center justify-center gap-1.5">
             <IconBtn
               onClick={() => seek(-15)}
               label="Voltar 15 segundos"
