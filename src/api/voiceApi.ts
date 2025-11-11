@@ -44,7 +44,13 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
   const t = setTimeout(() => ctrl.abort(), ms);
   try {
     const finalInit: RequestInit = { ...init, signal: ctrl.signal };
-    return await fetch(input, finalInit);
+    console.debug("[VoiceApi] Fazendo fetch para:", String(input), { timeout: ms, method: init.method || 'GET' });
+    const response = await fetch(input, finalInit);
+    console.debug("[VoiceApi] Resposta recebida:", { status: response.status, statusText: response.statusText });
+    return response;
+  } catch (error) {
+    console.error("[VoiceApi] Fetch falhou:", { error: String(error), input: String(input), timeout: ms });
+    throw error;
   } finally {
     clearTimeout(t);
   }
@@ -56,38 +62,59 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
  * Mantém o 2º parâmetro pra compatibilidade, mas IGNORA.
  */
 export async function gerarAudioDaMensagem(text: string, _voiceId?: string): Promise<string> {
-  const url = buildVoiceUrl(VOICE_TTS_ENDPOINT);
-  const body: any = { text: String(text ?? "").trim() };
-  if (!body.text) throw new Error("Texto vazio para TTS.");
+  try {
+    console.debug("[TTS] Iniciando geração de áudio para texto:", text.substring(0, 50) + "...");
 
-  // 👇 NÃO enviamos mais voice_id; o backend decide a voz
-  const biasHint = computeBiasHintFromText(body.text);
-  updateBiasHint(biasHint ?? null);
+    const url = buildVoiceUrl(VOICE_TTS_ENDPOINT);
+    console.debug("[TTS] URL construída:", url);
 
-  const resp = await fetchWithTimeout(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "audio/mpeg",
-      ...buildIdentityHeaders({ biasHint }),
-    },
-    body: JSON.stringify(body),
-  });
+    const body: any = { text: String(text ?? "").trim() };
+    if (!body.text) throw new Error("Texto vazio para TTS.");
 
-  if (!resp.ok) await readError(resp);
+    // 👇 NÃO enviamos mais voice_id; o backend decide a voz
+    const biasHint = computeBiasHintFromText(body.text);
+    updateBiasHint(biasHint ?? null);
 
-  // Em alguns hosts pode vir sem content-type; força audio/mpeg
-  let blob = await resp.blob();
-  if (!(blob instanceof Blob)) {
-    const ab = await resp.arrayBuffer();
-    blob = new Blob([ab], { type: "audio/mpeg" });
+    console.debug("[TTS] Enviando requisição para gerar áudio...");
+    const resp = await fetchWithTimeout(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "audio/mpeg",
+        ...buildIdentityHeaders({ biasHint }),
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!resp.ok) {
+      console.error("[TTS] Resposta com erro:", { status: resp.status, statusText: resp.statusText });
+      await readError(resp);
+    }
+
+    console.debug("[TTS] Convertendo resposta para blob...");
+    // Em alguns hosts pode vir sem content-type; força audio/mpeg
+    let blob = await resp.blob();
+    if (!(blob instanceof Blob)) {
+      const ab = await resp.arrayBuffer();
+      blob = new Blob([ab], { type: "audio/mpeg" });
+    }
+    if (!blob.type) blob = new Blob([blob], { type: "audio/mpeg" });
+
+    console.debug("[TTS] Blob criado com sucesso:", { size: blob.size, type: blob.type });
+
+    // (Opcional) Inspecionar a voz usada enviada pelo servidor:
+    const voiceId = resp.headers.get("x-voice-id");
+    if (voiceId) console.debug("[TTS] Voz usada:", voiceId);
+
+    console.debug("[TTS] Convertendo para Data URL...");
+    const dataUrl = await blobToDataURL(blob);
+    console.debug("[TTS] Geração de áudio concluída com sucesso!");
+
+    return dataUrl;
+  } catch (error) {
+    console.error("[TTS] Erro ao gerar áudio:", error);
+    throw error;
   }
-  if (!blob.type) blob = new Blob([blob], { type: "audio/mpeg" });
-
-  // (Opcional) Inspecionar a voz usada enviada pelo servidor:
-  // console.debug("x-voice-id:", resp.headers.get("x-voice-id"));
-
-  return await blobToDataURL(blob);
 }
 
 /**
