@@ -155,24 +155,24 @@ const Header: React.FC<HeaderProps> = ({
               href={FEEDBACK_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-full bg-eco-baby px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-eco-baby/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
+              className="inline-flex items-center justify-center rounded-full bg-eco-baby px-3 py-1.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:bg-eco-baby/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
             >
               Feedback
             </a>
 
-            {isGuest && guestLimitReached && onLoginClick && (
+            {isGuest && (
               <button
-                onClick={onLoginClick}
-                className="hidden sm:inline-flex items-center justify-center rounded-full bg-[#A7846C] px-5 py-2 h-11 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
+                onClick={() => navigate('/')}
+                className="inline-flex items-center justify-center rounded-full bg-[#A7846C] px-3 py-1.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
               >
                 Fazer login
               </button>
             )}
 
-            {onLogout && (
+            {!isGuest && onLogout && (
               <button
                 onClick={onLogout}
-                className="btn-secondary h-11 px-5 text-sm font-semibold"
+                className="btn-secondary h-9 px-4 text-xs sm:text-sm font-semibold"
               >
                 Sair
               </button>
