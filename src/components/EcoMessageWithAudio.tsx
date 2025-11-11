@@ -332,8 +332,15 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
 
       try {
         payload = createEventPayload({ vote, reason });
+        const feedbackArm = lastActivatedModuleKey ?? null;
         if (import.meta.env.DEV) {
-          console.log("[feedback.submit]", { interactionId: resolvedInteractionId, vote, reason });
+          console.log("[feedback.submit]", {
+            interactionId: resolvedInteractionId,
+            vote,
+            reason,
+            arm: feedbackArm,
+            moduleUsageCandidates,
+          });
         }
         const result = await send({
           interactionId: resolvedInteractionId,
@@ -345,7 +352,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
           meta: feedbackMeta,
           messageId: messageId ?? null,
           pillar: DEFAULT_FEEDBACK_PILLAR,
-          arm: lastActivatedModuleKey ?? null,
+          arm: feedbackArm,
         });
 
         if (!result) return false;

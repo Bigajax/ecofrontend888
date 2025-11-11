@@ -125,8 +125,9 @@ function toBody(input: NormalizedFeedbackInput) {
   if (input.pillar) {
     base.pillar = input.pillar;
   }
-  if (input.arm) {
-    base.arm = input.arm;
+  // ✅ Só envia arm se for uma string não-vazia (evita bandit_reward_failed)
+  if (input.arm && typeof input.arm === 'string' && input.arm.trim().length > 0) {
+    base.arm = input.arm.trim();
   }
 
   return base;
