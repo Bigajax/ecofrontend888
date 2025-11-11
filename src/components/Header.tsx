@@ -130,12 +130,12 @@ const Header: React.FC<HeaderProps> = ({
               to="/app"
               className="flex items-center gap-2 text-[color:var(--color-text-primary)] transition hover:opacity-95"
             >
-              <span className={`${labelCls} text-[16px] md:text-[17px]`}>{autoTitle}</span>
+              <span className={`${labelCls} text-[16px] md:text-[17px] hidden sm:inline`}>{autoTitle}</span>
             </Link>
           </div>
 
           {/* DIREITA */}
-          <div className="justify-self-end flex items-center gap-2">
+          <div className="justify-self-end flex items-center gap-1.5 sm:gap-2">
             {/* só aparece se NÃO estiver no chat */}
             {!isChat && shouldShowBack && (
               <button
@@ -155,15 +155,15 @@ const Header: React.FC<HeaderProps> = ({
               href={FEEDBACK_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-full bg-eco-baby px-3 py-1.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:bg-eco-baby/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
+              className="inline-flex items-center justify-center rounded-full bg-eco-baby px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-eco-baby/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
             >
               Feedback
             </a>
 
             {isGuest && (
               <button
-                onClick={() => navigate('/')}
-                className="inline-flex items-center justify-center rounded-full bg-[#A7846C] px-3 py-1.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
+                onClick={() => navigate('/register')}
+                className="inline-flex items-center justify-center rounded-full bg-[#A7846C] px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
               >
                 Fazer login
               </button>
@@ -172,7 +172,7 @@ const Header: React.FC<HeaderProps> = ({
             {!isGuest && onLogout && (
               <button
                 onClick={onLogout}
-                className="btn-secondary h-9 px-4 text-xs sm:text-sm font-semibold"
+                className="inline-flex items-center justify-center rounded-full bg-[#A7846C] px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
               >
                 Sair
               </button>
