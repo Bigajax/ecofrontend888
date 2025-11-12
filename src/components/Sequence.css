@@ -21,7 +21,7 @@
   --onboarding-shadow: var(--shadow-minimal);
   --onboarding-container-padding: clamp(12px, 3vw, 40px);
   --onboarding-vertical-padding: clamp(16px, 4vw, 72px);
-  --onboarding-panel-padding: clamp(16px, 3.5vw, 56px);
+  --onboarding-panel-padding: clamp(12px, 2.5vw, 32px);
   --onboarding-footer-gap: clamp(12px, 2.5vw, 24px);
   --onboarding-footer-height: 120px;
   min-height: 100dvh;
@@ -118,8 +118,8 @@
 .onboarding-header {
   display: flex;
   flex-direction: column;
-  gap: clamp(12px, 3vw, 20px);
-  margin-bottom: clamp(20px, 6vw, 40px);
+  gap: clamp(8px, 2vw, 14px);
+  margin-bottom: clamp(12px, 3vw, 24px);
 }
 
 .onboarding-headline {
@@ -135,7 +135,7 @@
 .onboarding-body-copy {
   display: flex;
   flex-direction: column;
-  gap: clamp(10px, 2.5vw, 16px);
+  gap: clamp(6px, 1.5vw, 11px);
   max-width: 68ch;
 }
 
@@ -152,7 +152,7 @@
 
 .onboarding-layout {
   display: grid;
-  gap: clamp(16px, 4vw, 32px);
+  gap: clamp(12px, 3vw, 24px);
   align-items: center;
   grid-auto-flow: row;
 }
@@ -169,7 +169,7 @@
 .onboarding-copy {
   display: flex;
   flex-direction: column;
-  gap: clamp(12px, 3vw, 20px);
+  gap: clamp(8px, 2vw, 14px);
 }
 
 .onboarding-badges {
@@ -206,7 +206,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(16px, 3vw, 24px);
+  gap: clamp(10px, 2vw, 16px);
   justify-content: center;
 }
 
