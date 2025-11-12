@@ -49,7 +49,15 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
     console.debug("[VoiceApi] Resposta recebida:", { status: response.status, statusText: response.statusText });
     return response;
   } catch (error) {
-    console.error("[VoiceApi] Fetch falhou:", { error: String(error), input: String(input), timeout: ms });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorName = error instanceof Error ? error.name : 'Unknown';
+    console.error("[VoiceApi] Fetch falhou:", {
+      errorName,
+      errorMessage,
+      input: String(input),
+      timeout: ms,
+      fullError: error
+    });
     throw error;
   } finally {
     clearTimeout(t);
