@@ -51,13 +51,10 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorName = error instanceof Error ? error.name : 'Unknown';
-    console.error("[VoiceApi] Fetch falhou:", {
-      errorName,
-      errorMessage,
-      input: String(input),
-      timeout: ms,
-      fullError: error
-    });
+    console.error(`[VoiceApi] Fetch falhou - Name: ${errorName}, Message: ${errorMessage}, URL: ${String(input)}, Timeout: ${ms}ms`);
+    if (error instanceof Error) {
+      console.error("[VoiceApi] Stack:", error.stack);
+    }
     throw error;
   } finally {
     clearTimeout(t);
