@@ -72,6 +72,7 @@ export async function gerarAudioDaMensagem(text: string, _voiceId?: string): Pro
 
     const url = buildVoiceUrl(VOICE_TTS_ENDPOINT);
     console.debug("[TTS] URL construída:", url);
+    console.debug("[TTS] API_BASE_URL resolveApiUrl:", window.__ecoApi?.API_BASE_URL, window.__ecoApi?.resolveApiUrl?.('/api/voice/tts'));
 
     const body: any = { text: String(text ?? "").trim() };
     if (!body.text) throw new Error("Texto vazio para TTS.");
@@ -117,7 +118,17 @@ export async function gerarAudioDaMensagem(text: string, _voiceId?: string): Pro
 
     return dataUrl;
   } catch (error) {
-    console.error("[TTS] Erro ao gerar áudio:", error);
+    const errorInfo = {
+      message: error instanceof Error ? error.message : String(error),
+      type: error instanceof Error ? error.name : typeof error,
+      isNetworkError: error instanceof Error && (
+        error.message.includes("Failed to fetch") ||
+        error.message.includes("Network") ||
+        error.message.includes("timeout")
+      ),
+    };
+    console.error("[TTS] Erro ao gerar áudio:", errorInfo);
+    console.error("[TTS] Stack:", error instanceof Error ? error.stack : "N/A");
     throw error;
   }
 }
