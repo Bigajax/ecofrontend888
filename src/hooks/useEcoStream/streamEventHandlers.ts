@@ -6,7 +6,7 @@ import {
   type EcoStreamDoneEvent,
   type EcoStreamPromptReadyEvent,
 } from "../../api/ecoStream";
-import { collectTexts } from "../../api/askEcoResponse";
+import { collectTexts, normalizeAskEcoResponse } from "../../api/askEcoResponse";
 import type { Message as ChatMessageType } from "../../contexts/ChatContext";
 import {
   applyChunkToMessages,
@@ -197,7 +197,22 @@ export const handleDone = (doneContext: DoneContext) => {
     const aggregatedTextValue = entry?.text ?? "";
     const aggregatedLength = aggregatedTextValue.length;
     const doneTexts = collectTexts(donePayload);
-    const doneContentCandidate = Array.isArray(doneTexts) && doneTexts.length > 0 ? doneTexts.join(" ") : undefined;
+    const doneContentCandidate = (() => {
+      if (!Array.isArray(doneTexts) || doneTexts.length === 0) return undefined;
+      const joined = doneTexts.join("");
+      const cleaned = joined
+        .replace(/\s*\n\s*/g, "\n")
+        .replace(/[ \t\f\v\u00a0]+/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+      if (cleaned) return cleaned;
+      const normalized = normalizeAskEcoResponse(donePayload);
+      if (typeof normalized === "string") {
+        const fallback = normalized.trim();
+        if (fallback) return fallback;
+      }
+      return undefined;
+    })();
 
     const normalizedAggregated = aggregatedTextValue.replace(/\s+/g, " ").trim();
     const normalizedDone =

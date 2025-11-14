@@ -175,6 +175,12 @@ export const processEventStream = async (
     rememberText(text);
   };
 
+  const combineTextParts = (parts: string[]): string => {
+    if (!Array.isArray(parts) || parts.length === 0) return "";
+    const joined = parts.join("");
+    return joined.replace(/\s*\n\s*/g, "\n").replace(/[ \t\f\v\u00a0]+/g, " ");
+  };
+
   const shouldIgnoreText = (text: unknown): boolean => {
     if (typeof text !== "string") return false;
     if (text.length === 0) return true;
@@ -495,7 +501,7 @@ export const processEventStream = async (
         (unwrappedPayload as any)?.message ??
         unwrappedPayload;
       const texts = collectTexts(source);
-      const chunkText = texts.join(" ");
+      const chunkText = combineTextParts(texts);
       const resolvedText = chunkText.length > 0 ? chunkText : fallbackText;
       if (shouldIgnoreText(resolvedText)) {
         if (isDev) {
@@ -551,7 +557,7 @@ export const processEventStream = async (
         (unwrappedPayload as any)?.message ??
         unwrappedPayload;
       const texts = collectTexts(source);
-      const chunkText = texts.join(" ");
+      const chunkText = combineTextParts(texts);
       const resolvedText = chunkText.length > 0 ? chunkText : fallbackText;
       if (shouldIgnoreText(resolvedText)) {
         if (isDev) {
@@ -669,7 +675,7 @@ export const processEventStream = async (
         (unwrappedPayload as any)?.message ??
         (unwrappedPayload as any)?.response;
       const texts = collectTexts(source);
-      const doneText = texts.join(" ");
+      const doneText = combineTextParts(texts);
       if (doneText.length > 0 && aggregatedParts.length === 0) {
         pushAggregatedPart(doneText);
       } else if (!doneText && fallbackText && aggregatedParts.length === 0) {

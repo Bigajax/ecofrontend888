@@ -51,6 +51,9 @@ export const prepareRequest = (
     "Content-Type": "application/json",
     ...buildIdentityHeaders({ biasHint }),
   };
+  if (guest.guestId) {
+    headers["X-Eco-Guest-Id"] = guest.guestId;
+  }
   if (!guest.isGuest && token) {
     headers.Authorization = `Bearer ${token}`;
   }
