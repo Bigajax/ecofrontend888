@@ -251,7 +251,7 @@ export const normalizeAskEcoResponse = (payload: AskEcoPayload): string | undefi
     new Set(texts.map((text) => text.trim()).filter((text) => text.length > 0))
   );
   if (unique.length === 0) return undefined;
-  return unique.reduce((acc, text) => acc ? `${acc} ${text}` : text, "");
+  return unique.join("\n\n");
 };
 
 export const unwrapPayload = <TPayload>(payload: TPayload): TPayload => {

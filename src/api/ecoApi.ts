@@ -16,6 +16,13 @@ import { ASK_ECO_ENDPOINT_PATH, buildAskEcoUrl } from "./askEcoUrl";
 export { EcoApiError };
 export type { EcoClientEvent, EcoEventHandlers, EcoSseEvent, EcoStreamResult };
 
+interface AskEcoOptions {
+  stream?: boolean;
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+  identity?: { guestId?: string | null; sessionId?: string | null };
+}
+
 const isNetworkErrorResult = (
   result: ApiFetchJsonResult<unknown>,
 ): result is ApiFetchJsonNetworkError => {
@@ -73,10 +80,7 @@ const extractClientErrorMessage = (data: unknown) => {
   return undefined;
 };
 
-export async function askEco(
-  payload: any,
-  opts: { stream?: boolean; headers?: Record<string, string>; signal?: AbortSignal } = {},
-) {
+export async function askEco(payload: any, opts: AskEcoOptions = {}) {
   if (opts.signal?.aborted) {
     throw new DOMException("Aborted", "AbortError");
   }
@@ -98,10 +102,52 @@ export async function askEco(
   }
 
   const serializedHeaders = Object.fromEntries(headers.entries());
+  const resolveHeaderValue = (name: string): string | undefined => {
+    const target = name.toLowerCase();
+    for (const [key, value] of Object.entries(serializedHeaders)) {
+      if (key.toLowerCase() === target) {
+        return value;
+      }
+    }
+    return undefined;
+  };
+
+  const guestIdentity = opts.identity?.guestId ?? resolveHeaderValue("x-eco-guest-id");
+  const sessionIdentity = opts.identity?.sessionId ?? resolveHeaderValue("x-eco-session-id");
+
   const body = JSON.stringify(payload ?? {});
 
   const targetPath = opts.stream ? ASK_ENDPOINT : `${ASK_ENDPOINT}?nostream=1`;
-  const url = buildAskEcoUrl(targetPath);
+  const baseUrl = buildAskEcoUrl(targetPath);
+  const url = (() => {
+    if (opts.stream !== false) {
+      return baseUrl;
+    }
+    const applyIdentity = (input: URL) => {
+      if (guestIdentity) input.searchParams.set("guest", guestIdentity);
+      if (sessionIdentity) input.searchParams.set("session", sessionIdentity);
+      return input;
+    };
+    try {
+      return applyIdentity(new URL(baseUrl)).toString();
+    } catch {
+      try {
+        const fallback = applyIdentity(new URL(baseUrl, "https://local.eco"));
+        if (fallback.origin === "https://local.eco") {
+          return `${fallback.pathname}${fallback.search}`;
+        }
+        return fallback.toString();
+      } catch {
+        const segments: string[] = [];
+        if (guestIdentity) segments.push(`guest=${encodeURIComponent(guestIdentity)}`);
+        if (sessionIdentity) segments.push(`session=${encodeURIComponent(sessionIdentity)}`);
+        if (!segments.length) return baseUrl;
+        const hasQuery = baseUrl.includes("?");
+        const joiner = hasQuery ? "&" : "?";
+        return `${baseUrl}${joiner}${segments.join("&")}`;
+      }
+    }
+  })();
 
   const executeRequest = async (): Promise<ApiFetchJsonResult<any>> => {
     try {
@@ -258,7 +304,12 @@ export const enviarMensagemParaEco = async (
     });
 
     if (!isStreaming) {
-      const data = await askEco(payload, { stream: false, headers });
+      const sessionHeader = headers["X-Eco-Session-Id"] ?? headers["x-eco-session-id"];
+      const data = await askEco(payload, {
+        stream: false,
+        headers,
+        identity: { guestId: guest.guestId, sessionId: sessionHeader },
+      });
       return parseNonStreamPayload(data);
     }
 
