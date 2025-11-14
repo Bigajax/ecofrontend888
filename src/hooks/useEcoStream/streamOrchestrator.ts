@@ -336,6 +336,7 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
     let closed = false as boolean;
     let closeReason: CloseReason | null = null;
     let streamErrored = false;
+    let startErrorReason: 'watchdog_timeout' | undefined = undefined;
 
     // Utilitários de aborto (usa abortControllerSafely importada do Session)
     const abortState = { triggered: false };
@@ -378,6 +379,7 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
     const onWdTimeout = (reason: CloseReason) => {
       safeClose(reason);
       streamErrored = true;
+      startErrorReason = 'watchdog_timeout';
       onError?.(new Error(`SSE watchdog timeout: ${reason}`));
     };
 
@@ -1784,6 +1786,7 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
     const patchAssistantStartError = (
       assistantId: string | null | undefined,
       fallbackText: string | undefined,
+      errorReason?: 'watchdog_timeout' | string,
     ) => {
       if (!assistantId) return;
       const updatedAt = new Date().toISOString();
@@ -1801,8 +1804,9 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
         updatedAt,
         content: resolvedText,
         text: resolvedText,
+        ...(errorReason && { errorReason }),
       };
-      const allowedKeys = ["status", "streaming", "updatedAt", "content", "text"] as string[];
+      const allowedKeys = ["status", "streaming", "updatedAt", "content", "text", "errorReason"] as string[];
       if (upsertMessage) {
         upsertMessage(patch, { patchSource: "stream_start_error", allowedKeys });
         return;
@@ -1817,6 +1821,7 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
             updatedAt,
             content: resolvedText,
             text: resolvedText,
+            ...(errorReason && { errorReason }),
           };
         }),
       );
@@ -2942,7 +2947,7 @@ response = await fetchFn(requestUrl, fetchInit);
       startErrorAssistantId = assistantIdOnStartError ?? startErrorAssistantId;
 
       const applyStartErrorPatch = () => {
-        patchAssistantStartError(assistantIdOnStartError, message);
+        patchAssistantStartError(assistantIdOnStartError, message, startErrorReason);
       };
 
       applyStartErrorPatch();
@@ -3042,7 +3047,7 @@ response = await fetchFn(requestUrl, fetchInit);
             tracking.assistantByClientRef.current[normalizedClientId] ??
             sharedContext.activeAssistantIdRef.current;
 
-          patchAssistantStartError(assistantForError, startErrorMessage ?? "Falha ao iniciar a resposta da Eco.");
+          patchAssistantStartError(assistantForError, startErrorMessage ?? "Falha ao iniciar a resposta da Eco.", startErrorReason);
         } else if (
           wasAborted &&
           !sharedContext.hasFirstChunkRef.current &&

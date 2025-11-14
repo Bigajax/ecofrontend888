@@ -28,7 +28,7 @@ import { useKeyboardInsets } from '../hooks/useKeyboardInsets';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { ensureSessionId } from '../utils/chat/session';
 import { saudacaoDoDiaFromHour } from '../utils/chat/greetings';
-import { isEcoMessage } from '../utils/chat/messages';
+import { isEcoMessage, resolveMessageSender } from '../utils/chat/messages';
 import { ROTATING_ITEMS, OPENING_VARIATIONS } from '../constants/chat';
 import mixpanel from '../lib/mixpanel';
 import { FeedbackPrompt } from '../components/FeedbackPrompt';
@@ -429,6 +429,49 @@ function ChatPage() {
     void sendWithGuards(lastAttempt.text, lastAttempt.hint);
   }, [lastAttempt, sendWithGuards]);
 
+  // Retry a specific message with watchdog timeout error
+  const handleRetryMessage = useCallback((errorMessageId: string) => {
+    // Find the assistant message with this error
+    const errorMsgIndex = messages.findIndex((m) => m.id === errorMessageId);
+    if (errorMsgIndex === -1) return;
+
+    // Find the user message that preceded this error (search backwards)
+    let userMsgIndex = -1;
+    for (let i = errorMsgIndex - 1; i >= 0; i--) {
+      const msg = messages[i];
+      const sender = resolveMessageSender(msg) ?? msg.sender;
+      if (sender === 'user') {
+        userMsgIndex = i;
+        break;
+      }
+    }
+
+    if (userMsgIndex === -1) return;
+
+    const userMessage = messages[userMsgIndex];
+    const userText = (() => {
+      if (typeof userMessage.content === 'string') {
+        const trimmed = userMessage.content.trim();
+        if (trimmed) return trimmed;
+      }
+      if (typeof userMessage.text === 'string') {
+        const trimmed = userMessage.text.trim();
+        if (trimmed) return trimmed;
+      }
+      return null;
+    })();
+
+    if (!userText) return;
+
+    devLog('[ChatPage] retry_message_triggered', {
+      errorMessageId,
+      userMessageId: userMessage.id,
+      textPreview: userText.slice(0, 60),
+    });
+
+    void sendWithGuards(userText);
+  }, [messages, sendWithGuards]);
+
   const handleOpenVoicePanel = useCallback(() => {
     if (voicePanelOpen) return;
     setVoicePanelOpen(true);
@@ -767,6 +810,7 @@ function ChatPage() {
                   typingIndicator={typingIndicatorNode}
                   isEcoTyping={isEcoStreamTyping}
                   endRef={endRef}
+                  onRetryMessage={handleRetryMessage}
                 />
               </div>
             </div>

@@ -16,9 +16,11 @@ interface ChatMessageProps {
   isEcoTyping?: boolean;
   /** ativa micro-realce visual no avatar da Eco */
   isEcoActive?: boolean;
+  /** callback para retry de mensagens com erro de watchdog */
+  onRetry?: () => void;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoActive }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoActive, onRetry }) => {
   const sender = resolveMessageSender(message) ?? message.sender;
   const normalizedRole = (() => {
     const roleCandidate = message.role ?? sender;
@@ -128,6 +130,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
     return trimmed.length > 0 ? trimmed : undefined;
   })();
 
+  // Detect watchdog timeout error
+  const isWatchdogTimeout = message?.status === 'error' && message?.errorReason === 'watchdog_timeout';
+  const watchdogTimeoutMessage = "A Eco está demorando mais do que o normal para responder.";
+
   const bubbleClass = clsx(
     "min-w-0 rounded-2xl px-3 py-2 md:px-4 md:py-3 text-left leading-[1.6]",
     "text-[15px] md:text-[16px]",
@@ -201,6 +207,21 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
               <span className="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-medium text-gray-600">
                 ({finishReasonLabel})
               </span>
+            </div>
+          )}
+
+          {isWatchdogTimeout && (
+            <div className="mt-3 rounded-lg border border-yellow-300 bg-yellow-50 p-3 max-w-[min(70ch,88vw)] md:max-w-[70ch]">
+              <p className="text-sm text-yellow-900 mb-2">{watchdogTimeoutMessage}</p>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-md bg-yellow-200 hover:bg-yellow-300 text-yellow-900 transition-colors"
+                  aria-label="Tentar novamente"
+                >
+                  Tentar de novo
+                </button>
+              )}
             </div>
           )}
         </div>

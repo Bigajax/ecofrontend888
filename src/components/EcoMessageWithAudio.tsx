@@ -34,6 +34,7 @@ type AudioOverlayState = {
 type EcoMessageWithAudioProps = {
   message: Message;
   onActivityTTS?: (active: boolean) => void;
+  onRetry?: () => void;
 };
 
 const BTN_SIZE = "w-7 h-7 sm:w-8 sm:h-8";
@@ -66,7 +67,7 @@ const GhostBtn = React.forwardRef<
 ));
 GhostBtn.displayName = "GhostBtn";
 
-const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onActivityTTS }) => {
+const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onActivityTTS, onRetry }) => {
   const [copied, setCopied] = useState(false);
   const [audioOverlay, setAudioOverlay] = useState<AudioOverlayState | null>(null);
   const [loadingAudio, setLoadingAudio] = useState(false);
@@ -643,7 +644,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
     <>
       <div ref={containerRef} className={`flex w-full ${isUser ? "justify-end" : "justify-start"} min-w-0`}>
         <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} w-full min-w-0 max-w-full`}>
-          <ChatMessage message={message} isEcoTyping={isEcoTyping} isEcoActive={isEcoTyping} />
+          <ChatMessage message={message} isEcoTyping={isEcoTyping} isEcoActive={isEcoTyping} onRetry={onRetry} />
 
           <div
             className={[

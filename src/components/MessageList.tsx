@@ -55,6 +55,7 @@ export type MessageListProps = {
   isEcoTyping?: boolean;
   feedbackPrompt?: React.ReactNode; // tipado
   endRef?: RefObject<HTMLDivElement>;
+  onRetryMessage?: (messageId: string) => void;
 };
 
 const MessageList: React.FC<MessageListProps> = ({
@@ -64,6 +65,7 @@ const MessageList: React.FC<MessageListProps> = ({
   feedbackPrompt,
   isEcoTyping,
   endRef,
+  onRetryMessage,
 }) => {
   const handleTTS = ecoActivityTTS ?? (() => {});
 
@@ -141,10 +143,18 @@ const MessageList: React.FC<MessageListProps> = ({
             }}
           >
             {isEcoMessage(message) ? (
-              <EcoMessageWithAudio message={message as any} onActivityTTS={handleTTS} />
+              <EcoMessageWithAudio
+                message={message as any}
+                onActivityTTS={handleTTS}
+                onRetry={onRetryMessage ? () => onRetryMessage(message.id) : undefined}
+              />
             ) : (
               // Passa isEcoTyping para o ChatMessage para que ele controle os três pontinhos na bolha
-              <ChatMessage message={message} isEcoTyping={isEcoTyping} />
+              <ChatMessage
+                message={message}
+                isEcoTyping={isEcoTyping}
+                onRetry={onRetryMessage ? () => onRetryMessage(message.id) : undefined}
+              />
             )}
           </motion.div>
         );

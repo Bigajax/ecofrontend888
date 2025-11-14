@@ -39,6 +39,7 @@ export interface Message {
   flags?: Record<string, unknown> | null;
   audioUrl?: string | null;
   continuity?: ContinuityMeta;
+  errorReason?: 'watchdog_timeout' | string;
 }
 
 export interface UpsertMessageOptions {
