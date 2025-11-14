@@ -1099,10 +1099,12 @@ export class StreamFallbackManager {
     } catch {
       clearTimeout(this.fallbackGuardTimer);
     }
+    const wasTriggered = this.fallbackGuardTriggered;
     this.fallbackGuardTimer = null;
-    // Reset the guard flag when timer is cleared (stream started successfully)
-    this.fallbackGuardTriggered = false;
-    this.streamStats.guardFallbackTriggered = false;
+    if (!wasTriggered) {
+      this.fallbackGuardTriggered = false;
+      this.streamStats.guardFallbackTriggered = false;
+    }
   }
 
   startFallbackGuardTimer(triggerJsonFallback: (reason: string) => void) {
@@ -1340,6 +1342,8 @@ export class StreamFallbackManager {
         } catch {
           /* noop */
         }
+        this.streamStats.status = "completed";
+        this.streamStats.noContentReason = undefined;
         this.streamStats.gotAnyChunk = true;
         this.streamStats.aggregatedLength += fallbackText.length;
         this.streamStats.jsonFallbackSucceeded = true;
