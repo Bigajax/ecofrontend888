@@ -1374,6 +1374,7 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
     let startErrorTriggered = false;
     let startErrorMessage: string | null = null;
     let startErrorAssistantId: string | null = null;
+    let startErrorReason: "watchdog_timeout" | string | undefined;
 
     session.setWatchdogTimeoutHandler(null);
 
@@ -1554,6 +1555,9 @@ const toRecordSafe = (input: unknown): Record<string, unknown> => {
       if (started) {
         streamState.fallbackRequested = true;
         streamStats.clientFinishReason ??= reason;
+        if (!startErrorReason) {
+          startErrorReason = reason;
+        }
       }
       return started;
     };
