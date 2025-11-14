@@ -1201,33 +1201,38 @@ const createFallbackOrchestration = (): FallbackOrchestration => {
               );
             }
 
+            // ✅ CONTRATO: SSE usa GET com query parameters (Seção 2)
+            const sseUrl = new URL(requestUrl);
+            sseUrl.searchParams.set('guest_id', getOrCreateGuestId() || '');
+            sseUrl.searchParams.set('session_id', getOrCreateSessionId() || '');
+            if (clientMessageId && clientMessageId.trim()) {
+              sseUrl.searchParams.set('client_message_id', clientMessageId);
+            }
+
             const requestHeaders = {
-  ...baseHeaders(),
-  'Content-Type': 'application/json', // ✅ ADICIONAR
-  Accept: acceptHeader, // text/event-stream
-};
+              'Accept': acceptHeader, // text/event-stream
+            };
 
-// ✅ Preparar o body com as mensagens
-const requestBody = JSON.stringify(requestPayload);
+            const fetchInit: RequestInit = {
+              method: 'GET', // ✅ CONTRATO: GET para SSE
+              mode: "cors",
+              credentials: "omit",
+              headers: requestHeaders,
+              signal: controller.signal,
+              cache: "no-store",
+            };
 
-const fetchInit: RequestInit = {
-  method: 'POST', // ✅ CORRETO: usar POST
-  mode: "cors",
-  credentials: "omit",
-  headers: requestHeaders,
-  body: requestBody, // ✅ ADICIONAR O BODY
-  signal: controller.signal,
-  cache: "no-store",
-};
+            console.log('[SSE-DEBUG] Enviando GET com query params', {
+              method: 'GET',
+              url: sseUrl.toString(),
+              params: {
+                guest_id: '***',
+                session_id: '***',
+                client_message_id: clientMessageId || undefined,
+              },
+            });
 
-console.log('[SSE-DEBUG] Enviando POST com body', {
-  method: 'POST',
-  hasBody: true,
-  bodyLength: requestBody.length,
-  headers: Object.keys(requestHeaders),
-});
-
-response = await fetchFn(requestUrl, fetchInit);
+            response = await fetchFn(sseUrl.toString(), fetchInit);
             clearReadyTimeout();
 
             if (!response.ok) {
