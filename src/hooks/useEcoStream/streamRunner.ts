@@ -1205,8 +1205,23 @@ const createFallbackOrchestration = (): FallbackOrchestration => {
             const sseUrl = new URL(requestUrl);
             sseUrl.searchParams.set('guest_id', getOrCreateGuestId() || '');
             sseUrl.searchParams.set('session_id', getOrCreateSessionId() || '');
+
+            // ⚠️ OBRIGATÓRIO: incluir mensagem (contrato linha 26)
+            const lastUserMessage = requestBody?.texto || requestBody?.message || '';
+            if (lastUserMessage) {
+              sseUrl.searchParams.set('message', String(lastUserMessage).trim());
+            }
+
             if (clientMessageId && clientMessageId.trim()) {
               sseUrl.searchParams.set('client_message_id', clientMessageId);
+            }
+
+            // ✅ Opcional: enviar messages e payload completo se disponível
+            if (requestBody?.mensagens && Array.isArray(requestBody.mensagens)) {
+              sseUrl.searchParams.set('messages', JSON.stringify(requestBody.mensagens));
+            }
+            if (requestBody) {
+              sseUrl.searchParams.set('payload', JSON.stringify(requestBody));
             }
 
             const requestHeaders = {
@@ -1222,13 +1237,16 @@ const createFallbackOrchestration = (): FallbackOrchestration => {
               cache: "no-store",
             };
 
-            console.log('[SSE-DEBUG] Enviando GET com query params', {
+            console.log('[SSE-DEBUG] Enviando GET com query params (contrato seção 2)', {
               method: 'GET',
               url: sseUrl.toString(),
               params: {
                 guest_id: '***',
                 session_id: '***',
+                message: lastUserMessage ? `${String(lastUserMessage).slice(0, 50)}...` : undefined,
                 client_message_id: clientMessageId || undefined,
+                has_messages: requestBody?.mensagens ? 'sim' : 'não',
+                has_payload: requestBody ? 'sim' : 'não',
               },
             });
 
