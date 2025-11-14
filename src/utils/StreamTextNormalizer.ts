@@ -13,6 +13,9 @@ const CODE_BLOCK_RE = /```[\s\S]*?```/g;
 const INLINE_CODE_RE = /`[^`]*`/g;
 const MARKDOWN_LINK_RE = /\[([^\]]+)\]\(([^)]+)\)/g;
 
+const DEFAULT_TAIL_LENGTH = 3;
+const MAX_TAIL_LENGTH = 200;
+
 /**
  * Detecta blocos de código (markdown ou inline)
  * Retorna array de { start, end, content, type: 'block' | 'inline' }
@@ -169,6 +172,29 @@ function normalizeLineEndings(text: string): string {
   return text.replace(/\r\n?/g, '\n');
 }
 
+function hasUnclosedCodeFence(buffer: string): boolean {
+  const matches = buffer.match(/```/g);
+  if (!matches) {
+    return false;
+  }
+
+  return matches.length % 2 === 1;
+}
+
+function computeTail(buffer: string): string {
+  const fenceIndex = buffer.lastIndexOf('```');
+  if (fenceIndex !== -1) {
+    const start = Math.max(fenceIndex, buffer.length - MAX_TAIL_LENGTH);
+    const slice = buffer.slice(start);
+    if (slice.includes('```')) {
+      return slice;
+    }
+    return `\`\`\`` + slice;
+  }
+
+  return buffer.length > DEFAULT_TAIL_LENGTH ? buffer.slice(-DEFAULT_TAIL_LENGTH) : buffer;
+}
+
 export interface NormalizeChunkResult {
   safe: string;
   tail: string;
@@ -203,17 +229,15 @@ export function normalizeChunk(prevTail: string, chunk: string): NormalizeChunkR
   // - Se tail é muito curto (1-2 chars) + espaço + letra = sempre remove (chunk break seguro)
   // - Se tail é normal (3+ chars) + espaço + 3+ letras = remove (provavelmente chunk break)
   // - Se tail é normal (3+ chars) + espaço + 1-2 letras = NÃO remove (provavelmente "fim a" legítimo)
-  let removedLeadingSpace = false;
   const leadingSpaceMatch = normalized.match(/^(\s+)([a-záéíóúâêôãõç]+)/);
   if (leadingSpaceMatch && /[a-záéíóúâêôãõç]$/.test(prevTail)) {
     const restOfWord = leadingSpaceMatch[2];
     const isShorterTail = prevTail.length <= 2;
     const isLongerRest = restOfWord.length >= 3;
 
-    if (isShorterTail || isLongerRest) {
-      // Chunk break: remove espaço
+    if (isShorterTail && isLongerRest) {
+      // Chunk break: remove espaço excedente enviado pelo backend
       normalized = normalized.substring(leadingSpaceMatch[1].length);
-      removedLeadingSpace = true;
     }
   }
 
@@ -226,35 +250,49 @@ export function normalizeChunk(prevTail: string, chunk: string): NormalizeChunkR
   const codeBlocks = extractCodeBlocks(combined);
 
   // Step 5: Inserir espaço entre palavras se necessário
-  // Importante: só adicionar espaço se chunk começou com espaço
-  // Se não começou com espaço, é continuação da palavra anterior (não adicionar espaço)
   let processed = normalized;
-  const chunkStartedWithSpace = /^\s/.test(chunk);
-  const shouldAdd = !removedLeadingSpace && chunkStartedWithSpace && shouldInsertSpace(prevTail, normalized);
+  const needsLeadingSpace = shouldInsertSpace(prevTail, normalized);
+  const hasLeadingWhitespace = /^\s/.test(normalized);
 
   // DEBUG
   if (process.env.NODE_ENV === 'development') {
     if (localStorage.getItem('ECO_DEBUG_SPACE') === 'true') {
-      console.log('[NORM] prevTail:', JSON.stringify(prevTail), 'chunk:', JSON.stringify(chunk.slice(0, 20)), 'shouldAdd:', shouldAdd);
+      console.log(
+        '[NORM] prevTail:',
+        JSON.stringify(prevTail),
+        'chunk:',
+        JSON.stringify(chunk.slice(0, 20)),
+        'needsLeadingSpace:',
+        needsLeadingSpace,
+      );
     }
     if (localStorage.getItem('ECO_DEBUG_MARKDOWN') === 'true' && /[\*_`]/.test(chunk)) {
       console.log('[MARKDOWN] Chunk com markdown:', JSON.stringify(chunk.slice(0, 40)));
     }
   }
 
-  if (shouldAdd) {
+  if (needsLeadingSpace && !hasLeadingWhitespace) {
     processed = ' ' + normalized;
   }
 
   // Step 6: Colapsar múltiplos espaços fora de código
   // Recalcular code blocks com o novo combined
   const newCombined = prevTail + processed;
-  const newCodeBlocks = extractCodeBlocks(newCombined);
-  processed = collapseSpaces(processed, newCodeBlocks);
+  const hasOpenCodeFence = hasUnclosedCodeFence(newCombined);
+  const newCodeBlocks = extractCodeBlocks(newCombined)
+    .map((block) => ({
+      start: Math.max(0, block.start - prevTail.length),
+      end: Math.max(0, block.end - prevTail.length),
+    }))
+    .filter((block) => block.end > 0);
+
+  if (!hasOpenCodeFence) {
+    processed = collapseSpaces(processed, newCodeBlocks);
+  }
 
   // Step 7: Extrair tail (últimos 3 caracteres para próxima iteração)
   const bufferForTail = prevTail + processed;
-  const tail = bufferForTail.length > 3 ? bufferForTail.slice(-3) : bufferForTail;
+  const tail = computeTail(bufferForTail);
 
   return {
     safe: processed,

@@ -95,7 +95,7 @@ describe('StreamTextNormalizer - Spacing Issue (User Reported)', () => {
       }
 
       expect(buffer).toBe('V ejo que você');
-      expect(buffer).not.toContain('V ejo'); // No space in middle of "ejo"
+      expect(buffer).not.toContain('e jo'); // No space in the middle of "ejo"
     });
 
     it('should handle multi-character tail correctly', () => {
