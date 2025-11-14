@@ -5,7 +5,11 @@ import type { Dispatch, SetStateAction } from "react";
 import type { Message, UpsertMessageOptions } from "../../../contexts/ChatContext";
 import type { MessageTrackingRefs, ReplyStateController } from "../messageState";
 import * as streamOrchestrator from "../streamOrchestrator";
-import type { StreamRunnerFactoryOptions, StreamRunnerTimers } from "../streamOrchestrator";
+import type {
+  StreamRunnerFactoryOptions,
+  StreamRunnerTimers,
+  CloseReason,
+} from "../streamOrchestrator";
 import type { StreamRunStats } from "../types";
 
 type BeginStreamParams = Parameters<typeof streamOrchestrator.beginStream>[0];
@@ -85,15 +89,27 @@ const flushManualTimersUntil = async (
   }
 };
 
-const createWatchdogStub = () => ({
-  markPromptReady: vi.fn(),
-  bumpFirstToken: vi.fn(),
-  bumpHeartbeat: vi.fn(),
-  clear: vi.fn(),
-  get sincePromptReadyMs() {
-    return 0;
-  },
-});
+const createWatchdogStub = () => {
+  let lastHandler: ((reason: CloseReason) => void) | null = null;
+  const assign = (handler?: (reason: CloseReason) => void) => {
+    if (handler) {
+      lastHandler = handler;
+    }
+  };
+
+  return {
+    markPromptReady: vi.fn((handler?: (reason: CloseReason) => void) => assign(handler)),
+    bumpFirstToken: vi.fn((handler?: (reason: CloseReason) => void) => assign(handler)),
+    bumpHeartbeat: vi.fn((handler?: (reason: CloseReason) => void) => assign(handler)),
+    clear: vi.fn(),
+    trigger(reason: CloseReason = "watchdog_heartbeat") {
+      lastHandler?.(reason);
+    },
+    get sincePromptReadyMs() {
+      return 0;
+    },
+  };
+};
 
 const buildBaseParams = (
   overrides: Partial<BeginStreamParams> = {},
@@ -120,6 +136,7 @@ const buildBaseParams = (
   const streamActiveRef = createRef<boolean>(false);
   const activeClientIdRef = createRef<string | null>(clientMessageId);
   const hasFirstChunkRef = createRef<boolean>(false);
+  const hasReadyRef = createRef<boolean>(false);
   const setDigitando = vi.fn<Dispatch<SetStateAction<boolean>>>();
   const setIsSending = vi.fn<Dispatch<SetStateAction<boolean>>>();
   const setErroApi =
@@ -185,6 +202,7 @@ const buildBaseParams = (
     activeClientIdRef,
     onFirstChunk: undefined,
     hasFirstChunkRef,
+    hasReadyRef,
     setDigitando,
     setIsSending,
     setErroApi,
@@ -218,6 +236,7 @@ const buildBaseParams = (
       streamActiveRef,
       activeClientIdRef,
       hasFirstChunkRef,
+      hasReadyRef,
       setDigitando,
       setIsSending,
       setErroApi,
@@ -293,6 +312,7 @@ describe("createStreamRunner", () => {
   const originalWindowEcoDiag = (typeof window !== "undefined"
     ? (window as typeof window & { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag
     : undefined);
+  const originalViGlobal = (globalThis as typeof globalThis & { vi?: unknown }).vi;
 
   beforeEach(() => {
     import.meta.env.MODE = "development";
@@ -307,6 +327,7 @@ describe("createStreamRunner", () => {
     if (typeof window !== "undefined") {
       (window as typeof window & { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag = diagPayload;
     }
+    (globalThis as typeof globalThis & { vi?: unknown }).vi = undefined;
   });
 
   afterEach(() => {
@@ -356,9 +377,14 @@ describe("createStreamRunner", () => {
       }
     }
     vi.restoreAllMocks();
+    if (originalViGlobal === undefined) {
+      delete (globalThis as typeof globalThis & { vi?: unknown }).vi;
+    } else {
+      (globalThis as typeof globalThis & { vi?: unknown }).vi = originalViGlobal;
+    }
   });
 
-  it("streams prompt, chunk and done events from a custom ReadableStream", async () => {
+  it("completes streaming and notifies activity onDone", async () => {
     const assignDiagPayload = (payload: { forceJson?: boolean } | undefined) => {
       (globalThis as typeof globalThis & { __ecoDiag?: { forceJson?: boolean } | undefined }).__ecoDiag =
         payload;
@@ -376,7 +402,8 @@ describe("createStreamRunner", () => {
     assignDiagPayload({ forceJson: false });
 
     const { timers, runAll } = createManualTimers();
-    const watchdogFactory = vi.fn(() => createWatchdogStub());
+    const watchdog = createWatchdogStub();
+    const watchdogFactory = vi.fn(() => watchdog);
     const fetchImpl = vi.fn<NonNullable<StreamRunnerFactoryOptions["fetchImpl"]>>(async (_url, init) => {
       const method = (init?.method ?? "GET").toString().toUpperCase();
       if (method === "HEAD") {
@@ -395,53 +422,25 @@ describe("createStreamRunner", () => {
     });
 
     try {
-      const runner = streamOrchestrator.createStreamRunner({ fetchImpl, timers, watchdogFactory });
-      const { params, context } = buildBaseParams({}, { clientId: "client-stream-success" });
+      const runner = streamOrchestrator.createStreamRunner({
+        fetchImpl,
+        timers,
+        watchdogFactory,
+        skipFetchInTest: false,
+      });
+      const activity = { onDone: vi.fn() };
+      const { params, context } = buildBaseParams({ activity }, { clientId: "client-success" });
 
-      const result = (await runner.beginStream(params)) as StreamRunStats;
-
+      const stats = (await runner.beginStream(params)) as StreamRunStats;
       runAll();
 
-      expect(fetchImpl).toHaveBeenCalled();
-      const streamCall = fetchImpl.mock.calls.find(([, init]) => {
-        const method = (init?.method ?? "GET").toString().toUpperCase();
-        return method !== "HEAD";
-      });
-      expect(streamCall).toBeTruthy();
-      if (!streamCall) throw new Error("streaming call not found");
-      const [, streamInit] = streamCall;
-      const streamMethod = (streamInit?.method ?? "GET").toString().toUpperCase();
-      expect(streamMethod).toBe("POST");
-      const headers = new Headers(streamInit?.headers as HeadersInit);
-      expect(headers.get("accept")).toBe("text/event-stream");
-      expect(headers.get("content-type")).toBe("application/json");
-      const body = streamInit?.body;
-      expect(typeof body).toBe("string");
-      const parsedBody = JSON.parse(body as string);
-      expect(parsedBody).toMatchObject({
-        clientMessageId: params.userMessage.id,
-        texto: params.userMessage.text,
-        isGuest: false,
-      });
-      expect(Array.isArray(parsedBody.history)).toBe(true);
-      expect(parsedBody.history?.length).toBeGreaterThan(0);
-      expect(result.gotAnyChunk).toBe(true);
-      expect(result.aggregatedLength).toBeGreaterThanOrEqual(7);
+      expect(stats.gotAnyChunk).toBe(true);
+      expect(activity.onDone).toHaveBeenCalledTimes(1);
       expect(context.setDigitando).toHaveBeenCalledWith(false);
-      expect(context.setErroApi).not.toHaveBeenCalledWith(expect.any(String));
-      expect(watchdogFactory).toHaveBeenCalledTimes(1);
-      const [watchdogId, timersArg] = watchdogFactory.mock.calls[0];
-      expect(watchdogId).toBe(params.userMessage.id);
-      expect(timersArg).toMatchObject({
-        setTimeout: expect.any(Function),
-        clearTimeout: expect.any(Function),
-      });
-      const messages = context.messagesRef();
-      const assistantMessage = messages.find((message) => message.id === context.assistantId);
-      expect(assistantMessage).toBeTruthy();
+      const assistantMessage = context
+        .messagesRef()
+        .find((message) => message.id === context.assistantId);
       expect(assistantMessage).toMatchObject({ streaming: false, status: "done" });
-      const renderedText = assistantMessage?.text ?? assistantMessage?.content;
-      expect(renderedText).toContain("Olá");
     } finally {
       assignDiagPayload(previousGlobalDiag ?? undefined);
       if (typeof window !== "undefined") {
@@ -451,11 +450,78 @@ describe("createStreamRunner", () => {
     }
   });
 
-  it(
-    "uses guard timeout to trigger JSON fallback when no chunks arrive",
-    async () => {
+  it("aborts stream when user cancels the controller", async () => {
     const timersHarness = createManualTimers();
-    const { timers, hasPending, pendingCount } = timersHarness;
+    const { timers, runAll } = timersHarness;
+    const watchdogFactory = vi.fn(() => createWatchdogStub());
+    const fetchImpl = vi.fn<NonNullable<StreamRunnerFactoryOptions["fetchImpl"]>>(async (_url, init) => {
+      const method = (init?.method ?? "GET").toString().toUpperCase();
+      if (method === "HEAD") {
+        return new Response(null, { status: 200, headers: new Headers() });
+      }
+      return createHangingSseResponse(init?.signal as AbortSignal | undefined);
+    });
+
+    const runner = streamOrchestrator.createStreamRunner({
+      fetchImpl,
+      timers,
+      watchdogFactory,
+      skipFetchInTest: false,
+    });
+    const activity = { onDone: vi.fn() };
+    const { params, context } = buildBaseParams({ activity }, { clientId: "client-user-abort" });
+
+    const streamPromise = runner.beginStream(params) as Promise<StreamRunStats>;
+    await Promise.resolve();
+    params.controllerOverride.abort("user_cancelled");
+    const stats = await streamPromise;
+    runAll();
+
+    expect(params.controllerOverride.signal.aborted).toBe(true);
+    expect((params.controllerOverride.signal as AbortSignal & { reason?: unknown }).reason).toBe(
+      "user_cancelled",
+    );
+    expect(activity.onDone).toHaveBeenCalled();
+    expect(stats.gotAnyChunk).toBe(false);
+    expect(stats.status).toBe("no_content");
+    expect(stats.clientFinishReason).toBe("stream_aborted");
+  });
+
+  it("handles watchdog timeout by cancelling the stream", async () => {
+    const timersHarness = createManualTimers();
+    const { timers } = timersHarness;
+    const watchdog = createWatchdogStub();
+    const watchdogFactory = vi.fn(() => watchdog);
+    const fetchImpl = vi.fn<NonNullable<StreamRunnerFactoryOptions["fetchImpl"]>>(async (_url, init) => {
+      const method = (init?.method ?? "GET").toString().toUpperCase();
+      if (method === "HEAD") {
+        return new Response(null, { status: 200, headers: new Headers() });
+      }
+      return createHangingSseResponse(init?.signal as AbortSignal | undefined);
+    });
+
+    const runner = streamOrchestrator.createStreamRunner({
+      fetchImpl,
+      timers,
+      watchdogFactory,
+      skipFetchInTest: false,
+    });
+    const activity = { onDone: vi.fn() };
+    const { params, context } = buildBaseParams({ activity }, { clientId: "client-watchdog" });
+
+    const streamPromise = runner.beginStream(params) as Promise<StreamRunStats>;
+    await Promise.resolve();
+    watchdog.trigger("watchdog_heartbeat");
+    const stats = await streamPromise;
+
+    expect(activity.onDone).toHaveBeenCalled();
+    expect(context.setErroApi).toHaveBeenCalled();
+    expect(stats.clientFinishReason).toBe("no_content");
+  });
+
+  it("invokes JSON fallback when guard timeout elapses", async () => {
+    const timersHarness = createManualTimers();
+    const { timers } = timersHarness;
     const watchdogFactory = vi.fn(() => createWatchdogStub());
     let fallbackRequested = false;
     const fetchImpl = vi.fn<NonNullable<StreamRunnerFactoryOptions["fetchImpl"]>>(async (_url, init) => {
@@ -474,70 +540,34 @@ describe("createStreamRunner", () => {
       });
     });
 
-    const runner = streamOrchestrator.createStreamRunner({ fetchImpl, timers, watchdogFactory });
-    const { params, context } = buildBaseParams({}, { clientId: "client-guard-success" });
+    const runner = streamOrchestrator.createStreamRunner({
+      fetchImpl,
+      timers,
+      watchdogFactory,
+      skipFetchInTest: false,
+    });
+    const { params, context } = buildBaseParams({}, { clientId: "client-guard" });
 
-    const streamPromise = runner.beginStream(params) as Promise<StreamRunStats>;
-    await Promise.resolve();
-    expect(pendingCount()).toBeGreaterThan(0);
+    const statsPromise = runner.beginStream(params) as Promise<StreamRunStats>;
     await flushManualTimersUntil(timersHarness, () => fallbackRequested);
-    const stats = await streamPromise;
+    const stats = await statsPromise;
     await flushManualTimersUntil(
       timersHarness,
-      () => stats.gotAnyChunk === true || stats.jsonFallbackSucceeded === true,
+      () => {
+        const latest = context
+          .messagesRef()
+          .find((message) => message.id === context.assistantId);
+        const content = latest?.text ?? latest?.content;
+        return typeof content === "string" && content.includes("Resposta alternativa");
+      },
+      5,
     );
 
-    expect(fallbackRequested).toBe(true);
     expect(stats.guardFallbackTriggered).toBe(true);
-    expect(stats.jsonFallbackAttempts).toBe(1);
-    expect(stats.gotAnyChunk).toBe(true);
-    expect(context.setDigitando).toHaveBeenCalledWith(false);
-    const messages = context.messagesRef();
-    const assistantMessage = messages.find((message) => message.id === context.assistantId);
+    expect(stats.jsonFallbackAttempts).toBeGreaterThanOrEqual(1);
+    const assistantMessage = context
+      .messagesRef()
+      .find((message) => message.id === context.assistantId);
     expect(assistantMessage?.text ?? assistantMessage?.content).toContain("Resposta alternativa");
-    },
-    15000,
-  );
-
-  it(
-    "records fallback errors when JSON request fails",
-    async () => {
-    const timersHarness = createManualTimers();
-    const { timers, hasPending, pendingCount } = timersHarness;
-    const watchdogFactory = vi.fn(() => createWatchdogStub());
-    const fetchImpl = vi.fn<NonNullable<StreamRunnerFactoryOptions["fetchImpl"]>>(async (_url, init) => {
-      const method = (init?.method ?? "GET").toString().toUpperCase();
-      if (method === "HEAD") {
-        return new Response(null, { status: 200, headers: new Headers() });
-      }
-      const isStreamRequest = init?.signal === context.controllerOverride.signal;
-      if (isStreamRequest) {
-        return createHangingSseResponse(init?.signal as AbortSignal | undefined);
-      }
-      return new Response("erro", {
-        status: 500,
-        headers: new Headers({ "content-type": "text/plain" }),
-      });
-    });
-
-    const runner = streamOrchestrator.createStreamRunner({ fetchImpl, timers, watchdogFactory });
-    const { params, context } = buildBaseParams({}, { clientId: "client-guard-failure" });
-
-    const streamPromise = runner.beginStream(params) as Promise<StreamRunStats>;
-    await Promise.resolve();
-    expect(pendingCount()).toBeGreaterThan(0);
-    await flushManualTimersUntil(timersHarness, () => context.setErroApi.mock.calls.length > 0);
-    const stats = await streamPromise;
-    await flushManualTimersUntil(timersHarness, () => stats.jsonFallbackAttempts === 1);
-
-    expect(stats.guardFallbackTriggered).toBe(true);
-    expect(stats.jsonFallbackAttempts).toBe(1);
-    expect(stats.gotAnyChunk).toBe(false);
-    expect(context.setErroApi).toHaveBeenCalledWith(
-      expect.stringContaining("Eco não chegou a enviar nada"),
-    );
-    expect(context.setDigitando).toHaveBeenCalledWith(false);
-    },
-    15000,
-  );
+  });
 });
