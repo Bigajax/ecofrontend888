@@ -40,6 +40,7 @@ import {
   handleDone,
   handleError,
   handleControl,
+  handleMemorySaved,
 } from "./streamEventHandlers";
 import type { DoneContext } from "./streamEventHandlers";
 import {
@@ -1406,6 +1407,11 @@ const createFallbackOrchestration = (): FallbackOrchestration => {
           normalizedClientId,
         });
 
+        const handleMemorySavedEvent = (event: Record<string, unknown>) => {
+          // Chama o handler de memória salva com userId do usuário autenticado
+          handleMemorySaved(event, params.userId);
+        };
+
         let retriedNoChunk = isRetry;
         const retry = () => {
           if (retriedNoChunk) {
@@ -1700,6 +1706,7 @@ const createFallbackOrchestration = (): FallbackOrchestration => {
           onMessage: (event) => handleMessageEvent(event),
           onStart: (event) => handleStartEvent(event),
           onEmpty: (event) => handleEmptyEvent(event),
+          onMemorySaved: (event) => handleMemorySavedEvent(event),
         };
 
         const findEventDelimiter = (input: string): { index: number; length: number } | null => {

@@ -7,6 +7,7 @@ import {
   type EcoStreamPromptReadyEvent,
 } from "../../api/ecoStream";
 import { collectTexts, normalizeAskEcoResponse } from "../../api/askEcoResponse";
+import { registrarMemoria } from "../../api/memoriaApi";
 import type { Message as ChatMessageType } from "../../contexts/ChatContext";
 import {
   applyChunkToMessages,
@@ -576,6 +577,65 @@ export const handleControl = (event: EcoStreamControlEvent, context: StreamShare
     }
     if (meta) {
       applyMetaToStreamStats(context.streamStats, meta);
+    }
+  }
+};
+
+export const handleMemorySaved = (
+  event: Record<string, unknown> | undefined,
+  userId: string | undefined,
+) => {
+  if (!event || !userId) {
+    return;
+  }
+
+  try {
+    // Extrai dados da memória do evento
+    const memoryData = (event as { memory?: unknown }).memory ?? event;
+
+    // Constrói o payload para registrarMemoria
+    const payload = {
+      usuario_id: userId,
+      mensagem_id: (memoryData as { message_id?: string }).message_id ?? (memoryData as { mensagem_id?: string }).mensagem_id ?? null,
+      resumo_eco: (memoryData as { summary?: string }).summary ?? (memoryData as { resumo_eco?: string }).resumo_eco ?? "",
+      emocao_principal: (memoryData as { emotion?: string }).emotion ?? (memoryData as { emocao_principal?: string }).emocao_principal,
+      intensidade: (memoryData as { intensity?: number }).intensity ?? (memoryData as { intensidade?: number }).intensidade,
+      contexto: (memoryData as { context?: string }).context ?? (memoryData as { contexto?: string }).contexto,
+      dominio_vida: (memoryData as { domain?: string }).domain ?? (memoryData as { dominio_vida?: string }).dominio_vida,
+      padrao_comportamental: (memoryData as { pattern?: string }).pattern ?? (memoryData as { padrao_comportamental?: string }).padrao_comportamental,
+      categoria: (memoryData as { category?: string }).category ?? (memoryData as { categoria?: string }).categoria,
+      salvar_memoria: true,
+      nivel_abertura: (memoryData as { openness_level?: number }).openness_level ?? (memoryData as { nivel_abertura?: number }).nivel_abertura,
+      analise_resumo: (memoryData as { analysis?: string }).analysis ?? (memoryData as { analise_resumo?: string }).analise_resumo,
+      tags: (memoryData as { tags?: string[] }).tags ?? [],
+    };
+
+    // Registra a memória no banco de dados
+    registrarMemoria(payload)
+      .then((result) => {
+        try {
+          console.debug("[Memory] Memória registrada com sucesso:", {
+            memoryId: result.memoria.id,
+            isFirstSignificant: result.primeiraMemoriaSignificativa,
+          });
+        } catch {
+          /* noop */
+        }
+      })
+      .catch((error) => {
+        // Log do erro mas não quebra o fluxo de streaming
+        try {
+          console.error("[Memory] Erro ao registrar memória:", error);
+        } catch {
+          /* noop */
+        }
+      });
+  } catch (error) {
+    // Log do erro mas não quebra o fluxo de streaming
+    try {
+      console.error("[Memory] Erro ao processar evento de memória salva:", error);
+    } catch {
+      /* noop */
     }
   }
 };

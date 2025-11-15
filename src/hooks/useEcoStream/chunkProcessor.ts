@@ -52,6 +52,7 @@ export interface ProcessSseHandlers {
   onMessage?: (event: Record<string, unknown>, info?: { eventName?: string | null }) => void;
   onStart?: (event: Record<string, unknown>) => void;
   onEmpty?: (event: Record<string, unknown>) => void;
+  onMemorySaved?: (event: Record<string, unknown>) => void;
 }
 
 export interface ProcessSseLineOptions {
@@ -228,6 +229,12 @@ export const processSseLine = (
   // Tratar evento 'empty'
   if (normalizedEventKey === "empty" || type === "empty") {
     handlers.onEmpty?.(event);
+    return;
+  }
+
+  // Tratar evento 'memory_saved'
+  if (normalizedEventKey === "memory_saved" || type === "memory_saved") {
+    handlers.onMemorySaved?.(event);
     return;
   }
 
