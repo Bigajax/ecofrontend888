@@ -34,30 +34,36 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     navigate('/login');
   };
 
+  // Mostrar header antigo apenas na ChatPage e outras páginas (não na HomePage)
+  const isHomePage = location.pathname === '/app' || location.pathname === '/app/';
+  const showOldHeader = !isHomePage;
+
   return (
     <>
-      {/* AUTO = TopBar no mobile / Sidebar no desktop */}
-      <Header
-        title={pageTitle}
-        variant="auto"
-        onLogout={user ? handleLogout : undefined}
-        isGuest={isGuest}
-        guestLimitReached={guestGate.reachedLimit}
-        onLoginClick={handleLoginClick}
-      />
+      {/* AUTO = TopBar no mobile / Sidebar no desktop - Apenas para ChatPage e outras páginas */}
+      {showOldHeader && (
+        <Header
+          title={pageTitle}
+          variant="auto"
+          onLogout={user ? handleLogout : undefined}
+          isGuest={isGuest}
+          guestLimitReached={guestGate.reachedLimit}
+          onLoginClick={handleLoginClick}
+        />
+      )}
 
       {/* Espaçamento controlado pelas CSS vars definidas no Header. */}
       {/* Variantes com sidebar devem definir explicitamente --eco-sidebar-w quando existirem. */}
       <main
-        className="
+        className={`
           min-h-[100svh] md:min-h-[100dvh]
-          pt-[var(--eco-topbar-h,56px)] md:pt-0
-          pl-0 md:pl-[var(--eco-sidebar-w,0px)]
+          ${showOldHeader ? 'pt-[var(--eco-topbar-h,56px)] md:pt-0' : ''}
+          pl-0 ${showOldHeader ? 'md:pl-[var(--eco-sidebar-w,0px)]' : ''}
           transition-[padding] duration-200 ease-out
           bg-transparent text-[color:var(--color-text-primary)]
-        "
+        `}
       >
-        <div className="mx-auto w-full max-w-[1140px] px-4 sm:px-6 md:px-8">
+        <div className={`${showOldHeader ? 'mx-auto w-full max-w-[1140px] px-4 sm:px-6 md:px-8' : 'w-full'}`}>
           {children}
         </div>
       </main>

@@ -32,6 +32,7 @@ import { HealthCheckResult, HealthStatus, pingWithRetry } from "@/utils/health";
 
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const ResetSenha = lazy(() => import("@/pages/ResetSenha"));
+const HomePage = lazy(() => import("@/pages/HomePage"));
 const ChatPage = lazy(() => import("@/pages/ChatPage"));
 const CreateProfilePage = lazy(() => import("@/pages/CreateProfilePage"));
 const WelcomePage = lazy(() => import("@/pages/WelcomePage"));
@@ -99,8 +100,8 @@ function AppRoutes() {
           </RequireAuth>
         }
       >
-        <Route index element={renderWithSuspense(<ChatPage />)} />
-        <Route path="chat" element={<Navigate to="/app" replace />} />
+        <Route index element={renderWithSuspense(<HomePage />)} />
+        <Route path="chat" element={renderWithSuspense(<ChatPage />)} />
         <Route path="voice" element={renderWithSuspense(<VoicePage />)} />
         <Route path="memory" element={renderWithSuspense(<MemoryLayout />)}>
           <Route index element={renderWithSuspense(<MemoriesSection />)} />
