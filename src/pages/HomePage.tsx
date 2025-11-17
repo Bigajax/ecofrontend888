@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import HomeHeader from '@/components/home/HomeHeader';
+import DailyRecommendationsSection from '@/components/home/DailyRecommendationsSection';
 import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
 import LearnExploreSection from '@/components/home/LearnExploreSection';
 
@@ -15,6 +16,37 @@ export default function HomePage() {
   const handleLogout = async () => {
     navigate('/');
   };
+
+  // Recomendações Diárias
+  const dailyRecommendations = useMemo(
+    () => [
+      {
+        id: 'rec_1',
+        title: '5 Anéis da Disciplina',
+        description: 'Construa sua estrutura pessoal',
+        duration: '12 min',
+        image: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url("https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=400&fit=crop")',
+        isPremium: false,
+      },
+      {
+        id: 'rec_2',
+        title: 'Quem Pensa Enriquece',
+        description: 'Transforme seu mindset financeiro',
+        duration: '15 min',
+        image: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url("https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=400&fit=crop")',
+        isPremium: false,
+      },
+      {
+        id: 'rec_3',
+        title: 'Orientação ECO AI',
+        description: 'Conversa personalizada do dia',
+        duration: '8 min',
+        image: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url("https://images.unsplash.com/photo-1557821552-17105176677c?w=800&h=400&fit=crop")',
+        isPremium: false,
+      },
+    ],
+    [],
+  );
 
   // Conteúdos para "Aprenda e Explore"
   const contentItems = useMemo(
@@ -213,6 +245,9 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+
+        {/* Daily Recommendations Section */}
+        <DailyRecommendationsSection recommendations={dailyRecommendations} />
 
         {/* ECO AI Guidance Card Section */}
         <EcoAIGuidanceCard
