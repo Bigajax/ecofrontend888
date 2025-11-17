@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import HomeHeader from '@/components/home/HomeHeader';
+import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
 import LearnExploreSection from '@/components/home/LearnExploreSection';
 
 export default function HomePage() {
@@ -212,6 +213,12 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+
+        {/* ECO AI Guidance Card Section */}
+        <EcoAIGuidanceCard
+          userName={displayName}
+          onStartChat={handleStartChat}
+        />
 
         {/* Learn & Explore Section */}
         <LearnExploreSection
