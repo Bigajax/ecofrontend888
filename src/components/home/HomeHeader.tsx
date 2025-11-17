@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import EcoBubbleOneEye from '@/components/EcoBubbleOneEye';
 
 interface HomeHeaderProps {
   onLogout?: () => void;
@@ -15,8 +16,8 @@ export default function HomeHeader({ onLogout }: HomeHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { label: 'Home', path: '/app', icon: '🏠' },
-    { label: 'Explorar', path: '/app/explore', icon: '🔍' },
+    { label: 'Home', path: '/app' },
+    { label: 'Explorar', path: '/app/explore' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -34,9 +35,7 @@ export default function HomeHeader({ onLogout }: HomeHeaderProps) {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--eco-user)]/10">
-              <span className="text-xl font-bold text-[var(--eco-user)]">🌱</span>
-            </div>
+            <EcoBubbleOneEye variant="icon" size={28} />
             <span className="font-display text-lg font-normal text-[var(--eco-text)]">
               ECO
             </span>
@@ -48,13 +47,12 @@ export default function HomeHeader({ onLogout }: HomeHeaderProps) {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[14px] font-medium transition-all duration-300 ${
+                className={`rounded-lg px-4 py-2 text-[14px] font-medium transition-all duration-300 ${
                   isActive(item.path)
                     ? 'bg-[var(--eco-user)] text-white shadow-[0_2px_10px_rgba(167,132,108,0.2)]'
                     : 'text-[var(--eco-text)] hover:bg-[var(--eco-line)]'
                 }`}
               >
-                <span>{item.icon}</span>
                 {item.label}
               </button>
             ))}
@@ -82,9 +80,7 @@ export default function HomeHeader({ onLogout }: HomeHeaderProps) {
         <div className="flex items-center justify-between px-4 py-4">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--eco-user)]/10">
-              <span className="text-lg font-bold text-[var(--eco-user)]">🌱</span>
-            </div>
+            <EcoBubbleOneEye variant="icon" size={24} />
             <span className="font-display text-base font-normal text-[var(--eco-text)]">
               ECO
             </span>
@@ -121,13 +117,12 @@ export default function HomeHeader({ onLogout }: HomeHeaderProps) {
                       navigate(item.path);
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex items-center gap-3 rounded-lg px-4 py-3 text-[14px] font-medium transition-all duration-300 ${
+                    className={`rounded-lg px-4 py-3 text-[14px] font-medium transition-all duration-300 ${
                       isActive(item.path)
                         ? 'bg-[var(--eco-user)] text-white'
                         : 'text-[var(--eco-text)] hover:bg-[var(--eco-line)]'
                     }`}
                   >
-                    <span className="text-lg">{item.icon}</span>
                     {item.label}
                   </button>
                 ))}
