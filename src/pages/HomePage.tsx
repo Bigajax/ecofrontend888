@@ -25,7 +25,7 @@ export default function HomePage() {
         title: '5 Anéis da Disciplina',
         description: 'Construa sua estrutura pessoal',
         duration: '12 min',
-        image: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url("https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=400&fit=crop")',
+        image: 'linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url("https://images.unsplash.com/photo-1673295716958-b1dc96e5b24f?w=1000&h=600&fit=crop")',
         isPremium: false,
       },
       {
@@ -33,7 +33,7 @@ export default function HomePage() {
         title: 'Quem Pensa Enriquece',
         description: 'Transforme seu mindset financeiro',
         duration: '15 min',
-        image: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url("https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=400&fit=crop")',
+        image: 'linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url("https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=1000&h=600&fit=crop")',
         isPremium: false,
       },
       {
@@ -41,7 +41,7 @@ export default function HomePage() {
         title: 'Orientação ECO AI',
         description: 'Conversa personalizada do dia',
         duration: '8 min',
-        image: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url("https://images.unsplash.com/photo-1557821552-17105176677c?w=800&h=400&fit=crop")',
+        image: 'linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url("https://images.unsplash.com/photo-1720249139972-368744d9d44c?w=1000&h=600&fit=crop")',
         isPremium: false,
       },
     ],
