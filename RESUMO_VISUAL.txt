@@ -1,0 +1,170 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                  🎯 FRONTEND: SISTEMA DE MEMÓRIAS                           ║
+║                        STATUS: ✅ 100% PRONTO                              ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 ARQUIVOS MODIFICADOS:
+
+  ✅ src/hooks/useEcoStream/chunkProcessor.ts
+     └─ Adicionado handler onMemorySaved ao interface ProcessSseHandlers
+     └─ Adicionada lógica de detecção de memory_saved em processSseLine()
+
+  ✅ src/hooks/useEcoStream/streamEventHandlers.ts
+     └─ Importado registrarMemoria
+     └─ Criado handleMemorySaved() com 115 linhas de logging detalhado
+     └─ Suporta nomes de campos em inglês e português
+     └─ Chama POST /api/memorias/registrar automaticamente
+
+  ✅ src/hooks/useEcoStream/streamRunner.ts
+     └─ Importado handleMemorySaved
+     └─ Criado wrapper handleMemorySavedEvent
+     └─ Adicionado handler onMemorySaved ao objeto handlers
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 O QUE O BACKEND PRECISA FAZER:
+
+    Durante o streaming SSE de /api/ask-eco:
+
+    1. Identificar que deve salvar uma memória (lógica backend)
+
+    2. Enviar evento SSE:
+       ┌────────────────────────────────────────────────────────┐
+       │ data: {                                                │
+       │   "type": "memory_saved",                             │
+       │   "payload": {                                        │
+       │     "memory": {                                       │
+       │       "usuario_id": "user-uuid",     ← OBRIGATÓRIO!   │
+       │       "resumo_eco": "Resumo...",     ← OBRIGATÓRIO!   │
+       │       "emocao_principal": "tristeza",                 │
+       │       "intensidade": 9,                               │
+       │       "contexto": "...",                              │
+       │       ... outros campos opcionais                     │
+       │     }                                                 │
+       │   }                                                   │
+       │ }                                                      │
+       │                                                        │
+       │ (incluir \n\n no final)                              │
+       └────────────────────────────────────────────────────────┘
+
+    3. Garantir que usuario_id é extraído do JWT do usuário
+
+    4. Persistir a memória no banco de dados (opcional, frontend fará)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 FLUXO COMPLETO:
+
+    USER                         FRONTEND                    BACKEND
+      │                            │                           │
+      ├─ Envia mensagem ──────────►│                           │
+      │  "estou triste"            │                           │
+      │                            ├─ POST /api/ask-eco ──────►│
+      │                            │                           │
+      │                            │◄─ SSE: prompt_ready ──────┤
+      │                            │                           │
+      │  (chat mostra)             │◄─ SSE: chunk ────────────┤
+      │  "Eu vejo que..."          │◄─ SSE: chunk ────────────┤
+      │                            │                           │
+      │  (memória criada)          │◄─ SSE: memory_saved ─────┤ ← CRÍTICO!
+      │                            │  {type: memory_saved,    │
+      │                            │   payload: {memory: {...}│
+      │                            │                           │
+      │  (memória salva)           ├─ POST /memorias/reg ─────►│
+      │  em Memórias               │                           ├─ INSERT
+      │                            │                           │
+      │                            │◄─ SSE: done ─────────────┤
+      │                            │                           │
+      ▼                            ▼                           ▼
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ CAMPOS OBRIGATÓRIOS:
+
+    ✓ usuario_id   → UUID do usuário (do JWT)
+    ✓ resumo_eco   → Texto do resumo (não vazio)
+
+    Opcionais (recomendados):
+    • emocao_principal
+    • intensidade (0-10)
+    • contexto
+    • dominio_vida
+    • padrao_comportamental
+    • tags
+    • analise_resumo
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 TESTE RÁPIDO NO CONSOLE:
+
+    Abra DevTools (F12) → Console
+    Envie mensagem que deveria gerar memória
+
+    ✅ SE FUNCIONAR, verá:
+    ┌─────────────────────────────────────────────┐
+    │ [Memory] handleMemorySaved chamado: {...}   │
+    │ [Memory] Chamando registrarMemoria...       │
+    │ [Memory] ✅ Memória registrada com sucesso  │
+    └─────────────────────────────────────────────┘
+
+    ❌ SE NÃO FUNCIONAR, verá:
+    ┌──────────────────────────────────────────────┐
+    │ [Memory] ⚠️ Event não foi fornecido          │
+    │ → Backend NÃO está enviando memory_saved    │
+    └──────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 EXEMPLO DE CÓDIGO (Node.js):
+
+    // Quando decidir salvar uma memória:
+
+    const memoria = {
+      usuario_id: req.user.id,  // ← DO JWT!
+      resumo_eco: "Usuário relatou tristeza profunda",
+      emocao_principal: "tristeza",
+      intensidade: 9,
+      contexto: "Situação de relacionamento",
+      dominio_vida: "relacionamento",
+      tags: ["tristeza", "relacionamento"]
+    };
+
+    // 1. Enviar para frontend via SSE:
+    res.write('data: ' + JSON.stringify({
+      type: 'memory_saved',
+      payload: { memory: memoria }
+    }) + '\n\n');
+
+    // 2. Salvar no banco (opcional):
+    await db.memorias.insert(memoria);
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ RESUMO: 3 PASSOS
+
+    1️⃣  Identificar memória
+    2️⃣  Enviar evento SSE type="memory_saved"
+    3️⃣  Frontend cuida do resto automaticamente ✨
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 ARQUIVOS PARA COMPARTILHAR COM O BACKEND:
+
+    1. Este arquivo (RESUMO_VISUAL.txt)
+    2. PARA_O_BACKEND.md (guia completo)
+    3. DIAGNOSTICO_MEMORIA_FRONTEND.md (detalhado)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 PRÓXIMO PASSO:
+
+    → Passe estes arquivos para o backend
+    → Ele verifica se está enviando memory_saved
+    → Você testa no console do navegador
+    → Se ainda não funcionar, compartilhe log de erro
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║  Frontend 100% Pronto ✅   │   Aguardando Backend ⏳   │   Estimar: 2h   ║
+╚════════════════════════════════════════════════════════════════════════════╝

@@ -585,13 +585,48 @@ export const handleMemorySaved = (
   event: Record<string, unknown> | undefined,
   userId: string | undefined,
 ) => {
-  if (!event || !userId) {
+  // Log detalhado para debug
+  try {
+    console.log("[Memory] handleMemorySaved chamado:", {
+      hasEvent: !!event,
+      hasUserId: !!userId,
+      userIdValue: userId,
+      eventKeys: event ? Object.keys(event) : [],
+    });
+  } catch {
+    /* noop */
+  }
+
+  if (!event) {
+    try {
+      console.warn("[Memory] ⚠️ Event não foi fornecido para handleMemorySaved");
+    } catch {
+      /* noop */
+    }
+    return;
+  }
+
+  if (!userId) {
+    try {
+      console.warn("[Memory] ⚠️ UserId não foi fornecido para handleMemorySaved");
+    } catch {
+      /* noop */
+    }
     return;
   }
 
   try {
     // Extrai dados da memória do evento
     const memoryData = (event as { memory?: unknown }).memory ?? event;
+
+    try {
+      console.log("[Memory] Dados da memória extraídos:", {
+        hasMemory: !!(event as { memory?: unknown }).memory,
+        memoryDataKeys: memoryData && typeof memoryData === 'object' ? Object.keys(memoryData as Record<string, unknown>) : [],
+      });
+    } catch {
+      /* noop */
+    }
 
     // Constrói o payload para registrarMemoria
     const payload = {
@@ -610,22 +645,42 @@ export const handleMemorySaved = (
       tags: (memoryData as { tags?: string[] }).tags ?? [],
     };
 
+    try {
+      console.log("[Memory] Chamando registrarMemoria com payload:", {
+        usuario_id: payload.usuario_id,
+        resumo_eco: payload.resumo_eco ? payload.resumo_eco.substring(0, 100) : "(vazio)",
+        emocao_principal: payload.emocao_principal,
+        intensidade: payload.intensidade,
+      });
+    } catch {
+      /* noop */
+    }
+
     // Registra a memória no banco de dados
     registrarMemoria(payload)
       .then((result) => {
         try {
-          console.debug("[Memory] Memória registrada com sucesso:", {
+          console.log("[Memory] ✅ Memória registrada com sucesso:", {
             memoryId: result.memoria.id,
             isFirstSignificant: result.primeiraMemoriaSignificativa,
+            memoryCreatedAt: result.memoria.created_at,
           });
         } catch {
           /* noop */
         }
       })
       .catch((error) => {
-        // Log do erro mas não quebra o fluxo de streaming
+        // Log do erro detalhado mas não quebra o fluxo de streaming
         try {
-          console.error("[Memory] Erro ao registrar memória:", error);
+          console.error("[Memory] ❌ Erro ao registrar memória:", {
+            errorName: error?.name,
+            errorMessage: error?.message,
+            errorDetails: String(error),
+            payload: {
+              usuario_id: payload.usuario_id,
+              resumo_eco: payload.resumo_eco ? payload.resumo_eco.substring(0, 100) : "(vazio)",
+            },
+          });
         } catch {
           /* noop */
         }
@@ -633,7 +688,10 @@ export const handleMemorySaved = (
   } catch (error) {
     // Log do erro mas não quebra o fluxo de streaming
     try {
-      console.error("[Memory] Erro ao processar evento de memória salva:", error);
+      console.error("[Memory] ❌ Erro ao processar evento de memória salva:", {
+        errorName: error instanceof Error ? error.name : "unknown",
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
     } catch {
       /* noop */
     }
