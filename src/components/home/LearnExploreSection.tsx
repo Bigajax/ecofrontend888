@@ -31,7 +31,7 @@ export default function LearnExploreSection({
   onContentClick,
 }: LearnExploreSectionProps) {
   return (
-    <section className="px-4 py-8 md:px-6 md:py-12">
+    <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
       {/* Header */}
       <div className="mb-8">
         <h2 className="font-display text-2xl font-normal text-[var(--eco-text)]">

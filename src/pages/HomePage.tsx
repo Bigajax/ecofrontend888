@@ -93,7 +93,7 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="md:pt-0">
         {/* Hero Section - 2 Cards Layout */}
-        <div className="px-4 py-8 md:px-6 md:py-12">
+        <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
           {/* Desktop: Grid 2 colunas com mesma altura */}
           <div className="hidden gap-6 md:grid md:grid-cols-2 md:h-96">
             {/* Left Card - Greeting */}
