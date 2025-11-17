@@ -93,59 +93,78 @@ export default function HomePage() {
       <main className="md:pt-0">
         {/* Hero Section - 2 Cards Layout */}
         <div className="px-4 py-8 md:px-6 md:py-12">
-          {/* Desktop: Grid de 2 colunas */}
-          <div className="hidden gap-6 md:grid md:grid-cols-2">
-            {/* Left Card - Greeting */}
-            <div className="flex flex-col justify-center rounded-2xl border border-[var(--eco-line)] bg-gradient-to-br from-purple-100 via-pink-50 to-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
+          {/* Desktop: Grid com proporções customizadas */}
+          <div className="hidden gap-6 md:grid md:grid-cols-3">
+            {/* Left Card - Greeting (2 colunas, mais alto) */}
+            <div className="col-span-1 flex flex-col justify-center rounded-3xl border border-[var(--eco-line)] bg-gradient-to-br from-purple-100 via-pink-50 to-white p-10 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
               <h1 className="font-display text-4xl font-normal text-[var(--eco-text)]">
                 Bom dia,
                 <br />
                 {displayName}
               </h1>
+              <p className="mt-4 text-[14px] text-[var(--eco-muted)]">
+                Fique em registro rápido do seu humor
+              </p>
               <button
                 onClick={handleStartChat}
-                className="mt-6 inline-flex items-center gap-2 text-[14px] font-medium text-[var(--eco-user)] transition-all duration-300 hover:gap-3"
+                className="mt-8 inline-flex items-center gap-2 text-[14px] font-medium text-[var(--eco-user)] transition-all duration-300 hover:gap-3"
               >
                 Comece uma conversa <span>→</span>
               </button>
             </div>
 
-            {/* Right Card - Image + Quote */}
-            <div className="group relative overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
-              {/* Background Image */}
-              <div
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
-                style={{
-                  backgroundImage:
-                    'url("https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=500&fit=crop")',
-                }}
-              />
+            {/* Right Card - Image + Quote (1 coluna, compacto) */}
+            <div className="col-span-2 grid grid-rows-2 gap-4">
+              {/* Top Image Card */}
+              <div className="group relative overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
+                {/* Background Image */}
+                <div
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
+                  style={{
+                    backgroundImage:
+                      'url("https://images.unsplash.com/photo-1545235617-7465005b5955?w=800&h=300&fit=crop")',
+                  }}
+                />
 
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10 transition-all duration-300 group-hover:from-black/80 group-hover:via-black/40" />
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
 
-              {/* Content */}
-              <div className="relative flex h-96 flex-col justify-between p-8">
-                {/* Top: Date badge */}
-                <div className="flex justify-end">
-                  <div className="rounded-full bg-white/80 px-4 py-2 text-[12px] font-medium text-[var(--eco-text)] backdrop-blur-sm">
-                    17 de novembro
+                {/* Content - Top Right */}
+                <div className="relative flex h-full flex-col justify-between p-6">
+                  <div className="flex justify-end">
+                    <div className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-medium text-[var(--eco-text)] backdrop-blur-sm">
+                      17 de nov
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-display text-lg font-normal text-white drop-shadow-lg">
+                      Não julgue
+                    </h3>
                   </div>
                 </div>
+              </div>
 
-                {/* Bottom: Quote */}
-                <div className="space-y-4">
-                  <h3 className="font-display text-xl font-normal text-white drop-shadow-lg">
-                    Não julgue, para que não seja julgado
-                  </h3>
-                  <p className="text-[14px] leading-relaxed text-white/90 drop-shadow-md">
-                    "Quando a filosofia é exercida com arrogância e de maneira inflexível,
-                    ela é a causa para a ruína de muitos. Deixa a filosofia remover teus
-                    defeitos, em vez de uma maneira de protestar contra os defeitos dos
-                    outros!"
+              {/* Bottom Image Card */}
+              <div className="group relative overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
+                {/* Background Image */}
+                <div
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
+                  style={{
+                    backgroundImage:
+                      'url("https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=300&fit=crop")',
+                  }}
+                />
+
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
+
+                {/* Content - Bottom Right */}
+                <div className="relative flex h-full flex-col justify-end p-6">
+                  <p className="text-[12px] leading-relaxed text-white/90 drop-shadow-md">
+                    "Quando a filosofia é exercida com arrogância, ela é a causa para a ruína."
                   </p>
-                  <p className="text-[13px] font-medium text-white/80 drop-shadow-md">
-                    — Sêneca, Cartas Morais, 103.4B-5A
+                  <p className="mt-2 text-[11px] font-medium text-white/80 drop-shadow-md">
+                    — Sêneca
                   </p>
                 </div>
               </div>
