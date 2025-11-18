@@ -60,11 +60,6 @@ export default function HomeHeader({ onLogout }: HomeHeaderProps) {
 
           {/* User Menu */}
           <div className="flex items-center gap-3">
-            {user && (
-              <span className="text-[14px] text-[var(--eco-muted)]">
-                {user.email?.split('@')[0]}
-              </span>
-            )}
             <button
               onClick={handleLogout}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--eco-line)] text-[var(--eco-user)] transition-all duration-300 hover:bg-[var(--eco-line)]"
