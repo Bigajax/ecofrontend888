@@ -25,7 +25,7 @@ export default function HomeHeader() {
           <div className="absolute left-6 flex items-center gap-2">
             <EcoBubbleOneEye variant="icon" size={28} />
             <span className="font-display text-lg font-normal text-[var(--eco-text)]">
-              ECO
+              ECOTOPIA
             </span>
           </div>
 
@@ -56,7 +56,7 @@ export default function HomeHeader() {
           <div className="flex items-center gap-2">
             <EcoBubbleOneEye variant="icon" size={24} />
             <span className="font-display text-base font-normal text-[var(--eco-text)]">
-              ECO
+              ECOTOPIA
             </span>
           </div>
 
