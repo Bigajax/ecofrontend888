@@ -41,8 +41,20 @@ export default function HomeHeader() {
                       : 'text-[#9C938A] hover:text-[#C6A995]'
                   }`}
                 >
-                  {index === 0 && <Home size={18} strokeWidth={1.5} />}
-                  {index === 1 && <Search size={18} strokeWidth={1.5} />}
+                  {index === 0 && (
+                    <Home
+                      size={18}
+                      strokeWidth={1.5}
+                      className={isActive(item.path) ? 'text-[#C6A995]' : 'text-[#9C938A]'}
+                    />
+                  )}
+                  {index === 1 && (
+                    <Search
+                      size={18}
+                      strokeWidth={1.5}
+                      className={isActive(item.path) ? 'text-[#C6A995]' : 'text-[#9C938A]'}
+                    />
+                  )}
                   {item.label}
                 </button>
 
@@ -112,8 +124,20 @@ export default function HomeHeader() {
                           : 'text-[#9C938A] hover:text-[#C6A995]'
                       }`}
                     >
-                      {index === 0 && <Home size={18} strokeWidth={1.5} />}
-                      {index === 1 && <Search size={18} strokeWidth={1.5} />}
+                      {index === 0 && (
+                        <Home
+                          size={18}
+                          strokeWidth={1.5}
+                          className={isActive(item.path) ? 'text-[#C6A995]' : 'text-[#9C938A]'}
+                        />
+                      )}
+                      {index === 1 && (
+                        <Search
+                          size={18}
+                          strokeWidth={1.5}
+                          className={isActive(item.path) ? 'text-[#C6A995]' : 'text-[#9C938A]'}
+                        />
+                      )}
                       {item.label}
                     </button>
 
