@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProgram } from '@/contexts/ProgramContext';
 import HomeHeader from '@/components/home/HomeHeader';
 import DailyRecommendationsSection from '@/components/home/DailyRecommendationsSection';
 import ActionButtons from '@/components/home/ActionButtons';
@@ -12,15 +13,7 @@ export default function HomePage() {
   const { userName } = useAuth();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  // Estado para rastrear programa em andamento (temporário - será integrado com backend depois)
-  const [ongoingProgram, setOngoingProgram] = useState<{
-    id: string;
-    title: string;
-    description: string;
-    currentLesson: string;
-    progress: number;
-    duration: string;
-  } | null>(null);
+  const { ongoingProgram } = useProgram();
 
   const displayName = userName || 'there';
 
@@ -129,8 +122,34 @@ export default function HomePage() {
   };
 
   const handleDailyRecommendationClick = (recId: string) => {
+    const { startProgram } = useProgram();
+
     if (recId === 'rec_1') {
+      // Salvar programa dos 5 Anéis
+      startProgram({
+        id: 'rec_1',
+        title: '5 Anéis da Disciplina',
+        description: 'Construa sua estrutura pessoal',
+        currentLesson: 'Aula 1: Introdução aos 5 Anéis',
+        progress: 0,
+        duration: '12 min',
+        startedAt: new Date().toISOString(),
+        lastAccessedAt: new Date().toISOString(),
+      });
       navigate('/app/rings');
+    } else if (recId === 'rec_2') {
+      // Salvar programa Quem Pensa Enriquece
+      startProgram({
+        id: 'rec_2',
+        title: 'Quem Pensa Enriquece',
+        description: 'Transforme seu mindset financeiro',
+        currentLesson: 'Aula 1: Os Princípios Fundamentais',
+        progress: 0,
+        duration: '15 min',
+        startedAt: new Date().toISOString(),
+        lastAccessedAt: new Date().toISOString(),
+      });
+      console.log('Recomendação clicada:', recId);
     } else {
       console.log('Recomendação clicada:', recId);
     }
