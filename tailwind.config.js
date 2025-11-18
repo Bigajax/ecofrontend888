@@ -135,6 +135,26 @@ export default {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-6px)' },
         },
+        kenBurns: {
+          '0%': { transform: 'scale(1)' },
+          '100%': { transform: 'scale(1.05)' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUpFade: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideLeftFade: {
+          '0%': { opacity: '0', transform: 'translateX(-20px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        slideRightFade: {
+          '0%': { opacity: '0', transform: 'translateX(20px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
       },
       animation: {
         'eco-pulse': 'ecoPulse 6s ease-in-out infinite',
@@ -145,6 +165,11 @@ export default {
         pulseListen: 'pulseListen 1.2s ease-in-out infinite',
         pulseTalk: 'pulseTalk 3s ease-in-out infinite',
         float: 'float 9s ease-in-out infinite',
+        'ken-burns': 'kenBurns 8s ease-in-out infinite',
+        'fade-in': 'fadeIn 600ms ease-out',
+        'slide-up-fade': 'slideUpFade 600ms ease-out',
+        'slide-left-fade': 'slideLeftFade 600ms ease-out',
+        'slide-right-fade': 'slideRightFade 600ms ease-out',
       },
     },
   },

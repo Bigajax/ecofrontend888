@@ -1,4 +1,5 @@
-import { useNavigate, useEffect } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useRings } from '@/contexts/RingsContext';
 import { useProgram } from '@/contexts/ProgramContext';
 import { RINGS_ARRAY } from '@/constants/rings';
@@ -12,6 +13,11 @@ export default function FiveRingsHub() {
   const { ongoingProgram, updateProgress, resumeProgram } = useProgram();
 
   const ritualCompleted = currentRitual?.status === 'completed';
+
+  // Scroll to top on page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Resume program when page loads
   useEffect(() => {

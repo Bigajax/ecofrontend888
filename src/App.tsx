@@ -43,6 +43,15 @@ const MemoriesSection = lazy(() => import("@/pages/memory/MemoriesSection"));
 const ProfileSection = lazy(() => import("@/pages/memory/ProfileSection"));
 const ReportSection = lazy(() => import("@/pages/memory/ReportSection"));
 
+const FiveRingsHub = lazy(() => import("@/pages/rings/FiveRingsHub"));
+const DailyRitual = lazy(() => import("@/pages/rings/DailyRitual"));
+const Timeline = lazy(() => import("@/pages/rings/Timeline"));
+const Progress = lazy(() => import("@/pages/rings/Progress"));
+const RingDetail = lazy(() => import("@/pages/rings/RingDetail"));
+const RiquezaMentalProgram = lazy(() => import("@/pages/programs/RiquezaMentalProgram"));
+const SleepArticle = lazy(() => import("@/pages/articles/SleepArticle"));
+const GoodNightSleepArticle = lazy(() => import("@/pages/articles/GoodNightSleepArticle"));
+
 const lazyFallback = <div>Carregando…</div>;
 
 function renderWithSuspense(element: ReactElement) {
@@ -109,6 +118,14 @@ function AppRoutes() {
           <Route path="report" element={renderWithSuspense(<ReportSection />)} />
           <Route path="*" element={<Navigate to="/app/memory" replace />} />
         </Route>
+        <Route path="rings" element={renderWithSuspense(<FiveRingsHub />)} />
+        <Route path="rings/ritual" element={renderWithSuspense(<DailyRitual />)} />
+        <Route path="rings/timeline" element={renderWithSuspense(<Timeline />)} />
+        <Route path="rings/progress" element={renderWithSuspense(<Progress />)} />
+        <Route path="rings/detail/:ringId" element={renderWithSuspense(<RingDetail />)} />
+        <Route path="riqueza-mental" element={renderWithSuspense(<RiquezaMentalProgram />)} />
+        <Route path="articles/sleep" element={renderWithSuspense(<SleepArticle />)} />
+        <Route path="articles/good-night-sleep" element={renderWithSuspense(<GoodNightSleepArticle />)} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -4,10 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProgram } from '@/contexts/ProgramContext';
 import HomeHeader from '@/components/home/HomeHeader';
 import DailyRecommendationsSection from '@/components/home/DailyRecommendationsSection';
-import ActionButtons from '@/components/home/ActionButtons';
-import ContinueProgram from '@/components/home/ContinueProgram';
 import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
+import ContinueProgram from '@/components/home/ContinueProgram';
 import LearnExploreSection from '@/components/home/LearnExploreSection';
+import HeroCarousel from '@/components/home/HeroCarousel';
+import AnimatedSection from '@/components/AnimatedSection';
 
 export default function HomePage() {
   const { userName } = useAuth();
@@ -37,7 +38,7 @@ export default function HomePage() {
         title: '5 Anéis da Disciplina',
         description: 'Construa sua estrutura pessoal',
         duration: '12 min',
-        image: 'url("/images/rings/five-rings-visual.png")',
+        image: 'url("/images/five-rings-visual.png")',
         isPremium: false,
       },
       {
@@ -45,15 +46,7 @@ export default function HomePage() {
         title: 'Quem Pensa Enriquece',
         description: 'Transforme seu mindset financeiro',
         duration: '15 min',
-        image: 'linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url("https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=1000&h=600&fit=crop")',
-        isPremium: false,
-      },
-      {
-        id: 'rec_3',
-        title: 'Orientação ECO AI',
-        description: 'Conversa personalizada do dia',
-        duration: '8 min',
-        image: 'linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url("https://images.unsplash.com/photo-1720249139972-368744d9d44c?w=1000&h=600&fit=crop")',
+        image: 'url("/images/quem-pensa-enriquece.png")',
         isPremium: false,
       },
     ],
@@ -64,39 +57,21 @@ export default function HomePage() {
   const contentItems = useMemo(
     () => [
       {
-        id: 'content_1',
-        title: 'Conversas Diárias',
-        description: 'Diálogos significativos',
-        category: 'conversations',
-        image: 'bg-gradient-to-br from-pink-200 to-rose-200',
-        icon: '💬',
+        id: 'content_wellbeing',
+        title: 'Sobre Bem-estar Mental',
+        description: 'Por que o sono é tão importante',
+        category: 'wellbeing',
+        image: 'url("/images/wellbeing-mental.jpg")',
+        icon: '',
         isPremium: false,
       },
       {
-        id: 'content_2',
-        title: 'Programas',
-        description: 'Jornadas estruturadas',
-        category: 'programs',
-        image: 'bg-gradient-to-br from-indigo-200 to-purple-200',
-        icon: '📚',
-        isPremium: true,
-      },
-      {
-        id: 'content_3',
-        title: 'Sono Restaurador',
-        description: 'Durma melhor',
-        category: 'sleep',
-        image: 'bg-gradient-to-br from-slate-300 to-gray-300',
-        icon: '😴',
-        isPremium: false,
-      },
-      {
-        id: 'content_4',
-        title: 'Sons Ambientes',
-        description: 'Ambientes sonoros',
-        category: 'sounds',
-        image: 'bg-gradient-to-br from-orange-200 to-amber-200',
-        icon: '🎵',
+        id: 'content_sleep_tips',
+        title: 'Como ter uma boa noite de sono',
+        description: 'Se estiver tendo problemas para dormir, estas dicas podem ajudar.',
+        category: 'wellbeing',
+        image: 'url("/images/good-night-sleep.jpg")',
+        icon: '',
         isPremium: false,
       },
     ],
@@ -106,10 +81,7 @@ export default function HomePage() {
   const categories = useMemo(
     () => [
       { id: 'all', label: 'Nossas Escolhas' },
-      { id: 'conversations', label: 'Conversas Diárias' },
-      { id: 'programs', label: 'Programas' },
-      { id: 'sleep', label: 'Sono' },
-      { id: 'sounds', label: 'Sons' },
+      { id: 'wellbeing', label: 'Bem-estar Mental' },
     ],
     [],
   );
@@ -126,7 +98,13 @@ export default function HomePage() {
   };
 
   const handleContentClick = (contentId: string) => {
-    console.log('Clicou em:', contentId);
+    if (contentId === 'content_wellbeing') {
+      navigate('/app/articles/sleep');
+    } else if (contentId === 'content_sleep_tips') {
+      navigate('/app/articles/good-night-sleep');
+    } else {
+      console.log('Clicou em:', contentId);
+    }
   };
 
   const handleDailyRecommendationClick = (recId: string) => {
@@ -149,13 +127,13 @@ export default function HomePage() {
         id: 'rec_2',
         title: 'Quem Pensa Enriquece',
         description: 'Transforme seu mindset financeiro',
-        currentLesson: 'Aula 1: Os Princípios Fundamentais',
+        currentLesson: 'Passo 1: Onde você está',
         progress: 0,
-        duration: '15 min',
+        duration: '25 min',
         startedAt: new Date().toISOString(),
         lastAccessedAt: new Date().toISOString(),
       });
-      console.log('Recomendação clicada:', recId);
+      navigate('/app/riqueza-mental');
     } else {
       console.log('Recomendação clicada:', recId);
     }
@@ -190,45 +168,8 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Right Card - Ocean Image */}
-            <div className="group relative overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
-              {/* Background Image */}
-              <div
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
-                style={{
-                  backgroundImage:
-                    'url("https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=1000&h=600&fit=crop")',
-                }}
-              />
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
-
-              {/* Content */}
-              <div className="relative flex h-full flex-col justify-between p-8">
-                {/* Top: Date badge */}
-                <div className="flex justify-end">
-                  <div className="rounded-full bg-white/80 px-4 py-2 text-[12px] font-medium text-[var(--eco-text)] backdrop-blur-sm">
-                    17 de novembro
-                  </div>
-                </div>
-
-                {/* Bottom: Quote */}
-                <div className="space-y-4">
-                  <h3 className="font-display text-xl font-normal text-white drop-shadow-lg">
-                    Não julgue, para que não seja julgado
-                  </h3>
-                  <p className="text-[14px] leading-relaxed text-white/90 drop-shadow-md">
-                    "Quando a filosofia é exercida com arrogância e de maneira inflexível,
-                    ela é a causa para a ruína de muitos. Deixa a filosofia remover teus
-                    defeitos, em vez de uma maneira de protestar contra os defeitos dos
-                    outros!"
-                  </p>
-                  <p className="text-[13px] font-medium text-white/80 drop-shadow-md">
-                    — Sêneca, Cartas Morais, 103.4B-5A
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Right Card - Hero Carousel */}
+            <HeroCarousel />
           </div>
 
           {/* Mobile: Stacked cards */}
@@ -248,97 +189,56 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Right Card - Ocean Image (Mobile) */}
-            <div className="group relative overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
-              {/* Background Image */}
-              <div
-                className="absolute inset-0 bg-cover bg-center"
-                style={{
-                  backgroundImage:
-                    'url("https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=1000&h=600&fit=crop")',
-                }}
-              />
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
-
-              {/* Content */}
-              <div className="relative flex min-h-80 flex-col justify-between p-6">
-                {/* Top: Date badge */}
-                <div className="flex justify-end">
-                  <div className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-medium text-[var(--eco-text)] backdrop-blur-sm">
-                    17 de nov
-                  </div>
-                </div>
-
-                {/* Bottom: Quote */}
-                <div className="space-y-3">
-                  <h3 className="font-display text-lg font-normal text-white drop-shadow-lg">
-                    Não julgue
-                  </h3>
-                  <p className="text-[13px] leading-relaxed text-white/90 drop-shadow-md">
-                    "Quando a filosofia é exercida com arrogância, ela é a causa para a
-                    ruína. Deixa a filosofia remover teus defeitos."
-                  </p>
-                  <p className="text-[12px] font-medium text-white/80 drop-shadow-md">
-                    — Sêneca
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Right Card - Hero Carousel (Mobile) */}
+            <HeroCarousel />
           </div>
         </div>
 
-        {/* Daily Recommendations Section */}
-        <DailyRecommendationsSection
-          recommendations={dailyRecommendations}
-          onRecommendationClick={handleDailyRecommendationClick}
-        />
-
-        {/* Action Buttons */}
-        <ActionButtons
-          onContinue={() => {
-            if (ongoingProgram) {
-              // Navegar para a página correta baseado no ID do programa
-              if (ongoingProgram.id === 'rec_1') {
-                navigate('/app/rings');
-              } else {
-                navigate(`/app/program/${ongoingProgram.id}`);
-              }
-            }
-          }}
-          onStart={() => navigate('/app/programs')}
-          onExplore={() => setSelectedCategory('programs')}
-        />
-
-        {/* Continue Program Section - Appears only when user has ongoing program */}
+        {/* Recently Played Section - Appears only when user has ongoing program */}
         {ongoingProgram && (
-          <ContinueProgram
-            program={ongoingProgram}
-            onContinue={() => {
-              // Navegar para a página correta baseado no ID do programa
-              if (ongoingProgram.id === 'rec_1') {
-                navigate('/app/rings');
-              } else {
-                navigate(`/app/program/${ongoingProgram.id}`);
-              }
-            }}
-          />
+          <AnimatedSection animation="slide-up-fade">
+            <ContinueProgram
+              program={ongoingProgram}
+              onContinue={() => {
+                // Navegar para a página correta baseado no ID do programa
+                if (ongoingProgram.id === 'rec_1') {
+                  navigate('/app/rings');
+                } else if (ongoingProgram.id === 'rec_2') {
+                  navigate('/app/riqueza-mental');
+                } else {
+                  navigate(`/app/program/${ongoingProgram.id}`);
+                }
+              }}
+            />
+          </AnimatedSection>
         )}
 
+        {/* Daily Recommendations Section */}
+        <AnimatedSection animation="slide-up-fade">
+          <DailyRecommendationsSection
+            recommendations={dailyRecommendations}
+            onRecommendationClick={handleDailyRecommendationClick}
+          />
+        </AnimatedSection>
+
         {/* ECO AI Guidance Card Section */}
-        <EcoAIGuidanceCard
-          userName={displayName}
-          onStartChat={handleStartChat}
-        />
+        <AnimatedSection animation="slide-up-fade">
+          <EcoAIGuidanceCard
+            userName={displayName}
+            onStartChat={handleStartChat}
+          />
+        </AnimatedSection>
 
         {/* Learn & Explore Section */}
-        <LearnExploreSection
-          categories={categories}
-          contentItems={filteredContent}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-          onContentClick={handleContentClick}
-        />
+        <AnimatedSection animation="slide-up-fade">
+          <LearnExploreSection
+            categories={categories}
+            contentItems={filteredContent}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            onContentClick={handleContentClick}
+          />
+        </AnimatedSection>
 
         {/* Footer spacing */}
         <div className="h-20" />

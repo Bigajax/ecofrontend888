@@ -697,6 +697,27 @@ button, [role="button"], a { touch-action: manipulation; }
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* Scroll Animation Keyframes */
+@keyframes fadeInAnimation {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUpFadeAnimation {
+  from { opacity: 0; transform: translateY(50px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slideLeftFadeAnimation {
+  from { opacity: 0; transform: translateX(-50px) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes slideRightFadeAnimation {
+  from { opacity: 0; transform: translateX(50px) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
 .animate-gentle-pulse { animation: gentlePulse 3s ease-in-out infinite; }
 .floating { animation: floating-animation 8s ease-in-out infinite; }
 .vibrating { animation: vibrating-animation .6s ease-in-out infinite; }

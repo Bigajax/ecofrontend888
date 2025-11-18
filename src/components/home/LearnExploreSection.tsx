@@ -112,50 +112,44 @@ function ContentCard({ item, onClick }: ContentCardProps) {
   return (
     <button
       onClick={onClick}
-      className="group relative overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 active:translate-y-0"
+      className="flex flex-col overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 active:translate-y-0"
     >
-      {/* Background image/gradient */}
-      <div
-        className={`absolute inset-0 ${item.image} transition-transform duration-300 group-hover:scale-105`}
-      />
+      {/* Image Section */}
+      <div className="relative h-40 overflow-hidden bg-gray-200">
+        <div
+          className="h-full w-full transition-transform duration-300 hover:scale-105"
+          style={
+            item.image.startsWith('url(') || item.image.startsWith('linear-gradient')
+              ? { backgroundImage: item.image, backgroundSize: 'cover', backgroundPosition: 'center' }
+              : { backgroundImage: '' }
+          }
+        />
+        {/* Fallback gradient for non-image items */}
+        {!item.image.startsWith('url(') && !item.image.startsWith('linear-gradient') && (
+          <div className={`h-full w-full ${item.image}`} />
+        )}
+      </div>
 
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      {/* Content Section - below image */}
+      <div className="flex flex-col justify-between bg-white p-4">
+        {/* Top: Premium badge if needed */}
+        {item.isPremium && (
+          <div className="mb-2 flex items-center gap-1 w-fit rounded-full bg-gray-100 px-2 py-1">
+            <Lock size={12} className="text-[var(--eco-user)]" />
+            <span className="text-[11px] font-medium text-[var(--eco-user)]">
+              Premium
+            </span>
+          </div>
+        )}
 
-      {/* Content */}
-      <div className="relative flex h-52 flex-col justify-between p-4">
-        {/* Top: Icon and Premium badge */}
-        <div className="flex items-start justify-between">
-          <span className="text-3xl">{item.icon}</span>
-          {item.isPremium && (
-            <div className="flex items-center gap-1 rounded-full bg-white/70 px-2 py-1 backdrop-blur-sm">
-              <Lock size={12} className="text-[var(--eco-user)]" />
-              <span className="text-[11px] font-medium text-[var(--eco-user)]">
-                Premium
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Bottom: Title, Description, and Play button */}
+        {/* Title and Description */}
         <div>
-          <h3 className="font-display text-lg font-normal text-[var(--eco-text)]">
+          <h3 className="font-display text-base font-normal text-[var(--eco-text)]">
             {item.title}
           </h3>
-          <p className="mt-1 text-[13px] text-[var(--eco-text)]/70">
+          <p className="mt-2 text-[13px] text-[var(--eco-text)]/70 leading-relaxed">
             {item.description}
           </p>
-
-          {/* Play button - shows on hover/mobile */}
-          <div className="mt-3 flex items-center gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm transition-all duration-300 group-hover:bg-white">
-              <Play
-                size={14}
-                className="fill-[var(--eco-user)] text-[var(--eco-user)]"
-              />
-            </div>
-            <span className="text-[13px] font-medium text-white">Ouvir</span>
-          </div>
         </div>
       </div>
     </button>

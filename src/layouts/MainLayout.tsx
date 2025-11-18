@@ -34,9 +34,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     navigate('/login');
   };
 
-  // Mostrar header antigo apenas na ChatPage e outras páginas (não na HomePage)
+  // Mostrar header antigo apenas na ChatPage e outras páginas (não na HomePage, nem Rings, nem Riqueza Mental, nem Articles)
   const isHomePage = location.pathname === '/app' || location.pathname === '/app/';
-  const showOldHeader = !isHomePage;
+  const isRingsPage = location.pathname.startsWith('/app/rings');
+  const isRiquezaMentalPage = location.pathname.startsWith('/app/riqueza-mental');
+  const isArticlesPage = location.pathname.startsWith('/app/articles');
+  const showOldHeader = !isHomePage && !isRingsPage && !isRiquezaMentalPage && !isArticlesPage;
 
   return (
     <>

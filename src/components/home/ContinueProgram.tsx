@@ -23,13 +23,13 @@ export default function ContinueProgram({
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-10">
       {/* Title */}
       <h2 className="mb-6 font-display text-2xl font-normal text-[var(--eco-text)]">
-        Continue o seu programa
+        Reproduzido recentemente
       </h2>
 
       {/* Program Card */}
       <button
         onClick={onContinue}
-        className="group w-full overflow-hidden rounded-2xl border border-[var(--eco-line)]/20 bg-gradient-to-br from-purple-50 via-white to-blue-50 p-6 shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_8px_48px_rgba(147,51,234,0.12)] hover:-translate-y-1 active:translate-y-0 md:p-8"
+        className="group w-full overflow-hidden rounded-2xl border border-[var(--eco-line)] bg-transparent p-6 transition-all duration-300 hover:shadow-[0_8px_48px_rgba(147,51,234,0.12)] hover:-translate-y-1 active:translate-y-0 md:p-8"
       >
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           {/* Left: Info */}

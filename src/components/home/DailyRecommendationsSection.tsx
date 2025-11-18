@@ -11,10 +11,12 @@ interface Recommendation {
 
 interface DailyRecommendationsSectionProps {
   recommendations: Recommendation[];
+  onRecommendationClick?: (recommendationId: string) => void;
 }
 
 export default function DailyRecommendationsSection({
   recommendations,
+  onRecommendationClick,
 }: DailyRecommendationsSectionProps) {
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
@@ -36,7 +38,11 @@ export default function DailyRecommendationsSection({
       {/* Desktop: Grid - 3 colunas */}
       <div className="mb-8 hidden grid-cols-3 gap-6 md:grid">
         {recommendations.map((rec) => (
-          <RecommendationCard key={rec.id} recommendation={rec} />
+          <RecommendationCard
+            key={rec.id}
+            recommendation={rec}
+            onClick={() => onRecommendationClick?.(rec.id)}
+          />
         ))}
       </div>
 
@@ -48,6 +54,7 @@ export default function DailyRecommendationsSection({
               key={rec.id}
               recommendation={rec}
               mobile
+              onClick={() => onRecommendationClick?.(rec.id)}
             />
           ))}
         </div>
@@ -59,66 +66,65 @@ export default function DailyRecommendationsSection({
 interface RecommendationCardProps {
   recommendation: Recommendation;
   mobile?: boolean;
+  onClick?: () => void;
 }
 
 function RecommendationCard({
   recommendation,
   mobile,
+  onClick,
 }: RecommendationCardProps) {
   const baseClass = mobile ? 'w-80 flex-shrink-0' : 'w-full';
 
   return (
     <button
-      className={`group relative overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 active:translate-y-0 ${baseClass}`}
+      onClick={onClick}
+      className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 hover:shadow-[0_8px_40px_rgba(0,0,0,0.12)] hover:-translate-y-1 active:translate-y-0 ${baseClass}`}
       style={{
         backgroundImage: recommendation.image,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        minHeight: mobile ? '240px' : '280px',
+        minHeight: mobile ? '200px' : '220px',
       }}
     >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent transition-all duration-300 group-hover:from-black/70 group-hover:via-black/30" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
       {/* Content */}
-      <div className="relative flex h-full flex-col justify-between p-6 md:p-8">
-        {/* Top: Duration + Premium Badge */}
+      <div className="relative flex h-full flex-col justify-between p-4 md:p-5">
+        {/* Top: Duration Badge */}
         <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 backdrop-blur-sm">
-            <span className="text-[12px] font-medium text-[var(--eco-text)]">
+          <span className="inline-flex items-center gap-1 rounded-full bg-black/50 px-3 py-1.5 backdrop-blur-md">
+            <span className="text-[11px] font-medium text-white">
               {recommendation.duration}
             </span>
           </span>
           {recommendation.isPremium && (
-            <div className="flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 backdrop-blur-sm">
-              <Lock size={12} className="text-[var(--eco-user)]" />
-              <span className="text-[11px] font-medium text-[var(--eco-user)]">
-                Premium
-              </span>
+            <div className="flex items-center justify-center rounded-full bg-black/50 p-1.5 backdrop-blur-md">
+              <Lock size={14} className="text-white" />
             </div>
           )}
         </div>
 
         {/* Bottom: Title, Description, Play Button */}
-        <div className="space-y-3">
-          <div>
-            <h3 className="font-display text-lg font-normal text-white drop-shadow-lg md:text-xl">
+        <div className="flex items-end justify-between gap-4">
+          <div className="flex-1 text-left">
+            <h3 className="font-display text-base font-normal text-white drop-shadow-lg md:text-lg">
               {recommendation.title}
             </h3>
-            <p className="mt-1 text-[13px] text-white/80 drop-shadow-md md:text-[14px]">
+            <p className="mt-0.5 text-[12px] text-white/85 drop-shadow-md md:text-[13px]">
               {recommendation.description}
             </p>
           </div>
 
-          {/* Play Button */}
+          {/* Play Button - Circular Icon */}
           <button
             onClick={(e) => {
               e.stopPropagation();
             }}
-            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-[13px] font-medium text-[var(--eco-user)] backdrop-blur-sm transition-all duration-300 hover:bg-white active:scale-95 md:text-[14px]"
+            className="shrink-0 flex items-center justify-center rounded-full bg-white/85 p-3 shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 active:scale-95 backdrop-blur-md"
           >
-            <Play size={14} className="fill-[var(--eco-user)]" />
-            Explorar
+            <Play size={18} className="fill-black text-black ml-0.5" />
           </button>
         </div>
       </div>
