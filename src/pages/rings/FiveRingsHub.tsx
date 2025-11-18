@@ -18,15 +18,29 @@ export default function FiveRingsHub() {
     if (ongoingProgram?.id === 'rec_1') {
       resumeProgram();
     }
-  }, [ongoingProgram, resumeProgram]);
+  }, [ongoingProgram?.id, resumeProgram]);
 
-  // Update program progress when ritual is completed
+  // Update program progress continuously and handle completion
   useEffect(() => {
-    if (ongoingProgram?.id === 'rec_1' && ritualCompleted) {
-      const completionPercentage = Math.round((progress / RINGS_ARRAY.length) * 100);
-      updateProgress(completionPercentage, `${RINGS_ARRAY.length} Anéis Completados`);
+    if (ongoingProgram?.id === 'rec_1' && currentRitual) {
+      // Calculate completion percentage based on current ritual responses
+      const totalRings = RINGS_ARRAY.length;
+      const ringResponses = currentRitual.responses?.length || 0;
+      const completionPercentage = Math.round((ringResponses / totalRings) * 100);
+
+      // Update progress with current state
+      if (ritualCompleted) {
+        // When ritual is 100% complete, mark as finished
+        updateProgress(100, 'Ritual Completo! 🎉');
+        // Note: completeProgram() will be called automatically when user returns to home
+        // or on next mount detection
+      } else if (ringResponses > 0) {
+        // While in progress, update with current percentage
+        const currentRing = RINGS_ARRAY[ringResponses - 1];
+        updateProgress(completionPercentage, `${currentRing?.displayName || `Anel ${ringResponses}`} Completado`);
+      }
     }
-  }, [ongoingProgram, ritualCompleted, progress, updateProgress]);
+  }, [ongoingProgram?.id, currentRitual, ritualCompleted, updateProgress]);
 
   return (
     <div className="min-h-screen bg-[var(--eco-bg)] font-primary">

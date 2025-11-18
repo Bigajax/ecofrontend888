@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram } from '@/contexts/ProgramContext';
@@ -13,9 +13,17 @@ export default function HomePage() {
   const { userName } = useAuth();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const { ongoingProgram, startProgram } = useProgram();
+  const { ongoingProgram, startProgram, completeProgram } = useProgram();
 
   const displayName = userName || 'there';
+
+  // Remove completed program from home page
+  useEffect(() => {
+    if (ongoingProgram && ongoingProgram.progress === 100) {
+      // Program is complete, mark it as finished and remove from display
+      completeProgram();
+    }
+  }, [ongoingProgram?.progress, completeProgram]);
 
   const handleLogout = async () => {
     navigate('/');
