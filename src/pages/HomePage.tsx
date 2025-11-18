@@ -13,7 +13,7 @@ export default function HomePage() {
   const { userName } = useAuth();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const { ongoingProgram } = useProgram();
+  const { ongoingProgram, startProgram } = useProgram();
 
   const displayName = userName || 'there';
 
@@ -122,8 +122,6 @@ export default function HomePage() {
   };
 
   const handleDailyRecommendationClick = (recId: string) => {
-    const { startProgram } = useProgram();
-
     if (recId === 'rec_1') {
       // Salvar programa dos 5 Anéis
       startProgram({
