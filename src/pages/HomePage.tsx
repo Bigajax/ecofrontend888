@@ -290,7 +290,12 @@ export default function HomePage() {
         <ActionButtons
           onContinue={() => {
             if (ongoingProgram) {
-              navigate(`/app/program/${ongoingProgram.id}`);
+              // Navegar para a página correta baseado no ID do programa
+              if (ongoingProgram.id === 'rec_1') {
+                navigate('/app/rings');
+              } else {
+                navigate(`/app/program/${ongoingProgram.id}`);
+              }
             }
           }}
           onStart={() => navigate('/app/programs')}
@@ -301,7 +306,14 @@ export default function HomePage() {
         {ongoingProgram && (
           <ContinueProgram
             program={ongoingProgram}
-            onContinue={() => navigate(`/app/program/${ongoingProgram.id}`)}
+            onContinue={() => {
+              // Navegar para a página correta baseado no ID do programa
+              if (ongoingProgram.id === 'rec_1') {
+                navigate('/app/rings');
+              } else {
+                navigate(`/app/program/${ongoingProgram.id}`);
+              }
+            }}
           />
         )}
 
