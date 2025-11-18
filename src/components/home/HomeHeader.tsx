@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Home, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EcoBubbleOneEye from '@/components/EcoBubbleOneEye';
 
@@ -20,6 +20,9 @@ export default function HomeHeader() {
     <>
       {/* Desktop Header */}
       <header className="sticky top-0 z-40 hidden border-b border-[var(--eco-line)] bg-white/60 backdrop-blur-md md:block">
+        {/* Top colored line */}
+        <div className="h-1 bg-gradient-to-r from-purple-500 to-blue-500" />
+
         <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-4">
           {/* Logo */}
           <div className="absolute left-6 flex items-center gap-2">
@@ -30,27 +33,34 @@ export default function HomeHeader() {
           </div>
 
           {/* Navigation - Centered */}
-          <nav className="flex items-center gap-1">
-            {navItems.map((item) => (
+          <nav className="flex items-center gap-8">
+            {navItems.map((item, index) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`rounded-lg px-4 py-2 text-[14px] font-medium transition-all duration-300 ${
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[14px] font-medium transition-all duration-300 ${
                   isActive(item.path)
-                    ? 'bg-[var(--eco-user)] text-white shadow-[0_2px_10px_rgba(167,132,108,0.2)]'
-                    : 'text-[var(--eco-text)] hover:bg-[var(--eco-line)]'
+                    ? 'text-purple-600'
+                    : 'text-[var(--eco-text)] hover:text-purple-600'
                 }`}
               >
+                {index === 0 && <Home size={18} strokeWidth={1.5} />}
+                {index === 1 && <Search size={18} strokeWidth={1.5} />}
                 {item.label}
               </button>
             ))}
           </nav>
 
+          {/* Avatar - Right */}
+          <div className="absolute right-6 flex h-10 w-10 items-center justify-center rounded-full bg-slate-700" />
         </div>
       </header>
 
       {/* Mobile Header */}
       <header className="sticky top-0 z-40 border-b border-[var(--eco-line)] bg-white/60 backdrop-blur-md md:hidden">
+        {/* Top colored line */}
+        <div className="h-1 bg-gradient-to-r from-purple-500 to-blue-500" />
+
         <div className="flex items-center justify-between px-4 py-4">
           {/* Logo */}
           <div className="flex items-center gap-2">
@@ -84,19 +94,21 @@ export default function HomeHeader() {
               className="border-t border-[var(--eco-line)] bg-[var(--eco-bg)] px-4 py-3"
             >
               <nav className="flex flex-col gap-1">
-                {navItems.map((item) => (
+                {navItems.map((item, index) => (
                   <button
                     key={item.path}
                     onClick={() => {
                       navigate(item.path);
                       setMobileMenuOpen(false);
                     }}
-                    className={`rounded-lg px-4 py-3 text-[14px] font-medium transition-all duration-300 ${
+                    className={`flex items-center gap-3 rounded-lg px-4 py-3 text-[14px] font-medium transition-all duration-300 ${
                       isActive(item.path)
-                        ? 'bg-[var(--eco-user)] text-white'
-                        : 'text-[var(--eco-text)] hover:bg-[var(--eco-line)]'
+                        ? 'text-purple-600'
+                        : 'text-[var(--eco-text)] hover:text-purple-600'
                     }`}
                   >
+                    {index === 0 && <Home size={18} strokeWidth={1.5} />}
+                    {index === 1 && <Search size={18} strokeWidth={1.5} />}
                     {item.label}
                   </button>
                 ))}
