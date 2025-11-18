@@ -1,18 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EcoBubbleOneEye from '@/components/EcoBubbleOneEye';
 
-interface HomeHeaderProps {
-  onLogout?: () => void;
-}
-
-export default function HomeHeader({ onLogout }: HomeHeaderProps) {
+export default function HomeHeader() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -21,12 +15,6 @@ export default function HomeHeader({ onLogout }: HomeHeaderProps) {
   ];
 
   const isActive = (path: string) => location.pathname === path;
-
-  const handleLogout = async () => {
-    if (onLogout) {
-      await onLogout();
-    }
-  };
 
   return (
     <>
@@ -58,15 +46,6 @@ export default function HomeHeader({ onLogout }: HomeHeaderProps) {
             ))}
           </nav>
 
-          {/* User Menu */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleLogout}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--eco-line)] text-[var(--eco-user)] transition-all duration-300 hover:bg-[var(--eco-line)]"
-            >
-              <LogOut size={18} strokeWidth={1.5} />
-            </button>
-          </div>
         </div>
       </header>
 
@@ -121,19 +100,6 @@ export default function HomeHeader({ onLogout }: HomeHeaderProps) {
                     {item.label}
                   </button>
                 ))}
-
-                <hr className="my-2 border-[var(--eco-line)]" />
-
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-[14px] font-medium text-[var(--eco-user)] transition-all duration-300 hover:bg-[var(--eco-line)]"
-                >
-                  <LogOut size={18} strokeWidth={1.5} />
-                  Sair
-                </button>
               </nav>
             </motion.div>
           )}
