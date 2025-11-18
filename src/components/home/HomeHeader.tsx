@@ -63,11 +63,11 @@ export default function HomeHeader() {
                   <motion.div
                     layoutId="navIndicator"
                     className="absolute top-0 h-1.5 bg-purple-600 rounded-full"
-                    style={{ left: '12px', right: '12px' }}
-                    initial={{ scaleX: 0.5, opacity: 0 }}
+                    style={{ left: '8px', right: '8px' }}
+                    initial={{ scaleX: 0.6, opacity: 0 }}
                     animate={{ scaleX: 1, opacity: 1 }}
-                    exit={{ scaleX: 0.5, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    exit={{ scaleX: 0.6, opacity: 0 }}
+                    transition={{ duration: 0.35, ease: 'easeInOut' }}
                   />
                 )}
               </div>
@@ -149,12 +149,12 @@ export default function HomeHeader() {
                     {isActive(item.path) && (
                       <motion.div
                         layoutId="mobileNavIndicator"
-                        className="absolute top-0 left-0 h-1.5 bg-purple-600 rounded-full"
-                        style={{ width: '32px', marginLeft: '20px' }}
-                        initial={{ scaleX: 0.5, opacity: 0 }}
+                        className="absolute top-0 h-1.5 bg-purple-600 rounded-full"
+                        style={{ left: '8px', right: '8px' }}
+                        initial={{ scaleX: 0.6, opacity: 0 }}
                         animate={{ scaleX: 1, opacity: 1 }}
-                        exit={{ scaleX: 0.5, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        exit={{ scaleX: 0.6, opacity: 0 }}
+                        transition={{ duration: 0.35, ease: 'easeInOut' }}
                       />
                     )}
                   </div>
