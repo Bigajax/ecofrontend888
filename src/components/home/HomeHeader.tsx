@@ -37,22 +37,22 @@ export default function HomeHeader() {
                   onClick={() => navigate(item.path)}
                   className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[14px] font-medium transition-all duration-300 ${
                     isActive(item.path)
-                      ? 'text-[#C6A995]'
-                      : 'text-[#9C938A] hover:text-[#C6A995]'
+                      ? 'text-purple-600'
+                      : 'text-gray-400 hover:text-purple-600'
                   }`}
                 >
                   {index === 0 && (
                     <Home
                       size={18}
                       strokeWidth={1.5}
-                      className={isActive(item.path) ? 'text-[#C6A995]' : 'text-[#9C938A]'}
+                      className={isActive(item.path) ? 'text-purple-600' : 'text-gray-400'}
                     />
                   )}
                   {index === 1 && (
                     <Search
                       size={18}
                       strokeWidth={1.5}
-                      className={isActive(item.path) ? 'text-[#C6A995]' : 'text-[#9C938A]'}
+                      className={isActive(item.path) ? 'text-purple-600' : 'text-gray-400'}
                     />
                   )}
                   {item.label}
@@ -62,7 +62,7 @@ export default function HomeHeader() {
                 {isActive(item.path) && (
                   <motion.div
                     layoutId="navIndicator"
-                    className="absolute top-0 left-0 right-0 h-1 bg-[#C6A995]"
+                    className="absolute top-0 left-0 right-0 h-1 bg-purple-600"
                     transition={{ duration: 0.3 }}
                   />
                 )}
@@ -120,22 +120,22 @@ export default function HomeHeader() {
                       }}
                       className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-[14px] font-medium transition-all duration-300 ${
                         isActive(item.path)
-                          ? 'text-[#C6A995]'
-                          : 'text-[#9C938A] hover:text-[#C6A995]'
+                          ? 'text-purple-600'
+                          : 'text-gray-400 hover:text-purple-600'
                       }`}
                     >
                       {index === 0 && (
                         <Home
                           size={18}
                           strokeWidth={1.5}
-                          className={isActive(item.path) ? 'text-[#C6A995]' : 'text-[#9C938A]'}
+                          className={isActive(item.path) ? 'text-purple-600' : 'text-gray-400'}
                         />
                       )}
                       {index === 1 && (
                         <Search
                           size={18}
                           strokeWidth={1.5}
-                          className={isActive(item.path) ? 'text-[#C6A995]' : 'text-[#9C938A]'}
+                          className={isActive(item.path) ? 'text-purple-600' : 'text-gray-400'}
                         />
                       )}
                       {item.label}
@@ -145,7 +145,7 @@ export default function HomeHeader() {
                     {isActive(item.path) && (
                       <motion.div
                         layoutId="mobileNavIndicator"
-                        className="absolute top-0 left-0 right-0 h-1 bg-[#C6A995]"
+                        className="absolute top-0 left-0 right-0 h-1 bg-purple-600"
                         transition={{ duration: 0.3 }}
                       />
                     )}
