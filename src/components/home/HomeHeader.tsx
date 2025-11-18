@@ -30,9 +30,22 @@ export default function HomeHeader() {
           </div>
 
           {/* Navigation - Centered */}
-          <nav className="flex items-center gap-12">
+          <nav className="flex items-end gap-12 pb-2">
             {navItems.map((item, index) => (
-              <div key={item.path} className="relative flex flex-col items-center">
+              <div key={item.path} className="relative flex flex-col items-center pt-3">
+                {/* Active indicator line */}
+                {isActive(item.path) && (
+                  <motion.div
+                    layoutId="navIndicator"
+                    className="absolute -top-3 h-1.5 bg-purple-600 rounded-full"
+                    style={{ left: '4px', right: '4px' }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                  />
+                )}
+
                 <button
                   onClick={() => navigate(item.path)}
                   className={`flex items-center gap-2.5 text-[15px] font-medium transition-colors duration-300 ${
@@ -57,19 +70,6 @@ export default function HomeHeader() {
                   )}
                   {item.label}
                 </button>
-
-                {/* Active indicator line */}
-                {isActive(item.path) && (
-                  <motion.div
-                    layoutId="navIndicator"
-                    className="absolute top-0 h-1.5 bg-purple-600 rounded-full"
-                    style={{ left: '4px', right: '4px' }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                  />
-                )}
               </div>
             ))}
           </nav>
@@ -116,7 +116,20 @@ export default function HomeHeader() {
             >
               <nav className="flex flex-col gap-2">
                 {navItems.map((item, index) => (
-                  <div key={item.path} className="relative flex flex-col items-start">
+                  <div key={item.path} className="relative flex flex-col items-start pt-2">
+                    {/* Active indicator line */}
+                    {isActive(item.path) && (
+                      <motion.div
+                        layoutId="mobileNavIndicator"
+                        className="absolute -top-2 h-1.5 bg-purple-600 rounded-full"
+                        style={{ left: '4px', right: '4px' }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                      />
+                    )}
+
                     <button
                       onClick={() => {
                         navigate(item.path);
@@ -144,19 +157,6 @@ export default function HomeHeader() {
                       )}
                       {item.label}
                     </button>
-
-                    {/* Active indicator line */}
-                    {isActive(item.path) && (
-                      <motion.div
-                        layoutId="mobileNavIndicator"
-                        className="absolute top-0 h-1.5 bg-purple-600 rounded-full"
-                        style={{ left: '4px', right: '4px' }}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.25 }}
-                      />
-                    )}
                   </div>
                 ))}
               </nav>
