@@ -50,7 +50,7 @@ export default function HomeHeader() {
                 {isActive(item.path) && (
                   <motion.div
                     layoutId="navIndicator"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-[#C6A995]"
+                    className="absolute top-0 left-0 right-0 h-1 bg-[#C6A995]"
                     transition={{ duration: 0.3 }}
                   />
                 )}
@@ -121,7 +121,7 @@ export default function HomeHeader() {
                     {isActive(item.path) && (
                       <motion.div
                         layoutId="mobileNavIndicator"
-                        className="absolute bottom-0 left-0 right-0 h-1 bg-[#C6A995]"
+                        className="absolute top-0 left-0 right-0 h-1 bg-[#C6A995]"
                         transition={{ duration: 0.3 }}
                       />
                     )}
