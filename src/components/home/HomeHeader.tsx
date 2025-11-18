@@ -20,16 +20,16 @@ export default function HomeHeader() {
     <>
       {/* Desktop Header */}
       <header className="sticky top-0 z-40 hidden border-b border-[var(--eco-line)] bg-white/60 backdrop-blur-md md:block">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-4">
           {/* Logo */}
-          <div className="flex items-center gap-2">
+          <div className="absolute left-6 flex items-center gap-2">
             <EcoBubbleOneEye variant="icon" size={28} />
             <span className="font-display text-lg font-normal text-[var(--eco-text)]">
               ECO
             </span>
           </div>
 
-          {/* Navigation */}
+          {/* Navigation - Centered */}
           <nav className="flex items-center gap-1">
             {navItems.map((item) => (
               <button
