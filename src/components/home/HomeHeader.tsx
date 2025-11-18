@@ -20,9 +20,6 @@ export default function HomeHeader() {
     <>
       {/* Desktop Header */}
       <header className="sticky top-0 z-40 hidden border-b border-[var(--eco-line)] bg-white/60 backdrop-blur-md md:block">
-        {/* Top colored line */}
-        <div className="h-1 bg-[#C6A995]" />
-
         <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-4">
           {/* Logo */}
           <div className="absolute left-6 flex items-center gap-2">
@@ -35,19 +32,29 @@ export default function HomeHeader() {
           {/* Navigation - Centered */}
           <nav className="flex items-center gap-8">
             {navItems.map((item, index) => (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[14px] font-medium transition-all duration-300 ${
-                  isActive(item.path)
-                    ? 'text-[#C6A995]'
-                    : 'text-[#9C938A] hover:text-[#C6A995]'
-                }`}
-              >
-                {index === 0 && <Home size={18} strokeWidth={1.5} />}
-                {index === 1 && <Search size={18} strokeWidth={1.5} />}
-                {item.label}
-              </button>
+              <div key={item.path} className="relative">
+                <button
+                  onClick={() => navigate(item.path)}
+                  className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[14px] font-medium transition-all duration-300 ${
+                    isActive(item.path)
+                      ? 'text-[#C6A995]'
+                      : 'text-[#9C938A] hover:text-[#C6A995]'
+                  }`}
+                >
+                  {index === 0 && <Home size={18} strokeWidth={1.5} />}
+                  {index === 1 && <Search size={18} strokeWidth={1.5} />}
+                  {item.label}
+                </button>
+
+                {/* Active indicator line */}
+                {isActive(item.path) && (
+                  <motion.div
+                    layoutId="navIndicator"
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-[#C6A995]"
+                    transition={{ duration: 0.3 }}
+                  />
+                )}
+              </div>
             ))}
           </nav>
 
@@ -58,8 +65,6 @@ export default function HomeHeader() {
 
       {/* Mobile Header */}
       <header className="sticky top-0 z-40 border-b border-[var(--eco-line)] bg-white/60 backdrop-blur-md md:hidden">
-        {/* Top colored line */}
-        <div className="h-1 bg-[#C6A995]" />
 
         <div className="flex items-center justify-between px-4 py-4">
           {/* Logo */}
@@ -95,22 +100,32 @@ export default function HomeHeader() {
             >
               <nav className="flex flex-col gap-1">
                 {navItems.map((item, index) => (
-                  <button
-                    key={item.path}
-                    onClick={() => {
-                      navigate(item.path);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`flex items-center gap-3 rounded-lg px-4 py-3 text-[14px] font-medium transition-all duration-300 ${
-                      isActive(item.path)
-                        ? 'text-[#C6A995]'
-                        : 'text-[#9C938A] hover:text-[#C6A995]'
-                    }`}
-                  >
-                    {index === 0 && <Home size={18} strokeWidth={1.5} />}
-                    {index === 1 && <Search size={18} strokeWidth={1.5} />}
-                    {item.label}
-                  </button>
+                  <div key={item.path} className="relative">
+                    <button
+                      onClick={() => {
+                        navigate(item.path);
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-[14px] font-medium transition-all duration-300 ${
+                        isActive(item.path)
+                          ? 'text-[#C6A995]'
+                          : 'text-[#9C938A] hover:text-[#C6A995]'
+                      }`}
+                    >
+                      {index === 0 && <Home size={18} strokeWidth={1.5} />}
+                      {index === 1 && <Search size={18} strokeWidth={1.5} />}
+                      {item.label}
+                    </button>
+
+                    {/* Active indicator line */}
+                    {isActive(item.path) && (
+                      <motion.div
+                        layoutId="mobileNavIndicator"
+                        className="absolute bottom-0 left-0 right-0 h-1 bg-[#C6A995]"
+                        transition={{ duration: 0.3 }}
+                      />
+                    )}
+                  </div>
                 ))}
               </nav>
             </motion.div>
