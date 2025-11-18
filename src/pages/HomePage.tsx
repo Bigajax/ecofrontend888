@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import HomeHeader from '@/components/home/HomeHeader';
 import DailyRecommendationsSection from '@/components/home/DailyRecommendationsSection';
+import ActionButtons from '@/components/home/ActionButtons';
+import ContinueProgram from '@/components/home/ContinueProgram';
 import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
 import LearnExploreSection from '@/components/home/LearnExploreSection';
 
@@ -10,6 +12,15 @@ export default function HomePage() {
   const { userName } = useAuth();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  // Estado para rastrear programa em andamento (temporário - será integrado com backend depois)
+  const [ongoingProgram, setOngoingProgram] = useState<{
+    id: string;
+    title: string;
+    description: string;
+    currentLesson: string;
+    progress: number;
+    duration: string;
+  } | null>(null);
 
   const displayName = userName || 'there';
 
@@ -25,7 +36,7 @@ export default function HomePage() {
         title: '5 Anéis da Disciplina',
         description: 'Construa sua estrutura pessoal',
         duration: '12 min',
-        image: 'linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url("https://images.unsplash.com/photo-1673295716958-b1dc96e5b24f?w=1000&h=600&fit=crop")',
+        image: 'url("/images/rings/five-rings-visual.png")',
         isPremium: false,
       },
       {
@@ -117,6 +128,14 @@ export default function HomePage() {
     console.log('Clicou em:', contentId);
   };
 
+  const handleDailyRecommendationClick = (recId: string) => {
+    if (recId === 'rec_1') {
+      navigate('/app/rings');
+    } else {
+      console.log('Recomendação clicada:', recId);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--eco-bg)] font-primary">
       {/* Header */}
@@ -129,7 +148,7 @@ export default function HomePage() {
           {/* Desktop: Grid 2 colunas com mesma altura */}
           <div className="hidden gap-6 md:grid md:grid-cols-2 md:h-96">
             {/* Left Card - Greeting */}
-            <div className="flex flex-col justify-center rounded-3xl border border-[var(--eco-line)] bg-gradient-to-br from-purple-100 via-pink-50 to-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
+            <div className="flex flex-col justify-center rounded-3xl border border-[var(--eco-line)] bg-gradient-to-br from-amber-50 via-stone-50 to-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
               <h1 className="font-display text-4xl font-normal text-[var(--eco-text)]">
                 Bom dia,
                 <br />
@@ -146,19 +165,18 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Right Card - Image + Quote */}
+            {/* Right Card - Ocean Image */}
             <div className="group relative overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
               {/* Background Image */}
               <div
                 className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
                 style={{
                   backgroundImage:
-                    'url("https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=500&fit=crop")',
+                    'url("https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=1000&h=600&fit=crop")',
                 }}
               />
-
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10 transition-all duration-300 group-hover:from-black/80 group-hover:via-black/40" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
 
               {/* Content */}
               <div className="relative flex h-full flex-col justify-between p-8">
@@ -191,7 +209,7 @@ export default function HomePage() {
           {/* Mobile: Stacked cards */}
           <div className="block space-y-6 md:hidden">
             {/* Left Card - Greeting */}
-            <div className="rounded-2xl border border-[var(--eco-line)] bg-gradient-to-br from-purple-100 via-pink-50 to-white p-6 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
+            <div className="rounded-2xl border border-[var(--eco-line)] bg-gradient-to-br from-amber-50 via-stone-50 to-white p-6 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
               <h1 className="font-display text-3xl font-normal text-[var(--eco-text)]">
                 Bom dia,
                 <br />
@@ -205,19 +223,18 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Right Card - Image + Quote */}
+            {/* Right Card - Ocean Image (Mobile) */}
             <div className="group relative overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
               {/* Background Image */}
               <div
                 className="absolute inset-0 bg-cover bg-center"
                 style={{
                   backgroundImage:
-                    'url("https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=500&fit=crop")',
+                    'url("https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=1000&h=600&fit=crop")',
                 }}
               />
-
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
 
               {/* Content */}
               <div className="relative flex min-h-80 flex-col justify-between p-6">
@@ -247,7 +264,29 @@ export default function HomePage() {
         </div>
 
         {/* Daily Recommendations Section */}
-        <DailyRecommendationsSection recommendations={dailyRecommendations} />
+        <DailyRecommendationsSection
+          recommendations={dailyRecommendations}
+          onRecommendationClick={handleDailyRecommendationClick}
+        />
+
+        {/* Action Buttons */}
+        <ActionButtons
+          onContinue={() => {
+            if (ongoingProgram) {
+              navigate(`/app/program/${ongoingProgram.id}`);
+            }
+          }}
+          onStart={() => navigate('/app/programs')}
+          onExplore={() => setSelectedCategory('programs')}
+        />
+
+        {/* Continue Program Section - Appears only when user has ongoing program */}
+        {ongoingProgram && (
+          <ContinueProgram
+            program={ongoingProgram}
+            onContinue={() => navigate(`/app/program/${ongoingProgram.id}`)}
+          />
+        )}
 
         {/* ECO AI Guidance Card Section */}
         <EcoAIGuidanceCard
