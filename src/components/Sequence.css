@@ -791,6 +791,6 @@
   .onboarding-visual__marker,
   .onboarding-visual__card-icons > span,
   .onboarding-visual__image {
-    animation: none !important;
+    animation: none;
   }
 }

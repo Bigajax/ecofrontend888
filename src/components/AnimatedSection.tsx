@@ -1,5 +1,6 @@
-import { ReactNode, CSSProperties } from 'react';
+import { ReactNode } from 'react';
 import { useInView } from '@/hooks/useInView';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 type AnimationType = 'fade-in' | 'slide-up-fade' | 'slide-left-fade' | 'slide-right-fade';
 
@@ -10,11 +11,20 @@ interface AnimatedSectionProps {
   delay?: number;
 }
 
-const animationMap: Record<AnimationType, string> = {
-  'fade-in': 'fadeInAnimation',
-  'slide-up-fade': 'slideUpFadeAnimation',
-  'slide-left-fade': 'slideLeftFadeAnimation',
-  'slide-right-fade': 'slideRightFadeAnimation',
+const animationClassMap: Record<AnimationType, string> = {
+  'fade-in': 'animate-fade-in',
+  'slide-up-fade': 'animate-slide-up-fade',
+  'slide-left-fade': 'animate-slide-left-fade',
+  'slide-right-fade': 'animate-slide-right-fade',
+};
+
+const delayClassMap: Record<number, string> = {
+  0: 'delay-0',
+  100: 'delay-100',
+  200: 'delay-200',
+  300: 'delay-300',
+  400: 'delay-400',
+  500: 'delay-500',
 };
 
 export default function AnimatedSection({
@@ -24,26 +34,25 @@ export default function AnimatedSection({
   delay = 0,
 }: AnimatedSectionProps) {
   const { ref, isInView } = useInView({ threshold: 0.1 });
+  const prefersReducedMotion = useReducedMotion();
 
-  const animationName = animationMap[animation];
+  const animationClass = animationClassMap[animation];
+  const delayClass = delayClassMap[delay as keyof typeof delayClassMap] || '';
 
-  // Use inline style with direct animation property
-  const style: CSSProperties = isInView
-    ? {
-        animation: `${animationName} 900ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards`,
-        animationDelay: `${delay}ms`,
-      }
-    : {
-        opacity: 0,
-        pointerEvents: 'none',
-      };
+  // Respeitar prefers-reduced-motion: mostrar sem animação se preferido
+  const finalClassName = [
+    className,
+    prefersReducedMotion
+      ? '' // Sem animação, apenas mostrar normalmente
+      : isInView
+        ? [animationClass, delayClass].filter(Boolean).join(' ')
+        : 'opacity-0 pointer-events-none',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div
-      ref={ref}
-      className={className}
-      style={style}
-    >
+    <div ref={ref} className={finalClassName}>
       {children}
     </div>
   );

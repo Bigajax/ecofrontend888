@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 
 type Variant = "pill" | "bubble" | "inline";
 type Tone = "auto" | "light" | "dark";
@@ -55,6 +55,38 @@ const TypingDots: React.FC<Props> = ({
   void tone;
   void density;
 
+  // Injetar estilos de animação no mount (apenas uma vez)
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      let styleEl = document.getElementById('typing-dots-styles');
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'typing-dots-styles';
+        styleEl.textContent = `
+          @keyframes ecoDot {
+            0%, 100% {
+              transform: scale(0.8);
+              opacity: 0.5;
+            }
+            50% {
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+          @keyframes ecoBreathing {
+            0%, 100% {
+              opacity: 0.7;
+            }
+            50% {
+              opacity: 0.9;
+            }
+          }
+        `;
+        document.head.appendChild(styleEl);
+      }
+    }
+  }, []);
+
   const animationDuration = useMemo(() => {
     const base = 1.2;
     const normalizedSpeed = clampSpeed(speed);
@@ -82,38 +114,6 @@ const TypingDots: React.FC<Props> = ({
     DOT_SIZES[size] ?? DOT_SIZES.md,
   ].join(" ");
 
-  const pulseKeyframes = `
-    @keyframes ecoDot {
-      0%, 100% {
-        transform: scale(0.8);
-        opacity: 0.5;
-      }
-      50% {
-        transform: scale(1);
-        opacity: 1;
-      }
-    }
-    @keyframes ecoBreathing {
-      0%, 100% {
-        opacity: 0.7;
-      }
-      50% {
-        opacity: 0.9;
-      }
-    }
-  `;
-
-  // Adicionar estilos de animação dinamicamente
-  if (typeof document !== 'undefined') {
-    let styleEl = document.getElementById('typing-dots-styles');
-    if (!styleEl) {
-      styleEl = document.createElement('style');
-      styleEl.id = 'typing-dots-styles';
-      styleEl.textContent = pulseKeyframes;
-      document.head.appendChild(styleEl);
-    }
-  }
-
   return (
     <div className={containerClasses} aria-live="polite" role="status">
       <span className={srOnly}>{ariaLabel}</span>
@@ -130,7 +130,7 @@ const TypingDots: React.FC<Props> = ({
               animation: `ecoDot ${animationDuration}s ease-in-out infinite`,
               animationDelay: `${delay}ms`,
               animationPlayState: playState,
-              willChange: 'transform, opacity',
+              willChange: playState === 'running' ? 'transform, opacity' : 'auto',
             }}
           />
         ))}

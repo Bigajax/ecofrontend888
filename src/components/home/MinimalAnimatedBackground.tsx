@@ -1,6 +1,19 @@
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 export default function MinimalAnimatedBackground() {
+  const prefersReducedMotion = useReducedMotion();
+
+  // Desabilitar animações se o usuário preferir redução de movimento
+  if (prefersReducedMotion) {
+    return (
+      <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-amber-50 via-stone-50 to-white">
+        {/* Overlay for text contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/40" />
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-amber-50 via-stone-50 to-white">
       {/* Subtle animated elements */}
