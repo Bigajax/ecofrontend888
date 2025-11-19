@@ -21,8 +21,8 @@ export default function DailyRecommendationsSection({
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
       {/* Title */}
-      <div className="mb-8">
-        <h2 className="font-display text-2xl font-normal text-[var(--eco-text)]">
+      <div className="mb-8 pb-6 border-b border-[var(--eco-line)]">
+        <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
           Recomendações diárias
         </h2>
         <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
@@ -79,7 +79,7 @@ function RecommendationCard({
   return (
     <button
       onClick={onClick}
-      className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 hover:shadow-[0_8px_40px_rgba(0,0,0,0.12)] hover:-translate-y-1 active:translate-y-0 ${baseClass}`}
+      className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] hover:scale-95 active:scale-90 ${baseClass}`}
       style={{
         backgroundImage: recommendation.image,
         backgroundSize: 'cover',

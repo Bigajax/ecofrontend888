@@ -51,6 +51,9 @@ const RingDetail = lazy(() => import("@/pages/rings/RingDetail"));
 const RiquezaMentalProgram = lazy(() => import("@/pages/programs/RiquezaMentalProgram"));
 const SleepArticle = lazy(() => import("@/pages/articles/SleepArticle"));
 const GoodNightSleepArticle = lazy(() => import("@/pages/articles/GoodNightSleepArticle"));
+const DiarioEstoicoPage = lazy(() => import("@/pages/diario-estoico/DiarioEstoicoPage"));
+const EnergyBlessingsPage = lazy(() => import("@/pages/energy-blessings/EnergyBlessingsPage"));
+const MeditationPlayerPage = lazy(() => import("@/pages/energy-blessings/MeditationPlayerPage"));
 
 const lazyFallback = <div>Carregando…</div>;
 
@@ -84,6 +87,10 @@ function AppProtectedShell() {
       <Outlet />
     </MainLayout>
   );
+}
+
+function AppProtectedShellNoLayout() {
+  return <Outlet />;
 }
 
 function AppRoutes() {
@@ -126,7 +133,28 @@ function AppRoutes() {
         <Route path="riqueza-mental" element={renderWithSuspense(<RiquezaMentalProgram />)} />
         <Route path="articles/sleep" element={renderWithSuspense(<SleepArticle />)} />
         <Route path="articles/good-night-sleep" element={renderWithSuspense(<GoodNightSleepArticle />)} />
+        <Route path="diario-estoico" element={renderWithSuspense(<DiarioEstoicoPage />)} />
         <Route path="*" element={<Navigate to="/app" replace />} />
+      </Route>
+      <Route
+        path="/app/energy-blessings"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<EnergyBlessingsPage />)} />
+      </Route>
+      <Route
+        path="/app/meditation-player"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<MeditationPlayerPage />)} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

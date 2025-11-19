@@ -22,14 +22,16 @@ export default function ContinueProgram({
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-10">
       {/* Title */}
-      <h2 className="mb-6 font-display text-2xl font-normal text-[var(--eco-text)]">
-        Reproduzido recentemente
-      </h2>
+      <div className="mb-6 pb-6 border-b border-[var(--eco-line)]">
+        <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
+          Reproduzido recentemente
+        </h2>
+      </div>
 
       {/* Program Card */}
       <button
         onClick={onContinue}
-        className="group w-full overflow-hidden rounded-2xl border border-[var(--eco-line)] bg-transparent p-6 transition-all duration-300 hover:shadow-[0_8px_48px_rgba(147,51,234,0.12)] hover:-translate-y-1 active:translate-y-0 md:p-8"
+        className="group w-full overflow-hidden rounded-2xl border border-[var(--eco-line)] bg-transparent p-6 transition-all duration-300 hover:scale-95 active:scale-90 md:p-8"
       >
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           {/* Left: Info */}

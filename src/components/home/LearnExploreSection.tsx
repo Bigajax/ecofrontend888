@@ -1,4 +1,4 @@
-import { Lock, Play } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 interface Category {
   id: string;
@@ -13,6 +13,10 @@ interface ContentItem {
   image: string;
   icon: string;
   isPremium: boolean;
+  date?: string;
+  maxim?: string;
+  fullText?: string;
+  author?: string;
 }
 
 interface LearnExploreSectionProps {
@@ -33,8 +37,8 @@ export default function LearnExploreSection({
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="font-display text-2xl font-normal text-[var(--eco-text)]">
+      <div className="mb-8 pb-6 border-b border-[var(--eco-line)]">
+        <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
           Aprenda e explore
         </h2>
         <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
@@ -109,10 +113,41 @@ interface ContentCardProps {
 }
 
 function ContentCard({ item, onClick }: ContentCardProps) {
+  // Special layout for Diário Estoico with full background image
+  const isDiarioEstoico = item.id === 'content_diario_estoico';
+
+  if (isDiarioEstoico) {
+    return (
+      <button
+        onClick={onClick}
+        className="relative h-80 w-full overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] hover:scale-95 active:scale-90"
+        style={{
+          backgroundImage: item.image,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black/30" />
+
+        {/* Content positioned at bottom */}
+        <div className="absolute inset-0 flex flex-col justify-end p-6">
+          <h3 className="font-display text-2xl font-bold text-white drop-shadow-lg">
+            {item.title}
+          </h3>
+          <p className="mt-2 text-[14px] text-white/90 drop-shadow-md">
+            Cultive a sabedoria diária através de reflexões estoicas.
+          </p>
+        </div>
+      </button>
+    );
+  }
+
+  // Standard layout for other cards
   return (
     <button
       onClick={onClick}
-      className="flex flex-col overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 active:translate-y-0"
+      className="flex flex-col overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] hover:scale-95 active:scale-90"
     >
       {/* Image Section */}
       <div className="relative h-40 overflow-hidden bg-gray-200">

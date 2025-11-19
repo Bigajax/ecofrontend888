@@ -13,9 +13,11 @@ export default function EcoAIGuidanceCard({
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
       {/* Title */}
-      <h2 className="mb-8 font-display text-2xl font-normal text-[var(--eco-text)]">
-        Receber orientação individual
-      </h2>
+      <div className="mb-8 pb-6 border-b border-[var(--eco-line)]">
+        <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
+          Receber orientação individual
+        </h2>
+      </div>
 
       {/* Card */}
       <button

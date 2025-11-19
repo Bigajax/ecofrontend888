@@ -2,21 +2,75 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram } from '@/contexts/ProgramContext';
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import DailyRecommendationsSection from '@/components/home/DailyRecommendationsSection';
+import EnergyBlessingsSection from '@/components/home/EnergyBlessingsSection';
 import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
 import ContinueProgram from '@/components/home/ContinueProgram';
 import LearnExploreSection from '@/components/home/LearnExploreSection';
 import HeroCarousel from '@/components/home/HeroCarousel';
 import AnimatedSection from '@/components/AnimatedSection';
 
+interface DailyMaxim {
+  date: string;
+  dayNumber: number;
+  title: string;
+  text: string;
+  author: string;
+  background?: string;
+}
+
+const ALL_DAILY_MAXIMS: DailyMaxim[] = [
+  {
+    date: 'Novembro 19',
+    dayNumber: 19,
+    title: 'MÁXIMAS DE TRÊS HOMENS SÁBIOS',
+    text: 'Para qualquer desafio, deveríamos ter três pensamentos ao nosso dispor: "Conduzam Deus e Destino, Para aquela Meta fixada para mim há muito. Seguirei e não tropeçarei; mesmo que minha vontade seja fraca, eu me manterei firme."',
+    author: 'CLEANTES',
+    background: 'url("/images/meditacao-19-nov.png")',
+  },
+  {
+    date: 'Novembro 20',
+    dayNumber: 20,
+    title: 'A VIRTUDE É O ÚNICO BEM',
+    text: 'A virtude é a única coisa que permanece com você em todas as circunstâncias da vida.',
+    author: 'EPICTETO',
+    background: 'url("https://images.unsplash.com/photo-1469022563149-aa64dbd37dae?w=1000&h=600&fit=crop")',
+  },
+  {
+    date: 'Novembro 21',
+    dayNumber: 21,
+    title: 'SOBRE A MORTE',
+    text: 'A morte não é um mal, pois os males são coisas que prejudicam.',
+    author: 'MARCOS AURÉLIO',
+    background: 'url("https://images.unsplash.com/photo-1470252649378-9c29740ff023?w=1000&h=600&fit=crop")',
+  },
+];
+
+const getAvailableMaxims = (): DailyMaxim[] => {
+  const today = new Date().getDate();
+  return ALL_DAILY_MAXIMS.filter(maxim => maxim.dayNumber <= today);
+};
+
 export default function HomePage() {
   const { userName } = useAuth();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showDiarioModal, setShowDiarioModal] = useState(false);
+  const [diarioSelectedIndex, setDiarioSelectedIndex] = useState(0);
+  const [diarioExpanded, setDiarioExpanded] = useState(false);
   const { ongoingProgram, startProgram, completeProgram } = useProgram();
 
-  const displayName = userName || 'there';
+  // Capitalize first letter of each word
+  const capitalizeNames = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  const displayName = capitalizeNames(userName || 'there');
 
   // Remove completed program from home page
   useEffect(() => {
@@ -53,6 +107,37 @@ export default function HomePage() {
     [],
   );
 
+  // Benções dos Centros de Energia (Meditações)
+  const energyBlessings = useMemo(
+    () => [
+      {
+        id: 'blessing_1',
+        title: 'Meditação do Centro Raiz',
+        description: 'Encontre estabilidade e segurança',
+        duration: '10 min',
+        image: 'url("/images/energy-blessings.png")',
+        isPremium: false,
+      },
+      {
+        id: 'blessing_2',
+        title: 'Meditação do Plexo Solar',
+        description: 'Desperte seu poder pessoal',
+        duration: '12 min',
+        image: 'url("/images/energy-blessings.png")',
+        isPremium: false,
+      },
+      {
+        id: 'blessing_3',
+        title: 'Meditação do Centro do Coração',
+        description: 'Cultive amor e compaixão',
+        duration: '14 min',
+        image: 'url("/images/energy-blessings.png")',
+        isPremium: false,
+      },
+    ],
+    [],
+  );
+
   // Conteúdos para "Aprenda e Explore"
   const contentItems = useMemo(
     () => [
@@ -74,6 +159,19 @@ export default function HomePage() {
         icon: '',
         isPremium: false,
       },
+      {
+        id: 'content_diario_estoico',
+        title: 'Diário Estoico',
+        description: 'Cultive a sabedoria diária através de reflexões estoicas. Uma prática que transforma seu mindset e fortalece sua resiliência emocional.',
+        category: 'stoicism',
+        image: 'url("/images/diario-estoico.png")',
+        icon: '',
+        isPremium: false,
+        date: '19 novembro',
+        maxim: 'MÁXIMAS DE TRÊS HOMENS SÁBIOS',
+        fullText: 'Para qualquer desafio, deveríamos ter três pensamentos ao nosso dispor: "Conduzam Deus e Destino, Para aquela Meta fixada para mim há muito. Seguirei e não tropeçarei; mesmo que minha vontade seja fraca, eu me manterei firme."',
+        author: 'CLEANTES',
+      },
     ],
     [],
   );
@@ -82,6 +180,7 @@ export default function HomePage() {
     () => [
       { id: 'all', label: 'Nossas Escolhas' },
       { id: 'wellbeing', label: 'Bem-estar Mental' },
+      { id: 'stoicism', label: 'Estoicismo' },
     ],
     [],
   );
@@ -102,6 +201,8 @@ export default function HomePage() {
       navigate('/app/articles/sleep');
     } else if (contentId === 'content_sleep_tips') {
       navigate('/app/articles/good-night-sleep');
+    } else if (contentId === 'content_diario_estoico') {
+      navigate('/app/diario-estoico');
     } else {
       console.log('Clicou em:', contentId);
     }
@@ -139,8 +240,43 @@ export default function HomePage() {
     }
   };
 
+  const handleEnergyBlessingClick = (blessingId: string) => {
+    if (blessingId === 'blessing_1') {
+      // Navegação para página de Bênçãos dos Centros de Energia
+      navigate('/app/energy-blessings');
+    } else if (blessingId === 'blessing_2') {
+      // Meditação Plexo Solar
+      startProgram({
+        id: 'blessing_2',
+        title: 'Meditação do Plexo Solar',
+        description: 'Desperte seu poder pessoal',
+        currentLesson: 'Começar meditação',
+        progress: 0,
+        duration: '12 min',
+        startedAt: new Date().toISOString(),
+        lastAccessedAt: new Date().toISOString(),
+      });
+      navigate('/app/meditation/solar');
+    } else if (blessingId === 'blessing_3') {
+      // Meditação Centro do Coração
+      startProgram({
+        id: 'blessing_3',
+        title: 'Meditação do Centro do Coração',
+        description: 'Cultive amor e compaixão',
+        currentLesson: 'Começar meditação',
+        progress: 0,
+        duration: '14 min',
+        startedAt: new Date().toISOString(),
+        lastAccessedAt: new Date().toISOString(),
+      });
+      navigate('/app/meditation/heart');
+    } else {
+      console.log('Benção clicada:', blessingId);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[var(--eco-bg)] font-primary">
+    <div className="min-h-screen bg-white font-primary">
       {/* Header */}
       <HomeHeader onLogout={handleLogout} />
 
@@ -151,8 +287,8 @@ export default function HomePage() {
           {/* Desktop: Grid 2 colunas com mesma altura */}
           <div className="hidden gap-6 md:grid md:grid-cols-2 md:h-96">
             {/* Left Card - Greeting */}
-            <div className="flex flex-col justify-center rounded-3xl border border-[var(--eco-line)] bg-gradient-to-br from-amber-50 via-stone-50 to-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
-              <h1 className="font-display text-4xl font-normal text-[var(--eco-text)]">
+            <div className="flex flex-col justify-center rounded-3xl border border-[var(--eco-line)] bg-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
+              <h1 className="font-display text-6xl font-bold text-[var(--eco-text)]">
                 Bom dia,
                 <br />
                 {displayName}
@@ -175,8 +311,8 @@ export default function HomePage() {
           {/* Mobile: Stacked cards */}
           <div className="block space-y-6 md:hidden">
             {/* Left Card - Greeting */}
-            <div className="rounded-2xl border border-[var(--eco-line)] bg-gradient-to-br from-amber-50 via-stone-50 to-white p-6 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
-              <h1 className="font-display text-3xl font-normal text-[var(--eco-text)]">
+            <div className="rounded-2xl border border-[var(--eco-line)] bg-white p-6 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
+              <h1 className="font-display text-4xl font-bold text-[var(--eco-text)]">
                 Bom dia,
                 <br />
                 {displayName}
@@ -218,6 +354,14 @@ export default function HomePage() {
           <DailyRecommendationsSection
             recommendations={dailyRecommendations}
             onRecommendationClick={handleDailyRecommendationClick}
+          />
+        </AnimatedSection>
+
+        {/* Energy Blessings Section */}
+        <AnimatedSection animation="slide-up-fade">
+          <EnergyBlessingsSection
+            blessings={energyBlessings}
+            onBlessingClick={handleEnergyBlessingClick}
           />
         </AnimatedSection>
 

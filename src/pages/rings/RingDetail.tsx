@@ -97,7 +97,7 @@ export default function RingDetail() {
                 const yesterday = new Date(today);
                 yesterday.setDate(yesterday.getDate() - 1);
 
-                let dateLabel = response.ritualDate === today.toISOString().split('T')[0] ? 'Hoje' :
+                const dateLabel = response.ritualDate === today.toISOString().split('T')[0] ? 'Hoje' :
                                response.ritualDate === yesterday.toISOString().split('T')[0] ? 'Ontem' :
                                date.toLocaleDateString('pt-BR');
 

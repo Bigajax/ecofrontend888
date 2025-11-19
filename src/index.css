@@ -774,6 +774,12 @@ button, [role="button"], a { touch-action: manipulation; }
 /* ---- Alturas e teclado (iOS/Android) ---- */
 body.keyboard-open { overscroll-behavior-y: contain; padding-bottom: var(--safe-bottom); }
 
+/* Diário Estoico - Fundo branco */
+body.diario-estoico-page,
+body.diario-estoico-page html {
+  background: #ffffff !important;
+}
+
 /* ---------- Redução de movimento ---------- */
 @media (prefers-reduced-motion: reduce) {
   html * { transition: none !important; }
