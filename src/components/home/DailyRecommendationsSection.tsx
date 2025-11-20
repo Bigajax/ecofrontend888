@@ -79,7 +79,7 @@ function RecommendationCard({
   return (
     <button
       onClick={onClick}
-      className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] hover:scale-95 active:scale-90 ${baseClass}`}
+      className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 md:hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] active:scale-95 touch-manipulation ${baseClass}`}
       style={{
         backgroundImage: recommendation.image,
         backgroundSize: 'cover',
@@ -122,7 +122,7 @@ function RecommendationCard({
             onClick={(e) => {
               e.stopPropagation();
             }}
-            className="shrink-0 flex items-center justify-center rounded-full bg-white/85 p-3 shadow-lg transition-all duration-300 hover:bg-white hover:scale-110 active:scale-95 backdrop-blur-md"
+            className="shrink-0 flex items-center justify-center rounded-full bg-white/85 p-3 shadow-lg transition-all duration-300 md:hover:bg-white active:scale-95 touch-manipulation backdrop-blur-md"
           >
             <Play size={18} className="fill-black text-black ml-0.5" />
           </button>

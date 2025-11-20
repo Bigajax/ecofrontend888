@@ -11,6 +11,7 @@ import ContinueProgram from '@/components/home/ContinueProgram';
 import LearnExploreSection from '@/components/home/LearnExploreSection';
 import HeroCarousel from '@/components/home/HeroCarousel';
 import AnimatedSection from '@/components/AnimatedSection';
+import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
 
 interface DailyMaxim {
   date: string;
@@ -60,7 +61,16 @@ export default function HomePage() {
   const [showDiarioModal, setShowDiarioModal] = useState(false);
   const [diarioSelectedIndex, setDiarioSelectedIndex] = useState(0);
   const [diarioExpanded, setDiarioExpanded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { ongoingProgram, startProgram, completeProgram } = useProgram();
+
+  // Simulate initial loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Capitalize first letter of each word
   const capitalizeNames = (name: string) => {
@@ -107,31 +117,61 @@ export default function HomePage() {
     [],
   );
 
-  // Benções dos Centros de Energia (Meditações)
+  // Meditações
   const energyBlessings = useMemo(
     () => [
       {
         id: 'blessing_1',
-        title: 'Meditação do Centro Raiz',
-        description: 'Encontre estabilidade e segurança',
-        duration: '10 min',
-        image: 'url("/images/energy-blessings.png")',
+        title: 'Meditação Bênção dos centros de energia',
+        description: 'Equilibre e ative seus centros energéticos',
+        duration: '15 min',
+        image: 'url("/images/meditacao-bencao-energia.png")',
+        imagePosition: 'center 32%',
         isPremium: false,
       },
       {
         id: 'blessing_2',
-        title: 'Meditação do Plexo Solar',
-        description: 'Desperte seu poder pessoal',
-        duration: '12 min',
-        image: 'url("/images/energy-blessings.png")',
+        title: 'Meditação para sintonizar novos potenciais',
+        description: 'Alinhe-se com novas possibilidades',
+        duration: '18 min',
+        image: 'url("/images/meditacao-novos-potenciais.png")',
+        imagePosition: 'center 32%',
         isPremium: false,
       },
       {
         id: 'blessing_3',
-        title: 'Meditação do Centro do Coração',
-        description: 'Cultive amor e compaixão',
-        duration: '14 min',
-        image: 'url("/images/energy-blessings.png")',
+        title: 'Meditação para recondicionar o corpo a uma nova mente',
+        description: 'Transforme padrões mentais e físicos',
+        duration: '20 min',
+        image: 'url("/images/meditacao-recondicionar.png")',
+        imagePosition: 'center 32%',
+        isPremium: false,
+      },
+      {
+        id: 'blessing_4',
+        title: 'Meditação do caleidoscópio e Mind Movie',
+        description: 'Visualize e crie sua nova realidade',
+        duration: '22 min',
+        image: 'url("/images/meditacao-caleidoscopio.png")',
+        imagePosition: 'center 32%',
+        isPremium: false,
+      },
+      {
+        id: 'blessing_5',
+        title: 'Meditação caminhando',
+        description: 'Pratique presença em movimento',
+        duration: '25 min',
+        image: 'url("/images/meditacao-caminhando.png")',
+        imagePosition: 'center 28%',
+        isPremium: false,
+      },
+      {
+        id: 'blessing_6',
+        title: 'Meditação espaço-tempo, tempo-espaço',
+        description: 'Transcenda as limitações dimensionais',
+        duration: '28 min',
+        image: 'url("/images/meditacao-espaco-tempo.png")',
+        imagePosition: 'center 32%',
         isPremium: false,
       },
     ],
@@ -241,47 +281,20 @@ export default function HomePage() {
   };
 
   const handleEnergyBlessingClick = (blessingId: string) => {
-    if (blessingId === 'blessing_1') {
-      // Navegação para página de Bênçãos dos Centros de Energia
-      navigate('/app/energy-blessings');
-    } else if (blessingId === 'blessing_2') {
-      // Meditação Plexo Solar
-      startProgram({
-        id: 'blessing_2',
-        title: 'Meditação do Plexo Solar',
-        description: 'Desperte seu poder pessoal',
-        currentLesson: 'Começar meditação',
-        progress: 0,
-        duration: '12 min',
-        startedAt: new Date().toISOString(),
-        lastAccessedAt: new Date().toISOString(),
-      });
-      navigate('/app/meditation/solar');
-    } else if (blessingId === 'blessing_3') {
-      // Meditação Centro do Coração
-      startProgram({
-        id: 'blessing_3',
-        title: 'Meditação do Centro do Coração',
-        description: 'Cultive amor e compaixão',
-        currentLesson: 'Começar meditação',
-        progress: 0,
-        duration: '14 min',
-        startedAt: new Date().toISOString(),
-        lastAccessedAt: new Date().toISOString(),
-      });
-      navigate('/app/meditation/heart');
-    } else {
-      console.log('Benção clicada:', blessingId);
-    }
+    // Navegar direto para o player de meditação
+    navigate('/app/meditation-player');
   };
 
   return (
     <div className="min-h-screen bg-white font-primary">
-      {/* Header */}
+      {/* Header - Always render first */}
       <HomeHeader onLogout={handleLogout} />
 
-      {/* Main Content */}
-      <main className="md:pt-0">
+      {/* Main Content - Show skeleton or real content */}
+      {isLoading ? (
+        <ContentSkeletonLoader />
+      ) : (
+        <main className="md:pt-0">
         {/* Hero Section - 2 Cards Layout */}
         <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
           {/* Desktop: Grid 2 colunas com mesma altura */}
@@ -386,7 +399,8 @@ export default function HomePage() {
 
         {/* Footer spacing */}
         <div className="h-20" />
-      </main>
+        </main>
+      )}
     </div>
   );
 }

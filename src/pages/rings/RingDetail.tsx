@@ -1,19 +1,42 @@
-import { useMemo } from 'react';
+import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useRings } from '@/contexts/RingsContext';
-import { RINGS } from '@/constants/rings';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { RINGS, RINGS_ARRAY } from '@/constants/rings';
 import RingIcon from '@/components/rings/RingIcon';
+import HomeHeader from '@/components/home/HomeHeader';
 
 export default function RingDetail() {
   const { ringId } = useParams<{ ringId: string }>();
   const navigate = useNavigate();
-  const { allRituals } = useRings();
 
   const ring = ringId ? RINGS[ringId] : null;
 
+  // Scroll to top when page loads or ringId changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [ringId]);
+
+  // Get current index and navigation
+  const currentIndex = RINGS_ARRAY.findIndex(r => r.id === ringId);
+  const hasPrevious = currentIndex > 0;
+  const hasNext = currentIndex < RINGS_ARRAY.length - 1;
+
+  const goToPrevious = () => {
+    if (hasPrevious) {
+      navigate(`/app/rings/detail/${RINGS_ARRAY[currentIndex - 1].id}`);
+    }
+  };
+
+  const goToNext = () => {
+    if (hasNext) {
+      navigate(`/app/rings/detail/${RINGS_ARRAY[currentIndex + 1].id}`);
+    }
+  };
+
   if (!ring) {
     return (
-      <div className="min-h-screen bg-[var(--eco-bg)]">
+      <div className="min-h-screen bg-white">
+        <HomeHeader />
         <div className="mx-auto max-w-3xl px-4 py-8 text-center">
           <p className="text-[var(--eco-muted)]">Anel não encontrado</p>
           <button
@@ -27,36 +50,50 @@ export default function RingDetail() {
     );
   }
 
-  // Get all responses for this ring
-  const ringResponses = useMemo(() => {
-    return allRituals
-      .filter((r) => r.status === 'completed')
-      .flatMap((ritual) =>
-        ritual.answers
-          .filter((a) => a.ringId === ringId)
-          .map((answer) => ({
-            ...answer,
-            ritualDate: ritual.date,
-          }))
-      )
-      .sort((a, b) => new Date(b.ritualDate).getTime() - new Date(a.ritualDate).getTime());
-  }, [allRituals, ringId]);
 
   return (
-    <div className="min-h-screen bg-[var(--eco-bg)] font-primary">
+    <div className="min-h-screen bg-white font-primary">
+      <HomeHeader />
+
       <div className="mx-auto max-w-3xl px-4 py-8 md:px-8 md:py-12">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        {/* Navigation buttons */}
+        <div className="mb-6 flex items-center justify-between">
+          <button
+            onClick={goToPrevious}
+            disabled={!hasPrevious}
+            className={`flex items-center gap-2 rounded-lg border border-[var(--eco-line)] px-4 py-2 text-[13px] font-medium transition-all duration-200 ${
+              hasPrevious
+                ? 'bg-white text-[var(--eco-text)] hover:bg-gray-50 active:scale-95'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            <ChevronLeft size={16} />
+            <span>Anterior</span>
+          </button>
+
           <button
             onClick={() => navigate('/app/rings')}
-            className="rounded-lg border border-[var(--eco-line)] bg-white/60 backdrop-blur-md px-4 py-2 text-sm font-medium text-[var(--eco-text)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]"
+            className="text-[13px] font-medium text-[var(--eco-user)] hover:underline"
           >
-            ← Voltar
+            Ver todos os anéis
+          </button>
+
+          <button
+            onClick={goToNext}
+            disabled={!hasNext}
+            className={`flex items-center gap-2 rounded-lg border border-[var(--eco-line)] px-4 py-2 text-[13px] font-medium transition-all duration-200 ${
+              hasNext
+                ? 'bg-white text-[var(--eco-text)] hover:bg-gray-50 active:scale-95'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            <span>Próximo</span>
+            <ChevronRight size={16} />
           </button>
         </div>
 
         {/* Ring hero section */}
-        <div className="mb-12 rounded-2xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
+        <div className="mb-12 rounded-2xl border border-[var(--eco-line)] bg-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
           <div className="flex items-start gap-6 md:gap-8">
             <div className="text-[var(--eco-text)]">
               <RingIcon ringId={ring.id as any} size={80} />
@@ -73,70 +110,16 @@ export default function RingDetail() {
         </div>
 
         {/* Why it matters */}
-        <div className="mb-12">
+        <div className="mb-8">
           <h2 className="mb-4 font-display text-2xl font-normal text-[var(--eco-text)]">
             Por que importa para disciplina?
           </h2>
-          <div className="rounded-xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+          <div className="rounded-xl border border-[var(--eco-line)] bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
             <p className="text-[var(--eco-muted)]">
               {ring.descriptionPt} O {ring.titlePt.toLowerCase()} é fundamental porque ajuda você a
               desenvolver consistência em todos os aspectos da vida.
             </p>
           </div>
-        </div>
-
-        {/* History */}
-        <div className="mb-8">
-          <h2 className="mb-4 font-display text-2xl font-normal text-[var(--eco-text)]">Histórico</h2>
-
-          {ringResponses.length > 0 ? (
-            <div className="space-y-4">
-              {ringResponses.map((response, index) => {
-                const date = new Date(response.ritualDate);
-                const today = new Date();
-                const yesterday = new Date(today);
-                yesterday.setDate(yesterday.getDate() - 1);
-
-                const dateLabel = response.ritualDate === today.toISOString().split('T')[0] ? 'Hoje' :
-                               response.ritualDate === yesterday.toISOString().split('T')[0] ? 'Ontem' :
-                               date.toLocaleDateString('pt-BR');
-
-                return (
-                  <div key={index} className="rounded-xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                    <p className="mb-2 text-sm font-medium text-[var(--eco-muted)]">{dateLabel}</p>
-                    <p className="rounded-lg border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-3 text-[var(--eco-text)] shadow-[0_2px_8px_rgba(0,0,0,0.02)]">{response.answer}</p>
-
-                    {/* Show metadata */}
-                    {response.metadata && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {response.metadata.focusScore !== undefined && (
-                          <span className="rounded-full border border-[var(--eco-line)] bg-white/60 backdrop-blur-md px-3 py-1 text-xs font-medium text-[var(--eco-text)] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-                            Foco: {response.metadata.focusScore}/10
-                          </span>
-                        )}
-                        {response.metadata.emotionIntensity !== undefined && (
-                          <span className="rounded-full border border-[var(--eco-line)] bg-white/60 backdrop-blur-md px-3 py-1 text-xs font-medium text-[var(--eco-text)] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-                            Intensidade: {response.metadata.emotionIntensity}/10
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-8 text-center shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
-              <p className="text-[var(--eco-muted)]">Nenhuma resposta ainda para este anel</p>
-              <button
-                onClick={() => navigate('/app/rings/ritual')}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[var(--eco-user)] px-6 py-2 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(167,132,108,0.25)]"
-              >
-                <span>Começar seu primeiro ritual</span>
-                <span>→</span>
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>

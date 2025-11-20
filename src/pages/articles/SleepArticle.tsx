@@ -29,11 +29,11 @@ export default function SleepArticle() {
         </h1>
 
         {/* First Image */}
-        <div className="mb-8 overflow-hidden rounded-2xl">
+        <div className="mb-8 overflow-hidden rounded-2xl h-48 sm:h-64 md:h-80">
           <img
             src="/images/sleep-stages-intro.jpg"
             alt="Noite com lua"
-            className="w-full h-auto"
+            className="w-full h-full object-cover"
           />
         </div>
 
@@ -50,11 +50,11 @@ export default function SleepArticle() {
         </AnimatedSection>
 
         {/* Second Image */}
-        <div className="mb-8 overflow-hidden rounded-2xl">
+        <div className="mb-8 overflow-hidden rounded-2xl h-40 sm:h-56 md:h-72">
           <img
             src="/images/sleep-cycles.jpg"
             alt="Ciclos do sono"
-            className="w-full h-auto"
+            className="w-full h-full object-cover"
           />
         </div>
 

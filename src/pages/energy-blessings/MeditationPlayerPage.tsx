@@ -94,35 +94,35 @@ export default function MeditationPlayerPage() {
       {/* Back Button */}
       <button
         onClick={handleBack}
-        className="absolute top-8 left-8 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md hover:shadow-lg transition-all hover:scale-105"
+        className="absolute top-4 left-4 sm:top-8 sm:left-8 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white shadow-md md:hover:shadow-lg transition-all active:scale-95 z-10 touch-manipulation"
       >
-        <ChevronLeft size={24} className="text-gray-700" />
+        <ChevronLeft size={20} className="sm:w-6 sm:h-6 text-gray-700" />
       </button>
 
       {/* Main Content */}
-      <div className="flex min-h-screen flex-col items-center justify-center px-8 py-20">
+      <div className="flex min-h-screen flex-col items-center justify-center px-4 sm:px-8 py-16 sm:py-20">
         {/* Meditation Image */}
-        <div className="mb-8 overflow-hidden rounded-3xl shadow-2xl">
+        <div className="mb-6 sm:mb-8 overflow-hidden rounded-3xl shadow-2xl">
           <img
             src={meditationData.imageUrl}
             alt={meditationData.title}
-            className="h-64 w-64 object-cover"
+            className="h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64 object-cover"
           />
         </div>
 
         {/* Title */}
-        <h1 className="mb-12 text-3xl font-bold text-gray-800">
+        <h1 className="mb-8 sm:mb-12 text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 text-center px-4">
           {meditationData.title}
         </h1>
 
         {/* Playback Controls */}
-        <div className="mb-16 flex items-center gap-6">
+        <div className="mb-10 sm:mb-16 flex items-center gap-4 sm:gap-6">
           {/* Skip Back 15s */}
           <button
             onClick={() => handleSkip(-15)}
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-md hover:shadow-lg transition-all hover:scale-105"
+            className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-white shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation"
           >
-            <RotateCcw size={20} className="text-gray-700" />
+            <RotateCcw size={18} className="sm:w-5 sm:h-5 text-gray-700" />
             <span className="absolute text-xs font-medium text-gray-700" style={{ marginTop: '2px' }}>
               15
             </span>
@@ -131,21 +131,21 @@ export default function MeditationPlayerPage() {
           {/* Play/Pause Button */}
           <button
             onClick={handlePlayPause}
-            className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-300 shadow-lg hover:shadow-xl transition-all hover:scale-105"
+            className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gray-300 shadow-lg md:hover:shadow-xl transition-all active:scale-95 touch-manipulation"
           >
             {isPlaying ? (
-              <Pause size={32} className="text-gray-800 fill-gray-800" />
+              <Pause size={28} className="sm:w-8 sm:h-8 text-gray-800 fill-gray-800" />
             ) : (
-              <Play size={32} className="text-gray-800 fill-gray-800 ml-1" />
+              <Play size={28} className="sm:w-8 sm:h-8 text-gray-800 fill-gray-800 ml-1" />
             )}
           </button>
 
           {/* Skip Forward 15s */}
           <button
             onClick={() => handleSkip(15)}
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-md hover:shadow-lg transition-all hover:scale-105"
+            className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-white shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation"
           >
-            <RotateCw size={20} className="text-gray-700" />
+            <RotateCw size={18} className="sm:w-5 sm:h-5 text-gray-700" />
             <span className="absolute text-xs font-medium text-gray-700" style={{ marginTop: '2px' }}>
               15
             </span>
@@ -153,8 +153,72 @@ export default function MeditationPlayerPage() {
         </div>
 
         {/* Bottom Controls */}
-        <div className="w-full max-w-4xl">
-          <div className="flex items-center gap-6 rounded-full bg-white/80 backdrop-blur-sm px-6 py-4 shadow-lg">
+        <div className="w-full max-w-4xl px-4 sm:px-0">
+          {/* Mobile Layout: Stacked */}
+          <div className="flex flex-col gap-4 sm:hidden rounded-3xl bg-white/80 backdrop-blur-sm px-4 py-4 shadow-lg">
+            {/* Progress Bar with Time */}
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-medium text-gray-700 w-10">
+                {formatTime(currentTime)}
+              </span>
+              <input
+                type="range"
+                min="0"
+                max={duration || 0}
+                value={currentTime}
+                onChange={handleProgressChange}
+                className="flex-1 cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`
+                }}
+              />
+              <span className="text-xs font-medium text-gray-700 w-10">
+                {formatTime(duration)}
+              </span>
+            </div>
+
+            {/* Actions Row */}
+            <div className="flex items-center justify-between">
+              {/* Background Music */}
+              <div className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5">
+                <Music size={14} className="text-gray-600" />
+                <span className="text-xs font-medium text-gray-800">
+                  {meditationData.backgroundMusic || 'Cristais'}
+                </span>
+              </div>
+
+              {/* Favorite & Volume */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsFavorite(!isFavorite)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full active:bg-gray-100 transition-colors touch-manipulation"
+                >
+                  <Heart
+                    size={18}
+                    className={isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}
+                  />
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <Volume2 size={16} className="text-gray-600" />
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={volume}
+                    onChange={(e) => setVolume(parseInt(e.target.value))}
+                    className="w-16 cursor-pointer"
+                  />
+                  <span className="text-xs font-medium text-gray-700 w-8">
+                    {volume}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Layout: Single Row */}
+          <div className="hidden sm:flex items-center gap-4 md:gap-6 rounded-full bg-white/80 backdrop-blur-sm px-6 py-4 shadow-lg">
             {/* Background Music Info */}
             <div className="flex items-center gap-3 rounded-full bg-gray-100 px-4 py-2">
               <Music size={18} className="text-gray-600" />
@@ -192,7 +256,7 @@ export default function MeditationPlayerPage() {
             {/* Favorite Button */}
             <button
               onClick={() => setIsFavorite(!isFavorite)}
-              className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-full md:hover:bg-gray-100 transition-colors touch-manipulation"
             >
               <Heart
                 size={20}

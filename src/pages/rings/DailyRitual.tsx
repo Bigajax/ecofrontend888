@@ -34,7 +34,7 @@ export default function DailyRitual() {
 
   if (!currentRitual) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--eco-bg)]">
+      <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center">
           <p className="text-[var(--eco-muted)]">Carregando ritual...</p>
         </div>
@@ -73,7 +73,7 @@ export default function DailyRitual() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--eco-bg)] font-primary">
+    <div className="min-h-screen bg-white font-primary">
       <div className="mx-auto max-w-2xl px-4 py-12 md:px-8 md:py-16">
         {/* Progress bar */}
         <div className="mb-12">
@@ -139,7 +139,7 @@ export default function DailyRitual() {
                 navigate('/app/rings');
               }
             }}
-            className="rounded-lg border border-[var(--eco-line)] bg-white/60 backdrop-blur-md px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)] active:translate-y-0"
+            className="rounded-lg border border-[var(--eco-line)] bg-white px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)] active:translate-y-0"
           >
             Voltar
           </button>
@@ -157,7 +157,7 @@ export default function DailyRitual() {
                   ? 'bg-[var(--eco-user)] text-white shadow-[0_4px_20px_rgba(167,132,108,0.25)]'
                   : index < currentStep
                     ? 'bg-green-500 text-white shadow-[0_2px_12px_rgba(34,197,94,0.15)]'
-                    : 'border border-[var(--eco-line)] bg-white/60 backdrop-blur-md text-[var(--eco-text)] shadow-[0_2px_12px_rgba(0,0,0,0.04)]'
+                    : 'border border-[var(--eco-line)] bg-white text-[var(--eco-text)] shadow-[0_2px_12px_rgba(0,0,0,0.04)]'
               }`}
               title={ring.titlePt}
             >

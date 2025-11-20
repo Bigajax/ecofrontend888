@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react';
 import type { Ring } from '@/types/rings';
 import RingIcon from './RingIcon';
 
@@ -8,39 +9,53 @@ interface RingCardProps {
 
 export default function RingCard({ ring, onViewMore }: RingCardProps) {
   return (
-    <button
-      onClick={onViewMore}
-      className="group relative overflow-hidden rounded-2xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-6 text-left transition-all duration-300 hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 active:translate-y-0 md:p-8"
+    <div className="group flex flex-col overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)] text-left transition-all duration-300 md:hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)]"
     >
-      {/* Background accent (subtle) */}
-      <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <div className="absolute right-0 top-0 -mr-12 -mt-12 h-32 w-32 rounded-full bg-gradient-to-br from-[var(--eco-user)]/5 to-transparent blur-2xl" />
+      {/* Image Section (top) */}
+      <div className="relative h-40 overflow-hidden rounded-t-2xl">
+        {ring.backgroundImage ? (
+          <img
+            src={ring.backgroundImage}
+            alt={ring.titlePt}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 scale-100"
+          />
+        ) : (
+          // Fallback with icon if no background image
+          <div className="flex h-full items-center justify-center bg-gradient-to-br from-amber-100 to-orange-100">
+            <RingIcon ringId={ring.id as any} size={60} />
+          </div>
+        )}
       </div>
 
-      {/* Content */}
-      <div className="relative">
-        {/* Icon */}
-        <div className="mb-4 text-[var(--eco-text)]">
-          <RingIcon ringId={ring.id as any} size={48} />
-        </div>
-
+      {/* Content Section (bottom) */}
+      <div className="flex flex-1 flex-col bg-white p-4">
         {/* Title */}
-        <h3 className="mb-1 text-[17px] font-semibold text-[var(--eco-text)]">{ring.titlePt}</h3>
+        <h3 className="font-display text-base font-normal text-[var(--eco-text)]">
+          {ring.titlePt}
+        </h3>
 
         {/* Subtitle */}
-        <p className="mb-4 text-[14px] font-medium text-[var(--eco-user)]">{ring.subtitlePt}</p>
+        <p className="mt-1 text-[13px] font-medium text-[#C17D3A]">
+          {ring.subtitlePt}
+        </p>
 
-        {/* Impact Phrase */}
-        <p className="mb-6 text-[13px] leading-relaxed text-[var(--eco-muted)] italic">
+        {/* Impact Phrase - with min height to ensure alignment */}
+        <p className="mt-2 min-h-[40px] text-[13px] text-[var(--eco-text)]/70 leading-relaxed italic">
           "{ring.impactPhrase}"
         </p>
 
-        {/* Arrow indicator */}
-        <div className="inline-flex items-center gap-2 text-[13px] font-medium text-[var(--eco-user)] transition-all group-hover:gap-3">
+        {/* Spacer to push button to bottom */}
+        <div className="flex-1" />
+
+        {/* Ver mais button - Apple style */}
+        <button
+          onClick={onViewMore}
+          className="mt-4 flex items-center justify-center gap-1.5 rounded-lg border border-[var(--eco-line)] bg-white px-4 py-2 text-[13px] font-medium text-[var(--eco-user)] transition-all duration-200 hover:bg-gray-50 active:scale-95"
+        >
           <span>Ver mais</span>
-          <span className="transition-transform group-hover:translate-x-1">→</span>
-        </div>
+          <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+        </button>
       </div>
-    </button>
+    </div>
   );
 }

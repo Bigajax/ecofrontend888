@@ -29,11 +29,11 @@ export default function GoodNightSleepArticle() {
         </h1>
 
         {/* Cover Image */}
-        <div className="mb-8 overflow-hidden rounded-2xl">
+        <div className="mb-8 overflow-hidden rounded-2xl h-48 sm:h-64 md:h-80">
           <img
             src="/images/good-night-sleep.jpg"
             alt="Como ter uma boa noite de sono"
-            className="w-full h-auto"
+            className="w-full h-full object-cover"
           />
         </div>
 
@@ -60,163 +60,163 @@ export default function GoodNightSleepArticle() {
           </p>
 
           {/* Image after description */}
-          <div className="mb-8 overflow-hidden rounded-2xl">
+          <div className="mb-8 overflow-hidden rounded-2xl h-40 sm:h-56 md:h-72">
             <img
               src="/images/article-bedtime-hero.jpg"
               alt="Durante o dia"
-              className="w-full h-auto"
+              className="w-full h-full object-cover"
             />
           </div>
 
           {/* Daytime Tips */}
           <div className="space-y-8">
             {/* Tip 1: Medicação */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
                   src="/images/sleep-icon-2.png"
                   alt="Medicação"
-                  className="w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 h-auto"
                 />
               </div>
               <div className="md:col-span-2">
-                <h3 className="font-display text-lg font-normal text-[var(--eco-text)] mb-2">
+                <h3 className="font-display text-base sm:text-lg font-normal text-[var(--eco-text)] mb-2">
                   Uso de medicação
                 </h3>
-                <p className="text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
+                <p className="text-[14px] sm:text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
                   Se você utiliza medicamentos regularmente, consulte seu médico sobre como eles podem afetar o sono.
                 </p>
               </div>
             </div>
 
             {/* Tip 2: Estimulantes */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
                   src="/images/sleep-icon-1.png"
                   alt="Estimulantes"
-                  className="w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 h-auto"
                 />
               </div>
               <div className="md:col-span-2">
-                <h3 className="font-display text-lg font-normal text-[var(--eco-text)] mb-2">
+                <h3 className="font-display text-base sm:text-lg font-normal text-[var(--eco-text)] mb-2">
                   Estimulantes
                 </h3>
-                <p className="text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
+                <p className="text-[14px] sm:text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
                   Evite nicotina e cafeína, pois são substâncias que podem atrapalhar o início e a manutenção do sono.
                 </p>
               </div>
             </div>
 
             {/* Tip 3: Cochilos */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
                   src="/images/sleep-icon-3.png"
                   alt="Cochilos"
-                  className="w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 h-auto"
                 />
               </div>
               <div className="md:col-span-2">
-                <h3 className="font-display text-lg font-normal text-[var(--eco-text)] mb-2">
+                <h3 className="font-display text-base sm:text-lg font-normal text-[var(--eco-text)] mb-2">
                   Cochilos
                 </h3>
-                <p className="text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
+                <p className="text-[14px] sm:text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
                   Caso precise cochilar, evite fazê-lo até seis horas antes de dormir.
                 </p>
               </div>
             </div>
 
             {/* Tip 4: Exercícios físicos */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
                   src="/images/sleep-icon-4.png"
                   alt="Exercícios"
-                  className="w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 h-auto"
                 />
               </div>
               <div className="md:col-span-2">
-                <h3 className="font-display text-lg font-normal text-[var(--eco-text)] mb-2">
+                <h3 className="font-display text-base sm:text-lg font-normal text-[var(--eco-text)] mb-2">
                   Exercícios físicos
                 </h3>
-                <p className="text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
+                <p className="text-[14px] sm:text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
                   Tente se exercitar pelo menos duas a três horas antes de ir para a cama.
                 </p>
               </div>
             </div>
 
             {/* Tip 5: Exposição à luz natural */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
                   src="/images/sleep-icon-7.png"
                   alt="Luz natural"
-                  className="w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 h-auto"
                 />
               </div>
               <div className="md:col-span-2">
-                <h3 className="font-display text-lg font-normal text-[var(--eco-text)] mb-2">
+                <h3 className="font-display text-base sm:text-lg font-normal text-[var(--eco-text)] mb-2">
                   Exposição à luz natural
                 </h3>
-                <p className="text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
+                <p className="text-[14px] sm:text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
                   Exponha-se regularmente à luz solar. Procure ficar ao menos 30 minutos por dia ao ar livre, preferencialmente pela manhã.
                 </p>
               </div>
             </div>
 
             {/* Tip 6: Alimentação */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
                   src="/images/sleep-icon-6.png"
                   alt="Alimentação"
-                  className="w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 h-auto"
                 />
               </div>
               <div className="md:col-span-2">
-                <h3 className="font-display text-lg font-normal text-[var(--eco-text)] mb-2">
+                <h3 className="font-display text-base sm:text-lg font-normal text-[var(--eco-text)] mb-2">
                   Alimentação
                 </h3>
-                <p className="text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
+                <p className="text-[14px] sm:text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
                   Evite refeições grandes e consumo excessivo de líquidos nas horas próximas ao horário de dormir.
                 </p>
               </div>
             </div>
 
             {/* Tip 7: Atividades calmantes */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
                   src="/images/sleep-icon-8.png"
                   alt="Atividades calmantes"
-                  className="w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 h-auto"
                 />
               </div>
               <div className="md:col-span-2">
-                <h3 className="font-display text-lg font-normal text-[var(--eco-text)] mb-2">
+                <h3 className="font-display text-base sm:text-lg font-normal text-[var(--eco-text)] mb-2">
                   Atividades calmantes
                 </h3>
-                <p className="text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
+                <p className="text-[14px] sm:text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
                   Crie um pequeno ritual noturno: ler um livro, ouvir música leve, escrever um diário ou simplesmente desacelerar.
                 </p>
               </div>
             </div>
 
             {/* Tip 8: Banho quente */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
                   src="/images/sleep-icon-9.png"
                   alt="Banho quente"
-                  className="w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 h-auto"
                 />
               </div>
               <div className="md:col-span-2">
-                <h3 className="font-display text-lg font-normal text-[var(--eco-text)] mb-2">
+                <h3 className="font-display text-base sm:text-lg font-normal text-[var(--eco-text)] mb-2">
                   Banho quente
                 </h3>
-                <p className="text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
+                <p className="text-[14px] sm:text-[15px] text-[var(--eco-text)]/80 leading-relaxed">
                   Um banho quente pode ajudar na sensação de relaxamento antes de deitar.
                 </p>
               </div>
@@ -237,11 +237,11 @@ export default function GoodNightSleepArticle() {
           </p>
 
           {/* Bedtime Environment Image */}
-          <div className="mb-8 overflow-hidden rounded-2xl">
+          <div className="mb-8 overflow-hidden rounded-2xl h-40 sm:h-56 md:h-72">
             <img
               src="/images/sleep-night-hero.jpg"
               alt="Ambiente para dormir"
-              className="w-full h-auto"
+              className="w-full h-full object-cover"
             />
           </div>
 

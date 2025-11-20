@@ -5,6 +5,7 @@ import { useProgram } from '@/contexts/ProgramContext';
 import { RINGS_ARRAY } from '@/constants/rings';
 import OnboardingModal from '@/components/rings/OnboardingModal';
 import RingCard from '@/components/rings/RingCard';
+import HomeHeader from '@/components/home/HomeHeader';
 
 export default function FiveRingsHub() {
   const navigate = useNavigate();
@@ -49,21 +50,16 @@ export default function FiveRingsHub() {
   }, [ongoingProgram?.id, currentRitual, ritualCompleted, updateProgress]);
 
   return (
-    <div className="min-h-screen bg-[var(--eco-bg)] font-primary">
+    <div className="min-h-screen bg-white font-primary">
+      {/* Header */}
+      <HomeHeader />
+
       {/* Onboarding Modal */}
       {showOnboarding && (
         <OnboardingModal onComplete={completeOnboarding} onDismiss={dismissOnboarding} />
       )}
 
       <main className="mx-auto max-w-4xl px-4 py-8 md:px-8 md:py-12">
-        {/* Back button */}
-        <button
-          onClick={() => navigate('/app')}
-          className="mb-6 flex items-center gap-2 text-[14px] font-medium text-[var(--eco-user)] transition-all hover:gap-3"
-        >
-          <span>←</span>
-          <span>Voltar para Home</span>
-        </button>
 
         {/* Header */}
         <div className="mb-12 space-y-4">
@@ -77,7 +73,7 @@ export default function FiveRingsHub() {
           </div>
 
           {/* Status Card */}
-          <div className="rounded-2xl border border-[var(--eco-line)] bg-gradient-to-r from-blue-50 to-purple-50 p-6 shadow-sm">
+          <div className="rounded-2xl border border-[var(--eco-line)] bg-white p-6 shadow-sm">
             {ritualCompleted ? (
               <div className="flex items-center justify-between">
                 <div>

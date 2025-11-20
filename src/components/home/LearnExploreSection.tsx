@@ -53,10 +53,10 @@ export default function LearnExploreSection({
             <button
               key={cat.id}
               onClick={() => onCategoryChange(cat.id)}
-              className={`whitespace-nowrap rounded-full px-6 py-2.5 font-medium transition-all duration-300 text-[14px] ${
+              className={`whitespace-nowrap rounded-full px-6 py-2.5 font-medium transition-all duration-300 text-[14px] touch-manipulation ${
                 selectedCategory === cat.id
                   ? 'bg-[var(--eco-user)] text-white shadow-[0_4px_15px_rgba(167,132,108,0.3)]'
-                  : 'border border-[var(--eco-line)] bg-white/60 text-[var(--eco-text)] backdrop-blur-sm hover:bg-white/80 hover:-translate-y-0.5'
+                  : 'border border-[var(--eco-line)] bg-white/60 text-[var(--eco-text)] backdrop-blur-sm md:hover:bg-white/80 active:scale-95'
               }`}
             >
               {cat.label}
@@ -116,17 +116,42 @@ function ContentCard({ item, onClick }: ContentCardProps) {
   // Special layout for Diário Estoico with full background image
   const isDiarioEstoico = item.id === 'content_diario_estoico';
 
+  // Extract image URL from url() string or gradient
+  const extractImageUrl = (imageString: string): string | null => {
+    if (imageString.startsWith('url(')) {
+      const match = imageString.match(/url\(['"]?([^'"]+)['"]?\)/);
+      return match ? match[1] : null;
+    }
+    return null;
+  };
+
+  const imageUrl = extractImageUrl(item.image);
+  const isGradient = item.image.startsWith('linear-gradient');
+
   if (isDiarioEstoico) {
     return (
       <button
         onClick={onClick}
-        className="relative h-80 w-full overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] hover:scale-95 active:scale-90"
-        style={{
-          backgroundImage: item.image,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
+        className="relative h-80 w-full overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 md:hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] active:scale-95 touch-manipulation"
       >
+        {/* Background Image */}
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={item.title}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <div
+            className="absolute inset-0 h-full w-full"
+            style={{
+              backgroundImage: item.image,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          />
+        )}
+
         {/* Dark overlay for text readability */}
         <div className="absolute inset-0 bg-black/30" />
 
@@ -147,22 +172,37 @@ function ContentCard({ item, onClick }: ContentCardProps) {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] hover:scale-95 active:scale-90"
+      className="flex flex-col overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 md:hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] active:scale-95 touch-manipulation"
     >
       {/* Image Section */}
       <div className="relative h-40 overflow-hidden bg-gray-200">
-        <div
-          className="h-full w-full transition-transform duration-300 hover:scale-105"
-          style={
-            item.image.startsWith('url(') || item.image.startsWith('linear-gradient')
-              ? { backgroundImage: item.image, backgroundSize: 'cover', backgroundPosition: 'center' }
-              : { backgroundImage: '' }
-          }
-        />
-        {/* Fallback gradient for non-image items */}
-        {!item.image.startsWith('url(') && !item.image.startsWith('linear-gradient') && (
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={item.title}
+            className="h-full w-full object-cover transition-transform duration-300"
+          />
+        ) : isGradient ? (
+          <div
+            className="h-full w-full transition-transform duration-300"
+            style={{
+              backgroundImage: item.image,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          />
+        ) : (
           <div className={`h-full w-full ${item.image}`} />
         )}
+
+        {/* Badge "Artigo" no canto superior esquerdo */}
+        <div className="absolute left-3 top-3">
+          <span className="inline-flex items-center rounded-full bg-white/90 px-3 py-1 backdrop-blur-sm shadow-sm">
+            <span className="text-[11px] font-medium text-[var(--eco-text)]">
+              Artigo
+            </span>
+          </span>
+        </div>
       </div>
 
       {/* Content Section - below image */}

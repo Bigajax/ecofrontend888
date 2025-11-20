@@ -19,6 +19,7 @@ export interface Ring {
   icon: string; // Emoji or icon identifier
   color: string; // Tailwind color class base
   order: number;
+  backgroundImage?: string; // Optional background image URL
 }
 
 /**
