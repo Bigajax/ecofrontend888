@@ -8,6 +8,7 @@ interface MeditationData {
   audioUrl: string;
   imageUrl: string;
   backgroundMusic?: string;
+  gradient?: string;
 }
 
 export default function MeditationPlayerPage() {
@@ -21,7 +22,8 @@ export default function MeditationPlayerPage() {
     duration: '07:42',
     audioUrl: '/audio/energy-blessings-meditation.mp3',
     imageUrl: '/images/energy-blessings.png',
-    backgroundMusic: 'Cristais'
+    backgroundMusic: 'Cristais',
+    gradient: 'linear-gradient(to bottom, #F5C563 0%, #F5A84D 15%, #F39439 30%, #E67E3C 45%, #D95B39 60%, #C74632 80%, #A63428 100%)'
   };
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -86,11 +88,11 @@ export default function MeditationPlayerPage() {
   };
 
   const handleBack = () => {
-    navigate(-1);
+    navigate('/app', { state: { returnFromMeditation: true } });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-blue-50 to-purple-100 font-primary">
+    <div className="min-h-screen font-primary" style={{ background: meditationData.gradient || 'linear-gradient(to bottom right, #FF8C42 0%, #F7931E 20%, #D8617A 40%, #8B3A62 60%, #6B2C5C 80%, #2D1B3D 100%)' }}>
       {/* Back Button */}
       <button
         onClick={handleBack}
@@ -107,6 +109,7 @@ export default function MeditationPlayerPage() {
             src={meditationData.imageUrl}
             alt={meditationData.title}
             className="h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64 object-cover"
+            style={{ objectPosition: 'center 35%' }}
           />
         </div>
 

@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import clsx from 'clsx';
 
 import ChatInput, { ChatInputHandle } from '../components/ChatInput';
@@ -81,6 +82,7 @@ function ChatPage() {
   const auth = useAuth();
   const { userId, userName: rawUserName = 'Usuário', user } = auth;
   const prefersReducedMotion = useReducedMotion();
+  const location = useLocation();
 
   const [sessaoId] = useState(() => ensureSessionId());
   useAdminCommands(user, sessaoId);
@@ -313,6 +315,19 @@ function ChatPage() {
     onUnauthorized: () => setLoginGateOpen(true),
     activity: ecoActivity,
   });
+
+  // Auto-send message from modal suggestion
+  const autoSentRef = useRef(false);
+  useEffect(() => {
+    const autoSendMessage = location.state?.autoSendMessage;
+    if (autoSendMessage && !autoSentRef.current && !pending && !streaming) {
+      autoSentRef.current = true;
+      // Wait for component to be ready
+      setTimeout(() => {
+        streamSendMessage(autoSendMessage);
+      }, 300);
+    }
+  }, [location.state, streamSendMessage, pending, streaming]);
 
   const streamAndPersist = useCallback(
     async (text: string, systemHint?: string) => {
@@ -742,7 +757,7 @@ function ChatPage() {
   return (
     <div
       className={clsx(
-        'chat-page grid min-h-[100dvh] w-full grid-rows-[auto_minmax(0,1fr)_auto] bg-[color:var(--color-bg-base)] text-[color:var(--color-text-primary)]',
+        'chat-page grid min-h-[100dvh] w-full grid-rows-[auto_minmax(0,1fr)_auto] bg-white text-[color:var(--color-text-primary)]',
         { 'keyboard-open': isKeyboardOpen },
       )}
       style={{

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram } from '@/contexts/ProgramContext';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
@@ -12,6 +12,7 @@ import LearnExploreSection from '@/components/home/LearnExploreSection';
 import HeroCarousel from '@/components/home/HeroCarousel';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
+import EcoAIModal from '@/components/EcoAIModal';
 
 interface DailyMaxim {
   date: string;
@@ -57,20 +58,43 @@ const getAvailableMaxims = (): DailyMaxim[] => {
 export default function HomePage() {
   const { userName } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showDiarioModal, setShowDiarioModal] = useState(false);
   const [diarioSelectedIndex, setDiarioSelectedIndex] = useState(0);
   const [diarioExpanded, setDiarioExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { ongoingProgram, startProgram, completeProgram } = useProgram();
+  const [showEcoAIModal, setShowEcoAIModal] = useState(false);
+  const { ongoingProgram, startProgram, completeProgram} = useProgram();
 
-  // Simulate initial loading
+  // Simulate initial loading (skip if returning from meditation)
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (location.state?.returnFromMeditation) {
       setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
+    } else {
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
+
+  // Restore scroll position when returning from meditation player
+  useEffect(() => {
+    if (!isLoading && location.state?.returnFromMeditation) {
+      const savedScrollPosition = sessionStorage.getItem('homePageScrollPosition');
+      if (savedScrollPosition) {
+        // Restore scroll immediately after content is loaded
+        requestAnimationFrame(() => {
+          window.scrollTo({
+            top: parseInt(savedScrollPosition),
+            behavior: 'auto'
+          });
+          sessionStorage.removeItem('homePageScrollPosition');
+        });
+      }
+    }
+  }, [isLoading, location]);
 
   // Capitalize first letter of each word
   const capitalizeNames = (name: string) => {
@@ -124,27 +148,33 @@ export default function HomePage() {
         id: 'blessing_1',
         title: 'Meditação Bênção dos centros de energia',
         description: 'Equilibre e ative seus centros energéticos',
-        duration: '15 min',
+        duration: '7 min',
+        audioUrl: '/audio/energy-blessings-meditation.mp3',
         image: 'url("/images/meditacao-bencao-energia.png")',
         imagePosition: 'center 32%',
+        gradient: 'linear-gradient(to bottom, #F5C563 0%, #F5A84D 15%, #F39439 30%, #E67E3C 45%, #D95B39 60%, #C74632 80%, #A63428 100%)',
         isPremium: false,
       },
       {
         id: 'blessing_2',
         title: 'Meditação para sintonizar novos potenciais',
         description: 'Alinhe-se com novas possibilidades',
-        duration: '18 min',
+        duration: '7 min',
+        audioUrl: '/audio/sintonizar-novos-potenciais.mp3',
         image: 'url("/images/meditacao-novos-potenciais.png")',
         imagePosition: 'center 32%',
+        gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #3D6BB8 20%, #3358A3 40%, #2A478E 60%, #213779 80%, #182864 100%)',
         isPremium: false,
       },
       {
         id: 'blessing_3',
         title: 'Meditação para recondicionar o corpo a uma nova mente',
         description: 'Transforme padrões mentais e físicos',
-        duration: '20 min',
+        duration: '7 min',
+        audioUrl: '/audio/recondicionar-corpo-nova-mente.mp3',
         image: 'url("/images/meditacao-recondicionar.png")',
         imagePosition: 'center 32%',
+        gradient: 'linear-gradient(to bottom, #9B79C9 0%, #8766B5 20%, #7454A0 40%, #61438C 60%, #4E3377 80%, #3B2463 100%)',
         isPremium: false,
       },
       {
@@ -154,24 +184,29 @@ export default function HomePage() {
         duration: '22 min',
         image: 'url("/images/meditacao-caleidoscopio.png")',
         imagePosition: 'center 32%',
+        gradient: 'linear-gradient(to bottom, #B494D4 0%, #A07DC4 20%, #8D67B5 40%, #7A52A6 60%, #673E97 80%, #542B88 100%)',
         isPremium: false,
       },
       {
         id: 'blessing_5',
         title: 'Meditação caminhando',
         description: 'Pratique presença em movimento',
-        duration: '25 min',
+        duration: '5 min',
+        audioUrl: '/audio/meditacao-caminhando.mp3',
         image: 'url("/images/meditacao-caminhando.png")',
-        imagePosition: 'center 28%',
+        imagePosition: 'center 15%',
+        gradient: 'linear-gradient(to bottom right, #FF8C42 0%, #F7931E 20%, #D8617A 40%, #8B3A62 60%, #6B2C5C 80%, #2D1B3D 100%)',
         isPremium: false,
       },
       {
         id: 'blessing_6',
         title: 'Meditação espaço-tempo, tempo-espaço',
         description: 'Transcenda as limitações dimensionais',
-        duration: '28 min',
+        duration: '5 min',
+        audioUrl: '/audio/meditacao-espaco-tempo.mp3',
         image: 'url("/images/meditacao-espaco-tempo.png")',
         imagePosition: 'center 32%',
+        gradient: 'linear-gradient(to bottom, #FCD670 0%, #FBCA5D 15%, #F7B84A 30%, #F39A3C 45%, #EC7D2E 60%, #E26224 75%, #D7491F 90%, #C43520 100%)',
         isPremium: false,
       },
     ],
@@ -233,7 +268,37 @@ export default function HomePage() {
   }, [selectedCategory, contentItems]);
 
   const handleStartChat = () => {
-    navigate('/app/chat');
+    setShowEcoAIModal(true);
+  };
+
+  const handleModalSentimentos = () => {
+    setShowEcoAIModal(false);
+    navigate('/app/chat', { state: { autoSendMessage: 'Vamos falar sobre meus sentimentos' } });
+  };
+
+  const handleModalSugerir = () => {
+    setShowEcoAIModal(false);
+    navigate('/app/chat', { state: { autoSendMessage: 'Sugerir conteúdo' } });
+  };
+
+  const handleModalSuggestion = (text: string) => {
+    setShowEcoAIModal(false);
+    navigate('/app/chat', { state: { autoSendMessage: text } });
+  };
+
+  const handleMemoriaEmocional = () => {
+    setShowEcoAIModal(false);
+    navigate('/app/memoria-emocional');
+  };
+
+  const handlePerfilEmocional = () => {
+    setShowEcoAIModal(false);
+    navigate('/app/perfil-emocional');
+  };
+
+  const handleRelatorio = () => {
+    setShowEcoAIModal(false);
+    navigate('/app/relatorio');
   };
 
   const handleContentClick = (contentId: string) => {
@@ -281,8 +346,27 @@ export default function HomePage() {
   };
 
   const handleEnergyBlessingClick = (blessingId: string) => {
-    // Navegar direto para o player de meditação
-    navigate('/app/meditation-player');
+    // Salvar posição do scroll antes de navegar
+    sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
+
+    // Encontrar a meditação clicada
+    const blessing = energyBlessings.find(b => b.id === blessingId);
+
+    if (blessing) {
+      // Navegar para o player passando os dados da meditação
+      navigate('/app/meditation-player', {
+        state: {
+          meditation: {
+            title: blessing.title,
+            duration: blessing.duration,
+            audioUrl: blessing.audioUrl || '/audio/energy-blessings-meditation.mp3',
+            imageUrl: blessing.image.replace('url("', '').replace('")', ''),
+            backgroundMusic: 'Cristais',
+            gradient: blessing.gradient
+          }
+        }
+      });
+    }
   };
 
   return (
@@ -401,6 +485,19 @@ export default function HomePage() {
         <div className="h-20" />
         </main>
       )}
+
+      {/* ECO AI Modal */}
+      <EcoAIModal
+        isOpen={showEcoAIModal}
+        onClose={() => setShowEcoAIModal(false)}
+        userName={capitalizeNames(userName || 'Usuário')}
+        onStartSentimentos={handleModalSentimentos}
+        onSugerirConteudo={handleModalSugerir}
+        onSuggestionClick={handleModalSuggestion}
+        onMemoriaEmocional={handleMemoriaEmocional}
+        onPerfilEmocional={handlePerfilEmocional}
+        onRelatorio={handleRelatorio}
+      />
     </div>
   );
 }
