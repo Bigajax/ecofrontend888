@@ -21,7 +21,7 @@ export default function MeditationPlayerPage() {
     title: 'Bênçãos dos Centros de Energia',
     duration: '07:42',
     audioUrl: '/audio/energy-blessings-meditation.mp3',
-    imageUrl: '/images/energy-blessings.png',
+    imageUrl: '/images/energy-blessings.webp',
     backgroundMusic: 'Cristais',
     gradient: 'linear-gradient(to bottom, #F5C563 0%, #F5A84D 15%, #F39439 30%, #E67E3C 45%, #D95B39 60%, #C74632 80%, #A63428 100%)'
   };

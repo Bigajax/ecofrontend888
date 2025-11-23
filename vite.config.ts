@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite';
 import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import string from 'vite-plugin-string';
+import { compression } from 'vite-plugin-compression2';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -25,6 +26,23 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       string({ include: ['**/*.txt'] }),
+      // Brotli compression (better than gzip)
+      compression({
+        algorithm: 'brotliCompress',
+        exclude: [/\.(br)$/, /\.(gz)$/],
+        threshold: 10240, // Only compress files > 10KB
+        deleteOriginFile: false,
+        compressionOptions: {
+          level: 11 // Maximum compression
+        }
+      }),
+      // Gzip compression (fallback for old browsers)
+      compression({
+        algorithm: 'gzip',
+        exclude: [/\.(br)$/, /\.(gz)$/],
+        threshold: 10240,
+        deleteOriginFile: false,
+      }),
     ],
 
     define,

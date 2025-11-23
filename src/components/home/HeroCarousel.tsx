@@ -16,7 +16,7 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
     description:
       'Cultive a sabedoria diária através de reflexões estoicas. Uma prática que transforma seu mindset e fortalece sua resiliência emocional.',
     background:
-      'url("/images/diario-estoico.png")',
+      'url("/images/diario-estoico.webp")',
   },
   {
     id: 2,

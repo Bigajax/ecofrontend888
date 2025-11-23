@@ -22,7 +22,7 @@ const ALL_DAILY_MAXIMS: DailyMaxim[] = [
     title: 'A FORÇA DA ADVERSIDADE',
     text: 'O obstáculo no caminho se torna o caminho. Nunca esqueça, em cada impedimento há uma oportunidade para praticar outra virtude.',
     author: 'MARCO AURÉLIO',
-    background: 'url("/images/meditacao-20-nov.png")',
+    background: 'url("/images/meditacao-20-nov.webp")',
   },
   {
     date: 'Novembro 18',
@@ -30,7 +30,7 @@ const ALL_DAILY_MAXIMS: DailyMaxim[] = [
     title: 'O CONTROLE INTERIOR',
     text: 'A felicidade da sua vida depende da qualidade dos seus pensamentos.',
     author: 'MARCO AURÉLIO',
-    background: 'url("/images/meditacao-21-nov.png")',
+    background: 'url("/images/meditacao-21-nov.webp")',
   },
   {
     date: 'Novembro 19',
@@ -38,7 +38,7 @@ const ALL_DAILY_MAXIMS: DailyMaxim[] = [
     title: 'MÁXIMAS DE TRÊS HOMENS SÁBIOS',
     text: 'Para qualquer desafio, deveríamos ter três pensamentos ao nosso dispor: "Conduzam Deus e Destino, Para aquela Meta fixada para mim há muito. Seguirei e não tropeçarei; mesmo que minha vontade seja fraca, eu me manterei firme."',
     author: 'CLEANTES',
-    background: 'url("/images/meditacao-19-nov.png")',
+    background: 'url("/images/meditacao-19-nov.webp")',
   },
   {
     date: 'Novembro 20',
@@ -46,7 +46,7 @@ const ALL_DAILY_MAXIMS: DailyMaxim[] = [
     title: 'O PODER DO PENSAMENTO',
     text: 'Você tem poder sobre sua mente - não sobre eventos externos. Perceba isso, e você encontrará força.',
     author: 'MARCO AURÉLIO',
-    background: 'url("/images/meditacao-20-nov.png")',
+    background: 'url("/images/meditacao-20-nov.webp")',
   },
   {
     date: 'Novembro 21',
@@ -54,7 +54,7 @@ const ALL_DAILY_MAXIMS: DailyMaxim[] = [
     title: 'A VIRTUDE DA REFLEXÃO',
     text: 'O pensamento profundo e a contemplação são o caminho para a verdadeira sabedoria.',
     author: 'SÊNECA',
-    background: 'url("/images/meditacao-21-nov.png")',
+    background: 'url("/images/meditacao-21-nov.webp")',
   },
 ];
 

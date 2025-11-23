@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { ResponsiveLine } from "@nivo/line";
+import { LazyResponsiveLine as ResponsiveLine } from "@/components/charts/LazyCharts";
 
 type LinhaDoTempoItem = { data: string; [dominio: string]: number | string };
 

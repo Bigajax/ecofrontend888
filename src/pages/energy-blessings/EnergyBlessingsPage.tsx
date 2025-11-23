@@ -30,7 +30,7 @@ export default function EnergyBlessingsPage() {
           title: 'Bênçãos dos Centros de Energia',
           duration: '07:42',
           audioUrl: '/audio/energy-blessings-meditation.mp3',
-          imageUrl: '/images/energy-blessings.png',
+          imageUrl: '/images/energy-blessings.webp',
           backgroundMusic: 'Cristais'
         }
       }
@@ -47,7 +47,7 @@ export default function EnergyBlessingsPage() {
             title: center.title,
             duration: center.duration,
             audioUrl: `/audio/center-${centerId}.mp3`,
-            imageUrl: '/images/energy-blessings.png',
+            imageUrl: '/images/energy-blessings.webp',
             backgroundMusic: 'Cristais'
           }
         }
@@ -66,7 +66,7 @@ export default function EnergyBlessingsPage() {
         <div
           className="relative h-[80vh] flex items-center justify-center"
         style={{
-          backgroundImage: 'url("/images/energy-blessings-hero.png")',
+          backgroundImage: 'url("/images/energy-blessings-hero.webp")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}

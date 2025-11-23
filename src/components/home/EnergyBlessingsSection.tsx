@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Play, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Blessing {
@@ -9,6 +9,7 @@ interface Blessing {
   image: string;
   isPremium?: boolean;
   imagePosition?: string;
+  category?: string;
 }
 
 interface EnergyBlessingsSectionProps {
@@ -23,6 +24,23 @@ export default function EnergyBlessingsSection({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
+
+  // Extract unique categories
+  const categories = useMemo(() => {
+    const uniqueCategories = Array.from(
+      new Set(blessings.map(b => b.category).filter(Boolean))
+    );
+    return ['Todas', ...uniqueCategories];
+  }, [blessings]);
+
+  // Filter blessings by selected category
+  const filteredBlessings = useMemo(() => {
+    if (selectedCategory === 'Todas') {
+      return blessings;
+    }
+    return blessings.filter(b => b.category === selectedCategory);
+  }, [blessings, selectedCategory]);
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -46,13 +64,30 @@ export default function EnergyBlessingsSection({
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12 bg-white">
       {/* Title */}
-      <div className="mb-8 pb-6 border-b border-[var(--eco-line)]">
+      <div className="mb-6 pb-4 border-b border-[var(--eco-line)]">
         <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
           Meditações
         </h2>
         <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
           Meditações guiadas para equilibrar sua energia
         </p>
+      </div>
+
+      {/* Category Tabs */}
+      <div className="mb-6 flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {categories.map((category) => (
+          <button
+            key={category}
+            onClick={() => setSelectedCategory(category)}
+            className={`flex-shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-all duration-200 ${
+              selectedCategory === category
+                ? 'bg-[var(--eco-user)] text-white shadow-sm'
+                : 'bg-gray-100 text-[var(--eco-muted)] hover:bg-gray-200'
+            }`}
+          >
+            {category}
+          </button>
+        ))}
       </div>
 
       {/* Desktop: Horizontal scroll with navigation buttons */}
@@ -83,7 +118,7 @@ export default function EnergyBlessingsSection({
           className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 pr-8 bg-white"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {blessings.map((blessing) => (
+          {filteredBlessings.map((blessing) => (
             <BlessingCard
               key={blessing.id}
               blessing={blessing}
@@ -96,7 +131,7 @@ export default function EnergyBlessingsSection({
       {/* Mobile: Horizontal scroll */}
       <div className="block md:hidden bg-white">
         <div className="flex gap-4 overflow-x-auto pb-2 pr-4 scrollbar-hide bg-white" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {blessings.map((blessing) => (
+          {filteredBlessings.map((blessing) => (
             <BlessingCard
               key={blessing.id}
               blessing={blessing}
@@ -142,7 +177,7 @@ function BlessingCard({
 
       {/* Content */}
       <div className="relative flex h-full flex-col justify-between p-4 md:p-5">
-        {/* Top: Duration Badge and Program Badge */}
+        {/* Top: Duration Badge and Category Badge */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1 rounded-full bg-purple-900/50 px-3 py-1.5 backdrop-blur-md">
@@ -150,11 +185,13 @@ function BlessingCard({
                 {blessing.duration}
               </span>
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-purple-900/50 px-3 py-1.5 backdrop-blur-md">
-              <span className="text-[11px] font-medium text-white">
-                Programa Dr. Joe Dispenza
+            {blessing.category && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-purple-900/50 px-3 py-1.5 backdrop-blur-md">
+                <span className="text-[11px] font-medium text-white">
+                  {blessing.category}
+                </span>
               </span>
-            </span>
+            )}
           </div>
           {blessing.isPremium && (
             <div className="flex items-center justify-center rounded-full bg-purple-900/50 p-1.5 backdrop-blur-md">

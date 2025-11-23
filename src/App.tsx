@@ -55,7 +55,19 @@ const DiarioEstoicoPage = lazy(() => import("@/pages/diario-estoico/DiarioEstoic
 const EnergyBlessingsPage = lazy(() => import("@/pages/energy-blessings/EnergyBlessingsPage"));
 const MeditationPlayerPage = lazy(() => import("@/pages/energy-blessings/MeditationPlayerPage"));
 
-const lazyFallback = <div>Carregando…</div>;
+// Lightweight loading fallback (no heavy dependencies)
+function LoadingFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-white">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-500" />
+        <p className="text-sm text-gray-500">Carregando...</p>
+      </div>
+    </div>
+  );
+}
+
+const lazyFallback = <LoadingFallback />;
 
 function renderWithSuspense(element: ReactElement) {
   return <Suspense fallback={lazyFallback}>{element}</Suspense>;

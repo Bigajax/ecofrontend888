@@ -74,7 +74,7 @@ export default function GoodNightSleepArticle() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
-                  src="/images/sleep-icon-2.png"
+                  src="/images/sleep-icon-2.webp"
                   alt="Medicação"
                   className="w-16 sm:w-20 md:w-24 h-auto"
                 />
@@ -93,7 +93,7 @@ export default function GoodNightSleepArticle() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
-                  src="/images/sleep-icon-1.png"
+                  src="/images/sleep-icon-1.webp"
                   alt="Estimulantes"
                   className="w-16 sm:w-20 md:w-24 h-auto"
                 />
@@ -112,7 +112,7 @@ export default function GoodNightSleepArticle() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
-                  src="/images/sleep-icon-3.png"
+                  src="/images/sleep-icon-3.webp"
                   alt="Cochilos"
                   className="w-16 sm:w-20 md:w-24 h-auto"
                 />
@@ -131,7 +131,7 @@ export default function GoodNightSleepArticle() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
-                  src="/images/sleep-icon-4.png"
+                  src="/images/sleep-icon-4.webp"
                   alt="Exercícios"
                   className="w-16 sm:w-20 md:w-24 h-auto"
                 />
@@ -150,7 +150,7 @@ export default function GoodNightSleepArticle() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
-                  src="/images/sleep-icon-7.png"
+                  src="/images/sleep-icon-7.webp"
                   alt="Luz natural"
                   className="w-16 sm:w-20 md:w-24 h-auto"
                 />
@@ -169,7 +169,7 @@ export default function GoodNightSleepArticle() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
-                  src="/images/sleep-icon-6.png"
+                  src="/images/sleep-icon-6.webp"
                   alt="Alimentação"
                   className="w-16 sm:w-20 md:w-24 h-auto"
                 />
@@ -188,7 +188,7 @@ export default function GoodNightSleepArticle() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
-                  src="/images/sleep-icon-8.png"
+                  src="/images/sleep-icon-8.webp"
                   alt="Atividades calmantes"
                   className="w-16 sm:w-20 md:w-24 h-auto"
                 />
@@ -207,7 +207,7 @@ export default function GoodNightSleepArticle() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
               <div className="flex justify-center md:col-span-1">
                 <img
-                  src="/images/sleep-icon-9.png"
+                  src="/images/sleep-icon-9.webp"
                   alt="Banho quente"
                   className="w-16 sm:w-20 md:w-24 h-auto"
                 />

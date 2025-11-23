@@ -90,7 +90,7 @@ export default function EcoAIModal({
                     <div className="flex items-center gap-3">
                       <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-pink-100">
                         <img
-                          src="/images/sentimentos.png"
+                          src="/images/sentimentos.webp"
                           alt="Sentimentos"
                           className="w-full h-full object-cover"
                         />
@@ -133,7 +133,7 @@ export default function EcoAIModal({
                   >
                     <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-purple-100">
                       <img
-                        src="/images/sugestao-vieses.png"
+                        src="/images/sugestao-vieses.webp"
                         alt="Vieses"
                         className="w-full h-full object-cover"
                       />
@@ -158,7 +158,7 @@ export default function EcoAIModal({
                         {isEstoico ? (
                           <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-purple-100">
                             <img
-                              src="/images/sugestao-estoico.png"
+                              src="/images/sugestao-estoico.webp"
                               alt="Estoico"
                               className="w-full h-full object-cover"
                             />
@@ -166,7 +166,7 @@ export default function EcoAIModal({
                         ) : isCoragem ? (
                           <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-purple-100">
                             <img
-                              src="/images/sugestao-coragem.png"
+                              src="/images/sugestao-coragem.webp"
                               alt="Coragem"
                               className="w-full h-full object-cover"
                             />
@@ -174,7 +174,7 @@ export default function EcoAIModal({
                         ) : isPresenca ? (
                           <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-purple-100">
                             <img
-                              src="/images/sugestao-presenca.png"
+                              src="/images/sugestao-presenca.webp"
                               alt="Presença"
                               className="w-full h-full object-cover"
                             />
@@ -202,7 +202,7 @@ export default function EcoAIModal({
                   {/* Image */}
                   <div className="relative h-52 bg-gradient-to-br from-blue-300 to-blue-500 overflow-hidden">
                     <img
-                      src="/images/memoria-emocional-ilustracao.png"
+                      src="/images/memoria-emocional-ilustracao.webp"
                       alt="Memória Emocional"
                       className="w-full h-full object-cover"
                     />
@@ -225,7 +225,7 @@ export default function EcoAIModal({
                   {/* Image */}
                   <div className="relative h-52 bg-gradient-to-br from-purple-300 to-purple-500 overflow-hidden">
                     <img
-                      src="/images/perfil-emocional-ilustracao.png"
+                      src="/images/perfil-emocional-ilustracao.webp"
                       alt="Perfil Emocional"
                       className="w-full h-full object-cover"
                     />
@@ -248,7 +248,7 @@ export default function EcoAIModal({
                   {/* Image */}
                   <div className="relative h-52 bg-gradient-to-br from-green-400 via-emerald-500 to-green-600 overflow-hidden">
                     <img
-                      src="/images/relatorio-emocional-ilustracao.png"
+                      src="/images/relatorio-emocional-ilustracao.webp"
                       alt="Relatório Emocional"
                       className="w-full h-full object-cover"
                     />
