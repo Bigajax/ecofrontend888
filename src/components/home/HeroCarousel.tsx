@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 
 interface CarouselItem {
   id: number;
@@ -39,6 +39,8 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
 
 export default function HeroCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
 
   const goToPrevious = () => {
     setCurrentIndex((prevIndex) =>
@@ -52,10 +54,42 @@ export default function HeroCarousel() {
     );
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const swipeThreshold = 50; // Minimum distance for a swipe
+    const diff = touchStartX.current - touchEndX.current;
+
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0) {
+        // Swiped left - go to next
+        goToNext();
+      } else {
+        // Swiped right - go to previous
+        goToPrevious();
+      }
+    }
+
+    // Reset values
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
+
   const currentItem = CAROUSEL_ITEMS[currentIndex];
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
+    <div
+      className="group relative overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)] select-none"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Background Image */}
       <div
         className="absolute inset-0 animate-ken-burns bg-cover bg-center"
@@ -68,44 +102,41 @@ export default function HeroCarousel() {
 
       {/* Content */}
       <div className="relative flex h-full flex-col justify-between p-8">
-        {/* Top: Badge and Navigation */}
-        <div className="flex items-center justify-between">
-          <div className="rounded-full bg-white/80 px-4 py-2 text-[12px] font-medium text-[var(--eco-text)] backdrop-blur-sm">
-            {currentIndex + 1} de {CAROUSEL_ITEMS.length}
-          </div>
+        {/* Quote Content */}
+        <div className="flex-1" />
 
-          {/* Navigation Buttons */}
-          <div className="flex gap-2">
-            <button
-              onClick={goToPrevious}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 transition-all duration-300 hover:bg-white/40"
-              aria-label="Anterior"
-            >
-              <ChevronLeft size={18} className="text-white" />
-            </button>
-            <button
-              onClick={goToNext}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 transition-all duration-300 hover:bg-white/40"
-              aria-label="Próximo"
-            >
-              <ChevronRight size={18} className="text-white" />
-            </button>
-          </div>
-        </div>
-
-        {/* Bottom: Quote */}
-        <div className="space-y-4">
-          <h3 className="font-display text-xl font-normal text-white drop-shadow-lg">
-            {currentItem.title}
-          </h3>
-          <p className="text-[14px] leading-relaxed text-white/90 drop-shadow-md">
-            {currentItem.description}
-          </p>
-          {currentItem.author && (
-            <p className="text-[13px] font-medium text-white/80 drop-shadow-md">
-              {currentItem.author}
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <h3 className="font-display text-xl font-normal text-white drop-shadow-lg">
+              {currentItem.title}
+            </h3>
+            <p className="text-[14px] leading-relaxed text-white/90 drop-shadow-md">
+              {currentItem.description}
             </p>
-          )}
+            {currentItem.author && (
+              <p className="text-[13px] font-medium text-white/80 drop-shadow-md">
+                {currentItem.author}
+              </p>
+            )}
+          </div>
+
+          {/* Bottom: Pagination Dots - Centered */}
+          <div className="flex items-center justify-center">
+            <div className="flex gap-2">
+              {CAROUSEL_ITEMS.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentIndex(index)}
+                  className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                    index === currentIndex
+                      ? 'bg-white w-6'
+                      : 'bg-white/40 hover:bg-white/60'
+                  }`}
+                  aria-label={`Ir para slide ${index + 1}`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

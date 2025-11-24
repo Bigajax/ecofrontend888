@@ -51,13 +51,16 @@ export default function HomeHeader() {
       <header className="sticky top-0 z-40 hidden border-b border-[var(--eco-line)]/20 bg-white/95 backdrop-blur-sm md:block">
         <div className="mx-auto flex max-w-7xl items-center justify-center px-8 py-5">
           {/* Logo */}
-          <div className="absolute left-8">
+          <button
+            onClick={() => navigate('/app')}
+            className="absolute left-8 transition-transform hover:scale-105 active:scale-95"
+          >
             <img
-              src="/logo-ecotopia.png"
+              src="/images/ECOTOPIA.png"
               alt="Ecotopia"
-              className="h-10"
+              className="h-20"
             />
-          </div>
+          </button>
 
           {/* Navigation - Centered */}
           <nav className="flex items-end gap-12 pb-2">
@@ -66,6 +69,8 @@ export default function HomeHeader() {
                 key={item.path}
                 className="relative flex flex-col items-center pt-3"
                 ref={index === 1 ? explorarRef : null}
+                onMouseEnter={() => index === 1 && setExplorarOpen(true)}
+                onMouseLeave={() => index === 1 && setExplorarOpen(false)}
               >
                 {/* Active indicator line */}
                 {isActive(item.path) && (
@@ -174,13 +179,16 @@ export default function HomeHeader() {
 
         <div className="flex items-center justify-between px-8 py-5">
           {/* Logo */}
-          <div>
+          <button
+            onClick={() => navigate('/app')}
+            className="transition-transform active:scale-95"
+          >
             <img
-              src="/logo-ecotopia.png"
+              src="/images/ECOTOPIA.png"
               alt="Ecotopia"
-              className="h-8"
+              className="h-16"
             />
-          </div>
+          </button>
 
           {/* Avatar and Menu Toggle */}
           <div className="flex items-center gap-3">
