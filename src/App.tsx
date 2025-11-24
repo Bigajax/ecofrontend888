@@ -54,6 +54,10 @@ const GoodNightSleepArticle = lazy(() => import("@/pages/articles/GoodNightSleep
 const DiarioEstoicoPage = lazy(() => import("@/pages/diario-estoico/DiarioEstoicoPage"));
 const EnergyBlessingsPage = lazy(() => import("@/pages/energy-blessings/EnergyBlessingsPage"));
 const MeditationPlayerPage = lazy(() => import("@/pages/energy-blessings/MeditationPlayerPage"));
+const ProgramasPage = lazy(() => import("@/pages/ProgramasPage"));
+const SonoPage = lazy(() => import("@/pages/SonoPage"));
+const SonsPage = lazy(() => import("@/pages/SonsPage"));
+const ConfiguracoesPage = lazy(() => import("@/pages/ConfiguracoesPage"));
 
 // Lightweight loading fallback (no heavy dependencies)
 function LoadingFallback() {
@@ -146,6 +150,10 @@ function AppRoutes() {
         <Route path="articles/sleep" element={renderWithSuspense(<SleepArticle />)} />
         <Route path="articles/good-night-sleep" element={renderWithSuspense(<GoodNightSleepArticle />)} />
         <Route path="diario-estoico" element={renderWithSuspense(<DiarioEstoicoPage />)} />
+        <Route path="programas" element={renderWithSuspense(<ProgramasPage />)} />
+        <Route path="sono" element={renderWithSuspense(<SonoPage />)} />
+        <Route path="sons" element={renderWithSuspense(<SonsPage />)} />
+        <Route path="configuracoes" element={renderWithSuspense(<ConfiguracoesPage />)} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Route>
       <Route

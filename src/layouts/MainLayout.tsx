@@ -34,13 +34,19 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     navigate('/login');
   };
 
-  // Mostrar header antigo apenas na ChatPage e outras páginas (não na HomePage, nem Rings, nem Riqueza Mental, nem Articles, nem Diário Estoico)
+  // Mostrar header antigo apenas na ChatPage e outras páginas (não na HomePage, nem Rings, nem Riqueza Mental, nem Articles, nem Diário Estoico, nem páginas de Explorar, nem páginas de Meditação)
   const isHomePage = location.pathname === '/app' || location.pathname === '/app/';
   const isRingsPage = location.pathname.startsWith('/app/rings');
   const isRiquezaMentalPage = location.pathname.startsWith('/app/riqueza-mental');
   const isArticlesPage = location.pathname.startsWith('/app/articles');
   const isDiarioEstoicoPage = location.pathname.startsWith('/app/diario-estoico');
-  const showOldHeader = !isHomePage && !isRingsPage && !isRiquezaMentalPage && !isArticlesPage && !isDiarioEstoicoPage;
+  const isProgramasPage = location.pathname.startsWith('/app/programas');
+  const isSonoPage = location.pathname.startsWith('/app/sono');
+  const isSonsPage = location.pathname.startsWith('/app/sons');
+  const isEnergyBlessingsPage = location.pathname.startsWith('/app/energy-blessings');
+  const isMeditationPlayerPage = location.pathname.startsWith('/app/meditation-player');
+  const isConfiguracoesPage = location.pathname.startsWith('/app/configuracoes');
+  const showOldHeader = !isHomePage && !isRingsPage && !isRiquezaMentalPage && !isArticlesPage && !isDiarioEstoicoPage && !isProgramasPage && !isSonoPage && !isSonsPage && !isEnergyBlessingsPage && !isMeditationPlayerPage && !isConfiguracoesPage;
 
   return (
     <>

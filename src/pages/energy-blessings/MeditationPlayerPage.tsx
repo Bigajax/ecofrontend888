@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Play, Pause, RotateCcw, RotateCw, Heart, Volume2, Music } from 'lucide-react';
+import HomeHeader from '@/components/home/HomeHeader';
 
 interface MeditationData {
   title: string;
@@ -31,6 +32,27 @@ export default function MeditationPlayerPage() {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(20);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+
+  // Scroll para o topo quando a página carregar
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Esconder toast após 3 segundos
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
+
+  const handleFavoriteToggle = () => {
+    setIsFavorite(!isFavorite);
+    setShowToast(true);
+  };
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -93,16 +115,11 @@ export default function MeditationPlayerPage() {
 
   return (
     <div className="min-h-screen font-primary" style={{ background: meditationData.gradient || 'linear-gradient(to bottom right, #FF8C42 0%, #F7931E 20%, #D8617A 40%, #8B3A62 60%, #6B2C5C 80%, #2D1B3D 100%)' }}>
-      {/* Back Button */}
-      <button
-        onClick={handleBack}
-        className="absolute top-4 left-4 sm:top-8 sm:left-8 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white shadow-md md:hover:shadow-lg transition-all active:scale-95 z-10 touch-manipulation"
-      >
-        <ChevronLeft size={20} className="sm:w-6 sm:h-6 text-gray-700" />
-      </button>
+      {/* HomeHeader */}
+      <HomeHeader />
 
       {/* Main Content */}
-      <div className="flex min-h-screen flex-col items-center justify-center px-4 sm:px-8 py-16 sm:py-20">
+      <div className="flex min-h-screen flex-col items-center justify-center px-4 sm:px-8 py-16 sm:py-20 pb-32 sm:pb-36">
         {/* Meditation Image */}
         <div className="mb-6 sm:mb-8 overflow-hidden rounded-3xl shadow-2xl">
           <img
@@ -155,132 +172,71 @@ export default function MeditationPlayerPage() {
           </button>
         </div>
 
-        {/* Bottom Controls */}
-        <div className="w-full max-w-4xl px-4 sm:px-0">
-          {/* Mobile Layout: Stacked */}
-          <div className="flex flex-col gap-4 sm:hidden rounded-3xl bg-white/80 backdrop-blur-sm px-4 py-4 shadow-lg">
-            {/* Progress Bar with Time */}
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-medium text-gray-700 w-10">
+        {/* Bottom Controls - Fixed */}
+        <div className="fixed bottom-0 left-0 right-0 w-full z-50">
+          <div className="w-full bg-white/95 backdrop-blur-md shadow-2xl">
+            {/* Single Row Layout */}
+            <div className="max-w-6xl mx-auto flex items-center gap-2 md:gap-3 px-4 md:px-8 py-2 md:py-2.5">
+              {/* Background Music Info */}
+              <div className="flex items-center gap-2 md:gap-3 rounded-full bg-gray-100 px-3 md:px-4 py-1.5 md:py-2 flex-shrink-0">
+                <Music size={16} className="text-gray-600 md:w-[18px] md:h-[18px]" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] md:text-xs font-medium text-gray-500 uppercase leading-tight">Sons de Fundo</span>
+                  <span className="text-xs md:text-sm font-medium text-gray-800 leading-tight">
+                    {meditationData.backgroundMusic || 'Cristais'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Time Display */}
+              <span className="text-xs md:text-sm font-medium text-gray-700 flex-shrink-0">
                 {formatTime(currentTime)}
               </span>
+
+              {/* Progress Bar */}
               <input
                 type="range"
                 min="0"
                 max={duration || 0}
                 value={currentTime}
                 onChange={handleProgressChange}
-                className="flex-1 cursor-pointer"
+                className="flex-1 cursor-pointer min-w-0"
                 style={{
                   background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`
                 }}
               />
-              <span className="text-xs font-medium text-gray-700 w-10">
+
+              {/* Duration */}
+              <span className="text-xs md:text-sm font-medium text-gray-700 flex-shrink-0">
                 {formatTime(duration)}
               </span>
-            </div>
 
-            {/* Actions Row */}
-            <div className="flex items-center justify-between">
-              {/* Background Music */}
-              <div className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5">
-                <Music size={14} className="text-gray-600" />
-                <span className="text-xs font-medium text-gray-800">
-                  {meditationData.backgroundMusic || 'Cristais'}
+              {/* Favorite Button */}
+              <button
+                onClick={handleFavoriteToggle}
+                className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full md:hover:bg-gray-100 transition-colors touch-manipulation flex-shrink-0"
+              >
+                <Heart
+                  size={18}
+                  className={`md:w-5 md:h-5 transition-all ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
+                />
+              </button>
+
+              {/* Volume Control */}
+              <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+                <Volume2 size={18} className="text-gray-600 md:w-5 md:h-5" />
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={volume}
+                  onChange={(e) => setVolume(parseInt(e.target.value))}
+                  className="w-16 md:w-24 cursor-pointer"
+                />
+                <span className="text-xs md:text-sm font-medium text-gray-700 w-10 md:w-12">
+                  %{volume}
                 </span>
               </div>
-
-              {/* Favorite & Volume */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsFavorite(!isFavorite)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full active:bg-gray-100 transition-colors touch-manipulation"
-                >
-                  <Heart
-                    size={18}
-                    className={isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}
-                  />
-                </button>
-
-                <div className="flex items-center gap-2">
-                  <Volume2 size={16} className="text-gray-600" />
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={volume}
-                    onChange={(e) => setVolume(parseInt(e.target.value))}
-                    className="w-16 cursor-pointer"
-                  />
-                  <span className="text-xs font-medium text-gray-700 w-8">
-                    {volume}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop Layout: Single Row */}
-          <div className="hidden sm:flex items-center gap-4 md:gap-6 rounded-full bg-white/80 backdrop-blur-sm px-6 py-4 shadow-lg">
-            {/* Background Music Info */}
-            <div className="flex items-center gap-3 rounded-full bg-gray-100 px-4 py-2">
-              <Music size={18} className="text-gray-600" />
-              <div className="flex flex-col">
-                <span className="text-xs font-medium text-gray-500 uppercase">Sons de Fundo</span>
-                <span className="text-sm font-medium text-gray-800">
-                  {meditationData.backgroundMusic || 'Cristais'}
-                </span>
-              </div>
-            </div>
-
-            {/* Time Display */}
-            <span className="text-sm font-medium text-gray-700">
-              {formatTime(currentTime)}
-            </span>
-
-            {/* Progress Bar */}
-            <input
-              type="range"
-              min="0"
-              max={duration || 0}
-              value={currentTime}
-              onChange={handleProgressChange}
-              className="flex-1 cursor-pointer"
-              style={{
-                background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`
-              }}
-            />
-
-            {/* Duration */}
-            <span className="text-sm font-medium text-gray-700">
-              {formatTime(duration)}
-            </span>
-
-            {/* Favorite Button */}
-            <button
-              onClick={() => setIsFavorite(!isFavorite)}
-              className="flex h-10 w-10 items-center justify-center rounded-full md:hover:bg-gray-100 transition-colors touch-manipulation"
-            >
-              <Heart
-                size={20}
-                className={isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}
-              />
-            </button>
-
-            {/* Volume Control */}
-            <div className="flex items-center gap-3">
-              <Volume2 size={20} className="text-gray-600" />
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={volume}
-                onChange={(e) => setVolume(parseInt(e.target.value))}
-                className="w-24 cursor-pointer"
-              />
-              <span className="text-sm font-medium text-gray-700 w-10">
-                %{volume}
-              </span>
             </div>
           </div>
         </div>
@@ -288,6 +244,18 @@ export default function MeditationPlayerPage() {
 
       {/* Hidden Audio Element */}
       <audio ref={audioRef} src={meditationData.audioUrl} />
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="bg-white/95 backdrop-blur-md rounded-full shadow-2xl px-6 py-3 flex items-center gap-3 border border-gray-200">
+            <Heart size={18} className="fill-red-500 text-red-500" />
+            <span className="text-sm font-medium text-gray-900">
+              {isFavorite ? 'Adicionado aos favoritos' : 'Removido dos favoritos'}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
