@@ -237,7 +237,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
                   'hover:bg-[#F3EEE7]/80 hover:-translate-y-0.5'
                 )}
               >
-                #{tag.toLowerCase()}
+                {tag}
               </span>
             ))}
             {extraTags > 0 ? (
@@ -274,6 +274,15 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
                 {mem.resumoCompleto && mem.resumoCompleto !== mem.resumo ? (
                   <p className="text-xs text-[#9C938A] italic">→ Resumido</p>
                 ) : null}
+              </div>
+            ) : null}
+
+            {mem.resumoEco ? (
+              <div className="space-y-2 rounded-lg border border-[#E8E3DD] bg-[#F3EEE7]/40 p-3.5">
+                <span className="text-xs font-display font-normal text-[#A7846C] uppercase tracking-wide block">
+                  Resumo da Eco
+                </span>
+                <p className="text-sm font-primary font-light text-[#38322A] leading-relaxed">{mem.resumoEco}</p>
               </div>
             ) : null}
 
