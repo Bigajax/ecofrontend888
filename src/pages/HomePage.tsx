@@ -123,6 +123,14 @@ export default function HomePage() {
     () => [
       {
         id: 'rec_1',
+        title: 'Meditação do Sono',
+        description: 'Relaxe profundamente e durma melhor',
+        duration: '20 min',
+        image: 'url("/images/meditacao-sono.webp")',
+        isPremium: false,
+      },
+      {
+        id: 'rec_2',
         title: '5 Anéis da Disciplina',
         description: 'Construa sua estrutura pessoal',
         duration: '12 min',
@@ -130,7 +138,7 @@ export default function HomePage() {
         isPremium: false,
       },
       {
-        id: 'rec_2',
+        id: 'rec_3',
         title: 'Quem Pensa Enriquece',
         description: 'Transforme seu mindset financeiro',
         duration: '15 min',

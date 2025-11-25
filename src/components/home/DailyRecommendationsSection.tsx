@@ -1,3 +1,4 @@
+import React from 'react';
 import { Play, Lock } from 'lucide-react';
 
 interface Recommendation {
@@ -35,28 +36,64 @@ export default function DailyRecommendationsSection({
         </p>
       </div>
 
-      {/* Desktop: Grid - 3 colunas */}
-      <div className="mb-8 hidden grid-cols-3 gap-6 md:grid">
-        {recommendations.map((rec) => (
-          <RecommendationCard
-            key={rec.id}
-            recommendation={rec}
-            onClick={() => onRecommendationClick?.(rec.id)}
-          />
-        ))}
-      </div>
+      {/* Desktop: Grid - 3 colunas com linha horizontal */}
+      <div className="mb-8 hidden md:block">
+        {/* Linha horizontal com bolinhas conectadas */}
+        <div className="relative mb-8">
+          <div className="flex items-center justify-between max-w-4xl mx-auto px-8">
+            {recommendations.map((_, index) => (
+              <React.Fragment key={index}>
+                {/* Bolinha */}
+                <div className="w-6 h-6 rounded-full border-[2px] border-purple-700 bg-white relative z-10" />
 
-      {/* Mobile: Horizontal scroll */}
-      <div className="block md:hidden">
-        <div className="flex gap-4 overflow-x-auto pb-2">
+                {/* Linha conectora (exceto depois da última bolinha) */}
+                {index < recommendations.length - 1 && (
+                  <div className="flex-1 h-[1px] bg-gray-300 mx-4" />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+
+        {/* Cards */}
+        <div className="grid grid-cols-3 gap-6">
           {recommendations.map((rec) => (
             <RecommendationCard
               key={rec.id}
               recommendation={rec}
-              mobile
               onClick={() => onRecommendationClick?.(rec.id)}
             />
           ))}
+        </div>
+      </div>
+
+      {/* Mobile: Layout vertical com linha vertical */}
+      <div className="block md:hidden">
+        <div className="relative">
+          {/* Linha vertical */}
+          <div className="absolute left-3 top-0 bottom-0 w-[1px] bg-gray-300" />
+
+          {/* Cards verticais com bolinhas */}
+          <div className="space-y-6">
+            {recommendations.map((rec, index) => (
+              <div key={rec.id} className="relative flex items-start gap-4">
+                {/* Bolinha */}
+                <div className="relative flex-shrink-0 z-10">
+                  <div className="w-6 h-6 rounded-full border-[2px] border-purple-700 bg-white" />
+                </div>
+
+                {/* Card */}
+                <div className="flex-1">
+                  <RecommendationCard
+                    recommendation={rec}
+                    mobile
+                    vertical
+                    onClick={() => onRecommendationClick?.(rec.id)}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -66,15 +103,17 @@ export default function DailyRecommendationsSection({
 interface RecommendationCardProps {
   recommendation: Recommendation;
   mobile?: boolean;
+  vertical?: boolean;
   onClick?: () => void;
 }
 
 function RecommendationCard({
   recommendation,
   mobile,
+  vertical,
   onClick,
 }: RecommendationCardProps) {
-  const baseClass = mobile ? 'w-80 flex-shrink-0' : 'w-full';
+  const baseClass = vertical ? 'w-full' : mobile ? 'w-80 flex-shrink-0' : 'w-full';
 
   return (
     <button
@@ -84,7 +123,7 @@ function RecommendationCard({
         backgroundImage: recommendation.image,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        minHeight: mobile ? '200px' : '220px',
+        minHeight: vertical ? '200px' : mobile ? '200px' : '220px',
       }}
     >
       {/* Overlay */}
