@@ -17,7 +17,7 @@ export default function AIGuidanceCard({
       </h2>
 
       {/* Main Card - Desktop & Mobile */}
-      <div className="group relative overflow-hidden rounded-3xl border border-[var(--eco-line)] bg-gradient-to-br from-purple-100 via-blue-50 to-pink-50 shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_12px_48px_rgba(138,43,226,0.15)]">
+      <div className="group relative overflow-hidden rounded-3xl border border-[var(--eco-line)] bg-gradient-to-br from-[#E3F5FF] via-[#F5FBFF] to-[#E3F5FF] shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_12px_48px_rgba(110,200,255,0.15)]">
         {/* Decorative gradient background */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/0 to-white/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 

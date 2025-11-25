@@ -40,7 +40,7 @@ export default function ConfiguracoesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#F5FBFF] via-[#E3F5FF] to-[#F5FBFF]">
       <HomeHeader />
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -54,7 +54,7 @@ export default function ConfiguracoesPage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-400 to-pink-400 text-white text-2xl font-bold">
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#6EC8FF] to-[#4BA8E0] text-white text-2xl font-bold">
                 {user?.user_metadata?.full_name?.charAt(0) || 'U'}
               </div>
             )}
@@ -83,7 +83,7 @@ export default function ConfiguracoesPage() {
                       onClick={() => setSelectedMenu(item.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                         isSelected
-                          ? 'bg-purple-50 text-purple-600'
+                          ? 'bg-[#F5FBFF] text-[#6EC8FF]'
                           : 'text-gray-600 hover:bg-gray-50'
                       }`}
                     >
@@ -122,7 +122,7 @@ export default function ConfiguracoesPage() {
                             type="text"
                             value={formData.nome}
                             onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent transition-all"
                           />
                         </div>
 
@@ -133,7 +133,7 @@ export default function ConfiguracoesPage() {
                             type="email"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent transition-all"
                           />
                         </div>
 
@@ -144,7 +144,7 @@ export default function ConfiguracoesPage() {
                             type="text"
                             value={formData.dataNascimento}
                             onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent transition-all"
                           />
                         </div>
                       </div>
@@ -153,7 +153,7 @@ export default function ConfiguracoesPage() {
                     {/* Update Button */}
                     <button
                       onClick={handleUpdate}
-                      className="px-8 py-3 bg-purple-600 text-white font-medium rounded-full hover:bg-purple-700 transition-colors shadow-md hover:shadow-lg active:scale-95"
+                      className="px-8 py-3 bg-[#6EC8FF] text-white font-medium rounded-full hover:bg-[#4BA8E0] transition-colors shadow-md hover:shadow-lg active:scale-95"
                     >
                       Atualizar
                     </button>

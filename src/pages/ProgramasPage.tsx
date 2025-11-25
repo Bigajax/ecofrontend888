@@ -252,7 +252,7 @@ export default function ProgramasPage() {
                   }}
                 >
                   {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-purple-900/70 via-purple-800/30 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#2B8FCC]/70 via-[#4BA8E0]/30 to-transparent" />
 
                   {/* Hover overlay - darken on hover */}
                   <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/20 transition-all duration-300" />
@@ -262,13 +262,13 @@ export default function ProgramasPage() {
                     {/* Top: Duration Badge and Category Badge */}
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-purple-900/50 px-3 py-1.5 backdrop-blur-md">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[#2B8FCC]/50 px-3 py-1.5 backdrop-blur-md">
                           <span className="text-[11px] font-medium text-white">
                             {meditation.duration}
                           </span>
                         </span>
                         {meditation.category && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-purple-900/50 px-3 py-1.5 backdrop-blur-md">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#2B8FCC]/50 px-3 py-1.5 backdrop-blur-md">
                             <span className="text-[11px] font-medium text-white">
                               {meditation.category}
                             </span>

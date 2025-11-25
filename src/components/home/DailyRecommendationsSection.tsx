@@ -44,7 +44,7 @@ export default function DailyRecommendationsSection({
             {recommendations.map((_, index) => (
               <React.Fragment key={index}>
                 {/* Bolinha */}
-                <div className="w-6 h-6 rounded-full border-[2px] border-purple-700 bg-white relative z-10" />
+                <div className="w-6 h-6 rounded-full border-[2px] border-[#6EC8FF] bg-white relative z-10" />
 
                 {/* Linha conectora (exceto depois da última bolinha) */}
                 {index < recommendations.length - 1 && (
@@ -76,7 +76,7 @@ export default function DailyRecommendationsSection({
               <div key={rec.id} className="relative flex items-center gap-4">
                 {/* Bolinha com linha conectora */}
                 <div className="relative flex-shrink-0 z-10 flex flex-col items-center">
-                  <div className="w-6 h-6 rounded-full border-[2px] border-purple-700 bg-white relative z-10" />
+                  <div className="w-6 h-6 rounded-full border-[2px] border-[#6EC8FF] bg-white relative z-10" />
 
                   {/* Linha conectora (exceto última bolinha) - começa do centro da bolinha */}
                   {index < recommendations.length - 1 && (

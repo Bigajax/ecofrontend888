@@ -111,9 +111,9 @@ export default function Favoritos() {
               </div>
               <button
                 onClick={() => handlePlayMeditation(item)}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors flex-shrink-0"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-[#E3F5FF] hover:bg-[#D0EEFF] transition-colors flex-shrink-0"
               >
-                <Play size={18} className="text-purple-600 fill-purple-600 ml-0.5" />
+                <Play size={18} className="text-[#6EC8FF] fill-[#6EC8FF] ml-0.5" />
               </button>
               <button
                 onClick={() => handleRemoveFavorite(item.id)}

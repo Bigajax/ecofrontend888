@@ -75,7 +75,7 @@ export default function HomeHeader() {
                 {isActive(item.path) && (
                   <motion.div
                     layoutId="navIndicator"
-                    className="absolute -top-3 h-1.5 bg-purple-600 rounded-full"
+                    className="absolute -top-3 h-1.5 bg-[#6EC8FF] rounded-full"
                     style={{ left: '4px', right: '4px' }}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -95,22 +95,22 @@ export default function HomeHeader() {
                   }}
                   className={`flex items-center gap-2.5 text-[15px] font-medium transition-colors duration-300 ${
                     isActive(item.path) || (index === 1 && explorarOpen)
-                      ? 'text-purple-600'
-                      : 'text-gray-400 hover:text-purple-600'
+                      ? 'text-[#6EC8FF]'
+                      : 'text-gray-400 hover:text-[#6EC8FF]'
                   }`}
                 >
                   {index === 0 && (
                     <Home
                       size={20}
                       strokeWidth={1.5}
-                      className={`transition-colors duration-300 ${isActive(item.path) ? 'text-purple-600' : 'text-gray-400'}`}
+                      className={`transition-colors duration-300 ${isActive(item.path) ? 'text-[#6EC8FF]' : 'text-gray-400'}`}
                     />
                   )}
                   {index === 1 && (
                     <Search
                       size={20}
                       strokeWidth={1.5}
-                      className={`transition-colors duration-300 ${isActive(item.path) || explorarOpen ? 'text-purple-600' : 'text-gray-400'}`}
+                      className={`transition-colors duration-300 ${isActive(item.path) || explorarOpen ? 'text-[#6EC8FF]' : 'text-gray-400'}`}
                     />
                   )}
                   {item.label}
@@ -165,7 +165,7 @@ export default function HomeHeader() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 text-white text-sm font-semibold">
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#6EC8FF] to-[#4BA8E0] text-white text-sm font-semibold">
                 {user?.user_metadata?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
               </div>
             )}

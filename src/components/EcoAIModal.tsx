@@ -61,7 +61,7 @@ export default function EcoAIModal({
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 shadow-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E3F5FF] shadow-sm">
                   <EcoBubbleOneEye variant="icon" size={24} />
                 </div>
                 <div>
@@ -131,7 +131,7 @@ export default function EcoAIModal({
                     onClick={() => onSuggestionClick('Quer checar possíveis vieses hoje?')}
                     className="w-full bg-white rounded-2xl px-4 py-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 text-left group flex items-center gap-3"
                   >
-                    <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-purple-100">
+                    <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-[#E3F5FF]">
                       <img
                         src="/images/sugestao-vieses.webp"
                         alt="Vieses"
@@ -156,7 +156,7 @@ export default function EcoAIModal({
                         className="w-full bg-white rounded-2xl px-4 py-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 text-left group flex items-center gap-3"
                       >
                         {isEstoico ? (
-                          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-purple-100">
+                          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-[#E3F5FF]">
                             <img
                               src="/images/sugestao-estoico.webp"
                               alt="Estoico"
@@ -164,7 +164,7 @@ export default function EcoAIModal({
                             />
                           </div>
                         ) : isCoragem ? (
-                          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-purple-100">
+                          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-[#E3F5FF]">
                             <img
                               src="/images/sugestao-coragem.webp"
                               alt="Coragem"
@@ -172,7 +172,7 @@ export default function EcoAIModal({
                             />
                           </div>
                         ) : isPresenca ? (
-                          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-purple-100">
+                          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-[#E3F5FF]">
                             <img
                               src="/images/sugestao-presenca.webp"
                               alt="Presença"
@@ -180,8 +180,8 @@ export default function EcoAIModal({
                             />
                           </div>
                         ) : (
-                          <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                            <IconComponent size={24} className="text-purple-600" />
+                          <div className="w-16 h-16 rounded-full bg-[#E3F5FF] flex items-center justify-center flex-shrink-0">
+                            <IconComponent size={24} className="text-[#6EC8FF]" />
                           </div>
                         )}
                         <p className="text-gray-700 text-sm flex-1">{suggestion.label}</p>
@@ -217,7 +217,7 @@ export default function EcoAIModal({
                 {/* Card Perfil Emocional */}
                 <div className="bg-white rounded-3xl overflow-hidden shadow-md">
                   {/* Image */}
-                  <div className="relative h-48 sm:h-52 bg-gradient-to-br from-purple-300 to-purple-500 overflow-hidden">
+                  <div className="relative h-48 sm:h-52 bg-gradient-to-br from-[#6EC8FF] to-[#4BA8E0] overflow-hidden">
                     <img
                       src="/images/perfil-emocional-ilustracao.webp"
                       alt="Perfil Emocional"
