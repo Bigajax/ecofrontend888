@@ -102,23 +102,6 @@ export default function EcoAIModal({
                       <ChevronRight size={20} className="text-gray-400 flex-shrink-0 group-hover:translate-x-1 transition-transform ml-2" />
                     </div>
                   </button>
-
-                  {/* Card 2: Sugerir conteúdo */}
-                  <button
-                    onClick={onSugerirConteudo}
-                    className="w-full bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0 text-left group"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-400 to-blue-500 text-white">
-                        <Play size={24} />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-800 mb-1">Sugerir conteúdo</h4>
-                        <p className="text-sm text-gray-600">Fale com a Soul e receba uma recomendação de conteúdo precisa.</p>
-                      </div>
-                      <ChevronRight size={20} className="text-gray-400 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </button>
                 </div>
               </div>
 
@@ -192,8 +175,10 @@ export default function EcoAIModal({
                 </div>
               </div>
 
-              {/* Memória, Perfil, Relatório - Grid responsivo */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+              {/* Acompanhe sua evolução */}
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Acompanhe sua evolução</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
                 {/* Card Memória Emocional */}
                 <div className="bg-white rounded-3xl overflow-hidden shadow-md">
                   {/* Image */}
@@ -252,6 +237,7 @@ export default function EcoAIModal({
                       Explore mapas emocionais em 3D, linha do tempo e gráficos das suas emoções dominantes.
                     </p>
                   </div>
+                </div>
                 </div>
               </div>
 
