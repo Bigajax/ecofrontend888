@@ -66,7 +66,7 @@ export default function EnergyBlessingsSection({
       {/* Title */}
       <div className="mb-6 pb-4 border-b border-[var(--eco-line)]">
         <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
-          Meditações
+          Recomendações para você
         </h2>
         <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
           Meditações guiadas para equilibrar sua energia
@@ -156,7 +156,7 @@ function BlessingCard({
   mobile,
   onClick,
 }: BlessingCardProps) {
-  const baseClass = mobile ? 'w-80 flex-shrink-0' : 'w-96 flex-shrink-0';
+  const baseClass = mobile ? 'w-[calc(100vw-3rem)] flex-shrink-0' : 'w-96 flex-shrink-0';
 
   return (
     <button
@@ -166,7 +166,7 @@ function BlessingCard({
         backgroundImage: blessing.image,
         backgroundSize: 'cover',
         backgroundPosition: blessing.imagePosition || 'center',
-        minHeight: mobile ? '200px' : '220px',
+        minHeight: mobile ? '160px' : '220px',
       }}
     >
       {/* Overlay */}
@@ -176,37 +176,37 @@ function BlessingCard({
       <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/20 transition-all duration-300" />
 
       {/* Content */}
-      <div className="relative flex h-full flex-col justify-between p-4 md:p-5">
+      <div className="relative flex h-full flex-col justify-between p-3 md:p-5">
         {/* Top: Duration Badge and Category Badge */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-purple-900/50 px-3 py-1.5 backdrop-blur-md">
-              <span className="text-[11px] font-medium text-white">
+            <span className="inline-flex items-center gap-1 rounded-full bg-purple-900/50 px-2.5 py-1 backdrop-blur-md">
+              <span className="text-[10px] font-medium text-white">
                 {blessing.duration}
               </span>
             </span>
             {blessing.category && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-purple-900/50 px-3 py-1.5 backdrop-blur-md">
-                <span className="text-[11px] font-medium text-white">
+              <span className="inline-flex items-center gap-1 rounded-full bg-purple-900/50 px-2.5 py-1 backdrop-blur-md">
+                <span className="text-[10px] font-medium text-white">
                   {blessing.category}
                 </span>
               </span>
             )}
           </div>
           {blessing.isPremium && (
-            <div className="flex items-center justify-center rounded-full bg-purple-900/50 p-1.5 backdrop-blur-md">
-              <Lock size={14} className="text-white" />
+            <div className="flex items-center justify-center rounded-full bg-purple-900/50 p-1 backdrop-blur-md">
+              <Lock size={12} className="text-white" />
             </div>
           )}
         </div>
 
         {/* Bottom: Title, Description, Play Button */}
-        <div className="flex items-end justify-between gap-4">
+        <div className="flex items-end justify-between gap-3">
           <div className="flex-1 text-left">
-            <h3 className="font-display text-base font-normal text-white drop-shadow-lg md:text-lg">
+            <h3 className="font-display text-[15px] font-normal text-white drop-shadow-lg md:text-lg">
               {blessing.title}
             </h3>
-            <p className="mt-0.5 text-[12px] text-white/85 drop-shadow-md md:text-[13px]">
+            <p className="mt-0.5 text-[11px] text-white/85 drop-shadow-md md:text-[13px]">
               {blessing.description}
             </p>
           </div>
@@ -216,9 +216,9 @@ function BlessingCard({
             onClick={(e) => {
               e.stopPropagation();
             }}
-            className="shrink-0 flex items-center justify-center rounded-full bg-white/85 p-3 shadow-lg transition-all duration-300 md:hover:bg-white active:scale-95 touch-manipulation backdrop-blur-md"
+            className="shrink-0 flex items-center justify-center rounded-full bg-white/85 p-2.5 shadow-lg transition-all duration-300 md:hover:bg-white active:scale-95 touch-manipulation backdrop-blur-md"
           >
-            <Play size={18} className="fill-black text-black ml-0.5" />
+            <Play size={16} className="fill-black text-black ml-0.5" />
           </button>
         </div>
       </div>
