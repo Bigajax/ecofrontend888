@@ -2,6 +2,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
+import BottomNav from '../components/BottomNav';
 import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
 import { useGuestGate } from '../hooks/useGuestGate';
@@ -48,6 +49,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const isConfiguracoesPage = location.pathname.startsWith('/app/configuracoes');
   const showOldHeader = !isHomePage && !isRingsPage && !isRiquezaMentalPage && !isArticlesPage && !isDiarioEstoicoPage && !isProgramasPage && !isSonoPage && !isSonsPage && !isEnergyBlessingsPage && !isMeditationPlayerPage && !isConfiguracoesPage;
 
+  // Mostrar BottomNav em todas as páginas principais (exceto login, welcome, etc)
+  const showBottomNav = location.pathname.startsWith('/app');
+
   return (
     <>
       {/* AUTO = TopBar no mobile / Sidebar no desktop - Apenas para ChatPage e outras páginas */}
@@ -68,6 +72,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         className={`
           min-h-[100svh] md:min-h-[100dvh]
           ${showOldHeader ? 'pt-[var(--eco-topbar-h,56px)] md:pt-0' : ''}
+          ${showBottomNav ? 'pb-16 md:pb-0' : ''}
           pl-0 ${showOldHeader ? 'md:pl-[var(--eco-sidebar-w,0px)]' : ''}
           transition-[padding] duration-200 ease-out
           bg-transparent text-[color:var(--color-text-primary)]
@@ -77,6 +82,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           {children}
         </div>
       </main>
+
+      {/* Bottom Navigation - Apenas mobile */}
+      {showBottomNav && <BottomNav />}
     </>
   );
 }
