@@ -192,15 +192,12 @@ export default function EcoAIModal({
                 </div>
               </div>
 
-              {/* Memória, Perfil, Relatório - Grid 3 colunas estáticas */}
-              <div className="grid grid-cols-3 gap-4 pb-4">
+              {/* Memória, Perfil, Relatório - Grid responsivo */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
                 {/* Card Memória Emocional */}
-                <button
-                  onClick={onMemoriaEmocional}
-                  className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all hover:-translate-y-1 text-left"
-                >
+                <div className="bg-white rounded-3xl overflow-hidden shadow-md">
                   {/* Image */}
-                  <div className="relative h-52 bg-gradient-to-br from-blue-300 to-blue-500 overflow-hidden">
+                  <div className="relative h-48 sm:h-52 bg-gradient-to-br from-blue-300 to-blue-500 overflow-hidden">
                     <img
                       src="/images/memoria-emocional-ilustracao.webp"
                       alt="Memória Emocional"
@@ -209,21 +206,18 @@ export default function EcoAIModal({
                   </div>
 
                   {/* Content */}
-                  <div className="p-5">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Memória Emocional</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
+                  <div className="p-4 sm:p-5">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1.5 sm:mb-2">Memória Emocional</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                       Capture momentos importantes da sua jornada emocional. Cada memória é analisada pela IA.
                     </p>
                   </div>
-                </button>
+                </div>
 
                 {/* Card Perfil Emocional */}
-                <button
-                  onClick={onPerfilEmocional}
-                  className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all hover:-translate-y-1 text-left"
-                >
+                <div className="bg-white rounded-3xl overflow-hidden shadow-md">
                   {/* Image */}
-                  <div className="relative h-52 bg-gradient-to-br from-purple-300 to-purple-500 overflow-hidden">
+                  <div className="relative h-48 sm:h-52 bg-gradient-to-br from-purple-300 to-purple-500 overflow-hidden">
                     <img
                       src="/images/perfil-emocional-ilustracao.webp"
                       alt="Perfil Emocional"
@@ -232,21 +226,18 @@ export default function EcoAIModal({
                   </div>
 
                   {/* Content */}
-                  <div className="p-5">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Perfil Emocional</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
+                  <div className="p-4 sm:p-5">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1.5 sm:mb-2">Perfil Emocional</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                       Descubra suas emoções mais frequentes, temas recorrentes e padrões únicos.
                     </p>
                   </div>
-                </button>
+                </div>
 
                 {/* Card Relatório */}
-                <button
-                  onClick={onRelatorio}
-                  className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all hover:-translate-y-1 text-left"
-                >
+                <div className="bg-white rounded-3xl overflow-hidden shadow-md">
                   {/* Image */}
-                  <div className="relative h-52 bg-gradient-to-br from-green-400 via-emerald-500 to-green-600 overflow-hidden">
+                  <div className="relative h-48 sm:h-52 bg-gradient-to-br from-green-400 via-emerald-500 to-green-600 overflow-hidden">
                     <img
                       src="/images/relatorio-emocional-ilustracao.webp"
                       alt="Relatório Emocional"
@@ -255,13 +246,13 @@ export default function EcoAIModal({
                   </div>
 
                   {/* Content */}
-                  <div className="p-5">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Relatório Emocional</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
+                  <div className="p-4 sm:p-5">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1.5 sm:mb-2">Relatório Emocional</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                       Explore mapas emocionais em 3D, linha do tempo e gráficos das suas emoções dominantes.
                     </p>
                   </div>
-                </button>
+                </div>
               </div>
 
               {/* Privacidade */}
