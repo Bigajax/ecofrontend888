@@ -70,16 +70,18 @@ export default function DailyRecommendationsSection({
       {/* Mobile: Layout vertical com linha vertical */}
       <div className="block md:hidden">
         <div className="relative">
-          {/* Linha vertical */}
-          <div className="absolute left-3 top-0 bottom-0 w-[1px] bg-gray-300" />
-
           {/* Cards verticais com bolinhas */}
-          <div className="space-y-6">
+          <div className="flex flex-col gap-6">
             {recommendations.map((rec, index) => (
               <div key={rec.id} className="relative flex items-center gap-4">
-                {/* Bolinha */}
-                <div className="relative flex-shrink-0 z-10">
-                  <div className="w-6 h-6 rounded-full border-[2px] border-purple-700 bg-white" />
+                {/* Bolinha com linha conectora */}
+                <div className="relative flex-shrink-0 z-10 flex flex-col items-center">
+                  <div className="w-6 h-6 rounded-full border-[2px] border-purple-700 bg-white relative z-10" />
+
+                  {/* Linha conectora (exceto última bolinha) - começa do centro da bolinha */}
+                  {index < recommendations.length - 1 && (
+                    <div className="w-[1px] h-[230px] bg-gray-300 -mt-3" />
+                  )}
                 </div>
 
                 {/* Card */}

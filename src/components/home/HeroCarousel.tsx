@@ -54,9 +54,7 @@ export default function HeroCarousel({
   const touchEndX = useRef<number>(0);
 
   // Compute slides array based on variant
-  const slides = variant === 'mobile'
-    ? [{ id: 0, isGreeting: true } as const, ...CAROUSEL_ITEMS]
-    : CAROUSEL_ITEMS;
+  const slides = CAROUSEL_ITEMS;
   const totalSlides = slides.length;
 
   const goToPrevious = () => {
@@ -100,40 +98,8 @@ export default function HeroCarousel({
 
   // Render slide content based on current index and variant
   const renderSlideContent = () => {
-    // Check if first slide in mobile variant
-    if (currentIndex === 0 && variant === 'mobile') {
-      return (
-        <div className="relative flex h-full flex-col justify-between p-6">
-          {/* Top: Avatar */}
-          <div className="flex items-start">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/60 shadow-[0_4px_15px_rgba(138,43,226,0.2)] backdrop-blur-sm overflow-hidden">
-              <EcoBubbleOneEye variant="avatar" size={40} />
-            </div>
-          </div>
-
-          {/* Bottom: Greeting + CTA */}
-          <div className="space-y-4">
-            <h1 className="font-display text-4xl font-bold text-[var(--eco-text)] drop-shadow-sm">
-              Bom dia,<br />{userName}
-            </h1>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onStartChat?.();
-              }}
-              className="inline-flex items-center gap-2 text-[14px] font-medium text-[var(--eco-user)] transition-all duration-300 hover:gap-3"
-            >
-              Comece uma conversa <span>→</span>
-            </button>
-          </div>
-        </div>
-      );
-    }
-
     // Regular carousel content
-    const item = variant === 'mobile'
-      ? CAROUSEL_ITEMS[currentIndex - 1]
-      : CAROUSEL_ITEMS[currentIndex];
+    const item = CAROUSEL_ITEMS[currentIndex];
 
     return (
       <div className="relative flex h-full flex-col justify-between p-6">
@@ -157,34 +123,23 @@ export default function HeroCarousel({
 
   return (
     <div
-      className="group relative h-[420px] overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)] select-none"
+      className={`group relative h-[420px] overflow-hidden select-none ${
+        variant === 'mobile'
+          ? 'rounded-none border-0'
+          : 'rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]'
+      }`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Conditional Background */}
-      {currentIndex === 0 && variant === 'mobile' ? (
-        // Greeting slide - static gradient
-        <div
-          className="absolute inset-0 rounded-2xl"
-          style={{
-            background: 'linear-gradient(135deg, #FAF9F7 0%, #E8E3DD 100%)'
-          }}
-        />
-      ) : (
-        // Carousel slides - animated image
-        <>
-          <div
-            className="absolute inset-0 animate-ken-burns bg-cover bg-center"
-            style={{
-              backgroundImage: variant === 'mobile'
-                ? CAROUSEL_ITEMS[currentIndex - 1].background
-                : CAROUSEL_ITEMS[currentIndex].background,
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
-        </>
-      )}
+      {/* Background - animated image */}
+      <div
+        className="absolute inset-0 animate-ken-burns bg-cover bg-center"
+        style={{
+          backgroundImage: CAROUSEL_ITEMS[currentIndex].background,
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
 
       {/* Content */}
       <div className="relative z-10 flex h-full flex-col">
