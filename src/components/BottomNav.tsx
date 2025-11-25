@@ -32,7 +32,7 @@ export default function BottomNav() {
               {({ isActive }) => (
                 <>
                   <Icon
-                    size={24}
+                    size={20}
                     strokeWidth={isActive ? 2 : 1.5}
                     className="transition-all duration-200"
                   />

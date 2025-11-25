@@ -76,7 +76,7 @@ export default function DailyRecommendationsSection({
           {/* Cards verticais com bolinhas */}
           <div className="space-y-6">
             {recommendations.map((rec, index) => (
-              <div key={rec.id} className="relative flex items-start gap-4">
+              <div key={rec.id} className="relative flex items-center gap-4">
                 {/* Bolinha */}
                 <div className="relative flex-shrink-0 z-10">
                   <div className="w-6 h-6 rounded-full border-[2px] border-purple-700 bg-white" />
