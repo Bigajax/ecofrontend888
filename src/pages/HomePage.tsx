@@ -435,25 +435,13 @@ export default function HomePage() {
             <HeroCarousel />
           </div>
 
-          {/* Mobile: Stacked cards */}
-          <div className="block space-y-6 md:hidden">
-            {/* Left Card - Greeting */}
-            <div className="rounded-2xl border border-[var(--eco-line)] bg-white p-6 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
-              <h1 className="font-display text-4xl font-bold text-[var(--eco-text)]">
-                Bom dia,
-                <br />
-                {displayName}
-              </h1>
-              <button
-                onClick={handleStartChat}
-                className="mt-6 inline-flex items-center gap-2 text-[14px] font-medium text-[var(--eco-user)] transition-all duration-300 hover:gap-3"
-              >
-                Comece uma conversa <span>→</span>
-              </button>
-            </div>
-
-            {/* Right Card - Hero Carousel (Mobile) */}
-            <HeroCarousel />
+          {/* Mobile: Unified Hero Card with Greeting */}
+          <div className="block md:hidden">
+            <HeroCarousel
+              variant="mobile"
+              userName={displayName}
+              onStartChat={handleStartChat}
+            />
           </div>
         </div>
 

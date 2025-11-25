@@ -173,10 +173,9 @@ export default function HomeHeader() {
         </div>
       </header>
 
-      {/* Mobile Header - Simplificado sem menu hamburguer */}
+      {/* Mobile Header - Logo Only */}
       <header className="sticky top-0 z-40 border-b border-[var(--eco-line)]/20 bg-white/95 backdrop-blur-sm md:hidden">
-        <div className="flex items-center justify-between px-8 py-5">
-          {/* Logo */}
+        <div className="flex items-center justify-center px-8 py-5">
           <button
             onClick={() => navigate('/app')}
             className="transition-transform active:scale-95"
@@ -186,24 +185,6 @@ export default function HomeHeader() {
               alt="Ecotopia"
               className="h-16"
             />
-          </button>
-
-          {/* Avatar */}
-          <button
-            onClick={() => navigate('/app/configuracoes')}
-            className="flex h-9 w-9 items-center justify-center rounded-full overflow-hidden transition-transform active:scale-95"
-          >
-            {user?.user_metadata?.avatar_url ? (
-              <img
-                src={user.user_metadata.avatar_url}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 text-white text-xs font-semibold">
-                {user?.user_metadata?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-            )}
           </button>
         </div>
       </header>
