@@ -75,8 +75,8 @@ export default function DailyRecommendationsSection({
             {recommendations.map((rec, index) => (
               <div key={rec.id} className="relative flex items-center gap-4">
                 {/* Bolinha com linha conectora */}
-                <div className="relative flex-shrink-0 z-10 flex flex-col items-center">
-                  <div className="w-6 h-6 rounded-full border-[2px] border-[#6EC8FF] bg-white relative z-10" />
+                <div className="relative flex-shrink-0 z-0 flex flex-col items-center">
+                  <div className="w-6 h-6 rounded-full border-[2px] border-[#6EC8FF] bg-white relative" />
 
                   {/* Linha conectora (exceto última bolinha) - começa do centro da bolinha */}
                   {index < recommendations.length - 1 && (
@@ -85,7 +85,7 @@ export default function DailyRecommendationsSection({
                 </div>
 
                 {/* Card */}
-                <div className="flex-1">
+                <div className="flex-1 relative z-10">
                   <RecommendationCard
                     recommendation={rec}
                     mobile
@@ -158,15 +158,12 @@ function RecommendationCard({
             </p>
           </div>
 
-          {/* Play Button - Circular Icon */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-            className="shrink-0 flex items-center justify-center rounded-full bg-white/85 p-3 shadow-lg transition-all duration-300 md:hover:bg-white active:scale-95 touch-manipulation backdrop-blur-md"
+          {/* Play Button - Circular Icon - apenas visual, o clique é tratado pelo card pai */}
+          <div
+            className="shrink-0 flex items-center justify-center rounded-full bg-white/85 p-3 shadow-lg transition-all duration-300 pointer-events-none backdrop-blur-md"
           >
             <Play size={18} className="fill-black text-black ml-0.5" />
-          </button>
+          </div>
         </div>
       </div>
     </button>

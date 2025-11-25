@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProgram } from '@/contexts/ProgramContext';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import DailyRecommendationsSection from '@/components/home/DailyRecommendationsSection';
@@ -55,6 +56,7 @@ const getAvailableMaxims = (): DailyMaxim[] => {
 
 export default function HomePage() {
   const { userName } = useAuth();
+  const { startProgram } = useProgram();
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
