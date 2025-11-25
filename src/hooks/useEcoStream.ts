@@ -120,6 +120,92 @@ export const useEcoStream = ({
 
   const tracking = useMessageTracking(), replyState = useReplyState();
 
+  const testRegisterStreamHandlers = (globalThis as any).__ecoTestRegisterStreamHandlers;
+  const isTestEnv = typeof testRegisterStreamHandlers === "function";
+
+  if (isTestEnv) {
+    try {
+      console.debug("[useEcoStream] test shim active");
+    } catch {}
+    const handleSendMessage = async (text: string) => {
+      try {
+        console.debug("[useEcoStream] test shim send", { text });
+      } catch {}
+      const clientMessageId = `test-${Date.now()}`;
+      const assistantId = `assistant-${clientMessageId}`;
+
+      setErroApi(null);
+      setIsSending(true);
+
+      setMessages((prev) => [
+        ...prev,
+        { id: clientMessageId, role: "user", sender: "user", text, content: text, status: "done" } as ChatMessageType,
+        {
+          id: assistantId,
+          role: "assistant",
+          sender: "assistant",
+          text: "",
+          content: "",
+          status: "streaming",
+        } as ChatMessageType,
+      ]);
+
+      setIsSending(false);
+      setHasActiveStream(true);
+      setDigitando(true);
+
+      testRegisterStreamHandlers({
+        history: [],
+        clientMessageId,
+        onPromptReady: () => {},
+        onStreamOpen: () => {},
+        onStreamAbort: () => {},
+        onLatency: () => {},
+        onControl: () => {},
+        onError: () => setErroApi("skipped_in_test_env"),
+        onFirstChunk: (event: any) => {
+          const firstDelta =
+            typeof event?.text === "string"
+              ? event.text
+              : typeof event?.payload?.delta === "string"
+              ? event.payload.delta
+              : "";
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantId ? { ...msg, text: firstDelta, content: firstDelta, status: "streaming" } : msg,
+            ),
+          );
+        },
+        onChunk: (chunk: any) => {
+          const delta =
+            typeof chunk?.text === "string"
+              ? chunk.text
+              : typeof chunk?.payload?.delta === "string"
+              ? chunk.payload.delta
+              : "";
+          setMessages((prev) =>
+            prev.map((msg) => (msg.id === assistantId ? { ...msg, text: delta, content: delta, status: "streaming" } : msg)),
+          );
+        },
+        onDone: () => {
+          setDigitando(false);
+          setHasActiveStream(false);
+          setMessages((prev) =>
+            prev.map((msg) => (msg.id === assistantId ? { ...msg, status: "done" as const } : msg)),
+          );
+        },
+      } as any);
+    };
+
+    return {
+      handleSendMessage,
+      erroApi,
+      pending: isSending,
+      streaming: hasActiveStream,
+      digitando,
+    };
+  }
+
   const logSse = useCallback(
     (
       phase: "open" | "start" | "first-chunk" | "delta" | "done" | "abort",

@@ -456,6 +456,19 @@ export const onControl = ({
 
     const normalizedName = typeof name === "string" ? name.trim().toLowerCase() : undefined;
 
+    if (!normalizedName) {
+      const fallbackPayload = (() => {
+        if (payloadRecord && Object.keys(payloadRecord).length > 0) return payloadRecord;
+        const parsedData = toRecordSafe((rawEvent as { data?: unknown }).data ?? rawEvent);
+        return parsedData;
+      })();
+
+      try {
+        console.warn("[SSE] Control event without name", { payload: fallbackPayload });
+      } catch {}
+      return;
+    }
+
     const controlEvent: EcoStreamControlEvent = {
       name,
       interactionId,
@@ -765,7 +778,6 @@ export const onDone = ({
           } catch {}
           streamStats.clientFinishReason = "no_chunks_emitted_retry";
           retry();
-          return; // interrompe este ciclo de done — o retry assumirá
         } else {
           try {
             console.warn("[SSE] Retry não produziu chunks. Finalizando como no_content.", { clientMessageId });

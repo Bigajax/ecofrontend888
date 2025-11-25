@@ -137,12 +137,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
   const bubbleClass = clsx(
     "min-w-0 rounded-2xl px-3 py-2 md:px-4 md:py-3 text-left leading-[1.6]",
     "text-[15px] md:text-[16px]",
-    "max-w-[min(70ch,88vw)] md:max-w-[70ch]",
+    "max-w-[min(72ch,90vw)]",
     "whitespace-pre-wrap break-words overflow-wrap-anywhere",
     isUser
-      ? "bg-gradient-to-br from-eco-baby to-eco-babyDark text-white shadow-ecoSm"
-      : // contraste suave no fundo branco para a bolha da Eco
-        "bg-white/70 backdrop-blur-md border border-eco-line/60 text-eco-text shadow-ecoSm"
+      ? "bg-[#007AFF] text-white shadow-ecoSm"
+      : "bg-white text-gray-900 whitespace-pre-wrap border border-gray-200 shadow-ecoSm"
   );
 
   const wrapperClass = clsx("flex w-full", isUser ? "justify-end" : "justify-start");

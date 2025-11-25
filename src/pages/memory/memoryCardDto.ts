@@ -38,6 +38,7 @@ export type MemoryCardDTO = {
   fallbackDate: string;
   resumo: string | null;
   resumoCompleto: string | null;
+  resumoEco: string | null;
   nivelAbertura: number | null;
   domain: string;
   categoria: string | null;
@@ -407,6 +408,7 @@ export const normalizeMemoryCard = (memory: Memoria): MemoryCardDTO => {
   const summaryRaw = (memory.analise_resumo ?? memory.resumo_eco ?? null) as Maybe<string>;
   const resumoCompleto = summaryRaw?.trim() ? summaryRaw.trim() : null;
   const resumo = sanitizeSummary(summaryRaw);
+  const resumoEco = sanitizeSummary(memory.resumo_eco as Maybe<string>);
 
   const nivelAbertura = (memory.nivel_abertura ?? (memory as any).nivelAbertura ?? null) as Maybe<number>;
   const padrao =
@@ -441,6 +443,7 @@ export const normalizeMemoryCard = (memory: Memoria): MemoryCardDTO => {
     fallbackDate,
     resumo,
     resumoCompleto,
+    resumoEco,
     nivelAbertura: nivelAbertura ?? null,
     domain: domain || 'Pessoal',
     categoria: memory.categoria ?? null,

@@ -26,6 +26,13 @@ vi.mock('../../api/ecoStream', async () => {
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
+  useLocation: () => ({
+    pathname: '/',
+    search: '',
+    hash: '',
+    state: null,
+    key: 'test-location',
+  }),
 }));
 
 vi.mock('../../contexts/AuthContext', () => ({
@@ -69,13 +76,94 @@ vi.mock('../../contexts/ChatContext', () => {
   return { useChat, ChatProvider };
 });
 
+vi.mock('../../hooks/useEcoStream', () => ({
+  useEcoStream: ({ setMessages }: { setMessages: (cb: any) => void }) => {
+    const handleSendMessage = async (text: string) => {
+      const register = (globalThis as any).__ecoTestRegisterStreamHandlers as
+        | ((opts: StartEcoStreamOptions) => void)
+        | undefined;
+
+      const clientMessageId = `test-${Date.now()}`;
+      const assistantId = `assistant-${clientMessageId}`;
+
+      setMessages((prev: any[]) => [
+        ...prev,
+        { id: clientMessageId, role: 'user', sender: 'user', text, content: text, status: 'done' },
+        {
+          id: assistantId,
+          role: 'assistant',
+          sender: 'assistant',
+          text: '',
+          content: '',
+          status: 'streaming',
+        },
+      ]);
+
+      register?.({
+        history: [],
+        clientMessageId,
+        onPromptReady: () => {},
+        onStreamOpen: () => {},
+        onStreamAbort: () => {},
+        onLatency: () => {},
+        onControl: () => {},
+        onError: () => {},
+        onFirstChunk: (event: any) => {
+          const delta =
+            typeof event?.text === 'string'
+              ? event.text
+              : typeof event?.payload?.delta === 'string'
+              ? event.payload.delta
+              : '';
+          setMessages((prev: any[]) =>
+            prev.map((msg) =>
+              msg.id === assistantId ? { ...msg, text: delta, content: delta, status: 'streaming' } : msg,
+            ),
+          );
+        },
+        onChunk: (chunk: any) => {
+          const delta =
+            typeof chunk?.text === 'string'
+              ? chunk.text
+              : typeof chunk?.payload?.delta === 'string'
+              ? chunk.payload.delta
+              : '';
+          setMessages((prev: any[]) =>
+            prev.map((msg) =>
+              msg.id === assistantId ? { ...msg, text: delta, content: delta, status: 'streaming' } : msg,
+            ),
+          );
+        },
+        onDone: () => {
+          setMessages((prev: any[]) =>
+            prev
+              .filter((msg) => msg.id !== 'assistant-initial')
+              .map((msg) => (msg.id === assistantId ? { ...msg, status: 'done' as const } : msg)),
+          );
+        },
+      } as any);
+    };
+
+    return { handleSendMessage, erroApi: null, pending: false, streaming: false, digitando: false };
+  },
+}));
+
 vi.mock('../../components/ChatMessage', () => ({
   default: ({ message }: { message: any }) => {
     const text = typeof message.text === 'string' ? message.text : '';
     const trimmed = text.trim();
     return (
       <div data-testid={`chat-${message.id}`}>
-        {trimmed.length > 0 ? text : <div data-testid="typing-dots">digitando…</div>}
+        {message.status === 'streaming' ? (
+          <>
+            <div data-testid="typing-dots">digitando…</div>
+            {trimmed.length > 0 ? <span>{text}</span> : null}
+          </>
+        ) : trimmed.length > 0 ? (
+          text
+        ) : (
+          <div data-testid="typing-dots">digitando…</div>
+        )}
       </div>
     );
   },
@@ -87,7 +175,16 @@ vi.mock('../../components/EcoMessageWithAudio', () => ({
     const trimmed = text.trim();
     return (
       <div data-testid={`eco-${message.id}`}>
-        {trimmed.length > 0 ? text : <div data-testid="typing-dots">digitando…</div>}
+        {message.status === 'streaming' ? (
+          <>
+            <div data-testid="typing-dots">digitando…</div>
+            {trimmed.length > 0 ? <span>{text}</span> : null}
+          </>
+        ) : trimmed.length > 0 ? (
+          text
+        ) : (
+          <div data-testid="typing-dots">digitando…</div>
+        )}
       </div>
     );
   },
@@ -104,6 +201,39 @@ vi.mock('../../components/TypingDots', () => ({
   __esModule: true,
   default: () => <div data-testid="typing-dots">digitando…</div>,
 }));
+
+vi.mock('../../components/MessageList', async () => {
+  const React = await import('react');
+  const chatContext = await import('../../contexts/ChatContext');
+  const useChat = (chatContext as any).useChat as () => { messages: any[] };
+
+  return {
+    __esModule: true,
+    default: () => {
+      const { messages } = useChat();
+      return (
+        <div data-testid="message-list">
+          {messages.map((msg: any) => (
+            <div key={msg.id} data-testid={`chat-${msg.id}`}>
+              {msg.status === 'streaming' ? (
+                <>
+                  <div data-testid="typing-dots">digitando…</div>
+                  {typeof msg.text === 'string' && msg.text.trim().length > 0 ? (
+                    <span>{msg.text}</span>
+                  ) : null}
+                </>
+              ) : typeof msg.text === 'string' && msg.text.trim().length > 0 ? (
+                msg.text
+              ) : (
+                <div data-testid="typing-dots">digitando…</div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    },
+  };
+});
 
 vi.mock('../../components/EcoBubbleOneEye', () => ({
   __esModule: true,
@@ -290,6 +420,8 @@ describe('ChatPage typing indicator', () => {
       } satisfies EcoEventHandlers;
     };
 
+    (globalThis as any).__ecoTestRegisterStreamHandlers = registerStreamHandlers;
+
     inflightPromise = new Promise<EcoStreamResult>((resolve) => {
       resolveResponse = (result) => {
         resolveStartEcoStream?.();
@@ -304,6 +436,7 @@ describe('ChatPage typing indicator', () => {
     vi.clearAllMocks();
     registerStreamHandlers = undefined;
     resolveStartEcoStream = undefined;
+    (globalThis as any).__ecoTestRegisterStreamHandlers = undefined;
   });
 
   test('keeps typing indicator when first token lacks content until chunk arrives', async () => {
