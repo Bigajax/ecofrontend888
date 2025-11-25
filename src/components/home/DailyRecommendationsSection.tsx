@@ -22,7 +22,7 @@ export default function DailyRecommendationsSection({
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
       {/* Title */}
-      <div className="mb-8 pb-6 border-b border-[var(--eco-line)]">
+      <div className="mb-8">
         <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
           Recomendações diárias
         </h2>

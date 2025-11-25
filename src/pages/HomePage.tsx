@@ -1,13 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProgram } from '@/contexts/ProgramContext';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import DailyRecommendationsSection from '@/components/home/DailyRecommendationsSection';
 import EnergyBlessingsSection from '@/components/home/EnergyBlessingsSection';
 import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
-import ContinueProgram from '@/components/home/ContinueProgram';
 import LearnExploreSection from '@/components/home/LearnExploreSection';
 import HeroCarousel from '@/components/home/HeroCarousel';
 import AnimatedSection from '@/components/AnimatedSection';
@@ -65,7 +63,6 @@ export default function HomePage() {
   const [diarioExpanded, setDiarioExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showEcoAIModal, setShowEcoAIModal] = useState(false);
-  const { ongoingProgram, startProgram, completeProgram} = useProgram();
 
   // Simulate initial loading (skip if returning from meditation)
   useEffect(() => {
@@ -105,14 +102,6 @@ export default function HomePage() {
   };
 
   const displayName = capitalizeNames(userName || 'there');
-
-  // Remove completed program from home page
-  useEffect(() => {
-    if (ongoingProgram && ongoingProgram.progress === 100) {
-      // Program is complete, mark it as finished and remove from display
-      completeProgram();
-    }
-  }, [ongoingProgram?.progress, completeProgram]);
 
   const handleLogout = async () => {
     navigate('/');
@@ -452,25 +441,6 @@ export default function HomePage() {
             />
           </div>
         </div>
-
-        {/* Recently Played Section - Appears only when user has ongoing program */}
-        {ongoingProgram && (
-          <AnimatedSection animation="slide-up-fade">
-            <ContinueProgram
-              program={ongoingProgram}
-              onContinue={() => {
-                // Navegar para a página correta baseado no ID do programa
-                if (ongoingProgram.id === 'rec_1') {
-                  navigate('/app/rings');
-                } else if (ongoingProgram.id === 'rec_2') {
-                  navigate('/app/riqueza-mental');
-                } else {
-                  navigate(`/app/program/${ongoingProgram.id}`);
-                }
-              }}
-            />
-          </AnimatedSection>
-        )}
 
         {/* Daily Recommendations Section */}
         <AnimatedSection animation="slide-up-fade">
