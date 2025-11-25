@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import {
@@ -11,6 +11,7 @@ import {
   LogOut,
   Home
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SideMenuEcoProps {
   isOpen?: boolean;
@@ -32,6 +33,18 @@ const navItems: NavItem[] = [
 ];
 
 export default function SideMenuEco({ isOpen = true, onClose, className }: SideMenuEcoProps) {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -142,10 +155,7 @@ export default function SideMenuEco({ isOpen = true, onClose, className }: SideM
               </NavLink>
 
               <button
-                onClick={() => {
-                  // Handle logout
-                  console.log('Logout clicked');
-                }}
+                onClick={handleLogout}
                 className={clsx(
                   'flex items-center gap-3 px-4 py-3 rounded-lg w-full',
                   'text-[15px] font-inter font-normal',

@@ -82,6 +82,18 @@ const LoginPage: React.FC = () => {
 
   const canSubmit = email.trim().length > 3 && password.length >= 6 && !loading;
 
+  // Carregar credenciais salvas do localStorage
+  useEffect(() => {
+    try {
+      const savedEmail = localStorage.getItem('eco.lastEmail');
+      const savedPassword = localStorage.getItem('eco.lastPassword');
+      if (savedEmail) setEmail(savedEmail);
+      if (savedPassword) setPassword(savedPassword);
+    } catch (error) {
+      console.error('Erro ao carregar credenciais salvas:', error);
+    }
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     navigate('/app');
@@ -124,6 +136,15 @@ const LoginPage: React.FC = () => {
     try {
       mixpanel.track('Front-end: Login Iniciado', { method: 'password', email: email.trim() });
       await signIn(email.trim(), password);
+
+      // Salvar credenciais no localStorage para próximo acesso
+      try {
+        localStorage.setItem('eco.lastEmail', email.trim());
+        localStorage.setItem('eco.lastPassword', password);
+      } catch (storageError) {
+        console.error('Erro ao salvar credenciais:', storageError);
+      }
+
       mixpanel.track('Front-end: Login Concluído', { method: 'password' });
     } catch (err: any) {
       setError(translateAuthError(err));
@@ -175,35 +196,28 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <PhoneFrame>
-      <div className="relative min-h-[100dvh] overflow-hidden bg-white text-slate-900">
-        <div className="relative grid min-h-[100dvh] place-items-center px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom))]">
+    <PhoneFrame backgroundImage="/images/login-background.png">
+      <div className="relative min-h-[100dvh] w-full overflow-hidden text-slate-900">
+        <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom)]] gap-8">
           {isTourActive && (
             <TourInicial onClose={closeTour} reason="login" nextPath="/" />
           )}
+
+          {/* Logo no topo */}
+          <div className="flex-shrink-0">
+            <img
+              src="/images/ECOTOPIA.webp"
+              alt="Ecotopia"
+              className="w-32 h-32 object-contain drop-shadow-lg"
+            />
+          </div>
 
           <motion.div
             initial={{ y: 12, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="w-full max-w-md space-y-8 rounded-3xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8"
+            className="w-full max-w-md space-y-6 rounded-3xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8"
           >
-            {/* Header */}
-            <div className="space-y-4 text-center">
-              <span
-                className="mx-auto inline-flex items-center justify-center rounded-full border border-[var(--eco-line)] bg-white/50 backdrop-blur-sm px-4 py-1 text-[13.5px] font-normal text-[var(--eco-muted)]"
-                style={{ fontFamily: 'var(--font-primary)' }}
-              >
-                Autoconhecimento Guiado
-              </span>
-              <h1
-                className="text-3xl font-normal tracking-tight sm:text-4xl text-[var(--eco-text)]"
-                style={{ fontFamily: 'var(--font-display)' }}
-              >
-                ECO
-              </h1>
-            </div>
-
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5" noValidate>
               <div className="space-y-3">
@@ -265,9 +279,9 @@ const LoginPage: React.FC = () => {
                   onClick={handleForgotPassword}
                   disabled={forgotLoading}
                   title="Enviaremos um link para o seu e-mail"
-                  className="text-sm font-normal text-[var(--eco-muted)] underline-offset-4 transition-all duration-300 ease-out hover:text-[var(--eco-text)] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="text-sm font-normal text-[#6EC8FF] hover:text-[#5AB8E5] transition-all duration-300 ease-out disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {forgotLoading ? 'Enviando…' : 'Redefinir senha'}
+                  {forgotLoading ? 'Enviando…' : 'Esqueceu a senha?'}
                 </button>
               </div>
 

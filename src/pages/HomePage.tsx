@@ -12,6 +12,8 @@ import HeroCarousel from '@/components/home/HeroCarousel';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
 import EcoAIModal from '@/components/EcoAIModal';
+import HomePageTour from '@/components/HomePageTour';
+import { useHomePageTour } from '@/hooks/useHomePageTour';
 
 interface DailyMaxim {
   date: string;
@@ -66,6 +68,9 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showEcoAIModal, setShowEcoAIModal] = useState(false);
 
+  // Tour hook
+  const { hasSeenTour, startTour } = useHomePageTour();
+
   // Simulate initial loading (skip if returning from meditation)
   useEffect(() => {
     if (location.state?.returnFromMeditation) {
@@ -77,6 +82,16 @@ export default function HomePage() {
       return () => clearTimeout(timer);
     }
   }, [location]);
+
+  // Start tour automatically for new users after loading
+  useEffect(() => {
+    if (!isLoading && !hasSeenTour) {
+      const tourTimer = setTimeout(() => {
+        startTour();
+      }, 800);
+      return () => clearTimeout(tourTimer);
+    }
+  }, [isLoading, hasSeenTour, startTour]);
 
   // Restore scroll position when returning from meditation player
   useEffect(() => {
@@ -445,7 +460,7 @@ export default function HomePage() {
         </div>
 
         {/* Daily Recommendations Section */}
-        <AnimatedSection animation="slide-up-fade">
+        <AnimatedSection animation="slide-up-fade" id="daily-recommendations-section">
           <DailyRecommendationsSection
             recommendations={dailyRecommendations}
             onRecommendationClick={handleDailyRecommendationClick}
@@ -453,7 +468,7 @@ export default function HomePage() {
         </AnimatedSection>
 
         {/* Energy Blessings Section */}
-        <AnimatedSection animation="slide-up-fade">
+        <AnimatedSection animation="slide-up-fade" id="energy-blessings-section">
           <EnergyBlessingsSection
             blessings={energyBlessings}
             onBlessingClick={handleEnergyBlessingClick}
@@ -461,7 +476,7 @@ export default function HomePage() {
         </AnimatedSection>
 
         {/* ECO AI Guidance Card Section */}
-        <AnimatedSection animation="slide-up-fade">
+        <AnimatedSection animation="slide-up-fade" id="eco-ai-guidance">
           <EcoAIGuidanceCard
             userName={displayName}
             onStartChat={handleStartChat}
@@ -469,7 +484,7 @@ export default function HomePage() {
         </AnimatedSection>
 
         {/* Learn & Explore Section */}
-        <AnimatedSection animation="slide-up-fade">
+        <AnimatedSection animation="slide-up-fade" id="learn-explore-section">
           <LearnExploreSection
             categories={categories}
             contentItems={filteredContent}
@@ -495,6 +510,12 @@ export default function HomePage() {
         onMemoriaEmocional={handleMemoriaEmocional}
         onPerfilEmocional={handlePerfilEmocional}
         onRelatorio={handleRelatorio}
+      />
+
+      {/* HomePage Tour */}
+      <HomePageTour
+        onComplete={() => console.log('Tour completed!')}
+        onStartChat={handleStartChat}
       />
     </div>
   );

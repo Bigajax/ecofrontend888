@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { TrendingUp, Heart, Award, Settings, MessageCircle, Globe, LogOut } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,8 +7,9 @@ import EstatisticasTotais from '@/components/settings/EstatisticasTotais';
 import Favoritos from '@/components/settings/Favoritos';
 
 export default function ConfiguracoesPage() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [selectedMenu, setSelectedMenu] = useState('configuracoes');
 
   useEffect(() => {
@@ -37,6 +38,23 @@ export default function ConfiguracoesPage() {
   const handleUpdate = () => {
     console.log('Atualizar dados:', formData);
     // TODO: Implementar atualização via API
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+  };
+
+  const handleMenuClick = (itemId: string) => {
+    if (itemId === 'sair') {
+      handleLogout();
+    } else {
+      setSelectedMenu(itemId);
+    }
   };
 
   return (
@@ -80,7 +98,7 @@ export default function ConfiguracoesPage() {
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setSelectedMenu(item.id)}
+                      onClick={() => handleMenuClick(item.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                         isSelected
                           ? 'bg-[#F5FBFF] text-[#6EC8FF]'

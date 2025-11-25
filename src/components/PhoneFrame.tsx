@@ -5,12 +5,25 @@ import { motion } from 'framer-motion';
 interface PhoneFrameProps {
   children: ReactNode;
   className?: string;
+  backgroundImage?: string;
 }
 
-const PhoneFrame: React.FC<PhoneFrameProps> = ({ children, className }) => {
+const PhoneFrame: React.FC<PhoneFrameProps> = ({ children, className, backgroundImage }) => {
   return (
-    // fundo branco para dar suporte ao glass dos filhos
-    <div className="flex items-center justify-center min-h-[100svh] bg-white">
+    // fundo com imagem de background opcional
+    <div
+      className="flex items-center justify-center min-h-[100svh]"
+      style={
+        backgroundImage
+          ? {
+              backgroundImage: `url(${backgroundImage})`,
+              backgroundSize: '100%',
+              backgroundPosition: 'center 45%',
+              backgroundRepeat: 'no-repeat',
+            }
+          : { backgroundColor: 'white' }
+      }
+    >
       <motion.div
         className={[
           'relative w-full h-[calc(100svh-2rem)] max-w-sm',

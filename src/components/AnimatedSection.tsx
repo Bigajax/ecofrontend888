@@ -9,6 +9,7 @@ interface AnimatedSectionProps {
   animation?: AnimationType;
   className?: string;
   delay?: number;
+  id?: string;
 }
 
 const animationClassMap: Record<AnimationType, string> = {
@@ -32,6 +33,7 @@ export default function AnimatedSection({
   animation = 'fade-in',
   className = '',
   delay = 0,
+  id,
 }: AnimatedSectionProps) {
   const { ref, isInView } = useInView({ threshold: 0.1 });
   const prefersReducedMotion = useReducedMotion();
@@ -52,7 +54,7 @@ export default function AnimatedSection({
     .join(' ');
 
   return (
-    <div ref={ref} className={finalClassName}>
+    <div ref={ref} className={finalClassName} id={id}>
       {children}
     </div>
   );
