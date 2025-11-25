@@ -30,7 +30,7 @@ const LoginGateModal: React.FC<LoginGateModalProps> = ({ open, onClose, onSignup
         {/* Logo Image */}
         <div className="flex justify-center mb-8">
           <img
-            src="/ECO conexão.png"
+            src="/ECO conexão.webp"
             alt="ECO"
             className="h-32 w-32 object-contain"
           />

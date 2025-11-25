@@ -170,7 +170,7 @@ function BlessingCard({
       }}
     >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#2B8FCC]/70 via-[#4BA8E0]/30 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
       {/* Hover overlay - darken on hover */}
       <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/20 transition-all duration-300" />
@@ -180,13 +180,13 @@ function BlessingCard({
         {/* Top: Duration Badge and Category Badge */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#2B8FCC]/50 px-2.5 py-1 backdrop-blur-md">
+            <span className="inline-flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 backdrop-blur-md">
               <span className="text-[10px] font-medium text-white">
                 {blessing.duration}
               </span>
             </span>
             {blessing.category && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#2B8FCC]/50 px-2.5 py-1 backdrop-blur-md">
+              <span className="inline-flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 backdrop-blur-md">
                 <span className="text-[10px] font-medium text-white">
                   {blessing.category}
                 </span>
@@ -194,7 +194,7 @@ function BlessingCard({
             )}
           </div>
           {blessing.isPremium && (
-            <div className="flex items-center justify-center rounded-full bg-[#2B8FCC]/50 p-1 backdrop-blur-md">
+            <div className="flex items-center justify-center rounded-full bg-black/50 p-1 backdrop-blur-md">
               <Lock size={12} className="text-white" />
             </div>
           )}

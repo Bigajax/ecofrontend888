@@ -73,15 +73,21 @@ export default function DailyRecommendationsSection({
           {/* Cards verticais com bolinhas */}
           <div className="flex flex-col gap-6">
             {recommendations.map((rec, index) => (
-              <div key={rec.id} className="relative flex items-center gap-4">
-                {/* Bolinha com linha conectora */}
-                <div className="relative flex-shrink-0 z-0 flex flex-col items-center">
-                  <div className="w-6 h-6 rounded-full border-[2px] border-[#6EC8FF] bg-white relative" />
+              <div key={rec.id} className="relative flex gap-4">
+                {/* Container da bolinha e linha - altura igual ao card */}
+                <div className="relative flex-shrink-0 z-0 flex items-center">
+                  <div className="relative flex flex-col items-center">
+                    {/* Bolinha centralizada */}
+                    <div className="w-6 h-6 rounded-full border-[2px] border-[#6EC8FF] bg-white" />
 
-                  {/* Linha conectora (exceto última bolinha) - começa do centro da bolinha */}
-                  {index < recommendations.length - 1 && (
-                    <div className="w-[1px] h-[230px] bg-gray-300 -mt-3" />
-                  )}
+                    {/* Linha conectora - da borda inferior desta bolinha até a borda superior da próxima */}
+                    {index < recommendations.length - 1 && (
+                      <div
+                        className="absolute top-full left-1/2 -translate-x-1/2 w-[2px] bg-gray-200"
+                        style={{ height: 'calc(100px + 1.5rem + 100px - 24px)' }}
+                      />
+                    )}
+                  </div>
                 </div>
 
                 {/* Card */}

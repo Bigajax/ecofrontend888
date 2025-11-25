@@ -22,13 +22,13 @@ export default function EcoAIGuidanceCard({
       {/* Card */}
       <button
         onClick={onStartChat}
-        className="group w-full max-w-xs overflow-hidden rounded-2xl border border-[var(--eco-line)] bg-transparent p-4 transition-all duration-300 hover:shadow-[0_8px_48px_rgba(138,43,226,0.15)] hover:-translate-y-1 active:translate-y-0 md:p-5"
+        className="group w-full max-w-xs overflow-hidden rounded-2xl border border-[var(--eco-line)] bg-transparent p-4 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:-translate-y-1 active:translate-y-0 md:p-5"
       >
         <div className="flex items-start justify-between gap-3">
           {/* Left: Avatar + Text */}
           <div className="flex items-start gap-3">
             {/* Avatar */}
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/60 shadow-[0_4px_15px_rgba(138,43,226,0.2)] backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/60 shadow-[0_4px_15px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
               <EcoBubbleOneEye variant="icon" size={24} />
             </div>
 

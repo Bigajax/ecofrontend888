@@ -22,7 +22,7 @@ export const slides: OnboardingSlideData[] = [
     ],
     subtext: 'Primeira sessão em menos de 3 minutos • Sem cadastro',
     visual: 'image',
-    imageSrc: '/ECO.png',
+    imageSrc: '/ECO.webp',
     ctaLabel: 'Começar →',
   },
   {
@@ -35,7 +35,7 @@ export const slides: OnboardingSlideData[] = [
       '⭐ 4.8/5 - Avaliação de usuários',
     ],
     visual: 'image',
-    imageSrc: '/ECO conexão.png',
+    imageSrc: '/ECO conexão.webp',
     badges: [
       { icon: '💫', label: 'Memórias' },
       { icon: '💭', label: 'Emoções' },
@@ -53,7 +53,7 @@ export const slides: OnboardingSlideData[] = [
       '✅ 100% seguro',
     ],
     visual: 'image',
-    imageSrc: '/micro.png',
+    imageSrc: '/micro.webp',
     ctaLabel: 'Começar agora →',
     subtext: 'Primeira sessão em 3 minutos',
   },
