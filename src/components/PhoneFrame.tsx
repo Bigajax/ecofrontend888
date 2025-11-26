@@ -17,9 +17,10 @@ const PhoneFrame: React.FC<PhoneFrameProps> = ({ children, className, background
         backgroundImage
           ? {
               backgroundImage: `url(${backgroundImage})`,
-              backgroundSize: '100%',
-              backgroundPosition: 'center 45%',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center top',
               backgroundRepeat: 'no-repeat',
+              backgroundAttachment: 'scroll',
             }
           : { backgroundColor: 'white' }
       }
