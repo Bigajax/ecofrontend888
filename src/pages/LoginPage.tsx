@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 import PhoneFrame from '../components/PhoneFrame';
 import { useAuth } from '../contexts/AuthContext';
-import TourInicial from '../components/TourInicial';
+import HomePageTour from '../components/HomePageTour';
 import mixpanel from '../lib/mixpanel';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -200,7 +200,7 @@ const LoginPage: React.FC = () => {
       <div className="relative min-h-[100dvh] w-full overflow-hidden text-slate-900">
         <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom)]] gap-8">
           {isTourActive && (
-            <TourInicial onClose={closeTour} reason="login" nextPath="/" />
+            <HomePageTour onClose={closeTour} reason="login" nextPath="/" forceStart={true} />
           )}
 
           {/* Logo no topo */}

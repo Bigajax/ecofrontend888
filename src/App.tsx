@@ -57,6 +57,7 @@ const MeditationPlayerPage = lazy(() => import("@/pages/energy-blessings/Meditat
 const ProgramasPage = lazy(() => import("@/pages/ProgramasPage"));
 const SonoPage = lazy(() => import("@/pages/SonoPage"));
 const SonsPage = lazy(() => import("@/pages/SonsPage"));
+const SoundPlayerPage = lazy(() => import("@/pages/SoundPlayerPage"));
 const ConfiguracoesPage = lazy(() => import("@/pages/ConfiguracoesPage"));
 
 // Lightweight loading fallback (no heavy dependencies)
@@ -175,6 +176,16 @@ function AppRoutes() {
         }
       >
         <Route index element={renderWithSuspense(<MeditationPlayerPage />)} />
+      </Route>
+      <Route
+        path="/app/sound-player"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<SoundPlayerPage />)} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

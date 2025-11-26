@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import TourInicial from '../components/TourInicial';
+import HomePageTour from '../components/HomePageTour';
 import { useShouldShowTour } from '../hooks/useShouldShowTour';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -29,7 +29,7 @@ export default function WelcomePage() {
   if (!open) return null;
 
   return (
-    <TourInicial
+    <HomePageTour
       reason={reason}
       nextPath="/app"
       onClose={goNext}

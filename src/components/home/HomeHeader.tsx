@@ -9,6 +9,7 @@ export default function HomeHeader() {
   const location = useLocation();
   const { user } = useAuth();
   const [explorarOpen, setExplorarOpen] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const explorarRef = useRef<HTMLDivElement>(null);
 
   const navItems = [
@@ -63,26 +64,49 @@ export default function HomeHeader() {
 
           {/* Navigation - Centered */}
           <nav className="flex items-end gap-12 pb-2">
-            {navItems.map((item, index) => (
-              <div
-                key={item.path}
-                className="relative flex flex-col items-center pt-3"
-                ref={index === 1 ? explorarRef : null}
-                onMouseEnter={() => index === 1 && setExplorarOpen(true)}
-                onMouseLeave={() => index === 1 && setExplorarOpen(false)}
-              >
-                {/* Active indicator line */}
-                {isActive(item.path) && (
-                  <motion.div
-                    layoutId="navIndicator"
-                    className="absolute -top-3 h-1.5 bg-[#6EC8FF] rounded-full"
-                    style={{ left: '4px', right: '4px' }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                  />
-                )}
+            {navItems.map((item, index) => {
+              const active = isActive(item.path);
+              const hovered = hoveredIndex === index;
+              // Verifica se há algum item ativo
+              const hasActiveItem = navItems.some(navItem => isActive(navItem.path));
+              // Só mostra hover se o item NÃO estiver ativo E não houver item ativo
+              const showIndicator = active || (hovered && !hasActiveItem);
+
+              return (
+                <div
+                  key={item.path}
+                  className="relative flex flex-col items-center pt-3"
+                  ref={index === 1 ? explorarRef : null}
+                  onMouseEnter={() => {
+                    setHoveredIndex(index);
+                    if (index === 1) setExplorarOpen(true);
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredIndex(null);
+                    if (index === 1) setExplorarOpen(false);
+                  }}
+                >
+                  {/* Indicator line - aparece no hover e quando ativo */}
+                  <AnimatePresence>
+                    {showIndicator && (
+                      <motion.div
+                        layoutId={active ? "navIndicatorActive" : undefined}
+                        className={`absolute -top-3 h-1.5 rounded-full ${
+                          active
+                            ? 'bg-[#6EC8FF]'
+                            : 'bg-[#6EC8FF]/50'
+                        }`}
+                        style={{ left: '4px', right: '4px' }}
+                        initial={{ opacity: 0, scaleX: 0.5 }}
+                        animate={{ opacity: 1, scaleX: 1 }}
+                        exit={{ opacity: 0, scaleX: 0.5 }}
+                        transition={{
+                          duration: 0.2,
+                          ease: 'easeOut'
+                        }}
+                      />
+                    )}
+                  </AnimatePresence>
 
                 <button
                   onClick={() => {
@@ -150,7 +174,8 @@ export default function HomeHeader() {
                   </AnimatePresence>
                 )}
               </div>
-            ))}
+              );
+            })}
           </nav>
 
           {/* Avatar - Right */}

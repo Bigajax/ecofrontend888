@@ -15,48 +15,44 @@ export interface TourStep {
 
 export const HOMEPAGE_TOUR_STEPS: TourStep[] = [
   {
-    id: 'intro',
-    title: 'Bem-vindo ao Ecotopia!',
-    description: 'Sua jornada de bem-estar emocional começa aqui. Vamos te mostrar os principais recursos.',
+    id: 'promise',
+    title: '❇️ Criamos sua nova realidade interior',
+    description: 'Bem-vindo à Ecotopia. Um espaço para você transformar sua energia, mente e presença.',
     position: 'center',
     showOverlay: true,
   },
   {
-    id: 'daily-recommendations',
-    title: 'Recomendações Diárias',
-    description: 'Conteúdos personalizados para você hoje. Todos os dias novos conteúdos baseados no seu perfil.',
-    targetId: 'daily-recommendations-section',
-    position: 'bottom',
+    id: 'why',
+    title: 'Você não precisa viver no automático',
+    description: 'A Ecotopia te ajuda a criar consciência, calma e direção — todos os dias.',
+    position: 'center',
     showOverlay: true,
   },
   {
     id: 'meditations',
-    title: 'Meditações Guiadas',
-    description: 'Explore meditações para equilibrar sua energia. Filtre por categoria e escolha a meditação ideal.',
-    targetId: 'energy-blessings-section',
-    position: 'bottom',
+    title: '🧘🏻‍♂️ Meditações que transformam energia',
+    description: 'Inspiradas no Dr. Joe Dispenza para reprogramar padrões e elevar seu estado interior.',
+    position: 'center',
+    showOverlay: true,
+  },
+  {
+    id: 'stoicism',
+    title: '📘 Reflexões Estoicas',
+    description: 'Reflexões diárias para você pensar melhor, decidir melhor e viver com mais propósito.',
+    position: 'center',
+    showOverlay: true,
+  },
+  {
+    id: 'discipline',
+    title: '🌀 Disciplina com Significado',
+    description: 'Os 5 Anéis da Disciplina. Hábitos pequenos, consistentes e espirituais para criar ordem interna e força de ação.',
+    position: 'center',
     showOverlay: true,
   },
   {
     id: 'eco-ai',
-    title: 'ECO AI - Orientação Individual',
-    description: 'Converse a qualquer momento com a ECO. IA treinada para entender suas emoções.',
-    targetId: 'eco-ai-guidance',
-    position: 'top',
-    showOverlay: true,
-  },
-  {
-    id: 'learn-explore',
-    title: 'Aprenda e Explore',
-    description: 'Artigos e conteúdos sobre bem-estar mental. Conhecimento para transformar sua vida.',
-    targetId: 'learn-explore-section',
-    position: 'top',
-    showOverlay: true,
-  },
-  {
-    id: 'complete',
-    title: 'Explore e aproveite sua jornada!',
-    description: 'Você está pronto para começar! Que tal conversar com a ECO agora?',
+    title: '🤖 Eco IA — seu guia interior',
+    description: 'Uma inteligência emocional que te ajuda a refletir, entender e criar uma nova realidade.',
     position: 'center',
     showOverlay: true,
   },
@@ -84,6 +80,12 @@ export function useHomePageTour() {
   }, []);
 
   const startTour = useCallback(() => {
+    // Don't start if already seen
+    const seen = localStorage.getItem(TOUR_SEEN_KEY);
+    if (seen) {
+      setIsActive(false);
+      return;
+    }
     setIsActive(true);
     setCurrentStep(0);
     localStorage.removeItem(TOUR_STEP_KEY);

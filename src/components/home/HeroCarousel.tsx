@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, MoreHorizontal, BookOpen } from 'lucide-react';
 import EcoBubbleOneEye from '@/components/EcoBubbleOneEye';
 
 interface CarouselItem {
@@ -8,6 +9,7 @@ interface CarouselItem {
   description: string;
   background: string;
   author?: string;
+  video?: string;
 }
 
 interface HeroCarouselProps {
@@ -19,11 +21,12 @@ interface HeroCarouselProps {
 const CAROUSEL_ITEMS: CarouselItem[] = [
   {
     id: 1,
-    title: 'Diário Estoico',
+    title: 'Sua reflexão diária para um dia melhor',
     description:
-      'Cultive a sabedoria diária através de reflexões estoicas. Uma prática que transforma seu mindset e fortalece sua resiliência emocional.',
+      'A cada dia, uma lição estoica para clarear sua mente e fortalecer sua resiliência — em menos de 1 minuto.',
     background:
       'url("/images/diario-estoico.webp")',
+    video: '/videos/diario-estoico.mp4',
   },
   {
     id: 2,
@@ -49,6 +52,7 @@ export default function HeroCarousel({
   userName,
   onStartChat
 }: HeroCarouselProps = {}) {
+  const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
@@ -100,6 +104,7 @@ export default function HeroCarousel({
   const renderSlideContent = () => {
     // Regular carousel content
     const item = CAROUSEL_ITEMS[currentIndex];
+    const isDiarioEstoico = item.id === 1;
 
     return (
       <div className="relative flex h-full flex-col justify-between p-6">
@@ -115,6 +120,25 @@ export default function HeroCarousel({
             <p className="text-[13px] font-medium text-white/80 drop-shadow-md">
               {item.author}
             </p>
+          )}
+
+          {/* CTA Button for Diário Estoico */}
+          {isDiarioEstoico && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/app/diario-estoico');
+                }}
+                className="mt-4 flex w-fit items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sky-950 shadow-md transition duration-200 hover:scale-[1.02] hover:bg-sky-50 cursor-pointer active:scale-95"
+              >
+                <BookOpen size={18} />
+                <span className="text-sm font-medium">Ler a reflexão de hoje</span>
+              </button>
+              <p className="mt-2 text-xs text-white/80">
+                Leitura rápida. Profundidade duradoura.
+              </p>
+            </>
           )}
         </div>
       </div>
@@ -132,13 +156,25 @@ export default function HeroCarousel({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Background - animated image */}
-      <div
-        className="absolute inset-0 animate-ken-burns bg-cover bg-center"
-        style={{
-          backgroundImage: CAROUSEL_ITEMS[currentIndex].background,
-        }}
-      />
+      {/* Background - video or animated image */}
+      {CAROUSEL_ITEMS[currentIndex].video ? (
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover"
+        >
+          <source src={CAROUSEL_ITEMS[currentIndex].video} type="video/mp4" />
+        </video>
+      ) : (
+        <div
+          className="absolute inset-0 animate-ken-burns bg-cover bg-center"
+          style={{
+            backgroundImage: CAROUSEL_ITEMS[currentIndex].background,
+          }}
+        />
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
 
       {/* Content */}
