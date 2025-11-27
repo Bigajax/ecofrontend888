@@ -4,6 +4,7 @@ export type SafeFetchResult = {
   response?: Response;
   aborted?: boolean;
   error?: unknown;
+  networkError?: boolean;
 };
 
 const FIVE_SECONDS = 5000;
@@ -101,6 +102,21 @@ const normalizeAbortReason = (value: unknown): string => {
   return raw || "unknown";
 };
 
+const isLikelyNetworkError = (error: unknown): boolean => {
+  if (!error) return false;
+  if (error instanceof TypeError) return true;
+
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : undefined;
+
+  if (!message) return false;
+  return /network.?error|failed to fetch|load failed/i.test(message);
+};
+
 export async function safeFetch(
   input: RequestInfo | URL,
   init: RequestInit = {}
@@ -172,6 +188,7 @@ export async function safeFetch(
     const response = await fetch(inputForFetch, fetchInit);
     return { ok: response.ok, response };
   } catch (error) {
+    const networkError = isLikelyNetworkError(error);
     const aborted = (error as DOMException)?.name === "AbortError";
     const normalizedReason = normalizeAbortReason(pickAbortReason());
     const expected = new Set([
@@ -190,11 +207,14 @@ export async function safeFetch(
       aborted,
       reason: (controller.signal as any)?.reason ?? null,
       normalizedReason: normalizedReason || null,
+      networkError,
     };
 
     try {
       if (aborted || expected.has(normalizedReason)) {
         console.debug("[safeFetch] aborted", logPayload);
+      } else if (networkError) {
+        console.warn("[safeFetch] network_error", { ...logPayload, error });
       } else {
         console.error("[safeFetch] fetch_failed", { ...logPayload, error });
       }
@@ -202,7 +222,7 @@ export async function safeFetch(
       /* noop */
     }
 
-    return { ok: false, aborted, error };
+    return { ok: false, aborted, error, networkError };
   } finally {
     for (const fn of cleanups) {
       try {
