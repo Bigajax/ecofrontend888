@@ -126,7 +126,7 @@ export default function SoundPlayerPage() {
   };
 
   const handleBack = () => {
-    navigate('/sons');
+    navigate('/app/sons');
   };
 
   // Calcular o progresso do círculo
@@ -158,15 +158,20 @@ export default function SoundPlayerPage() {
         {/* Circular Timer */}
         <div className="mb-8 relative">
           <div
-            className="rounded-3xl shadow-2xl p-8 flex items-center justify-center"
+            className="rounded-3xl shadow-2xl p-8 flex items-center justify-center overflow-hidden relative"
             style={{
               background: soundData.image,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
               width: '280px',
               height: '280px'
             }}
           >
+            {/* Overlay for better contrast */}
+            <div className="absolute inset-0 bg-black/20 rounded-3xl" />
+
             {/* SVG Circle Progress */}
-            <svg className="transform -rotate-90" width="200" height="200">
+            <svg className="transform -rotate-90 relative z-10" width="200" height="200">
               {/* Background circle */}
               <circle
                 cx="100"

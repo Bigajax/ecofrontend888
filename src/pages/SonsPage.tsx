@@ -2,25 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Lock } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
-
-interface Sound {
-  id: string;
-  title: string;
-  duration: string;
-  image: string;
-  category: string;
-  isPremium: boolean;
-  badge: string;
-  audioUrl?: string;
-}
-
-interface SoundCategory {
-  id: string;
-  emoji: string;
-  title: string;
-  gradient: string;
-  sounds: Sound[];
-}
+import { SOUND_CATEGORIES, type Sound } from '@/data/sounds';
 
 interface CategoryPill {
   id: string;
@@ -38,74 +20,6 @@ const CATEGORY_PILLS: CategoryPill[] = [
   { id: 'radio', label: 'Rádio de música' },
   { id: 'meditacao', label: 'Música para meditação' },
   { id: 'natureza', label: 'Sons da natureza' },
-];
-
-const SOUND_CATEGORIES: SoundCategory[] = [
-  {
-    id: 'natureza',
-    emoji: '🎧',
-    title: 'Sons da Natureza',
-    gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-    sounds: [
-      { id: 'nat_1', title: 'Chuva suave', duration: '60 min', image: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', category: 'natureza', isPremium: false, badge: 'SOM RELAXANTE', audioUrl: '/sounds/chuva-suave.mp3' },
-      { id: 'nat_2', title: 'Tempestade leve', duration: '45 min', image: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', category: 'natureza', isPremium: false, badge: 'SOM RELAXANTE', audioUrl: '/sounds/tempestade-leve.mp3' },
-      { id: 'nat_3', title: 'Cachoeira', duration: '90 min', image: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', category: 'natureza', isPremium: false, badge: 'SOM RELAXANTE' },
-      { id: 'nat_4', title: 'Riacho', duration: '60 min', image: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)', category: 'natureza', isPremium: true, badge: 'SOM RELAXANTE' },
-      { id: 'nat_5', title: 'Vento nas árvores', duration: '75 min', image: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', category: 'natureza', isPremium: false, badge: 'SOM RELAXANTE' },
-      { id: 'nat_6', title: 'Pássaros ao amanhecer', duration: '30 min', image: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', category: 'natureza', isPremium: false, badge: 'SOM RELAXANTE' },
-    ],
-  },
-  {
-    id: 'meditacao',
-    emoji: '🧘‍♂️',
-    title: 'Meditação & Presença',
-    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    sounds: [
-      { id: 'med_1', title: 'Taças tibetanas', duration: '45 min', image: 'linear-gradient(135deg, #c471f5 0%, #fa71cd 100%)', category: 'meditacao', isPremium: false, badge: 'MÚSICA' },
-      { id: 'med_2', title: 'Flauta nativa', duration: '40 min', image: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', category: 'meditacao', isPremium: false, badge: 'MÚSICA' },
-      { id: 'med_3', title: 'Mantras', duration: '60 min', image: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', category: 'meditacao', isPremium: true, badge: 'MÚSICA' },
-      { id: 'med_4', title: 'Sons 432Hz', duration: '90 min', image: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', category: 'meditacao', isPremium: false, badge: 'SOM RELAXANTE' },
-      { id: 'med_5', title: 'Binaural Calm', duration: '60 min', image: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', category: 'meditacao', isPremium: true, badge: 'SOM RELAXANTE' },
-    ],
-  },
-  {
-    id: 'frequencias',
-    emoji: '🌌',
-    title: 'Frequências Energéticas',
-    gradient: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
-    sounds: [
-      { id: 'freq_1', title: '432Hz', duration: '120 min', image: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', category: 'frequencias', isPremium: false, badge: 'SOM RELAXANTE' },
-      { id: 'freq_2', title: '528Hz', duration: '120 min', image: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', category: 'frequencias', isPremium: false, badge: 'SOM RELAXANTE' },
-      { id: 'freq_3', title: '963Hz', duration: '90 min', image: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', category: 'frequencias', isPremium: true, badge: 'SOM RELAXANTE' },
-      { id: 'freq_4', title: 'Ressonância Schumann', duration: '180 min', image: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)', category: 'frequencias', isPremium: true, badge: 'SOM RELAXANTE' },
-      { id: 'freq_5', title: 'Harmônicos cristalinos', duration: '60 min', image: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', category: 'frequencias', isPremium: false, badge: 'SOM RELAXANTE' },
-    ],
-  },
-  {
-    id: 'sono',
-    emoji: '🌙',
-    title: 'Sono & Relaxamento',
-    gradient: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-    sounds: [
-      { id: 'sono_1', title: 'Ondas do mar', duration: '120 min', image: 'linear-gradient(135deg, #2e3192 0%, #1bffff 100%)', category: 'sono', isPremium: false, badge: 'SOM RELAXANTE' },
-      { id: 'sono_2', title: 'Chuva na janela', duration: '90 min', image: 'linear-gradient(135deg, #4b6cb7 0%, #182848 100%)', category: 'sono', isPremium: false, badge: 'SOM RELAXANTE' },
-      { id: 'sono_3', title: 'White noise', duration: '240 min', image: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', category: 'sono', isPremium: false, badge: 'SOM RELAXANTE' },
-      { id: 'sono_4', title: 'Pink noise', duration: '240 min', image: 'linear-gradient(135deg, #c471f5 0%, #fa71cd 100%)', category: 'sono', isPremium: true, badge: 'SOM RELAXANTE' },
-      { id: 'sono_5', title: 'Vento noturno', duration: '150 min', image: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)', category: 'sono', isPremium: false, badge: 'SOM RELAXANTE' },
-    ],
-  },
-  {
-    id: 'mistico',
-    emoji: '💭',
-    title: 'Sons místicos & espirituais',
-    gradient: 'linear-gradient(135deg, #c471f5 0%, #fa71cd 100%)',
-    sounds: [
-      { id: 'mist_1', title: 'Monges tibetanos', duration: '45 min', image: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', category: 'mistico', isPremium: false, badge: 'MÚSICA' },
-      { id: 'mist_2', title: 'Canto budista suave', duration: '60 min', image: 'linear-gradient(135deg, #c471f5 0%, #fa71cd 100%)', category: 'mistico', isPremium: false, badge: 'MÚSICA' },
-      { id: 'mist_3', title: 'Temple bells', duration: '30 min', image: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', category: 'mistico', isPremium: true, badge: 'SOM RELAXANTE' },
-      { id: 'mist_4', title: 'Atmospheric pads', duration: '90 min', image: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', category: 'mistico', isPremium: false, badge: 'SOM RELAXANTE' },
-    ],
-  },
 ];
 
 export default function SonsPage() {
@@ -138,7 +52,7 @@ export default function SonsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F3FF]">
+    <div className="min-h-screen bg-white">
       <HomeHeader />
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
@@ -191,6 +105,8 @@ export default function SonsPage() {
                       className="relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl"
                       style={{
                         background: sound.image,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
                         aspectRatio: '4/5',
                       }}
                     >
@@ -217,7 +133,7 @@ export default function SonsPage() {
                             <Clock size={14} strokeWidth={2} />
                             <span className="text-xs font-medium">{sound.duration}</span>
                           </div>
-                          <button className="w-full bg-[#6B5DD3] hover:bg-[#5B4DC3] text-white text-xs font-semibold py-2.5 rounded-xl transition-colors duration-300 uppercase tracking-wider">
+                          <button className="w-full bg-[#A8D8EA] hover:bg-[#8BC6DB] text-white text-xs font-semibold py-2.5 rounded-xl transition-colors duration-300 uppercase tracking-wider">
                             SONS RELAXANTES
                           </button>
                         </div>
@@ -241,9 +157,9 @@ export default function SonsPage() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl overflow-hidden w-full max-w-md shadow-2xl">
             {/* Header with curve */}
-            <div className="relative bg-gradient-to-br from-[#4B5DD3] to-[#6B5DD3] h-32 flex items-center justify-center">
+            <div className="relative bg-gradient-to-br from-[#A8D8EA] to-[#8BC6DB] h-32 flex items-center justify-center">
               <div className="absolute -bottom-12 bg-white rounded-full p-6 shadow-lg">
-                <Clock size={40} className="text-[#4B5DD3]" strokeWidth={2} />
+                <Clock size={40} className="text-[#A8D8EA]" strokeWidth={2} />
               </div>
             </div>
 
@@ -261,8 +177,8 @@ export default function SonsPage() {
                     onClick={() => setSelectedDuration(duration)}
                     className={`w-24 h-24 rounded-full border-2 transition-all duration-300 ${
                       selectedDuration === duration
-                        ? 'border-[#6B5DD3] bg-[#6B5DD3]/10 text-[#6B5DD3] scale-110'
-                        : 'border-gray-300 text-[#38322A]/60 hover:border-[#6B5DD3]/50'
+                        ? 'border-[#A8D8EA] bg-[#A8D8EA]/10 text-[#A8D8EA] scale-110'
+                        : 'border-gray-300 text-[#38322A]/60 hover:border-[#A8D8EA]/50'
                     }`}
                   >
                     <span className="text-base font-medium">{duration} min.</span>
@@ -282,7 +198,7 @@ export default function SonsPage() {
               <div className="w-px bg-gray-200" />
               <button
                 onClick={handleStartSound}
-                className="flex-1 py-4 text-[#6B5DD3] font-semibold hover:bg-[#6B5DD3]/5 transition-colors"
+                className="flex-1 py-4 text-[#A8D8EA] font-semibold hover:bg-[#A8D8EA]/5 transition-colors"
               >
                 Iniciar
               </button>

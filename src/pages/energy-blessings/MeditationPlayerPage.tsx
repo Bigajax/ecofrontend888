@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Play, Pause, RotateCcw, RotateCw, Heart, Music } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
+import BackgroundSoundsModal from '@/components/BackgroundSoundsModal';
+import { type Sound } from '@/data/sounds';
 
 interface MeditationData {
   title: string;
@@ -32,13 +34,47 @@ export default function MeditationPlayerPage() {
   const [duration, setDuration] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
 
+  // Estados para sons de fundo
+  const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
+  const [selectedBackgroundSound, setSelectedBackgroundSound] = useState<Sound | null>(null);
+  const [backgroundVolume, setBackgroundVolume] = useState(40);
+  const backgroundAudioRef = useRef<HTMLAudioElement>(null);
+
   // Scroll para o topo quando a página carregar
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Controlar reprodução do áudio de fundo
+  useEffect(() => {
+    if (backgroundAudioRef.current && selectedBackgroundSound?.audioUrl) {
+      backgroundAudioRef.current.play().catch(err => {
+        console.error('Erro ao reproduzir som de fundo:', err);
+      });
+    }
+  }, [selectedBackgroundSound]);
+
+  // Controlar volume do áudio de fundo
+  useEffect(() => {
+    if (backgroundAudioRef.current) {
+      backgroundAudioRef.current.volume = backgroundVolume / 100;
+    }
+  }, [backgroundVolume]);
+
   const handleFavoriteToggle = () => {
     setIsFavorite(!isFavorite);
+  };
+
+  const handleOpenBackgroundModal = () => {
+    setIsBackgroundModalOpen(true);
+  };
+
+  const handleCloseBackgroundModal = () => {
+    setIsBackgroundModalOpen(false);
+  };
+
+  const handleSelectBackgroundSound = (sound: Sound) => {
+    setSelectedBackgroundSound(sound);
   };
 
   useEffect(() => {
@@ -193,15 +229,18 @@ export default function MeditationPlayerPage() {
       {/* Bottom Fixed Controls */}
       <div className="fixed bottom-6 left-0 right-0 z-50 px-4 sm:px-6 flex items-end justify-between">
         {/* Background Music Info - Bottom Left */}
-        <div className="flex items-center gap-2.5 sm:gap-3 rounded-full bg-white/95 backdrop-blur-md shadow-xl px-4 py-3 sm:px-5 sm:py-3.5 border border-gray-200/50">
+        <button
+          onClick={handleOpenBackgroundModal}
+          className="flex items-center gap-2.5 sm:gap-3 rounded-full bg-white/95 backdrop-blur-md shadow-xl px-4 py-3 sm:px-5 sm:py-3.5 border border-gray-200/50 md:hover:shadow-2xl transition-all active:scale-95 touch-manipulation"
+        >
           <Music size={18} className="sm:w-5 sm:h-5 text-gray-700 flex-shrink-0" />
           <div className="flex flex-col">
             <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase leading-tight">Sons de Fundo</span>
             <span className="text-xs sm:text-sm font-semibold text-gray-900 leading-tight">
-              {meditationData.backgroundMusic || 'Cristais'}
+              {selectedBackgroundSound?.title || meditationData.backgroundMusic || 'Cristais'}
             </span>
           </div>
-        </div>
+        </button>
 
         {/* Favorite Button - Bottom Right */}
         <button
@@ -218,6 +257,26 @@ export default function MeditationPlayerPage() {
 
       {/* Hidden Audio Element */}
       <audio ref={audioRef} src={meditationData.audioUrl} />
+
+      {/* Background Sound Audio Element */}
+      {selectedBackgroundSound?.audioUrl && (
+        <audio
+          ref={backgroundAudioRef}
+          src={selectedBackgroundSound.audioUrl}
+          loop
+          preload="auto"
+        />
+      )}
+
+      {/* Background Sounds Modal */}
+      <BackgroundSoundsModal
+        isOpen={isBackgroundModalOpen}
+        onClose={handleCloseBackgroundModal}
+        selectedSoundId={selectedBackgroundSound?.id}
+        onSelectSound={handleSelectBackgroundSound}
+        backgroundVolume={backgroundVolume}
+        onVolumeChange={setBackgroundVolume}
+      />
     </div>
   );
 }
