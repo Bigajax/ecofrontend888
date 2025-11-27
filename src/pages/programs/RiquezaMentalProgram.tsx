@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProgram } from '@/contexts/ProgramContext';
 import RiquezaMentalHeader from '@/components/programs/RiquezaMentalHeader';
@@ -20,23 +20,32 @@ export default function RiquezaMentalProgram() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<StepAnswers>({});
   const [isCompleting, setIsCompleting] = useState(false);
+  const lastReportedProgressRef = useRef<{ progress: number; lesson: string } | null>(null);
 
   const TOTAL_STEPS = 6;
 
   useEffect(() => {
-    // Update progress in real-time
-    if (ongoingProgram?.id === 'rec_2') {
-      const progressPercentage = Math.round(((currentStep + 1) / TOTAL_STEPS) * 100);
-      const stepName = [
-        'Onde você está',
-        'O que você quer',
-        'O que te puxa',
-        'Frase nova',
-        'Próximos 7 dias',
-        'Conclusão'
-      ][currentStep];
-      updateProgress(progressPercentage, `${stepName} — ${currentStep + 1}/${TOTAL_STEPS}`);
+    if (ongoingProgram?.id !== 'rec_2') return;
+
+    const progressPercentage = Math.round(((currentStep + 1) / TOTAL_STEPS) * 100);
+    const stepName = [
+      'Onde você está',
+      'O que você quer',
+      'O que te puxa',
+      'Frase nova',
+      'Próximos 7 dias',
+      'Conclusão'
+    ][currentStep];
+
+    const lessonLabel = `${stepName} — ${currentStep + 1}/${TOTAL_STEPS}`;
+    const last = lastReportedProgressRef.current;
+
+    if (last?.progress === progressPercentage && last.lesson === lessonLabel) {
+      return;
     }
+
+    lastReportedProgressRef.current = { progress: progressPercentage, lesson: lessonLabel };
+    updateProgress(progressPercentage, lessonLabel);
   }, [currentStep, ongoingProgram?.id, updateProgress]);
 
   const handleAnswerChange = (key: string, value: string | string[]) => {
