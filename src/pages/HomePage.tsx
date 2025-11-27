@@ -359,9 +359,13 @@ export default function HomePage() {
 
   const handleDailyRecommendationClick = (recId: string) => {
     if (recId === 'rec_1') {
+      // Meditação do Sono - ainda não implementado
+      console.log('Meditação do Sono - em breve!');
+      // TODO: Implementar página de Meditação do Sono
+    } else if (recId === 'rec_2') {
       // Salvar programa dos 5 Anéis
       startProgram({
-        id: 'rec_1',
+        id: 'rec_2',
         title: '5 Anéis da Disciplina',
         description: 'Construa sua estrutura pessoal',
         currentLesson: 'Aula 1: Introdução aos 5 Anéis',
@@ -371,10 +375,10 @@ export default function HomePage() {
         lastAccessedAt: new Date().toISOString(),
       });
       navigate('/app/rings');
-    } else if (recId === 'rec_2') {
+    } else if (recId === 'rec_3') {
       // Salvar programa Quem Pensa Enriquece
       startProgram({
-        id: 'rec_2',
+        id: 'rec_3',
         title: 'Quem Pensa Enriquece',
         description: 'Transforme seu mindset financeiro',
         currentLesson: 'Passo 1: Onde você está',
