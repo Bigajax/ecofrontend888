@@ -269,36 +269,106 @@ export default function SoundPlayerPage() {
           </button>
         </div>
 
-        {/* Progress Bar and Controls */}
-        <div className="w-full max-w-2xl px-8 space-y-6">
-          {/* Time Progress Bar */}
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-[#38322A] w-12 text-right">
+        {/* Progress Bar and Controls - Responsivo */}
+        <div className="w-full max-w-4xl px-2 sm:px-6 space-y-3">
+          {/* Mobile Layout - Stacked */}
+          <div className="md:hidden flex flex-col gap-3">
+            {/* Barra Principal - Mobile */}
+            <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full px-4 py-3 shadow-lg">
+              {/* Time Display */}
+              <span className="text-[11px] font-medium text-gray-700 flex-shrink-0">
+                {formatTime(currentTime)}
+              </span>
+
+              {/* Progress Bar */}
+              <input
+                type="range"
+                min="0"
+                max={totalSeconds}
+                value={currentTime}
+                onChange={handleProgressChange}
+                className="flex-1 cursor-pointer min-w-0 touch-manipulation"
+                style={{
+                  height: '6px',
+                  background: `linear-gradient(to right, #6B5DD3 0%, #6B5DD3 ${progress}%, #E5E7EB ${progress}%, #E5E7EB 100%)`,
+                  borderRadius: '999px'
+                }}
+              />
+
+              {/* Time Duration */}
+              <span className="text-[11px] font-medium text-gray-700 flex-shrink-0">
+                {formatTime(totalSeconds)}
+              </span>
+
+              {/* Favorite Button */}
+              <button
+                onClick={handleFavoriteToggle}
+                className="flex items-center justify-center w-7 h-7 flex-shrink-0 hover:opacity-80 transition-opacity"
+              >
+                <Heart
+                  size={18}
+                  className={`transition-all ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
+                  strokeWidth={1.5}
+                />
+              </button>
+
+              {/* Volume Icon */}
+              <button
+                className="flex items-center justify-center w-7 h-7 flex-shrink-0 hover:opacity-80 transition-opacity"
+              >
+                <Volume2 size={16} className="text-gray-700" />
+              </button>
+            </div>
+
+            {/* Volume Control - Separate bar on mobile - Minimalista e Compacto */}
+            <div className="flex items-center gap-2 bg-white/70 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm">
+              <Volume2 size={12} className="text-gray-500 flex-shrink-0" />
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={volume}
+                onChange={handleVolumeChange}
+                className="flex-1 cursor-pointer touch-manipulation"
+                style={{
+                  height: '3px',
+                  background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${volume}%, #E5E7EB ${volume}%, #E5E7EB 100%)`,
+                  borderRadius: '999px'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Desktop Layout - Single Row */}
+          <div className="hidden md:flex items-center justify-between gap-3 sm:gap-4 bg-white/90 backdrop-blur-md rounded-full px-4 sm:px-6 py-3 sm:py-4 shadow-lg">
+            {/* Time Display */}
+            <span className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">
               {formatTime(currentTime)}
             </span>
+
+            {/* Progress Bar */}
             <input
               type="range"
               min="0"
               max={totalSeconds}
               value={currentTime}
               onChange={handleProgressChange}
-              className="flex-1 cursor-pointer h-1.5"
+              className="flex-1 cursor-pointer h-1"
               style={{
-                background: `linear-gradient(to right, #6B5DD3 0%, #6B5DD3 ${progress}%, #D1D5DB ${progress}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${progress}%, #E5E7EB ${progress}%, #E5E7EB 100%)`,
                 borderRadius: '999px'
               }}
             />
-            <span className="text-sm font-medium text-[#38322A] w-12">
+
+            {/* Time Duration */}
+            <span className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">
               {formatTime(totalSeconds)}
             </span>
-          </div>
 
-          {/* Bottom Controls */}
-          <div className="flex items-center justify-center gap-6">
             {/* Favorite Button */}
             <button
               onClick={handleFavoriteToggle}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-md hover:shadow-lg transition-all active:scale-95"
+              className="flex items-center justify-center w-8 h-8 flex-shrink-0 hover:opacity-80 transition-opacity"
             >
               <Heart
                 size={20}
@@ -307,24 +377,21 @@ export default function SoundPlayerPage() {
               />
             </button>
 
-            {/* Volume Control */}
-            <div className="flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-full px-6 py-3 shadow-md">
-              <Volume2 size={20} className="text-gray-700 flex-shrink-0" />
+            {/* Volume Control - Minimalista */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Volume2 size={16} className="text-gray-600" />
               <input
                 type="range"
                 min="0"
                 max="100"
                 value={volume}
                 onChange={handleVolumeChange}
-                className="w-32 cursor-pointer h-1.5"
+                className="w-20 sm:w-24 cursor-pointer h-0.5"
                 style={{
-                  background: `linear-gradient(to right, #6B5DD3 0%, #6B5DD3 ${volume}%, #D1D5DB ${volume}%, #D1D5DB 100%)`,
+                  background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${volume}%, #E5E7EB ${volume}%, #E5E7EB 100%)`,
                   borderRadius: '999px'
                 }}
               />
-              <span className="text-sm font-medium text-gray-700 w-10">
-                %{volume}
-              </span>
             </div>
           </div>
         </div>
