@@ -16,11 +16,29 @@ export default function BackgroundSoundsModal({
   onClose,
   selectedSoundId,
   onSelectSound,
-  backgroundVolume = 15, // Reduzido de 40 para 15 para não sobrepor a meditação
+  backgroundVolume = 35, // Volume balanceado para som de fundo
   onVolumeChange,
 }: BackgroundSoundsModalProps) {
   const [volume, setVolume] = useState(backgroundVolume);
   const allSounds = getAllSounds();
+
+  // Estilo customizado para scrollbar
+  const scrollbarStyles = `
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #F3F4F6;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #9CA3AF;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #6B7280;
+    }
+  `;
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
@@ -35,26 +53,35 @@ export default function BackgroundSoundsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <>
+      {/* Inject scrollbar styles */}
+      <style>{scrollbarStyles}</style>
 
-      {/* Modal Content - Responsive */}
-      <div className="relative w-full max-w-4xl max-h-[90vh] sm:max-h-[85vh] bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden">
-        {/* Close Button */}
-        <button
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           onClick={onClose}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors touch-manipulation active:scale-95"
-          aria-label="Fechar"
-        >
-          <X size={18} className="text-gray-700" />
-        </button>
+        />
 
-        {/* Scrollable Content */}
-        <div className="h-full overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6">
+        {/* Modal Content - Responsive */}
+        <div className="relative w-full max-w-4xl max-h-[90vh] sm:max-h-[85vh] bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors touch-manipulation active:scale-95"
+            aria-label="Fechar"
+          >
+            <X size={18} className="text-gray-700" />
+          </button>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 overscroll-contain scroll-smooth"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#9CA3AF #E5E7EB'
+            }}
+          >
           {/* Header */}
           <div className="mb-4 sm:mb-6 pr-8 sm:pr-0">
             {/* Title Section */}
@@ -154,5 +181,6 @@ export default function BackgroundSoundsModal({
         </div>
       </div>
     </div>
+    </>
   );
 }

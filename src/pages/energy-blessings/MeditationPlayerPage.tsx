@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Play, Pause, RotateCcw, RotateCw, Heart, Music, Volume2 } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import BackgroundSoundsModal from '@/components/BackgroundSoundsModal';
-import { type Sound } from '@/data/sounds';
+import { type Sound, getAllSounds } from '@/data/sounds';
 
 interface MeditationData {
   title: string;
@@ -36,8 +36,12 @@ export default function MeditationPlayerPage() {
 
   // Estados para sons de fundo
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
-  const [selectedBackgroundSound, setSelectedBackgroundSound] = useState<Sound | null>(null);
-  const [backgroundVolume, setBackgroundVolume] = useState(15); // Reduzido de 40 para 15 para não sobrepor
+  const [selectedBackgroundSound, setSelectedBackgroundSound] = useState<Sound | null>(() => {
+    // Definir 432Hz como som padrão
+    const allSounds = getAllSounds();
+    return allSounds.find(sound => sound.id === 'freq_1') || null;
+  });
+  const [backgroundVolume, setBackgroundVolume] = useState(35); // Volume balanceado para som de fundo
   const backgroundAudioRef = useRef<HTMLAudioElement>(null);
 
   // Estado para volume da meditação
@@ -48,14 +52,19 @@ export default function MeditationPlayerPage() {
     window.scrollTo(0, 0);
   }, []);
 
-  // Controlar reprodução do áudio de fundo
+  // Sincronizar som de fundo com o estado de reprodução
   useEffect(() => {
     if (backgroundAudioRef.current && selectedBackgroundSound?.audioUrl) {
-      backgroundAudioRef.current.play().catch(err => {
-        console.error('Erro ao reproduzir som de fundo:', err);
-      });
+      // Só tocar se a meditação estiver tocando
+      if (isPlaying) {
+        backgroundAudioRef.current.play().catch(err => {
+          console.error('Erro ao reproduzir som de fundo:', err);
+        });
+      } else {
+        backgroundAudioRef.current.pause();
+      }
     }
-  }, [selectedBackgroundSound]);
+  }, [selectedBackgroundSound, isPlaying]);
 
   // Controlar volume do áudio de fundo
   useEffect(() => {
@@ -113,8 +122,18 @@ export default function MeditationPlayerPage() {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
+        // Pausar também o som de fundo
+        if (backgroundAudioRef.current) {
+          backgroundAudioRef.current.pause();
+        }
       } else {
         audioRef.current.play();
+        // Iniciar automaticamente o som de fundo quando play for clicado
+        if (backgroundAudioRef.current && selectedBackgroundSound?.audioUrl) {
+          backgroundAudioRef.current.play().catch(err => {
+            console.error('Erro ao reproduzir som de fundo:', err);
+          });
+        }
       }
       setIsPlaying(!isPlaying);
     }
