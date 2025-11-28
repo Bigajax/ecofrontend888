@@ -1,26 +1,75 @@
 import { useState, useEffect } from 'react';
 
-// Avatar data with varied sizes, positions and images
+// Avatar data with varied sizes, positions, images and colors - Cada avatar aparece apenas 1 vez
+// Posições responsivas: mobile (default) e desktop (md)
 const AVATARS = [
   // Row 1 - Top
-  { id: 1, size: 'small', image: '/images/avatars/avatar-1.png', left: '5%', top: '8%', delay: 0 },
-  { id: 2, size: 'medium', image: '/images/avatars/avatar-2.png', left: '15%', top: '5%', delay: 0.2 },
-  { id: 3, size: 'large', image: '/images/avatars/avatar-3.png', left: '38%', top: '3%', delay: 0.4 },
-  { id: 4, size: 'large', image: '/images/avatars/avatar-4.png', left: '62%', top: '3%', delay: 0.6 },
-  { id: 5, size: 'medium', image: '/images/avatars/avatar-5.png', left: '85%', top: '5%', delay: 0.8 },
-  { id: 6, size: 'small', image: '/images/avatars/avatar-6.png', left: '95%', top: '8%', delay: 1 },
+  {
+    id: 1, size: 'small', image: '/images/avatars/avatar-1.webp',
+    mobile: { left: '10%', top: '10%' }, desktop: { left: '8%', top: '12%' },
+    delay: 0, color: '#FF6B6B' // Vermelho coral
+  },
+  {
+    id: 2, size: 'medium', image: '/images/avatars/avatar-2.webp',
+    mobile: { left: '22%', top: '6%' }, desktop: { left: '18%', top: '8%' },
+    delay: 0.2, color: '#4ECDC4' // Turquesa
+  },
+  {
+    id: 3, size: 'large', image: '/images/avatars/avatar-3.webp',
+    mobile: { left: '40%', top: '4%' }, desktop: { left: '38%', top: '6%' },
+    delay: 0.4, color: '#FFD93D' // Amarelo dourado
+  },
+  {
+    id: 4, size: 'large', image: '/images/avatars/avatar-4.webp',
+    mobile: { left: '58%', top: '4%' }, desktop: { left: '60%', top: '6%' },
+    delay: 0.6, color: '#6BCF7F' // Verde menta
+  },
+  {
+    id: 5, size: 'medium', image: '/images/avatars/avatar-5.webp',
+    mobile: { left: '76%', top: '6%' }, desktop: { left: '80%', top: '8%' },
+    delay: 0.8, color: '#A78BFA' // Roxo lavanda
+  },
+  {
+    id: 6, size: 'small', image: '/images/avatars/avatar-6.webp',
+    mobile: { left: '88%', top: '10%' }, desktop: { left: '90%', top: '12%' },
+    delay: 1, color: '#F472B6' // Rosa pink
+  },
 
   // Row 2 - Middle-Top
-  { id: 7, size: 'medium', image: '/images/avatars/avatar-6.png', left: '25%', top: '25%', delay: 0.3 },
-  { id: 8, size: 'medium', image: '/images/avatars/avatar-4.png', left: '75%', top: '25%', delay: 0.9 },
+  {
+    id: 7, size: 'medium', image: '/images/avatars/avatar-7.webp',
+    mobile: { left: '30%', top: '26%' }, desktop: { left: '28%', top: '28%' },
+    delay: 0.3, color: '#FBBF24' // Âmbar/ouro
+  },
+  {
+    id: 8, size: 'medium', image: '/images/avatars/avatar-8.webp',
+    mobile: { left: '68%', top: '26%' }, desktop: { left: '72%', top: '28%' },
+    delay: 0.9, color: '#34D399' // Verde esmeralda
+  },
 
   // Row 3 - Middle-Bottom
-  { id: 9, size: 'medium', image: '/images/avatars/avatar-2.png', left: '10%', top: '70%', delay: 0.5 },
-  { id: 10, size: 'medium', image: '/images/avatars/avatar-5.png', left: '90%', top: '70%', delay: 1.1 },
+  {
+    id: 11, size: 'medium', image: '/images/avatars/avatar-11.webp',
+    mobile: { left: '18%', top: '70%' }, desktop: { left: '15%', top: '68%' },
+    delay: 1.1, color: '#FB923C' // Laranja vibrante
+  },
+  {
+    id: 12, size: 'medium', image: '/images/avatars/avatar-12.webp',
+    mobile: { left: '80%', top: '70%' }, desktop: { left: '85%', top: '68%' },
+    delay: 1.3, color: '#0EA5E9' // Azul céu
+  },
 
   // Row 4 - Bottom
-  { id: 11, size: 'small', image: '/images/avatars/avatar-1.png', left: '35%', top: '88%', delay: 0.7 },
-  { id: 12, size: 'small', image: '/images/avatars/avatar-3.png', left: '65%', top: '88%', delay: 1.3 }
+  {
+    id: 9, size: 'medium', image: '/images/avatars/avatar-9.webp',
+    mobile: { left: '40%', top: '86%' }, desktop: { left: '38%', top: '82%' },
+    delay: 0.5, color: '#EC4899' // Rosa magenta
+  },
+  {
+    id: 10, size: 'medium', image: '/images/avatars/avatar-10.webp',
+    mobile: { left: '58%', top: '86%' }, desktop: { left: '62%', top: '82%' },
+    delay: 0.7, color: '#8B5CF6' // Roxo violeta
+  }
 ];
 
 const SIZE_MAP = {
@@ -31,6 +80,19 @@ const SIZE_MAP = {
 
 export default function LiveReflectionSection() {
   const [count, setCount] = useState(4182);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Update counter every 10 seconds
   useEffect(() => {
@@ -49,27 +111,31 @@ export default function LiveReflectionSection() {
 
         {/* Floating Avatars Container */}
         <div className="pointer-events-none absolute inset-0">
-          {AVATARS.map((avatar) => (
-            <div
-              key={avatar.id}
-              className="absolute"
-              style={{
-                left: avatar.left,
-                top: avatar.top,
-                animation: `float-${avatar.id} ${6 + Math.random() * 2}s ease-in-out infinite`,
-                animationDelay: `${avatar.delay}s`
-              }}
-            >
-              <img
-                src={avatar.image}
-                alt={`Avatar ${avatar.id}`}
-                className={`${SIZE_MAP[avatar.size as keyof typeof SIZE_MAP]} rounded-full object-cover opacity-60 sm:opacity-80 md:opacity-90 shadow-md md:shadow-lg transition-all duration-300 hover:scale-110 hover:opacity-100`}
+          {AVATARS.map((avatar) => {
+            const position = isMobile ? avatar.mobile : avatar.desktop;
+            return (
+              <div
+                key={avatar.id}
+                className="absolute"
                 style={{
-                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+                  left: position.left,
+                  top: position.top,
+                  animation: `float-${avatar.id} ${6 + Math.random() * 2}s ease-in-out infinite`,
+                  animationDelay: `${avatar.delay}s`
                 }}
-              />
-            </div>
-          ))}
+              >
+                <img
+                  src={avatar.image}
+                  alt={`Avatar ${avatar.id}`}
+                  className={`${SIZE_MAP[avatar.size as keyof typeof SIZE_MAP]} rounded-full object-cover opacity-60 sm:opacity-80 md:opacity-90 shadow-md md:shadow-lg transition-all duration-300 hover:scale-110 hover:opacity-100`}
+                  style={{
+                    boxShadow: `0 0 0 3px ${avatar.color}, 0 4px 20px rgba(0, 0, 0, 0.08)`,
+                    border: `3px solid ${avatar.color}`
+                  }}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Central Content */}

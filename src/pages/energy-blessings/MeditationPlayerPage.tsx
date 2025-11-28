@@ -282,8 +282,9 @@ export default function MeditationPlayerPage() {
                 max={duration || 0}
                 value={currentTime}
                 onChange={handleProgressChange}
-                className="flex-1 cursor-pointer h-1 min-w-0"
+                className="flex-1 cursor-pointer min-w-0 touch-manipulation"
                 style={{
+                  height: '6px',
                   background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`,
                   borderRadius: '999px'
                 }}
@@ -315,17 +316,18 @@ export default function MeditationPlayerPage() {
               </button>
             </div>
 
-            {/* Volume Control - Separate bar on mobile - Minimalista */}
-            <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-3 py-2 shadow-md">
-              <Volume2 size={14} className="text-gray-600 flex-shrink-0" />
+            {/* Volume Control - Separate bar on mobile - Minimalista e Compacto */}
+            <div className="flex items-center gap-2 bg-white/70 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm">
+              <Volume2 size={12} className="text-gray-500 flex-shrink-0" />
               <input
                 type="range"
                 min="0"
                 max="100"
                 value={meditationVolume}
                 onChange={(e) => setMeditationVolume(parseFloat(e.target.value))}
-                className="flex-1 cursor-pointer h-0.5"
+                className="flex-1 cursor-pointer touch-manipulation"
                 style={{
+                  height: '3px',
                   background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${meditationVolume}%, #E5E7EB ${meditationVolume}%, #E5E7EB 100%)`,
                   borderRadius: '999px'
                 }}
