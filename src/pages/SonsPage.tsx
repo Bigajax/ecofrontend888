@@ -102,7 +102,7 @@ export default function SonsPage() {
                     {/* Sound Card */}
                     <div
                       onClick={() => handleCardClick(sound)}
-                      className="relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                      className="relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-95 hover:shadow-xl"
                       style={{
                         background: sound.image,
                         backgroundSize: 'cover',

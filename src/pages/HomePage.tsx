@@ -9,6 +9,7 @@ import EnergyBlessingsSection from '@/components/home/EnergyBlessingsSection';
 import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
 import LearnExploreSection from '@/components/home/LearnExploreSection';
 import HeroCarousel from '@/components/home/HeroCarousel';
+import LiveReflectionSection from '@/components/home/LiveReflectionSection';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
 import EcoAIModal from '@/components/EcoAIModal';
@@ -496,6 +497,11 @@ export default function HomePage() {
             onCategoryChange={setSelectedCategory}
             onContentClick={handleContentClick}
           />
+        </AnimatedSection>
+
+        {/* Live Reflection Section */}
+        <AnimatedSection animation="slide-up-fade" id="live-reflection-section">
+          <LiveReflectionSection />
         </AnimatedSection>
 
         {/* Footer spacing */}

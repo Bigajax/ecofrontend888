@@ -38,9 +38,9 @@ export const SOUND_CATEGORIES: SoundCategory[] = [
     title: 'Meditação & Presença',
     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     sounds: [
-      { id: 'med_1', title: 'Taças tibetanas', duration: '45 min', image: 'linear-gradient(135deg, #c471f5 0%, #fa71cd 100%)', category: 'meditacao', isPremium: false, badge: 'MÚSICA' },
-      { id: 'med_2', title: 'Flauta nativa', duration: '40 min', image: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', category: 'meditacao', isPremium: false, badge: 'MÚSICA' },
-      { id: 'med_3', title: 'Mantras', duration: '60 min', image: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', category: 'meditacao', isPremium: true, badge: 'MÚSICA' },
+      { id: 'med_1', title: 'Taças tibetanas', duration: '45 min', image: 'url(/images/sounds/tibetan-bowl.png)', category: 'meditacao', isPremium: false, badge: 'MÚSICA', audioUrl: '/sounds/tibetan-bowl-26240.mp3' },
+      { id: 'med_2', title: 'Flauta nativa', duration: '40 min', image: 'url(/images/sounds/flauta-nativa.png)', category: 'meditacao', isPremium: false, badge: 'MÚSICA', audioUrl: '/sounds/flute-recorder-18816.mp3' },
+      { id: 'med_3', title: 'Mantras', duration: '60 min', image: 'url(/images/sounds/mantras.png)', category: 'meditacao', isPremium: false, badge: 'MÚSICA', audioUrl: '/sounds/aum_02_528hz-22432.mp3' },
       { id: 'med_4', title: 'Sons 432Hz', duration: '90 min', image: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', category: 'meditacao', isPremium: false, badge: 'SOM RELAXANTE' },
       { id: 'med_5', title: 'Binaural Calm', duration: '60 min', image: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', category: 'meditacao', isPremium: true, badge: 'SOM RELAXANTE' },
     ],
@@ -51,7 +51,7 @@ export const SOUND_CATEGORIES: SoundCategory[] = [
     title: 'Frequências Energéticas',
     gradient: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
     sounds: [
-      { id: 'freq_1', title: '432Hz', duration: '120 min', image: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', category: 'frequencias', isPremium: false, badge: 'SOM RELAXANTE' },
+      { id: 'freq_1', title: '432Hz', duration: '120 min', image: 'url(/images/sounds/432hz.png)', category: 'frequencias', isPremium: false, badge: 'SOM RELAXANTE', audioUrl: '/sounds/432hz-frequency.mp3' },
       { id: 'freq_2', title: '528Hz', duration: '120 min', image: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', category: 'frequencias', isPremium: false, badge: 'SOM RELAXANTE' },
       { id: 'freq_3', title: '963Hz', duration: '90 min', image: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', category: 'frequencias', isPremium: true, badge: 'SOM RELAXANTE' },
       { id: 'freq_4', title: 'Ressonância Schumann', duration: '180 min', image: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)', category: 'frequencias', isPremium: true, badge: 'SOM RELAXANTE' },
