@@ -33,6 +33,7 @@ export default function MeditationPlayerPage() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showFavoriteToast, setShowFavoriteToast] = useState(false);
 
   // Estados para sons de fundo
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
@@ -81,7 +82,17 @@ export default function MeditationPlayerPage() {
   }, [meditationVolume]);
 
   const handleFavoriteToggle = () => {
-    setIsFavorite(!isFavorite);
+    const newFavoriteState = !isFavorite;
+    setIsFavorite(newFavoriteState);
+
+    // Mostrar toast de confirmação
+    if (newFavoriteState) {
+      setShowFavoriteToast(true);
+      // Auto-hide após 3 segundos
+      setTimeout(() => {
+        setShowFavoriteToast(false);
+      }, 3000);
+    }
   };
 
   const handleOpenBackgroundModal = () => {
@@ -304,24 +315,21 @@ export default function MeditationPlayerPage() {
               </button>
             </div>
 
-            {/* Volume Control - Separate bar on mobile */}
-            <div className="flex items-center gap-3 bg-white/90 backdrop-blur-md rounded-full px-4 py-2.5 shadow-lg">
-              <Volume2 size={16} className="text-gray-700 flex-shrink-0" />
+            {/* Volume Control - Separate bar on mobile - Minimalista */}
+            <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-3 py-2 shadow-md">
+              <Volume2 size={14} className="text-gray-600 flex-shrink-0" />
               <input
                 type="range"
                 min="0"
                 max="100"
                 value={meditationVolume}
                 onChange={(e) => setMeditationVolume(parseFloat(e.target.value))}
-                className="flex-1 cursor-pointer h-1"
+                className="flex-1 cursor-pointer h-0.5"
                 style={{
                   background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${meditationVolume}%, #E5E7EB ${meditationVolume}%, #E5E7EB 100%)`,
                   borderRadius: '999px'
                 }}
               />
-              <span className="text-xs font-medium text-gray-700 w-10 text-right">
-                %{Math.round(meditationVolume)}
-              </span>
             </div>
           </div>
 
@@ -377,24 +385,21 @@ export default function MeditationPlayerPage() {
               />
             </button>
 
-            {/* Volume Control */}
+            {/* Volume Control - Minimalista */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Volume2 size={18} className="text-gray-700" />
+              <Volume2 size={16} className="text-gray-600" />
               <input
                 type="range"
                 min="0"
                 max="100"
                 value={meditationVolume}
                 onChange={(e) => setMeditationVolume(parseFloat(e.target.value))}
-                className="w-20 sm:w-24 cursor-pointer h-1"
+                className="w-20 sm:w-24 cursor-pointer h-0.5"
                 style={{
                   background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${meditationVolume}%, #E5E7EB ${meditationVolume}%, #E5E7EB 100%)`,
                   borderRadius: '999px'
                 }}
               />
-              <span className="text-xs font-medium text-gray-700 w-10 text-right">
-                %{Math.round(meditationVolume)}
-              </span>
             </div>
           </div>
         </div>
@@ -423,6 +428,25 @@ export default function MeditationPlayerPage() {
         backgroundVolume={backgroundVolume}
         onVolumeChange={setBackgroundVolume}
       />
+
+      {/* Toast de Confirmação de Favorito */}
+      {showFavoriteToast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-slide-down">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl px-6 py-4 flex items-center gap-3 border border-gray-200/50">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-50">
+              <Heart size={20} className="text-red-500 fill-red-500" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-gray-900">
+                Adicionado aos favoritos!
+              </span>
+              <span className="text-xs text-gray-500">
+                {meditationData.title}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -94,24 +94,21 @@ export default function BackgroundSoundsModal({
               </p>
             </div>
 
-            {/* Volume Control */}
-            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2 sm:px-4 sm:py-2.5 w-full sm:w-auto">
-              <Volume2 size={16} className="text-gray-700 flex-shrink-0" />
+            {/* Volume Control - Minimalista */}
+            <div className="flex items-center gap-2 bg-gray-50 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 w-full sm:w-auto">
+              <Volume2 size={14} className="text-gray-600 flex-shrink-0" />
               <input
                 type="range"
                 min="0"
                 max="100"
                 value={volume}
                 onChange={handleVolumeChange}
-                className="flex-1 cursor-pointer h-1 sm:h-1.5 touch-manipulation"
+                className="flex-1 cursor-pointer h-0.5 touch-manipulation"
                 style={{
-                  background: `linear-gradient(to right, #6B5DD3 0%, #6B5DD3 ${volume}%, #D1D5DB ${volume}%, #D1D5DB 100%)`,
+                  background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${volume}%, #E5E7EB ${volume}%, #E5E7EB 100%)`,
                   borderRadius: '999px'
                 }}
               />
-              <span className="text-xs font-medium text-gray-700 w-8 text-right">
-                %{Math.round(volume)}
-              </span>
             </div>
           </div>
 

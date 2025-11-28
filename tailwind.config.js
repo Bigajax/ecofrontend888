@@ -155,6 +155,10 @@ export default {
           '0%': { opacity: '0', transform: 'translateX(20px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
+        slideDown: {
+          '0%': { opacity: '0', transform: 'translateY(-20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'eco-pulse': 'ecoPulse 6s ease-in-out infinite',
@@ -170,6 +174,7 @@ export default {
         'slide-up-fade': 'slideUpFade 600ms ease-out',
         'slide-left-fade': 'slideLeftFade 600ms ease-out',
         'slide-right-fade': 'slideRightFade 600ms ease-out',
+        'slide-down': 'slideDown 400ms ease-out',
       },
     },
   },
