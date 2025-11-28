@@ -24,9 +24,9 @@ const AVATARS = [
 ];
 
 const SIZE_MAP = {
-  small: 'w-10 h-10',
-  medium: 'w-14 h-14',
-  large: 'w-16 h-16'
+  small: 'w-8 h-8 md:w-10 md:h-10',
+  medium: 'w-10 h-10 md:w-14 md:h-14',
+  large: 'w-12 h-12 md:w-16 md:h-16'
 };
 
 export default function LiveReflectionSection() {
@@ -45,7 +45,7 @@ export default function LiveReflectionSection() {
   return (
     <section className="relative mx-auto max-w-6xl px-4 py-16 md:px-8 md:py-24">
       {/* White Background Container */}
-      <div className="relative overflow-hidden rounded-[32px] bg-white px-8 py-20 md:px-16 md:py-32">
+      <div className="relative overflow-hidden rounded-[32px] bg-white px-4 py-16 sm:px-8 sm:py-20 md:px-16 md:py-32">
 
         {/* Floating Avatars Container */}
         <div className="pointer-events-none absolute inset-0">
@@ -63,7 +63,7 @@ export default function LiveReflectionSection() {
               <img
                 src={avatar.image}
                 alt={`Avatar ${avatar.id}`}
-                className={`${SIZE_MAP[avatar.size as keyof typeof SIZE_MAP]} rounded-full object-cover opacity-90 shadow-lg transition-all duration-300 hover:scale-110 hover:opacity-100`}
+                className={`${SIZE_MAP[avatar.size as keyof typeof SIZE_MAP]} rounded-full object-cover opacity-60 sm:opacity-80 md:opacity-90 shadow-md md:shadow-lg transition-all duration-300 hover:scale-110 hover:opacity-100`}
                 style={{
                   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
                 }}
@@ -73,22 +73,22 @@ export default function LiveReflectionSection() {
         </div>
 
         {/* Central Content */}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center">
+        <div className="relative z-10 flex flex-col items-center justify-center text-center px-2">
           {/* Counter and Live Badge */}
-          <div className="mb-4 flex items-center gap-3">
-            <h2 className="font-display text-5xl font-bold text-gray-800 md:text-7xl">
+          <div className="mb-3 flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+            <h2 className="font-display text-4xl sm:text-5xl font-bold text-gray-800 md:text-7xl">
               {count.toLocaleString('pt-BR')}
             </h2>
-            <div className="flex items-center gap-1.5 rounded-full bg-red-500 px-3 py-1.5 shadow-lg">
-              <div className="h-2 w-2 animate-pulse rounded-full bg-white"></div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-white">
+            <div className="flex items-center gap-1.5 rounded-full bg-red-500 px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-lg">
+              <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 animate-pulse rounded-full bg-white"></div>
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-white">
                 AO VIVO
               </span>
             </div>
           </div>
 
           {/* Subtitle */}
-          <p className="text-lg font-medium text-gray-600 md:text-xl">
+          <p className="text-base sm:text-lg font-medium text-gray-600 md:text-xl max-w-xs sm:max-w-none">
             Pessoas refletindo com a Eco agora
           </p>
         </div>
