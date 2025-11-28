@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Play, Pause, RotateCcw, RotateCw, Heart, Music } from 'lucide-react';
+import { ChevronLeft, Play, Pause, RotateCcw, RotateCw, Heart, Music, Volume2 } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import BackgroundSoundsModal from '@/components/BackgroundSoundsModal';
 import { type Sound } from '@/data/sounds';
@@ -37,8 +37,11 @@ export default function MeditationPlayerPage() {
   // Estados para sons de fundo
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
   const [selectedBackgroundSound, setSelectedBackgroundSound] = useState<Sound | null>(null);
-  const [backgroundVolume, setBackgroundVolume] = useState(40);
+  const [backgroundVolume, setBackgroundVolume] = useState(15); // Reduzido de 40 para 15 para não sobrepor
   const backgroundAudioRef = useRef<HTMLAudioElement>(null);
+
+  // Estado para volume da meditação
+  const [meditationVolume, setMeditationVolume] = useState(100);
 
   // Scroll para o topo quando a página carregar
   useEffect(() => {
@@ -61,6 +64,13 @@ export default function MeditationPlayerPage() {
     }
   }, [backgroundVolume]);
 
+  // Controlar volume do áudio da meditação
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = meditationVolume / 100;
+    }
+  }, [meditationVolume]);
+
   const handleFavoriteToggle = () => {
     setIsFavorite(!isFavorite);
   };
@@ -82,7 +92,11 @@ export default function MeditationPlayerPage() {
     if (!audio) return;
 
     const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
+    const updateDuration = () => {
+      setDuration(audio.duration);
+      // Inicializar volume quando metadata carregar
+      audio.volume = meditationVolume / 100;
+    };
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
@@ -93,7 +107,7 @@ export default function MeditationPlayerPage() {
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', () => setIsPlaying(false));
     };
-  }, []);
+  }, [meditationVolume]);
 
   const handlePlayPause = () => {
     if (audioRef.current) {
@@ -138,122 +152,235 @@ export default function MeditationPlayerPage() {
       {/* HomeHeader */}
       <HomeHeader />
 
-      {/* Back Button - Fixed Position */}
-      <button
-        onClick={handleBack}
-        className="fixed top-24 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-lg md:hover:shadow-xl transition-all active:scale-95 touch-manipulation"
-        aria-label="Voltar"
-      >
-        <ChevronLeft size={24} className="text-gray-800" />
-      </button>
-
       {/* Main Content - Centered */}
-      <div className="flex min-h-screen flex-col items-center justify-center px-4 sm:px-8 py-20 pb-32">
+      <div className="flex min-h-screen flex-col items-center justify-start px-4 sm:px-8 pt-24 pb-8">
+        {/* Back Button - Inline no topo (mobile) */}
+        <div className="w-full max-w-4xl mb-4">
+          <button
+            onClick={handleBack}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation"
+            aria-label="Voltar"
+          >
+            <ChevronLeft size={22} className="text-gray-800" />
+          </button>
+        </div>
         {/* Meditation Image Card */}
-        <div className="mb-8 sm:mb-10 overflow-hidden rounded-3xl shadow-2xl">
+        <div className="mb-6 overflow-hidden rounded-3xl shadow-2xl">
           <img
             src={meditationData.imageUrl}
             alt={meditationData.title}
-            className="h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64 object-cover"
+            className="h-40 w-40 sm:h-48 sm:w-48 object-cover"
             style={{ objectPosition: 'center 35%' }}
           />
         </div>
 
         {/* Title */}
-        <h1 className="mb-12 sm:mb-16 text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 text-center px-4 drop-shadow-sm">
+        <h1 className="mb-6 text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 text-center px-4 drop-shadow-sm">
           {meditationData.title}
         </h1>
 
-        {/* Playback Controls */}
-        <div className="mb-8 sm:mb-10 flex items-center gap-6 sm:gap-8">
+        {/* Playback Controls - Reduzidos */}
+        <div className="mb-6 flex items-center gap-4">
           {/* Skip Back 15s */}
           <button
             onClick={() => handleSkip(-15)}
-            className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-lg md:hover:shadow-xl transition-all active:scale-95 touch-manipulation border border-gray-200/50"
+            className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation border border-gray-200/50"
           >
             <div className="relative flex items-center justify-center">
-              <RotateCcw size={24} className="sm:w-7 sm:h-7 text-gray-700" strokeWidth={1.5} />
-              <span className="absolute text-xs sm:text-sm font-bold text-gray-700 leading-none" style={{ marginTop: '2px' }}>
+              <RotateCcw size={18} className="text-gray-700" strokeWidth={1.5} />
+              <span className="absolute text-[10px] font-bold text-gray-700 leading-none" style={{ marginTop: '1px' }}>
                 15
               </span>
             </div>
           </button>
 
-          {/* Play/Pause Button - Larger */}
+          {/* Play/Pause Button */}
           <button
             onClick={handlePlayPause}
-            className="flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-white/95 backdrop-blur-sm shadow-2xl md:hover:shadow-[0_20px_60px_rgba(0,0,0,0.3)] transition-all active:scale-95 touch-manipulation border border-gray-200/50"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 backdrop-blur-sm shadow-xl md:hover:shadow-2xl transition-all active:scale-95 touch-manipulation border border-gray-200/50"
           >
             {isPlaying ? (
-              <Pause size={36} className="sm:w-10 sm:h-10 text-gray-900" strokeWidth={2} />
+              <Pause size={28} className="text-gray-900" strokeWidth={2} />
             ) : (
-              <Play size={36} className="sm:w-10 sm:h-10 text-gray-900 ml-1" strokeWidth={2} fill="currentColor" />
+              <Play size={28} className="text-gray-900 ml-0.5" strokeWidth={2} fill="currentColor" />
             )}
           </button>
 
           {/* Skip Forward 15s */}
           <button
             onClick={() => handleSkip(15)}
-            className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-lg md:hover:shadow-xl transition-all active:scale-95 touch-manipulation border border-gray-200/50"
+            className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation border border-gray-200/50"
           >
             <div className="relative flex items-center justify-center">
-              <RotateCw size={24} className="sm:w-7 sm:h-7 text-gray-700" strokeWidth={1.5} />
-              <span className="absolute text-xs sm:text-sm font-bold text-gray-700 leading-none" style={{ marginTop: '2px' }}>
+              <RotateCw size={18} className="text-gray-700" strokeWidth={1.5} />
+              <span className="absolute text-[10px] font-bold text-gray-700 leading-none" style={{ marginTop: '1px' }}>
                 15
               </span>
             </div>
           </button>
         </div>
 
-        {/* Progress Bar - Integrated */}
-        <div className="w-full max-w-2xl px-4 sm:px-8">
-          <input
-            type="range"
-            min="0"
-            max={duration || 0}
-            value={currentTime}
-            onChange={handleProgressChange}
-            className="w-full cursor-pointer h-1.5 mb-2"
-            style={{
-              background: `linear-gradient(to right, #374151 0%, #374151 ${(currentTime / (duration || 1)) * 100}%, #D1D5DB ${(currentTime / (duration || 1)) * 100}%, #D1D5DB 100%)`,
-              borderRadius: '999px'
-            }}
-          />
-          <div className="flex justify-between items-center text-sm sm:text-base font-medium text-white drop-shadow-md">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+        {/* Controls Bar - Responsive */}
+        <div className="w-full max-w-4xl px-2 sm:px-6 mt-4">
+          {/* Mobile Layout - Stacked */}
+          <div className="md:hidden flex flex-col gap-3">
+            {/* Barra Principal - Mobile */}
+            <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full px-4 py-3 shadow-lg">
+              {/* Background Sound Selector */}
+              <button
+                onClick={handleOpenBackgroundModal}
+                className="flex items-center gap-2 min-w-0 flex-shrink hover:opacity-80 transition-opacity"
+              >
+                <Music size={16} className="text-gray-700 flex-shrink-0" />
+                <div className="flex flex-col items-start min-w-0">
+                  <span className="text-[9px] font-medium text-gray-500 uppercase leading-tight">Sons de Fundo</span>
+                  <span className="text-[11px] font-semibold text-gray-900 leading-tight truncate max-w-[80px]">
+                    {selectedBackgroundSound?.title || 'Nenhum'}
+                  </span>
+                </div>
+              </button>
+
+              {/* Time Display */}
+              <span className="text-[11px] font-medium text-gray-700 flex-shrink-0">
+                {formatTime(currentTime)}
+              </span>
+
+              {/* Progress Bar */}
+              <input
+                type="range"
+                min="0"
+                max={duration || 0}
+                value={currentTime}
+                onChange={handleProgressChange}
+                className="flex-1 cursor-pointer h-1 min-w-0"
+                style={{
+                  background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`,
+                  borderRadius: '999px'
+                }}
+              />
+
+              {/* Time Duration */}
+              <span className="text-[11px] font-medium text-gray-700 flex-shrink-0">
+                {formatTime(duration)}
+              </span>
+
+              {/* Favorite Button */}
+              <button
+                onClick={handleFavoriteToggle}
+                className="flex items-center justify-center w-7 h-7 flex-shrink-0 hover:opacity-80 transition-opacity"
+              >
+                <Heart
+                  size={18}
+                  className={`transition-all ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
+                  strokeWidth={1.5}
+                />
+              </button>
+
+              {/* Volume Icon - Opens volume control */}
+              <button
+                className="flex items-center justify-center w-7 h-7 flex-shrink-0 hover:opacity-80 transition-opacity"
+                onClick={() => {/* Toggle volume panel */}}
+              >
+                <Volume2 size={16} className="text-gray-700" />
+              </button>
+            </div>
+
+            {/* Volume Control - Separate bar on mobile */}
+            <div className="flex items-center gap-3 bg-white/90 backdrop-blur-md rounded-full px-4 py-2.5 shadow-lg">
+              <Volume2 size={16} className="text-gray-700 flex-shrink-0" />
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={meditationVolume}
+                onChange={(e) => setMeditationVolume(parseFloat(e.target.value))}
+                className="flex-1 cursor-pointer h-1"
+                style={{
+                  background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${meditationVolume}%, #E5E7EB ${meditationVolume}%, #E5E7EB 100%)`,
+                  borderRadius: '999px'
+                }}
+              />
+              <span className="text-xs font-medium text-gray-700 w-10 text-right">
+                %{Math.round(meditationVolume)}
+              </span>
+            </div>
+          </div>
+
+          {/* Desktop Layout - Single Row */}
+          <div className="hidden md:flex items-center justify-between gap-3 sm:gap-4 bg-white/90 backdrop-blur-md rounded-full px-4 sm:px-6 py-3 sm:py-4 shadow-lg">
+            {/* Background Sound Selector */}
+            <button
+              onClick={handleOpenBackgroundModal}
+              className="flex items-center gap-2 min-w-0 flex-shrink-0 hover:opacity-80 transition-opacity"
+            >
+              <Music size={18} className="text-gray-700 flex-shrink-0" />
+              <div className="flex flex-col items-start min-w-0">
+                <span className="text-[10px] font-medium text-gray-500 uppercase leading-tight">Sons de Fundo</span>
+                <span className="text-xs font-semibold text-gray-900 leading-tight truncate max-w-[100px]">
+                  {selectedBackgroundSound?.title || 'Nenhum'}
+                </span>
+              </div>
+            </button>
+
+            {/* Time Display */}
+            <span className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">
+              {formatTime(currentTime)}
+            </span>
+
+            {/* Progress Bar */}
+            <input
+              type="range"
+              min="0"
+              max={duration || 0}
+              value={currentTime}
+              onChange={handleProgressChange}
+              className="flex-1 cursor-pointer h-1"
+              style={{
+                background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`,
+                borderRadius: '999px'
+              }}
+            />
+
+            {/* Time Duration */}
+            <span className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">
+              {formatTime(duration)}
+            </span>
+
+            {/* Favorite Button */}
+            <button
+              onClick={handleFavoriteToggle}
+              className="flex items-center justify-center w-8 h-8 flex-shrink-0 hover:opacity-80 transition-opacity"
+            >
+              <Heart
+                size={20}
+                className={`transition-all ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
+                strokeWidth={1.5}
+              />
+            </button>
+
+            {/* Volume Control */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Volume2 size={18} className="text-gray-700" />
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={meditationVolume}
+                onChange={(e) => setMeditationVolume(parseFloat(e.target.value))}
+                className="w-20 sm:w-24 cursor-pointer h-1"
+                style={{
+                  background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${meditationVolume}%, #E5E7EB ${meditationVolume}%, #E5E7EB 100%)`,
+                  borderRadius: '999px'
+                }}
+              />
+              <span className="text-xs font-medium text-gray-700 w-10 text-right">
+                %{Math.round(meditationVolume)}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Fixed Controls */}
-      <div className="fixed bottom-6 left-0 right-0 z-50 px-4 sm:px-6 flex items-end justify-between">
-        {/* Background Music Info - Bottom Left */}
-        <button
-          onClick={handleOpenBackgroundModal}
-          className="flex items-center gap-2.5 sm:gap-3 rounded-full bg-white/95 backdrop-blur-md shadow-xl px-4 py-3 sm:px-5 sm:py-3.5 border border-gray-200/50 md:hover:shadow-2xl transition-all active:scale-95 touch-manipulation"
-        >
-          <Music size={18} className="sm:w-5 sm:h-5 text-gray-700 flex-shrink-0" />
-          <div className="flex flex-col">
-            <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase leading-tight">Sons de Fundo</span>
-            <span className="text-xs sm:text-sm font-semibold text-gray-900 leading-tight">
-              {selectedBackgroundSound?.title || meditationData.backgroundMusic || 'Cristais'}
-            </span>
-          </div>
-        </button>
-
-        {/* Favorite Button - Bottom Right */}
-        <button
-          onClick={handleFavoriteToggle}
-          className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-white/95 backdrop-blur-md shadow-xl md:hover:shadow-2xl transition-all active:scale-95 touch-manipulation border border-gray-200/50"
-        >
-          <Heart
-            size={24}
-            className={`sm:w-7 sm:h-7 transition-all ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
-            strokeWidth={1.5}
-          />
-        </button>
-      </div>
 
       {/* Hidden Audio Element */}
       <audio ref={audioRef} src={meditationData.audioUrl} />

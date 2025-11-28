@@ -16,7 +16,7 @@ export default function BackgroundSoundsModal({
   onClose,
   selectedSoundId,
   onSelectSound,
-  backgroundVolume = 40,
+  backgroundVolume = 15, // Reduzido de 40 para 15 para não sobrepor a meditação
   onVolumeChange,
 }: BackgroundSoundsModalProps) {
   const [volume, setVolume] = useState(backgroundVolume);
