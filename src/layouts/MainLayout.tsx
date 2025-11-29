@@ -24,8 +24,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   const handleLogout = async () => {
     try {
+      // Limpa mensagens do chat ANTES de fazer logout
+      clearMessages();
       await signOut();
-      clearMessages(); // opcional: limpa as mensagens do chat
     } finally {
       navigate('/');
     }
@@ -35,8 +36,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     navigate('/login');
   };
 
-  // Mostrar header antigo apenas na ChatPage e outras páginas (não na HomePage, nem Rings, nem Riqueza Mental, nem Articles, nem Diário Estoico, nem páginas de Explorar, nem páginas de Meditação)
+  // Mostrar header antigo apenas em páginas específicas (NÃO na HomePage, ChatPage, Rings, Memórias, etc.)
   const isHomePage = location.pathname === '/app' || location.pathname === '/app/';
+  const isChatPage = location.pathname.startsWith('/app/chat'); // Nova sidebar/topbar já implementada
+  const isMemoryPage = location.pathname.startsWith('/app/memory'); // Memórias, Perfil Emocional, Relatórios
+  const isVoicePage = location.pathname.startsWith('/app/voice'); // Página de voz
   const isRingsPage = location.pathname.startsWith('/app/rings');
   const isRiquezaMentalPage = location.pathname.startsWith('/app/riqueza-mental');
   const isArticlesPage = location.pathname.startsWith('/app/articles');
@@ -47,10 +51,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const isEnergyBlessingsPage = location.pathname.startsWith('/app/energy-blessings');
   const isMeditationPlayerPage = location.pathname.startsWith('/app/meditation-player');
   const isConfiguracoesPage = location.pathname.startsWith('/app/configuracoes');
-  const showOldHeader = !isHomePage && !isRingsPage && !isRiquezaMentalPage && !isArticlesPage && !isDiarioEstoicoPage && !isProgramasPage && !isSonoPage && !isSonsPage && !isEnergyBlessingsPage && !isMeditationPlayerPage && !isConfiguracoesPage;
+  const showOldHeader = !isHomePage && !isChatPage && !isMemoryPage && !isVoicePage && !isRingsPage && !isRiquezaMentalPage && !isArticlesPage && !isDiarioEstoicoPage && !isProgramasPage && !isSonoPage && !isSonsPage && !isEnergyBlessingsPage && !isMeditationPlayerPage && !isConfiguracoesPage;
 
-  // Mostrar BottomNav em todas as páginas principais (exceto login, welcome, etc)
-  const showBottomNav = location.pathname.startsWith('/app');
+  // Mostrar BottomNav APENAS nas páginas antigas (NÃO no Chat, Memórias, Voz que têm sidebar própria)
+  const showBottomNav = location.pathname.startsWith('/app') && !isChatPage && !isMemoryPage && !isVoicePage;
 
   return (
     <>
@@ -68,20 +72,25 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       {/* Espaçamento controlado pelas CSS vars definidas no Header. */}
       {/* Variantes com sidebar devem definir explicitamente --eco-sidebar-w quando existirem. */}
-      <main
-        className={`
-          min-h-[100svh] md:min-h-[100dvh]
-          ${showOldHeader ? 'pt-[var(--eco-topbar-h,56px)] md:pt-0' : ''}
-          ${showBottomNav ? 'pb-16 md:pb-0' : ''}
-          pl-0 ${showOldHeader ? 'md:pl-[var(--eco-sidebar-w,0px)]' : ''}
-          transition-[padding] duration-200 ease-out
-          bg-transparent text-[color:var(--color-text-primary)]
-        `}
-      >
-        <div className={`${showOldHeader ? 'mx-auto w-full max-w-[1140px] px-4 sm:px-6 md:px-8' : 'w-full'}`}>
-          {children}
-        </div>
-      </main>
+      {/* Páginas com nova sidebar/topbar têm layout completo próprio, não precisam de wrapper */}
+      {isChatPage || isMemoryPage || isVoicePage ? (
+        children
+      ) : (
+        <main
+          className={`
+            min-h-[100svh] md:min-h-[100dvh]
+            ${showOldHeader ? 'pt-[var(--eco-topbar-h,56px)] md:pt-0' : ''}
+            ${showBottomNav ? 'pb-16 md:pb-0' : ''}
+            pl-0 ${showOldHeader ? 'md:pl-[var(--eco-sidebar-w,0px)]' : ''}
+            transition-[padding] duration-200 ease-out
+            bg-transparent text-[color:var(--color-text-primary)]
+          `}
+        >
+          <div className={`${showOldHeader ? 'mx-auto w-full max-w-[1140px] px-4 sm:px-6 md:px-8' : 'w-full'}`}>
+            {children}
+          </div>
+        </main>
+      )}
 
       {/* Bottom Navigation - Apenas mobile */}
       {showBottomNav && <BottomNav />}

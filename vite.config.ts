@@ -61,8 +61,14 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: 'http://localhost:3001',
+          target: apiBase || 'https://ecobackend888.onrender.com',
           changeOrigin: true,
+          secure: true,
+        },
+        '/health': {
+          target: apiBase || 'https://ecobackend888.onrender.com',
+          changeOrigin: true,
+          secure: true,
         },
       },
     },

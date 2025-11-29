@@ -190,12 +190,29 @@ export const useAutoScroll = <T extends HTMLElement>(
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    // Força scroll imediato + retry para garantir que chegue ao final
     scrollToBottom(!prefersReducedMotion);
+
+    // Retry após render completo para garantir que imagens/conteúdo dinâmico não quebrem o scroll
+    const retryTimeout = setTimeout(() => {
+      scrollToBottom(false);
+    }, 100);
+
+    return () => clearTimeout(retryTimeout);
   }, [isAtBottom, scrollToBottom, ...items]);
 
+  // Scroll inicial quando o componente monta
   useEffect(() => {
     scrollToBottom(false);
-  }, [scrollToBottom]);
+
+    // Retry após 300ms para garantir que todo conteúdo foi renderizado
+    const initialRetry = setTimeout(() => {
+      scrollToBottom(false);
+    }, 300);
+
+    return () => clearTimeout(initialRetry);
+  }, []);
 
   return {
     scrollerRef,

@@ -175,10 +175,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Logout em outra aba/expiração da sessão
         if (event === 'SIGNED_OUT') {
+          // Limpa localStorage imediatamente
+          clearClientState();
+          clearGuestStorage();
+          persistAuthToken(null);
+
           const signedOutCleanup = () => {
-            clearClientState();
-            clearGuestStorage(); // <— garante limpeza do modo guest
-            persistAuthToken(null);
+            // Cleanup adicional após stream terminar
             if (typeof mixpanel.unregister_all === 'function') {
               mixpanel.unregister_all();
             }
@@ -262,20 +265,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    // Opcional: mostrar loading durante o processo
     setLoading(true);
     try {
+      // Aguarda stream terminar antes de fazer logout
+      if (isStreamActive()) {
+        await waitForIdle(2000);
+      }
+
+      // IMPORTANTE: Limpa localStorage ANTES de fazer logout
+      // Isso garante que o histórico do chat seja removido imediatamente
+      clearClientState();
+      clearGuestStorage();
+      persistAuthToken(null);
+
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } finally {
-      // Zera estado local SEMPRE, independente do retorno do supabase
+      // Garantir limpeza mesmo se o logout falhar
       clearClientState();
-      clearGuestStorage(); // <— limpa ID/contadores do guest ao sair
+      clearGuestStorage();
       persistAuthToken(null);
       if (typeof mixpanel.unregister_all === 'function') {
         mixpanel.unregister_all();
       }
       mixpanel.reset();
+
+      // Força a limpeza de user/session
       setUser(null);
       setSession(null);
       setLoading(false);

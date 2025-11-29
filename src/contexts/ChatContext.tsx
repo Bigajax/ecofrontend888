@@ -172,8 +172,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // SEMPRE limpa o histórico ao fazer login (fresh start)
+    // Remove qualquer mensagem antiga que possa estar em estado
+    setMessagesState([]);
+
     try {
       const raw = localStorage.getItem(keyFor(userId));
+      // Se não houver histórico salvo, mantém vazio (fresh start)
       setMessagesState(raw ? (JSON.parse(raw) as Message[]) : []);
     } catch {
       setMessagesState([]);

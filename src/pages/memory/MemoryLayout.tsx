@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import PhoneFrame from '../../components/PhoneFrame';
 import { useAuth } from '../../contexts/AuthContext';
+import { useChat } from '../../contexts/ChatContext';
 import { buscarMemoriasPorUsuario } from '../../api/memoriaApi';
 import { buscarPerfilEmocional } from '../../api/perfilApi';
 import { buscarRelatorioEmocional } from '../../api/relatorioEmocionalApi';
@@ -16,6 +17,8 @@ import EcoBubbleLoading from '../../components/EcoBubbleLoading';
 import { ApiFetchError } from '../../api/apiFetch';
 import { MissingUserIdError } from '../../api/errors';
 import { track } from '../../analytics/track';
+import TopBar from '../../components/TopBar';
+import Sidebar from '../../components/Sidebar';
 
 type EndpointKey = 'memories' | 'perfil' | 'relatorio';
 
@@ -219,9 +222,22 @@ const formatTechnicalDetails = (details: ApiErrorDetails | null) => {
 };
 
 const MemoryLayout: React.FC = () => {
-  const { userId, loading } = useAuth();
+  const { userId, loading, user, signOut } = useAuth();
+  const { clearMessages } = useChat();
+  const navigate = useNavigate();
   const mountedRef = useRef(true);
   const [state, setState] = useState<MemoryState>(INITIAL_STATE);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      // Limpa mensagens do chat ANTES de fazer logout
+      clearMessages();
+      await signOut();
+    } finally {
+      window.location.href = '/';
+    }
+  }, [signOut, clearMessages]);
 
   useEffect(() => {
     return () => {
@@ -383,14 +399,25 @@ const MemoryLayout: React.FC = () => {
     refetchRelatorio,
   }), [state, refetchMemories, refetchPerfil, refetchRelatorio]);
 
+  const isGuest = !user;
+
   if (loading) {
     return (
       <MemoryDataContext.Provider value={LOGGED_OUT_CONTEXT}>
-        <PhoneFrame className="flex flex-col h-full bg-white">
-          <div className="flex-1 flex items-center justify-center">
-            <EcoBubbleLoading size={120} text="Carregando..." />
+        <div className="flex h-screen overflow-hidden bg-gradient-to-br from-white via-blue-50/20 to-purple-50/10">
+          <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleLogout} />
+          <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
+
+          <div className="flex flex-col flex-1 min-w-0">
+            {/* Top Bar - APENAS DESKTOP */}
+            <div className="hidden lg:block">
+              <TopBar onMenuClick={() => setSidebarOpen(true)} showMenuButton={false} />
+            </div>
+            <div className="flex-1 flex items-center justify-center">
+              <EcoBubbleLoading size={120} text="Carregando..." />
+            </div>
           </div>
-        </PhoneFrame>
+        </div>
       </MemoryDataContext.Provider>
     );
   }
@@ -398,93 +425,111 @@ const MemoryLayout: React.FC = () => {
   if (!userId) {
     return (
       <MemoryDataContext.Provider value={LOGGED_OUT_CONTEXT}>
-        <PhoneFrame className="flex flex-col h-full bg-white">
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
-            <h2 className="text-xl font-semibold text-neutral-900">Entre para continuar</h2>
-            <p className="text-sm text-neutral-500">
-              Você precisa estar logado para acessar suas memórias, perfil e relatório emocional.
-            </p>
-            <Link
-              to="/"
-              className={[
-                'inline-flex items-center justify-center rounded-full bg-neutral-900',
-                'px-5 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800',
-              ].join(' ')}
-            >
-              Fazer login
-            </Link>
+        <div className="flex h-screen overflow-hidden bg-gradient-to-br from-white via-blue-50/20 to-purple-50/10">
+          <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleLogout} />
+          <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
+
+          <div className="flex flex-col flex-1 min-w-0">
+            {/* Top Bar - APENAS DESKTOP */}
+            <div className="hidden lg:block">
+              <TopBar onMenuClick={() => setSidebarOpen(true)} showMenuButton={false} />
+            </div>
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
+              <h2 className="text-xl font-semibold text-neutral-900">Entre para continuar</h2>
+              <p className="text-sm text-neutral-500">
+                Você precisa estar logado para acessar suas memórias, perfil e relatório emocional.
+              </p>
+              <Link
+                to="/"
+                className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800"
+              >
+                Fazer login
+              </Link>
+            </div>
           </div>
-        </PhoneFrame>
+        </div>
       </MemoryDataContext.Provider>
     );
   }
 
   return (
     <MemoryDataContext.Provider value={contextValue}>
-      <PhoneFrame className="flex flex-col h-full bg-white">
-        <div className="flex-1 overflow-y-auto px-4 py-4 relative">
-          {(() => {
-            const items = [
-              state.memoriesError && {
-                key: 'memories' as const,
-                message: state.memoriesError,
-                details: state.memoriesErrorDetails,
-                onRetry: refetchMemories,
-              },
-              state.perfilError && {
-                key: 'perfil' as const,
-                message: state.perfilError,
-                details: state.perfilErrorDetails,
-                onRetry: refetchPerfil,
-              },
-              state.relatorioError && {
-                key: 'relatorio' as const,
-                message: state.relatorioError,
-                details: state.relatorioErrorDetails,
-                onRetry: refetchRelatorio,
-              },
-            ].filter(Boolean) as Array<{
-              key: EndpointKey;
-              message: string;
-              details: ApiErrorDetails | null;
-              onRetry: () => void;
-            }>;
+      <div className="flex h-screen overflow-hidden bg-gradient-to-br from-white via-blue-50/20 to-purple-50/10">
+        <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleLogout} />
+        <Sidebar variant="mobile" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} isGuest={isGuest} onLogout={handleLogout} />
 
-            if (!items.length) return null;
+        <div className="flex flex-col flex-1 min-w-0">
+          {/* Top Bar - APENAS DESKTOP */}
+          <div className="hidden lg:block">
+            <TopBar onMenuClick={() => setSidebarOpen(true)} showMenuButton={false} />
+          </div>
 
-            return (
-              <div className="mb-4 space-y-3">
-                {items.map(({ key, message, details, onRetry }) => (
-                  <div
-                    key={key}
-                    className="rounded-2xl border border-rose-100/80 bg-rose-50/80 px-4 py-3 text-left"
-                  >
-                    <p className="text-[13px] font-medium text-rose-600">{message}</p>
-                    {formatTechnicalDetails(details) ? (
-                      <p className="mt-1 text-[11px] text-rose-500/80">{`Detalhes técnicos: ${formatTechnicalDetails(details)}`}</p>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={onRetry}
-                      className="mt-3 inline-flex items-center justify-center rounded-full border border-rose-200/70 bg-white/90 px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-white"
-                    >
-                      Tentar novamente
-                    </button>
+          <main className="flex-1 overflow-y-auto px-4 py-4 lg:py-4 pt-6 lg:pt-4 pb-20 lg:pb-4 bg-transparent">
+            <div className="mx-auto max-w-4xl">
+              {(() => {
+                const items = [
+                  state.memoriesError && {
+                    key: 'memories' as const,
+                    message: state.memoriesError,
+                    details: state.memoriesErrorDetails,
+                    onRetry: refetchMemories,
+                  },
+                  state.perfilError && {
+                    key: 'perfil' as const,
+                    message: state.perfilError,
+                    details: state.perfilErrorDetails,
+                    onRetry: refetchPerfil,
+                  },
+                  state.relatorioError && {
+                    key: 'relatorio' as const,
+                    message: state.relatorioError,
+                    details: state.relatorioErrorDetails,
+                    onRetry: refetchRelatorio,
+                  },
+                ].filter(Boolean) as Array<{
+                  key: EndpointKey;
+                  message: string;
+                  details: ApiErrorDetails | null;
+                  onRetry: () => void;
+                }>;
+
+                if (!items.length) return null;
+
+                return (
+                  <div className="mb-4 space-y-3">
+                    {items.map(({ key, message, details, onRetry }) => (
+                      <div
+                        key={key}
+                        className="rounded-2xl border border-rose-100/80 bg-rose-50/80 px-4 py-3 text-left"
+                      >
+                        <p className="text-[13px] font-medium text-rose-600">{message}</p>
+                        {formatTechnicalDetails(details) ? (
+                          <p className="mt-1 text-[11px] text-rose-500/80">{`Detalhes técnicos: ${formatTechnicalDetails(details)}`}</p>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={onRetry}
+                          className="mt-3 inline-flex items-center justify-center rounded-full border border-rose-200/70 bg-white/90 px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-white"
+                        >
+                          Tentar novamente
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            );
-          })()}
+                );
+              })()}
 
-          {state.memoriesLoading && state.perfilLoading && state.relatorioLoading ? (
-            <div className="h-[calc(100%-0px)] min-h-[320px] flex items-center justify-center">
-              <EcoBubbleLoading size={120} text="Carregando dados..." />
+              {state.memoriesLoading && state.perfilLoading && state.relatorioLoading ? (
+                <div className="h-[calc(100vh-200px)] min-h-[320px] flex items-center justify-center">
+                  <EcoBubbleLoading size={120} text="Carregando dados..." />
+                </div>
+              ) : (
+                <Outlet />
+              )}
             </div>
-          ) : (
-            <Outlet />
-          )}
+          </main>
         </div>
-      </PhoneFrame>
+      </div>
     </MemoryDataContext.Provider>
   );
 };

@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*  ChatPage.tsx — scroll estável + sem bolinha fantasma + saudação alinhada  */
+/*  ChatPage.tsx — Modern minimalist layout (Claude/Ecotopia inspired)       */
 /* -------------------------------------------------------------------------- */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
@@ -16,6 +16,8 @@ import TypingDots from '../components/TypingDots';
 import SuggestionChips from '../components/SuggestionChips';
 import MessageList from '../components/MessageList';
 import VoiceRecorderPanel from '../components/VoiceRecorderPanel';
+import TopBar from '../components/TopBar';
+import Sidebar from '../components/Sidebar';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
@@ -78,13 +80,14 @@ type BehaviorHintMetrics = {
 };
 
 function ChatPage() {
-  const { messages, upsertMessage, setMessages } = useChat();
+  const { messages, upsertMessage, setMessages, clearMessages } = useChat();
   const auth = useAuth();
   const { userId, userName: rawUserName = 'Usuário', user } = auth;
   const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
 
   const [sessaoId] = useState(() => ensureSessionId());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   useAdminCommands(user, sessaoId);
   const isGuest = !user;
   const guestGate = useGuestGate(isGuest);
@@ -390,11 +393,18 @@ function ChatPage() {
         setIsComposerSending(true);
         setLastAttempt({ text: trimmed, hint: systemHint });
         haptic.medium(); // Feedback ao enviar
+
+        // Força scroll antes de enviar (mostra mensagem do usuário)
+        scrollToBottom(true);
+
         try {
           await streamAndPersist(trimmed, systemHint);
           haptic.success(); // Feedback de sucesso
           finalizeBehaviorMetrics();
           setLastAttempt(null);
+
+          // Força scroll após enviar (garante que mostra resposta da ECO)
+          setTimeout(() => scrollToBottom(false), 100);
         } finally {
           setIsComposerSending(false);
           devLog('[ChatPage] send_complete', {
@@ -405,7 +415,7 @@ function ChatPage() {
         sendingRef.current = false; // FIX: libera o bloqueio após término do envio
       }
     },
-    [finalizeBehaviorMetrics, isComposerSending, pending, streamAndPersist, streaming],
+    [finalizeBehaviorMetrics, isComposerSending, pending, streamAndPersist, streaming, scrollToBottom],
   );
 
   useEffect(() => {
@@ -666,6 +676,41 @@ function ChatPage() {
     scrollToBottom(false);
   }, [shouldRenderGlobalTyping, isAtBottom, scrollToBottom]);
 
+  // Força scroll para a última mensagem sempre que mensagens mudam
+  useEffect(() => {
+    if (messages.length === 0) return;
+
+    // Força scroll imediatamente
+    scrollToBottom(false);
+
+    // Aguarda render completo e força scroll novamente
+    const scrollTimeout = setTimeout(() => {
+      scrollToBottom(false);
+    }, 50);
+
+    return () => clearTimeout(scrollTimeout);
+  }, [messages.length, scrollToBottom]);
+
+  // Detecta quando ECO termina de responder (streaming → done)
+  const wasStreamingRef = useRef(false);
+  useEffect(() => {
+    const isCurrentlyStreaming = streaming || isEcoStreamTyping;
+
+    // Se estava streaming e parou = ECO terminou de responder
+    if (wasStreamingRef.current && !isCurrentlyStreaming) {
+      // Força scroll para mostrar resposta completa da ECO
+      scrollToBottom(false);
+
+      // Retry após 100ms para garantir
+      setTimeout(() => scrollToBottom(false), 100);
+
+      // Retry após 300ms para garantir imagens/conteúdo
+      setTimeout(() => scrollToBottom(false), 300);
+    }
+
+    wasStreamingRef.current = isCurrentlyStreaming;
+  }, [streaming, isEcoStreamTyping, scrollToBottom]);
+
   // Scroll para o input quando o teclado abre
   useEffect(() => {
     if (!isKeyboardOpen || !chatInputWrapperRef.current) return;
@@ -729,12 +774,9 @@ function ChatPage() {
 
 
 
-  const mainTopPadding = 'calc(var(--eco-topbar-h,56px) + 12px)';
-  const mainScrollPadding = 'calc(var(--footer-h,72px) + env(safe-area-inset-bottom))';
   const footerStyle: CSSProperties = {
     paddingBottom: safeAreaBottom + 16,
-    '--footer-h': `${computedInputHeight}px`,
-  } as CSSProperties & { ['--footer-h']?: string };
+  } as CSSProperties;
 
   // ---------------------------------------------------------------------------
   // ÚNICO indicador global de "digitando" (evita duplicidade)
@@ -754,161 +796,173 @@ function ChatPage() {
     );
   }, [shouldShowGlobalTyping, isEcoStreamTyping, ecoTypingElapsed]);
 
+  const handleLogout = useCallback(async () => {
+    try {
+      // Limpa mensagens do chat ANTES de fazer logout
+      clearMessages();
+      await auth.signOut();
+    } finally {
+      // Redireciona para homepage independente do resultado
+      window.location.href = '/';
+    }
+  }, [auth, clearMessages]);
+
   return (
-    <div
-      className={clsx(
-        'chat-page grid min-h-[100dvh] w-full grid-rows-[auto_minmax(0,1fr)_auto] bg-white text-[color:var(--color-text-primary)]',
-        { 'keyboard-open': isKeyboardOpen },
-      )}
-      style={{
-        '--keyboard-height': `${keyboardHeight}px`,
-      } as React.CSSProperties & { '--keyboard-height': string }}
-    >
-      <header aria-hidden className="sr-only" />
-      <main
-        ref={scrollerRef}
-        className="relative flex min-h-0 flex-col overflow-y-auto"
-        style={{
-          WebkitOverflowScrolling: 'touch',
-          overscrollBehaviorY: 'contain',
-          paddingBottom: Math.max(scrollInset, keyboardHeight + computedInputHeight + 16),
-          scrollPaddingTop: mainTopPadding,
-          scrollPaddingBottom: mainScrollPadding,
-        }}
-      >
-        <div role="feed" aria-busy={isWaitingForEco || isSendingToEco} className="flex-1">
-          <div className="w-full px-4 sm:px-6 lg:px-10" style={{ paddingTop: mainTopPadding }}>
-            <div className="mx-auto flex w-full max-w-[920px] flex-col items-center px-4 text-center sm:max-w-[600px] md:max-w-[760px]">
-              {isEmptyState && (
-                <motion.div
-                  className="w-full"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.28 }}
-                >
-                  <div className="flex w-full flex-col items-center py-10 sm:py-12">
-                    <div className="mt-4 w-full max-w-[840px] rounded-2xl border border-black/5 bg-white/90 px-5 py-4 text-center backdrop-blur-sm transition-colors md:py-3 sm:py-2">
-                      <h1 className="text-[clamp(28px,5vw,40px)] font-semibold leading-tight text-[color:var(--bubble-eco-text)]">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-white via-blue-50/20 to-purple-50/10">
+      {/* Desktop Sidebar */}
+      <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleLogout} />
+
+      {/* Mobile Bottom Nav */}
+      <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
+
+      {/* Main Content Area */}
+      <div className="flex flex-col flex-1 min-w-0">
+        {/* Top Bar - APENAS DESKTOP */}
+        <div className="hidden lg:block">
+          <TopBar onMenuClick={() => setSidebarOpen(true)} showMenuButton={false} />
+        </div>
+
+        {/* Chat Area */}
+        <main
+          ref={scrollerRef}
+          className="flex-1 overflow-y-auto bg-transparent pt-4 lg:pt-0 pb-20 lg:pb-0"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehaviorY: 'contain',
+            paddingBottom: Math.max(120 + 64, keyboardHeight + computedInputHeight + 80), // +64px para o bottom nav
+          }}
+        >
+          <div role="feed" aria-busy={isWaitingForEco || isSendingToEco} className="flex-1">
+            <div className="w-full px-4 sm:px-6 lg:px-8">
+              <div className="mx-auto flex w-full max-w-3xl flex-col">
+                {isEmptyState && (
+                  <motion.div
+                    className="w-full pt-12 pb-8"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.28 }}
+                  >
+                    <div className="text-center space-y-2">
+                      <h1 className="text-2xl sm:text-3xl font-medium text-gray-900">
                         {saudacao}, {displayName || rawUserName}
                       </h1>
-                      <p className="mt-2 text-[clamp(14px,2.2vw,18px)] text-neutral-600" data-testid="chat-hero-subtitle">
+                      <p className="text-base text-gray-600" data-testid="chat-hero-subtitle">
                         {heroSubtitle || OPENING_VARIATIONS[0] || ''}
                       </p>
                     </div>
-                    {/* herói limpo (sem sugestões aqui) */}
+                  </motion.div>
+                )}
+
+                {erroApi && (
+                  <div className="mt-6 flex flex-col items-center gap-2 rounded-xl border border-red-200/60 bg-red-50/50 backdrop-blur-sm px-4 py-3 text-center text-red-600">
+                    <span className="text-sm">{erroApi}</span>
+                    {canRetry && (
+                      <button
+                        type="button"
+                        onClick={handleRetry}
+                        disabled={composerPending}
+                        className="text-sm font-medium text-red-700 underline underline-offset-2 transition hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Tentar novamente
+                      </button>
+                    )}
                   </div>
-                </motion.div>
-              )}
+                )}
 
-              {erroApi && (
-                <div className="mt-6 flex w-full max-w-[700px] flex-col items-center gap-2 rounded-xl border border-red-100 bg-red-50/70 px-4 py-3 text-center text-red-600">
-                  <span>{erroApi}</span>
-                  {canRetry && (
-                    <button
-                      type="button"
-                      onClick={handleRetry}
-                      disabled={composerPending}
-                      className="text-sm font-medium text-red-700 underline underline-offset-4 transition hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      Tentar novamente
-                    </button>
-                  )}
+                <div className={clsx("w-full", isEmptyState ? "mt-4" : "mt-6")}>
+                  <MessageList
+                    messages={messages}
+                    prefersReducedMotion={prefersReducedMotion}
+                    ecoActivityTTS={ecoActivity.onTTS}
+                    feedbackPrompt={feedbackPromptNode}
+                    typingIndicator={typingIndicatorNode}
+                    isEcoTyping={isEcoStreamTyping}
+                    endRef={endRef}
+                    onRetryMessage={handleRetryMessage}
+                  />
                 </div>
-              )}
-
-              <div className="mt-8 w-full max-w-[min(700px,92vw)] text-left sm:mt-10">
-                <MessageList
-                  messages={messages}
-                  prefersReducedMotion={prefersReducedMotion}
-                  ecoActivityTTS={ecoActivity.onTTS}
-                  feedbackPrompt={feedbackPromptNode}
-                  typingIndicator={typingIndicatorNode}
-                  isEcoTyping={isEcoStreamTyping}
-                  endRef={endRef}
-                  onRetryMessage={handleRetryMessage}
-                />
               </div>
             </div>
           </div>
-        </div>
 
-        {showNewMessagesChip && (
-          <div
-            className="sticky z-30 flex justify-center px-2 sm:px-6"
-            style={{ bottom: safeAreaBottom + computedInputHeight + 24 }}
-          >
-            <button
-              type="button"
-              onClick={handleJumpToBottom}
-              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-eco-baby/60"
+          {showNewMessagesChip && (
+            <div
+              className="sticky z-30 flex justify-center px-4"
+              style={{ bottom: safeAreaBottom + computedInputHeight + 24 }}
             >
-              Novas mensagens
-            </button>
-          </div>
-        )}
-      </main>
+              <button
+                type="button"
+                onClick={handleJumpToBottom}
+                className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-lg transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              >
+                Novas mensagens
+              </button>
+            </div>
+          )}
+        </main>
 
-      <footer
-        ref={chatInputWrapperRef}
-        className="composer fixed bottom-0 left-0 right-0 z-40 w-full px-4 pt-4 sm:px-6 sm:pt-5 lg:px-10 bg-white"
-        style={{
-          ...footerStyle,
-          paddingBottom: `calc(${safeAreaBottom + 16}px + env(safe-area-inset-bottom))`,
-        }}
-      >
-        <div className="mx-auto w-full max-w-[min(700px,92vw)] space-y-2">
-          {/* QuickSuggestions compactas + rotativo acima do input */}
-          <QuickSuggestions
-            variant="footer"
-            visible={showQuick && !composerPending && !erroApi && !voicePanelOpen}
-            onPickSuggestion={handlePickSuggestion}
-            rotatingItems={ROTATING_ITEMS}
-            rotationMs={5000}
-            showRotating={true}
-            disabled={composerPending}
-            className="-mb-1"
-          />
+        {/* Footer Input */}
+        <footer
+          ref={chatInputWrapperRef}
+          className="sticky z-40 w-full border-t border-black/5 bg-white/80 backdrop-blur-xl px-4 pt-3 pb-3 sm:px-6 lg:px-8 bottom-16 lg:bottom-0"
+          style={{
+            ...footerStyle,
+            paddingBottom: `calc(${safeAreaBottom + 12}px + env(safe-area-inset-bottom))`,
+          }}
+        >
+          <div className="mx-auto w-full max-w-3xl space-y-2">
+            <QuickSuggestions
+              variant="footer"
+              visible={showQuick && !composerPending && !erroApi && !voicePanelOpen}
+              onPickSuggestion={handlePickSuggestion}
+              rotatingItems={ROTATING_ITEMS}
+              rotationMs={5000}
+              showRotating={true}
+              disabled={composerPending}
+              className="-mb-1"
+            />
 
-          <SuggestionChips
-            visible={shouldShowSuggestionChips}
-            onPick={(suggestion, index) =>
-              handlePickSuggestion(suggestion, { source: 'pill', index })
-            }
-            disabled={composerPending}
-            className="-mt-1"
-          />
-
-          <ChatInput
-            ref={chatInputRef}
-            value={composerValue}
-            onSendMessage={(t) => sendWithGuards(t)}
-            disabled={composerPending || (isGuest && guestGate.inputDisabled)}
-            placeholder={
-              isGuest && guestGate.inputDisabled
-                ? 'Crie sua conta para continuar…'
-                : undefined
-            }
-            onTextChange={handleComposerTextChange}
-            isSending={composerPending}
-            onMicPress={handleOpenVoicePanel}
-            isMicActive={voicePanelOpen}
-          />
-
-          <LoginGateModal
-            open={loginGateOpen}
-            onClose={() => setLoginGateOpen(false)}
-            onSignup={() => {
-              if (guestGate.guestId) {
-                mixpanel.track('signup_clicked', { guestId: guestGate.guestId });
+            <SuggestionChips
+              visible={shouldShowSuggestionChips}
+              onPick={(suggestion, index) =>
+                handlePickSuggestion(suggestion, { source: 'pill', index })
               }
-              setLoginGateOpen(false);
-              window.location.href = '/?returnTo=/app';
-            }}
-            count={guestGate.count}
-            limit={guestGate.limit}
-          />
-        </div>
-      </footer>
+              disabled={composerPending}
+              className="-mt-1"
+            />
+
+            <ChatInput
+              ref={chatInputRef}
+              value={composerValue}
+              onSendMessage={(t) => sendWithGuards(t)}
+              disabled={composerPending || (isGuest && guestGate.inputDisabled)}
+              placeholder={
+                isGuest && guestGate.inputDisabled
+                  ? 'Crie sua conta para continuar…'
+                  : undefined
+              }
+              onTextChange={handleComposerTextChange}
+              isSending={composerPending}
+              onMicPress={handleOpenVoicePanel}
+              isMicActive={voicePanelOpen}
+            />
+
+            <LoginGateModal
+              open={loginGateOpen}
+              onClose={() => setLoginGateOpen(false)}
+              onSignup={() => {
+                if (guestGate.guestId) {
+                  mixpanel.track('signup_clicked', { guestId: guestGate.guestId });
+                }
+                setLoginGateOpen(false);
+                window.location.href = '/?returnTo=/app';
+              }}
+              count={guestGate.count}
+              limit={guestGate.limit}
+            />
+          </div>
+        </footer>
+      </div>
 
       <VoiceRecorderPanel
         open={voicePanelOpen}

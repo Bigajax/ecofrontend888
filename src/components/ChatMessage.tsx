@@ -135,19 +135,23 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
   const watchdogTimeoutMessage = "A Eco está demorando mais do que o normal para responder.";
 
   const bubbleClass = clsx(
-    "min-w-0 rounded-2xl px-3 py-2 md:px-4 md:py-3 text-left leading-[1.6]",
-    "text-[15px] md:text-[16px]",
-    "max-w-[min(72ch,90vw)]",
+    "min-w-0 rounded-2xl px-3 py-2.5 text-left leading-relaxed",
+    "text-[15px]",
+    "max-w-[min(65ch,85vw)]",
     "whitespace-pre-wrap break-words overflow-wrap-anywhere",
+    "transition-all duration-200",
     isUser
-      ? "bg-[#007AFF] text-white shadow-ecoSm"
-      : "bg-white text-gray-900 whitespace-pre-wrap border border-gray-200 shadow-ecoSm"
+      ? "bg-gray-900 text-white shadow-sm"
+      : "bg-white/90 text-gray-900 border border-gray-200/60 shadow-sm backdrop-blur-sm"
   );
 
-  const wrapperClass = clsx("flex w-full", isUser ? "justify-end" : "justify-start");
+  const wrapperClass = clsx(
+    "flex w-full group",
+    isUser ? "justify-end" : "justify-start"
+  );
 
   const rowClass = clsx(
-    "flex max-w-full items-start min-w-0 gap-2 sm:gap-3",
+    "flex max-w-full items-start min-w-0 gap-2",
     isUser ? "justify-end" : "justify-start"
   );
 
@@ -156,9 +160,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
       <div className={rowClass}>
         {isEco && (
           <EcoBubbleOneEye
-            className="mt-1 shrink-0"
+            className="mt-0.5 shrink-0"
             variant="message"
-            size={30}
+            size={24}
             data-eco-active={isEcoActive ? "true" : undefined}
             data-testid="eco-avatar"
           />
@@ -202,20 +206,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
           )}
 
           {finishReasonLabel && (
-            <div className="mt-1 pl-1 text-xs text-gray-500">
-              <span className="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-medium text-gray-600">
-                ({finishReasonLabel})
+            <div className="mt-1 pl-1 text-xs text-gray-400">
+              <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+                {finishReasonLabel}
               </span>
             </div>
           )}
 
           {isWatchdogTimeout && (
-            <div className="mt-3 rounded-lg border border-yellow-300 bg-yellow-50 p-3 max-w-[min(70ch,88vw)] md:max-w-[70ch]">
-              <p className="text-sm text-yellow-900 mb-2">{watchdogTimeoutMessage}</p>
+            <div className="mt-2 rounded-lg border border-yellow-200/60 bg-yellow-50/50 backdrop-blur-sm p-2.5 max-w-[min(65ch,85vw)]">
+              <p className="text-xs text-yellow-900 mb-1.5">{watchdogTimeoutMessage}</p>
               {onRetry && (
                 <button
                   onClick={onRetry}
-                  className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-md bg-yellow-200 hover:bg-yellow-300 text-yellow-900 transition-colors"
+                  className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-medium rounded-md bg-yellow-100 hover:bg-yellow-200 text-yellow-900 transition-colors"
                   aria-label="Tentar novamente"
                 >
                   Tentar de novo
