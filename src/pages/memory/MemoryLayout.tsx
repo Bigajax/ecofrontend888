@@ -373,7 +373,8 @@ const MemoryLayout: React.FC = () => {
 
     setState(INITIAL_STATE);
     void Promise.allSettled([loadMemories(), loadPerfil(), loadRelatorio()]);
-  }, [loadMemories, loadPerfil, loadRelatorio, userId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   useEffect(() => {
     void import('./ProfileSection');
@@ -456,7 +457,7 @@ const MemoryLayout: React.FC = () => {
     <MemoryDataContext.Provider value={contextValue}>
       <div className="flex h-screen overflow-hidden bg-gradient-to-br from-white via-blue-50/20 to-purple-50/10">
         <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleLogout} />
-        <Sidebar variant="mobile" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} isGuest={isGuest} onLogout={handleLogout} />
+        <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
 
         <div className="flex flex-col flex-1 min-w-0">
           {/* Top Bar - APENAS DESKTOP */}

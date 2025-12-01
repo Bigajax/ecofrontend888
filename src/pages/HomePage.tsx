@@ -10,6 +10,7 @@ import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
 import LearnExploreSection from '@/components/home/LearnExploreSection';
 import HeroCarousel from '@/components/home/HeroCarousel';
 import LiveReflectionSection from '@/components/home/LiveReflectionSection';
+import DrJoeMeditationCard from '@/components/home/DrJoeMeditationCard';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
 import EcoAIModal from '@/components/EcoAIModal';
@@ -119,7 +120,24 @@ export default function HomePage() {
       .join(' ');
   };
 
-  const displayName = capitalizeNames(userName || 'there');
+  // Obter saudação baseada no horário de Brasília
+  const getGreeting = () => {
+    const now = new Date();
+    // Converter para horário de Brasília (UTC-3)
+    const brasiliaTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+    const hour = brasiliaTime.getHours();
+
+    if (hour >= 5 && hour < 12) {
+      return 'Bom dia';
+    } else if (hour >= 12 && hour < 18) {
+      return 'Boa tarde';
+    } else {
+      return 'Boa noite';
+    }
+  };
+
+  const greeting = getGreeting();
+  const displayName = capitalizeNames(userName || 'Convidado(a)');
 
   const handleLogout = async () => {
     navigate('/');
@@ -132,8 +150,11 @@ export default function HomePage() {
         id: 'rec_1',
         title: 'Meditação do Sono',
         description: 'Relaxe profundamente e durma melhor',
-        duration: '20 min',
+        duration: '9 min',
+        audioUrl: '/audio/meditacao-sono.mp4',
         image: 'url("/images/meditacao-sono.webp")',
+        imagePosition: 'center 32%',
+        gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
         isPremium: false,
       },
       {
@@ -156,45 +177,9 @@ export default function HomePage() {
     [],
   );
 
-  // Meditações
+  // Meditações - Outras meditações (as do Dr. Joe estão na página dedicada)
   const energyBlessings = useMemo(
     () => [
-      {
-        id: 'blessing_1',
-        title: 'Meditação Bênção dos centros de energia',
-        description: 'Equilibre e ative seus centros energéticos',
-        duration: '7 min',
-        audioUrl: '/audio/energy-blessings-meditation.mp3',
-        image: 'url("/images/meditacao-bencao-energia.webp")',
-        imagePosition: 'center 32%',
-        gradient: 'linear-gradient(to bottom, #F5C563 0%, #F5A84D 15%, #F39439 30%, #E67E3C 45%, #D95B39 60%, #C74632 80%, #A63428 100%)',
-        isPremium: false,
-        category: 'Dr. Joe Dispenza',
-      },
-      {
-        id: 'blessing_2',
-        title: 'Meditação para sintonizar novos potenciais',
-        description: 'Alinhe-se com novas possibilidades',
-        duration: '7 min',
-        audioUrl: '/audio/sintonizar-novos-potenciais.mp3',
-        image: 'url("/images/meditacao-novos-potenciais.webp")',
-        imagePosition: 'center 32%',
-        gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #3D6BB8 20%, #3358A3 40%, #2A478E 60%, #213779 80%, #182864 100%)',
-        isPremium: false,
-        category: 'Dr. Joe Dispenza',
-      },
-      {
-        id: 'blessing_3',
-        title: 'Meditação para recondicionar o corpo a uma nova mente',
-        description: 'Transforme padrões mentais e físicos',
-        duration: '7 min',
-        audioUrl: '/audio/recondicionar-corpo-nova-mente.mp3',
-        image: 'url("/images/meditacao-recondicionar.webp")',
-        imagePosition: 'center 32%',
-        gradient: 'linear-gradient(to bottom, #9B79C9 0%, #8766B5 20%, #7454A0 40%, #61438C 60%, #4E3377 80%, #3B2463 100%)',
-        isPremium: false,
-        category: 'Dr. Joe Dispenza',
-      },
       {
         id: 'blessing_4',
         title: 'Meditação do caleidoscópio e Mind Movie',
@@ -203,30 +188,6 @@ export default function HomePage() {
         image: 'url("/images/meditacao-caleidoscopio.webp")',
         imagePosition: 'center 32%',
         gradient: 'linear-gradient(to bottom, #B494D4 0%, #A07DC4 20%, #8D67B5 40%, #7A52A6 60%, #673E97 80%, #542B88 100%)',
-        isPremium: false,
-        category: 'Dr. Joe Dispenza',
-      },
-      {
-        id: 'blessing_5',
-        title: 'Meditação caminhando',
-        description: 'Pratique presença em movimento',
-        duration: '5 min',
-        audioUrl: '/audio/meditacao-caminhando.mp3',
-        image: 'url("/images/meditacao-caminhando.webp")',
-        imagePosition: 'center 15%',
-        gradient: 'linear-gradient(to bottom right, #FF8C42 0%, #F7931E 20%, #D8617A 40%, #8B3A62 60%, #6B2C5C 80%, #2D1B3D 100%)',
-        isPremium: false,
-        category: 'Dr. Joe Dispenza',
-      },
-      {
-        id: 'blessing_6',
-        title: 'Meditação espaço-tempo, tempo-espaço',
-        description: 'Transcenda as limitações dimensionais',
-        duration: '5 min',
-        audioUrl: '/audio/meditacao-espaco-tempo.mp3',
-        image: 'url("/images/meditacao-espaco-tempo.webp")',
-        imagePosition: 'center 32%',
-        gradient: 'linear-gradient(to bottom, #FCD670 0%, #FBCA5D 15%, #F7B84A 30%, #F39A3C 45%, #EC7D2E 60%, #E26224 75%, #D7491F 90%, #C43520 100%)',
         isPremium: false,
         category: 'Dr. Joe Dispenza',
       },
@@ -246,8 +207,8 @@ export default function HomePage() {
         id: 'blessing_8',
         title: 'Meditação do Sono',
         description: 'Relaxe profundamente e tenha uma noite tranquila',
-        duration: '15 min',
-        audioUrl: '/audio/meditacao-sono.mp3',
+        duration: '9 min',
+        audioUrl: '/audio/meditacao-sono.mp4',
         image: 'url("/images/meditacao-sono.webp")',
         imagePosition: 'center 32%',
         gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
@@ -360,9 +321,23 @@ export default function HomePage() {
 
   const handleDailyRecommendationClick = (recId: string) => {
     if (recId === 'rec_1') {
-      // Meditação do Sono - ainda não implementado
-      console.log('Meditação do Sono - em breve!');
-      // TODO: Implementar página de Meditação do Sono
+      // Meditação do Sono - navegar para o player
+      const sonoMeditation = dailyRecommendations.find(r => r.id === 'rec_1');
+      if (sonoMeditation) {
+        navigate('/app/meditation-player', {
+          state: {
+            meditation: {
+              title: sonoMeditation.title,
+              duration: sonoMeditation.duration,
+              audioUrl: sonoMeditation.audioUrl,
+              imageUrl: sonoMeditation.image.replace('url("', '').replace('")', ''),
+              backgroundMusic: 'Sono',
+              gradient: sonoMeditation.gradient,
+            },
+            returnTo: '/app',
+          },
+        });
+      }
     } else if (recId === 'rec_2') {
       // Salvar programa dos 5 Anéis
       startProgram({
@@ -435,7 +410,7 @@ export default function HomePage() {
             {/* Left Card - Greeting */}
             <div className="flex flex-col justify-center rounded-3xl border border-[var(--eco-line)] bg-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
               <h1 className="font-display text-6xl font-bold text-[var(--eco-text)]">
-                Bom dia,
+                {greeting},
                 <br />
                 {displayName}
               </h1>
@@ -472,6 +447,18 @@ export default function HomePage() {
           />
         </AnimatedSection>
 
+        {/* Dr. Joe Dispenza Meditation Card */}
+        <AnimatedSection animation="slide-up-fade" id="drjoe-meditation-section">
+          <DrJoeMeditationCard
+            onClick={() => {
+              // Navegar para a página dedicada do Dr. Joe Dispenza
+              navigate('/app/dr-joe-dispenza');
+              // Scroll para o topo após navegação
+              window.scrollTo(0, 0);
+            }}
+          />
+        </AnimatedSection>
+
         {/* Energy Blessings Section */}
         <AnimatedSection animation="slide-up-fade" id="energy-blessings-section">
           <EnergyBlessingsSection
@@ -484,6 +471,7 @@ export default function HomePage() {
         <AnimatedSection animation="slide-up-fade" id="eco-ai-guidance">
           <EcoAIGuidanceCard
             userName={displayName}
+            greeting={greeting}
             onStartChat={handleStartChat}
           />
         </AnimatedSection>

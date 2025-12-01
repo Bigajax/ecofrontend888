@@ -171,19 +171,39 @@ export default function MeditationPlayerPage() {
   };
 
   const handleBack = () => {
-    navigate('/app', { state: { returnFromMeditation: true } });
+    const returnTo = location.state?.returnTo || '/app';
+    navigate(returnTo, { state: { returnFromMeditation: true } });
   };
 
   return (
-    <div
-      className="relative min-h-screen font-primary"
-      style={{ background: meditationData.gradient || 'linear-gradient(to bottom right, #FF8C42 0%, #F7931E 20%, #D8617A 40%, #8B3A62 60%, #6B2C5C 80%, #2D1B3D 100%)' }}
-    >
+    <div className="relative min-h-screen font-primary">
+      {/* Background Image Blurred */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: `url(${meditationData.imageUrl})`,
+          filter: 'blur(40px)',
+          transform: 'scale(1.1)',
+        }}
+      />
+
+      {/* Gradient Overlay */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: meditationData.gradient
+            ? `${meditationData.gradient.replace('linear-gradient', 'linear-gradient').replace(')', ', 0.85)')}`
+            : 'linear-gradient(to bottom right, rgba(255,140,66,0.85) 0%, rgba(247,147,30,0.85) 20%, rgba(216,97,122,0.85) 40%, rgba(139,58,98,0.85) 60%, rgba(107,44,92,0.85) 80%, rgba(45,27,61,0.85) 100%)'
+        }}
+      />
+
       {/* HomeHeader */}
-      <HomeHeader />
+      <div className="relative z-10">
+        <HomeHeader />
+      </div>
 
       {/* Main Content - Centered */}
-      <div className="flex min-h-screen flex-col items-center justify-start px-4 sm:px-8 pt-24 pb-8">
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-start px-4 sm:px-8 pt-24 pb-8">
         {/* Back Button - Inline no topo (mobile) */}
         <div className="w-full max-w-4xl mb-4">
           <button

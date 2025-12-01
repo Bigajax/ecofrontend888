@@ -37,8 +37,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   };
 
   // Mostrar header antigo apenas em páginas específicas (NÃO na HomePage, ChatPage, Rings, Memórias, etc.)
-  const isHomePage = location.pathname === '/app' || location.pathname === '/app/';
-  const isChatPage = location.pathname.startsWith('/app/chat'); // Nova sidebar/topbar já implementada
+  const isHomePage = false; // HomePage agora é o chat principal
+  const isChatPage = location.pathname === '/app' || location.pathname === '/app/' || location.pathname.startsWith('/app/chat'); // Nova sidebar/topbar já implementada
   const isMemoryPage = location.pathname.startsWith('/app/memory'); // Memórias, Perfil Emocional, Relatórios
   const isVoicePage = location.pathname.startsWith('/app/voice'); // Página de voz
   const isRingsPage = location.pathname.startsWith('/app/rings');

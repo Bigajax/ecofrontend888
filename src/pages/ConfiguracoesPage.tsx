@@ -40,18 +40,40 @@ export default function ConfiguracoesPage() {
     // TODO: Implementar atualização via API
   };
 
-  const handleLogout = async () => {
+  const handleExitToLogin = async () => {
+    // Fazer LOGOUT completo e sair do app (funciona para usuário logado e convidado)
     try {
+      // Limpar dados específicos do usuário, mantendo preferências globais
+      const keysToRemove = [
+        'eco.guestId',
+        'eco.sessionId',
+        'eco.chat.v1',
+        'sb-',  // Supabase keys
+      ];
+
+      // Remove apenas chaves relacionadas ao usuário/sessão
+      Object.keys(localStorage).forEach(key => {
+        if (keysToRemove.some(prefix => key.startsWith(prefix))) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      // Limpar sessionStorage
+      sessionStorage.clear();
+
+      // Fazer logout do Supabase (se houver sessão)
       await signOut();
-      navigate('/');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
+    } finally {
+      // Redireciona para a página de login
+      window.location.href = '/login';
     }
   };
 
   const handleMenuClick = (itemId: string) => {
     if (itemId === 'sair') {
-      handleLogout();
+      handleExitToLogin();
     } else {
       setSelectedMenu(itemId);
     }

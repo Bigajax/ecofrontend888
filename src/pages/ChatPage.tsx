@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 
 import ChatInput, { ChatInputHandle } from '../components/ChatInput';
@@ -796,24 +796,21 @@ function ChatPage() {
     );
   }, [shouldShowGlobalTyping, isEcoStreamTyping, ecoTypingElapsed]);
 
-  const handleLogout = useCallback(async () => {
-    try {
-      // Limpa mensagens do chat ANTES de fazer logout
-      clearMessages();
-      await auth.signOut();
-    } finally {
-      // Redireciona para homepage independente do resultado
-      window.location.href = '/';
-    }
-  }, [auth, clearMessages]);
+  const navigate = useNavigate();
+
+  const handleBackToHome = useCallback(() => {
+    // Volta para a HomePage sem fazer logout
+    // Mantém o usuário logado ou em modo convidado
+    navigate('/app');
+  }, [navigate]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-white via-blue-50/20 to-purple-50/10">
       {/* Desktop Sidebar */}
-      <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleLogout} />
+      <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleBackToHome} />
 
       {/* Mobile Bottom Nav */}
-      <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
+      <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleBackToHome} />
 
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 min-w-0">

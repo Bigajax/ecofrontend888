@@ -16,7 +16,7 @@ const navItems = [
   { id: 'memories', label: 'Memórias', icon: BookOpen, path: '/app/memory' },
   { id: 'profile', label: 'Perfil', icon: Brain, path: '/app/memory/profile' },
   { id: 'reports', label: 'Relatórios', icon: BarChart3, path: '/app/memory/report' },
-  { id: 'settings', label: 'Config', icon: Settings, path: '/app/configuracoes' },
+  // { id: 'settings', label: 'Config', icon: Settings, path: '/app/configuracoes' },
 ];
 
 const FEEDBACK_URL = 'https://feedback777.vercel.app/';
@@ -32,18 +32,13 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
     }
   };
 
-  const handleLogout = () => {
+  const handleBackToHome = () => {
     if (onClose) onClose();
     if (onLogout) onLogout();
   };
 
   const handleFeedback = () => {
     window.open(FEEDBACK_URL, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleLogin = () => {
-    if (onClose) onClose();
-    navigate('/register');
   };
 
   if (variant === 'mobile') {
@@ -115,23 +110,13 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
               <span className="text-sm font-medium">Feedback</span>
             </button>
 
-            {isGuest ? (
-              <button
-                onClick={handleLogin}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-eco-baby text-white hover:bg-eco-baby/90 transition-all"
-              >
-                <LogOut className="w-5 h-5 shrink-0" />
-                <span className="text-sm font-medium">Fazer login</span>
-              </button>
-            ) : (
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-all"
-              >
-                <LogOut className="w-5 h-5 shrink-0" />
-                <span className="text-sm font-medium">Sair</span>
-              </button>
-            )}
+            <button
+              onClick={handleBackToHome}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-black/5 transition-all"
+            >
+              <LogOut className="w-5 h-5 shrink-0" />
+              <span className="text-sm font-medium">Sair</span>
+            </button>
           </div>
         </aside>
       </>
@@ -140,6 +125,13 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
 
   // Bottom Nav Mobile
   if (variant === 'bottom') {
+    const handleExitToHome = () => {
+      // Volta para HomePage mantendo usuário logado ou modo convidado
+      if (onLogout) {
+        onLogout();
+      }
+    };
+
     return (
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-black/10 lg:hidden">
         <div className="flex items-center justify-around h-16 px-2 pb-safe">
@@ -173,6 +165,21 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
               </button>
             );
           })}
+
+          {/* Botão Sair - leva para homepage */}
+          <button
+            onClick={handleExitToHome}
+            className="flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg transition-all duration-200 min-w-[60px] text-gray-600 hover:text-gray-900"
+          >
+            <LogOut
+              size={20}
+              strokeWidth={1.5}
+              className="transition-all duration-200"
+            />
+            <span className="text-[10px] transition-all duration-200 text-center font-normal">
+              Sair
+            </span>
+          </button>
         </div>
       </nav>
     );
@@ -223,29 +230,16 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
           </span>
         </button>
 
-        {isGuest ? (
-          <button
-            onClick={handleLogin}
-            className="flex flex-col items-center justify-center gap-1.5 w-full py-3 rounded-xl bg-eco-baby/10 text-eco-deep hover:bg-eco-baby/20 transition-all"
-            title="Fazer login"
-          >
-            <LogOut className="w-6 h-6 shrink-0" />
-            <span className="text-[10px] font-medium text-center leading-tight">
-              Login
-            </span>
-          </button>
-        ) : (
-          <button
-            onClick={handleLogout}
-            className="flex flex-col items-center justify-center gap-1.5 w-full py-3 rounded-xl text-red-600 hover:bg-red-50 transition-all"
-            title="Sair"
-          >
-            <LogOut className="w-6 h-6 shrink-0" />
-            <span className="text-[10px] font-medium text-center leading-tight">
-              Sair
-            </span>
-          </button>
-        )}
+        <button
+          onClick={handleBackToHome}
+          className="flex flex-col items-center justify-center gap-1.5 w-full py-3 rounded-xl text-gray-600 hover:bg-black/5 hover:text-gray-900 transition-all"
+          title="Sair"
+        >
+          <LogOut className="w-6 h-6 shrink-0" />
+          <span className="text-[10px] font-medium text-center leading-tight">
+            Sair
+          </span>
+        </button>
       </div>
     </aside>
   );

@@ -54,6 +54,7 @@ const GoodNightSleepArticle = lazy(() => import("@/pages/articles/GoodNightSleep
 const DiarioEstoicoPage = lazy(() => import("@/pages/diario-estoico/DiarioEstoicoPage"));
 const EnergyBlessingsPage = lazy(() => import("@/pages/energy-blessings/EnergyBlessingsPage"));
 const MeditationPlayerPage = lazy(() => import("@/pages/energy-blessings/MeditationPlayerPage"));
+const DrJoeDispenzaPage = lazy(() => import("@/pages/DrJoeDispenzaPage"));
 const ProgramasPage = lazy(() => import("@/pages/ProgramasPage"));
 const SonoPage = lazy(() => import("@/pages/SonoPage"));
 const SonsPage = lazy(() => import("@/pages/SonsPage"));
@@ -87,15 +88,8 @@ function PublicShell() {
 }
 
 function PublicHome() {
-  const location = useLocation();
-  const fromAdsOrTour = useMemo(
-    () => /(\bfbclid=|\butm_|tour=1)/.test(location.search),
-    [location.search],
-  );
-
-  return fromAdsOrTour
-    ? renderWithSuspense(<WelcomePage />)
-    : renderWithSuspense(<LoginPage />);
+  // Homepage pública sempre mostra HomePage
+  return renderWithSuspense(<HomePage />);
 }
 
 function AppProtectedShell() {
@@ -122,8 +116,8 @@ function AppRoutes() {
         <Route path="welcome" element={renderWithSuspense(<WelcomePage />)} />
         <Route path="register" element={renderWithSuspense(<CreateProfilePage />)} />
         <Route path="reset-senha" element={renderWithSuspense(<ResetSenha />)} />
-        <Route path="login" element={<Navigate to="/" replace />} />
-        <Route path="login/tour" element={<Navigate to="/?tour=1" replace />} />
+        <Route path="login" element={renderWithSuspense(<LoginPage />)} />
+        <Route path="login/tour" element={<Navigate to="/login?tour=1" replace />} />
       </Route>
       <Route
         path="/app/*"
@@ -134,6 +128,7 @@ function AppRoutes() {
         }
       >
         <Route index element={renderWithSuspense(<HomePage />)} />
+        <Route path="home" element={renderWithSuspense(<HomePage />)} />
         <Route path="chat" element={renderWithSuspense(<ChatPage />)} />
         <Route path="voice" element={renderWithSuspense(<VoicePage />)} />
         <Route path="memory" element={renderWithSuspense(<MemoryLayout />)}>
@@ -156,6 +151,16 @@ function AppRoutes() {
         <Route path="sons" element={renderWithSuspense(<SonsPage />)} />
         <Route path="configuracoes" element={renderWithSuspense(<ConfiguracoesPage />)} />
         <Route path="*" element={<Navigate to="/app" replace />} />
+      </Route>
+      <Route
+        path="/app/dr-joe-dispenza"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<DrJoeDispenzaPage />)} />
       </Route>
       <Route
         path="/app/energy-blessings"

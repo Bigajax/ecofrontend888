@@ -3,11 +3,13 @@ import EcoBubbleOneEye from '@/components/EcoBubbleOneEye';
 
 interface EcoAIGuidanceCardProps {
   userName: string;
+  greeting?: string;
   onStartChat: () => void;
 }
 
 export default function EcoAIGuidanceCard({
   userName,
+  greeting = 'Olá',
   onStartChat,
 }: EcoAIGuidanceCardProps) {
   return (
@@ -38,7 +40,7 @@ export default function EcoAIGuidanceCard({
                 ECO AI
               </h3>
               <p className="mt-1 text-[12px] leading-relaxed text-[var(--eco-muted)]">
-                Bom tarde, {userName}! Se precisar fazer uma pausa, estou aqui para conversar.
+                {greeting}, {userName}! Se precisar fazer uma pausa, estou aqui para conversar.
               </p>
             </div>
           </div>
