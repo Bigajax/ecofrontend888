@@ -18,6 +18,13 @@ interface HeroCarouselProps {
   onStartChat?: () => void;
 }
 
+// Função para escolher o vídeo do dia (alterna diariamente)
+const getDailyReflectionVideo = (): string => {
+  const today = new Date().getDate(); // Dia do mês (1-31)
+  // Dias ímpares = vídeo 2 (novo), dias pares = vídeo 1 (original)
+  return today % 2 === 1 ? '/videos/diario-reflexao-2.mp4' : '/videos/diario-estoico.mp4';
+};
+
 const CAROUSEL_ITEMS: CarouselItem[] = [
   {
     id: 1,
@@ -26,7 +33,7 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
       'A cada dia, uma lição estoica para clarear sua mente e fortalecer sua resiliência — em menos de 1 minuto.',
     background:
       'url("/images/diario-estoico.webp")',
-    video: '/videos/diario-estoico.mp4',
+    video: getDailyReflectionVideo(),
   },
   {
     id: 2,
