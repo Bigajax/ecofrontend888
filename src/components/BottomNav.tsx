@@ -6,7 +6,6 @@ export default function BottomNav() {
   const navItems = [
     { to: '/app', icon: Home, label: 'Hoje' },
     { to: '/app/programas', icon: Play, label: 'Programas' },
-    { to: '/app/sono', icon: Moon, label: 'Sono' },
     { to: '/app/sons', icon: Music, label: 'Sons' },
     { to: '/app/configuracoes', icon: User, label: 'Perfil' },
   ];

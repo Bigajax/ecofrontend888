@@ -19,7 +19,6 @@ export default function HomeHeader() {
 
   const explorarOptions = [
     { label: 'Programas', path: '/app/programas', icon: Play },
-    { label: 'Sono', path: '/app/sono', icon: Moon },
     { label: 'Sons', path: '/app/sons', icon: Music },
   ];
 

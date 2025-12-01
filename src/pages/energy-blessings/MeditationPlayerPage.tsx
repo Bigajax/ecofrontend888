@@ -42,7 +42,7 @@ export default function MeditationPlayerPage() {
     const allSounds = getAllSounds();
     return allSounds.find(sound => sound.id === 'freq_1') || null;
   });
-  const [backgroundVolume, setBackgroundVolume] = useState(35); // Volume balanceado para som de fundo
+  const [backgroundVolume, setBackgroundVolume] = useState(20); // Volume mais suave para som de fundo
   const backgroundAudioRef = useRef<HTMLAudioElement>(null);
 
   // Estado para volume da meditação

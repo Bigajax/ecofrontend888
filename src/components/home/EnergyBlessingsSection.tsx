@@ -160,13 +160,20 @@ function BlessingCard({
 
   return (
     <button
-      onClick={onClick}
-      className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 touch-manipulation ${baseClass}`}
+      onClick={blessing.isPremium ? undefined : onClick}
+      disabled={blessing.isPremium}
+      className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 ${
+        blessing.isPremium
+          ? 'cursor-not-allowed'
+          : 'md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 cursor-pointer'
+      } touch-manipulation ${baseClass}`}
       style={{
         backgroundImage: blessing.image,
         backgroundSize: 'cover',
         backgroundPosition: blessing.imagePosition || 'center',
         minHeight: mobile ? '160px' : '220px',
+        opacity: 1,
+        filter: 'none',
       }}
     >
       {/* Overlay */}

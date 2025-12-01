@@ -171,7 +171,7 @@ export default function HomePage() {
         description: 'Transforme seu mindset financeiro',
         duration: '15 min',
         image: 'url("/images/quem-pensa-enriquece.webp")',
-        isPremium: false,
+        isPremium: true,
       },
     ],
     [],
@@ -188,7 +188,7 @@ export default function HomePage() {
         image: 'url("/images/meditacao-caleidoscopio.webp")',
         imagePosition: 'center 32%',
         gradient: 'linear-gradient(to bottom, #B494D4 0%, #A07DC4 20%, #8D67B5 40%, #7A52A6 60%, #673E97 80%, #542B88 100%)',
-        isPremium: false,
+        isPremium: true,
         category: 'Dr. Joe Dispenza',
       },
       {
@@ -200,7 +200,7 @@ export default function HomePage() {
         image: 'url("/images/meditacao-introducao.webp")',
         imagePosition: 'center 32%',
         gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
-        isPremium: false,
+        isPremium: true,
         category: 'Introdução',
       },
       {

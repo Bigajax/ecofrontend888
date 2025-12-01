@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Volume2 } from 'lucide-react';
+import { X, Volume2, Lock } from 'lucide-react';
 import { getAllSounds, type Sound } from '@/data/sounds';
 
 interface BackgroundSoundsModalProps {
@@ -16,7 +16,7 @@ export default function BackgroundSoundsModal({
   onClose,
   selectedSoundId,
   onSelectSound,
-  backgroundVolume = 35, // Volume balanceado para som de fundo
+  backgroundVolume = 20, // Volume mais suave para som de fundo
   onVolumeChange,
 }: BackgroundSoundsModalProps) {
   const [volume, setVolume] = useState(backgroundVolume);
@@ -130,14 +130,19 @@ export default function BackgroundSoundsModal({
                 return (
                   <button
                     key={sound.id}
-                    onClick={() => handleSoundClick(sound)}
+                    onClick={sound.isPremium ? undefined : () => handleSoundClick(sound)}
+                    disabled={sound.isPremium}
                     className={`
                       relative aspect-square rounded-2xl sm:rounded-[22px] overflow-hidden
-                      transition-all duration-300 active:scale-95 sm:hover:scale-105
-                      touch-manipulation
+                      transition-all duration-300 touch-manipulation
+                      ${sound.isPremium ? 'cursor-not-allowed' : 'active:scale-95 sm:hover:scale-105 cursor-pointer'}
                       ${isSelected ? 'ring-2 sm:ring-3 ring-[#6EC8FF] shadow-lg' : 'shadow-sm sm:hover:shadow-md'}
                     `}
-                    style={imageStyle}
+                    style={{
+                      ...imageStyle,
+                      opacity: 1,
+                      filter: 'none',
+                    }}
                   >
                     {/* Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
@@ -149,8 +154,15 @@ export default function BackgroundSoundsModal({
                       </h3>
                     </div>
 
+                    {/* Lock Icon for Premium */}
+                    {sound.isPremium && (
+                      <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center">
+                        <Lock size={12} className="text-white" />
+                      </div>
+                    )}
+
                     {/* Selected Indicator */}
-                    {isSelected && (
+                    {isSelected && !sound.isPremium && (
                       <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-4 h-4 sm:w-5 sm:h-5 bg-[#6EC8FF] rounded-full flex items-center justify-center">
                         <svg
                           width="10"

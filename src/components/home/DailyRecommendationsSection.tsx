@@ -125,13 +125,20 @@ function RecommendationCard({
 
   return (
     <button
-      onClick={onClick}
-      className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 md:hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] active:scale-95 touch-manipulation ${baseClass}`}
+      onClick={recommendation.isPremium ? undefined : onClick}
+      disabled={recommendation.isPremium}
+      className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 ${
+        recommendation.isPremium
+          ? 'cursor-not-allowed'
+          : 'md:hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] active:scale-95 cursor-pointer'
+      } touch-manipulation ${baseClass}`}
       style={{
         backgroundImage: recommendation.image,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         minHeight: vertical ? '200px' : mobile ? '200px' : '220px',
+        opacity: 1,
+        filter: 'none',
       }}
     >
       {/* Overlay */}

@@ -56,7 +56,6 @@ const EnergyBlessingsPage = lazy(() => import("@/pages/energy-blessings/EnergyBl
 const MeditationPlayerPage = lazy(() => import("@/pages/energy-blessings/MeditationPlayerPage"));
 const DrJoeDispenzaPage = lazy(() => import("@/pages/DrJoeDispenzaPage"));
 const ProgramasPage = lazy(() => import("@/pages/ProgramasPage"));
-const SonoPage = lazy(() => import("@/pages/SonoPage"));
 const SonsPage = lazy(() => import("@/pages/SonsPage"));
 const SoundPlayerPage = lazy(() => import("@/pages/SoundPlayerPage"));
 const ConfiguracoesPage = lazy(() => import("@/pages/ConfiguracoesPage"));
@@ -147,7 +146,6 @@ function AppRoutes() {
         <Route path="articles/good-night-sleep" element={renderWithSuspense(<GoodNightSleepArticle />)} />
         <Route path="diario-estoico" element={renderWithSuspense(<DiarioEstoicoPage />)} />
         <Route path="programas" element={renderWithSuspense(<ProgramasPage />)} />
-        <Route path="sono" element={renderWithSuspense(<SonoPage />)} />
         <Route path="sons" element={renderWithSuspense(<SonsPage />)} />
         <Route path="configuracoes" element={renderWithSuspense(<ConfiguracoesPage />)} />
         <Route path="*" element={<Navigate to="/app" replace />} />
