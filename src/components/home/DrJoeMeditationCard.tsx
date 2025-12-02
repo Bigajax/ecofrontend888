@@ -12,7 +12,7 @@ export default function DrJoeMeditationCard({ onClick }: DrJoeMeditationCardProp
           Meditações do Dr. Joe Dispenza
         </h2>
         <p className="mt-2 text-sm text-[var(--eco-muted)] md:text-base">
-          Técnicas avançadas para transformação pessoal
+          Recondicione sua mente e manifeste uma nova realidade
         </p>
       </div>
 
@@ -49,10 +49,10 @@ export default function DrJoeMeditationCard({ onClick }: DrJoeMeditationCardProp
           <div className="flex items-end justify-between">
             <div className="flex-1 text-left">
               <h3 className="text-2xl font-bold text-white md:text-3xl">
-                Fundamentos
+                Desperte Seu Potencial
               </h3>
               <p className="mt-2 text-sm text-white/90 md:text-base">
-                Meditações guiadas para iniciar sua jornada com atenção e consciência.
+                Acesse o campo quântico e crie a realidade que você deseja viver.
               </p>
             </div>
 

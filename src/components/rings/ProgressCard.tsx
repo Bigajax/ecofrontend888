@@ -130,7 +130,7 @@ export default function ProgressCard({ ring, allRituals }: ProgressCardProps) {
       </div>
 
       {insight && (
-        <p className="mt-4 rounded-lg border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-3 text-sm text-[var(--eco-text)] shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+        <p className="mt-4 rounded-lg border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-3 text-sm text-[var(--eco-text)] shadow-[0_2px_8px_rgba(0,0,0,0.02)] break-words overflow-wrap-anywhere">
           {insight}
         </p>
       )}

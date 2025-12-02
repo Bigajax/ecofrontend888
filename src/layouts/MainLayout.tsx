@@ -37,8 +37,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   };
 
   // Mostrar header antigo apenas em páginas específicas (NÃO na HomePage, ChatPage, Rings, Memórias, etc.)
-  const isHomePage = false; // HomePage agora é o chat principal
-  const isChatPage = location.pathname === '/app' || location.pathname === '/app/' || location.pathname.startsWith('/app/chat'); // Nova sidebar/topbar já implementada
+  const isHomePage = location.pathname === '/app' || location.pathname === '/app/' || location.pathname === '/app/home';
+  const isChatPage = location.pathname.startsWith('/app/chat'); // Nova sidebar/topbar já implementada
   const isMemoryPage = location.pathname.startsWith('/app/memory'); // Memórias, Perfil Emocional, Relatórios
   const isVoicePage = location.pathname.startsWith('/app/voice'); // Página de voz
   const isRingsPage = location.pathname.startsWith('/app/rings');
@@ -53,7 +53,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const isConfiguracoesPage = location.pathname.startsWith('/app/configuracoes');
   const showOldHeader = !isHomePage && !isChatPage && !isMemoryPage && !isVoicePage && !isRingsPage && !isRiquezaMentalPage && !isArticlesPage && !isDiarioEstoicoPage && !isProgramasPage && !isSonoPage && !isSonsPage && !isEnergyBlessingsPage && !isMeditationPlayerPage && !isConfiguracoesPage;
 
-  // Mostrar BottomNav APENAS nas páginas antigas (NÃO no Chat, Memórias, Voz que têm sidebar própria)
+  // Mostrar BottomNav na HomePage e em páginas específicas (NÃO no Chat, Memórias, Voz que têm sidebar própria)
   const showBottomNav = location.pathname.startsWith('/app') && !isChatPage && !isMemoryPage && !isVoicePage;
 
   return (
@@ -73,7 +73,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* Espaçamento controlado pelas CSS vars definidas no Header. */}
       {/* Variantes com sidebar devem definir explicitamente --eco-sidebar-w quando existirem. */}
       {/* Páginas com nova sidebar/topbar têm layout completo próprio, não precisam de wrapper */}
-      {isChatPage || isMemoryPage || isVoicePage ? (
+      {isHomePage || isChatPage || isMemoryPage || isVoicePage ? (
         children
       ) : (
         <main

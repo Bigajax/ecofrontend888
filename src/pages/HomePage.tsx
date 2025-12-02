@@ -394,7 +394,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-primary">
+    <div className="min-h-screen bg-white font-primary pb-16 md:pb-0">
       {/* Header - Always render first */}
       <HomeHeader onLogout={handleLogout} />
 

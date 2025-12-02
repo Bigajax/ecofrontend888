@@ -13,7 +13,7 @@ export default function OnboardingModal({ onComplete, onDismiss }: OnboardingMod
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onDismiss} />
 
       {/* Modal Container with scroll */}
-      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-4 sm:p-6 shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300">
+      <div className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-4 pb-20 sm:p-6 sm:pb-6 shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300">
         {/* Close button */}
         <button
           onClick={onDismiss}
@@ -65,16 +65,16 @@ export default function OnboardingModal({ onComplete, onDismiss }: OnboardingMod
         </div>
 
         {/* Buttons */}
-        <div className="mt-4 sm:mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end pb-1">
+        <div className="mt-4 sm:mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
           <button
             onClick={onDismiss}
-            className="rounded-lg border border-[var(--eco-line)] bg-white/60 backdrop-blur-md px-4 py-2.5 sm:py-2 text-[13px] sm:text-[12px] font-medium text-[var(--eco-text)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)] active:translate-y-0"
+            className="rounded-lg border border-[var(--eco-line)] bg-white/60 backdrop-blur-md px-4 py-2.5 sm:py-2 text-[13px] sm:text-[12px] font-medium text-[var(--eco-text)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)] active:translate-y-0 touch-manipulation"
           >
             Ver depois
           </button>
           <button
             onClick={onComplete}
-            className="rounded-lg bg-[var(--eco-user)] px-4 py-2.5 sm:py-2 text-[13px] sm:text-[12px] font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(167,132,108,0.25)] active:translate-y-0"
+            className="rounded-lg bg-[var(--eco-user)] px-4 py-2.5 sm:py-2 text-[13px] sm:text-[12px] font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(167,132,108,0.25)] active:translate-y-0 touch-manipulation"
           >
             Começar
           </button>

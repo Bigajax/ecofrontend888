@@ -77,10 +77,10 @@ export default function TimelineDay({ ritual, dateFormatted, rings }: TimelineDa
                     <span className="mt-0.5 text-[var(--eco-text)]">
                       <RingIcon ringId={answer.ringId} size={32} />
                     </span>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-[var(--eco-text)]">{ring.titlePt}</h4>
-                      <p className="mt-2 text-sm text-[var(--eco-muted)]">{ring.question}</p>
-                      <p className="mt-3 rounded-lg border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-3 text-[var(--eco-text)] shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-[var(--eco-text)] break-words">{ring.titlePt}</h4>
+                      <p className="mt-2 text-sm text-[var(--eco-muted)] break-words">{ring.question}</p>
+                      <p className="mt-3 rounded-lg border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-3 text-[var(--eco-text)] shadow-[0_2px_8px_rgba(0,0,0,0.02)] break-words overflow-wrap-anywhere">
                         {answer.answer}
                       </p>
 

@@ -711,19 +711,19 @@ function ChatPage() {
     wasStreamingRef.current = isCurrentlyStreaming;
   }, [streaming, isEcoStreamTyping, scrollToBottom]);
 
-  // Scroll para o input quando o teclado abre
-  useEffect(() => {
-    if (!isKeyboardOpen || !chatInputWrapperRef.current) return;
+  // Scroll para o input quando o teclado abre (disabled - footer is now fixed on mobile)
+  // useEffect(() => {
+  //   if (!isKeyboardOpen || !chatInputWrapperRef.current) return;
 
-    const timeoutId = setTimeout(() => {
-      chatInputWrapperRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'end'
-      });
-    }, 100);
+  //   const timeoutId = setTimeout(() => {
+  //     chatInputWrapperRef.current?.scrollIntoView({
+  //       behavior: 'smooth',
+  //       block: 'end'
+  //     });
+  //   }, 100);
 
-    return () => clearTimeout(timeoutId);
-  }, [isKeyboardOpen]);
+  //   return () => clearTimeout(timeoutId);
+  // }, [isKeyboardOpen]);
 
   // Haptic feedback quando Eco começa/termina de digitar
   useEffect(() => {
@@ -822,11 +822,11 @@ function ChatPage() {
         {/* Chat Area */}
         <main
           ref={scrollerRef}
-          className="flex-1 overflow-y-auto bg-transparent pt-4 lg:pt-0 pb-20 lg:pb-0"
+          className="flex-1 overflow-y-auto bg-transparent pt-14 lg:pt-0 pb-20 lg:pb-0"
           style={{
             WebkitOverflowScrolling: 'touch',
             overscrollBehaviorY: 'contain',
-            paddingBottom: Math.max(120 + 64, keyboardHeight + computedInputHeight + 80), // +64px para o bottom nav
+            paddingBottom: Math.max(120, keyboardHeight + computedInputHeight + 80), // Padding para input
           }}
         >
           <div role="feed" aria-busy={isWaitingForEco || isSendingToEco} className="flex-1">
@@ -901,7 +901,7 @@ function ChatPage() {
         {/* Footer Input */}
         <footer
           ref={chatInputWrapperRef}
-          className="sticky z-40 w-full border-t border-black/5 bg-white/80 backdrop-blur-xl px-4 pt-3 pb-3 sm:px-6 lg:px-8 bottom-16 lg:bottom-0"
+          className="fixed lg:sticky z-40 w-full border-t border-black/5 bg-white/80 backdrop-blur-xl px-4 pt-3 pb-3 sm:px-6 lg:px-8 bottom-0 left-0 right-0"
           style={{
             ...footerStyle,
             paddingBottom: `calc(${safeAreaBottom + 12}px + env(safe-area-inset-bottom))`,

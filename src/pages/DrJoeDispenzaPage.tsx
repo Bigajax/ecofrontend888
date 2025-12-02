@@ -19,8 +19,8 @@ interface Meditation {
 const INITIAL_MEDITATIONS: Meditation[] = [
   {
     id: 'blessing_1',
-    title: 'Meditação Bênção dos centros de energia',
-    description: 'Equilibre e ative seus centros energéticos',
+    title: 'Bênção dos Centros de Energia',
+    description: 'Ative seus 7 chakras e libere seu poder interior para cura profunda',
     duration: '7 min',
     audioUrl: '/audio/energy-blessings-meditation.mp3',
     image: 'url("/images/meditacao-bencao-energia.webp")',
@@ -30,8 +30,8 @@ const INITIAL_MEDITATIONS: Meditation[] = [
   },
   {
     id: 'blessing_2',
-    title: 'Meditação para sintonizar novos potenciais',
-    description: 'Alinhe-se com novas possibilidades',
+    title: 'Sintonize Novos Potenciais',
+    description: 'Acesse o campo quântico e manifeste a realidade que você deseja',
     duration: '7 min',
     audioUrl: '/audio/sintonizar-novos-potenciais.mp3',
     image: 'url("/images/meditacao-novos-potenciais.webp")',
@@ -41,8 +41,8 @@ const INITIAL_MEDITATIONS: Meditation[] = [
   },
   {
     id: 'blessing_3',
-    title: 'Meditação para recondicionar o corpo a uma nova mente',
-    description: 'Transforme padrões mentais e físicos',
+    title: 'Recondicione Seu Corpo e Mente',
+    description: 'Quebre padrões limitantes e crie novos circuitos neurais de sucesso',
     duration: '7 min',
     audioUrl: '/audio/recondicionar-corpo-nova-mente.mp3',
     image: 'url("/images/meditacao-recondicionar.webp")',
@@ -52,8 +52,8 @@ const INITIAL_MEDITATIONS: Meditation[] = [
   },
   {
     id: 'blessing_5',
-    title: 'Meditação caminhando',
-    description: 'Pratique presença em movimento',
+    title: 'Meditação Caminhando',
+    description: 'Integre corpo e mente enquanto se move conscientemente pelo mundo',
     duration: '5 min',
     audioUrl: '/audio/meditacao-caminhando.mp3',
     image: 'url("/images/meditacao-caminhando.webp")',
@@ -63,8 +63,8 @@ const INITIAL_MEDITATIONS: Meditation[] = [
   },
   {
     id: 'blessing_6',
-    title: 'Meditação espaço-tempo, tempo-espaço',
-    description: 'Transcenda as limitações dimensionais',
+    title: 'Espaço-Tempo, Tempo-Espaço',
+    description: 'Transcenda dimensões e conecte-se com infinitas possibilidades',
     duration: '5 min',
     audioUrl: '/audio/meditacao-espaco-tempo.mp3',
     image: 'url("/images/meditacao-espaco-tempo.webp")',
@@ -149,8 +149,8 @@ export default function DrJoeDispenzaPage() {
             className="absolute inset-0 bg-cover"
             style={{
               backgroundImage: 'url("/images/caduceu-dourado.png")',
-              backgroundPosition: 'center 30%',
-              transform: 'scale(1.1)',
+              backgroundPosition: 'center 40%',
+              transform: 'scale(1.05)',
             }}
           />
           <div
@@ -162,10 +162,10 @@ export default function DrJoeDispenzaPage() {
 
           <div className="relative z-10 flex flex-col items-center px-4 text-center sm:px-6">
             <h1 className="font-display text-3xl font-bold text-white drop-shadow-lg sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
-              Fundamentos
+              Desperte Seu Potencial Infinito
             </h1>
             <p className="mt-3 max-w-2xl text-sm text-white/95 drop-shadow-md sm:mt-4 sm:text-base md:text-lg lg:text-xl" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>
-              Meditação começa com atenção e consciência. Nesta série, começaremos a praticar atenção plena através do foco na respiração e no corpo.
+              Recondicione sua mente, reprograme seu corpo e manifeste uma nova realidade. Meditações cientificamente comprovadas para transformação profunda e duradoura.
             </p>
 
             <button

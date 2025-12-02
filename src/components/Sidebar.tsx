@@ -12,7 +12,7 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { id: 'chat', label: 'Chat', icon: MessageCircle, path: '/app' },
+  { id: 'chat', label: 'Chat', icon: MessageCircle, path: '/app/chat' },
   { id: 'memories', label: 'Memórias', icon: BookOpen, path: '/app/memory' },
   { id: 'profile', label: 'Perfil', icon: Brain, path: '/app/memory/profile' },
   { id: 'reports', label: 'Relatórios', icon: BarChart3, path: '/app/memory/report' },
@@ -123,7 +123,7 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
     );
   }
 
-  // Bottom Nav Mobile
+  // Bottom Nav Mobile (moved to top for better UX)
   if (variant === 'bottom') {
     const handleExitToHome = () => {
       // Volta para HomePage mantendo usuário logado ou modo convidado
@@ -133,8 +133,8 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
     };
 
     return (
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-black/10 lg:hidden">
-        <div className="flex items-center justify-around h-16 px-2 pb-safe">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-black/10 lg:hidden">
+        <div className="flex items-center justify-around h-14 px-2 pt-safe">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path ||

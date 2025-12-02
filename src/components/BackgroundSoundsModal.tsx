@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Volume2, Lock } from 'lucide-react';
 import { getAllSounds, type Sound } from '@/data/sounds';
 
@@ -16,11 +16,16 @@ export default function BackgroundSoundsModal({
   onClose,
   selectedSoundId,
   onSelectSound,
-  backgroundVolume = 20, // Volume mais suave para som de fundo
+  backgroundVolume = 13, // Volume mais suave para som de fundo (13%)
   onVolumeChange,
 }: BackgroundSoundsModalProps) {
   const [volume, setVolume] = useState(backgroundVolume);
   const allSounds = getAllSounds();
+
+  // Sincronizar volume local com prop quando mudar
+  useEffect(() => {
+    setVolume(backgroundVolume);
+  }, [backgroundVolume]);
 
   // Estilo customizado para scrollbar
   const scrollbarStyles = `
