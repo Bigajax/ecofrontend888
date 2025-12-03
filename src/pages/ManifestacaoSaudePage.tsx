@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, Pause, Check } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Check, Volume2, VolumeX, Maximize } from 'lucide-react';
+import { VIDEO_CALEIDOSCOPIO_SAUDE } from '@/config/videos';
 
 export default function ManifestacaoSaudePage() {
   const navigate = useNavigate();
@@ -16,12 +17,22 @@ export default function ManifestacaoSaudePage() {
   const [isPlayingAfirmacoes, setIsPlayingAfirmacoes] = useState(false);
 
   const caleidoscopioAudioRef = useRef<HTMLAudioElement>(null);
+  const caleidoscopioVideoRef = useRef<HTMLVideoElement>(null);
   const mindMovieAudioRef = useRef<HTMLAudioElement>(null);
   const afirmacoesAudioRef = useRef<HTMLAudioElement>(null);
 
   // Controle de conclusão de cada etapa
   const [caleidoscopioCompleted, setCaleidoscopioCompleted] = useState(false);
   const [mindMovieCompleted, setMindMovieCompleted] = useState(false);
+
+  // Controles do vídeo
+  const [showControls, setShowControls] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
   const emotions = [
     'Vitalidade',
@@ -86,14 +97,76 @@ export default function ManifestacaoSaudePage() {
   };
 
   const toggleCaleidoscopio = () => {
-    if (caleidoscopioAudioRef.current) {
+    if (caleidoscopioAudioRef.current && caleidoscopioVideoRef.current) {
       if (isPlayingCaleidoscopio) {
         caleidoscopioAudioRef.current.pause();
+        caleidoscopioVideoRef.current.pause();
       } else {
         caleidoscopioAudioRef.current.play();
+        caleidoscopioVideoRef.current.play();
       }
       setIsPlayingCaleidoscopio(!isPlayingCaleidoscopio);
     }
+  };
+
+  const handleVideoTimeUpdate = () => {
+    if (caleidoscopioVideoRef.current) {
+      const current = caleidoscopioVideoRef.current.currentTime;
+      const duration = caleidoscopioVideoRef.current.duration;
+      setVideoCurrentTime(current);
+      setVideoProgress((current / duration) * 100);
+    }
+  };
+
+  const handleVideoLoadedMetadata = () => {
+    if (caleidoscopioVideoRef.current) {
+      setVideoDuration(caleidoscopioVideoRef.current.duration);
+    }
+  };
+
+  const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (caleidoscopioVideoRef.current) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = x / rect.width;
+      const newTime = percentage * caleidoscopioVideoRef.current.duration;
+      caleidoscopioVideoRef.current.currentTime = newTime;
+      if (caleidoscopioAudioRef.current) {
+        caleidoscopioAudioRef.current.currentTime = newTime;
+      }
+    }
+  };
+
+  const toggleMute = () => {
+    if (caleidoscopioVideoRef.current) {
+      caleidoscopioVideoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    if (caleidoscopioVideoRef.current) {
+      caleidoscopioVideoRef.current.volume = newVolume;
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (videoContainerRef.current) {
+      if (!document.fullscreenElement) {
+        videoContainerRef.current.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    if (isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const toggleMindMovie = () => {
@@ -242,40 +315,112 @@ export default function ManifestacaoSaudePage() {
             </h1>
 
             <p className="mt-4 text-base text-[var(--eco-muted)] sm:text-lg">
-              Duração: 3–5 min
+              Duração: 7 min
             </p>
 
-            {/* Placeholder para animação do caleidoscópio */}
-            <div className="mt-8 overflow-hidden rounded-2xl bg-gradient-to-br from-purple-400 via-pink-300 to-purple-500 p-1">
-              <div className="flex h-64 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm sm:h-80 md:h-96">
-                <p className="text-center text-lg font-medium text-white drop-shadow-lg">
-                  Animação do caleidoscópio aqui
-                </p>
-              </div>
-            </div>
+            {/* Vídeo do caleidoscópio com controles estilo YouTube */}
+            <div
+              ref={videoContainerRef}
+              className="relative mt-8 overflow-hidden rounded-2xl bg-black group"
+              onMouseEnter={() => setShowControls(true)}
+              onMouseLeave={() => setShowControls(false)}
+            >
+              <video
+                ref={caleidoscopioVideoRef}
+                className="w-full h-auto"
+                loop
+                playsInline
+                onTimeUpdate={handleVideoTimeUpdate}
+                onLoadedMetadata={handleVideoLoadedMetadata}
+              >
+                <source src={VIDEO_CALEIDOSCOPIO_SAUDE} type="video/mp4" />
+                Seu navegador não suporta a reprodução de vídeo.
+              </video>
 
-            {/* Player de áudio */}
-            <div className="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-6">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={toggleCaleidoscopio}
-                  className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-[#7A52A6] text-white shadow-lg transition-all duration-300 hover:bg-[#673E97] hover:shadow-xl active:scale-95"
+              {/* Botão Play/Pause Central */}
+              {!isPlayingCaleidoscopio && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity">
+                  <button
+                    onClick={toggleCaleidoscopio}
+                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white/90 text-[#7A52A6] shadow-2xl transition-all duration-300 hover:bg-white hover:scale-110 active:scale-95"
+                  >
+                    <Play className="h-10 w-10 ml-1" fill="currentColor" />
+                  </button>
+                </div>
+              )}
+
+              {/* Controles inferiores estilo YouTube */}
+              <div
+                className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent px-4 py-3 transition-opacity duration-300 ${
+                  showControls || !isPlayingCaleidoscopio ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                {/* Barra de progresso */}
+                <div
+                  className="mb-3 h-1 w-full cursor-pointer rounded-full bg-white/30 hover:h-1.5 transition-all"
+                  onClick={handleProgressBarClick}
                 >
-                  {isPlayingCaleidoscopio ? (
-                    <Pause className="h-6 w-6" fill="currentColor" />
-                  ) : (
-                    <Play className="h-6 w-6 ml-0.5" fill="currentColor" />
-                  )}
-                </button>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-700">
-                    Áudio Caleidoscópio
-                  </p>
-                  <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
-                    <div className="h-2 w-0 rounded-full bg-[#7A52A6] transition-all" />
+                  <div
+                    className="h-full rounded-full bg-[#7A52A6] transition-all"
+                    style={{ width: `${videoProgress}%` }}
+                  />
+                </div>
+
+                {/* Controles */}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    {/* Play/Pause */}
+                    <button
+                      onClick={toggleCaleidoscopio}
+                      className="text-white transition-transform hover:scale-110 active:scale-95"
+                    >
+                      {isPlayingCaleidoscopio ? (
+                        <Pause className="h-6 w-6" fill="currentColor" />
+                      ) : (
+                        <Play className="h-6 w-6 ml-0.5" fill="currentColor" />
+                      )}
+                    </button>
+
+                    {/* Volume */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={toggleMute}
+                        className="text-white transition-transform hover:scale-110 active:scale-95"
+                      >
+                        {isMuted ? (
+                          <VolumeX className="h-5 w-5" />
+                        ) : (
+                          <Volume2 className="h-5 w-5" />
+                        )}
+                      </button>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        className="w-16 h-1 bg-white/30 rounded-full outline-none cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Tempo */}
+                    <span className="text-xs text-white font-medium">
+                      {formatTime(videoCurrentTime)} / {formatTime(videoDuration)}
+                    </span>
                   </div>
+
+                  {/* Fullscreen */}
+                  <button
+                    onClick={toggleFullscreen}
+                    className="text-white transition-transform hover:scale-110 active:scale-95"
+                  >
+                    <Maximize className="h-5 w-5" />
+                  </button>
                 </div>
               </div>
+
+              {/* Áudio sincronizado (oculto) */}
               <audio
                 ref={caleidoscopioAudioRef}
                 src="/audio/caleidoscopio-mock.mp3"

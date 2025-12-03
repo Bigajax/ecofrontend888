@@ -19,7 +19,17 @@
  */
 export const VIDEO_CALEIDOSCOPIO_DINHEIRO =
   import.meta.env.VITE_VIDEO_CALEIDOSCOPIO_DINHEIRO ||
-  'https://e6qcazsomcrmqybj.public.blob.vercel-storage.com/caleidoscopio-dinheiro.mp4';
+  'https://e6qcazsomcrmqybj.public.blob.vercel-storage.com/Caleidoscopio%20manifesta%C3%A7%C3%A3o%20do%20dinheiro.mp4';
+
+/**
+ * Caleidoscópio da Saúde video
+ * Used in: ManifestacaoSaudePage.tsx (Step 3 - Caleidoscópio section)
+ * Duration: ~7 minutes
+ * Purpose: Visual meditation for health and healing
+ */
+export const VIDEO_CALEIDOSCOPIO_SAUDE =
+  import.meta.env.VITE_VIDEO_CALEIDOSCOPIO_SAUDE ||
+  'https://e6qcazsomcrmqybj.public.blob.vercel-storage.com/Manifesta%C3%A7%C3%A3o%20da%20sa%C3%BAde.mp4';
 
 /**
  * Helper to check if video URLs are properly configured
