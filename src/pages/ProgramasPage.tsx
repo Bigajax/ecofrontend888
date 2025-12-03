@@ -60,11 +60,11 @@ export default function ProgramasPage() {
     },
     {
       id: 'blessing_4',
-      title: 'Meditação do caleidoscópio e Mind Movie',
-      description: 'Visualize e crie sua nova realidade',
+      title: 'Programa de Meditação do Caleidoscópio e Mind Movie',
+      description: 'Visualize e crie novas realidades internas',
       duration: '22 min',
-      image: 'url("/images/meditacao-caleidoscopio.webp")',
-      imagePosition: 'center 32%',
+      image: 'url("/images/caleidoscopio-mind-movie.png")',
+      imagePosition: 'center center',
       gradient: 'linear-gradient(to bottom, #B494D4 0%, #A07DC4 20%, #8D67B5 40%, #7A52A6 60%, #673E97 80%, #542B88 100%)',
       isPremium: false,
       category: 'Dr. Joe Dispenza',
@@ -181,6 +181,12 @@ export default function ProgramasPage() {
   }, [meditations, selectedCategory]);
 
   const handleMeditationClick = (meditationId: string) => {
+    // Programa do Caleidoscópio navega para sua própria página
+    if (meditationId === 'blessing_4') {
+      navigate('/app/programas/caleidoscopio-mind-movie');
+      return;
+    }
+
     const meditation = meditations.find(m => m.id === meditationId);
     if (meditation) {
       navigate('/app/meditation-player', {

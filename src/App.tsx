@@ -56,6 +56,9 @@ const EnergyBlessingsPage = lazy(() => import("@/pages/energy-blessings/EnergyBl
 const MeditationPlayerPage = lazy(() => import("@/pages/energy-blessings/MeditationPlayerPage"));
 const DrJoeDispenzaPage = lazy(() => import("@/pages/DrJoeDispenzaPage"));
 const ProgramasPage = lazy(() => import("@/pages/ProgramasPage"));
+const CaleidoscopioMindMovieProgramPage = lazy(() => import("@/pages/CaleidoscopioMindMovieProgramPage"));
+const ManifestacaoSaudePage = lazy(() => import("@/pages/ManifestacaoSaudePage"));
+const ManifestacaoDinheiroPage = lazy(() => import("@/pages/ManifestacaoDinheiroPage"));
 const SonsPage = lazy(() => import("@/pages/SonsPage"));
 const SoundPlayerPage = lazy(() => import("@/pages/SoundPlayerPage"));
 const ConfiguracoesPage = lazy(() => import("@/pages/ConfiguracoesPage"));
@@ -159,6 +162,36 @@ function AppRoutes() {
         }
       >
         <Route index element={renderWithSuspense(<DrJoeDispenzaPage />)} />
+      </Route>
+      <Route
+        path="/app/programas/caleidoscopio-mind-movie"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<CaleidoscopioMindMovieProgramPage />)} />
+      </Route>
+      <Route
+        path="/app/programas/caleidoscopio-mind-movie/manifestacao-saude"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<ManifestacaoSaudePage />)} />
+      </Route>
+      <Route
+        path="/app/programas/caleidoscopio-mind-movie/manifestacao-dinheiro"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<ManifestacaoDinheiroPage />)} />
       </Route>
       <Route
         path="/app/energy-blessings"

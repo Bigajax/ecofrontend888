@@ -18,30 +18,8 @@ const loadingSkeleton = (
 );
 
 const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
-  const { user, loading } = useAuth();
-  const [status, setStatus] = useState<AuthStatus>('loading');
-
-  useEffect(() => {
-    if (loading) {
-      setStatus('loading');
-    } else {
-      // Allow both authenticated and unauthenticated (guest) users
-      setStatus('authenticated');
-    }
-  }, [loading, user]);
-
-  const content = useMemo(() => {
-    switch (status) {
-      case 'loading':
-        return loadingSkeleton;
-      case 'authenticated':
-        return <>{children}</>;
-      default:
-        return loadingSkeleton;
-    }
-  }, [children, status]);
-
-  return <>{content}</>;
+  // Always allow access immediately - supports both authenticated and guest users
+  return <>{children}</>;
 };
 
 export default RequireAuth;
