@@ -69,7 +69,7 @@ export default function EnergyBlessingsSection({
           Recomendações para você
         </h2>
         <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
-          Meditações guiadas para equilibrar sua energia
+          Conteúdos selecionados para sua transformação pessoal
         </p>
       </div>
 

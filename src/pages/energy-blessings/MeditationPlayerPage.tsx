@@ -42,8 +42,13 @@ export default function MeditationPlayerPage() {
     const allSounds = getAllSounds();
     return allSounds.find(sound => sound.id === 'freq_1') || null;
   });
-  const [backgroundVolume, setBackgroundVolume] = useState(13); // Volume mais suave para som de fundo (13%)
+  const [backgroundVolume, setBackgroundVolume] = useState(5); // Volume bem baixo para som de fundo (5%)
   const backgroundAudioRef = useRef<HTMLAudioElement>(null);
+
+  // Web Audio API para controle avançado de volume
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const backgroundGainNodeRef = useRef<GainNode | null>(null);
+  const backgroundSourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
 
   // Estado para volume da meditação
   const [meditationVolume, setMeditationVolume] = useState(100);
@@ -67,10 +72,35 @@ export default function MeditationPlayerPage() {
     }
   }, [selectedBackgroundSound, isPlaying]);
 
-  // Controlar volume do áudio de fundo
+  // Inicializar Web Audio API para som de fundo
   useEffect(() => {
-    if (backgroundAudioRef.current) {
-      backgroundAudioRef.current.volume = backgroundVolume / 100;
+    if (backgroundAudioRef.current && !audioContextRef.current) {
+      // Criar AudioContext
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+      // Criar nó de ganho (volume)
+      backgroundGainNodeRef.current = audioContextRef.current.createGain();
+
+      // Criar source a partir do elemento de áudio
+      backgroundSourceNodeRef.current = audioContextRef.current.createMediaElementSource(backgroundAudioRef.current);
+
+      // Conectar: source -> gain -> destination (speakers)
+      backgroundSourceNodeRef.current.connect(backgroundGainNodeRef.current);
+      backgroundGainNodeRef.current.connect(audioContextRef.current.destination);
+
+      // Definir volume inicial muito baixo (0.03 = 3%)
+      backgroundGainNodeRef.current.gain.value = 0.03;
+    }
+  }, []);
+
+  // Controlar volume do áudio de fundo usando Web Audio API
+  useEffect(() => {
+    if (backgroundGainNodeRef.current) {
+      // Converter porcentagem para valor Web Audio (0.0 a 1.0)
+      // Aplicar uma curva logarítmica para melhor percepção de volume
+      const normalizedVolume = backgroundVolume / 100;
+      const logarithmicVolume = Math.pow(normalizedVolume, 2) * 0.5; // Máximo 0.5 (50%)
+      backgroundGainNodeRef.current.gain.value = logarithmicVolume;
     }
   }, [backgroundVolume]);
 

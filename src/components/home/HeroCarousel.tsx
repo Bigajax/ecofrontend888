@@ -38,7 +38,7 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
     id: 2,
     title: 'Domine os 5 Anéis da Disciplina',
     description:
-      'Um ritual diário poderoso inspirado em Miyamoto Musashi. Construa clareza, foco e propósito através de 5 perguntas que transformam sua disciplina.',
+      'Construa clareza, foco e propósito com um ritual diário inspirado em Miyamoto Musashi.',
     background:
       'url("/images/5-aneis-hero.png")',
   },
@@ -46,7 +46,7 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
     id: 3,
     title: 'Desperte Seu Potencial Infinito',
     description:
-      'Recondicione sua mente, reprograme seu corpo e manifeste uma nova realidade. Meditações cientificamente comprovadas do Dr. Joe Dispenza para transformação profunda.',
+      'Recondicione sua mente e manifeste a realidade que deseja viver.',
     background:
       'url("/images/dr-joe-hero.png")',
   },
@@ -134,7 +134,7 @@ export default function HeroCarousel({
           <h3 className="font-display text-2xl font-medium text-white drop-shadow-lg leading-[1.4] tracking-[-0.2px] text-center">
             {item.title}
           </h3>
-          <p className="text-[12px] sm:text-[13px] leading-relaxed text-white/85 drop-shadow-md">
+          <p className="text-[12px] sm:text-[13px] leading-relaxed text-white/85 drop-shadow-md text-center">
             {item.description}
           </p>
           {item.author && (
@@ -161,30 +161,32 @@ export default function HeroCarousel({
 
           {/* CTA Button for 5 Anéis */}
           {is5Aneis && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate('/app/rings');
-              }}
-              className="mt-2 sm:mt-3 flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 px-5 sm:px-6 py-2 sm:py-2.5 text-white shadow-lg transition duration-200 hover:scale-[1.02] hover:shadow-xl cursor-pointer active:scale-95"
-            >
-              <span className="text-[13px] sm:text-sm font-semibold">Começar Jornada</span>
-              <span className="text-sm">→</span>
-            </button>
+            <div className="mt-3 sm:mt-4 flex justify-center">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/app/rings');
+                }}
+                className="flex items-center gap-2 rounded-full bg-white px-4 sm:px-5 py-1.5 sm:py-2 text-purple-900 shadow-md transition duration-200 hover:scale-[1.02] hover:bg-gray-50 cursor-pointer active:scale-95"
+              >
+                <span className="text-[12px] sm:text-[13px] font-medium">Começar Jornada</span>
+              </button>
+            </div>
           )}
 
           {/* CTA Button for Dr. Joe */}
           {isDrJoe && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate('/app/dr-joe-dispenza');
-              }}
-              className="mt-2 sm:mt-3 flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-5 sm:px-6 py-2 sm:py-2.5 text-white shadow-lg transition duration-200 hover:scale-[1.02] hover:shadow-xl cursor-pointer active:scale-95"
-            >
-              <span className="text-[13px] sm:text-sm font-semibold">Explorar Meditações</span>
-              <span className="text-sm">✨</span>
-            </button>
+            <div className="mt-3 sm:mt-4 flex justify-center">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/app/dr-joe-dispenza');
+                }}
+                className="flex items-center gap-2 rounded-full bg-white px-4 sm:px-5 py-1.5 sm:py-2 text-purple-900 shadow-md transition duration-200 hover:scale-[1.02] hover:bg-gray-50 cursor-pointer active:scale-95"
+              >
+                <span className="text-[12px] sm:text-[13px] font-medium">Explorar Meditações</span>
+              </button>
+            </div>
           )}
         </div>
       </div>

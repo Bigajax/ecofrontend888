@@ -183,6 +183,15 @@ export default function HomePage() {
   const energyBlessings = useMemo(
     () => [
       {
+        id: 'blessing_9',
+        title: 'Quem Pensa Enriquece',
+        description: 'Transforme seu mindset financeiro',
+        duration: '25 min',
+        image: 'url("/images/quem-pensa-enriquece.webp")',
+        isPremium: true,
+        category: 'Programas',
+      },
+      {
         id: 'blessing_4',
         title: 'Meditação do caleidoscópio e Mind Movie',
         description: 'Visualize e crie sua nova realidade',
@@ -367,6 +376,22 @@ export default function HomePage() {
   const handleEnergyBlessingClick = (blessingId: string) => {
     // Salvar posição do scroll antes de navegar
     sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
+
+    // Quem Pensa Enriquece - navega para sua própria página
+    if (blessingId === 'blessing_9') {
+      startProgram({
+        id: 'blessing_9',
+        title: 'Quem Pensa Enriquece',
+        description: 'Transforme seu mindset financeiro',
+        currentLesson: 'Passo 1: Onde você está',
+        progress: 0,
+        duration: '25 min',
+        startedAt: new Date().toISOString(),
+        lastAccessedAt: new Date().toISOString(),
+      });
+      navigate('/app/riqueza-mental');
+      return;
+    }
 
     // Programa do Caleidoscópio navega para sua própria página
     if (blessingId === 'blessing_4') {
