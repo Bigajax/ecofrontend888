@@ -149,7 +149,7 @@ export default function HomePage() {
       {
         id: 'rec_1',
         title: 'Meditação do Sono',
-        description: 'Relaxe profundamente e durma melhor',
+        description: 'Relaxe profundamente e durma melhor.',
         duration: '9 min',
         audioUrl: '/audio/meditacao-sono.mp4',
         image: 'url("/images/meditacao-sono.webp")',
@@ -160,18 +160,20 @@ export default function HomePage() {
       {
         id: 'rec_2',
         title: '5 Anéis da Disciplina',
-        description: 'Construa sua estrutura pessoal',
+        description: 'Construa sua estrutura pessoal.',
         duration: '12 min',
         image: 'url("/images/five-rings-visual.webp")',
         isPremium: false,
       },
       {
         id: 'rec_3',
-        title: 'Quem Pensa Enriquece',
-        description: 'Transforme seu mindset financeiro',
-        duration: '15 min',
-        image: 'url("/images/quem-pensa-enriquece.webp")',
-        isPremium: true,
+        title: 'Meditação do caleidoscópio e Mind Movie',
+        description: 'Visualize e crie sua nova realidade.',
+        duration: '22 min',
+        image: 'url("/images/caleidoscopio-mind-movie.png")',
+        imagePosition: 'center center',
+        gradient: 'linear-gradient(to bottom, #B494D4 0%, #A07DC4 20%, #8D67B5 40%, #7A52A6 60%, #673E97 80%, #542B88 100%)',
+        isPremium: false,
       },
     ],
     [],
@@ -320,6 +322,9 @@ export default function HomePage() {
   };
 
   const handleDailyRecommendationClick = (recId: string) => {
+    // Salvar posição do scroll antes de navegar
+    sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
+
     if (recId === 'rec_1') {
       // Meditação do Sono - navegar para o player
       const sonoMeditation = dailyRecommendations.find(r => r.id === 'rec_1');
@@ -352,18 +357,8 @@ export default function HomePage() {
       });
       navigate('/app/rings');
     } else if (recId === 'rec_3') {
-      // Salvar programa Quem Pensa Enriquece
-      startProgram({
-        id: 'rec_3',
-        title: 'Quem Pensa Enriquece',
-        description: 'Transforme seu mindset financeiro',
-        currentLesson: 'Passo 1: Onde você está',
-        progress: 0,
-        duration: '25 min',
-        startedAt: new Date().toISOString(),
-        lastAccessedAt: new Date().toISOString(),
-      });
-      navigate('/app/riqueza-mental');
+      // Meditação do Caleidoscópio - navegar para a página dedicada
+      navigate('/app/programas/caleidoscopio-mind-movie');
     } else {
       console.log('Recomendação clicada:', recId);
     }
@@ -410,11 +405,11 @@ export default function HomePage() {
       ) : (
         <main className="md:pt-0">
         {/* Hero Section */}
-        <div className="mx-auto max-w-6xl md:px-8 md:py-12">
+        <div className="mx-auto max-w-6xl md:px-8 md:py-8">
           {/* Desktop: Grid 2 colunas com mesma altura */}
-          <div className="hidden gap-6 md:grid md:grid-cols-2 md:h-96">
+          <div className="hidden gap-6 md:grid md:grid-cols-2">
             {/* Left Card - Greeting */}
-            <div className="flex flex-col justify-center rounded-3xl border border-[var(--eco-line)] bg-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
+            <div className="flex flex-col justify-center rounded-2xl border border-[var(--eco-line)] bg-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)] md:h-[260px]">
               <h1 className="font-display text-6xl font-bold text-[var(--eco-text)]">
                 {greeting},
                 <br />

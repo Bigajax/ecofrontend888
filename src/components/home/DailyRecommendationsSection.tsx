@@ -56,7 +56,7 @@ export default function DailyRecommendationsSection({
         </div>
 
         {/* Cards */}
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 gap-5">
           {recommendations.map((rec) => (
             <RecommendationCard
               key={rec.id}
@@ -71,7 +71,7 @@ export default function DailyRecommendationsSection({
       <div className="block md:hidden">
         <div className="relative">
           {/* Cards verticais com bolinhas */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-5">
             {recommendations.map((rec, index) => (
               <div key={rec.id} className="relative flex gap-4">
                 {/* Container da bolinha e linha - altura igual ao card */}
@@ -84,7 +84,7 @@ export default function DailyRecommendationsSection({
                     {index < recommendations.length - 1 && (
                       <div
                         className="absolute top-full left-1/2 -translate-x-1/2 w-[2px] bg-gray-200"
-                        style={{ height: 'calc(100px + 1.5rem + 100px - 24px)' }}
+                        style={{ height: 'calc(150px + 1.25rem - 24px)' }}
                       />
                     )}
                   </div>
@@ -127,16 +127,16 @@ function RecommendationCard({
     <button
       onClick={recommendation.isPremium ? undefined : onClick}
       disabled={recommendation.isPremium}
-      className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 ${
+      className={`group relative overflow-hidden rounded-3xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] transition-all duration-300 ${
         recommendation.isPremium
           ? 'cursor-not-allowed'
-          : 'md:hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] active:scale-95 cursor-pointer'
+          : 'md:hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)] active:scale-95 cursor-pointer'
       } touch-manipulation ${baseClass}`}
       style={{
         backgroundImage: recommendation.image,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        minHeight: vertical ? '200px' : mobile ? '200px' : '220px',
+        minHeight: vertical ? '150px' : mobile ? '150px' : '150px',
         opacity: 1,
         filter: 'none',
       }}

@@ -28,9 +28,8 @@ const getDailyReflectionVideo = (): string => {
 const CAROUSEL_ITEMS: CarouselItem[] = [
   {
     id: 1,
-    title: 'Sua reflexão diária para um dia melhor',
-    description:
-      'A cada dia, uma lição estoica para clarear sua mente e fortalecer sua resiliência — em menos de 1 minuto.',
+    title: 'Um minuto por dia para clarear a mente e fortalecer sua resiliência.',
+    description: '',
     background:
       'url("/images/diario-estoico.webp")',
     video: getDailyReflectionVideo(),
@@ -129,13 +128,13 @@ export default function HeroCarousel({
     const isDrJoe = item.id === 3;
 
     return (
-      <div className="relative flex h-full flex-col justify-between p-4 sm:p-6 pb-16 sm:pb-20">
+      <div className="relative flex h-full flex-col justify-between p-4 sm:p-6 pb-12 sm:pb-14">
         <div className="flex-1" />
-        <div className="space-y-2 sm:space-y-3">
-          <h3 className="font-display text-lg sm:text-xl font-normal text-white drop-shadow-lg">
+        <div className="space-y-1.5 sm:space-y-2">
+          <h3 className="font-display text-2xl font-medium text-white drop-shadow-lg leading-[1.4] tracking-[-0.2px] text-center">
             {item.title}
           </h3>
-          <p className="text-[13px] sm:text-[14px] leading-relaxed text-white/90 drop-shadow-md">
+          <p className="text-[12px] sm:text-[13px] leading-relaxed text-white/85 drop-shadow-md">
             {item.description}
           </p>
           {item.author && (
@@ -146,16 +145,18 @@ export default function HeroCarousel({
 
           {/* CTA Button for Diário Estoico */}
           {isDiarioEstoico && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate('/app/diario-estoico');
-              }}
-              className="mt-2 sm:mt-3 flex w-fit items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2 sm:py-2.5 text-sky-950 shadow-md transition duration-200 hover:scale-[1.02] hover:bg-sky-50 cursor-pointer active:scale-95"
-            >
-              <BookOpen size={16} className="sm:w-[18px] sm:h-[18px]" />
-              <span className="text-[13px] sm:text-sm font-medium">Ler a reflexão de hoje</span>
-            </button>
+            <div className="mt-3 sm:mt-4 flex justify-center">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/app/diario-estoico');
+                }}
+                className="flex items-center gap-2 rounded-full bg-white px-4 sm:px-5 py-1.5 sm:py-2 text-sky-950 shadow-md transition duration-200 hover:scale-[1.02] hover:bg-sky-50 cursor-pointer active:scale-95"
+              >
+                <BookOpen size={14} className="sm:w-4 sm:h-4" />
+                <span className="text-[12px] sm:text-[13px] font-medium">Ler a reflexão de hoje</span>
+              </button>
+            </div>
           )}
 
           {/* CTA Button for 5 Anéis */}
@@ -192,7 +193,7 @@ export default function HeroCarousel({
 
   return (
     <div
-      className={`group relative h-[420px] overflow-hidden select-none ${
+      className={`group relative h-[260px] overflow-hidden select-none ${
         variant === 'mobile'
           ? 'rounded-none border-0'
           : 'rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]'
