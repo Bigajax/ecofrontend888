@@ -42,7 +42,7 @@ export default function LearnExploreSection({
           Aprenda e explore
         </h2>
         <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
-          Meditações selecionadas com base na sua preferência e no seu humor
+          Artigos, práticas e conteúdos selecionados para sua jornada de crescimento pessoal
         </p>
       </div>
 
@@ -163,6 +163,16 @@ function ContentCard({ item, onClick }: ContentCardProps) {
           <p className="mt-2 text-[14px] text-white/90 drop-shadow-md">
             Cultive a sabedoria diária através de reflexões estoicas.
           </p>
+
+          {/* Botão CTA */}
+          <div className="mt-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 shadow-md transition-all duration-200 hover:scale-105">
+              <span className="text-[13px] font-medium text-gray-900">Acessar diário</span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </div>
         </div>
       </button>
     );

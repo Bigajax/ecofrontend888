@@ -11,6 +11,7 @@ import LearnExploreSection from '@/components/home/LearnExploreSection';
 import HeroCarousel from '@/components/home/HeroCarousel';
 import LiveReflectionSection from '@/components/home/LiveReflectionSection';
 import DrJoeMeditationCard from '@/components/home/DrJoeMeditationCard';
+import EcoAIRecommendationCard from '@/components/home/EcoAIRecommendationCard';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
 import EcoAIModal from '@/components/EcoAIModal';
@@ -167,12 +168,12 @@ export default function HomePage() {
       },
       {
         id: 'rec_3',
-        title: 'Meditação do caleidoscópio e Mind Movie',
-        description: 'Visualize e crie sua nova realidade.',
-        duration: '22 min',
-        image: 'url("/images/caleidoscopio-mind-movie.png")',
+        title: 'Desperte Seu Potencial',
+        description: 'Acesse o campo quântico e crie a realidade que você deseja viver.',
+        duration: '5 meditações',
+        image: 'url("/images/caduceu-dourado.png")',
         imagePosition: 'center center',
-        gradient: 'linear-gradient(to bottom, #B494D4 0%, #A07DC4 20%, #8D67B5 40%, #7A52A6 60%, #673E97 80%, #542B88 100%)',
+        gradient: 'linear-gradient(to bottom, rgba(59, 30, 119, 0.6) 0%, rgba(59, 30, 119, 0.85) 100%)',
         isPremium: false,
       },
     ],
@@ -199,7 +200,7 @@ export default function HomePage() {
         image: 'url("/images/caleidoscopio-mind-movie.png")',
         imagePosition: 'center center',
         gradient: 'linear-gradient(to bottom, #B494D4 0%, #A07DC4 20%, #8D67B5 40%, #7A52A6 60%, #673E97 80%, #542B88 100%)',
-        isPremium: false,
+        isPremium: true,
         category: 'Dr. Joe Dispenza',
       },
       {
@@ -366,8 +367,8 @@ export default function HomePage() {
       });
       navigate('/app/rings');
     } else if (recId === 'rec_3') {
-      // Meditação do Caleidoscópio - navegar para a página dedicada
-      navigate('/app/programas/caleidoscopio-mind-movie');
+      // Desperte Seu Potencial - navegar para a página do Dr. Joe Dispenza
+      navigate('/app/dr-joe-dispenza');
     } else {
       console.log('Recomendação clicada:', recId);
     }
@@ -465,23 +466,16 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* ECO AI Recommendation Card */}
+        <AnimatedSection animation="slide-up-fade">
+          <EcoAIRecommendationCard onStartChat={handleStartChat} />
+        </AnimatedSection>
+
         {/* Daily Recommendations Section */}
         <AnimatedSection animation="slide-up-fade" id="daily-recommendations-section">
           <DailyRecommendationsSection
             recommendations={dailyRecommendations}
             onRecommendationClick={handleDailyRecommendationClick}
-          />
-        </AnimatedSection>
-
-        {/* Dr. Joe Dispenza Meditation Card */}
-        <AnimatedSection animation="slide-up-fade" id="drjoe-meditation-section">
-          <DrJoeMeditationCard
-            onClick={() => {
-              // Navegar para a página dedicada do Dr. Joe Dispenza
-              navigate('/app/dr-joe-dispenza');
-              // Scroll para o topo após navegação
-              window.scrollTo(0, 0);
-            }}
           />
         </AnimatedSection>
 
@@ -499,6 +493,18 @@ export default function HomePage() {
             userName={displayName}
             greeting={greeting}
             onStartChat={handleStartChat}
+          />
+        </AnimatedSection>
+
+        {/* Dr. Joe Dispenza Meditation Card */}
+        <AnimatedSection animation="slide-up-fade" id="drjoe-meditation-section">
+          <DrJoeMeditationCard
+            onClick={() => {
+              // Navegar para a página dedicada do Dr. Joe Dispenza
+              navigate('/app/dr-joe-dispenza');
+              // Scroll para o topo após navegação
+              window.scrollTo(0, 0);
+            }}
           />
         </AnimatedSection>
 

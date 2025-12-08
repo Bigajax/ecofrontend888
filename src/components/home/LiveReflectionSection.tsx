@@ -73,9 +73,9 @@ const AVATARS = [
 ];
 
 const SIZE_MAP = {
-  small: 'w-8 h-8 md:w-10 md:h-10',
-  medium: 'w-10 h-10 md:w-14 md:h-14',
-  large: 'w-12 h-12 md:w-16 md:h-16'
+  small: 'w-6 h-6 md:w-10 md:h-10',
+  medium: 'w-8 h-8 md:w-14 md:h-14',
+  large: 'w-10 h-10 md:w-16 md:h-16'
 };
 
 export default function LiveReflectionSection() {
@@ -107,7 +107,7 @@ export default function LiveReflectionSection() {
   return (
     <section className="relative mx-auto max-w-6xl px-4 py-16 md:px-8 md:py-24">
       {/* White Background Container */}
-      <div className="relative overflow-hidden rounded-[32px] bg-white px-4 py-16 sm:px-8 sm:py-20 md:px-16 md:py-32">
+      <div className="relative overflow-hidden rounded-[32px] bg-white px-6 py-16 sm:px-8 sm:py-20 md:px-16 md:py-32">
 
         {/* Floating Avatars Container */}
         <div className="pointer-events-none absolute inset-0">
@@ -139,7 +139,7 @@ export default function LiveReflectionSection() {
         </div>
 
         {/* Central Content */}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center px-2">
+        <div className="relative z-10 flex flex-col items-center justify-center text-center px-8 sm:px-2">
           {/* Counter and Live Badge */}
           <div className="mb-3 flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
             <h2 className="font-display text-4xl sm:text-5xl font-bold text-gray-800 md:text-7xl">
@@ -154,7 +154,7 @@ export default function LiveReflectionSection() {
           </div>
 
           {/* Subtitle */}
-          <p className="text-base sm:text-lg font-medium text-gray-600 md:text-xl max-w-xs sm:max-w-none">
+          <p className="text-sm sm:text-lg font-medium text-gray-600 md:text-xl">
             Pessoas refletindo com a Eco agora
           </p>
         </div>

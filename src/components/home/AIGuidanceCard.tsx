@@ -27,8 +27,8 @@ export default function AIGuidanceCard({
             {/* Left side - Avatar & Text */}
             <div className="flex flex-col items-start">
               {/* Avatar */}
-              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white/60 shadow-[0_4px_15px_rgba(138,43,226,0.2)] backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
-                <Sparkles size={32} className="text-[var(--eco-user)]" strokeWidth={1.5} />
+              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white/60 backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:bg-[#89CFF0]/20">
+                <Sparkles size={32} className="text-[#89CFF0] transition-colors duration-300" strokeWidth={1.5} />
               </div>
 
               {/* Text content */}

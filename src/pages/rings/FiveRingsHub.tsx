@@ -6,6 +6,7 @@ import { RINGS_ARRAY } from '@/constants/rings';
 import OnboardingModal from '@/components/rings/OnboardingModal';
 import RingCard from '@/components/rings/RingCard';
 import HomeHeader from '@/components/home/HomeHeader';
+import { ArrowLeft } from 'lucide-react';
 
 export default function FiveRingsHub() {
   const navigate = useNavigate();
@@ -59,10 +60,17 @@ export default function FiveRingsHub() {
         <OnboardingModal onComplete={completeOnboarding} onDismiss={dismissOnboarding} />
       )}
 
-      <main className="mx-auto max-w-4xl px-4 py-8 md:px-8 md:py-12">
+      <main className="relative mx-auto max-w-4xl px-4 py-8 md:px-8 md:py-12">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate('/app')}
+          className="absolute left-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--eco-text)] shadow-md border border-[var(--eco-line)] transition-all hover:bg-gray-50 hover:shadow-lg active:scale-95 md:left-8 md:top-8"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
 
         {/* Header */}
-        <div className="mb-12 space-y-4">
+        <div className="mb-12 space-y-4 pt-16 md:pt-4">
           <div>
             <h1 className="font-display text-4xl font-normal text-[var(--eco-text)] md:text-5xl">
               Cinco Anéis da Disciplina

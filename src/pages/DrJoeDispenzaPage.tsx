@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Check, Circle, ArrowLeft } from 'lucide-react';
+import { Play, Check, Circle, ArrowLeft, Lock } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -14,6 +14,7 @@ interface Meditation {
   imagePosition: string;
   gradient: string;
   completed: boolean;
+  isPremium?: boolean;
 }
 
 const INITIAL_MEDITATIONS: Meditation[] = [
@@ -71,6 +72,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     imagePosition: 'center 32%',
     gradient: 'linear-gradient(to bottom, #FCD670 0%, #FBCA5D 15%, #F7B84A 30%, #F39A3C 45%, #EC7D2E 60%, #E26224 75%, #D7491F 90%, #C43520 100%)',
     completed: false,
+    isPremium: true,
   },
 ];
 
@@ -84,7 +86,15 @@ export default function DrJoeDispenzaPage() {
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Merge with INITIAL_MEDITATIONS to ensure isPremium is updated
+        return parsed.map((saved: Meditation) => {
+          const initial = INITIAL_MEDITATIONS.find(m => m.id === saved.id);
+          return {
+            ...saved,
+            isPremium: initial?.isPremium || false,
+          };
+        });
       } catch {
         return INITIAL_MEDITATIONS;
       }
@@ -99,6 +109,8 @@ export default function DrJoeDispenzaPage() {
   }, [meditations, user?.id]);
 
   const handleMeditationClick = (meditation: Meditation) => {
+    if (meditation.isPremium) return;
+
     sessionStorage.setItem('drJoePageScrollPosition', window.scrollY.toString());
 
     navigate('/app/meditation-player', {
@@ -170,7 +182,7 @@ export default function DrJoeDispenzaPage() {
 
             <button
               onClick={() => handleMeditationClick(meditations[0])}
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#89CFF0] px-6 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#6FB8E0] active:scale-95 sm:mt-8 sm:px-8 sm:py-3 sm:text-base"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[#3B1E77] shadow-lg transition-all duration-300 hover:bg-white/95 hover:shadow-xl hover:scale-105 active:scale-95 sm:mt-8 sm:px-8 sm:py-3 sm:text-base"
             >
               <Play className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" />
               Tocar
@@ -195,6 +207,7 @@ export default function DrJoeDispenzaPage() {
                 <button
                   onClick={() => handleToggleComplete(meditation.id)}
                   className="flex-shrink-0 pt-1 sm:pt-0"
+                  disabled={meditation.isPremium}
                 >
                   {meditation.completed ? (
                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#89CFF0] sm:h-8 sm:w-8">
@@ -207,12 +220,20 @@ export default function DrJoeDispenzaPage() {
 
                 <button
                   onClick={() => handleMeditationClick(meditation)}
-                  className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0"
+                  disabled={meditation.isPremium}
+                  className={`flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 ${
+                    meditation.isPremium ? 'cursor-not-allowed' : ''
+                  }`}
                 >
                   <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-[var(--eco-text)] sm:text-base">
-                      {meditation.title}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-[var(--eco-text)] sm:text-base">
+                        {meditation.title}
+                      </h3>
+                      {meditation.isPremium && (
+                        <Lock className="h-3.5 w-3.5 text-[var(--eco-muted)] sm:h-4 sm:w-4" />
+                      )}
+                    </div>
                     <p className="mt-0.5 text-xs text-[var(--eco-muted)] sm:mt-1 sm:text-sm">
                       {meditation.description}
                     </p>
@@ -222,8 +243,12 @@ export default function DrJoeDispenzaPage() {
                     <span className="text-xs text-[var(--eco-muted)] sm:text-sm">
                       {meditation.duration}
                     </span>
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#89CFF0]/10 sm:h-10 sm:w-10">
-                      <Play className="h-4 w-4 text-[#89CFF0] sm:h-5 sm:w-5" fill="currentColor" />
+                    <div className={`flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10 ${
+                      meditation.isPremium ? 'bg-gray-200' : 'bg-[#89CFF0]/10'
+                    }`}>
+                      <Play className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                        meditation.isPremium ? 'text-gray-400' : 'text-[#89CFF0]'
+                      }`} fill="currentColor" />
                     </div>
                   </div>
                 </button>
