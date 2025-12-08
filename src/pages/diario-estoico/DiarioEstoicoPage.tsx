@@ -220,13 +220,21 @@ const getAvailableMaxims = (): DailyMaxim[] => {
 
   // Filtrar reflexões válidas para dezembro (mês 11)
   if (currentMonth === 11) { // Dezembro
-    // Mostrar reflexões de 8 até o dia atual
+    // Calcular os 3 dias: hoje, ontem e anteontem
+    const threeDaysAgo = currentDay - 2;
+
+    // Filtrar reflexões para esses 3 dias específicos
     const validReflections = ALL_DAILY_MAXIMS.filter(
-      maxim => maxim.month === 'dezembro' && maxim.dayNumber >= 8 && maxim.dayNumber <= currentDay
+      maxim =>
+        maxim.month === 'dezembro' &&
+        maxim.dayNumber >= threeDaysAgo &&
+        maxim.dayNumber <= currentDay &&
+        maxim.dayNumber >= 8 && // Garantir que não mostre antes do dia 8
+        maxim.dayNumber <= 27  // Garantir que não mostre depois do dia 27
     );
 
-    // Retornar os últimos 3 dias (ou menos se não houver 3)
-    return validReflections.slice(-3).sort((a, b) => a.dayNumber - b.dayNumber);
+    // Retornar ordenado por data crescente
+    return validReflections.sort((a, b) => a.dayNumber - b.dayNumber);
   }
 
   // Se não for dezembro, retornar array vazio (trigger fallback)
