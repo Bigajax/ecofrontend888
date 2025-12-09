@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play } from 'lucide-react';
+import { Play, Lock } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
+import { useProgram } from '@/contexts/ProgramContext';
 
 interface Meditation {
   id: string;
@@ -18,10 +19,21 @@ interface Meditation {
 
 export default function ProgramasPage() {
   const navigate = useNavigate();
+  const { startProgram } = useProgram();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
 
   // Meditações (mesmas do HomePage)
   const meditations: Meditation[] = useMemo(() => [
+    {
+      id: 'blessing_9',
+      title: 'Quem Pensa Enriquece',
+      description: 'Transforme seu mindset financeiro',
+      duration: '25 min',
+      image: 'url("/images/quem-pensa-enriquece.webp")',
+      gradient: 'linear-gradient(to bottom, #1E3A5F 0%, #2C5282 20%, #3B6BA5 40%, #4A84C8 60%, #5A9DEB 80%, #6BB6FF 100%)',
+      isPremium: true,
+      category: 'Programas',
+    },
     {
       id: 'blessing_1',
       title: 'Meditação Bênção dos centros de energia',
@@ -66,7 +78,7 @@ export default function ProgramasPage() {
       image: 'url("/images/caleidoscopio-mind-movie.png")',
       imagePosition: 'center center',
       gradient: 'linear-gradient(to bottom, #B494D4 0%, #A07DC4 20%, #8D67B5 40%, #7A52A6 60%, #673E97 80%, #542B88 100%)',
-      isPremium: false,
+      isPremium: true,
       category: 'Dr. Joe Dispenza',
     },
     {
@@ -102,7 +114,7 @@ export default function ProgramasPage() {
       image: 'url("/images/meditacao-introducao.webp")',
       imagePosition: 'center 32%',
       gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
-      isPremium: false,
+      isPremium: true,
       category: 'Introdução',
     },
     {
@@ -135,7 +147,8 @@ export default function ProgramasPage() {
     );
 
     const transformacao = meditations.filter(m =>
-      m.id === 'blessing_3' // Recondicionar o corpo
+      m.id === 'blessing_3' || // Recondicionar o corpo
+      m.id === 'blessing_9'    // Quem Pensa Enriquece
     );
 
     const energia = meditations.filter(m =>
@@ -181,13 +194,35 @@ export default function ProgramasPage() {
   }, [meditations, selectedCategory]);
 
   const handleMeditationClick = (meditationId: string) => {
+    const meditation = meditations.find(m => m.id === meditationId);
+
+    // Verificar se é premium e bloquear
+    if (meditation?.isPremium) {
+      return;
+    }
+
+    // Quem Pensa Enriquece - navega para sua própria página
+    if (meditationId === 'blessing_9') {
+      startProgram({
+        id: 'blessing_9',
+        title: 'Quem Pensa Enriquece',
+        description: 'Transforme seu mindset financeiro',
+        currentLesson: 'Passo 1: Onde você está',
+        progress: 0,
+        duration: '25 min',
+        startedAt: new Date().toISOString(),
+        lastAccessedAt: new Date().toISOString(),
+      });
+      navigate('/app/riqueza-mental');
+      return;
+    }
+
     // Programa do Caleidoscópio navega para sua própria página
     if (meditationId === 'blessing_4') {
       navigate('/app/programas/caleidoscopio-mind-movie');
       return;
     }
 
-    const meditation = meditations.find(m => m.id === meditationId);
     if (meditation) {
       navigate('/app/meditation-player', {
         state: {
@@ -249,16 +284,23 @@ export default function ProgramasPage() {
                 <button
                   key={meditation.id}
                   onClick={() => handleMeditationClick(meditation.id)}
-                  className="group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 touch-manipulation"
+                  disabled={meditation.isPremium}
+                  className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 ${
+                    meditation.isPremium
+                      ? 'cursor-not-allowed'
+                      : 'md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 cursor-pointer'
+                  } touch-manipulation`}
                   style={{
                     backgroundImage: meditation.image,
                     backgroundSize: 'cover',
                     backgroundPosition: meditation.imagePosition || 'center',
                     minHeight: '220px',
+                    opacity: 1,
+                    filter: 'none',
                   }}
                 >
                   {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#2B8FCC]/70 via-[#4BA8E0]/30 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
                   {/* Hover overlay - darken on hover */}
                   <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/20 transition-all duration-300" />
@@ -268,19 +310,24 @@ export default function ProgramasPage() {
                     {/* Top: Duration Badge and Category Badge */}
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[#2B8FCC]/50 px-3 py-1.5 backdrop-blur-md">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-black/50 px-3 py-1.5 backdrop-blur-md">
                           <span className="text-[11px] font-medium text-white">
                             {meditation.duration}
                           </span>
                         </span>
                         {meditation.category && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#2B8FCC]/50 px-3 py-1.5 backdrop-blur-md">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-black/50 px-3 py-1.5 backdrop-blur-md">
                             <span className="text-[11px] font-medium text-white">
                               {meditation.category}
                             </span>
                           </span>
                         )}
                       </div>
+                      {meditation.isPremium && (
+                        <div className="flex items-center justify-center rounded-full bg-black/50 p-1.5 backdrop-blur-md">
+                          <Lock size={14} className="text-white" />
+                        </div>
+                      )}
                     </div>
 
                     {/* Bottom: Title, Description, Play Button */}
