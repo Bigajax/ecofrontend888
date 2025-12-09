@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { useRings } from '@/contexts/RingsContext';
 import { useProgram } from '@/contexts/ProgramContext';
 import { RINGS_ARRAY } from '@/constants/rings';
@@ -74,7 +75,30 @@ export default function DailyRitual() {
 
   return (
     <div className="min-h-screen bg-white font-primary">
-      <div className="mx-auto max-w-2xl px-4 py-12 md:px-8 md:py-16">
+      <div className="mx-auto max-w-2xl px-4 py-8 md:px-8 md:py-12">
+        {/* Back Button - Top left no flow normal */}
+        <div className="mb-8">
+          <button
+            onClick={() => {
+              // Save current progress before leaving
+              if (ongoingProgram?.id === 'rec_1' && currentStep > 0) {
+                const progressPercentage = Math.round(((currentStep + 1) / RINGS_ARRAY.length) * 100);
+                const ringName = RINGS_ARRAY[currentStep]?.displayName || `Anel ${currentStep + 1}`;
+                updateProgress(progressPercentage, `Ritual Pausado no ${ringName}`);
+              }
+
+              if (currentStep > 0) {
+                setCurrentStep(currentStep - 1);
+              } else {
+                navigate('/app/rings');
+              }
+            }}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--eco-text)] shadow-md border border-[var(--eco-line)] transition-all hover:bg-gray-50 hover:shadow-lg active:scale-95"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        </div>
+
         {/* Progress bar */}
         <div className="mb-12">
           <div className="flex gap-2">
@@ -121,29 +145,6 @@ export default function DailyRitual() {
           isLoading={isCompleting}
           existingAnswer={currentRitual.answers.find((a) => a.ringId === ring.id)}
         />
-
-        {/* Navigation buttons */}
-        <div className="mt-8 flex gap-3">
-          <button
-            onClick={() => {
-              // Save current progress before leaving
-              if (ongoingProgram?.id === 'rec_1' && currentStep > 0) {
-                const progressPercentage = Math.round(((currentStep + 1) / RINGS_ARRAY.length) * 100);
-                const ringName = RINGS_ARRAY[currentStep]?.displayName || `Anel ${currentStep + 1}`;
-                updateProgress(progressPercentage, `Ritual Pausado no ${ringName}`);
-              }
-
-              if (currentStep > 0) {
-                setCurrentStep(currentStep - 1);
-              } else {
-                navigate('/app/rings');
-              }
-            }}
-            className="rounded-lg border border-[var(--eco-line)] bg-white px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)] active:translate-y-0"
-          >
-            Voltar
-          </button>
-        </div>
 
         {/* Progress indicator at bottom */}
         <div className="mt-12 flex justify-center gap-2">

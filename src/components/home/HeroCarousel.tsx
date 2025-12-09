@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, MoreHorizontal, BookOpen } from 'lucide-react';
 import EcoBubbleOneEye from '@/components/EcoBubbleOneEye';
@@ -61,8 +61,14 @@ export default function HeroCarousel({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
+  const [progress, setProgress] = useState(0);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const SLIDE_DURATION = 5000; // 5 segundos por slide
+  const PROGRESS_INTERVAL = 50; // Atualizar barra a cada 50ms
 
   // Compute slides array based on variant
   const slides = CAROUSEL_ITEMS;
@@ -72,13 +78,55 @@ export default function HeroCarousel({
     setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? totalSlides - 1 : prevIndex - 1
     );
+    setProgress(0);
+    resetTimer();
   };
 
   const goToNext = () => {
     setCurrentIndex((prevIndex) =>
       prevIndex === totalSlides - 1 ? 0 : prevIndex + 1
     );
+    setProgress(0);
   };
+
+  const goToSlide = (index: number) => {
+    setCurrentIndex(index);
+    setProgress(0);
+    resetTimer();
+  };
+
+  const resetTimer = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    startTimer();
+  };
+
+  const startTimer = () => {
+    intervalRef.current = setInterval(() => {
+      goToNext();
+    }, SLIDE_DURATION);
+
+    progressIntervalRef.current = setInterval(() => {
+      setProgress((prev) => {
+        const increment = (PROGRESS_INTERVAL / SLIDE_DURATION) * 100;
+        if (prev + increment >= 100) return 100;
+        return prev + increment;
+      });
+    }, PROGRESS_INTERVAL);
+  };
+
+  useEffect(() => {
+    startTimer();
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    setProgress(0);
+  }, [currentIndex]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -245,24 +293,23 @@ export default function HeroCarousel({
         {renderSlideContent()}
       </div>
 
-      {/* Pagination Dots - Apple-style minimal design */}
-      <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 z-20 flex items-center justify-center gap-1.5">
+      {/* Barra de Progresso Ultra Minimalista */}
+      <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 w-24 sm:w-32">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={(e) => {
               e.stopPropagation();
-              setCurrentIndex(index);
+              goToSlide(index);
             }}
-            className="touch-manipulation p-2"
+            className="flex-1 h-[2px] bg-white/20 rounded-full overflow-hidden transition-all duration-200 hover:bg-white/30 touch-manipulation"
             aria-label={`Ir para slide ${index + 1}`}
           >
             <div
-              className={`rounded-full transition-all duration-300 ${
-                currentIndex === index
-                  ? 'h-1.5 w-1.5 bg-white opacity-100'
-                  : 'h-1.5 w-1.5 bg-white opacity-30'
-              }`}
+              className="h-full bg-white rounded-full transition-all duration-100 ease-linear"
+              style={{
+                width: index === currentIndex ? `${progress}%` : index < currentIndex ? '100%' : '0%',
+              }}
             />
           </button>
         ))}
