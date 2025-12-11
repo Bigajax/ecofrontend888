@@ -435,7 +435,7 @@ export default function HomePage() {
           {/* Desktop: Grid 2 colunas com mesma altura */}
           <div className="hidden gap-6 md:grid md:grid-cols-2">
             {/* Left Card - Greeting */}
-            <div className="flex flex-col justify-center rounded-2xl border border-[var(--eco-line)] bg-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)] md:h-[260px]">
+            <div className="flex flex-col justify-center rounded-2xl border border-[var(--eco-line)] bg-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)] md:h-[320px]">
               <h1 className="font-display text-6xl font-bold text-[var(--eco-text)]">
                 {greeting},
                 <br />

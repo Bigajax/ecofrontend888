@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, MoreHorizontal, BookOpen } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import EcoBubbleOneEye from '@/components/EcoBubbleOneEye';
 
 interface CarouselItem {
@@ -59,6 +60,7 @@ export default function HeroCarousel({
 }: HeroCarouselProps = {}) {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState<'left' | 'right'>('right');
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -70,11 +72,40 @@ export default function HeroCarousel({
   const SLIDE_DURATION = 5000; // 5 segundos por slide
   const PROGRESS_INTERVAL = 50; // Atualizar barra a cada 50ms
 
+  // Animation variants for smooth transitions
+  const slideVariants = {
+    enter: (direction: 'left' | 'right') => ({
+      x: direction === 'right' ? '100%' : '-100%',
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: 'left' | 'right') => ({
+      x: direction === 'right' ? '-100%' : '100%',
+      opacity: 0,
+    }),
+  };
+
+  const fadeVariants = {
+    enter: {
+      opacity: 0,
+    },
+    center: {
+      opacity: 1,
+    },
+    exit: {
+      opacity: 0,
+    },
+  };
+
   // Compute slides array based on variant
   const slides = CAROUSEL_ITEMS;
   const totalSlides = slides.length;
 
   const goToPrevious = () => {
+    setDirection('left');
     setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? totalSlides - 1 : prevIndex - 1
     );
@@ -83,13 +114,16 @@ export default function HeroCarousel({
   };
 
   const goToNext = () => {
+    setDirection('right');
     setCurrentIndex((prevIndex) =>
       prevIndex === totalSlides - 1 ? 0 : prevIndex + 1
     );
     setProgress(0);
+    resetTimer();
   };
 
   const goToSlide = (index: number) => {
+    setDirection(index > currentIndex ? 'right' : 'left');
     setCurrentIndex(index);
     setProgress(0);
     resetTimer();
@@ -243,7 +277,7 @@ export default function HeroCarousel({
 
   return (
     <div
-      className={`group relative h-[260px] overflow-hidden select-none ${
+      className={`group relative h-[280px] sm:h-[320px] overflow-hidden select-none ${
         variant === 'mobile'
           ? 'rounded-none border-0'
           : 'rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]'
@@ -253,45 +287,66 @@ export default function HeroCarousel({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Background - video or animated image with drag effect */}
-      <div
-        className="absolute inset-0"
-        style={{
-          transform: `translateX(${dragOffset}px)`,
-          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
-      >
-        {CAROUSEL_ITEMS[currentIndex].video ? (
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 h-full w-full object-cover"
-          >
-            <source src={CAROUSEL_ITEMS[currentIndex].video} type="video/mp4" />
-          </video>
-        ) : (
-          <div
-            className="absolute inset-0 animate-ken-burns bg-cover bg-center"
-            style={{
-              backgroundImage: CAROUSEL_ITEMS[currentIndex].background,
-            }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
-      </div>
+      {/* Background - video or animated image with smooth transitions */}
+      <AnimatePresence initial={false} custom={direction} mode="wait">
+        <motion.div
+          key={`bg-${currentIndex}`}
+          custom={direction}
+          variants={fadeVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{
+            opacity: { duration: 0.5, ease: 'easeInOut' },
+          }}
+          className="absolute inset-0"
+          style={{
+            transform: isDragging ? `translateX(${dragOffset}px)` : undefined,
+          }}
+        >
+          {CAROUSEL_ITEMS[currentIndex].video ? (
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 h-full w-full object-cover"
+            >
+              <source src={CAROUSEL_ITEMS[currentIndex].video} type="video/mp4" />
+            </video>
+          ) : (
+            <div
+              className="absolute inset-0 animate-ken-burns bg-cover bg-center"
+              style={{
+                backgroundImage: CAROUSEL_ITEMS[currentIndex].background,
+              }}
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
+        </motion.div>
+      </AnimatePresence>
 
-      {/* Content with drag effect */}
-      <div
-        className="relative z-10 flex h-full flex-col"
-        style={{
-          transform: `translateX(${dragOffset}px)`,
-          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
-      >
-        {renderSlideContent()}
-      </div>
+      {/* Content with smooth slide transitions */}
+      <AnimatePresence initial={false} custom={direction} mode="wait">
+        <motion.div
+          key={`content-${currentIndex}`}
+          custom={direction}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{
+            x: { type: 'spring', stiffness: 300, damping: 30 },
+            opacity: { duration: 0.3 },
+          }}
+          className="relative z-10 flex h-full flex-col"
+          style={{
+            transform: isDragging ? `translateX(${dragOffset}px)` : undefined,
+          }}
+        >
+          {renderSlideContent()}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Barra de Progresso Ultra Minimalista */}
       <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 w-24 sm:w-32">

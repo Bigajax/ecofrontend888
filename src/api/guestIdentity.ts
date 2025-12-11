@@ -148,6 +148,21 @@ export const removePersistedGuestId = () => {
   clearGuestId();
 };
 
+/**
+ * Read guest ID without creating it.
+ * Returns null if no guest ID exists.
+ * Use this in API clients to avoid auto-creating guest IDs.
+ */
+export const readGuestId = (): string | null => {
+  const existing = readPersistedGuestId();
+  return existing;
+};
+
+/**
+ * Get or create guest ID.
+ * IMPORTANT: This should ONLY be called from AuthContext.loginAsGuest()
+ * to ensure guest mode is activated explicitly and intentionally.
+ */
 export const getOrCreateGuestId = (): string => {
   const existing = readPersistedGuestId();
   if (existing) return existing;

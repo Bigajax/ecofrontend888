@@ -18,7 +18,34 @@ const loadingSkeleton = (
 );
 
 const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
-  // Always allow access immediately - supports both authenticated and guest users
+  const { user, loading, isGuestMode } = useAuth();
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
+
+  useEffect(() => {
+    if (loading) {
+      setAuthStatus('loading');
+      return;
+    }
+
+    // Allow access if user is authenticated OR in guest mode
+    if (user || isGuestMode) {
+      setAuthStatus('authenticated');
+    } else {
+      setAuthStatus('unauthenticated');
+    }
+  }, [user, loading, isGuestMode]);
+
+  // Show loading skeleton while checking auth
+  if (authStatus === 'loading') {
+    return loadingSkeleton;
+  }
+
+  // Redirect to login if not authenticated and not in guest mode
+  if (authStatus === 'unauthenticated') {
+    return <Navigate to="/login" replace />;
+  }
+
+  // User is authenticated or in guest mode - allow access
   return <>{children}</>;
 };
 

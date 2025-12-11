@@ -5,6 +5,7 @@ import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import mixpanel from '../lib/mixpanel';
 import { clearGuestStorage } from '../hooks/useGuestGate';
 import { isStreamActive, onStreamActivityChange } from '../hooks/useEcoStream/streamStatus';
+import { getOrCreateGuestId, readPersistedGuestId } from '../api/guestIdentity';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
@@ -14,10 +15,13 @@ interface AuthContextType {
   loading: boolean;
   userId?: string;
   userName?: string;
+  isGuestMode: boolean;
+  guestId: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   register: (email: string, password: string, nome: string, telefone: string) => Promise<void>;
+  loginAsGuest: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -138,6 +142,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Guest mode state - persisted in localStorage
+  const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return localStorage.getItem('eco.auth.guestMode') === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  const [guestId, setGuestId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const guestModeActive = localStorage.getItem('eco.auth.guestMode') === '1';
+      if (guestModeActive) {
+        return readPersistedGuestId();
+      }
+    } catch {
+      // Ignore errors
+    }
+    return null;
+  });
+
   useEffect(() => {
     let mounted = true;
 
@@ -235,6 +262,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+
+      // Clear guest mode on successful login
+      setIsGuestMode(false);
+      setGuestId(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('eco.auth.guestMode');
+      }
     } finally {
       setLoading(false);
     }
@@ -258,6 +292,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) throw error;
+
+      // Clear guest mode on successful OAuth login
+      setIsGuestMode(false);
+      setGuestId(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('eco.auth.guestMode');
+      }
     } catch (err) {
       setLoading(false);
       throw err;
@@ -278,6 +319,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearGuestStorage();
       persistAuthToken(null);
 
+      // Clear guest mode
+      setIsGuestMode(false);
+      setGuestId(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('eco.auth.guestMode');
+      }
+
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } finally {
@@ -285,6 +333,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearClientState();
       clearGuestStorage();
       persistAuthToken(null);
+
+      // Clear guest mode (fallback)
+      setIsGuestMode(false);
+      setGuestId(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('eco.auth.guestMode');
+      }
+
       if (typeof mixpanel.unregister_all === 'function') {
         mixpanel.unregister_all();
       }
@@ -298,6 +354,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const lastIdentitySignatureRef = useRef<string | null>(null);
+
+  // Sync guest mode across tabs via storage events
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'eco.auth.guestMode') {
+        const newValue = e.newValue === '1';
+        setIsGuestMode(newValue);
+
+        if (newValue) {
+          // Guest mode was activated in another tab
+          const persistedGuestId = readPersistedGuestId();
+          setGuestId(persistedGuestId);
+        } else {
+          // Guest mode was cleared in another tab
+          setGuestId(null);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -319,6 +399,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     lastIdentitySignatureRef.current = signature;
     syncMixpanelIdentity(user);
   }, [user?.id, user?.email, user?.user_metadata?.full_name, user?.user_metadata?.name]);
+
+  const loginAsGuest = async () => {
+    // Already authenticated? Nothing to do
+    if (user) {
+      console.info('[Auth] Already authenticated, skipping guest mode');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Create guest ID (ONLY place where this happens intentionally)
+      const newGuestId = getOrCreateGuestId();
+
+      // Activate guest mode
+      setIsGuestMode(true);
+      setGuestId(newGuestId);
+
+      // Persist to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('eco.auth.guestMode', '1');
+      }
+
+      // Track analytics
+      mixpanel.identify(`guest_${newGuestId}`);
+      mixpanel.track('Guest Mode Activated', {
+        guestId: newGuestId,
+        timestamp: new Date().toISOString(),
+      });
+
+      console.info('[Auth] Guest mode activated', { guestId: newGuestId });
+    } catch (error) {
+      console.error('[Auth] Failed to activate guest mode:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const register = async (email: string, password: string, nome: string, telefone: string) => {
     const { data, error } = await supabase.auth.signUp({
@@ -354,10 +471,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         userId: user?.id,
         userName: user?.user_metadata?.full_name || user?.user_metadata?.name,
+        isGuestMode,
+        guestId,
         signIn,
         signInWithGoogle,
         signOut,
         register,
+        loginAsGuest,
       }}
     >
       {children}

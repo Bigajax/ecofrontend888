@@ -83,16 +83,22 @@ import App from './App';
 import './index.css';
 import './eco-design-system.css';
 
-import { getOrCreateGuestId, getOrCreateSessionId } from './utils/identity';
+import { getOrCreateSessionId } from './utils/identity';
 
 import { initFacebookPixel } from './lib/fbpixel';
 import { syncEcoStorageDomain } from './utils/ecoStorage';
 
-// Garante que guest_id e session_id existam antes de qualquer requisição
+// Sync storage domain (for cookies/localStorage compatibility)
 syncEcoStorageDomain();
-const guestId = getOrCreateGuestId();
+
+// Session ID is still created on bootstrap (per-session identifier)
 const sessionId = getOrCreateSessionId();
-console.info('[IDENTITY]', { guestId, sessionId });
+console.info('[IDENTITY] Session initialized', { sessionId });
+
+// IMPORTANT: Guest ID is NO LONGER created automatically on bootstrap.
+// Guest mode is now activated explicitly when user completes the tour
+// by clicking "Criar minha nova realidade" button in HomePageTour.tsx
+// This ensures guest mode is intentional, not automatic.
 
 // inicia o Pixel uma única vez
 initFacebookPixel();

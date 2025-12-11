@@ -82,15 +82,16 @@ type BehaviorHintMetrics = {
 function ChatPage() {
   const { messages, upsertMessage, setMessages, clearMessages } = useChat();
   const auth = useAuth();
-  const { userId, userName: rawUserName = 'Usuário', user } = auth;
+  const { userId, userName: rawUserName = 'Usuário', user, isGuestMode, guestId } = auth;
   const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
 
   const [sessaoId] = useState(() => ensureSessionId());
   const [sidebarOpen, setSidebarOpen] = useState(false);
   useAdminCommands(user, sessaoId);
-  const isGuest = !user;
-  const guestGate = useGuestGate(isGuest);
+  // Use explicit guest mode flag instead of implicit !user check
+  const isGuest = isGuestMode && !user;
+  const guestGate = useGuestGate(!user, isGuestMode);
   const [loginGateOpen, setLoginGateOpen] = useState(false);
   const [isComposerSending, setIsComposerSending] = useState(false);
   const [composerValue, setComposerValue] = useState('');

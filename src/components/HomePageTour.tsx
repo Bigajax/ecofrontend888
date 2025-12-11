@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft, Sparkles, Check, Lock, Zap, Heart } from 'lucide-react';
 import { useHomePageTour } from '@/hooks/useHomePageTour';
+import { useAuth } from '@/contexts/AuthContext';
 import EcoBubbleOneEye from './EcoBubbleOneEye';
 import mixpanel from '@/lib/mixpanel';
 
@@ -18,6 +19,7 @@ interface HomePageTourProps {
 
 export default function HomePageTour({ onClose, reason, nextPath, onBeforeNavigate, forceStart }: HomePageTourProps) {
   const navigate = useNavigate();
+  const { loginAsGuest } = useAuth();
   const {
     isActive,
     step,
@@ -67,14 +69,23 @@ export default function HomePageTour({ onClose, reason, nextPath, onBeforeNaviga
     onClose();
   }, [skipTourInternal, onClose, step?.id]);
 
-  const handleComplete = useCallback(() => {
+  const handleComplete = useCallback(async () => {
     mixpanel.track('Front-end: Tour Concluído');
     completeTourInternal();
 
     try {
+      // CRITICAL: Activate guest mode BEFORE navigation
+      // This is the ONLY place where guest mode should be activated
+      await loginAsGuest();
+
       onBeforeNavigate?.();
     } catch (error) {
-      console.error('[HomePageTour] Error in onBeforeNavigate:', error);
+      console.error('[HomePageTour] Error activating guest mode:', error);
+      // Fallback: redirect to login if guest mode activation fails
+      if (typeof navigate === 'function') {
+        navigate('/login', { replace: true });
+        return;
+      }
     }
 
     // Always default to /app for guest flow, even if nextPath is /
@@ -88,7 +99,7 @@ export default function HomePageTour({ onClose, reason, nextPath, onBeforeNaviga
     if (typeof window !== 'undefined') {
       window.location.assign(targetPath);
     }
-  }, [completeTourInternal, navigate, nextPath, onBeforeNavigate]);
+  }, [completeTourInternal, navigate, nextPath, onBeforeNavigate, loginAsGuest]);
 
   const handleStartChat = useCallback(() => {
     handleComplete();

@@ -51,7 +51,8 @@ import {
 import { rememberGuestIdentityFromResponse, rememberSessionIdentityFromResponse } from "../../lib/guestId";
 import { setStreamActive } from "./streamStatus";
 import { NO_TEXT_ALERT_MESSAGE, showToast } from "../useEcoStream.helpers";
-import { getOrCreateGuestId, getOrCreateSessionId, rememberIdsFromResponse } from "@/utils/identity";
+import { getOrCreateSessionId, rememberIdsFromResponse } from "@/utils/identity";
+import { readGuestId } from "@/api/guestIdentity";
 import {
   onControl,
   onDone,
@@ -1204,7 +1205,8 @@ const createFallbackOrchestration = (): FallbackOrchestration => {
 
             // ✅ CONTRATO: SSE usa GET com query parameters (Seção 2)
             const sseUrl = new URL(requestUrl);
-            sseUrl.searchParams.set('guest_id', getOrCreateGuestId() || '');
+            // Read guest ID without creating it (may be empty if not in guest mode)
+            sseUrl.searchParams.set('guest_id', readGuestId() || '');
             sseUrl.searchParams.set('session_id', getOrCreateSessionId() || '');
 
             // ⚠️ OBRIGATÓRIO: incluir mensagem (contrato linha 26)

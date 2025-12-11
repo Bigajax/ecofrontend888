@@ -1,5 +1,6 @@
 import { resolveApiUrl, API_BASE_URL } from "@/constants/api";
-import { getOrCreateGuestId, getOrCreateSessionId } from "@/utils/identity";
+import { getOrCreateSessionId } from "@/utils/identity";
+import { readGuestId } from "./guestIdentity";
 
 export const ASK_ECO_ENDPOINT_PATH = "/api/ask-eco" as const;
 
@@ -50,7 +51,8 @@ export const buildAskEcoUrl = (
 
 // Nova função para construir headers
 export const buildAskEcoHeaders = (clientMessageId?: string) => {
-  const guestId = getOrCreateGuestId();
+  // Read guest ID without creating it (may be null if not in guest mode)
+  const guestId = readGuestId();
   const sessionId = getOrCreateSessionId();
 
   return {

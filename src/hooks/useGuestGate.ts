@@ -65,10 +65,12 @@ function write(key: string, value: string) {
   }
 }
 
-export function useGuestGate(isLogged: boolean) {
-  // guestId
+export function useGuestGate(isLogged: boolean, isGuestMode: boolean = false) {
+  // guestId - only create if explicitly in guest mode
   const [guestId, setGuestId] = useState<string | null>(() => {
     if (isLogged || !hasWindow) return null;
+    // CRITICAL: Only create guest ID if explicitly in guest mode
+    if (!isGuestMode) return null;
     try {
       return getOrCreateGuestId();
     } catch {
@@ -89,17 +91,24 @@ export function useGuestGate(isLogged: boolean) {
   useEffect(() => {
     if (!hasWindow) return;
     if (isLogged) {
+      // User is logged in - clear all guest data
       clearGuestStorage();
       setGuestId(null);
       setCount(0);
       setInputDisabled(false);
-    } else {
+    } else if (isGuestMode) {
+      // Explicitly in guest mode - create/restore guest ID
       setGuestId(getOrCreateGuestId());
       // reidrata caso tenha sido limpo em outra aba
       setCount(readInt(STORAGE.COUNT, 0));
       setInputDisabled(readBool(STORAGE.INPUT_DISABLED, false));
+    } else {
+      // Not logged in and not in guest mode - clear everything
+      setGuestId(null);
+      setCount(0);
+      setInputDisabled(false);
     }
-  }, [isLogged]);
+  }, [isLogged, isGuestMode]);
 
   // persiste mudanças locais
   useEffect(() => {

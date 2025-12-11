@@ -7,7 +7,7 @@ import EstatisticasTotais from '@/components/settings/EstatisticasTotais';
 import Favoritos from '@/components/settings/Favoritos';
 
 export default function ConfiguracoesPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isGuestMode } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [selectedMenu, setSelectedMenu] = useState('configuracoes');
@@ -20,9 +20,9 @@ export default function ConfiguracoesPage() {
 
   // Dados do usuário (mock - depois integrar com API)
   const [formData, setFormData] = useState({
-    nome: user?.user_metadata?.full_name || 'Rafael Barbon',
-    email: user?.email || 'rafael.r.barbon@gmail.com',
-    dataNascimento: 'December 31, 1969'
+    nome: user?.user_metadata?.full_name || (isGuestMode ? 'Convidado' : 'Usuário'),
+    email: user?.email || (isGuestMode ? '' : ''),
+    dataNascimento: user?.user_metadata?.birth_date || ''
   });
 
   const menuItems = [
@@ -95,15 +95,17 @@ export default function ConfiguracoesPage() {
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#6EC8FF] to-[#4BA8E0] text-white text-2xl font-bold">
-                {user?.user_metadata?.full_name?.charAt(0) || 'U'}
+                {user?.user_metadata?.full_name?.charAt(0) || (isGuestMode ? 'C' : 'U')}
               </div>
             )}
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              {user?.user_metadata?.full_name || 'Rafael Barbon'}
+              {user?.user_metadata?.full_name || (isGuestMode ? 'Convidado' : 'Usuário')}
             </h1>
-            <p className="text-sm text-gray-500">@LhBdamsR</p>
+            <p className="text-sm text-gray-500">
+              {isGuestMode ? 'Modo convidado' : user?.email?.split('@')[0] || '@usuario'}
+            </p>
           </div>
         </div>
 
@@ -146,6 +148,22 @@ export default function ConfiguracoesPage() {
                 <>
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Configurações</h2>
 
+                  {/* Guest mode warning */}
+                  {isGuestMode && (
+                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                      <p className="text-sm text-blue-800">
+                        <strong>Modo convidado:</strong> Você está usando o ECO como convidado.
+                        <button
+                          onClick={() => navigate('/register')}
+                          className="ml-1 underline font-semibold hover:text-blue-900"
+                        >
+                          Crie uma conta
+                        </button>
+                        {' '}para salvar suas informações e acessar todos os recursos.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="space-y-6">
                     {/* Section Title */}
                     <div>
@@ -162,7 +180,9 @@ export default function ConfiguracoesPage() {
                             type="text"
                             value={formData.nome}
                             onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent transition-all"
+                            disabled={isGuestMode}
+                            placeholder={isGuestMode ? "Disponível apenas para usuários registrados" : ""}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                           />
                         </div>
 
@@ -173,7 +193,9 @@ export default function ConfiguracoesPage() {
                             type="email"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent transition-all"
+                            disabled={isGuestMode}
+                            placeholder={isGuestMode ? "Disponível apenas para usuários registrados" : ""}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                           />
                         </div>
 
@@ -184,19 +206,30 @@ export default function ConfiguracoesPage() {
                             type="text"
                             value={formData.dataNascimento}
                             onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent transition-all"
+                            disabled={isGuestMode}
+                            placeholder={isGuestMode ? "Disponível apenas para usuários registrados" : ""}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* Update Button */}
-                    <button
-                      onClick={handleUpdate}
-                      className="px-8 py-3 bg-[#6EC8FF] text-white font-medium rounded-full hover:bg-[#4BA8E0] transition-colors shadow-md hover:shadow-lg active:scale-95"
-                    >
-                      Atualizar
-                    </button>
+                    {isGuestMode ? (
+                      <button
+                        onClick={() => navigate('/register')}
+                        className="px-8 py-3 bg-[#6EC8FF] text-white font-medium rounded-full hover:bg-[#4BA8E0] transition-colors shadow-md hover:shadow-lg active:scale-95"
+                      >
+                        Criar conta gratuita
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleUpdate}
+                        className="px-8 py-3 bg-[#6EC8FF] text-white font-medium rounded-full hover:bg-[#4BA8E0] transition-colors shadow-md hover:shadow-lg active:scale-95"
+                      >
+                        Atualizar
+                      </button>
+                    )}
                   </div>
                 </>
               )}

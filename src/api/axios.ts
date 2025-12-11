@@ -2,7 +2,9 @@ import axios from "axios";
 
 import { getApiBase } from "../config/apiBase";
 import { buildIdentityHeaders, syncGuestId } from "../lib/guestId";
-import { getOrCreateGuestId, getOrCreateSessionId } from "@/utils/identity";
+import { getOrCreateSessionId } from "@/utils/identity";
+import { readGuestId } from "./guestIdentity";
+
 const api = axios.create({
   baseURL: getApiBase(),
   timeout: 60000,
@@ -12,7 +14,8 @@ const api = axios.create({
   },
 });
 
-const defaultGuestId = getOrCreateGuestId();
+// Read guest ID without creating it (may be null if not in guest mode)
+const defaultGuestId = readGuestId() || '';
 const defaultSessionId = getOrCreateSessionId();
 
 api.defaults.headers.common["X-Eco-Guest-Id"] = defaultGuestId;

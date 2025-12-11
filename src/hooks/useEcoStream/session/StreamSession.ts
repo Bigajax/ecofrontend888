@@ -9,10 +9,10 @@ import type {
 } from "../../../contexts/ChatContext";
 import { ASK_ECO_ENDPOINT_PATH } from "@/api/askEcoUrl";
 import {
-  getOrCreateGuestId,
   getOrCreateSessionId,
   rememberIdsFromResponse,
 } from "@/utils/identity";
+import { readGuestId } from "@/api/guestIdentity";
 import { buildIdentityHeaders } from "../../../lib/guestId";
 import { sanitizeText } from "../../../utils/sanitizeText";
 import type { EnsureAssistantEventMeta, MessageTrackingRefs, ReplyStateController } from "../messageState";
@@ -605,7 +605,8 @@ export class StreamSession {
 
       const resolvedGuestId = resolveIdentityHeader("X-Eco-Guest-Id");
       const resolvedSessionId = resolveIdentityHeader("X-Eco-Session-Id");
-      const effectiveGuestId = resolvedGuestId || getOrCreateGuestId();
+      // Read guest ID without creating it (may be empty if not in guest mode)
+      const effectiveGuestId = resolvedGuestId || readGuestId() || '';
       const effectiveSessionId = resolvedSessionId || getOrCreateSessionId();
 
     const resolvedClientId = (() => {
