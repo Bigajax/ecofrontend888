@@ -167,30 +167,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    // 🛡️ PROTEÇÃO: Timeout de segurança para evitar loading infinito
+    // Se após 15s ainda estiver loading, força para unauthenticated
+    // Crítico para Safari Mobile que pode travar na busca da sessão
+    timeoutId = setTimeout(() => {
+      if (mounted && loading) {
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('[AuthProvider] ⚠️ TIMEOUT DE SEGURANÇA ATIVADO');
+        console.error('[AuthProvider] Loading estava travado há 15s');
+        console.error('[AuthProvider] Forçando loading=false para evitar tela branca');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        setLoading(false);
+        setSession(null);
+        setUser(null);
+      }
+    }, 15000); // 15 segundos máximo
 
     const getSession = async () => {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      if (error) console.error('Erro ao obter sessão:', error.message);
-      setSession(session);
-      setUser(session?.user ?? null);
-      persistAuthToken(session?.access_token ?? null);
-      setLoading(false);
+        if (error) {
+          console.error('[AuthProvider] Erro ao obter sessão:', error.message);
+          // Mesmo com erro, não pode ficar travado em loading
+          setLoading(false);
+          setSession(null);
+          setUser(null);
+          return;
+        }
 
-      if (session?.user) {
-        // logou => zera dados do modo guest
-        clearGuestStorage();
-        await safelyEnsureProfile(session.user, 'getSession');
+        setSession(session);
+        setUser(session?.user ?? null);
+        persistAuthToken(session?.access_token ?? null);
+        setLoading(false);
+
+        if (session?.user) {
+          // logou => zera dados do modo guest
+          clearGuestStorage();
+          await safelyEnsureProfile(session.user, 'getSession');
+        }
+      } catch (error) {
+        console.error('[AuthProvider] Exceção durante getSession:', error);
+        if (mounted) {
+          // Nunca deixar travado, mesmo com exceção
+          setLoading(false);
+          setSession(null);
+          setUser(null);
+        }
       }
     };
 
     getSession().catch((error) => {
       console.error('[Auth] Session bootstrap error', error);
+      if (mounted) {
+        setLoading(false);
+      }
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange(
@@ -253,6 +291,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       sub.subscription.unsubscribe();
     };
   }, []);

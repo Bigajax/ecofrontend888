@@ -83,7 +83,169 @@
   </head>
 
   <body class="min-h-viewport">
-    <div id="root"></div>
+    <div id="root">
+      <!-- 🛡️ FALLBACK DE SEGURANÇA: Mostrado se React não montar em 10s -->
+      <!-- Crítico para Safari Mobile que pode falhar ao carregar após inatividade -->
+      <div id="loading-fallback" style="
+        display: flex;
+        min-height: 100vh;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #FAF9F7 0%, #F3EEE7 100%);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+        padding: 20px;
+        box-sizing: border-box;
+      ">
+        <div style="text-align: center; max-width: 400px;">
+          <!-- Spinner -->
+          <div style="
+            margin: 0 auto 24px;
+            width: 48px;
+            height: 48px;
+            border: 4px solid #E2E8F0;
+            border-top-color: #3B82F6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          "></div>
+
+          <!-- Mensagem -->
+          <p style="
+            font-size: 16px;
+            font-weight: 500;
+            color: #475569;
+            margin: 0 0 12px;
+          ">Carregando Ecotopia...</p>
+
+          <p id="fallback-message" style="
+            font-size: 14px;
+            color: #94A3B8;
+            margin: 0;
+          ">Aguarde um momento</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Animação do spinner -->
+    <style>
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      /* Ocultar fallback quando React montar */
+      #root:not(:empty) #loading-fallback {
+        display: none !important;
+      }
+    </style>
+
+    <!-- Script de timeout de segurança -->
+    <script>
+      (function() {
+        // 🛡️ PROTEÇÃO: Se após 10s React não montou, mostrar erro amigável
+        var startTime = Date.now();
+        var fallbackShown = false;
+
+        setTimeout(function() {
+          var root = document.getElementById('root');
+          var fallback = document.getElementById('loading-fallback');
+          var fallbackMsg = document.getElementById('fallback-message');
+
+          // Se root ainda vazio ou só com fallback, significa que React não montou
+          if (root && (root.children.length <= 1 || !root.textContent.trim().replace(/\s+/g, ''))) {
+            fallbackShown = true;
+
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.error('[index.html] ⚠️ FALLBACK DE SEGURANÇA ATIVADO');
+            console.error('[index.html] React não montou após 10s');
+            console.error('[index.html] Mostrando tela de erro amigável');
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+            if (fallback) {
+              fallback.innerHTML = `
+                <div style="text-align: center; max-width: 420px; padding: 32px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+                  <!-- Ícone de Erro -->
+                  <div style="
+                    width: 64px;
+                    height: 64px;
+                    margin: 0 auto 20px;
+                    background: #FEE2E2;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 32px;
+                  ">⚠️</div>
+
+                  <h1 style="
+                    font-size: 20px;
+                    font-weight: 600;
+                    color: #1E293B;
+                    margin: 0 0 12px;
+                  ">Ops! Algo deu errado</h1>
+
+                  <p style="
+                    font-size: 14px;
+                    color: #64748B;
+                    line-height: 1.6;
+                    margin: 0 0 24px;
+                  ">
+                    O aplicativo não conseguiu carregar corretamente.
+                    ${/safari/i.test(navigator.userAgent) && !/chrome/i.test(navigator.userAgent)
+                      ? 'Isso pode acontecer no Safari após inatividade.'
+                      : 'Tente recarregar a página.'
+                    }
+                  </p>
+
+                  <!-- Botões -->
+                  <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <button onclick="window.location.reload()" style="
+                      width: 100%;
+                      padding: 14px 24px;
+                      background: #3B82F6;
+                      color: white;
+                      border: none;
+                      border-radius: 12px;
+                      font-size: 15px;
+                      font-weight: 600;
+                      cursor: pointer;
+                      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+                    ">🔄 Recarregar Página</button>
+
+                    <button onclick="localStorage.clear(); sessionStorage.clear(); window.location.href = '/login';" style="
+                      width: 100%;
+                      padding: 14px 24px;
+                      background: white;
+                      color: #64748B;
+                      border: 2px solid #E2E8F0;
+                      border-radius: 12px;
+                      font-size: 15px;
+                      font-weight: 600;
+                      cursor: pointer;
+                    ">🏠 Limpar e Ir para Login</button>
+                  </div>
+
+                  <p style="
+                    font-size: 12px;
+                    color: #94A3B8;
+                    margin: 16px 0 0;
+                  ">Tempo de espera: ${Math.round((Date.now() - startTime) / 1000)}s</p>
+                </div>
+              `;
+            }
+          }
+        }, 10000); // 10 segundos
+
+        // Listener de erros globais
+        window.addEventListener('error', function(e) {
+          console.error('[index.html] 🚨 Erro global capturado:', e.message, e.filename, e.lineno, e.colno);
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+          console.error('[index.html] 🚨 Promise rejection não tratada:', e.reason);
+        });
+      })();
+    </script>
+
     <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>

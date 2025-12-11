@@ -17,11 +17,50 @@ const loadingSkeleton = (
   </div>
 );
 
+/**
+ * RequireAuth - Componente de proteção de rotas
+ *
+ * Garante que:
+ * 1. Nunca retorna null (sempre mostra algo)
+ * 2. Tem timeout de segurança (máx 20s em loading)
+ * 3. Redireciona para login se não autenticado
+ * 4. Permite acesso se autenticado ou guest mode
+ *
+ * Crítico para Safari Mobile que pode descarregar a aba.
+ */
 const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
   const { user, loading, isGuestMode } = useAuth();
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
+  const [timedOut, setTimedOut] = useState(false);
+
+  // 🛡️ PROTEÇÃO: Timeout de segurança para evitar loading infinito
+  // Se RequireAuth ficar travado em loading, força redirect após 20s
+  useEffect(() => {
+    if (!loading) {
+      setTimedOut(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('[RequireAuth] ⚠️ TIMEOUT DE SEGURANÇA ATIVADO');
+      console.error('[RequireAuth] Loading estava travado há 20s');
+      console.error('[RequireAuth] Forçando redirect para /login');
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      setTimedOut(true);
+      setAuthStatus('unauthenticated');
+    }, 20000); // 20 segundos máximo
+
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
 
   useEffect(() => {
+    // Se timeout disparou, forçar unauthenticated
+    if (timedOut) {
+      setAuthStatus('unauthenticated');
+      return;
+    }
+
     if (loading) {
       setAuthStatus('loading');
       return;
@@ -33,8 +72,9 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
     } else {
       setAuthStatus('unauthenticated');
     }
-  }, [user, loading, isGuestMode]);
+  }, [user, loading, isGuestMode, timedOut]);
 
+  // NUNCA retorna null - sempre mostra algo
   // Show loading skeleton while checking auth
   if (authStatus === 'loading') {
     return loadingSkeleton;
@@ -42,6 +82,7 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
 
   // Redirect to login if not authenticated and not in guest mode
   if (authStatus === 'unauthenticated') {
+    console.info('[RequireAuth] Redirecionando para /login (unauthenticated)');
     return <Navigate to="/login" replace />;
   }
 

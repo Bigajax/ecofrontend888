@@ -333,18 +333,35 @@ function AppChrome() {
     }
 
     const handleWindowError = (event: ErrorEvent) => {
-      console.error("[App] window error capturado", {
-        message: event.message,
-        source: event.filename,
-        lineno: event.lineno,
-        colno: event.colno,
-        error: event.error,
-      });
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error("[App] 🚨 WINDOW ERROR CAPTURADO");
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error("[App] Mensagem:", event.message);
+      console.error("[App] Arquivo:", event.filename);
+      console.error("[App] Linha:Coluna:", `${event.lineno}:${event.colno}`);
+      console.error("[App] Erro:", event.error);
+      console.error("[App] Timestamp:", new Date().toISOString());
+      console.error("[App] User Agent:", navigator.userAgent);
+      console.error("[App] URL:", window.location.href);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
       setHasCapturedError(true);
+
+      // Se erro crítico (não pode continuar), considerar reload automático
+      const isCriticalError =
+        event.message?.includes('ChunkLoadError') ||
+        event.message?.includes('Failed to fetch') ||
+        event.message?.includes('Loading chunk');
+
+      if (isCriticalError) {
+        console.error("[App] ⚠️ Erro crítico detectado. Sugerindo reload ao usuário.");
+        // O ErrorChip vai aparecer e o usuário pode decidir
+      }
     };
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       event.preventDefault?.();
+
       // Suppress AbortError rejections - they're benign and expected during normal stream cancellation
       const isAbortError =
         event.reason?.name === 'AbortError' ||
@@ -358,17 +375,39 @@ function AppChrome() {
         return;
       }
 
-      console.debug("[App] onunhandledrejection", event.reason);
-      console.error("[App] window.unhandledrejection capturado", event.reason, event);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error("[App] 🚨 UNHANDLED PROMISE REJECTION");
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error("[App] Reason:", event.reason);
+      console.error("[App] Promise:", event.promise);
+      console.error("[App] Timestamp:", new Date().toISOString());
+      console.error("[App] User Agent:", navigator.userAgent);
+      console.error("[App] URL:", window.location.href);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
       setHasCapturedError(true);
     };
 
     window.addEventListener("error", handleWindowError);
     window.addEventListener("unhandledrejection", handleUnhandledRejection);
 
+    // 🛡️ PROTEÇÃO SAFARI: Detectar quando a aba volta de inatividade
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.info('[App] 👁️ TAB VOLTOU A ESTAR VISÍVEL');
+        console.info('[App] Safari pode ter descarregado recursos');
+        console.info('[App] Timestamp:', new Date().toISOString());
+        console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       window.removeEventListener("error", handleWindowError);
       window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
