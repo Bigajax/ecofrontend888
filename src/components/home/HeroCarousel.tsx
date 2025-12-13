@@ -19,11 +19,15 @@ interface HeroCarouselProps {
   onStartChat?: () => void;
 }
 
-// Função para escolher o vídeo do dia (alterna diariamente)
+// Função para escolher o vídeo do dia (alterna diariamente entre 3 vídeos)
 const getDailyReflectionVideo = (): string => {
   const today = new Date().getDate(); // Dia do mês (1-31)
-  // Dias ímpares = vídeo 2 (novo), dias pares = vídeo 1 (original)
-  return today % 2 === 1 ? '/videos/diario-reflexao-2.mp4' : '/videos/diario-estoico.mp4';
+  const videos = [
+    '/videos/diario-estoico.mp4',       // Vídeo 1 (original)
+    '/videos/diario-reflexao-3.mp4',    // Vídeo 3 (novo) - aparece hoje dia 13
+    '/videos/diario-reflexao-2.mp4',    // Vídeo 2
+  ];
+  return videos[today % 3];
 };
 
 const CAROUSEL_ITEMS: CarouselItem[] = [
