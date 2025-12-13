@@ -34,7 +34,8 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
   const [timedOut, setTimedOut] = useState(false);
 
   // 🛡️ PROTEÇÃO: Timeout de segurança para evitar loading infinito
-  // Se RequireAuth ficar travado em loading, força redirect após 20s
+  // Se RequireAuth ficar travado em loading, apenas para o loading
+  // MAS NÃO força logout - permite acesso mesmo com erro
   useEffect(() => {
     if (!loading) {
       setTimedOut(false);
@@ -42,22 +43,24 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
     }
 
     const timeoutId = setTimeout(() => {
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.error('[RequireAuth] ⚠️ TIMEOUT DE SEGURANÇA ATIVADO');
-      console.error('[RequireAuth] Loading estava travado há 20s');
-      console.error('[RequireAuth] Forçando redirect para /login');
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.warn('[RequireAuth] ⚠️ TIMEOUT DE SEGURANÇA ATIVADO');
+      console.warn('[RequireAuth] Loading estava travado há 60s');
+      console.warn('[RequireAuth] Parando loading mas PERMITINDO acesso');
+      console.warn('[RequireAuth] Timestamp:', new Date().toISOString());
+      console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       setTimedOut(true);
-      setAuthStatus('unauthenticated');
-    }, 20000); // 20 segundos máximo
+      // Permite acesso em vez de forçar unauthenticated
+      setAuthStatus('authenticated');
+    }, 60000); // 60 segundos máximo
 
     return () => clearTimeout(timeoutId);
   }, [loading]);
 
   useEffect(() => {
-    // Se timeout disparou, forçar unauthenticated
+    // Se timeout disparou, permite acesso (não força logout)
     if (timedOut) {
-      setAuthStatus('unauthenticated');
+      setAuthStatus('authenticated');
       return;
     }
 

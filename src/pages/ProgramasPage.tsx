@@ -114,7 +114,7 @@ export default function ProgramasPage() {
       image: 'url("/images/meditacao-introducao.webp")',
       imagePosition: 'center 32%',
       gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
-      isPremium: true,
+      isPremium: false,
       category: 'Introdução',
     },
     {
@@ -220,6 +220,12 @@ export default function ProgramasPage() {
     // Programa do Caleidoscópio navega para sua própria página
     if (meditationId === 'blessing_4') {
       navigate('/app/programas/caleidoscopio-mind-movie');
+      return;
+    }
+
+    // Introdução à Meditação - navega para sua própria página
+    if (meditationId === 'blessing_7') {
+      navigate('/app/introducao-meditacao');
       return;
     }
 

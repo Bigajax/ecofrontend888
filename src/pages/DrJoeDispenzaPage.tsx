@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Play, Check, Circle, ArrowLeft, Lock } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
+import MeditationPageSkeleton from '@/components/MeditationPageSkeleton';
 
 interface Meditation {
   id: string;
@@ -79,6 +80,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
 export default function DrJoeDispenzaPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load meditations from localStorage
   const [meditations, setMeditations] = useState<Meditation[]>(() => {
@@ -143,63 +145,73 @@ export default function DrJoeDispenzaPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+
+    // Simulate loading time to show skeleton
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <div className="min-h-screen bg-white font-primary">
       <HomeHeader onLogout={handleLogout} />
 
-      <main className="pb-20">
-        <section className="relative flex min-h-[400px] flex-col items-center justify-center overflow-hidden py-12 sm:min-h-[500px] sm:py-16 md:min-h-[600px] md:py-20">
-          <button
-            onClick={() => navigate('/app')}
-            className="absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-[var(--eco-text)] shadow-md backdrop-blur-sm transition-all hover:bg-white hover:shadow-lg sm:left-6 sm:top-6 md:left-8 md:top-8"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div
-            className="absolute inset-0 bg-cover"
-            style={{
-              backgroundImage: 'url("/images/caduceu-dourado.png")',
-              backgroundPosition: 'center 40%',
-              transform: 'scale(1.05)',
-            }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,1) 100%)',
-            }}
-          />
-
-          <div className="relative z-10 flex flex-col items-center px-4 text-center sm:px-6">
-            <h1 className="font-display text-3xl font-bold text-white drop-shadow-lg sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
-              Desperte Seu Potencial Infinito
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm text-white/95 drop-shadow-md sm:mt-4 sm:text-base md:text-lg lg:text-xl" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>
-              Recondicione sua mente, reprograme seu corpo e manifeste uma nova realidade. Meditações cientificamente comprovadas para transformação profunda e duradoura.
-            </p>
-
+      {isLoading ? (
+        <MeditationPageSkeleton />
+      ) : (
+        <main className="pb-20">
+          <section className="relative flex min-h-[400px] flex-col items-center justify-center overflow-hidden py-12 sm:min-h-[500px] sm:py-16 md:min-h-[600px] md:py-20">
             <button
-              onClick={() => handleMeditationClick(meditations[0])}
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[#3B1E77] shadow-lg transition-all duration-300 hover:bg-white/95 hover:shadow-xl hover:scale-105 active:scale-95 sm:mt-8 sm:px-8 sm:py-3 sm:text-base"
+              onClick={() => navigate('/app')}
+              className="absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-[var(--eco-text)] shadow-md backdrop-blur-sm transition-all hover:bg-white hover:shadow-lg sm:left-6 sm:top-6 md:left-8 md:top-8"
             >
-              <Play className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" />
-              Tocar
+              <ArrowLeft className="h-5 w-5" />
             </button>
-          </div>
-        </section>
+            <div
+              className="absolute inset-0 bg-cover"
+              style={{
+                backgroundImage: 'url("/images/caduceu-dourado.png")',
+                backgroundPosition: 'center 40%',
+                transform: 'scale(1.05)',
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'linear-gradient(to bottom, rgba(59, 30, 119, 0.6) 0%, rgba(59, 30, 119, 0.85) 100%)',
+              }}
+            />
 
-        <section className="mx-auto max-w-4xl px-4 py-6 sm:py-8 md:px-8">
-          <div className="mb-4 flex items-center justify-between sm:mb-6">
-            <h2 className="text-base font-semibold text-[var(--eco-text)] sm:text-lg">Episódios</h2>
-            <span className="text-xs text-[var(--eco-muted)] sm:text-sm">
-              {completedCount} concluído(s) de {totalCount}
-            </span>
-          </div>
+            <div className="relative z-10 flex flex-col items-center px-4 text-center sm:px-6">
+              <h1 className="font-display text-3xl font-bold text-white drop-shadow-lg sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+                Desperte Seu Potencial Infinito
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm text-white/95 drop-shadow-md sm:mt-4 sm:text-base md:text-lg lg:text-xl" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>
+                Recondicione sua mente, reprograme seu corpo e manifeste uma nova realidade. Meditações cientificamente comprovadas para transformação profunda e duradoura.
+              </p>
 
-          <div className="space-y-3 sm:space-y-4">
-            {meditations.map((meditation) => (
+              <button
+                onClick={() => handleMeditationClick(meditations[0])}
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[#3B1E77] shadow-lg transition-all duration-300 hover:bg-white/95 hover:shadow-xl hover:scale-105 active:scale-95 sm:mt-8 sm:px-8 sm:py-3 sm:text-base"
+              >
+                <Play className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" />
+                Tocar
+              </button>
+            </div>
+          </section>
+
+          <section className="mx-auto max-w-4xl px-4 py-6 sm:py-8 md:px-8">
+            <div className="mb-4 flex items-center justify-between sm:mb-6">
+              <h2 className="text-base font-semibold text-[var(--eco-text)] sm:text-lg">Episódios</h2>
+              <span className="text-xs text-[var(--eco-muted)] sm:text-sm">
+                {completedCount} concluído(s) de {totalCount}
+              </span>
+            </div>
+
+            <div className="space-y-3 sm:space-y-4">
+              {meditations.map((meditation) => (
               <div
                 key={meditation.id}
                 className="flex items-start gap-3 rounded-2xl border border-[var(--eco-line)] bg-white p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] sm:items-center sm:gap-4 sm:p-4"
@@ -253,10 +265,11 @@ export default function DrJoeDispenzaPage() {
                   </div>
                 </button>
               </div>
-            ))}
-          </div>
-        </section>
-      </main>
+              ))}
+            </div>
+          </section>
+        </main>
+      )}
     </div>
   );
 }

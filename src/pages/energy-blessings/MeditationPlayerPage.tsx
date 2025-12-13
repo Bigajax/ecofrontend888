@@ -53,6 +53,10 @@ export default function MeditationPlayerPage() {
   // Estado para volume da meditação
   const [meditationVolume, setMeditationVolume] = useState(100);
 
+  // Estado para controlar popover de volume (mobile)
+  const [showVolumePopover, setShowVolumePopover] = useState(false);
+  const volumePopoverRef = useRef<HTMLDivElement>(null);
+
   // Scroll para o topo quando a página carregar
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -205,6 +209,25 @@ export default function MeditationPlayerPage() {
     navigate(returnTo, { state: { returnFromMeditation: true } });
   };
 
+  // Fechar popover de volume ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (volumePopoverRef.current && !volumePopoverRef.current.contains(event.target as Node)) {
+        setShowVolumePopover(false);
+      }
+    };
+
+    if (showVolumePopover) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside as any);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside as any);
+    };
+  }, [showVolumePopover]);
+
   return (
     <div className="relative min-h-screen font-primary">
       {/* Background Image Blurred */}
@@ -302,86 +325,104 @@ export default function MeditationPlayerPage() {
 
         {/* Controls Bar - Responsive */}
         <div className="w-full max-w-4xl px-2 sm:px-6 mt-4">
-          {/* Mobile Layout - Stacked */}
-          <div className="md:hidden flex flex-col gap-3">
-            {/* Barra Principal - Mobile */}
-            <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full px-4 py-3 shadow-lg">
-              {/* Background Sound Selector */}
+          {/* Mobile Layout - Premium Clean */}
+          <div className="md:hidden relative" ref={volumePopoverRef}>
+            {/* Barra Principal - Mobile Premium */}
+            <div className="flex items-center justify-between gap-4 bg-white/95 backdrop-blur-lg rounded-2xl px-5 py-4 shadow-xl border border-gray-100/50">
+              {/* Background Sound Chip */}
               <button
                 onClick={handleOpenBackgroundModal}
-                className="flex items-center gap-2 min-w-0 flex-shrink hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2.5 px-3.5 py-2 bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-sm border border-gray-200/50 hover:shadow-md transition-all active:scale-95 touch-manipulation"
               >
-                <Music size={16} className="text-gray-700 flex-shrink-0" />
+                <Music size={16} className="text-gray-600 flex-shrink-0" strokeWidth={2} />
                 <div className="flex flex-col items-start min-w-0">
-                  <span className="text-[9px] font-medium text-gray-500 uppercase leading-tight">Sons de Fundo</span>
-                  <span className="text-[11px] font-semibold text-gray-900 leading-tight truncate max-w-[80px]">
+                  <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide leading-tight">Sons de fundo</span>
+                  <span className="text-xs font-bold text-gray-800 leading-tight truncate max-w-[120px]">
                     {selectedBackgroundSound?.title || 'Nenhum'}
                   </span>
                 </div>
               </button>
 
-              {/* Time Display */}
-              <span className="text-[11px] font-medium text-gray-700 flex-shrink-0">
-                {formatTime(currentTime)}
-              </span>
-
-              {/* Progress Bar */}
-              <input
-                type="range"
-                min="0"
-                max={duration || 0}
-                value={currentTime}
-                onChange={handleProgressChange}
-                className="flex-1 cursor-pointer min-w-0 touch-manipulation"
-                style={{
-                  height: '6px',
-                  background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`,
-                  borderRadius: '999px'
-                }}
-              />
-
-              {/* Time Duration */}
-              <span className="text-[11px] font-medium text-gray-700 flex-shrink-0">
-                {formatTime(duration)}
-              </span>
-
               {/* Favorite Button */}
               <button
                 onClick={handleFavoriteToggle}
-                className="flex items-center justify-center w-7 h-7 flex-shrink-0 hover:opacity-80 transition-opacity"
+                className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-gray-50 to-white shadow-sm border border-gray-200/50 hover:shadow-md transition-all active:scale-95 touch-manipulation"
               >
                 <Heart
-                  size={18}
-                  className={`transition-all ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
-                  strokeWidth={1.5}
+                  size={20}
+                  className={`transition-all ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
+                  strokeWidth={2}
                 />
               </button>
 
-              {/* Volume Icon - Opens volume control */}
+              {/* Volume Button - Opens popover */}
               <button
-                className="flex items-center justify-center w-7 h-7 flex-shrink-0 hover:opacity-80 transition-opacity"
-                onClick={() => {/* Toggle volume panel */}}
+                onClick={() => setShowVolumePopover(!showVolumePopover)}
+                className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-gray-50 to-white shadow-sm border border-gray-200/50 hover:shadow-md transition-all active:scale-95 touch-manipulation"
               >
-                <Volume2 size={16} className="text-gray-700" />
+                <Volume2 size={18} className="text-gray-600" strokeWidth={2} />
               </button>
             </div>
 
-            {/* Volume Control - Separate bar on mobile - Minimalista e Compacto */}
-            <div className="flex items-center gap-2 bg-white/70 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm">
-              <Volume2 size={12} className="text-gray-500 flex-shrink-0" />
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={meditationVolume}
-                onChange={(e) => setMeditationVolume(parseFloat(e.target.value))}
-                className="flex-1 cursor-pointer touch-manipulation"
-                style={{
-                  height: '3px',
-                  background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${meditationVolume}%, #E5E7EB ${meditationVolume}%, #E5E7EB 100%)`,
-                  borderRadius: '999px'
-                }}
-              />
+            {/* Volume Popover - Aparece acima do chip */}
+            <div className={`absolute bottom-full left-0 right-0 mb-3 transition-all duration-300 ease-out ${
+              showVolumePopover
+                ? 'opacity-100 translate-y-0 pointer-events-auto'
+                : 'opacity-0 translate-y-2 pointer-events-none'
+            }`}>
+              <div className="bg-white/95 backdrop-blur-lg rounded-2xl px-5 py-4 shadow-2xl border border-gray-100/50">
+                <div className="flex items-center gap-3">
+                  <Volume2 size={16} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+                  <div className="flex-1 relative">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={meditationVolume}
+                      onChange={(e) => setMeditationVolume(parseFloat(e.target.value))}
+                      className="w-full cursor-pointer touch-manipulation appearance-none bg-transparent"
+                      style={{
+                        height: '6px',
+                      }}
+                    />
+                    <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1.5 bg-gray-200 rounded-full pointer-events-none">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-150"
+                        style={{ width: `${meditationVolume}%` }}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-gray-700 flex-shrink-0 min-w-[32px] text-right">
+                    {Math.round(meditationVolume)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Bar - Separado abaixo */}
+            <div className="mt-3 bg-white/90 backdrop-blur-md rounded-full px-4 py-2.5 shadow-md border border-gray-100/50">
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-semibold text-gray-600 flex-shrink-0 tabular-nums">
+                  {formatTime(currentTime)}
+                </span>
+                <div className="flex-1 relative h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <input
+                    type="range"
+                    min="0"
+                    max={duration || 0}
+                    value={currentTime}
+                    onChange={handleProgressChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-manipulation z-10"
+                  />
+                  <div
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-100"
+                    style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+                  />
+                </div>
+                <span className="text-[11px] font-semibold text-gray-600 flex-shrink-0 tabular-nums">
+                  {formatTime(duration)}
+                </span>
+              </div>
             </div>
           </div>
 

@@ -170,20 +170,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let timeoutId: NodeJS.Timeout | null = null;
 
     // 🛡️ PROTEÇÃO: Timeout de segurança para evitar loading infinito
-    // Se após 15s ainda estiver loading, força para unauthenticated
-    // Crítico para Safari Mobile que pode travar na busca da sessão
+    // Se após 60s ainda estiver loading, apenas para o loading
+    // MAS NÃO faz logout - mantém o usuário autenticado
     timeoutId = setTimeout(() => {
       if (mounted && loading) {
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('[AuthProvider] ⚠️ TIMEOUT DE SEGURANÇA ATIVADO');
-        console.error('[AuthProvider] Loading estava travado há 15s');
-        console.error('[AuthProvider] Forçando loading=false para evitar tela branca');
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.warn('[AuthProvider] ⚠️ TIMEOUT DE SEGURANÇA ATIVADO');
+        console.warn('[AuthProvider] Loading estava travado há 60s');
+        console.warn('[AuthProvider] Parando loading mas MANTENDO usuário autenticado');
+        console.warn('[AuthProvider] Timestamp:', new Date().toISOString());
+        console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         setLoading(false);
-        setSession(null);
-        setUser(null);
+        // NÃO limpa session/user - mantém autenticado
       }
-    }, 15000); // 15 segundos máximo
+    }, 60000); // 60 segundos máximo
 
     const getSession = async () => {
       try {
@@ -234,32 +234,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, session) => {
         if (!mounted) return;
+
+        // 🛡️ LOG DETALHADO: Rastrear todas as mudanças de autenticação
+        console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.info('[Auth] 🔐 AUTH STATE CHANGE DETECTADO');
+        console.info('[Auth] Evento:', event);
+        console.info('[Auth] Session presente:', !!session);
+        console.info('[Auth] User presente:', !!session?.user);
+        console.info('[Auth] Timestamp:', new Date().toISOString());
+        console.info('[Auth] URL:', window.location.href);
+        console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
         setSession(session ?? null);
         setUser(session?.user ?? null);
         persistAuthToken(session?.access_token ?? null);
 
-        // Logout em outra aba/expiração da sessão
+        // 🛡️ PROTEÇÃO: Detecta SIGNED_OUT mas NÃO faz logout automático
+        // Apenas faz logout se foi o PRÓPRIO USUÁRIO que clicou em "Sair"
         if (event === 'SIGNED_OUT') {
-          // Limpa localStorage imediatamente
-          clearClientState();
-          clearGuestStorage();
-          persistAuthToken(null);
+          console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.warn('[Auth] ⚠️ SIGNED_OUT DETECTADO');
+          console.warn('[Auth] Tentando recuperar sessão automaticamente...');
+          console.warn('[Auth] Timestamp:', new Date().toISOString());
+          console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-          const signedOutCleanup = () => {
-            // Cleanup adicional após stream terminar
-            if (typeof mixpanel.unregister_all === 'function') {
-              mixpanel.unregister_all();
+          // Tentar recuperar a sessão automaticamente
+          supabase.auth.getSession().then(({ data: { session: recoveredSession }, error }) => {
+            if (error) {
+              console.error('[Auth] ❌ Erro ao tentar recuperar sessão:', error);
+              // Não faz logout, apenas registra o erro
+              // O usuário pode continuar usando o app
+              return;
             }
-            mixpanel.reset();
-          };
 
-          if (isStreamActive()) {
-            console.info('[Auth] SIGNED_OUT deferred until stream idle');
-          }
-
-          void safeCleanupAfterSignout(signedOutCleanup);
+            if (recoveredSession) {
+              console.info('[Auth] ✅ Sessão recuperada com sucesso!');
+              setSession(recoveredSession);
+              setUser(recoveredSession.user);
+              persistAuthToken(recoveredSession.access_token);
+            } else {
+              console.warn('[Auth] ⚠️ Não foi possível recuperar a sessão');
+              console.warn('[Auth] Mas NÃO vamos fazer logout automático');
+              console.warn('[Auth] Usuário pode continuar usando o app');
+              // Não limpa nada - mantém o usuário logado localmente
+            }
+          }).catch((err) => {
+            console.error('[Auth] Exceção ao recuperar sessão:', err);
+            // Não faz logout mesmo com erro
+          });
 
           return;
+        }
+
+        // 🛡️ PROTEÇÃO: Log quando o token é renovado automaticamente
+        if (event === 'TOKEN_REFRESHED') {
+          console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.info('[Auth] ✅ TOKEN RENOVADO COM SUCESSO');
+          console.info('[Auth] Session válida até:', new Date(session?.expires_at ? session.expires_at * 1000 : 0).toISOString());
+          console.info('[Auth] Timestamp:', new Date().toISOString());
+          console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         }
 
         if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {

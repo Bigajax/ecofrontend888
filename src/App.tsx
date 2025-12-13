@@ -55,6 +55,7 @@ const DiarioEstoicoPage = lazy(() => import("@/pages/diario-estoico/DiarioEstoic
 const EnergyBlessingsPage = lazy(() => import("@/pages/energy-blessings/EnergyBlessingsPage"));
 const MeditationPlayerPage = lazy(() => import("@/pages/energy-blessings/MeditationPlayerPage"));
 const DrJoeDispenzaPage = lazy(() => import("@/pages/DrJoeDispenzaPage"));
+const IntroducaoMeditacaoPage = lazy(() => import("@/pages/IntroducaoMeditacaoPage"));
 const ProgramasPage = lazy(() => import("@/pages/ProgramasPage"));
 const CaleidoscopioMindMovieProgramPage = lazy(() => import("@/pages/CaleidoscopioMindMovieProgramPage"));
 const ManifestacaoSaudePage = lazy(() => import("@/pages/ManifestacaoSaudePage"));
@@ -162,6 +163,16 @@ function AppRoutes() {
         }
       >
         <Route index element={renderWithSuspense(<DrJoeDispenzaPage />)} />
+      </Route>
+      <Route
+        path="/app/introducao-meditacao"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<IntroducaoMeditacaoPage />)} />
       </Route>
       <Route
         path="/app/programas/caleidoscopio-mind-movie"
