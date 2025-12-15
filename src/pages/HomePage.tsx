@@ -60,7 +60,7 @@ const getAvailableMaxims = (): DailyMaxim[] => {
 };
 
 export default function HomePage() {
-  const { userName } = useAuth();
+  const { userName, isGuestMode } = useAuth();
   const { startProgram } = useProgram();
   const navigate = useNavigate();
   const location = useLocation();
@@ -72,7 +72,15 @@ export default function HomePage() {
   const [showEcoAIModal, setShowEcoAIModal] = useState(false);
 
   // Tour hook
-  const { hasSeenTour, startTour } = useHomePageTour();
+  const { hasSeenTour } = useHomePageTour();
+  const [isTourActive, setIsTourActive] = useState(false);
+
+  // Show tour only for guest users who haven't seen it
+  useEffect(() => {
+    if (isGuestMode && !hasSeenTour) {
+      setIsTourActive(true);
+    }
+  }, [isGuestMode, hasSeenTour]);
 
   // Simulate initial loading (skip if returning from meditation)
   useEffect(() => {
@@ -548,11 +556,17 @@ export default function HomePage() {
         onRelatorio={handleRelatorio}
       />
 
-      {/* HomePage Tour */}
-      <HomePageTour
-        onComplete={() => console.log('Tour completed!')}
-        onStartChat={handleStartChat}
-      />
+      {/* HomePage Tour - Only for guest users */}
+      {isTourActive && isGuestMode && !hasSeenTour && (
+        <HomePageTour
+          onClose={() => setIsTourActive(false)}
+          onComplete={() => {
+            console.log('Tour completed!');
+            setIsTourActive(false);
+          }}
+          onStartChat={handleStartChat}
+        />
+      )}
     </div>
   );
 }
