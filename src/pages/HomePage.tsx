@@ -94,16 +94,6 @@ export default function HomePage() {
     }
   }, [location]);
 
-  // Start tour automatically for new users after loading
-  useEffect(() => {
-    if (!isLoading && !hasSeenTour) {
-      const tourTimer = setTimeout(() => {
-        startTour();
-      }, 800);
-      return () => clearTimeout(tourTimer);
-    }
-  }, [isLoading, hasSeenTour, startTour]);
-
   // Restore scroll position when returning from meditation player
   useEffect(() => {
     if (!isLoading && location.state?.returnFromMeditation) {
@@ -157,6 +147,27 @@ export default function HomePage() {
     () => [
       {
         id: 'rec_1',
+        title: 'Introdução à Meditação',
+        description: 'Seus primeiros passos na prática meditativa',
+        duration: '8 min',
+        audioUrl: '/audio/introducao-meditacao.mp3',
+        image: 'url("/images/meditacao-introducao.webp")',
+        imagePosition: 'center 32%',
+        gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
+        isPremium: false,
+      },
+      {
+        id: 'rec_2',
+        title: 'Diário Estoico',
+        description: 'Cultive a sabedoria diária através de reflexões estoicas',
+        duration: 'Diário',
+        image: 'url("/images/diario-estoico.webp")',
+        imagePosition: 'center center',
+        gradient: 'linear-gradient(to bottom, rgba(139, 92, 60, 0.6) 0%, rgba(139, 92, 60, 0.85) 100%)',
+        isPremium: false,
+      },
+      {
+        id: 'rec_3',
         title: 'Meditação do Sono',
         description: 'Relaxe profundamente e durma melhor.',
         duration: '9 min',
@@ -166,24 +177,6 @@ export default function HomePage() {
         gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
         isPremium: false,
       },
-      {
-        id: 'rec_2',
-        title: '5 Anéis da Disciplina',
-        description: 'Construa sua estrutura pessoal.',
-        duration: '12 min',
-        image: 'url("/images/five-rings-visual.webp")',
-        isPremium: false,
-      },
-      {
-        id: 'rec_3',
-        title: 'Desperte Seu Potencial',
-        description: 'Acesse o campo quântico e crie a realidade que você deseja viver.',
-        duration: '5 meditações',
-        image: 'url("/images/caduceu-dourado.png")',
-        imagePosition: 'center center',
-        gradient: 'linear-gradient(to bottom, rgba(59, 30, 119, 0.6) 0%, rgba(59, 30, 119, 0.85) 100%)',
-        isPremium: false,
-      },
     ],
     [],
   );
@@ -191,6 +184,16 @@ export default function HomePage() {
   // Meditações - Outras meditações (as do Dr. Joe estão na página dedicada)
   const energyBlessings = useMemo(
     () => [
+      {
+        id: 'blessing_1',
+        title: '5 Anéis da Disciplina',
+        description: 'Construa sua estrutura pessoal',
+        duration: '12 min',
+        image: 'url("/images/five-rings-visual.webp")',
+        imagePosition: 'center center',
+        isPremium: false,
+        category: 'Programas',
+      },
       {
         id: 'blessing_9',
         title: 'Quem Pensa Enriquece',
@@ -213,15 +216,14 @@ export default function HomePage() {
       },
       {
         id: 'blessing_7',
-        title: 'Introdução à Meditação',
-        description: 'Seus primeiros passos na prática meditativa',
-        duration: '8 min',
-        audioUrl: '/audio/introducao-meditacao.mp3',
-        image: 'url("/images/meditacao-introducao.webp")',
-        imagePosition: 'center 32%',
-        gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
+        title: 'Desperte Seu Potencial',
+        description: 'Acesse o campo quântico e crie a realidade que você deseja viver.',
+        duration: '5 meditações',
+        image: 'url("/images/caduceu-dourado.png")',
+        imagePosition: 'center center',
+        gradient: 'linear-gradient(to bottom, rgba(59, 30, 119, 0.6) 0%, rgba(59, 30, 119, 0.85) 100%)',
         isPremium: false,
-        category: 'Introdução',
+        category: 'Dr. Joe Dispenza',
       },
       {
         id: 'blessing_8',
@@ -344,8 +346,14 @@ export default function HomePage() {
     sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
 
     if (recId === 'rec_1') {
+      // Introdução à Meditação - navegar para sua própria página
+      navigate('/app/introducao-meditacao');
+    } else if (recId === 'rec_2') {
+      // Diário Estoico - navegar para sua própria página
+      navigate('/app/diario-estoico');
+    } else if (recId === 'rec_3') {
       // Meditação do Sono - navegar para o player
-      const sonoMeditation = dailyRecommendations.find(r => r.id === 'rec_1');
+      const sonoMeditation = dailyRecommendations.find(r => r.id === 'rec_3');
       if (sonoMeditation) {
         navigate('/app/meditation-player', {
           state: {
@@ -361,10 +369,19 @@ export default function HomePage() {
           },
         });
       }
-    } else if (recId === 'rec_2') {
-      // Salvar programa dos 5 Anéis
+    } else {
+      console.log('Recomendação clicada:', recId);
+    }
+  };
+
+  const handleEnergyBlessingClick = (blessingId: string) => {
+    // Salvar posição do scroll antes de navegar
+    sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
+
+    // 5 Anéis da Disciplina - navega para sua própria página
+    if (blessingId === 'blessing_1') {
       startProgram({
-        id: 'rec_2',
+        id: 'blessing_1',
         title: '5 Anéis da Disciplina',
         description: 'Construa sua estrutura pessoal',
         currentLesson: 'Aula 1: Introdução aos 5 Anéis',
@@ -374,17 +391,8 @@ export default function HomePage() {
         lastAccessedAt: new Date().toISOString(),
       });
       navigate('/app/rings');
-    } else if (recId === 'rec_3') {
-      // Desperte Seu Potencial - navegar para a página do Dr. Joe Dispenza
-      navigate('/app/dr-joe-dispenza');
-    } else {
-      console.log('Recomendação clicada:', recId);
+      return;
     }
-  };
-
-  const handleEnergyBlessingClick = (blessingId: string) => {
-    // Salvar posição do scroll antes de navegar
-    sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
 
     // Quem Pensa Enriquece - navega para sua própria página
     if (blessingId === 'blessing_9') {
@@ -408,9 +416,9 @@ export default function HomePage() {
       return;
     }
 
-    // Introdução à Meditação - navega para sua própria página
+    // Desperte Seu Potencial - navegar para a página do Dr. Joe Dispenza
     if (blessingId === 'blessing_7') {
-      navigate('/app/introducao-meditacao');
+      navigate('/app/dr-joe-dispenza');
       return;
     }
 

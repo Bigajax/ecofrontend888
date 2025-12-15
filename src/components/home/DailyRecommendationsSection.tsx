@@ -127,10 +127,10 @@ function RecommendationCard({
     <button
       onClick={recommendation.isPremium ? undefined : onClick}
       disabled={recommendation.isPremium}
-      className={`group relative overflow-hidden rounded-3xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] transition-all duration-300 ${
+      className={`group relative overflow-hidden rounded-3xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 ${
         recommendation.isPremium
           ? 'cursor-not-allowed'
-          : 'md:hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)] active:scale-95 cursor-pointer'
+          : 'md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 cursor-pointer'
       } touch-manipulation ${baseClass}`}
       style={{
         backgroundImage: recommendation.image,
@@ -143,6 +143,9 @@ function RecommendationCard({
     >
       {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
+      {/* Hover overlay - darken on hover */}
+      <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/20 transition-all duration-300" />
 
       {/* Content */}
       <div className="relative flex h-full flex-col justify-between p-4 md:p-5">
