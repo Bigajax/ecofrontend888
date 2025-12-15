@@ -310,72 +310,217 @@ export default function DiarioEstoicoPage() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {availableMaxims.map((maxim) => {
-                const isExpanded = expandedCards.has(maxim.dayNumber);
-
-                return (
-                  <AnimatedSection key={maxim.dayNumber} animation="slide-up-fade">
-                    <div
-                      className="relative w-full rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 hover:shadow-3xl"
-                      style={{
-                        backgroundImage: maxim.background,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                      }}
-                    >
-                      {/* Overlay sempre presente */}
-                      <div className="absolute inset-0 bg-black/35 pointer-events-none" />
-
-                      {/* Content - parte superior fixa */}
-                      <div className="relative flex flex-col min-h-[400px] justify-between p-6 md:p-8">
-                        {/* Top: Date Badge */}
-                        <div>
-                          <span className="inline-flex rounded-full px-4 py-2 backdrop-blur-sm bg-gray-600/70">
-                            <span className="text-[12px] font-medium text-white">
-                              {maxim.date}
-                            </span>
-                          </span>
-                        </div>
-
-                        {/* Middle: Title */}
-                        <div className="space-y-4">
-                          <p className="font-display font-normal leading-relaxed text-xl md:text-2xl text-white drop-shadow-lg">
-                            {maxim.title}
-                          </p>
-
-                          {/* Botão - Leia mais ou Fechar */}
-                          <button
+              <>
+                {/* Layout Desktop: Card do dia no centro grande, outros nas laterais */}
+                <div className="hidden md:flex md:items-center md:justify-center md:gap-4 lg:gap-6">
+                  {/* Cards anteriores (esquerda) */}
+                  <div className="flex flex-col gap-4 max-w-[280px] lg:max-w-[320px]">
+                    {availableMaxims.slice(0, -1).map((maxim) => {
+                      const isExpanded = expandedCards.has(maxim.dayNumber);
+                      return (
+                        <AnimatedSection key={maxim.dayNumber} animation="slide-up-fade">
+                          <div
+                            className="relative w-full rounded-2xl overflow-hidden shadow-lg transition-all duration-500 hover:shadow-xl cursor-pointer"
+                            style={{
+                              backgroundImage: maxim.background,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center',
+                            }}
                             onClick={() => toggleExpanded(maxim.dayNumber)}
-                            className="inline-flex items-center gap-2 text-[13px] font-medium transition-all rounded-full px-4 py-2 text-white bg-gray-600/60 hover:bg-gray-600/80 backdrop-blur-sm"
                           >
-                            <MoreHorizontal size={16} />
-                            {isExpanded ? 'Fechar' : 'Leia mais'}
-                          </button>
-                        </div>
-
-                        {/* Bottom: Empty space for alignment */}
-                        <div />
-                      </div>
-
-                      {/* Conteúdo expandido - aparece embaixo */}
-                      {isExpanded && (
-                        <div className="relative bg-white p-6 md:p-8 border-t border-gray-200">
-                          <div className="space-y-4">
-                            <p className="text-[15px] leading-relaxed text-gray-700 italic">
-                              "{maxim.text}"
-                            </p>
-                            <p className="text-[13px] font-medium text-gray-600">
-                              — {maxim.author}
-                            </p>
+                            <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+                            <div className="relative flex flex-col min-h-[180px] justify-between p-4">
+                              <div>
+                                <span className="inline-flex rounded-full px-3 py-1 backdrop-blur-sm bg-gray-600/70">
+                                  <span className="text-[10px] font-medium text-white">
+                                    {maxim.date}
+                                  </span>
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-display font-normal leading-snug text-sm text-white drop-shadow-lg line-clamp-2">
+                                  {maxim.title}
+                                </p>
+                              </div>
+                            </div>
+                            {isExpanded && (
+                              <div className="relative bg-white p-4 border-t border-gray-200">
+                                <div className="space-y-3">
+                                  <p className="text-[13px] leading-relaxed text-gray-700 italic line-clamp-4">
+                                    "{maxim.text}"
+                                  </p>
+                                  <p className="text-[11px] font-medium text-gray-600">
+                                    — {maxim.author}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                           </div>
+                        </AnimatedSection>
+                      );
+                    })}
+                  </div>
+
+                  {/* Card do dia (centro - destaque) */}
+                  {availableMaxims.length > 0 && (() => {
+                    const todayMaxim = availableMaxims[availableMaxims.length - 1];
+                    const isExpanded = expandedCards.has(todayMaxim.dayNumber);
+                    return (
+                      <AnimatedSection key={todayMaxim.dayNumber} animation="scale-up">
+                        <div
+                          className="relative w-full max-w-[500px] lg:max-w-[600px] rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 hover:shadow-3xl"
+                          style={{
+                            backgroundImage: todayMaxim.background,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                          }}
+                        >
+                          <div className="absolute inset-0 bg-black/35 pointer-events-none" />
+                          <div className="relative flex flex-col min-h-[500px] justify-between p-8 lg:p-10">
+                            <div>
+                              <span className="inline-flex rounded-full px-5 py-2.5 backdrop-blur-sm bg-eco-400/80">
+                                <span className="text-[13px] font-semibold text-white tracking-wide">
+                                  HOJE • {todayMaxim.date}
+                                </span>
+                              </span>
+                            </div>
+                            <div className="space-y-6">
+                              <p className="font-display font-normal leading-relaxed text-3xl lg:text-4xl text-white drop-shadow-2xl">
+                                {todayMaxim.title}
+                              </p>
+                              <button
+                                onClick={() => toggleExpanded(todayMaxim.dayNumber)}
+                                className="inline-flex items-center gap-2 text-[14px] font-medium transition-all rounded-full px-6 py-3 text-white bg-gray-600/60 hover:bg-gray-600/80 backdrop-blur-sm"
+                              >
+                                <MoreHorizontal size={18} />
+                                {isExpanded ? 'Fechar' : 'Leia mais'}
+                              </button>
+                            </div>
+                            <div />
+                          </div>
+                          {isExpanded && (
+                            <div className="relative bg-white p-8 lg:p-10 border-t border-gray-200">
+                              <div className="space-y-5">
+                                <p className="text-[16px] lg:text-[17px] leading-relaxed text-gray-700 italic">
+                                  "{todayMaxim.text}"
+                                </p>
+                                <p className="text-[14px] font-medium text-gray-600">
+                                  — {todayMaxim.author}
+                                </p>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </AnimatedSection>
-                );
-              })}
-              </div>
+                      </AnimatedSection>
+                    );
+                  })()}
+                </div>
+
+                {/* Layout Mobile: Card do dia em cima grande, outros embaixo */}
+                <div className="flex flex-col gap-6 md:hidden">
+                  {/* Card do dia (mobile) */}
+                  {availableMaxims.length > 0 && (() => {
+                    const todayMaxim = availableMaxims[availableMaxims.length - 1];
+                    const isExpanded = expandedCards.has(todayMaxim.dayNumber);
+                    return (
+                      <AnimatedSection key={todayMaxim.dayNumber} animation="scale-up">
+                        <div
+                          className="relative w-full rounded-3xl overflow-hidden shadow-2xl transition-all duration-500"
+                          style={{
+                            backgroundImage: todayMaxim.background,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                          }}
+                        >
+                          <div className="absolute inset-0 bg-black/35 pointer-events-none" />
+                          <div className="relative flex flex-col min-h-[450px] justify-between p-6">
+                            <div>
+                              <span className="inline-flex rounded-full px-4 py-2 backdrop-blur-sm bg-eco-400/80">
+                                <span className="text-[12px] font-semibold text-white tracking-wide">
+                                  HOJE • {todayMaxim.date}
+                                </span>
+                              </span>
+                            </div>
+                            <div className="space-y-4">
+                              <p className="font-display font-normal leading-relaxed text-2xl text-white drop-shadow-2xl">
+                                {todayMaxim.title}
+                              </p>
+                              <button
+                                onClick={() => toggleExpanded(todayMaxim.dayNumber)}
+                                className="inline-flex items-center gap-2 text-[13px] font-medium transition-all rounded-full px-5 py-2.5 text-white bg-gray-600/60 hover:bg-gray-600/80 backdrop-blur-sm"
+                              >
+                                <MoreHorizontal size={16} />
+                                {isExpanded ? 'Fechar' : 'Leia mais'}
+                              </button>
+                            </div>
+                            <div />
+                          </div>
+                          {isExpanded && (
+                            <div className="relative bg-white p-6 border-t border-gray-200">
+                              <div className="space-y-4">
+                                <p className="text-[15px] leading-relaxed text-gray-700 italic">
+                                  "{todayMaxim.text}"
+                                </p>
+                                <p className="text-[13px] font-medium text-gray-600">
+                                  — {todayMaxim.author}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </AnimatedSection>
+                    );
+                  })()}
+
+                  {/* Cards anteriores (mobile) */}
+                  <div className="grid grid-cols-1 gap-4">
+                    {availableMaxims.slice(0, -1).map((maxim) => {
+                      const isExpanded = expandedCards.has(maxim.dayNumber);
+                      return (
+                        <AnimatedSection key={maxim.dayNumber} animation="slide-up-fade">
+                          <div
+                            className="relative w-full rounded-2xl overflow-hidden shadow-lg transition-all duration-500 cursor-pointer"
+                            style={{
+                              backgroundImage: maxim.background,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center',
+                            }}
+                            onClick={() => toggleExpanded(maxim.dayNumber)}
+                          >
+                            <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+                            <div className="relative flex flex-col min-h-[200px] justify-between p-5">
+                              <div>
+                                <span className="inline-flex rounded-full px-3 py-1.5 backdrop-blur-sm bg-gray-600/70">
+                                  <span className="text-[11px] font-medium text-white">
+                                    {maxim.date}
+                                  </span>
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-display font-normal leading-snug text-base text-white drop-shadow-lg">
+                                  {maxim.title}
+                                </p>
+                              </div>
+                            </div>
+                            {isExpanded && (
+                              <div className="relative bg-white p-5 border-t border-gray-200">
+                                <div className="space-y-3">
+                                  <p className="text-[14px] leading-relaxed text-gray-700 italic">
+                                    "{maxim.text}"
+                                  </p>
+                                  <p className="text-[12px] font-medium text-gray-600">
+                                    — {maxim.author}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </AnimatedSection>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </main>
