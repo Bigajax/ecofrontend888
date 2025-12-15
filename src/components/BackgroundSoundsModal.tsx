@@ -62,7 +62,13 @@ export default function BackgroundSoundsModal({
       {/* Inject scrollbar styles */}
       <style>{scrollbarStyles}</style>
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
+        style={{
+          overscrollBehaviorX: 'none',
+          touchAction: 'pan-y'
+        }}
+      >
         {/* Backdrop */}
         <div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
@@ -195,6 +201,27 @@ export default function BackgroundSoundsModal({
         </div>
       </div>
     </div>
+
+    {/* Estilos para ocultar thumb do input range */}
+    <style>{`
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 0;
+        height: 0;
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 0;
+        height: 0;
+        border: none;
+        background: transparent;
+      }
+      input[type="range"]::-ms-thumb {
+        width: 0;
+        height: 0;
+        background: transparent;
+      }
+    `}</style>
     </>
   );
 }

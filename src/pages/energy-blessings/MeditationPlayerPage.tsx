@@ -42,7 +42,7 @@ export default function MeditationPlayerPage() {
     const allSounds = getAllSounds();
     return allSounds.find(sound => sound.id === 'freq_1') || null;
   });
-  const [backgroundVolume, setBackgroundVolume] = useState(5); // Volume bem baixo para som de fundo (5%)
+  const [backgroundVolume, setBackgroundVolume] = useState(47); // Volume padrão para som de fundo (47%)
   const backgroundAudioRef = useRef<HTMLAudioElement>(null);
 
   // Web Audio API para controle avançado de volume
@@ -92,8 +92,8 @@ export default function MeditationPlayerPage() {
       backgroundSourceNodeRef.current.connect(backgroundGainNodeRef.current);
       backgroundGainNodeRef.current.connect(audioContextRef.current.destination);
 
-      // Definir volume inicial muito baixo (0.03 = 3%)
-      backgroundGainNodeRef.current.gain.value = 0.03;
+      // Definir volume inicial (47% com curva logarítmica)
+      backgroundGainNodeRef.current.gain.value = Math.pow(0.47, 2) * 0.5;
     }
   }, []);
 
@@ -229,7 +229,13 @@ export default function MeditationPlayerPage() {
   }, [showVolumePopover]);
 
   return (
-    <div className="relative min-h-screen font-primary">
+    <div
+      className="relative min-h-screen font-primary overflow-x-hidden overflow-y-auto"
+      style={{
+        overscrollBehaviorX: 'none',
+        touchAction: 'pan-y'
+      }}
+    >
       {/* Background Image Blurred */}
       <div
         className="absolute inset-0 bg-cover bg-center"
@@ -355,46 +361,57 @@ export default function MeditationPlayerPage() {
                 />
               </button>
 
-              {/* Volume Button - Opens popover */}
-              <button
-                onClick={() => setShowVolumePopover(!showVolumePopover)}
-                className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-gray-50 to-white shadow-sm border border-gray-200/50 hover:shadow-md transition-all active:scale-95 touch-manipulation"
-              >
-                <Volume2 size={18} className="text-gray-600" strokeWidth={2} />
-              </button>
-            </div>
+              {/* Volume Button Container - With Popover */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowVolumePopover(!showVolumePopover)}
+                  className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-gray-50 to-white shadow-sm border border-gray-200/50 hover:shadow-md transition-all active:scale-95 touch-manipulation"
+                >
+                  <Volume2 size={18} className="text-gray-600" strokeWidth={2} />
+                </button>
 
-            {/* Volume Popover - Aparece acima do chip */}
-            <div className={`absolute bottom-full left-0 right-0 mb-3 transition-all duration-300 ease-out ${
-              showVolumePopover
-                ? 'opacity-100 translate-y-0 pointer-events-auto'
-                : 'opacity-0 translate-y-2 pointer-events-none'
-            }`}>
-              <div className="bg-white/95 backdrop-blur-lg rounded-2xl px-5 py-4 shadow-2xl border border-gray-100/50">
-                <div className="flex items-center gap-3">
-                  <Volume2 size={16} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
-                  <div className="flex-1 relative">
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={meditationVolume}
-                      onChange={(e) => setMeditationVolume(parseFloat(e.target.value))}
-                      className="w-full cursor-pointer touch-manipulation appearance-none bg-transparent"
-                      style={{
-                        height: '6px',
-                      }}
-                    />
-                    <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1.5 bg-gray-200 rounded-full pointer-events-none">
-                      <div
-                        className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-150"
-                        style={{ width: `${meditationVolume}%` }}
-                      />
+                {/* Volume Popover Vertical - Aparece acima do botão */}
+                <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-3 transition-all duration-300 ease-out ${
+                  showVolumePopover
+                    ? 'opacity-100 translate-y-0 pointer-events-auto'
+                    : 'opacity-0 translate-y-2 pointer-events-none'
+                }`}>
+                  <div className="bg-white/95 backdrop-blur-lg rounded-2xl px-3 py-4 shadow-2xl border border-gray-100/50">
+                    <div className="flex flex-col items-center gap-3 h-[180px]">
+                      {/* Porcentagem no topo */}
+                      <span className="text-xs font-bold text-gray-700">
+                        {Math.round(meditationVolume)}%
+                      </span>
+
+                      {/* Slider Vertical */}
+                      <div className="flex-1 relative w-2">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={meditationVolume}
+                          onChange={(e) => setMeditationVolume(parseFloat(e.target.value))}
+                          className="absolute inset-0 cursor-pointer touch-manipulation appearance-none bg-transparent"
+                          style={{
+                            width: '180px',
+                            height: '8px',
+                            transform: 'rotate(-90deg)',
+                            transformOrigin: 'center',
+                          }}
+                        />
+                        {/* Barra de fundo vertical */}
+                        <div className="absolute inset-x-0 top-0 bottom-0 w-2 bg-gray-200 rounded-full pointer-events-none">
+                          <div
+                            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-500 to-blue-600 rounded-full transition-all duration-150"
+                            style={{ height: `${meditationVolume}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Ícone no bottom */}
+                      <Volume2 size={14} className="text-gray-500" strokeWidth={2} />
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-gray-700 flex-shrink-0 min-w-[32px] text-right">
-                    {Math.round(meditationVolume)}%
-                  </span>
                 </div>
               </div>
             </div>
