@@ -215,17 +215,6 @@ export default function HomePage() {
         category: 'Dr. Joe Dispenza',
       },
       {
-        id: 'blessing_7',
-        title: 'Desperte Seu Potencial',
-        description: 'Acesse o campo quântico e crie a realidade que você deseja viver.',
-        duration: '5 meditações',
-        image: 'url("/images/caduceu-dourado.png")',
-        imagePosition: 'center center',
-        gradient: 'linear-gradient(to bottom, rgba(59, 30, 119, 0.6) 0%, rgba(59, 30, 119, 0.85) 100%)',
-        isPremium: false,
-        category: 'Dr. Joe Dispenza',
-      },
-      {
         id: 'blessing_8',
         title: 'Meditação do Sono',
         description: 'Relaxe profundamente e tenha uma noite tranquila',
@@ -413,12 +402,6 @@ export default function HomePage() {
     // Programa do Caleidoscópio navega para sua própria página
     if (blessingId === 'blessing_4') {
       navigate('/app/programas/caleidoscopio-mind-movie');
-      return;
-    }
-
-    // Desperte Seu Potencial - navegar para a página do Dr. Joe Dispenza
-    if (blessingId === 'blessing_7') {
-      navigate('/app/dr-joe-dispenza');
       return;
     }
 

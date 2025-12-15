@@ -56,6 +56,8 @@ export default function MeditationPlayerPage() {
   // Estado para controlar popover de volume (mobile)
   const [showVolumePopover, setShowVolumePopover] = useState(false);
   const volumePopoverRef = useRef<HTMLDivElement>(null);
+  const volumeSliderRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Scroll para o topo quando a página carregar
   useEffect(() => {
@@ -92,8 +94,8 @@ export default function MeditationPlayerPage() {
       backgroundSourceNodeRef.current.connect(backgroundGainNodeRef.current);
       backgroundGainNodeRef.current.connect(audioContextRef.current.destination);
 
-      // Definir volume inicial (47% com curva logarítmica)
-      backgroundGainNodeRef.current.gain.value = Math.pow(0.47, 2) * 0.5;
+      // Definir volume inicial (47% → ~3.8% do volume real)
+      backgroundGainNodeRef.current.gain.value = 0.47 * 0.08;
     }
   }, []);
 
@@ -101,12 +103,24 @@ export default function MeditationPlayerPage() {
   useEffect(() => {
     if (backgroundGainNodeRef.current) {
       // Converter porcentagem para valor Web Audio (0.0 a 1.0)
-      // Aplicar uma curva logarítmica para melhor percepção de volume
+      // Sons de fundo muito suaves para não tampar a meditação (máximo 8%)
       const normalizedVolume = backgroundVolume / 100;
-      const logarithmicVolume = Math.pow(normalizedVolume, 2) * 0.5; // Máximo 0.5 (50%)
-      backgroundGainNodeRef.current.gain.value = logarithmicVolume;
+      const softVolume = normalizedVolume * 0.08; // Máximo 8% (0.08) do volume real
+      backgroundGainNodeRef.current.gain.value = softVolume;
     }
-  }, [backgroundVolume]);
+
+    // Se volume for 0, pausar o áudio de fundo
+    if (backgroundAudioRef.current) {
+      if (backgroundVolume === 0) {
+        backgroundAudioRef.current.pause();
+      } else if (isPlaying && selectedBackgroundSound?.audioUrl) {
+        // Se volume > 0 e meditação está tocando, retomar o áudio de fundo
+        backgroundAudioRef.current.play().catch(err => {
+          console.error('Erro ao reproduzir som de fundo:', err);
+        });
+      }
+    }
+  }, [backgroundVolume, isPlaying, selectedBackgroundSound]);
 
   // Controlar volume do áudio da meditação
   useEffect(() => {
@@ -227,6 +241,60 @@ export default function MeditationPlayerPage() {
       document.removeEventListener('touchstart', handleClickOutside as any);
     };
   }, [showVolumePopover]);
+
+  // Handler para slider vertical customizado
+  const handleVolumeSliderInteraction = (clientY: number) => {
+    if (!volumeSliderRef.current) return;
+
+    const rect = volumeSliderRef.current.getBoundingClientRect();
+    const sliderHeight = rect.height;
+    const clickY = clientY - rect.top;
+
+    // Inverter o cálculo porque o volume 100% fica no topo
+    const percentage = Math.max(0, Math.min(100, ((sliderHeight - clickY) / sliderHeight) * 100));
+    setMeditationVolume(Math.round(percentage));
+  };
+
+  const handleVolumeSliderStart = (e: React.TouchEvent | React.MouseEvent) => {
+    setIsDragging(true);
+
+    if ('touches' in e) {
+      handleVolumeSliderInteraction(e.touches[0].clientY);
+    } else {
+      handleVolumeSliderInteraction(e.clientY);
+    }
+  };
+
+  // Listeners globais para dragging
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMove = (e: TouchEvent | MouseEvent) => {
+      e.preventDefault();
+
+      if ('touches' in e) {
+        handleVolumeSliderInteraction(e.touches[0].clientY);
+      } else {
+        handleVolumeSliderInteraction(e.clientY);
+      }
+    };
+
+    const handleEnd = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener('touchmove', handleMove, { passive: false });
+    document.addEventListener('touchend', handleEnd);
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleEnd);
+
+    return () => {
+      document.removeEventListener('touchmove', handleMove);
+      document.removeEventListener('touchend', handleEnd);
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleEnd);
+    };
+  }, [isDragging]);
 
   return (
     <div
@@ -384,23 +452,14 @@ export default function MeditationPlayerPage() {
                       </span>
 
                       {/* Slider Vertical */}
-                      <div className="flex-1 relative w-2">
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={meditationVolume}
-                          onChange={(e) => setMeditationVolume(parseFloat(e.target.value))}
-                          className="absolute inset-0 cursor-pointer touch-manipulation appearance-none bg-transparent"
-                          style={{
-                            width: '180px',
-                            height: '8px',
-                            transform: 'rotate(-90deg)',
-                            transformOrigin: 'center',
-                          }}
-                        />
+                      <div
+                        ref={volumeSliderRef}
+                        onTouchStart={handleVolumeSliderStart}
+                        onMouseDown={handleVolumeSliderStart}
+                        className="flex-1 relative w-12 flex items-center justify-center cursor-pointer touch-manipulation active:cursor-grabbing"
+                      >
                         {/* Barra de fundo vertical */}
-                        <div className="absolute inset-x-0 top-0 bottom-0 w-2 bg-gray-200 rounded-full pointer-events-none">
+                        <div className="absolute inset-x-0 top-0 bottom-0 w-2 mx-auto bg-gray-200 rounded-full pointer-events-none">
                           <div
                             className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-500 to-blue-600 rounded-full transition-all duration-150"
                             style={{ height: `${meditationVolume}%` }}

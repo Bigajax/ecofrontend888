@@ -120,6 +120,9 @@ export default function BackgroundSoundsModal({
                   borderRadius: '999px'
                 }}
               />
+              <span className="text-xs font-semibold text-gray-700 min-w-[38px] text-right">
+                {Math.round(volume)}%
+              </span>
             </div>
           </div>
 
