@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Play, Pause, RotateCcw, RotateCw, Heart, Music, Volume2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import HomeHeader from '@/components/home/HomeHeader';
 import BackgroundSoundsModal from '@/components/BackgroundSoundsModal';
 import { type Sound, getAllSounds } from '@/data/sounds';
@@ -13,6 +14,24 @@ interface MeditationData {
   backgroundMusic?: string;
   gradient?: string;
 }
+
+// Animation variants for smooth entry
+const fadeSlideUp = {
+  hidden: {
+    opacity: 0,
+    y: 20,
+    scale: 0.95
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.6,
+      ease: [0.25, 0.46, 0.45, 0.94] // Custom easing for smooth feel
+    }
+  }
+};
 
 export default function MeditationPlayerPage() {
   const navigate = useNavigate();
@@ -342,22 +361,40 @@ export default function MeditationPlayerPage() {
           </button>
         </div>
         {/* Meditation Image Card */}
-        <div className="mb-6 overflow-hidden rounded-3xl shadow-2xl">
+        <motion.div
+          variants={fadeSlideUp}
+          initial="hidden"
+          animate="visible"
+          transition={{ delay: 0.1 }}
+          className="mb-6 overflow-hidden rounded-3xl shadow-2xl"
+        >
           <img
             src={meditationData.imageUrl}
             alt={meditationData.title}
             className="h-40 w-40 sm:h-48 sm:w-48 object-cover"
             style={{ objectPosition: 'center 35%' }}
           />
-        </div>
+        </motion.div>
 
         {/* Title */}
-        <h1 className="mb-6 text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 text-center px-4 drop-shadow-sm">
+        <motion.h1
+          variants={fadeSlideUp}
+          initial="hidden"
+          animate="visible"
+          transition={{ delay: 0.2 }}
+          className="mb-6 text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 text-center px-4 drop-shadow-sm"
+        >
           {meditationData.title}
-        </h1>
+        </motion.h1>
 
         {/* Playback Controls - Reduzidos */}
-        <div className="mb-6 flex items-center gap-4">
+        <motion.div
+          variants={fadeSlideUp}
+          initial="hidden"
+          animate="visible"
+          transition={{ delay: 0.3 }}
+          className="mb-6 flex items-center gap-4"
+        >
           {/* Skip Back 15s */}
           <button
             onClick={() => handleSkip(-15)}
@@ -395,10 +432,16 @@ export default function MeditationPlayerPage() {
               </span>
             </div>
           </button>
-        </div>
+        </motion.div>
 
         {/* Controls Bar - Responsive */}
-        <div className="w-full max-w-4xl px-2 sm:px-6 mt-4">
+        <motion.div
+          variants={fadeSlideUp}
+          initial="hidden"
+          animate="visible"
+          transition={{ delay: 0.4 }}
+          className="w-full max-w-4xl px-2 sm:px-6 mt-4"
+        >
           {/* Mobile Layout - Premium Clean */}
           <div className="md:hidden relative" ref={volumePopoverRef}>
             {/* Barra Principal - Mobile Premium */}
@@ -571,7 +614,7 @@ export default function MeditationPlayerPage() {
               />
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
 
