@@ -76,20 +76,20 @@ export default function HeroCarousel({
   const SLIDE_DURATION = 5000; // 5 segundos por slide
   const PROGRESS_INTERVAL = 50; // Atualizar barra a cada 50ms
 
-  // Animation variants for smooth transitions
+  // Animation variants for smooth crossfade transitions
   const slideVariants = {
-    enter: (direction: 'left' | 'right') => ({
-      x: direction === 'right' ? '100%' : '-100%',
+    enter: {
       opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
+      scale: 1.05,
     },
-    exit: (direction: 'left' | 'right') => ({
-      x: direction === 'right' ? '-100%' : '100%',
+    center: {
+      opacity: 1,
+      scale: 1,
+    },
+    exit: {
       opacity: 0,
-    }),
+      scale: 0.95,
+    },
   };
 
   const fadeVariants = {
@@ -291,17 +291,16 @@ export default function HeroCarousel({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Background - video or animated image with smooth transitions */}
-      <AnimatePresence initial={false} custom={direction} mode="wait">
+      {/* Background - video or animated image with smooth crossfade */}
+      <AnimatePresence initial={false}>
         <motion.div
           key={`bg-${currentIndex}`}
-          custom={direction}
           variants={fadeVariants}
           initial="enter"
           animate="center"
           exit="exit"
           transition={{
-            opacity: { duration: 0.5, ease: 'easeInOut' },
+            opacity: { duration: 0.6, ease: 'easeInOut' },
           }}
           className="absolute inset-0"
           style={{
@@ -330,20 +329,19 @@ export default function HeroCarousel({
         </motion.div>
       </AnimatePresence>
 
-      {/* Content with smooth slide transitions */}
-      <AnimatePresence initial={false} custom={direction} mode="wait">
+      {/* Content with smooth crossfade */}
+      <AnimatePresence initial={false}>
         <motion.div
           key={`content-${currentIndex}`}
-          custom={direction}
           variants={slideVariants}
           initial="enter"
           animate="center"
           exit="exit"
           transition={{
-            x: { type: 'spring', stiffness: 300, damping: 30 },
-            opacity: { duration: 0.3 },
+            opacity: { duration: 0.5, ease: 'easeInOut' },
+            scale: { duration: 0.5, ease: 'easeOut' },
           }}
-          className="relative z-10 flex h-full flex-col"
+          className="absolute inset-0 z-10 flex h-full flex-col"
           style={{
             transform: isDragging ? `translateX(${dragOffset}px)` : undefined,
           }}
