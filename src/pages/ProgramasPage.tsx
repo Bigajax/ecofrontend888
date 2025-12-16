@@ -123,7 +123,7 @@ export default function ProgramasPage() {
       description: 'Relaxe profundamente e tenha uma noite tranquila',
       duration: '15 min',
       audioUrl: '/audio/meditacao-sono.mp3',
-      image: 'url("/images/meditacao-sono.webp")',
+      image: 'url("/images/meditacao-sono-new.webp")',
       imagePosition: 'center 32%',
       gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
       isPremium: false,

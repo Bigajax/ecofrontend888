@@ -38,7 +38,7 @@ export default function Favoritos() {
       title: 'Meditação do Sono',
       duration: '15 min',
       audioUrl: '/audio/meditacao-sono.mp3',
-      image: '/images/meditacao-sono.webp',
+      image: '/images/meditacao-sono-new.webp',
       category: 'Sono',
       gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
     },
