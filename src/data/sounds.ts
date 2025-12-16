@@ -37,9 +37,9 @@ export const SOUND_CATEGORIES: SoundCategory[] = [
     title: 'Meditação & Presença',
     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     sounds: [
-      { id: 'med_1', title: 'Taças tibetanas', duration: '45 min', image: 'url(/images/sounds/tibetan-bowl.png)', category: 'meditacao', isPremium: false, badge: 'MÚSICA', audioUrl: '/sounds/tibetan-bowl-26240.mp3' },
-      { id: 'med_2', title: 'Flauta nativa', duration: '40 min', image: 'url(/images/sounds/flauta-nativa.png)', category: 'meditacao', isPremium: false, badge: 'MÚSICA', audioUrl: '/sounds/flute-recorder-18816.mp3' },
-      { id: 'med_3', title: 'Mantras', duration: '60 min', image: 'url(/images/sounds/mantras.png)', category: 'meditacao', isPremium: false, badge: 'MÚSICA', audioUrl: '/sounds/aum_02_528hz-22432.mp3' },
+      { id: 'med_1', title: 'Taças tibetanas', duration: '45 min', image: 'url(/images/sounds/tibetan-bowl.webp)', category: 'meditacao', isPremium: false, badge: 'MÚSICA', audioUrl: '/sounds/tibetan-bowl-26240.mp3' },
+      { id: 'med_2', title: 'Flauta nativa', duration: '40 min', image: 'url(/images/sounds/flauta-nativa.webp)', category: 'meditacao', isPremium: false, badge: 'MÚSICA', audioUrl: '/sounds/flute-recorder-18816.mp3' },
+      { id: 'med_3', title: 'Mantras', duration: '60 min', image: 'url(/images/sounds/mantras.webp)', category: 'meditacao', isPremium: false, badge: 'MÚSICA', audioUrl: '/sounds/aum_02_528hz-22432.mp3' },
     ],
   },
   {
@@ -48,7 +48,7 @@ export const SOUND_CATEGORIES: SoundCategory[] = [
     title: 'Frequências Energéticas',
     gradient: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
     sounds: [
-      { id: 'freq_1', title: '432Hz', duration: '120 min', image: 'url(/images/sounds/432hz.png)', category: 'frequencias', isPremium: false, badge: 'SOM RELAXANTE', audioUrl: '/sounds/432hz-frequency.mp3' },
+      { id: 'freq_1', title: '432Hz', duration: '120 min', image: 'url(/images/sounds/432hz.webp)', category: 'frequencias', isPremium: false, badge: 'SOM RELAXANTE', audioUrl: '/sounds/432hz-frequency.mp3' },
     ],
   },
 ];

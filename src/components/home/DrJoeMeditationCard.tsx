@@ -23,7 +23,7 @@ export default function DrJoeMeditationCard({ onClick }: DrJoeMeditationCardProp
         >
         {/* Background Image */}
         <img
-          src="/images/caduceu-dourado.png"
+          src="/images/caduceu-dourado.webp"
           alt="Desperte Seu Potencial"
           className="absolute inset-0 h-full w-full object-cover"
         />

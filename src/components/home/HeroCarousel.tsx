@@ -45,7 +45,7 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
     description:
       'Construa clareza, foco e propósito com um ritual diário inspirado em Miyamoto Musashi.',
     background:
-      'url("/images/5-aneis-hero.png")',
+      'url("/images/5-aneis-hero.webp")',
   },
   {
     id: 3,
@@ -53,7 +53,7 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
     description:
       'Recondicione sua mente e manifeste a realidade que deseja viver.',
     background:
-      'url("/images/dr-joe-hero.png")',
+      'url("/images/dr-joe-hero.webp")',
   },
 ];
 

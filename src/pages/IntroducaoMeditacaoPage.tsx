@@ -34,25 +34,25 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     id: 'intro_2',
     title: 'Observando a respiração',
     description: 'Aprenda a focar sua atenção na respiração',
-    duration: '7 min',
-    audioUrl: '/audio/intro-respiracao.mp3',
-    image: 'url("/images/meditacao-introducao.webp")',
+    duration: '4 min',
+    audioUrl: '/audio/observando-respiracao.mp3',
+    image: 'url("/images/observando-respiracao.webp")',
     imagePosition: 'center 32%',
     gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
     completed: false,
-    isPremium: true,
+    isPremium: false,
   },
   {
     id: 'intro_3',
     title: 'Sentindo',
     description: 'Conecte-se com suas sensações e emoções',
-    duration: '6 min',
-    audioUrl: '/audio/intro-sentindo.mp3',
-    image: 'url("/images/meditacao-introducao.webp")',
+    duration: '4 min',
+    audioUrl: '/audio/sentindo.mp3',
+    image: 'url("/images/sentindo.webp")',
     imagePosition: 'center 32%',
     gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
     completed: false,
-    isPremium: true,
+    isPremium: false,
   },
   {
     id: 'intro_4',
@@ -87,17 +87,17 @@ export default function IntroducaoMeditacaoPage() {
 
   // Load meditations from localStorage
   const [meditations, setMeditations] = useState<Meditation[]>(() => {
-    const storageKey = `eco.introducao.meditations.v1.${user?.id || 'guest'}`;
+    const storageKey = `eco.introducao.meditations.v2.${user?.id || 'guest'}`;
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Merge with INITIAL_MEDITATIONS to ensure isPremium is updated
+        // Merge with INITIAL_MEDITATIONS to ensure all properties are updated
         return parsed.map((saved: Meditation) => {
           const initial = INITIAL_MEDITATIONS.find(m => m.id === saved.id);
           return {
-            ...saved,
-            isPremium: initial?.isPremium || false,
+            ...initial,
+            completed: saved.completed || false,
           };
         });
       } catch {
@@ -109,7 +109,7 @@ export default function IntroducaoMeditacaoPage() {
 
   // Save to localStorage whenever meditations change
   useEffect(() => {
-    const storageKey = `eco.introducao.meditations.v1.${user?.id || 'guest'}`;
+    const storageKey = `eco.introducao.meditations.v2.${user?.id || 'guest'}`;
     localStorage.setItem(storageKey, JSON.stringify(meditations));
   }, [meditations, user?.id]);
 

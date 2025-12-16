@@ -172,7 +172,7 @@ export default function DrJoeDispenzaPage() {
             <div
               className="absolute inset-0 bg-cover"
               style={{
-                backgroundImage: 'url("/images/caduceu-dourado.png")',
+                backgroundImage: 'url("/images/caduceu-dourado.webp")',
                 backgroundPosition: 'center 40%',
                 transform: 'scale(1.05)',
               }}

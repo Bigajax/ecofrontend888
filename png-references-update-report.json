@@ -1,0 +1,46 @@
+{
+  "filesUpdated": 10,
+  "totalReplacements": 15,
+  "files": [
+    {
+      "file": "src/pages/IntroducaoMeditacaoPage.tsx",
+      "replacements": 2
+    },
+    {
+      "file": "src/pages/HomePage.tsx",
+      "replacements": 1
+    },
+    {
+      "file": "src/data/sounds.ts",
+      "replacements": 4
+    },
+    {
+      "file": "src/components/home/DrJoeMeditationCard.tsx",
+      "replacements": 1
+    },
+    {
+      "file": "src/pages/CreateProfilePage.tsx",
+      "replacements": 1
+    },
+    {
+      "file": "src/pages/LoginPage.tsx",
+      "replacements": 1
+    },
+    {
+      "file": "src/components/home/HeroCarousel.tsx",
+      "replacements": 2
+    },
+    {
+      "file": "src/pages/DrJoeDispenzaPage.tsx",
+      "replacements": 1
+    },
+    {
+      "file": "src/pages/ProgramasPage.tsx",
+      "replacements": 1
+    },
+    {
+      "file": "src/pages/CaleidoscopioMindMovieProgramPage.tsx",
+      "replacements": 1
+    }
+  ]
+}

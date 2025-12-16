@@ -75,7 +75,7 @@ export default function ProgramasPage() {
       title: 'Programa de Meditação do Caleidoscópio e Mind Movie',
       description: 'Visualize e crie novas realidades internas',
       duration: '22 min',
-      image: 'url("/images/caleidoscopio-mind-movie.png")',
+      image: 'url("/images/caleidoscopio-mind-movie.webp")',
       imagePosition: 'center center',
       gradient: 'linear-gradient(to bottom, #B494D4 0%, #A07DC4 20%, #8D67B5 40%, #7A52A6 60%, #673E97 80%, #542B88 100%)',
       isPremium: true,

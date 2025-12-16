@@ -138,7 +138,7 @@ const CreateProfilePage: React.FC = () => {
   };
 
   return (
-    <PhoneFrame backgroundImage="/images/login-background.png">
+    <PhoneFrame backgroundImage="/images/login-background.webp">
       <div className="relative min-h-[100dvh] w-full overflow-hidden text-slate-900">
         <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom))] gap-8">
           {/* Logo no topo */}
