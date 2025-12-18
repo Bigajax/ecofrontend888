@@ -288,6 +288,11 @@ export default function HomePage() {
     setShowEcoAIModal(true);
   };
 
+  const handleEnterChat = () => {
+    setShowEcoAIModal(false);
+    navigate('/app/chat');
+  };
+
   const handleModalSentimentos = () => {
     setShowEcoAIModal(false);
     navigate('/app/chat', { state: { autoSendMessage: 'Vamos falar sobre meus sentimentos' } });
@@ -538,6 +543,7 @@ export default function HomePage() {
       <EcoAIModal
         isOpen={showEcoAIModal}
         onClose={() => setShowEcoAIModal(false)}
+        onEnter={handleEnterChat}
         userName={capitalizeNames(userName || 'Usuário')}
         onStartSentimentos={handleModalSentimentos}
         onSugerirConteudo={handleModalSugerir}

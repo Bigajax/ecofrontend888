@@ -7,6 +7,7 @@ import type { LucideIcon } from 'lucide-react';
 interface EcoAIModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onEnter: () => void;
   userName: string;
   onStartSentimentos: () => void;
   onSugerirConteudo: () => void;
@@ -27,6 +28,7 @@ const iconMap: Record<string, LucideIcon> = {
 export default function EcoAIModal({
   isOpen,
   onClose,
+  onEnter,
   userName,
   onStartSentimentos,
   onSugerirConteudo,
@@ -82,7 +84,24 @@ export default function EcoAIModal({
               <div>
                 <h3 className="text-xl font-bold text-gray-800 mb-4">Iniciar nova conversa</h3>
                 <div className="space-y-3">
-                  {/* Card 1: Vamos falar sobre meus sentimentos */}
+                  {/* Card 1: Entrar sem mensagem */}
+                  <button
+                    onClick={onEnter}
+                    className="w-full bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0 text-left group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-16 rounded-full flex-shrink-0 bg-blue-100 flex items-center justify-center">
+                        <Play size={28} className="text-[#6EC8FF]" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-800 mb-1">Entrar</h4>
+                        <p className="text-sm text-gray-600">Comece sua conversa do jeito que preferir, sem sugestões.</p>
+                      </div>
+                      <ChevronRight size={20} className="text-gray-400 flex-shrink-0 group-hover:translate-x-1 transition-transform ml-2" />
+                    </div>
+                  </button>
+
+                  {/* Card 2: Vamos falar sobre meus sentimentos */}
                   <button
                     onClick={onStartSentimentos}
                     className="w-full bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0 text-left group"

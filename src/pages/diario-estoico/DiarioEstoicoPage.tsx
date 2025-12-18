@@ -296,8 +296,21 @@ export default function DiarioEstoicoPage() {
         {/* Header */}
         <HomeHeader onLogout={handleLogout} />
 
+        {/* Botão Voltar */}
+        <div className="w-full px-4 pt-6 md:px-8">
+          <div className="mx-auto max-w-7xl">
+            <button
+              onClick={() => navigate('/app')}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow"
+            >
+              <ChevronLeft size={18} />
+              Voltar
+            </button>
+          </div>
+        </div>
+
         {/* Main Content */}
-        <main className="w-full px-4 py-8 md:px-8 md:py-12">
+        <main className="w-full px-4 py-4 md:px-8 md:py-8">
           {/* Grid de cards */}
           <div className="mx-auto max-w-7xl">
             {availableMaxims.length === 0 ? (

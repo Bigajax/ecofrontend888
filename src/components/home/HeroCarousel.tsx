@@ -33,8 +33,8 @@ const getDailyReflectionVideo = (): string => {
 const CAROUSEL_ITEMS: CarouselItem[] = [
   {
     id: 1,
-    title: 'Um minuto por dia para clarear a mente e fortalecer sua resiliência.',
-    description: '',
+    title: 'Um minuto para organizar seus pensamentos',
+    description: 'Uma reflexão estoica para começar o dia com clareza.',
     background:
       'url("/images/diario-estoico.webp")',
     video: getDailyReflectionVideo(),
@@ -217,7 +217,7 @@ export default function HeroCarousel({
       <div className="relative flex h-full flex-col justify-between p-4 sm:p-6 pb-12 sm:pb-14">
         <div className="flex-1" />
         <div className="space-y-1.5 sm:space-y-2">
-          <h3 className="font-display text-2xl font-medium text-white drop-shadow-lg leading-[1.4] tracking-[-0.2px] text-center">
+          <h3 className="font-display text-2xl font-medium text-white drop-shadow-lg leading-[1.4] tracking-[-0.2px] text-center px-2">
             {item.title}
           </h3>
           <p className="text-[12px] sm:text-[13px] leading-relaxed text-white/85 drop-shadow-md text-center">
@@ -239,7 +239,6 @@ export default function HeroCarousel({
                 }}
                 className="flex items-center gap-2 rounded-full bg-white px-4 sm:px-5 py-1.5 sm:py-2 text-sky-950 shadow-md transition duration-200 hover:scale-[1.02] hover:bg-sky-50 cursor-pointer active:scale-95"
               >
-                <BookOpen size={14} className="sm:w-4 sm:h-4" />
                 <span className="text-[12px] sm:text-[13px] font-medium">Ler a reflexão de hoje</span>
               </button>
             </div>
