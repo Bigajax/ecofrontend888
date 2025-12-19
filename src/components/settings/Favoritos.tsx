@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Play } from 'lucide-react';
+import { trackMeditationEvent, parseDurationToSeconds, getCategoryFromPath } from '@/analytics/meditation';
 
 interface Meditacao {
   id: string;
@@ -45,21 +46,53 @@ export default function Favoritos() {
   ]);
 
   const handlePlayMeditation = (meditacao: Meditacao) => {
+    // Inferir categoria do nome da categoria
+    const categoryMap: Record<string, string> = {
+      'Dr. Joe Dispenza': 'dr_joe_dispenza',
+      'Sono': 'sono',
+      'Introdução': 'introducao',
+    };
+    const category = categoryMap[meditacao.category] || 'unknown';
+
     navigate('/app/meditation-player', {
       state: {
         meditation: {
+          id: meditacao.id,
           title: meditacao.title,
           duration: meditacao.duration,
           audioUrl: meditacao.audioUrl,
           imageUrl: meditacao.image,
           backgroundMusic: 'Cristais',
           gradient: meditacao.gradient,
-        }
+          category,
+          isPremium: false,
+        },
+        returnTo: '/app/configuracoes',
       }
     });
   };
 
   const handleRemoveFavorite = (id: string) => {
+    const meditacao = favoritos.find(fav => fav.id === id);
+    if (!meditacao) return;
+
+    // Inferir categoria
+    const categoryMap: Record<string, string> = {
+      'Dr. Joe Dispenza': 'dr_joe_dispenza',
+      'Sono': 'sono',
+      'Introdução': 'introducao',
+    };
+    const category = categoryMap[meditacao.category] || 'unknown';
+
+    // Track Unfavorited
+    const payload = {
+      meditation_id: meditacao.id,
+      meditation_title: meditacao.title,
+      category,
+      source: 'settings' as const,
+    };
+    trackMeditationEvent('Front-end: Meditation Unfavorited', payload);
+
     setFavoritos(favoritos.filter(fav => fav.id !== id));
   };
 

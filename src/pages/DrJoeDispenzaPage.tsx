@@ -1,9 +1,16 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Play, Check, Circle, ArrowLeft, Lock } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import MeditationPageSkeleton from '@/components/MeditationPageSkeleton';
+import {
+  trackMeditationEvent,
+  parseDurationToSeconds,
+  type MeditationListViewedPayload,
+  type MeditationSelectedPayload,
+  type PremiumContentBlockedPayload,
+} from '@/analytics/meditation';
 
 interface Meditation {
   id: string;
@@ -79,6 +86,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
 
 export default function DrJoeDispenzaPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -111,19 +119,47 @@ export default function DrJoeDispenzaPage() {
   }, [meditations, user?.id]);
 
   const handleMeditationClick = (meditation: Meditation) => {
-    if (meditation.isPremium) return;
+    // Track premium content blocked
+    if (meditation.isPremium) {
+      const payload: Omit<PremiumContentBlockedPayload, 'user_id' | 'session_id' | 'timestamp'> = {
+        meditation_id: meditation.id,
+        meditation_title: meditation.title,
+        category: 'dr_joe_dispenza',
+        duration_seconds: parseDurationToSeconds(meditation.duration),
+        is_premium: true,
+        source_page: location.pathname,
+        has_subscription: false, // TODO: integrar com sistema de assinatura
+      };
+      trackMeditationEvent('Front-end: Premium Content Blocked', payload);
+      return;
+    }
+
+    // Track meditation selected
+    const payload: Omit<MeditationSelectedPayload, 'user_id' | 'session_id' | 'timestamp'> = {
+      meditation_id: meditation.id,
+      meditation_title: meditation.title,
+      category: 'dr_joe_dispenza',
+      duration_seconds: parseDurationToSeconds(meditation.duration),
+      is_premium: meditation.isPremium || false,
+      is_completed: meditation.completed,
+      source_page: location.pathname,
+    };
+    trackMeditationEvent('Front-end: Meditation Selected', payload);
 
     sessionStorage.setItem('drJoePageScrollPosition', window.scrollY.toString());
 
     navigate('/app/meditation-player', {
       state: {
         meditation: {
+          id: meditation.id,
           title: meditation.title,
           duration: meditation.duration,
           audioUrl: meditation.audioUrl,
           imageUrl: meditation.image.replace('url("', '').replace('")', ''),
           backgroundMusic: 'Cristais',
           gradient: meditation.gradient,
+          category: 'dr_joe_dispenza',
+          isPremium: meditation.isPremium || false,
         },
         returnTo: '/app/dr-joe-dispenza',
       },
@@ -149,10 +185,20 @@ export default function DrJoeDispenzaPage() {
     // Simulate loading time to show skeleton
     const timer = setTimeout(() => {
       setIsLoading(false);
+
+      // Track list viewed after loading
+      const payload: Omit<MeditationListViewedPayload, 'user_id' | 'session_id' | 'timestamp'> = {
+        category: 'dr_joe_dispenza',
+        total_meditations: meditations.length,
+        completed_count: meditations.filter(m => m.completed).length,
+        premium_count: meditations.filter(m => m.isPremium).length,
+        page_path: location.pathname,
+      };
+      trackMeditationEvent('Front-end: Meditation List Viewed', payload);
     }, 800);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [meditations, location.pathname]);
 
   return (
     <div className="min-h-screen bg-white font-primary">

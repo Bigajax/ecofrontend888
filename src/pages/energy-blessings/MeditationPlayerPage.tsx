@@ -4,15 +4,21 @@ import { ChevronLeft, Play, Pause, RotateCcw, RotateCw, Heart, Music, Volume2 } 
 import { motion } from 'framer-motion';
 import HomeHeader from '@/components/home/HomeHeader';
 import BackgroundSoundsModal from '@/components/BackgroundSoundsModal';
+import MeditationCompletion from '@/components/meditation/MeditationCompletion';
 import { type Sound, getAllSounds } from '@/data/sounds';
+import { useMeditationAnalytics } from '@/hooks/useMeditationAnalytics';
+import { parseDurationToSeconds, getCategoryFromPath, trackMeditationEvent } from '@/analytics/meditation';
 
 interface MeditationData {
+  id?: string;
   title: string;
   duration: string;
   audioUrl: string;
   imageUrl: string;
   backgroundMusic?: string;
   gradient?: string;
+  category?: string;
+  isPremium?: boolean;
 }
 
 // Animation variants for smooth entry
@@ -40,13 +46,35 @@ export default function MeditationPlayerPage() {
 
   // Dados da meditação passados via navigation state
   const meditationData: MeditationData = location.state?.meditation || {
+    id: 'fallback_1',
     title: 'Bênçãos dos Centros de Energia',
     duration: '07:42',
     audioUrl: '/audio/energy-blessings-meditation.mp3',
     imageUrl: '/images/energy-blessings.webp',
     backgroundMusic: 'Cristais',
-    gradient: 'linear-gradient(to bottom, #F5C563 0%, #F5A84D 15%, #F39439 30%, #E67E3C 45%, #D95B39 60%, #C74632 80%, #A63428 100%)'
+    gradient: 'linear-gradient(to bottom, #F5C563 0%, #F5A84D 15%, #F39439 30%, #E67E3C 45%, #D95B39 60%, #C74632 80%, #A63428 100%)',
+    category: 'fallback',
+    isPremium: false,
   };
+
+  // Inferir categoria do returnTo se não fornecido
+  const returnTo = location.state?.returnTo || '/app';
+  const category = meditationData.category || getCategoryFromPath(returnTo);
+
+  //Initialize analytics
+  const analytics = useMeditationAnalytics({
+    meditationId: meditationData.id || 'unknown',
+    meditationTitle: meditationData.title,
+    category,
+    durationSeconds: parseDurationToSeconds(meditationData.duration),
+    isPremium: meditationData.isPremium || false,
+  });
+
+  // Track if this is the first play (to differentiate Started from Resumed)
+  const hasPlayedOnce = useRef(false);
+
+  // Track if Completed event was already sent (prevent multiple sends)
+  const hasCompletedEventSent = useRef(false);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -78,9 +106,22 @@ export default function MeditationPlayerPage() {
   const volumeSliderRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Estado para tela de conclusão
+  const [showCompletionScreen, setShowCompletionScreen] = useState(false);
+
   // Scroll para o topo quando a página carregar
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  // Track Abandoned on component unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        analytics.trackAbandoned(audioRef.current.currentTime, 'navigation');
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sincronizar som de fundo com o estado de reprodução
@@ -128,6 +169,16 @@ export default function MeditationPlayerPage() {
       backgroundGainNodeRef.current.gain.value = softVolume;
     }
 
+    // Track background volume change (with debounce handled by analytics hook)
+    if (previousBackgroundVolumeRef.current !== backgroundVolume) {
+      analytics.trackBackgroundVolumeChanged(
+        previousBackgroundVolumeRef.current,
+        backgroundVolume,
+        selectedBackgroundSound?.id || 'none'
+      );
+      previousBackgroundVolumeRef.current = backgroundVolume;
+    }
+
     // Se volume for 0, pausar o áudio de fundo
     if (backgroundAudioRef.current) {
       if (backgroundVolume === 0) {
@@ -139,26 +190,57 @@ export default function MeditationPlayerPage() {
         });
       }
     }
-  }, [backgroundVolume, isPlaying, selectedBackgroundSound]);
+  }, [backgroundVolume, isPlaying, selectedBackgroundSound, analytics]);
+
+  // Track previous volumes for change detection
+  const previousMeditationVolume = useRef(meditationVolume);
+  const previousBackgroundVolumeRef = useRef(backgroundVolume);
 
   // Controlar volume do áudio da meditação
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = meditationVolume / 100;
     }
-  }, [meditationVolume]);
+
+    // Track meditation volume change (with debounce handled by analytics hook)
+    if (previousMeditationVolume.current !== meditationVolume) {
+      analytics.trackVolumeChanged(previousMeditationVolume.current, meditationVolume);
+      previousMeditationVolume.current = meditationVolume;
+    }
+  }, [meditationVolume, analytics]);
 
   const handleFavoriteToggle = () => {
     const newFavoriteState = !isFavorite;
     setIsFavorite(newFavoriteState);
 
-    // Mostrar toast de confirmação
+    // Track Favorited/Unfavorited
     if (newFavoriteState) {
+      // Track Favorited
+      const payload = {
+        meditation_id: meditationData.id || 'unknown',
+        meditation_title: meditationData.title,
+        category,
+        duration_seconds: parseDurationToSeconds(meditationData.duration),
+        is_completed: false, // TODO: integrar com sistema de progresso
+        source: 'player' as const,
+      };
+      trackMeditationEvent('Front-end: Meditation Favorited', payload);
+
+      // Mostrar toast de confirmação
       setShowFavoriteToast(true);
       // Auto-hide após 3 segundos
       setTimeout(() => {
         setShowFavoriteToast(false);
       }, 3000);
+    } else {
+      // Track Unfavorited
+      const payload = {
+        meditation_id: meditationData.id || 'unknown',
+        meditation_title: meditationData.title,
+        category,
+        source: 'player' as const,
+      };
+      trackMeditationEvent('Front-end: Meditation Unfavorited', payload);
     }
   };
 
@@ -170,7 +252,18 @@ export default function MeditationPlayerPage() {
     setIsBackgroundModalOpen(false);
   };
 
+  const previousBackgroundSound = useRef(selectedBackgroundSound);
+
   const handleSelectBackgroundSound = (sound: Sound) => {
+    // Track Background Sound Selected
+    analytics.trackBackgroundSoundSelected(
+      previousBackgroundSound.current?.id || 'none',
+      sound.id,
+      sound.title,
+      sound.category
+    );
+
+    previousBackgroundSound.current = sound;
     setSelectedBackgroundSound(sound);
   };
 
@@ -178,33 +271,75 @@ export default function MeditationPlayerPage() {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateTime = () => {
+      setCurrentTime(audio.currentTime);
+
+      // Check if meditation is 95%+ complete (send only ONCE)
+      if (
+        !hasCompletedEventSent.current &&
+        audio.duration > 0 &&
+        (audio.currentTime / audio.duration) >= 0.95
+      ) {
+        hasCompletedEventSent.current = true;
+        analytics.trackCompleted({
+          backgroundSoundId: selectedBackgroundSound?.id || 'none',
+          backgroundSoundTitle: selectedBackgroundSound?.title || 'Nenhum',
+          meditationVolumeFinal: meditationVolume,
+          backgroundVolumeFinal: backgroundVolume,
+        });
+        setShowCompletionScreen(true);
+      }
+    };
+
     const updateDuration = () => {
       setDuration(audio.duration);
       // Inicializar volume quando metadata carregar
       audio.volume = meditationVolume / 100;
     };
 
+    const handleEnded = () => {
+      setIsPlaying(false);
+
+      // Track Completed on natural end (only if not sent already)
+      if (!hasCompletedEventSent.current) {
+        hasCompletedEventSent.current = true;
+        analytics.trackCompleted({
+          backgroundSoundId: selectedBackgroundSound?.id || 'none',
+          backgroundSoundTitle: selectedBackgroundSound?.title || 'Nenhum',
+          meditationVolumeFinal: meditationVolume,
+          backgroundVolumeFinal: backgroundVolume,
+        });
+        setShowCompletionScreen(true);
+      }
+    };
+
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
-    audio.addEventListener('ended', () => setIsPlaying(false));
+    audio.addEventListener('ended', handleEnded);
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', updateDuration);
-      audio.removeEventListener('ended', () => setIsPlaying(false));
+      audio.removeEventListener('ended', handleEnded);
     };
-  }, [meditationVolume]);
+  }, [meditationVolume, backgroundVolume, selectedBackgroundSound, analytics]);
 
   const handlePlayPause = () => {
     if (audioRef.current) {
       if (isPlaying) {
+        // PAUSE
         audioRef.current.pause();
         // Pausar também o som de fundo
         if (backgroundAudioRef.current) {
           backgroundAudioRef.current.pause();
         }
+
+        // Track Paused
+        analytics.trackPaused(audioRef.current.currentTime);
+
+        setIsPlaying(false);
       } else {
+        // PLAY
         audioRef.current.play();
         // Iniciar automaticamente o som de fundo quando play for clicado
         if (backgroundAudioRef.current && selectedBackgroundSound?.audioUrl) {
@@ -212,22 +347,62 @@ export default function MeditationPlayerPage() {
             console.error('Erro ao reproduzir som de fundo:', err);
           });
         }
+
+        // Track Started (first play) ou Resumed (subsequent plays)
+        if (!hasPlayedOnce.current) {
+          analytics.trackStarted({
+            backgroundSoundId: selectedBackgroundSound?.id || 'none',
+            backgroundSoundTitle: selectedBackgroundSound?.title || 'Nenhum',
+            meditationVolume,
+            backgroundVolume,
+            sourcePage: returnTo,
+          });
+          hasPlayedOnce.current = true;
+        } else {
+          analytics.trackResumed(audioRef.current.currentTime);
+        }
+
+        setIsPlaying(true);
       }
-      setIsPlaying(!isPlaying);
     }
   };
 
   const handleSkip = (seconds: number) => {
     if (audioRef.current) {
+      const beforeTime = audioRef.current.currentTime;
       audioRef.current.currentTime += seconds;
+      const afterTime = audioRef.current.currentTime;
+
+      // Track Skip
+      analytics.trackSkip(
+        seconds > 0 ? 'forward' : 'backward',
+        beforeTime,
+        afterTime
+      );
     }
   };
+
+  // Track seek start time
+  const seekStartTime = useRef<number | null>(null);
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = parseFloat(e.target.value);
     if (audioRef.current) {
+      // Capture seek start time on first change
+      if (seekStartTime.current === null) {
+        seekStartTime.current = audioRef.current.currentTime;
+      }
+
       audioRef.current.currentTime = newTime;
       setCurrentTime(newTime);
+    }
+  };
+
+  const handleProgressChangeEnd = () => {
+    // Track Seek when user finishes dragging
+    if (seekStartTime.current !== null && audioRef.current) {
+      analytics.trackSeek(seekStartTime.current, audioRef.current.currentTime);
+      seekStartTime.current = null;
     }
   };
 
@@ -531,6 +706,8 @@ export default function MeditationPlayerPage() {
                     max={duration || 0}
                     value={currentTime}
                     onChange={handleProgressChange}
+                    onMouseUp={handleProgressChangeEnd}
+                    onTouchEnd={handleProgressChangeEnd}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-manipulation z-10"
                   />
                   <div
@@ -573,6 +750,8 @@ export default function MeditationPlayerPage() {
               max={duration || 0}
               value={currentTime}
               onChange={handleProgressChange}
+              onMouseUp={handleProgressChangeEnd}
+              onTouchEnd={handleProgressChangeEnd}
               className="flex-1 cursor-pointer h-1"
               style={{
                 background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`,
@@ -658,6 +837,25 @@ export default function MeditationPlayerPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Meditation Completion Screen */}
+      {showCompletionScreen && (
+        <MeditationCompletion
+          meditationId={meditationData.id || 'unknown'}
+          meditationTitle={meditationData.title}
+          meditationDuration={duration}
+          meditationCategory={category}
+          onDismiss={() => {
+            setShowCompletionScreen(false);
+            handleBack();
+          }}
+          sessionMetrics={{
+            pauseCount: analytics.getSessionMetrics().pauseCount,
+            skipCount: analytics.getSessionMetrics().skipCount,
+            actualPlayTime: currentTime,
+          }}
+        />
       )}
     </div>
   );
