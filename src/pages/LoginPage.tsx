@@ -206,7 +206,7 @@ const LoginPage: React.FC = () => {
           {/* Logo no topo */}
           <div className="flex-shrink-0">
             <img
-              src="/images/ECOTOPIA.webp"
+              src="/images/ECOTOPIA-Natal.webp"
               alt="Ecotopia"
               className="w-32 h-32 object-contain drop-shadow-lg"
             />
