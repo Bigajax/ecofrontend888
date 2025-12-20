@@ -85,15 +85,8 @@ export async function submitMeditationFeedback(
       body: JSON.stringify(payload),
     });
 
-    // Parse response
-    const data = await response.json();
-
-    // Handle success
-    if (response.ok) {
-      return data as MeditationFeedbackResponse;
-    }
-
-    // Handle 404 - endpoint not implemented yet (graceful degradation)
+    // Handle 404 FIRST - endpoint not implemented yet (graceful degradation)
+    // Check status BEFORE parsing JSON to avoid parse errors
     if (response.status === 404) {
       console.warn('[meditationFeedback] Backend endpoint not implemented yet (404). Skipping server sync.');
       // Return a mock success response - analytics will still be tracked
@@ -102,6 +95,14 @@ export async function submitMeditationFeedback(
         feedback_id: 'local-only',
         message: 'Feedback registrado localmente (backend pendente)',
       };
+    }
+
+    // Parse response (only if not 404)
+    const data = await response.json();
+
+    // Handle success
+    if (response.ok) {
+      return data as MeditationFeedbackResponse;
     }
 
     // Handle validation errors (400)
