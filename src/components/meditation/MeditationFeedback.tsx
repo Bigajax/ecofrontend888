@@ -20,7 +20,7 @@ interface MeditationFeedbackProps {
     skipCount: number;
     actualPlayTime: number;
   };
-  onFeedbackSubmitted?: (vote: 'positive' | 'negative', reasons?: string[]) => void;
+  onFeedbackSubmitted?: (vote: 'positive' | 'negative', reasons?: string[]) => void | Promise<void>;
 }
 
 const MEDITATION_FEEDBACK_REASONS = [
@@ -42,10 +42,20 @@ export default function MeditationFeedback({
 }: MeditationFeedbackProps) {
   const [mode, setMode] = useState<FeedbackMode>('ask');
   const [selectedReasons, setSelectedReasons] = useState<Set<ReasonKey>>(new Set());
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handlePositiveVote = () => {
-    setMode('done');
-    onFeedbackSubmitted?.('positive');
+  const handlePositiveVote = async () => {
+    setIsSubmitting(true);
+    try {
+      await onFeedbackSubmitted?.('positive');
+      setMode('done');
+    } catch (error) {
+      console.error('[MeditationFeedback] Error submitting positive feedback:', error);
+      // Still transition to done state - error already logged in parent
+      setMode('done');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleNegativeVote = () => {
@@ -64,10 +74,19 @@ export default function MeditationFeedback({
     });
   };
 
-  const handleSubmitReasons = () => {
+  const handleSubmitReasons = async () => {
     const reasonsArray = Array.from(selectedReasons);
-    setMode('done');
-    onFeedbackSubmitted?.('negative', reasonsArray);
+    setIsSubmitting(true);
+    try {
+      await onFeedbackSubmitted?.('negative', reasonsArray);
+      setMode('done');
+    } catch (error) {
+      console.error('[MeditationFeedback] Error submitting negative feedback:', error);
+      // Still transition to done state - error already logged in parent
+      setMode('done');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Ask mode - thumbs up/down
@@ -85,12 +104,14 @@ export default function MeditationFeedback({
           {/* Thumbs down */}
           <button
             onClick={handleNegativeVote}
+            disabled={isSubmitting}
             className="
               w-16 h-16 md:w-20 md:h-20
               rounded-full border-2 border-gray-300
               flex items-center justify-center
               hover:border-eco-500 hover:scale-105
               active:bg-eco-50
+              disabled:opacity-50 disabled:cursor-not-allowed
               transition-all duration-200
             "
             aria-label="Não gostei"
@@ -101,12 +122,14 @@ export default function MeditationFeedback({
           {/* Thumbs up */}
           <button
             onClick={handlePositiveVote}
+            disabled={isSubmitting}
             className="
               w-16 h-16 md:w-20 md:h-20
               rounded-full border-2 border-gray-300
               flex items-center justify-center
               hover:border-eco-500 hover:scale-105
               active:bg-eco-50
+              disabled:opacity-50 disabled:cursor-not-allowed
               transition-all duration-200
             "
             aria-label="Gostei"
@@ -166,7 +189,7 @@ export default function MeditationFeedback({
 
         <button
           onClick={handleSubmitReasons}
-          disabled={selectedReasons.size === 0}
+          disabled={selectedReasons.size === 0 || isSubmitting}
           className="
             mt-6 px-10 py-3 rounded-full
             bg-gray-900 text-white font-semibold text-base
@@ -176,7 +199,7 @@ export default function MeditationFeedback({
             shadow-lg
           "
         >
-          Enviar
+          {isSubmitting ? 'Enviando...' : 'Enviar'}
         </button>
       </div>
     );

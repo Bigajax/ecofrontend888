@@ -212,6 +212,12 @@ export function useMeditationAnalytics(info: MeditationInfo) {
 
       sessionMetrics.current.hasCompletedEventSent = true;
 
+      // Garantir que playSessionId exista (caso Completed seja chamado sem Started)
+      if (!sessionMetrics.current.playSessionId) {
+        sessionMetrics.current.playSessionId = generateSessionId();
+        sessionMetrics.current.startTime = Date.now();
+      }
+
       // Calcular tempo real de reprodução
       const totalElapsedMs = sessionMetrics.current.startTime
         ? Date.now() - sessionMetrics.current.startTime

@@ -11,6 +11,7 @@ import { ChevronLeft } from 'lucide-react';
 import { getTodayMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
 import { useMeditationStreak } from '@/hooks/useMeditationStreak';
 import { trackMeditationFeedback } from '@/analytics/meditation';
+import { submitMeditationFeedback } from '@/api/meditationFeedback';
 import DiarioEstoicoCard from '@/components/diario-estoico/DiarioEstoicoCard';
 import MeditationFeedback from '@/components/meditation/MeditationFeedback';
 
@@ -43,7 +44,35 @@ export default function MeditationCompletion({
     updateStreak();
   }, [updateStreak]);
 
-  const handleFeedbackSubmitted = (vote: 'positive' | 'negative', reasons?: string[]) => {
+  const handleFeedbackSubmitted = async (vote: 'positive' | 'negative', reasons?: string[]) => {
+    // Build payload for backend
+    const payload = {
+      vote,
+      reasons,
+      meditation_id: meditationId,
+      meditation_title: meditationTitle,
+      meditation_duration_seconds: meditationDuration,
+      meditation_category: meditationCategory,
+      actual_play_time_seconds: sessionMetrics?.actualPlayTime || meditationDuration,
+      completion_percentage: sessionMetrics?.actualPlayTime
+        ? Math.round((sessionMetrics.actualPlayTime / meditationDuration) * 100)
+        : 100,
+      pause_count: sessionMetrics?.pauseCount || 0,
+      skip_count: sessionMetrics?.skipCount || 0,
+      seek_count: 0, // TODO: Add seek tracking
+      feedback_source: 'meditation_completion',
+    };
+
+    try {
+      // Send to backend API
+      await submitMeditationFeedback(payload);
+      console.log('[MeditationCompletion] Feedback sent to backend successfully');
+    } catch (error) {
+      // Log error but don't block the user experience
+      console.error('[MeditationCompletion] Failed to send feedback to backend:', error);
+    }
+
+    // Always send to Mixpanel analytics (even if backend fails)
     trackMeditationFeedback(
       vote,
       {

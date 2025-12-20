@@ -273,14 +273,21 @@ export function validateEventPayload(
   eventName: string,
   payload: Record<string, unknown>
 ): boolean {
+  // DEBUG: Log completo do payload
+  console.log(`[Analytics] Validating ${eventName}`, payload);
+
   // 1. Campos obrigatórios para eventos de meditação
   if (!payload.meditation_id && eventName !== 'Front-end: Meditation List Viewed') {
     console.warn(`[Analytics] Missing meditation_id for ${eventName}`);
     return false;
   }
 
-  if (!payload.category && eventName !== 'Front-end: Meditation List Viewed') {
-    console.warn(`[Analytics] Missing category for ${eventName}`);
+  // Eventos de feedback usam meditation_category em vez de category
+  const isFeedbackEvent = eventName.includes('Feedback');
+  const categoryField = isFeedbackEvent ? 'meditation_category' : 'category';
+
+  if (!payload[categoryField] && eventName !== 'Front-end: Meditation List Viewed') {
+    console.warn(`[Analytics] Missing ${categoryField} for ${eventName}`);
     return false;
   }
 
@@ -331,6 +338,7 @@ export function validateEventPayload(
   const isSessionEvent = sessionEvents.some((e) => eventName.includes(e));
   if (isSessionEvent && !payload.play_session_id) {
     console.warn(`[Analytics] Missing play_session_id for ${eventName}`);
+    console.warn(`[Analytics] Payload:`, payload);
     return false;
   }
 
