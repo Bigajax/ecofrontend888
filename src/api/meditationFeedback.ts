@@ -79,11 +79,27 @@ export async function submitMeditationFeedback(
     const apiUrl = import.meta.env.VITE_API_URL || '';
     const endpoint = `${apiUrl}/api/meditation/feedback`;
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-    });
+    console.log('[meditationFeedback] Sending to endpoint:', endpoint);
+
+    let response: Response;
+    try {
+      response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+    } catch (fetchError) {
+      // Network error - could be offline, CORS, or server unreachable
+      console.warn('[meditationFeedback] Network error during fetch:', fetchError);
+      // Return mock success to avoid breaking UX - analytics will still work
+      return {
+        success: true,
+        feedback_id: 'local-only-network-error',
+        message: 'Feedback registrado localmente (erro de rede)',
+      };
+    }
+
+    console.log('[meditationFeedback] Response status:', response.status);
 
     // Handle 404 FIRST - endpoint not implemented yet (graceful degradation)
     // Check status BEFORE parsing JSON to avoid parse errors
@@ -92,17 +108,35 @@ export async function submitMeditationFeedback(
       // Return a mock success response - analytics will still be tracked
       return {
         success: true,
-        feedback_id: 'local-only',
+        feedback_id: 'local-only-404',
         message: 'Feedback registrado localmente (backend pendente)',
       };
     }
 
-    // Parse response (only if not 404)
-    const data = await response.json();
-
-    // Handle success
+    // Handle success before parsing (to avoid unnecessary parsing)
     if (response.ok) {
-      return data as MeditationFeedbackResponse;
+      try {
+        const data = await response.json();
+        return data as MeditationFeedbackResponse;
+      } catch (parseError) {
+        console.warn('[meditationFeedback] Failed to parse success response:', parseError);
+        // Even if parse fails, the request succeeded
+        return {
+          success: true,
+          feedback_id: 'local-only-parse-error',
+          message: 'Feedback registrado com sucesso',
+        };
+      }
+    }
+
+    // For error responses, try to parse the error details
+    let data: any;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      console.warn('[meditationFeedback] Failed to parse error response:', parseError);
+      // Can't parse error details, return generic error
+      throw new Error(`Erro do servidor (${response.status}). Tente novamente.`);
     }
 
     // Handle validation errors (400)
@@ -119,18 +153,15 @@ export async function submitMeditationFeedback(
     }
 
     // Generic error fallback
-    throw new Error('Erro ao enviar feedback. Tente novamente.');
+    throw new Error(`Erro ao enviar feedback (${response.status}). Tente novamente.`);
   } catch (error) {
-    // Network errors
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Erro de conexão. Verifique sua internet.');
-    }
-
-    // Re-throw with user-friendly message
-    if (error instanceof Error) {
+    // If it's already our custom error, re-throw it
+    if (error instanceof Error && error.message.includes('Erro')) {
       throw error;
     }
 
+    // Unknown error
+    console.error('[meditationFeedback] Unexpected error:', error);
     throw new Error('Erro desconhecido ao enviar feedback.');
   }
 }

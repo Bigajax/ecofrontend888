@@ -301,11 +301,23 @@ export default function DiarioEstoicoPage() {
           <div className="mx-auto max-w-7xl">
             <button
               onClick={() => navigate('/app')}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow"
+              className="inline-flex items-center justify-center w-10 h-10 text-gray-700 bg-white rounded-full border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow"
+              aria-label="Voltar"
             >
-              <ChevronLeft size={18} />
-              Voltar
+              <ChevronLeft size={20} />
             </button>
+          </div>
+        </div>
+
+        {/* Título e Subtítulo */}
+        <div className="w-full px-4 pt-6 md:px-8">
+          <div className="mx-auto max-w-7xl text-center">
+            <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2">
+              DIÁRIO ESTOICO
+            </h1>
+            <p className="text-sm md:text-base lg:text-lg font-medium tracking-wider" style={{ color: '#8B4A3C' }}>
+              366 LIÇÕES SOBRE SABEDORIA, PERSEVERANÇA E A ARTE DE VIVER
+            </p>
           </div>
         </div>
 
