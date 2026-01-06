@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import HomePageTour from '../components/HomePageTour';
 import mixpanel from '../lib/mixpanel';
 import { supabase } from '@/lib/supabaseClient';
+import { useGoogleOneTap } from '../hooks/useGoogleOneTap';
 
 /* Divisor com traço mais marcado */
 const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
@@ -65,7 +66,7 @@ function translateAuthError(err: any): string {
 }
 
 const LoginPage: React.FC = () => {
-  const { signIn, signInWithGoogle, user } = useAuth();
+  const { signIn, signInWithGoogle, signInWithGoogleIdToken, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isTourPath = Boolean(useMatch('/login/tour'));
@@ -81,6 +82,30 @@ const LoginPage: React.FC = () => {
   const [forgotLoading, setForgotLoading] = useState(false);
 
   const canSubmit = email.trim().length > 3 && password.length >= 6 && !loading;
+
+  // Google One Tap - Login automático para usuários já logados no Google
+  useGoogleOneTap({
+    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+    enabled: !user && !loading, // Só exibe se não estiver logado
+    autoSelect: false, // Não seleciona automaticamente (melhor UX)
+    onSuccess: async (idToken) => {
+      setError('');
+      setLoading(true);
+      try {
+        mixpanel.track('Front-end: Login Iniciado', { method: 'google_one_tap' });
+        await signInWithGoogleIdToken(idToken);
+        mixpanel.track('Front-end: Login Concluído', { method: 'google_one_tap' });
+      } catch (err: any) {
+        setLoading(false);
+        setError(translateAuthError(err));
+        mixpanel.track('Front-end: Login Falhou', { method: 'google_one_tap', reason: translateAuthError(err) });
+      }
+    },
+    onError: (error) => {
+      console.error('[LoginPage] Google One Tap error:', error);
+      setError('Não foi possível fazer login com Google.');
+    },
+  });
 
   // Carregar credenciais salvas do localStorage
   useEffect(() => {

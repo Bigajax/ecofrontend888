@@ -19,6 +19,7 @@ interface AuthContextType {
   guestId: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  signInWithGoogleIdToken: (idToken: string) => Promise<void>;
   signOut: () => Promise<void>;
   register: (email: string, password: string, nome: string, telefone: string) => Promise<void>;
   loginAsGuest: () => Promise<void>;
@@ -379,6 +380,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithGoogleIdToken = async (idToken: string) => {
+    setLoading(true);
+    try {
+      // Sign in with Google ID token using Supabase
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+      });
+
+      if (error) throw error;
+
+      // Clear guest mode on successful login
+      setIsGuestMode(false);
+      setGuestId(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('eco.auth.guestMode');
+      }
+
+      // Sync with Mixpanel
+      if (data.user) {
+        syncMixpanelIdentity(data.user);
+        await safelyEnsureProfile(data.user, 'googleOneTap');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signOut = async () => {
     setLoading(true);
     try {
@@ -549,6 +578,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         guestId,
         signIn,
         signInWithGoogle,
+        signInWithGoogleIdToken,
         signOut,
         register,
         loginAsGuest,
