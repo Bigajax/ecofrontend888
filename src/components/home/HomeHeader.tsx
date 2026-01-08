@@ -55,7 +55,7 @@ export default function HomeHeader() {
             className="absolute left-8 transition-transform hover:scale-105 active:scale-95"
           >
             <img
-              src="/images/ECOTOPIA-Natal.webp"
+              src="/images/ECOTOPIA.webp"
               alt="Ecotopia"
               className="h-20"
             />
@@ -205,7 +205,7 @@ export default function HomeHeader() {
             className="transition-transform active:scale-95"
           >
             <img
-              src="/images/ECOTOPIA-Natal.webp"
+              src="/images/ECOTOPIA.webp"
               alt="Ecotopia"
               className="h-16"
             />
