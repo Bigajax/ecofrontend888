@@ -12,12 +12,16 @@ interface DiarioEstoicoCardProps {
   maxim: DailyMaxim;
   size?: 'small' | 'medium' | 'large';
   expandable?: boolean;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export default function DiarioEstoicoCard({
   maxim,
   size = 'medium',
   expandable = false,
+  isExpanded = false,
+  onToggleExpand,
 }: DiarioEstoicoCardProps) {
   // Size-specific classes
   const sizeClasses = {
@@ -42,43 +46,61 @@ export default function DiarioEstoicoCard({
     <div
       className={`
         relative rounded-2xl lg:rounded-3xl overflow-hidden
-        shadow-lg hover:shadow-xl transition-shadow duration-300
+        shadow-lg hover:shadow-xl transition-all duration-300
         ${sizeClasses[size]}
+        ${expandable ? 'cursor-pointer' : ''}
       `}
-      style={{
-        backgroundImage: maxim.background || 'url("/images/meditacao-19-nov.webp")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
+      onClick={expandable ? onToggleExpand : undefined}
     >
-      {/* Dark overlay for text readability */}
-      <div className="absolute inset-0 bg-black/40" />
+      <div
+        style={{
+          backgroundImage: maxim.background || 'url("/images/meditacao-19-nov.webp")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black/40" />
 
-      {/* Content */}
-      <div className="relative z-10 h-full flex flex-col items-center justify-center text-center space-y-4">
-        {/* Quote text */}
-        <p
-          className={`
-            font-display text-white
-            ${textClasses[size]}
-            leading-relaxed
-            drop-shadow-lg
-          `}
-        >
-          {maxim.text}
-        </p>
+        {/* Content */}
+        <div className="relative z-10 h-full flex flex-col items-center justify-center text-center space-y-4">
+          {/* Quote text */}
+          <p
+            className={`
+              font-display text-white
+              ${textClasses[size]}
+              leading-relaxed
+              drop-shadow-lg
+            `}
+          >
+            {maxim.text}
+          </p>
 
-        {/* Author */}
-        <p
-          className={`
-            text-white/90 italic
-            ${authorClasses[size]}
-            drop-shadow-md
-          `}
-        >
-          — {maxim.author}
-        </p>
+          {/* Author */}
+          <p
+            className={`
+              text-white/90 italic
+              ${authorClasses[size]}
+              drop-shadow-md
+            `}
+          >
+            — {maxim.author}
+            {maxim.source && `, ${maxim.source}`}
+          </p>
+        </div>
       </div>
+
+      {/* Expanded comment section */}
+      {isExpanded && maxim.comment && (
+        <div className="relative bg-white p-6 lg:p-8 border-t border-gray-200">
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">Comentário</h3>
+            <p className="text-sm lg:text-base leading-relaxed text-gray-700 whitespace-pre-line">
+              {maxim.comment}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
