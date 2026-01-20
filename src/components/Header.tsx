@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, NavLink, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, BarChart3, MessageSquare, MoreVertical } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, BarChart3, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrolled } from '@/hooks/useScrolled';
 import EcoBubbleOneEye from './EcoBubbleOneEye';
@@ -153,25 +153,13 @@ const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {/* Feedback button - Desktop */}
+            {/* Feedback button */}
             <button
               onClick={() => setFeedbackModalOpen(true)}
-              className="hidden sm:inline-flex items-center justify-center rounded-full bg-eco-baby px-3 py-1.5 text-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-eco-baby/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
+              className="inline-flex items-center gap-1.5 justify-center rounded-full bg-eco-baby px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-eco-baby/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
             >
-              Feedback
-            </button>
-
-            {/* Feedback button - Mobile (Three dots) */}
-            <button
-              onClick={() => setFeedbackModalOpen(true)}
-              className={`sm:hidden ${iconButtonClass}`}
-              aria-label="Abrir feedback"
-              title="Feedback"
-            >
-              <MoreVertical
-                className="h-5 w-5 text-[color:var(--color-text-primary)]"
-                strokeWidth={1.75}
-              />
+              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
+              <span className="hidden sm:inline">Feedback</span>
             </button>
 
             {isGuest && (

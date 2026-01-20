@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Search, Play, Moon, Music } from 'lucide-react';
+import { Home, Search, Play, Moon, Music, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import FeedbackModal from '@/components/FeedbackModal';
 
 export default function HomeHeader() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function HomeHeader() {
   const { user } = useAuth();
   const [explorarOpen, setExplorarOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const explorarRef = useRef<HTMLDivElement>(null);
 
   const navItems = [
@@ -177,29 +179,41 @@ export default function HomeHeader() {
             })}
           </nav>
 
-          {/* Avatar - Right */}
-          <button
-            onClick={() => navigate('/app/configuracoes')}
-            className="absolute right-8 flex h-10 w-10 items-center justify-center rounded-full overflow-hidden transition-transform hover:scale-105 active:scale-95"
-          >
-            {user?.user_metadata?.avatar_url ? (
-              <img
-                src={user.user_metadata.avatar_url}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#6EC8FF] to-[#4BA8E0] text-white text-sm font-semibold">
-                {user?.user_metadata?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-            )}
-          </button>
+          {/* Right Section - Feedback + Avatar */}
+          <div className="absolute right-8 flex items-center gap-3">
+            {/* Feedback Button */}
+            <button
+              onClick={() => setFeedbackModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-eco-baby px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-eco-baby/90 hover:scale-105 active:scale-95"
+            >
+              <MessageSquare size={16} strokeWidth={2} />
+              Feedback
+            </button>
+
+            {/* Avatar */}
+            <button
+              onClick={() => navigate('/app/configuracoes')}
+              className="flex h-10 w-10 items-center justify-center rounded-full overflow-hidden transition-transform hover:scale-105 active:scale-95"
+            >
+              {user?.user_metadata?.avatar_url ? (
+                <img
+                  src={user.user_metadata.avatar_url}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#6EC8FF] to-[#4BA8E0] text-white text-sm font-semibold">
+                  {user?.user_metadata?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Mobile Header - Logo Only */}
+      {/* Mobile Header - Logo + Feedback */}
       <header className="sticky top-0 z-40 border-b border-[var(--eco-line)]/20 bg-white/95 backdrop-blur-sm md:hidden">
-        <div className="flex items-center justify-center px-8 py-5">
+        <div className="flex items-center justify-between px-4 py-4">
           <button
             onClick={() => navigate('/app')}
             className="transition-transform active:scale-95"
@@ -207,11 +221,26 @@ export default function HomeHeader() {
             <img
               src="/images/ECOTOPIA.webp"
               alt="Ecotopia"
-              className="h-16"
+              className="h-14"
             />
+          </button>
+
+          {/* Feedback Button - Mobile */}
+          <button
+            onClick={() => setFeedbackModalOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-eco-baby px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-eco-baby/90 active:scale-95"
+          >
+            <MessageSquare size={16} strokeWidth={2} />
+            Feedback
           </button>
         </div>
       </header>
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={feedbackModalOpen}
+        onClose={() => setFeedbackModalOpen(false)}
+      />
     </>
   );
 }
