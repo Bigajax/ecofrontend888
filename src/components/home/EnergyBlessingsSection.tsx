@@ -66,10 +66,10 @@ export default function EnergyBlessingsSection({
       {/* Title */}
       <div className="mb-6 pb-4 border-b border-[var(--eco-line)]">
         <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
-          Recomendações para você
+          Jornadas
         </h2>
         <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
-          Conteúdos selecionados para sua transformação pessoal
+          Programas e meditações para sua transformação pessoal
         </p>
       </div>
 

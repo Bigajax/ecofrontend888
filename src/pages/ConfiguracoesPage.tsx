@@ -5,6 +5,7 @@ import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import EstatisticasTotais from '@/components/settings/EstatisticasTotais';
 import Favoritos from '@/components/settings/Favoritos';
+import SubscriptionManagement from '@/components/settings/SubscriptionManagement';
 
 export default function ConfiguracoesPage() {
   const { user, signOut, isGuestMode } = useAuth();
@@ -13,10 +14,16 @@ export default function ConfiguracoesPage() {
   const [selectedMenu, setSelectedMenu] = useState('configuracoes');
 
   useEffect(() => {
-    if (location.state?.selectedMenu) {
+    // Verificar se há query parameter ?menu=
+    const searchParams = new URLSearchParams(location.search);
+    const menuParam = searchParams.get('menu');
+
+    if (menuParam) {
+      setSelectedMenu(menuParam);
+    } else if (location.state?.selectedMenu) {
       setSelectedMenu(location.state.selectedMenu);
     }
-  }, [location.state]);
+  }, [location.state, location.search]);
 
   // Dados do usuário (mock - depois integrar com API)
   const [formData, setFormData] = useState({
@@ -143,6 +150,7 @@ export default function ConfiguracoesPage() {
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm p-6 md:p-8">
               {selectedMenu === 'estatisticas' && <EstatisticasTotais />}
               {selectedMenu === 'favoritos' && <Favoritos />}
+              {selectedMenu === 'assinatura' && <SubscriptionManagement />}
 
               {selectedMenu === 'configuracoes' && (
                 <>

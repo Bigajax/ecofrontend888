@@ -280,7 +280,7 @@ export default function HeroCarousel({
 
   return (
     <div
-      className={`group relative h-[280px] sm:h-[320px] overflow-hidden select-none ${
+      className={`group relative h-[340px] sm:h-[380px] overflow-hidden select-none ${
         variant === 'mobile'
           ? 'rounded-none border-0'
           : 'rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]'

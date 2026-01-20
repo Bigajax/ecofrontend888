@@ -4,6 +4,8 @@ import { Play, Check, Circle, ArrowLeft, Lock } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import MeditationPageSkeleton from '@/components/MeditationPageSkeleton';
+import { usePremiumContent } from '@/hooks/usePremiumContent';
+import UpgradeModal from '@/components/subscription/UpgradeModal';
 import {
   trackMeditationEvent,
   parseDurationToSeconds,
@@ -91,6 +93,7 @@ export default function IntroducaoMeditacaoPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { checkAccess, requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const [isLoading, setIsLoading] = useState(true);
 
   // Load meditations from localStorage
@@ -122,19 +125,27 @@ export default function IntroducaoMeditacaoPage() {
   }, [meditations, user?.id]);
 
   const handleMeditationClick = (meditation: Meditation) => {
-    // Track premium content blocked
+    // Check premium access
     if (meditation.isPremium) {
-      const payload: Omit<PremiumContentBlockedPayload, 'user_id' | 'session_id' | 'timestamp'> = {
-        meditation_id: meditation.id,
-        meditation_title: meditation.title,
-        category: 'introducao',
-        duration_seconds: parseDurationToSeconds(meditation.duration),
-        is_premium: true,
-        source_page: location.pathname,
-        has_subscription: false, // TODO: integrar com sistema de assinatura
-      };
-      trackMeditationEvent('Front-end: Premium Content Blocked', payload);
-      return;
+      const { hasAccess } = checkAccess(true);
+
+      if (!hasAccess) {
+        // Track premium content blocked
+        const payload: Omit<PremiumContentBlockedPayload, 'user_id' | 'session_id' | 'timestamp'> = {
+          meditation_id: meditation.id,
+          meditation_title: meditation.title,
+          category: 'introducao',
+          duration_seconds: parseDurationToSeconds(meditation.duration),
+          is_premium: true,
+          source_page: location.pathname,
+          has_subscription: false,
+        };
+        trackMeditationEvent('Front-end: Premium Content Blocked', payload);
+
+        // Show upgrade modal
+        requestUpgrade('introducao_meditacao');
+        return;
+      }
     }
 
     // Track meditation selected
@@ -319,6 +330,13 @@ export default function IntroducaoMeditacaoPage() {
           </section>
         </main>
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        source="introducao_meditacao"
+      />
     </div>
   );
 }

@@ -6,6 +6,8 @@ import mixpanel from '../lib/mixpanel';
 import { clearGuestStorage } from '../hooks/useGuestGate';
 import { isStreamActive, onStreamActivityChange } from '../hooks/useEcoStream/streamStatus';
 import { getOrCreateGuestId, readPersistedGuestId } from '../api/guestIdentity';
+import type { SubscriptionState } from '../types/subscription';
+import { getSubscriptionStatus } from '../api/subscription';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
@@ -23,6 +25,13 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   register: (email: string, password: string, nome: string, telefone: string) => Promise<void>;
   loginAsGuest: () => Promise<void>;
+
+  // Subscription fields
+  subscription: SubscriptionState;
+  isPremiumUser: boolean;
+  isTrialActive: boolean;
+  trialDaysRemaining: number;
+  refreshSubscription: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -165,6 +174,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     return null;
   });
+
+  // Subscription state
+  const [subscription, setSubscription] = useState<SubscriptionState>({
+    plan: 'free',
+    status: 'active',
+    trialStartDate: null,
+    trialEndDate: null,
+    subscriptionId: null,
+    provider: 'mercadopago',
+    providerPreapprovalId: null,
+    providerPaymentId: null,
+    planType: null,
+    currentPeriodEnd: null,
+    accessUntil: null,
+    nextBillingDate: null,
+  });
+
+  // Computed subscription values
+  const isPremiumUser = (() => {
+    if (!subscription.accessUntil) return false;
+    const now = new Date();
+    const accessUntil = new Date(subscription.accessUntil);
+    return now <= accessUntil && subscription.status === 'active';
+  })();
+
+  const isTrialActive = (() => {
+    if (subscription.plan !== 'trial') return false;
+    if (!subscription.trialEndDate) return false;
+    const now = new Date();
+    const endDate = new Date(subscription.trialEndDate);
+    return now <= endDate && subscription.status === 'active';
+  })();
+
+  const trialDaysRemaining = (() => {
+    if (!isTrialActive || !subscription.trialEndDate) return 0;
+    const now = new Date();
+    const endDate = new Date(subscription.trialEndDate);
+    const diffMs = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  })();
 
   useEffect(() => {
     let mounted = true;
@@ -331,6 +381,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  // Refresh subscription from backend
+  const refreshSubscription = async () => {
+    if (!user) {
+      // Reset to free if no user
+      setSubscription({
+        plan: 'free',
+        status: 'active',
+        trialStartDate: null,
+        trialEndDate: null,
+        subscriptionId: null,
+        provider: 'mercadopago',
+        providerPreapprovalId: null,
+        providerPaymentId: null,
+        planType: null,
+        currentPeriodEnd: null,
+        accessUntil: null,
+        nextBillingDate: null,
+      });
+      return;
+    }
+
+    try {
+      const status = await getSubscriptionStatus();
+
+      setSubscription({
+        plan: status.plan,
+        status: status.status,
+        trialStartDate: status.trialStartDate,
+        trialEndDate: status.trialEndDate,
+        subscriptionId: null, // Will be set by backend if needed
+        provider: 'mercadopago',
+        providerPreapprovalId: null,
+        providerPaymentId: null,
+        planType: status.planType,
+        currentPeriodEnd: status.currentPeriodEnd,
+        accessUntil: status.accessUntil,
+        nextBillingDate: null,
+      });
+    } catch (error) {
+      console.error('[Auth] Failed to refresh subscription:', error);
+      // Keep current state on error
+    }
+  };
+
+  // Refresh subscription when user changes
+  useEffect(() => {
+    if (user) {
+      refreshSubscription();
+    }
+  }, [user?.id]);
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
@@ -582,6 +683,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut,
         register,
         loginAsGuest,
+
+        // Subscription
+        subscription,
+        isPremiumUser,
+        isTrialActive,
+        trialDaysRemaining,
+        refreshSubscription,
       }}
     >
       {children}

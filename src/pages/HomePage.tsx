@@ -445,20 +445,23 @@ export default function HomePage() {
           {/* Desktop: Grid 2 colunas com mesma altura */}
           <div className="hidden gap-6 md:grid md:grid-cols-2">
             {/* Left Card - Greeting */}
-            <div className="flex flex-col justify-center rounded-2xl border border-[var(--eco-line)] bg-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)] md:h-[320px]">
-              <h1 className="font-display text-6xl font-bold text-[var(--eco-text)]">
+            <div className="flex flex-col justify-center rounded-2xl border border-[var(--eco-line)] bg-white p-10 shadow-[0_4px_30px_rgba(0,0,0,0.04)] md:h-[380px]">
+              <h1 className="font-display text-7xl font-bold text-[var(--eco-text)] leading-tight">
                 {greeting},
                 <br />
                 {displayName}
               </h1>
-              <p className="mt-4 text-[14px] text-[var(--eco-muted)]">
-                Fique em registro rápido do seu humor
+              <p className="mt-6 text-[18px] font-medium text-[var(--eco-text)]">
+                Como você está agora?
+              </p>
+              <p className="mt-2 text-[15px] text-[var(--eco-muted)]">
+                Registre seu estado ou fale com a Eco
               </p>
               <button
                 onClick={handleStartChat}
-                className="mt-8 inline-flex items-center gap-2 text-[14px] font-medium text-[var(--eco-user)] transition-all duration-300 hover:gap-3"
+                className="mt-8 inline-flex items-center justify-center rounded-full bg-[var(--eco-user)] px-6 py-3 text-[15px] font-semibold text-white transition-all duration-300 hover:bg-[var(--eco-user)]/90 hover:scale-105 active:scale-95 shadow-md"
               >
-                Comece uma conversa <span>→</span>
+                Refletir agora
               </button>
             </div>
 

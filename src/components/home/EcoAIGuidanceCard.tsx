@@ -14,11 +14,14 @@ export default function EcoAIGuidanceCard({
 }: EcoAIGuidanceCardProps) {
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
-      {/* Title */}
+      {/* Title with Progress Indicator */}
       <div className="mb-8 pb-6 border-b border-[var(--eco-line)]">
         <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
           Receber orientação individual
         </h2>
+        <p className="mt-2 text-[13px] text-[var(--eco-muted)]">
+          Continue sua jornada de autoconhecimento
+        </p>
       </div>
 
       {/* Card */}

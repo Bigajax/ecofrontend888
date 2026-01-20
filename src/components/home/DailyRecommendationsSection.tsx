@@ -24,7 +24,7 @@ export default function DailyRecommendationsSection({
       {/* Title */}
       <div className="mb-8">
         <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
-          Recomendações diárias
+          Para o seu momento
         </h2>
         <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
           {new Date().toLocaleDateString('pt-BR', {
@@ -36,32 +36,16 @@ export default function DailyRecommendationsSection({
         </p>
       </div>
 
-      {/* Desktop: Grid - 3 colunas com linha horizontal */}
+      {/* Desktop: Grid com hierarquia visual - 1 destaque + 2 secundários */}
       <div className="mb-8 hidden md:block">
-        {/* Linha horizontal com bolinhas conectadas */}
-        <div className="relative mb-8">
-          <div className="flex items-center justify-between max-w-4xl mx-auto px-8">
-            {recommendations.map((_, index) => (
-              <React.Fragment key={index}>
-                {/* Bolinha */}
-                <div className="w-6 h-6 rounded-full border-[2px] border-[#6EC8FF] bg-white relative z-10" />
-
-                {/* Linha conectora (exceto depois da última bolinha) */}
-                {index < recommendations.length - 1 && (
-                  <div className="flex-1 h-[1px] bg-gray-300 mx-4" />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-
-        {/* Cards */}
-        <div className="grid grid-cols-3 gap-5">
-          {recommendations.map((rec) => (
+        {/* Cards com hierarquia */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {recommendations.map((rec, index) => (
             <RecommendationCard
               key={rec.id}
               recommendation={rec}
               onClick={() => onRecommendationClick?.(rec.id)}
+              featured={index === 0}
             />
           ))}
         </div>
@@ -112,6 +96,7 @@ interface RecommendationCardProps {
   recommendation: Recommendation;
   mobile?: boolean;
   vertical?: boolean;
+  featured?: boolean;
   onClick?: () => void;
 }
 
@@ -119,9 +104,15 @@ function RecommendationCard({
   recommendation,
   mobile,
   vertical,
+  featured = false,
   onClick,
 }: RecommendationCardProps) {
   const baseClass = vertical ? 'w-full' : mobile ? 'w-80 flex-shrink-0' : 'w-full';
+
+  // Featured card spans all columns and is taller
+  const heightClass = featured && !mobile && !vertical
+    ? 'md:col-span-3 md:min-h-[280px]'
+    : vertical ? '150px' : mobile ? '150px' : '180px';
 
   return (
     <button
@@ -131,12 +122,12 @@ function RecommendationCard({
         recommendation.isPremium
           ? 'cursor-not-allowed'
           : 'md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 cursor-pointer'
-      } touch-manipulation ${baseClass}`}
+      } touch-manipulation ${baseClass} ${featured && !mobile && !vertical ? heightClass : ''}`}
       style={{
         backgroundImage: recommendation.image,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        minHeight: vertical ? '150px' : mobile ? '150px' : '150px',
+        minHeight: typeof heightClass === 'string' && !heightClass.startsWith('md:') ? heightClass : vertical ? '150px' : mobile ? '150px' : '180px',
         opacity: 1,
         filter: 'none',
       }}

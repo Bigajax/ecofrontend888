@@ -154,8 +154,13 @@ export default function LiveReflectionSection() {
           </div>
 
           {/* Subtitle */}
-          <p className="text-sm sm:text-lg font-medium text-gray-600 md:text-xl">
-            Pessoas refletindo com a Eco agora
+          <p className="text-sm sm:text-lg font-medium text-gray-600 md:text-xl mb-2">
+            pessoas refletindo agora
+          </p>
+
+          {/* Humanized message */}
+          <p className="text-xs sm:text-sm text-gray-500 md:text-base max-w-md">
+            Em silêncio, cada uma no seu processo.
           </p>
         </div>
 
