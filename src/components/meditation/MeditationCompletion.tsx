@@ -110,35 +110,37 @@ export default function MeditationCompletion({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
       {/* Back button - top left */}
       <button
         onClick={onDismiss}
         className="
-          fixed top-4 left-4 z-10
-          w-10 h-10 rounded-full
+          fixed top-3 left-3 sm:top-4 sm:left-4 z-20
+          w-9 h-9 sm:w-10 sm:h-10 rounded-full
           flex items-center justify-center
-          bg-gray-100 hover:bg-gray-200
-          transition-colors duration-200
+          bg-white/90 backdrop-blur-sm border border-gray-200
+          hover:bg-gray-100 shadow-md
+          transition-all duration-200
         "
         aria-label="Voltar"
       >
-        <ChevronLeft className="w-6 h-6 text-gray-600" />
+        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
       </button>
 
-      {/* Scrollable content */}
-      <motion.div
-        className="w-full max-w-2xl px-4 py-8 md:px-8 md:py-12 space-y-6 md:space-y-8"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      {/* Scrollable content container */}
+      <div className="min-h-screen flex items-center justify-center py-16 sm:py-20 px-4">
+        <motion.div
+          className="w-full max-w-2xl space-y-6 sm:space-y-8 md:space-y-10"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
         {/* Diário Estoico Card with "Muito bem!" overlay */}
         {todayMaxim && (
-          <motion.div variants={itemVariants} className="relative pt-10">
-            {/* "Muito bem!" title overlaid on card */}
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+          <motion.div variants={itemVariants} className="space-y-4 sm:space-y-6">
+            {/* "Muito bem!" title - centered above card */}
+            <div className="flex justify-center">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 drop-shadow-sm">
                 Muito bem!
               </h1>
             </div>
@@ -153,7 +155,7 @@ export default function MeditationCompletion({
             className="flex justify-center"
             variants={itemVariants}
           >
-            <div className="px-4 py-2 rounded-full bg-eco-100/50 text-eco-700 text-sm md:text-base font-medium">
+            <div className="px-5 py-2.5 sm:px-6 sm:py-3 rounded-full bg-eco-100/50 text-eco-700 text-base sm:text-lg md:text-xl font-semibold shadow-sm">
               {currentStreak} {currentStreak === 1 ? 'dia seguido!' : 'dias seguidos!'} 🔥
             </div>
           </motion.div>
@@ -161,7 +163,7 @@ export default function MeditationCompletion({
 
         {/* Feedback */}
         <motion.div
-          className="pt-4"
+          className="pt-4 sm:pt-6"
           variants={itemVariants}
         >
           <MeditationFeedback
@@ -173,7 +175,8 @@ export default function MeditationCompletion({
             onFeedbackSubmitted={handleFeedbackSubmitted}
           />
         </motion.div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }
