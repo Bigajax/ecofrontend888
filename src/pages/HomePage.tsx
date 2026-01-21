@@ -17,6 +17,8 @@ import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
 import EcoAIModal from '@/components/EcoAIModal';
 import HomePageTour from '@/components/HomePageTour';
 import { useHomePageTour } from '@/hooks/useHomePageTour';
+import { usePremiumContent } from '@/hooks/usePremiumContent';
+import UpgradeModal from '@/components/subscription/UpgradeModal';
 
 interface DailyMaxim {
   date: string;
@@ -62,6 +64,7 @@ const getAvailableMaxims = (): DailyMaxim[] => {
 export default function HomePage() {
   const { userName, isGuestMode } = useAuth();
   const { startProgram } = useProgram();
+  const { checkAccess, requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -388,8 +391,15 @@ export default function HomePage() {
       return;
     }
 
-    // Quem Pensa Enriquece - navega para sua própria página
+    // Quem Pensa Enriquece - navega para sua própria página (PREMIUM)
     if (blessingId === 'blessing_9') {
+      const { hasAccess } = checkAccess(true);
+
+      if (!hasAccess) {
+        requestUpgrade('home_quem_pensa_enriquece');
+        return;
+      }
+
       startProgram({
         id: 'blessing_9',
         title: 'Quem Pensa Enriquece',
@@ -404,8 +414,15 @@ export default function HomePage() {
       return;
     }
 
-    // Programa do Caleidoscópio navega para sua própria página
+    // Programa do Caleidoscópio navega para sua própria página (PREMIUM)
     if (blessingId === 'blessing_4') {
+      const { hasAccess } = checkAccess(true);
+
+      if (!hasAccess) {
+        requestUpgrade('home_caleidoscopio');
+        return;
+      }
+
       navigate('/app/programas/caleidoscopio-mind-movie');
       return;
     }
@@ -567,6 +584,13 @@ export default function HomePage() {
           onStartChat={handleStartChat}
         />
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        source="home"
+      />
     </div>
   );
 }

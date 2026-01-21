@@ -61,7 +61,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     imagePosition: 'center 32%',
     gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
     completed: false,
-    isPremium: false,
+    isPremium: true,
   },
   {
     id: 'intro_4',
@@ -292,10 +292,7 @@ export default function IntroducaoMeditacaoPage() {
 
                 <button
                   onClick={() => handleMeditationClick(meditation)}
-                  disabled={meditation.isPremium}
-                  className={`flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 ${
-                    meditation.isPremium ? 'cursor-not-allowed' : ''
-                  }`}
+                  className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">

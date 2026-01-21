@@ -160,13 +160,8 @@ function BlessingCard({
 
   return (
     <button
-      onClick={blessing.isPremium ? undefined : onClick}
-      disabled={blessing.isPremium}
-      className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 ${
-        blessing.isPremium
-          ? 'cursor-not-allowed'
-          : 'md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 cursor-pointer'
-      } touch-manipulation ${baseClass}`}
+      onClick={onClick}
+      className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 cursor-pointer touch-manipulation ${baseClass}`}
       style={{
         backgroundImage: blessing.image,
         backgroundSize: 'cover',
@@ -219,14 +214,9 @@ function BlessingCard({
           </div>
 
           {/* Play Button - Circular Icon */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-            className="shrink-0 flex items-center justify-center rounded-full bg-white/85 p-2.5 shadow-lg transition-all duration-300 md:hover:bg-white active:scale-95 touch-manipulation backdrop-blur-md"
-          >
+          <div className="shrink-0 flex items-center justify-center rounded-full bg-white/85 p-2.5 shadow-lg transition-all duration-300 md:group-hover:bg-white backdrop-blur-md pointer-events-none">
             <Play size={16} className="fill-black text-black ml-0.5" />
-          </button>
+          </div>
         </div>
       </div>
     </button>

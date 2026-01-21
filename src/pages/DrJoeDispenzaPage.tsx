@@ -49,6 +49,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     imagePosition: 'center 32%',
     gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #3D6BB8 20%, #3358A3 40%, #2A478E 60%, #213779 80%, #182864 100%)',
     completed: false,
+    isPremium: true,
   },
   {
     id: 'blessing_3',
@@ -60,6 +61,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     imagePosition: 'center 32%',
     gradient: 'linear-gradient(to bottom, #9B79C9 0%, #8766B5 20%, #7454A0 40%, #61438C 60%, #4E3377 80%, #3B2463 100%)',
     completed: false,
+    isPremium: true,
   },
   {
     id: 'blessing_5',
@@ -71,6 +73,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     imagePosition: 'center 15%',
     gradient: 'linear-gradient(to bottom right, #FF8C42 0%, #F7931E 20%, #D8617A 40%, #8B3A62 60%, #6B2C5C 80%, #2D1B3D 100%)',
     completed: false,
+    isPremium: true,
   },
   {
     id: 'blessing_6',
@@ -289,10 +292,7 @@ export default function DrJoeDispenzaPage() {
 
                 <button
                   onClick={() => handleMeditationClick(meditation)}
-                  disabled={meditation.isPremium}
-                  className={`flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 ${
-                    meditation.isPremium ? 'cursor-not-allowed' : ''
-                  }`}
+                  className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">

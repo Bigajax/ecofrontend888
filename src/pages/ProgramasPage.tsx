@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Play, Lock } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useProgram } from '@/contexts/ProgramContext';
+import { usePremiumContent } from '@/hooks/usePremiumContent';
+import UpgradeModal from '@/components/subscription/UpgradeModal';
 
 interface Meditation {
   id: string;
@@ -20,6 +22,7 @@ interface Meditation {
 export default function ProgramasPage() {
   const navigate = useNavigate();
   const { startProgram } = useProgram();
+  const { checkAccess, requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
 
   // Meditações (mesmas do HomePage)
@@ -196,9 +199,14 @@ export default function ProgramasPage() {
   const handleMeditationClick = (meditationId: string) => {
     const meditation = meditations.find(m => m.id === meditationId);
 
-    // Verificar se é premium e bloquear
+    // Verificar se é premium e mostrar modal
     if (meditation?.isPremium) {
-      return;
+      const { hasAccess } = checkAccess(true);
+
+      if (!hasAccess) {
+        requestUpgrade('programas_' + meditationId);
+        return;
+      }
     }
 
     // Quem Pensa Enriquece - navega para sua própria página
@@ -290,12 +298,7 @@ export default function ProgramasPage() {
                 <button
                   key={meditation.id}
                   onClick={() => handleMeditationClick(meditation.id)}
-                  disabled={meditation.isPremium}
-                  className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 ${
-                    meditation.isPremium
-                      ? 'cursor-not-allowed'
-                      : 'md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 cursor-pointer'
-                  } touch-manipulation`}
+                  className="group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 cursor-pointer touch-manipulation"
                   style={{
                     backgroundImage: meditation.image,
                     backgroundSize: 'cover',
@@ -365,6 +368,13 @@ export default function ProgramasPage() {
           </div>
         ))}
       </div>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        source="programas"
+      />
     </div>
   );
 }

@@ -64,6 +64,8 @@ const SonsPage = lazy(() => import("@/pages/SonsPage"));
 const SoundPlayerPage = lazy(() => import("@/pages/SoundPlayerPage"));
 const ConfiguracoesPage = lazy(() => import("@/pages/ConfiguracoesPage"));
 const SubscriptionCallbackPage = lazy(() => import("@/pages/SubscriptionCallbackPage"));
+const SubscriptionTestPage = lazy(() => import("@/pages/SubscriptionTestPage"));
+const FluxoAssinaturaDemo = lazy(() => import("@/pages/FluxoAssinaturaDemo"));
 
 // Lightweight loading fallback (no heavy dependencies)
 function LoadingFallback() {
@@ -244,6 +246,26 @@ function AppRoutes() {
         }
       >
         <Route index element={renderWithSuspense(<SubscriptionCallbackPage />)} />
+      </Route>
+      <Route
+        path="/app/subscription/test"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<SubscriptionTestPage />)} />
+      </Route>
+      <Route
+        path="/app/subscription/demo"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<FluxoAssinaturaDemo />)} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

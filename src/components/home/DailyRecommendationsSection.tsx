@@ -116,13 +116,8 @@ function RecommendationCard({
 
   return (
     <button
-      onClick={recommendation.isPremium ? undefined : onClick}
-      disabled={recommendation.isPremium}
-      className={`group relative overflow-hidden rounded-3xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 ${
-        recommendation.isPremium
-          ? 'cursor-not-allowed'
-          : 'md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 cursor-pointer'
-      } touch-manipulation ${baseClass} ${featured && !mobile && !vertical ? heightClass : ''}`}
+      onClick={onClick}
+      className={`group relative overflow-hidden rounded-3xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 cursor-pointer touch-manipulation ${baseClass} ${featured && !mobile && !vertical ? heightClass : ''}`}
       style={{
         backgroundImage: recommendation.image,
         backgroundSize: 'cover',
