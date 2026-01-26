@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { GUEST_EXPERIENCE_FEATURES } from '@/constants/guestExperience';
 
 interface RequireAuthProps {
   children: React.ReactNode;
 }
 
-type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
+type AuthStatus = 'loading' | 'authenticated' | 'guest' | 'unauthenticated';
 
 const loadingSkeleton = (
   <div className="flex min-h-screen w-full items-center justify-center bg-slate-50">
@@ -22,14 +23,14 @@ const loadingSkeleton = (
  *
  * Garante que:
  * 1. Nunca retorna null (sempre mostra algo)
- * 2. Tem timeout de segurança (máx 20s em loading)
- * 3. Redireciona para login se não autenticado
+ * 2. Tem timeout de segurança (máx 60s em loading)
+ * 3. Ativa guest mode automaticamente se não logado (novo!)
  * 4. Permite acesso se autenticado ou guest mode
  *
  * Crítico para Safari Mobile que pode descarregar a aba.
  */
 const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
-  const { user, loading, isGuestMode } = useAuth();
+  const { user, loading, isGuestMode, loginAsGuest } = useAuth();
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
   const [timedOut, setTimedOut] = useState(false);
 
@@ -69,13 +70,29 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
       return;
     }
 
-    // Allow access if user is authenticated OR in guest mode
-    if (user || isGuestMode) {
+    // Se tem user autenticado, status = authenticated
+    if (user) {
       setAuthStatus('authenticated');
-    } else {
-      setAuthStatus('unauthenticated');
+      return;
     }
-  }, [user, loading, isGuestMode, timedOut]);
+
+    // Se não tem user, verificar guest mode
+    if (isGuestMode) {
+      // Já está em guest mode
+      setAuthStatus('guest');
+    } else {
+      // Não está logado nem em guest mode
+      // Ativar guest mode automaticamente (se feature habilitada)
+      if (GUEST_EXPERIENCE_FEATURES.AUTO_GUEST_MODE) {
+        console.info('[RequireAuth] Ativando guest mode automaticamente');
+        loginAsGuest();
+        setAuthStatus('guest');
+      } else {
+        // Feature desabilitada, redirecionar para login
+        setAuthStatus('unauthenticated');
+      }
+    }
+  }, [user, loading, isGuestMode, timedOut, loginAsGuest]);
 
   // NUNCA retorna null - sempre mostra algo
   // Show loading skeleton while checking auth
@@ -89,7 +106,13 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // User is authenticated or in guest mode - allow access
+  // User is authenticated OR in guest mode - allow access
+  if (authStatus === 'authenticated' || authStatus === 'guest') {
+    return <>{children}</>;
+  }
+
+  // Fallback (nunca deve chegar aqui)
+  console.warn('[RequireAuth] Estado inesperado, permitindo acesso');
   return <>{children}</>;
 };
 

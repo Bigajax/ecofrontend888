@@ -21,6 +21,7 @@ import Sidebar from '../components/Sidebar';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
+import { useGuestExperience } from '../contexts/GuestExperienceContext';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useEcoStream } from '../hooks/useEcoStream';
@@ -83,6 +84,7 @@ function ChatPage() {
   const { messages, upsertMessage, setMessages, clearMessages } = useChat();
   const auth = useAuth();
   const { userId, userName: rawUserName = 'Usuário', user, isGuestMode, guestId } = auth;
+  const { trackInteraction } = useGuestExperience();
   const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
 
@@ -401,6 +403,24 @@ function ChatPage() {
         try {
           await streamAndPersist(trimmed, systemHint);
           haptic.success(); // Feedback de sucesso
+
+          // Rastrear interação para guests
+          if (!user) {
+            trackInteraction('chat_message_sent', {
+              message_length: trimmed.length,
+              has_hint: Boolean(systemHint?.trim()),
+              page: '/app/chat',
+            });
+
+            // Disparar evento customizado para GuestExperienceTracker
+            window.dispatchEvent(new CustomEvent('eco:chat:message-sent', {
+              detail: {
+                message_length: trimmed.length,
+                has_hint: Boolean(systemHint?.trim()),
+              },
+            }));
+          }
+
           finalizeBehaviorMetrics();
           setLastAttempt(null);
 

@@ -14,6 +14,7 @@ import {
   Route,
   Routes,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 
 import { RootProviders } from "@/providers/RootProviders";
@@ -22,13 +23,18 @@ import RootErrorBoundary from "@/components/RootErrorBoundary";
 import HealthBanner from "@/components/HealthBanner";
 import ApiBaseWarningCard from "@/components/ApiBaseWarningCard";
 import GlobalErrorChip from "@/components/GlobalErrorChip";
+import GuestSignupModal from "@/components/GuestSignupModal";
 import MainLayout from "@/layouts/MainLayout";
 import PixelRouteListener from "@/lib/PixelRouteListener";
 import MixpanelRouteListener from "@/lib/MixpanelRouteListener";
+import { GuestExperienceTracker } from "@/lib/GuestExperienceTracker";
 import mixpanel from "@/lib/mixpanel";
 import { DEFAULT_API_BASE, RAW_API_BASE } from "@/constants/api";
 import { getApiBase } from "@/config/apiBase";
 import { HealthCheckResult, HealthStatus, pingWithRetry } from "@/utils/health";
+import { useAuth } from "@/contexts/AuthContext";
+import { useGuestExperience } from "@/contexts/GuestExperienceContext";
+import { GUEST_EXPERIENCE_CONFIG } from "@/constants/guestExperience";
 
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const ResetSenha = lazy(() => import("@/pages/ResetSenha"));
@@ -274,8 +280,14 @@ function AppRoutes() {
 }
 
 function AppChrome() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { shouldShowModal, markModalShown, dismissModal, state } = useGuestExperience();
+
   const [healthStatus, setHealthStatus] = useState<HealthStatus>("idle");
   const [hasCapturedError, setHasCapturedError] = useState(false);
+  const [guestModalOpen, setGuestModalOpen] = useState(false);
+
   const healthMetaRef = useRef<{
     aborted: boolean;
     responseOk: boolean;
@@ -299,6 +311,57 @@ function AppChrome() {
     DEFAULT_API_BASE && DEFAULT_API_BASE.trim().length > 0
       ? DEFAULT_API_BASE
       : "mesmo host (/)";
+
+  // Guest Experience Modal - Verificar periodicamente se deve mostrar
+  useEffect(() => {
+    if (user) return; // Só para guests
+
+    const interval = setInterval(() => {
+      if (shouldShowModal()) {
+        setGuestModalOpen(true);
+        markModalShown();
+
+        // Analytics
+        mixpanel.track('Guest Signup Modal Shown', {
+          trigger: state.totalTimeMs >= state.timeLimitMs ? 'time' : 'interactions',
+          time_spent_ms: state.totalTimeMs,
+          time_spent_minutes: Math.floor(state.totalTimeMs / 60000),
+          interaction_count: state.interactionCount,
+          page_views: state.pageViews,
+          unique_pages_visited: state.visitedPages.size,
+          guest_id: state.guestId,
+        });
+      }
+    }, GUEST_EXPERIENCE_CONFIG.MODAL_CHECK_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [user, shouldShowModal, markModalShown, state]);
+
+  // Handlers do modal
+  const handleGuestSignup = () => {
+    mixpanel.track('Guest Signup Modal - Signup Clicked', {
+      time_spent_ms: state.totalTimeMs,
+      time_spent_minutes: Math.floor(state.totalTimeMs / 60000),
+      interaction_count: state.interactionCount,
+      page_views: state.pageViews,
+      guest_id: state.guestId,
+    });
+
+    setGuestModalOpen(false);
+    navigate('/register', { state: { from: 'guest-experience' } });
+  };
+
+  const handleGuestContinue = () => {
+    mixpanel.track('Guest Signup Modal - Continued', {
+      time_spent_ms: state.totalTimeMs,
+      time_spent_minutes: Math.floor(state.totalTimeMs / 60000),
+      interaction_count: state.interactionCount,
+      guest_id: state.guestId,
+    });
+
+    setGuestModalOpen(false);
+    dismissModal();
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -480,6 +543,18 @@ function AppChrome() {
 
       <GlobalErrorChip visible={showErrorChip} onClick={handleErrorChipClick} />
 
+      <GuestSignupModal
+        open={guestModalOpen}
+        onClose={handleGuestContinue}
+        onSignup={handleGuestSignup}
+        trigger={state.totalTimeMs >= state.timeLimitMs ? 'time' : 'interactions'}
+        stats={{
+          timeSpentMinutes: Math.floor(state.totalTimeMs / 60000),
+          interactionCount: state.interactionCount,
+          pagesVisited: state.pageViews,
+        }}
+      />
+
       <div className={showHealthBanner ? "pt-12" : ""}>
         <AppRoutes />
       </div>
@@ -493,6 +568,7 @@ export default function App(): JSX.Element {
       <BrowserRouter basename="/">
         <PixelRouteListener />
         <MixpanelRouteListener />
+        <GuestExperienceTracker />
         <RootErrorBoundary>
           <Suspense fallback="Carregando…">
             <AppChrome />

@@ -6,12 +6,14 @@ import { sendVoiceMessage } from "../api/voiceApi";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import EcoBubbleOneEye from "../components/EcoBubbleOneEye";
+import { useGuestExperience } from "../contexts/GuestExperienceContext";
 
 /** Mude para false quando quiser liberar a gravação */
 const UNDER_CONSTRUCTION = true;
 
 const VoicePage: React.FC = () => {
-  const { userName, userId } = useAuth();
+  const { userName, userId, user } = useAuth();
+  const { trackInteraction } = useGuestExperience();
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [ecoAudioURL, setEcoAudioURL] = useState<string | null>(null);
@@ -94,6 +96,25 @@ const VoicePage: React.FC = () => {
           setEcoAudioURL(audioURL);
           const ecoAudio = new Audio(audioURL);
           await ecoAudio.play();
+
+          // Rastrear interação para guests
+          if (!user) {
+            const recordingDuration = audioBlob.size / 1024; // Aproximação em KB
+
+            trackInteraction('voice_message_sent', {
+              recording_size_kb: recordingDuration,
+              transcription_length: response.userText?.length || 0,
+              page: '/app/voice',
+            });
+
+            // Disparar evento customizado para GuestExperienceTracker
+            window.dispatchEvent(new CustomEvent('eco:voice:message-sent', {
+              detail: {
+                recording_size_kb: recordingDuration,
+                transcription_length: response.userText?.length || 0,
+              },
+            }));
+          }
         } catch (err: any) {
           handleError(`Falha na interação de voz: ${err.message}`);
         } finally {

@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { RingsProvider } from "@/contexts/RingsContext";
 import { ProgramProvider } from "@/contexts/ProgramContext";
+import { GuestExperienceProvider } from "@/contexts/GuestExperienceContext";
 
 function AuthAwareChatProvider({ children }: PropsWithChildren): JSX.Element {
   const { userId } = useAuth();
@@ -18,11 +19,13 @@ function AuthAwareRingsProvider({ children }: PropsWithChildren): JSX.Element {
 export function RootProviders({ children }: PropsWithChildren): JSX.Element {
   return (
     <AuthProvider>
-      <ProgramProvider>
-        <AuthAwareChatProvider>
-          <AuthAwareRingsProvider>{children}</AuthAwareRingsProvider>
-        </AuthAwareChatProvider>
-      </ProgramProvider>
+      <GuestExperienceProvider>
+        <ProgramProvider>
+          <AuthAwareChatProvider>
+            <AuthAwareRingsProvider>{children}</AuthAwareRingsProvider>
+          </AuthAwareChatProvider>
+        </ProgramProvider>
+      </GuestExperienceProvider>
     </AuthProvider>
   );
 }

@@ -8,6 +8,8 @@ import MeditationCompletion from '@/components/meditation/MeditationCompletion';
 import { type Sound, getAllSounds } from '@/data/sounds';
 import { useMeditationAnalytics } from '@/hooks/useMeditationAnalytics';
 import { parseDurationToSeconds, getCategoryFromPath, trackMeditationEvent } from '@/analytics/meditation';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGuestExperience } from '@/contexts/GuestExperienceContext';
 
 interface MeditationData {
   id?: string;
@@ -42,6 +44,8 @@ const fadeSlideUp = {
 export default function MeditationPlayerPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const { trackInteraction } = useGuestExperience();
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Dados da meditação passados via navigation state
@@ -309,6 +313,27 @@ export default function MeditationPlayerPage() {
           meditationVolumeFinal: meditationVolume,
           backgroundVolumeFinal: backgroundVolume,
         });
+
+        // Rastrear interação para guests
+        if (!user) {
+          trackInteraction('meditation_completed', {
+            meditation_id: meditationData.id || 'unknown',
+            meditation_title: meditationData.title,
+            category,
+            duration_seconds: parseDurationToSeconds(meditationData.duration),
+            page: '/app/meditation-player',
+          });
+
+          // Disparar evento customizado para GuestExperienceTracker
+          window.dispatchEvent(new CustomEvent('eco:meditation:completed', {
+            detail: {
+              meditation_id: meditationData.id || 'unknown',
+              meditation_title: meditationData.title,
+              category,
+            },
+          }));
+        }
+
         setShowCompletionScreen(true);
       }
     };
@@ -357,6 +382,26 @@ export default function MeditationPlayerPage() {
             backgroundVolume,
             sourcePage: returnTo,
           });
+
+          // Rastrear interação para guests
+          if (!user) {
+            trackInteraction('meditation_started', {
+              meditation_id: meditationData.id || 'unknown',
+              meditation_title: meditationData.title,
+              category,
+              page: '/app/meditation-player',
+            });
+
+            // Disparar evento customizado para GuestExperienceTracker
+            window.dispatchEvent(new CustomEvent('eco:meditation:started', {
+              detail: {
+                meditation_id: meditationData.id || 'unknown',
+                meditation_title: meditationData.title,
+                category,
+              },
+            }));
+          }
+
           hasPlayedOnce.current = true;
         } else {
           analytics.trackResumed(audioRef.current.currentTime);

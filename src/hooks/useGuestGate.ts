@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { clearGuestId, getOrCreateGuestId } from "../api/guestIdentity";
+import { GUEST_EXPERIENCE_CONFIG } from "../constants/guestExperience";
 
 const hasWindow = typeof window !== "undefined";
 
@@ -21,9 +22,13 @@ const STORAGE = {
 export function clearGuestStorage() {
   if (hasWindow) {
     try {
+      // Limpar chaves legadas e atuais
       LEGACY_STORAGE_KEYS.concat(Object.values(STORAGE)).forEach((key) =>
         window.localStorage.removeItem(key)
       );
+
+      // Limpar guest experience tracking (NOVO)
+      window.localStorage.removeItem(GUEST_EXPERIENCE_CONFIG.STORAGE_KEY);
     } catch {
       /* ignore */
     }
