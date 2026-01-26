@@ -405,12 +405,13 @@ const getAvailableMaxims = (): DailyMaxim[] => {
 
 export default function DiarioEstoicoPage() {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
 
   // Obter apenas os cards disponíveis até hoje
   const availableMaxims = getAvailableMaxims();
 
+  // Se o usuário está logado, pode fazer logout
   const handleLogout = async () => {
     try {
       await signOut();
@@ -455,19 +456,30 @@ export default function DiarioEstoicoPage() {
       width: '100%'
     }}>
       <div className="w-full min-h-full">
-        {/* Header */}
-        <HomeHeader onLogout={handleLogout} />
+        {/* Header - apenas se usuário logado */}
+        {user && <HomeHeader onLogout={handleLogout} />}
 
-        {/* Botão Voltar */}
+        {/* Navegação */}
         <div className="w-full px-4 pt-6 md:px-8">
-          <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-7xl flex items-center justify-between">
+            {/* Botão Voltar */}
             <button
-              onClick={() => navigate('/app')}
+              onClick={() => navigate(user ? '/app' : '/')}
               className="inline-flex items-center justify-center w-10 h-10 text-gray-700 bg-white rounded-full border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow"
               aria-label="Voltar"
             >
               <ChevronLeft size={20} />
             </button>
+
+            {/* CTA para guest */}
+            {!user && (
+              <button
+                onClick={() => navigate('/register')}
+                className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-eco-400 to-eco-500 rounded-full hover:shadow-lg transition-all duration-200"
+              >
+                Criar conta grátis
+              </button>
+            )}
           </div>
         </div>
 
