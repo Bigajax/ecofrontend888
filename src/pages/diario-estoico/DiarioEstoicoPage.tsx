@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import AnimatedSection from '@/components/AnimatedSection';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
+import DiarioExitModal from '@/components/DiarioExitModal';
+import mixpanel from '@/lib/mixpanel';
 
 interface DailyMaxim {
   date: string;
@@ -362,6 +364,9 @@ const ALL_DAILY_MAXIMS: DailyMaxim[] = [
   ...DECEMBER_REFLECTIONS,
 ];
 
+// Chave para sessionStorage - modal aparece apenas uma vez por sessão
+const EXIT_MODAL_SHOWN_KEY = 'eco.diario.exitModalShown';
+
 // Função para obter os últimos 3 dias (hoje e os 2 dias anteriores)
 const getAvailableMaxims = (): DailyMaxim[] => {
   const now = new Date();
@@ -407,6 +412,7 @@ export default function DiarioEstoicoPage() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  const [showExitModal, setShowExitModal] = useState(false);
 
   // Obter apenas os cards disponíveis até hoje
   const availableMaxims = getAvailableMaxims();
@@ -418,6 +424,46 @@ export default function DiarioEstoicoPage() {
     } finally {
       navigate('/');
     }
+  };
+
+  // Interceptar clique no botão Voltar
+  const handleBackClick = () => {
+    // Só mostra modal para guests
+    if (!user) {
+      // Verificar se já foi mostrado nesta sessão
+      const wasShown = sessionStorage.getItem(EXIT_MODAL_SHOWN_KEY);
+
+      if (!wasShown) {
+        sessionStorage.setItem(EXIT_MODAL_SHOWN_KEY, 'true');
+        setShowExitModal(true);
+
+        mixpanel.track('Diario Estoico: Exit Modal Shown', {
+          timestamp: new Date().toISOString(),
+        });
+        return; // Não navega ainda
+      }
+    }
+
+    // Navega normalmente
+    navigate(user ? '/app' : '/');
+  };
+
+  // Handlers do modal
+  const handleModalSignup = () => {
+    mixpanel.track('Diario Estoico: Exit Modal - Signup Clicked');
+    setShowExitModal(false);
+    navigate('/register', { state: { from: 'diario-estoico' } });
+  };
+
+  const handleModalStay = () => {
+    mixpanel.track('Diario Estoico: Exit Modal - Stayed');
+    setShowExitModal(false);
+  };
+
+  const handleModalLeave = () => {
+    mixpanel.track('Diario Estoico: Exit Modal - Left Anyway');
+    setShowExitModal(false);
+    navigate('/');
   };
 
   const toggleExpanded = (dayNumber: number) => {
@@ -464,7 +510,7 @@ export default function DiarioEstoicoPage() {
           <div className="mx-auto max-w-7xl flex items-center justify-between">
             {/* Botão Voltar */}
             <button
-              onClick={() => navigate(user ? '/app' : '/')}
+              onClick={handleBackClick}
               className="inline-flex items-center justify-center w-10 h-10 text-gray-700 bg-white rounded-full border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow"
               aria-label="Voltar"
             >
@@ -771,6 +817,14 @@ export default function DiarioEstoicoPage() {
             )}
           </div>
         </main>
+
+        {/* Exit Modal */}
+        <DiarioExitModal
+          open={showExitModal}
+          onClose={handleModalStay}
+          onSignup={handleModalSignup}
+          onLeaveAnyway={handleModalLeave}
+        />
       </div>
     </div>
   );
