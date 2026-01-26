@@ -9,7 +9,7 @@ export default function EcoAIRecommendationCard({ onStartChat }: EcoAIRecommenda
     <section className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
       <button
         onClick={onStartChat}
-        className="group w-full flex items-center gap-4 rounded-3xl bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 px-6 py-6 transition-all duration-300 hover:border-purple-400 hover:shadow-[0_8px_30px_rgba(147,51,234,0.15)] hover:-translate-y-1 active:scale-98 cursor-pointer md:px-8 md:py-7"
+        className="group w-full flex items-center gap-4 rounded-3xl bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-sky-200 px-6 py-6 transition-all duration-300 hover:border-sky-300 hover:shadow-[0_8px_30px_rgba(135,206,235,0.20)] hover:-translate-y-1 active:scale-98 cursor-pointer md:px-8 md:py-7"
       >
         {/* Logo ECO - Maior e mais destacado */}
         <div className="flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full bg-white shadow-lg flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
@@ -27,7 +27,12 @@ export default function EcoAIRecommendationCard({ onStartChat }: EcoAIRecommenda
         </div>
 
         {/* Indicador visual de ação */}
-        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-600 text-white transition-all duration-300 group-hover:bg-purple-700 flex-shrink-0">
+        <div
+          className="flex items-center justify-center w-10 h-10 rounded-full text-white transition-all duration-300 flex-shrink-0"
+          style={{
+            backgroundColor: '#87CEEB',
+          }}
+        >
           <svg
             width="20"
             height="20"
