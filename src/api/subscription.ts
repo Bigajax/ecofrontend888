@@ -70,12 +70,23 @@ export async function createSubscription(
     throw new Error(ERROR_MESSAGES.INVALID_PLAN);
   }
 
+  // Log the request payload
+  const payload = { plan };
+  console.log('[subscription] Creating subscription with payload:', payload);
+
   const result = await apiFetchJson(`${SUBSCRIPTION_BASE_PATH}/create-preference`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ plan }),
+    body: JSON.stringify(payload),
+  });
+
+  // Debug log
+  console.log('[subscription] createSubscription result:', {
+    ok: result.ok,
+    status: result.ok ? (result as any).status : (result as any).status,
+    data: result.data,
   });
 
   if (isNetworkError(result)) {
@@ -83,6 +94,11 @@ export async function createSubscription(
   }
 
   if (!result.ok) {
+    // Log full error details
+    console.error('[subscription] Backend error:', {
+      status: (result as any).status,
+      data: result.data,
+    });
     const message = extractErrorMessage(result.data, ERROR_MESSAGES.SUBSCRIPTION_FAILED);
     throw new Error(message);
   }
