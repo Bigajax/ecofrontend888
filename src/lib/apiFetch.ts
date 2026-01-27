@@ -1,4 +1,5 @@
 import { buildApiUrl } from "@/constants/api";
+import { supabase } from "./supabaseClient";
 
 export type ApiFetchJsonErrorCode = "NETWORK" | "TIMEOUT";
 
@@ -111,6 +112,42 @@ export async function apiFetchJson<T = unknown>(
   }
 
   const headers = toHeaders(headersInit);
+
+  // Add Authorization header if not already present
+  if (!headers.has("Authorization")) {
+    // Try to get token from Supabase session first
+    let authToken: string | null = null;
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      authToken = sessionData?.session?.access_token ?? null;
+
+      // Debug log
+      if (path.includes("/subscription")) {
+        console.log("[apiFetch] Getting token for subscription API:", {
+          hasSession: !!sessionData?.session,
+          hasToken: !!authToken,
+          path
+        });
+      }
+    } catch (error) {
+      console.warn("[apiFetch] Failed to get Supabase session:", error);
+      // If Supabase fails, try localStorage as fallback
+      if (typeof window !== "undefined") {
+        try {
+          authToken = window.localStorage.getItem("auth_token");
+        } catch {
+          authToken = null;
+        }
+      }
+    }
+
+    // Set Authorization header if we have a token
+    if (authToken) {
+      headers.set("Authorization", `Bearer ${authToken}`);
+    } else if (path.includes("/subscription")) {
+      console.warn("[apiFetch] No auth token available for subscription API");
+    }
+  }
 
   const fetchInit: RequestInit = {
     ...rest,
