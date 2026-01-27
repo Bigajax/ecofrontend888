@@ -93,7 +93,7 @@ export default function MeditationPlayerPage() {
     const allSounds = getAllSounds();
     return allSounds.find(sound => sound.id === 'freq_1') || null;
   });
-  const [backgroundVolume, setBackgroundVolume] = useState(47); // Volume padrão para som de fundo (47%)
+  const [backgroundVolume, setBackgroundVolume] = useState(67); // Volume padrão para som de fundo (67%)
   const backgroundAudioRef = useRef<HTMLAudioElement>(null);
 
   // Web Audio API para controle avançado de volume
@@ -158,8 +158,8 @@ export default function MeditationPlayerPage() {
       backgroundSourceNodeRef.current.connect(backgroundGainNodeRef.current);
       backgroundGainNodeRef.current.connect(audioContextRef.current.destination);
 
-      // Definir volume inicial (47% → ~3.8% do volume real)
-      backgroundGainNodeRef.current.gain.value = 0.47 * 0.08;
+      // Definir volume inicial (67% → ~5.4% do volume real)
+      backgroundGainNodeRef.current.gain.value = 0.67 * 0.08;
     }
   }, []);
 
