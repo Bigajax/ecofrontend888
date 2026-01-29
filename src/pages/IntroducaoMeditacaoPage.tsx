@@ -6,6 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import MeditationPageSkeleton from '@/components/MeditationPageSkeleton';
 import { usePremiumContent } from '@/hooks/usePremiumContent';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
+import MeditacaoExitModal from '@/components/MeditacaoExitModal';
+import mixpanel from '@/lib/mixpanel';
 import {
   trackMeditationEvent,
   parseDurationToSeconds,
@@ -89,12 +91,16 @@ const INITIAL_MEDITATIONS: Meditation[] = [
   },
 ];
 
+// Chave para sessionStorage - modal aparece apenas uma vez por sessão
+const EXIT_MODAL_SHOWN_KEY = 'eco.meditacao.exitModalShown';
+
 export default function IntroducaoMeditacaoPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { checkAccess, requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const [isLoading, setIsLoading] = useState(true);
+  const [showExitModal, setShowExitModal] = useState(false);
 
   // Load meditations from localStorage
   const [meditations, setMeditations] = useState<Meditation[]>(() => {
@@ -189,7 +195,52 @@ export default function IntroducaoMeditacaoPage() {
   const completedCount = meditations.filter(m => m.completed).length;
   const totalCount = meditations.length;
 
-  const handleLogout = () => {
+  // Se o usuário está logado, pode fazer logout
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } finally {
+      navigate('/');
+    }
+  };
+
+  // Interceptar clique no botão Voltar
+  const handleBackClick = () => {
+    // Só mostra modal para guests
+    if (!user) {
+      // Verificar se já foi mostrado nesta sessão
+      const wasShown = sessionStorage.getItem(EXIT_MODAL_SHOWN_KEY);
+
+      if (!wasShown) {
+        sessionStorage.setItem(EXIT_MODAL_SHOWN_KEY, 'true');
+        setShowExitModal(true);
+
+        mixpanel.track('Meditacao Primeiros Passos: Exit Modal Shown', {
+          timestamp: new Date().toISOString(),
+        });
+        return; // Não navega ainda
+      }
+    }
+
+    // Navega normalmente
+    navigate(user ? '/app' : '/');
+  };
+
+  // Handlers do modal
+  const handleModalSignup = () => {
+    mixpanel.track('Meditacao Primeiros Passos: Exit Modal - Signup Clicked');
+    setShowExitModal(false);
+    navigate('/register', { state: { from: 'meditacao-primeiros-passos' } });
+  };
+
+  const handleModalStay = () => {
+    mixpanel.track('Meditacao Primeiros Passos: Exit Modal - Stayed');
+    setShowExitModal(false);
+  };
+
+  const handleModalLeave = () => {
+    mixpanel.track('Meditacao Primeiros Passos: Exit Modal - Left Anyway');
+    setShowExitModal(false);
     navigate('/');
   };
 
@@ -216,19 +267,34 @@ export default function IntroducaoMeditacaoPage() {
 
   return (
     <div className="min-h-screen bg-white font-primary">
-      <HomeHeader onLogout={handleLogout} />
+      {/* Header - apenas se usuário logado */}
+      {user && <HomeHeader onLogout={handleLogout} />}
 
       {isLoading ? (
         <MeditationPageSkeleton />
       ) : (
         <main className="pb-20">
           <section className="relative flex min-h-[400px] flex-col items-center justify-center overflow-hidden py-12 sm:min-h-[500px] sm:py-16 md:min-h-[600px] md:py-20">
-            <button
-              onClick={() => navigate('/app')}
-              className="absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-[var(--eco-text)] shadow-md backdrop-blur-sm transition-all hover:bg-white hover:shadow-lg sm:left-6 sm:top-6 md:left-8 md:top-8"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
+            {/* Navegação superior */}
+            <div className="absolute left-4 top-4 right-4 z-20 flex items-center justify-between sm:left-6 sm:top-6 sm:right-6 md:left-8 md:top-8 md:right-8">
+              {/* Botão Voltar */}
+              <button
+                onClick={handleBackClick}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-[var(--eco-text)] shadow-md backdrop-blur-sm transition-all hover:bg-white hover:shadow-lg"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+
+              {/* CTA para guest */}
+              {!user && (
+                <button
+                  onClick={() => navigate('/register')}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-eco-400 to-eco-500 rounded-full hover:shadow-lg transition-all duration-200"
+                >
+                  Criar conta grátis
+                </button>
+              )}
+            </div>
             <div
               className="absolute inset-0 bg-cover"
               style={{
@@ -327,6 +393,14 @@ export default function IntroducaoMeditacaoPage() {
           </section>
         </main>
       )}
+
+      {/* Exit Modal */}
+      <MeditacaoExitModal
+        open={showExitModal}
+        onClose={handleModalStay}
+        onSignup={handleModalSignup}
+        onLeaveAnyway={handleModalLeave}
+      />
 
       {/* Upgrade Modal */}
       <UpgradeModal

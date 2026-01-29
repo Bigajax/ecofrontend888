@@ -131,6 +131,7 @@ function AppRoutes() {
         <Route path="login" element={renderWithSuspense(<LoginPage />)} />
         <Route path="login/tour" element={<Navigate to="/login?tour=1" replace />} />
         <Route path="diario-estoico" element={renderWithSuspense(<DiarioEstoicoPage />)} />
+        <Route path="meditacao-primeiros-passos" element={renderWithSuspense(<IntroducaoMeditacaoPage />)} />
       </Route>
       <Route
         path="/app/*"
