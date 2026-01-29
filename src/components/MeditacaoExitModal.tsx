@@ -37,16 +37,7 @@ const MeditacaoExitModal: React.FC<MeditacaoExitModalProps> = ({
       aria-modal="true"
       aria-labelledby="exit-modal-title"
     >
-      <div className="rounded-3xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-8 max-w-md w-full text-center transition-all duration-300">
-        {/* Logo Image */}
-        <div className="flex justify-center mb-6">
-          <img
-            src="/ECO conexão.webp"
-            alt="ECO"
-            className="h-24 w-24 object-contain"
-          />
-        </div>
-
+      <div className="rounded-3xl border border-[var(--eco-line)] bg-white shadow-[0_4px_30px_rgba(0,0,0,0.08)] p-8 max-w-md w-full text-center transition-all duration-300">
         <h2
           id="exit-modal-title"
           className="text-3xl font-display font-normal text-[var(--eco-text)] mb-4"
@@ -55,7 +46,7 @@ const MeditacaoExitModal: React.FC<MeditacaoExitModalProps> = ({
         </h2>
 
         <p className="text-base font-primary text-[var(--eco-text)] leading-relaxed mb-6">
-          Crie sua conta gratuita para acessar todas as meditações, acompanhar seu progresso e transformar sua jornada de autoconhecimento.
+          Crie sua conta gratuita e desbloqueie acesso completo à experiência ECO.
         </p>
 
         {/* Benefícios */}
@@ -63,19 +54,25 @@ const MeditacaoExitModal: React.FC<MeditacaoExitModalProps> = ({
           <div className="flex items-start gap-2">
             <span className="text-eco-500 font-bold mt-0.5">✓</span>
             <p className="text-sm font-primary text-[var(--eco-text)]">
-              Acesso completo a todas as meditações
+              Chat ilimitado com a ECO IA emocional
             </p>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-eco-500 font-bold mt-0.5">✓</span>
             <p className="text-sm font-primary text-[var(--eco-text)]">
-              Acompanhe seu progresso e histórico
+              Meditações guiadas e sons terapêuticos
             </p>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-eco-500 font-bold mt-0.5">✓</span>
             <p className="text-sm font-primary text-[var(--eco-text)]">
-              Conversas com a ECO IA emocional
+              Perfil emocional e memórias afetivas
+            </p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="text-eco-500 font-bold mt-0.5">✓</span>
+            <p className="text-sm font-primary text-[var(--eco-text)]">
+              5 Anéis: rituais diários personalizados
             </p>
           </div>
         </div>
@@ -85,8 +82,8 @@ const MeditacaoExitModal: React.FC<MeditacaoExitModalProps> = ({
           {/* Botão primário: Criar conta */}
           <button
             onClick={onSignup}
-            className="bg-gradient-to-r from-[var(--eco-user)] to-[var(--eco-accent)] text-white px-6 py-3 rounded-lg font-primary font-medium text-base
-                       hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]
+            className="bg-[var(--eco-user)] text-white px-6 py-3 rounded-lg font-primary font-medium text-base
+                       hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(110,200,255,0.3)]
                        active:translate-y-0 transition-all duration-300 ease-out"
           >
             Criar conta grátis
@@ -95,9 +92,9 @@ const MeditacaoExitModal: React.FC<MeditacaoExitModalProps> = ({
           {/* Botão secundário: Continuar meditando */}
           <button
             onClick={onClose}
-            className="border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm
+            className="border border-[var(--eco-line)] bg-white
                        text-[var(--eco-text)] px-6 py-3 rounded-lg font-primary font-medium text-base
-                       hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.04)]
+                       hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.04)]
                        active:translate-y-0 transition-all duration-300 ease-out"
           >
             Continuar meditando
