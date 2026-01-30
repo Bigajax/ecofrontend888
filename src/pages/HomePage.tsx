@@ -150,12 +150,11 @@ export default function HomePage() {
     () => [
       {
         id: 'rec_1',
-        title: 'Introdução à Meditação',
-        description: 'Seus primeiros passos na prática meditativa',
-        duration: '8 min',
-        audioUrl: '/audio/introducao-meditacao.mp3',
-        image: 'url("/images/meditacao-introducao.webp")',
-        imagePosition: 'center 32%',
+        title: 'Inicie Sua Jornada',
+        description: 'Dê os primeiros passos na prática meditativa e descubra a paz interior',
+        duration: '5 meditações',
+        image: 'url("/images/introducao-meditacao-hero.png")',
+        imagePosition: 'center center',
         gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
         isPremium: false,
       },
@@ -171,12 +170,11 @@ export default function HomePage() {
       },
       {
         id: 'rec_3',
-        title: 'Meditação do Sono',
-        description: 'Relaxe profundamente e durma melhor.',
-        duration: '9 min',
-        audioUrl: '/audio/meditacao-sono.mp4',
-        image: 'url("/images/meditacao-sono-new.webp")',
-        imagePosition: 'center 32%',
+        title: 'Durma em Paz',
+        description: 'Liberte-se das preocupações e encontre o caminho para o sono profundo',
+        duration: '2 meditações',
+        image: 'url("/images/meditacoes-sono-hero.png")',
+        imagePosition: 'center center',
         gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
         isPremium: false,
       },
@@ -349,23 +347,8 @@ export default function HomePage() {
       // Diário Estoico - navegar para sua própria página
       navigate('/app/diario-estoico');
     } else if (recId === 'rec_3') {
-      // Meditação do Sono - navegar para o player
-      const sonoMeditation = dailyRecommendations.find(r => r.id === 'rec_3');
-      if (sonoMeditation) {
-        navigate('/app/meditation-player', {
-          state: {
-            meditation: {
-              title: sonoMeditation.title,
-              duration: sonoMeditation.duration,
-              audioUrl: sonoMeditation.audioUrl,
-              imageUrl: sonoMeditation.image.replace('url("', '').replace('")', ''),
-              backgroundMusic: 'Sono',
-              gradient: sonoMeditation.gradient,
-            },
-            returnTo: '/app',
-          },
-        });
-      }
+      // Meditações de Sono - navegar para página dedicada
+      navigate('/app/meditacoes-sono');
     } else {
       console.log('Recomendação clicada:', recId);
     }

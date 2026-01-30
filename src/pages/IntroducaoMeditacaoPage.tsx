@@ -298,24 +298,24 @@ export default function IntroducaoMeditacaoPage() {
             <div
               className="absolute inset-0 bg-cover"
               style={{
-                backgroundImage: 'url("/images/meditacao-introducao.webp")',
-                backgroundPosition: 'center 32%',
+                backgroundImage: 'url("/images/introducao-meditacao-hero.png")',
+                backgroundPosition: 'center center',
                 transform: 'scale(1.05)',
               }}
             />
             <div
               className="absolute inset-0"
               style={{
-                background: 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,1) 100%)',
+                background: 'linear-gradient(to bottom, rgba(200,215,235,0) 0%, rgba(200,215,235,0) 40%, rgba(255,255,255,1) 100%)',
               }}
             />
 
             <div className="relative z-10 flex flex-col items-center px-4 text-center sm:px-6">
               <h1 className="font-display text-3xl font-bold text-white drop-shadow-lg sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
-                Primeiros passos
+                Inicie Sua Jornada
               </h1>
               <p className="mt-3 max-w-2xl text-sm text-white/95 drop-shadow-md sm:mt-4 sm:text-base md:text-lg lg:text-xl" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>
-                Bem-vindo ao Ecotopia! Com estas pequenas práticas, você vai descobrir o que é meditar e dar os seus primeiros passos nesta experiência.
+                Bem-vindo ao Ecotopia! Dê os primeiros passos na prática meditativa e descubra um caminho de paz, clareza e conexão com seu interior.
               </p>
 
               <button

@@ -68,6 +68,7 @@ export default function HeroCarousel({
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [videoError, setVideoError] = useState(false);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -130,6 +131,7 @@ export default function HeroCarousel({
     setDirection(index > currentIndex ? 'right' : 'left');
     setCurrentIndex(index);
     setProgress(0);
+    setVideoError(false);
     resetTimer();
   };
 
@@ -164,6 +166,7 @@ export default function HeroCarousel({
 
   useEffect(() => {
     setProgress(0);
+    setVideoError(false);
   }, [currentIndex]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -306,13 +309,17 @@ export default function HeroCarousel({
             transform: isDragging ? `translateX(${dragOffset}px)` : undefined,
           }}
         >
-          {CAROUSEL_ITEMS[currentIndex].video ? (
+          {CAROUSEL_ITEMS[currentIndex].video && !videoError ? (
             <video
               autoPlay
               loop
               muted
               playsInline
               className="absolute inset-0 h-full w-full object-cover"
+              onError={() => {
+                console.error('Video failed to load, falling back to image');
+                setVideoError(true);
+              }}
             >
               <source src={CAROUSEL_ITEMS[currentIndex].video} type="video/mp4" />
             </video>
