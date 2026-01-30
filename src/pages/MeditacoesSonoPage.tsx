@@ -46,7 +46,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     description: 'Acalme a mente ansiosa e encontre paz profunda para uma noite tranquila',
     duration: '15 min',
     audioUrl: '/audio/meditacao-ansiedade-sono.mp3',
-    image: 'url("/images/meditacao-ansiedade-sono.png")',
+    image: 'url("/images/meditacao-ansiedade-sono.webp")',
     imagePosition: 'center center',
     gradient: 'linear-gradient(to bottom, #6B5B95 0%, #5D4E85 20%, #4F4175 40%, #413465 60%, #332755 80%, #251A45 100%)',
     completed: false,
@@ -222,7 +222,7 @@ export default function MeditacoesSonoPage() {
             <div
               className="absolute inset-0 bg-cover"
               style={{
-                backgroundImage: 'url("/images/meditacoes-sono-hero.png")',
+                backgroundImage: 'url("/images/meditacoes-sono-hero.webp")',
                 backgroundPosition: 'center center',
                 transform: 'scale(1.05)',
               }}

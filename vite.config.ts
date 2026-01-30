@@ -76,6 +76,20 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: true,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Separate vendor chunks for better caching
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            'nivo-charts': ['@nivo/bar', '@nivo/line', '@nivo/core'],
+            'framer-motion': ['framer-motion'],
+            'supabase': ['@supabase/supabase-js'],
+            'date-utils': ['date-fns'],
+          },
+        },
+      },
+      // Increase chunk size warning limit
+      chunkSizeWarningLimit: 600,
     },
   };
 });

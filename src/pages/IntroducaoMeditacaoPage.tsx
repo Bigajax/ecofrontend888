@@ -298,7 +298,7 @@ export default function IntroducaoMeditacaoPage() {
             <div
               className="absolute inset-0 bg-cover"
               style={{
-                backgroundImage: 'url("/images/introducao-meditacao-hero.png")',
+                backgroundImage: 'url("/images/introducao-meditacao-hero.webp")',
                 backgroundPosition: 'center center',
                 transform: 'scale(1.05)',
               }}
