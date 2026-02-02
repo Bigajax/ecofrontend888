@@ -82,17 +82,19 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
   },
   {
     id: 2,
-    title: 'Domine os 5 Anéis da Disciplina',
-    description:
-      'Construa clareza, foco e propósito com um ritual diário inspirado em Miyamoto Musashi.',
+    badge: 'JORNADA SAMURAI',
+    mainTitle: 'DOMINE OS 5 ANÉIS DA DISCIPLINA',
+    title: 'Ritual Diário de Miyamoto Musashi',
+    description: 'Construa clareza, foco e propósito através da sabedoria do maior samurai',
     background:
       'url("/images/5-aneis-hero.webp")',
   },
   {
     id: 3,
-    title: 'Desperte Seu Potencial Infinito',
-    description:
-      'Recondicione sua mente e manifeste a realidade que deseja viver.',
+    badge: 'TRANSFORMAÇÃO QUÂNTICA',
+    mainTitle: 'DESPERTE SEU POTENCIAL INFINITO',
+    title: 'Meditações Guiadas Dr. Joe Dispenza',
+    description: 'Recondicione sua mente e manifeste a realidade que você deseja viver',
     background:
       'url("/images/dr-joe-hero.webp")',
   },
@@ -259,8 +261,8 @@ export default function HeroCarousel({
 
     return (
       <div className="relative flex h-full flex-col justify-between p-4 sm:p-6 pb-12 sm:pb-14">
-        {/* Badge superior para Diário Estoico */}
-        {isDiarioEstoico && item.badge && (
+        {/* Badge superior para cards especiais */}
+        {(isDiarioEstoico || is5Aneis || isDrJoe) && item.badge && (
           <div className="flex justify-center pt-2">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 border border-white/30">
               <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
@@ -274,8 +276,8 @@ export default function HeroCarousel({
         <div className="flex-1" />
 
         <div className="space-y-2 sm:space-y-3">
-          {/* Título principal grande para Diário Estoico */}
-          {isDiarioEstoico && item.mainTitle ? (
+          {/* Título principal grande para cards especiais */}
+          {(isDiarioEstoico || is5Aneis || isDrJoe) && item.mainTitle ? (
             <>
               <h2 className="font-display text-[22px] sm:text-[26px] md:text-[28px] font-bold text-white drop-shadow-2xl leading-tight text-center px-2 tracking-tight">
                 {item.mainTitle}
@@ -320,32 +322,44 @@ export default function HeroCarousel({
             </div>
           )}
 
-          {/* CTA Button for 5 Anéis */}
+          {/* CTA Button for 5 Anéis - Melhorado */}
           {is5Aneis && (
-            <div className="mt-3 sm:mt-4 flex justify-center">
+            <div className="mt-4 sm:mt-5 flex justify-center">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate('/app/rings');
                 }}
-                className="flex items-center gap-2 rounded-full bg-white px-4 sm:px-5 py-1.5 sm:py-2 text-purple-900 shadow-md transition duration-200 hover:scale-[1.02] hover:bg-gray-50 cursor-pointer active:scale-95"
+                className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-purple-900 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"
               >
-                <span className="text-[12px] sm:text-[13px] font-medium">Começar Jornada</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <svg className="w-4 h-4 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span className="text-[13px] sm:text-[14px] font-bold relative z-10">
+                  Começar Jornada Agora
+                </span>
               </button>
             </div>
           )}
 
-          {/* CTA Button for Dr. Joe */}
+          {/* CTA Button for Dr. Joe - Melhorado */}
           {isDrJoe && (
-            <div className="mt-3 sm:mt-4 flex justify-center">
+            <div className="mt-4 sm:mt-5 flex justify-center">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate('/app/dr-joe-dispenza');
                 }}
-                className="flex items-center gap-2 rounded-full bg-white px-4 sm:px-5 py-1.5 sm:py-2 text-purple-900 shadow-md transition duration-200 hover:scale-[1.02] hover:bg-gray-50 cursor-pointer active:scale-95"
+                className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-purple-900 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"
               >
-                <span className="text-[12px] sm:text-[13px] font-medium">Explorar Meditações</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-50 via-pink-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <svg className="w-4 h-4 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                <span className="text-[13px] sm:text-[14px] font-bold relative z-10">
+                  Começar Transformação
+                </span>
               </button>
             </div>
           )}
