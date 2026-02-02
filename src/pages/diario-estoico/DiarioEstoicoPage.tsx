@@ -174,6 +174,21 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
   },
 ];
 
+// Reflexões de fevereiro (1 a 28)
+const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
+  {
+    date: '2 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 2,
+    title: 'Um bom estado de espírito',
+    text: 'Formula teus pensamentos assim: és uma pessoa idosa, não te deixarás mais ser escravizado por isso, não mais manipulado como um fantoche por todos os impulsos, e vais parar de te queixar de tua sorte atual ou de temer o futuro.',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 2.2',
+    comment: 'Ficamos com raiva da pessoa que vem e tenta nos dar ordens.\nNão me diga como devo me vestir, como devo pensar, como devo fazer meu trabalho, como devo viver. Isso ocorre porque somos pessoas independentes, autossuficientes.\nOu, pelo menos, é o que dizemos a nós mesmos.\n\nContudo se alguém diz algo de que discordamos, alguma coisa dentro de nós nos indica que temos de discutir com ele. Se há um prato de biscoitos diante de nós, temos de comê-los. Se alguém faz alguma coisa de que não gostamos, temos de ficar furiosos. Quando surge um contratempo, temos de ficar tristes, deprimidos ou preocupados. Mas se alguma coisa boa acontece alguns minutos depois, de repente ficamos felizes, empolgados e queremos mais.\n\nNão deveríamos nunca deixar outra pessoa nos sacudir para cá e para lá da maneira como fazem nossos impulsos. É hora de começarmos a perceber isso desta forma: que não somos fantoches que podem ser levados a dançar desse ou daquele jeito só porque nos apetece. Deveríamos ser aqueles que estão no controle — e não nossas emoções — porque somos pessoas independentes, autossuficientes.',
+    background: BACKGROUNDS[1],
+  },
+];
+
 // Reflexões de dezembro (8 a 27)
 const DECEMBER_REFLECTIONS: DailyMaxim[] = [
   {
@@ -361,6 +376,7 @@ const DECEMBER_REFLECTIONS: DailyMaxim[] = [
 // Array de máximas diárias com datas específicas
 const ALL_DAILY_MAXIMS: DailyMaxim[] = [
   ...JANUARY_REFLECTIONS,
+  ...FEBRUARY_REFLECTIONS,
   ...DECEMBER_REFLECTIONS,
 ];
 
@@ -382,6 +398,10 @@ const getAvailableMaxims = (): DailyMaxim[] => {
     monthName = 'janeiro';
     startDay = 19;
     endDay = 31;
+  } else if (currentMonth === 1) { // Fevereiro
+    monthName = 'fevereiro';
+    startDay = 1;
+    endDay = 28;
   } else if (currentMonth === 11) { // Dezembro
     monthName = 'dezembro';
     startDay = 8;
