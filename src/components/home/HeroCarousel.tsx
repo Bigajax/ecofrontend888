@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, MoreHorizontal, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EcoBubbleOneEye from '@/components/EcoBubbleOneEye';
+import { getTodayMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
 
 interface CarouselItem {
   id: number;
@@ -11,6 +12,8 @@ interface CarouselItem {
   background: string;
   author?: string;
   video?: string;
+  badge?: string; // Badge superior (ex: "HOJE • 02 FEV")
+  mainTitle?: string; // Título principal destacado
 }
 
 interface HeroCarouselProps {
@@ -30,11 +33,49 @@ const getDailyReflectionVideo = (): string => {
   return videos[today % 3];
 };
 
+// Função para obter o conteúdo dinâmico da reflexão diária
+const getDailyReflectionContent = (): {
+  title: string;
+  description: string;
+  badge?: string;
+  mainTitle?: string;
+} => {
+  const todayMaxim = getTodayMaxim();
+
+  if (todayMaxim) {
+    const now = new Date();
+    const monthNames = [
+      'JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN',
+      'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'
+    ];
+    const day = now.getDate().toString().padStart(2, '0');
+    const month = monthNames[now.getMonth()];
+
+    return {
+      badge: `HOJE • ${day} ${month}`,
+      mainTitle: todayMaxim.title.toUpperCase(),
+      title: 'Reflexão Diária Estoica',
+      description: 'Comece seu dia com sabedoria e clareza'
+    };
+  }
+
+  // Fallback quando não há reflexão disponível
+  return {
+    title: 'Um minuto para organizar seus pensamentos',
+    description: 'Uma reflexão estoica para começar o dia com clareza.'
+  };
+};
+
+// Obter conteúdo dinâmico da reflexão
+const dailyContent = getDailyReflectionContent();
+
 const CAROUSEL_ITEMS: CarouselItem[] = [
   {
     id: 1,
-    title: 'Um minuto para organizar seus pensamentos',
-    description: 'Uma reflexão estoica para começar o dia com clareza.',
+    title: dailyContent.title,
+    description: dailyContent.description,
+    badge: dailyContent.badge,
+    mainTitle: dailyContent.mainTitle,
     background:
       'url("/images/diario-estoico.webp")',
     video: getDailyReflectionVideo(),
@@ -218,31 +259,63 @@ export default function HeroCarousel({
 
     return (
       <div className="relative flex h-full flex-col justify-between p-4 sm:p-6 pb-12 sm:pb-14">
+        {/* Badge superior para Diário Estoico */}
+        {isDiarioEstoico && item.badge && (
+          <div className="flex justify-center pt-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 border border-white/30">
+              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              <span className="text-[11px] sm:text-[12px] font-bold text-white tracking-wider">
+                {item.badge}
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="flex-1" />
-        <div className="space-y-1.5 sm:space-y-2">
-          <h3 className="font-display text-2xl font-medium text-white drop-shadow-lg leading-[1.4] tracking-[-0.2px] text-center px-2">
-            {item.title}
-          </h3>
-          <p className="text-[12px] sm:text-[13px] leading-relaxed text-white/85 drop-shadow-md text-center">
-            {item.description}
-          </p>
+
+        <div className="space-y-2 sm:space-y-3">
+          {/* Título principal grande para Diário Estoico */}
+          {isDiarioEstoico && item.mainTitle ? (
+            <>
+              <h2 className="font-display text-[22px] sm:text-[26px] md:text-[28px] font-bold text-white drop-shadow-2xl leading-tight text-center px-2 tracking-tight">
+                {item.mainTitle}
+              </h2>
+              <p className="text-[11px] sm:text-[12px] leading-relaxed text-white/90 drop-shadow-lg text-center font-medium">
+                {item.description}
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 className="font-display text-2xl font-medium text-white drop-shadow-lg leading-[1.4] tracking-[-0.2px] text-center px-2">
+                {item.title}
+              </h3>
+              <p className="text-[12px] sm:text-[13px] leading-relaxed text-white/85 drop-shadow-md text-center">
+                {item.description}
+              </p>
+            </>
+          )}
+
           {item.author && (
             <p className="text-[12px] sm:text-[13px] font-medium text-white/80 drop-shadow-md">
               {item.author}
             </p>
           )}
 
-          {/* CTA Button for Diário Estoico */}
+          {/* CTA Button for Diário Estoico - Melhorado */}
           {isDiarioEstoico && (
-            <div className="mt-3 sm:mt-4 flex justify-center">
+            <div className="mt-4 sm:mt-5 flex justify-center">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate('/app/diario-estoico');
                 }}
-                className="flex items-center gap-2 rounded-full bg-white px-4 sm:px-5 py-1.5 sm:py-2 text-sky-950 shadow-md transition duration-200 hover:scale-[1.02] hover:bg-sky-50 cursor-pointer active:scale-95"
+                className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-sky-950 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"
               >
-                <span className="text-[12px] sm:text-[13px] font-medium">Ler a reflexão de hoje</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-sky-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <BookOpen className="w-4 h-4 relative z-10" />
+                <span className="text-[13px] sm:text-[14px] font-bold relative z-10">
+                  Ler Reflexão de Hoje
+                </span>
               </button>
             </div>
           )}
