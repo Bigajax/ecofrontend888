@@ -1,7 +1,7 @@
 // src/components/subscription/UpgradeModal.tsx
 // Modal de upgrade para assinatura premium
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,6 +10,11 @@ import PricingCard from './PricingCard';
 import { createSubscription } from '../../api/subscription';
 import type { PlanType } from '../../types/subscription';
 import mixpanel from '../../lib/mixpanel';
+import {
+  trackPremiumScreenViewed,
+  trackPremiumCardClicked,
+  trackCheckoutStarted
+} from '../../lib/mixpanelConversionEvents';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface UpgradeModalProps {
@@ -62,14 +67,37 @@ export default function UpgradeModal({ open, onClose, source = 'unknown' }: Upgr
   const [state, setState] = useState<ModalState>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
+  // Track Premium Screen Viewed quando modal abre
+  useEffect(() => {
+    if (open) {
+      const planData = PRICING_PLANS.find((p) => p.id === selectedPlan);
+      trackPremiumScreenViewed({
+        plan_id: selectedPlan,
+        plan_label: planData?.name || selectedPlan,
+        price: planData?.price || 0,
+        screen: 'upgrade_modal',
+        placement: source,
+        is_guest: !user,
+        user_id: user?.id,
+      });
+    }
+  }, [open, selectedPlan, source, user]);
+
   if (!open) return null;
 
   const handlePlanSelect = (plan: PlanType) => {
     setSelectedPlan(plan);
-    mixpanel.track('Plan Selected', {
-      plan,
-      price: PRICING_PLANS.find((p) => p.id === plan)?.price,
-      source,
+    const planData = PRICING_PLANS.find((p) => p.id === plan);
+
+    // Track Premium Card Clicked (Camada 1)
+    trackPremiumCardClicked({
+      plan_id: plan,
+      plan_label: planData?.name || plan,
+      price: planData?.price || 0,
+      currency: 'BRL',
+      screen: 'upgrade_modal',
+      placement: source,
+      is_guest: !user,
       user_id: user?.id,
     });
   };
@@ -79,13 +107,20 @@ export default function UpgradeModal({ open, onClose, source = 'unknown' }: Upgr
     setErrorMessage('');
 
     try {
-      mixpanel.track('Checkout Initiated', {
-        plan: selectedPlan,
-        source,
-        user_id: user?.id,
-      });
-
+      const planData = PRICING_PLANS.find((p) => p.id === selectedPlan);
       const response = await createSubscription(selectedPlan);
+
+      // Track Checkout Started (Camada 2)
+      trackCheckoutStarted({
+        plan_id: selectedPlan,
+        checkout_provider: 'mercadopago',
+        checkout_type: response.type || 'preference',
+        preference_id: response.id,
+        amount: planData?.price || 0,
+        currency: 'BRL',
+        user_id: user?.id,
+        is_guest: !user,
+      });
 
       // Redirecionar para checkout do Mercado Pago
       window.location.href = response.initPoint;

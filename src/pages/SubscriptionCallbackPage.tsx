@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../contexts/AuthContext';
 import mixpanel from '../lib/mixpanel';
+import { trackSubscriptionPaid, trackPaymentFailed } from '../lib/mixpanelConversionEvents';
 
 type CallbackStatus = 'loading' | 'success' | 'error' | 'pending';
 
@@ -45,12 +46,14 @@ export default function SubscriptionCallbackPage() {
             // ✅ Sucesso! Trial ou premium ativo
             setStatus('success');
 
-            // Analytics
-            mixpanel.track('Payment Success', {
-              plan: subscription.plan,
-              plan_type: subscription.planType,
-              is_trial: subscription.plan === 'trial',
+            // Track Subscription Paid (Camada 3 - Frontend)
+            trackSubscriptionPaid({
+              plan_id: (subscription.planType || 'annual') as 'monthly' | 'annual',
+              mp_status: subscription.status,
+              transaction_amount: subscription.planType === 'monthly' ? 29.9 : 299.0,
+              provider: 'mercadopago',
               user_id: user?.id,
+              source: 'frontend_callback',
             });
 
             // Confetti celebration
@@ -98,10 +101,13 @@ export default function SubscriptionCallbackPage() {
                 : 'Não foi possível confirmar o pagamento'
             );
 
-            mixpanel.track('Payment Error', {
-              error: error instanceof Error ? error.message : 'Unknown error',
-              retries: maxRetries,
+            // Track Payment Failed (Camada 3 - Frontend)
+            trackPaymentFailed({
+              mp_status: 'error',
+              error_message: error instanceof Error ? error.message : 'Unknown error',
+              provider: 'mercadopago',
               user_id: user?.id,
+              source: 'frontend_callback',
             });
           }
         }
