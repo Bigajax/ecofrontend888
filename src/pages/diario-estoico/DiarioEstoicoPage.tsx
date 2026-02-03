@@ -1,11 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ChevronLeft, MoreHorizontal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedSection from '@/components/AnimatedSection';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import DiarioExitModal from '@/components/DiarioExitModal';
 import mixpanel from '@/lib/mixpanel';
+import {
+  trackDiarioPageViewed,
+  trackDiarioPageExited,
+  trackDiarioCardViewed,
+  trackDiarioCardExpanded,
+  trackDiarioCardCollapsed,
+  getDeviceType,
+  getCardPosition,
+} from '@/lib/mixpanelDiarioEvents';
 
 interface DailyMaxim {
   date: string;
@@ -434,6 +443,12 @@ export default function DiarioEstoicoPage() {
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
   const [showExitModal, setShowExitModal] = useState(false);
 
+  // Tracking state
+  const [pageViewTime, setPageViewTime] = useState<Date | null>(null);
+  const [viewedCards, setViewedCards] = useState<Set<string>>(new Set());
+  const [cardExpandTimes, setCardExpandTimes] = useState<Map<number, Date>>(new Map());
+  const [scrolledToBottom, setScrolledToBottom] = useState(false);
+
   // Obter apenas os cards disponíveis até hoje
   const availableMaxims = getAvailableMaxims();
 
@@ -487,16 +502,175 @@ export default function DiarioEstoicoPage() {
   };
 
   const toggleExpanded = (dayNumber: number) => {
-    setExpandedCards((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(dayNumber)) {
+    const maxim = availableMaxims.find((m) => m.dayNumber === dayNumber);
+    if (!maxim) return;
+
+    const isExpanding = !expandedCards.has(dayNumber);
+
+    if (isExpanding) {
+      // Expandindo
+      setExpandedCards((prev) => new Set(prev).add(dayNumber));
+
+      // Track expansion
+      const timeToExpand = pageViewTime
+        ? Math.floor((new Date().getTime() - pageViewTime.getTime()) / 1000)
+        : 0;
+
+      trackDiarioCardExpanded({
+        reflection_date: maxim.date,
+        day_number: maxim.dayNumber,
+        month: maxim.month,
+        author: maxim.author,
+        source: maxim.source,
+        has_comment: !!maxim.comment,
+        card_position: getCardPosition(maxim.dayNumber, availableMaxims[0].dayNumber),
+        time_to_expand_seconds: timeToExpand,
+        is_guest: !user,
+        user_id: user?.id,
+      });
+
+      // Salvar tempo de expansão
+      setCardExpandTimes((prev) => new Map(prev).set(dayNumber, new Date()));
+    } else {
+      // Colapsando
+      setExpandedCards((prev) => {
+        const newSet = new Set(prev);
         newSet.delete(dayNumber);
-      } else {
-        newSet.add(dayNumber);
-      }
-      return newSet;
-    });
+        return newSet;
+      });
+
+      // Track collapse
+      const expandTime = cardExpandTimes.get(dayNumber);
+      const timeExpanded = expandTime
+        ? Math.floor((new Date().getTime() - expandTime.getTime()) / 1000)
+        : 0;
+
+      trackDiarioCardCollapsed({
+        reflection_date: maxim.date,
+        author: maxim.author,
+        time_expanded_seconds: timeExpanded,
+        read_full_comment: timeExpanded > 10, // estimativa: 10s+ = leu
+        is_guest: !user,
+        user_id: user?.id,
+      });
+
+      // Remover tempo de expansão
+      setCardExpandTimes((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(dayNumber);
+        return newMap;
+      });
+    }
   };
+
+  // Track card view quando entra no viewport
+  const handleCardView = useCallback((dayNumber: number) => {
+    const cardKey = `${dayNumber}`;
+
+    // Evitar duplicatas
+    if (viewedCards.has(cardKey)) return;
+
+    const maxim = availableMaxims.find((m) => m.dayNumber === dayNumber);
+    if (!maxim) return;
+
+    setViewedCards((prev) => new Set(prev).add(cardKey));
+
+    trackDiarioCardViewed({
+      reflection_date: maxim.date,
+      day_number: maxim.dayNumber,
+      month: maxim.month,
+      author: maxim.author,
+      title: maxim.title,
+      is_today: maxim.dayNumber === availableMaxims[0].dayNumber,
+      card_position: getCardPosition(maxim.dayNumber, availableMaxims[0].dayNumber),
+      is_guest: !user,
+      user_id: user?.id,
+    });
+  }, [availableMaxims, viewedCards, user]);
+
+  // Track page view on mount
+  useEffect(() => {
+    const viewTime = new Date();
+    setPageViewTime(viewTime);
+
+    // Determine source from URL or sessionStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const source = urlParams.get('from') ||
+                   sessionStorage.getItem('diario_entry_source') ||
+                   'direct';
+
+    trackDiarioPageViewed({
+      source: source as any,
+      is_guest: !user,
+      user_id: user?.id,
+      available_reflections: availableMaxims.length,
+      today_date: availableMaxims[0]?.date || 'N/A',
+      today_author: availableMaxims[0]?.author || 'N/A',
+      device_type: getDeviceType(),
+    });
+
+    // Clear source after use
+    sessionStorage.removeItem('diario_entry_source');
+  }, []); // Empty deps - só roda no mount
+
+  // Track page exit on unmount
+  useEffect(() => {
+    return () => {
+      if (!pageViewTime) return;
+
+      const timeSpent = Math.floor((new Date().getTime() - pageViewTime.getTime()) / 1000);
+
+      trackDiarioPageExited({
+        time_spent_seconds: timeSpent,
+        cards_expanded: expandedCards.size,
+        reflections_viewed: Array.from(viewedCards),
+        scrolled_to_bottom: scrolledToBottom,
+        exit_method: 'navigation',
+        is_guest: !user,
+        user_id: user?.id,
+      });
+    };
+  }, [pageViewTime, expandedCards, viewedCards, scrolledToBottom, user]);
+
+  // Track scroll to bottom
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      // Considera "bottom" se está a 100px do final
+      if (scrollTop + windowHeight >= documentHeight - 100) {
+        setScrolledToBottom(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Intersection observer for card views
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const dayNumber = parseInt(entry.target.getAttribute('data-day-number') || '0');
+            if (dayNumber) {
+              handleCardView(dayNumber);
+            }
+          }
+        });
+      },
+      { threshold: 0.5 } // 50% do card visível
+    );
+
+    // Observar todos os cards
+    const cards = document.querySelectorAll('[data-diario-card]');
+    cards.forEach((card) => observer.observe(card));
+
+    return () => observer.disconnect();
+  }, [handleCardView]);
 
   // Forçar fundo branco em todo o documento
   useEffect(() => {
@@ -585,6 +759,8 @@ export default function DiarioEstoicoPage() {
                       return (
                         <AnimatedSection key={maxim.dayNumber} animation="slide-up-fade">
                           <div
+                            data-diario-card
+                            data-day-number={maxim.dayNumber}
                             className="relative w-full rounded-2xl overflow-hidden shadow-lg transition-all duration-500 hover:shadow-xl cursor-pointer"
                             style={{
                               backgroundImage: maxim.background,
@@ -645,6 +821,8 @@ export default function DiarioEstoicoPage() {
                     return (
                       <AnimatedSection key={todayMaxim.dayNumber} animation="scale-up">
                         <div
+                          data-diario-card
+                          data-day-number={todayMaxim.dayNumber}
                           className="relative w-full max-w-[500px] lg:max-w-[600px] rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 hover:shadow-3xl"
                           style={{
                             backgroundImage: todayMaxim.background,
@@ -714,6 +892,8 @@ export default function DiarioEstoicoPage() {
                     return (
                       <AnimatedSection key={todayMaxim.dayNumber} animation="scale-up">
                         <div
+                          data-diario-card
+                          data-day-number={todayMaxim.dayNumber}
                           className="relative w-full rounded-3xl overflow-hidden shadow-2xl transition-all duration-500"
                           style={{
                             backgroundImage: todayMaxim.background,
@@ -780,6 +960,8 @@ export default function DiarioEstoicoPage() {
                       return (
                         <AnimatedSection key={maxim.dayNumber} animation="slide-up-fade">
                           <div
+                            data-diario-card
+                            data-day-number={maxim.dayNumber}
                             className="relative w-full rounded-2xl overflow-hidden shadow-lg transition-all duration-500 cursor-pointer"
                             style={{
                               backgroundImage: maxim.background,

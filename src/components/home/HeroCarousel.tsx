@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, MoreHorizontal, BookOpen } from 'lucide-reac
 import { motion, AnimatePresence } from 'framer-motion';
 import EcoBubbleOneEye from '@/components/EcoBubbleOneEye';
 import { getTodayMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
+import { trackDiarioEnteredFromCarousel } from '@/lib/mixpanelDiarioEvents';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CarouselItem {
   id: number;
@@ -106,6 +108,7 @@ export default function HeroCarousel({
   onStartChat
 }: HeroCarouselProps = {}) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
   const [isDragging, setIsDragging] = useState(false);
@@ -309,6 +312,18 @@ export default function HeroCarousel({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+
+                  const todayMaxim = getTodayMaxim();
+                  const currentVideo = CAROUSEL_ITEMS[currentIndex]?.video || 'unknown';
+
+                  trackDiarioEnteredFromCarousel({
+                    carousel_video: currentVideo,
+                    today_title: todayMaxim?.title || 'N/A',
+                    is_guest: !user,
+                    user_id: user?.id,
+                  });
+
+                  sessionStorage.setItem('diario_entry_source', 'hero_carousel');
                   navigate('/app/diario-estoico');
                 }}
                 className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-sky-950 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"

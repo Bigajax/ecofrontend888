@@ -19,6 +19,7 @@ import HomePageTour from '@/components/HomePageTour';
 import { useHomePageTour } from '@/hooks/useHomePageTour';
 import { usePremiumContent } from '@/hooks/usePremiumContent';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
+import { trackDiarioEnteredFromExplore } from '@/lib/mixpanelDiarioEvents';
 
 interface DailyMaxim {
   date: string;
@@ -330,6 +331,19 @@ export default function HomePage() {
     } else if (contentId === 'content_sleep_tips') {
       navigate('/app/articles/good-night-sleep');
     } else if (contentId === 'content_diario_estoico') {
+      // Encontrar posição do card na lista filtrada
+      const filteredItems = selectedCategory === 'all'
+        ? contentItems
+        : contentItems.filter((item) => item.category === selectedCategory);
+      const position = filteredItems.findIndex((item) => item.id === contentId);
+
+      trackDiarioEnteredFromExplore({
+        explore_position: position >= 0 ? position : 0,
+        is_guest: !user,
+        user_id: user?.id,
+      });
+
+      sessionStorage.setItem('diario_entry_source', 'explore_section');
       navigate('/app/diario-estoico');
     } else {
       console.log('Clicou em:', contentId);

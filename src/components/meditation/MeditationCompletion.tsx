@@ -14,6 +14,8 @@ import { trackMeditationFeedback } from '@/analytics/meditation';
 import { submitMeditationFeedback } from '@/api/meditationFeedback';
 import DiarioEstoicoCard from '@/components/diario-estoico/DiarioEstoicoCard';
 import MeditationFeedback from '@/components/meditation/MeditationFeedback';
+import { trackDiarioViewedPostMeditation } from '@/lib/mixpanelDiarioEvents';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MeditationCompletionProps {
   meditationId: string;
@@ -37,12 +39,30 @@ export default function MeditationCompletion({
   sessionMetrics,
 }: MeditationCompletionProps) {
   const { currentStreak, updateStreak, isLoading: streakLoading } = useMeditationStreak();
+  const { user } = useAuth();
   const todayMaxim = getTodayMaxim();
 
   // Update streak on mount
   useEffect(() => {
     updateStreak();
   }, [updateStreak]);
+
+  // Track viewing reflection post-meditation
+  useEffect(() => {
+    if (todayMaxim) {
+      const completionPercentage = sessionMetrics?.actualPlayTime
+        ? Math.round((sessionMetrics.actualPlayTime / meditationDuration) * 100)
+        : 100;
+
+      trackDiarioViewedPostMeditation({
+        meditation_id: meditationId,
+        meditation_completion: completionPercentage,
+        reflection_date: todayMaxim.date,
+        author: todayMaxim.author,
+        user_id: user?.id || 'unknown',
+      });
+    }
+  }, [todayMaxim, meditationId, meditationDuration, sessionMetrics, user]);
 
   const handleFeedbackSubmitted = async (vote: 'positive' | 'negative', reasons?: string[]) => {
     // Build payload for backend
