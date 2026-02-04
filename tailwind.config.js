@@ -183,7 +183,7 @@ export default {
     plugin(function ({ addUtilities }) {
       addUtilities({
         '.glass-shell': {
-          'background': glassBackground,
+          'background': 'rgba(250, 249, 247, 0.85)',
           'border': glassStroke,
           'backdrop-filter': `blur(${glassBlur})`,
           '-webkit-backdrop-filter': `blur(${glassBlur})`,
@@ -201,7 +201,7 @@ export default {
           'pointer-events': 'none',
         },
         '.glass-shell-strong': {
-          'background': 'rgba(243, 238, 231, 0.75)',
+          'background': 'rgba(250, 249, 247, 0.95)',
           'border': glassStroke,
           'backdrop-filter': `blur(${glassBlurStrong})`,
           '-webkit-backdrop-filter': `blur(${glassBlurStrong})`,
