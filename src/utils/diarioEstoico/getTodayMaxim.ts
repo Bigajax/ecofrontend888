@@ -196,6 +196,17 @@ const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'O pai ansioso, preocupado com o filho. O que ele quer? Um mundo que seja sempre seguro. Uma viajante inquieta. O que ela quer? Que o tempo continue firme e o trânsito esteja livre para que ela possa embarcar em seu voo. E um investidor nervoso? Quer que o mercado mude de rumo e um investimento valha a pena.\n\nTodas essas situações têm uma coisa em comum. Como diz Epicteto, é querer algo que está fora de nosso controle. Ficar tenso, afobado, andar de um lado para outro nervosamente — esses momentos intensos, dolorosos e ansiosos nos revelam nosso lado mais fútil e servil. Olhar fixamente para o relógio, para o registrador de cotações na bolsa, para a próxima fila do caixa terminada, para o céu: é como se nós todos pertencêssemos a um culto religioso que acredita que os deuses da sorte só nos darão o que queremos se sacrificarmos nossa paz de espírito.\n\nHoje, quando perceber que está ansioso, pergunte a você mesmo: Por que estou com o estômago embrulhado? Sou eu que estou no controle aqui ou é a minha ansiedade? E mais importante: Minha ansiedade está me fazendo algum bem?',
     background: DECEMBER_BACKGROUNDS[2],
   },
+  {
+    date: '4 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 4,
+    title: 'SOBRE SER INVENCÍVEL',
+    text: 'Então quem é o invencível? É aquele que não pode ser perturbado por nada que esteja fora de sua escolha racional.',
+    author: 'Epicteto',
+    source: 'Discursos, 1.18.21',
+    comment: 'Você já observou um profissional experiente lidando com a imprensa? Nenhuma pergunta é difícil demais, nenhum tom é mordaz ou ofensivo demais. Eles se desviam de cada golpe com humor, equilíbrio e paciência. Mesmo quando ofendidos ou provocados, escolhem não se esquivar ou reagir. São capazes de fazer isso não só graças a um treinamento e a sua experiência, mas porque compreendem que reagir emocionalmente só tornará a situação pior. Os jornalistas esperam que os entrevistados tropecem ou fiquem desconcertados; assim, para se saírem bem em coletivas de imprensa, bons entrevistados internalizaram a importância de se manterem calmos e sob controle.\n\nÉ pouco provável que você vá enfrentar, hoje, uma multidão de repórteres inquisitivos bombardeando-o com perguntas insensíveis. Poderia ser útil, porém, ter em mente essa imagem e usá-la como modelo para lidar com qualquer sobrecarga, motivo de estresse ou frustração que lhe sobrevenham. Nossa escolha racional — nossa prohairesis, como os estoicos a chamavam — é uma espécie de invencibilidade que pode ser cultivada.\n\nÉ possível ignorar os ataques hostis e lidar tranquilamente com a pressão ou os problemas. E, como em nosso modelo, quando terminamos, podemos apontar de volta para a multidão e dizer: "Próximo!"',
+    background: DECEMBER_BACKGROUNDS[0],
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
