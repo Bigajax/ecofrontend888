@@ -7,6 +7,15 @@ import mixpanel from '../lib/mixpanel';
 import type { AccessValidation } from '../types/subscription';
 
 /**
+ * Lista VIP de emails com acesso premium gratuito
+ * Essas contas têm acesso total sem precisar de assinatura
+ */
+const VIP_EMAILS = [
+  'rafaelrazeira@hotmail.com',
+  // Adicione mais emails VIP aqui conforme necessário
+];
+
+/**
  * Hook para gerenciar acesso a conteúdo premium
  *
  * Fornece:
@@ -53,6 +62,16 @@ export function usePremiumContent() {
       // Conteúdo free: sempre libera
       if (!isPremium) {
         return { hasAccess: true };
+      }
+
+      // ⭐ VIP CHECK: Verificar se o email está na lista VIP
+      const userEmail = user?.email?.toLowerCase();
+      if (userEmail && VIP_EMAILS.includes(userEmail)) {
+        return {
+          hasAccess: true,
+          plan: 'vip',
+          isVip: true,
+        };
       }
 
       // Verificar se tem acesso premium
@@ -153,7 +172,11 @@ export function useIsPremium(): boolean {
   const isPremiumUser = (auth as any).isPremiumUser ?? false;
   const isTrialActive = (auth as any).isTrialActive ?? false;
 
-  return isPremiumUser || isTrialActive;
+  // ⭐ VIP CHECK: Verificar se o email está na lista VIP
+  const userEmail = auth.user?.email?.toLowerCase();
+  const isVip = userEmail ? VIP_EMAILS.includes(userEmail) : false;
+
+  return isPremiumUser || isTrialActive || isVip;
 }
 
 /**
