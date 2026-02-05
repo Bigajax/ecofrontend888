@@ -234,6 +234,17 @@ const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Você já observou um profissional experiente lidando com a imprensa? Nenhuma pergunta é difícil demais, nenhum tom é mordaz ou ofensivo demais. Eles se desviam de cada golpe com humor, equilíbrio e paciência. Mesmo quando ofendidos ou provocados, escolhem não se esquivar ou reagir. São capazes de fazer isso não só graças a um treinamento e a sua experiência, mas porque compreendem que reagir emocionalmente só tornará a situação pior. Os jornalistas esperam que os entrevistados tropecem ou fiquem desconcertados; assim, para se saírem bem em coletivas de imprensa, bons entrevistados internalizaram a importância de se manterem calmos e sob controle.\n\nÉ pouco provável que você vá enfrentar, hoje, uma multidão de repórteres inquisitivos bombardeando-o com perguntas insensíveis. Poderia ser útil, porém, ter em mente essa imagem e usá-la como modelo para lidar com qualquer sobrecarga, motivo de estresse ou frustração que lhe sobrevenham. Nossa escolha racional — nossa prohairesis, como os estoicos a chamavam — é uma espécie de invencibilidade que pode ser cultivada.\n\nÉ possível ignorar os ataques hostis e lidar tranquilamente com a pressão ou os problemas. E, como em nosso modelo, quando terminamos, podemos apontar de volta para a multidão e dizer: "Próximo!"',
     background: getBackgroundForDay(4),
   },
+  {
+    date: '5 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 5,
+    title: 'EQUILIBRE SEUS IMPULSOS',
+    text: 'Não sejas impelido de um lado para outro, mas submete todos os impulsos às exigências da justiça e protege tua clara convicção em todos os aspectos.',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 4.22',
+    comment: 'Pense nas pessoas maníacas em sua vida. Não as que sofrem de um lamentável transtorno, mas aquelas cuja vida e escolhas estão em desordem. Elas transitam o tempo todo entre altos eufóricos ou baixos massacrantes; o dia é maravilhoso ou horrível. Essas pessoas não são exaustivas? Você não gostaria que elas tivessem simplesmente um filtro, através do qual pudessem experimentar os impulsos bons em vez dos maus?\n\nEsse filtro existe. Justiça. Razão. Filosofia. Se há uma mensagem principal no pensamento estoico, é esta: impulsos de todos os tipos chegarão, e seu trabalho é controlá-los, como se adestrasse um cão. Ou simplesmente: pense antes de agir. Pergunte: Quem está no controle aqui? Quais princípios estão me guiando?',
+    background: getBackgroundForDay(5),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
