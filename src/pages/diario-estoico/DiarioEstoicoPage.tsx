@@ -74,7 +74,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 7.2',
     comment: 'Você teve semanas ruins? Afastou-se dos princípios e crenças que lhe são caros? Isso é completamente normal. Acontece com todos nós.\n\nProvavelmente aconteceu com Marco Aurélio — pode ter sido por isso que ele escreveu a nota acima para si mesmo. Talvez ele estivesse lidando com senadores difíceis ou tendo dificuldades com seu filho problemático. Talvez nessas situações ele tenha perdido as estribeiras, ficado deprimido ou deixado de entrar em contato consigo mesmo. Quem não faria isso?\n\nMas o que devemos lembrar aqui é que, não importa o que aconteça, não importa como nossa atitude foi decepcionante no passado, os próprios princípios permanecem inalterados. Podemos retornar e abraçá-los a qualquer momento. O que aconteceu ontem — o que aconteceu cinco minutos atrás — é o passado. Podemos reacender nossos pensamentos e recomeçar sempre que quisermos.\n\nPor que não fazer isso agora mesmo?',
-    background: BACKGROUNDS[1],
+    background: getBackgroundForDay(20),
   },
   {
     date: '21 de janeiro',
@@ -85,7 +85,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Epicteto',
     source: 'Discursos, 4.6.34–35',
     comment: 'Muitas pessoas bem-sucedidas têm seu ritual matinal. Para algumas, é meditar. Para outras, é se exercitar. Para muitas, é escrever num diário: apenas algumas páginas em que elas registram seus pensamentos, medos, esperanças. Nesses casos, o que interessa não é tanto a atividade em si, mas o ritual da reflexão. A ideia é dedicar um tempo para olhar dentro de si mesmo e examinar-se.\n\nTirar esse tempo é o que os estoicos defendiam mais do que qualquer outra coisa. Não sabemos se Marco Aurélio escrevia suas Meditações de manhã ou à noite, mas sabemos que ele arranjava seus momentos de tranquilidade solitária — e que ele escrevia para si mesmo, não para alguém. Se você está procurando um lugar para começar o próprio ritual, não pode fazer melhor que o exemplo de Marco Aurélio e a lista de perguntas de Epicteto.\n\nTodos os dias, a partir de hoje, faça essas perguntas difíceis a si mesmo. Deixe a filosofia e o trabalho árduo guiarem-no para respostas melhores, uma manhã de cada vez, ao longo de uma vida.',
-    background: BACKGROUNDS[2],
+    background: getBackgroundForDay(21),
   },
   {
     date: '22 de janeiro',
@@ -96,7 +96,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Sêneca',
     source: 'Cartas Morais, 83.2',
     comment: 'Numa carta a seu irmão mais velho, Novato, Sêneca descreve um exercício bom que pegou emprestado de outro proeminente filósofo. No fim de cada dia ele fazia a si mesmo variações das seguintes questões: Que mau hábito reprimi hoje? Como estou melhor? Minhas ações foram justas? Como posso melhorar?\n\nNo início ou no fim de cada dia, o estoico se senta com seu diário e revisa o que fez, o que pensou, o que poderia ser melhorado. É por essa razão que as Meditações de Marco Aurélio é um livro um tanto impenetrável — era para sua própria clareza, não para benefício público. Tomar nota de exercícios estoicos era, e ainda é, uma forma de os praticar, tal como poderia ser repetir uma prece ou um hino.\n\nMantenha um diário, seja ele um arquivo no computador, seja um pequeno caderno. Dedique tempo para recordar conscientemente os acontecimentos do dia anterior. Seja resoluto em suas avaliações. Observe o que contribuiu para sua felicidade e o que a depreciou. Escreva sobre o que você gostaria de aprimorar ou anote citações que aprecia. Fazendo o esforço de registrar tais pensamentos, você fica menos propenso a esquecê-los. Mais um benefício: você acumulará uma boa quantidade de registros para acompanhar seu progresso também.',
-    background: BACKGROUNDS[0],
+    background: getBackgroundForDay(22),
   },
   {
     date: '23 de janeiro',
@@ -107,7 +107,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Sêneca',
     source: 'Consolação à Minha Mãe Hélvia, 12.1.B–2',
     comment: 'O autor F. Scott Fitzgerald, que muitas vezes glamorizou os estilos de vida dos ricos e famosos em livros como O grande Gatsby, abre um de seus contos com as frases agora clássicas: "Deixe-me falar-lhe sobre os muito ricos. Eles são diferentes de você e de mim." Alguns anos depois que esse conto foi publicado, seu amigo Ernest Hemingway caçoou de Fitzgerald ao escrever: "Sim, eles têm mais dinheiro."\n\nÉ disso que Sêneca está nos lembrando. Um dos homens mais ricos de Roma, ele sabia em primeira mão que o dinheiro só muda a vida em parte. O dinheiro não resolve os problemas que as pessoas pobres pensam que ele resolverá. Na verdade, nenhuma posse material o fará. Coisas externas não podem resolver questões internas.\n\nSempre nos esquecemos disso — o que causa muita confusão e dor. Como Hemingway escreveria mais tarde sobre Fitzgerald: "Ele pensou [que os ricos] eram uma raça glamorosa especial, e quando descobriu que não eram, isso o destruiu tanto quanto qualquer outra coisa que o tenha destruído." Se não mudarmos, isso também será verdade em relação a nós.',
-    background: BACKGROUNDS[1],
+    background: getBackgroundForDay(23),
   },
   {
     date: '24 de janeiro',
@@ -118,7 +118,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 1.7.3',
     comment: 'O primeiro livro das Meditações de Marco Aurélio começa com uma lista de agradecimentos. Ele agradece, uma por uma, às principais influências em sua vida. Uma dessas pessoas é Quinto Júnio Rústico, um professor que desenvolveu em seu aluno um amor pela clareza e pela compreensão profundas — um desejo de não parar na superfície quando se trata de aprendizado.\n\nFoi também por meio de Rústico que Marco Aurélio foi apresentado a Epicteto. Na verdade, Rústico emprestou ao aluno seu exemplar das palestras de Epicteto. Marco Aurélio claramente não ficou satisfeito em apenas entender a ideia básica dessas palestras, nem as aceitou simplesmente por recomendação de seu professor. Paul Johnson gracejou uma vez que Edmund Wilson lia livros "como se a vida do autor estivesse em julgamento". Foi assim que Marco Aurélio leu Epicteto — e quando as lições se mostraram satisfatórias, ele as absorveu. Elas se tornaram parte de seu DNA. Ele as citou extensivamente ao longo da vida, encontrando clareza e força reais em suas palavras, mesmo em meio ao luxo e ao poder imensos que viria a possuir.\n\nEsse é o tipo de leitura e estudo profundos que precisamos cultivar, razão por que estamos lendo apenas uma página por dia em vez de um capítulo de cada vez. Para que possamos ter tempo de ler com atenção e profundidade.',
-    background: BACKGROUNDS[2],
+    background: getBackgroundForDay(24),
   },
   {
     date: '25 de janeiro',
@@ -129,7 +129,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 6.16.2B–4A',
     comment: 'Warren Buffett, cuja fortuna líquida é de aproximadamente 65 bilhões de dólares, vive na mesma casa que comprou, em 1958, por 31.500 dólares. John Urschel, um atacante do time de futebol americano Baltimore Ravens, recebe milhões, mas vive com 25 mil dólares por ano. A estrela do time de basquete San Antonio Spurs, Kawhi Leonard, circula por aí no mesmo Chevy Tahoe de 1997 desde a adolescência, mesmo tendo um contrato de cerca de 94 milhões de dólares. Por quê? Não porque sejam avarentos. É porque as coisas que importam para eles são baratas.\n\nBuffett, Urschel e Leonard não acabaram desse jeito por acidente. O estilo de vida deles é resultado de priorização. Eles cultivam interesses que estão sem dúvida abaixo de seus recursos financeiros e, em consequência, qualquer renda lhes proporcionaria liberdade para buscar as coisas que mais lhes interessam.\n\nAcontece simplesmente que eles enriqueceram acima de qualquer expectativa. Esse tipo de clareza — sobre aquilo que eles mais amam no mundo — significa que eles podem aproveitar a vida. Significa que ainda seriam felizes mesmo se houvesse uma reviravolta nos negócios ou se suas carreiras fossem interrompidas por uma lesão.\n\nQuanto mais coisas desejamos e mais temos de fazer para ganhar ou alcançá-las, menos aproveitamos verdadeiramente a vida — e menos livres somos.',
-    background: BACKGROUNDS[0],
+    background: getBackgroundForDay(25),
   },
   {
     date: '26 de janeiro',
@@ -140,7 +140,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 8.29',
     comment: 'Qualquer pessoa que tenha feito uma aula de ioga ou sido apresentada ao pensamento hindu ou budista provavelmente ouviu falar do conceito de mantra. Em sânscrito, a palavra significa "fala sagrada" — basicamente, uma palavra, uma frase, um pensamento, até um som — destinada a fornecer clareza ou orientação espiritual. Um mantra pode ser especialmente útil durante a meditação porque nos permite bloquear todas as distrações e nos concentrarmos.\n\nEra apropriado, portanto, que Marco Aurélio sugerisse esse mantra estoico — um lembrete ou frase de alerta para usar quando somos acometidos por falsas impressões, distrações ou sentimos a pressão da vida cotidiana sobre nós. Ele diz, essencialmente: "Tenho dentro de mim o poder de manter isso afastado. Posso ver a verdade."\n\nMude o fraseado como quiser. Essa parte depende de você. Mas tenha um mantra e use-o para encontrar a clareza pela qual anseia.',
-    background: BACKGROUNDS[1],
+    background: getBackgroundForDay(26),
   },
   {
     date: '27 de janeiro',
@@ -151,7 +151,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Epicteto',
     source: 'Discursos, 3.2.1–3A',
     comment: 'Hoje, vamos nos concentrar nas três áreas de treinamento que Epicteto nos mostrou.\n\nPrimeiro, precisamos considerar o que devemos desejar e o que devemos rejeitar. Por quê? Para desejarmos o que é bom e evitarmos o que é mau. Não basta apenas ouvir seu corpo — porque nossas atrações muitas vezes nos desencaminham.\n\nEm seguida, devemos examinar o que nos impulsiona a agir — isto é, nossas motivações. Estamos agindo pelas razões corretas? Ou porque não paramos para pensar? Ou acreditamos que temos de fazer algo?\n\nFinalmente, há nosso julgamento. Nossa capacidade de ver as coisas claramente e de forma apropriada chega quando usamos nossa grande dádiva da natureza: a razão.\n\nEssas são as três áreas distintas de treinamento, mas, na prática, elas estão inextricavelmente entrelaçadas. Nosso julgamento afeta o que desejamos, nossos desejos afetam nossas ações e nosso julgamento as determina. Mas não podemos apenas esperar que isso aconteça. Em todas as áreas da vida, devemos refletir e empregar nossa energia com empenho. Se o fizermos, encontraremos clareza e seremos bem-sucedidos.',
-    background: BACKGROUNDS[2],
+    background: getBackgroundForDay(27),
   },
   {
     date: '28 de janeiro',
@@ -162,7 +162,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 4.38',
     comment: 'Sêneca disse: "Sem uma régua com a qual fazê-lo, não podemos endireitar o que está torto." Esse é o papel das pessoas sábias em nossa vida: servir de modelo e de inspiração. Fazer nossas ideias reverberarem e pôr nossas presunções à prova.\n\nQuem essa pessoa será depende de você. Talvez seja seu pai ou sua mãe. Pode ser que um filósofo, um escritor ou um pensador cumpra esse papel. Talvez perguntar "o que Jesus faria?" seja o modelo certo para você.\n\nMas escolha alguém, observe o que essa pessoa faz (e o que ela não faz) e esforce-se ao máximo para fazer o mesmo.',
-    background: BACKGROUNDS[0],
+    background: getBackgroundForDay(28),
   },
   {
     date: '29 de janeiro',
@@ -173,7 +173,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 2.5',
     comment: 'Cada dia nos apresenta a possibilidade de pensarmos além do necessário sobre tudo. O que eu deveria vestir? Será que eles gostam de mim? Estou comendo bem? O que acontecerá na minha vida? Será que meu chefe está satisfeito com o meu trabalho?\n\nHoje, vamos nos concentrar no que está diante de nós. Seguiremos a máxima que o técnico Bill Belichick, do time de futebol americano New England Patriots, diz aos seus jogadores: "Faça seu trabalho." Como um romano, como um bom soldado, como um mestre de nosso ofício. Não precisamos nos perder em mil outras distrações ou nos assuntos alheios.\n\nMarco Aurélio diz que devemos encarar cada tarefa como se fosse a última, porque ela de fato poderia ser. E mesmo que não seja, fazer de qualquer jeito o que você tem em mãos não ajuda em nada. Encontre clareza na simplicidade de fazer seu trabalho hoje.',
-    background: BACKGROUNDS[1],
+    background: getBackgroundForDay(29),
   },
   {
     date: '30 de janeiro',
@@ -184,7 +184,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Epicteto',
     source: 'Encheirídion, 13A',
     comment: 'Uma das coisas mais extraordinárias que você pode fazer como ser humano em nosso mundo midiático hiperconectado 24 horas por dia, sete dias por semana, é dizer "não sei". Ou, de maneira mais provocativa, "não me importo".\n\nA maior parte da sociedade parece ter adotado como mandamento que devemos saber de tudo o que está acontecendo, assistir a todos os episódios de todas as séries de televisão aclamadas pela crítica, acompanhar os noticiários religiosamente e nos apresentarmos para os outros como indivíduos informados e conhecedores do mundo.\n\nMas onde estão as provas de que isso é mesmo necessário? Essa obrigação é imposta por lei? Ou será que você simplesmente tem medo de parecer meio bobinho num jantar? Sim, você tem para com seu país e sua família o dever de saber daquilo que pode afetá-los diretamente, mas é só isso.\n\nQuanto tempo, energia e capacidade mental você teria a mais se cortasse drasticamente seu consumo de mídia? O quanto se sentiria mais descansado e presente se parasse de se abalar e se indignar diante de cada escândalo, furo de reportagem e possível crise (muitas das quais nunca chegam a ocorrer, no fim das contas)?',
-    background: BACKGROUNDS[2],
+    background: getBackgroundForDay(30),
   },
   {
     date: '31 de janeiro',
@@ -195,7 +195,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 5.9',
     comment: 'Quanto mais ocupados ficamos, quanto mais trabalhamos, e aprendemos, e lemos, maior a chance de ficarmos à deriva. Entramos num ritmo. Estamos ganhando dinheiro, sendo criativos, nos sentindo estimulados e atarefados. Parece que tudo vai bem, contudo nos afastamos cada vez mais da filosofia.\n\nEssa negligência acabará acarretando um problema — o estresse se acumula, nossa mente fica confusa, esquecemos o que é importante, e isso nos causa um mal. Quando algo desse tipo acontece, é importante pisarmos no freio, pormos de lado todo o ímpeto e o momento. Retornemos ao modus operandi e às práticas que sabemos estarem enraizados na clareza, no bom julgamento, nos bons princípios e na boa saúde.\n\nO estoicismo foi concebido para ser um remédio para a alma. Ele nos livra das vulnerabilidades da vida moderna. Ele nos restaura com o vigor de que precisamos para prosperar na vida. Entre em contato com essa filosofia hoje, e deixe-a curá-lo.',
-    background: BACKGROUNDS[0],
+    background: getBackgroundForDay(31),
   },
 ];
 
