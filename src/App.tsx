@@ -73,6 +73,7 @@ const ConfiguracoesPage = lazy(() => import("@/pages/ConfiguracoesPage"));
 const SubscriptionCallbackPage = lazy(() => import("@/pages/SubscriptionCallbackPage"));
 const SubscriptionTestPage = lazy(() => import("@/pages/SubscriptionTestPage"));
 const FluxoAssinaturaDemo = lazy(() => import("@/pages/FluxoAssinaturaDemo"));
+const GuestMeditationPage = lazy(() => import("@/pages/GuestMeditationPage"));
 
 // Lightweight loading fallback (no heavy dependencies)
 function LoadingFallback() {
@@ -133,6 +134,8 @@ function AppRoutes() {
         <Route path="login/tour" element={<Navigate to="/login?tour=1" replace />} />
         <Route path="diario-estoico" element={renderWithSuspense(<DiarioEstoicoPage />)} />
         <Route path="meditacao-primeiros-passos" element={renderWithSuspense(<IntroducaoMeditacaoPage />)} />
+        <Route path="meditacao/sintonize-novos-potenciais" element={renderWithSuspense(<GuestMeditationPage />)} />
+        <Route path="guest/meditation-player" element={renderWithSuspense(<MeditationPlayerPage />)} />
       </Route>
       <Route
         path="/app/*"
