@@ -5,27 +5,42 @@ interface Step2Props {
 
 export default function RiquezaMentalStep2({ answers, onAnswerChange }: Step2Props) {
   return (
-    <div className="space-y-8 rounded-3xl bg-white p-8 md:p-10 shadow-sm border border-gray-100/50">
+    <div className="space-y-8 rounded-3xl glass-shell p-8 md:p-10 shadow-eco">
+      {/* Badge */}
+      <div>
+        <span className="inline-flex rounded-full px-4 py-1.5 bg-eco-baby">
+          <span className="text-[11px] font-semibold text-white tracking-wide">
+            PASSO 2 DE 6
+          </span>
+        </span>
+      </div>
+
       {/* Title */}
       <div>
-        <h2 className="font-display text-3xl font-normal text-black md:text-4xl">
+        <h2 className="font-display text-3xl font-medium text-eco-text md:text-4xl leading-tight">
           O que você realmente quer
         </h2>
       </div>
 
       {/* Introduction Text */}
-      <div className="space-y-4 text-gray-700 leading-relaxed">
+      <div className="space-y-4 font-primary text-eco-text leading-relaxed">
         <p>
-          Napoleon Hill chamava isso de <span className="font-medium">'desejo ardente'</span>: um objetivo claro o suficiente para que sua mente saiba para onde ir.
+          Napoleon Hill chamava isso de <span className="font-medium text-eco-baby">'desejo ardente'</span>: um objetivo claro o suficiente para que sua mente saiba para onde ir.
         </p>
         <p>
           Pense em você daqui a 3 anos. As coisas deram certo. Como está a sua vida financeira nessa versão de você?
         </p>
+        <div className="bg-eco-baby/10 border border-eco-baby/30 rounded-xl p-4 mt-4">
+          <p className="text-sm text-eco-text leading-relaxed">
+            <span className="font-medium">💡 Importante:</span> Um desejo vago não orienta decisões.
+            Pense em <span className="font-medium text-eco-baby">tranquilidade, segurança, controle ou liberdade</span> — não em números fantasiosos sem base emocional.
+          </p>
+        </div>
       </div>
 
       {/* Question */}
       <div>
-        <label className="block font-medium text-black mb-4">
+        <label className="block font-primary font-medium text-eco-text mb-4">
           Como seria sua vida financeira ideal daqui a 3 anos se tudo se organizasse?
         </label>
 
@@ -34,7 +49,10 @@ export default function RiquezaMentalStep2({ answers, onAnswerChange }: Step2Pro
           value={answers.step2 || ''}
           onChange={(e) => onAnswerChange('step2', e.target.value)}
           placeholder="Ex.: ter reserva de 6 meses / viver sem ansiedade financeira / quitar dívidas…"
-          className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 px-5 py-4 text-gray-800 placeholder:text-gray-400 focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-100 transition-all"
+          className="w-full rounded-2xl border-2 border-eco-line bg-white/80 px-5 py-4
+                     font-primary text-eco-text placeholder:text-eco-muted/60
+                     focus:border-eco-baby focus:outline-none focus:ring-2 focus:ring-eco-baby/20
+                     transition-all duration-200"
           rows={4}
         />
       </div>

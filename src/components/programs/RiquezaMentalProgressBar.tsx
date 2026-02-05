@@ -16,17 +16,17 @@ export default function RiquezaMentalProgressBar({
         {steps.map((step) => (
           <div
             key={step}
-            className={`flex-1 h-2 rounded-full transition-all duration-300 ${
+            className={`flex-1 h-2.5 rounded-full transition-all duration-300 ${
               step <= currentStep
-                ? 'bg-gradient-to-r from-amber-300 to-amber-400'
-                : 'bg-gray-200/60'
+                ? 'bg-eco-baby shadow-minimal'
+                : 'bg-eco-line/30'
             }`}
           />
         ))}
       </div>
 
       {/* Step counter */}
-      <div className="text-center text-sm text-gray-600">
+      <div className="text-center text-sm font-primary font-medium text-eco-muted">
         Passo {currentStep + 1} de {totalSteps}
       </div>
     </div>
