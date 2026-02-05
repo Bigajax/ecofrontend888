@@ -900,8 +900,8 @@ export default function DiarioEstoicoPage() {
               <button
                 onClick={() => navigate('/register')}
                 className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold
-                           text-white bg-eco-user rounded-full hover:shadow-eco-glow
-                           transition-all duration-300"
+                           text-white bg-eco-baby rounded-full hover:bg-eco-baby/90
+                           hover:scale-105 active:scale-95 transition-all duration-200"
               >
                 Criar conta grátis
               </button>
@@ -972,7 +972,7 @@ export default function DiarioEstoicoPage() {
                             <div className="absolute inset-0 bg-black/40 pointer-events-none" />
                             <div className="relative flex flex-col min-h-[180px] justify-between p-4">
                               <div>
-                                <span className="inline-flex rounded-full px-3 py-1 backdrop-blur-sm bg-eco-accent/80">
+                                <span className="inline-flex rounded-full px-3 py-1 bg-eco-baby">
                                   <span className="text-[10px] font-medium text-white">
                                     {maxim.date}
                                   </span>
@@ -1077,7 +1077,7 @@ export default function DiarioEstoicoPage() {
                           <div className="absolute inset-0 bg-black/35 pointer-events-none" />
                           <div className="relative flex flex-col min-h-[500px] justify-between p-8 lg:p-10">
                             <div>
-                              <span className="inline-flex rounded-full px-5 py-2.5 backdrop-blur-sm bg-eco-accent/90">
+                              <span className="inline-flex rounded-full px-5 py-2.5 bg-eco-baby">
                                 <span className="text-[13px] font-semibold text-white tracking-wide">
                                   HOJE • {todayMaxim.date}
                                 </span>
@@ -1143,9 +1143,9 @@ export default function DiarioEstoicoPage() {
                                       }}
                                       className="w-full flex items-center justify-center gap-2 px-4 py-3
                                                text-sm font-semibold text-white
-                                               bg-eco-accent hover:bg-eco-accent/90
-                                               rounded-xl shadow-eco hover:shadow-eco-glow
-                                               transition-all duration-300"
+                                               bg-eco-baby hover:bg-eco-baby/90
+                                               rounded-xl hover:scale-105 active:scale-95
+                                               transition-all duration-200"
                                     >
                                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1238,7 +1238,7 @@ export default function DiarioEstoicoPage() {
                           <div className="absolute inset-0 bg-black/35 pointer-events-none" />
                           <div className="relative flex flex-col min-h-[450px] justify-between p-6">
                             <div>
-                              <span className="inline-flex rounded-full px-4 py-2 backdrop-blur-sm bg-eco-accent/90">
+                              <span className="inline-flex rounded-full px-4 py-2 bg-eco-baby">
                                 <span className="text-[12px] font-semibold text-white tracking-wide">
                                   HOJE • {todayMaxim.date}
                                 </span>
@@ -1301,9 +1301,9 @@ export default function DiarioEstoicoPage() {
                                       }}
                                       className="w-full flex items-center justify-center gap-2 px-4 py-2.5
                                                text-sm font-semibold text-white
-                                               bg-eco-accent hover:bg-eco-accent/90
-                                               rounded-lg shadow-eco hover:shadow-eco-glow
-                                               transition-all duration-300"
+                                               bg-eco-baby hover:bg-eco-baby/90
+                                               rounded-lg active:scale-95
+                                               transition-all duration-200"
                                     >
                                       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1394,7 +1394,7 @@ export default function DiarioEstoicoPage() {
                             <div className="absolute inset-0 bg-black/40 pointer-events-none" />
                             <div className="relative flex flex-col min-h-[200px] justify-between p-5">
                               <div>
-                                <span className="inline-flex rounded-full px-3 py-1.5 backdrop-blur-sm bg-eco-accent/80">
+                                <span className="inline-flex rounded-full px-3 py-1.5 bg-eco-baby">
                                   <span className="text-[11px] font-medium text-white">
                                     {maxim.date}
                                   </span>

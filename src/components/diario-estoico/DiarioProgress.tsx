@@ -63,7 +63,7 @@ export default function DiarioProgress({
 
       <div className="h-2 bg-eco-line/30 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-eco-accent to-eco-user
+          className="h-full bg-eco-baby
                      transition-all duration-500 ease-out"
           style={{ width: `${percentage}%` }}
         />
@@ -72,7 +72,7 @@ export default function DiarioProgress({
       {/* Percentage label */}
       {percentage > 0 && (
         <div className="mt-2 text-center">
-          <span className="text-xs font-medium text-eco-accent">
+          <span className="text-xs font-medium text-eco-baby">
             {Math.round(percentage)}% concluído
           </span>
         </div>
