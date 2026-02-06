@@ -34,7 +34,7 @@ export default function ProgramasPage() {
       duration: '25 min',
       image: 'url("/images/quem-pensa-enriquece.webp")',
       gradient: 'linear-gradient(to bottom, #1E3A5F 0%, #2C5282 20%, #3B6BA5 40%, #4A84C8 60%, #5A9DEB 80%, #6BB6FF 100%)',
-      isPremium: true,
+      isPremium: false,
       category: 'Programas',
     },
     {

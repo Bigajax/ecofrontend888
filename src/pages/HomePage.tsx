@@ -202,7 +202,7 @@ export default function HomePage() {
         description: 'Transforme seu mindset financeiro',
         duration: '25 min',
         image: 'url("/images/quem-pensa-enriquece.webp")',
-        isPremium: true,
+        isPremium: false,
         category: 'Programas',
       },
       {
@@ -388,15 +388,8 @@ export default function HomePage() {
       return;
     }
 
-    // Quem Pensa Enriquece - navega para sua própria página (PREMIUM)
+    // Quem Pensa Enriquece - navega para sua própria página (GRATUITO)
     if (blessingId === 'blessing_9') {
-      const { hasAccess } = checkAccess(true);
-
-      if (!hasAccess) {
-        requestUpgrade('home_quem_pensa_enriquece');
-        return;
-      }
-
       startProgram({
         id: 'rec_2', // ✅ ID CORRETO para sync com backend
         title: 'Quem Pensa Enriquece',
