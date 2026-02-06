@@ -4,6 +4,21 @@
 
 import { supabase } from '@/lib/supabaseClient';
 
+/**
+ * Get API base URL
+ * In development, try proxy first. If proxy fails, fallback to direct backend URL
+ */
+function getApiBaseUrl(): string {
+  // In production (Vercel), always use proxy
+  if (import.meta.env.PROD) {
+    return '';
+  }
+
+  // In development, use direct backend URL to bypass Vite proxy issues
+  // The backend already has CORS configured for localhost:5173
+  return import.meta.env.VITE_API_URL || 'https://ecobackend888.onrender.com';
+}
+
 interface StartProgramRequest {
   programId: string;
   title: string;
@@ -69,8 +84,12 @@ async function fetchAPI<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = await getAccessToken();
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}/api/programs${endpoint}`;
 
-  const response = await fetch(`/api/programs${endpoint}`, {
+  console.log('[programsApi] Making request to:', url);
+
+  const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -81,9 +100,11 @@ async function fetchAPI<T>(
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+    console.error('[programsApi] Request failed:', { url, status: response.status, error });
     throw new Error(error.message || error.error || 'Erro na requisição');
   }
 
+  console.log('[programsApi] Request successful:', url);
   return response.json();
 }
 
