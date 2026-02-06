@@ -52,6 +52,8 @@ export function ProgramProvider({ children }: { children: ReactNode }) {
   }, [ongoingProgram]);
 
   const startProgram = async (program: OngoingProgram) => {
+    console.log('[ProgramContext] Starting program:', program);
+
     const newProgram: OngoingProgram = {
       ...program,
       startedAt: new Date().toISOString(),
@@ -60,11 +62,18 @@ export function ProgramProvider({ children }: { children: ReactNode }) {
 
     // Optimistic update (local first)
     setOngoingProgram(newProgram);
+    console.log('[ProgramContext] Local state updated:', newProgram);
 
     // Sync with backend if authenticated
     if (user) {
       try {
         setSyncing(true);
+        console.log('[ProgramContext] Syncing with backend...', {
+          programId: program.id,
+          title: program.title,
+          userId: user.id
+        });
+
         const response = await programsApi.startProgram({
           programId: program.id,
           title: program.title,
@@ -72,18 +81,23 @@ export function ProgramProvider({ children }: { children: ReactNode }) {
           duration: program.duration,
         });
 
+        console.log('[ProgramContext] Backend response:', response);
+
         // Update with enrollmentId from backend
         const syncedProgram = {
           ...newProgram,
           enrollmentId: response.enrollmentId,
         };
         setOngoingProgram(syncedProgram);
+        console.log('[ProgramContext] ✅ Program synced successfully! enrollmentId:', response.enrollmentId);
       } catch (error) {
-        console.error('Erro ao sincronizar programa com backend:', error);
+        console.error('[ProgramContext] ❌ Erro ao sincronizar programa com backend:', error);
         // Continue with localStorage-only mode
       } finally {
         setSyncing(false);
       }
+    } else {
+      console.log('[ProgramContext] ⚠️  User not authenticated - localStorage only mode');
     }
   };
 
@@ -117,17 +131,28 @@ export function ProgramProvider({ children }: { children: ReactNode }) {
   };
 
   const completeProgram = async () => {
+    console.log('[ProgramContext] Completing program:', {
+      hasUser: !!user,
+      enrollmentId: ongoingProgram?.enrollmentId,
+      programId: ongoingProgram?.id
+    });
+
     // Complete in backend first if possible
     if (user && ongoingProgram?.enrollmentId) {
       try {
+        console.log('[ProgramContext] Marking as complete in backend:', ongoingProgram.enrollmentId);
         await programsApi.completeProgram(ongoingProgram.enrollmentId);
+        console.log('[ProgramContext] ✅ Program completed in backend successfully!');
       } catch (error) {
-        console.error('Erro ao completar programa no backend:', error);
+        console.error('[ProgramContext] ❌ Erro ao completar programa no backend:', error);
       }
+    } else {
+      console.log('[ProgramContext] ⚠️  Cannot complete in backend - missing user or enrollmentId');
     }
 
     // Clear local state
     setOngoingProgram(null);
+    console.log('[ProgramContext] Local state cleared');
   };
 
   const resumeProgram = () => {

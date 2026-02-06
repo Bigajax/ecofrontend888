@@ -398,7 +398,7 @@ export default function HomePage() {
       }
 
       startProgram({
-        id: 'blessing_9',
+        id: 'rec_2', // ✅ ID CORRETO para sync com backend
         title: 'Quem Pensa Enriquece',
         description: 'Transforme seu mindset financeiro',
         currentLesson: 'Passo 1: Onde você está',
