@@ -208,6 +208,17 @@ const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     background: DECEMBER_BACKGROUNDS[0],
   },
   {
+    date: '5 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 5,
+    title: 'EQUILIBRE SEUS IMPULSOS',
+    text: 'Não sejas impelido de um lado para outro, mas submete todos os impulsos às exigências da justiça e protege tua clara convicção em todos os aspectos.',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 4.22',
+    comment: 'Pense nas pessoas maníacas em sua vida. Não as que sofrem de um lamentável transtorno, mas aquelas cuja vida e escolhas estão em desordem. Elas transitam o tempo todo entre altos eufóricos ou baixos massacrantes; o dia é maravilhoso ou horrível. Essas pessoas não são exaustivas? Você não gostaria que elas tivessem simplesmente um filtro, através do qual pudessem experimentar os impulsos bons em vez dos maus?\n\nEsse filtro existe. Justiça. Razão. Filosofia. Se há uma mensagem principal no pensamento estoico, é esta: impulsos de todos os tipos chegarão, e seu trabalho é controlá-los, como se adestrasse um cão. Ou simplesmente: pense antes de agir. Pergunte: Quem está no controle aqui? Quais princípios estão me guiando?',
+    background: DECEMBER_BACKGROUNDS[2],
+  },
+  {
     date: '6 de fevereiro',
     month: 'fevereiro',
     dayNumber: 6,
