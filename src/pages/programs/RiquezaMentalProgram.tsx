@@ -29,6 +29,7 @@ export default function RiquezaMentalProgram() {
   const [showExitModal, setShowExitModal] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [activeTab, setActiveTab] = useState<'program' | 'history'>('program');
+  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
   const lastReportedProgressRef = useRef<{ progress: number; lesson: string } | null>(null);
 
   const TOTAL_STEPS = 6;
@@ -217,12 +218,21 @@ export default function RiquezaMentalProgram() {
       await completeProgram();
 
       // Show success message
-      toast.success('Programa concluído com sucesso! 🎉');
+      toast.success('Programa concluído com sucesso! 🎉', {
+        duration: 4000,
+        icon: '🎉',
+      });
 
-      // Navigate back after a brief delay
-      setTimeout(() => {
-        navigate('/app');
-      }, 1500);
+      // Switch to history tab to show the completed session
+      setActiveTab('history');
+
+      // Force refresh of history to show newly completed session
+      setHistoryRefreshTrigger(prev => prev + 1);
+
+      // Reset to step 0 for next session
+      setCurrentStep(0);
+      setAnswers({});
+      setIsCompleting(false);
     } catch (error) {
       console.error('Erro ao concluir:', error);
       toast.error('Erro ao concluir programa');
@@ -334,7 +344,11 @@ export default function RiquezaMentalProgram() {
               Programa
             </button>
             <button
-              onClick={() => setActiveTab('history')}
+              onClick={() => {
+                setActiveTab('history');
+                // Refresh history when switching to this tab
+                setHistoryRefreshTrigger(prev => prev + 1);
+              }}
               className={`px-6 py-2.5 rounded-xl font-primary font-medium text-sm transition-all duration-200 ${
                 activeTab === 'history'
                   ? 'bg-eco-baby text-white shadow-minimal'
@@ -409,7 +423,10 @@ export default function RiquezaMentalProgram() {
           </>
         ) : (
           /* History Tab */
-          <RiquezaMentalHistory currentEnrollmentId={ongoingProgram?.enrollmentId} />
+          <RiquezaMentalHistory
+            currentEnrollmentId={ongoingProgram?.enrollmentId}
+            refreshTrigger={historyRefreshTrigger}
+          />
         )}
       </main>
     </div>

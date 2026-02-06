@@ -19,11 +19,13 @@ interface Enrollment {
 interface RiquezaMentalHistoryProps {
   onViewAnswers?: (enrollmentId: string) => void;
   currentEnrollmentId?: string;
+  refreshTrigger?: number; // Add trigger to force refresh
 }
 
 export default function RiquezaMentalHistory({
   onViewAnswers,
   currentEnrollmentId,
+  refreshTrigger = 0,
 }: RiquezaMentalHistoryProps) {
   const { user } = useAuth();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -40,20 +42,23 @@ export default function RiquezaMentalHistory({
         return;
       }
 
+      setLoading(true);
       try {
+        console.log('[RiquezaMentalHistory] Loading history...');
         const data = await programsApi.getUserHistory();
         // Filter only "Quem Pensa Enriquece" program
         const filtered = data.enrollments.filter(e => e.programId === 'rec_2');
+        console.log('[RiquezaMentalHistory] Found enrollments:', filtered.length);
         setEnrollments(filtered);
       } catch (error) {
-        console.error('Erro ao carregar histórico:', error);
+        console.error('[RiquezaMentalHistory] Erro ao carregar histórico:', error);
       } finally {
         setLoading(false);
       }
     }
 
     loadHistory();
-  }, [user]);
+  }, [user, refreshTrigger]); // Re-run when refreshTrigger changes
 
   // Load details of selected enrollment
   async function handleViewDetails(enrollmentId: string) {
