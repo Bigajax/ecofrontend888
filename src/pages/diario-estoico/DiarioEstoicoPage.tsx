@@ -21,6 +21,8 @@ import {
   getDeviceType,
   getCardPosition,
 } from '@/lib/mixpanelDiarioEvents';
+import { useGuestExperience } from '@/contexts/GuestExperienceContext';
+import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestConversionTriggers';
 
 interface DailyMaxim {
   date: string;
@@ -255,6 +257,17 @@ const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     source: 'Cartas Morais, 28.7',
     comment: 'Tornou-se um clichê citar o discurso de Theodore Roosevelt, "O homem na arena", que idolatra "aquele cujo rosto está sujo de poeira, suor e sangue; que luta com valentia...", comparado com o crítico que fica sentado no canto. Roosevelt fez esse discurso pouco depois de deixar o cargo, no auge de sua popularidade. Em poucos anos, ele iria se opor a um antigo protegido seu numa tentativa de recuperar a Casa Branca, sofrendo uma derrota fragorosa e quase sendo assassinado. Ele também quase morreria durante uma exploração de um rio na Amazônia; mataria milhares de animais em safáris africanos e tempos depois suplicaria a Woodrow Wilson que permitisse que se alistasse na Primeira Guerra Mundial, apesar de ter 59 anos. Ele iria fazer muitas coisas que, agora, parecem um tanto desconcertantes.\n\nTheodore Roosevelt era de fato um grande homem. Mas era também movido por uma compulsão, um vício em trabalho e em manter-se ativo que parecia sem fim. Muitos de nós compartilhamos dessa aflição, ser movidos por algo que não podemos controlar. Temos medo de ficar parados, por isso procuramos luta e ação como uma distração. Escolhemos estar em guerra — em alguns casos, literalmente — quando a paz é, na verdade, a mais honrosa e adequada escolha. Sim, o homem na arena é admirável. Assim como o soldado, o político, a mulher de negócios e todas as outras ocupações. Mas, e este é um grande mas, somente se estivermos na arena pelas razões corretas.',
     background: getBackgroundForDay(6),
+  },
+  {
+    date: '7 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 7,
+    title: 'O MEDO É UMA PROFECIA QUE SE AUTORREALIZA',
+    text: '"Muitos são prejudicados pelo próprio medo, e muitos podem ter chegado a seu destino enquanto o temiam."',
+    author: 'Sêneca',
+    source: 'Édipo, 992',
+    comment: '"Só o paranoide sobrevive", foi uma frase famosa de Andy Grove, ex-CEO da Intel. Talvez ela seja verdadeira. Mas também sabemos que o paranoide destrói a si mesmo mais depressa e mais espetacularmente que a qualquer inimigo. Sêneca, tendo acesso à elite mais poderosa de Roma e a conhecendo muito bem, teria visto essa dinâmica se desenrolar vividamente. Nero, o discípulo cujos excessos Sêneca tentou refrear, matou não apenas a própria mãe e a esposa, mas, por fim, voltou-se também contra Sêneca, seu mentor.\n\nA combinação de poder, medo e mania pode ser mortal. O líder, certo de que pode ser traído, decide trair os outros primeiro. Temendo não ser apreciado, ele se empenha tanto para conseguir que as pessoas gostem dele que acaba provocando o efeito contrário. Convencido de que a administração vai mal, ele gerencia cada pormenor, controlando os funcionários, e se torna a fonte da má administração. E assim por diante — acabamos por infligir cegamente a nós mesmos coisas que tememos ou que nos apavoram.\n\nA próxima vez que estiver com medo de algum resultado supostamente desastroso, lembre-se de que se não controlar seus impulsos, se perder o autocontrole, você pode ser a própria fonte do desastre que teme. Isso aconteceu com pessoas mais inteligentes, mais poderosas e mais bem-sucedidas. Pode acontecer conosco também.',
+    background: getBackgroundForDay(7),
   },
 ];
 
@@ -499,7 +512,9 @@ const getAvailableMaxims = (): DailyMaxim[] => {
 
 export default function DiarioEstoicoPage() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isGuestMode } = useAuth();
+  const { trackInteraction } = useGuestExperience();
+  const { checkTrigger } = useGuestConversionTriggers();
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
   const [showExitModal, setShowExitModal] = useState(false);
 
@@ -517,6 +532,85 @@ export default function DiarioEstoicoPage() {
 
   // Refs for scroll management
   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  /**
+   * Helper para renderizar comentário (com teaser para guests)
+   */
+  const renderComment = (maxim: DailyMaxim, textSizeClass: string = 'text-[13px]') => {
+    if (!maxim.comment) return null;
+
+    const isGuest = isGuestMode && !user;
+
+    // Guest mode: mostrar apenas 45% do comentário
+    if (isGuest) {
+      const fullComment = maxim.comment;
+      const lines = fullComment.split('\n');
+      const visibleLines = Math.ceil(lines.length * 0.45);
+      const visibleComment = lines.slice(0, visibleLines).join('\n');
+
+      return (
+        <>
+          <hr className="border-eco-line" />
+          <div className="relative">
+            <h4 className="font-primary text-[12px] font-bold text-eco-text mb-2">
+              Comentário
+            </h4>
+            <p className={`font-primary ${textSizeClass} leading-relaxed text-eco-text whitespace-pre-line`}>
+              {visibleComment}
+            </p>
+
+            {/* Fade gradient */}
+            <div
+              className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
+              style={{
+                background:
+                  'linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 40%, rgba(255, 255, 255, 0) 100%)',
+              }}
+            />
+
+            {/* CTA Button */}
+            <div className="mt-6 pt-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  mixpanel.track('Guest Reflection Teaser CTA Clicked', {
+                    reflection_id: `${maxim.month}-${maxim.dayNumber}`,
+                  });
+                  checkTrigger(ConversionSignals.reflectionViewed(`${maxim.month}-${maxim.dayNumber}`));
+                  navigate('/register?returnTo=/app/diario-estoico');
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3
+                           text-sm font-semibold text-white
+                           bg-gradient-to-r from-eco-user to-eco-accent
+                           rounded-lg hover:shadow-lg
+                           transition-all duration-300"
+              >
+                <span>Continue esta reflexão →</span>
+              </button>
+              <p className="text-center text-[10px] text-eco-muted mt-2">
+                Crie sua conta em 30 segundos — sempre gratuito
+              </p>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    // Authenticated: mostrar comentário completo
+    return (
+      <>
+        <hr className="border-eco-line" />
+        <div>
+          <h4 className="font-primary text-[12px] font-bold text-eco-text mb-2">
+            Comentário
+          </h4>
+          <p className={`font-primary ${textSizeClass} leading-relaxed text-eco-text whitespace-pre-line`}>
+            {fullComment}
+          </p>
+        </div>
+      </>
+    );
+  };
 
   // Obter apenas os cards disponíveis até hoje
   const availableMaxims = getAvailableMaxims();
@@ -781,7 +875,21 @@ export default function DiarioEstoicoPage() {
       is_guest: !user,
       user_id: user?.id,
     });
-  }, [availableMaxims, viewedCards, user]);
+
+    // NOVO: Track reflection view para guests
+    if (isGuestMode && !user) {
+      trackInteraction('page_view', {
+        page: `/diario-estoico/${dayNumber}`,
+        reflection_id: `${maxim.month}-${dayNumber}`,
+      });
+
+      // Trigger conversão após 3+ reflexões
+      const totalViewed = viewedCards.size + 1;
+      if (totalViewed >= 3) {
+        checkTrigger(ConversionSignals.reflectionViewed(`${maxim.month}-${dayNumber}`));
+      }
+    }
+  }, [availableMaxims, viewedCards, user, isGuestMode, trackInteraction, checkTrigger]);
 
   // Track page view on mount
   useEffect(() => {
@@ -1005,19 +1113,7 @@ export default function DiarioEstoicoPage() {
                                     — {maxim.author}
                                     {maxim.source && `, ${maxim.source}`}
                                   </p>
-                                  {maxim.comment && (
-                                    <>
-                                      <hr className="border-eco-line" />
-                                      <div>
-                                        <h4 className="font-primary text-[12px] font-bold text-eco-text mb-2">
-                                          Comentário
-                                        </h4>
-                                        <p className="font-primary text-[13px] leading-relaxed text-eco-text whitespace-pre-line">
-                                          {maxim.comment}
-                                        </p>
-                                      </div>
-                                    </>
-                                  )}
+                                  {renderComment(maxim, 'text-[13px]')}
 
                                   {/* Action buttons */}
                                   <div className="flex gap-2 pt-2">
@@ -1122,21 +1218,7 @@ export default function DiarioEstoicoPage() {
                                   — {todayMaxim.author}
                                   {todayMaxim.source && `, ${todayMaxim.source}`}
                                 </p>
-                                {todayMaxim.comment && (
-                                  <>
-                                    <hr className="border-eco-line" />
-                                    <div>
-                                      <h4 className="font-primary text-[16px] font-bold text-eco-text mb-3">
-                                        Comentário
-                                      </h4>
-                                      <p className="font-primary text-[14px] lg:text-[15px] leading-relaxed
-                                                  text-eco-text whitespace-pre-line">
-                                        {todayMaxim.comment}
-                                      </p>
-
-                                    </div>
-                                  </>
-                                )}
+                                {renderComment(todayMaxim, 'text-[14px] lg:text-[15px]')}
 
                                 {/* Action buttons */}
                                 <div className="space-y-3">
@@ -1281,20 +1363,7 @@ export default function DiarioEstoicoPage() {
                                   — {todayMaxim.author}
                                   {todayMaxim.source && `, ${todayMaxim.source}`}
                                 </p>
-                                {todayMaxim.comment && (
-                                  <>
-                                    <hr className="border-eco-line" />
-                                    <div>
-                                      <h4 className="font-primary text-[14px] font-bold text-eco-text mb-2">
-                                        Comentário
-                                      </h4>
-                                      <p className="font-primary text-[14px] leading-relaxed text-eco-text whitespace-pre-line">
-                                        {todayMaxim.comment}
-                                      </p>
-
-                                    </div>
-                                  </>
-                                )}
+                                {renderComment(todayMaxim, 'text-[14px]')}
 
                                 {/* Action buttons */}
                                 <div className="space-y-2">
@@ -1427,19 +1496,7 @@ export default function DiarioEstoicoPage() {
                                     — {maxim.author}
                                     {maxim.source && `, ${maxim.source}`}
                                   </p>
-                                  {maxim.comment && (
-                                    <>
-                                      <hr className="border-eco-line" />
-                                      <div>
-                                        <h4 className="font-primary text-[13px] font-bold text-eco-text mb-2">
-                                          Comentário
-                                        </h4>
-                                        <p className="font-primary text-[13px] leading-relaxed text-eco-text whitespace-pre-line">
-                                          {maxim.comment}
-                                        </p>
-                                      </div>
-                                    </>
-                                  )}
+                                  {renderComment(maxim, 'text-[13px]')}
 
                                   {/* Action buttons */}
                                   <div className="flex gap-2 pt-2">
