@@ -605,7 +605,7 @@ export default function DiarioEstoicoPage() {
             Comentário
           </h4>
           <p className={`font-primary ${textSizeClass} leading-relaxed text-eco-text whitespace-pre-line`}>
-            {fullComment}
+            {maxim.comment}
           </p>
         </div>
       </>
