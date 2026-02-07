@@ -229,6 +229,17 @@ const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Tornou-se um clichê citar o discurso de Theodore Roosevelt, "O homem na arena", que idolatra "aquele cujo rosto está sujo de poeira, suor e sangue; que luta com valentia...", comparado com o crítico que fica sentado no canto. Roosevelt fez esse discurso pouco depois de deixar o cargo, no auge de sua popularidade. Em poucos anos, ele iria se opor a um antigo protegido seu numa tentativa de recuperar a Casa Branca, sofrendo uma derrota fragorosa e quase sendo assassinado. Ele também quase morreria durante uma exploração de um rio na Amazônia; mataria milhares de animais em safáris africanos e tempos depois suplicaria a Woodrow Wilson que permitisse que se alistasse na Primeira Guerra Mundial, apesar de ter 59 anos. Ele iria fazer muitas coisas que, agora, parecem um tanto desconcertantes.\n\nTheodore Roosevelt era de fato um grande homem. Mas era também movido por uma compulsão, um vício em trabalho e em manter-se ativo que parecia sem fim. Muitos de nós compartilhamos dessa aflição, ser movidos por algo que não podemos controlar. Temos medo de ficar parados, por isso procuramos luta e ação como uma distração. Escolhemos estar em guerra — em alguns casos, literalmente — quando a paz é, na verdade, a mais honrosa e adequada escolha. Sim, o homem na arena é admirável. Assim como o soldado, o político, a mulher de negócios e todas as outras ocupações. Mas, e este é um grande mas, somente se estivermos na arena pelas razões corretas.',
     background: DECEMBER_BACKGROUNDS[1],
   },
+  {
+    date: '7 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 7,
+    title: 'O MEDO É UMA PROFECIA QUE SE AUTORREALIZA',
+    text: '"Muitos são prejudicados pelo próprio medo, e muitos podem ter chegado a seu destino enquanto o temiam."',
+    author: 'Sêneca',
+    source: 'Édipo, 992',
+    comment: '"Só o paranoide sobrevive", foi uma frase famosa de Andy Grove, ex-CEO da Intel. Talvez ela seja verdadeira. Mas também sabemos que o paranoide destrói a si mesmo mais depressa e mais espetacularmente que a qualquer inimigo. Sêneca, tendo acesso à elite mais poderosa de Roma e a conhecendo muito bem, teria visto essa dinâmica se desenrolar vividamente. Nero, o discípulo cujos excessos Sêneca tentou refrear, matou não apenas a própria mãe e a esposa, mas, por fim, voltou-se também contra Sêneca, seu mentor.\n\nA combinação de poder, medo e mania pode ser mortal. O líder, certo de que pode ser traído, decide trair os outros primeiro. Temendo não ser apreciado, ele se empenha tanto para conseguir que as pessoas gostem dele que acaba provocando o efeito contrário. Convencido de que a administração vai mal, ele gerencia cada pormenor, controlando os funcionários, e se torna a fonte da má administração. E assim por diante — acabamos por infligir cegamente a nós mesmos coisas que tememos ou que nos apavoram.\n\nA próxima vez que estiver com medo de algum resultado supostamente desastroso, lembre-se de que se não controlar seus impulsos, se perder o autocontrole, você pode ser a própria fonte do desastre que teme. Isso aconteceu com pessoas mais inteligentes, mais poderosas e mais bem-sucedidas. Pode acontecer conosco também.',
+    background: DECEMBER_BACKGROUNDS[2],
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
