@@ -33,6 +33,15 @@ interface GuestExperienceState {
   // Limites (podem ser dinâmicos no futuro)
   timeLimitMs: number;
   interactionLimit: number;
+
+  // NOVO: Sinais comportamentais de qualidade
+  longMessagesCount: number;   // Mensagens >150 chars
+  deepScrollCount: number;     // Scrolls >80% profundidade
+  favoriteAttempts: number;    // Tentativas de favoritar
+  voiceUsageCount: number;     // Uso de voz
+  ttsPlayCount: number;        // Reproduções de TTS
+  profileClickCount: number;   // Clicks em perfil/memória
+  sessionCount: number;        // Número de sessões
 }
 
 /**
@@ -45,6 +54,14 @@ interface GuestExperienceContextType {
   trackPageView(path: string): void;
   trackInteraction(type: GuestInteractionType, metadata?: GuestInteractionMetadata): void;
   trackTimeSpent(ms: number): void;
+
+  // NOVO: Tracking de sinais comportamentais
+  trackLongMessage(length: number): void;
+  trackDeepScroll(depth: number): void;
+  trackFavoriteAttempt(): void;
+  trackVoiceUsage(): void;
+  trackTTSPlay(): void;
+  trackProfileClick(): void;
 
   // Verificações
   shouldShowModal(): boolean;
@@ -76,6 +93,14 @@ const createInitialState = (): GuestExperienceState => ({
   modalDismissedAt: null,
   timeLimitMs: GUEST_EXPERIENCE_CONFIG.TIME_LIMIT_MS,
   interactionLimit: GUEST_EXPERIENCE_CONFIG.INTERACTION_LIMIT,
+  // NOVO: Sinais comportamentais
+  longMessagesCount: 0,
+  deepScrollCount: 0,
+  favoriteAttempts: 0,
+  voiceUsageCount: 0,
+  ttsPlayCount: 0,
+  profileClickCount: 0,
+  sessionCount: 1, // Começa em 1 (primeira sessão)
 });
 
 /**
@@ -231,6 +256,114 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
     }));
   }, []);
 
+  // NOVO: Rastrear mensagem longa
+  const trackLongMessage = useCallback(
+    (length: number) => {
+      if (length <= 150) return; // Só conta se >150 chars
+
+      setState((prev) => ({
+        ...prev,
+        longMessagesCount: prev.longMessagesCount + 1,
+        lastActivityAt: Date.now(),
+      }));
+
+      if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
+        mixpanel.track('Guest Long Message', {
+          message_length: length,
+          long_messages_count: state.longMessagesCount + 1,
+          guest_id: guestId,
+        });
+      }
+    },
+    [guestId, state.longMessagesCount]
+  );
+
+  // NOVO: Rastrear scroll profundo
+  const trackDeepScroll = useCallback(
+    (depth: number) => {
+      if (depth <= 0.8) return; // Só conta se >80%
+
+      setState((prev) => ({
+        ...prev,
+        deepScrollCount: prev.deepScrollCount + 1,
+        lastActivityAt: Date.now(),
+      }));
+
+      if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
+        mixpanel.track('Guest Deep Scroll', {
+          scroll_depth: depth,
+          deep_scroll_count: state.deepScrollCount + 1,
+          guest_id: guestId,
+        });
+      }
+    },
+    [guestId, state.deepScrollCount]
+  );
+
+  // NOVO: Rastrear tentativa de favoritar
+  const trackFavoriteAttempt = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      favoriteAttempts: prev.favoriteAttempts + 1,
+      lastActivityAt: Date.now(),
+    }));
+
+    if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
+      mixpanel.track('Guest Favorite Attempt', {
+        favorite_attempts: state.favoriteAttempts + 1,
+        guest_id: guestId,
+      });
+    }
+  }, [guestId, state.favoriteAttempts]);
+
+  // NOVO: Rastrear uso de voz
+  const trackVoiceUsage = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      voiceUsageCount: prev.voiceUsageCount + 1,
+      lastActivityAt: Date.now(),
+    }));
+
+    if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
+      mixpanel.track('Guest Voice Usage', {
+        voice_usage_count: state.voiceUsageCount + 1,
+        guest_id: guestId,
+      });
+    }
+  }, [guestId, state.voiceUsageCount]);
+
+  // NOVO: Rastrear TTS play
+  const trackTTSPlay = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      ttsPlayCount: prev.ttsPlayCount + 1,
+      lastActivityAt: Date.now(),
+    }));
+
+    if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
+      mixpanel.track('Guest TTS Play', {
+        tts_play_count: state.ttsPlayCount + 1,
+        guest_id: guestId,
+      });
+    }
+  }, [guestId, state.ttsPlayCount]);
+
+  // NOVO: Rastrear click em perfil/memória
+  const trackProfileClick = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      profileClickCount: prev.profileClickCount + 1,
+      lastActivityAt: Date.now(),
+    }));
+
+    if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
+      mixpanel.track('Guest Profile Click', {
+        profile_click_count: state.profileClickCount + 1,
+        guest_id: guestId,
+      });
+    }
+  }, [guestId, state.profileClickCount]);
+
   // Verificar se atingiu algum limite
   const hasReachedLimit = useCallback((): boolean => {
     const timeReached =
@@ -307,6 +440,12 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
     trackPageView,
     trackInteraction,
     trackTimeSpent,
+    trackLongMessage,
+    trackDeepScroll,
+    trackFavoriteAttempt,
+    trackVoiceUsage,
+    trackTTSPlay,
+    trackProfileClick,
     shouldShowModal,
     hasReachedLimit,
     markModalShown,
@@ -334,6 +473,12 @@ export function useGuestExperience(): GuestExperienceContextType {
       trackPageView: () => {},
       trackInteraction: () => {},
       trackTimeSpent: () => {},
+      trackLongMessage: () => {},
+      trackDeepScroll: () => {},
+      trackFavoriteAttempt: () => {},
+      trackVoiceUsage: () => {},
+      trackTTSPlay: () => {},
+      trackProfileClick: () => {},
       shouldShowModal: () => false,
       hasReachedLimit: () => false,
       markModalShown: () => {},
