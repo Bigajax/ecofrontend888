@@ -10,6 +10,8 @@ import { useMeditationAnalytics } from '@/hooks/useMeditationAnalytics';
 import { parseDurationToSeconds, getCategoryFromPath, trackMeditationEvent } from '@/analytics/meditation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGuestExperience } from '@/contexts/GuestExperienceContext';
+import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestConversionTriggers';
+import MeditationGuestGate from '@/components/meditation/MeditationGuestGate';
 
 interface MeditationData {
   id?: string;
@@ -44,8 +46,9 @@ const fadeSlideUp = {
 export default function MeditationPlayerPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isGuestMode } = useAuth();
   const { trackInteraction } = useGuestExperience();
+  const { checkTrigger } = useGuestConversionTriggers();
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Dados da meditação passados via navigation state
@@ -113,6 +116,13 @@ export default function MeditationPlayerPage() {
   // Estado para tela de conclusão
   const [showCompletionScreen, setShowCompletionScreen] = useState(false);
 
+  // NOVO: Guest mode state
+  const isGuest = isGuestMode && !user;
+  const GUEST_TIME_LIMIT_SECONDS = 120; // 2 minutos
+  const [showGuestGate, setShowGuestGate] = useState(false);
+  const [isAudioFading, setIsAudioFading] = useState(false);
+  const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   // Scroll para o topo quando a página carregar
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -123,6 +133,11 @@ export default function MeditationPlayerPage() {
     return () => {
       if (audioRef.current) {
         analytics.trackAbandoned(audioRef.current.currentTime, 'navigation');
+      }
+
+      // Cleanup fade interval
+      if (fadeIntervalRef.current) {
+        clearInterval(fadeIntervalRef.current);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -271,12 +286,91 @@ export default function MeditationPlayerPage() {
     setSelectedBackgroundSound(sound);
   };
 
+  /**
+   * NOVO: Fade out suave do áudio ao longo de 10 segundos
+   */
+  const startAudioFadeOut = () => {
+    const audio = audioRef.current;
+    const backgroundAudio = backgroundAudioRef.current;
+    if (!audio) return;
+
+    setIsAudioFading(true);
+
+    const fadeDurationMs = 10000; // 10 segundos
+    const fadeSteps = 100; // 100 passos
+    const stepDurationMs = fadeDurationMs / fadeSteps;
+    const initialVolume = audio.volume;
+    const initialBackgroundVolume = backgroundAudio?.volume || 0;
+
+    let currentStep = 0;
+
+    fadeIntervalRef.current = setInterval(() => {
+      currentStep++;
+
+      const progress = currentStep / fadeSteps;
+      const newVolume = initialVolume * (1 - progress);
+
+      // Fade áudio principal
+      if (audio) {
+        audio.volume = Math.max(0, newVolume);
+      }
+
+      // Fade áudio de fundo
+      if (backgroundAudio) {
+        backgroundAudio.volume = Math.max(0, initialBackgroundVolume * (1 - progress));
+      }
+
+      // Após 5 segundos (50% do fade), mostrar gate
+      if (currentStep === Math.floor(fadeSteps / 2)) {
+        setShowGuestGate(true);
+      }
+
+      // Quando completar o fade, pausar áudio
+      if (currentStep >= fadeSteps) {
+        if (fadeIntervalRef.current) {
+          clearInterval(fadeIntervalRef.current);
+        }
+
+        if (audio) {
+          audio.pause();
+        }
+
+        if (backgroundAudio) {
+          backgroundAudio.pause();
+        }
+
+        setIsPlaying(false);
+        setIsAudioFading(false);
+      }
+    }, stepDurationMs);
+  };
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const updateTime = () => {
       setCurrentTime(audio.currentTime);
+
+      // NOVO: Guest mode - detectar limite de 2 minutos
+      if (
+        isGuest &&
+        !showGuestGate &&
+        !isAudioFading &&
+        audio.currentTime >= GUEST_TIME_LIMIT_SECONDS
+      ) {
+        // Iniciar fade out
+        startAudioFadeOut();
+
+        // Track limite atingido
+        trackInteraction('meditation_started', {
+          meditation_id: meditationData.id,
+          time_listened_seconds: audio.currentTime,
+        });
+
+        // Trigger conversão
+        checkTrigger(ConversionSignals.meditationPreview(meditationData.id || 'unknown'));
+      }
 
       // Check if meditation is 95%+ complete (send only ONCE)
       if (
@@ -900,6 +994,18 @@ export default function MeditationPlayerPage() {
             skipCount: analytics.getSessionMetrics().skipCount,
             actualPlayTime: currentTime,
           }}
+        />
+      )}
+
+      {/* NOVO: Guest Gate (2 minutos limit) */}
+      {isGuest && (
+        <MeditationGuestGate
+          open={showGuestGate}
+          meditationTitle={meditationData.title}
+          meditationId={meditationData.id || 'unknown'}
+          currentTime={currentTime}
+          totalDuration={duration}
+          onClose={handleBack}
         />
       )}
     </div>

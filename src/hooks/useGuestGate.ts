@@ -36,7 +36,9 @@ export function clearGuestStorage() {
   clearGuestId();
 }
 
-const DEFAULT_LIMIT = 6;
+// Limite de turnos (um turno = mensagem usuário + resposta Eco)
+const DEFAULT_LIMIT = 10;
+const SOFT_PROMPT_THRESHOLD = 6; // Mostrar soft prompt após 6 turnos
 
 function readInt(key: string, fallback = 0) {
   if (!hasWindow) return fallback;
@@ -83,7 +85,7 @@ export function useGuestGate(isLogged: boolean, isGuestMode: boolean = false) {
     }
   });
 
-  // estado persistido
+  // estado persistido - agora rastreando TURNOS (user + Eco = 1 turno)
   const [count, setCount] = useState<number>(() => readInt(STORAGE.COUNT, 0));
   const [inputDisabled, setInputDisabled] = useState<boolean>(() =>
     readBool(STORAGE.INPUT_DISABLED, false)
@@ -91,6 +93,7 @@ export function useGuestGate(isLogged: boolean, isGuestMode: boolean = false) {
 
   const limit = DEFAULT_LIMIT;
   const reachedLimit = count >= limit || inputDisabled;
+  const shouldShowSoftPrompt = count >= SOFT_PROMPT_THRESHOLD && count < limit;
 
   // quando logar, limpa tudo
   useEffect(() => {
@@ -160,8 +163,9 @@ export function useGuestGate(isLogged: boolean, isGuestMode: boolean = false) {
       limit,
       reachedLimit,
       inputDisabled,
+      shouldShowSoftPrompt,
       registerUserInteraction,
     }),
-    [guestId, count, limit, reachedLimit, inputDisabled, registerUserInteraction]
+    [guestId, count, limit, reachedLimit, inputDisabled, shouldShowSoftPrompt, registerUserInteraction]
   );
 }

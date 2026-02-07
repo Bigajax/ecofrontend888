@@ -25,6 +25,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   register: (email: string, password: string, nome: string, telefone: string) => Promise<void>;
   loginAsGuest: () => Promise<void>;
+  migrateGuestData: (newUserId: string) => Promise<PreservedData>;
 
   // Subscription fields
   subscription: SubscriptionState;
@@ -145,6 +146,111 @@ async function safelyEnsureProfile(user: User | null | undefined, context: strin
     console.error('[Auth] Profile error', { context, error });
     return null;
   }
+}
+
+export interface PreservedData {
+  chatMessages?: number;
+  favorites?: number;
+  ringsDay?: number;
+  meditationProgress?: boolean;
+}
+
+/**
+ * Migra dados de guest mode para conta autenticada
+ * Deve ser chamado IMEDIATAMENTE após signup bem-sucedido, ANTES de clearGuestStorage
+ */
+export async function migrateGuestData(newUserId: string): Promise<PreservedData> {
+  const preservedData: PreservedData = {};
+
+  try {
+    // 1. Ler guestId
+    const guestId = readPersistedGuestId();
+    if (!guestId) {
+      console.info('[Auth] No guest ID found, skipping migration');
+      return preservedData;
+    }
+
+    console.info('[Auth] Starting guest data migration', { guestId, newUserId });
+
+    // 2. Migrar histórico chat
+    const guestChatKey = `eco.chat.v1.${guestId}`;
+    const guestChat = localStorage.getItem(guestChatKey);
+    if (guestChat) {
+      try {
+        const messages = JSON.parse(guestChat);
+        if (Array.isArray(messages) && messages.length > 0) {
+          // Copiar para key do novo usuário
+          const userChatKey = `eco.chat.v1.${newUserId}`;
+          localStorage.setItem(userChatKey, guestChat);
+
+          preservedData.chatMessages = messages.length;
+          console.info('[Auth] Chat history migrated', { messageCount: messages.length });
+        }
+      } catch (err) {
+        console.error('[Auth] Failed to migrate chat history:', err);
+      }
+    }
+
+    // 3. Migrar progresso Five Rings
+    const guestRingsKey = `eco.rings.v1.${guestId}`;
+    const guestRings = localStorage.getItem(guestRingsKey);
+    if (guestRings) {
+      try {
+        const ringsData = JSON.parse(guestRings);
+        if (ringsData && Array.isArray(ringsData)) {
+          // Copiar para key do novo usuário
+          const userRingsKey = `eco.rings.v1.${newUserId}`;
+          localStorage.setItem(userRingsKey, guestRings);
+
+          // Encontrar o dia atual (último ritual)
+          const lastRitual = ringsData[ringsData.length - 1];
+          if (lastRitual?.day) {
+            preservedData.ringsDay = lastRitual.day;
+          }
+
+          console.info('[Auth] Rings progress migrated', { day: preservedData.ringsDay });
+        }
+      } catch (err) {
+        console.error('[Auth] Failed to migrate rings progress:', err);
+      }
+    }
+
+    // 4. Migrar progresso meditação (se existir em sessionStorage)
+    // Nota: meditações geralmente não são persistidas para guests, mas verificamos
+    const guestMeditationKey = `eco.meditation.${guestId}`;
+    const guestMeditation = sessionStorage.getItem(guestMeditationKey);
+    if (guestMeditation) {
+      try {
+        const meditationData = JSON.parse(guestMeditation);
+        if (meditationData) {
+          const userMeditationKey = `eco.meditation.${newUserId}`;
+          sessionStorage.setItem(userMeditationKey, guestMeditation);
+
+          preservedData.meditationProgress = true;
+          console.info('[Auth] Meditation progress migrated');
+        }
+      } catch (err) {
+        console.error('[Auth] Failed to migrate meditation progress:', err);
+      }
+    }
+
+    // 5. Track sucesso migração
+    mixpanel.track('Guest Data Migrated', {
+      guestId,
+      newUserId,
+      chat_messages: preservedData.chatMessages || 0,
+      favorites_count: preservedData.favorites || 0,
+      rings_day: preservedData.ringsDay || 0,
+      meditation_progress: preservedData.meditationProgress || false,
+      timestamp: new Date().toISOString(),
+    });
+
+    console.info('[Auth] Guest data migration completed', preservedData);
+  } catch (error) {
+    console.error('[Auth] Error during guest data migration:', error);
+  }
+
+  return preservedData;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -683,6 +789,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut,
         register,
         loginAsGuest,
+        migrateGuestData,
 
         // Subscription
         subscription,

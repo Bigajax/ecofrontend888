@@ -95,6 +95,7 @@ function ChatPage() {
   const isGuest = isGuestMode && !user;
   const guestGate = useGuestGate(!user, isGuestMode);
   const [loginGateOpen, setLoginGateOpen] = useState(false);
+  const [loginGateContext, setLoginGateContext] = useState<'chat_soft_prompt' | 'chat_hard_limit'>('chat_hard_limit');
   const [isComposerSending, setIsComposerSending] = useState(false);
   const [composerValue, setComposerValue] = useState('');
   const [lastAttempt, setLastAttempt] = useState<{ text: string; hint?: string } | null>(null);
@@ -219,10 +220,18 @@ function ChatPage() {
       setLoginGateOpen(false);
       return;
     }
+
+    // Hard limit - mostrar modal bloqueante
     if (guestGate.reachedLimit || guestGate.inputDisabled) {
+      setLoginGateContext('chat_hard_limit');
       setLoginGateOpen(true);
     }
-  }, [guestGate.reachedLimit, guestGate.inputDisabled, isGuest]);
+    // Soft prompt - mostrar modal dismissível
+    else if (guestGate.shouldShowSoftPrompt && !loginGateOpen) {
+      setLoginGateContext('chat_soft_prompt');
+      setLoginGateOpen(true);
+    }
+  }, [guestGate.reachedLimit, guestGate.inputDisabled, guestGate.shouldShowSoftPrompt, isGuest, loginGateOpen]);
 
   const saudacao = useMemo(() => saudacaoDoDiaFromHour(new Date().getHours()), []);
   const [heroSubtitle, setHeroSubtitle] = useState<string>(() => pickHeroSubtitle());
@@ -351,6 +360,7 @@ function ChatPage() {
       }
       if (isGuest) {
         if (guestGate.inputDisabled || guestGate.count >= guestGate.limit) {
+          setLoginGateContext('chat_hard_limit');
           setLoginGateOpen(true);
           return;
         }
@@ -970,13 +980,18 @@ function ChatPage() {
               onClose={() => setLoginGateOpen(false)}
               onSignup={() => {
                 if (guestGate.guestId) {
-                  mixpanel.track('signup_clicked', { guestId: guestGate.guestId });
+                  mixpanel.track('signup_clicked', {
+                    guestId: guestGate.guestId,
+                    context: loginGateContext,
+                  });
                 }
                 setLoginGateOpen(false);
                 window.location.href = '/?returnTo=/app';
               }}
               count={guestGate.count}
               limit={guestGate.limit}
+              context={loginGateContext}
+              isSoftPrompt={loginGateContext === 'chat_soft_prompt'}
             />
           </div>
         </footer>

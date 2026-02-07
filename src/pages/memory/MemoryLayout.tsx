@@ -222,7 +222,7 @@ const formatTechnicalDetails = (details: ApiErrorDetails | null) => {
 };
 
 const MemoryLayout: React.FC = () => {
-  const { userId, loading, user, signOut } = useAuth();
+  const { userId, loading, user, signOut, isGuestMode } = useAuth();
   const { clearMessages } = useChat();
   const navigate = useNavigate();
   const mountedRef = useRef(true);
@@ -244,6 +244,14 @@ const MemoryLayout: React.FC = () => {
       mountedRef.current = false;
     };
   }, []);
+
+  // Redirect guests to memory teaser page
+  useEffect(() => {
+    const isGuest = isGuestMode && !user;
+    if (!loading && isGuest) {
+      navigate('/memory-preview', { replace: true });
+    }
+  }, [loading, isGuestMode, user, navigate]);
 
   const safeSetState = useCallback(
     (updater: (prev: MemoryState) => MemoryState) => {

@@ -3,19 +3,31 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useRings } from '@/contexts/RingsContext';
 import { useProgram } from '@/contexts/ProgramContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGuestExperience } from '@/contexts/GuestExperienceContext';
+import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestConversionTriggers';
 import { RINGS_ARRAY } from '@/constants/rings';
 import RitualStep from '@/components/rings/RitualStep';
 import RitualCompletion from '@/components/rings/RitualCompletion';
 import RingIcon from '@/components/rings/RingIcon';
+import RitualGuestGate from '@/components/rings/RitualGuestGate';
 import type { RingType, RingResponse } from '@/types/rings';
 
 export default function DailyRitual() {
   const navigate = useNavigate();
   const { currentRitual, startRitual, saveRingAnswer, completeRitual } = useRings();
   const { ongoingProgram, updateProgress } = useProgram();
+  const { user, isGuestMode } = useAuth();
+  const { trackInteraction } = useGuestExperience();
+  const { checkTrigger } = useGuestConversionTriggers();
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleting, setIsCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // NOVO: Guest mode state
+  const isGuest = isGuestMode && !user;
+  const GUEST_RING_LIMIT = 2; // Guests podem completar apenas 2 anéis (Earth e Water)
+  const [showGuestGate, setShowGuestGate] = useState(false);
 
   useEffect(() => {
     // Ensure ritual exists
@@ -49,6 +61,25 @@ export default function DailyRitual() {
 
   const handleAnswerSaved = (ringId: RingType, answer: string, metadata: RingResponse) => {
     saveRingAnswer(ringId, answer, metadata);
+
+    // NOVO: Guest mode - bloquear após completar 2 anéis (antes de chegar no Anel 3/Fire)
+    if (isGuest && currentStep >= GUEST_RING_LIMIT - 1) {
+      // Guest completou 2 anéis (Earth + Water)
+      // Próximo passo seria Fire (index 2), mas bloqueamos
+
+      // Track completion
+      trackInteraction('page_view', {
+        page: '/rings/ritual',
+        rings_completed: currentStep + 1,
+      });
+
+      // Trigger conversão
+      checkTrigger(ConversionSignals.ringsCompleted(currentStep + 1));
+
+      // Mostrar gate
+      setShowGuestGate(true);
+      return;
+    }
 
     if (isLastStep) {
       // Complete the ritual
@@ -152,7 +183,7 @@ export default function DailyRitual() {
             <button
               key={ring.id}
               onClick={() => setCurrentStep(index)}
-              disabled={index > currentStep}
+              disabled={index > currentStep || (isGuest && index >= GUEST_RING_LIMIT)}
               className={`flex h-10 w-10 items-center justify-center rounded-full font-semibold transition-all duration-300 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
                 index === currentStep
                   ? 'bg-[var(--eco-user)] text-white shadow-[0_4px_20px_rgba(167,132,108,0.25)]'
@@ -173,6 +204,16 @@ export default function DailyRitual() {
           ))}
         </div>
       </div>
+
+      {/* NOVO: Guest Gate (bloqueio no Anel 3/Fire) */}
+      {isGuest && (
+        <RitualGuestGate
+          open={showGuestGate}
+          currentDay={currentRitual?.day || 1}
+          completedRings={currentStep + 1}
+          onBack={() => navigate('/app/rings')}
+        />
+      )}
     </div>
   );
 }
