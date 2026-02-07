@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGuestExperience } from '../contexts/GuestExperienceContext';
 import type { ConversionContext } from '../constants/conversionCopy';
-import mixpanel from 'mixpanel-browser';
+import mixpanel from '@/lib/mixpanel';
 
 /**
  * Tipos de sinais comportamentais que podem acionar conversão

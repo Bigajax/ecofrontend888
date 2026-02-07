@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useGuestExperience } from '@/contexts/GuestExperienceContext';
 import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestConversionTriggers';
-import mixpanel from 'mixpanel-browser';
+import mixpanel from '@/lib/mixpanel';
 
 interface ReflectionTeaserWrapperProps {
   children: React.ReactNode;
