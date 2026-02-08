@@ -240,6 +240,17 @@ const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: '"Só o paranoide sobrevive", foi uma frase famosa de Andy Grove, ex-CEO da Intel. Talvez ela seja verdadeira. Mas também sabemos que o paranoide destrói a si mesmo mais depressa e mais espetacularmente que a qualquer inimigo. Sêneca, tendo acesso à elite mais poderosa de Roma e a conhecendo muito bem, teria visto essa dinâmica se desenrolar vividamente. Nero, o discípulo cujos excessos Sêneca tentou refrear, matou não apenas a própria mãe e a esposa, mas, por fim, voltou-se também contra Sêneca, seu mentor.\n\nA combinação de poder, medo e mania pode ser mortal. O líder, certo de que pode ser traído, decide trair os outros primeiro. Temendo não ser apreciado, ele se empenha tanto para conseguir que as pessoas gostem dele que acaba provocando o efeito contrário. Convencido de que a administração vai mal, ele gerencia cada pormenor, controlando os funcionários, e se torna a fonte da má administração. E assim por diante — acabamos por infligir cegamente a nós mesmos coisas que tememos ou que nos apavoram.\n\nA próxima vez que estiver com medo de algum resultado supostamente desastroso, lembre-se de que se não controlar seus impulsos, se perder o autocontrole, você pode ser a própria fonte do desastre que teme. Isso aconteceu com pessoas mais inteligentes, mais poderosas e mais bem-sucedidas. Pode acontecer conosco também.',
     background: DECEMBER_BACKGROUNDS[2],
   },
+  {
+    date: '8 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 8,
+    title: 'ISSO O FEZ SENTIR-SE MELHOR?',
+    text: '"Tu choras — estou sofrendo forte dor! Mas essa dor é de algum modo aliviada, se a suportas de uma maneira pouco viril?"',
+    author: 'Sêneca',
+    source: 'Cartas Morais, 78.17',
+    comment: 'Da próxima vez que alguém ficar transtornado perto de você — chorando, gritando, quebrando alguma coisa, sendo mordaz ou cruel —, observe como esta declaração os fará parar imediatamente: "Espero que isso esteja fazendo com que se sinta melhor." Porque, é claro, não está. Somente no calor da extrema emoção podemos justificar um comportamento desse tipo — e quando precisamos explicá-lo, geralmente nos sentimos envergonhados.\n\nVale a pena aplicar esse padrão a você mesmo. Na próxima vez que se encontrar em meio a uma crise de nervos, ou resmungando e reclamando porque suspeita estar pegando um resfriado, ou chorando lágrimas de arrependimento, apenas pergunte: Isto realmente está fazendo com que eu me sinta melhor? Está aliviando algum dos sintomas que eu desejaria que desaparecessem?',
+    background: DECEMBER_BACKGROUNDS[0],
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
