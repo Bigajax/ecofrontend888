@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRings } from '@/contexts/RingsContext';
 import { useProgram } from '@/contexts/ProgramContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +7,7 @@ import { RINGS_ARRAY } from '@/constants/rings';
 import OnboardingModal from '@/components/rings/OnboardingModal';
 import RingCard from '@/components/rings/RingCard';
 import HomeHeader from '@/components/home/HomeHeader';
+import RingsHistory from '@/components/rings/RingsHistory';
 import { ArrowLeft, Lock } from 'lucide-react';
 
 export default function FiveRingsHub() {
@@ -14,10 +15,14 @@ export default function FiveRingsHub() {
   const { showOnboarding, completeOnboarding, dismissOnboarding, currentRitual, progress } =
     useRings();
   const { ongoingProgram, updateProgress, resumeProgram } = useProgram();
-  const { user, isGuestMode } = useAuth();
+  const { user, isGuestMode, isVipUser } = useAuth();
 
   const ritualCompleted = currentRitual?.status === 'completed';
-  const isGuest = isGuestMode && !user;
+  // VIP users bypass all guest gates
+  const isGuest = isGuestMode && !user && !isVipUser;
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'ritual' | 'history'>('ritual');
 
   // Scroll to top on page load
   useEffect(() => {
@@ -110,8 +115,36 @@ export default function FiveRingsHub() {
             </div>
           )}
 
-          {/* Status Card */}
-          <div className="rounded-2xl border border-[var(--eco-line)] bg-white p-6 shadow-sm">
+          {/* Tabs */}
+          <div className="flex gap-2 border-b border-eco-line">
+            <button
+              onClick={() => setActiveTab('ritual')}
+              className={`px-6 py-3 font-medium transition-all duration-300 ${
+                activeTab === 'ritual'
+                  ? 'border-b-2 border-eco-user text-eco-user'
+                  : 'text-eco-muted hover:text-eco-text'
+              }`}
+            >
+              Ritual de Hoje
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-6 py-3 font-medium transition-all duration-300 ${
+                activeTab === 'history'
+                  ? 'border-b-2 border-eco-user text-eco-user'
+                  : 'text-eco-muted hover:text-eco-text'
+              }`}
+            >
+              Minhas Sessões
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'ritual' ? (
+          <>
+            {/* Status Card */}
+            <div className="rounded-2xl border border-[var(--eco-line)] bg-white p-6 shadow-sm">
             {ritualCompleted ? (
               <div className="flex items-center justify-between">
                 <div>
@@ -155,47 +188,51 @@ export default function FiveRingsHub() {
                 </button>
               </div>
             )}
-          </div>
-        </div>
+            </div>
 
-        {/* Rings Grid */}
-        <div className="mb-12 grid gap-6 md:grid-cols-2">
-          {RINGS_ARRAY.map((ring) => (
-            <RingCard
-              key={ring.id}
-              ring={ring}
-              onViewMore={() => navigate(`/app/rings/detail/${ring.id}`)}
-            />
-          ))}
-        </div>
+            {/* Rings Grid */}
+            <div className="mb-12 grid gap-6 md:grid-cols-2">
+              {RINGS_ARRAY.map((ring) => (
+                <RingCard
+                  key={ring.id}
+                  ring={ring}
+                  onViewMore={() => navigate(`/app/rings/detail/${ring.id}`)}
+                />
+              ))}
+            </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-          <button
-            onClick={() => navigate('/app/rings/timeline')}
-            className="flex items-center justify-center gap-2 rounded-xl border border-[var(--eco-line)] bg-white px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 hover:bg-gray-50 active:scale-95"
-          >
-            <span>📅</span>
-            <span>Ver Linha do Tempo</span>
-          </button>
-          <button
-            onClick={() => navigate('/app/rings/progress')}
-            className="flex items-center justify-center gap-2 rounded-xl border border-[var(--eco-line)] bg-white px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 hover:bg-gray-50 active:scale-95"
-          >
-            <span>📊</span>
-            <span>Ver Progresso</span>
-          </button>
-        </div>
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+              <button
+                onClick={() => navigate('/app/rings/timeline')}
+                className="flex items-center justify-center gap-2 rounded-xl border border-[var(--eco-line)] bg-white px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 hover:bg-gray-50 active:scale-95"
+              >
+                <span>📅</span>
+                <span>Ver Linha do Tempo</span>
+              </button>
+              <button
+                onClick={() => navigate('/app/rings/progress')}
+                className="flex items-center justify-center gap-2 rounded-xl border border-[var(--eco-line)] bg-white px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 hover:bg-gray-50 active:scale-95"
+              >
+                <span>📊</span>
+                <span>Ver Progresso</span>
+              </button>
+            </div>
 
-        {/* Stats Footer */}
-        {progress && (
-          <div className="mt-12 rounded-xl border border-[var(--eco-line)] bg-white/50 p-6 text-center">
-            <p className="text-sm text-[var(--eco-muted)]">Seu compromisso</p>
-            <p className="mt-2 font-display text-3xl font-normal text-[var(--eco-text)]">
-              {progress.currentStreak} 🔥
-            </p>
-            <p className="mt-1 text-sm text-[var(--eco-muted)]">dias seguidos de disciplina</p>
-          </div>
+            {/* Stats Footer */}
+            {progress && (
+              <div className="mt-12 rounded-xl border border-[var(--eco-line)] bg-white/50 p-6 text-center">
+                <p className="text-sm text-[var(--eco-muted)]">Seu compromisso</p>
+                <p className="mt-2 font-display text-3xl font-normal text-[var(--eco-text)]">
+                  {progress.currentStreak} 🔥
+                </p>
+                <p className="mt-1 text-sm text-[var(--eco-muted)]">dias seguidos de disciplina</p>
+              </div>
+            )}
+          </>
+        ) : (
+          /* History Tab Content */
+          <RingsHistory />
         )}
       </main>
     </div>

@@ -81,6 +81,10 @@ const LoginPage: React.FC = () => {
   const [forgotError, setForgotError] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
 
+  // Extrair returnTo da URL
+  const searchParams = new URLSearchParams(location.search);
+  const returnTo = searchParams.get('returnTo') || '/app';
+
   const canSubmit = email.trim().length > 3 && password.length >= 6 && !loading;
 
   // Google One Tap - Login automático para usuários já logados no Google
@@ -346,7 +350,7 @@ const LoginPage: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => navigate('/register')}
+                  onClick={() => navigate(`/register?returnTo=${encodeURIComponent(returnTo)}`)}
                   disabled={loading}
                   className="flex h-12 w-full items-center justify-center rounded-xl border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm text-sm font-normal text-[var(--eco-text)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-300 ease-out hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                 >

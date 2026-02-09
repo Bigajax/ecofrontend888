@@ -8,6 +8,8 @@ import { isStreamActive, onStreamActivityChange } from '../hooks/useEcoStream/st
 import { getOrCreateGuestId, readPersistedGuestId } from '../api/guestIdentity';
 import type { SubscriptionState } from '../types/subscription';
 import { getSubscriptionStatus } from '../api/subscription';
+import * as ringsApi from '../api/ringsApi';
+import { isVipUser as checkIsVipUser } from '../constants/vipUsers';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
@@ -19,6 +21,7 @@ interface AuthContextType {
   userName?: string;
   isGuestMode: boolean;
   guestId: string | null;
+  isVipUser: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithGoogleIdToken: (idToken: string) => Promise<void>;
@@ -192,23 +195,32 @@ export async function migrateGuestData(newUserId: string): Promise<PreservedData
     }
 
     // 3. Migrar progresso Five Rings
-    const guestRingsKey = `eco.rings.v1.${guestId}`;
+    const guestRingsKey = `eco.rings.v1.rituals.${guestId}`;
     const guestRings = localStorage.getItem(guestRingsKey);
     if (guestRings) {
       try {
         const ringsData = JSON.parse(guestRings);
         if (ringsData && Array.isArray(ringsData)) {
-          // Copiar para key do novo usuário
-          const userRingsKey = `eco.rings.v1.${newUserId}`;
+          // Copiar para key do novo usuário (localStorage)
+          const userRingsKey = `eco.rings.v1.rituals.${newUserId}`;
           localStorage.setItem(userRingsKey, guestRings);
+
+          // NOVO: Migrar para backend
+          try {
+            await ringsApi.migrateFromLocalStorage({ rituals: ringsData });
+            console.info('[Auth] Rings migrated to backend', { count: ringsData.length });
+          } catch (backendError) {
+            console.error('[Auth] Failed to migrate rings to backend:', backendError);
+            // Continue anyway - data is in localStorage
+          }
 
           // Encontrar o dia atual (último ritual)
           const lastRitual = ringsData[ringsData.length - 1];
-          if (lastRitual?.day) {
-            preservedData.ringsDay = lastRitual.day;
+          if (lastRitual?.date) {
+            preservedData.ringsDay = ringsData.length; // Count of rituals
           }
 
-          console.info('[Auth] Rings progress migrated', { day: preservedData.ringsDay });
+          console.info('[Auth] Rings progress migrated', { ritualsCount: ringsData.length });
         }
       } catch (err) {
         console.error('[Auth] Failed to migrate rings progress:', err);
@@ -297,8 +309,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     nextBillingDate: null,
   });
 
+  // Computed VIP status
+  const isVipUser = checkIsVipUser(user?.email);
+
   // Computed subscription values
   const isPremiumUser = (() => {
+    // VIP users have full access
+    if (isVipUser) return true;
     if (!subscription.accessUntil) return false;
     const now = new Date();
     const accessUntil = new Date(subscription.accessUntil);
@@ -783,6 +800,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userName: user?.user_metadata?.full_name || user?.user_metadata?.name,
         isGuestMode,
         guestId,
+        isVipUser,
         signIn,
         signInWithGoogle,
         signInWithGoogleIdToken,

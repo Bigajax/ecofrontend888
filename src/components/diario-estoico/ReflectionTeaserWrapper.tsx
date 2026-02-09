@@ -72,8 +72,8 @@ export default function ReflectionTeaserWrapper({
     // Trigger conversion modal
     checkTrigger(ConversionSignals.reflectionViewed(reflectionId));
 
-    // Navigate to signup
-    navigate('/register?returnTo=/app/diario-estoico');
+    // Navigate to login
+    navigate('/login?returnTo=/app/diario-estoico');
   };
 
   return (
@@ -111,11 +111,11 @@ export default function ReflectionTeaserWrapper({
         <div className="relative px-6 lg:px-8 pb-6 lg:pb-8 pt-4 bg-white">
           <motion.button
             onClick={handleContinueReading}
-            whileHover={{ scale: 1.02, y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full bg-gradient-to-r from-[var(--eco-user)] to-[var(--eco-accent)]
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-full bg-[#6EC8FF] hover:bg-[#36B3FF]
                        text-white px-6 py-4 rounded-xl font-primary font-semibold text-base
-                       shadow-lg hover:shadow-xl transition-all duration-300
+                       shadow-lg hover:shadow-xl transition-all duration-200
                        flex items-center justify-center gap-2"
           >
             <span>Continue esta reflexão →</span>

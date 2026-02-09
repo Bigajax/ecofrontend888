@@ -83,7 +83,7 @@ type BehaviorHintMetrics = {
 function ChatPage() {
   const { messages, upsertMessage, setMessages, clearMessages } = useChat();
   const auth = useAuth();
-  const { userId, userName: rawUserName = 'Usuário', user, isGuestMode, guestId } = auth;
+  const { userId, userName: rawUserName = 'Usuário', user, isGuestMode, guestId, isVipUser } = auth;
   const { trackInteraction } = useGuestExperience();
   const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
@@ -92,7 +92,8 @@ function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   useAdminCommands(user, sessaoId);
   // Use explicit guest mode flag instead of implicit !user check
-  const isGuest = isGuestMode && !user;
+  // VIP users bypass all guest gates
+  const isGuest = isGuestMode && !user && !isVipUser;
   const guestGate = useGuestGate(!user, isGuestMode);
   const [loginGateOpen, setLoginGateOpen] = useState(false);
   const [loginGateContext, setLoginGateContext] = useState<'chat_soft_prompt' | 'chat_hard_limit'>('chat_hard_limit');
@@ -216,6 +217,12 @@ function ChatPage() {
   }, [rawUserName, user, userId]);
 
   useEffect(() => {
+    // VIP users bypass all guest gates
+    if (isVipUser) {
+      setLoginGateOpen(false);
+      return;
+    }
+
     if (!isGuest) {
       setLoginGateOpen(false);
       return;
@@ -231,7 +238,7 @@ function ChatPage() {
       setLoginGateContext('chat_soft_prompt');
       setLoginGateOpen(true);
     }
-  }, [guestGate.reachedLimit, guestGate.inputDisabled, guestGate.shouldShowSoftPrompt, isGuest, loginGateOpen]);
+  }, [guestGate.reachedLimit, guestGate.inputDisabled, guestGate.shouldShowSoftPrompt, isGuest, isVipUser, loginGateOpen]);
 
   const saudacao = useMemo(() => saudacaoDoDiaFromHour(new Date().getHours()), []);
   const [heroSubtitle, setHeroSubtitle] = useState<string>(() => pickHeroSubtitle());

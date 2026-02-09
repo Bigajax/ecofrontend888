@@ -17,15 +17,15 @@ export default function DailyRitual() {
   const navigate = useNavigate();
   const { currentRitual, startRitual, saveRingAnswer, completeRitual } = useRings();
   const { ongoingProgram, updateProgress } = useProgram();
-  const { user, isGuestMode } = useAuth();
+  const { user, isGuestMode, isVipUser } = useAuth();
   const { trackInteraction } = useGuestExperience();
   const { checkTrigger } = useGuestConversionTriggers();
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleting, setIsCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // NOVO: Guest mode state
-  const isGuest = isGuestMode && !user;
+  // NOVO: Guest mode state (VIP users bypass all gates)
+  const isGuest = isGuestMode && !user && !isVipUser;
   const GUEST_RING_LIMIT = 2; // Guests podem completar apenas 2 anéis (Earth e Water)
   const [showGuestGate, setShowGuestGate] = useState(false);
 

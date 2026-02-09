@@ -534,7 +534,7 @@ const getAvailableMaxims = (): DailyMaxim[] => {
 
 export default function DiarioEstoicoPage() {
   const navigate = useNavigate();
-  const { user, signOut, isGuestMode } = useAuth();
+  const { user, signOut, isGuestMode, isVipUser } = useAuth();
   const { trackInteraction } = useGuestExperience();
   const { checkTrigger } = useGuestConversionTriggers();
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
@@ -561,7 +561,8 @@ export default function DiarioEstoicoPage() {
   const renderComment = (maxim: DailyMaxim, textSizeClass: string = 'text-[13px]') => {
     if (!maxim.comment) return null;
 
-    const isGuest = isGuestMode && !user;
+    // VIP users bypass all guest gates
+    const isGuest = isGuestMode && !user && !isVipUser;
 
     // Guest mode: mostrar apenas 45% do comentário
     if (isGuest) {
@@ -573,7 +574,7 @@ export default function DiarioEstoicoPage() {
       return (
         <>
           <hr className="border-eco-line" />
-          <div className="relative">
+          <div className="relative pb-0">
             <h4 className="font-primary text-[12px] font-bold text-eco-text mb-2">
               Comentário
             </h4>
@@ -591,7 +592,7 @@ export default function DiarioEstoicoPage() {
             />
 
             {/* CTA Button */}
-            <div className="mt-6 pt-2">
+            <div className="mt-6 -mb-8 lg:-mb-10">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -599,17 +600,18 @@ export default function DiarioEstoicoPage() {
                     reflection_id: `${maxim.month}-${maxim.dayNumber}`,
                   });
                   checkTrigger(ConversionSignals.reflectionViewed(`${maxim.month}-${maxim.dayNumber}`));
-                  navigate('/register?returnTo=/app/diario-estoico');
+                  navigate('/login?returnTo=/app/diario-estoico');
                 }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3
                            text-sm font-semibold text-white
-                           bg-gradient-to-r from-eco-user to-eco-accent
-                           rounded-lg hover:shadow-lg
-                           transition-all duration-300"
+                           bg-[#6EC8FF] hover:bg-[#36B3FF]
+                           rounded-xl hover:scale-105 active:scale-95
+                           shadow-lg hover:shadow-xl
+                           transition-all duration-200"
               >
                 <span>Continue esta reflexão →</span>
               </button>
-              <p className="text-center text-[10px] text-eco-muted mt-2">
+              <p className="text-center text-[10px] text-eco-muted mt-2 mb-0">
                 Crie sua conta em 30 segundos — sempre gratuito
               </p>
             </div>
@@ -898,8 +900,8 @@ export default function DiarioEstoicoPage() {
       user_id: user?.id,
     });
 
-    // NOVO: Track reflection view para guests
-    if (isGuestMode && !user) {
+    // NOVO: Track reflection view para guests (VIP users bypass)
+    if (isGuestMode && !user && !isVipUser) {
       trackInteraction('page_view', {
         page: `/diario-estoico/${dayNumber}`,
         reflection_id: `${maxim.month}-${dayNumber}`,
@@ -911,7 +913,7 @@ export default function DiarioEstoicoPage() {
         checkTrigger(ConversionSignals.reflectionViewed(`${maxim.month}-${dayNumber}`));
       }
     }
-  }, [availableMaxims, viewedCards, user, isGuestMode, trackInteraction, checkTrigger]);
+  }, [availableMaxims, viewedCards, user, isGuestMode, isVipUser, trackInteraction, checkTrigger]);
 
   // Track page view on mount
   useEffect(() => {
@@ -1187,6 +1189,8 @@ export default function DiarioEstoicoPage() {
                   {availableMaxims.length > 0 && (() => {
                     const todayMaxim = availableMaxims[availableMaxims.length - 1];
                     const isExpanded = expandedCards.has(todayMaxim.dayNumber);
+                    // VIP users bypass all guest gates
+                    const isGuest = isGuestMode && !user && !isVipUser;
                     return (
                       <AnimatedSection key={todayMaxim.dayNumber} animation="scale-up">
                         <div
@@ -1242,7 +1246,8 @@ export default function DiarioEstoicoPage() {
                                 </p>
                                 {renderComment(todayMaxim, 'text-[14px] lg:text-[15px]')}
 
-                                {/* Action buttons */}
+                                {/* Action buttons - apenas para authenticated */}
+                                {!isGuest && (
                                 <div className="space-y-3">
                                   {/* Mark as read button - only show if not read yet */}
                                   {!readDays.has(todayMaxim.dayNumber) && (
@@ -1319,6 +1324,7 @@ export default function DiarioEstoicoPage() {
                                     </button>
                                   </div>
                                 </div>
+                                )}
                               </div>
                             </div>
                           )}
@@ -1334,6 +1340,8 @@ export default function DiarioEstoicoPage() {
                   {availableMaxims.length > 0 && (() => {
                     const todayMaxim = availableMaxims[availableMaxims.length - 1];
                     const isExpanded = expandedCards.has(todayMaxim.dayNumber);
+                    // VIP users bypass all guest gates
+                    const isGuest = isGuestMode && !user && !isVipUser;
                     return (
                       <AnimatedSection key={todayMaxim.dayNumber} animation="scale-up">
                         <div
@@ -1387,7 +1395,8 @@ export default function DiarioEstoicoPage() {
                                 </p>
                                 {renderComment(todayMaxim, 'text-[14px]')}
 
-                                {/* Action buttons */}
+                                {/* Action buttons - apenas para authenticated */}
+                                {!isGuest && (
                                 <div className="space-y-2">
                                   {/* Mark as read button - only show if not read yet */}
                                   {!readDays.has(todayMaxim.dayNumber) && (
@@ -1464,6 +1473,7 @@ export default function DiarioEstoicoPage() {
                                     </button>
                                   </div>
                                 </div>
+                                )}
                               </div>
                             </div>
                           )}

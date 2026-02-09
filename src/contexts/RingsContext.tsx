@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import * as ringsApi from '@/api/ringsApi';
 import type {
   DailyRitual,
   OnboardingState,
@@ -185,45 +186,68 @@ export function RingsProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize on mount
+  // Initialize on mount (with backend integration)
   useEffect(() => {
-    try {
-      setLoading(true);
+    async function initialize() {
+      try {
+        setLoading(true);
 
-      // Load onboarding state
-      const onboardingState = loadOnboardingState(userId);
-      setShowOnboarding(!onboardingState.hasSeenOnboarding);
+        // Load onboarding state
+        const onboardingState = loadOnboardingState(userId);
+        setShowOnboarding(!onboardingState.hasSeenOnboarding);
 
-      // Load rituals
-      const rituals = loadRituals(userId);
-      setAllRituals(rituals);
+        let rituals: DailyRitual[] = [];
 
-      // Load or create today's ritual
-      const today = getTodayDate();
-      let todayRitual = rituals.find((r) => r.date === today);
-      if (!todayRitual) {
-        todayRitual = {
-          id: generateUUID(),
-          userId: userId || 'anonymous',
-          date: today,
-          answers: [],
-          status: 'in_progress',
-          completedAt: new Date().toISOString(),
-        };
+        // Try to load from backend first (if authenticated)
+        if (user) {
+          try {
+            const response = await ringsApi.getRitualHistory({ limit: 100, includeAnswers: true });
+            rituals = response.rituals || [];
+            console.log('[RingsContext] Loaded rituals from backend:', rituals.length);
+
+            // Cache in localStorage
+            saveRituals(rituals, userId);
+          } catch (error) {
+            console.error('[RingsContext] Failed to load from backend, using localStorage:', error);
+            // Fallback to localStorage
+            rituals = loadRituals(userId);
+          }
+        } else {
+          // Guest: use localStorage only
+          rituals = loadRituals(userId);
+        }
+
+        setAllRituals(rituals);
+
+        // Load or create today's ritual
+        const today = getTodayDate();
+        let todayRitual = rituals.find((r) => r.date === today);
+        if (!todayRitual) {
+          todayRitual = {
+            id: generateUUID(),
+            userId: userId || 'anonymous',
+            date: today,
+            answers: [],
+            status: 'in_progress',
+            completedAt: new Date().toISOString(),
+          };
+        }
+        setCurrentRitual(todayRitual);
+
+        // Calculate progress
+        const newProgress = calculateProgress(rituals, userId);
+        setProgress(newProgress);
+
+        setLoading(false);
+      } catch (err) {
+        console.error('[RingsContext] Initialization error:', err);
+        setError(String(err));
+        setLoading(false);
       }
-      setCurrentRitual(todayRitual);
-
-      // Calculate progress
-      const newProgress = calculateProgress(rituals, userId);
-      setProgress(newProgress);
-
-      setLoading(false);
-    } catch (err) {
-      console.error('[RingsContext] Initialization error:', err);
-      setError(String(err));
-      setLoading(false);
     }
-  }, [userId]);
+
+    initialize();
+  }, [userId, user]);
 
   // Dismiss onboarding
   const dismissOnboarding = useCallback(() => {
@@ -261,14 +285,15 @@ export function RingsProvider({ children }: { children: ReactNode }) {
     setCurrentRitual(ritual);
   }, [userId, currentRitual]);
 
-  // Save a ring answer
+  // Save a ring answer (with backend integration)
   const saveRingAnswer = useCallback(
-    (ringId: RingType, answer: string, metadata: RingResponse) => {
+    async (ringId: RingType, answer: string, metadata: RingResponse) => {
       if (!currentRitual) {
         console.warn('[RingsContext] No current ritual');
         return;
       }
 
+      // Optimistic update (update UI immediately)
       const ritual = { ...currentRitual };
       const existingIndex = ritual.answers.findIndex((a) => a.ringId === ringId);
 
@@ -286,11 +311,23 @@ export function RingsProvider({ children }: { children: ReactNode }) {
       }
 
       setCurrentRitual(ritual);
+
+      // Background API call (only for authenticated users)
+      if (user) {
+        try {
+          await ringsApi.saveRingAnswer(currentRitual.id, { ringId, answer, metadata });
+          console.log('[RingsContext] Answer saved to backend:', ringId);
+        } catch (error) {
+          console.error('[RingsContext] Failed to save answer to backend:', error);
+          // Note: Optimistic update is already applied, so UI stays consistent
+          // Could implement retry queue here if needed
+        }
+      }
     },
-    [currentRitual]
+    [currentRitual, user]
   );
 
-  // Complete ritual
+  // Complete ritual (with backend integration)
   const completeRitual = useCallback(async () => {
     if (!currentRitual) {
       throw new Error('No current ritual');
@@ -308,7 +345,7 @@ export function RingsProvider({ children }: { children: ReactNode }) {
       updatedAt: new Date().toISOString(),
     };
 
-    // Update rituals list
+    // Update rituals list (optimistic)
     const updated = [...allRituals];
     const existingIndex = updated.findIndex((r) => r.date === completed.date);
     if (existingIndex >= 0) {
@@ -321,10 +358,33 @@ export function RingsProvider({ children }: { children: ReactNode }) {
     setCurrentRitual(null);
     saveRituals(updated, userId);
 
-    // Recalculate progress
+    // Recalculate progress (optimistic)
     const newProgress = calculateProgress(updated, userId);
     setProgress(newProgress);
-  }, [currentRitual, allRituals, userId]);
+
+    // Backend call (only for authenticated users)
+    if (user) {
+      try {
+        const response = await ringsApi.completeRitual(completed.id);
+        console.log('[RingsContext] Ritual completed on backend:', response);
+
+        // Update progress with backend streak data
+        if (response.streak) {
+          setProgress((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              currentStreak: response.streak.current,
+              longestStreak: response.streak.longest,
+            };
+          });
+        }
+      } catch (error) {
+        console.error('[RingsContext] Failed to complete ritual on backend:', error);
+        // Optimistic update already applied, ritual is marked complete locally
+      }
+    }
+  }, [currentRitual, allRituals, userId, user]);
 
   // Get ritual for specific date
   const getRitualForDate = useCallback(

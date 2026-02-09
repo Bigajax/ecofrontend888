@@ -46,7 +46,7 @@ const fadeSlideUp = {
 export default function MeditationPlayerPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isGuestMode } = useAuth();
+  const { user, isGuestMode, isVipUser } = useAuth();
   const { trackInteraction } = useGuestExperience();
   const { checkTrigger } = useGuestConversionTriggers();
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -116,8 +116,8 @@ export default function MeditationPlayerPage() {
   // Estado para tela de conclusão
   const [showCompletionScreen, setShowCompletionScreen] = useState(false);
 
-  // NOVO: Guest mode state
-  const isGuest = isGuestMode && !user;
+  // NOVO: Guest mode state (VIP users bypass all gates)
+  const isGuest = isGuestMode && !user && !isVipUser;
   const GUEST_TIME_LIMIT_SECONDS = 120; // 2 minutos
   const [showGuestGate, setShowGuestGate] = useState(false);
   const [isAudioFading, setIsAudioFading] = useState(false);

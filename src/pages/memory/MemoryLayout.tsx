@@ -222,7 +222,7 @@ const formatTechnicalDetails = (details: ApiErrorDetails | null) => {
 };
 
 const MemoryLayout: React.FC = () => {
-  const { userId, loading, user, signOut, isGuestMode } = useAuth();
+  const { userId, loading, user, signOut, isGuestMode, isVipUser } = useAuth();
   const { clearMessages } = useChat();
   const navigate = useNavigate();
   const mountedRef = useRef(true);
@@ -245,13 +245,13 @@ const MemoryLayout: React.FC = () => {
     };
   }, []);
 
-  // Redirect guests to memory teaser page
+  // Redirect guests to memory teaser page (VIP users bypass)
   useEffect(() => {
-    const isGuest = isGuestMode && !user;
+    const isGuest = isGuestMode && !user && !isVipUser;
     if (!loading && isGuest) {
       navigate('/memory-preview', { replace: true });
     }
-  }, [loading, isGuestMode, user, navigate]);
+  }, [loading, isGuestMode, user, isVipUser, navigate]);
 
   const safeSetState = useCallback(
     (updater: (prev: MemoryState) => MemoryState) => {
