@@ -251,6 +251,17 @@ const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Da próxima vez que alguém ficar transtornado perto de você — chorando, gritando, quebrando alguma coisa, sendo mordaz ou cruel —, observe como esta declaração os fará parar imediatamente: "Espero que isso esteja fazendo com que se sinta melhor." Porque, é claro, não está. Somente no calor da extrema emoção podemos justificar um comportamento desse tipo — e quando precisamos explicá-lo, geralmente nos sentimos envergonhados.\n\nVale a pena aplicar esse padrão a você mesmo. Na próxima vez que se encontrar em meio a uma crise de nervos, ou resmungando e reclamando porque suspeita estar pegando um resfriado, ou chorando lágrimas de arrependimento, apenas pergunte: Isto realmente está fazendo com que eu me sinta melhor? Está aliviando algum dos sintomas que eu desejaria que desaparecessem?',
     background: DECEMBER_BACKGROUNDS[0],
   },
+  {
+    date: '9 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 9,
+    title: 'VOCÊ NÃO TEM DE TER UMA OPINIÃO',
+    text: 'Temos o poder de não ter opinião nenhuma sobre algo e não deixar que nossa alma seja perturbada — pois as coisas não têm o poder natural de moldar nossos julgamentos.',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 6.52',
+    comment: 'Eis um exercício divertido: pense em todas as coisas perturbadoras das quais você não tem conhecimento — coisas que as pessoas podem ter dito sobre você pelas costas, erros que talvez tenham passado batidos, coisas que você deixou cair ou perdeu sem nem sequer perceber. Qual é a sua reação? Nenhuma, porque você não tem conhecimento disso.\n\nEm outras palavras, é possível não ter uma opinião sobre uma coisa negativa. Você precisa apenas cultivar esse poder em vez de exercê-lo acidentalmente. Em especial quando ter uma opinião tende a nos deixar contrariados. Pratique a habilidade de não pensar absolutamente nada sobre determinada situação — aja como se não tivesse nenhuma ideia de que ela jamais ocorrera. Ou como se nunca tivesse ouvido falar nela antes. Deixe-a tornar-se irrelevante ou inexistente para você, e, assim, ela se tornará muito menos poderosa.',
+    background: DECEMBER_BACKGROUNDS[1],
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
