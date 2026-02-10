@@ -19,14 +19,31 @@ export interface DailyMaxim {
 }
 
 // Imagens rotativas para as reflexões de dezembro
-const DECEMBER_BACKGROUNDS = [
+export const DECEMBER_BACKGROUNDS = [
   'url("/images/meditacao-19-nov.webp")',
   'url("/images/meditacao-20-nov.webp")',
   'url("/images/meditacao-21-nov.webp")',
 ];
 
+// Array de backgrounds - Sistema de rotação inteligente
+export const BACKGROUNDS = [
+  'url("/images/meditacao-19-nov.webp")',
+  'url("/images/meditacao-20-nov.webp")',
+  'url("/images/meditacao-21-nov.webp")',
+  'url("/images/diario-01.png")',
+  'url("/images/diario-02.png")',
+  'url("/images/diario-03.png")',
+  'url("/images/diario-04.png")',
+];
+
+// Função para atribuir background baseado no número do dia (rotação inteligente)
+export const getBackgroundForDay = (dayNumber: number): string => {
+  const index = (dayNumber - 1) % BACKGROUNDS.length;
+  return BACKGROUNDS[index];
+};
+
 // Reflexões de janeiro (19 a 31)
-const JANUARY_REFLECTIONS: DailyMaxim[] = [
+export const JANUARY_REFLECTIONS: DailyMaxim[] = [
   {
     date: '19 de janeiro',
     month: 'janeiro',
@@ -173,7 +190,7 @@ const JANUARY_REFLECTIONS: DailyMaxim[] = [
 ];
 
 // Reflexões de fevereiro (1 a 28)
-const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
+export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
   {
     date: '2 de fevereiro',
     month: 'fevereiro',
@@ -276,7 +293,7 @@ const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
 ];
 
 // Reflexões de dezembro (8 a 27)
-const DECEMBER_REFLECTIONS: DailyMaxim[] = [
+export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
   {
     date: '8 de dezembro',
     month: 'dezembro',
@@ -459,7 +476,7 @@ const DECEMBER_REFLECTIONS: DailyMaxim[] = [
   },
 ];
 
-const ALL_DAILY_MAXIMS: DailyMaxim[] = [
+export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
   ...JANUARY_REFLECTIONS,
   ...FEBRUARY_REFLECTIONS,
   ...DECEMBER_REFLECTIONS,
