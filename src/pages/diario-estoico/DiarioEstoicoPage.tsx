@@ -291,6 +291,17 @@ const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Eis um exercício divertido: pense em todas as coisas perturbadoras das quais você não tem conhecimento — coisas que as pessoas podem ter dito sobre você pelas costas, erros que talvez tenham passado batidos, coisas que você deixou cair ou perdeu sem nem sequer perceber. Qual é a sua reação? Nenhuma, porque você não tem conhecimento disso.\n\nEm outras palavras, é possível não ter uma opinião sobre uma coisa negativa. Você precisa apenas cultivar esse poder em vez de exercê-lo acidentalmente. Em especial quando ter uma opinião tende a nos deixar contrariados. Pratique a habilidade de não pensar absolutamente nada sobre determinada situação — aja como se não tivesse nenhuma ideia de que ela jamais ocorrera. Ou como se nunca tivesse ouvido falar nela antes. Deixe-a tornar-se irrelevante ou inexistente para você, e, assim, ela se tornará muito menos poderosa.',
     background: getBackgroundForDay(9),
   },
+  {
+    date: '10 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 10,
+    title: 'A RAIVA É UM COMBUSTÍVEL RUIM',
+    text: 'Não há nada mais espantoso que a raiva, nada mais curvado sobre a própria força. Se bem-sucedida, nada mais arrogante; se frustrada, nada mais insano — como ela não é forçada a recuar pelo cansaço mesmo na derrota, quando a sorte elimina seu adversário ela crava os dentes em si mesma.',
+    author: 'Sêneca',
+    source: 'Sobre a Raiva, 3.1.5',
+    comment: 'Como os estoicos disseram muitas vezes, ficar com raiva quase nunca resolve as coisas. Em geral, as torna piores. Ficamos perturbados, então a outra pessoa também fica — e todos se veem perturbados, enquanto o problema continua longe de ser resolvido.\n\nMuitas pessoas bem-sucedidas vão lhe dizer que a raiva é um combustível poderoso na vida. O desejo de "provar que todos estão errados" ou "esfregar isso na cara deles" fez muitos milionários. A raiva de ser chamado de gordo ou de burro criou excelentes corpos e mentes brilhantes. A raiva de ser rejeitado motivou muitos a trilhar o próprio caminho.\n\nMas essa é uma visão turva. Essas histórias deixam de lado a poluição produzida como efeito colateral e o desgaste que ela provocou no motor. Ignora o que acontece quando aquela raiva inicial se esgota, passando a precisar ser gerada cada vez mais para manter a máquina em movimento (até que, finalmente, a única fonte que resta é o ódio de si mesmo). "O ódio é um fardo pesado demais para suportar", Martin Luther King Jr. advertiu seus companheiros líderes dos direitos civis em 1967, ainda que eles tivessem todos os motivos para responder ao ódio com ódio.\n\nO mesmo se aplica à raiva — na verdade, aplica-se à maior parte das emoções extremas. Elas são um combustível tóxico. Há uma grande abundância dela por aí no mundo, não resta dúvida, mas os custos que a acompanham nunca valem a pena.',
+    background: getBackgroundForDay(10),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
