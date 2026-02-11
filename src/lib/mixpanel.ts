@@ -1,7 +1,7 @@
 import mixpanel from 'mixpanel-browser';
 
 mixpanel.init(import.meta.env.VITE_MIXPANEL_TOKEN || '', {
-  debug: true, // opcional para ver no console
+  debug: false, // Desabilitado para evitar travamento
   api_host: 'https://api-eu.mixpanel.com',
 
   // Otimizações para evitar mutex timeout e flood de eventos

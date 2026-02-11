@@ -152,8 +152,8 @@ export default function DiarioEstoicoPage() {
                   navigate('/login?returnTo=/app/diario-estoico');
                 }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3
-                           text-sm font-semibold text-white
-                           bg-[#6EC8FF] hover:bg-[#36B3FF]
+                           text-sm font-bold text-white
+                           bg-[#0EA5E9] hover:bg-[#0284C7]
                            rounded-xl hover:scale-105 active:scale-95
                            shadow-lg hover:shadow-xl
                            transition-all duration-200"
@@ -365,58 +365,60 @@ export default function DiarioEstoicoPage() {
     navigate('/');
   };
 
-  const toggleExpanded = (dayNumber: number) => {
+  const toggleExpanded = useCallback((dayNumber: number) => {
     const maxim = availableMaxims.find((m) => m.dayNumber === dayNumber);
     if (!maxim) return;
 
     const isExpanding = !expandedCards.has(dayNumber);
 
     if (isExpanding) {
-      // Expandindo
+      // Expandindo - atualizar estado imediatamente
       setExpandedCards((prev) => new Set(prev).add(dayNumber));
-
-      // Track expansion
-      const timeToExpand = pageViewTime
-        ? Math.floor((new Date().getTime() - pageViewTime.getTime()) / 1000)
-        : 0;
-
-      trackDiarioCardExpanded({
-        reflection_date: maxim.date,
-        day_number: maxim.dayNumber,
-        month: maxim.month,
-        author: maxim.author,
-        source: maxim.source,
-        has_comment: !!maxim.comment,
-        card_position: getCardPosition(maxim.dayNumber, availableMaxims[0].dayNumber),
-        time_to_expand_seconds: timeToExpand,
-        is_guest: !user,
-        user_id: user?.id,
-      });
-
-      // Salvar tempo de expansão
       setCardExpandTimes((prev) => new Map(prev).set(dayNumber, new Date()));
+
+      // Track expansion (não bloqueante)
+      setTimeout(() => {
+        const timeToExpand = pageViewTime
+          ? Math.floor((new Date().getTime() - pageViewTime.getTime()) / 1000)
+          : 0;
+
+        trackDiarioCardExpanded({
+          reflection_date: maxim.date,
+          day_number: maxim.dayNumber,
+          month: maxim.month,
+          author: maxim.author,
+          source: maxim.source,
+          has_comment: !!maxim.comment,
+          card_position: getCardPosition(maxim.dayNumber, availableMaxims[0].dayNumber),
+          time_to_expand_seconds: timeToExpand,
+          is_guest: !user,
+          user_id: user?.id,
+        });
+      }, 0);
     } else {
-      // Colapsando
+      // Colapsando - atualizar estado imediatamente
       setExpandedCards((prev) => {
         const newSet = new Set(prev);
         newSet.delete(dayNumber);
         return newSet;
       });
 
-      // Track collapse
+      // Track collapse (não bloqueante)
       const expandTime = cardExpandTimes.get(dayNumber);
-      const timeExpanded = expandTime
-        ? Math.floor((new Date().getTime() - expandTime.getTime()) / 1000)
-        : 0;
+      setTimeout(() => {
+        const timeExpanded = expandTime
+          ? Math.floor((new Date().getTime() - expandTime.getTime()) / 1000)
+          : 0;
 
-      trackDiarioCardCollapsed({
-        reflection_date: maxim.date,
-        author: maxim.author,
-        time_expanded_seconds: timeExpanded,
-        read_full_comment: timeExpanded > 10, // estimativa: 10s+ = leu
-        is_guest: !user,
-        user_id: user?.id,
-      });
+        trackDiarioCardCollapsed({
+          reflection_date: maxim.date,
+          author: maxim.author,
+          time_expanded_seconds: timeExpanded,
+          read_full_comment: timeExpanded > 10, // estimativa: 10s+ = leu
+          is_guest: !user,
+          user_id: user?.id,
+        });
+      }, 0);
 
       // Remover tempo de expansão
       setCardExpandTimes((prev) => {
@@ -425,7 +427,7 @@ export default function DiarioEstoicoPage() {
         return newMap;
       });
     }
-  };
+  }, [availableMaxims, expandedCards, cardExpandTimes, pageViewTime, user]);
 
   // Track card view quando entra no viewport
   const handleCardView = useCallback((dayNumber: number) => {
