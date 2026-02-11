@@ -290,6 +290,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Como os estoicos disseram muitas vezes, ficar com raiva quase nunca resolve as coisas. Em geral, as torna piores. Ficamos perturbados, então a outra pessoa também fica — e todos se veem perturbados, enquanto o problema continua longe de ser resolvido.\n\nMuitas pessoas bem-sucedidas vão lhe dizer que a raiva é um combustível poderoso na vida. O desejo de "provar que todos estão errados" ou "esfregar isso na cara deles" fez muitos milionários. A raiva de ser chamado de gordo ou de burro criou excelentes corpos e mentes brilhantes. A raiva de ser rejeitado motivou muitos a trilhar o próprio caminho.\n\nMas essa é uma visão turva. Essas histórias deixam de lado a poluição produzida como efeito colateral e o desgaste que ela provocou no motor. Ignora o que acontece quando aquela raiva inicial se esgota, passando a precisar ser gerada cada vez mais para manter a máquina em movimento (até que, finalmente, a única fonte que resta é o ódio de si mesmo). "O ódio é um fardo pesado demais para suportar", Martin Luther King Jr. advertiu seus companheiros líderes dos direitos civis em 1967, ainda que eles tivessem todos os motivos para responder ao ódio com ódio.\n\nO mesmo se aplica à raiva — na verdade, aplica-se à maior parte das emoções extremas. Elas são um combustível tóxico. Há uma grande abundância dela por aí no mundo, não resta dúvida, mas os custos que a acompanham nunca valem a pena.',
     background: DECEMBER_BACKGROUNDS[2],
   },
+  {
+    date: '11 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 11,
+    title: 'HERÓI OU NERO?',
+    text: 'Nossa alma às vezes é um rei, outras vezes, um tirano. Um rei, cuidando do que é honroso, protege a boa saúde do corpo e não lhe dá nenhuma ordem vulgar ou sórdida. Mas uma alma descontrolada, alimentada pelo desejo, mimada, é transformada de um rei naquilo que é mais temido e detestado — um tirano.',
+    author: 'Sêneca',
+    source: 'Cartas Morais, 114.24',
+    comment: 'Há aquela máxima de que o poder corrompe. À primeira vista, é verdade. Nero, o pupilo de Sêneca, com sua sequência de crimes e assassinatos, é um exemplo perfeito. Outro imperador, Domiciano, baniu arbitrariamente todos os filósofos de Roma (Epicteto foi obrigado a fugir por causa disso). Muitos dos imperadores de Roma foram tiranos. Contudo, não muitos anos depois, Epicteto se tornaria amigo íntimo de outro imperador, Adriano, que ajudaria Marco Aurélio a ascender ao trono, um dos mais verdadeiros exemplos de um sábio rei-filósofo.\n\nPortanto não é tão claro que o poder sempre corrompa. De fato, parece que a questão se resume, sob muitos aspectos, à força interior e à autoconsciência de indivíduos — o que eles valem, que desejos controlam, se sua compreensão de equidade e justiça se contrapõe às tentações de riqueza e deferência ilimitadas.\n\nO mesmo se aplica a você. Tanto pessoal quanto profissionalmente. Tirano ou rei? Herói ou Nero? Qual você será?',
+    background: DECEMBER_BACKGROUNDS[0],
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
