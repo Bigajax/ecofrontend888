@@ -10,6 +10,7 @@ import type { SubscriptionState } from '../types/subscription';
 import { getSubscriptionStatus } from '../api/subscription';
 import * as ringsApi from '../api/ringsApi';
 import { isVipUser as checkIsVipUser } from '../constants/vipUsers';
+import { apiFetch } from '../api/apiFetch';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
@@ -246,7 +247,22 @@ export async function migrateGuestData(newUserId: string): Promise<PreservedData
       }
     }
 
-    // 5. Track sucesso migração
+    // 5. Chamar backend para migrar referencias_temporarias
+    try {
+      console.info('[Auth] Calling /api/guest/claim to migrate backend data', { guestId, newUserId });
+
+      await apiFetch('/api/guest/claim', {
+        method: 'POST',
+        json: { guestId },
+      });
+
+      console.info('[Auth] Backend data migration successful');
+    } catch (claimError) {
+      console.error('[Auth] Failed to claim guest data on backend:', claimError);
+      // Continue anyway - localStorage data is already migrated
+    }
+
+    // 6. Track sucesso migração
     mixpanel.track('Guest Data Migrated', {
       guestId,
       newUserId,
