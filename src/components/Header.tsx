@@ -55,6 +55,7 @@ const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [isCompactActions, setIsCompactActions] = useState(false);
 
   const routeTitleMap: Array<[RegExp, string]> = [
     [/^\/memory\/?$/, 'Memórias'],
@@ -70,6 +71,15 @@ const Header: React.FC<HeaderProps> = ({
 
   const shouldShowBack = showBackButton || !isChat;
   const scrolled = useScrolled(8);
+  const hasPrimaryTextAction = isGuest || Boolean(onLogout);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 359px)');
+    const sync = () => setIsCompactActions(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -114,7 +124,7 @@ const Header: React.FC<HeaderProps> = ({
         ].join(' ')}
       >
         {/* Grid de 3 colunas - centralização perfeita */}
-        <div className="grid grid-cols-[1fr,auto,1fr] items-center h-[64px] gap-3 px-3 sm:px-5">
+        <div className="grid grid-cols-[auto,1fr,auto] items-center h-[64px] gap-3 px-3 sm:px-5">
           {/* ESQUERDA */}
           <div className="flex items-center">
             <button
@@ -127,12 +137,12 @@ const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* CENTRO */}
-          <div className="justify-self-center select-none">
+          <div className="justify-self-center min-w-0 select-none">
             <Link
               to="/app"
-              className="flex items-center gap-2 text-[color:var(--color-text-primary)] transition hover:opacity-95"
+              className="flex min-w-0 items-center gap-2 text-[color:var(--color-text-primary)] transition hover:opacity-95"
             >
-              <span className={`${labelCls} text-[16px] md:text-[17px] hidden sm:inline`}>{autoTitle}</span>
+              <span className={`${labelCls} hidden truncate text-[16px] md:text-[17px] sm:inline`}>{autoTitle}</span>
             </Link>
           </div>
 
@@ -154,18 +164,23 @@ const Header: React.FC<HeaderProps> = ({
             )}
 
             {/* Feedback button */}
-            <button
-              onClick={() => setFeedbackModalOpen(true)}
-              className="inline-flex items-center gap-1.5 justify-center rounded-full bg-eco-baby px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-eco-baby/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
-            >
-              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
-              <span className="hidden sm:inline">Feedback</span>
-            </button>
+            {!isCompactActions && (
+              <button
+                onClick={() => setFeedbackModalOpen(true)}
+                className="inline-flex items-center gap-1.5 justify-center rounded-full bg-eco-baby px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-eco-baby/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
+                aria-label="Abrir feedback"
+                title="Abrir feedback"
+              >
+                <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
+                {!hasPrimaryTextAction && <span className="hidden sm:inline">Feedback</span>}
+              </button>
+            )}
 
             {isGuest && (
               <button
                 onClick={() => navigate('/register')}
                 className="inline-flex items-center justify-center rounded-full bg-[#A7846C] px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
+                aria-label="Fazer login"
               >
                 Fazer login
               </button>
@@ -175,6 +190,7 @@ const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={onLogout}
                 className="inline-flex items-center justify-center rounded-full bg-[#A7846C] px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
+                aria-label="Sair da conta"
               >
                 Sair
               </button>
@@ -287,6 +303,23 @@ const Header: React.FC<HeaderProps> = ({
                   <ArrowLeft className={iconCls} strokeWidth={1.5} style={{ color: 'rgba(56, 50, 42, 0.6)' }} />
                   <span className={labelCls}>Voltar</span>
                 </button>
+              )}
+
+              {isCompactActions && (
+                <>
+                  <button
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      setFeedbackModalOpen(true);
+                    }}
+                    className={navItem(false)}
+                    aria-label="Abrir feedback"
+                  >
+                    <MessageSquare className={iconCls} strokeWidth={1.5} style={{ color: 'rgba(56, 50, 42, 0.6)' }} />
+                    <span className={labelCls}>Feedback</span>
+                  </button>
+
+                </>
               )}
             </nav>
 
