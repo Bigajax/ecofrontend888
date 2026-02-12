@@ -55,6 +55,7 @@ const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [isCompactActions, setIsCompactActions] = useState(false);
 
   const routeTitleMap: Array<[RegExp, string]> = [
     [/^\/memory\/?$/, 'Memórias'],
@@ -70,6 +71,15 @@ const Header: React.FC<HeaderProps> = ({
 
   const shouldShowBack = showBackButton || !isChat;
   const scrolled = useScrolled(8);
+  const hasPrimaryTextAction = isGuest || Boolean(onLogout);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 359px)');
+    const sync = () => setIsCompactActions(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -127,10 +137,10 @@ const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* CENTRO */}
-          <div className="justify-self-center select-none">
+          <div className="justify-self-center min-w-0 select-none">
             <Link
               to="/app"
-              className="flex items-center gap-2 text-[color:var(--color-text-primary)] transition hover:opacity-95"
+              className="flex min-w-0 items-center gap-2 text-[color:var(--color-text-primary)] transition hover:opacity-95"
             >
               <span className={`${labelCls} text-fluid-lg hidden sm:inline`}>{autoTitle}</span>
             </Link>
@@ -287,6 +297,23 @@ const Header: React.FC<HeaderProps> = ({
                   <ArrowLeft className={iconCls} strokeWidth={1.5} style={{ color: 'rgba(56, 50, 42, 0.6)' }} />
                   <span className={labelCls}>Voltar</span>
                 </button>
+              )}
+
+              {isCompactActions && (
+                <>
+                  <button
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      setFeedbackModalOpen(true);
+                    }}
+                    className={navItem(false)}
+                    aria-label="Abrir feedback"
+                  >
+                    <MessageSquare className={iconCls} strokeWidth={1.5} style={{ color: 'rgba(56, 50, 42, 0.6)' }} />
+                    <span className={labelCls}>Feedback</span>
+                  </button>
+
+                </>
               )}
             </nav>
 

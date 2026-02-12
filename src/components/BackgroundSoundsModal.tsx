@@ -54,7 +54,7 @@ export default function BackgroundSoundsModal({
   const handleSoundClick = (sound: Sound) => {
     onSelectSound(sound);
   };
-
+  
   if (!isOpen) return null;
 
   return (
