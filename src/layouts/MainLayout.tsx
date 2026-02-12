@@ -86,7 +86,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             bg-transparent text-[color:var(--color-text-primary)]
           `}
         >
-          <div className={`${showOldHeader ? 'mx-auto w-full max-w-[1140px] px-4 sm:px-6 md:px-8' : 'w-full'}`}>
+          <div className={`${showOldHeader ? 'container-content' : 'w-full'}`}>
             {children}
           </div>
         </main>

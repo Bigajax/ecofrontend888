@@ -18,16 +18,16 @@ interface HeaderProps {
 }
 
 const VERSION = '222';
-const iconCls = 'h-[22px] w-[22px]';
+const iconCls = 'h-5 w-5 md:h-[22px] md:w-[22px]';
 const labelCls =
-  'text-[15px] leading-[1.35] font-medium tracking-[-0.01em] text-inherit antialiased';
+  'text-fluid-base leading-[1.35] font-medium tracking-[-0.01em] text-inherit antialiased';
 
 const iconButtonClass =
-  'glass-chip h-11 w-11 flex items-center justify-center transition-transform duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]';
+  'glass-chip h-11 w-11 md:h-12 md:w-12 flex items-center justify-center transition-transform duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]';
 
 const navItem = (active: boolean) =>
   [
-    'group flex items-center gap-3 px-4 py-3 h-12 min-h-[48px] rounded-lg',
+    'group flex items-center gap-fluid-sm px-fluid-sm py-fluid-sm min-h-12 rounded-lg',
     'transition duration-200 ease-out relative',
     active
       ? 'bg-[#EDE4DC] text-[#38322A] border-l-4 border-[#A7846C] pl-[14px]'
@@ -115,16 +115,16 @@ const Header: React.FC<HeaderProps> = ({
 
   /* ================= AppBar ================= */
   const TopBar = (
-    <div className="sticky top-0 z-50 flex w-full justify-center px-3 pb-3 pt-[env(safe-area-inset-top,0px)] sm:px-6">
+    <div className="sticky top-0 z-50 flex w-full justify-center px-fluid-sm pb-fluid-sm pt-[env(safe-area-inset-top,0px)]">
       <div
         className={[
-          'glass-toolbar pointer-events-auto w-full max-w-6xl border border-white/60',
+          'glass-toolbar pointer-events-auto container-content-wide border border-white/60',
           'transition-all duration-300 ease-out',
           scrolled ? 'translate-y-[1px] bg-white/75' : 'bg-white/65',
         ].join(' ')}
       >
         {/* Grid de 3 colunas - centralização perfeita */}
-        <div className="grid grid-cols-[auto,1fr,auto] items-center h-[64px] gap-3 px-3 sm:px-5">
+        <div className="grid grid-cols-[1fr,auto,1fr] items-center min-h-16 gap-fluid-sm px-fluid-sm md:px-fluid-md">
           {/* ESQUERDA */}
           <div className="flex items-center">
             <button
@@ -142,7 +142,7 @@ const Header: React.FC<HeaderProps> = ({
               to="/app"
               className="flex min-w-0 items-center gap-2 text-[color:var(--color-text-primary)] transition hover:opacity-95"
             >
-              <span className={`${labelCls} hidden truncate text-[16px] md:text-[17px] sm:inline`}>{autoTitle}</span>
+              <span className={`${labelCls} text-fluid-lg hidden sm:inline`}>{autoTitle}</span>
             </Link>
           </div>
 
@@ -164,23 +164,18 @@ const Header: React.FC<HeaderProps> = ({
             )}
 
             {/* Feedback button */}
-            {!isCompactActions && (
-              <button
-                onClick={() => setFeedbackModalOpen(true)}
-                className="inline-flex items-center gap-1.5 justify-center rounded-full bg-eco-baby px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-eco-baby/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
-                aria-label="Abrir feedback"
-                title="Abrir feedback"
-              >
-                <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
-                {!hasPrimaryTextAction && <span className="hidden sm:inline">Feedback</span>}
-              </button>
-            )}
+            <button
+              onClick={() => setFeedbackModalOpen(true)}
+              className="inline-flex items-center gap-fluid-2xs justify-center rounded-full bg-eco-baby px-fluid-sm py-fluid-2xs text-fluid-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-eco-baby/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,122,255,0.25)]"
+            >
+              <MessageSquare className="h-3.5 w-3.5 md:h-4 md:w-4" strokeWidth={2} />
+              <span className="hidden sm:inline">Feedback</span>
+            </button>
 
             {isGuest && (
               <button
                 onClick={() => navigate('/register')}
-                className="inline-flex items-center justify-center rounded-full bg-[#A7846C] px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
-                aria-label="Fazer login"
+                className="inline-flex items-center justify-center rounded-full bg-[#A7846C] px-fluid-sm py-fluid-2xs text-fluid-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
               >
                 Fazer login
               </button>
@@ -189,8 +184,7 @@ const Header: React.FC<HeaderProps> = ({
             {!isGuest && onLogout && (
               <button
                 onClick={onLogout}
-                className="inline-flex items-center justify-center rounded-full bg-[#A7846C] px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
-                aria-label="Sair da conta"
+                className="inline-flex items-center justify-center rounded-full bg-[#A7846C] px-fluid-sm py-fluid-2xs text-fluid-sm font-semibold text-white whitespace-nowrap transition-all duration-200 hover:bg-[#A7846C]/90 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7846C]/40"
               >
                 Sair
               </button>
@@ -222,7 +216,7 @@ const Header: React.FC<HeaderProps> = ({
             exit={{ x: '-100%', opacity: 0.85, filter: 'blur(14px)' }}
             transition={{ type: 'spring', stiffness: 380, damping: 38 }}
             className="
-              fixed top-0 left-0 z-[80] h-dvh w-screen sm:w-[420px]
+              fixed top-0 left-0 z-[80] h-dvh w-screen md:w-[min(26rem,92vw)]
               flex flex-col overflow-y-auto border-r border-[#E8E3DD]/60 bg-[#FAF9F7] text-[#38322A]
               font-['SF Pro Display','SF Pro Text','-apple-system','BlinkMacSystemFont','Segoe UI',sans-serif]
               pt-[env(safe-area-inset-top)] sm:rounded-r-[28px]

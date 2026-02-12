@@ -128,7 +128,7 @@ const MessageList: React.FC<MessageListProps> = ({
   }
 
   return (
-    <div className="w-full space-y-2 md:space-y-3">
+    <div className="w-full space-y-fluid-sm md:space-y-fluid-md">
       {uniqueMessages.map((message, index) => {
         const messageKey = buildMessageKey(message, index);
         return (
@@ -163,9 +163,9 @@ const MessageList: React.FC<MessageListProps> = ({
       {feedbackPrompt}
 
       {showGlobalTyping && (
-        <div className="flex items-center gap-2 mt-1" role="status" aria-live="polite">
+        <div className="mt-fluid-2xs flex items-center gap-fluid-xs" role="status" aria-live="polite">
           <TypingDots variant="bubble" size="md" tone="auto" />
-          <span className="text-gray-500 italic">Eco refletindo...</span>
+          <span className="text-fluid-sm italic text-gray-500">Eco refletindo...</span>
         </div>
       )}
 

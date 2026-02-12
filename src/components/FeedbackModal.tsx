@@ -82,18 +82,18 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[101] flex items-center justify-center p-fluid-sm md:p-fluid-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl"
+              className="relative w-full max-w-content-compact rounded-2xl bg-white shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-                <h2 className="text-lg font-semibold text-gray-900">Feedback</h2>
+              <div className="flex items-center justify-between border-b border-gray-200 px-fluid-lg py-fluid-md">
+                <h2 className="text-fluid-lg font-semibold text-gray-900">Feedback</h2>
                 <button
                   onClick={handleClose}
                   disabled={isSubmitting}
@@ -109,7 +109,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mx-6 mt-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3"
+                  className="mx-fluid-lg mt-fluid-sm rounded-lg border border-green-200 bg-green-50 px-fluid-sm py-fluid-sm"
                 >
                   <p className="text-sm font-medium text-green-800">
                     ✓ Feedback enviado com sucesso!
@@ -118,13 +118,13 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
               )}
 
               {/* Form */}
-              <form onSubmit={handleSubmit} className="p-6">
+              <form onSubmit={handleSubmit} className="p-fluid-lg">
                 {/* Category Selector */}
-                <div className="mb-4">
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                <div className="mb-fluid-sm">
+                  <label className="mb-fluid-2xs block text-fluid-sm font-medium text-gray-700">
                     Tipo de feedback
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-fluid-xs">
                     {[
                       { value: 'bug', label: '🐛 Bug' },
                       { value: 'feature', label: '✨ Sugestão' },
@@ -136,7 +136,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
                         type="button"
                         onClick={() => setCategory(cat.value as FeedbackFormData['category'])}
                         className={`
-                          rounded-lg border px-3 py-2 text-sm font-medium transition-all
+                          rounded-lg border px-fluid-sm py-fluid-xs text-fluid-sm font-medium transition-all
                           ${
                             category === cat.value
                               ? 'border-eco-baby bg-eco-baby/10 text-eco-baby'
@@ -151,8 +151,8 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Message Input */}
-                <div className="mb-4">
-                  <label htmlFor="feedback-message" className="mb-2 block text-sm font-medium text-gray-700">
+                <div className="mb-fluid-sm">
+                  <label htmlFor="feedback-message" className="mb-fluid-2xs block text-fluid-sm font-medium text-gray-700">
                     Sua mensagem
                   </label>
                   <textarea
@@ -163,8 +163,8 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
                     placeholder="Descreva sua sugestão, bug ou comentário..."
                     rows={4}
                     className="
-                      w-full rounded-lg border border-gray-300 bg-white px-4 py-3
-                      text-sm text-gray-900 placeholder-gray-400
+                      w-full rounded-lg border border-gray-300 bg-white px-fluid-sm py-fluid-sm
+                      text-fluid-sm text-gray-900 placeholder-gray-400
                       transition-colors
                       focus:border-eco-baby focus:outline-none focus:ring-2 focus:ring-eco-baby/20
                       disabled:bg-gray-50 disabled:text-gray-500
@@ -177,19 +177,19 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3"
+                    className="mb-fluid-sm rounded-lg border border-red-200 bg-red-50 px-fluid-sm py-fluid-sm"
                   >
                     <p className="text-sm text-red-800">{error}</p>
                   </motion.div>
                 )}
 
                 {/* Footer */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-fluid-sm">
                   {/* Attachment button (placeholder) */}
                   <button
                     type="button"
                     disabled
-                    className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-400 opacity-50 cursor-not-allowed"
+                    className="inline-flex cursor-not-allowed items-center gap-fluid-2xs rounded-lg px-fluid-sm py-fluid-xs text-fluid-sm text-gray-400 opacity-50"
                     title="Em breve"
                   >
                     <ImageIcon size={16} />
@@ -200,8 +200,8 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
                     type="submit"
                     disabled={isSubmitting || submitSuccess || !message.trim()}
                     className="
-                      inline-flex items-center gap-2 rounded-lg bg-eco-baby px-5 py-2.5
-                      text-sm font-semibold text-white
+                      inline-flex items-center gap-fluid-2xs rounded-lg bg-eco-baby px-fluid-md py-fluid-xs
+                      text-fluid-sm font-semibold text-white
                       transition-all
                       hover:bg-eco-baby/90
                       disabled:cursor-not-allowed disabled:opacity-50
