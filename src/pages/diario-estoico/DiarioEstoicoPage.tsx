@@ -105,71 +105,12 @@ export default function DiarioEstoicoPage() {
   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   /**
-   * Helper para renderizar comentário (com teaser para guests)
+   * Helper para renderizar comentário (completo para todos os usuários)
    */
   const renderComment = (maxim: DailyMaxim, textSizeClass: string = 'text-[13px]') => {
     if (!maxim.comment) return null;
 
-    // VIP users bypass all guest gates
-    const isGuest = isGuestMode && !user && !isVipUser;
-
-    // Guest mode: mostrar apenas 45% do comentário
-    if (isGuest) {
-      const fullComment = maxim.comment;
-      const lines = fullComment.split('\n');
-      const visibleLines = Math.ceil(lines.length * 0.45);
-      const visibleComment = lines.slice(0, visibleLines).join('\n');
-
-      return (
-        <>
-          <hr className="border-eco-line" />
-          <div className="relative pb-0">
-            <h4 className="font-primary text-[12px] font-bold text-eco-text mb-2">
-              Comentário
-            </h4>
-            <p className={`font-primary ${textSizeClass} leading-relaxed text-eco-text whitespace-pre-line`}>
-              {visibleComment}
-            </p>
-
-            {/* Fade gradient */}
-            <div
-              className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
-              style={{
-                background:
-                  'linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 40%, rgba(255, 255, 255, 0) 100%)',
-              }}
-            />
-
-            {/* CTA Button */}
-            <div className="mt-6 -mb-4 md:-mb-8 lg:-mb-10">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  mixpanel.track('Guest Reflection Teaser CTA Clicked', {
-                    reflection_id: `${maxim.month}-${maxim.dayNumber}`,
-                  });
-                  checkTrigger(ConversionSignals.reflectionViewed(`${maxim.month}-${maxim.dayNumber}`));
-                  navigate('/login?returnTo=/app/diario-estoico');
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3
-                           text-sm font-bold text-white
-                           bg-[#0EA5E9] hover:bg-[#0284C7]
-                           rounded-xl hover:scale-105 active:scale-95
-                           shadow-lg hover:shadow-xl
-                           transition-all duration-200"
-              >
-                <span>Continue esta reflexão →</span>
-              </button>
-              <p className="text-center text-[10px] text-eco-muted mt-2 mb-0">
-                Crie sua conta em 30 segundos — sempre gratuito
-              </p>
-            </div>
-          </div>
-        </>
-      );
-    }
-
-    // Authenticated: mostrar comentário completo
+    // Mostrar comentário completo para todos (guests e authenticated)
     return (
       <>
         <hr className="border-eco-line" />

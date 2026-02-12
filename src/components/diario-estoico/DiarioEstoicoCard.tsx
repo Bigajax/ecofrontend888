@@ -7,7 +7,6 @@
 
 import React from 'react';
 import type { DailyMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
-import ReflectionTeaserWrapper from './ReflectionTeaserWrapper';
 
 interface DiarioEstoicoCardProps {
   maxim: DailyMaxim;
@@ -15,8 +14,6 @@ interface DiarioEstoicoCardProps {
   expandable?: boolean;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
-  isGuestMode?: boolean; // NOVO: Indica se está em guest mode
-  visiblePercentage?: number; // NOVO: Porcentagem visível em guest mode
 }
 
 export default function DiarioEstoicoCard({
@@ -25,8 +22,6 @@ export default function DiarioEstoicoCard({
   expandable = false,
   isExpanded = false,
   onToggleExpand,
-  isGuestMode = false,
-  visiblePercentage = 45,
 }: DiarioEstoicoCardProps) {
   // Size-specific classes
   const sizeClasses = {
@@ -54,9 +49,9 @@ export default function DiarioEstoicoCard({
         relative rounded-2xl lg:rounded-3xl overflow-hidden
         shadow-lg hover:shadow-xl transition-all duration-300
         ${sizeClasses[size]}
-        ${expandable && !isGuestMode ? 'cursor-pointer' : ''}
+        ${expandable ? 'cursor-pointer' : ''}
       `}
-      onClick={expandable && !isGuestMode ? onToggleExpand : undefined}
+      onClick={expandable ? onToggleExpand : undefined}
     >
       <div
         className="absolute inset-0"
@@ -103,25 +98,12 @@ export default function DiarioEstoicoCard({
     </div>
   );
 
-  // Se guest mode e expandido, renderizar com teaser
-  if (isGuestMode && isExpanded && maxim.comment) {
-    return (
-      <ReflectionTeaserWrapper
-        comment={maxim.comment}
-        reflectionId={`${maxim.month}-${maxim.dayNumber}`}
-        visiblePercentage={visiblePercentage}
-      >
-        {quoteCard}
-      </ReflectionTeaserWrapper>
-    );
-  }
-
-  // Authenticated user - renderizar normalmente
+  // Renderizar card simples (sem lógica de guest mode)
   return (
     <div>
       {quoteCard}
 
-      {/* Expanded comment section (authenticated users) */}
+      {/* Expanded comment section (todos os usuários) */}
       {isExpanded && maxim.comment && (
         <div className="relative bg-white p-6 lg:p-8 border-t border-gray-200 rounded-b-2xl lg:rounded-b-3xl shadow-lg">
           <div className="space-y-4">
