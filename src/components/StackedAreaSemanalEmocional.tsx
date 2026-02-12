@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { LazyResponsiveLine as ResponsiveLine } from "@/components/charts/LazyCharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
 
 type LinhaDoTempoItem = { data: string; [dominio: string]: number | string };
 
@@ -144,100 +144,110 @@ export default function StackedAreaSemanalEmocional({
       ? weekly.total.reduce((a, b) => a + b.y, 0) / weekly.total.length
       : 0;
 
+  // Transform data for Recharts
+  const rechartsData = useMemo(() => {
+    if (variant === "total") {
+      return weekly.total.map(point => ({
+        date: fmt.format(point.x),
+        Total: Number(point.y.toFixed(1)),
+      }));
+    } else {
+      const allDates = [...new Set(weekly.byDomain.flatMap(s => s.data.map(d => d.x.getTime())))].sort();
+      return allDates.map(timestamp => {
+        const date = new Date(timestamp);
+        const obj: any = { date: fmt.format(date) };
+        weekly.byDomain.forEach(serie => {
+          if (visible[serie.id as string]) {
+            const point = serie.data.find(d => d.x.getTime() === timestamp);
+            obj[serie.id as string] = point ? Number(point.y.toFixed(1)) : 0;
+          }
+        });
+        return obj;
+      });
+    }
+  }, [variant, weekly, visible]);
+
   return (
     <div role="img" aria-label="Tendência semanal" style={{ height }}>
-      <ResponsiveLine
-        data={
-          variant === "total"
-            ? [{ id: "Total", color: BLUE, data: weekly.total }]
-            : (displayedDomains as any)
-        }
-        xScale={{ type: "time", format: "native", precision: "day" }}
-        xFormat="time:%d/%m"
-        yScale={{ type: "linear", stacked: false, min: 0, max: 10 }} // escala fixa 0..10 (Apple-like)
-        axisBottom={{ tickPadding: 6, tickSize: 0, tickValues, format: "%d/%m" }}
-        axisLeft={{ tickPadding: 4, tickSize: 0 }}
-        enablePoints={false}
-        curve="monotoneX"
-        enableGridX={false}
-        enableGridY
-        colors={(s) => (s.color as string) ?? BLUE}
-        lineWidth={variant === "total" ? 2 : 1.5}
-        enableArea={variant === "total"}
-        areaOpacity={0.28}
-        margin={{ top: 8, right: 12, bottom: 28, left: 28 }}
-        useMesh
-        enableSlices="x"
-        legends={
-          variant === "domains"
-            ? [
-                {
-                  anchor: "bottom-left",
-                  direction: "row",
-                  translateY: 20,
-                  itemWidth: 120,
-                  itemHeight: 16,
-                  symbolSize: 8,
-                  itemsSpacing: 12,
-                  onClick: (d: any) => {
-                    const id = d?.id as string;
-                    if (id) setVisible((v) => ({ ...v, [id]: !v[id] }));
-                  },
-                },
-              ]
-            : undefined
-        }
-        theme={{
-          grid: { line: { stroke: "#F3F4F6", strokeWidth: 1 } },
-          axis: { ticks: { text: { fill: "#9CA3AF", fontSize: 10 } } },
-          legends: { text: { fill: "#6B7280", fontSize: 11 } },
-          crosshair: { line: { stroke: "#D1D5DB", strokeWidth: 1 } },
-          tooltip: { container: { fontSize: 12, borderRadius: 8 } },
-        }}
-        tooltip={({ slice }) => {
-          if (!slice) return null;
-          const d = slice.points[0]?.data.x as Date;
-          return (
-            <div className="rounded-md border border-neutral-200 bg-white/95 p-2 text-xs">
-              <div className="font-medium mb-1">{fmt.format(d)} (semana)</div>
-              {variant === "total" ? (
-                <div className="flex items-center gap-1">
-                  <span
-                    className="inline-block w-2.5 h-2.5 rounded-full"
-                    style={{ background: BLUE }}
-                  />
-                  Intensidade média: {Number(slice.points[0]?.data.y).toFixed(1)}
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={rechartsData} margin={{ top: 8, right: 12, bottom: 28, left: 28 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+          <XAxis
+            dataKey="date"
+            tick={{ fill: "#9CA3AF", fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            domain={[0, 10]}
+            tick={{ fill: "#9CA3AF", fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
+          />
+          <Tooltip
+            content={({ active, payload }) =>
+              active && payload?.length ? (
+                <div className="rounded-md border border-neutral-200 bg-white/95 p-2 text-xs">
+                  <div className="font-medium mb-1">{payload[0].payload.date} (semana)</div>
+                  {variant === "total" ? (
+                    <div className="flex items-center gap-1">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: BLUE }} />
+                      Intensidade média: {payload[0].value}
+                    </div>
+                  ) : (
+                    payload.map((p, i) => (
+                      <div key={i} className="flex items-center gap-1">
+                        <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />
+                        {p.name}: {p.value}
+                      </div>
+                    ))
+                  )}
                 </div>
-              ) : (
-                slice.points.map((p) => (
-                  <div key={p.id} className="flex items-center gap-1">
-                    <span
-                      className="inline-block w-2.5 h-2.5 rounded-full"
-                      style={{ background: p.serieColor }}
-                    />
-                    {p.serieId}: {Number(p.data.y).toFixed(1)}
-                  </div>
-                ))
-              )}
-            </div>
-          );
-        }}
-        markers={
-          variant === "total" && avgTotal
-            ? [
-                {
-                  axis: "y",
-                  value: avgTotal,
-                  lineStyle: { stroke: "#9CA3AF", strokeWidth: 1, strokeDasharray: "4 4" },
-                  legend: `média ${avgTotal.toFixed(1)}`,
-                  legendPosition: "right",
-                  textStyle: { fill: "#6B7280", fontSize: 10 },
-                },
-              ]
-            : []
-        }
-        animate={false}
-      />
+              ) : null
+            }
+          />
+          {variant === "domains" && (
+            <Legend
+              wrapperStyle={{ fontSize: 11, color: "#6B7280" }}
+              onClick={(e) => {
+                const id = e.dataKey as string;
+                if (id) setVisible((v) => ({ ...v, [id]: !v[id] }));
+              }}
+            />
+          )}
+          {variant === "total" && avgTotal > 0 && (
+            <ReferenceLine
+              y={Number(avgTotal.toFixed(1))}
+              stroke="#9CA3AF"
+              strokeDasharray="4 4"
+              strokeWidth={1}
+              label={{ value: `média ${avgTotal.toFixed(1)}`, fill: "#6B7280", fontSize: 10, position: "right" }}
+            />
+          )}
+          {variant === "total" ? (
+            <Line
+              type="monotone"
+              dataKey="Total"
+              stroke={BLUE}
+              strokeWidth={2}
+              dot={false}
+              fill={BLUE}
+              fillOpacity={0.28}
+            />
+          ) : (
+            keys.filter(k => visible[k]).map((domain, i) => (
+              <Line
+                key={domain}
+                type="monotone"
+                dataKey={domain}
+                stroke={COLORS[i % COLORS.length]}
+                strokeWidth={1.5}
+                dot={false}
+              />
+            ))
+          )}
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { getSessionId } from "../utils/identity";
 import { trackFeedbackEvent } from "../analytics/track";
 import type { FeedbackTrackingPayload } from "../analytics/track";
 import type { Message } from "../contexts/ChatContext";
-import { DEFAULT_FEEDBACK_PILLAR } from "../constants/feedback";
+import { DEFAULT_FEEDBACK_PILLAR, FEEDBACK_REASONS, type FeedbackReasonKey } from "../constants/feedback";
 import { useMessageFeedbackContext } from "../hooks/useMessageFeedbackContext";
 import { extractModuleUsageCandidates, resolveLastActivatedModuleKey } from "../utils/moduleUsage";
 
@@ -17,17 +17,8 @@ type FeedbackPromptProps = {
   onSubmitted?: () => void;
 };
 
-export const FEEDBACK_REASONS = [
-  { key: "too_long", label: "Muito longo" },
-  { key: "off_topic", label: "Fora do tema" },
-  { key: "shallow", label: "Raso" },
-  { key: "tone", label: "Tom inadequado" },
-  { key: "other", label: "Outro" },
-] as const;
-
 const REASONS = FEEDBACK_REASONS;
-
-type ReasonKey = (typeof REASONS)[number]["key"];
+type ReasonKey = FeedbackReasonKey;
 
 export function FeedbackPrompt({ message, userId, onSubmitted }: FeedbackPromptProps) {
   const [mode, setMode] = useState<Mode>("ask");

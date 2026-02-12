@@ -11,6 +11,18 @@ const subtleShadow = tokens.shadows.subtle
 
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+
+  // 🚀 PERFORMANCE: Disable unused Tailwind core plugins
+  corePlugins: {
+    container: false,        // Not used in codebase
+    columns: false,          // Not used in codebase
+    breakAfter: false,       // Not used in codebase
+    breakBefore: false,      // Not used in codebase
+    breakInside: false,      // Not used in codebase
+    placeholderColor: false, // Deprecated in Tailwind 3.0
+    placeholderOpacity: false, // Deprecated in Tailwind 3.0
+  },
+
   theme: {
     extend: {
       /* Tipografia — Inter (primária) + Playfair Display (display) */
@@ -31,6 +43,8 @@ export default {
         light: 300,
         normal: 400,
         medium: 500,
+        semibold: 600, // 🚀 OPT#8: Added - used 187 times
+        bold: 700,     // 🚀 OPT#8: Added - used 93 times
       },
 
       colors: {
@@ -117,20 +131,7 @@ export default {
           '0%': { transform: 'scale(0.95)', opacity: '0' },
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
-        ripple: {
-          '0%':   { transform: 'scale(0.8)', opacity: '1' },
-          '100%': { transform: 'scale(1.4)', opacity: '0' },
-        },
-        pulseListen: {
-          '0%, 100%': { transform: 'scale(1)', opacity: '1' },
-          '50%':      { transform: 'scale(1.08)', opacity: '0.85' },
-        },
-        pulseTalk: {
-          '0%':   { transform: 'scale(1)', opacity: '1' },
-          '25%':  { transform: 'scale(1.06)', opacity: '0.85' },
-          '50%':  { transform: 'scale(1)', opacity: '1' },
-          '100%': { transform: 'scale(1)', opacity: '1' },
-        },
+        // 🚀 REMOVED: ripple, pulseListen, pulseTalk (unused animations)
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-6px)' },
@@ -165,9 +166,7 @@ export default {
         'wave': 'wave 3s ease-in-out infinite',
         'breathe': 'breathe 4s ease-in-out infinite',
         'fade-expand': 'fadeExpand 300ms ease-out',
-        ripple: 'ripple 1.5s infinite ease-in-out',
-        pulseListen: 'pulseListen 1.2s ease-in-out infinite',
-        pulseTalk: 'pulseTalk 3s ease-in-out infinite',
+        // 🚀 REMOVED: ripple, pulseListen, pulseTalk animations (unused)
         float: 'float 9s ease-in-out infinite',
         'ken-burns': 'kenBurns 8s ease-in-out infinite',
         'fade-in': 'fadeIn 600ms ease-out',

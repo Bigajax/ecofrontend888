@@ -10,15 +10,8 @@ import { emotionPalette, resolveEmotionKey } from './emotionTokens';
 
 import EcoBubbleLoading from '../../components/EcoBubbleLoading';
 
-/* ===== Lazy Nivo (tipado) ===== */
-const LazyResponsiveLine = lazy(async () => {
-  const mod = await import('@nivo/line');
-  return { default: mod.ResponsiveLine as unknown as React.ComponentType<any> };
-});
-const LazyResponsiveBar = lazy(async () => {
-  const mod = await import('@nivo/bar');
-  return { default: mod.ResponsiveBar as unknown as React.ComponentType<any> };
-});
+/* ===== Recharts (replacement for Nivo) ===== */
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 /* ===== Error Boundary ===== */
 type EBState = { hasError: boolean };
@@ -86,14 +79,7 @@ const day = 24 * 60 * 60 * 1000;
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const toISOday = (t: number) => new Date(t).toISOString().slice(0, 10);
 
-// 👉 util: cópia profunda e mutável (evita objetos "frozen" do Redux/Immer)
-const deepClone = <T,>(v: T): T => {
-  try {
-    // @ts-ignore - runtime check
-    if (typeof structuredClone === 'function') return structuredClone(v);
-  } catch {}
-  return JSON.parse(JSON.stringify(v));
-};
+// deepClone removed - not needed with Recharts (only needed for Nivo's frozen objects issue)
 
 function countBy<T>(arr: T[], key: (x: T) => string | undefined | null) {
   const map = new Map<string, number>();
@@ -276,10 +262,7 @@ const ProfileSection: FC = () => {
     [themeChart]
   );
 
-  // 👇 cópias mutáveis (evita "Cannot add property ref, object is not extensible")
-  const emotionsDataSafe = useMemo(() => deepClone(emotionsData), [emotionsData]);
-  const themesDataSafe   = useMemo(() => deepClone(themesData),   [themesData]);
-  const lineDataSafe     = useMemo(() => deepClone(lineData),     [lineData]);
+  // Safe copies removed - Recharts doesn't have the frozen objects issue that Nivo had
 
   const noRemoteData = (!perfil || (!perfil.emocoes_frequentes && !perfil.temas_recorrentes)) && (allMemories.length === 0);
 
@@ -412,51 +395,41 @@ const ProfileSection: FC = () => {
               {isClient && hasLinePoints ? (
                 <ChartErrorBoundary>
                   <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={28} /></div>}>
-                    {/* usa cópia mutável */}
-                    <LazyResponsiveLine
-                      key={`line-${period}`}
-                      data={lineDataSafe}
-                      margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
-                      xScale={{ type: 'time', format: '%Y-%m-%d', precision: 'day', useUTC: false }}
-                      xFormat="time:%d/%m"
-                      yScale={{ type: 'linear', min: 0, max: 'auto' }}
-                      axisBottom={null}
-                      axisLeft={null}
-                      enablePoints={false}
-                      enableArea
-                      areaOpacity={0.15}
-                      useMesh
-                      enableGridX={false}
-                      enableGridY
-                      curve="monotoneX"
-                      colors={['var(--eco-user, #A7846C)']}
-                      theme={{
-                        grid: { line: { stroke: 'var(--eco-line, #E8E3DD)' } },
-                        tooltip: {
-                          container: {
-                            fontSize: 12,
-                            borderRadius: 10,
-                            boxShadow: '0 8px 24px rgba(0,0,0,.08)',
-                            backgroundColor: 'rgba(243, 238, 231, 0.95)',
-                            color: 'var(--eco-text, #38322A)',
-                            borderColor: 'var(--eco-line, #E8E3DD)',
-                          },
-                        },
-                      }}
-                      tooltip={({ point }: any) => (
-                        <div
-                          className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
-                          style={{
-                            backgroundColor: 'rgba(243, 238, 231, 0.95)',
-                            borderColor: 'var(--eco-line, #E8E3DD)',
-                            color: 'var(--eco-text, #38322A)',
-                          }}
-                        >
-                          <div className="font-medium">{String(point?.data?.xFormatted ?? '')}</div>
-                          <div>{String(point?.data?.y ?? '')} registro{Number(point?.data?.y) === 1 ? '' : 's'}</div>
-                        </div>
-                      )}
-                    />
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={lineData[0]?.data ?? []}
+                        margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
+                      >
+                        <XAxis dataKey="x" hide />
+                        <YAxis hide domain={[0, 'auto']} />
+                        <Tooltip
+                          content={({ active, payload }: any) =>
+                            active && payload?.length ? (
+                              <div
+                                className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
+                                style={{
+                                  backgroundColor: 'rgba(243, 238, 231, 0.95)',
+                                  borderColor: 'var(--eco-line, #E8E3DD)',
+                                  color: 'var(--eco-text, #38322A)',
+                                }}
+                              >
+                                <div className="font-medium">{payload[0].payload.x}</div>
+                                <div>{payload[0].value} registro{payload[0].value === 1 ? '' : 's'}</div>
+                              </div>
+                            ) : null
+                          }
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="y"
+                          stroke="var(--eco-user, #A7846C)"
+                          strokeWidth={2}
+                          dot={false}
+                          fill="var(--eco-user, #A7846C)"
+                          fillOpacity={0.15}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </Suspense>
                 </ChartErrorBoundary>
               ) : (
@@ -473,52 +446,46 @@ const ProfileSection: FC = () => {
 
         {/* CARD 2 — Emoções */}
         <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
-          {isClient && emotionsDataSafe.length ? (
+          {isClient && emotionsData.length ? (
             <div className="h-[300px]">
               <ChartErrorBoundary>
                 <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={32} /></div>}>
-                  {/* usa cópia mutável */}
-                  <LazyResponsiveBar
-                    key={`bar-emo-${period}`}
-                    data={emotionsDataSafe}
-                    keys={['value']}
-                    indexBy="name"
-                    margin={{ top: 12, right: 12, bottom: 0, left: 40 }}
-                    padding={0.32}
-                    colors={(bar: any) => colorForEmotion(bar.data.name as string)}
-                    borderRadius={12}
-                    axisTop={null}
-                    axisRight={null}
-                    axisBottom={null}
-                    axisLeft={{ tickSize: 0, tickPadding: 6 }}
-                    enableGridY
-                    enableLabel={false}
-                    theme={{
-                      grid: { line: { stroke: 'var(--eco-line, #E8E3DD)' } },
-                      tooltip: {
-                        container: {
-                          fontSize: 12,
-                          borderRadius: 10,
-                          boxShadow: '0 8px 24px rgba(0,0,0,.08)',
-                          backgroundColor: 'rgba(243, 238, 231, 0.95)',
-                          color: 'var(--eco-text, #38322A)',
-                        },
-                      },
-                    }}
-                    tooltip={({ indexValue, value, color }: any) => (
-                      <div
-                        className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
-                        style={{
-                          backgroundColor: 'rgba(243, 238, 231, 0.95)',
-                          borderColor: color,
-                          color: 'var(--eco-text, #38322A)',
-                        }}
-                      >
-                        <div className="font-medium">{String(indexValue)}</div>
-                        <div>{String(value)}</div>
-                      </div>
-                    )}
-                  />
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={emotionsData}
+                      margin={{ top: 12, right: 12, bottom: 0, left: 40 }}
+                      barCategoryGap="32%"
+                    >
+                      <XAxis dataKey="name" hide />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: 'var(--eco-muted, #9C938A)', fontSize: 12 }}
+                      />
+                      <Tooltip
+                        content={({ active, payload }: any) =>
+                          active && payload?.length ? (
+                            <div
+                              className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
+                              style={{
+                                backgroundColor: 'rgba(243, 238, 231, 0.95)',
+                                borderColor: colorForEmotion(payload[0].payload.name),
+                                color: 'var(--eco-text, #38322A)',
+                              }}
+                            >
+                              <div className="font-medium">{payload[0].payload.name}</div>
+                              <div>{payload[0].value}</div>
+                            </div>
+                          ) : null
+                        }
+                      />
+                      <Bar dataKey="value" radius={[12, 12, 0, 0]}>
+                        {emotionsData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={colorForEmotion(entry.name)} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </Suspense>
               </ChartErrorBoundary>
             </div>
@@ -542,53 +509,50 @@ const ProfileSection: FC = () => {
 
         {/* CARD 3 — Temas */}
         <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
-          {isClient && themesDataSafe.length ? (
+          {isClient && themesData.length ? (
             <div className="h-[300px]">
               <ChartErrorBoundary>
                 <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={32} /></div>}>
-                  {/* usa cópia mutável */}
-                  <LazyResponsiveBar
-                    key={`bar-theme-${period}`}
-                    data={themesDataSafe}
-                    keys={['value']}
-                    indexBy="name"
-                    layout="horizontal"
-                    margin={{ top: 8, right: 16, bottom: 8, left: 160 }}
-                    padding={0.3}
-                    colors={(bar: any) => pastel(bar.data.name as string)}
-                    borderRadius={12}
-                    axisTop={null}
-                    axisRight={null}
-                    axisLeft={{ tickSize: 0, tickPadding: 6 }}
-                    axisBottom={null}
-                    enableGridX
-                    labelSkipWidth={9999}
-                    theme={{
-                      grid: { line: { stroke: 'var(--eco-line, #E8E3DD)' } },
-                      tooltip: {
-                        container: {
-                          fontSize: 12,
-                          borderRadius: 10,
-                          boxShadow: '0 8px 24px rgba(0,0,0,.08)',
-                          backgroundColor: 'rgba(243, 238, 231, 0.95)',
-                          color: 'var(--eco-text, #38322A)',
-                        },
-                      },
-                    }}
-                    tooltip={({ indexValue, value }: any) => (
-                      <div
-                        className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
-                        style={{
-                          backgroundColor: 'rgba(243, 238, 231, 0.95)',
-                          borderColor: 'var(--eco-line, #E8E3DD)',
-                          color: 'var(--eco-text, #38322A)',
-                        }}
-                      >
-                        <div className="font-medium">{String(indexValue)}</div>
-                        <div>{String(value)}</div>
-                      </div>
-                    )}
-                  />
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={themesData}
+                      layout="horizontal"
+                      margin={{ top: 8, right: 16, bottom: 8, left: 160 }}
+                      barCategoryGap="30%"
+                    >
+                      <XAxis type="number" hide />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: 'var(--eco-text, #38322A)', fontSize: 12 }}
+                        width={150}
+                      />
+                      <Tooltip
+                        content={({ active, payload }: any) =>
+                          active && payload?.length ? (
+                            <div
+                              className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
+                              style={{
+                                backgroundColor: 'rgba(243, 238, 231, 0.95)',
+                                borderColor: 'var(--eco-line, #E8E3DD)',
+                                color: 'var(--eco-text, #38322A)',
+                              }}
+                            >
+                              <div className="font-medium">{payload[0].payload.name}</div>
+                              <div>{payload[0].value}</div>
+                            </div>
+                          ) : null
+                        }
+                      />
+                      <Bar dataKey="value" radius={[0, 12, 12, 0]}>
+                        {themesData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={pastel(entry.name)} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </Suspense>
               </ChartErrorBoundary>
             </div>

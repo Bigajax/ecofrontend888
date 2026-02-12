@@ -37,11 +37,26 @@
 
     <!-- Fontes Soft Minimal: Inter + Playfair Display -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <!-- 🚀 OPT#8: Font optimization with subsetting + all used weights -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:wght@400;500&display=swap"
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap&subset=latin,latin-ext"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap&subset=latin,latin-ext"
       rel="stylesheet"
     />
+
+    <!-- 🚀 PERFORMANCE: Preconnect para APIs críticas -->
+    <link rel="preconnect" href="https://ecobackend888.onrender.com" crossorigin />
+    <link rel="dns-prefetch" href="https://ecobackend888.onrender.com" />
+
+    <!-- 🚀 PERFORMANCE: Preload hero images -->
+    <link rel="preload" as="image" href="/images/ECOTOPIA.webp" />
+    <link rel="preload" as="image" href="/images/login-background.webp" />
 
     <!-- Google Identity Services (One Tap) -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>

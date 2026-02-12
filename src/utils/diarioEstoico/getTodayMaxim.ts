@@ -30,10 +30,11 @@ export const BACKGROUNDS = [
   'url("/images/meditacao-19-nov.webp")',
   'url("/images/meditacao-20-nov.webp")',
   'url("/images/meditacao-21-nov.webp")',
-  'url("/images/diario-01.png")',
-  'url("/images/diario-02.png")',
-  'url("/images/diario-03.png")',
-  'url("/images/diario-04.png")',
+  'url("/images/diario-01.webp")', // 🚀 OPT#7: Converted PNG→WebP (-1.93 MB)
+  'url("/images/diario-02.webp")', // 🚀 OPT#7: Converted PNG→WebP (-1.76 MB)
+  'url("/images/diario-03.webp")', // 🚀 OPT#7: Converted PNG→WebP (-2.21 MB)
+  'url("/images/diario-04.webp")', // 🚀 OPT#7: Converted PNG→WebP (-2.20 MB)
+
 ];
 
 // Função para atribuir background baseado no número do dia (rotação inteligente)

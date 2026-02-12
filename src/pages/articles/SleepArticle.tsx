@@ -31,9 +31,10 @@ export default function SleepArticle() {
         {/* First Image */}
         <div className="mb-8 overflow-hidden rounded-2xl h-48 sm:h-64 md:h-80">
           <img
-            src="/images/sleep-stages-intro.jpg"
+            src="/images/sleep-stages-intro.webp"
             alt="Noite com lua"
             className="w-full h-full object-cover"
+            loading="lazy"
           />
         </div>
 
@@ -52,9 +53,10 @@ export default function SleepArticle() {
         {/* Second Image */}
         <div className="mb-8 overflow-hidden rounded-2xl h-40 sm:h-56 md:h-72">
           <img
-            src="/images/sleep-cycles.jpg"
+            src="/images/sleep-cycles.webp"
             alt="Ciclos do sono"
             className="w-full h-full object-cover"
+            loading="lazy"
           />
         </div>
 

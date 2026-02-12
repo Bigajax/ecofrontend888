@@ -2,7 +2,7 @@
 /*  ChatPage.tsx — Modern minimalist layout (Claude/Ecotopia inspired)       */
 /* -------------------------------------------------------------------------- */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense, type CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
@@ -10,14 +10,19 @@ import clsx from 'clsx';
 import ChatInput, { ChatInputHandle } from '../components/ChatInput';
 import LoginGateModal from '../components/LoginGateModal';
 import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
-import EcoLoopHud from '../components/EcoLoopHud';
-import QuickSuggestions, { Suggestion, SuggestionPickMeta } from '../components/QuickSuggestions';
 import TypingDots from '../components/TypingDots';
 import SuggestionChips from '../components/SuggestionChips';
 import MessageList from '../components/MessageList';
-import VoiceRecorderPanel from '../components/VoiceRecorderPanel';
 import TopBar from '../components/TopBar';
 import Sidebar from '../components/Sidebar';
+
+// 🚀 PERFORMANCE: Lazy load heavy components (Quick Win #4)
+const EcoLoopHud = lazy(() => import('../components/EcoLoopHud'));
+const QuickSuggestions = lazy(() => import('../components/QuickSuggestions').then(m => ({ default: m.default })));
+const VoiceRecorderPanel = lazy(() => import('../components/VoiceRecorderPanel'));
+
+// Import types separately (não afeta bundle)
+import type { Suggestion, SuggestionPickMeta } from '../components/QuickSuggestions';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
@@ -35,7 +40,9 @@ import { saudacaoDoDiaFromHour } from '../utils/chat/greetings';
 import { isEcoMessage, resolveMessageSender } from '../utils/chat/messages';
 import { ROTATING_ITEMS, OPENING_VARIATIONS } from '../constants/chat';
 import mixpanel from '../lib/mixpanel';
-import { FeedbackPrompt } from '../components/FeedbackPrompt';
+
+// 🚀 PERFORMANCE: Lazy load FeedbackPrompt
+const FeedbackPrompt = lazy(() => import('../components/FeedbackPrompt').then(m => ({ default: m.FeedbackPrompt })));
 import { trackFeedbackEvent } from '../analytics/track';
 import { getSessionId } from '../utils/identity';
 import { useGuestGate } from '../hooks/useGuestGate';
@@ -789,25 +796,27 @@ function ChatPage() {
 
   const feedbackPromptNode =
     showFeedback && lastEcoInfo?.msg ? (
-      <FeedbackPrompt
-        message={lastEcoInfo.msg}
-        userId={auth?.user?.id ?? null}
-        onSubmitted={() => {
-          const sessionId = getSessionId();
-          const payload: Record<string, unknown> = {
-            user_id: auth?.user?.id ?? undefined,
-            session_id: sessionId ?? undefined,
-            source: 'prompt_auto',
-            interaction_id: lastPromptFeedbackContext.interactionId,
-          };
-          if (lastPromptFeedbackContext.messageId) payload.message_id = lastPromptFeedbackContext.messageId;
-          if (lastPromptFeedbackContext.moduleCombo?.length) payload.module_combo = lastPromptFeedbackContext.moduleCombo;
-          if (lastPromptFeedbackContext.promptHash) payload.prompt_hash = lastPromptFeedbackContext.promptHash;
-          if (typeof lastPromptFeedbackContext.latencyMs === 'number') payload.latency_ms = lastPromptFeedbackContext.latencyMs;
-          trackFeedbackEvent('FE: Feedback Prompt Closed', payload);
+      <Suspense fallback={null}>
+        <FeedbackPrompt
+          message={lastEcoInfo.msg}
+          userId={auth?.user?.id ?? null}
+          onSubmitted={() => {
+            const sessionId = getSessionId();
+            const payload: Record<string, unknown> = {
+              user_id: auth?.user?.id ?? undefined,
+              session_id: sessionId ?? undefined,
+              source: 'prompt_auto',
+              interaction_id: lastPromptFeedbackContext.interactionId,
+            };
+            if (lastPromptFeedbackContext.messageId) payload.message_id = lastPromptFeedbackContext.messageId;
+            if (lastPromptFeedbackContext.moduleCombo?.length) payload.module_combo = lastPromptFeedbackContext.moduleCombo;
+            if (lastPromptFeedbackContext.promptHash) payload.prompt_hash = lastPromptFeedbackContext.promptHash;
+            if (typeof lastPromptFeedbackContext.latencyMs === 'number') payload.latency_ms = lastPromptFeedbackContext.latencyMs;
+            trackFeedbackEvent('FE: Feedback Prompt Closed', payload);
           handleFeedbackSubmitted();
         }}
       />
+      </Suspense>
     ) : null;
 
 
@@ -946,16 +955,18 @@ function ChatPage() {
           }}
         >
           <div className="mx-auto w-full max-w-3xl space-y-2">
-            <QuickSuggestions
-              variant="footer"
-              visible={showQuick && !composerPending && !erroApi && !voicePanelOpen}
-              onPickSuggestion={handlePickSuggestion}
-              rotatingItems={ROTATING_ITEMS}
-              rotationMs={5000}
-              showRotating={true}
-              disabled={composerPending}
-              className="-mb-1"
-            />
+            <Suspense fallback={null}>
+              <QuickSuggestions
+                variant="footer"
+                visible={showQuick && !composerPending && !erroApi && !voicePanelOpen}
+                onPickSuggestion={handlePickSuggestion}
+                rotatingItems={ROTATING_ITEMS}
+                rotationMs={5000}
+                showRotating={true}
+                disabled={composerPending}
+                className="-mb-1"
+              />
+            </Suspense>
 
             <SuggestionChips
               visible={shouldShowSuggestionChips}
@@ -1004,15 +1015,19 @@ function ChatPage() {
         </footer>
       </div>
 
-      <VoiceRecorderPanel
-        open={voicePanelOpen}
-        bottomOffset={voicePanelBottomOffset}
-        onCancel={handleVoicePanelClose}
-        onConfirm={handleVoiceConfirm}
-        onError={(error) => console.error('Painel de voz', error)}
-      />
+      <Suspense fallback={null}>
+        <VoiceRecorderPanel
+          open={voicePanelOpen}
+          bottomOffset={voicePanelBottomOffset}
+          onCancel={handleVoicePanelClose}
+          onConfirm={handleVoiceConfirm}
+          onError={(error) => console.error('Painel de voz', error)}
+        />
+      </Suspense>
 
-      <EcoLoopHud />
+      <Suspense fallback={null}>
+        <EcoLoopHud />
+      </Suspense>
     </div>
   );
 };

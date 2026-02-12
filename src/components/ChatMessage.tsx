@@ -4,7 +4,7 @@ import clsx from "clsx";
 
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
 import TypingDots from "./TypingDots";
-import MarkdownRenderer from "./MarkdownRenderer";
+import LazyLazyMarkdownRenderer from "./LazyLazyMarkdownRenderer";
 import CollapsibleMessage from "./CollapsibleMessage";
 import type { Message } from "../contexts/ChatContext";
 import { resolveMessageSender, isUserMessage, isEcoMessage } from "../utils/chat/messages";
@@ -20,7 +20,27 @@ interface ChatMessageProps {
   onRetry?: () => void;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoActive, onRetry }) => {
+// 🚀 PERFORMANCE: Comparação customizada para evitar re-renders desnecessários
+const arePropsEqual = (prevProps: ChatMessageProps, nextProps: ChatMessageProps): boolean => {
+  // Se as props forem exatamente as mesmas, não re-renderizar
+  if (prevProps === nextProps) return true;
+
+  const prevMsg = prevProps.message;
+  const nextMsg = nextProps.message;
+
+  // Comparar campos críticos que afetam a renderização
+  const sameContent = prevMsg.content === nextMsg.content;
+  const sameStatus = prevMsg.status === nextMsg.status;
+  const sameStreaming = prevMsg.streaming === nextMsg.streaming;
+  const sameTyping = prevProps.isEcoTyping === nextProps.isEcoTyping;
+  const sameActive = prevProps.isEcoActive === nextProps.isEcoActive;
+  const sameRetry = prevProps.onRetry === nextProps.onRetry;
+
+  // Se todos os campos críticos são iguais, não re-renderizar
+  return sameContent && sameStatus && sameStreaming && sameTyping && sameActive && sameRetry;
+};
+
+const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoActive, onRetry }) => {
   const sender = resolveMessageSender(message) ?? message.sender;
   const normalizedRole = (() => {
     const roleCandidate = message.role ?? sender;
@@ -174,7 +194,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
               <div className={bubbleClass} data-sender={sender}>
                 <div className="chat-message-text">
                   {isEco ? (
-                    <MarkdownRenderer content={displayText} />
+                    <LazyMarkdownRenderer content={displayText} />
                   ) : (
                     <span>{displayText}</span>
                   )}
@@ -190,7 +210,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
               ) : (
                 <div className="chat-message-text">
                   {isEco ? (
-                    <MarkdownRenderer content={displayText} />
+                    <LazyMarkdownRenderer content={displayText} />
                   ) : (
                     <span>{displayText}</span>
                   )}
@@ -232,5 +252,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isEcoTyping, isEcoAc
     </div>
   );
 };
+
+// 🚀 PERFORMANCE: React.memo com comparação customizada para evitar re-renders
+const ChatMessage = React.memo(ChatMessageComponent, arePropsEqual);
 
 export default ChatMessage;

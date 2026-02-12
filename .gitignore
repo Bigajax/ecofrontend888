@@ -3,6 +3,10 @@ node_modules
 .env*.local
 dist
 
+# Bundle analyzer output
+dist/stats.html
+stats.html
+
 # Large video files (use Vercel Blob Storage instead)
 /public/videos/*.mp4
 /public/videos/*.mov

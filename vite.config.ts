@@ -1,10 +1,10 @@
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import string from 'vite-plugin-string';
 import { compression } from 'vite-plugin-compression2';
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   // Só define __API_BASE__ se houver valor nas envs
@@ -18,6 +18,30 @@ export default defineConfig(({ mode }) => {
 
   if (apiBase) {
     define.__API_BASE__ = JSON.stringify(apiBase);
+  }
+
+  // 🚀 BUNDLE ANALYZER: Ativo apenas em modo analyze
+  const isAnalyze = mode === 'analyze';
+
+  // 🚀 BUNDLE ANALYZER: Import dinâmico apenas se necessário
+  let analyzerPlugin: PluginOption[] = [];
+  if (isAnalyze) {
+    try {
+      const { visualizer } = await import('rollup-plugin-visualizer');
+      analyzerPlugin = [
+        visualizer({
+          open: true, // Abre automaticamente no browser
+          filename: 'dist/stats.html', // Onde salvar o report
+          gzipSize: true, // Mostra tamanho gzipped
+          brotliSize: true, // Mostra tamanho brotli
+          template: 'treemap', // Tipo de visualização (treemap, sunburst, network)
+          title: 'Ecotopia Bundle Analysis', // Título do report
+        }),
+      ];
+    } catch (err) {
+      console.warn('⚠️ rollup-plugin-visualizer não instalado.');
+      console.warn('💡 Rode: npm install -D rollup-plugin-visualizer');
+    }
   }
 
   return {
@@ -43,12 +67,23 @@ export default defineConfig(({ mode }) => {
         threshold: 10240,
         deleteOriginFile: false,
       }),
+      // 🚀 BUNDLE ANALYZER: Adiciona plugin se modo analyze
+      ...analyzerPlugin,
     ],
 
     define,
 
+    // 🚀 PERFORMANCE: Otimizar deps para melhor build
     optimizeDeps: {
-      exclude: ['lucide-react'],
+      include: [
+        'react',
+        'react-dom',
+        'react-router-dom',
+        'framer-motion',
+        '@supabase/supabase-js',
+        'mixpanel-browser',
+      ],
+      exclude: ['lucide-react'], // Tree-shaking automático
     },
 
     resolve: {
@@ -88,20 +123,42 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: true,
+
+      // 🚀 PERFORMANCE: Minificação com esbuild (mais rápido que terser!)
+      minify: 'esbuild',
+
+      // Remove console.logs em produção via esbuild
+      esbuild: {
+        drop: ['console', 'debugger'], // Remove console.* e debugger
+      },
+
       rollupOptions: {
         output: {
           manualChunks: {
-            // Separate vendor chunks for better caching
+            // 🚀 PERFORMANCE: Chunks otimizados para caching
             'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-            'nivo-charts': ['@nivo/bar', '@nivo/line', '@nivo/core'],
             'framer-motion': ['framer-motion'],
             'supabase': ['@supabase/supabase-js'],
+
+            // 🆕 OPTIMIZATION #6: Index chunk splitting
+            'recharts': ['recharts'], // Charts library (~378 KB) - Used in Memory pages
+            'analytics': ['mixpanel-browser'], // Analytics (~50-80 KB)
+            'http-client': ['axios'], // HTTP client (~100 KB)
+
             'date-utils': ['date-fns'],
+
+            // Lazy loaded chunks (só carregam quando necessário)
+            'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
+            // ✅ MARKDOWN LAZY: Lazy loaded via LazyMarkdownRenderer (economia: -117 KB / -36 KB gzip)
+            'markdown': ['react-markdown'],
+            'audio': ['wavesurfer.js', '@wavesurfer/react'],
+            'icons': ['lucide-react', 'react-icons'],
           },
         },
       },
-      // Increase chunk size warning limit
-      chunkSizeWarningLimit: 600,
+
+      // 🚀 PERFORMANCE: Chunks menores para melhor caching
+      chunkSizeWarningLimit: 400,
     },
   };
 });

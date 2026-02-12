@@ -3,7 +3,7 @@ import { PointerEvent, useEffect, useId, useMemo, useRef } from "react";
 import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
 
 import FeedbackPortal from "./feedback/FeedbackPortal";
-import { FEEDBACK_REASONS } from "./FeedbackPrompt";
+import { FEEDBACK_REASONS } from "../constants/feedback";
 
 type FeedbackReasonPopoverProps = {
   open: boolean;

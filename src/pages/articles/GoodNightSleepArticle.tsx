@@ -31,9 +31,10 @@ export default function GoodNightSleepArticle() {
         {/* Cover Image */}
         <div className="mb-8 overflow-hidden rounded-2xl h-48 sm:h-64 md:h-80">
           <img
-            src="/images/good-night-sleep.jpg"
+            src="/images/good-night-sleep.webp"
             alt="Como ter uma boa noite de sono"
             className="w-full h-full object-cover"
+            loading="lazy"
           />
         </div>
 
@@ -62,9 +63,10 @@ export default function GoodNightSleepArticle() {
           {/* Image after description */}
           <div className="mb-8 overflow-hidden rounded-2xl h-40 sm:h-56 md:h-72">
             <img
-              src="/images/article-bedtime-hero.jpg"
+              src="/images/article-bedtime-hero.webp"
               alt="Durante o dia"
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
 
@@ -239,9 +241,10 @@ export default function GoodNightSleepArticle() {
           {/* Bedtime Environment Image */}
           <div className="mb-8 overflow-hidden rounded-2xl h-40 sm:h-56 md:h-72">
             <img
-              src="/images/sleep-night-hero.jpg"
+              src="/images/sleep-night-hero.webp"
               alt="Ambiente para dormir"
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
 

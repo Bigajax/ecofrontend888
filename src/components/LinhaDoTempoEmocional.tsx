@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { LazyResponsiveLine as ResponsiveLine } from "@/components/charts/LazyCharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
 
 type LinhaDoTempoItem = { data: string; [dominio: string]: number | string };
 
@@ -111,6 +111,28 @@ const LinhaDoTempoEmocional: React.FC<Props> = ({
   const tickEvery = Math.max(1, Math.floor(dates.length / 6));
   const tickValues = dates.filter((_, i) => i % tickEvery === 0);
 
+  // Transform data for Recharts format
+  const rechartsData = useMemo(() => {
+    if (mode === "total") {
+      return totalSeries[0].data.map(point => ({
+        date: fmtDM.format(point.x),
+        timestamp: point.x.getTime(),
+        Total: point.y,
+      }));
+    } else {
+      // Merge all series into single array of objects
+      const allDates = [...new Set(domainSeries.flatMap(s => s.data.map(d => d.x.getTime())))].sort();
+      return allDates.map(timestamp => {
+        const obj: any = { date: fmtDM.format(new Date(timestamp)), timestamp };
+        domainSeries.forEach(serie => {
+          const point = serie.data.find(d => d.x.getTime() === timestamp);
+          obj[serie.id] = point ? point.y : 0;
+        });
+        return obj;
+      });
+    }
+  }, [mode, totalSeries, domainSeries]);
+
   return (
     <div style={{ height }}>
       {/* Segmented control */}
@@ -134,75 +156,67 @@ const LinhaDoTempoEmocional: React.FC<Props> = ({
         ))}
       </div>
 
-      <ResponsiveLine
-        data={mode === "total" ? totalSeries : domainSeries}
-        xScale={{ type: "time", format: "native", precision: "day" }}
-        xFormat="time:%d/%m"
-        yScale={{ type: "linear", stacked: false, min: 0, max: yMax }}
-        axisBottom={{ tickPadding: 6, tickSize: 0, format: "%d/%m", tickValues }}
-        axisLeft={{ tickPadding: 4, tickSize: 0 }}
-        enablePoints={false}
-        curve="natural"
-        enableGridX={false}
-        enableGridY
-        colors={(s) => (s.color as string) ?? COLORS[0]}
-        lineWidth={2}
-        enableArea={mode === "total"}         // área sutil só no total
-        areaOpacity={0.18}
-        margin={{ top: 8, right: 12, bottom: 28, left: 28 }}
-        useMesh
-        enableSlices="x"
-        legends={
-          mode === "dominios"
-            ? [
-                {
-                  anchor: "bottom-left",
-                  direction: "row",
-                  translateY: 20,
-                  itemWidth: 120,
-                  itemHeight: 16,
-                  symbolSize: 8,
-                  itemsSpacing: 12,
-                },
-              ]
-            : []
-        }
-        theme={{
-          grid: { line: { stroke: "#F3F4F6", strokeWidth: 1 } },
-          axis: { ticks: { text: { fill: "#9CA3AF", fontSize: 10 } } },
-          legends: { text: { fill: "#6B7280", fontSize: 11 } },
-          crosshair: { line: { stroke: "#D1D5DB", strokeWidth: 1 } },
-          tooltip: { container: { fontSize: 12, borderRadius: 8 } },
-        }}
-        tooltip={({ slice }) => {
-          if (!slice) return null;
-          const d = slice.points[0]?.data.x as Date;
-          return (
-            <div className="rounded-md border border-neutral-200 bg-white/95 p-2 text-xs">
-              <div className="font-medium mb-1">{fmtDM.format(d)}</div>
-              {slice.points.map((p) => (
-                <div key={p.id} className="flex items-center gap-1">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: p.serieColor }} />
-                  {p.serieId}: {Number(p.data.y).toFixed(0)}
+      <ResponsiveContainer width="100%" height={height - 50}>
+        <LineChart data={rechartsData} margin={{ top: 8, right: 12, bottom: 28, left: 28 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+          <XAxis
+            dataKey="date"
+            tick={{ fill: "#9CA3AF", fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            domain={[0, yMax]}
+            tick={{ fill: "#9CA3AF", fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
+          />
+          <Tooltip
+            content={({ active, payload }) =>
+              active && payload?.length ? (
+                <div className="rounded-md border border-neutral-200 bg-white/95 p-2 text-xs">
+                  <div className="font-medium mb-1">{payload[0].payload.date}</div>
+                  {payload.map((p, i) => (
+                    <div key={i} className="flex items-center gap-1">
+                      <span
+                        className="inline-block w-2.5 h-2.5 rounded-full"
+                        style={{ background: p.color }}
+                      />
+                      {p.name}: {Number(p.value).toFixed(0)}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          );
-        }}
-        markers={
-          mode === "total"
-            ? []
-            : [
-                {
-                  axis: "y",
-                  value: 3,
-                  lineStyle: { stroke: "#9CA3AF", strokeWidth: 1, strokeDasharray: "4 4" },
-                  legend: "",
-                },
-              ]
-        }
-        animate={false}
-      />
+              ) : null
+            }
+          />
+          {mode === "dominios" && <Legend wrapperStyle={{ fontSize: 11, color: "#6B7280" }} />}
+          {mode === "dominios" && (
+            <ReferenceLine y={3} stroke="#9CA3AF" strokeDasharray="4 4" strokeWidth={1} />
+          )}
+          {mode === "total" ? (
+            <Line
+              type="natural"
+              dataKey="Total"
+              stroke={COLORS[0]}
+              strokeWidth={2}
+              dot={false}
+              fill={COLORS[0]}
+              fillOpacity={0.18}
+            />
+          ) : (
+            topDomains.map((domain, i) => (
+              <Line
+                key={domain}
+                type="natural"
+                dataKey={domain}
+                stroke={COLORS[i % COLORS.length]}
+                strokeWidth={2}
+                dot={false}
+              />
+            ))
+          )}
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 };

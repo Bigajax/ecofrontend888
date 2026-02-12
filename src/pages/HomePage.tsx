@@ -240,7 +240,7 @@ export default function HomePage() {
         title: 'Sobre Bem-estar Mental',
         description: 'Por que o sono é tão importante',
         category: 'wellbeing',
-        image: 'url("/images/wellbeing-mental.jpg")',
+        image: 'url("/images/wellbeing-mental.webp")', // 🚀 OPT#7: JPG→WebP (-22.72 KB)
         icon: '',
         isPremium: false,
       },
@@ -249,7 +249,7 @@ export default function HomePage() {
         title: 'Como ter uma boa noite de sono',
         description: 'Se estiver tendo problemas para dormir, estas dicas podem ajudar.',
         category: 'wellbeing',
-        image: 'url("/images/good-night-sleep.jpg")',
+        image: 'url("/images/good-night-sleep.webp")', // 🚀 OPT#7: JPG→WebP (-20.48 KB)
         icon: '',
         isPremium: false,
       },
