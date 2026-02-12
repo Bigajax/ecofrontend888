@@ -301,6 +301,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Há aquela máxima de que o poder corrompe. À primeira vista, é verdade. Nero, o pupilo de Sêneca, com sua sequência de crimes e assassinatos, é um exemplo perfeito. Outro imperador, Domiciano, baniu arbitrariamente todos os filósofos de Roma (Epicteto foi obrigado a fugir por causa disso). Muitos dos imperadores de Roma foram tiranos. Contudo, não muitos anos depois, Epicteto se tornaria amigo íntimo de outro imperador, Adriano, que ajudaria Marco Aurélio a ascender ao trono, um dos mais verdadeiros exemplos de um sábio rei-filósofo.\n\nPortanto não é tão claro que o poder sempre corrompa. De fato, parece que a questão se resume, sob muitos aspectos, à força interior e à autoconsciência de indivíduos — o que eles valem, que desejos controlam, se sua compreensão de equidade e justiça se contrapõe às tentações de riqueza e deferência ilimitadas.\n\nO mesmo se aplica a você. Tanto pessoal quanto profissionalmente. Tirano ou rei? Herói ou Nero? Qual você será?',
     background: DECEMBER_BACKGROUNDS[0],
   },
+  {
+    date: '12 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 12,
+    title: 'PROTEJA SUA PAZ DE ESPÍRITO',
+    text: 'Mantém guarda constante sobre tuas percepções, pois não é pouca coisa que estás protegendo, mas teu respeito, confiabilidade e equilíbrio, paz de espírito, ausência da dor e do medo; numa palavra, tua liberdade. Por quanto venderias tudo isso?',
+    author: 'Epicteto',
+    source: 'Discursos, 4.3.6b-8',
+    comment: 'O trabalho problemático que o deixa estressado, um relacionamento conflituoso, uma vida sob os holofotes. Por nos ajudar a controlar nossas reações emocionais e a analisá-las, o estoicismo pode tornar situações como essas mais fáceis de suportar. Pode ajudá-lo a controlar e mitigar os gatilhos que parecem ser acionados a todo momento.\n\nMas uma pergunta: Você está se sujeitando a isso? É esse realmente o ambiente para o qual você foi feito? Ser provocado por e-mails maldosos e uma interminável sucessão de problemas no trabalho? Nossas glândulas ad-renais podem lidar apenas com certo número de situações atribuladas antes de ficarem exaustas. Você não deveria preservá-las para situações de vida ou morte?\n\nPortanto, sim, use o estoicismo para lidar com essas dificuldades. Mas não se esqueça de perguntar: Esta é realmente a vida que quero? Cada vez que você fica aborrecido, um pouquinho de vida deixa seu corpo. Essas são mesmo as coisas com que você quer gastar esse recurso inestimável? Não tenha medo de fazer uma mudança — uma mudança grande.',
+    background: DECEMBER_BACKGROUNDS[1],
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
