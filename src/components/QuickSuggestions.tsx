@@ -129,8 +129,8 @@ export const DEFAULT_ROTATING: Suggestion[] = [
 /* === Tipografia (clean) === */
 const labelBase =
   "text-center text-slate-900/95 tracking-[-0.005em] antialiased";
-const labelHero = "text-[15px] leading-[1.35] font-normal";
-const labelFooter = "text-[14px] leading-[1.35] font-normal";
+const labelHero = "text-fluid-base leading-[1.35] font-normal";
+const labelFooter = "text-fluid-sm leading-[1.35] font-normal";
 
 function QuickSuggestionsComp({
   visible,
@@ -158,10 +158,10 @@ function QuickSuggestionsComp({
   return (
     <div
       className={clsx(
-        "mx-auto flex w-full flex-col items-center text-center",
+        "container-content-compact mx-auto flex w-full flex-col items-center text-center",
         isFooter
-          ? "mb-2 md:mb-2 sm:mb-1 max-w-[min(700px,92vw)]"
-          : "mb-4 md:mb-3 sm:mb-2 max-w-[840px]",
+          ? "mb-fluid-xs max-w-content-compact"
+          : "mb-fluid-md max-w-content",
         className
       )}
       aria-label="Atalhos de início"
@@ -184,12 +184,12 @@ function QuickSuggestionsComp({
         className={clsx(
           "quick-suggestions-scroll flex w-full overflow-x-auto no-scrollbar",
           "scroll-smooth snap-x snap-mandatory",
-          isFooter ? "mt-2 gap-2" : "mt-3 gap-3",
-          "px-1"
+          isFooter ? "mt-fluid-xs gap-fluid-xs" : "mt-fluid-sm gap-fluid-sm",
+          "px-fluid-2xs"
         )}
         role="list"
         style={{
-          scrollPaddingInline: '0.5rem',
+          scrollPaddingInline: 'var(--space-fluid-xs)',
           WebkitOverflowScrolling: 'touch',
         }}
       >
@@ -209,8 +209,8 @@ function QuickSuggestionsComp({
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-eco-baby/40",
               "active:translate-y-0",
               isFooter
-                ? "min-h-[44px] min-w-[180px] px-3.5 py-2.5"
-                : "min-h-[48px] min-w-[240px] px-4 py-3",
+                ? "min-h-11 min-w-[11rem] px-fluid-sm py-fluid-xs"
+                : "min-h-12 min-w-[14rem] px-fluid-md py-fluid-sm",
               disabled && "cursor-not-allowed opacity-60"
             )}
             aria-label={`Sugerir: ${s.label}`}
@@ -224,7 +224,7 @@ function QuickSuggestionsComp({
               <span
                 className={clsx(
                   "leading-none opacity-80",
-                  isFooter ? "text-[14px]" : "text-[15px] md:text-[17px]"
+                  isFooter ? "text-fluid-sm" : "text-fluid-base md:text-fluid-lg"
                 )}
                 aria-hidden
               >

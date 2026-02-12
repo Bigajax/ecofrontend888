@@ -11,8 +11,8 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-t border-gray-200 pb-safe md:hidden">
-      <div className="flex items-center justify-around h-16 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/80 pb-safe backdrop-blur-md md:hidden">
+      <div className="container-content flex min-h-16 items-center justify-around px-fluid-xs">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -21,7 +21,7 @@ export default function BottomNav() {
               to={item.to}
               className={({ isActive }) =>
                 clsx(
-                  'flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 min-w-[60px]',
+                  'flex min-w-[3.75rem] flex-col items-center justify-center gap-fluid-2xs rounded-lg px-fluid-xs py-fluid-2xs transition-all duration-200',
                   isActive
                     ? 'text-[#6EC8FF]'
                     : 'text-gray-600 hover:text-gray-900'
@@ -31,12 +31,12 @@ export default function BottomNav() {
               {({ isActive }) => (
                 <>
                   <Icon
-                    size={20}
+                    size={18}
                     strokeWidth={isActive ? 2 : 1.5}
                     className="transition-all duration-200"
                   />
                   <span className={clsx(
-                    'text-xs font-medium transition-all duration-200',
+                    'text-fluid-xs font-medium transition-all duration-200',
                     isActive ? 'font-semibold' : 'font-normal'
                   )}>
                     {item.label}

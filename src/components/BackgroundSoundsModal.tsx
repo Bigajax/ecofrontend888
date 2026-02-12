@@ -63,7 +63,7 @@ export default function BackgroundSoundsModal({
       <style>{scrollbarStyles}</style>
 
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center p-fluid-xs md:p-fluid-md"
         style={{
           overscrollBehaviorX: 'none',
           touchAction: 'pan-y'
@@ -76,37 +76,37 @@ export default function BackgroundSoundsModal({
         />
 
         {/* Modal Content - Responsive */}
-        <div className="relative w-full max-w-4xl max-h-[90vh] sm:max-h-[85vh] bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+        <div className="relative flex w-full max-w-content-wide max-h-[90vh] bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden">
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors touch-manipulation active:scale-95"
+            className="absolute right-fluid-sm top-fluid-sm z-10 flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-gray-200 touch-manipulation active:scale-95"
             aria-label="Fechar"
           >
             <X size={18} className="text-gray-700" />
           </button>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 overscroll-contain scroll-smooth"
+          <div className="custom-scrollbar flex-1 overflow-y-auto px-fluid-md py-fluid-md md:px-fluid-lg md:py-fluid-lg overscroll-contain scroll-smooth"
             style={{
               scrollbarWidth: 'thin',
               scrollbarColor: '#9CA3AF #E5E7EB'
             }}
           >
           {/* Header */}
-          <div className="mb-4 sm:mb-6 pr-8 sm:pr-0">
+          <div className="mb-fluid-md pr-10 md:pr-0">
             {/* Title Section */}
-            <div className="mb-3 sm:mb-4">
-              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-1">
+            <div className="mb-fluid-sm">
+              <h1 className="mb-fluid-2xs text-fluid-xl font-semibold text-gray-900">
                 Sons de fundo
               </h1>
-              <p className="text-xs sm:text-sm text-gray-500">
+              <p className="text-fluid-sm text-gray-500">
                 Fazemos sugestões personalizadas para você
               </p>
             </div>
 
             {/* Volume Control - Minimalista */}
-            <div className="flex items-center gap-2 bg-gray-50 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 w-full sm:w-auto">
+            <div className="flex w-full items-center gap-fluid-xs rounded-full bg-gray-50 px-fluid-sm py-fluid-xs md:w-auto">
               <Volume2 size={14} className="text-gray-600 flex-shrink-0" />
               <input
                 type="range"
@@ -120,15 +120,15 @@ export default function BackgroundSoundsModal({
                   borderRadius: '999px'
                 }}
               />
-              <span className="text-xs font-semibold text-gray-700 min-w-[38px] text-right">
+              <span className="min-w-[2.5rem] text-right text-fluid-sm font-semibold text-gray-700">
                 {Math.round(volume)}%
               </span>
             </div>
           </div>
 
           {/* Sounds Grid - Fully Responsive */}
-          <div className="pb-2 sm:pb-4">
-            <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
+          <div className="pb-fluid-sm">
+            <div className="grid grid-cols-2 w390:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-fluid-xs md:gap-fluid-sm">
               {allSounds.map((sound) => {
                 const isSelected = selectedSoundId === sound.id;
                 const imageStyle = sound.image.startsWith('url(')
@@ -147,10 +147,10 @@ export default function BackgroundSoundsModal({
                     onClick={sound.isPremium ? undefined : () => handleSoundClick(sound)}
                     disabled={sound.isPremium}
                     className={`
-                      relative aspect-square rounded-2xl sm:rounded-[22px] overflow-hidden
+                      relative aspect-square rounded-2xl md:rounded-[22px] overflow-hidden
                       transition-all duration-300 touch-manipulation
                       ${sound.isPremium ? 'cursor-not-allowed' : 'active:scale-95 sm:hover:scale-105 cursor-pointer'}
-                      ${isSelected ? 'ring-2 sm:ring-3 ring-[#6EC8FF] shadow-lg' : 'shadow-sm sm:hover:shadow-md'}
+                      ${isSelected ? 'ring-2 md:ring-3 ring-[#6EC8FF] shadow-lg' : 'shadow-sm md:hover:shadow-md'}
                     `}
                     style={{
                       ...imageStyle,
@@ -162,8 +162,8 @@ export default function BackgroundSoundsModal({
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
                     {/* Sound Title */}
-                    <div className="absolute inset-0 flex items-end justify-center p-1.5 sm:p-2">
-                      <h3 className="text-white font-medium text-[10px] xs:text-xs sm:text-xs text-center leading-tight">
+                    <div className="absolute inset-0 flex items-end justify-center p-fluid-xs">
+                      <h3 className="text-fluid-xs text-center font-medium leading-tight text-white">
                         {sound.title}
                       </h3>
                     </div>

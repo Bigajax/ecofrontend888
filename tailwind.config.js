@@ -8,6 +8,9 @@ const glassBlur = tokens.blur.glass
 const glassBlurStrong = tokens.blur.glassStrong
 const minimalShadow = tokens.shadows.minimal
 const subtleShadow = tokens.shadows.subtle
+const breakpoints = tokens.breakpoints
+const fluidType = tokens.fluid.typography
+const fluidSpace = tokens.fluid.spacing
 
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
@@ -24,7 +27,39 @@ export default {
   },
 
   theme: {
+    screens: {
+      'w320': breakpoints.w320,
+      'w375': breakpoints.w375,
+      'w390': breakpoints.w390,
+      'w414': breakpoints.w414,
+      'md': breakpoints.w768,
+      'lg': breakpoints.w1024,
+      'xl': breakpoints.w1280,
+      '2xl': breakpoints.w1536,
+    },
     extend: {
+      maxWidth: {
+        'content-compact': tokens.layout.content.compact,
+        content: tokens.layout.content.default,
+        'content-wide': tokens.layout.content.wide,
+      },
+      spacing: {
+        'fluid-2xs': fluidSpace['2xs'],
+        'fluid-xs': fluidSpace.xs,
+        'fluid-sm': fluidSpace.sm,
+        'fluid-md': fluidSpace.md,
+        'fluid-lg': fluidSpace.lg,
+        'fluid-xl': fluidSpace.xl,
+        'content-gutter': tokens.layout.gutter.base,
+      },
+      fontSize: {
+        'fluid-xs': [fluidType.xs, { lineHeight: '1.4' }],
+        'fluid-sm': [fluidType.sm, { lineHeight: '1.45' }],
+        'fluid-base': [fluidType.base, { lineHeight: '1.55' }],
+        'fluid-lg': [fluidType.lg, { lineHeight: '1.5' }],
+        'fluid-xl': [fluidType.xl, { lineHeight: '1.35' }],
+        'fluid-2xl': [fluidType['2xl'], { lineHeight: '1.25' }],
+      },
       /* Tipografia — Inter (primária) + Playfair Display (display) */
       fontFamily: {
         sans: [
@@ -198,6 +233,21 @@ export default {
           'background': 'linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0))',
           'opacity': '0.75',
           'pointer-events': 'none',
+        },
+        '.container-content': {
+          'width': 'min(100%, var(--content-max-default))',
+          'margin-inline': 'auto',
+          'padding-inline': 'var(--content-gutter)',
+        },
+        '.container-content-compact': {
+          'width': 'min(100%, var(--content-max-compact))',
+          'margin-inline': 'auto',
+          'padding-inline': 'var(--content-gutter)',
+        },
+        '.container-content-wide': {
+          'width': 'min(100%, var(--content-max-wide))',
+          'margin-inline': 'auto',
+          'padding-inline': 'var(--content-gutter-comfortable)',
         },
         '.glass-shell-strong': {
           'background': 'rgba(250, 249, 247, 0.95)',
