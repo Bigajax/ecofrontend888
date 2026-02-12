@@ -63,7 +63,7 @@ export default function BackgroundSoundsModal({
       <style>{scrollbarStyles}</style>
 
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center p-2 xs:p-3 sm:p-4"
         style={{
           overscrollBehaviorX: 'none',
           touchAction: 'pan-y'
@@ -76,37 +76,37 @@ export default function BackgroundSoundsModal({
         />
 
         {/* Modal Content - Responsive */}
-        <div className="relative w-full max-w-4xl max-h-[90vh] sm:max-h-[85vh] bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+        <div className="relative w-full max-w-4xl max-h-[90vh] xs:max-h-[88vh] sm:max-h-[85vh] bg-white rounded-2xl xs:rounded-[22px] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col">
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors touch-manipulation active:scale-95"
+            className="absolute top-3 right-3 xs:top-3.5 xs:right-3.5 sm:top-4 sm:right-4 z-10 flex h-8 w-8 xs:h-9 xs:w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors touch-manipulation active:scale-95"
             aria-label="Fechar"
           >
             <X size={18} className="text-gray-700" />
           </button>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 overscroll-contain scroll-smooth"
+          <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 xs:px-5 xs:py-5 sm:px-6 sm:py-5 md:px-8 md:py-6 overscroll-contain scroll-smooth"
             style={{
               scrollbarWidth: 'thin',
               scrollbarColor: '#9CA3AF #E5E7EB'
             }}
           >
           {/* Header */}
-          <div className="mb-4 sm:mb-6 pr-8 sm:pr-0">
+          <div className="mb-4 xs:mb-5 sm:mb-6 pr-8 xs:pr-10 sm:pr-0">
             {/* Title Section */}
-            <div className="mb-3 sm:mb-4">
-              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-1">
+            <div className="mb-3 xs:mb-3.5 sm:mb-4">
+              <h1 className="text-lg xs:text-xl sm:text-2xl font-semibold text-gray-900 mb-1">
                 Sons de fundo
               </h1>
-              <p className="text-xs sm:text-sm text-gray-500">
+              <p className="text-[11px] xs:text-xs sm:text-sm text-gray-500">
                 Fazemos sugestões personalizadas para você
               </p>
             </div>
 
             {/* Volume Control - Minimalista */}
-            <div className="flex items-center gap-2 bg-gray-50 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2 bg-gray-50 rounded-full px-3 py-1.5 xs:px-3.5 xs:py-2 sm:px-4 sm:py-2 w-full sm:w-auto">
               <Volume2 size={14} className="text-gray-600 flex-shrink-0" />
               <input
                 type="range"
@@ -127,8 +127,8 @@ export default function BackgroundSoundsModal({
           </div>
 
           {/* Sounds Grid - Fully Responsive */}
-          <div className="pb-2 sm:pb-4">
-            <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
+          <div className="pb-2 xs:pb-3 sm:pb-4">
+            <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 xs:gap-2.5 sm:gap-3">
               {allSounds.map((sound) => {
                 const isSelected = selectedSoundId === sound.id;
                 const imageStyle = sound.image.startsWith('url(')
@@ -163,7 +163,7 @@ export default function BackgroundSoundsModal({
 
                     {/* Sound Title */}
                     <div className="absolute inset-0 flex items-end justify-center p-1.5 sm:p-2">
-                      <h3 className="text-white font-medium text-[10px] xs:text-xs sm:text-xs text-center leading-tight">
+                      <h3 className="text-white font-medium text-[10px] xs:text-[11px] sm:text-xs text-center leading-tight">
                         {sound.title}
                       </h3>
                     </div>

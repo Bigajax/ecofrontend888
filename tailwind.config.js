@@ -25,6 +25,10 @@ export default {
 
   theme: {
     extend: {
+      screens: {
+        xs: '475px',
+      },
+
       /* Tipografia — Inter (primária) + Playfair Display (display) */
       fontFamily: {
         sans: [
