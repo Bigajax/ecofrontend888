@@ -286,6 +286,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 🛡️ Flag para evitar loop de recuperação de sessão
+  const isRecoveringSessionRef = useRef(false);
+  const sessionRecoveryAttemptsRef = useRef(0);
+  const MAX_RECOVERY_ATTEMPTS = 2;
+
   // Guest mode state - persisted in localStorage
   const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -439,21 +444,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         persistAuthToken(session?.access_token ?? null);
 
-        // 🛡️ PROTEÇÃO: Detecta SIGNED_OUT mas NÃO faz logout automático
-        // Apenas faz logout se foi o PRÓPRIO USUÁRIO que clicou em "Sair"
+        // 🛡️ PROTEÇÃO: Detecta SIGNED_OUT e tenta recuperar sessão COM LIMITE
         if (event === 'SIGNED_OUT') {
           console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.warn('[Auth] ⚠️ SIGNED_OUT DETECTADO');
-          console.warn('[Auth] Tentando recuperar sessão automaticamente...');
+          console.warn('[Auth] Tentativas de recuperação:', sessionRecoveryAttemptsRef.current);
           console.warn('[Auth] Timestamp:', new Date().toISOString());
           console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
+          // 🛡️ ANTI-LOOP: Evitar tentativas infinitas de recuperação
+          if (isRecoveringSessionRef.current) {
+            console.warn('[Auth] ⚠️ Já está tentando recuperar sessão - ignorando SIGNED_OUT');
+            return;
+          }
+
+          if (sessionRecoveryAttemptsRef.current >= MAX_RECOVERY_ATTEMPTS) {
+            console.error('[Auth] ❌ Máximo de tentativas de recuperação atingido');
+            console.error('[Auth] Limpando sessão corrompida e continuando como guest');
+
+            // Limpar completamente
+            setSession(null);
+            setUser(null);
+            persistAuthToken(null);
+            clearClientState();
+            clearGuestStorage();
+
+            // Reset contador
+            sessionRecoveryAttemptsRef.current = 0;
+            setLoading(false);
+            return;
+          }
+
           // Tentar recuperar a sessão automaticamente
+          isRecoveringSessionRef.current = true;
+          sessionRecoveryAttemptsRef.current += 1;
+
           supabase.auth.getSession().then(({ data: { session: recoveredSession }, error }) => {
+            isRecoveringSessionRef.current = false;
+
             if (error) {
               console.error('[Auth] ❌ Erro ao tentar recuperar sessão:', error);
-              // Não faz logout, apenas registra o erro
-              // O usuário pode continuar usando o app
+              console.error('[Auth] Error message:', error.message);
+              console.error('[Auth] Error name:', error.name);
+
+              // 🛡️ CRÍTICO: Detectar refresh token inválido especificamente
+              const isInvalidRefreshToken =
+                error.message?.toLowerCase().includes('invalid refresh token') ||
+                error.message?.toLowerCase().includes('refresh token not found') ||
+                error.message?.toLowerCase().includes('refresh_token_not_found');
+
+              if (isInvalidRefreshToken) {
+                console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                console.error('[Auth] 🚨 REFRESH TOKEN INVÁLIDO DETECTADO');
+                console.error('[Auth] Fazendo logout completo e limpando sessão');
+                console.error('[Auth] Usuário continuará como guest');
+                console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+                // Limpar TUDO imediatamente
+                setSession(null);
+                setUser(null);
+                persistAuthToken(null);
+                clearClientState();
+                clearGuestStorage();
+
+                // Fazer signOut do Supabase (não await - fire and forget)
+                supabase.auth.signOut().catch(() => {
+                  // Ignorar erro de signOut - já limpamos localmente
+                });
+
+                // Reset contador e parar loading
+                sessionRecoveryAttemptsRef.current = 0;
+                setLoading(false);
+                return;
+              }
+
+              // Outros erros: não fazer nada, usuário pode continuar
               return;
             }
 
@@ -462,6 +527,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setSession(recoveredSession);
               setUser(recoveredSession.user);
               persistAuthToken(recoveredSession.access_token);
+
+              // Reset contador após sucesso
+              sessionRecoveryAttemptsRef.current = 0;
             } else {
               console.warn('[Auth] ⚠️ Não foi possível recuperar a sessão');
               console.warn('[Auth] Mas NÃO vamos fazer logout automático');
@@ -469,6 +537,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // Não limpa nada - mantém o usuário logado localmente
             }
           }).catch((err) => {
+            isRecoveringSessionRef.current = false;
             console.error('[Auth] Exceção ao recuperar sessão:', err);
             // Não faz logout mesmo com erro
           });

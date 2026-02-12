@@ -135,8 +135,13 @@
         to { transform: rotate(360deg); }
       }
 
-      /* Ocultar fallback quando React montar */
-      #root:not(:empty) #loading-fallback {
+      /* 🛡️ Ocultar fallback quando React montar */
+      #loading-fallback {
+        pointer-events: none; /* CRÍTICO: Nunca bloquear cliques */
+      }
+
+      /* Ocultar fallback quando app montar (flag setada pelo React) */
+      body.app-mounted #loading-fallback {
         display: none !important;
       }
     </style>
@@ -148,10 +153,41 @@
         var startTime = Date.now();
         var fallbackShown = false;
 
+        // 🛡️ Observador para detectar quando React monta
+        var observer = new MutationObserver(function() {
+          // Verificar se React montou (flag global ou conteúdo no root)
+          if (window.__APP_MOUNTED__ || document.getElementById('root')?.children.length > 1) {
+            // React montou! Remover fallback e parar observação
+            var fallback = document.getElementById('loading-fallback');
+            if (fallback) {
+              fallback.style.display = 'none';
+            }
+            document.body.classList.add('app-mounted');
+            observer.disconnect();
+
+            console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.info('[index.html] ✅ React montou com sucesso!');
+            console.info('[index.html] Fallback removido');
+            console.info('[index.html] Tempo de carregamento:', Math.round((Date.now() - startTime) / 1000) + 's');
+            console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          }
+        });
+
+        // Observar mudanças no root
+        var root = document.getElementById('root');
+        if (root) {
+          observer.observe(root, { childList: true, subtree: true });
+        }
+
         setTimeout(function() {
+          // 🛡️ Se React já montou, não fazer nada
+          if (window.__APP_MOUNTED__ || document.body.classList.contains('app-mounted')) {
+            console.info('[index.html] ✅ Timeout de 10s alcançado mas React já montou - tudo OK!');
+            return;
+          }
+
           var root = document.getElementById('root');
           var fallback = document.getElementById('loading-fallback');
-          var fallbackMsg = document.getElementById('fallback-message');
 
           // Se root ainda vazio ou só com fallback, significa que React não montou
           if (root && (root.children.length <= 1 || !root.textContent.trim().replace(/\s+/g, ''))) {
@@ -164,6 +200,8 @@
             console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
             if (fallback) {
+              // Habilitar pointer-events APENAS para fallback de erro (com botões)
+              fallback.style.pointerEvents = 'auto';
               fallback.innerHTML = `
                 <div style="text-align: center; max-width: 420px; padding: 32px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
                   <!-- Ícone de Erro -->

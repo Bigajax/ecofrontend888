@@ -120,7 +120,10 @@ export default function LiveReflectionSection() {
                 style={{
                   left: position.left,
                   top: position.top,
-                  animation: `float-${avatar.id} ${6 + Math.random() * 2}s ease-in-out infinite`,
+                  animationName: `float-${avatar.id}`,
+                  animationDuration: `${6 + Math.random() * 2}s`,
+                  animationTimingFunction: 'ease-in-out',
+                  animationIterationCount: 'infinite',
                   animationDelay: `${avatar.delay}s`
                 }}
               >

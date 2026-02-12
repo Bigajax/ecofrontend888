@@ -110,3 +110,17 @@ createRoot(document.getElementById('root')!).render(
 );
 
 // ✅ StrictMode permanece; os envios agora são idempotentes e fora do setState.
+
+// 🛡️ PROTEÇÃO: Sinalizar que React montou com sucesso
+// Isso remove o fallback do index.html e evita que ele fique travando cliques
+if (typeof window !== 'undefined') {
+  window.__APP_MOUNTED__ = true;
+  document.body.classList.add('app-mounted');
+
+  // Remover fallback do DOM se existir
+  const fallback = document.getElementById('loading-fallback');
+  if (fallback) {
+    fallback.style.display = 'none';
+    console.info('[main.tsx] ✅ Fallback removido - React montado com sucesso');
+  }
+}

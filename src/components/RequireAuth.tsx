@@ -10,7 +10,10 @@ interface RequireAuthProps {
 type AuthStatus = 'loading' | 'authenticated' | 'guest' | 'unauthenticated';
 
 const loadingSkeleton = (
-  <div className="flex min-h-screen w-full items-center justify-center bg-slate-50">
+  <div
+    className="flex min-h-screen w-full items-center justify-center bg-slate-50"
+    style={{ pointerEvents: 'none' }} // 🛡️ CRÍTICO: Nunca bloquear cliques
+  >
     <div className="space-y-3 text-center">
       <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-slate-300 border-t-slate-500" />
       <p className="text-sm font-medium text-slate-600">Validando sessão…</p>
