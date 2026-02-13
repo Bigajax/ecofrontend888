@@ -313,6 +313,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'O trabalho problemático que o deixa estressado, um relacionamento conflituoso, uma vida sob os holofotes. Por nos ajudar a controlar nossas reações emocionais e a analisá-las, o estoicismo pode tornar situações como essas mais fáceis de suportar. Pode ajudá-lo a controlar e mitigar os gatilhos que parecem ser acionados a todo momento.\n\nMas uma pergunta: Você está se sujeitando a isso? É esse realmente o ambiente para o qual você foi feito? Ser provocado por e-mails maldosos e uma interminável sucessão de problemas no trabalho? Nossas glândulas ad-renais podem lidar apenas com certo número de situações atribuladas antes de ficarem exaustas. Você não deveria preservá-las para situações de vida ou morte?\n\nPortanto, sim, use o estoicismo para lidar com essas dificuldades. Mas não se esqueça de perguntar: Esta é realmente a vida que quero? Cada vez que você fica aborrecido, um pouquinho de vida deixa seu corpo. Essas são mesmo as coisas com que você quer gastar esse recurso inestimável? Não tenha medo de fazer uma mudança — uma mudança grande.',
     background: DECEMBER_BACKGROUNDS[1],
   },
+  {
+    date: '13 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 13,
+    title: 'O PRAZER PODE SE TORNAR PUNIÇÃO',
+    text: 'Sempre que tiveres a impressão de prazer, ou qualquer outra, não te deixes levar por ela, permite que ela espere tua ação, para por um instante. Depois disso, evoca ambos os momentos, primeiro aquele em que desfrutaste o prazer e depois aquele em que o lamentarás e detestarás a ti mesmo. Em seguida, compara com eles a alegria e a satisfação que sentirias por se abster por completo. No entanto, se surgir um momento aparentemente apropriado para agir sobre tal impressão, não te deixes vencer por sua comodidade e graciosidade — mas age contra tudo isso, pois é melhor a consciência de superá-la.',
+    author: 'Epicteto',
+    source: 'Encheiridion, 34',
+    comment: 'Autocontrole é algo difícil, sem dúvida. É por isso que um truque muito conhecido das dietas pode ser útil: o "dia do lixo" — o dia na semana em que é permitido comer de tudo. De fato, as pessoas que estão seguindo a dieta são estimuladas a fazer uma lista durante a semana de todas as comidas que desejaram, para que possam ter o prazer de desfrutá-las todas de uma só vez (a ideia é que se você se alimentar de maneira saudável seis dias em cada sete, ainda sairá ganhando).\n\nA princípio, isso parece um sonho, mas qualquer pessoa que tenha realmente feito isso sabe a verdade: em todos os dias do lixo você come até passar mal e odeia a si mesmo depois. Não demora, e você está abolindo esses dias por livre e espontânea vontade, porque não precisa deles e com certeza não os quer. Não é diferente de um pai que pega o filho com cigarros e o obriga a fumar o maço inteiro. É importante conectar a chamada tentação com seus efeitos. Quando você compreende que ceder pode ser pior do que resistir, o impulso começa a perder seu apelo. Dessa maneira, o autocontrole se torna o real prazer e a tentação se torna o remorso.',
+    background: DECEMBER_BACKGROUNDS[2],
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
