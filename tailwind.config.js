@@ -217,7 +217,7 @@ export default {
     plugin(function ({ addUtilities }) {
       addUtilities({
         '.glass-shell': {
-          'background': 'rgba(250, 249, 247, 0.85)',
+          'background': '#FAF9F7',
           'border': glassStroke,
           'backdrop-filter': `blur(${glassBlur})`,
           '-webkit-backdrop-filter': `blur(${glassBlur})`,
