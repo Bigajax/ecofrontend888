@@ -108,10 +108,26 @@ export function useKeyboardInsets(options: UseKeyboardInsetsOptions = {}): Keybo
   useEffect(() => {
     if (typeof document === 'undefined') return;
     document.body.classList.toggle('keyboard-open', isKeyboardOpen);
+
+    // Scroll para o input quando teclado abre (melhoria mobile)
+    if (isKeyboardOpen && inputRef?.current) {
+      requestAnimationFrame(() => {
+        const element = inputRef.current;
+        if (!element) return;
+
+        // Scroll suave para garantir que o input está visível
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'nearest'
+        });
+      });
+    }
+
     return () => {
       document.body.classList.remove('keyboard-open');
     };
-  }, [isKeyboardOpen]);
+  }, [isKeyboardOpen, inputRef]);
 
   const contentInset = useMemo(() => {
     return inputHeight + keyboardHeight;

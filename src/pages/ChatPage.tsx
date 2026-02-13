@@ -931,13 +931,18 @@ function ChatPage() {
 
           {showNewMessagesChip && (
             <div
-              className="sticky z-30 flex justify-center px-4"
-              style={{ bottom: safeAreaBottom + computedInputHeight + 24 }}
+              className="fixed z-30 flex justify-center px-4 sm:px-6 lg:px-8 pointer-events-none left-0 right-0"
+              style={{
+                bottom: safeAreaBottom + computedInputHeight + 24,
+                // Garantir que fica acima do conteúdo sem sobrepor
+                marginBottom: '8px'
+              }}
             >
               <button
                 type="button"
                 onClick={handleJumpToBottom}
-                className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-lg transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-eco-baby to-eco-babyDark px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-2 focus:ring-eco-baby/50 active:scale-95 pointer-events-auto"
+                aria-label="Rolar para novas mensagens"
               >
                 Novas mensagens
               </button>

@@ -185,7 +185,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping
     "whitespace-pre-wrap break-words overflow-wrap-anywhere",
     "transition-all duration-200",
     isUser
-      ? "bg-gray-900 text-white shadow-sm"
+      ? "bg-gradient-to-br from-eco-baby to-eco-babyDark text-white shadow-md hover:shadow-lg"
       : "bg-white/90 text-gray-900 border border-gray-200/60 shadow-sm backdrop-blur-sm"
   );
 

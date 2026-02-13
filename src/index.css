@@ -861,7 +861,53 @@ button, [role="button"], a { touch-action: manipulation; }
 }
 
 /* ---- Alturas e teclado (iOS/Android) ---- */
-body.keyboard-open { overscroll-behavior-y: contain; padding-bottom: var(--safe-bottom); }
+/* Previne bounce quando teclado está aberto */
+body.keyboard-open {
+  overscroll-behavior-y: contain;
+  padding-bottom: var(--safe-bottom);
+  /* Previne scroll do body quando teclado abre */
+  position: fixed;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Mobile: garantir que o input fique visível */
+@media (max-width: 768px) {
+  /* Smooth scroll para mobile */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Otimizar scroll touch no iOS */
+  body, #root {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+  }
+
+  /* Quando teclado abre, garantir que o scroll funciona */
+  body.keyboard-open #root {
+    position: relative;
+    overflow-y: auto;
+    height: 100dvh; /* Dynamic viewport height - ajusta com teclado */
+  }
+
+  /* Input fixo quando teclado aberto */
+  body.keyboard-open footer {
+    position: fixed !important;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+  }
+}
+
+/* iOS Safari: corrigir viewport height com teclado */
+@supports (-webkit-touch-callout: none) {
+  body.keyboard-open {
+    height: 100dvh;
+    max-height: -webkit-fill-available;
+  }
+}
 
 /* Diário Estoico - Fundo branco */
 body.diario-estoico-page,

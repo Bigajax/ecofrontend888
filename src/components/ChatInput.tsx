@@ -226,11 +226,11 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 exit={{ opacity: 0, scale: 0.9, x: 8 }}
                 transition={{ duration: 0.18 }}
                 className={clsx(
-                  "inline-flex h-10 w-10 items-center justify-center rounded-full text-white transition-all duration-200 shadow-ecoSm",
+                  "inline-flex h-10 w-10 items-center justify-center rounded-full text-white transition-all duration-200 shadow-md",
                   "bg-gradient-to-br from-eco-baby to-eco-babyDark",
-                  "hover:shadow-ecoHover active:scale-[0.98]",
-                  "focus-visible:ring-2 focus-visible:ring-eco-baby/40 focus-visible:outline-none",
-                  isBusy ? "cursor-not-allowed opacity-70 hover:shadow-ecoSm" : null,
+                  "hover:shadow-lg hover:scale-110 active:scale-95",
+                  "focus-visible:ring-2 focus-visible:ring-eco-baby/50 focus-visible:outline-none",
+                  isBusy ? "cursor-not-allowed opacity-70 hover:scale-100 hover:shadow-md" : null,
                 )}
                 aria-label="Enviar mensagem"
                 title={isBusy ? "Aguarde a resposta da Eco" : "Enviar mensagem"}
