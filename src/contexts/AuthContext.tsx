@@ -629,8 +629,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         nextBillingDate: null,
       });
     } catch (error) {
-      console.error('[Auth] Failed to refresh subscription:', error);
-      // Keep current state on error
+      // Tratar erro de forma não-invasiva
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const isNetworkError = errorMessage.includes('conectar') || errorMessage.includes('rede') || errorMessage.includes('network');
+
+      if (isNetworkError) {
+        // Erro de rede: log como warning, não bloqueia app
+        console.warn('[Auth] Subscription refresh failed (network issue):', errorMessage);
+        console.warn('[Auth] User can continue using app, subscription check will retry later');
+      } else {
+        // Outro erro: log como erro mas não derruba app
+        console.error('[Auth] Failed to refresh subscription:', error);
+      }
+
+      // Manter estado atual em caso de erro (não reseta para free)
+      // Isso previne perder acesso premium por erro temporário de rede
     }
   };
 

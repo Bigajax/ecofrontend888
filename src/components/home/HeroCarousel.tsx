@@ -417,9 +417,21 @@ export default function HeroCarousel({
               loop
               muted
               playsInline
+              preload="metadata"
               className="absolute inset-0 h-full w-full object-cover"
-              onError={() => {
-                console.error('Video failed to load, falling back to image');
+              onError={(e) => {
+                const video = e.currentTarget;
+                const diagnostics = {
+                  src: CAROUSEL_ITEMS[currentIndex].video,
+                  currentSrc: video.currentSrc || 'none',
+                  networkState: video.networkState, // 0=empty, 1=idle, 2=loading, 3=no source
+                  readyState: video.readyState, // 0=nothing, 1=metadata, 2=current, 3=future, 4=enough
+                  error: video.error ? {
+                    code: video.error.code, // 1=aborted, 2=network, 3=decode, 4=src not supported
+                    message: video.error.message,
+                  } : null,
+                };
+                console.warn('[HeroCarousel] Video failed to load, falling back to image', diagnostics);
                 setVideoError(true);
               }}
             >

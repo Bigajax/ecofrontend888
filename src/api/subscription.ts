@@ -117,7 +117,13 @@ export async function createSubscription(
 }
 
 /**
+ * Helper: sleep com Promise
+ */
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
  * Busca o status atual da assinatura do usuário
+ * Com retry automático em caso de erro de rede
  *
  * @returns Status completo da assinatura, incluindo trial e datas
  *
@@ -130,20 +136,63 @@ export async function createSubscription(
  * ```
  */
 export async function getSubscriptionStatus(): Promise<SubscriptionStatusResponse> {
-  const result = await apiFetchJson(`${SUBSCRIPTION_BASE_PATH}/status`, {
-    method: 'GET',
-  });
+  const MAX_RETRIES = 2;
+  const RETRY_DELAYS = [1000, 2000]; // 1s, 2s
 
-  if (isNetworkError(result)) {
-    throw new Error(ERROR_MESSAGES.NETWORK);
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await apiFetchJson(`${SUBSCRIPTION_BASE_PATH}/status`, {
+        method: 'GET',
+      });
+
+      if (isNetworkError(result)) {
+        lastError = new Error(ERROR_MESSAGES.NETWORK);
+
+        // Retry em caso de erro de rede
+        if (attempt < MAX_RETRIES) {
+          const delay = RETRY_DELAYS[attempt];
+          console.warn(`[subscription] Network error, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})...`);
+          await sleep(delay);
+          continue;
+        }
+
+        throw lastError;
+      }
+
+      if (!result.ok) {
+        const message = extractErrorMessage(result.data, ERROR_MESSAGES.STATUS_FAILED);
+        // Não retry em erros HTTP 4xx/5xx - são erros de lógica/autorização
+        throw new Error(message);
+      }
+
+      return result.data as SubscriptionStatusResponse;
+    } catch (error) {
+      lastError = error as Error;
+
+      // Se for erro de timeout/rede, retry
+      const isRetryable = error instanceof Error && (
+        error.message.includes('rede') ||
+        error.message.includes('network') ||
+        error.message.includes('timeout') ||
+        error.message.includes('conectar')
+      );
+
+      if (isRetryable && attempt < MAX_RETRIES) {
+        const delay = RETRY_DELAYS[attempt];
+        console.warn(`[subscription] Retryable error, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})...`, error);
+        await sleep(delay);
+        continue;
+      }
+
+      // Se não for retryable ou acabaram as tentativas, throw
+      throw error;
+    }
   }
 
-  if (!result.ok) {
-    const message = extractErrorMessage(result.data, ERROR_MESSAGES.STATUS_FAILED);
-    throw new Error(message);
-  }
-
-  return result.data as SubscriptionStatusResponse;
+  // Fallback (nunca deve chegar aqui)
+  throw lastError || new Error(ERROR_MESSAGES.STATUS_FAILED);
 }
 
 /**

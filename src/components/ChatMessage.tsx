@@ -4,11 +4,35 @@ import clsx from "clsx";
 
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
 import TypingDots from "./TypingDots";
-import LazyLazyMarkdownRenderer from "./LazyLazyMarkdownRenderer";
+import LazyMarkdownRenderer from "./LazyMarkdownRenderer";
 import CollapsibleMessage from "./CollapsibleMessage";
 import type { Message } from "../contexts/ChatContext";
 import { resolveMessageSender, isUserMessage, isEcoMessage } from "../utils/chat/messages";
 import { fixIntrawordSpaces } from "../utils/fixIntrawordSpaces";
+
+/**
+ * SafeMarkdownRenderer - Wrapper com fallback se LazyMarkdownRenderer falhar
+ */
+const SafeMarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    // Fallback: renderizar texto puro se markdown falhar
+    return <span className="whitespace-pre-wrap">{content}</span>;
+  }
+
+  try {
+    return (
+      <React.Suspense fallback={<span className="whitespace-pre-wrap">{content}</span>}>
+        <LazyMarkdownRenderer content={content} />
+      </React.Suspense>
+    );
+  } catch (error) {
+    console.error('[ChatMessage] LazyMarkdownRenderer failed:', error);
+    setHasError(true);
+    return <span className="whitespace-pre-wrap">{content}</span>;
+  }
+};
 
 interface ChatMessageProps {
   message: Message;
@@ -194,7 +218,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping
               <div className={bubbleClass} data-sender={sender}>
                 <div className="chat-message-text">
                   {isEco ? (
-                    <LazyMarkdownRenderer content={displayText} />
+                    <SafeMarkdownRenderer content={displayText} />
                   ) : (
                     <span>{displayText}</span>
                   )}
@@ -210,7 +234,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping
               ) : (
                 <div className="chat-message-text">
                   {isEco ? (
-                    <LazyMarkdownRenderer content={displayText} />
+                    <SafeMarkdownRenderer content={displayText} />
                   ) : (
                     <span>{displayText}</span>
                   )}
