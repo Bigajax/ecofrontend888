@@ -324,6 +324,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Autocontrole é algo difícil, sem dúvida. É por isso que um truque muito conhecido das dietas pode ser útil: o "dia do lixo" — o dia na semana em que é permitido comer de tudo. De fato, as pessoas que estão seguindo a dieta são estimuladas a fazer uma lista durante a semana de todas as comidas que desejaram, para que possam ter o prazer de desfrutá-las todas de uma só vez (a ideia é que se você se alimentar de maneira saudável seis dias em cada sete, ainda sairá ganhando).\n\nA princípio, isso parece um sonho, mas qualquer pessoa que tenha realmente feito isso sabe a verdade: em todos os dias do lixo você come até passar mal e odeia a si mesmo depois. Não demora, e você está abolindo esses dias por livre e espontânea vontade, porque não precisa deles e com certeza não os quer. Não é diferente de um pai que pega o filho com cigarros e o obriga a fumar o maço inteiro. É importante conectar a chamada tentação com seus efeitos. Quando você compreende que ceder pode ser pior do que resistir, o impulso começa a perder seu apelo. Dessa maneira, o autocontrole se torna o real prazer e a tentação se torna o remorso.',
     background: DECEMBER_BACKGROUNDS[2],
   },
+  {
+    date: '14 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 14,
+    title: 'PENSE ANTES DE AGIR',
+    text: 'Porque ser sensato é apenas uma coisa — fixar nossa atenção em nossa inteligência, que guia todas as coisas em toda parte.',
+    author: 'Heráclito',
+    source: 'citado em Diógenes Laércio, Vida e doutrinas de filósofos ilustres, 9.1',
+    comment: 'Por que eu fiz isso? Você provavelmente já se fez essa pergunta. Todos nós fizemos. Como pude ser tão estúpido? O que eu estava pensando?\n\nVocê não estava pensando. Esse é o problema. Dentro da sua cabeça está toda a razão e a inteligência de que você precisa. Tratar de acatá-las e utilizá-las é a parte difícil. Assegurar que sua mente esteja no comando, não suas sensações físicas imediatas, não seus hormônios em polvorosa.\n\nFixe sua atenção em sua inteligência. Deixe-a fazer o trabalho dela.',
+    background: DECEMBER_BACKGROUNDS[0],
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
