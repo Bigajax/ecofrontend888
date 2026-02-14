@@ -193,6 +193,17 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
 // Reflexões de fevereiro (1 a 28)
 export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
   {
+    date: '1 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 1,
+    title: 'O PODER DA ESCOLHA',
+    text: 'A principal tarefa na vida é simplesmente esta: identificar e separar as questões de modo que eu possa dizer claramente a mim mesmo quais são as coisas externas que não estão sob meu controle, e quais têm a ver com as escolhas que de fato controlo.',
+    author: 'Epicteto',
+    source: 'Discursos, 2.5.4–5',
+    comment: 'Hoje é o primeiro dia de um novo mês. Não importa como foi janeiro — quem você foi então não é quem precisa ser agora ou no futuro próximo. Hoje, você está enfrentando uma escolha — assim como todos os meses, semanas e dias que se estenderão à sua frente. Qual caminho você tomará?\n\nO filósofo e imperador Marco Aurélio encontrou essa questão muito frutífera. "A sorte de amanhã depende de hoje" era como ele a articulava, lembrando a si mesmo que, com cada nova decisão acrescenta-se à totalidade de suas escolhas. Cada detalhe adiciona-se, cada escolha tem importância.\n\nHoje, pergunte a si mesmo: O que realmente está sob meu controle? Decida focar naquilo que você pode controlar e não gaste energia tentando manipular o que está fora de seu alcance. Essa é a essência da sabedoria estoica.',
+    background: DECEMBER_BACKGROUNDS[0],
+  },
+  {
     date: '2 de fevereiro',
     month: 'fevereiro',
     dayNumber: 2,
