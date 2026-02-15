@@ -32,6 +32,7 @@ export type ConversionContext =
   | 'memory_preview'        // Tentou acessar memórias/perfil
   | 'memory_advanced'       // FREE: Tentou acessar charts avançados
   | 'memory_unlimited'      // FREE: Tentou ver histórico completo
+  | 'voice_daily_limit'     // FREE: Limite de 5 mensagens de voz/dia
   | 'multiple_visits'       // Retornou 2+ vezes como guest
   | 'voice_usage'           // Usou gravador de voz
   | 'favorite_attempt'      // Tentou favoritar qualquer conteúdo
@@ -250,6 +251,14 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Acesse todas as suas memórias, sem limites de tempo ou quantidade. Sua história emocional completa.',
     primaryCta: 'Desbloquear histórico completo',
     secondaryCta: 'Continuar com últimos 30 dias',
+    subtitle: '7 dias grátis',
+  },
+
+  voice_daily_limit: {
+    title: 'Limite diário de voz atingido',
+    message: 'Você usou suas 5 mensagens de voz hoje. Premium desbloqueia mensagens de voz ilimitadas.',
+    primaryCta: 'Desbloquear voz ilimitada',
+    secondaryCta: 'Voltar ao chat',
     subtitle: '7 dias grátis',
   },
 
