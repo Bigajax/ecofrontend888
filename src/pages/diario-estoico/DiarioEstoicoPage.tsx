@@ -37,8 +37,12 @@ import {
 const EXIT_MODAL_SHOWN_KEY = 'eco.diario.exitModalShown';
 
 
-// Função para obter os últimos 3 dias (hoje e os 2 dias anteriores)
-const getAvailableMaxims = (): DailyMaxim[] => {
+/**
+ * Função para obter reflexões disponíveis
+ * - Premium: Arquivo completo (todas as 77 reflexões)
+ * - Free: Últimos 7 dias
+ */
+const getAvailableMaxims = (isPremium: boolean): DailyMaxim[] => {
   const now = new Date();
   const currentMonth = now.getMonth(); // 0 = Jan, 11 = Dez
   const currentDay = now.getDate();
@@ -65,26 +69,36 @@ const getAvailableMaxims = (): DailyMaxim[] => {
     return [];
   }
 
-  // Calcular os 3 dias: hoje, ontem e anteontem
-  const threeDaysAgo = currentDay - 2;
+  if (isPremium) {
+    // PREMIUM: Retornar arquivo completo (todas as reflexões do mês)
+    const allMonthReflections = ALL_DAILY_MAXIMS.filter(
+      maxim =>
+        maxim.month === monthName &&
+        maxim.dayNumber >= startDay &&
+        maxim.dayNumber <= endDay
+    );
+    return allMonthReflections.sort((a, b) => a.dayNumber - b.dayNumber);
+  } else {
+    // FREE: Apenas últimos 7 dias
+    const sevenDaysAgo = currentDay - 6; // 7 dias incluindo hoje
 
-  // Filtrar reflexões para esses 3 dias específicos
-  const validReflections = ALL_DAILY_MAXIMS.filter(
-    maxim =>
-      maxim.month === monthName &&
-      maxim.dayNumber >= threeDaysAgo &&
-      maxim.dayNumber <= currentDay &&
-      maxim.dayNumber >= startDay &&
-      maxim.dayNumber <= endDay
-  );
+    const freeReflections = ALL_DAILY_MAXIMS.filter(
+      maxim =>
+        maxim.month === monthName &&
+        maxim.dayNumber >= Math.max(sevenDaysAgo, startDay) &&
+        maxim.dayNumber <= currentDay &&
+        maxim.dayNumber >= startDay &&
+        maxim.dayNumber <= endDay
+    );
 
-  // Retornar ordenado por data crescente
-  return validReflections.sort((a, b) => a.dayNumber - b.dayNumber);
+    return freeReflections.sort((a, b) => a.dayNumber - b.dayNumber);
+  }
 };
 
 export default function DiarioEstoicoPage() {
   const navigate = useNavigate();
   const { user, signOut, isGuestMode, isVipUser } = useAuth();
+  const isPremium = useIsPremium();
   const { trackInteraction } = useGuestExperience();
   const { checkTrigger } = useGuestConversionTriggers();
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
