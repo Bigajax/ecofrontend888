@@ -74,7 +74,20 @@ export function useConversionMetrics() {
         .from('users')
         .select('id, subscription_status, subscription_plan');
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        // If table doesn't exist, use placeholder data
+        if (usersError.code === 'PGRST116' || usersError.message?.includes('does not exist')) {
+          console.warn('Users table not found - using placeholder metrics');
+          setMetrics((prev) => ({
+            ...prev,
+            loading: false,
+            error: 'Tabela users não encontrada. Configure o schema do Supabase.',
+          }));
+          return;
+        }
+        throw usersError;
+      }
 
       const distribution: UserDistribution = {
         free: 0,
