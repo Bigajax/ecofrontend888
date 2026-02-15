@@ -16,6 +16,7 @@ import AnimatedSection from '@/components/AnimatedSection';
 import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
 import EcoAIModal from '@/components/EcoAIModal';
 import HomePageTour from '@/components/HomePageTour';
+import TrialOnboarding from '@/components/trial/TrialOnboarding';
 import { useHomePageTour } from '@/hooks/useHomePageTour';
 import { usePremiumContent } from '@/hooks/usePremiumContent';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
@@ -447,6 +448,11 @@ export default function HomePage() {
         <ContentSkeletonLoader />
       ) : (
         <main className="md:pt-0">
+        {/* Trial Onboarding - Show for trial users */}
+        <div className="mx-auto max-w-6xl md:px-8 pt-4 md:pt-0">
+          <TrialOnboarding />
+        </div>
+
         {/* Hero Section */}
         <div className="mx-auto max-w-6xl md:px-8 md:py-8">
           {/* Desktop: Grid 2 colunas com mesma altura */}
