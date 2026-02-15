@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabaseClient } from '@/lib/supabase';
+import { supabaseClient } from '@/lib/supabaseClient';
 
 export interface UserDistribution {
   free: number;
