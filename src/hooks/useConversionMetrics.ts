@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 
 export interface UserDistribution {
   free: number;
@@ -70,7 +70,7 @@ export function useConversionMetrics() {
       setMetrics((prev) => ({ ...prev, loading: true, error: null }));
 
       // 1. Fetch user distribution
-      const { data: users, error: usersError } = await supabaseClient
+      const { data: users, error: usersError } = await supabase
         .from('users')
         .select('id, subscription_status, subscription_plan');
 
@@ -114,7 +114,7 @@ export function useConversionMetrics() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const { data: cancelledSubs, error: churnError } = await supabaseClient
+      const { data: cancelledSubs, error: churnError } = await supabase
         .from('subscription_events')
         .select('id')
         .eq('event_type', 'subscription.cancelled')

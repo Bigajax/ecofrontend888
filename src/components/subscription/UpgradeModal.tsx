@@ -211,6 +211,13 @@ export default function UpgradeModal({ open, onClose, source = 'unknown' }: Upgr
               </div>
             </div>
 
+            {/* Social Proof */}
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+              <p className="text-xs sm:text-sm text-center text-gray-700">
+                <strong className="text-green-700">1.200+ pessoas</strong> já transformaram suas vidas com ECOTOPIA 🌱
+              </p>
+            </div>
+
             {/* Pricing Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
               {PRICING_PLANS.map((plan) => (
@@ -280,6 +287,15 @@ export default function UpgradeModal({ open, onClose, source = 'unknown' }: Upgr
                   <div className="w-2 h-2 rounded-full bg-green-500" />
                   <span>Suporte via WhatsApp</span>
                 </div>
+              </div>
+
+              {/* Additional Trust Signals */}
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs text-[var(--eco-muted)]">
+                <span>✓ 4.8/5 estrelas</span>
+                <span>•</span>
+                <span>✓ 1.200+ membros ativos</span>
+                <span>•</span>
+                <span>✓ Cancelamento em 1 clique</span>
               </div>
             </div>
           </motion.div>
