@@ -141,8 +141,8 @@ export default function DiarioEstoicoPage() {
     );
   };
 
-  // Obter apenas os cards disponíveis até hoje
-  const availableMaxims = getAvailableMaxims();
+  // Obter apenas os cards disponíveis (premium = todos, free = últimos 7 dias)
+  const availableMaxims = getAvailableMaxims(isPremium);
   const availableDayNumbers = availableMaxims.map(m => m.dayNumber);
 
   // Load read days from localStorage
@@ -532,6 +532,31 @@ export default function DiarioEstoicoPage() {
       <div className="w-full min-h-full">
         {/* Header - apenas se usuário logado */}
         {user && <HomeHeader onLogout={handleLogout} />}
+
+        {/* FREE TIER: Banner informativo */}
+        {user && !isPremium && !isGuestMode && (
+          <div className="w-full px-4 pt-4 md:px-8">
+            <div className="mx-auto max-w-7xl">
+              <div className="bg-gradient-to-r from-eco-primary/10 to-eco-accent/10 border border-eco-primary/30 rounded-xl p-4">
+                <p className="text-sm text-eco-text text-center">
+                  📚 Você está vendo os últimos 7 dias de reflexões.{' '}
+                  <button
+                    onClick={() => {
+                      mixpanel.track('Diario Archive Upgrade Click', {
+                        user_id: user.id,
+                        reflections_available_free: 7,
+                      });
+                      navigate('/app/programas'); // Vai para página premium
+                    }}
+                    className="font-semibold text-eco-primary underline"
+                  >
+                    Desbloqueie o arquivo completo (77 reflexões)
+                  </button>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Navegação */}
         <div className="w-full px-4 pt-6 md:px-8">
