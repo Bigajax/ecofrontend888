@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Component, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -65,7 +65,7 @@ function MetricCard({ label, value, icon: Icon, change, color }: MetricCardProps
   );
 }
 
-export default function ConversionDashboard() {
+function ConversionDashboard() {
   const { user } = useAuth();
   const {
     userDistribution,
@@ -332,5 +332,56 @@ export default function ConversionDashboard() {
         </div>
       </div>
     </PhoneFrame>
+  );
+}
+
+// Error Boundary para capturar erros
+class DashboardErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <PhoneFrame>
+          <div className="p-6">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+              <h2 className="text-xl font-bold text-red-800 mb-3">
+                Erro no Dashboard
+              </h2>
+              <p className="text-red-600 mb-4">
+                {this.state.error?.message || 'Erro desconhecido'}
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Recarregar Página
+              </button>
+            </div>
+          </div>
+        </PhoneFrame>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Export wrapped component
+export default function ConversionDashboardWithBoundary() {
+  return (
+    <DashboardErrorBoundary>
+      <ConversionDashboard />
+    </DashboardErrorBoundary>
   );
 }
