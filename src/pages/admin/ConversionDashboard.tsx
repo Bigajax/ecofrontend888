@@ -23,9 +23,9 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { useConversionMetrics } from '../../hooks/useConversionMetrics';
-import { useAuth } from '../../contexts/AuthContext';
-import PhoneFrame from '../../components/PhoneFrame';
+import { useConversionMetrics } from '@/hooks/useConversionMetrics';
+import { useAuth } from '@/contexts/AuthContext';
+import PhoneFrame from '@/components/PhoneFrame';
 
 // Admin emails whitelist
 const ADMIN_EMAILS = [
