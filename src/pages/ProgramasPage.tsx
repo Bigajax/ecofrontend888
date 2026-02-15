@@ -34,7 +34,7 @@ export default function ProgramasPage() {
       duration: '25 min',
       image: 'url("/images/quem-pensa-enriquece.webp")',
       gradient: 'linear-gradient(to bottom, #1E3A5F 0%, #2C5282 20%, #3B6BA5 40%, #4A84C8 60%, #5A9DEB 80%, #6BB6FF 100%)',
-      isPremium: false,
+      isPremium: true, // PREMIUM: 25 min
       category: 'Programas',
     },
     {
@@ -129,7 +129,7 @@ export default function ProgramasPage() {
       image: 'url("/images/meditacao-sono-new.webp")',
       imagePosition: 'center 32%',
       gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
-      isPremium: false,
+      isPremium: true, // PREMIUM: 15 min
       category: 'Sono',
     },
   ], []);
