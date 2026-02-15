@@ -6,6 +6,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import AnimatedSection from '@/components/AnimatedSection';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsPremium } from '@/hooks/usePremiumContent';
 import DiarioExitModal from '@/components/DiarioExitModal';
 import DiarioNavigation from '@/components/diario-estoico/DiarioNavigation';
 import DiarioProgress from '@/components/diario-estoico/DiarioProgress';
