@@ -346,6 +346,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Por que eu fiz isso? Você provavelmente já se fez essa pergunta. Todos nós fizemos. Como pude ser tão estúpido? O que eu estava pensando?\n\nVocê não estava pensando. Esse é o problema. Dentro da sua cabeça está toda a razão e a inteligência de que você precisa. Tratar de acatá-las e utilizá-las é a parte difícil. Assegurar que sua mente esteja no comando, não suas sensações físicas imediatas, não seus hormônios em polvorosa.\n\nFixe sua atenção em sua inteligência. Deixe-a fazer o trabalho dela.',
     background: DECEMBER_BACKGROUNDS[0],
   },
+  {
+    date: '15 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 15,
+    title: 'APENAS PESADELOS',
+    text: 'Limpa tua mente e controla-te. Então, ao despertar do sono, percebe que tua perturbação é decorrente de nada mais que um pesadelo. Acorda e vê que tudo o que existe é exatamente como esses sonhos.',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 6.31',
+    comment: 'O autor Raymond Chandler estava descrevendo a maioria de nós em uma carta destinada ao seu editor: "Nunca olhei para trás, embora tenha passado por muitos períodos desconfortáveis olhando para a frente." Thomas Jefferson uma vez gracejou numa carta para John Adams: "Quanto sofrimento nos custaram os males que nunca aconteceram!" E Sêneca expressaria isso melhor: "Não há certeza em nossos medos que seja ainda mais certa do que o fato de que a maior parte do que tememos não dá em nada."\n\nMuitas das coisas que nos perturbam, acreditavam os estoicos, são um produto da imaginação, não a realidade. Como sonhos, elas são vívidas e realistas no momento, mas absurdas uma vez que saímos dele. Num sonho, nunca paramos para pensar e dizer: "Isso faz algum sentido?" Não, nós concordamos com aquilo. O mesmo se passa com nossos acessos de raiva, medo ou outras emoções extremas.\n\nFicar perturbado é como levar adiante o sonho quando você está acordado. A coisa que o provocou não era real — mas sua reação foi. E assim, a partir da falsificação, decorrem consequências reais. É por isso que você precisa acordar agora mesmo, em vez de criar um pesadelo.',
+    background: DECEMBER_BACKGROUNDS[1],
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
