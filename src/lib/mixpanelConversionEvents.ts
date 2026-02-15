@@ -51,6 +51,36 @@ interface PaymentFailedProperties {
   source: 'frontend_callback';
 }
 
+interface FreeTierLimitHitProperties {
+  limit_type: 'daily_messages' | 'weekly_rings' | 'reflection_archive' | 'meditation_preview' | 'voice_daily';
+  current_count: number;
+  limit_value: number;
+  days_since_signup: number;
+  user_id?: string;
+}
+
+interface PremiumFeatureAttemptedProperties {
+  feature_id: string;
+  feature_name: string;
+  context: string;
+  is_premium_user: boolean;
+  user_id?: string;
+}
+
+interface TrialEventProperties {
+  plan_id: string;
+  user_id: string;
+  trial_days?: number;
+  days_remaining?: number;
+}
+
+interface SubscriptionCancelledProperties {
+  reason?: string;
+  user_id: string;
+  plan: string;
+  days_active: number;
+}
+
 /**
  * Camada 1: Intenção Topo
  * Tracking quando usuário visualiza a tela/modal Premium
@@ -102,6 +132,83 @@ export function trackSubscriptionPaid(props: SubscriptionPaidProperties) {
  */
 export function trackPaymentFailed(props: PaymentFailedProperties) {
   mixpanel.track('Payment Failed', {
+    ...props,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * FASE 1: Free Tier Limits
+ * Tracking quando usuário atinge limite de free tier
+ */
+export function trackFreeTierLimitHit(props: FreeTierLimitHitProperties) {
+  mixpanel.track('Free Tier Limit Hit', {
+    ...props,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * FASE 2: Premium Features
+ * Tracking quando usuário tenta acessar feature premium sem ser premium
+ */
+export function trackPremiumFeatureAttempted(props: PremiumFeatureAttemptedProperties) {
+  mixpanel.track('Premium Feature Attempted', {
+    ...props,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * FASE 2: Trial Management
+ * Tracking quando trial inicia
+ */
+export function trackTrialStarted(props: TrialEventProperties) {
+  mixpanel.track('Trial Started', {
+    ...props,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * FASE 2: Trial Management
+ * Tracking check-in diário durante trial
+ */
+export function trackTrialDay(props: TrialEventProperties) {
+  mixpanel.track('Trial Day Check-in', {
+    ...props,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * FASE 2: Trial Management
+ * Tracking quando trial está perto de acabar
+ */
+export function trackTrialEndingSoon(props: TrialEventProperties) {
+  mixpanel.track('Trial Ending Soon', {
+    ...props,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * FASE 4: Churn Analysis
+ * Tracking quando usuário cancela assinatura
+ */
+export function trackSubscriptionCancelled(props: SubscriptionCancelledProperties) {
+  mixpanel.track('Subscription Cancelled', {
+    ...props,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * FASE 3: Downgrade tracking
+ * Tracking quando usuário faz downgrade de plano
+ */
+export function trackDowngradedToFree(props: { user_id: string; previous_plan: string; reason?: string }) {
+  mixpanel.track('Downgraded to Free', {
     ...props,
     timestamp: new Date().toISOString(),
   });

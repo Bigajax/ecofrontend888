@@ -48,6 +48,7 @@ const MemoryLayout = lazy(() => import("@/pages/memory/MemoryLayout"));
 const MemoriesSection = lazy(() => import("@/pages/memory/MemoriesSection"));
 const ProfileSection = lazy(() => import("@/pages/memory/ProfileSection"));
 const ReportSection = lazy(() => import("@/pages/memory/ReportSection"));
+const ConversionDashboard = lazy(() => import("@/pages/admin/ConversionDashboard"));
 
 const FiveRingsHub = lazy(() => import("@/pages/rings/FiveRingsHub"));
 const DailyRitual = lazy(() => import("@/pages/rings/DailyRitual"));
@@ -169,6 +170,7 @@ function AppRoutes() {
         <Route path="programas" element={renderWithSuspense(<ProgramasPage />)} />
         <Route path="sons" element={renderWithSuspense(<SonsPage />)} />
         <Route path="configuracoes" element={renderWithSuspense(<ConfiguracoesPage />)} />
+        <Route path="admin/conversion" element={renderWithSuspense(<ConversionDashboard />)} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Route>
       <Route
