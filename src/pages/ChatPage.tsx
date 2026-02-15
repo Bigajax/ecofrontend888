@@ -35,6 +35,8 @@ import { useQuickSuggestionsVisibility } from '../hooks/useQuickSuggestionsVisib
 import { useEcoActivity } from '../hooks/useEcoActivity';
 import { useKeyboardInsets } from '../hooks/useKeyboardInsets';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { useFreeTierLimits } from '../hooks/useFreeTierLimits';
+import { useIsPremium } from '../hooks/usePremiumContent';
 import { ensureSessionId } from '../utils/chat/session';
 import { saudacaoDoDiaFromHour } from '../utils/chat/greetings';
 import { isEcoMessage, resolveMessageSender } from '../utils/chat/messages';
@@ -102,8 +104,11 @@ function ChatPage() {
   // VIP users bypass all guest gates
   const isGuest = isGuestMode && !user && !isVipUser;
   const guestGate = useGuestGate(!user, isGuestMode);
+  const isPremium = useIsPremium();
+  const freeLimits = useFreeTierLimits(); // Free tier message limits
   const [loginGateOpen, setLoginGateOpen] = useState(false);
-  const [loginGateContext, setLoginGateContext] = useState<'chat_soft_prompt' | 'chat_hard_limit'>('chat_hard_limit');
+  const [loginGateContext, setLoginGateContext] = useState<'chat_soft_prompt' | 'chat_hard_limit' | 'chat_daily_limit' | 'chat_soft_limit'>('chat_hard_limit');
+  const [hasShownSoftPrompt, setHasShownSoftPrompt] = useState(false); // Track se já mostrou soft prompt
   const [isComposerSending, setIsComposerSending] = useState(false);
   const [composerValue, setComposerValue] = useState('');
   const [lastAttempt, setLastAttempt] = useState<{ text: string; hint?: string } | null>(null);
@@ -411,6 +416,36 @@ function ChatPage() {
         });
         return;
       }
+
+      // FREE TIER LIMITS: Check message limits for free users
+      if (user && !isPremium && !isGuest) {
+        // Hard limit: Block se atingiu 30 mensagens
+        if (freeLimits.reachedLimit) {
+          setLoginGateContext('chat_daily_limit');
+          setLoginGateOpen(true);
+          mixpanel.track('Free Tier Limit Blocked', {
+            limit_type: 'daily_messages',
+            count: freeLimits.count,
+            limit: freeLimits.limit,
+            user_id: user.id,
+          });
+          return;
+        }
+
+        // Soft prompt: Aviso em 25 mensagens (dismissível)
+        if (freeLimits.shouldShowSoftPrompt && !hasShownSoftPrompt) {
+          setLoginGateContext('chat_soft_limit');
+          setLoginGateOpen(true);
+          setHasShownSoftPrompt(true);
+          mixpanel.track('Free Tier Soft Prompt Shown', {
+            count: freeLimits.count,
+            remaining: freeLimits.remaining,
+            user_id: user.id,
+          });
+          // Não bloqueia - permite continuar após fechar modal
+        }
+      }
+
       sendingRef.current = true; // FIX: trava imediatamente o novo envio
       try {
         devLog('[ChatPage] send_start', {
@@ -427,6 +462,11 @@ function ChatPage() {
         try {
           await streamAndPersist(trimmed, systemHint);
           haptic.success(); // Feedback de sucesso
+
+          // FREE TIER: Incrementar contador de mensagens
+          if (user && !isPremium && !isGuest) {
+            freeLimits.incrementCount();
+          }
 
           // Rastrear interação para guests
           if (!user) {
@@ -460,7 +500,21 @@ function ChatPage() {
         sendingRef.current = false; // FIX: libera o bloqueio após término do envio
       }
     },
-    [finalizeBehaviorMetrics, isComposerSending, pending, streamAndPersist, streaming, scrollToBottom],
+    [
+      finalizeBehaviorMetrics,
+      isComposerSending,
+      pending,
+      streamAndPersist,
+      streaming,
+      scrollToBottom,
+      user,
+      isPremium,
+      isGuest,
+      freeLimits,
+      hasShownSoftPrompt,
+      haptic,
+      trackInteraction,
+    ],
   );
 
   useEffect(() => {
@@ -981,6 +1035,41 @@ function ChatPage() {
               disabled={composerPending}
               className="-mt-1"
             />
+
+            {/* FREE TIER: Indicador de mensagens restantes */}
+            {user && !isPremium && !isGuest && freeLimits.remaining <= 10 && (
+              <div className="text-xs text-center py-2 px-4 text-eco-muted">
+                {freeLimits.remaining > 0 ? (
+                  <>
+                    {freeLimits.remaining} {freeLimits.remaining === 1 ? 'mensagem restante' : 'mensagens restantes'} hoje
+                    {freeLimits.remaining <= 5 && (
+                      <button
+                        onClick={() => {
+                          setLoginGateContext('chat_soft_limit');
+                          setLoginGateOpen(true);
+                        }}
+                        className="ml-2 text-eco-primary font-semibold underline"
+                      >
+                        Upgrade
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    Limite diário atingido.{' '}
+                    <button
+                      onClick={() => {
+                        setLoginGateContext('chat_daily_limit');
+                        setLoginGateOpen(true);
+                      }}
+                      className="text-eco-primary font-semibold underline"
+                    >
+                      Upgrade para ilimitadas
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
 
             <ChatInput
               ref={chatInputRef}

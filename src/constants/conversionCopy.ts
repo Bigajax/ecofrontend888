@@ -15,17 +15,23 @@
 export type ConversionContext =
   | 'chat_soft_prompt'      // Soft prompt após 6-7 turnos
   | 'chat_hard_limit'       // Hard limit após 8-10 turnos
+  | 'chat_daily_limit'      // FREE: Limite diário de mensagens (30)
+  | 'chat_soft_limit'       // FREE: Aproximando do limite (25)
   | 'chat_vulnerability'    // Usuário expressou vulnerabilidade
   | 'chat_deep_engagement'  // Mensagens longas e profundas
   | 'reflection_teaser'     // Fade em reflexão estoica
   | 'reflection_multiple'   // Visualizou 3+ reflexões
   | 'reflection_deep_scroll'// Scroll profundo em reflexão
+  | 'reflection_archive_locked' // FREE: Tentou acessar arquivo completo
   | 'meditation_time_limit' // Limite de 2 minutos atingido
   | 'meditation_complete'   // Completou preview de meditação
   | 'meditation_favorite'   // Tentou favoritar meditação
   | 'rings_day_complete'    // Completou dia do Five Rings
   | 'rings_gate'            // Gate no Anel 3
+  | 'rings_weekly_limit'    // FREE: Completou ritual semanal
   | 'memory_preview'        // Tentou acessar memórias/perfil
+  | 'memory_advanced'       // FREE: Tentou acessar charts avançados
+  | 'memory_unlimited'      // FREE: Tentou ver histórico completo
   | 'multiple_visits'       // Retornou 2+ vezes como guest
   | 'voice_usage'           // Usou gravador de voz
   | 'favorite_attempt'      // Tentou favoritar qualquer conteúdo
@@ -196,6 +202,57 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // FALLBACK GENÉRICO
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // FREE TIER LIMITS (Fase 1)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  chat_daily_limit: {
+    title: 'Você atingiu seu limite diário',
+    message: 'Você teve 30 mensagens hoje. Amanhã, mais 30 te aguardam — ou desbloqueie conversas ilimitadas agora.',
+    primaryCta: 'Desbloquear conversas ilimitadas',
+    secondaryCta: 'Voltar amanhã',
+    subtitle: '7 dias grátis • Cancele quando quiser',
+  },
+
+  chat_soft_limit: {
+    title: 'Você está se aproximando do limite',
+    message: 'Restam 5 mensagens hoje. Continue amanhã ou faça upgrade para conversas ilimitadas.',
+    primaryCta: 'Upgrade agora',
+    secondaryCta: 'Continuar (5 restantes)',
+    subtitle: '7 dias grátis',
+  },
+
+  reflection_archive_locked: {
+    title: 'Arquivo completo de reflexões',
+    message: 'Acesse todas as 77 reflexões estoicas (Janeiro, Fevereiro, Dezembro) + novos meses em breve.',
+    primaryCta: 'Desbloquear arquivo completo',
+    secondaryCta: 'Continuar com últimos 7 dias',
+    subtitle: '7 dias grátis • Sempre pode cancelar',
+  },
+
+  rings_weekly_limit: {
+    title: 'Ritual semanal concluído',
+    message: 'Você completou seu ritual desta semana. Premium desbloqueia prática diária — 30 dias de transformação ininterrupta.',
+    primaryCta: 'Desbloquear prática diária',
+    secondaryCta: 'Voltar',
+    subtitle: '7 dias grátis para experimentar',
+  },
+
+  memory_advanced: {
+    title: 'Análises avançadas bloqueadas',
+    message: 'Veja padrões emocionais ao longo do tempo, correlações entre eventos e insights personalizados.',
+    primaryCta: 'Desbloquear análises',
+    secondaryCta: 'Voltar',
+    subtitle: '7 dias grátis',
+  },
+
+  memory_unlimited: {
+    title: 'Histórico completo bloqueado',
+    message: 'Acesse todas as suas memórias, sem limites de tempo ou quantidade. Sua história emocional completa.',
+    primaryCta: 'Desbloquear histórico completo',
+    secondaryCta: 'Continuar com últimos 30 dias',
+    subtitle: '7 dias grátis',
+  },
+
   generic: {
     title: 'Continue sua jornada',
     message: 'Crie sua conta gratuita para salvar seu progresso e desbloquear a experiência completa do ECOTOPIA.',
@@ -227,6 +284,8 @@ export function getPreservedDataBadges(context: ConversionContext): PreservedDat
     case 'chat_hard_limit':
     case 'chat_vulnerability':
     case 'chat_deep_engagement':
+    case 'chat_daily_limit':
+    case 'chat_soft_limit':
       return [
         { icon: '💬', label: 'Conversa salva' },
         { icon: '🧠', label: 'Memória emocional' },
@@ -235,6 +294,7 @@ export function getPreservedDataBadges(context: ConversionContext): PreservedDat
     case 'reflection_teaser':
     case 'reflection_multiple':
     case 'reflection_deep_scroll':
+    case 'reflection_archive_locked':
       return [
         { icon: '📖', label: 'Reflexões completas' },
         { icon: '⭐', label: 'Salvar favoritas' },
@@ -250,12 +310,15 @@ export function getPreservedDataBadges(context: ConversionContext): PreservedDat
 
     case 'rings_day_complete':
     case 'rings_gate':
+    case 'rings_weekly_limit':
       return [
         { icon: '⭕', label: '30 dias completos' },
         { icon: '📈', label: 'Progresso salvo' },
       ];
 
     case 'memory_preview':
+    case 'memory_advanced':
+    case 'memory_unlimited':
       return [
         { icon: '📊', label: 'Perfil emocional' },
         { icon: '💭', label: 'Memórias organizadas' },
