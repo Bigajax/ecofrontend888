@@ -357,6 +357,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'O autor Raymond Chandler estava descrevendo a maioria de nós em uma carta destinada ao seu editor: "Nunca olhei para trás, embora tenha passado por muitos períodos desconfortáveis olhando para a frente." Thomas Jefferson uma vez gracejou numa carta para John Adams: "Quanto sofrimento nos custaram os males que nunca aconteceram!" E Sêneca expressaria isso melhor: "Não há certeza em nossos medos que seja ainda mais certa do que o fato de que a maior parte do que tememos não dá em nada."\n\nMuitas das coisas que nos perturbam, acreditavam os estoicos, são um produto da imaginação, não a realidade. Como sonhos, elas são vívidas e realistas no momento, mas absurdas uma vez que saímos dele. Num sonho, nunca paramos para pensar e dizer: "Isso faz algum sentido?" Não, nós concordamos com aquilo. O mesmo se passa com nossos acessos de raiva, medo ou outras emoções extremas.\n\nFicar perturbado é como levar adiante o sonho quando você está acordado. A coisa que o provocou não era real — mas sua reação foi. E assim, a partir da falsificação, decorrem consequências reais. É por isso que você precisa acordar agora mesmo, em vez de criar um pesadelo.',
     background: DECEMBER_BACKGROUNDS[1],
   },
+  {
+    date: '16 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 16,
+    title: 'NÃO TORNE AS COISAS MAIS DIFÍCEIS DO QUE ELAS PRECISAM SER',
+    text: 'Se uma pessoa te perguntasse como se escreve o teu nome, tu irias vociferar cada letra? E se a pessoa ficasse irada, irias devolver a raiva? Não irias, em vez disso, soletrar o nome para ela gentilmente? Portanto, lembra-te na vida de que teus deveres são a soma de atos individuais. Prestar atenção a cada um deles, como é teu dever… apenas conclui metodicamente tua tarefa.',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 6.26',
+    comment: 'Aqui está uma situação comum. Você está trabalhando com um colega frustrante ou um chefe difícil. Eles lhe pedem que faça alguma coisa, e, por não gostar do mensageiro, você protesta na mesma hora. Há este ou aquele problema, ou o pedido deles é ofensivo e rude. Por isso você lhes diz: "Não, não vou fazer isso." Então eles revidam imediatamente deixando de fazer alguma coisa que você havia pedido. E assim o conflito se intensifica.\n\nNesse meio-tempo, se você pudesse dar um passo atrás e enxergar a situação de maneira objetiva, provavelmente veria que nem tudo que eles estão pedindo é inaceitável. Na verdade, uma parte é até muito fácil de fazer ou, pelo menos, agradável. E se você fizesse o que eles pedem, isso poderia tornar o resto das tarefas um pouco mais tolerável também. Rapidamente, você teria terminado tudo.\n\nA vida (e nosso trabalho) já é difícil o suficiente. Não a tornemos ainda mais árdua reagindo emocionalmente a questões insignificantes ou procurando batalhas que não são de fato importantes para nós. Não deixemos a emoção interferir com kathêkon, as ações simples e apropriadas no caminho para a virtude.',
+    background: DECEMBER_BACKGROUNDS[2],
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
