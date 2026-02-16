@@ -54,7 +54,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Epicteto',
     source: 'Discursos, 2.6.25',
     comment: 'Todos os estoicos ocupavam posições muito diferentes na vida. Alguns eram ricos, já outros haviam nascido na base da rígida hierarquia romana. Para alguns as coisas eram fáceis, para outros, inconcebidamente difícil. Isso também é verdade a respeito de nós — todos chegamos à filosofia vindos de diferentes origens, e mesmo em nossa vida experimentamos períodos de boa e má sorte.\n\nMas em todas as situações, adversas ou vantajosas, devemos fazer apenas uma coisa: nos concentrarmos no que está sob nosso controle, em oposição ao que não está. Agora mesmo poderíamos estar abatidos com as lutas, ao passo que apenas alguns anos atrás talvez tivéssemos vivido no luxo, e dentro de apenas poucos dias poderíamos estar tão bem que o sucesso seria realmente um fardo. Uma coisa permanecerá constante: nossa liberdade de escolha — tanto no quadro geral quanto no restrito.\n\nNa verdade, isso é clareza. Não importa quem somos ou onde estamos, o que interessa são nossas escolhas. O que são elas? Como iremos avaliá-las? De que maneira faremos a maioria delas? Essas são as perguntas que a vida nos faz, seja lá qual for nossa posição. Como você responderá?',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(19),
   },
   {
     date: '20 de janeiro',
@@ -65,7 +65,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 7.2',
     comment: 'Você teve semanas ruins? Afastou-se dos princípios e crenças que lhe são caros? Isso é completamente normal. Acontece com todos nós.\n\nProvavelmente aconteceu com Marco Aurélio — pode ter sido por isso que ele escreveu a nota acima para si mesmo. Talvez ele estivesse lidando com senadores difíceis ou tendo dificuldades com seu filho problemático. Talvez nessas situações ele tenha perdido as estribeiras, ficado deprimido ou deixado de entrar em contato consigo mesmo. Quem não faria isso?\n\nMas o que devemos lembrar aqui é que, não importa o que aconteça, não importa como nossa atitude foi decepcionante no passado, os próprios princípios permanecem inalterados. Podemos retornar e abraçá-los a qualquer momento. O que aconteceu ontem — o que aconteceu cinco minutos atrás — é o passado. Podemos reacender nossos pensamentos e recomeçar sempre que quisermos.\n\nPor que não fazer isso agora mesmo?',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(20),
   },
   {
     date: '21 de janeiro',
@@ -76,7 +76,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Epicteto',
     source: 'Discursos, 4.6.34–35',
     comment: 'Muitas pessoas bem-sucedidas têm seu ritual matinal. Para algumas, é meditar. Para outras, é se exercitar. Para muitas, é escrever num diário: apenas algumas páginas em que elas registram seus pensamentos, medos, esperanças. Nesses casos, o que interessa não é tanto a atividade em si, mas o ritual da reflexão. A ideia é dedicar um tempo para olhar dentro de si mesmo e examinar-se.\n\nTirar esse tempo é o que os estoicos defendiam mais do que qualquer outra coisa. Não sabemos se Marco Aurélio escrevia suas Meditações de manhã ou à noite, mas sabemos que ele arranjava seus momentos de tranquilidade solitária — e que ele escrevia para si mesmo, não para alguém. Se você está procurando um lugar para começar o próprio ritual, não pode fazer melhor que o exemplo de Marco Aurélio e a lista de perguntas de Epicteto.\n\nTodos os dias, a partir de hoje, faça essas perguntas difíceis a si mesmo. Deixe a filosofia e o trabalho árduo guiarem-no para respostas melhores, uma manhã de cada vez, ao longo de uma vida.',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(21),
   },
   {
     date: '22 de janeiro',
@@ -87,7 +87,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Sêneca',
     source: 'Cartas Morais, 83.2',
     comment: 'Numa carta a seu irmão mais velho, Novato, Sêneca descreve um exercício bom que pegou emprestado de outro proeminente filósofo. No fim de cada dia ele fazia a si mesmo variações das seguintes questões: Que mau hábito reprimi hoje? Como estou melhor? Minhas ações foram justas? Como posso melhorar?\n\nNo início ou no fim de cada dia, o estoico se senta com seu diário e revisa o que fez, o que pensou, o que poderia ser melhorado. É por essa razão que as Meditações de Marco Aurélio é um livro um tanto impenetrável — era para sua própria clareza, não para benefício público. Tomar nota de exercícios estoicos era, e ainda é, uma forma de os praticar, tal como poderia ser repetir uma prece ou um hino.\n\nMantenha um diário, seja ele um arquivo no computador, seja um pequeno caderno. Dedique tempo para recordar conscientemente os acontecimentos do dia anterior. Seja resoluto em suas avaliações. Observe o que contribuiu para sua felicidade e o que a depreciou. Escreva sobre o que você gostaria de aprimorar ou anote citações que aprecia. Fazendo o esforço de registrar tais pensamentos, você fica menos propenso a esquecê-los. Mais um benefício: você acumulará uma boa quantidade de registros para acompanhar seu progresso também.',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(22),
   },
   {
     date: '23 de janeiro',
@@ -98,7 +98,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Sêneca',
     source: 'Consolação à Minha Mãe Hélvia, 12.1.B–2',
     comment: 'O autor F. Scott Fitzgerald, que muitas vezes glamorizou os estilos de vida dos ricos e famosos em livros como O grande Gatsby, abre um de seus contos com as frases agora clássicas: "Deixe-me falar-lhe sobre os muito ricos. Eles são diferentes de você e de mim." Alguns anos depois que esse conto foi publicado, seu amigo Ernest Hemingway caçoou de Fitzgerald ao escrever: "Sim, eles têm mais dinheiro."\n\nÉ disso que Sêneca está nos lembrando. Um dos homens mais ricos de Roma, ele sabia em primeira mão que o dinheiro só muda a vida em parte. O dinheiro não resolve os problemas que as pessoas pobres pensam que ele resolverá. Na verdade, nenhuma posse material o fará. Coisas externas não podem resolver questões internas.\n\nSempre nos esquecemos disso — o que causa muita confusão e dor. Como Hemingway escreveria mais tarde sobre Fitzgerald: "Ele pensou [que os ricos] eram uma raça glamorosa especial, e quando descobriu que não eram, isso o destruiu tanto quanto qualquer outra coisa que o tenha destruído." Se não mudarmos, isso também será verdade em relação a nós.',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(23),
   },
   {
     date: '24 de janeiro',
@@ -109,7 +109,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 1.7.3',
     comment: 'O primeiro livro das Meditações de Marco Aurélio começa com uma lista de agradecimentos. Ele agradece, uma por uma, às principais influências em sua vida. Uma dessas pessoas é Quinto Júnio Rústico, um professor que desenvolveu em seu aluno um amor pela clareza e pela compreensão profundas — um desejo de não parar na superfície quando se trata de aprendizado.\n\nFoi também por meio de Rústico que Marco Aurélio foi apresentado a Epicteto. Na verdade, Rústico emprestou ao aluno seu exemplar das palestras de Epicteto. Marco Aurélio claramente não ficou satisfeito em apenas entender a ideia básica dessas palestras, nem as aceitou simplesmente por recomendação de seu professor. Paul Johnson gracejou uma vez que Edmund Wilson lia livros "como se a vida do autor estivesse em julgamento". Foi assim que Marco Aurélio leu Epicteto — e quando as lições se mostraram satisfatórias, ele as absorveu. Elas se tornaram parte de seu DNA. Ele as citou extensivamente ao longo da vida, encontrando clareza e força reais em suas palavras, mesmo em meio ao luxo e ao poder imensos que viria a possuir.\n\nEsse é o tipo de leitura e estudo profundos que precisamos cultivar, razão por que estamos lendo apenas uma página por dia em vez de um capítulo de cada vez. Para que possamos ter tempo de ler com atenção e profundidade.',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(24),
   },
   {
     date: '25 de janeiro',
@@ -120,7 +120,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 6.16.2B–4A',
     comment: 'Warren Buffett, cuja fortuna líquida é de aproximadamente 65 bilhões de dólares, vive na mesma casa que comprou, em 1958, por 31.500 dólares. John Urschel, um atacante do time de futebol americano Baltimore Ravens, recebe milhões, mas vive com 25 mil dólares por ano. A estrela do time de basquete San Antonio Spurs, Kawhi Leonard, circula por aí no mesmo Chevy Tahoe de 1997 desde a adolescência, mesmo tendo um contrato de cerca de 94 milhões de dólares. Por quê? Não porque sejam avarentos. É porque as coisas que importam para eles são baratas.\n\nBuffett, Urschel e Leonard não acabaram desse jeito por acidente. O estilo de vida deles é resultado de priorização. Eles cultivam interesses que estão sem dúvida abaixo de seus recursos financeiros e, em consequência, qualquer renda lhes proporcionaria liberdade para buscar as coisas que mais lhes interessam.\n\nAcontece simplesmente que eles enriqueceram acima de qualquer expectativa. Esse tipo de clareza — sobre aquilo que eles mais amam no mundo — significa que eles podem aproveitar a vida. Significa que ainda seriam felizes mesmo se houvesse uma reviravolta nos negócios ou se suas carreiras fossem interrompidas por uma lesão.\n\nQuanto mais coisas desejamos e mais temos de fazer para ganhar ou alcançá-las, menos aproveitamos verdadeiramente a vida — e menos livres somos.',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(25),
   },
   {
     date: '26 de janeiro',
@@ -131,7 +131,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 8.29',
     comment: 'Qualquer pessoa que tenha feito uma aula de ioga ou sido apresentada ao pensamento hindu ou budista provavelmente ouviu falar do conceito de mantra. Em sânscrito, a palavra significa "fala sagrada" — basicamente, uma palavra, uma frase, um pensamento, até um som — destinada a fornecer clareza ou orientação espiritual. Um mantra pode ser especialmente útil durante a meditação porque nos permite bloquear todas as distrações e nos concentrarmos.\n\nEra apropriado, portanto, que Marco Aurélio sugerisse esse mantra estoico — um lembrete ou frase de alerta para usar quando somos acometidos por falsas impressões, distrações ou sentimos a pressão da vida cotidiana sobre nós. Ele diz, essencialmente: "Tenho dentro de mim o poder de manter isso afastado. Posso ver a verdade."\n\nMude o fraseado como quiser. Essa parte depende de você. Mas tenha um mantra e use-o para encontrar a clareza pela qual anseia.',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(26),
   },
   {
     date: '27 de janeiro',
@@ -142,7 +142,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Epicteto',
     source: 'Discursos, 3.2.1–3A',
     comment: 'Hoje, vamos nos concentrar nas três áreas de treinamento que Epicteto nos mostrou.\n\nPrimeiro, precisamos considerar o que devemos desejar e o que devemos rejeitar. Por quê? Para desejarmos o que é bom e evitarmos o que é mau. Não basta apenas ouvir seu corpo — porque nossas atrações muitas vezes nos desencaminham.\n\nEm seguida, devemos examinar o que nos impulsiona a agir — isto é, nossas motivações. Estamos agindo pelas razões corretas? Ou porque não paramos para pensar? Ou acreditamos que temos de fazer algo?\n\nFinalmente, há nosso julgamento. Nossa capacidade de ver as coisas claramente e de forma apropriada chega quando usamos nossa grande dádiva da natureza: a razão.\n\nEssas são as três áreas distintas de treinamento, mas, na prática, elas estão inextricavelmente entrelaçadas. Nosso julgamento afeta o que desejamos, nossos desejos afetam nossas ações e nosso julgamento as determina. Mas não podemos apenas esperar que isso aconteça. Em todas as áreas da vida, devemos refletir e empregar nossa energia com empenho. Se o fizermos, encontraremos clareza e seremos bem-sucedidos.',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(27),
   },
   {
     date: '28 de janeiro',
@@ -153,7 +153,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 4.38',
     comment: 'Sêneca disse: "Sem uma régua com a qual fazê-lo, não podemos endireitar o que está torto." Esse é o papel das pessoas sábias em nossa vida: servir de modelo e de inspiração. Fazer nossas ideias reverberarem e pôr nossas presunções à prova.\n\nQuem essa pessoa será depende de você. Talvez seja seu pai ou sua mãe. Pode ser que um filósofo, um escritor ou um pensador cumpra esse papel. Talvez perguntar "o que Jesus faria?" seja o modelo certo para você.\n\nMas escolha alguém, observe o que essa pessoa faz (e o que ela não faz) e esforce-se ao máximo para fazer o mesmo.',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(28),
   },
   {
     date: '29 de janeiro',
@@ -164,7 +164,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 2.5',
     comment: 'Cada dia nos apresenta a possibilidade de pensarmos além do necessário sobre tudo. O que eu deveria vestir? Será que eles gostam de mim? Estou comendo bem? O que acontecerá na minha vida? Será que meu chefe está satisfeito com o meu trabalho?\n\nHoje, vamos nos concentrar no que está diante de nós. Seguiremos a máxima que o técnico Bill Belichick, do time de futebol americano New England Patriots, diz aos seus jogadores: "Faça seu trabalho." Como um romano, como um bom soldado, como um mestre de nosso ofício. Não precisamos nos perder em mil outras distrações ou nos assuntos alheios.\n\nMarco Aurélio diz que devemos encarar cada tarefa como se fosse a última, porque ela de fato poderia ser. E mesmo que não seja, fazer de qualquer jeito o que você tem em mãos não ajuda em nada. Encontre clareza na simplicidade de fazer seu trabalho hoje.',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(29),
   },
   {
     date: '30 de janeiro',
@@ -175,7 +175,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Epicteto',
     source: 'Encheirídion, 13A',
     comment: 'Uma das coisas mais extraordinárias que você pode fazer como ser humano em nosso mundo midiático hiperconectado 24 horas por dia, sete dias por semana, é dizer "não sei". Ou, de maneira mais provocativa, "não me importo".\n\nA maior parte da sociedade parece ter adotado como mandamento que devemos saber de tudo o que está acontecendo, assistir a todos os episódios de todas as séries de televisão aclamadas pela crítica, acompanhar os noticiários religiosamente e nos apresentarmos para os outros como indivíduos informados e conhecedores do mundo.\n\nMas onde estão as provas de que isso é mesmo necessário? Essa obrigação é imposta por lei? Ou será que você simplesmente tem medo de parecer meio bobinho num jantar? Sim, você tem para com seu país e sua família o dever de saber daquilo que pode afetá-los diretamente, mas é só isso.\n\nQuanto tempo, energia e capacidade mental você teria a mais se cortasse drasticamente seu consumo de mídia? O quanto se sentiria mais descansado e presente se parasse de se abalar e se indignar diante de cada escândalo, furo de reportagem e possível crise (muitas das quais nunca chegam a ocorrer, no fim das contas)?',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(30),
   },
   {
     date: '31 de janeiro',
@@ -186,7 +186,7 @@ export const JANUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 5.9',
     comment: 'Quanto mais ocupados ficamos, quanto mais trabalhamos, e aprendemos, e lemos, maior a chance de ficarmos à deriva. Entramos num ritmo. Estamos ganhando dinheiro, sendo criativos, nos sentindo estimulados e atarefados. Parece que tudo vai bem, contudo nos afastamos cada vez mais da filosofia.\n\nEssa negligência acabará acarretando um problema — o estresse se acumula, nossa mente fica confusa, esquecemos o que é importante, e isso nos causa um mal. Quando algo desse tipo acontece, é importante pisarmos no freio, pormos de lado todo o ímpeto e o momento. Retornemos ao modus operandi e às práticas que sabemos estarem enraizados na clareza, no bom julgamento, nos bons princípios e na boa saúde.\n\nO estoicismo foi concebido para ser um remédio para a alma. Ele nos livra das vulnerabilidades da vida moderna. Ele nos restaura com o vigor de que precisamos para prosperar na vida. Entre em contato com essa filosofia hoje, e deixe-a curá-lo.',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(31),
   },
 ];
 
@@ -201,7 +201,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Epicteto',
     source: 'Discursos, 2.5.4–5',
     comment: 'Hoje é o primeiro dia de um novo mês. Não importa como foi janeiro — quem você foi então não é quem precisa ser agora ou no futuro próximo. Hoje, você está enfrentando uma escolha — assim como todos os meses, semanas e dias que se estenderão à sua frente. Qual caminho você tomará?\n\nO filósofo e imperador Marco Aurélio encontrou essa questão muito frutífera. "A sorte de amanhã depende de hoje" era como ele a articulava, lembrando a si mesmo que, com cada nova decisão acrescenta-se à totalidade de suas escolhas. Cada detalhe adiciona-se, cada escolha tem importância.\n\nHoje, pergunte a si mesmo: O que realmente está sob meu controle? Decida focar naquilo que você pode controlar e não gaste energia tentando manipular o que está fora de seu alcance. Essa é a essência da sabedoria estoica.',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(1),
   },
   {
     date: '2 de fevereiro',
@@ -212,7 +212,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 2.2',
     comment: 'Ficamos com raiva da pessoa que vem e tenta nos dar ordens.\nNão me diga como devo me vestir, como devo pensar, como devo fazer meu trabalho, como devo viver. Isso ocorre porque somos pessoas independentes, autossuficientes.\nOu, pelo menos, é o que dizemos a nós mesmos.\n\nContudo se alguém diz algo de que discordamos, alguma coisa dentro de nós nos indica que temos de discutir com ele. Se há um prato de biscoitos diante de nós, temos de comê-los. Se alguém faz alguma coisa de que não gostamos, temos de ficar furiosos. Quando surge um contratempo, temos de ficar tristes, deprimidos ou preocupados. Mas se alguma coisa boa acontece alguns minutos depois, de repente ficamos felizes, empolgados e queremos mais.\n\nNão deveríamos nunca deixar outra pessoa nos sacudir para cá e para lá da maneira como fazem nossos impulsos. É hora de começarmos a perceber isso desta forma: que não somos fantoches que podem ser levados a dançar desse ou daquele jeito só porque nos apetece. Deveríamos ser aqueles que estão no controle — e não nossas emoções — porque somos pessoas independentes, autossuficientes.',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(2),
   },
   {
     date: '3 de fevereiro',
@@ -223,7 +223,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Epicteto',
     source: 'Discursos, 2.13.1',
     comment: 'O pai ansioso, preocupado com o filho. O que ele quer? Um mundo que seja sempre seguro. Uma viajante inquieta. O que ela quer? Que o tempo continue firme e o trânsito esteja livre para que ela possa embarcar em seu voo. E um investidor nervoso? Quer que o mercado mude de rumo e um investimento valha a pena.\n\nTodas essas situações têm uma coisa em comum. Como diz Epicteto, é querer algo que está fora de nosso controle. Ficar tenso, afobado, andar de um lado para outro nervosamente — esses momentos intensos, dolorosos e ansiosos nos revelam nosso lado mais fútil e servil. Olhar fixamente para o relógio, para o registrador de cotações na bolsa, para a próxima fila do caixa terminada, para o céu: é como se nós todos pertencêssemos a um culto religioso que acredita que os deuses da sorte só nos darão o que queremos se sacrificarmos nossa paz de espírito.\n\nHoje, quando perceber que está ansioso, pergunte a você mesmo: Por que estou com o estômago embrulhado? Sou eu que estou no controle aqui ou é a minha ansiedade? E mais importante: Minha ansiedade está me fazendo algum bem?',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(3),
   },
   {
     date: '4 de fevereiro',
@@ -234,7 +234,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Epicteto',
     source: 'Discursos, 1.18.21',
     comment: 'Você já observou um profissional experiente lidando com a imprensa? Nenhuma pergunta é difícil demais, nenhum tom é mordaz ou ofensivo demais. Eles se desviam de cada golpe com humor, equilíbrio e paciência. Mesmo quando ofendidos ou provocados, escolhem não se esquivar ou reagir. São capazes de fazer isso não só graças a um treinamento e a sua experiência, mas porque compreendem que reagir emocionalmente só tornará a situação pior. Os jornalistas esperam que os entrevistados tropecem ou fiquem desconcertados; assim, para se saírem bem em coletivas de imprensa, bons entrevistados internalizaram a importância de se manterem calmos e sob controle.\n\nÉ pouco provável que você vá enfrentar, hoje, uma multidão de repórteres inquisitivos bombardeando-o com perguntas insensíveis. Poderia ser útil, porém, ter em mente essa imagem e usá-la como modelo para lidar com qualquer sobrecarga, motivo de estresse ou frustração que lhe sobrevenham. Nossa escolha racional — nossa prohairesis, como os estoicos a chamavam — é uma espécie de invencibilidade que pode ser cultivada.\n\nÉ possível ignorar os ataques hostis e lidar tranquilamente com a pressão ou os problemas. E, como em nosso modelo, quando terminamos, podemos apontar de volta para a multidão e dizer: "Próximo!"',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(4),
   },
   {
     date: '5 de fevereiro',
@@ -245,7 +245,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 4.22',
     comment: 'Pense nas pessoas maníacas em sua vida. Não as que sofrem de um lamentável transtorno, mas aquelas cuja vida e escolhas estão em desordem. Elas transitam o tempo todo entre altos eufóricos ou baixos massacrantes; o dia é maravilhoso ou horrível. Essas pessoas não são exaustivas? Você não gostaria que elas tivessem simplesmente um filtro, através do qual pudessem experimentar os impulsos bons em vez dos maus?\n\nEsse filtro existe. Justiça. Razão. Filosofia. Se há uma mensagem principal no pensamento estoico, é esta: impulsos de todos os tipos chegarão, e seu trabalho é controlá-los, como se adestrasse um cão. Ou simplesmente: pense antes de agir. Pergunte: Quem está no controle aqui? Quais princípios estão me guiando?',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(5),
   },
   {
     date: '6 de fevereiro',
@@ -256,7 +256,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Sêneca',
     source: 'Cartas Morais, 28.7',
     comment: 'Tornou-se um clichê citar o discurso de Theodore Roosevelt, "O homem na arena", que idolatra "aquele cujo rosto está sujo de poeira, suor e sangue; que luta com valentia...", comparado com o crítico que fica sentado no canto. Roosevelt fez esse discurso pouco depois de deixar o cargo, no auge de sua popularidade. Em poucos anos, ele iria se opor a um antigo protegido seu numa tentativa de recuperar a Casa Branca, sofrendo uma derrota fragorosa e quase sendo assassinado. Ele também quase morreria durante uma exploração de um rio na Amazônia; mataria milhares de animais em safáris africanos e tempos depois suplicaria a Woodrow Wilson que permitisse que se alistasse na Primeira Guerra Mundial, apesar de ter 59 anos. Ele iria fazer muitas coisas que, agora, parecem um tanto desconcertantes.\n\nTheodore Roosevelt era de fato um grande homem. Mas era também movido por uma compulsão, um vício em trabalho e em manter-se ativo que parecia sem fim. Muitos de nós compartilhamos dessa aflição, ser movidos por algo que não podemos controlar. Temos medo de ficar parados, por isso procuramos luta e ação como uma distração. Escolhemos estar em guerra — em alguns casos, literalmente — quando a paz é, na verdade, a mais honrosa e adequada escolha. Sim, o homem na arena é admirável. Assim como o soldado, o político, a mulher de negócios e todas as outras ocupações. Mas, e este é um grande mas, somente se estivermos na arena pelas razões corretas.',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(6),
   },
   {
     date: '7 de fevereiro',
@@ -267,7 +267,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Sêneca',
     source: 'Édipo, 992',
     comment: '"Só o paranoide sobrevive", foi uma frase famosa de Andy Grove, ex-CEO da Intel. Talvez ela seja verdadeira. Mas também sabemos que o paranoide destrói a si mesmo mais depressa e mais espetacularmente que a qualquer inimigo. Sêneca, tendo acesso à elite mais poderosa de Roma e a conhecendo muito bem, teria visto essa dinâmica se desenrolar vividamente. Nero, o discípulo cujos excessos Sêneca tentou refrear, matou não apenas a própria mãe e a esposa, mas, por fim, voltou-se também contra Sêneca, seu mentor.\n\nA combinação de poder, medo e mania pode ser mortal. O líder, certo de que pode ser traído, decide trair os outros primeiro. Temendo não ser apreciado, ele se empenha tanto para conseguir que as pessoas gostem dele que acaba provocando o efeito contrário. Convencido de que a administração vai mal, ele gerencia cada pormenor, controlando os funcionários, e se torna a fonte da má administração. E assim por diante — acabamos por infligir cegamente a nós mesmos coisas que tememos ou que nos apavoram.\n\nA próxima vez que estiver com medo de algum resultado supostamente desastroso, lembre-se de que se não controlar seus impulsos, se perder o autocontrole, você pode ser a própria fonte do desastre que teme. Isso aconteceu com pessoas mais inteligentes, mais poderosas e mais bem-sucedidas. Pode acontecer conosco também.',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(7),
   },
   {
     date: '8 de fevereiro',
@@ -278,7 +278,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Sêneca',
     source: 'Cartas Morais, 78.17',
     comment: 'Da próxima vez que alguém ficar transtornado perto de você — chorando, gritando, quebrando alguma coisa, sendo mordaz ou cruel —, observe como esta declaração os fará parar imediatamente: "Espero que isso esteja fazendo com que se sinta melhor." Porque, é claro, não está. Somente no calor da extrema emoção podemos justificar um comportamento desse tipo — e quando precisamos explicá-lo, geralmente nos sentimos envergonhados.\n\nVale a pena aplicar esse padrão a você mesmo. Na próxima vez que se encontrar em meio a uma crise de nervos, ou resmungando e reclamando porque suspeita estar pegando um resfriado, ou chorando lágrimas de arrependimento, apenas pergunte: Isto realmente está fazendo com que eu me sinta melhor? Está aliviando algum dos sintomas que eu desejaria que desaparecessem?',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(8),
   },
   {
     date: '9 de fevereiro',
@@ -289,7 +289,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 6.52',
     comment: 'Eis um exercício divertido: pense em todas as coisas perturbadoras das quais você não tem conhecimento — coisas que as pessoas podem ter dito sobre você pelas costas, erros que talvez tenham passado batidos, coisas que você deixou cair ou perdeu sem nem sequer perceber. Qual é a sua reação? Nenhuma, porque você não tem conhecimento disso.\n\nEm outras palavras, é possível não ter uma opinião sobre uma coisa negativa. Você precisa apenas cultivar esse poder em vez de exercê-lo acidentalmente. Em especial quando ter uma opinião tende a nos deixar contrariados. Pratique a habilidade de não pensar absolutamente nada sobre determinada situação — aja como se não tivesse nenhuma ideia de que ela jamais ocorrera. Ou como se nunca tivesse ouvido falar nela antes. Deixe-a tornar-se irrelevante ou inexistente para você, e, assim, ela se tornará muito menos poderosa.',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(9),
   },
   {
     date: '10 de fevereiro',
@@ -300,7 +300,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Sêneca',
     source: 'Sobre a Raiva, 3.1.5',
     comment: 'Como os estoicos disseram muitas vezes, ficar com raiva quase nunca resolve as coisas. Em geral, as torna piores. Ficamos perturbados, então a outra pessoa também fica — e todos se veem perturbados, enquanto o problema continua longe de ser resolvido.\n\nMuitas pessoas bem-sucedidas vão lhe dizer que a raiva é um combustível poderoso na vida. O desejo de "provar que todos estão errados" ou "esfregar isso na cara deles" fez muitos milionários. A raiva de ser chamado de gordo ou de burro criou excelentes corpos e mentes brilhantes. A raiva de ser rejeitado motivou muitos a trilhar o próprio caminho.\n\nMas essa é uma visão turva. Essas histórias deixam de lado a poluição produzida como efeito colateral e o desgaste que ela provocou no motor. Ignora o que acontece quando aquela raiva inicial se esgota, passando a precisar ser gerada cada vez mais para manter a máquina em movimento (até que, finalmente, a única fonte que resta é o ódio de si mesmo). "O ódio é um fardo pesado demais para suportar", Martin Luther King Jr. advertiu seus companheiros líderes dos direitos civis em 1967, ainda que eles tivessem todos os motivos para responder ao ódio com ódio.\n\nO mesmo se aplica à raiva — na verdade, aplica-se à maior parte das emoções extremas. Elas são um combustível tóxico. Há uma grande abundância dela por aí no mundo, não resta dúvida, mas os custos que a acompanham nunca valem a pena.',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(10),
   },
   {
     date: '11 de fevereiro',
@@ -311,7 +311,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Sêneca',
     source: 'Cartas Morais, 114.24',
     comment: 'Há aquela máxima de que o poder corrompe. À primeira vista, é verdade. Nero, o pupilo de Sêneca, com sua sequência de crimes e assassinatos, é um exemplo perfeito. Outro imperador, Domiciano, baniu arbitrariamente todos os filósofos de Roma (Epicteto foi obrigado a fugir por causa disso). Muitos dos imperadores de Roma foram tiranos. Contudo, não muitos anos depois, Epicteto se tornaria amigo íntimo de outro imperador, Adriano, que ajudaria Marco Aurélio a ascender ao trono, um dos mais verdadeiros exemplos de um sábio rei-filósofo.\n\nPortanto não é tão claro que o poder sempre corrompa. De fato, parece que a questão se resume, sob muitos aspectos, à força interior e à autoconsciência de indivíduos — o que eles valem, que desejos controlam, se sua compreensão de equidade e justiça se contrapõe às tentações de riqueza e deferência ilimitadas.\n\nO mesmo se aplica a você. Tanto pessoal quanto profissionalmente. Tirano ou rei? Herói ou Nero? Qual você será?',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(11),
   },
   {
     date: '12 de fevereiro',
@@ -322,7 +322,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Epicteto',
     source: 'Discursos, 4.3.6b-8',
     comment: 'O trabalho problemático que o deixa estressado, um relacionamento conflituoso, uma vida sob os holofotes. Por nos ajudar a controlar nossas reações emocionais e a analisá-las, o estoicismo pode tornar situações como essas mais fáceis de suportar. Pode ajudá-lo a controlar e mitigar os gatilhos que parecem ser acionados a todo momento.\n\nMas uma pergunta: Você está se sujeitando a isso? É esse realmente o ambiente para o qual você foi feito? Ser provocado por e-mails maldosos e uma interminável sucessão de problemas no trabalho? Nossas glândulas ad-renais podem lidar apenas com certo número de situações atribuladas antes de ficarem exaustas. Você não deveria preservá-las para situações de vida ou morte?\n\nPortanto, sim, use o estoicismo para lidar com essas dificuldades. Mas não se esqueça de perguntar: Esta é realmente a vida que quero? Cada vez que você fica aborrecido, um pouquinho de vida deixa seu corpo. Essas são mesmo as coisas com que você quer gastar esse recurso inestimável? Não tenha medo de fazer uma mudança — uma mudança grande.',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(12),
   },
   {
     date: '13 de fevereiro',
@@ -333,7 +333,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Epicteto',
     source: 'Encheiridion, 34',
     comment: 'Autocontrole é algo difícil, sem dúvida. É por isso que um truque muito conhecido das dietas pode ser útil: o "dia do lixo" — o dia na semana em que é permitido comer de tudo. De fato, as pessoas que estão seguindo a dieta são estimuladas a fazer uma lista durante a semana de todas as comidas que desejaram, para que possam ter o prazer de desfrutá-las todas de uma só vez (a ideia é que se você se alimentar de maneira saudável seis dias em cada sete, ainda sairá ganhando).\n\nA princípio, isso parece um sonho, mas qualquer pessoa que tenha realmente feito isso sabe a verdade: em todos os dias do lixo você come até passar mal e odeia a si mesmo depois. Não demora, e você está abolindo esses dias por livre e espontânea vontade, porque não precisa deles e com certeza não os quer. Não é diferente de um pai que pega o filho com cigarros e o obriga a fumar o maço inteiro. É importante conectar a chamada tentação com seus efeitos. Quando você compreende que ceder pode ser pior do que resistir, o impulso começa a perder seu apelo. Dessa maneira, o autocontrole se torna o real prazer e a tentação se torna o remorso.',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(13),
   },
   {
     date: '14 de fevereiro',
@@ -344,7 +344,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Heráclito',
     source: 'citado em Diógenes Laércio, Vida e doutrinas de filósofos ilustres, 9.1',
     comment: 'Por que eu fiz isso? Você provavelmente já se fez essa pergunta. Todos nós fizemos. Como pude ser tão estúpido? O que eu estava pensando?\n\nVocê não estava pensando. Esse é o problema. Dentro da sua cabeça está toda a razão e a inteligência de que você precisa. Tratar de acatá-las e utilizá-las é a parte difícil. Assegurar que sua mente esteja no comando, não suas sensações físicas imediatas, não seus hormônios em polvorosa.\n\nFixe sua atenção em sua inteligência. Deixe-a fazer o trabalho dela.',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(14),
   },
   {
     date: '15 de fevereiro',
@@ -355,7 +355,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 6.31',
     comment: 'O autor Raymond Chandler estava descrevendo a maioria de nós em uma carta destinada ao seu editor: "Nunca olhei para trás, embora tenha passado por muitos períodos desconfortáveis olhando para a frente." Thomas Jefferson uma vez gracejou numa carta para John Adams: "Quanto sofrimento nos custaram os males que nunca aconteceram!" E Sêneca expressaria isso melhor: "Não há certeza em nossos medos que seja ainda mais certa do que o fato de que a maior parte do que tememos não dá em nada."\n\nMuitas das coisas que nos perturbam, acreditavam os estoicos, são um produto da imaginação, não a realidade. Como sonhos, elas são vívidas e realistas no momento, mas absurdas uma vez que saímos dele. Num sonho, nunca paramos para pensar e dizer: "Isso faz algum sentido?" Não, nós concordamos com aquilo. O mesmo se passa com nossos acessos de raiva, medo ou outras emoções extremas.\n\nFicar perturbado é como levar adiante o sonho quando você está acordado. A coisa que o provocou não era real — mas sua reação foi. E assim, a partir da falsificação, decorrem consequências reais. É por isso que você precisa acordar agora mesmo, em vez de criar um pesadelo.',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(15),
   },
   {
     date: '16 de fevereiro',
@@ -366,7 +366,7 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     author: 'Marco Aurélio',
     source: 'Meditações, 6.26',
     comment: 'Aqui está uma situação comum. Você está trabalhando com um colega frustrante ou um chefe difícil. Eles lhe pedem que faça alguma coisa, e, por não gostar do mensageiro, você protesta na mesma hora. Há este ou aquele problema, ou o pedido deles é ofensivo e rude. Por isso você lhes diz: "Não, não vou fazer isso." Então eles revidam imediatamente deixando de fazer alguma coisa que você havia pedido. E assim o conflito se intensifica.\n\nNesse meio-tempo, se você pudesse dar um passo atrás e enxergar a situação de maneira objetiva, provavelmente veria que nem tudo que eles estão pedindo é inaceitável. Na verdade, uma parte é até muito fácil de fazer ou, pelo menos, agradável. E se você fizesse o que eles pedem, isso poderia tornar o resto das tarefas um pouco mais tolerável também. Rapidamente, você teria terminado tudo.\n\nA vida (e nosso trabalho) já é difícil o suficiente. Não a tornemos ainda mais árdua reagindo emocionalmente a questões insignificantes ou procurando batalhas que não são de fato importantes para nós. Não deixemos a emoção interferir com kathêkon, as ações simples e apropriadas no caminho para a virtude.',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(16),
   },
 ];
 
@@ -379,7 +379,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Não se esconda dos seus sentimentos',
     text: 'É melhor dominar a dor que enganá-la.',
     author: 'Sêneca, Consolação a Minha Mãe Hélvia, 17.1B',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(8),
   },
   {
     date: '9 de dezembro',
@@ -388,7 +388,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Perdulários do tempo',
     text: 'Caso todos os gênios da história se concentrassem neste único assunto, nunca poderiam expressar plenamente sua perplexidade diante da obscuridade da mente humana. Nenhuma pessoa abandonaria sequer uma polegada de sua propriedade, e a menor das brigas com um vizinho pode significar o inferno para pagar; no entanto, deixamos facilmente outros invadirem nossa vida — pior, muitas vezes abrimos caminho para aqueles que vão controlá-la. Ninguém distribui seu dinheiro aos transeuntes, mas a quantos cada um de nós distribuímos nossa vida? Somos sovinas com propriedade e dinheiro, no entanto damos pouquíssima importância à perda de tempo, a coisa em relação à qual deveríamos ser os mais duros avarentos.',
     author: 'Sêneca, Sobre a Brevidade da Vida, 3.1–2',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(9),
   },
   {
     date: '10 de dezembro',
@@ -397,7 +397,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Não se venda por um preço muito baixo',
     text: 'Eu digo: que ninguém me roube um único dia sem que vá fazer uma devolução completa da perda.',
     author: 'Sêneca, Sobre a Tranquilidade da Alma, 1.11B',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(10),
   },
   {
     date: '11 de dezembro',
@@ -406,7 +406,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Dignidade e coragem',
     text: 'Como diz Cícero, detestamos gladiadores se eles se apressam a salvar a própria vida a todo custo; nós os preferimos se mostram desprezo pela vida.',
     author: 'Sêneca, Sobre a Tranquilidade da Alma, 11.4B',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(11),
   },
   {
     date: '12 de dezembro',
@@ -415,7 +415,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'A batida continua',
     text: 'Percorre a longa galeria do passado, de impérios e reinos sucedendo-se uns aos outros incontáveis vezes. E podes também ver o futuro, pois certamente ele será igual, sem tirar nem pôr, incapaz de se desviar do ritmo atual. É tudo uma só coisa, quer tenhas experimentado quarenta anos, quer tenha sido uma era. O que mais há para ver?',
     author: 'Marco Aurélio, Meditações, 7.49',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(12),
   },
   {
     date: '13 de dezembro',
@@ -424,7 +424,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'É só um número',
     text: 'Não estás aborrecido porque tens um certo peso e não o dobro. Então por que ficar nervoso porque te foi dado um certo tempo de vida e não mais? Assim como estás satisfeito com teu peso, assim também deverias estar com o tempo que te foi dado.',
     author: 'Marco Aurélio, Meditações, 6.49',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(13),
   },
   {
     date: '14 de dezembro',
@@ -433,7 +433,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'O que deveríamos saber no fim',
     text: 'Logo vais morrer, e ainda assim não és sincero, sereno ou livre da desconfiança de que coisas externas podem prejudicá-lo; tampouco és indulgente com todos, ciente de que sabedoria e agir com justiça são uma só e mesma coisa.',
     author: 'Marco Aurélio, Meditações, 4.37',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(14),
   },
   {
     date: '15 de dezembro',
@@ -442,7 +442,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Uma maneira simples de medir nossos dias',
     text: 'Esta é a marca da perfeição de caráter: passar cada dia como se fosse o último, sem exaltação, preguiça ou fingimento.',
     author: 'Marco Aurélio, Meditações, 7.69',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(15),
   },
   {
     date: '16 de dezembro',
@@ -451,7 +451,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Boa saúde perpétua',
     text: 'Eu te digo, tens somente de aprender a viver como a pessoa saudável o faz […] vivendo com completa confiança. Que confiança? A única que vale a pena ter, no que é confiável, desempenhado e não pode ser levado embora — tua escolha racional.',
     author: 'Epicteto, Discursos, 3.26.28B–24',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(16),
   },
   {
     date: '17 de dezembro',
@@ -460,7 +460,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Conhece a ti mesmo — antes que seja tarde demais',
     text: 'A morte pesa sobre uma pessoa que, extremamente bem conhecida por todos, morre desconhecida para si mesma.',
     author: 'Sêneca, Tieste, 400',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(17),
   },
   {
     date: '18 de dezembro',
@@ -469,7 +469,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'O que chega para todos nós',
     text: 'Tanto Alexandre, o Grande, quanto seu condutor de mulas foram levados para o mesmo lugar pela morte — foram ou recebidos na razão generativa de todas as coisas, ou dispersados entre os átomos.',
     author: 'Marco Aurélio, Meditações, 6.24',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(18),
   },
   {
     date: '19 de dezembro',
@@ -478,7 +478,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Escala humana',
     text: 'Pensa em todo o universo de matéria e em quão pequena é tua parte. Pensa sobre a extensão do tempo e em quão breve — quase momentânea — é a parte destinada a ti. Pensa nos funcionamentos da sorte e em quão infinitesimal é teu papel.',
     author: 'Marco Aurélio, Meditações, 5.24',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(19),
   },
   {
     date: '20 de dezembro',
@@ -487,7 +487,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Tema: o medo da morte',
     text: 'Ponderas então como o supremo dos males humanos, a marca mais segura dos vis e covardes, não é a morte, mas o medo da morte? Exorto-te a te disciplinares contra tal medo, a dirigires todo o teu pensamento, exercícios e leitura nesse sentido — e conhecerás o único caminho para a liberdade humana.',
     author: 'Epicteto, Discursos, 3.26.38–39',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(20),
   },
   {
     date: '21 de dezembro',
@@ -496,7 +496,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'O que todos os seus anos de vida têm para mostrar?',
     text: 'Muitas vezes um velho não tem outra evidência além de sua idade para provar que viveu longo tempo.',
     author: 'Sêneca, Sobre a Tranquilidade da Alma, 3.8B',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(21),
   },
   {
     date: '22 de dezembro',
@@ -505,7 +505,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Faça sua própria afirmação',
     text: 'Pois é vergonhoso para uma pessoa idosa, ou que se aproxima da velhice, ter apenas o conhecimento carregado em seus cadernos. Zenão disse isso… O que tu dizes? Cleanthes disse isso… O que tu dizes? Por quanto tempo serás compelido pelas afirmações de outrem? Assume o controle e le faz tua própria afirmação — algo que a posteridade vá carregar em seu caderno.',
     author: 'Sêneca, Cartas Morais, 33.7',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(22),
   },
   {
     date: '23 de dezembro',
@@ -514,7 +514,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'O que você tem tanto medo de perder?',
     text: 'Tens medo de morrer. Mas, vamos lá, em que essa tua vida é algo diferente da morte?',
     author: 'Sêneca, Cartas Morais, 77.18',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(23),
   },
   {
     date: '24 de dezembro',
@@ -523,7 +523,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Sem sentido… como um bom vinho',
     text: 'Sabes que sabor têm vinho e licor. Não faz diferença se cem ou mil garrafas passam pela tua bexiga — tu não és mais que um filtro.',
     author: 'Sêneca, Cartas Morais, 77.16',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(24),
   },
   {
     date: '25 de dezembro',
@@ -532,7 +532,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Não queime a vela pelas duas pontas',
     text: 'A mente deve poder descansar — ela se levantará melhor e mais aguçada após uma boa pausa. Assim como campos ricos não devem ser forçados — pois rapidamente perderão sua fertilidade se nunca lhes for dada uma pausa —, assim também o trabalho constante na bigorna fraturará a força da mente. Mas ela recupera seus poderes se for deixada livre e descansada por algum tempo. Trabalho constante dá origem a um certo tipo de entorpecimento e debilidade da alma racional.',
     author: 'Sêneca, Sobre a Tranquilidade da Alma, 17.5',
-    background: DECEMBER_BACKGROUNDS[2],
+    background: getBackgroundForDay(25),
   },
   {
     date: '26 de dezembro',
@@ -541,7 +541,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'A vida é longa — se você souber usá-la',
     text: 'Não se trata nem um pouco de termos um tempo de vida curto demais, mas de desperdiçarmos uma grande parte dele. A vida é bastante longa, e é dada em medida suficiente para fazermos grandes coisas se a aproveitarmos bem. Mas quando ela é escoada pelo ralo do luxo e da negligência, quando não é empregada para nenhuma boa finalidade, somos compelidos a perceber que ela passou antes mesmo que reconhecêssemos que estava passando. E assim é — nós é que recebemos uma vida curta, nós a tornamos curta.',
     author: 'Sêneca, Sobre a Brevidade da Vida, 1.3–4A',
-    background: DECEMBER_BACKGROUNDS[0],
+    background: getBackgroundForDay(26),
   },
   {
     date: '27 de dezembro',
@@ -550,7 +550,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
     title: 'Não deixe sua alma ir antes',
     text: 'É uma desgraça nesta vida quando a alma se rende primeiro, enquanto o corpo se recusa a fazê-lo.',
     author: 'Marco Aurélio, Meditações, 6.29',
-    background: DECEMBER_BACKGROUNDS[1],
+    background: getBackgroundForDay(27),
   },
 ];
 
