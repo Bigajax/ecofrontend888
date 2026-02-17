@@ -368,6 +368,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Aqui está uma situação comum. Você está trabalhando com um colega frustrante ou um chefe difícil. Eles lhe pedem que faça alguma coisa, e, por não gostar do mensageiro, você protesta na mesma hora. Há este ou aquele problema, ou o pedido deles é ofensivo e rude. Por isso você lhes diz: "Não, não vou fazer isso." Então eles revidam imediatamente deixando de fazer alguma coisa que você havia pedido. E assim o conflito se intensifica.\n\nNesse meio-tempo, se você pudesse dar um passo atrás e enxergar a situação de maneira objetiva, provavelmente veria que nem tudo que eles estão pedindo é inaceitável. Na verdade, uma parte é até muito fácil de fazer ou, pelo menos, agradável. E se você fizesse o que eles pedem, isso poderia tornar o resto das tarefas um pouco mais tolerável também. Rapidamente, você teria terminado tudo.\n\nA vida (e nosso trabalho) já é difícil o suficiente. Não a tornemos ainda mais árdua reagindo emocionalmente a questões insignificantes ou procurando batalhas que não são de fato importantes para nós. Não deixemos a emoção interferir com kathêkon, as ações simples e apropriadas no caminho para a virtude.',
     background: getBackgroundForDay(16),
   },
+  {
+    date: '17 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 17,
+    title: 'O INIMIGO DA FELICIDADE',
+    text: 'É inteiramente impossível unir a felicidade a um anseio por aquilo que não temos. A felicidade tem tudo o que ela quer e, como os bem alimentados, não deveria ter fome ou sede.',
+    author: 'Epicteto',
+    source: 'Discursos, 3.24.17',
+    comment: 'Serei feliz quando me formar, dizemos a nós mesmos. Serei feliz quando conseguir ser promovido, quando a dieta fizer efeito, quando eu tiver o dinheiro que meus pais nunca tiveram. Felicidade condicional é o nome que os psicólogos dão a esse tipo de pensamento. Como o horizonte, você pode andar quilômetros e mais quilômetros e nunca a alcançar. Nem mesmo chegará mais perto.\n\nAntecipar um acontecimento futuro por ansiedade, imaginar de maneira apaixonada algo que deseja, ansiar por alguma situação feliz — por mais prazerosas que essas atividades possam parecer, destroem sua chance de encontrar a felicidade aqui e agora. Localize esse anseio por mais, melhor, algum dia e veja-o tal como é: o inimigo do seu contentamento. É preciso escolher entre esse anseio e sua felicidade. Como diz Epicteto, os dois não são compatíveis.',
+    background: getBackgroundForDay(17),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
