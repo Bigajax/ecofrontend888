@@ -162,12 +162,11 @@ export default function HomePage() {
       },
       {
         id: 'rec_2',
-        title: 'Diário Estoico',
-        description: 'Cultive a sabedoria diária através de reflexões estoicas',
-        duration: 'Diário',
-        image: 'url("/images/diario-estoico.webp")',
+        title: 'Acolhendo sua respiração',
+        description: 'Encontre presença e calma através da sua respiração',
+        duration: '7 min',
+        image: 'url("/images/acolhendo-respiracao.png")',
         imagePosition: 'center center',
-        gradient: 'linear-gradient(to bottom, rgba(139, 92, 60, 0.6) 0%, rgba(139, 92, 60, 0.85) 100%)',
         isPremium: false,
       },
       {
@@ -228,6 +227,18 @@ export default function HomePage() {
         gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
         isPremium: false,
         category: 'Sono',
+      },
+      {
+        id: 'blessing_10',
+        title: 'Acolhendo sua respiração',
+        description: 'Encontre presença e calma através da sua respiração',
+        duration: '7 min',
+        audioUrl: '/audio/acolhendo-respiracao.mp3',
+        image: 'url("/images/acolhendo-respiracao.png")',
+        imagePosition: 'center center',
+        gradient: 'linear-gradient(to bottom, #7BBFB5 0%, #5FA89E 20%, #459188 40%, #2E7A70 60%, #1A6358 80%, #084D42 100%)',
+        isPremium: false,
+        category: 'Respiração',
       },
     ],
     [],
@@ -359,8 +370,19 @@ export default function HomePage() {
       // Introdução à Meditação - navegar para sua própria página
       navigate('/app/introducao-meditacao');
     } else if (recId === 'rec_2') {
-      // Diário Estoico - navegar para sua própria página
-      navigate('/app/diario-estoico');
+      // Acolhendo sua respiração - abrir no meditation player
+      navigate('/app/meditation-player', {
+        state: {
+          meditation: {
+            title: 'Acolhendo sua respiração',
+            duration: '7 min',
+            audioUrl: '/audio/acolhendo-respiracao.mp3',
+            imageUrl: '/images/acolhendo-respiracao.png',
+            backgroundMusic: 'Cristais',
+            gradient: 'linear-gradient(to bottom, #7BBFB5 0%, #5FA89E 20%, #459188 40%, #2E7A70 60%, #1A6358 80%, #084D42 100%)',
+          },
+        },
+      });
     } else if (recId === 'rec_3') {
       // Meditações de Sono - navegar para página dedicada
       navigate('/app/meditacoes-sono');
