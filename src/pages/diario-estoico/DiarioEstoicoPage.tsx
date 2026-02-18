@@ -757,14 +757,13 @@ export default function DiarioEstoicoPage() {
               return (
                 <div key={part.number}>
                   {/* Header da parte */}
-                  <div className="mb-4 flex items-baseline gap-2">
-                    <span className="font-display text-[11px] font-bold tracking-[0.18em] text-eco-muted uppercase">
+                  <div className="mb-4">
+                    <p className="text-xs font-bold tracking-[0.2em] text-eco-muted uppercase mb-0.5">
                       Parte {part.number}
-                    </span>
-                    <span className="text-eco-line">—</span>
-                    <span className="font-display text-[13px] font-semibold text-eco-text tracking-wide uppercase">
+                    </p>
+                    <p className="font-display text-base font-bold text-eco-text tracking-wide uppercase">
                       {part.title}
-                    </span>
+                    </p>
                   </div>
 
                   {/* Grid 2x2 dos meses */}
@@ -794,7 +793,7 @@ export default function DiarioEstoicoPage() {
                             }`}
                         >
                           {/* Espaço para imagem */}
-                          <div className={`w-full h-[90px] sm:h-[100px] relative overflow-hidden ${
+                          <div className={`w-full h-[110px] relative overflow-hidden ${
                             isActive ? 'bg-[#3B2D8F]/10' : 'bg-gray-100'
                           }`}>
                             {month.image ? (
@@ -804,13 +803,13 @@ export default function DiarioEstoicoPage() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <div className={`w-full h-full flex items-end p-2 bg-gradient-to-br ${
+                              <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${
                                 isActive
-                                  ? 'from-[#3B2D8F]/20 to-[#3B2D8F]/5'
+                                  ? 'from-[#3B2D8F]/15 to-[#3B2D8F]/5'
                                   : 'from-gray-200 to-gray-100'
                               }`}>
-                                <span className={`text-[9px] font-medium tracking-widest uppercase ${isActive ? 'text-[#3B2D8F]/60' : 'text-gray-400'}`}>
-                                  imagem em breve
+                                <span className={`text-[10px] font-medium tracking-wide uppercase ${isActive ? 'text-[#3B2D8F]/50' : 'text-gray-400'}`}>
+                                  Em breve
                                 </span>
                               </div>
                             )}
@@ -820,24 +819,24 @@ export default function DiarioEstoicoPage() {
                             )}
                             {/* Lock overlay */}
                             {!isUnlocked && (
-                              <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
-                                <span className="text-xs font-bold text-gray-400 bg-white/80 px-2 py-0.5 rounded-full tracking-wide">
-                                  PREMIUM
+                              <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+                                <span className="text-[11px] font-bold text-gray-500 bg-white/90 px-2.5 py-1 rounded-full tracking-wide shadow-sm">
+                                  Premium
                                 </span>
                               </div>
                             )}
                           </div>
 
                           {/* Info do mês */}
-                          <div className={`px-3 py-2.5 ${isActive ? 'bg-[#3B2D8F]' : 'bg-white'}`}>
-                            <p className={`font-bold text-[11px] tracking-widest uppercase leading-tight ${isActive ? 'text-white' : 'text-eco-text'}`}>
+                          <div className={`px-3 py-3 ${isActive ? 'bg-[#3B2D8F]' : 'bg-white'}`}>
+                            <p className={`font-bold text-sm leading-tight tracking-wider uppercase ${isActive ? 'text-white' : 'text-eco-text'}`}>
                               {month.shortName}
                             </p>
-                            <p className={`text-[10px] mt-0.5 leading-tight ${isActive ? 'text-white/70' : 'text-eco-muted'}`}>
+                            <p className={`text-xs mt-1 leading-snug ${isActive ? 'text-white/80' : 'text-eco-muted'}`}>
                               {month.theme}
                             </p>
-                            <p className={`text-[9px] mt-1 ${isActive ? 'text-white/50' : 'text-eco-muted/60'}`}>
-                              {monthMaxims.length > 0 ? `${monthMaxims.length} reflexões` : 'Em breve'}
+                            <p className={`text-[11px] mt-1.5 font-medium ${isActive ? 'text-white/55' : 'text-eco-muted/70'}`}>
+                              {monthMaxims.length > 0 ? `${monthMaxims.length} dias` : 'Em breve'}
                             </p>
                           </div>
                         </button>
