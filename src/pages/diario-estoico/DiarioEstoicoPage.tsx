@@ -547,6 +547,16 @@ export default function DiarioEstoicoPage() {
     return () => observer.disconnect();
   }, [handleCardView]);
 
+  // Auto-scroll até a reflexão de hoje após render
+  useEffect(() => {
+    if (!todayMaxim) return;
+    const timer = setTimeout(() => {
+      const el = cardRefs.current.get(todayMaxim.dayNumber);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 600); // Aguarda animações de entrada
+    return () => clearTimeout(timer);
+  }, [todayMaxim]);
+
   // Apply ECO background to document
   useEffect(() => {
     // Salvar estilos originais
@@ -666,185 +676,213 @@ export default function DiarioEstoicoPage() {
           </div>
         </div>
 
-        {/* Accordion de Meses */}
-        <div className="w-full px-4 pt-6 pb-12 md:px-8">
-          <div className="mx-auto max-w-3xl space-y-3">
-            {MONTH_THEMES.map((month) => {
-              const isOpen = openMonth === month.id;
-              const isUnlocked = tier === 'premium' || tier === 'vip' || tier === 'essentials' || month.isFreeAccess;
-              const monthMaxims = availableMaxims.filter(m => m.month === month.monthName);
+        {/* Cards de seleção de mês */}
+        <div className="w-full px-4 pt-6 md:px-8">
+          <div className="mx-auto max-w-3xl">
+            <div className="grid grid-cols-3 gap-3">
+              {MONTH_THEMES.map((month) => {
+                const isActive = openMonth === month.id;
+                const isUnlocked = tier === 'premium' || tier === 'vip' || tier === 'essentials' || month.isFreeAccess;
+                const monthMaxims = availableMaxims.filter(m => m.month === month.monthName);
+                const hasToday = todayMaxim?.month === month.monthName;
 
-              return (
-                <div key={month.id} className="rounded-2xl overflow-hidden bg-white shadow-sm border border-eco-line/30">
-                  {/* Header do accordion */}
+                return (
                   <button
-                    className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:bg-eco-bg/60 active:bg-eco-bg"
+                    key={month.id}
                     onClick={() => {
                       if (!isUnlocked) {
                         mixpanel.track('Diario Month Locked Click', { month: month.id, theme: month.theme, user_tier: tier, user_id: user?.id });
                         setShowUpgradeModal(true);
                         return;
                       }
-                      const next = isOpen ? null : month.id;
-                      setOpenMonth(next);
-                      mixpanel.track('Diario Month Tab Click', { month: month.id, action: next ? 'open' : 'close', user_tier: tier, is_guest: !user, user_id: user?.id });
+                      setOpenMonth(isActive ? null : month.id);
+                      mixpanel.track('Diario Month Tab Click', { month: month.id, action: isActive ? 'close' : 'open', user_tier: tier, is_guest: !user, user_id: user?.id });
                     }}
+                    className={`relative flex flex-col items-center justify-between rounded-2xl p-4 text-center transition-all duration-300 active:scale-95 overflow-hidden
+                      ${isActive
+                        ? 'bg-[#3B2D8F] shadow-[0_4px_20px_rgba(59,45,143,0.35)] ring-2 ring-[#3B2D8F]'
+                        : 'bg-white shadow-sm border border-eco-line/40 hover:shadow-md'
+                      }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{month.iconEmoji}</span>
-                      <div className="text-left">
-                        <p className="font-bold text-eco-text text-sm sm:text-base leading-tight">
-                          {month.displayName}
-                        </p>
-                        <p className="text-xs text-eco-muted mt-0.5">
-                          {month.theme} • {month.reflectionsCount} reflexões
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {!isUnlocked && (
-                        <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full font-medium">Premium</span>
-                      )}
-                      {isUnlocked && (
-                        <span className="text-xs text-green-600 font-medium hidden sm:inline">✓ Disponível</span>
-                      )}
-                      <ChevronDown
-                        size={18}
-                        className={`text-eco-muted transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
-                      />
-                    </div>
+                    {/* Badge "Hoje" */}
+                    {hasToday && (
+                      <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-eco-baby shadow-sm" />
+                    )}
+
+                    {/* Emoji */}
+                    <span className="text-3xl mb-2 block">{month.iconEmoji}</span>
+
+                    {/* Nome */}
+                    <p className={`font-bold text-sm leading-tight ${isActive ? 'text-white' : 'text-eco-text'}`}>
+                      {month.displayName.substring(0, 3)}
+                    </p>
+
+                    {/* Reflexões count */}
+                    <p className={`text-[10px] mt-1 ${isActive ? 'text-white/70' : 'text-eco-muted'}`}>
+                      {monthMaxims.length} dias
+                    </p>
+
+                    {/* Lock ou check */}
+                    {!isUnlocked ? (
+                      <span className="mt-2 text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full">🔒</span>
+                    ) : (
+                      <span className={`mt-2 text-[10px] font-semibold ${isActive ? 'text-white/80' : 'text-green-600'}`}>✓</span>
+                    )}
+
+                    {/* Indicador de ativo */}
+                    {isActive && (
+                      <ChevronDown size={14} className="text-white/70 mt-1" />
+                    )}
                   </button>
-
-                  {/* Cards do mês */}
-                  {isOpen && (
-                    <div className="border-t border-eco-line/30 px-4 py-4 space-y-4">
-                      {monthMaxims.length === 0 && (
-                        <p className="text-center text-sm text-eco-muted py-6">
-                          Nenhuma reflexão disponível ainda.
-                        </p>
-                      )}
-                      {monthMaxims.map((maxim) => {
-                        const isToday = todayMaxim?.dayNumber === maxim.dayNumber && todayMaxim?.month === maxim.month;
-                        const isExpanded = expandedCards.has(maxim.dayNumber);
-                        const isGuest = isGuestMode && !user && !isVipUser;
-
-                        return (
-                          <AnimatedSection key={maxim.dayNumber} animation="slide-up-fade">
-                            <div
-                              ref={(el) => { if (el) cardRefs.current.set(maxim.dayNumber, el); }}
-                              data-diario-card
-                              data-day-number={maxim.dayNumber}
-                              className={`relative w-full rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 ${
-                                isToday
-                                  ? 'ring-2 ring-eco-baby shadow-[0_6px_28px_rgba(110,200,255,0.30)]'
-                                  : 'shadow-eco hover:shadow-eco-glow'
-                              }`}
-                              style={{
-                                backgroundImage: maxim.background,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                              }}
-                              onClick={() => toggleExpanded(maxim.dayNumber)}
-                            >
-                              <div className="absolute inset-0 bg-black/40 pointer-events-none" />
-                              <div className={`relative flex flex-col justify-between p-5 ${isToday ? 'min-h-[220px]' : 'min-h-[160px]'}`}>
-                                {/* Top: data + badge hoje */}
-                                <div className="flex items-start justify-between gap-2">
-                                  <span className={`inline-flex rounded-full px-3 py-1.5 ${isToday ? 'bg-eco-baby' : 'bg-black/40 backdrop-blur-sm'}`}>
-                                    <span className="text-[11px] font-semibold text-white tracking-wide">
-                                      {isToday ? `HOJE • ${maxim.date}` : maxim.date}
-                                    </span>
-                                  </span>
-                                  {isToday && (
-                                    <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/30">
-                                      ✦ Reflexão do dia
-                                    </span>
-                                  )}
-                                </div>
-
-                                {/* Bottom: título + botão leia mais */}
-                                <div>
-                                  <p className={`font-display font-normal leading-snug text-white drop-shadow-lg ${isToday ? 'text-lg sm:text-xl' : 'text-base'}`}>
-                                    {maxim.title}
-                                  </p>
-                                  {isToday && (
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); toggleExpanded(maxim.dayNumber); }}
-                                      className="mt-3 inline-flex items-center gap-2 text-[12px] font-medium rounded-full px-4 py-2 text-white bg-gray-600/60 hover:bg-gray-600/80 backdrop-blur-sm transition-all"
-                                    >
-                                      <MoreHorizontal size={14} />
-                                      {isExpanded ? 'Fechar' : 'Leia mais'}
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Conteúdo expandido */}
-                              {isExpanded && (
-                                <div className="relative glass-shell p-5 border-t border-eco-line/30">
-                                  <div className="space-y-3">
-                                    <p className="font-display text-[14px] leading-relaxed text-eco-text italic">
-                                      "{maxim.text}"
-                                    </p>
-                                    <p className="font-primary text-[12px] font-medium text-eco-muted">
-                                      — {maxim.author}
-                                      {maxim.source && `, ${maxim.source}`}
-                                    </p>
-                                    {renderComment(maxim, 'text-[13px]')}
-
-                                    {!isGuest && (
-                                      <div className="space-y-2 pt-1">
-                                        {!readDays.has(maxim.dayNumber) && (
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              markDayAsRead(maxim.dayNumber);
-                                              mixpanel.track('Diario Estoico: Marked As Read', { day_number: maxim.dayNumber, is_guest: !user, method: 'button' });
-                                            }}
-                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-eco-baby hover:bg-eco-baby/90 rounded-lg active:scale-95 transition-all duration-200"
-                                          >
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                            Marcar como lida
-                                          </button>
-                                        )}
-                                        {readDays.has(maxim.dayNumber) && (
-                                          <div className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-eco-accent glass-shell rounded-lg">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                            Reflexão concluída
-                                          </div>
-                                        )}
-                                        <div className="flex gap-2">
-                                          <button
-                                            onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-eco-text glass-shell rounded-lg hover:bg-eco-accent/10 transition-all duration-300"
-                                          >
-                                            <BookOpen size={12} />
-                                            Modo Leitura
-                                          </button>
-                                          <button
-                                            onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-eco-text glass-shell rounded-lg hover:bg-eco-accent/10 transition-all duration-300"
-                                          >
-                                            <Share2 size={12} />
-                                            Compartilhar
-                                          </button>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </AnimatedSection>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
+
+        {/* Reflexões do mês selecionado */}
+        {openMonth && (() => {
+          const month = MONTH_THEMES.find(m => m.id === openMonth);
+          if (!month) return null;
+          const monthMaxims = availableMaxims.filter(m => m.month === month.monthName);
+
+          return (
+            <div className="w-full px-4 pt-5 pb-12 md:px-8">
+              <div className="mx-auto max-w-3xl">
+                {/* Header do mês */}
+                <div className="mb-5 flex items-center gap-2">
+                  <span className="text-xl">{month.iconEmoji}</span>
+                  <div>
+                    <h2 className="font-display font-bold text-eco-text text-lg leading-tight">
+                      {month.displayName} — {month.theme}
+                    </h2>
+                    <p className="text-xs text-eco-muted">{month.themeDescription}</p>
+                  </div>
+                </div>
+
+                {/* Lista de reflexões */}
+                <div className="space-y-4">
+                  {monthMaxims.length === 0 && (
+                    <p className="text-center text-sm text-eco-muted py-8">
+                      Nenhuma reflexão disponível ainda.
+                    </p>
+                  )}
+                  {monthMaxims.map((maxim) => {
+                    const isToday = todayMaxim?.dayNumber === maxim.dayNumber && todayMaxim?.month === maxim.month;
+                    const isExpanded = expandedCards.has(maxim.dayNumber);
+                    const isGuest = isGuestMode && !user && !isVipUser;
+
+                    return (
+                      <AnimatedSection key={maxim.dayNumber} animation="slide-up-fade">
+                        <div
+                          ref={(el) => { if (el) cardRefs.current.set(maxim.dayNumber, el); }}
+                          data-diario-card
+                          data-day-number={maxim.dayNumber}
+                          className={`relative w-full rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 ${
+                            isToday
+                              ? 'ring-2 ring-eco-baby shadow-[0_6px_28px_rgba(110,200,255,0.30)]'
+                              : 'shadow-eco hover:shadow-eco-glow'
+                          }`}
+                          style={{
+                            backgroundImage: maxim.background,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                          }}
+                          onClick={() => toggleExpanded(maxim.dayNumber)}
+                        >
+                          <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+                          <div className={`relative flex flex-col justify-between p-5 ${isToday ? 'min-h-[220px]' : 'min-h-[160px]'}`}>
+                            <div className="flex items-start justify-between gap-2">
+                              <span className={`inline-flex rounded-full px-3 py-1.5 ${isToday ? 'bg-eco-baby' : 'bg-black/40 backdrop-blur-sm'}`}>
+                                <span className="text-[11px] font-semibold text-white tracking-wide">
+                                  {isToday ? `HOJE • ${maxim.date}` : maxim.date}
+                                </span>
+                              </span>
+                              {isToday && (
+                                <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/30">
+                                  ✦ Reflexão do dia
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <p className={`font-display font-normal leading-snug text-white drop-shadow-lg ${isToday ? 'text-lg sm:text-xl' : 'text-base'}`}>
+                                {maxim.title}
+                              </p>
+                              {isToday && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); toggleExpanded(maxim.dayNumber); }}
+                                  className="mt-3 inline-flex items-center gap-2 text-[12px] font-medium rounded-full px-4 py-2 text-white bg-gray-600/60 hover:bg-gray-600/80 backdrop-blur-sm transition-all"
+                                >
+                                  <MoreHorizontal size={14} />
+                                  {isExpanded ? 'Fechar' : 'Leia mais'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {isExpanded && (
+                            <div className="relative glass-shell p-5 border-t border-eco-line/30">
+                              <div className="space-y-3">
+                                <p className="font-display text-[14px] leading-relaxed text-eco-text italic">
+                                  "{maxim.text}"
+                                </p>
+                                <p className="font-primary text-[12px] font-medium text-eco-muted">
+                                  — {maxim.author}
+                                  {maxim.source && `, ${maxim.source}`}
+                                </p>
+                                {renderComment(maxim, 'text-[13px]')}
+
+                                {!isGuest && (
+                                  <div className="space-y-2 pt-1">
+                                    {!readDays.has(maxim.dayNumber) && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          markDayAsRead(maxim.dayNumber);
+                                          mixpanel.track('Diario Estoico: Marked As Read', { day_number: maxim.dayNumber, is_guest: !user, method: 'button' });
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-eco-baby hover:bg-eco-baby/90 rounded-lg active:scale-95 transition-all duration-200"
+                                      >
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                        Marcar como lida
+                                      </button>
+                                    )}
+                                    {readDays.has(maxim.dayNumber) && (
+                                      <div className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-eco-accent glass-shell rounded-lg">
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                        Reflexão concluída
+                                      </div>
+                                    )}
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
+                                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-eco-text glass-shell rounded-lg hover:bg-eco-accent/10 transition-all duration-300"
+                                      >
+                                        <BookOpen size={12} />
+                                        Modo Leitura
+                                      </button>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
+                                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-eco-text glass-shell rounded-lg hover:bg-eco-accent/10 transition-all duration-300"
+                                      >
+                                        <Share2 size={12} />
+                                        Compartilhar
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </AnimatedSection>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Reading Mode Modal */}
         <ReadingModeModal
