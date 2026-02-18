@@ -74,6 +74,7 @@ const SubscriptionCallbackPage = lazy(() => import("@/pages/SubscriptionCallback
 const FluxoAssinaturaDemo = lazy(() => import("@/pages/FluxoAssinaturaDemo"));
 const GuestMeditationPage = lazy(() => import("@/pages/GuestMeditationPage"));
 const MemoryPageGuestTeaser = lazy(() => import("@/pages/memory/MemoryPageGuestTeaser"));
+const UpgradeModalTest = lazy(() => import("@/pages/UpgradeModalTest"));
 
 // Lightweight loading fallback (no heavy dependencies)
 function LoadingFallback() {
@@ -137,6 +138,7 @@ function AppRoutes() {
         <Route path="meditacao/sintonize-novos-potenciais" element={renderWithSuspense(<GuestMeditationPage />)} />
         <Route path="guest/meditation-player" element={renderWithSuspense(<MeditationPlayerPage />)} />
         <Route path="memory-preview" element={renderWithSuspense(<MemoryPageGuestTeaser />)} />
+        <Route path="test-upgrade-modal" element={renderWithSuspense(<UpgradeModalTest />)} />
       </Route>
       <Route
         path="/app/*"

@@ -153,7 +153,7 @@ export default function ProgramasPage() {
       description: 'Encontre presença e calma através da sua respiração',
       duration: '7 min',
       audioUrl: '/audio/acolhendo-respiracao.mp3',
-      image: 'url("/images/acolhendo-respiracao.png")',
+      image: 'url("/images/acolhendo-respiracao.webp")',
       imagePosition: 'center center',
       gradient: 'linear-gradient(to bottom, #7BBFB5 0%, #5FA89E 20%, #459188 40%, #2E7A70 60%, #1A6358 80%, #084D42 100%)',
       isPremium: false,
