@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, ChevronDown, MoreHorizontal, BookOpen, Share2 } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, BookOpen, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import AnimatedSection from '@/components/AnimatedSection';
@@ -40,53 +40,118 @@ const EXIT_MODAL_SHOWN_KEY = 'eco.diario.exitModalShown';
  */
 interface MonthMetadata {
   id: string;
-  monthName: string; // 'janeiro', 'fevereiro', 'dezembro'
-  displayName: string; // 'JANEIRO', 'FEVEREIRO', 'DEZEMBRO'
+  monthName: string;
+  displayName: string;
+  shortName: string; // 'JAN', 'FEV', etc.
   theme: string;
   themeDescription: string;
   reflectionsCount: number;
   startDay: number;
   endDay: number;
-  iconEmoji: string;
-  isFreeAccess: boolean; // Se é o mês gratuito
+  isFreeAccess: boolean;
+  part: 1 | 2 | 3;
+  image?: string; // Imagem do card (a ser fornecida)
 }
 
+interface Part {
+  number: string; // 'I', 'II', 'III'
+  title: string;
+  monthIds: string[];
+}
+
+const PARTS: Part[] = [
+  { number: 'I',   title: 'A Disciplina da Percepção', monthIds: ['janeiro', 'fevereiro', 'marco', 'abril'] },
+  { number: 'II',  title: 'A Disciplina da Ação',      monthIds: ['maio', 'junho', 'julho', 'agosto'] },
+  { number: 'III', title: 'A Disciplina da Vontade',   monthIds: ['setembro', 'outubro', 'novembro', 'dezembro'] },
+];
+
 const MONTH_THEMES: MonthMetadata[] = [
+  // ── Parte I ──────────────────────────────────────────────────────────────
   {
-    id: 'janeiro',
-    monthName: 'janeiro',
-    displayName: 'JANEIRO',
+    id: 'janeiro', monthName: 'janeiro', displayName: 'JANEIRO', shortName: 'JAN',
     theme: 'CLAREZA',
     themeDescription: 'Reflexões sobre clareza mental, foco e discernimento',
-    reflectionsCount: 13,
-    startDay: 19,
-    endDay: 31,
-    iconEmoji: '🔍',
-    isFreeAccess: true, // Mês gratuito
+    reflectionsCount: 13, startDay: 19, endDay: 31,
+    isFreeAccess: true, part: 1,
   },
   {
-    id: 'fevereiro',
-    monthName: 'fevereiro',
-    displayName: 'FEVEREIRO',
+    id: 'fevereiro', monthName: 'fevereiro', displayName: 'FEVEREIRO', shortName: 'FEV',
     theme: 'PAIXÕES E EMOÇÕES',
     themeDescription: 'Domine suas paixões, entenda suas emoções',
-    reflectionsCount: 28,
-    startDay: 1,
-    endDay: 28,
-    iconEmoji: '🔥',
-    isFreeAccess: false,
+    reflectionsCount: 28, startDay: 1, endDay: 28,
+    isFreeAccess: false, part: 1,
   },
   {
-    id: 'dezembro',
-    monthName: 'dezembro',
-    displayName: 'DEZEMBRO',
+    id: 'marco', monthName: 'marco', displayName: 'MARÇO', shortName: 'MAR',
+    theme: 'CONSCIÊNCIA',
+    themeDescription: 'Desperte para a plena consciência de si e do mundo',
+    reflectionsCount: 31, startDay: 1, endDay: 31,
+    isFreeAccess: false, part: 1,
+  },
+  {
+    id: 'abril', monthName: 'abril', displayName: 'ABRIL', shortName: 'ABR',
+    theme: 'PENSAMENTO IMPARCIAL',
+    themeDescription: 'Veja as coisas como elas realmente são',
+    reflectionsCount: 30, startDay: 1, endDay: 30,
+    isFreeAccess: false, part: 1,
+  },
+  // ── Parte II ─────────────────────────────────────────────────────────────
+  {
+    id: 'maio', monthName: 'maio', displayName: 'MAIO', shortName: 'MAI',
+    theme: 'AÇÃO CORRETA',
+    themeDescription: 'Aja com propósito, virtude e determinação',
+    reflectionsCount: 31, startDay: 1, endDay: 31,
+    isFreeAccess: false, part: 2,
+  },
+  {
+    id: 'junho', monthName: 'junho', displayName: 'JUNHO', shortName: 'JUN',
+    theme: 'SOLUÇÕES DE PROBLEMAS',
+    themeDescription: 'Enfrente obstáculos com criatividade e calma',
+    reflectionsCount: 30, startDay: 1, endDay: 30,
+    isFreeAccess: false, part: 2,
+  },
+  {
+    id: 'julho', monthName: 'julho', displayName: 'JULHO', shortName: 'JUL',
+    theme: 'DEVER',
+    themeDescription: 'Cumpra seu papel com excelência e integridade',
+    reflectionsCount: 31, startDay: 1, endDay: 31,
+    isFreeAccess: false, part: 2,
+  },
+  {
+    id: 'agosto', monthName: 'agosto', displayName: 'AGOSTO', shortName: 'AGO',
+    theme: 'PRAGMATISMO',
+    themeDescription: 'Foco no que funciona, no que importa agora',
+    reflectionsCount: 31, startDay: 1, endDay: 31,
+    isFreeAccess: false, part: 2,
+  },
+  // ── Parte III ────────────────────────────────────────────────────────────
+  {
+    id: 'setembro', monthName: 'setembro', displayName: 'SETEMBRO', shortName: 'SET',
+    theme: 'FORÇA E RESILIÊNCIA',
+    themeDescription: 'Construa uma fortaleza interior inabalável',
+    reflectionsCount: 30, startDay: 1, endDay: 30,
+    isFreeAccess: false, part: 3,
+  },
+  {
+    id: 'outubro', monthName: 'outubro', displayName: 'OUTUBRO', shortName: 'OUT',
+    theme: 'VIRTUDE E BONDADE',
+    themeDescription: 'Viva bem fazendo o bem ao mundo',
+    reflectionsCount: 31, startDay: 1, endDay: 31,
+    isFreeAccess: false, part: 3,
+  },
+  {
+    id: 'novembro', monthName: 'novembro', displayName: 'NOVEMBRO', shortName: 'NOV',
+    theme: 'ACEITAÇÃO, AMOR FATI',
+    themeDescription: 'Ame seu destino, abrace o que não pode ser mudado',
+    reflectionsCount: 30, startDay: 1, endDay: 30,
+    isFreeAccess: false, part: 3,
+  },
+  {
+    id: 'dezembro', monthName: 'dezembro', displayName: 'DEZEMBRO', shortName: 'DEZ',
     theme: 'MEDITAÇÃO SOBRE MORTALIDADE',
     themeDescription: 'Memento Mori: reflexões sobre finitude e propósito',
-    reflectionsCount: 20,
-    startDay: 8,
-    endDay: 27,
-    iconEmoji: '💀',
-    isFreeAccess: false,
+    reflectionsCount: 20, startDay: 8, endDay: 27,
+    isFreeAccess: false, part: 3,
   },
 ];
 
@@ -111,12 +176,11 @@ const getAvailableMaxims = (tier: 'free' | 'essentials' | 'premium' | 'vip'): Da
       allReflections.push(...monthReflections);
     });
 
-    return allReflections.sort((a, b) => {
-      // Ordenar por mês (janeiro, fevereiro, dezembro) e depois por dia
-      const monthOrder = { janeiro: 0, fevereiro: 1, dezembro: 2 };
-      const monthDiff = (monthOrder[a.month as keyof typeof monthOrder] || 999) -
-                        (monthOrder[b.month as keyof typeof monthOrder] || 999);
+    const monthOrder: Record<string, number> = {};
+    MONTH_THEMES.forEach((m, i) => { monthOrder[m.monthName] = i; });
 
+    return allReflections.sort((a, b) => {
+      const monthDiff = (monthOrder[a.month] ?? 999) - (monthOrder[b.month] ?? 999);
       if (monthDiff !== 0) return monthDiff;
       return a.dayNumber - b.dayNumber;
     });
@@ -168,7 +232,11 @@ export default function DiarioEstoicoPage() {
 
   // Accordion: which month is open (default = current calendar month)
   const [openMonth, setOpenMonth] = useState<string | null>(() => {
-    const monthMap: Record<number, string> = { 0: 'janeiro', 1: 'fevereiro', 11: 'dezembro' };
+    const monthMap: Record<number, string> = {
+      0: 'janeiro', 1: 'fevereiro', 2: 'marco', 3: 'abril',
+      4: 'maio', 5: 'junho', 6: 'julho', 7: 'agosto',
+      8: 'setembro', 9: 'outubro', 10: 'novembro', 11: 'dezembro',
+    };
     const todayMonthId = monthMap[new Date().getMonth()];
     return MONTH_THEMES.some(m => m.id === todayMonthId) ? todayMonthId : MONTH_THEMES[0].id;
   });
@@ -214,7 +282,11 @@ export default function DiarioEstoicoPage() {
 
   // Reflexão de hoje baseada no calendário real
   const todayMaxim = (() => {
-    const monthMap: Record<number, string> = { 0: 'janeiro', 1: 'fevereiro', 11: 'dezembro' };
+    const monthMap: Record<number, string> = {
+      0: 'janeiro', 1: 'fevereiro', 2: 'marco', 3: 'abril',
+      4: 'maio', 5: 'junho', 6: 'julho', 7: 'agosto',
+      8: 'setembro', 9: 'outubro', 10: 'novembro', 11: 'dezembro',
+    };
     const monthName = monthMap[new Date().getMonth()];
     if (!monthName) return null;
     const dayNum = new Date().getDate();
@@ -596,7 +668,7 @@ export default function DiarioEstoicoPage() {
                 <div className="bg-gradient-to-r from-eco-primary/10 to-eco-accent/10 border border-eco-primary/30 rounded-xl p-5">
                   <div className="text-center space-y-2">
                     <p className="text-sm font-medium text-eco-text">
-                      {freeMonth.iconEmoji} Você tem acesso ao mês <span className="font-bold">{freeMonth.theme}</span> ({freeMonth.displayName} - {freeMonth.reflectionsCount} reflexões)
+                      Você tem acesso ao mês <span className="font-bold">{freeMonth.theme}</span> ({freeMonth.displayName} — {freeMonth.reflectionsCount} reflexões)
                     </p>
                     <p className="text-xs text-eco-muted">
                       Aprofunde sua jornada estoica com {lockedReflectionsCount} reflexões premium
@@ -676,67 +748,105 @@ export default function DiarioEstoicoPage() {
           </div>
         </div>
 
-        {/* Cards de seleção de mês */}
-        <div className="w-full px-4 pt-6 md:px-8">
-          <div className="mx-auto max-w-3xl">
-            <div className="grid grid-cols-3 gap-3">
-              {MONTH_THEMES.map((month) => {
-                const isActive = openMonth === month.id;
-                const isUnlocked = tier === 'premium' || tier === 'vip' || tier === 'essentials' || month.isFreeAccess;
-                const monthMaxims = availableMaxims.filter(m => m.month === month.monthName);
-                const hasToday = todayMaxim?.month === month.monthName;
+        {/* Partes — seleção de mês */}
+        <div className="w-full px-4 pt-6 md:px-8 space-y-8">
+          <div className="mx-auto max-w-3xl space-y-8">
+            {PARTS.map((part) => {
+              const partMonths = MONTH_THEMES.filter(m => part.monthIds.includes(m.id));
 
-                return (
-                  <button
-                    key={month.id}
-                    onClick={() => {
-                      if (!isUnlocked) {
-                        mixpanel.track('Diario Month Locked Click', { month: month.id, theme: month.theme, user_tier: tier, user_id: user?.id });
-                        setShowUpgradeModal(true);
-                        return;
-                      }
-                      setOpenMonth(isActive ? null : month.id);
-                      mixpanel.track('Diario Month Tab Click', { month: month.id, action: isActive ? 'close' : 'open', user_tier: tier, is_guest: !user, user_id: user?.id });
-                    }}
-                    className={`relative flex flex-col items-center justify-between rounded-2xl p-4 text-center transition-all duration-300 active:scale-95 overflow-hidden
-                      ${isActive
-                        ? 'bg-[#3B2D8F] shadow-[0_4px_20px_rgba(59,45,143,0.35)] ring-2 ring-[#3B2D8F]'
-                        : 'bg-white shadow-sm border border-eco-line/40 hover:shadow-md'
-                      }`}
-                  >
-                    {/* Badge "Hoje" */}
-                    {hasToday && (
-                      <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-eco-baby shadow-sm" />
-                    )}
+              return (
+                <div key={part.number}>
+                  {/* Header da parte */}
+                  <div className="mb-4 flex items-baseline gap-2">
+                    <span className="font-display text-[11px] font-bold tracking-[0.18em] text-eco-muted uppercase">
+                      Parte {part.number}
+                    </span>
+                    <span className="text-eco-line">—</span>
+                    <span className="font-display text-[13px] font-semibold text-eco-text tracking-wide uppercase">
+                      {part.title}
+                    </span>
+                  </div>
 
-                    {/* Emoji */}
-                    <span className="text-3xl mb-2 block">{month.iconEmoji}</span>
+                  {/* Grid 2x2 dos meses */}
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {partMonths.map((month) => {
+                      const isActive = openMonth === month.id;
+                      const isUnlocked = tier === 'premium' || tier === 'vip' || tier === 'essentials' || month.isFreeAccess;
+                      const hasToday = todayMaxim?.month === month.monthName;
+                      const monthMaxims = availableMaxims.filter(m => m.month === month.monthName);
 
-                    {/* Nome */}
-                    <p className={`font-bold text-sm leading-tight ${isActive ? 'text-white' : 'text-eco-text'}`}>
-                      {month.displayName.substring(0, 3)}
-                    </p>
+                      return (
+                        <button
+                          key={month.id}
+                          onClick={() => {
+                            if (!isUnlocked) {
+                              mixpanel.track('Diario Month Locked Click', { month: month.id, theme: month.theme, user_tier: tier, user_id: user?.id });
+                              setShowUpgradeModal(true);
+                              return;
+                            }
+                            setOpenMonth(isActive ? null : month.id);
+                            mixpanel.track('Diario Month Tab Click', { month: month.id, action: isActive ? 'close' : 'open', user_tier: tier, is_guest: !user, user_id: user?.id });
+                          }}
+                          className={`relative flex flex-col rounded-2xl overflow-hidden text-left transition-all duration-300 active:scale-[0.97]
+                            ${isActive
+                              ? 'ring-2 ring-[#3B2D8F] shadow-[0_4px_20px_rgba(59,45,143,0.25)]'
+                              : 'shadow-sm border border-eco-line/40 hover:shadow-md'
+                            }`}
+                        >
+                          {/* Espaço para imagem */}
+                          <div className={`w-full h-[90px] sm:h-[100px] relative overflow-hidden ${
+                            isActive ? 'bg-[#3B2D8F]/10' : 'bg-gray-100'
+                          }`}>
+                            {month.image ? (
+                              <img
+                                src={month.image}
+                                alt={month.displayName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className={`w-full h-full flex items-end p-2 bg-gradient-to-br ${
+                                isActive
+                                  ? 'from-[#3B2D8F]/20 to-[#3B2D8F]/5'
+                                  : 'from-gray-200 to-gray-100'
+                              }`}>
+                                <span className={`text-[9px] font-medium tracking-widest uppercase ${isActive ? 'text-[#3B2D8F]/60' : 'text-gray-400'}`}>
+                                  imagem em breve
+                                </span>
+                              </div>
+                            )}
+                            {/* Badge hoje */}
+                            {hasToday && (
+                              <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-eco-baby shadow" />
+                            )}
+                            {/* Lock overlay */}
+                            {!isUnlocked && (
+                              <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+                                <span className="text-xs font-bold text-gray-400 bg-white/80 px-2 py-0.5 rounded-full tracking-wide">
+                                  PREMIUM
+                                </span>
+                              </div>
+                            )}
+                          </div>
 
-                    {/* Reflexões count */}
-                    <p className={`text-[10px] mt-1 ${isActive ? 'text-white/70' : 'text-eco-muted'}`}>
-                      {monthMaxims.length} dias
-                    </p>
-
-                    {/* Lock ou check */}
-                    {!isUnlocked ? (
-                      <span className="mt-2 text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full">🔒</span>
-                    ) : (
-                      <span className={`mt-2 text-[10px] font-semibold ${isActive ? 'text-white/80' : 'text-green-600'}`}>✓</span>
-                    )}
-
-                    {/* Indicador de ativo */}
-                    {isActive && (
-                      <ChevronDown size={14} className="text-white/70 mt-1" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                          {/* Info do mês */}
+                          <div className={`px-3 py-2.5 ${isActive ? 'bg-[#3B2D8F]' : 'bg-white'}`}>
+                            <p className={`font-bold text-[11px] tracking-widest uppercase leading-tight ${isActive ? 'text-white' : 'text-eco-text'}`}>
+                              {month.shortName}
+                            </p>
+                            <p className={`text-[10px] mt-0.5 leading-tight ${isActive ? 'text-white/70' : 'text-eco-muted'}`}>
+                              {month.theme}
+                            </p>
+                            <p className={`text-[9px] mt-1 ${isActive ? 'text-white/50' : 'text-eco-muted/60'}`}>
+                              {monthMaxims.length > 0 ? `${monthMaxims.length} reflexões` : 'Em breve'}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -750,14 +860,11 @@ export default function DiarioEstoicoPage() {
             <div className="w-full px-4 pt-5 pb-12 md:px-8">
               <div className="mx-auto max-w-3xl">
                 {/* Header do mês */}
-                <div className="mb-5 flex items-center gap-2">
-                  <span className="text-xl">{month.iconEmoji}</span>
-                  <div>
-                    <h2 className="font-display font-bold text-eco-text text-lg leading-tight">
-                      {month.displayName} — {month.theme}
-                    </h2>
-                    <p className="text-xs text-eco-muted">{month.themeDescription}</p>
-                  </div>
+                <div className="mb-5">
+                  <h2 className="font-display font-bold text-eco-text text-lg leading-tight">
+                    {month.displayName} — {month.theme}
+                  </h2>
+                  <p className="text-xs text-eco-muted mt-1">{month.themeDescription}</p>
                 </div>
 
                 {/* Lista de reflexões */}
