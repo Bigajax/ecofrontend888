@@ -1,12 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Mic, StopCircle, Loader, BookOpen, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Mic, StopCircle, Loader, BookOpen, X, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { sendVoiceMessage } from "../api/voiceApi";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import EcoBubbleOneEye from "../components/EcoBubbleOneEye";
 import { useGuestExperience } from "../contexts/GuestExperienceContext";
+import { useVoiceInteractionLimits } from "../hooks/useVoiceInteractionLimits";
+import { usePremiumContent } from "../hooks/usePremiumContent";
+import UpgradeModal from "../components/subscription/UpgradeModal";
 
 /** Mude para false quando quiser liberar a gravação */
 const UNDER_CONSTRUCTION = true;
@@ -14,6 +17,8 @@ const UNDER_CONSTRUCTION = true;
 const VoicePage: React.FC = () => {
   const { userName, userId, user } = useAuth();
   const { trackInteraction } = useGuestExperience();
+  const voiceLimits = useVoiceInteractionLimits();
+  const { showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [ecoAudioURL, setEcoAudioURL] = useState<string | null>(null);
@@ -62,6 +67,19 @@ const VoicePage: React.FC = () => {
 
   const startRecording = async () => {
     setError(null);
+
+    // Verificar limite de voice interactions
+    if (voiceLimits.reachedLimit) {
+      setError(`Você atingiu seu limite diário de ${voiceLimits.limit} mensagens de voz. Faça upgrade para continuar!`);
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    // Soft prompt (1 mensagem restante)
+    if (voiceLimits.shouldShowSoftPrompt) {
+      setError(`⚠️ Última mensagem de voz restante hoje. Upgrade para conversas ilimitadas!`);
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
@@ -96,6 +114,9 @@ const VoicePage: React.FC = () => {
           setEcoAudioURL(audioURL);
           const ecoAudio = new Audio(audioURL);
           await ecoAudio.play();
+
+          // Incrementar contador de voice messages (após sucesso)
+          voiceLimits.incrementCount();
 
           // Rastrear interação para guests
           if (!user) {
@@ -168,11 +189,36 @@ const VoicePage: React.FC = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
     >
-      {/* Selo “Em construção” */}
-      <div className="absolute top-[calc(var(--eco-topbar-h,56px)+8px)]">
+      {/* Selo "Em construção" */}
+      <div className="absolute top-[calc(var(--eco-topbar-h,56px)+8px)] flex flex-col items-center gap-2">
         <span className="px-3 py-1.5 rounded-full border border-black/10 bg-white/80 text-neutral-700 text-sm font-medium">
           Em construção
         </span>
+
+        {/* Contador de voice messages (se não for premium/vip) */}
+        {voiceLimits.tier !== 'premium' && voiceLimits.tier !== 'vip' && (
+          <AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className={`
+                px-3 py-1.5 rounded-full border backdrop-blur-md text-xs font-medium flex items-center gap-1.5
+                ${voiceLimits.reachedLimit
+                  ? 'bg-red-50/90 border-red-200 text-red-700'
+                  : voiceLimits.shouldShowSoftPrompt
+                  ? 'bg-orange-50/90 border-orange-200 text-orange-700'
+                  : 'bg-blue-50/90 border-blue-200 text-blue-700'
+                }
+              `}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>
+                {voiceLimits.remaining} de {voiceLimits.limit} {voiceLimits.remaining === 1 ? 'mensagem' : 'mensagens'} restante{voiceLimits.remaining === 1 ? '' : 's'} hoje
+              </span>
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
 
       {/* Eco bolha unificada */}
@@ -252,6 +298,13 @@ const VoicePage: React.FC = () => {
       <div className="text-[11px] text-neutral-400">
         Eco Voz – prévia de design
       </div>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        source="voice_page_limit"
+      />
     </motion.div>
   );
 };

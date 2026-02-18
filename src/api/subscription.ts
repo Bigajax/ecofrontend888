@@ -52,21 +52,21 @@ const extractErrorMessage = (data: unknown, fallback: string): string => {
 };
 
 /**
- * Cria uma nova assinatura (mensal ou anual)
+ * Cria uma nova assinatura (essentials, mensal ou anual)
  *
- * @param plan - Tipo do plano ('monthly' ou 'annual')
+ * @param plan - Tipo do plano ('essentials', 'monthly' ou 'annual')
  * @returns URL do checkout do Mercado Pago e ID da subscription
  *
  * @example
  * ```typescript
- * const { initPoint, id } = await createSubscription('monthly');
+ * const { initPoint, id } = await createSubscription('essentials');
  * window.location.href = initPoint; // Redireciona para checkout
  * ```
  */
 export async function createSubscription(
   plan: PlanType
 ): Promise<CreateSubscriptionResponse> {
-  if (plan !== 'monthly' && plan !== 'annual') {
+  if (plan !== 'essentials' && plan !== 'monthly' && plan !== 'annual') {
     throw new Error(ERROR_MESSAGES.INVALID_PLAN);
   }
 

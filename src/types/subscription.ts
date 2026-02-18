@@ -4,7 +4,7 @@
 /**
  * Tipos de plano disponíveis
  */
-export type SubscriptionPlan = 'free' | 'trial' | 'premium_monthly' | 'premium_annual';
+export type SubscriptionPlan = 'free' | 'trial' | 'essentials_monthly' | 'premium_monthly' | 'premium_annual' | 'vip';
 
 /**
  * Status da assinatura
@@ -17,9 +17,9 @@ export type SubscriptionStatus = 'active' | 'expired' | 'cancelled' | 'pending';
 export type PaymentProvider = 'mercadopago' | 'stripe';
 
 /**
- * Tipo de plano (mensal ou anual)
+ * Tipo de plano (essentials, premium mensal ou premium anual)
  */
-export type PlanType = 'monthly' | 'annual';
+export type PlanType = 'essentials' | 'monthly' | 'annual';
 
 /**
  * Estado completo da assinatura do usuário

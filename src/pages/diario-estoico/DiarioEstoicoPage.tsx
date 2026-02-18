@@ -6,12 +6,13 @@ import toast, { Toaster } from 'react-hot-toast';
 import AnimatedSection from '@/components/AnimatedSection';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsPremium } from '@/hooks/usePremiumContent';
+import { useIsPremium, useSubscriptionTier } from '@/hooks/usePremiumContent';
 import DiarioExitModal from '@/components/DiarioExitModal';
 import DiarioNavigation from '@/components/diario-estoico/DiarioNavigation';
 import DiarioProgress from '@/components/diario-estoico/DiarioProgress';
 import ReadingModeModal from '@/components/diario-estoico/ReadingModeModal';
 import ShareReflectionModal from '@/components/diario-estoico/ShareReflectionModal';
+import UpgradeModal from '@/components/subscription/UpgradeModal';
 import mixpanel from '@/lib/mixpanel';
 import {
   trackDiarioPageViewed,
@@ -36,73 +37,136 @@ import {
 // Chave para sessionStorage - modal aparece apenas uma vez por sessão
 const EXIT_MODAL_SHOWN_KEY = 'eco.diario.exitModalShown';
 
+/**
+ * Metadados dos meses temáticos
+ */
+interface MonthMetadata {
+  id: string;
+  monthName: string; // 'janeiro', 'fevereiro', 'dezembro'
+  displayName: string; // 'JANEIRO', 'FEVEREIRO', 'DEZEMBRO'
+  theme: string;
+  themeDescription: string;
+  reflectionsCount: number;
+  startDay: number;
+  endDay: number;
+  iconEmoji: string;
+  isFreeAccess: boolean; // Se é o mês gratuito
+}
+
+const MONTH_THEMES: MonthMetadata[] = [
+  {
+    id: 'janeiro',
+    monthName: 'janeiro',
+    displayName: 'JANEIRO',
+    theme: 'CLAREZA',
+    themeDescription: 'Reflexões sobre clareza mental, foco e discernimento',
+    reflectionsCount: 13,
+    startDay: 19,
+    endDay: 31,
+    iconEmoji: '🔍',
+    isFreeAccess: true, // Mês gratuito
+  },
+  {
+    id: 'fevereiro',
+    monthName: 'fevereiro',
+    displayName: 'FEVEREIRO',
+    theme: 'PAIXÕES E EMOÇÕES',
+    themeDescription: 'Domine suas paixões, entenda suas emoções',
+    reflectionsCount: 28,
+    startDay: 1,
+    endDay: 28,
+    iconEmoji: '🔥',
+    isFreeAccess: false,
+  },
+  {
+    id: 'dezembro',
+    monthName: 'dezembro',
+    displayName: 'DEZEMBRO',
+    theme: 'MEDITAÇÃO SOBRE MORTALIDADE',
+    themeDescription: 'Memento Mori: reflexões sobre finitude e propósito',
+    reflectionsCount: 20,
+    startDay: 8,
+    endDay: 27,
+    iconEmoji: '💀',
+    isFreeAccess: false,
+  },
+];
 
 /**
- * Função para obter reflexões disponíveis
- * - Premium: Arquivo completo (todas as 77 reflexões)
- * - Free: Últimos 7 dias
+ * Função para obter reflexões disponíveis por tier
+ * - Premium/VIP: Arquivo completo (todos os meses)
+ * - Essentials: Todos os meses
+ * - Free: Apenas JANEIRO (CLAREZA)
  */
-const getAvailableMaxims = (isPremium: boolean): DailyMaxim[] => {
-  const now = new Date();
-  const currentMonth = now.getMonth(); // 0 = Jan, 11 = Dez
-  const currentDay = now.getDate();
+const getAvailableMaxims = (tier: 'free' | 'essentials' | 'premium' | 'vip'): DailyMaxim[] => {
+  if (tier === 'premium' || tier === 'vip' || tier === 'essentials') {
+    // PREMIUM/VIP/ESSENTIALS: Acesso a TODOS os meses
+    const allReflections: DailyMaxim[] = [];
 
-  let monthName = '';
-  let startDay = 1;
-  let endDay = 31;
+    MONTH_THEMES.forEach(month => {
+      const monthReflections = ALL_DAILY_MAXIMS.filter(
+        maxim =>
+          maxim.month === month.monthName &&
+          maxim.dayNumber >= month.startDay &&
+          maxim.dayNumber <= month.endDay
+      );
+      allReflections.push(...monthReflections);
+    });
 
-  // Define month parameters
-  if (currentMonth === 0) { // Janeiro
-    monthName = 'janeiro';
-    startDay = 19;
-    endDay = 31;
-  } else if (currentMonth === 1) { // Fevereiro
-    monthName = 'fevereiro';
-    startDay = 1;
-    endDay = 28;
-  } else if (currentMonth === 11) { // Dezembro
-    monthName = 'dezembro';
-    startDay = 8;
-    endDay = 27;
+    return allReflections.sort((a, b) => {
+      // Ordenar por mês (janeiro, fevereiro, dezembro) e depois por dia
+      const monthOrder = { janeiro: 0, fevereiro: 1, dezembro: 2 };
+      const monthDiff = (monthOrder[a.month as keyof typeof monthOrder] || 999) -
+                        (monthOrder[b.month as keyof typeof monthOrder] || 999);
+
+      if (monthDiff !== 0) return monthDiff;
+      return a.dayNumber - b.dayNumber;
+    });
   } else {
-    // Outside active months: return empty array (trigger fallback)
-    return [];
-  }
+    // FREE: Apenas JANEIRO (CLAREZA) completo
+    const freeMonth = MONTH_THEMES.find(m => m.isFreeAccess);
 
-  if (isPremium) {
-    // PREMIUM: Retornar arquivo completo (todas as reflexões do mês)
-    const allMonthReflections = ALL_DAILY_MAXIMS.filter(
-      maxim =>
-        maxim.month === monthName &&
-        maxim.dayNumber >= startDay &&
-        maxim.dayNumber <= endDay
-    );
-    return allMonthReflections.sort((a, b) => a.dayNumber - b.dayNumber);
-  } else {
-    // FREE: Apenas últimos 7 dias
-    const sevenDaysAgo = currentDay - 6; // 7 dias incluindo hoje
+    if (!freeMonth) return [];
 
     const freeReflections = ALL_DAILY_MAXIMS.filter(
       maxim =>
-        maxim.month === monthName &&
-        maxim.dayNumber >= Math.max(sevenDaysAgo, startDay) &&
-        maxim.dayNumber <= currentDay &&
-        maxim.dayNumber >= startDay &&
-        maxim.dayNumber <= endDay
+        maxim.month === freeMonth.monthName &&
+        maxim.dayNumber >= freeMonth.startDay &&
+        maxim.dayNumber <= freeMonth.endDay
     );
 
     return freeReflections.sort((a, b) => a.dayNumber - b.dayNumber);
   }
 };
 
+/**
+ * Obter meses bloqueados para o usuário free
+ */
+const getLockedMonths = (tier: 'free' | 'essentials' | 'premium' | 'vip'): MonthMetadata[] => {
+  if (tier === 'premium' || tier === 'vip' || tier === 'essentials') {
+    return []; // Não tem meses bloqueados
+  }
+
+  return MONTH_THEMES.filter(m => !m.isFreeAccess);
+};
+
+/**
+ * Obter mês acessível para free user
+ */
+const getFreeMonth = (): MonthMetadata | undefined => {
+  return MONTH_THEMES.find(m => m.isFreeAccess);
+};
+
 export default function DiarioEstoicoPage() {
   const navigate = useNavigate();
   const { user, signOut, isGuestMode, isVipUser } = useAuth();
   const isPremium = useIsPremium();
+  const tier = useSubscriptionTier();
   const { trackInteraction } = useGuestExperience();
   const { checkTrigger } = useGuestConversionTriggers();
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
   const [showExitModal, setShowExitModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // New states for navigation and features
   const [currentDayNumber, setCurrentDayNumber] = useState<number | null>(null);
@@ -118,6 +182,7 @@ export default function DiarioEstoicoPage() {
 
   // Refs for scroll management
   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const monthSectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   /**
    * Helper para renderizar comentário (completo para todos os usuários)
@@ -141,8 +206,8 @@ export default function DiarioEstoicoPage() {
     );
   };
 
-  // Obter apenas os cards disponíveis (premium = todos, free = últimos 7 dias)
-  const availableMaxims = getAvailableMaxims(isPremium);
+  // Obter apenas os cards disponíveis (premium/vip = todos, essentials = últimos 30 dias, free = últimos 7 dias)
+  const availableMaxims = getAvailableMaxims(tier);
   const availableDayNumbers = availableMaxims.map(m => m.dayNumber);
 
   // Load read days from localStorage
@@ -191,6 +256,22 @@ export default function DiarioEstoicoPage() {
       user_id: user?.id,
     });
   }, [user]);
+
+  // Scroll to month section
+  const scrollToMonth = useCallback((monthId: string) => {
+    const section = monthSectionRefs.current.get(monthId);
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Track month navigation
+    mixpanel.track('Diario Month Tab Click', {
+      month: monthId,
+      user_tier: tier,
+      is_guest: !user,
+      user_id: user?.id,
+    });
+  }, [tier, user]);
 
   // Swipe handlers for mobile
   const swipeHandlers = useSwipeable({
@@ -534,29 +615,48 @@ export default function DiarioEstoicoPage() {
         {user && <HomeHeader onLogout={handleLogout} />}
 
         {/* FREE TIER: Banner informativo */}
-        {user && !isPremium && !isGuestMode && (
-          <div className="w-full px-4 pt-4 md:px-8">
-            <div className="mx-auto max-w-7xl">
-              <div className="bg-gradient-to-r from-eco-primary/10 to-eco-accent/10 border border-eco-primary/30 rounded-xl p-4">
-                <p className="text-sm text-eco-text text-center">
-                  📚 Você está vendo os últimos 7 dias de reflexões.{' '}
-                  <button
-                    onClick={() => {
-                      mixpanel.track('Diario Archive Upgrade Click', {
-                        user_id: user.id,
-                        reflections_available_free: 7,
-                      });
-                      navigate('/app/programas'); // Vai para página premium
-                    }}
-                    className="font-semibold text-eco-primary underline"
-                  >
-                    Desbloqueie o arquivo completo (77 reflexões)
-                  </button>
-                </p>
+        {user && !isPremium && !isGuestMode && tier === 'free' && (() => {
+          const freeMonth = getFreeMonth();
+          const lockedMonths = getLockedMonths(tier);
+          const lockedReflectionsCount = lockedMonths.reduce((sum, m) => sum + m.reflectionsCount, 0);
+
+          if (!freeMonth) return null;
+
+          return (
+            <div className="w-full px-4 pt-4 md:px-8">
+              <div className="mx-auto max-w-7xl">
+                <div className="bg-gradient-to-r from-eco-primary/10 to-eco-accent/10 border border-eco-primary/30 rounded-xl p-5">
+                  <div className="text-center space-y-2">
+                    <p className="text-sm font-medium text-eco-text">
+                      {freeMonth.iconEmoji} Você tem acesso ao mês <span className="font-bold">{freeMonth.theme}</span> ({freeMonth.displayName} - {freeMonth.reflectionsCount} reflexões)
+                    </p>
+                    <p className="text-xs text-eco-muted">
+                      Aprofunde sua jornada estoica com {lockedReflectionsCount} reflexões premium
+                    </p>
+                    <button
+                      onClick={() => {
+                        mixpanel.track('Diario Archive Upgrade Click', {
+                          user_id: user.id,
+                          free_month: freeMonth.id,
+                          free_month_theme: freeMonth.theme,
+                          reflections_available: freeMonth.reflectionsCount,
+                          reflections_locked: lockedReflectionsCount,
+                          total_reflections: 61,
+                          tier: 'free',
+                          source: 'banner',
+                        });
+                        setShowUpgradeModal(true);
+                      }}
+                      className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-eco-primary text-white text-sm font-semibold rounded-full hover:bg-eco-primary/90 transition-all shadow-sm hover:shadow-md"
+                    >
+                      Desbloquear {lockedMonths.map(m => m.theme).join(' + ')}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Navegação */}
         <div className="w-full px-4 pt-6 md:px-8">
@@ -605,6 +705,55 @@ export default function DiarioEstoicoPage() {
                 />
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Month Navigation Tabs */}
+        <div className="w-full px-4 pt-8 pb-4 md:px-8">
+          <div className="mx-auto max-w-7xl">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              {MONTH_THEMES.map((month) => {
+                const isUnlocked = tier === 'premium' || tier === 'vip' || tier === 'essentials' || month.isFreeAccess;
+                const lockedMonths = getLockedMonths(tier);
+                const isLocked = lockedMonths.some(m => m.id === month.id);
+
+                return (
+                  <button
+                    key={month.id}
+                    onClick={() => scrollToMonth(month.id)}
+                    className={`
+                      relative inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm
+                      transition-all duration-300 shadow-sm hover:shadow-md
+                      ${isUnlocked
+                        ? 'bg-eco-primary text-white hover:bg-eco-primary/90'
+                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                      }
+                    `}
+                  >
+                    <span className="text-lg">{month.iconEmoji}</span>
+                    <span className="uppercase tracking-wide">{month.displayName.substring(0, 3)}</span>
+                    {isUnlocked ? (
+                      <span className="text-lg">✓</span>
+                    ) : (
+                      <span className="text-lg">🔒</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center justify-center gap-4 mt-4 text-xs text-eco-muted">
+              <span className="flex items-center gap-1">
+                <span>✓</span>
+                <span>Disponível</span>
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <span>🔒</span>
+                <span>Premium</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -1016,6 +1165,29 @@ export default function DiarioEstoicoPage() {
                     );
                   })()}
 
+                  {/* Janeiro Section Header */}
+                  {(() => {
+                    const janeiroMonth = MONTH_THEMES.find(m => m.id === 'janeiro');
+                    if (!janeiroMonth) return null;
+
+                    return (
+                      <div
+                        ref={(el) => {
+                          if (el) monthSectionRefs.current.set('janeiro', el);
+                        }}
+                        className="mt-12 mb-6 text-center"
+                      >
+                        <h2 className="font-display text-3xl font-bold text-eco-text mb-2 flex items-center justify-center gap-3">
+                          <span>{janeiroMonth.iconEmoji}</span>
+                          <span>{janeiroMonth.displayName} - {janeiroMonth.theme}</span>
+                        </h2>
+                        <p className="text-sm text-eco-muted">
+                          {janeiroMonth.themeDescription}
+                        </p>
+                      </div>
+                    );
+                  })()}
+
                   {/* Cards anteriores (mobile) */}
                   <div className="grid grid-cols-1 gap-4">
                     {availableMaxims.slice(0, -1).map((maxim) => {
@@ -1109,6 +1281,100 @@ export default function DiarioEstoicoPage() {
                       );
                     })}
                   </div>
+
+                  {/* Meses Bloqueados (Free User) */}
+                  {user && !isPremium && !isGuestMode && tier === 'free' && (() => {
+                    const lockedMonths = getLockedMonths(tier);
+
+                    if (lockedMonths.length === 0) return null;
+
+                    return (
+                      <div className="mt-12 space-y-6">
+                        <div className="text-center">
+                          <h3 className="text-xl font-display font-bold text-eco-text mb-2">
+                            Meses Premium
+                          </h3>
+                          <p className="text-sm text-eco-muted">
+                            Desbloqueie {lockedMonths.reduce((sum, m) => sum + m.reflectionsCount, 0)} reflexões adicionais
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          {lockedMonths.map((month) => (
+                            <AnimatedSection key={month.id} animation="slide-up-fade">
+                              <div
+                                ref={(el) => {
+                                  if (el) monthSectionRefs.current.set(month.id, el);
+                                }}
+                                className="relative w-full rounded-2xl overflow-hidden shadow-eco cursor-pointer hover:shadow-eco-glow transition-all duration-300"
+                                onClick={() => {
+                                  mixpanel.track('Diario Month Locked Click', {
+                                    month: month.id,
+                                    theme: month.theme,
+                                    reflections_count: month.reflectionsCount,
+                                    user_tier: tier,
+                                    source: 'locked_card',
+                                    user_id: user?.id,
+                                  });
+                                  setShowUpgradeModal(true);
+                                }}
+                              >
+                                {/* Background com blur */}
+                                <div className="relative h-64 bg-gradient-to-br from-eco-primary/20 to-eco-accent/20">
+                                  <div className="absolute inset-0 backdrop-blur-md bg-white/10" />
+
+                                  {/* Content */}
+                                  <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
+                                    {/* Icon */}
+                                    <div className="text-6xl mb-4 opacity-50">
+                                      {month.iconEmoji}
+                                    </div>
+
+                                    {/* Theme */}
+                                    <h4 className="font-display text-2xl font-bold text-eco-text mb-2">
+                                      {month.displayName}
+                                    </h4>
+                                    <p className="text-lg font-semibold text-eco-primary mb-3">
+                                      {month.theme}
+                                    </p>
+
+                                    {/* Description */}
+                                    <p className="text-sm text-eco-muted mb-4 max-w-md">
+                                      {month.themeDescription}
+                                    </p>
+
+                                    {/* Lock icon + count */}
+                                    <div className="flex items-center gap-2 mb-6">
+                                      <span className="text-2xl">🔒</span>
+                                      <span className="text-sm font-medium text-eco-text">
+                                        {month.reflectionsCount} reflexões premium
+                                      </span>
+                                    </div>
+
+                                    {/* CTA Button */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        mixpanel.track('Diario Month CTA Click', {
+                                          month: month.id,
+                                          theme: month.theme,
+                                          user_id: user?.id,
+                                        });
+                                        setShowUpgradeModal(true);
+                                      }}
+                                      className="inline-flex items-center gap-2 px-6 py-3 bg-eco-primary text-white font-semibold rounded-full hover:bg-eco-primary/90 transition-all shadow-md hover:shadow-lg"
+                                    >
+                                      Desbloquear {month.theme}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </AnimatedSection>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </>
             )}
@@ -1136,6 +1402,13 @@ export default function DiarioEstoicoPage() {
           maxim={shareModalMaxim}
           open={!!shareModalMaxim}
           onClose={() => setShareModalMaxim(null)}
+        />
+
+        {/* Upgrade Modal */}
+        <UpgradeModal
+          open={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          source="diario_estoico"
         />
 
         {/* Exit Modal */}

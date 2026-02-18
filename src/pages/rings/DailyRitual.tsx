@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useRings } from '@/contexts/RingsContext';
 import { useProgram } from '@/contexts/ProgramContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsPremium } from '@/hooks/usePremiumContent';
+import { useIsPremium, useSubscriptionTier } from '@/hooks/usePremiumContent';
 import { useGuestExperience } from '@/contexts/GuestExperienceContext';
 import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestConversionTriggers';
 import mixpanel from '@/lib/mixpanel';
@@ -22,6 +22,7 @@ export default function DailyRitual() {
   const { ongoingProgram, updateProgress } = useProgram();
   const { user, isGuestMode, isVipUser } = useAuth();
   const isPremium = useIsPremium();
+  const tier = useSubscriptionTier();
   const { trackInteraction } = useGuestExperience();
   const { checkTrigger } = useGuestConversionTriggers();
   const [currentStep, setCurrentStep] = useState(0);
@@ -33,11 +34,14 @@ export default function DailyRitual() {
   const GUEST_RING_LIMIT = 2; // Guests podem completar apenas 2 anéis (Earth e Water)
   const [showGuestGate, setShowGuestGate] = useState(false);
 
-  // FREE TIER: Weekly ritual limit
+  // FREE TIER: Weekly ritual limit (Essentials/Premium = daily unlimited)
   const [showFreeGate, setShowFreeGate] = useState(false);
   const canCompleteRitualToday = () => {
-    if (!user || isPremium) return true; // Premium = unlimited
+    if (!user || tier === 'premium' || tier === 'vip' || tier === 'essentials') {
+      return true; // Essentials, Premium, VIP = daily unlimited
+    }
 
+    // FREE TIER: Weekly limit (7 days)
     const storageKey = `eco.rings.lastCompletion.${user.id}`;
     const lastCompletion = localStorage.getItem(storageKey);
 
@@ -101,13 +105,14 @@ export default function DailyRitual() {
       return;
     }
 
-    // FREE TIER: Weekly ritual limit - block if trying to complete a second ritual this week
-    if (user && !isPremium && !isGuest && isLastStep) {
+    // FREE TIER ONLY: Weekly ritual limit - block if trying to complete a second ritual this week
+    if (user && tier === 'free' && !isGuest && isLastStep) {
       if (!canCompleteRitualToday()) {
         // Track limit hit
         mixpanel.track('Free Tier Limit Blocked', {
           limit_type: 'weekly_rings',
           user_id: user.id,
+          tier: 'free',
         });
 
         // Show free tier gate
@@ -121,8 +126,8 @@ export default function DailyRitual() {
       setIsCompleting(true);
       completeRitual()
         .then(() => {
-          // FREE TIER: Save completion date for weekly limit
-          if (user && !isPremium && !isGuest) {
+          // FREE TIER ONLY: Save completion date for weekly limit
+          if (user && tier === 'free' && !isGuest) {
             const storageKey = `eco.rings.lastCompletion.${user.id}`;
             localStorage.setItem(storageKey, new Date().toISOString());
           }
@@ -256,8 +261,8 @@ export default function DailyRitual() {
         />
       )}
 
-      {/* FREE TIER: Weekly ritual limit gate */}
-      {user && !isPremium && !isGuest && (
+      {/* FREE TIER ONLY: Weekly ritual limit gate (Essentials has daily access) */}
+      {user && tier === 'free' && !isGuest && (
         <LoginGateModal
           isOpen={showFreeGate}
           onClose={() => {

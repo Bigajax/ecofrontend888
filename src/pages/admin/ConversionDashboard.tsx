@@ -31,6 +31,7 @@ import PhoneFrame from '@/components/PhoneFrame';
 const ADMIN_EMAILS = [
   'admin@ecotopia.com',
   'rafael@ecotopia.com',
+  'rafaelrazeira@hotmail.com',
   // Add more admin emails here
 ];
 
@@ -115,7 +116,10 @@ function ConversionDashboard() {
     );
   }
 
-  if (error) {
+  // Mostrar aviso se estiver usando dados de exemplo
+  const isUsingPlaceholderData = error?.includes('exemplo') || error?.includes('não configurado');
+
+  if (error && !isUsingPlaceholderData) {
     return (
       <PhoneFrame>
         <div className="p-6">
@@ -183,6 +187,27 @@ function ConversionDashboard() {
   return (
     <PhoneFrame>
       <div className="p-6 pb-24 space-y-8">
+        {/* Aviso de dados de exemplo */}
+        {isUsingPlaceholderData && (
+          <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-yellow-900 mb-1">
+                  Modo Demo - Dados de Exemplo
+                </p>
+                <p className="text-xs text-yellow-800">
+                  {error || 'O banco de dados não está configurado. Os dados abaixo são apenas exemplos para visualização.'}
+                </p>
+                <p className="text-xs text-yellow-700 mt-2">
+                  <strong>Para dados reais:</strong> Configure as tabelas <code className="bg-yellow-100 px-1 rounded">users</code> e{' '}
+                  <code className="bg-yellow-100 px-1 rounded">subscription_events</code> no Supabase.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

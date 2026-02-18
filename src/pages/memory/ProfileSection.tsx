@@ -6,6 +6,8 @@ import type { ApiErrorDetails } from './memoryData';
 import type { Memoria } from '../../api/memoriaApi';
 import { listarMemoriasBasico } from '../../api/memoriaApi';
 import { useAuth } from '../../contexts/AuthContext';
+import { useIsPremium, usePremiumContent } from '../../hooks/usePremiumContent';
+import { Lock } from 'lucide-react';
 import { emotionPalette, resolveEmotionKey } from './emotionTokens';
 
 import EcoBubbleLoading from '../../components/EcoBubbleLoading';
@@ -73,6 +75,46 @@ const Card: FC<PropsWithChildren<{ title: string; subtitle?: string; id?: string
     </div>
   </section>
 );
+
+/* Wrapper for locked advanced charts (free tier) */
+const LockedChart: FC<PropsWithChildren<{ locked: boolean; onUpgrade: () => void }>> = ({ locked, onUpgrade, children }) => {
+  if (!locked) return <>{children}</>;
+
+  return (
+    <div className="relative">
+      {/* Blurred content */}
+      <div className="blur-[8px] pointer-events-none select-none">
+        {children}
+      </div>
+
+      {/* Lock overlay */}
+      <div className="absolute inset-0 bg-white/20 backdrop-blur-[4px] flex items-center justify-center">
+        <div
+          className="text-center p-6 bg-white rounded-xl shadow-lg max-w-sm cursor-pointer hover:scale-105 transition-transform"
+          onClick={onUpgrade}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+            <Lock className="w-6 h-6 text-white" />
+          </div>
+          <h4 className="font-semibold text-base mb-2" style={{ color: 'var(--eco-text, #38322A)' }}>
+            Gráfico Premium
+          </h4>
+          <p className="text-sm mb-4" style={{ color: 'var(--eco-muted, #9C938A)' }}>
+            Visualize padrões emocionais ao longo do tempo
+          </p>
+          <button
+            onClick={onUpgrade}
+            className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-semibold hover:shadow-lg transition-shadow"
+          >
+            Fazer Upgrade
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 /* ---------- helpers ---------- */
 const day = 24 * 60 * 60 * 1000;
@@ -189,6 +231,8 @@ const SegmentedControl: FC<{ value: Period; onChange: (p: Period)=>void }> = ({ 
 /* ---------- componente ---------- */
 const ProfileSection: FC = () => {
   const { userId } = useAuth();
+  const isPremium = useIsPremium();
+  const { requestUpgrade } = usePremiumContent();
   const {
     perfil,
     memories,
@@ -446,50 +490,51 @@ const ProfileSection: FC = () => {
 
         {/* CARD 2 — Emoções */}
         <Card title="Emoções mais frequentes" subtitle={`Período: ${periodLabel}`} id="emocoes">
-          {isClient && emotionsData.length ? (
-            <div className="h-[300px]">
-              <ChartErrorBoundary>
-                <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={32} /></div>}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={emotionsData}
-                      margin={{ top: 12, right: 12, bottom: 0, left: 40 }}
-                      barCategoryGap="32%"
-                    >
-                      <XAxis dataKey="name" hide />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: 'var(--eco-muted, #9C938A)', fontSize: 12 }}
-                      />
-                      <Tooltip
-                        content={({ active, payload }: any) =>
-                          active && payload?.length ? (
-                            <div
-                              className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
-                              style={{
-                                backgroundColor: 'rgba(243, 238, 231, 0.95)',
-                                borderColor: colorForEmotion(payload[0].payload.name),
-                                color: 'var(--eco-text, #38322A)',
-                              }}
-                            >
-                              <div className="font-medium">{payload[0].payload.name}</div>
-                              <div>{payload[0].value}</div>
-                            </div>
-                          ) : null
-                        }
-                      />
-                      <Bar dataKey="value" radius={[12, 12, 0, 0]}>
-                        {emotionsData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={colorForEmotion(entry.name)} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Suspense>
-              </ChartErrorBoundary>
-            </div>
-          ) : (
+          <LockedChart locked={!isPremium} onUpgrade={() => requestUpgrade('memory_emotions_chart')}>
+            {isClient && emotionsData.length ? (
+              <div className="h-[300px]">
+                <ChartErrorBoundary>
+                  <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={32} /></div>}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={emotionsData}
+                        margin={{ top: 12, right: 12, bottom: 0, left: 40 }}
+                        barCategoryGap="32%"
+                      >
+                        <XAxis dataKey="name" hide />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: 'var(--eco-muted, #9C938A)', fontSize: 12 }}
+                        />
+                        <Tooltip
+                          content={({ active, payload }: any) =>
+                            active && payload?.length ? (
+                              <div
+                                className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
+                                style={{
+                                  backgroundColor: 'rgba(243, 238, 231, 0.95)',
+                                  borderColor: colorForEmotion(payload[0].payload.name),
+                                  color: 'var(--eco-text, #38322A)',
+                                }}
+                              >
+                                <div className="font-medium">{payload[0].payload.name}</div>
+                                <div>{payload[0].value}</div>
+                              </div>
+                            ) : null
+                          }
+                        />
+                        <Bar dataKey="value" radius={[12, 12, 0, 0]}>
+                          {emotionsData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={colorForEmotion(entry.name)} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </Suspense>
+                </ChartErrorBoundary>
+              </div>
+            ) : (
             <div
               className="grid place-items-center h-[240px]"
               style={{ color: 'var(--eco-muted, #9C938A)' }}
@@ -505,73 +550,76 @@ const ProfileSection: FC = () => {
               </div>
             </div>
           )}
+          </LockedChart>
         </Card>
 
         {/* CARD 3 — Temas */}
         <Card title="Temas mais recorrentes" subtitle={`Período: ${periodLabel}`} id="temas">
-          {isClient && themesData.length ? (
-            <div className="h-[300px]">
-              <ChartErrorBoundary>
-                <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={32} /></div>}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={themesData}
-                      layout="horizontal"
-                      margin={{ top: 8, right: 16, bottom: 8, left: 160 }}
-                      barCategoryGap="30%"
-                    >
-                      <XAxis type="number" hide />
-                      <YAxis
-                        type="category"
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: 'var(--eco-text, #38322A)', fontSize: 12 }}
-                        width={150}
-                      />
-                      <Tooltip
-                        content={({ active, payload }: any) =>
-                          active && payload?.length ? (
-                            <div
-                              className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
-                              style={{
-                                backgroundColor: 'rgba(243, 238, 231, 0.95)',
-                                borderColor: 'var(--eco-line, #E8E3DD)',
-                                color: 'var(--eco-text, #38322A)',
-                              }}
-                            >
-                              <div className="font-medium">{payload[0].payload.name}</div>
-                              <div>{payload[0].value}</div>
-                            </div>
-                          ) : null
-                        }
-                      />
-                      <Bar dataKey="value" radius={[0, 12, 12, 0]}>
-                        {themesData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={pastel(entry.name)} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Suspense>
-              </ChartErrorBoundary>
-            </div>
-          ) : (
-            <div
-              className="grid place-items-center h-[240px]"
-              style={{ color: 'var(--eco-muted, #9C938A)' }}
-            >
-              <div className="text-center">
-                <p
-                  className="font-medium"
-                  style={{ color: 'var(--eco-text, #38322A)' }}
-                >
-                  Sem dados no período
-                </p>
-                <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
+          <LockedChart locked={!isPremium} onUpgrade={() => requestUpgrade('memory_themes_chart')}>
+            {isClient && themesData.length ? (
+              <div className="h-[300px]">
+                <ChartErrorBoundary>
+                  <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={32} /></div>}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={themesData}
+                        layout="horizontal"
+                        margin={{ top: 8, right: 16, bottom: 8, left: 160 }}
+                        barCategoryGap="30%"
+                      >
+                        <XAxis type="number" hide />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: 'var(--eco-text, #38322A)', fontSize: 12 }}
+                          width={150}
+                        />
+                        <Tooltip
+                          content={({ active, payload }: any) =>
+                            active && payload?.length ? (
+                              <div
+                                className="rounded-xl border px-3 py-2 text-[12px] backdrop-blur-sm"
+                                style={{
+                                  backgroundColor: 'rgba(243, 238, 231, 0.95)',
+                                  borderColor: 'var(--eco-line, #E8E3DD)',
+                                  color: 'var(--eco-text, #38322A)',
+                                }}
+                              >
+                                <div className="font-medium">{payload[0].payload.name}</div>
+                                <div>{payload[0].value}</div>
+                              </div>
+                            ) : null
+                          }
+                        />
+                        <Bar dataKey="value" radius={[0, 12, 12, 0]}>
+                          {themesData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={pastel(entry.name)} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </Suspense>
+                </ChartErrorBoundary>
               </div>
-            </div>
-          )}
+            ) : (
+              <div
+                className="grid place-items-center h-[240px]"
+                style={{ color: 'var(--eco-muted, #9C938A)' }}
+              >
+                <div className="text-center">
+                  <p
+                    className="font-medium"
+                    style={{ color: 'var(--eco-text, #38322A)' }}
+                  >
+                    Sem dados no período
+                  </p>
+                  <p className="text-sm">Crie registros para descobrir seus principais temas.</p>
+                </div>
+              </div>
+            )}
+          </LockedChart>
         </Card>
       </div>
     </div>

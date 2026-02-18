@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import PhoneFrame from '../../components/PhoneFrame';
 import { useAuth } from '../../contexts/AuthContext';
-import { useIsPremium } from '../../hooks/usePremiumContent';
+import { useIsPremium, useSubscriptionTier } from '../../hooks/usePremiumContent';
 import { useChat } from '../../contexts/ChatContext';
 import { buscarMemoriasPorUsuario } from '../../api/memoriaApi';
 import { buscarPerfilEmocional } from '../../api/perfilApi';
@@ -225,6 +225,7 @@ const formatTechnicalDetails = (details: ApiErrorDetails | null) => {
 const MemoryLayout: React.FC = () => {
   const { userId, loading, user, signOut, isGuestMode, isVipUser } = useAuth();
   const isPremium = useIsPremium();
+  const tier = useSubscriptionTier();
   const { clearMessages } = useChat();
   const navigate = useNavigate();
   const mountedRef = useRef(true);
@@ -406,16 +407,28 @@ const MemoryLayout: React.FC = () => {
   const contextValue = useMemo<MemoryData>(() => {
     let filteredMemories = state.memories;
 
-    // FREE TIER: Limitar memórias (últimos 30 dias, max 20)
-    if (user && !isPremium && !isGuestMode) {
-      const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-
-      filteredMemories = state.memories
-        .filter(m => {
-          const createdAt = new Date(m.created_at).getTime();
-          return createdAt >= thirtyDaysAgo;
-        })
-        .slice(0, 20); // Max 20 memórias
+    // TIER-BASED MEMORY LIMITS
+    if (user && !isGuestMode) {
+      if (tier === 'free') {
+        // FREE: Últimos 30 dias, max 20 memórias
+        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        filteredMemories = state.memories
+          .filter(m => {
+            const createdAt = new Date(m.created_at).getTime();
+            return createdAt >= thirtyDaysAgo;
+          })
+          .slice(0, 20);
+      } else if (tier === 'essentials') {
+        // ESSENTIALS: Últimos 90 dias, max 100 memórias
+        const ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
+        filteredMemories = state.memories
+          .filter(m => {
+            const createdAt = new Date(m.created_at).getTime();
+            return createdAt >= ninetyDaysAgo;
+          })
+          .slice(0, 100);
+      }
+      // Premium/VIP: sem limites, mantém state.memories completo
     }
 
     return {
@@ -425,7 +438,7 @@ const MemoryLayout: React.FC = () => {
       refetchPerfil,
       refetchRelatorio,
     };
-  }, [state, refetchMemories, refetchPerfil, refetchRelatorio, user, isPremium, isGuestMode]);
+  }, [state, refetchMemories, refetchPerfil, refetchRelatorio, user, tier, isGuestMode]);
 
   const isGuest = !user;
 
@@ -494,17 +507,31 @@ const MemoryLayout: React.FC = () => {
 
           <main className="flex-1 overflow-y-auto px-4 py-4 lg:py-4 pt-6 lg:pt-4 pb-20 lg:pb-4 bg-transparent">
             <div className="mx-auto max-w-4xl">
-              {/* FREE TIER: Banner informativo */}
+              {/* FREE/ESSENTIALS TIER: Banner informativo */}
               {user && !isPremium && !isGuestMode && (
                 <div className="mb-4 bg-gradient-to-r from-eco-primary/10 to-eco-accent/10 border border-eco-primary/30 rounded-xl p-4">
                   <p className="text-sm text-eco-text text-center">
-                    📊 Você está vendo os últimos 30 dias (max 20 memórias).{' '}
-                    <button
-                      onClick={() => navigate('/app/programas')}
-                      className="font-semibold text-eco-primary underline"
-                    >
-                      Desbloquear histórico completo + insights avançados
-                    </button>
+                    {tier === 'essentials' ? (
+                      <>
+                        📊 Você está vendo os últimos 90 dias (max 100 memórias).{' '}
+                        <button
+                          onClick={() => navigate('/app/programas')}
+                          className="font-semibold text-eco-primary underline"
+                        >
+                          Upgrade para histórico completo + insights avançados
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        📊 Você está vendo os últimos 30 dias (max 20 memórias).{' '}
+                        <button
+                          onClick={() => navigate('/app/programas')}
+                          className="font-semibold text-eco-primary underline"
+                        >
+                          Desbloquear histórico completo + insights avançados
+                        </button>
+                      </>
+                    )}
                   </p>
                 </div>
               )}

@@ -5,7 +5,9 @@ import { Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export interface PricingCardProps {
-  plan: 'monthly' | 'annual';
+  plan: 'essentials' | 'monthly' | 'annual';
+  name?: string;
+  subtitle?: string;
   price: number;
   originalPrice?: number;
   billingPeriod: 'month' | 'year';
@@ -19,6 +21,8 @@ export interface PricingCardProps {
 
 export default function PricingCard({
   plan,
+  name,
+  subtitle,
   price,
   originalPrice,
   billingPeriod,
@@ -33,6 +37,20 @@ export default function PricingCard({
   const discountPercentage = originalPrice
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : 0;
+
+  // Determinar nome do plano
+  const planName =
+    name ||
+    (plan === 'essentials'
+      ? 'Plano Essentials'
+      : plan === 'monthly'
+      ? 'Plano Mensal'
+      : 'Plano Anual');
+
+  // Determinar descrição
+  const planDescription =
+    subtitle ||
+    (billingPeriod === 'month' ? 'Renovação mensal' : 'Pagamento único anual');
 
   return (
     <motion.button
@@ -74,10 +92,10 @@ export default function PricingCard({
       {/* Header do Plano */}
       <div className="mb-3 sm:mb-4">
         <h3 className="text-base sm:text-lg font-semibold text-[var(--eco-text)] mb-1">
-          {plan === 'monthly' ? 'Plano Mensal' : 'Plano Anual'}
+          {planName}
         </h3>
         <p className="text-xs sm:text-sm text-[var(--eco-muted)]">
-          {billingPeriod === 'month' ? 'Renovação mensal' : 'Pagamento único anual'}
+          {planDescription}
         </p>
       </div>
 

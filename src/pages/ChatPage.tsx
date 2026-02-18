@@ -20,6 +20,7 @@ import Sidebar from '../components/Sidebar';
 const EcoLoopHud = lazy(() => import('../components/EcoLoopHud'));
 const QuickSuggestions = lazy(() => import('../components/QuickSuggestions').then(m => ({ default: m.default })));
 const VoiceRecorderPanel = lazy(() => import('../components/VoiceRecorderPanel'));
+const TrialOnboarding = lazy(() => import('../components/trial/TrialOnboarding'));
 
 // Import types separately (não afeta bundle)
 import type { Suggestion, SuggestionPickMeta } from '../components/QuickSuggestions';
@@ -949,6 +950,13 @@ function ChatPage() {
                       </p>
                     </div>
                   </motion.div>
+                )}
+
+                {/* Trial Onboarding Checklist */}
+                {user && !isGuest && (
+                  <Suspense fallback={null}>
+                    <TrialOnboarding />
+                  </Suspense>
                 )}
 
                 {erroApi && (

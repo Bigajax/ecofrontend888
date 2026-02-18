@@ -1,9 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsPremium } from '@/hooks/usePremiumContent';
+import { useSubscriptionTier } from '@/hooks/usePremiumContent';
 import { trackFreeTierLimitHit } from '@/lib/mixpanelConversionEvents';
 
-const DAILY_VOICE_LIMIT = 5;
+// Limites de voice por tier
+const TIER_VOICE_LIMITS = {
+  free: 5,
+  essentials: 20,
+  premium: Infinity,
+  vip: Infinity,
+} as const;
 
 interface DailyVoiceData {
   date: string; // YYYY-MM-DD
@@ -12,12 +18,12 @@ interface DailyVoiceData {
 
 export function useVoiceLimits() {
   const { user } = useAuth();
-  const isPremium = useIsPremium();
+  const tier = useSubscriptionTier();
 
   const storageKey = `eco.freeUser.dailyVoice.v1.${user?.id || 'unknown'}`;
 
   const [count, setCount] = useState<number>(() => {
-    if (!user || isPremium) return 0;
+    if (!user || tier === 'premium' || tier === 'vip') return 0;
 
     const stored = localStorage.getItem(storageKey);
     if (!stored) return 0;
@@ -39,11 +45,11 @@ export function useVoiceLimits() {
     }
   });
 
-  const limit = DAILY_VOICE_LIMIT;
+  const limit = TIER_VOICE_LIMITS[tier];
   const reachedLimit = count >= limit;
 
   const incrementCount = useCallback(() => {
-    if (isPremium) return; // Premium users não têm limites
+    if (tier === 'premium' || tier === 'vip') return; // Premium/VIP users não têm limites
 
     setCount((prev) => {
       const next = prev + 1;
@@ -64,16 +70,17 @@ export function useVoiceLimits() {
           limit_value: limit,
           days_since_signup: getDaysSinceSignup(user),
           user_id: user?.id,
+          tier, // Adicionar tier para analytics
         });
       }
 
       return next;
     });
-  }, [isPremium, user, limit, storageKey]);
+  }, [tier, user, limit, storageKey]);
 
   // Reset count at midnight
   useEffect(() => {
-    if (isPremium || !user) return;
+    if (tier === 'premium' || tier === 'vip' || !user) return;
 
     const checkMidnight = () => {
       const stored = localStorage.getItem(storageKey);
@@ -96,7 +103,7 @@ export function useVoiceLimits() {
     const interval = setInterval(checkMidnight, 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [isPremium, user, storageKey]);
+  }, [tier, user, storageKey]);
 
   return {
     count,

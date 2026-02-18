@@ -15,24 +15,31 @@
 export type ConversionContext =
   | 'chat_soft_prompt'      // Soft prompt após 6-7 turnos
   | 'chat_hard_limit'       // Hard limit após 8-10 turnos
-  | 'chat_daily_limit'      // FREE: Limite diário de mensagens (30)
-  | 'chat_soft_limit'       // FREE: Aproximando do limite (25)
+  | 'chat_daily_limit'      // FREE: Limite diário de mensagens (10)
+  | 'chat_soft_limit'       // FREE: Aproximando do limite (8)
+  | 'chat_essentials_limit' // ESSENTIALS: Limite de 100 mensagens/dia
   | 'chat_vulnerability'    // Usuário expressou vulnerabilidade
   | 'chat_deep_engagement'  // Mensagens longas e profundas
   | 'reflection_teaser'     // Fade em reflexão estoica
   | 'reflection_multiple'   // Visualizou 3+ reflexões
   | 'reflection_deep_scroll'// Scroll profundo em reflexão
   | 'reflection_archive_locked' // FREE: Tentou acessar arquivo completo
+  | 'reflection_month_fevereiro' // FREE: Tentou acessar PAIXÕES E EMOÇÕES
+  | 'reflection_month_dezembro'  // FREE: Tentou acessar MEDITAÇÃO SOBRE MORTALIDADE
   | 'meditation_time_limit' // Limite de 2 minutos atingido
   | 'meditation_complete'   // Completou preview de meditação
   | 'meditation_favorite'   // Tentou favoritar meditação
+  | 'meditation_premium_locked' // ESSENTIALS: Tentou acessar meditação premium
+  | 'meditation_library_banner' // Clicou no banner da biblioteca de meditações
+  | 'meditation_library_footer' // Clicou no botão do footer da biblioteca
   | 'rings_day_complete'    // Completou dia do Five Rings
   | 'rings_gate'            // Gate no Anel 3
   | 'rings_weekly_limit'    // FREE: Completou ritual semanal
   | 'memory_preview'        // Tentou acessar memórias/perfil
-  | 'memory_advanced'       // FREE: Tentou acessar charts avançados
+  | 'memory_advanced'       // FREE/ESSENTIALS: Tentou acessar charts avançados
   | 'memory_unlimited'      // FREE: Tentou ver histórico completo
   | 'voice_daily_limit'     // FREE: Limite de 5 mensagens de voz/dia
+  | 'voice_essentials_limit' // ESSENTIALS: Limite de 20 mensagens de voz/dia
   | 'multiple_visits'       // Retornou 2+ vezes como guest
   | 'voice_usage'           // Usou gravador de voz
   | 'favorite_attempt'      // Tentou favoritar qualquer conteúdo
@@ -208,7 +215,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   chat_daily_limit: {
     title: 'Você atingiu seu limite diário',
-    message: 'Você teve 30 mensagens hoje. Amanhã, mais 30 te aguardam — ou desbloqueie conversas ilimitadas agora.',
+    message: 'Você teve 5 conversas profundas hoje. Amanhã, mais 5 te aguardam — ou desbloqueie conversas ilimitadas agora.',
     primaryCta: 'Desbloquear conversas ilimitadas',
     secondaryCta: 'Voltar amanhã',
     subtitle: '7 dias grátis • Cancele quando quiser',
@@ -216,18 +223,44 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
 
   chat_soft_limit: {
     title: 'Você está se aproximando do limite',
-    message: 'Restam 5 mensagens hoje. Continue amanhã ou faça upgrade para conversas ilimitadas.',
+    message: 'Restam 2 mensagens hoje. Continue amanhã ou faça upgrade para conversas ilimitadas.',
     primaryCta: 'Upgrade agora',
-    secondaryCta: 'Continuar (5 restantes)',
+    secondaryCta: 'Continuar (2 restantes)',
     subtitle: '7 dias grátis',
   },
 
   reflection_archive_locked: {
     title: 'Arquivo completo de reflexões',
-    message: 'Acesse todas as 77 reflexões estoicas (Janeiro, Fevereiro, Dezembro) + novos meses em breve.',
+    message: 'Acesse todas as 61 reflexões estoicas (Janeiro, Fevereiro, Dezembro) organizadas por temas.',
     primaryCta: 'Desbloquear arquivo completo',
-    secondaryCta: 'Continuar com últimos 7 dias',
+    secondaryCta: 'Continuar com CLAREZA',
     subtitle: '7 dias grátis • Sempre pode cancelar',
+  },
+
+  reflection_month_fevereiro: {
+    title: 'PAIXÕES E EMOÇÕES',
+    message: '"As paixões são tiranas. Aprenda a dominá-las." — Marco Aurélio. 28 reflexões que vão transformar sua relação com as emoções.',
+    primaryCta: 'Desbloquear Fevereiro (28 reflexões)',
+    secondaryCta: 'Continuar com Janeiro',
+    subtitle: '7 dias grátis • Cancele quando quiser',
+    badges: [
+      { icon: '🔥', label: 'Paixões e Emoções' },
+      { icon: '📖', label: '28 reflexões' },
+      { icon: '💾', label: 'Progresso salvo' },
+    ],
+  },
+
+  reflection_month_dezembro: {
+    title: 'MEDITAÇÃO SOBRE MORTALIDADE',
+    message: '"Você pode deixar a vida agora. Que isso determine o que você faz, diz e pensa." — Marco Aurélio. 20 reflexões profundas sobre finitude, propósito e legado.',
+    primaryCta: 'Desbloquear Dezembro (20 reflexões)',
+    secondaryCta: 'Continuar com Janeiro',
+    subtitle: '7 dias grátis • Cancele quando quiser',
+    badges: [
+      { icon: '💀', label: 'Memento Mori' },
+      { icon: '📖', label: '20 reflexões' },
+      { icon: '💾', label: 'Progresso salvo' },
+    ],
   },
 
   rings_weekly_limit: {
@@ -260,6 +293,49 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     primaryCta: 'Desbloquear voz ilimitada',
     secondaryCta: 'Voltar ao chat',
     subtitle: '7 dias grátis',
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ESSENTIALS TIER LIMITS (Fase 3.1)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  chat_essentials_limit: {
+    title: 'Você atingiu seu limite Essentials',
+    message: 'Você teve 100 mensagens hoje. Premium desbloqueia conversas verdadeiramente ilimitadas.',
+    primaryCta: 'Upgrade para Premium',
+    secondaryCta: 'Voltar amanhã',
+    subtitle: 'Desbloqueie conversas ilimitadas + todas as meditações',
+  },
+
+  voice_essentials_limit: {
+    title: 'Limite Essentials de voz atingido',
+    message: 'Você usou suas 20 mensagens de voz hoje. Premium desbloqueia voz ilimitada + meditações avançadas.',
+    primaryCta: 'Upgrade para Premium',
+    secondaryCta: 'Voltar ao chat',
+    subtitle: 'Acesso completo + suporte prioritário',
+  },
+
+  meditation_premium_locked: {
+    title: 'Meditação Premium',
+    message: 'Esta meditação é exclusiva do plano Premium. Upgrade para acessar todas as práticas de 15+ minutos e conteúdos avançados.',
+    primaryCta: 'Upgrade para Premium',
+    secondaryCta: 'Voltar à biblioteca',
+    subtitle: '7 dias grátis • Todas as meditações',
+  },
+
+  meditation_library_banner: {
+    title: 'Desbloqueie a Biblioteca Completa',
+    message: 'Acesse meditações longas, programas completos e novos conteúdos toda semana. Aprofunde sua prática sem limites.',
+    primaryCta: 'Ver Planos',
+    secondaryCta: 'Continuar explorando',
+    subtitle: '7 dias grátis • Cancele quando quiser',
+  },
+
+  meditation_library_footer: {
+    title: 'Aprofunde Sua Prática',
+    message: 'Desbloqueie meditações de 15-25 minutos, programas completos de transformação e novos conteúdos exclusivos.',
+    primaryCta: 'Desbloquear Biblioteca Premium',
+    secondaryCta: 'Voltar',
+    subtitle: '7 dias grátis • R$ 29,90/mês depois',
   },
 
   generic: {
@@ -295,6 +371,7 @@ export function getPreservedDataBadges(context: ConversionContext): PreservedDat
     case 'chat_deep_engagement':
     case 'chat_daily_limit':
     case 'chat_soft_limit':
+    case 'chat_essentials_limit':
       return [
         { icon: '💬', label: 'Conversa salva' },
         { icon: '🧠', label: 'Memória emocional' },
@@ -312,9 +389,20 @@ export function getPreservedDataBadges(context: ConversionContext): PreservedDat
     case 'meditation_time_limit':
     case 'meditation_complete':
     case 'meditation_favorite':
+    case 'meditation_premium_locked':
+    case 'meditation_library_banner':
+    case 'meditation_library_footer':
       return [
         { icon: '🧘', label: 'Meditações completas' },
         { icon: '📊', label: 'Progresso registrado' },
+        { icon: '🎵', label: 'Todas as práticas' },
+      ];
+
+    case 'voice_daily_limit':
+    case 'voice_essentials_limit':
+      return [
+        { icon: '🎤', label: 'Voz ilimitada' },
+        { icon: '📝', label: 'Transcrições salvas' },
       ];
 
     case 'rings_day_complete':

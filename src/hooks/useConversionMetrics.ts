@@ -70,47 +70,86 @@ export function useConversionMetrics() {
       setMetrics((prev) => ({ ...prev, loading: true, error: null }));
 
       // 1. Fetch user distribution
+      // IMPORTANTE: Backend usa tabela 'usuarios', não 'users'
       const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('id, subscription_status, subscription_plan');
+        .from('usuarios')
+        .select('id, subscription_status, tier, plan_type');
 
       if (usersError) {
-        console.error('Error fetching users:', usersError);
-        // If table doesn't exist, use placeholder data
-        if (usersError.code === 'PGRST116' || usersError.message?.includes('does not exist')) {
-          console.warn('Users table not found - using placeholder metrics');
-          setMetrics((prev) => ({
-            ...prev,
-            loading: false,
-            error: 'Tabela users não encontrada. Configure o schema do Supabase.',
-          }));
-          return;
-        }
-        throw usersError;
+        console.warn('[ConversionMetrics] Error fetching users, using placeholder data:', usersError);
+
+        // Use dados placeholder quando houver qualquer erro de DB
+        const placeholderDistribution: UserDistribution = {
+          free: 45,
+          trial: 8,
+          essentials: 3,
+          premium: 12,
+          total: 68,
+        };
+
+        setMetrics({
+          userDistribution: placeholderDistribution,
+          conversionFunnel: {
+            guestVisits: 150,
+            signups: 68,
+            trialsStarted: 23,
+            paidConversions: 15,
+            guestToSignup: (68 / 150) * 100, // 45%
+            signupToTrial: (23 / 68) * 100,  // 34%
+            trialToPaid: (15 / 23) * 100,    // 65%
+          },
+          churnRate: 8.5,
+          ltv: 249,
+          loading: false,
+          error: 'Usando dados de exemplo (DB não configurado)',
+        });
+
+        setTriggerStats([
+          { trigger_type: 'chat_daily_limit', total_hits: 42, conversions: 8, conversion_rate: 19.0 },
+          { trigger_type: 'meditation_premium_locked', total_hits: 28, conversions: 5, conversion_rate: 17.9 },
+          { trigger_type: 'reflection_archive_locked', total_hits: 35, conversions: 6, conversion_rate: 17.1 },
+          { trigger_type: 'rings_weekly_limit', total_hits: 18, conversions: 3, conversion_rate: 16.7 },
+        ]);
+
+        return;
       }
+
+      // Contar todos os usuários (auth.users)
+      const { count: totalUsersCount } = await supabase
+        .from('usuarios')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: totalAuthUsers } = await supabase.auth.admin.listUsers();
 
       const distribution: UserDistribution = {
         free: 0,
         trial: 0,
         essentials: 0,
         premium: 0,
-        total: users?.length || 0,
+        total: totalAuthUsers?.users?.length || 0,
       };
 
-      users?.forEach((user) => {
-        const status = user.subscription_status || 'free';
-        const plan = user.subscription_plan || 'free';
+      users?.forEach((user: any) => {
+        const status = user.subscription_status;
+        const tier = user.tier || 'premium'; // Default premium se não especificado
+        const planType = user.plan_type; // 'monthly' ou 'annual'
 
-        if (status === 'trialing') {
+        // Trial users
+        if (status === 'pending' && user.trial_start_date) {
           distribution.trial++;
-        } else if (plan === 'essentials_monthly') {
-          distribution.essentials++;
-        } else if (plan === 'premium_monthly' || plan === 'premium_annual') {
-          distribution.premium++;
-        } else {
-          distribution.free++;
+        }
+        // Active paid users
+        else if (status === 'active') {
+          if (tier === 'essentials') {
+            distribution.essentials++;
+          } else {
+            distribution.premium++;
+          }
         }
       });
+
+      // Free users = total - (trial + essentials + premium)
+      distribution.free = distribution.total - (distribution.trial + distribution.essentials + distribution.premium);
 
       // 2. Fetch conversion funnel data
       // Note: This requires tracking guest visits and conversions
@@ -133,7 +172,9 @@ export function useConversionMetrics() {
         .eq('event_type', 'subscription.cancelled')
         .gte('created_at', thirtyDaysAgo.toISOString());
 
-      if (churnError) console.error('Churn error:', churnError);
+      if (churnError) {
+        console.warn('[ConversionMetrics] Churn data not available:', churnError);
+      }
 
       const totalPaid = distribution.essentials + distribution.premium;
       const churnRate = totalPaid > 0 ? ((cancelledSubs?.length || 0) / totalPaid) * 100 : 0;

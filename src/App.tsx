@@ -43,6 +43,8 @@ const ChatPage = lazy(() => import("@/pages/ChatPage"));
 const CreateProfilePage = lazy(() => import("@/pages/CreateProfilePage"));
 const WelcomePage = lazy(() => import("@/pages/WelcomePage"));
 const VoicePage = lazy(() => import("@/pages/VoicePage"));
+const UpgradeModalTest = lazy(() => import("@/pages/UpgradeModalTest"));
+const VoiceLimitsTest = lazy(() => import("@/pages/VoiceLimitsTest"));
 
 const MemoryLayout = lazy(() => import("@/pages/memory/MemoryLayout"));
 const MemoriesSection = lazy(() => import("@/pages/memory/MemoriesSection"));
@@ -139,6 +141,8 @@ function AppRoutes() {
         <Route path="meditacao/sintonize-novos-potenciais" element={renderWithSuspense(<GuestMeditationPage />)} />
         <Route path="guest/meditation-player" element={renderWithSuspense(<MeditationPlayerPage />)} />
         <Route path="memory-preview" element={renderWithSuspense(<MemoryPageGuestTeaser />)} />
+        <Route path="test-upgrade-modal" element={renderWithSuspense(<UpgradeModalTest />)} />
+        <Route path="test-voice-limits" element={renderWithSuspense(<VoiceLimitsTest />)} />
       </Route>
       <Route
         path="/app/*"

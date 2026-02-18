@@ -1,10 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsPremium } from '@/hooks/usePremiumContent';
+import { useSubscriptionTier, useFeatureAccess } from '@/hooks/usePremiumContent';
 import { trackFreeTierLimitHit } from '@/lib/mixpanelConversionEvents';
 
-const DAILY_MESSAGE_LIMIT = 30;
-const SOFT_PROMPT_THRESHOLD = 25;
+// Limites por tier
+const TIER_LIMITS = {
+  free: 10, // 10 mensagens/dia (5 turnos)
+  essentials: 100,
+  premium: Infinity,
+  vip: Infinity,
+} as const;
+
+// Soft prompt thresholds (80% do limite)
+const SOFT_PROMPT_THRESHOLDS = {
+  free: 8, // 80% de 10
+  essentials: 80, // 80% de 100
+  premium: Infinity,
+  vip: Infinity,
+} as const;
 
 interface DailyMessageData {
   date: string; // YYYY-MM-DD
@@ -13,12 +26,12 @@ interface DailyMessageData {
 
 export function useFreeTierLimits() {
   const { user } = useAuth();
-  const isPremium = useIsPremium();
+  const tier = useSubscriptionTier();
 
   const storageKey = `eco.freeUser.dailyMessages.v1.${user?.id || 'unknown'}`;
 
   const [count, setCount] = useState<number>(() => {
-    if (!user || isPremium) return 0;
+    if (!user || tier === 'premium' || tier === 'vip') return 0;
 
     const stored = localStorage.getItem(storageKey);
     if (!stored) return 0;
@@ -40,12 +53,13 @@ export function useFreeTierLimits() {
     }
   });
 
-  const limit = DAILY_MESSAGE_LIMIT;
+  const limit = TIER_LIMITS[tier];
+  const softPromptThreshold = SOFT_PROMPT_THRESHOLDS[tier];
   const reachedLimit = count >= limit;
-  const shouldShowSoftPrompt = count >= SOFT_PROMPT_THRESHOLD && count < limit;
+  const shouldShowSoftPrompt = count >= softPromptThreshold && count < limit;
 
   const incrementCount = useCallback(() => {
-    if (isPremium) return; // Premium users não têm limites
+    if (tier === 'premium' || tier === 'vip') return; // Premium/VIP users não têm limites
 
     setCount((prev) => {
       const next = prev + 1;
@@ -66,16 +80,17 @@ export function useFreeTierLimits() {
           limit_value: limit,
           days_since_signup: getDaysSinceSignup(user),
           user_id: user?.id,
+          tier, // Adicionar tier para analytics
         });
       }
 
       return next;
     });
-  }, [isPremium, user, limit, storageKey]);
+  }, [tier, user, limit, storageKey]);
 
   // Reset count at midnight
   useEffect(() => {
-    if (isPremium || !user) return;
+    if (tier === 'premium' || tier === 'vip' || !user) return;
 
     const checkMidnight = () => {
       const stored = localStorage.getItem(storageKey);
@@ -98,7 +113,7 @@ export function useFreeTierLimits() {
     const interval = setInterval(checkMidnight, 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [isPremium, user, storageKey]);
+  }, [tier, user, storageKey]);
 
   return {
     count,
