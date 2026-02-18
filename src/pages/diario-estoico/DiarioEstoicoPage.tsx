@@ -73,6 +73,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     themeDescription: 'Reflexões sobre clareza mental, foco e discernimento',
     reflectionsCount: 13, startDay: 19, endDay: 31,
     isFreeAccess: true, part: 1,
+    image: '/images/diario-janeiro.webp',
   },
   {
     id: 'fevereiro', monthName: 'fevereiro', displayName: 'FEVEREIRO', shortName: 'FEV',
@@ -80,6 +81,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     themeDescription: 'Domine suas paixões, entenda suas emoções',
     reflectionsCount: 28, startDay: 1, endDay: 28,
     isFreeAccess: false, part: 1,
+    image: '/images/diario-fevereiro.webp',
   },
   {
     id: 'marco', monthName: 'marco', displayName: 'MARÇO', shortName: 'MAR',
@@ -87,6 +89,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     themeDescription: 'Desperte para a plena consciência de si e do mundo',
     reflectionsCount: 31, startDay: 1, endDay: 31,
     isFreeAccess: false, part: 1,
+    image: '/images/diario-marco.webp',
   },
   {
     id: 'abril', monthName: 'abril', displayName: 'ABRIL', shortName: 'ABR',
@@ -94,6 +97,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     themeDescription: 'Veja as coisas como elas realmente são',
     reflectionsCount: 30, startDay: 1, endDay: 30,
     isFreeAccess: false, part: 1,
+    image: '/images/diario-abril.webp',
   },
   // ── Parte II ─────────────────────────────────────────────────────────────
   {
@@ -102,6 +106,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     themeDescription: 'Aja com propósito, virtude e determinação',
     reflectionsCount: 31, startDay: 1, endDay: 31,
     isFreeAccess: false, part: 2,
+    image: '/images/diario-maio.webp',
   },
   {
     id: 'junho', monthName: 'junho', displayName: 'JUNHO', shortName: 'JUN',
@@ -109,6 +114,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     themeDescription: 'Enfrente obstáculos com criatividade e calma',
     reflectionsCount: 30, startDay: 1, endDay: 30,
     isFreeAccess: false, part: 2,
+    image: '/images/diario-junho.webp',
   },
   {
     id: 'julho', monthName: 'julho', displayName: 'JULHO', shortName: 'JUL',
@@ -116,6 +122,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     themeDescription: 'Cumpra seu papel com excelência e integridade',
     reflectionsCount: 31, startDay: 1, endDay: 31,
     isFreeAccess: false, part: 2,
+    image: '/images/diario-julho.webp',
   },
   {
     id: 'agosto', monthName: 'agosto', displayName: 'AGOSTO', shortName: 'AGO',
@@ -123,6 +130,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     themeDescription: 'Foco no que funciona, no que importa agora',
     reflectionsCount: 31, startDay: 1, endDay: 31,
     isFreeAccess: false, part: 2,
+    image: '/images/diario-agosto.webp',
   },
   // ── Parte III ────────────────────────────────────────────────────────────
   {
@@ -131,6 +139,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     themeDescription: 'Construa uma fortaleza interior inabalável',
     reflectionsCount: 30, startDay: 1, endDay: 30,
     isFreeAccess: false, part: 3,
+    image: '/images/diario-setembro.webp',
   },
   {
     id: 'outubro', monthName: 'outubro', displayName: 'OUTUBRO', shortName: 'OUT',
@@ -138,6 +147,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     themeDescription: 'Viva bem fazendo o bem ao mundo',
     reflectionsCount: 31, startDay: 1, endDay: 31,
     isFreeAccess: false, part: 3,
+    image: '/images/diario-outubro.webp',
   },
   {
     id: 'novembro', monthName: 'novembro', displayName: 'NOVEMBRO', shortName: 'NOV',
@@ -145,6 +155,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     themeDescription: 'Ame seu destino, abrace o que não pode ser mudado',
     reflectionsCount: 30, startDay: 1, endDay: 30,
     isFreeAccess: false, part: 3,
+    image: '/images/diario-novembro.webp',
   },
   {
     id: 'dezembro', monthName: 'dezembro', displayName: 'DEZEMBRO', shortName: 'DEZ',
@@ -152,6 +163,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     themeDescription: 'Memento Mori: reflexões sobre finitude e propósito',
     reflectionsCount: 20, startDay: 8, endDay: 27,
     isFreeAccess: false, part: 3,
+    image: '/images/diario-dezembro.webp',
   },
 ];
 
