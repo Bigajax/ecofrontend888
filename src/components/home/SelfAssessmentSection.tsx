@@ -27,6 +27,14 @@ const PROGRAMS: Program[] = [
     imagePosition: 'center center',
     isPremium: false,
   },
+  {
+    id: 'prog_diario',
+    label: 'Cultive a sabedoria diária',
+    title: 'Diário Estoico',
+    image: '/images/diario-estoico.webp',
+    imagePosition: 'center center',
+    isPremium: false,
+  },
 ];
 
 interface SelfAssessmentSectionProps {

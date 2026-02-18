@@ -10,8 +10,9 @@ import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
 import LearnExploreSection from '@/components/home/LearnExploreSection';
 import HeroCarousel from '@/components/home/HeroCarousel';
 import LiveReflectionSection from '@/components/home/LiveReflectionSection';
-import DrJoeMeditationCard from '@/components/home/DrJoeMeditationCard';
 import SelfAssessmentSection from '@/components/home/SelfAssessmentSection';
+import PromoSection from '@/components/home/PromoSection';
+import PromoStickyBanner from '@/components/home/PromoStickyBanner';
 import EcoAIRecommendationCard from '@/components/home/EcoAIRecommendationCard';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
@@ -281,19 +282,6 @@ export default function HomePage() {
         icon: '',
         isPremium: false,
       },
-      {
-        id: 'content_diario_estoico',
-        title: 'Diário Estoico',
-        description: 'Cultive a sabedoria diária através de reflexões estoicas. Uma prática que transforma seu mindset e fortalece sua resiliência emocional.',
-        category: 'stoicism',
-        image: 'url("/images/diario-estoico.webp")',
-        icon: '',
-        isPremium: false,
-        date: '19 novembro',
-        maxim: 'MÁXIMAS DE TRÊS HOMENS SÁBIOS',
-        fullText: 'Para qualquer desafio, deveríamos ter três pensamentos ao nosso dispor: "Conduzam Deus e Destino, Para aquela Meta fixada para mim há muito. Seguirei e não tropeçarei; mesmo que minha vontade seja fraca, eu me manterei firme."',
-        author: 'CLEANTES',
-      },
     ],
     [],
   );
@@ -302,7 +290,6 @@ export default function HomePage() {
     () => [
       { id: 'all', label: 'Nossas Escolhas' },
       { id: 'wellbeing', label: 'Bem-estar Mental' },
-      { id: 'stoicism', label: 'Estoicismo' },
     ],
     [],
   );
@@ -579,6 +566,8 @@ export default function HomePage() {
                   lastAccessedAt: new Date().toISOString(),
                 });
                 navigate('/app/riqueza-mental');
+              } else if (id === 'prog_diario') {
+                navigate('/app/diario-estoico');
               }
             }}
           />
@@ -593,18 +582,6 @@ export default function HomePage() {
           />
         </AnimatedSection>
 
-        {/* Dr. Joe Dispenza Meditation Card */}
-        <AnimatedSection animation="slide-up-fade" id="drjoe-meditation-section">
-          <DrJoeMeditationCard
-            onClick={() => {
-              // Navegar para a página dedicada do Dr. Joe Dispenza
-              navigate('/app/dr-joe-dispenza');
-              // Scroll para o topo após navegação
-              window.scrollTo(0, 0);
-            }}
-          />
-        </AnimatedSection>
-
         {/* Learn & Explore Section */}
         <AnimatedSection animation="slide-up-fade" id="learn-explore-section">
           <LearnExploreSection
@@ -614,6 +591,11 @@ export default function HomePage() {
             onCategoryChange={setSelectedCategory}
             onContentClick={handleContentClick}
           />
+        </AnimatedSection>
+
+        {/* Promo 50% OFF */}
+        <AnimatedSection animation="slide-up-fade" id="promo-section">
+          <PromoSection onUpgradeClick={() => requestUpgrade('home_promo_50off')} />
         </AnimatedSection>
 
         {/* Live Reflection Section */}
@@ -651,6 +633,9 @@ export default function HomePage() {
           onStartChat={handleStartChat}
         />
       )}
+
+      {/* Sticky promo banner — mobile only */}
+      <PromoStickyBanner onUpgradeClick={() => requestUpgrade('home_sticky_banner_50off')} />
 
       {/* Upgrade Modal */}
       <UpgradeModal
