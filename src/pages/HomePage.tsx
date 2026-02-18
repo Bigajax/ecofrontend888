@@ -11,6 +11,7 @@ import LearnExploreSection from '@/components/home/LearnExploreSection';
 import HeroCarousel from '@/components/home/HeroCarousel';
 import LiveReflectionSection from '@/components/home/LiveReflectionSection';
 import DrJoeMeditationCard from '@/components/home/DrJoeMeditationCard';
+import SelfAssessmentSection from '@/components/home/SelfAssessmentSection';
 import EcoAIRecommendationCard from '@/components/home/EcoAIRecommendationCard';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
@@ -153,31 +154,32 @@ export default function HomePage() {
       {
         id: 'rec_1',
         title: 'Inicie Sua Jornada',
-        description: 'Dê os primeiros passos na prática meditativa e descubra a paz interior',
-        duration: '5 meditações',
+        description: 'Dê os primeiros passos na prática meditativa',
+        duration: '8 min',
         image: 'url("/images/introducao-meditacao-hero.webp")',
         imagePosition: 'center center',
-        gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
         isPremium: false,
+        categoryType: 'programa' as const,
       },
       {
         id: 'rec_2',
         title: 'Acolhendo sua respiração',
-        description: 'Encontre presença e calma através da sua respiração',
+        description: 'Comece o seu dia',
         duration: '7 min',
         image: 'url("/images/acolhendo-respiracao.png")',
         imagePosition: 'center center',
         isPremium: false,
+        categoryType: 'meditacao' as const,
       },
       {
         id: 'rec_3',
-        title: 'Durma em Paz',
-        description: 'Liberte-se das preocupações e encontre o caminho para o sono profundo',
-        duration: '2 meditações',
-        image: 'url("/images/meditacoes-sono-hero.webp")',
-        imagePosition: 'center center',
-        gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
-        isPremium: false,
+        title: 'Meditação do Sono',
+        description: 'Relaxe profundamente para uma noite tranquila',
+        duration: '15 min',
+        image: 'url("/images/meditacao-sono-new.webp")',
+        imagePosition: 'center 32%',
+        isPremium: true,
+        categoryType: 'meditacao' as const,
       },
     ],
     [],
@@ -186,25 +188,7 @@ export default function HomePage() {
   // Meditações - Outras meditações (as do Dr. Joe estão na página dedicada)
   const energyBlessings = useMemo(
     () => [
-      {
-        id: 'blessing_1',
-        title: '5 Anéis da Disciplina',
-        description: 'Construa sua estrutura pessoal',
-        duration: '12 min',
-        image: 'url("/images/five-rings-visual.webp")',
-        imagePosition: 'center center',
-        isPremium: false,
-        category: 'Programas',
-      },
-      {
-        id: 'blessing_9',
-        title: 'Quem Pensa Enriquece',
-        description: 'Transforme seu mindset financeiro',
-        duration: '25 min',
-        image: 'url("/images/quem-pensa-enriquece.webp")',
-        isPremium: false,
-        category: 'Programas',
-      },
+      // Dr. Joe Dispenza — primeiro
       {
         id: 'blessing_4',
         title: 'Meditação do caleidoscópio e Mind Movie',
@@ -212,10 +196,43 @@ export default function HomePage() {
         duration: '22 min',
         image: 'url("/images/caleidoscopio-mind-movie.webp")',
         imagePosition: 'center center',
-        gradient: 'linear-gradient(to bottom, #B494D4 0%, #A07DC4 20%, #8D67B5 40%, #7A52A6 60%, #673E97 80%, #542B88 100%)',
         isPremium: true,
         category: 'Dr. Joe Dispenza',
       },
+      {
+        id: 'drjoe_blessing1',
+        title: 'Meditação Bênção dos centros de energia',
+        description: 'Equilibre e ative seus centros energéticos',
+        duration: '7 min',
+        audioUrl: '/audio/energy-blessings-meditation.mp3',
+        image: 'url("/images/meditacao-bencao-energia.webp")',
+        imagePosition: 'center 32%',
+        isPremium: false,
+        category: 'Dr. Joe Dispenza',
+      },
+      {
+        id: 'drjoe_blessing2',
+        title: 'Meditação para sintonizar novos potenciais',
+        description: 'Alinhe-se com novas possibilidades',
+        duration: '7 min',
+        audioUrl: '/audio/sintonizar-novos-potenciais.mp3',
+        image: 'url("/images/meditacao-novos-potenciais.webp")',
+        imagePosition: 'center 32%',
+        isPremium: false,
+        category: 'Dr. Joe Dispenza',
+      },
+      {
+        id: 'drjoe_blessing3',
+        title: 'Recondicionar o corpo a uma nova mente',
+        description: 'Transforme padrões mentais e físicos',
+        duration: '7 min',
+        audioUrl: '/audio/recondicionar-corpo-nova-mente.mp3',
+        image: 'url("/images/meditacao-recondicionar.webp")',
+        imagePosition: 'center 32%',
+        isPremium: false,
+        category: 'Dr. Joe Dispenza',
+      },
+      // Sono
       {
         id: 'blessing_8',
         title: 'Meditação do Sono',
@@ -224,10 +241,10 @@ export default function HomePage() {
         audioUrl: '/audio/meditacao-sono.mp4',
         image: 'url("/images/meditacao-sono-new.webp")',
         imagePosition: 'center 32%',
-        gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
         isPremium: false,
         category: 'Sono',
       },
+      // Respiração
       {
         id: 'blessing_10',
         title: 'Acolhendo sua respiração',
@@ -236,7 +253,6 @@ export default function HomePage() {
         audioUrl: '/audio/acolhendo-respiracao.mp3',
         image: 'url("/images/acolhendo-respiracao.png")',
         imagePosition: 'center center',
-        gradient: 'linear-gradient(to bottom, #7BBFB5 0%, #5FA89E 20%, #459188 40%, #2E7A70 60%, #1A6358 80%, #084D42 100%)',
         isPremium: false,
         category: 'Respiração',
       },
@@ -440,22 +456,21 @@ export default function HomePage() {
       return;
     }
 
-    // Encontrar a meditação clicada
+    // Encontrar a meditação clicada (inclui novos IDs Dr. Joe)
     const blessing = energyBlessings.find(b => b.id === blessingId);
 
     if (blessing) {
-      // Navegar para o player passando os dados da meditação
       navigate('/app/meditation-player', {
         state: {
           meditation: {
             title: blessing.title,
             duration: blessing.duration,
-            audioUrl: blessing.audioUrl || '/audio/energy-blessings-meditation.mp3',
+            audioUrl: (blessing as { audioUrl?: string }).audioUrl || '/audio/energy-blessings-meditation.mp3',
             imageUrl: blessing.image.replace('url("', '').replace('")', ''),
             backgroundMusic: 'Cristais',
-            gradient: blessing.gradient
-          }
-        }
+            gradient: (blessing as { gradient?: string }).gradient,
+          },
+        },
       });
     }
   };
@@ -532,6 +547,40 @@ export default function HomePage() {
           <EnergyBlessingsSection
             blessings={energyBlessings}
             onBlessingClick={handleEnergyBlessingClick}
+          />
+        </AnimatedSection>
+
+        {/* Programas Section */}
+        <AnimatedSection animation="slide-up-fade" id="self-assessment-section">
+          <SelfAssessmentSection
+            onProgramClick={(id) => {
+              sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
+              if (id === 'prog_rings') {
+                startProgram({
+                  id: 'blessing_1',
+                  title: '5 Anéis da Disciplina',
+                  description: 'Construa sua estrutura pessoal',
+                  currentLesson: 'Aula 1: Introdução aos 5 Anéis',
+                  progress: 0,
+                  duration: '12 min',
+                  startedAt: new Date().toISOString(),
+                  lastAccessedAt: new Date().toISOString(),
+                });
+                navigate('/app/rings');
+              } else if (id === 'prog_riqueza') {
+                startProgram({
+                  id: 'rec_2',
+                  title: 'Quem Pensa Enriquece',
+                  description: 'Transforme seu mindset financeiro',
+                  currentLesson: 'Passo 1: Onde você está',
+                  progress: 0,
+                  duration: '25 min',
+                  startedAt: new Date().toISOString(),
+                  lastAccessedAt: new Date().toISOString(),
+                });
+                navigate('/app/riqueza-mental');
+              }
+            }}
           />
         </AnimatedSection>
 
