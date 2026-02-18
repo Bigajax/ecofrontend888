@@ -43,9 +43,6 @@ const ChatPage = lazy(() => import("@/pages/ChatPage"));
 const CreateProfilePage = lazy(() => import("@/pages/CreateProfilePage"));
 const WelcomePage = lazy(() => import("@/pages/WelcomePage"));
 const VoicePage = lazy(() => import("@/pages/VoicePage"));
-const UpgradeModalTest = lazy(() => import("@/pages/UpgradeModalTest"));
-const VoiceLimitsTest = lazy(() => import("@/pages/VoiceLimitsTest"));
-
 const MemoryLayout = lazy(() => import("@/pages/memory/MemoryLayout"));
 const MemoriesSection = lazy(() => import("@/pages/memory/MemoriesSection"));
 const ProfileSection = lazy(() => import("@/pages/memory/ProfileSection"));
@@ -74,7 +71,6 @@ const SonsPage = lazy(() => import("@/pages/SonsPage"));
 const SoundPlayerPage = lazy(() => import("@/pages/SoundPlayerPage"));
 const ConfiguracoesPage = lazy(() => import("@/pages/ConfiguracoesPage"));
 const SubscriptionCallbackPage = lazy(() => import("@/pages/SubscriptionCallbackPage"));
-const SubscriptionTestPage = lazy(() => import("@/pages/SubscriptionTestPage"));
 const FluxoAssinaturaDemo = lazy(() => import("@/pages/FluxoAssinaturaDemo"));
 const GuestMeditationPage = lazy(() => import("@/pages/GuestMeditationPage"));
 const MemoryPageGuestTeaser = lazy(() => import("@/pages/memory/MemoryPageGuestTeaser"));
@@ -141,8 +137,6 @@ function AppRoutes() {
         <Route path="meditacao/sintonize-novos-potenciais" element={renderWithSuspense(<GuestMeditationPage />)} />
         <Route path="guest/meditation-player" element={renderWithSuspense(<MeditationPlayerPage />)} />
         <Route path="memory-preview" element={renderWithSuspense(<MemoryPageGuestTeaser />)} />
-        <Route path="test-upgrade-modal" element={renderWithSuspense(<UpgradeModalTest />)} />
-        <Route path="test-voice-limits" element={renderWithSuspense(<VoiceLimitsTest />)} />
       </Route>
       <Route
         path="/app/*"
@@ -276,16 +270,6 @@ function AppRoutes() {
         }
       >
         <Route index element={renderWithSuspense(<SubscriptionCallbackPage />)} />
-      </Route>
-      <Route
-        path="/app/subscription/test"
-        element={
-          <RequireAuth>
-            <AppProtectedShellNoLayout />
-          </RequireAuth>
-        }
-      >
-        <Route index element={renderWithSuspense(<SubscriptionTestPage />)} />
       </Route>
       <Route
         path="/app/subscription/demo"
