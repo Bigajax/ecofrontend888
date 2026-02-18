@@ -158,6 +158,97 @@ export function usePremiumContent() {
 }
 
 /**
+ * Tier type - nível de acesso do usuário
+ */
+export type SubscriptionTier = 'free' | 'essentials' | 'premium' | 'vip';
+
+/**
+ * Hook para obter o tier atual do usuário
+ *
+ * @returns Tier atual ('free' | 'essentials' | 'premium' | 'vip')
+ */
+export function useSubscriptionTier(): SubscriptionTier {
+  const auth = useAuth();
+  const subscription = (auth as any).subscription;
+  const isPremiumUser = (auth as any).isPremiumUser ?? false;
+  const isTrialActive = (auth as any).isTrialActive ?? false;
+  const user = auth.user;
+
+  // VIP CHECK
+  const userEmail = user?.email?.toLowerCase();
+  const isVip = userEmail ? VIP_EMAILS.includes(userEmail) : false;
+  if (isVip) return 'vip';
+
+  // Trial ativo = premium temporário
+  if (isTrialActive) return 'premium';
+
+  // Premium pago
+  if (isPremiumUser) {
+    const plan = subscription?.plan;
+    if (plan === 'premium_monthly' || plan === 'premium_annual') {
+      return 'premium';
+    }
+    if (plan === 'essentials_monthly') {
+      return 'essentials';
+    }
+  }
+
+  // Autenticado mas sem subscription = free
+  return 'free';
+}
+
+/**
+ * Features disponíveis por tier
+ */
+const TIER_FEATURES = {
+  free: {
+    chat_messages_daily: 30,
+    meditation_advanced: false,
+    memory_advanced: false,
+    rings_daily: false,
+    diario_full_archive: false,
+    voice_messages_daily: 5,
+  },
+  essentials: {
+    chat_messages_daily: 100,
+    meditation_advanced: false, // Só meditações básicas até 15min
+    memory_advanced: false, // Apenas Standard (90 dias)
+    rings_daily: true, // Diário
+    diario_full_archive: false, // Últimos 30 dias
+    voice_messages_daily: 20,
+  },
+  premium: {
+    chat_messages_daily: Infinity,
+    meditation_advanced: true,
+    memory_advanced: true,
+    rings_daily: true,
+    diario_full_archive: true,
+    voice_messages_daily: Infinity,
+  },
+  vip: {
+    chat_messages_daily: Infinity,
+    meditation_advanced: true,
+    memory_advanced: true,
+    rings_daily: true,
+    diario_full_archive: true,
+    voice_messages_daily: Infinity,
+  },
+} as const;
+
+/**
+ * Hook para verificar acesso a uma feature específica
+ *
+ * @param feature - Nome da feature
+ * @returns Valor do limite/acesso da feature no tier atual
+ */
+export function useFeatureAccess<K extends keyof typeof TIER_FEATURES['free']>(
+  feature: K
+): typeof TIER_FEATURES['free'][K] {
+  const tier = useSubscriptionTier();
+  return TIER_FEATURES[tier][feature];
+}
+
+/**
  * Hook simples para verificar se usuário é premium
  * (sem lógica de modal)
  *
@@ -168,15 +259,8 @@ export function usePremiumContent() {
  * ```
  */
 export function useIsPremium(): boolean {
-  const auth = useAuth();
-  const isPremiumUser = (auth as any).isPremiumUser ?? false;
-  const isTrialActive = (auth as any).isTrialActive ?? false;
-
-  // ⭐ VIP CHECK: Verificar se o email está na lista VIP
-  const userEmail = auth.user?.email?.toLowerCase();
-  const isVip = userEmail ? VIP_EMAILS.includes(userEmail) : false;
-
-  return isPremiumUser || isTrialActive || isVip;
+  const tier = useSubscriptionTier();
+  return tier === 'premium' || tier === 'vip';
 }
 
 /**
