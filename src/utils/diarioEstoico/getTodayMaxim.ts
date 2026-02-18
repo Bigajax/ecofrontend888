@@ -379,6 +379,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Serei feliz quando me formar, dizemos a nós mesmos. Serei feliz quando conseguir ser promovido, quando a dieta fizer efeito, quando eu tiver o dinheiro que meus pais nunca tiveram. Felicidade condicional é o nome que os psicólogos dão a esse tipo de pensamento. Como o horizonte, você pode andar quilômetros e mais quilômetros e nunca a alcançar. Nem mesmo chegará mais perto.\n\nAntecipar um acontecimento futuro por ansiedade, imaginar de maneira apaixonada algo que deseja, ansiar por alguma situação feliz — por mais prazerosas que essas atividades possam parecer, destroem sua chance de encontrar a felicidade aqui e agora. Localize esse anseio por mais, melhor, algum dia e veja-o tal como é: o inimigo do seu contentamento. É preciso escolher entre esse anseio e sua felicidade. Como diz Epicteto, os dois não são compatíveis.',
     background: getBackgroundForDay(17),
   },
+  {
+    date: '18 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 18,
+    title: 'PREPARE-SE PARA A TEMPESTADE',
+    text: 'Este é o verdadeiro atleta: a pessoa que treina rigorosamente contra as falsas impressões. Permanece firme, tu que sofres, não sejas sequestrado por tuas impressões! A luta é grande, a tarefa é divina: para ganhar mestria, liberdade, felicidade e tranquilidade.',
+    author: 'Epicteto',
+    source: 'Discursos, 2.18.27-28',
+    comment: 'Epicteto também usou a metáfora de uma tempestade, dizendo que nossas impressões não são diferentes das condições climáticas extremas que podem nos apanhar em cheio. Quando ficamos nervosos ou apaixonados por uma questão, podemos compreender isso.\n\nMas pensemos no papel das condições meteorológicas nos tempos modernos. Hoje, temos meteorologistas e especialistas que preveem padrões de tempestades de maneira muito precisa. Hoje, só estamos desprotegidos contra um furacão se nos recusarmos a nos preparar ou a dar ouvidos aos alertas.\n\nSe não temos um plano, se nunca aprendemos como instalar as janelas protetoras, ficaremos à mercê desses elementos externos e internos. Ainda somos seres humanos insignificantes comparados com ventos de 160 quilômetros por hora, mas temos a vantagem de ser capazes de nos preparar — de poder enfrentá-los de uma nova maneira.',
+    background: getBackgroundForDay(18),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
