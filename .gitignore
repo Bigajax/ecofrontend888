@@ -12,3 +12,4 @@ stats.html
 /public/videos/*.mov
 /public/videos/*.webm
 /public/videos/*.avi
+.vercel
