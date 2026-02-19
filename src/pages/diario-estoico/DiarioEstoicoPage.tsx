@@ -80,7 +80,7 @@ const MONTH_THEMES: MonthMetadata[] = [
     theme: 'PAIXÕES E EMOÇÕES',
     themeDescription: 'Domine suas paixões, entenda suas emoções',
     reflectionsCount: 28, startDay: 1, endDay: 28,
-    isFreeAccess: false, part: 1,
+    isFreeAccess: true, part: 1,
     image: '/images/diario-fevereiro.webp',
   },
   {
@@ -171,7 +171,7 @@ const MONTH_THEMES: MonthMetadata[] = [
  * Função para obter reflexões disponíveis por tier
  * - Premium/VIP: Arquivo completo (todos os meses)
  * - Essentials: Todos os meses
- * - Free: Apenas JANEIRO (CLAREZA)
+ * - Free: Meses marcados com isFreeAccess (JANEIRO + FEVEREIRO)
  */
 const getAvailableMaxims = (tier: 'free' | 'essentials' | 'premium' | 'vip'): DailyMaxim[] => {
   if (tier === 'premium' || tier === 'vip' || tier === 'essentials') {
@@ -197,19 +197,28 @@ const getAvailableMaxims = (tier: 'free' | 'essentials' | 'premium' | 'vip'): Da
       return a.dayNumber - b.dayNumber;
     });
   } else {
-    // FREE: Apenas JANEIRO (CLAREZA) completo
-    const freeMonth = MONTH_THEMES.find(m => m.isFreeAccess);
+    // FREE: Todos os meses marcados com isFreeAccess
+    const freeMonths = MONTH_THEMES.filter(m => m.isFreeAccess);
 
-    if (!freeMonth) return [];
+    if (freeMonths.length === 0) return [];
 
-    const freeReflections = ALL_DAILY_MAXIMS.filter(
-      maxim =>
-        maxim.month === freeMonth.monthName &&
-        maxim.dayNumber >= freeMonth.startDay &&
-        maxim.dayNumber <= freeMonth.endDay
+    const monthOrder: Record<string, number> = {};
+    MONTH_THEMES.forEach((m, i) => { monthOrder[m.monthName] = i; });
+
+    const freeReflections = ALL_DAILY_MAXIMS.filter(maxim =>
+      freeMonths.some(
+        fm =>
+          fm.monthName === maxim.month &&
+          maxim.dayNumber >= fm.startDay &&
+          maxim.dayNumber <= fm.endDay
+      )
     );
 
-    return freeReflections.sort((a, b) => a.dayNumber - b.dayNumber);
+    return freeReflections.sort((a, b) => {
+      const monthDiff = (monthOrder[a.month] ?? 999) - (monthOrder[b.month] ?? 999);
+      if (monthDiff !== 0) return monthDiff;
+      return a.dayNumber - b.dayNumber;
+    });
   }
 };
 

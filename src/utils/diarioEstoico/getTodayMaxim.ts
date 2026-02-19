@@ -390,6 +390,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Epicteto também usou a metáfora de uma tempestade, dizendo que nossas impressões não são diferentes das condições climáticas extremas que podem nos apanhar em cheio. Quando ficamos nervosos ou apaixonados por uma questão, podemos compreender isso.\n\nMas pensemos no papel das condições meteorológicas nos tempos modernos. Hoje, temos meteorologistas e especialistas que preveem padrões de tempestades de maneira muito precisa. Hoje, só estamos desprotegidos contra um furacão se nos recusarmos a nos preparar ou a dar ouvidos aos alertas.\n\nSe não temos um plano, se nunca aprendemos como instalar as janelas protetoras, ficaremos à mercê desses elementos externos e internos. Ainda somos seres humanos insignificantes comparados com ventos de 160 quilômetros por hora, mas temos a vantagem de ser capazes de nos preparar — de poder enfrentá-los de uma nova maneira.',
     background: getBackgroundForDay(18),
   },
+  {
+    date: '19 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 19,
+    title: 'O BANQUETE DA VIDA',
+    text: 'Lembra-te de te conduzires na vida como se num banquete. Quando alguma coisa que está sendo servida chega a ti, estende a mão e pega uma porção moderada. Ela não te é oferecida? Não a detenhas. Ainda não chegou? Não ardas de desejo por ela, mas espera que chegue à tua frente. Age dessa maneira com os filhos, com um cônjuge, em relação a status, à riqueza — um dia isso te fará merecedor de um banquete com os deuses.',
+    author: 'Epicteto',
+    source: 'Encheiridion, 15',
+    comment: 'A próxima vez que você vir alguma coisa que quer, lembre-se da metáfora de Epicteto do banquete da vida. Quando perceber que está afobado, disposto a fazer de tudo para obtê-la — o equivalente de estender o braço sobre a mesa e arrancar um prato das mãos de alguém —, apenas se lembre: isso é falta de educação e é desnecessário. Depois espere pacientemente pela sua vez.\n\nEsta metáfora permite outras interpretações também. Por exemplo, poderíamos refletir que temos sorte de ter sido convidados para um banquete tão maravilhoso (gratidão). Ou que deveríamos aproveitar o nosso tempo e saborear o gosto do que está sendo oferecido (gozar o momento presente), mas que nos empanturrar de comida e bebida até passar mal não é bom para ninguém, menos ainda para a nossa saúde (afinal, gula é um pecado capital). Que, no fim da refeição, é grosseiro não ajudar o anfitrião a tirar a mesa e lavar os pratos (egoísmo). E, finalmente, que da próxima vez caberá a nós receber e banquetear outras pessoas, assim como fomos banqueteados (caridade).\n\nBom apetite!',
+    background: getBackgroundForDay(19),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
