@@ -645,7 +645,7 @@ export default function DiarioEstoicoPage() {
     if (!todayMaxim) return;
     const timer = setTimeout(() => {
       const el = cardRefs.current.get(todayMaxim.dayNumber);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }, 600); // Aguarda animações de entrada
     return () => clearTimeout(timer);
   }, [todayMaxim]);
@@ -887,78 +887,96 @@ export default function DiarioEstoicoPage() {
                   <p className="text-xs text-eco-muted mt-1">{month.themeDescription}</p>
                 </div>
 
-                {/* Lista de reflexões */}
-                <div className="space-y-4">
-                  {monthMaxims.length === 0 && (
-                    <p className="text-center text-sm text-eco-muted py-8">
-                      Nenhuma reflexão disponível ainda.
-                    </p>
-                  )}
-                  {monthMaxims.map((maxim) => {
-                    const isToday = todayMaxim?.dayNumber === maxim.dayNumber && todayMaxim?.month === maxim.month;
-                    const isExpanded = expandedCards.has(maxim.dayNumber);
-                    const isGuest = isGuestMode && !user && !isVipUser;
+                {/* Lista de reflexões — carrossel horizontal */}
+                <div
+                  className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  style={{ touchAction: 'pan-x pinch-zoom', WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain' } as React.CSSProperties}
+                >
+                    {monthMaxims.length === 0 && (
+                      <p className="text-center text-sm text-eco-muted py-8 w-full">
+                        Nenhuma reflexão disponível ainda.
+                      </p>
+                    )}
+                    {monthMaxims.map((maxim) => {
+                      const isToday = todayMaxim?.dayNumber === maxim.dayNumber && todayMaxim?.month === maxim.month;
+                      const isExpanded = expandedCards.has(maxim.dayNumber);
+                      const isGuest = isGuestMode && !user && !isVipUser;
+                      const isLongText = maxim.text.length > 130;
 
-                    return (
-                      <AnimatedSection key={maxim.dayNumber} animation="slide-up-fade">
+                      return (
                         <div
+                          key={maxim.dayNumber}
                           ref={(el) => { if (el) cardRefs.current.set(maxim.dayNumber, el); }}
-                          data-diario-card
-                          data-day-number={maxim.dayNumber}
-                          className={`relative w-full rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 ${
-                            isToday
-                              ? 'ring-2 ring-eco-baby shadow-[0_6px_28px_rgba(110,200,255,0.30)]'
-                              : 'shadow-eco hover:shadow-eco-glow'
-                          }`}
-                          style={{
-                            backgroundImage: maxim.background,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                          }}
-                          onClick={() => toggleExpanded(maxim.dayNumber)}
+                          className="snap-center flex-shrink-0 w-[calc(100%-64px)] md:w-[calc(100%-180px)]"
                         >
-                          <div className="absolute inset-0 bg-black/40 pointer-events-none" />
-                          <div className={`relative flex flex-col justify-between p-5 ${isToday ? 'min-h-[220px]' : 'min-h-[160px]'}`}>
-                            <div className="flex items-start justify-between gap-2">
-                              <span className={`inline-flex rounded-full px-3 py-1.5 ${isToday ? 'bg-eco-baby' : 'bg-black/40 backdrop-blur-sm'}`}>
-                                <span className="text-[11px] font-semibold text-white tracking-wide">
-                                  {isToday ? `HOJE • ${maxim.date}` : maxim.date}
+                          {/* Imagem + citação */}
+                          <div
+                            data-diario-card
+                            data-day-number={maxim.dayNumber}
+                            className={`relative rounded-2xl overflow-hidden cursor-pointer transition-shadow duration-300 ${
+                              isToday
+                                ? 'ring-2 ring-eco-baby shadow-[0_6px_28px_rgba(110,200,255,0.30)]'
+                                : 'shadow-eco hover:shadow-eco-glow'
+                            } ${isExpanded ? 'rounded-b-none' : ''}`}
+                            style={{
+                              backgroundImage: maxim.background,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center',
+                              minHeight: 'clamp(300px, 48vh, 480px)',
+                            }}
+                            onClick={() => toggleExpanded(maxim.dayNumber)}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/55 to-black/75 pointer-events-none" />
+
+                            <div className="relative h-full flex flex-col justify-between p-5" style={{ minHeight: 'inherit' }}>
+                              {/* Topo: badge data */}
+                              <div className="flex items-start justify-between gap-2">
+                                <span className={`inline-flex rounded-full px-3 py-1.5 ${isToday ? 'bg-eco-baby' : 'bg-black/40 backdrop-blur-sm'}`}>
+                                  <span className="text-[11px] font-semibold text-white tracking-wide">
+                                    {isToday ? `HOJE • ${maxim.date}` : maxim.date}
+                                  </span>
                                 </span>
-                              </span>
-                              {isToday && (
-                                <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/30">
-                                  ✦ Reflexão do dia
-                                </span>
-                              )}
-                            </div>
-                            <div>
-                              <p className={`font-display font-normal leading-snug text-white drop-shadow-lg ${isToday ? 'text-lg sm:text-xl' : 'text-base'}`}>
-                                {maxim.title}
-                              </p>
-                              {isToday && (
+                                {isToday && (
+                                  <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/30">
+                                    ✦ Reflexão do dia
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Centro: título */}
+                              <div className="flex-1 flex items-center justify-center px-1 py-5">
+                                <p
+                                  className="font-display text-white text-center text-xl sm:text-2xl leading-snug drop-shadow-lg tracking-wide"
+                                  style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5)' }}
+                                >
+                                  {maxim.title}
+                                </p>
+                              </div>
+
+                              {/* Rodapé: botão */}
+                              <div className="flex items-end justify-end">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); toggleExpanded(maxim.dayNumber); }}
-                                  className="mt-3 inline-flex items-center gap-2 text-[12px] font-medium rounded-full px-4 py-2 text-white bg-gray-600/60 hover:bg-gray-600/80 backdrop-blur-sm transition-all"
+                                  className="flex-shrink-0 inline-flex items-center gap-1.5 text-[11px] font-medium rounded-full px-3.5 py-1.5 text-white bg-black/50 hover:bg-black/70 backdrop-blur-sm transition-all"
                                 >
-                                  <MoreHorizontal size={14} />
+                                  <MoreHorizontal size={12} />
                                   {isExpanded ? 'Fechar' : 'Leia mais'}
                                 </button>
-                              )}
+                              </div>
                             </div>
                           </div>
 
+                          {/* Seção expandida */}
                           {isExpanded && (
-                            <div className="relative glass-shell p-5 border-t border-eco-line/30">
+                            <div className="glass-shell rounded-b-2xl p-5 border-t border-eco-line/30">
                               <div className="space-y-3">
                                 <p className="font-display text-[14px] leading-relaxed text-eco-text italic">
                                   "{maxim.text}"
                                 </p>
                                 <p className="font-primary text-[12px] font-medium text-eco-muted">
-                                  — {maxim.author}
-                                  {maxim.source && `, ${maxim.source}`}
+                                  — {maxim.author}{maxim.source && `, ${maxim.source}`}
                                 </p>
                                 {renderComment(maxim, 'text-[13px]')}
-
                                 {!isGuest && (
                                   <div className="space-y-2 pt-1">
                                     {!readDays.has(maxim.dayNumber) && (
@@ -1002,10 +1020,9 @@ export default function DiarioEstoicoPage() {
                             </div>
                           )}
                         </div>
-                      </AnimatedSection>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
               </div>
             </div>
           );
