@@ -23,7 +23,7 @@ ALTER TABLE usuarios
   ADD COLUMN provider_payment_id VARCHAR(255) NULL,      -- Pagamento pontual anual (payment)
 
   -- Subscription status
-  ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'active',
+  ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'pending',
   ADD COLUMN plan_type VARCHAR(50) NULL,                 -- 'monthly' ou 'annual'
 
   -- Access control dates
@@ -105,6 +105,10 @@ CREATE TABLE payments (
   amount DECIMAL(10,2),
   plan VARCHAR(50),
 
+  -- Payment method info
+  payment_method VARCHAR(100),
+  receipt_url TEXT,
+
   -- Raw payload from provider (JSON)
   raw_payload JSONB,
 
@@ -127,12 +131,56 @@ CREATE INDEX idx_payments_status
   ON payments(status);
 
 -- ============================================================================
--- 5. ROW LEVEL SECURITY (RLS) - Security Policies
+-- 5. CREATE TABLE webhook_logs - Idempotency & Debug Log
+-- ============================================================================
+
+CREATE TABLE webhook_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  -- Source of webhook (e.g. 'mercadopago')
+  source VARCHAR(50) NOT NULL,
+
+  -- Event type from provider (e.g. 'payment', 'subscription_preapproval')
+  event_type VARCHAR(100),
+
+  -- Provider event ID (for idempotency dedup)
+  event_id VARCHAR(255) NOT NULL,
+
+  -- Full webhook payload (JSON)
+  payload JSONB,
+
+  -- Processing status
+  processed BOOLEAN DEFAULT FALSE,
+  processed_at TIMESTAMP NULL,
+
+  -- Error if processing failed
+  error_message TEXT,
+
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Unique index for idempotency: one record per (source, event_id)
+CREATE UNIQUE INDEX idx_webhook_logs_source_event_id
+  ON webhook_logs(source, event_id);
+
+-- Index for lookup by source
+CREATE INDEX idx_webhook_logs_source
+  ON webhook_logs(source);
+
+-- Index for unprocessed webhooks (monitoring/retry)
+CREATE INDEX idx_webhook_logs_processed
+  ON webhook_logs(processed)
+  WHERE processed = FALSE;
+
+-- ============================================================================
+-- 6. ROW LEVEL SECURITY (RLS) - Security Policies
 -- ============================================================================
 
 -- Enable RLS on new tables
 ALTER TABLE subscription_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+-- webhook_logs is backend-only, no RLS needed (service_role bypasses RLS anyway)
 
 -- Policy: Users can only view their own subscription events
 CREATE POLICY subscription_events_user_policy
@@ -169,14 +217,14 @@ ORDER BY column_name;
 SELECT table_name
 FROM information_schema.tables
 WHERE table_schema = 'public'
-  AND table_name IN ('subscription_events', 'payments')
+  AND table_name IN ('subscription_events', 'payments', 'webhook_logs')
 ORDER BY table_name;
 
 -- Verify indexes were created
 SELECT indexname, tablename
 FROM pg_indexes
 WHERE schemaname = 'public'
-  AND tablename IN ('usuarios', 'subscription_events', 'payments')
+  AND tablename IN ('usuarios', 'subscription_events', 'payments', 'webhook_logs')
 ORDER BY tablename, indexname;
 
 -- ============================================================================
@@ -200,6 +248,7 @@ ORDER BY tablename, indexname;
 -- CAUTION: Only run this if you need to undo the migration
 -- This will DROP tables and REMOVE columns - data will be lost!
 
+-- DROP TABLE IF EXISTS webhook_logs CASCADE;
 -- DROP TABLE IF EXISTS payments CASCADE;
 -- DROP TABLE IF EXISTS subscription_events CASCADE;
 
