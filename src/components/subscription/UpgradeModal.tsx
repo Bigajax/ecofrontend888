@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createSubscription } from '../../api/subscription';
 import mixpanel from '../../lib/mixpanel';
@@ -14,6 +14,7 @@ import {
 } from '../../lib/mixpanelConversionEvents';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePremiumContent } from '../../hooks/usePremiumContent';
+import { UPGRADE_CONTEXT_COPY, resolveUpgradeSource } from '../../constants/upgradeContextCopy';
 
 interface UpgradeModalProps {
   open: boolean;
@@ -22,15 +23,6 @@ interface UpgradeModalProps {
 }
 
 type ModalState = 'idle' | 'loading' | 'error';
-
-const FEATURES = [
-  { emoji: '💬', label: 'Conversas ilimitadas com ECO' },
-  { emoji: '🧘', label: 'Todas as meditações premium' },
-  { emoji: '🎯', label: 'Five Rings diário completo' },
-  { emoji: '📖', label: 'Diário Estoico — arquivo completo' },
-  { emoji: '🧠', label: 'Memory Advanced + AI insights' },
-  { emoji: '🔄', label: 'Cancelamento em 1 clique' },
-];
 
 const PROGRAM_EXAMPLES = [
   { image: '/images/meditacao-caleidoscopio.webp', title: 'Caleidoscópio Mind Movie' },
@@ -70,12 +62,15 @@ function Radio({ selected }: { selected: boolean }) {
   );
 }
 
-export default function UpgradeModal({ open, onClose, source = 'unknown' }: UpgradeModalProps) {
+export default function UpgradeModal({ open, onClose, source = 'generic' }: UpgradeModalProps) {
   const { user } = useAuth();
   const { isTrialActive, trialDaysRemaining } = usePremiumContent();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
   const [state, setState] = useState<ModalState>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Conteúdo contextual baseado em source
+  const content = UPGRADE_CONTEXT_COPY[resolveUpgradeSource(source)];
 
   useEffect(() => {
     if (open) {
@@ -153,7 +148,7 @@ export default function UpgradeModal({ open, onClose, source = 'unknown' }: Upgr
   const ctaLabel =
     isTrialActive && trialDaysRemaining <= 2
       ? 'MANTER ACESSO PREMIUM'
-      : 'GARANTIR 50% AGORA';
+      : content.cta;
 
   const disclaimer =
     selectedPlan === 'annual'
@@ -201,10 +196,10 @@ export default function UpgradeModal({ open, onClose, source = 'unknown' }: Upgr
                 {/* Headline */}
                 <div className="text-center mb-5 sm:mb-7">
                   <h2 className="text-2xl sm:text-[1.65rem] font-bold text-white leading-tight mb-2 sm:mb-3">
-                    O seu desconto de 50%<br />está pronto
+                    {content.title}
                   </h2>
                   <p className="text-sm text-white/55 leading-relaxed max-w-[280px] mx-auto">
-                    Você já iniciou sua jornada na Ecotopia. Garanta agora o acesso completo com condição especial.
+                    {content.subtitle}
                   </p>
                 </div>
 
@@ -288,12 +283,12 @@ export default function UpgradeModal({ open, onClose, source = 'unknown' }: Upgr
                 <div className="mb-5 sm:mb-8">
                   <h3 className="text-base sm:text-lg font-bold text-white mb-4">O que está incluído?</h3>
                   <div className="space-y-3 sm:space-y-4">
-                    {FEATURES.map((feat) => (
-                      <div key={feat.label} className="flex items-center gap-3 sm:gap-4">
-                        <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 flex items-center justify-center text-lg sm:text-[22px]">
-                          {feat.emoji}
+                    {content.bullets.map((bullet) => (
+                      <div key={bullet} className="flex items-center gap-3 sm:gap-4">
+                        <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-[#33B5F0]" />
                         </div>
-                        <p className="text-[13px] sm:text-[14px] text-white/75 leading-snug">{feat.label}</p>
+                        <p className="text-[13px] sm:text-[14px] text-white/75 leading-snug">{bullet}</p>
                       </div>
                     ))}
                   </div>

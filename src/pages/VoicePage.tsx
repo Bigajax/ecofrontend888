@@ -8,7 +8,8 @@ import { supabase } from "../lib/supabaseClient";
 import EcoBubbleOneEye from "../components/EcoBubbleOneEye";
 import { useGuestExperience } from "../contexts/GuestExperienceContext";
 import { useVoiceInteractionLimits } from "../hooks/useVoiceInteractionLimits";
-import { usePremiumContent } from "../hooks/usePremiumContent";
+import { usePremiumContent, useSubscriptionTier } from "../hooks/usePremiumContent";
+import { canAccess } from "../constants/meditationTiers";
 import UpgradeModal from "../components/subscription/UpgradeModal";
 
 /** Mude para false quando quiser liberar a gravação */
@@ -18,7 +19,8 @@ const VoicePage: React.FC = () => {
   const { userName, userId, user } = useAuth();
   const { trackInteraction } = useGuestExperience();
   const voiceLimits = useVoiceInteractionLimits();
-  const { showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
+  const tier = useSubscriptionTier();
+  const { requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [ecoAudioURL, setEcoAudioURL] = useState<string | null>(null);
@@ -168,6 +170,14 @@ const VoicePage: React.FC = () => {
     else startRecording();
   };
 
+  // FREE TIER: bloquear completamente — mostra upgrade modal ao entrar
+  useEffect(() => {
+    if (user && !canAccess('voice', tier)) {
+      requestUpgrade('voice_premium');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, tier]);
+
   useEffect(() => {
     return () => {
       if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
@@ -303,7 +313,7 @@ const VoicePage: React.FC = () => {
       <UpgradeModal
         open={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        source="voice_page_limit"
+        source="voice_premium"
       />
     </motion.div>
   );

@@ -49,6 +49,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     imagePosition: 'center 32%',
     gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #3D6BB8 20%, #3358A3 40%, #2A478E 60%, #213779 80%, #182864 100%)',
     completed: false,
+    isPremium: true,
   },
   {
     id: 'blessing_3',
@@ -298,8 +299,12 @@ export default function DrJoeDispenzaPage() {
                       <h3 className="text-sm font-semibold text-[var(--eco-text)] sm:text-base">
                         {meditation.title}
                       </h3>
-                      {meditation.isPremium && (
+                      {meditation.isPremium ? (
                         <Lock className="h-3.5 w-3.5 text-[var(--eco-muted)] sm:h-4 sm:w-4" />
+                      ) : meditation.id === 'blessing_1' && (
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                          Grátis
+                        </span>
                       )}
                     </div>
                     <p className="mt-0.5 text-xs text-[var(--eco-muted)] sm:mt-1 sm:text-sm">

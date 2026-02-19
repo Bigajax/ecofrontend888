@@ -4,7 +4,8 @@ import { ArrowLeft } from 'lucide-react';
 import { useRings } from '@/contexts/RingsContext';
 import { useProgram } from '@/contexts/ProgramContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsPremium, useSubscriptionTier } from '@/hooks/usePremiumContent';
+import { useSubscriptionTier, usePremiumContent } from '@/hooks/usePremiumContent';
+import { canAccess } from '@/constants/meditationTiers';
 import { useGuestExperience } from '@/contexts/GuestExperienceContext';
 import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestConversionTriggers';
 import mixpanel from '@/lib/mixpanel';
@@ -13,7 +14,7 @@ import RitualStep from '@/components/rings/RitualStep';
 import RitualCompletion from '@/components/rings/RitualCompletion';
 import RingIcon from '@/components/rings/RingIcon';
 import RitualGuestGate from '@/components/rings/RitualGuestGate';
-import LoginGateModal from '@/components/LoginGateModal';
+import UpgradeModal from '@/components/subscription/UpgradeModal';
 import type { RingType, RingResponse } from '@/types/rings';
 
 export default function DailyRitual() {
@@ -21,37 +22,21 @@ export default function DailyRitual() {
   const { currentRitual, startRitual, saveRingAnswer, completeRitual } = useRings();
   const { ongoingProgram, updateProgress } = useProgram();
   const { user, isGuestMode, isVipUser } = useAuth();
-  const isPremium = useIsPremium();
   const tier = useSubscriptionTier();
+  const { requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const { trackInteraction } = useGuestExperience();
   const { checkTrigger } = useGuestConversionTriggers();
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleting, setIsCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // NOVO: Guest mode state (VIP users bypass all gates)
+  // Guest mode state (VIP users bypass all gates)
   const isGuest = isGuestMode && !user && !isVipUser;
   const GUEST_RING_LIMIT = 2; // Guests podem completar apenas 2 anéis (Earth e Water)
   const [showGuestGate, setShowGuestGate] = useState(false);
 
-  // FREE TIER: Weekly ritual limit (Essentials/Premium = daily unlimited)
-  const [showFreeGate, setShowFreeGate] = useState(false);
-  const canCompleteRitualToday = () => {
-    if (!user || tier === 'premium' || tier === 'vip' || tier === 'essentials') {
-      return true; // Essentials, Premium, VIP = daily unlimited
-    }
-
-    // FREE TIER: Weekly limit (7 days)
-    const storageKey = `eco.rings.lastCompletion.${user.id}`;
-    const lastCompletion = localStorage.getItem(storageKey);
-
-    if (!lastCompletion) return true; // Nunca completou
-
-    const lastDate = new Date(lastCompletion);
-    const daysSince = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-
-    return daysSince >= 7; // Pode completar se faz 7+ dias
-  };
+  // FREE TIER: bloqueio completo (sem acesso semanal)
+  const isFreeBlocked = user && !isGuest && !canAccess('rings_daily', tier);
 
   useEffect(() => {
     // Ensure ritual exists
@@ -59,6 +44,19 @@ export default function DailyRitual() {
       startRitual();
     }
   }, [currentRitual, startRitual]);
+
+  // FREE TIER: show upgrade gate immediately on mount
+  useEffect(() => {
+    if (isFreeBlocked) {
+      mixpanel.track('Free Tier Limit Blocked', {
+        limit_type: 'rings_premium',
+        user_id: user?.id,
+        tier,
+      });
+      requestUpgrade('rings_free_blocked');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFreeBlocked]);
 
   useEffect(() => {
     // Update program progress as user moves through rings
@@ -105,33 +103,11 @@ export default function DailyRitual() {
       return;
     }
 
-    // FREE TIER ONLY: Weekly ritual limit - block if trying to complete a second ritual this week
-    if (user && tier === 'free' && !isGuest && isLastStep) {
-      if (!canCompleteRitualToday()) {
-        // Track limit hit
-        mixpanel.track('Free Tier Limit Blocked', {
-          limit_type: 'weekly_rings',
-          user_id: user.id,
-          tier: 'free',
-        });
-
-        // Show free tier gate
-        setShowFreeGate(true);
-        return;
-      }
-    }
-
     if (isLastStep) {
       // Complete the ritual
       setIsCompleting(true);
       completeRitual()
         .then(() => {
-          // FREE TIER ONLY: Save completion date for weekly limit
-          if (user && tier === 'free' && !isGuest) {
-            const storageKey = `eco.rings.lastCompletion.${user.id}`;
-            localStorage.setItem(storageKey, new Date().toISOString());
-          }
-
           // Show completion screen with animation
           setCurrentStep(RINGS_ARRAY.length); // Trigger completion view
         })
@@ -261,18 +237,15 @@ export default function DailyRitual() {
         />
       )}
 
-      {/* FREE TIER ONLY: Weekly ritual limit gate (Essentials has daily access) */}
-      {user && tier === 'free' && !isGuest && (
-        <LoginGateModal
-          isOpen={showFreeGate}
-          onClose={() => {
-            setShowFreeGate(false);
-            navigate('/app/rings'); // Voltar para hub
-          }}
-          context="rings_weekly_limit"
-          isSoftPrompt={false} // Bloqueante
-        />
-      )}
+      {/* FREE TIER: gate completo — upgrade modal */}
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => {
+          setShowUpgradeModal(false);
+          navigate('/app/rings');
+        }}
+        source="rings_free_blocked"
+      />
     </div>
   );
 }

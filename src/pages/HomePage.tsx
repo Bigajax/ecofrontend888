@@ -186,10 +186,21 @@ export default function HomePage() {
     [],
   );
 
-  // Meditações - Outras meditações (as do Dr. Joe estão na página dedicada)
+  // Meditações - Dr. Joe unificado + outras categorias
   const energyBlessings = useMemo(
     () => [
-      // Dr. Joe Dispenza — primeiro
+      // Dr. Joe Dispenza — card unificado (navega para página dedicada)
+      {
+        id: 'drjoe_collection',
+        title: 'Desperte Seu Potencial',
+        description: '5 meditações para transformação profunda',
+        duration: '5 meditações',
+        image: 'url("/images/caduceu-dourado.webp")',
+        imagePosition: 'center 40%',
+        isPremium: false,
+        category: 'Dr. Joe Dispenza',
+      },
+      // Caleidoscópio e Mind Movie — produto separado (premium)
       {
         id: 'blessing_4',
         title: 'Meditação do caleidoscópio e Mind Movie',
@@ -198,39 +209,6 @@ export default function HomePage() {
         image: 'url("/images/caleidoscopio-mind-movie.webp")',
         imagePosition: 'center center',
         isPremium: true,
-        category: 'Dr. Joe Dispenza',
-      },
-      {
-        id: 'drjoe_blessing1',
-        title: 'Meditação Bênção dos centros de energia',
-        description: 'Equilibre e ative seus centros energéticos',
-        duration: '7 min',
-        audioUrl: '/audio/energy-blessings-meditation.mp3',
-        image: 'url("/images/meditacao-bencao-energia.webp")',
-        imagePosition: 'center 32%',
-        isPremium: false,
-        category: 'Dr. Joe Dispenza',
-      },
-      {
-        id: 'drjoe_blessing2',
-        title: 'Meditação para sintonizar novos potenciais',
-        description: 'Alinhe-se com novas possibilidades',
-        duration: '7 min',
-        audioUrl: '/audio/sintonizar-novos-potenciais.mp3',
-        image: 'url("/images/meditacao-novos-potenciais.webp")',
-        imagePosition: 'center 32%',
-        isPremium: false,
-        category: 'Dr. Joe Dispenza',
-      },
-      {
-        id: 'drjoe_blessing3',
-        title: 'Recondicionar o corpo a uma nova mente',
-        description: 'Transforme padrões mentais e físicos',
-        duration: '7 min',
-        audioUrl: '/audio/recondicionar-corpo-nova-mente.mp3',
-        image: 'url("/images/meditacao-recondicionar.webp")',
-        imagePosition: 'center 32%',
-        isPremium: false,
         category: 'Dr. Joe Dispenza',
       },
       // Sono
@@ -430,20 +408,24 @@ export default function HomePage() {
       return;
     }
 
-    // Programa do Caleidoscópio navega para sua própria página (PREMIUM)
+    // Dr. Joe Dispenza — card unificado navega para página dedicada
+    if (blessingId === 'drjoe_collection') {
+      navigate('/app/dr-joe-dispenza');
+      return;
+    }
+
+    // Caleidoscópio e Mind Movie — produto premium separado
     if (blessingId === 'blessing_4') {
       const { hasAccess } = checkAccess(true);
-
       if (!hasAccess) {
         requestUpgrade('home_caleidoscopio');
         return;
       }
-
       navigate('/app/programas/caleidoscopio-mind-movie');
       return;
     }
 
-    // Encontrar a meditação clicada (inclui novos IDs Dr. Joe)
+    // Encontrar a meditação clicada
     const blessing = energyBlessings.find(b => b.id === blessingId);
 
     if (blessing) {

@@ -1,10 +1,14 @@
 import React, { useMemo, useState } from "react";
+import { Lock } from "lucide-react";
 import { useMemoryData } from "./memoryData";
 import MapaEmocional2D from "../../components/MapaEmocional2D";
 import LinhaDoTempoEmocional from "../../components/LinhaDoTempoEmocional";
 import StackedAreaSemanalEmocional from "../../components/StackedAreaSemanalEmocional";
 import DailyIntensityStrip from "../../components/DailyIntensityStrip";
 import EcoBubbleLoading from "../../components/EcoBubbleLoading";
+import { useSubscriptionTier, usePremiumContent } from "../../hooks/usePremiumContent";
+import { canAccess } from "../../constants/meditationTiers";
+import UpgradeModal from "../../components/subscription/UpgradeModal";
 
 /* ---------- Helpers / UI ---------- */
 
@@ -214,12 +218,63 @@ const QuadrantLegend = () => (
   </div>
 );
 
+/* ---------- Premium Gate ---------- */
+
+const RelatorioPremiumTeaser: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => (
+  <section className="space-y-4">
+    <div
+      className="sticky top-0 z-20 -mx-1 px-1 py-2 border-b backdrop-blur"
+      style={{ backgroundColor: 'rgba(243, 238, 231, 0.7)', borderColor: 'var(--eco-line, #E8E3DD)' }}
+    >
+      <SectionHeader title="Resumo" subtitle="Relatório Emocional" />
+    </div>
+
+    <div className="grid grid-cols-1 gap-4">
+      {/* Placeholder 1 */}
+      {(['Intensidade por Dia', 'Volume Semanal', 'Mapa Emocional 2D'] as const).map((title) => (
+        <div key={title} className="relative rounded-2xl overflow-hidden border" style={{ borderColor: 'var(--eco-line, #E8E3DD)', minHeight: 200 }}>
+          {/* Simulated blurred content */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#f3eeE7] to-[#e8ddd5] blur-[3px] opacity-60" />
+          <div className="absolute inset-0 backdrop-blur-[6px] bg-white/30" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-md">
+              <Lock size={22} className="text-[var(--eco-user,#A7846C)]" />
+            </div>
+            <span className="text-sm font-semibold text-[var(--eco-text,#38322A)]">{title}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* CTA */}
+    <div className="rounded-2xl border p-5 text-center" style={{ borderColor: 'var(--eco-line, #E8E3DD)', backgroundColor: 'rgba(243, 238, 231, 0.5)' }}>
+      <p className="font-semibold text-[var(--eco-text,#38322A)] mb-1">Relatório Emocional Premium</p>
+      <p className="text-sm text-[var(--eco-muted,#9C938A)] mb-4">
+        Visualize padrões, mapa 2D e intensidade emocional ao longo do tempo. Exclusivo para Premium.
+      </p>
+      <button
+        onClick={onUpgrade}
+        className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+        style={{ background: 'linear-gradient(90deg, var(--eco-user,#A7846C), var(--eco-accent,#C6A995))' }}
+      >
+        <Lock size={14} />
+        Desbloquear Relatório
+      </button>
+      <p className="mt-2 text-[11px] text-[var(--eco-muted,#9C938A)]">Sempre gratuito cancelar</p>
+    </div>
+  </section>
+);
+
 /* ---------- Main ---------- */
 
 const ReportSection: React.FC = () => {
+  const tier = useSubscriptionTier();
+  const { requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const { relatorio, relatorioLoading, relatorioError, relatorioErrorDetails } = useMemoryData();
   const [heatmapRange, setHeatmapRange] = useState<30 | 90 | 180 | undefined>(30);
+  const isFree = !canAccess('relatorio_emocional', tier);
 
+  // useMemo sempre chamado (antes de qualquer early return — regras de hooks)
   const mapaEmocional2D = useMemo(() => {
     if (!Array.isArray(relatorio?.mapa_emocional))
       return [] as Array<{
@@ -242,6 +297,20 @@ const ReportSection: React.FC = () => {
           typeof p.excitacaoNormalizada === "number"
       );
   }, [relatorio]);
+
+  // FREE TIER: mostrar teaser elegante (after all hooks)
+  if (isFree) {
+    return (
+      <>
+        <RelatorioPremiumTeaser onUpgrade={() => requestUpgrade('relatorio_emocional')} />
+        <UpgradeModal
+          open={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          source="relatorio_emocional"
+        />
+      </>
+    );
+  }
 
   if (relatorioLoading) {
     return (
