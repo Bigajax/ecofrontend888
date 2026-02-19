@@ -23,7 +23,7 @@ export default function EcoAIRecommendationCard({ onStartChat }: EcoAIRecommenda
 
         <button onClick={() => navigate('/app/configuracoes?menu=favoritos')} className={tileClass}>
           <Heart size={18} color="#6EC8FF" fill="#6EC8FF" strokeWidth={0} />
-          <span className="text-xs font-medium text-gray-700 truncate">Favoritos</span>
+          <span className="text-xs font-medium text-gray-700 truncate">Salvos</span>
         </button>
 
         <button onClick={() => navigate('/app/diario-estoico')} className={tileClass}>
