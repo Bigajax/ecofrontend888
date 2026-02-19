@@ -6,7 +6,7 @@ import {
   GuestInteractionType,
   GuestInteractionMetadata,
 } from '@/constants/guestExperience';
-import mixpanel from 'mixpanel-browser';
+import mixpanel from '@/lib/mixpanel';
 
 /**
  * Estado do sistema de Guest Experience

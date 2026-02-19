@@ -346,6 +346,15 @@ function AppChrome() {
     return () => clearInterval(interval);
   }, [user, shouldShowModal, markModalShown, state]);
 
+  // Keepalive ping — mantém o backend Render acordado (evita cold start)
+  useEffect(() => {
+    const TEN_MINUTES = 10 * 60 * 1000;
+    const keepalive = setInterval(() => {
+      pingWithRetry(1, 0).catch(() => {/* silencioso */});
+    }, TEN_MINUTES);
+    return () => clearInterval(keepalive);
+  }, []);
+
   // Handlers do modal
   const handleGuestSignup = () => {
     mixpanel.track('Guest Signup Modal - Signup Clicked', {

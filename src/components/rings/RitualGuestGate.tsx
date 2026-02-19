@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import RingIcon from './RingIcon';
-import mixpanel from 'mixpanel-browser';
+import mixpanel from '@/lib/mixpanel';
 
 interface RitualGuestGateProps {
   open: boolean;

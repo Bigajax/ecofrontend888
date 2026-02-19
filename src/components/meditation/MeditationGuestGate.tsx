@@ -8,7 +8,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import mixpanel from 'mixpanel-browser';
+import mixpanel from '@/lib/mixpanel';
 
 interface MeditationGuestGateProps {
   open: boolean;
