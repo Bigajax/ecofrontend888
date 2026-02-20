@@ -401,6 +401,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'A próxima vez que você vir alguma coisa que quer, lembre-se da metáfora de Epicteto do banquete da vida. Quando perceber que está afobado, disposto a fazer de tudo para obtê-la — o equivalente de estender o braço sobre a mesa e arrancar um prato das mãos de alguém —, apenas se lembre: isso é falta de educação e é desnecessário. Depois espere pacientemente pela sua vez.\n\nEsta metáfora permite outras interpretações também. Por exemplo, poderíamos refletir que temos sorte de ter sido convidados para um banquete tão maravilhoso (gratidão). Ou que deveríamos aproveitar o nosso tempo e saborear o gosto do que está sendo oferecido (gozar o momento presente), mas que nos empanturrar de comida e bebida até passar mal não é bom para ninguém, menos ainda para a nossa saúde (afinal, gula é um pecado capital). Que, no fim da refeição, é grosseiro não ajudar o anfitrião a tirar a mesa e lavar os pratos (egoísmo). E, finalmente, que da próxima vez caberá a nós receber e banquetear outras pessoas, assim como fomos banqueteados (caridade).\n\nBom apetite!',
     background: getBackgroundForDay(19),
   },
+  {
+    date: '20 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 20,
+    title: 'A GRANDE PARADA DO DESEJO',
+    text: 'Ladrões, pervertidos, assassinos e tiranos — reúnem para tua inspeção seus supostos prazeres!',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 6.34',
+    comment: 'Nunca é muito bom julgar outras pessoas, mas vale a pena parar um segundo e investigar como uma vida dedicada a entregar-se a cada capricho realmente funciona. A escritora Anne Lamott graceja em seu livro Palavra por palavra: "Alguma vez você se perguntou o que Deus pensa do dinheiro? Basta olhar para as pessoas a quem ele o dá." O mesmo pode ser dito do prazer. Olhe para o ditador e seu harém cheio de amantes conspiradoras, manipuladoras. Veja com que rapidez a diversão de uma jovem estrela se transforma em dependência de drogas e uma carreira paralisada.\n\nPergunte a você mesmo: Isso realmente vale a pena? É mesmo tão prazeroso assim?\n\nConsidere isso quando você ansiar por alguma coisa ou pensar em se entregar a um vício "inofensivo".',
+    background: getBackgroundForDay(20),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
