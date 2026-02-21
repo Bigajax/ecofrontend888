@@ -412,6 +412,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Nunca é muito bom julgar outras pessoas, mas vale a pena parar um segundo e investigar como uma vida dedicada a entregar-se a cada capricho realmente funciona. A escritora Anne Lamott graceja em seu livro Palavra por palavra: "Alguma vez você se perguntou o que Deus pensa do dinheiro? Basta olhar para as pessoas a quem ele o dá." O mesmo pode ser dito do prazer. Olhe para o ditador e seu harém cheio de amantes conspiradoras, manipuladoras. Veja com que rapidez a diversão de uma jovem estrela se transforma em dependência de drogas e uma carreira paralisada.\n\nPergunte a você mesmo: Isso realmente vale a pena? É mesmo tão prazeroso assim?\n\nConsidere isso quando você ansiar por alguma coisa ou pensar em se entregar a um vício "inofensivo".',
     background: getBackgroundForDay(20),
   },
+  {
+    date: '21 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 21,
+    title: 'NÃO DESEJE, NÃO QUEIRA',
+    text: 'Lembra-te de que não é somente o desejo por riqueza e status que nos degrada e subjuga, mas também o desejo por paz, tempo livre, viagens e aprendizado. Não importa qual seja o objeto externo, o valor que atribuímos a ele nos subjuga… onde colocamos nosso coração, ali se encontra nosso impedimento.',
+    author: 'Epicteto',
+    source: 'Discursos, 4.4.1-2; 15',
+    comment: 'Com certeza Epicteto não está dizendo que paz, tempo livre, viagens e aprendizado são ruins, não é? Felizmente não. Mas desejo incessante, ardente — se não mau em e por si mesmo —, está carregado de possíveis complicações. O que desejamos nos torna vulneráveis. Seja uma oportunidade de viajar pelo mundo, de ser o presidente ou de ter cinco minutos de paz e sossego, quando ansiamos por algo, quando nos agarramos a um fiapo de esperança, nós nos preparamos para a desilusão. Porque o destino pode sempre intervir, e então provavelmente perderemos, em resposta, nosso autocontrole.\n\nComo Diógenes, o famoso cínico, disse: "É privilégio dos deuses não querer nada e de homens divinos querer pouco." Não querer nada nos torna invencíveis — porque nada se encontra fora de nosso controle. Isso não se aplica apenas a não desejar as coisas fáceis de criticar, como riqueza ou fama — os tipos de destino que vemos nas peças e fábulas mais clássicas. A luz verde pela qual Gatsby lutou pode aparentemente representar coisas boas também, como amor ou uma causa nobre. Mas pode nos destruir ainda assim.\n\nQuando se trata de seus objetivos e aquilo pelo que você luta, pergunte a si mesmo: Sou eu que os controlo ou são eles que me controlam?',
+    background: getBackgroundForDay(21),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
