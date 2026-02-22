@@ -31,6 +31,12 @@ const MapaEmocional2D: React.FC<Props> = ({ data, height = 320, radius = 14 }) =
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
+
+    if (!('ResizeObserver' in window)) {
+      setWidth(Math.max(260, Math.floor(el.offsetWidth)));
+      return;
+    }
+
     const ro = new ResizeObserver((entries) => {
       const w = entries[0].contentRect.width;
       setWidth(Math.max(260, Math.floor(w)));

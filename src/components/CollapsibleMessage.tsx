@@ -64,6 +64,8 @@ export const CollapsibleMessage: React.FC<CollapsibleMessageProps> = ({
     checkHeight();
 
     // Recheck on content changes (images load, etc.)
+    if (!('ResizeObserver' in window)) return;
+
     const resizeObserver = new ResizeObserver(checkHeight);
     if (contentRef.current) {
       resizeObserver.observe(contentRef.current);
