@@ -56,7 +56,7 @@ export default function EcoSidebar({ isOpen = true, onClose, className }: Sideba
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-40 bg-black/20 md:hidden"
             aria-hidden="true"
           />
 
@@ -68,7 +68,7 @@ export default function EcoSidebar({ isOpen = true, onClose, className }: Sideba
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             className={clsx(
               'fixed left-0 top-0 z-50 h-full w-[260px] md:sticky md:z-auto',
-              'bg-white/50 backdrop-blur-md border-r border-[var(--eco-line)]',
+              'bg-white/50 backdrop-blur-md max-md:[backdrop-filter:none] max-md:[-webkit-backdrop-filter:none] max-md:bg-white border-r border-[var(--eco-line)]',
               'flex flex-col',
               'shadow-[0_4px_30px_rgba(0,0,0,0.04)]',
               className

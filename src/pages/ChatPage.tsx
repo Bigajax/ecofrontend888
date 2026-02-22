@@ -1015,7 +1015,7 @@ function ChatPage() {
         {/* Footer Input */}
         <footer
           ref={chatInputWrapperRef}
-          className="fixed lg:sticky z-40 w-full border-t border-black/5 bg-white/80 backdrop-blur-xl px-4 pt-3 pb-3 sm:px-6 lg:px-8 bottom-0 left-0 right-0"
+          className="fixed lg:sticky z-40 w-full border-t border-black/5 bg-white/80 backdrop-blur-xl max-lg:[backdrop-filter:none] max-lg:[-webkit-backdrop-filter:none] max-lg:bg-white px-4 pt-3 pb-3 sm:px-6 lg:px-8 bottom-0 left-0 right-0"
           style={{
             ...footerStyle,
             paddingBottom: `calc(${safeAreaBottom + 12}px + env(safe-area-inset-bottom))`,
