@@ -122,6 +122,7 @@ export default function MeditationPlayerPage() {
   const [showGuestGate, setShowGuestGate] = useState(false);
   const [isAudioFading, setIsAudioFading] = useState(false);
   const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const favoriteToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Scroll para o topo quando a página carregar
   useEffect(() => {
@@ -138,6 +139,11 @@ export default function MeditationPlayerPage() {
       // Cleanup fade interval
       if (fadeIntervalRef.current) {
         clearInterval(fadeIntervalRef.current);
+      }
+
+      // Cleanup favorite toast timer
+      if (favoriteToastTimerRef.current) {
+        clearTimeout(favoriteToastTimerRef.current);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -247,8 +253,11 @@ export default function MeditationPlayerPage() {
 
       // Mostrar toast de confirmação
       setShowFavoriteToast(true);
-      // Auto-hide após 3 segundos
-      setTimeout(() => {
+      // Auto-hide após 3 segundos (cancela timer anterior se existir)
+      if (favoriteToastTimerRef.current) {
+        clearTimeout(favoriteToastTimerRef.current);
+      }
+      favoriteToastTimerRef.current = setTimeout(() => {
         setShowFavoriteToast(false);
       }, 3000);
     } else {
