@@ -28,8 +28,9 @@ export default function ShareReflectionModal({
 
     try {
       const html2canvas = (await import('html2canvas')).default;
+      const scale = window.innerWidth < 768 ? 1 : 2;
       const canvas = await html2canvas(cardRef.current, {
-        scale: 2,
+        scale,
         backgroundColor: '#FAF9F7',
         logging: false,
       });
@@ -87,7 +88,7 @@ export default function ShareReflectionModal({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm
+      className="fixed inset-0 z-[9999] bg-black/50
                  flex items-center justify-center p-4 animate-fade-in"
       onClick={onClose}
     >
