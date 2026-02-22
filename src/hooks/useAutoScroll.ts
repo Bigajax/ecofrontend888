@@ -154,6 +154,8 @@ export const useAutoScroll = <T extends HTMLElement>(
 
     // ResizeObserver to handle image load and content changes
     // Only update if user is at bottom (avoid spam during typing)
+    if (!('ResizeObserver' in window)) return () => el.removeEventListener('scroll', handleScroll);
+
     let lastScrolledTime = 0;
     const resizeObserver = new ResizeObserver(() => {
       if (debounceTimerRef.current) {

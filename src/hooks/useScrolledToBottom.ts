@@ -22,6 +22,11 @@ export function useScrolledToBottom(
   useEffect(() => {
     if (!enabled || !bottomRef.current) return;
 
+    if (!('IntersectionObserver' in window)) {
+      setHasScrolledToBottom(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
