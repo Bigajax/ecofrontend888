@@ -339,7 +339,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label="Reprodutor de áudio"
-        className="pointer-events-auto relative flex w-full max-w-[min(460px,94vw)] flex-col gap-3 rounded-xl border border-eco-line bg-eco-bubble/60 px-3 py-3 sm:px-4 sm:py-4 text-eco-text backdrop-blur-glass shadow-minimal transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-eco-accent/50"
+        className="pointer-events-auto relative flex w-full max-w-[min(460px,94vw)] flex-col gap-3 rounded-xl border border-eco-line bg-eco-bubble/95 px-3 py-3 sm:px-4 sm:py-4 sm:bg-eco-bubble/60 sm:backdrop-blur-glass text-eco-text shadow-minimal transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-eco-accent/50"
       >
         <button
           type="button"
