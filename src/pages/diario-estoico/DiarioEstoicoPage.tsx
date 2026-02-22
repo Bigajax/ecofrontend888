@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ChevronLeft, MoreHorizontal, BookOpen, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
@@ -298,8 +298,8 @@ export default function DiarioEstoicoPage() {
     );
   };
 
-  // Obter apenas os cards disponíveis
-  const availableMaxims = getAvailableMaxims(tier);
+  // Obter apenas os cards disponíveis — memoizado por tier
+  const availableMaxims = useMemo(() => getAvailableMaxims(tier), [tier]);
 
   // Reflexão de hoje baseada no calendário real
   const todayMaxim = (() => {
@@ -938,6 +938,7 @@ export default function DiarioEstoicoPage() {
                               backgroundSize: 'cover',
                               backgroundPosition: 'center',
                               minHeight: 'clamp(300px, 48vh, 480px)',
+                              aspectRatio: '3/2',
                             }}
                             onClick={() => toggleExpanded(maxim.dayNumber)}
                           >

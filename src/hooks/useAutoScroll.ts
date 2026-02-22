@@ -183,18 +183,21 @@ export const useAutoScroll = <T extends HTMLElement>(
     };
   }, [checkPosition, isAtBottom, scrollToBottom]);
 
+  // Calculado uma vez no mount — prefers-reduced-motion não muda durante a sessão
+  const prefersReducedMotionRef = useRef(
+    typeof window !== 'undefined' &&
+      (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false)
+  );
+
   useLayoutEffect(() => {
     if (!Array.isArray(items) || items.length === 0) {
       return;
     }
     const shouldScroll = isAtBottom;
     if (!shouldScroll) return;
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
     // Força scroll imediato + retry para garantir que chegue ao final
-    scrollToBottom(!prefersReducedMotion);
+    scrollToBottom(!prefersReducedMotionRef.current);
 
     // Retry após render completo para garantir que imagens/conteúdo dinâmico não quebrem o scroll
     const retryTimeout = setTimeout(() => {
