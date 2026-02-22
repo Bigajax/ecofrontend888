@@ -12,6 +12,11 @@ export function useInView(options: UseInViewOptions = {}) {
   const hasTriggered = useRef(false);
 
   useEffect(() => {
+    if (!('IntersectionObserver' in window)) {
+      setIsInView(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         // Debug logging
