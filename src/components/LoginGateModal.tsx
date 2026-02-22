@@ -74,7 +74,7 @@ const LoginGateModal: React.FC<LoginGateModalProps> = ({
             >
               {/* Logo Image */}
               <div className="flex justify-center mb-6">
-                <img src="/ECO conexão.webp" alt="ECO" className="h-24 w-24 object-contain" />
+                <img src="/ECO conexão.webp" alt="ECO" className="h-24 w-24 object-contain" loading="lazy" />
               </div>
 
               {/* Title */}

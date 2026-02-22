@@ -307,6 +307,7 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
                             src={prog.image}
                             alt={prog.title}
                             className="w-full h-full object-cover"
+                            loading="lazy"
                           />
                         </div>
                         <p className="text-xs text-white/70 leading-snug">{prog.title}</p>

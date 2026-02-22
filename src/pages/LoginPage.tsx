@@ -238,6 +238,7 @@ const LoginPage: React.FC = () => {
               src="/images/ECOTOPIA.webp"
               alt="Ecotopia"
               className="w-32 h-32 object-contain drop-shadow-lg"
+              loading="lazy"
             />
           </div>
 

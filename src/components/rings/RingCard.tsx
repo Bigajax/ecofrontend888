@@ -18,6 +18,7 @@ export default function RingCard({ ring, onViewMore }: RingCardProps) {
             src={ring.backgroundImage}
             alt={ring.titlePt}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 scale-100"
+            loading="lazy"
           />
         ) : (
           // Fallback with icon if no background image

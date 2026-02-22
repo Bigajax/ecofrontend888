@@ -130,6 +130,7 @@ export default function LiveReflectionSection() {
                 <img
                   src={avatar.image}
                   alt={`Avatar ${avatar.id}`}
+                  loading="lazy"
                   className={`${SIZE_MAP[avatar.size as keyof typeof SIZE_MAP]} rounded-full object-cover opacity-60 sm:opacity-80 md:opacity-90 shadow-md md:shadow-lg transition-all duration-300 hover:scale-110 hover:opacity-100`}
                   style={{
                     boxShadow: `0 0 0 3px ${avatar.color}, 0 4px 20px rgba(0, 0, 0, 0.08)`,
