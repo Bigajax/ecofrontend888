@@ -50,7 +50,7 @@ export default function ReadingModeModal({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md
+      className="fixed inset-0 z-[9999] bg-black/70
                  flex items-center justify-center p-4 md:p-8
                  animate-fade-in"
       onClick={onClose}

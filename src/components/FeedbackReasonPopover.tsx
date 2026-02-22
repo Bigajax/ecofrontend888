@@ -86,7 +86,7 @@ export function FeedbackReasonPopover({
       <>
         <div
           ref={backdropRef}
-          className="fixed inset-0 z-[60] min-h-[100dvh] bg-black/35 backdrop-blur-[2px]"
+          className="fixed inset-0 z-[60] min-h-[100dvh] bg-black/40"
           onPointerDown={handleBackdropClick}
           aria-hidden="true"
         />
