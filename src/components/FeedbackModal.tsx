@@ -78,7 +78,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 z-[100] bg-black/30 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] bg-black/40"
           />
 
           {/* Modal */}

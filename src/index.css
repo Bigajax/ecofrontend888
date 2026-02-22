@@ -499,7 +499,7 @@ body {
   -webkit-backdrop-filter: blur(8px);
 }
 
-.sticky { will-change: transform; }
+
 .supports-backdrop .bg-white\/80 { transform: translateZ(0); }
 
 /* ---------------------- Glass utilities ----------------------- */
