@@ -603,8 +603,6 @@ export default function MeditationPlayerPage() {
     if (!isDragging) return;
 
     const handleMove = (e: TouchEvent | MouseEvent) => {
-      e.preventDefault();
-
       if ('touches' in e) {
         handleVolumeSliderInteraction(e.touches[0].clientY);
       } else {
@@ -616,7 +614,7 @@ export default function MeditationPlayerPage() {
       setIsDragging(false);
     };
 
-    document.addEventListener('touchmove', handleMove, { passive: false });
+    document.addEventListener('touchmove', handleMove, { passive: true });
     document.addEventListener('touchend', handleEnd);
     document.addEventListener('mousemove', handleMove);
     document.addEventListener('mouseup', handleEnd);
@@ -813,7 +811,7 @@ export default function MeditationPlayerPage() {
                         ref={volumeSliderRef}
                         onTouchStart={handleVolumeSliderStart}
                         onMouseDown={handleVolumeSliderStart}
-                        className="flex-1 relative w-12 flex items-center justify-center cursor-pointer touch-manipulation active:cursor-grabbing"
+                        className="flex-1 relative w-12 flex items-center justify-center cursor-pointer [touch-action:none] active:cursor-grabbing"
                       >
                         {/* Barra de fundo vertical */}
                         <div className="absolute inset-x-0 top-0 bottom-0 w-2 mx-auto bg-gray-200 rounded-full pointer-events-none">
