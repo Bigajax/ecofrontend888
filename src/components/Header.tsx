@@ -120,7 +120,8 @@ const Header: React.FC<HeaderProps> = ({
         className={[
           'glass-toolbar pointer-events-auto container-content-wide border border-white/60',
           'transition-all duration-300 ease-out',
-          scrolled ? 'translate-y-[1px] bg-white/75' : 'bg-white/65',
+          'max-sm:[backdrop-filter:none] max-sm:[-webkit-backdrop-filter:none]',
+          scrolled ? 'translate-y-[1px] bg-white/75 max-sm:bg-white' : 'bg-white/65 max-sm:bg-white/98',
         ].join(' ')}
       >
         {/* Grid de 3 colunas - centralização perfeita */}
@@ -211,9 +212,9 @@ const Header: React.FC<HeaderProps> = ({
           />
           <motion.aside
             key="panel"
-            initial={{ x: '-100%', opacity: 0.85, filter: 'blur(14px)' }}
-            animate={{ x: 0, opacity: 1, filter: 'blur(0px)' }}
-            exit={{ x: '-100%', opacity: 0.85, filter: 'blur(14px)' }}
+            initial={{ x: '-100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '-100%', opacity: 0 }}
             transition={{ type: 'spring', stiffness: 380, damping: 38 }}
             className="
               fixed top-0 left-0 z-[80] h-dvh w-screen md:w-[min(26rem,92vw)]
@@ -226,7 +227,7 @@ const Header: React.FC<HeaderProps> = ({
             onTouchEnd={onTouchEnd}
           >
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#E8E3DD]/60 bg-[#FAF9F7] px-5 py-4">
-              <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-[#38322A]/5 backdrop-blur-sm">
+              <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-[#38322A]/5">
                 <span className="text-2xl font-display font-normal text-[#38322A] tracking-tight">ECO</span>
               </div>
               <button
