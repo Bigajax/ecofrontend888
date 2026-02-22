@@ -586,6 +586,8 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
     const el = containerRef.current;
     if (!el) return;
 
+    if (!('IntersectionObserver' in window)) return;
+
     const VISIBLE_RATIO = 0.6;
     const MIN_VISIBLE_MS = 6000;
 
