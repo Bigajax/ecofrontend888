@@ -20,6 +20,7 @@ import {
 import { RootProviders } from "@/providers/RootProviders";
 import RequireAuth from "@/components/RequireAuth";
 import RootErrorBoundary from "@/components/RootErrorBoundary";
+import PageErrorBoundary from "@/components/PageErrorBoundary";
 import HealthBanner from "@/components/HealthBanner";
 import ApiBaseWarningCard from "@/components/ApiBaseWarningCard";
 import GlobalErrorChip from "@/components/GlobalErrorChip";
@@ -94,6 +95,14 @@ function renderWithSuspense(element: ReactElement) {
   return <Suspense fallback={lazyFallback}>{element}</Suspense>;
 }
 
+function renderWithBoundary(element: ReactElement) {
+  return (
+    <PageErrorBoundary>
+      <Suspense fallback={lazyFallback}>{element}</Suspense>
+    </PageErrorBoundary>
+  );
+}
+
 function PublicShell() {
   return (
     <div className="flex min-h-[100dvh] w-screen flex-col bg-white font-sans">
@@ -133,10 +142,10 @@ function AppRoutes() {
         <Route path="reset-senha" element={renderWithSuspense(<ResetSenha />)} />
         <Route path="login" element={renderWithSuspense(<LoginPage />)} />
         <Route path="login/tour" element={<Navigate to="/login?tour=1" replace />} />
-        <Route path="diario-estoico" element={renderWithSuspense(<DiarioEstoicoPage />)} />
+        <Route path="diario-estoico" element={renderWithBoundary(<DiarioEstoicoPage />)} />
         <Route path="meditacao-primeiros-passos" element={renderWithSuspense(<IntroducaoMeditacaoPage />)} />
         <Route path="meditacao/sintonize-novos-potenciais" element={renderWithSuspense(<GuestMeditationPage />)} />
-        <Route path="guest/meditation-player" element={renderWithSuspense(<MeditationPlayerPage />)} />
+        <Route path="guest/meditation-player" element={renderWithBoundary(<MeditationPlayerPage />)} />
         <Route path="memory-preview" element={renderWithSuspense(<MemoryPageGuestTeaser />)} />
         <Route path="test-upgrade-modal" element={renderWithSuspense(<UpgradeModalTest />)} />
       </Route>
@@ -150,7 +159,7 @@ function AppRoutes() {
       >
         <Route index element={renderWithSuspense(<HomePage />)} />
         <Route path="home" element={renderWithSuspense(<HomePage />)} />
-        <Route path="chat" element={renderWithSuspense(<ChatPage />)} />
+        <Route path="chat" element={renderWithBoundary(<ChatPage />)} />
         <Route path="voice" element={renderWithSuspense(<VoicePage />)} />
         <Route path="memory" element={renderWithSuspense(<MemoryLayout />)}>
           <Route index element={renderWithSuspense(<MemoriesSection />)} />
@@ -159,14 +168,14 @@ function AppRoutes() {
           <Route path="*" element={<Navigate to="/app/memory" replace />} />
         </Route>
         <Route path="rings" element={renderWithSuspense(<FiveRingsHub />)} />
-        <Route path="rings/ritual" element={renderWithSuspense(<DailyRitual />)} />
+        <Route path="rings/ritual" element={renderWithBoundary(<DailyRitual />)} />
         <Route path="rings/timeline" element={renderWithSuspense(<Timeline />)} />
         <Route path="rings/progress" element={renderWithSuspense(<Progress />)} />
         <Route path="rings/detail/:ringId" element={renderWithSuspense(<RingDetail />)} />
         <Route path="riqueza-mental" element={renderWithSuspense(<RiquezaMentalProgram />)} />
         <Route path="articles/sleep" element={renderWithSuspense(<SleepArticle />)} />
         <Route path="articles/good-night-sleep" element={renderWithSuspense(<GoodNightSleepArticle />)} />
-        <Route path="diario-estoico" element={renderWithSuspense(<DiarioEstoicoPage />)} />
+        <Route path="diario-estoico" element={renderWithBoundary(<DiarioEstoicoPage />)} />
         <Route path="programas" element={renderWithSuspense(<ProgramasPage />)} />
         <Route path="sons" element={renderWithSuspense(<SonsPage />)} />
         <Route path="configuracoes" element={renderWithSuspense(<ConfiguracoesPage />)} />
@@ -251,7 +260,7 @@ function AppRoutes() {
           </RequireAuth>
         }
       >
-        <Route index element={renderWithSuspense(<MeditationPlayerPage />)} />
+        <Route index element={renderWithBoundary(<MeditationPlayerPage />)} />
       </Route>
       <Route
         path="/app/sound-player"
