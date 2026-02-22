@@ -602,20 +602,33 @@ export default function DiarioEstoicoPage() {
 
   // Track scroll to bottom
   useEffect(() => {
+    let rafId: number;
     const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const scrollTop = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
 
-      // Considera "bottom" se está a 100px do final
-      if (scrollTop + windowHeight >= documentHeight - 100) {
-        setScrolledToBottom(true);
-      }
+        // Considera "bottom" se está a 100px do final
+        if (scrollTop + windowHeight >= documentHeight - 100) {
+          setScrolledToBottom(true);
+        }
+      });
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(rafId);
+    };
   }, []);
+
+  // Ref para evitar que o observer reconecte a cada mudança de handleCardView
+  const handleCardViewRef = useRef(handleCardView);
+  useEffect(() => {
+    handleCardViewRef.current = handleCardView;
+  }, [handleCardView]);
 
   // Intersection observer for card views
   useEffect(() => {
@@ -627,7 +640,7 @@ export default function DiarioEstoicoPage() {
           if (entry.isIntersecting) {
             const dayNumber = parseInt(entry.target.getAttribute('data-day-number') || '0');
             if (dayNumber) {
-              handleCardView(dayNumber);
+              handleCardViewRef.current(dayNumber);
             }
           }
         });
@@ -635,12 +648,12 @@ export default function DiarioEstoicoPage() {
       { threshold: 0.5 } // 50% do card visível
     );
 
-    // Observar todos os cards
+    // Observar todos os cards — roda apenas uma vez após o mount
     const cards = document.querySelectorAll('[data-diario-card]');
     cards.forEach((card) => observer.observe(card));
 
     return () => observer.disconnect();
-  }, [handleCardView]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll até a reflexão de hoje após render
   useEffect(() => {
