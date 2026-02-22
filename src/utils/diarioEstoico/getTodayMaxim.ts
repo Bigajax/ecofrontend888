@@ -423,6 +423,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Com certeza Epicteto não está dizendo que paz, tempo livre, viagens e aprendizado são ruins, não é? Felizmente não. Mas desejo incessante, ardente — se não mau em e por si mesmo —, está carregado de possíveis complicações. O que desejamos nos torna vulneráveis. Seja uma oportunidade de viajar pelo mundo, de ser o presidente ou de ter cinco minutos de paz e sossego, quando ansiamos por algo, quando nos agarramos a um fiapo de esperança, nós nos preparamos para a desilusão. Porque o destino pode sempre intervir, e então provavelmente perderemos, em resposta, nosso autocontrole.\n\nComo Diógenes, o famoso cínico, disse: "É privilégio dos deuses não querer nada e de homens divinos querer pouco." Não querer nada nos torna invencíveis — porque nada se encontra fora de nosso controle. Isso não se aplica apenas a não desejar as coisas fáceis de criticar, como riqueza ou fama — os tipos de destino que vemos nas peças e fábulas mais clássicas. A luz verde pela qual Gatsby lutou pode aparentemente representar coisas boas também, como amor ou uma causa nobre. Mas pode nos destruir ainda assim.\n\nQuando se trata de seus objetivos e aquilo pelo que você luta, pergunte a si mesmo: Sou eu que os controlo ou são eles que me controlam?',
     background: getBackgroundForDay(21),
   },
+  {
+    date: '22 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 22,
+    title: 'AQUILO QUE É MELHOR CALAR',
+    text: '"Catão fazia o tipo de discurso público capaz de comover as massas, acreditando que a filosofia política adequada cuida, como qualquer grande cidade, de manter o elemento belicoso. Mas ele nunca foi visto praticando o discurso na frente de outros, e ninguém jamais o ouviu ensaiar uma fala. Quando lhe disseram que as pessoas o censuravam por seu silêncio, ele respondeu: \'Melhor que não censurem a minha vida. Só começo a falar quando tenho certeza de que não é melhor calar o que tenho a dizer.\'"',
+    author: 'Plutarco',
+    source: 'Catão, o Jovem, 4',
+    comment: 'É fácil agir: simplesmente mergulhe de cabeça. É mais difícil parar, fazer uma pausa, pensar: Não, ainda não tenho certeza de que preciso fazer isso. Não tenho certeza de que estou pronto. Quando Catão entrou na política, muitos esperavam dele feitos rápidos e grandiosos: discursos empolgantes, condenações estrondosas, análises sábias. Ele estava ciente dessa pressão — uma pressão que existe em todos nós em todos os momentos — e resistiu. É fácil condescender com a multidão (e com nosso ego).\n\nEm vez disso, ele esperou e se preparou. Analisou seus pensamentos, certificou-se de que não estava reagindo de maneira emocional, egoísta, ignorante ou prematura. Só depois falaria — quando tivesse certeza de que suas palavras eram dignas de ser ouvidas.\n\nPara fazer isso é necessário ter consciência. É necessário que paremos e avaliemos a nós mesmos com honestidade. Você é capaz de fazer isso?',
+    background: getBackgroundForDay(22),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
