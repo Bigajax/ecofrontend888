@@ -59,7 +59,7 @@ export default function HomeHeader() {
             <img
               src="/images/ECOTOPIA.webp"
               alt="Ecotopia"
-              className="h-20"
+              className="h-20 w-20 object-contain"
             />
           </button>
 
@@ -221,7 +221,7 @@ export default function HomeHeader() {
             <img
               src="/images/ECOTOPIA.webp"
               alt="Ecotopia"
-              className="h-14"
+              className="h-14 w-14 object-contain"
             />
           </button>
 

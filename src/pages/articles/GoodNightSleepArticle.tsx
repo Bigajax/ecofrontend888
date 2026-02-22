@@ -78,7 +78,7 @@ export default function GoodNightSleepArticle() {
                 <img
                   src="/images/sleep-icon-2.webp"
                   alt="Medicação"
-                  className="w-16 sm:w-20 md:w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 aspect-square"
                 />
               </div>
               <div className="md:col-span-2">
@@ -97,7 +97,7 @@ export default function GoodNightSleepArticle() {
                 <img
                   src="/images/sleep-icon-1.webp"
                   alt="Estimulantes"
-                  className="w-16 sm:w-20 md:w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 aspect-square"
                 />
               </div>
               <div className="md:col-span-2">
@@ -116,7 +116,7 @@ export default function GoodNightSleepArticle() {
                 <img
                   src="/images/sleep-icon-3.webp"
                   alt="Cochilos"
-                  className="w-16 sm:w-20 md:w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 aspect-square"
                 />
               </div>
               <div className="md:col-span-2">
@@ -135,7 +135,7 @@ export default function GoodNightSleepArticle() {
                 <img
                   src="/images/sleep-icon-4.webp"
                   alt="Exercícios"
-                  className="w-16 sm:w-20 md:w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 aspect-square"
                 />
               </div>
               <div className="md:col-span-2">
@@ -154,7 +154,7 @@ export default function GoodNightSleepArticle() {
                 <img
                   src="/images/sleep-icon-7.webp"
                   alt="Luz natural"
-                  className="w-16 sm:w-20 md:w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 aspect-square"
                 />
               </div>
               <div className="md:col-span-2">
@@ -173,7 +173,7 @@ export default function GoodNightSleepArticle() {
                 <img
                   src="/images/sleep-icon-6.webp"
                   alt="Alimentação"
-                  className="w-16 sm:w-20 md:w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 aspect-square"
                 />
               </div>
               <div className="md:col-span-2">
@@ -192,7 +192,7 @@ export default function GoodNightSleepArticle() {
                 <img
                   src="/images/sleep-icon-8.webp"
                   alt="Atividades calmantes"
-                  className="w-16 sm:w-20 md:w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 aspect-square"
                 />
               </div>
               <div className="md:col-span-2">
@@ -211,7 +211,7 @@ export default function GoodNightSleepArticle() {
                 <img
                   src="/images/sleep-icon-9.webp"
                   alt="Banho quente"
-                  className="w-16 sm:w-20 md:w-24 h-auto"
+                  className="w-16 sm:w-20 md:w-24 aspect-square"
                 />
               </div>
               <div className="md:col-span-2">
