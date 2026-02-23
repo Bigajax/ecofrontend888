@@ -434,6 +434,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'É fácil agir: simplesmente mergulhe de cabeça. É mais difícil parar, fazer uma pausa, pensar: Não, ainda não tenho certeza de que preciso fazer isso. Não tenho certeza de que estou pronto. Quando Catão entrou na política, muitos esperavam dele feitos rápidos e grandiosos: discursos empolgantes, condenações estrondosas, análises sábias. Ele estava ciente dessa pressão — uma pressão que existe em todos nós em todos os momentos — e resistiu. É fácil condescender com a multidão (e com nosso ego).\n\nEm vez disso, ele esperou e se preparou. Analisou seus pensamentos, certificou-se de que não estava reagindo de maneira emocional, egoísta, ignorante ou prematura. Só depois falaria — quando tivesse certeza de que suas palavras eram dignas de ser ouvidas.\n\nPara fazer isso é necessário ter consciência. É necessário que paremos e avaliemos a nós mesmos com honestidade. Você é capaz de fazer isso?',
     background: getBackgroundForDay(22),
   },
+  {
+    date: '23 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 23,
+    title: 'AS CIRCUNSTÂNCIAS NÃO SE IMPORTAM COM NOSSOS SENTIMENTOS',
+    text: 'Não deverias dar às circunstâncias o poder de despertar raiva em ti, porque elas não se importam nem um pouco.',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 7.38',
+    comment: 'Uma parte significativa das Meditações de Marco Aurélio são citações curtas e passagens de outros escritores. Isso porque ele não estava necessariamente tentando produzir uma obra original — em vez disso, estava praticando, lembrando a si mesmo, aqui e ali, de lições importantes, e algumas vezes tais lições eram coisas que havia lido.\n\nEsta citação é especial porque foi retirada de uma peça de Eurípedes, que, exceto por um punhado de fragmentos como o mencionado acima, está perdida para nós. Pelo que podemos depreender sobre a peça, Belerofonte, o herói, passa a duvidar da existência dos deuses. Mas nesta passagem ele está dizendo: Por que nos darmos ao trabalho de nos enfurecer com causas e forças muito maiores do que nós? Por que tomamos essas coisas num nível pessoal? Afinal de contas, acontecimentos externos não são seres sensíveis — não reagem a nossos gritos e prantos —, tampouco são os deuses, indiferentes em sua maioria.\n\nÉ disso que Marco Aurélio está lembrando a si mesmo aqui: circunstâncias são incapazes de considerar ou de se preocupar com seus sentimentos, sua ansiedade ou sua empolgação. Elas não se importam com suas reações. Elas não são pessoas. Por isso, pare de agir como se a exaltação tivesse algum impacto sobre a situação. As situações não se importam nem um pouco.',
+    background: getBackgroundForDay(23),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
