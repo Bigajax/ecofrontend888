@@ -159,6 +159,18 @@ export default function ProgramasPage() {
       isPremium: false,
       category: 'Respiração',
     },
+    {
+      id: 'blessing_11',
+      title: 'Liberando o Estresse',
+      description: 'Solte as tensões do dia e restaure sua paz interior',
+      duration: '5 min',
+      audioUrl: '/audio/liberando-estresse.mp3',
+      image: 'url("/images/liberando-estresse.png")',
+      imagePosition: 'center center',
+      gradient: 'linear-gradient(to bottom, #C4A0E8 0%, #A877D6 20%, #8855C4 40%, #6B40A8 60%, #4F2B8C 80%, #341870 100%)',
+      isPremium: false,
+      category: 'Relaxamento',
+    },
   ], []);
 
   const categories = [
@@ -184,7 +196,8 @@ export default function ProgramasPage() {
     const energia = meditations.filter(m =>
       m.id === 'blessing_1' || // Bênção dos centros
       m.id === 'blessing_6' || // Espaço-tempo
-      m.id === 'blessing_10'   // Acolhendo sua respiração
+      m.id === 'blessing_10' || // Acolhendo sua respiração
+      m.id === 'blessing_11'   // Liberando o Estresse
     );
 
     const manifestacao = meditations.filter(m =>

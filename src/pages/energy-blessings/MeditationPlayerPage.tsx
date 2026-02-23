@@ -20,7 +20,6 @@ interface MeditationData {
   audioUrl: string;
   imageUrl: string;
   backgroundMusic?: string;
-  gradient?: string;
   category?: string;
   isPremium?: boolean;
 }
@@ -59,7 +58,6 @@ export default function MeditationPlayerPage() {
     audioUrl: '/audio/energy-blessings-meditation.mp3',
     imageUrl: '/images/energy-blessings.webp',
     backgroundMusic: 'Cristais',
-    gradient: 'linear-gradient(to bottom, #F5C563 0%, #F5A84D 15%, #F39439 30%, #E67E3C 45%, #D95B39 60%, #C74632 80%, #A63428 100%)',
     category: 'fallback',
     isPremium: false,
   };
@@ -654,15 +652,8 @@ export default function MeditationPlayerPage() {
         }}
       />
 
-      {/* Gradient Overlay */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: meditationData.gradient
-            ? `${meditationData.gradient.replace('linear-gradient', 'linear-gradient').replace(')', ', 0.85)')}`
-            : 'linear-gradient(to bottom right, rgba(255,140,66,0.85) 0%, rgba(247,147,30,0.85) 20%, rgba(216,97,122,0.85) 40%, rgba(139,58,98,0.85) 60%, rgba(107,44,92,0.85) 80%, rgba(45,27,61,0.85) 100%)'
-        }}
-      />
+      {/* Dark overlay for text readability */}
+      <div className="absolute inset-0 bg-black/25" />
 
       {/* HomeHeader */}
       <div className="relative z-10">

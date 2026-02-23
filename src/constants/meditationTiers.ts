@@ -103,6 +103,7 @@ export const MEDITATION_TIER_MAP: Record<string, MeditationTier> = {
   // === STANDALONE — não Dr. Joe, curtas ===
   blessing_7: 'free',   // Introdução à Meditação (8 min)
   blessing_10: 'free',  // Acolhendo sua respiração (7 min)
+  blessing_11: 'free',  // Liberando o Estresse (7 min)
 
   // === SONO ===
   sono_1: 'free',     // Sono básica (9 min)
