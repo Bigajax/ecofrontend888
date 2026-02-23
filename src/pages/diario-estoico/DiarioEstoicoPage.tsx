@@ -660,7 +660,7 @@ export default function DiarioEstoicoPage() {
     if (!todayMaxim) return;
     const timer = setTimeout(() => {
       const el = cardRefs.current.get(todayMaxim.dayNumber);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 600); // Aguarda animações de entrada
     return () => clearTimeout(timer);
   }, [todayMaxim]);
@@ -902,10 +902,9 @@ export default function DiarioEstoicoPage() {
                   <p className="text-xs text-eco-muted mt-1">{month.themeDescription}</p>
                 </div>
 
-                {/* Lista de reflexões — carrossel horizontal */}
+                {/* Lista de reflexões — vertical no mobile, carrossel no desktop */}
                 <div
-                  className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                  style={{ touchAction: 'pan-x pinch-zoom', WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain' } as React.CSSProperties}
+                  className="flex flex-col gap-5 md:flex-row md:overflow-x-auto md:snap-x md:snap-mandatory md:gap-4 md:pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 >
                     {monthMaxims.length === 0 && (
                       <p className="text-center text-sm text-eco-muted py-8 w-full">
@@ -916,13 +915,12 @@ export default function DiarioEstoicoPage() {
                       const isToday = todayMaxim?.dayNumber === maxim.dayNumber && todayMaxim?.month === maxim.month;
                       const isExpanded = expandedCards.has(maxim.dayNumber);
                       const isGuest = isGuestMode && !user && !isVipUser;
-                      const isLongText = maxim.text.length > 130;
 
                       return (
                         <div
                           key={maxim.dayNumber}
                           ref={(el) => { if (el) cardRefs.current.set(maxim.dayNumber, el); }}
-                          className="snap-center flex-shrink-0 w-[calc(100%-64px)] md:w-[calc(100%-180px)]"
+                          className="w-full md:snap-center md:flex-shrink-0 md:w-[calc(100%-180px)]"
                         >
                           {/* Imagem + citação */}
                           <div
@@ -937,14 +935,13 @@ export default function DiarioEstoicoPage() {
                               backgroundImage: maxim.background,
                               backgroundSize: 'cover',
                               backgroundPosition: 'center',
-                              minHeight: 'clamp(300px, 48vh, 480px)',
-                              aspectRatio: '3/2',
+                              minHeight: '280px',
                             }}
                             onClick={() => toggleExpanded(maxim.dayNumber)}
                           >
                             <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/55 to-black/75 pointer-events-none" />
 
-                            <div className="relative h-full flex flex-col justify-between p-5" style={{ minHeight: 'inherit' }}>
+                            <div className="relative h-full flex flex-col justify-between p-5" style={{ minHeight: '280px' }}>
                               {/* Topo: badge data */}
                               <div className="flex items-start justify-between gap-2">
                                 <span className={`inline-flex rounded-full px-3 py-1.5 ${isToday ? 'bg-eco-baby' : 'bg-black/40 backdrop-blur-sm'}`}>
@@ -960,9 +957,9 @@ export default function DiarioEstoicoPage() {
                               </div>
 
                               {/* Centro: título */}
-                              <div className="flex-1 flex items-center justify-center px-1 py-5">
+                              <div className="flex-1 flex items-center justify-center px-4 py-4">
                                 <p
-                                  className="font-display text-white text-center text-xl sm:text-2xl leading-snug drop-shadow-lg tracking-wide"
+                                  className="font-display text-white text-center text-base sm:text-xl leading-snug drop-shadow-lg tracking-wide break-words"
                                   style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5)' }}
                                 >
                                   {maxim.title}
