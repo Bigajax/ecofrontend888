@@ -291,11 +291,11 @@ export default function DiarioEstoicoPage() {
         <>
           <hr className="border-eco-line" />
           <div>
-            <h4 className="font-primary text-[12px] font-bold text-eco-text mb-2">
+            <h4 className="font-primary text-xs font-semibold text-eco-muted tracking-[0.12em] uppercase mb-3">
               Comentário
             </h4>
             <div className="relative overflow-hidden" style={{ maxHeight: '72px' }}>
-              <p className={`font-primary ${textSizeClass} leading-relaxed text-eco-text whitespace-pre-line`}>
+              <p className={`font-primary ${textSizeClass} leading-[1.7] text-eco-text whitespace-pre-line`}>
                 {maxim.comment}
               </p>
               <div
@@ -325,10 +325,10 @@ export default function DiarioEstoicoPage() {
       <>
         <hr className="border-eco-line" />
         <div>
-          <h4 className="font-primary text-[12px] font-bold text-eco-text mb-2">
+          <h4 className="font-primary text-xs font-semibold text-eco-muted tracking-[0.12em] uppercase mb-3">
             Comentário
           </h4>
-          <p className={`font-primary ${textSizeClass} leading-relaxed text-eco-text whitespace-pre-line`}>
+          <p className={`font-primary ${textSizeClass} leading-[1.7] text-eco-text whitespace-pre-line`}>
             {maxim.comment}
           </p>
         </div>
@@ -1021,10 +1021,10 @@ export default function DiarioEstoicoPage() {
                           {isExpanded && (
                             <div className="glass-shell rounded-b-2xl p-5 border-t border-eco-line/30">
                               <div className="space-y-3">
-                                <p className="font-display text-[14px] leading-relaxed text-eco-text italic">
+                                <p className="font-display text-[13px] leading-[1.75] text-eco-text italic">
                                   "{maxim.text}"
                                 </p>
-                                <p className="font-primary text-[12px] font-medium text-eco-muted">
+                                <p className="font-primary text-[11px] font-semibold uppercase tracking-wide text-eco-accent">
                                   — {maxim.author}{maxim.source && `, ${maxim.source}`}
                                 </p>
                                 {renderComment(maxim, 'text-[13px]')}

@@ -56,7 +56,7 @@ export default function ReadingModeModal({
       onClick={onClose}
     >
       <div
-        className="max-w-3xl w-full glass-shell-strong p-8 md:p-12
+        className="max-w-3xl w-full glass-shell-strong px-5 py-7 md:p-12
                    rounded-3xl overflow-y-auto max-h-[90vh]
                    animate-slide-up-fade"
         onClick={(e) => e.stopPropagation()}
@@ -70,29 +70,35 @@ export default function ReadingModeModal({
         </div>
 
         {/* Título */}
-        <h2 className="font-display text-3xl md:text-4xl text-eco-text mb-8 leading-relaxed">
+        <h2 className="font-display text-2xl md:text-3xl text-eco-text mb-6 leading-snug tracking-tight">
           {maxim.title}
         </h2>
 
         {/* Citação */}
-        <blockquote className="border-l-4 border-eco-accent pl-6 mb-6">
-          <p className="font-display text-xl md:text-2xl italic
-                       text-eco-text leading-relaxed">
+        <blockquote className="border-l-4 border-eco-accent pl-7 mb-6">
+          <p className="font-display text-lg md:text-xl italic
+                       text-eco-text leading-[1.85]">
             "{maxim.text}"
           </p>
         </blockquote>
 
         {/* Autor */}
-        <p className="font-primary text-lg font-medium text-eco-muted mb-8">
+        <p className="font-primary text-sm font-semibold text-eco-accent tracking-wide uppercase mb-6 mt-2">
           — {maxim.author}
           {maxim.source && `, ${maxim.source}`}
         </p>
 
+        {/* Separador */}
+        {maxim.comment && <hr className="border-eco-line/40 my-6" />}
+
         {/* Comentário */}
         {maxim.comment && (
-          <div className="prose prose-lg max-w-none">
-            <p className="font-primary text-base md:text-lg text-eco-text
-                         leading-relaxed whitespace-pre-line">
+          <div className="max-w-none">
+            <p className="font-primary text-xs font-semibold text-eco-muted tracking-[0.15em] uppercase mb-3">
+              Comentário
+            </p>
+            <p className="font-primary text-[15px] md:text-base text-eco-text/90
+                         leading-[1.8] whitespace-pre-line">
               {maxim.comment}
             </p>
           </div>
