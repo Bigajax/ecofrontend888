@@ -445,6 +445,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Uma parte significativa das Meditações de Marco Aurélio são citações curtas e passagens de outros escritores. Isso porque ele não estava necessariamente tentando produzir uma obra original — em vez disso, estava praticando, lembrando a si mesmo, aqui e ali, de lições importantes, e algumas vezes tais lições eram coisas que havia lido.\n\nEsta citação é especial porque foi retirada de uma peça de Eurípedes, que, exceto por um punhado de fragmentos como o mencionado acima, está perdida para nós. Pelo que podemos depreender sobre a peça, Belerofonte, o herói, passa a duvidar da existência dos deuses. Mas nesta passagem ele está dizendo: Por que nos darmos ao trabalho de nos enfurecer com causas e forças muito maiores do que nós? Por que tomamos essas coisas num nível pessoal? Afinal de contas, acontecimentos externos não são seres sensíveis — não reagem a nossos gritos e prantos —, tampouco são os deuses, indiferentes em sua maioria.\n\nÉ disso que Marco Aurélio está lembrando a si mesmo aqui: circunstâncias são incapazes de considerar ou de se preocupar com seus sentimentos, sua ansiedade ou sua empolgação. Elas não se importam com suas reações. Elas não são pessoas. Por isso, pare de agir como se a exaltação tivesse algum impacto sobre a situação. As situações não se importam nem um pouco.',
     background: getBackgroundForDay(23),
   },
+  {
+    date: '24 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 24,
+    title: 'A VERDADEIRA FONTE DE DANO',
+    text: 'Tem em mente que não é aquele que guarda rancor de ti e te golpeia que te prejudica, mas que o mal vem de teu pensamento sobre a agressão. Assim, quando alguém desperta a tua raiva, sabe que é tua própria opinião que de fato a alimenta. Em vez disso, faz com que tua primeira reação seja não te deixar levar por essas impressões, pois com tempo e distância é mais fácil alcançar o autodomínio.',
+    author: 'Epicteto',
+    source: 'Encheiridion, 20',
+    comment: 'Os estoicos nos lembram que não existe uma ocorrência que seja boa ou má de um ponto de vista objetivo. Quando um bilionário perde um milhão de dólares nas flutuações do mercado, não é a mesma coisa que quando eu ou você perdemos a mesma quantia. A crítica vinda do seu pior inimigo é recebida de maneira diferente das palavras negativas de um cônjuge. Se alguém lhe envia um e-mail cheio de raiva, mas você não chega a ver, terá ele realmente acontecido? Em outras palavras, essas situações requerem nossa participação, contexto e categorização para serem "más".\n\nNossa reação é o que decide onde o dano ocorreu. Se sentimos que fomos prejudicados e ficamos zangados, claro que é assim que isso parecerá. Se levantamos a voz porque sentimos que estamos sendo confrontados, naturalmente uma confrontação se seguirá.\n\nMas se mantemos o controle de nós mesmos, decidimos se rotulamos ou não algo como bom ou mau. De fato, se nos ocorresse uma situação igual em outros momentos da vida, poderíamos ter reações muito diferentes. Assim, por que não escolher agora não aplicar esses rótulos? Que tal escolher não reagir?',
+    background: getBackgroundForDay(24),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
