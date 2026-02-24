@@ -111,15 +111,13 @@ const LoginPage: React.FC = () => {
     },
   });
 
-  // Carregar credenciais salvas do localStorage
+  // Carregar email salvo do localStorage
   useEffect(() => {
     try {
       const savedEmail = localStorage.getItem('eco.lastEmail');
-      const savedPassword = localStorage.getItem('eco.lastPassword');
       if (savedEmail) setEmail(savedEmail);
-      if (savedPassword) setPassword(savedPassword);
     } catch (error) {
-      console.error('Erro ao carregar credenciais salvas:', error);
+      console.error('Erro ao carregar email salvo:', error);
     }
   }, []);
 
@@ -166,12 +164,11 @@ const LoginPage: React.FC = () => {
       mixpanel.track('Front-end: Login Iniciado', { method: 'password', email: email.trim() });
       await signIn(email.trim(), password);
 
-      // Salvar credenciais no localStorage para próximo acesso
+      // Salvar email no localStorage para próximo acesso
       try {
         localStorage.setItem('eco.lastEmail', email.trim());
-        localStorage.setItem('eco.lastPassword', password);
       } catch (storageError) {
-        console.error('Erro ao salvar credenciais:', storageError);
+        console.error('Erro ao salvar email:', storageError);
       }
 
       mixpanel.track('Front-end: Login Concluído', { method: 'password' });
@@ -366,7 +363,7 @@ const LoginPage: React.FC = () => {
                   disabled={loading}
                   className="flex h-12 w-full items-center justify-center rounded-xl border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm text-sm font-normal text-[var(--eco-text)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-300 ease-out hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Iniciar Tour
+                  Experimentar gratuitamente →
                 </button>
 
                 <div role="status" aria-live="polite" className="min-h-[1.25rem] text-center text-sm">

@@ -41,7 +41,7 @@ export const GUEST_EXPERIENCE_CONFIG = {
  * Útil para A/B testing e rollback gradual
  */
 export const GUEST_EXPERIENCE_FEATURES = {
-  AUTO_GUEST_MODE: true,               // Ativar guest automaticamente em RequireAuth
+  AUTO_GUEST_MODE: false,              // Ativar guest automaticamente em RequireAuth
   SHOW_MODAL: true,                    // Mostrar modal de signup
   TRACK_INTERACTIONS: true,            // Rastrear interações do usuário
   SEND_TO_MIXPANEL: true,              // Enviar eventos ao Mixpanel

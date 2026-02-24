@@ -66,7 +66,7 @@ const getAvailableMaxims = (): DailyMaxim[] => {
 };
 
 export default function HomePage() {
-  const { userName, isGuestMode } = useAuth();
+  const { userName, isGuestMode, user } = useAuth();
   const { startProgram } = useProgram();
   const { checkAccess, requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const navigate = useNavigate();
@@ -82,6 +82,13 @@ export default function HomePage() {
   const { hasSeenTour } = useHomePageTour();
   const [isTourActive, setIsTourActive] = useState(false);
 
+  // Redireciona authenticated users de / para /app imediatamente
+  useEffect(() => {
+    if (user && !isGuestMode) {
+      navigate('/app', { replace: true });
+    }
+  }, [user, isGuestMode, navigate]);
+
   // Show tour only for guest users who haven't seen it
   useEffect(() => {
     if (isGuestMode && !hasSeenTour) {
@@ -89,17 +96,10 @@ export default function HomePage() {
     }
   }, [isGuestMode, hasSeenTour]);
 
-  // Simulate initial loading (skip if returning from meditation)
+  // Set loading to false immediately (no artificial delay)
   useEffect(() => {
-    if (location.state?.returnFromMeditation) {
-      setIsLoading(false);
-    } else {
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [location]);
+    setIsLoading(false);
+  }, []);
 
   // Restore scroll position when returning from meditation player
   useEffect(() => {

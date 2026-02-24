@@ -3,6 +3,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
+import GuestModeBanner from '../components/GuestModeBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
 import { useGuestGate } from '../hooks/useGuestGate';
@@ -10,7 +11,7 @@ import { useGuestGate } from '../hooks/useGuestGate';
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut, user } = useAuth();
+  const { signOut, user, isGuestMode } = useAuth();
   const { clearMessages } = useChat();
 
   // Guest gate para controlar limite de mensagens
@@ -58,6 +59,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <>
+      {/* Banner de modo convidado — visível apenas para guests */}
+      {isGuestMode && <GuestModeBanner />}
+
       {/* AUTO = TopBar no mobile / Sidebar no desktop - Apenas para ChatPage e outras páginas */}
       {showOldHeader && (
         <Header

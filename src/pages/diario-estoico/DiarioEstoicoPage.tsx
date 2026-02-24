@@ -277,12 +277,50 @@ export default function DiarioEstoicoPage() {
   const didAutoExpand = useRef(false);
 
   /**
-   * Helper para renderizar comentário (completo para todos os usuários)
+   * Helper para renderizar comentário.
+   * Guests veem teaser (fade + CTA), usuários autenticados veem completo.
    */
   const renderComment = (maxim: DailyMaxim, textSizeClass: string = 'text-[13px]') => {
     if (!maxim.comment) return null;
 
-    // Mostrar comentário completo para todos (guests e authenticated)
+    const isGuest = !user;
+
+    if (isGuest) {
+      const reflectionId = `${maxim.month}-${maxim.dayNumber}`;
+      return (
+        <>
+          <hr className="border-eco-line" />
+          <div>
+            <h4 className="font-primary text-[12px] font-bold text-eco-text mb-2">
+              Comentário
+            </h4>
+            <div className="relative overflow-hidden" style={{ maxHeight: '72px' }}>
+              <p className={`font-primary ${textSizeClass} leading-relaxed text-eco-text whitespace-pre-line`}>
+                {maxim.comment}
+              </p>
+              <div
+                className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none"
+                style={{ background: 'linear-gradient(to top, rgba(248,247,245,0.97) 0%, rgba(248,247,245,0) 100%)' }}
+              />
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: reflectionId });
+                navigate('/login?returnTo=/app/diario-estoico');
+              }}
+              className="mt-3 w-full bg-eco-baby text-white px-4 py-2.5 rounded-lg font-primary font-semibold text-sm hover:bg-eco-baby/90 active:scale-95 transition-all duration-200"
+            >
+              Continue esta reflexão →
+            </button>
+            <p className="text-center text-xs text-eco-muted mt-2 font-primary">
+              Crie sua conta em 30 segundos — sempre gratuito
+            </p>
+          </div>
+        </>
+      );
+    }
+
     return (
       <>
         <hr className="border-eco-line" />
@@ -437,7 +475,7 @@ export default function DiarioEstoicoPage() {
   const handleModalSignup = () => {
     mixpanel.track('Diario Estoico: Exit Modal - Signup Clicked');
     setShowExitModal(false);
-    navigate('/register', { state: { from: 'diario-estoico' } });
+    navigate('/register?returnTo=' + encodeURIComponent('/app/diario-estoico'));
   };
 
   const handleModalStay = () => {

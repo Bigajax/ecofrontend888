@@ -36,7 +36,8 @@ const LoginGateModal: React.FC<LoginGateModalProps> = ({
   const handleCreateAccount = () => {
     // Chamar callback antes de navegar
     onSignup();
-    navigate('/register');
+    const currentPath = window.location.pathname;
+    navigate(`/register?returnTo=${encodeURIComponent(currentPath)}`);
   };
 
   const handleDismiss = () => {
