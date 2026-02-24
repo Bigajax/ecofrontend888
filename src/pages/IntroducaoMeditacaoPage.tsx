@@ -223,14 +223,14 @@ export default function IntroducaoMeditacaoPage() {
     }
 
     // Navega normalmente
-    navigate(user ? '/app' : '/');
+    navigate(user ? '/app' : '/login');
   };
 
   // Handlers do modal
   const handleModalSignup = () => {
     mixpanel.track('Meditacao Primeiros Passos: Exit Modal - Signup Clicked');
     setShowExitModal(false);
-    navigate('/register', { state: { from: 'meditacao-primeiros-passos' } });
+    navigate('/register?returnTo=' + encodeURIComponent('/app/introducao-meditacao'));
   };
 
   const handleModalStay = () => {
@@ -241,7 +241,7 @@ export default function IntroducaoMeditacaoPage() {
   const handleModalLeave = () => {
     mixpanel.track('Meditacao Primeiros Passos: Exit Modal - Left Anyway');
     setShowExitModal(false);
-    navigate('/');
+    navigate('/login');
   };
 
   useEffect(() => {

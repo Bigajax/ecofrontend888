@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Lock } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
@@ -33,9 +33,8 @@ export default function ProgramasPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { startProgram } = useProgram();
-  const { checkAccess, requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
+  const { requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const tier = useSubscriptionTier();
-  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
 
   // Meditações (mesmas do HomePage)
   const meditations: Meditation[] = useMemo(() => [
@@ -173,69 +172,37 @@ export default function ProgramasPage() {
     },
   ], []);
 
-  const categories = [
-    'Todas',
-    'Primeiros Passos',
-    'Transformação Pessoal',
-    'Energia e Vitalidade',
-    'Manifestação',
-    'Sono e Relaxamento',
-  ];
-
-  // Organizar meditações por objetivos
-  const meditationsByCategory = useMemo(() => {
-    const primeiroPassos = meditations.filter(m =>
-      m.id === 'blessing_7' // Introdução à Meditação
-    );
-
-    const transformacao = meditations.filter(m =>
-      m.id === 'blessing_3' || // Recondicionar o corpo
-      m.id === 'blessing_9'    // Quem Pensa Enriquece
-    );
-
-    const energia = meditations.filter(m =>
-      m.id === 'blessing_1' || // Bênção dos centros
-      m.id === 'blessing_6' || // Espaço-tempo
-      m.id === 'blessing_10' || // Acolhendo sua respiração
-      m.id === 'blessing_11'   // Liberando o Estresse
-    );
-
-    const manifestacao = meditations.filter(m =>
-      m.id === 'blessing_2' || // Sintonizar novos potenciais
-      m.id === 'blessing_4'    // Caleidoscópio
-    );
-
-    const sono = meditations.filter(m =>
-      m.id === 'blessing_8' || // Meditação do Sono
-      m.id === 'blessing_5'    // Meditação caminhando
-    );
-
-    if (selectedCategory === 'Todas') {
-      return {
-        'Primeiros Passos': primeiroPassos,
-        'Transformação Pessoal': transformacao,
-        'Energia e Vitalidade': energia,
-        'Manifestação': manifestacao,
-        'Sono e Relaxamento': sono,
-      };
-    }
-
-    // Filtrar por categoria selecionada
-    switch (selectedCategory) {
-      case 'Primeiros Passos':
-        return { [selectedCategory]: primeiroPassos };
-      case 'Transformação Pessoal':
-        return { [selectedCategory]: transformacao };
-      case 'Energia e Vitalidade':
-        return { [selectedCategory]: energia };
-      case 'Manifestação':
-        return { [selectedCategory]: manifestacao };
-      case 'Sono e Relaxamento':
-        return { [selectedCategory]: sono };
-      default:
-        return {};
-    }
-  }, [meditations, selectedCategory]);
+  // Seções por objetivo emocional (layout Meditopia)
+  const sections = useMemo(() => [
+    {
+      title: 'Comece Aqui',
+      meditations: meditations.filter(m => m.id === 'blessing_7'),
+    },
+    {
+      title: 'Transforme sua Mente',
+      meditations: meditations.filter(m =>
+        m.id === 'blessing_3' || m.id === 'blessing_9'
+      ),
+    },
+    {
+      title: 'Energize e Manifeste',
+      meditations: meditations.filter(m =>
+        m.id === 'blessing_1' || m.id === 'blessing_2' ||
+        m.id === 'blessing_6' || m.id === 'blessing_4'
+      ),
+    },
+    {
+      title: 'Alivie e Acalme',
+      meditations: meditations.filter(m =>
+        m.id === 'blessing_5' || m.id === 'blessing_10' ||
+        m.id === 'blessing_11'
+      ),
+    },
+    {
+      title: 'Para Dormir',
+      meditations: meditations.filter(m => m.id === 'blessing_8'),
+    },
+  ], [meditations]);
 
   // Helper para verificar se meditação está locked
   const isMeditationLocked = (meditation: Meditation): boolean => {
@@ -247,12 +214,11 @@ export default function ProgramasPage() {
   const handleMeditationClick = (meditationId: string) => {
     const meditation = meditations.find(m => m.id === meditationId);
 
-    // ESSENTIALS TIER: Bloquear meditações 15min+ (apenas até 15min)
-    if (tier === 'essentials' && meditation?.durationMinutes && meditation.durationMinutes >= 15) {
-      // Track tentativa de acesso a feature premium
+    // Usar MEDITATION_TIER_MAP como fonte única de verdade para acesso
+    if (!canAccessMeditation(meditationId, tier)) {
       trackPremiumFeatureAttempted({
         feature_id: meditationId,
-        feature_name: meditation.title,
+        feature_name: meditation?.title ?? meditationId,
         context: 'meditation_library',
         is_premium_user: false,
         user_id: user?.id,
@@ -260,43 +226,16 @@ export default function ProgramasPage() {
 
       mixpanel.track('Meditation Premium Clicked', {
         meditation_id: meditationId,
-        meditation_title: meditation.title,
-        duration_minutes: meditation.durationMinutes,
+        meditation_title: meditation?.title,
+        duration_minutes: meditation?.durationMinutes,
+        required_tier: getRequiredTier(meditationId),
         user_tier: tier,
         is_locked: true,
         user_id: user?.id,
       });
 
-      requestUpgrade('meditation_premium_locked');
+      requestUpgrade('programas_' + meditationId);
       return;
-    }
-
-    // Verificar se é premium e mostrar modal para free tier
-    if (meditation?.isPremium) {
-      const { hasAccess } = checkAccess(true);
-
-      if (!hasAccess) {
-        // Track tentativa de acesso a feature premium
-        trackPremiumFeatureAttempted({
-          feature_id: meditationId,
-          feature_name: meditation.title,
-          context: 'meditation_library',
-          is_premium_user: false,
-          user_id: user?.id,
-        });
-
-        mixpanel.track('Meditation Premium Clicked', {
-          meditation_id: meditationId,
-          meditation_title: meditation.title,
-          duration_minutes: meditation.durationMinutes,
-          user_tier: tier,
-          is_locked: true,
-          user_id: user?.id,
-        });
-
-        requestUpgrade('programas_' + meditationId);
-        return;
-      }
     }
 
     // Track acesso bem-sucedido a meditação
@@ -305,7 +244,7 @@ export default function ProgramasPage() {
       meditation_title: meditation?.title,
       duration_minutes: meditation?.durationMinutes,
       user_tier: tier,
-      is_premium: meditation?.isPremium || false,
+      required_tier: getRequiredTier(meditationId),
       user_id: user?.id,
     });
 
@@ -370,15 +309,15 @@ export default function ProgramasPage() {
 
         {/* Banner informativo de tier - apenas para free/essentials */}
         {(tier === 'free' || tier === 'essentials') && lockedMeditations > 0 && (
-          <div className="mb-6 rounded-2xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 p-4">
+          <div className="mb-6 rounded-2xl bg-eco-babySoft border border-eco-baby/30 p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <p className="text-sm font-semibold text-blue-900 mb-1">
+                <p className="text-sm font-semibold text-[#1a6fa8] mb-1">
                   {tier === 'free'
                     ? '📚 Você tem acesso a 6 meditações gratuitas'
                     : '✨ Plano Essentials: Meditações até 15 minutos'}
                 </p>
-                <p className="text-xs text-blue-800">
+                <p className="text-xs text-[#2e8fc4]">
                   {accessibleMeditations} de {totalMeditations} meditações disponíveis •{' '}
                   {lockedMeditations} meditações premium bloqueadas
                 </p>
@@ -393,7 +332,7 @@ export default function ProgramasPage() {
                   });
                   requestUpgrade('meditation_library_banner');
                 }}
-                className="shrink-0 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-semibold rounded-full hover:from-blue-700 hover:to-purple-700 transition-all"
+                className="shrink-0 px-3 py-1.5 bg-eco-baby text-white text-xs font-semibold rounded-full hover:bg-eco-babyDark transition-all"
               >
                 {tier === 'free' ? 'Ver Planos' : 'Upgrade Premium'}
               </button>
@@ -401,59 +340,42 @@ export default function ProgramasPage() {
           </div>
         )}
 
-        {/* Tabs de Categorias */}
-        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide mb-8">
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`flex-shrink-0 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
-                selectedCategory === category
-                  ? 'bg-[#A7846C] text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-
-        {/* Seções de Meditações */}
-        {Object.entries(meditationsByCategory).map(([categoryName, categoryMeditations]) => (
-          <div key={categoryName} className="mb-12">
-            <div className="flex items-center justify-between mb-4">
+        {/* Seções com scroll horizontal — estilo Meditopia */}
+        {sections.map((section) => (
+          <div key={section.title} className="mb-10">
+            <div className="flex items-center justify-between mb-4 px-4 sm:px-0">
               <h2 className="text-2xl font-display font-semibold text-[#38322A]">
-                {categoryName}
+                {section.title}
               </h2>
               <button className="text-sm text-[#A7846C] hover:underline">
                 Ver todos
               </button>
             </div>
 
-            {/* Grid de Cards de Meditação */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {categoryMeditations.map((meditation) => {
+            {/* Scroll horizontal com snap */}
+            <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide snap-x snap-mandatory pl-4 sm:pl-0">
+              {section.meditations.map((meditation, idx) => {
                 const isLocked = isMeditationLocked(meditation);
+                const isLast = idx === section.meditations.length - 1;
 
                 return (
                   <button
                     key={meditation.id}
                     onClick={() => handleMeditationClick(meditation.id)}
-                    className={`group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 md:hover:scale-[0.98] md:hover:shadow-[0_2px_15px_rgba(0,0,0,0.06)] md:hover:translate-y-1 active:scale-95 cursor-pointer touch-manipulation ${
-                      isLocked ? 'opacity-90' : ''
-                    }`}
+                    className={`group relative flex-shrink-0 snap-start overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 active:scale-95 cursor-pointer touch-manipulation ${isLast ? 'mr-4 sm:mr-0' : ''}`}
                     style={{
+                      width: '260px',
+                      height: '200px',
                       backgroundImage: meditation.image,
                       backgroundSize: 'cover',
                       backgroundPosition: meditation.imagePosition || 'center',
-                      minHeight: '220px',
                       filter: isLocked ? 'grayscale(0.2)' : 'none',
                     }}
                   >
-                    {/* Overlay */}
+                    {/* Gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
-                    {/* Hover overlay - darken on hover */}
+                    {/* Hover overlay */}
                     <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/20 transition-all duration-300" />
 
                     {/* Lock overlay para meditações locked */}
@@ -461,59 +383,59 @@ export default function ProgramasPage() {
                       <div className="absolute inset-0 bg-black/10 backdrop-blur-[0.5px]" />
                     )}
 
-                  {/* Content */}
-                  <div className="relative flex h-full flex-col justify-between p-4 md:p-5">
-                    {/* Top: Duration Badge and Category Badge */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-black/50 px-3 py-1.5 backdrop-blur-md">
-                          <span className="text-[11px] font-medium text-white">
-                            {meditation.duration}
-                          </span>
-                        </span>
-                        {meditation.category && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-black/50 px-3 py-1.5 backdrop-blur-md">
+                    {/* Content */}
+                    <div className="relative flex h-full flex-col justify-between p-4">
+                      {/* Top: Duration Badge and Premium Badge */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center rounded-full bg-white/20 border border-white/30 px-2.5 py-1 backdrop-blur-md">
                             <span className="text-[11px] font-medium text-white">
-                              {meditation.category}
+                              {meditation.duration}
                             </span>
                           </span>
+                          {meditation.category && (
+                            <span className="inline-flex items-center rounded-full bg-white/20 border border-white/30 px-2.5 py-1 backdrop-blur-md">
+                              <span className="text-[11px] font-medium text-white">
+                                {meditation.category}
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                        {MEDITATION_TIER_MAP[meditation.id] !== 'free' && (
+                          <div className="flex items-center gap-1.5 rounded-full bg-eco-baby px-2.5 py-1 backdrop-blur-md shadow-md">
+                            {isLocked && <Lock size={11} className="text-white" />}
+                            <span className="text-[10px] font-bold text-white tracking-wide">
+                              {getRequiredTier(meditation.id).toUpperCase()}
+                            </span>
+                          </div>
                         )}
                       </div>
-                      {meditation.isPremium && (
-                        <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 px-2.5 py-1.5 backdrop-blur-md shadow-md">
-                          {isLocked && <Lock size={12} className="text-white" />}
-                          <span className="text-[10px] font-bold text-white tracking-wide">
-                            {getRequiredTier(meditation.id).toUpperCase()}
-                          </span>
+
+                      {/* Bottom: Title, Description, Play Button */}
+                      <div className="flex items-end justify-between gap-4">
+                        <div className="flex-1 text-left">
+                          <h3 className="font-display text-base font-normal text-white drop-shadow-lg leading-tight">
+                            {meditation.title}
+                          </h3>
+                          <p className="mt-0.5 text-[12px] text-white/85 drop-shadow-md line-clamp-1">
+                            {meditation.description}
+                          </p>
                         </div>
-                      )}
-                    </div>
 
-                    {/* Bottom: Title, Description, Play Button */}
-                    <div className="flex items-end justify-between gap-4">
-                      <div className="flex-1 text-left">
-                        <h3 className="font-display text-base font-normal text-white drop-shadow-lg md:text-lg">
-                          {meditation.title}
-                        </h3>
-                        <p className="mt-0.5 text-[12px] text-white/85 drop-shadow-md md:text-[13px]">
-                          {meditation.description}
-                        </p>
+                        {/* Play Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMeditationClick(meditation.id);
+                          }}
+                          className="shrink-0 flex items-center justify-center rounded-full bg-white/85 p-3 shadow-lg transition-all duration-300 md:hover:bg-white active:scale-95 touch-manipulation backdrop-blur-md"
+                        >
+                          <Play size={18} className="fill-black text-black ml-0.5" />
+                        </button>
                       </div>
-
-                      {/* Play Button - Circular Icon */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMeditationClick(meditation.id);
-                        }}
-                        className="shrink-0 flex items-center justify-center rounded-full bg-white/85 p-3 shadow-lg transition-all duration-300 md:hover:bg-white active:scale-95 touch-manipulation backdrop-blur-md"
-                      >
-                        <Play size={18} className="fill-black text-black ml-0.5" />
-                      </button>
                     </div>
-                  </div>
-                </button>
-              );
+                  </button>
+                );
               })}
             </div>
           </div>
@@ -530,7 +452,7 @@ export default function ProgramasPage() {
             </p>
             <div className="w-full max-w-md mx-auto bg-gray-200 rounded-full h-2 mb-4">
               <div
-                className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-500"
+                className="bg-eco-baby h-2 rounded-full transition-all duration-500"
                 style={{ width: `${(accessibleMeditations / totalMeditations) * 100}%` }}
               />
             </div>
@@ -544,7 +466,7 @@ export default function ProgramasPage() {
                 });
                 requestUpgrade('meditation_library_footer');
               }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-eco-baby text-white font-semibold rounded-full hover:bg-eco-babyDark transition-all shadow-md hover:shadow-lg"
             >
               <Lock size={16} />
               Desbloquear todas as {lockedMeditations} meditações premium
