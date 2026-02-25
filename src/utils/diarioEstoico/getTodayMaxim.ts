@@ -456,6 +456,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Os estoicos nos lembram que não existe uma ocorrência que seja boa ou má de um ponto de vista objetivo. Quando um bilionário perde um milhão de dólares nas flutuações do mercado, não é a mesma coisa que quando eu ou você perdemos a mesma quantia. A crítica vinda do seu pior inimigo é recebida de maneira diferente das palavras negativas de um cônjuge. Se alguém lhe envia um e-mail cheio de raiva, mas você não chega a ver, terá ele realmente acontecido? Em outras palavras, essas situações requerem nossa participação, contexto e categorização para serem "más".\n\nNossa reação é o que decide onde o dano ocorreu. Se sentimos que fomos prejudicados e ficamos zangados, claro que é assim que isso parecerá. Se levantamos a voz porque sentimos que estamos sendo confrontados, naturalmente uma confrontação se seguirá.\n\nMas se mantemos o controle de nós mesmos, decidimos se rotulamos ou não algo como bom ou mau. De fato, se nos ocorresse uma situação igual em outros momentos da vida, poderíamos ter reações muito diferentes. Assim, por que não escolher agora não aplicar esses rótulos? Que tal escolher não reagir?',
     background: getBackgroundForDay(24),
   },
+  {
+    date: '25 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 25,
+    title: 'A FUMAÇA E A POEIRA DO MITO',
+    text: 'Mantém uma lista mental daqueles que arderam com cólera e ressentimento por um motivo qualquer, ou mesmo os mais renomados por sucesso, infortúnio, más ações ou qualquer distinção especial. Então pergunta a ti mesmo: o que restou de tudo isso? Fumaça e poeira, os ingredientes de um simples mito tentando ser lenda...',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 12.27',
+    comment: 'Nos seus escritos, Marco Aurélio mostra constantemente como os imperadores que vieram antes dele mal eram lembrados apenas alguns anos depois. Para ele, isso era um aviso de que, por mais que tenha conquistado, por mais que tenha imposto sua vontade ao mundo, era como se construísse um castelo na areia, fadado a ser logo apagado pelos ventos do tempo.\n\nO mesmo pode ser dito daqueles impulsionados às alturas do ódio, da raiva, da obsessão ou do perfeccionismo. Marco Aurélio gostava de mostrar que Alexandre, o Grande — um dos homens mais apaixonados e ambiciosos que já existiram —, foi enterrado no mesmo solo que seu condutor de mulas. Finalmente, todos nós vamos morrer e ser pouco a pouco esquecidos. Deveríamos gozar desse breve tempo que temos na Terra, e não ser escravizados por emoções que nos deixam infelizes e insatisfeitos.',
+    background: getBackgroundForDay(25),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
