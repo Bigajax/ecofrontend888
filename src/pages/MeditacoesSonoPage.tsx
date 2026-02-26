@@ -25,7 +25,7 @@ const PROTOCOL_NIGHTS: ProtocolNight[] = [
     night: 1,
     title: 'Desligando o Estado de Alerta',
     description: 'Ensine seu corpo a sair do modo tensão antes de dormir.',
-    duration: '9 min',
+    duration: '5 min',
     audioUrl: '/audio/desligando-estado-alerta.mp3',
     hasAudio: true,
     gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #14172E 100%)',
