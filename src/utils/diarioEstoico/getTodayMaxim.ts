@@ -467,6 +467,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Nos seus escritos, Marco Aurélio mostra constantemente como os imperadores que vieram antes dele mal eram lembrados apenas alguns anos depois. Para ele, isso era um aviso de que, por mais que tenha conquistado, por mais que tenha imposto sua vontade ao mundo, era como se construísse um castelo na areia, fadado a ser logo apagado pelos ventos do tempo.\n\nO mesmo pode ser dito daqueles impulsionados às alturas do ódio, da raiva, da obsessão ou do perfeccionismo. Marco Aurélio gostava de mostrar que Alexandre, o Grande — um dos homens mais apaixonados e ambiciosos que já existiram —, foi enterrado no mesmo solo que seu condutor de mulas. Finalmente, todos nós vamos morrer e ser pouco a pouco esquecidos. Deveríamos gozar desse breve tempo que temos na Terra, e não ser escravizados por emoções que nos deixam infelizes e insatisfeitos.',
     background: getBackgroundForDay(25),
   },
+  {
+    date: '26 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 26,
+    title: 'A CADA UM O QUE LHE PERTENCE',
+    text: 'Outra pessoa me prejudicou? Deixe-a cuidar disso. Ela tem suas próprias tendenciosidades e suas próprias questões. O que eu tenho neste instante é o que a natureza comum quis, e o que me esforço por realizar agora é o que minha natureza quer.',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 5.25',
+    comment: 'Abraham Lincoln de vez em quando ficava furioso com um subordinado, um de seus generais, até um amigo. Em vez de descarregar isso sobre essa pessoa diretamente, ele escrevia uma longa carta, resumindo sua questão, por que a pessoa estava errada e o que ele queria que ela soubesse. Em seguida, Lincoln dobrava a carta, a guardava na gaveta da escrivaninha e jamais a enviava. Muitas dessas cartas sobreviveram apenas por acaso.\n\nEle sabia, como o ex-imperador de Roma, que é fácil retaliar. É tentador dizer à pessoa o que você pensa. Mas você acaba quase sempre arrependido. Quase sempre desejaria não ter enviado a carta. Pense na última vez que você perdeu completamente a cabeça. Qual foi o resultado? Houve algum benefício?',
+    background: getBackgroundForDay(26),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
