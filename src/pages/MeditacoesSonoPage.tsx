@@ -15,6 +15,7 @@ interface ProtocolNight {
   description: string;
   duration: string;
   audioUrl?: string;
+  imageUrl?: string;
   hasAudio: boolean;
   gradient: string;
 }
@@ -27,6 +28,7 @@ const PROTOCOL_NIGHTS: ProtocolNight[] = [
     description: 'Ensine seu corpo a sair do modo tensão antes de dormir.',
     duration: '5 min',
     audioUrl: '/audio/desligando-estado-alerta.mp3',
+    imageUrl: '/images/desligando-estado-alerta.png',
     hasAudio: true,
     gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #14172E 100%)',
   },
@@ -176,7 +178,7 @@ export default function MeditacoesSonoPage() {
           title: night.title,
           duration: night.duration,
           audioUrl: night.audioUrl,
-          imageUrl: '/images/meditacoes-sono-hero.webp',
+          imageUrl: night.imageUrl ?? '/images/meditacoes-sono-hero.webp',
           backgroundMusic: 'Sono',
           gradient: night.gradient,
           category: 'sono',
