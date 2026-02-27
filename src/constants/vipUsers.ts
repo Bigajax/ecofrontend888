@@ -9,6 +9,7 @@
  */
 export const VIP_EMAILS = [
   'acessoriaintuitivo@gmail.com',
+  'rafaelrazeira@hotmail.com',
 ];
 
 /**
