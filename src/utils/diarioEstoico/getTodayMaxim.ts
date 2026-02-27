@@ -478,6 +478,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Abraham Lincoln de vez em quando ficava furioso com um subordinado, um de seus generais, até um amigo. Em vez de descarregar isso sobre essa pessoa diretamente, ele escrevia uma longa carta, resumindo sua questão, por que a pessoa estava errada e o que ele queria que ela soubesse. Em seguida, Lincoln dobrava a carta, a guardava na gaveta da escrivaninha e jamais a enviava. Muitas dessas cartas sobreviveram apenas por acaso.\n\nEle sabia, como o ex-imperador de Roma, que é fácil retaliar. É tentador dizer à pessoa o que você pensa. Mas você acaba quase sempre arrependido. Quase sempre desejaria não ter enviado a carta. Pense na última vez que você perdeu completamente a cabeça. Qual foi o resultado? Houve algum benefício?',
     background: getBackgroundForDay(26),
   },
+  {
+    date: '27 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 27,
+    title: 'CULTIVAR A INDIFERENÇA ONDE OUTROS CULTIVAM PAIXÃO',
+    text: 'De todas as coisas que existem, algumas são boas, outras más e outras, ainda, indiferentes. As boas são virtudes e tudo que delas participam; as más são os vícios e todos que se entregam a eles; a indiferente situa-se entre virtude e vício, e inclui riqueza, saúde, vida, morte, prazer e dor.',
+    author: 'Epicteto',
+    source: 'Discursos, 2.19.12B-13',
+    comment: 'Imagine o poder que você teria em sua vida e em seus relacionamentos se todas as coisas que perturbam os outros não importassem tanto — quanto pesam, quanto dinheiro têm, quantos anos de vida lhes restam, como morrerão. Que tal se, onde outros estão perturbados, invejosos, afobados, possessivos ou gananciosos, você fosse objetivo, calmo e lúcido? Consegue conceber isso? Imagine o que isso faria para seus relacionamentos no trabalho, sua vida amorosa ou suas amizades.\n\nSêneca era um homem incrivelmente rico, até famoso; no entanto, era estoico. Tinha muitas coisas materiais, contudo, como dizem os estoicos, era também indiferente a elas. Desfrutava-as enquanto estavam ali, mas aceitava que um dia elas poderiam desaparecer. Uma atitude bem melhor do que ansiar desesperadamente por mais ou sentir um terrível pavor diante da ideia de perder sequer um centavo. A indiferença é um sólido meio-termo.\n\nNão se trata de evitar ou esquivar-se, mas sim de não dar a nenhum possível resultado mais poder ou preferência do que o apropriado. Não é fácil fazer isso, certamente, mas se você conseguisse, não ficaria muito mais calmo?',
+    background: getBackgroundForDay(27),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
