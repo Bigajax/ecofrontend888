@@ -70,8 +70,10 @@ const PROTOCOL_NIGHTS: ProtocolNight[] = [
     night: 5,
     title: 'Silêncio Interno Guiado',
     description: 'Reduza estímulos e permita que o sono surja naturalmente.',
-    duration: '~20 min',
-    hasAudio: false,
+    duration: '4 min',
+    audioUrl: '/audio/silencio-interno-guiado.mp3',
+    imageUrl: '/images/silencio-interno-guiado.webp',
+    hasAudio: true,
     gradient: 'linear-gradient(to bottom, #4A6B8A 0%, #142045 100%)',
   },
   {
