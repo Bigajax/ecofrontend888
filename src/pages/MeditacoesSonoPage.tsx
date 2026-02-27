@@ -93,9 +93,11 @@ const PROTOCOL_NIGHTS: ProtocolNight[] = [
 ];
 
 // Nights 1–2 always free; nights 3–7 require paid + sequential completion
-function isNightAccessible(night: number, completed: Set<number>, isPaid: boolean): boolean {
+// VIP users bypass sequential requirement and get all nights unlocked
+function isNightAccessible(night: number, completed: Set<number>, isPaid: boolean, isVip: boolean): boolean {
   if (night === 1) return true;
   if (night === 2) return true;
+  if (isVip) return true;
   if (!isPaid) return false;
   return completed.has(night - 1);
 }
@@ -162,7 +164,7 @@ export default function MeditacoesSonoPage() {
       : `Continuar Noite ${nextNight}`;
 
   const handleNightClick = (night: ProtocolNight) => {
-    const accessible = isNightAccessible(night.night, completedNights, isVipUser);
+    const accessible = isNightAccessible(night.night, completedNights, isVipUser, isVipUser);
 
     if (!accessible && night.night > 2) {
       navigate(UPGRADE_PATH);
@@ -390,7 +392,7 @@ export default function MeditacoesSonoPage() {
 
           <div className="space-y-3">
             {PROTOCOL_NIGHTS.map((night, index) => {
-              const accessible = isNightAccessible(night.night, completedNights, isVipUser);
+              const accessible = isNightAccessible(night.night, completedNights, isVipUser, isVipUser);
               const completed = completedNights.has(night.night);
               const paidLocked = night.night > 2 && !isVipUser;
               const sequentialLocked = night.night > 2 && isVipUser && !accessible;
