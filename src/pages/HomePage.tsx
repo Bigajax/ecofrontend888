@@ -20,6 +20,7 @@ import EcoAIModal from '@/components/EcoAIModal';
 import HomePageTour from '@/components/HomePageTour';
 import TrialOnboarding from '@/components/trial/TrialOnboarding';
 import { useHomePageTour } from '@/hooks/useHomePageTour';
+import { useProgramProgress } from '@/hooks/useProgramProgress';
 import { usePremiumContent } from '@/hooks/usePremiumContent';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
 import { trackDiarioEnteredFromExplore } from '@/lib/mixpanelDiarioEvents';
@@ -77,6 +78,19 @@ export default function HomePage() {
   const [diarioExpanded, setDiarioExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showEcoAIModal, setShowEcoAIModal] = useState(false);
+
+  // Program progress
+  const programProgressList = useProgramProgress();
+  const programProgressMap = Object.fromEntries(
+    programProgressList.map(p => [
+      p.programId === 'riqueza'
+        ? 'prog_riqueza'
+        : p.programId === 'intro'
+        ? 'prog_intro'
+        : 'prog_caleidoscopio',
+      { progress: p.progress, isInactive: p.isInactive, isNearComplete: p.isNearComplete },
+    ])
+  );
 
   // Tour hook
   const { hasSeenTour } = useHomePageTour();
@@ -154,8 +168,8 @@ export default function HomePage() {
     () => [
       {
         id: 'rec_1',
-        title: 'Inicie Sua Jornada',
-        description: 'Dê os primeiros passos na prática meditativa',
+        title: 'Seu primeiro passo começa aqui',
+        description: '8 min para plantar o hábito que vai mudar sua rotina',
         duration: '8 min',
         image: 'url("/images/introducao-meditacao-hero.webp")',
         imagePosition: 'center center',
@@ -164,8 +178,8 @@ export default function HomePage() {
       },
       {
         id: 'rec_2',
-        title: 'Acolhendo sua respiração',
-        description: 'Comece o seu dia',
+        title: 'Comece o dia do seu jeito',
+        description: '7 min para soltar a tensão antes de qualquer coisa',
         duration: '7 min',
         image: 'url("/images/acolhendo-respiracao.webp")',
         imagePosition: 'center center',
@@ -174,8 +188,8 @@ export default function HomePage() {
       },
       {
         id: 'rec_3',
-        title: 'Programa do Sono',
-        description: 'Prepare mente e corpo para uma noite restauradora',
+        title: 'Durma melhor a partir desta noite',
+        description: '15 min — e seu corpo vai agradecer amanhã',
         duration: '15 min',
         image: 'url("/images/meditacao-sono-new.webp")',
         imagePosition: 'center 32%',
@@ -192,7 +206,7 @@ export default function HomePage() {
       // Dr. Joe Dispenza — card unificado (navega para página dedicada)
       {
         id: 'drjoe_collection',
-        title: 'Desperte Seu Potencial',
+        title: 'Ative o que já está em você',
         description: '5 meditações para transformação profunda',
         duration: '5 meditações',
         image: 'url("/images/caduceu-dourado.webp")',
@@ -203,7 +217,7 @@ export default function HomePage() {
       // Caleidoscópio e Mind Movie — produto separado (premium)
       {
         id: 'blessing_4',
-        title: 'Meditação do caleidoscópio e Mind Movie',
+        title: 'Visualize quem você quer ser',
         description: 'Visualize e crie sua nova realidade',
         duration: '22 min',
         image: 'url("/images/caleidoscopio-mind-movie.webp")',
@@ -214,7 +228,7 @@ export default function HomePage() {
       // Sono
       {
         id: 'blessing_8',
-        title: 'Meditação do Sono',
+        title: 'Adormeça sem carregar o dia',
         description: 'Relaxe profundamente e tenha uma noite tranquila',
         duration: '9 min',
         audioUrl: '/audio/meditacao-sono.mp4',
@@ -223,10 +237,22 @@ export default function HomePage() {
         isPremium: false,
         category: 'Sono',
       },
+      // Sono — ansiedade + sono
+      {
+        id: 'blessing_12',
+        title: 'Ansiedade + Sono Profundo',
+        description: 'Acalme a mente ansiosa e encontre paz para uma noite tranquila',
+        duration: '15 min',
+        audioUrl: '/audio/meditacao-ansiedade-sono.mp3',
+        image: 'url("/images/meditacao-ansiedade-sono.webp")',
+        imagePosition: 'center center',
+        isPremium: false,
+        category: 'Sono',
+      },
       // Respiração
       {
         id: 'blessing_10',
-        title: 'Acolhendo sua respiração',
+        title: 'Pause. Respire. Recomece.',
         description: 'Encontre presença e calma através da sua respiração',
         duration: '7 min',
         audioUrl: '/audio/acolhendo-respiracao.mp3',
@@ -238,7 +264,7 @@ export default function HomePage() {
       // Estresse
       {
         id: 'blessing_11',
-        title: 'Liberando o Estresse',
+        title: 'Liberte o peso do dia em 5 min',
         description: 'Solte as tensões do dia e restaure sua paz interior',
         duration: '5 min',
         audioUrl: '/audio/liberando-estresse.mp3',
@@ -256,8 +282,8 @@ export default function HomePage() {
     () => [
       {
         id: 'content_wellbeing',
-        title: 'Sobre Bem-estar Mental',
-        description: 'Por que o sono é tão importante',
+        title: 'O que é bem-estar mental de verdade?',
+        description: 'Você dorme 8h e ainda acorda cansado? Isso pode explicar.',
         category: 'wellbeing',
         image: 'url("/images/wellbeing-mental.webp")', // 🚀 OPT#7: JPG→WebP (-22.72 KB)
         icon: '',
@@ -265,8 +291,8 @@ export default function HomePage() {
       },
       {
         id: 'content_sleep_tips',
-        title: 'Como ter uma boa noite de sono',
-        description: 'Se estiver tendo problemas para dormir, estas dicas podem ajudar.',
+        title: 'O ritual de sono que mudou a vida de 1 em cada 3 usuários',
+        description: '5 práticas simples. Comece hoje à noite.',
         category: 'wellbeing',
         image: 'url("/images/good-night-sleep.webp")', // 🚀 OPT#7: JPG→WebP (-20.48 KB)
         icon: '',
@@ -483,16 +509,16 @@ export default function HomePage() {
                 {displayName}
               </h1>
               <p className="mt-4 text-[16px] font-medium text-[var(--eco-text)]">
-                Como você está agora?
+                O que está passando pela sua mente agora?
               </p>
               <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
-                Registre seu estado ou fale com a Eco
+                A Eco está aqui para ouvir — sem julgamento.
               </p>
               <button
                 onClick={handleStartChat}
                 className="mt-6 inline-flex items-center justify-center rounded-full bg-[var(--eco-user)] px-6 py-3 text-[15px] font-semibold text-white transition-all duration-300 hover:bg-[var(--eco-user)]/90 hover:scale-105 active:scale-95 shadow-md"
               >
-                Refletir agora
+                Começar minha reflexão
               </button>
             </div>
 
@@ -534,6 +560,7 @@ export default function HomePage() {
         {/* Programas Section */}
         <AnimatedSection animation="slide-up-fade" id="self-assessment-section">
           <SelfAssessmentSection
+            programProgress={programProgressMap}
             onProgramClick={(id) => {
               sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
               if (id === 'prog_rings') {
@@ -571,7 +598,7 @@ export default function HomePage() {
         <AnimatedSection animation="slide-up-fade" id="eco-ai-guidance">
           <EcoAIGuidanceCard
             userName={displayName}
-            greeting={greeting}
+            totalSessions={programProgressList.reduce((acc, p) => acc + p.completedSessions, 0)}
             onStartChat={handleStartChat}
           />
         </AnimatedSection>

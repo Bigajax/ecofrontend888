@@ -64,7 +64,7 @@ export default function EnergyBlessingsSection({
           Jornadas
         </h2>
         <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
-          Programas e meditações para sua transformação pessoal
+          Cada jornada foi criada para levar você de um ponto a outro — com intenção.
         </p>
       </div>
 

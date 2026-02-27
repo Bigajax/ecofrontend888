@@ -31,7 +31,7 @@ export default function DailyRecommendationsSection({
       {/* Title */}
       <div className="mb-5">
         <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
-          Recomendações diárias
+          Para você, hoje
         </h2>
         <p className="mt-1 text-[14px] text-[var(--eco-muted)]">{dateLabel}</p>
       </div>

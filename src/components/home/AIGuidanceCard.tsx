@@ -13,7 +13,7 @@ export default function AIGuidanceCard({
     <section className="px-4 py-8 md:px-6 md:py-12">
       {/* Title */}
       <h2 className="mb-6 font-display text-2xl font-normal text-[var(--eco-text)]">
-        Receber orientação individual
+        A Eco te conhece. Fale com ela agora.
       </h2>
 
       {/* Main Card - Desktop & Mobile */}
@@ -33,7 +33,7 @@ export default function AIGuidanceCard({
 
               {/* Text content */}
               <h3 className="font-display text-3xl font-normal text-[var(--eco-text)]">
-                ECO AI
+                Eco
               </h3>
               <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-[var(--eco-text)]/80">
                 {userName}, estou aqui para uma conversa que te ajude a entender melhor

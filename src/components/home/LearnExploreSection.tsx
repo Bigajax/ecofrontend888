@@ -39,10 +39,10 @@ export default function LearnExploreSection({
       {/* Header */}
       <div className="mb-8 pb-6 border-b border-[var(--eco-line)]">
         <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
-          Aprofundar
+          Leituras para ir mais fundo
         </h2>
         <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
-          Artigos e conteúdos para expandir sua jornada
+          Quando você estiver pronto para entender o porquê
         </p>
       </div>
 

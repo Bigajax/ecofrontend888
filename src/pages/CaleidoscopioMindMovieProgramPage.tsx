@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, ArrowLeft, X } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
@@ -53,9 +53,25 @@ export default function CaleidoscopioMindMovieProgramPage() {
 
   // Save to localStorage whenever progress changes
   useEffect(() => {
-    const storageKey = `eco.caleidoscopio.completed.v1.${user?.id || 'guest'}`;
+    const uid = user?.id || 'guest';
+    const storageKey = `eco.caleidoscopio.completed.v1.${uid}`;
     localStorage.setItem(storageKey, JSON.stringify([...completedEpisodes]));
+    if (completedEpisodes.size > 0) {
+      localStorage.setItem(`eco.program.lastActive.caleidoscopio.${uid}`, new Date().toISOString());
+    }
   }, [completedEpisodes, user?.id]);
+
+  const [sessionJustCompleted, setSessionJustCompleted] = useState<number | null>(null);
+  const prevSizeRef = useRef(completedEpisodes.size);
+
+  useEffect(() => {
+    if (completedEpisodes.size > prevSizeRef.current) {
+      const newPct = Math.round((completedEpisodes.size / totalCount) * 100);
+      setSessionJustCompleted(newPct);
+      setTimeout(() => setSessionJustCompleted(null), 3000);
+    }
+    prevSizeRef.current = completedEpisodes.size;
+  }, [completedEpisodes.size, totalCount]);
 
   const handleEpisodeClick = (episode: Episode) => {
     // Navegar para o episódio Manifestação da Saúde
@@ -82,6 +98,16 @@ export default function CaleidoscopioMindMovieProgramPage() {
 
   const completedCount = completedEpisodes.size;
   const totalCount = INITIAL_EPISODES.length;
+  const pct = Math.round((completedCount / totalCount) * 100);
+  const remaining = totalCount - completedCount;
+  const urgencyLabel =
+    pct === 0
+      ? 'Comece sua primeira sessão'
+      : pct === 100
+      ? 'Programa concluído 🎉'
+      : pct >= 80
+      ? 'Você está quase lá'
+      : `Continue sua jornada · Faltam ${remaining} sessões`;
 
   const handleLogout = () => {
     navigate('/');
@@ -246,12 +272,40 @@ export default function CaleidoscopioMindMovieProgramPage() {
         </section>
 
         {/* Episodes Section */}
+        {/* Toast de celebração — aparece 3s após concluir episódio */}
+        {sessionJustCompleted !== null && (
+          <div className="mx-auto max-w-4xl px-4 sm:px-8 mb-4 animate-fade-in">
+            <div className="rounded-xl bg-violet-50 border border-violet-100 px-4 py-2.5 flex items-center gap-2">
+              <span className="text-violet-600 text-sm font-semibold">
+                Você avançou para {sessionJustCompleted}% da sua jornada
+              </span>
+            </div>
+          </div>
+        )}
+
         <section className="mx-auto max-w-4xl px-4 py-6 sm:py-8 md:px-8">
-          <div className="mb-4 flex items-center justify-between sm:mb-6">
-            <h2 className="text-base font-semibold text-[var(--eco-text)] sm:text-lg">Episódios</h2>
-            <span className="text-xs text-[var(--eco-muted)] sm:text-sm">
-              {completedCount} concluído(s) de {totalCount}
-            </span>
+          {/* Bloco de progresso */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sm font-semibold text-gray-800">{urgencyLabel}</span>
+              <span className="text-sm font-bold text-gray-800">{pct}%</span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${pct}%`,
+                  background:
+                    pct === 100
+                      ? 'linear-gradient(to right, #34d399, #10b981)'
+                      : 'linear-gradient(to right, #a78bfa, #7c3aed)',
+                }}
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              {completedCount} de {totalCount} episódios concluídos
+              {pct >= 50 && pct < 100 ? ' · A maioria desiste antes da metade — você passou' : ''}
+            </p>
           </div>
 
           <div className="space-y-3 sm:space-y-4">

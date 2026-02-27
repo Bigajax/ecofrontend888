@@ -37,11 +37,18 @@ const PROGRAMS: Program[] = [
   },
 ];
 
-interface SelfAssessmentSectionProps {
-  onProgramClick?: (id: string) => void;
+interface ProgramProgressEntry {
+  progress: number;
+  isInactive: boolean;
+  isNearComplete: boolean;
 }
 
-export default function SelfAssessmentSection({ onProgramClick }: SelfAssessmentSectionProps) {
+interface SelfAssessmentSectionProps {
+  onProgramClick?: (id: string) => void;
+  programProgress?: Record<string, ProgramProgressEntry>;
+}
+
+export default function SelfAssessmentSection({ onProgramClick, programProgress = {} }: SelfAssessmentSectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -98,7 +105,12 @@ export default function SelfAssessmentSection({ onProgramClick }: SelfAssessment
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {PROGRAMS.map((p) => (
-            <ProgramCard key={p.id} program={p} onClick={() => onProgramClick?.(p.id)} />
+            <ProgramCard
+              key={p.id}
+              program={p}
+              onClick={() => onProgramClick?.(p.id)}
+              progressEntry={programProgress[p.id]}
+            />
           ))}
         </div>
       </div>
@@ -110,7 +122,13 @@ export default function SelfAssessmentSection({ onProgramClick }: SelfAssessment
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {PROGRAMS.map((p) => (
-            <ProgramCard key={p.id} program={p} mobile onClick={() => onProgramClick?.(p.id)} />
+            <ProgramCard
+              key={p.id}
+              program={p}
+              mobile
+              onClick={() => onProgramClick?.(p.id)}
+              progressEntry={programProgress[p.id]}
+            />
           ))}
         </div>
       </div>
@@ -124,9 +142,14 @@ interface ProgramCardProps {
   program: Program;
   mobile?: boolean;
   onClick?: () => void;
+  progressEntry?: ProgramProgressEntry;
 }
 
-function ProgramCard({ program, mobile, onClick }: ProgramCardProps) {
+function ProgramCard({ program, mobile, onClick, progressEntry }: ProgramCardProps) {
+  const progress = progressEntry?.progress ?? 0;
+  const isInactive = progressEntry?.isInactive ?? false;
+  const isNearComplete = progressEntry?.isNearComplete ?? false;
+
   return (
     <button
       onClick={onClick}
@@ -159,11 +182,53 @@ function ProgramCard({ program, mobile, onClick }: ProgramCardProps) {
           />
           {/* Bottom fade */}
           <div className="absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-gray-200/80 to-transparent pointer-events-none" />
+
+          {/* Badge de inatividade */}
+          {isInactive && progress > 0 && (
+            <div className="absolute top-3 left-3 right-3">
+              <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 backdrop-blur-sm">
+                <span className="text-[10px] font-semibold text-amber-300">Sua jornada está esperando</span>
+              </span>
+            </div>
+          )}
+
+          {/* % + barra na base da imagem */}
+          {progress > 0 && (
+            <>
+              <div className="absolute bottom-4 left-3">
+                <span className="text-[13px] font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)]">
+                  {progress >= 100 ? '✓' : `${progress}%`}
+                </span>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/25">
+                <div
+                  className="h-full transition-all duration-700"
+                  style={{
+                    width: `${progress}%`,
+                    background:
+                      progress >= 100
+                        ? '#34d399'
+                        : 'linear-gradient(to right, #a78bfa, #7c3aed)',
+                  }}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* Title below card */}
       <p className="text-[15px] font-semibold text-[var(--eco-text)]">{program.title}</p>
+
+      {/* Micro copy */}
+      {progress > 0 && progress < 100 && (
+        <p className="mt-0.5 text-[12px] text-[var(--eco-muted)]">
+          {isNearComplete ? 'Você está quase lá' : 'Continue sua jornada'}
+        </p>
+      )}
+      {progress >= 100 && (
+        <p className="mt-0.5 text-[12px] text-emerald-600 font-medium">Programa concluído</p>
+      )}
     </button>
   );
 }

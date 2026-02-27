@@ -87,7 +87,7 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
     badge: 'JORNADA SAMURAI',
     mainTitle: 'DOMINE OS 5 ANÉIS DA DISCIPLINA',
     title: 'Ritual Diário de Miyamoto Musashi',
-    description: 'Construa clareza, foco e propósito através da sabedoria do maior samurai',
+    description: 'Miyamoto Musashi treinou a mente antes do corpo. Em 5 práticas, você também vai.',
     background:
       'url("/images/5-aneis-hero.webp")',
   },

@@ -3,24 +3,53 @@ import EcoBubbleOneEye from '@/components/EcoBubbleOneEye';
 
 interface EcoAIGuidanceCardProps {
   userName: string;
-  greeting?: string;
+  totalSessions?: number;
   onStartChat: () => void;
+}
+
+function getContextualMessage(firstName: string, totalSessions: number): string {
+  const now = new Date();
+  const brasiliaTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+  const hour = brasiliaTime.getHours();
+  const dayOfWeek = brasiliaTime.getDay(); // 0=Dom, 1=Seg, ..., 6=Sab
+
+  // Segunda-feira de manhã/tarde
+  if (dayOfWeek === 1 && hour < 15) {
+    return `Segunda-feira pode pesar. Que tal a gente começar com 5 minutos para você?`;
+  }
+
+  // Usuário com sessões concluídas
+  if (totalSessions > 0) {
+    return `${firstName}, você já completou ${totalSessions} ${totalSessions === 1 ? 'sessão' : 'sessões'}. Como está indo por dentro?`;
+  }
+
+  // Contextual por hora
+  if (hour >= 5 && hour < 12) {
+    return `Oi, ${firstName}. Como está sendo sua manhã? Posso te ajudar a começá-la bem.`;
+  } else if (hour >= 12 && hour < 18) {
+    return `Oi, ${firstName}. Senti que você ainda não fez uma pausa hoje. Quer falar sobre como está sendo o seu dia?`;
+  } else {
+    return `Oi, ${firstName}. Como foi o seu dia? Estou aqui para ouvir.`;
+  }
 }
 
 export default function EcoAIGuidanceCard({
   userName,
-  greeting = 'Olá',
+  totalSessions = 0,
   onStartChat,
 }: EcoAIGuidanceCardProps) {
+  const firstName = userName.split(' ')[0];
+  const message = getContextualMessage(firstName, totalSessions);
+
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
       {/* Title with Progress Indicator */}
       <div className="mb-8 pb-6 border-b border-[var(--eco-line)]">
         <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
-          Receber orientação individual
+          A Eco te conhece. Fale com ela agora.
         </h2>
         <p className="mt-2 text-[13px] text-[var(--eco-muted)]">
-          Continue sua jornada de autoconhecimento
+          Uma IA treinada para te acompanhar — sem script, sem roteiro fixo.
         </p>
       </div>
 
@@ -40,10 +69,10 @@ export default function EcoAIGuidanceCard({
             {/* Text Content */}
             <div className="text-left">
               <h3 className="font-display text-lg font-normal text-[var(--eco-text)]">
-                ECO AI
+                Eco
               </h3>
               <p className="mt-1 text-[12px] leading-relaxed text-[var(--eco-muted)]">
-                {greeting}, {userName}! Se precisar fazer uma pausa, estou aqui para conversar.
+                {message}
               </p>
             </div>
           </div>

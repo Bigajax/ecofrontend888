@@ -49,7 +49,7 @@ export default function DrJoeMeditationCard({ onClick }: DrJoeMeditationCardProp
           {/* Bottom: Title, Description, and Button */}
           <div>
             <h3 className="text-xl font-bold text-white drop-shadow-lg md:text-2xl">
-              Desperte Seu Potencial
+              Ative o que já está em você
             </h3>
             <p className="mt-1 text-[13px] text-white/90 drop-shadow-md md:text-sm">
               Acesse o campo quântico e crie a realidade que você deseja viver.

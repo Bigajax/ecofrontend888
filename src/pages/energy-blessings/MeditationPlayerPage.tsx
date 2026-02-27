@@ -379,6 +379,14 @@ export default function MeditationPlayerPage() {
         checkTrigger(ConversionSignals.meditationPreview(meditationData.id || 'unknown'));
       }
 
+      // Write 80% completion marker for program sequence tracking
+      if (audio.duration > 0 && (audio.currentTime / audio.duration) >= 0.80 && meditationData.id) {
+        const markerKey = `eco.meditation.completed80pct.${meditationData.id}`;
+        if (!localStorage.getItem(markerKey)) {
+          localStorage.setItem(markerKey, 'true');
+        }
+      }
+
       // Check if meditation is 95%+ complete (send only ONCE)
       if (
         !hasCompletedEventSent.current &&

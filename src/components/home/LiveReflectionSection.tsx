@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Avatar data with varied sizes, positions, images and colors - Cada avatar aparece apenas 1 vez
 // Posições responsivas: mobile (default) e desktop (md)
@@ -79,6 +80,7 @@ const SIZE_MAP = {
 };
 
 export default function LiveReflectionSection() {
+  const navigate = useNavigate();
   const [count, setCount] = useState(4182);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -144,6 +146,11 @@ export default function LiveReflectionSection() {
 
         {/* Central Content */}
         <div className="relative z-10 flex flex-col items-center justify-center text-center px-8 sm:px-2">
+          {/* Main message */}
+          <p className="text-base sm:text-lg font-medium text-gray-600 md:text-xl mb-6 max-w-xs">
+            Você nunca medita sozinho no Ecotopia.
+          </p>
+
           {/* Counter and Live Badge */}
           <div className="mb-3 flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
             <h2 className="font-display text-4xl sm:text-5xl font-bold text-gray-800 md:text-7xl">
@@ -158,14 +165,17 @@ export default function LiveReflectionSection() {
           </div>
 
           {/* Subtitle */}
-          <p className="text-sm sm:text-lg font-medium text-gray-600 md:text-xl mb-2">
-            pessoas refletindo agora
+          <p className="text-sm sm:text-lg font-medium text-gray-600 md:text-xl mb-8">
+            pessoas estão aqui agora.
           </p>
 
-          {/* Humanized message */}
-          <p className="text-xs sm:text-sm text-gray-500 md:text-base max-w-md">
-            Em silêncio, cada uma no seu processo.
-          </p>
+          {/* CTA */}
+          <button
+            onClick={() => navigate('/app')}
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--eco-user)] px-6 py-3 text-[15px] font-semibold text-white shadow-md transition-all duration-300 hover:bg-[var(--eco-user)]/90 hover:scale-105 active:scale-95"
+          >
+            Junte-se a elas →
+          </button>
         </div>
 
         {/* Keyframes for floating animations */}
