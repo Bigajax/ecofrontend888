@@ -59,8 +59,10 @@ const PROTOCOL_NIGHTS: ProtocolNight[] = [
     night: 4,
     title: 'Liberando Preocupações do Dia',
     description: 'Pare de antecipar o amanhã quando deveria estar descansando.',
-    duration: '~18 min',
-    hasAudio: false,
+    duration: '5 min',
+    audioUrl: '/audio/liberando-preocupacoes.mp3',
+    imageUrl: '/images/liberando-preocupacoes.webp',
+    hasAudio: true,
     gradient: 'linear-gradient(to bottom, #7B5B8A 0%, #2A1A40 100%)',
   },
   {
