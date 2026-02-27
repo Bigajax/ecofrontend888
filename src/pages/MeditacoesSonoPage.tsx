@@ -48,8 +48,10 @@ const PROTOCOL_NIGHTS: ProtocolNight[] = [
     night: 3,
     title: 'Esvaziando Pensamentos Repetitivos',
     description: 'Interrompa o ciclo mental que mantém você acordado.',
-    duration: '~18 min',
-    hasAudio: false,
+    duration: '5 min',
+    audioUrl: '/audio/esvaziando-pensamentos.mp3',
+    imageUrl: '/images/esvaziando-pensamentos.webp',
+    hasAudio: true,
     gradient: 'linear-gradient(to bottom, #5B6B95 0%, #1A2545 100%)',
   },
   {
