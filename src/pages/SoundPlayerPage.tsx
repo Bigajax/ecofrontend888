@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useMediaSession } from '@/hooks/useMediaSession';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Play, Pause, RotateCcw, RotateCw, Heart, Volume2, Bell } from 'lucide-react';
 
@@ -156,6 +157,21 @@ export default function SoundPlayerPage() {
   const progress = (currentTime / totalSeconds) * 100;
   const circumference = 2 * Math.PI * 90; // raio do círculo = 90
   const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  useMediaSession({
+    title: soundData.title,
+    artist: 'ECO — Sons',
+    artwork: soundData.image,
+    audioRef,
+    isPlaying,
+    duration: totalSeconds,
+    currentTime,
+    onPlay: () => setIsPlaying(true),
+    onPause: () => setIsPlaying(false),
+    onSeekBackward: () => handleSkip(-10),
+    onSeekForward: () => handleSkip(10),
+    onSeekTo: (time) => setCurrentTime(Math.max(0, Math.min(totalSeconds, time))),
+  });
 
   return (
     <div

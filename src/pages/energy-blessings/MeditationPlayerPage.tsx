@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGuestExperience } from '@/contexts/GuestExperienceContext';
 import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestConversionTriggers';
 import MeditationGuestGate from '@/components/meditation/MeditationGuestGate';
+import { useMediaSession } from '@/hooks/useMediaSession';
 
 interface MeditationData {
   id?: string;
@@ -122,9 +123,43 @@ export default function MeditationPlayerPage() {
   const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const favoriteToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Fade-in on first play
+  const fadeInIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Progress persistence
+  const PROGRESS_KEY = `eco.meditation.progress.v1.${meditationData.id || 'default'}`;
+  const lastSavedTimeRef = useRef(0);
+  const [savedProgress, setSavedProgress] = useState<number | null>(null);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+
   // Scroll para o topo quando a página carregar
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  // Load saved progress and offer resume prompt
+  useEffect(() => {
+    const raw = localStorage.getItem(PROGRESS_KEY);
+    if (!raw) return;
+    try {
+      const { currentTime: savedTime, timestamp } = JSON.parse(raw) as {
+        currentTime: number;
+        timestamp: number;
+      };
+      // Expire after 7 days
+      if (Date.now() - timestamp > 7 * 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(PROGRESS_KEY);
+        return;
+      }
+      // Only show prompt if more than 10 s was listened
+      if (savedTime > 10) {
+        setSavedProgress(savedTime);
+        setShowResumePrompt(true);
+      }
+    } catch {
+      localStorage.removeItem(PROGRESS_KEY);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Track Abandoned on component unmount
@@ -134,9 +169,12 @@ export default function MeditationPlayerPage() {
         analytics.trackAbandoned(audioRef.current.currentTime, 'navigation');
       }
 
-      // Cleanup fade interval
+      // Cleanup fade intervals
       if (fadeIntervalRef.current) {
         clearInterval(fadeIntervalRef.current);
+      }
+      if (fadeInIntervalRef.current) {
+        clearInterval(fadeInIntervalRef.current);
       }
 
       // Cleanup favorite toast timer
@@ -352,12 +390,52 @@ export default function MeditationPlayerPage() {
     }, stepDurationMs);
   };
 
+  /**
+   * Smoothly fade audio volume from 0 to the user's current setting over 3 s.
+   * Only called on the very first play of a session.
+   */
+  const startFadeIn = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.volume = 0;
+    const targetVolume = meditationVolume / 100;
+    const fadeSteps = 60; // ~50 ms each → 3 s total
+    const stepMs = 3000 / fadeSteps;
+    let step = 0;
+
+    fadeInIntervalRef.current = setInterval(() => {
+      step++;
+      if (audio) {
+        audio.volume = Math.min(targetVolume, targetVolume * (step / fadeSteps));
+      }
+      if (step >= fadeSteps) {
+        if (fadeInIntervalRef.current) clearInterval(fadeInIntervalRef.current);
+      }
+    }, stepMs);
+  };
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const updateTime = () => {
       setCurrentTime(audio.currentTime);
+
+      // Save progress every ~5 s for resume-later feature
+      if (
+        audio.duration > 0 &&
+        (audio.currentTime / audio.duration) < 0.95 &&
+        audio.currentTime > 10
+      ) {
+        if (audio.currentTime - lastSavedTimeRef.current >= 5) {
+          lastSavedTimeRef.current = audio.currentTime;
+          localStorage.setItem(
+            PROGRESS_KEY,
+            JSON.stringify({ currentTime: audio.currentTime, timestamp: Date.now() })
+          );
+        }
+      }
 
       // NOVO: Guest mode - detectar limite de 2 minutos
       if (
@@ -394,6 +472,7 @@ export default function MeditationPlayerPage() {
         (audio.currentTime / audio.duration) >= 0.95
       ) {
         hasCompletedEventSent.current = true;
+        localStorage.removeItem(PROGRESS_KEY);
         analytics.trackCompleted({
           backgroundSoundId: selectedBackgroundSound?.id || 'none',
           backgroundSoundTitle: selectedBackgroundSound?.title || 'Nenhum',
@@ -416,6 +495,7 @@ export default function MeditationPlayerPage() {
       // Track Completed on natural end (only if not sent already)
       if (!hasCompletedEventSent.current) {
         hasCompletedEventSent.current = true;
+        localStorage.removeItem(PROGRESS_KEY);
         analytics.trackCompleted({
           backgroundSoundId: selectedBackgroundSound?.id || 'none',
           backgroundSoundTitle: selectedBackgroundSound?.title || 'Nenhum',
@@ -475,6 +555,10 @@ export default function MeditationPlayerPage() {
       } else {
         // PLAY
         audioRef.current.play();
+        // Smooth fade-in only on the very first play
+        if (!hasPlayedOnce.current) {
+          startFadeIn();
+        }
         // Iniciar automaticamente o som de fundo quando play for clicado
         if (backgroundAudioRef.current && selectedBackgroundSound?.audioUrl) {
           backgroundAudioRef.current.play().catch(err => {
@@ -641,6 +725,20 @@ export default function MeditationPlayerPage() {
       document.removeEventListener('mouseup', handleEnd);
     };
   }, [isDragging]);
+
+  useMediaSession({
+    title: meditationData.title,
+    artist: 'ECO — Meditação',
+    artwork: meditationData.imageUrl,
+    audioRef,
+    isPlaying,
+    duration,
+    currentTime,
+    onPlay: () => { if (!isPlaying) handlePlayPause(); },
+    onPause: () => { if (isPlaying) handlePlayPause(); },
+    onSeekBackward: () => handleSkip(-15),
+    onSeekForward: () => handleSkip(15),
+  });
 
   return (
     <div
@@ -979,6 +1077,36 @@ export default function MeditationPlayerPage() {
               <span className="text-xs text-gray-500">
                 {meditationData.title}
               </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resume Progress Prompt */}
+      {showResumePrompt && savedProgress !== null && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm animate-slide-down">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl px-4 py-3 flex items-center justify-between gap-3 border border-gray-200/50">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">Continuar de onde parou?</p>
+              <p className="text-xs text-gray-500">{formatTime(savedProgress)}</p>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => {
+                  if (audioRef.current) audioRef.current.currentTime = savedProgress;
+                  setCurrentTime(savedProgress);
+                  setShowResumePrompt(false);
+                }}
+                className="px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-full touch-manipulation"
+              >
+                Continuar
+              </button>
+              <button
+                onClick={() => setShowResumePrompt(false)}
+                className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full touch-manipulation"
+              >
+                Não
+              </button>
             </div>
           </div>
         </div>
