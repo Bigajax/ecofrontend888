@@ -489,6 +489,17 @@ export const FEBRUARY_REFLECTIONS: DailyMaxim[] = [
     comment: 'Imagine o poder que você teria em sua vida e em seus relacionamentos se todas as coisas que perturbam os outros não importassem tanto — quanto pesam, quanto dinheiro têm, quantos anos de vida lhes restam, como morrerão. Que tal se, onde outros estão perturbados, invejosos, afobados, possessivos ou gananciosos, você fosse objetivo, calmo e lúcido? Consegue conceber isso? Imagine o que isso faria para seus relacionamentos no trabalho, sua vida amorosa ou suas amizades.\n\nSêneca era um homem incrivelmente rico, até famoso; no entanto, era estoico. Tinha muitas coisas materiais, contudo, como dizem os estoicos, era também indiferente a elas. Desfrutava-as enquanto estavam ali, mas aceitava que um dia elas poderiam desaparecer. Uma atitude bem melhor do que ansiar desesperadamente por mais ou sentir um terrível pavor diante da ideia de perder sequer um centavo. A indiferença é um sólido meio-termo.\n\nNão se trata de evitar ou esquivar-se, mas sim de não dar a nenhum possível resultado mais poder ou preferência do que o apropriado. Não é fácil fazer isso, certamente, mas se você conseguisse, não ficaria muito mais calmo?',
     background: getBackgroundForDay(27),
   },
+  {
+    date: '28 de fevereiro',
+    month: 'fevereiro',
+    dayNumber: 28,
+    title: 'QUANDO VOCÊ SE DESCONTROLA',
+    text: 'A alma é como uma tigela de água, e nossas impressões são como o raio de luz que incide sobre ela. Quando a água é agitada, parece que a própria luz também está se movendo, mas não está. Assim, quando uma pessoa perde o autocontrole, não são suas habilidades e virtudes que são perturbadas, mas o espírito em que elas existem, e, quando o espírito se acalma, essas coisas também se acalmam.',
+    author: 'Epicteto',
+    source: 'Discursos, 3.3.20–22',
+    comment: 'Você fez uma pequena bobagem. Ou talvez uma grande bobagem.\n\nE daí? Isso não muda a filosofia que você conhece. Não é que sua escolha racional o tenha abandonado para sempre. Ao contrário, foi você que a abandonou temporariamente.\n\nLembre-se de que as ferramentas e os objetivos de seu treinamento não são afetados pela turbulência do momento. Pare. Recupere o autocontrole. Ele está à sua espera.',
+    background: getBackgroundForDay(28),
+  },
 ];
 
 // Reflexões de dezembro (8 a 27)
