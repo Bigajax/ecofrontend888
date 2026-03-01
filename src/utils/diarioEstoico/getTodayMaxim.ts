@@ -689,7 +689,7 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
 export const MARCH_REFLECTIONS: DailyMaxim[] = [
   {
     date: '1 de março',
-    month: 'março',
+    month: 'marco',
     dayNumber: 1,
     title: 'ONDE A FILOSOFIA COMEÇA',
     text: 'Um lugar importante para começar na filosofia é este: a clara percepção de nosso princípio orientador.',
@@ -732,7 +732,7 @@ export function getTodayMaxim(): DailyMaxim | null {
     startDay = 1;
     endDay = 28;
   } else if (currentMonth === 2) { // Março
-    monthName = 'março';
+    monthName = 'marco';
     startDay = 1;
     endDay = 31;
   } else if (currentMonth === 11) { // Dezembro
