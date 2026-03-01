@@ -686,9 +686,24 @@ export const DECEMBER_REFLECTIONS: DailyMaxim[] = [
   },
 ];
 
+export const MARCH_REFLECTIONS: DailyMaxim[] = [
+  {
+    date: '1 de março',
+    month: 'março',
+    dayNumber: 1,
+    title: 'ONDE A FILOSOFIA COMEÇA',
+    text: 'Um lugar importante para começar na filosofia é este: a clara percepção de nosso princípio orientador.',
+    author: 'Epicteto',
+    source: 'Discursos, 1.26.15',
+    comment: 'A filosofia é intimidadora. Por onde começar? Com livros? Palestras? Com a venda de suas posses mundanas? Com nenhuma dessas coisas. Epicteto está dizendo que nos tornamos filósofos quando começamos a exercitar nossa razão orientadora e passamos a questionar as emoções e crenças e até a linguagem que outros dão por certas. Pensa-se que um animal tem consciência de si mesmo quando é capaz de se reconhecer plenamente num espelho. Talvez possamos afirmar que começamos nossa jornada na filosofia quando nos tornamos conscientes da capacidade de analisarmos a própria mente.\n\nVocê pode dar esse primeiro passo hoje? Quando o fizer, descobrirá que, a partir disso, realmente ganhamos vida, levamos vidas — para parafrasear Sócrates — que são realmente dignas de ser vividas.',
+    background: getBackgroundForDay(1),
+  },
+];
+
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
   ...JANUARY_REFLECTIONS,
   ...FEBRUARY_REFLECTIONS,
+  ...MARCH_REFLECTIONS,
   ...DECEMBER_REFLECTIONS,
 ];
 
