@@ -99,11 +99,6 @@ export default function MeditationPlayerPage() {
   const [backgroundVolume, setBackgroundVolume] = useState(67); // Volume padrão para som de fundo (67%)
   const backgroundAudioRef = useRef<HTMLAudioElement>(null);
 
-  // Web Audio API para controle avançado de volume
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const backgroundGainNodeRef = useRef<GainNode | null>(null);
-  const backgroundSourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
-
   // Estado para volume da meditação
   const [meditationVolume, setMeditationVolume] = useState(100);
 
@@ -200,35 +195,12 @@ export default function MeditationPlayerPage() {
     }
   }, [selectedBackgroundSound, isPlaying]);
 
-  // Inicializar Web Audio API para som de fundo
+  // Controlar volume do áudio de fundo diretamente no elemento (compatível com background/lock screen)
   useEffect(() => {
-    if (backgroundAudioRef.current && !audioContextRef.current) {
-      // Criar AudioContext
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-
-      // Criar nó de ganho (volume)
-      backgroundGainNodeRef.current = audioContextRef.current.createGain();
-
-      // Criar source a partir do elemento de áudio
-      backgroundSourceNodeRef.current = audioContextRef.current.createMediaElementSource(backgroundAudioRef.current);
-
-      // Conectar: source -> gain -> destination (speakers)
-      backgroundSourceNodeRef.current.connect(backgroundGainNodeRef.current);
-      backgroundGainNodeRef.current.connect(audioContextRef.current.destination);
-
-      // Definir volume inicial (67% → ~5.4% do volume real)
-      backgroundGainNodeRef.current.gain.value = 0.67 * 0.08;
-    }
-  }, []);
-
-  // Controlar volume do áudio de fundo usando Web Audio API
-  useEffect(() => {
-    if (backgroundGainNodeRef.current) {
-      // Converter porcentagem para valor Web Audio (0.0 a 1.0)
-      // Sons de fundo muito suaves para não tampar a meditação (máximo 8%)
-      const normalizedVolume = backgroundVolume / 100;
-      const softVolume = normalizedVolume * 0.08; // Máximo 8% (0.08) do volume real
-      backgroundGainNodeRef.current.gain.value = softVolume;
+    if (backgroundAudioRef.current) {
+      // Sons de fundo suaves: máximo 8% do volume total
+      const softVolume = (backgroundVolume / 100) * 0.08;
+      backgroundAudioRef.current.volume = softVolume;
     }
 
     // Track background volume change (with debounce handled by analytics hook)
@@ -246,13 +218,29 @@ export default function MeditationPlayerPage() {
       if (backgroundVolume === 0) {
         backgroundAudioRef.current.pause();
       } else if (isPlaying && selectedBackgroundSound?.audioUrl) {
-        // Se volume > 0 e meditação está tocando, retomar o áudio de fundo
         backgroundAudioRef.current.play().catch(err => {
           console.error('Erro ao reproduzir som de fundo:', err);
         });
       }
     }
   }, [backgroundVolume, isPlaying, selectedBackgroundSound, analytics]);
+
+  // Retomar áudio de fundo quando o utilizador desbloqueia o telemóvel
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (
+        document.visibilityState === 'visible' &&
+        isPlaying &&
+        backgroundVolume > 0 &&
+        selectedBackgroundSound?.audioUrl &&
+        backgroundAudioRef.current?.paused
+      ) {
+        backgroundAudioRef.current.play().catch(() => {/* silêncio */});
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isPlaying, backgroundVolume, selectedBackgroundSound]);
 
   // Track previous volumes for change detection
   const previousMeditationVolume = useRef(meditationVolume);
