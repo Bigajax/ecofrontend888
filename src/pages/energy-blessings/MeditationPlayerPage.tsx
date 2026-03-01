@@ -13,6 +13,7 @@ import { useGuestExperience } from '@/contexts/GuestExperienceContext';
 import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestConversionTriggers';
 import MeditationGuestGate from '@/components/meditation/MeditationGuestGate';
 import { useMediaSession } from '@/hooks/useMediaSession';
+import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 
 interface MeditationData {
   id?: string;
@@ -1123,6 +1124,43 @@ export default function MeditationPlayerPage() {
             setShowCompletionScreen(false);
             handleBack();
           }}
+          nextNight={(() => {
+            if (category !== 'sono' || !meditationData.id?.startsWith('night_')) return undefined;
+            const currentNum = parseInt(meditationData.id.replace('night_', ''), 10);
+            if (isNaN(currentNum) || currentNum >= 7) return undefined;
+            const next = PROTOCOL_NIGHTS.find(n => n.night === currentNum + 1);
+            if (!next || !next.hasAudio) return undefined;
+            const isLocked = next.night > 2 && !isVipUser;
+            return {
+              nightNumber: next.night,
+              title: next.title,
+              description: next.description,
+              duration: next.duration,
+              isLocked,
+              onPlay: () => {
+                if (isLocked) {
+                  navigate('/app/subscription/demo');
+                  return;
+                }
+                navigate('/app/meditation-player', {
+                  state: {
+                    meditation: {
+                      id: next.id,
+                      title: next.title,
+                      duration: next.duration,
+                      audioUrl: next.audioUrl,
+                      imageUrl: next.imageUrl ?? '/images/meditacoes-sono-hero.webp',
+                      backgroundMusic: 'Sono',
+                      gradient: next.gradient,
+                      category: 'sono',
+                      isPremium: false,
+                    },
+                    returnTo: '/app/meditacoes-sono',
+                  },
+                });
+              },
+            };
+          })()}
           sessionMetrics={{
             pauseCount: analytics.getSessionMetrics().pauseCount,
             skipCount: analytics.getSessionMetrics().skipCount,

@@ -103,6 +103,13 @@ function renderWithBoundary(element: ReactElement) {
   );
 }
 
+// Forces MeditationPlayerPage to fully remount on every navigation
+// (even same-route), so audio state resets correctly when playing next night.
+function MeditationPlayerKeyed() {
+  const location = useLocation();
+  return renderWithBoundary(<MeditationPlayerPage key={location.key} />);
+}
+
 function PublicShell() {
   return (
     <div className="flex min-h-[100dvh] w-screen flex-col bg-white font-sans">
@@ -260,7 +267,7 @@ function AppRoutes() {
           </RequireAuth>
         }
       >
-        <Route index element={renderWithBoundary(<MeditationPlayerPage />)} />
+        <Route index element={<MeditationPlayerKeyed />} />
       </Route>
       <Route
         path="/app/sound-player"

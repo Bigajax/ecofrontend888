@@ -7,7 +7,7 @@
 
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Moon, Play, Lock } from 'lucide-react';
 import { getTodayMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
 import { useMeditationStreak } from '@/hooks/useMeditationStreak';
 import { trackMeditationFeedback } from '@/analytics/meditation';
@@ -17,12 +17,22 @@ import MeditationFeedback from '@/components/meditation/MeditationFeedback';
 import { trackDiarioViewedPostMeditation } from '@/lib/mixpanelDiarioEvents';
 import { useAuth } from '@/contexts/AuthContext';
 
+interface NextNightInfo {
+  nightNumber: number;
+  title: string;
+  description: string;
+  duration: string;
+  isLocked: boolean;
+  onPlay: () => void;
+}
+
 interface MeditationCompletionProps {
   meditationId: string;
   meditationTitle: string;
   meditationDuration: number; // seconds
   meditationCategory: string;
   onDismiss: () => void;
+  nextNight?: NextNightInfo;
   sessionMetrics?: {
     pauseCount: number;
     skipCount: number;
@@ -36,6 +46,7 @@ export default function MeditationCompletion({
   meditationDuration,
   meditationCategory,
   onDismiss,
+  nextNight,
   sessionMetrics,
 }: MeditationCompletionProps) {
   const { currentStreak, updateStreak, isLoading: streakLoading } = useMeditationStreak();
@@ -177,6 +188,43 @@ export default function MeditationCompletion({
           >
             <div className="px-5 py-2.5 sm:px-6 sm:py-3 rounded-full bg-eco-100/50 text-eco-700 text-base sm:text-lg md:text-xl font-semibold shadow-sm">
               {currentStreak} {currentStreak === 1 ? 'dia seguido!' : 'dias seguidos!'} 🔥
+            </div>
+          </motion.div>
+        )}
+
+        {/* Next sleep night (only for sono category) */}
+        {nextNight && (
+          <motion.div variants={itemVariants}>
+            <div className="rounded-2xl border border-[#4A5B8A]/25 bg-gradient-to-br from-[#14172E] to-[#1A2045] px-5 py-5 sm:px-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Moon className="h-4 w-4 text-[#8BA4E8]" />
+                <span className="text-xs font-semibold uppercase tracking-widest text-[#8BA4E8]">
+                  Próxima meditação
+                </span>
+              </div>
+              <p className="text-base font-semibold text-white leading-snug">
+                Noite {nextNight.nightNumber} – {nextNight.title}
+              </p>
+              <p className="mt-1 text-sm text-white/55 leading-relaxed">
+                {nextNight.description}
+              </p>
+              <div className="mt-4 flex items-center gap-3">
+                <button
+                  onClick={nextNight.onPlay}
+                  className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-95 ${
+                    nextNight.isLocked
+                      ? 'bg-white/10 text-white/60 hover:bg-white/15'
+                      : 'bg-[#8BA4E8] text-[#14172E] hover:brightness-110 hover:scale-105 shadow-md'
+                  }`}
+                >
+                  {nextNight.isLocked ? (
+                    <><Lock className="h-3.5 w-3.5" /> Desbloquear Noite {nextNight.nightNumber}</>
+                  ) : (
+                    <><Play className="h-3.5 w-3.5" fill="currentColor" /> Iniciar Noite {nextNight.nightNumber}</>
+                  )}
+                </button>
+                <span className="text-xs text-white/35">{nextNight.duration}</span>
+              </div>
             </div>
           </motion.div>
         )}
