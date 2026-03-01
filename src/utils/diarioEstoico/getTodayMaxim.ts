@@ -731,6 +731,10 @@ export function getTodayMaxim(): DailyMaxim | null {
     monthName = 'fevereiro';
     startDay = 1;
     endDay = 28;
+  } else if (currentMonth === 2) { // Março
+    monthName = 'março';
+    startDay = 1;
+    endDay = 31;
   } else if (currentMonth === 11) { // Dezembro
     monthName = 'dezembro';
     startDay = 8;
