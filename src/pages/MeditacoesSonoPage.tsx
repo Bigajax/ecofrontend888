@@ -81,8 +81,10 @@ const PROTOCOL_NIGHTS: ProtocolNight[] = [
     night: 6,
     title: 'Indução ao Sono Profundo',
     description: 'Aprofunde o estado pré-sono com desaceleração progressiva.',
-    duration: '~20 min',
-    hasAudio: false,
+    duration: '4 min',
+    audioUrl: '/audio/inducao-sono-profundo.mp3',
+    imageUrl: '/images/inducao-sono-profundo.png',
+    hasAudio: true,
     gradient: 'linear-gradient(to bottom, #6B4A8A 0%, #20142E 100%)',
   },
   {
