@@ -5,9 +5,10 @@
  * Displays: "Muito bem!" + stoic card + streak + feedback
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Moon, Play, Lock } from 'lucide-react';
+import { ChevronLeft, Moon, Play, Lock, BookOpen } from 'lucide-react';
 import { getTodayMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
 import { useMeditationStreak } from '@/hooks/useMeditationStreak';
 import { trackMeditationFeedback } from '@/analytics/meditation';
@@ -16,6 +17,39 @@ import DiarioEstoicoCard from '@/components/diario-estoico/DiarioEstoicoCard';
 import MeditationFeedback from '@/components/meditation/MeditationFeedback';
 import { trackDiarioViewedPostMeditation } from '@/lib/mixpanelDiarioEvents';
 import { useAuth } from '@/contexts/AuthContext';
+
+interface RelatedMeditation {
+  id: string;
+  title: string;
+  duration: string;
+  imageUrl: string;
+  audioUrl: string;
+  gradient: string;
+  isPremium: boolean;
+  category: string;
+  returnTo: string;
+}
+
+const RELATED_BY_CATEGORY: Record<string, RelatedMeditation[]> = {
+  sono: [
+    { id: 'night_1', title: 'Desligando o Estado de Alerta', duration: '5 min', imageUrl: '/images/desligando-estado-alerta.png', audioUrl: '/audio/desligando-estado-alerta.mp3', gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #14172E 100%)', isPremium: false, category: 'sono', returnTo: '/app/meditacoes-sono' },
+    { id: 'night_2', title: 'Respiração que Induz o Sono', duration: '5 min', imageUrl: '/images/respiracao-induz-sono.webp', audioUrl: '/audio/respiracao-induz-sono.mp3', gradient: 'linear-gradient(to bottom, #6B5B95 0%, #251A45 100%)', isPremium: false, category: 'sono', returnTo: '/app/meditacoes-sono' },
+    { id: 'night_3', title: 'Esvaziando Pensamentos Repetitivos', duration: '5 min', imageUrl: '/images/esvaziando-pensamentos.webp', audioUrl: '/audio/esvaziando-pensamentos.mp3', gradient: 'linear-gradient(to bottom, #5B6B95 0%, #1A2545 100%)', isPremium: false, category: 'sono', returnTo: '/app/meditacoes-sono' },
+    { id: 'blessing_8', title: 'Meditação do Sono', duration: '15 min', imageUrl: '/images/meditacao-sono-new.webp', audioUrl: '/audio/meditacao-sono.mp3', gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #14172E 100%)', isPremium: true, category: 'sono', returnTo: '/app/programas' },
+  ],
+  dr_joe_dispenza: [
+    { id: 'blessing_1', title: 'Bênção dos Centros de Energia', duration: '7 min', imageUrl: '/images/meditacao-bencao-energia.webp', audioUrl: '/audio/energy-blessings-meditation.mp3', gradient: 'linear-gradient(to bottom, #F5C563 0%, #A63428 100%)', isPremium: false, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
+    { id: 'blessing_2', title: 'Sintonize Novos Potenciais', duration: '7 min', imageUrl: '/images/meditacao-novos-potenciais.webp', audioUrl: '/audio/sintonizar-novos-potenciais.mp3', gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #182864 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
+    { id: 'blessing_3', title: 'Recondicione Seu Corpo e Mente', duration: '7 min', imageUrl: '/images/meditacao-recondicionar.webp', audioUrl: '/audio/recondicionar-corpo-nova-mente.mp3', gradient: 'linear-gradient(to bottom, #9B79C9 0%, #3B2463 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
+    { id: 'blessing_5', title: 'Meditação Caminhando', duration: '5 min', imageUrl: '/images/meditacao-caminhando.webp', audioUrl: '/audio/meditacao-caminhando.mp3', gradient: 'linear-gradient(to bottom right, #FF8C42 0%, #2D1B3D 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
+  ],
+  default: [
+    { id: 'blessing_7', title: 'Introdução à Meditação', duration: '8 min', imageUrl: '/images/meditacao-introducao.webp', audioUrl: '/audio/introducao-meditacao.mp3', gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #1F7BAD 100%)', isPremium: false, category: 'intro', returnTo: '/app/programas' },
+    { id: 'blessing_10', title: 'Acolhendo sua respiração', duration: '7 min', imageUrl: '/images/acolhendo-respiracao.webp', audioUrl: '/audio/acolhendo-respiracao.mp3', gradient: 'linear-gradient(to bottom, #7BBFB5 0%, #084D42 100%)', isPremium: false, category: 'respiracao', returnTo: '/app/programas' },
+    { id: 'blessing_11', title: 'Liberando o Estresse', duration: '5 min', imageUrl: '/images/liberando-estresse.png', audioUrl: '/audio/liberando-estresse.mp3', gradient: 'linear-gradient(to bottom, #C4A0E8 0%, #341870 100%)', isPremium: false, category: 'relaxamento', returnTo: '/app/programas' },
+    { id: 'blessing_1', title: 'Bênção dos Centros de Energia', duration: '7 min', imageUrl: '/images/meditacao-bencao-energia.webp', audioUrl: '/audio/energy-blessings-meditation.mp3', gradient: 'linear-gradient(to bottom, #F5C563 0%, #A63428 100%)', isPremium: false, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
+  ],
+};
 
 interface NextNightInfo {
   nightNumber: number;
@@ -49,9 +83,34 @@ export default function MeditationCompletion({
   nextNight,
   sessionMetrics,
 }: MeditationCompletionProps) {
+  const navigate = useNavigate();
   const { currentStreak, updateStreak, isLoading: streakLoading } = useMeditationStreak();
   const { user } = useAuth();
   const todayMaxim = getTodayMaxim();
+
+  const relatedMeditations = useMemo(() => {
+    const pool = RELATED_BY_CATEGORY[meditationCategory] ?? RELATED_BY_CATEGORY.default;
+    return pool.filter(m => m.id !== meditationId).slice(0, 4);
+  }, [meditationCategory, meditationId]);
+
+  const handleNavigateToMeditation = (med: RelatedMeditation) => {
+    navigate('/app/meditation-player', {
+      state: {
+        meditation: {
+          id: med.id,
+          title: med.title,
+          duration: med.duration,
+          audioUrl: med.audioUrl,
+          imageUrl: med.imageUrl,
+          backgroundMusic: med.category === 'sono' ? 'Sono' : 'Cristais',
+          gradient: med.gradient,
+          category: med.category,
+          isPremium: med.isPremium,
+        },
+        returnTo: med.returnTo,
+      },
+    });
+  };
 
   // Update streak on mount
   useEffect(() => {
@@ -177,6 +236,23 @@ export default function MeditationCompletion({
             </div>
 
             <DiarioEstoicoCard maxim={todayMaxim} size="medium" />
+
+            {/* Button to Diário Estoico */}
+            <div className="flex justify-center">
+              <button
+                onClick={() => navigate('/app/diario-estoico')}
+                className="
+                  flex items-center gap-2 px-5 py-2.5 rounded-full
+                  bg-amber-50 border border-amber-200
+                  text-amber-800 text-sm font-medium
+                  hover:bg-amber-100 active:scale-95
+                  transition-all duration-200 shadow-sm
+                "
+              >
+                <BookOpen className="w-4 h-4" />
+                Ler reflexão de hoje
+              </button>
+            </div>
           </motion.div>
         )}
 
@@ -225,6 +301,48 @@ export default function MeditationCompletion({
                 </button>
                 <span className="text-xs text-white/35">{nextNight.duration}</span>
               </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Related Meditations */}
+        {relatedMeditations.length > 0 && (
+          <motion.div variants={itemVariants}>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
+              Continue sua jornada
+            </h3>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {relatedMeditations.map((med) => (
+                <button
+                  key={med.id}
+                  onClick={() => handleNavigateToMeditation(med)}
+                  className="flex-shrink-0 w-40 sm:w-44 rounded-2xl overflow-hidden relative shadow-md active:scale-95 transition-transform duration-150 snap-start"
+                  style={{ height: '180px' }}
+                  aria-label={`Meditar: ${med.title}`}
+                >
+                  <img
+                    src={med.imageUrl}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                  {med.isPremium && (
+                    <div className="absolute top-2 right-2 bg-amber-400/90 backdrop-blur-sm rounded-full p-1">
+                      <Lock className="w-3 h-3 text-amber-900" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-3 text-left">
+                    <p className="text-white text-xs font-semibold leading-tight line-clamp-2">{med.title}</p>
+                    <p className="text-white/70 text-xs mt-0.5">{med.duration}</p>
+                  </div>
+                </button>
+              ))}
             </div>
           </motion.div>
         )}
