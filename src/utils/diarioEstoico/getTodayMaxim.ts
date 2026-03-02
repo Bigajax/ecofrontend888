@@ -698,6 +698,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'A filosofia é intimidadora. Por onde começar? Com livros? Palestras? Com a venda de suas posses mundanas? Com nenhuma dessas coisas. Epicteto está dizendo que nos tornamos filósofos quando começamos a exercitar nossa razão orientadora e passamos a questionar as emoções e crenças e até a linguagem que outros dão por certas. Pensa-se que um animal tem consciência de si mesmo quando é capaz de se reconhecer plenamente num espelho. Talvez possamos afirmar que começamos nossa jornada na filosofia quando nos tornamos conscientes da capacidade de analisarmos a própria mente.\n\nVocê pode dar esse primeiro passo hoje? Quando o fizer, descobrirá que, a partir disso, realmente ganhamos vida, levamos vidas — para parafrasear Sócrates — que são realmente dignas de ser vividas.',
     background: getBackgroundForDay(1),
   },
+  {
+    date: '2 de março',
+    month: 'marco',
+    dayNumber: 2,
+    title: 'AUTOAVALIAÇÃO PRECISA',
+    text: '"Acima de tudo, é necessário fazermos uma verdadeira autoavaliação, pois no geral pensamos que podemos realizar mais do que realmente somos capazes."',
+    author: 'Sêneca',
+    source: 'Sobre a tranquilidade da alma, 5.2',
+    comment: 'A maior parte das pessoas resiste à ideia de uma verdadeira autoavaliação, provavelmente porque teme que isso signifique depreciar algumas de suas crenças sobre aquilo que é e do que é capaz. Como diz a máxima de Goethe, é um grande defeito "ver-se como mais do que você é". Como você pode ser considerado autoconsciente quando se recusa a reconhecer suas fraquezas?\n\nNão tema a autoavaliação porque a possibilidade de ter de admitir algumas coisas sobre você mesmo o preocupa. A segunda metade da máxima de Goethe é importante também. Ele afirma que é igualmente danoso "atribuir-se menos do que seu verdadeiro valor". Não é comum ficarmos surpresos ao ver como conseguimos lidar bem com uma situação que temíamos? A maneira como somos capazes de deixar de lado o luto pela perda de um ente querido e importar-nos com os outros — embora sempre tivéssemos pensado que ficaríamos destruídos se algo acontecesse com nossos pais ou com um irmão. A maneira como somos capazes de reagir à altura a uma situação estressante ou a uma oportunidade que transformará nossa vida.\n\nSubestimamos algumas de nossas capacidades tanto e tão perigosamente quanto superestimamos outras. Cultive a capacidade de se avaliar com precisão e honestidade. Olhe para dentro de si com o propósito de discernir do que você é capaz e o que será necessário para liberar esse potencial.',
+    background: getBackgroundForDay(2),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
