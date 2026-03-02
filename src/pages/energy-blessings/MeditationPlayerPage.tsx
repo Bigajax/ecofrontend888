@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Play, Pause, RotateCcw, RotateCw, Heart, Music, Volume2 } from 'lucide-react';
+import { ChevronLeft, Play, Pause, SkipBack, SkipForward, Heart, Music, Volume2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import HomeHeader from '@/components/home/HomeHeader';
 import BackgroundSoundsModal from '@/components/BackgroundSoundsModal';
@@ -92,7 +92,6 @@ export default function MeditationPlayerPage() {
   // Estados para sons de fundo
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
   const [selectedBackgroundSound, setSelectedBackgroundSound] = useState<Sound | null>(() => {
-    // Definir 432Hz como som padrão
     const allSounds = getAllSounds();
     return allSounds.find(sound => sound.id === 'freq_1') || null;
   });
@@ -404,6 +403,40 @@ export default function MeditationPlayerPage() {
     }, stepMs);
   };
 
+  // Auto-play ao entrar na página
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const tryAutoPlay = () => {
+      if (hasPlayedOnce.current) return;
+      audio.volume = 0;
+      audio.play()
+        .then(() => {
+          startFadeIn();
+          hasPlayedOnce.current = true;
+          setIsPlaying(true);
+          analytics.trackStarted({
+            backgroundSoundId: selectedBackgroundSound?.id || 'none',
+            backgroundSoundTitle: selectedBackgroundSound?.title || 'Nenhum',
+            meditationVolume,
+            backgroundVolume,
+            sourcePage: returnTo,
+          });
+          if (backgroundAudioRef.current && selectedBackgroundSound?.audioUrl) {
+            backgroundAudioRef.current.play().catch(() => {});
+          }
+        })
+        .catch(() => {
+          // Autoplay bloqueado pelo browser — usuário precisa pressionar play manualmente
+        });
+    };
+
+    audio.addEventListener('canplay', tryAutoPlay, { once: true });
+    return () => audio.removeEventListener('canplay', tryAutoPlay);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -644,22 +677,28 @@ export default function MeditationPlayerPage() {
     navigate(returnTo, { state: { returnFromMeditation: true } });
   };
 
-  // Fechar popover de volume ao clicar fora
+  // Fechar popover de volume ao clicar fora ou pressionar Escape
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: Event) => {
       if (volumePopoverRef.current && !volumePopoverRef.current.contains(event.target as Node)) {
         setShowVolumePopover(false);
       }
     };
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowVolumePopover(false);
+    };
+
     if (showVolumePopover) {
       document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside as any);
+      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside as any);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [showVolumePopover]);
 
@@ -805,19 +844,17 @@ export default function MeditationPlayerPage() {
           {/* Skip Back 15s */}
           <button
             onClick={() => handleSkip(-15)}
-            className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation border border-gray-200/50"
+            aria-label="Retroceder 15 segundos"
+            className="flex flex-col h-12 w-12 items-center justify-center gap-0.5 rounded-full bg-white/90 backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation border border-gray-200/50"
           >
-            <div className="relative flex items-center justify-center">
-              <RotateCcw size={18} className="text-gray-700" strokeWidth={1.5} />
-              <span className="absolute text-[10px] font-bold text-gray-700 leading-none" style={{ marginTop: '1px' }}>
-                15
-              </span>
-            </div>
+            <SkipBack size={16} className="text-gray-700" strokeWidth={1.5} />
+            <span className="text-[9px] font-bold text-gray-700 leading-none">15s</span>
           </button>
 
           {/* Play/Pause Button */}
           <button
             onClick={handlePlayPause}
+            aria-label={isPlaying ? 'Pausar meditação' : 'Reproduzir meditação'}
             className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 backdrop-blur-sm shadow-xl md:hover:shadow-2xl transition-all active:scale-95 touch-manipulation border border-gray-200/50"
           >
             {isPlaying ? (
@@ -830,14 +867,11 @@ export default function MeditationPlayerPage() {
           {/* Skip Forward 15s */}
           <button
             onClick={() => handleSkip(15)}
-            className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation border border-gray-200/50"
+            aria-label="Avançar 15 segundos"
+            className="flex flex-col h-12 w-12 items-center justify-center gap-0.5 rounded-full bg-white/90 backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation border border-gray-200/50"
           >
-            <div className="relative flex items-center justify-center">
-              <RotateCw size={18} className="text-gray-700" strokeWidth={1.5} />
-              <span className="absolute text-[10px] font-bold text-gray-700 leading-none" style={{ marginTop: '1px' }}>
-                15
-              </span>
-            </div>
+            <SkipForward size={16} className="text-gray-700" strokeWidth={1.5} />
+            <span className="text-[9px] font-bold text-gray-700 leading-none">15s</span>
           </button>
         </motion.div>
 
@@ -856,6 +890,7 @@ export default function MeditationPlayerPage() {
               {/* Background Sound Chip */}
               <button
                 onClick={handleOpenBackgroundModal}
+                aria-label={`Sons de fundo: ${selectedBackgroundSound?.title ?? 'Nenhum'}`}
                 className="flex items-center gap-2.5 px-3.5 py-2 bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-sm border border-gray-200/50 hover:shadow-md transition-all active:scale-95 touch-manipulation"
               >
                 <Music size={16} className="text-gray-600 flex-shrink-0" strokeWidth={2} />
@@ -870,6 +905,8 @@ export default function MeditationPlayerPage() {
               {/* Favorite Button */}
               <button
                 onClick={handleFavoriteToggle}
+                aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                aria-pressed={isFavorite}
                 className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-gray-50 to-white shadow-sm border border-gray-200/50 hover:shadow-md transition-all active:scale-95 touch-manipulation"
               >
                 <Heart
@@ -883,6 +920,8 @@ export default function MeditationPlayerPage() {
               <div className="relative">
                 <button
                   onClick={() => setShowVolumePopover(!showVolumePopover)}
+                  aria-label="Controle de volume"
+                  aria-expanded={showVolumePopover}
                   className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-gray-50 to-white shadow-sm border border-gray-200/50 hover:shadow-md transition-all active:scale-95 touch-manipulation"
                 >
                   <Volume2 size={18} className="text-gray-600" strokeWidth={2} />
@@ -906,6 +945,13 @@ export default function MeditationPlayerPage() {
                         ref={volumeSliderRef}
                         onTouchStart={handleVolumeSliderStart}
                         onMouseDown={handleVolumeSliderStart}
+                        role="slider"
+                        aria-label="Volume da meditação"
+                        aria-valuenow={meditationVolume}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuetext={`${meditationVolume}%`}
+                        tabIndex={0}
                         className="flex-1 relative w-12 flex items-center justify-center cursor-pointer [touch-action:none] active:cursor-grabbing"
                       >
                         {/* Barra de fundo vertical */}
@@ -915,6 +961,11 @@ export default function MeditationPlayerPage() {
                             style={{ height: `${meditationVolume}%` }}
                           />
                         </div>
+                        {/* Thumb visual */}
+                        <div
+                          className="absolute left-1/2 -translate-x-1/2 w-5 h-5 bg-white rounded-full shadow-md border-2 border-blue-500 pointer-events-none transition-all duration-150"
+                          style={{ bottom: `calc(${meditationVolume}% - 10px)` }}
+                        />
                       </div>
 
                       {/* Ícone no bottom */}
@@ -931,7 +982,7 @@ export default function MeditationPlayerPage() {
                 <span className="text-[11px] font-semibold text-gray-600 flex-shrink-0 tabular-nums">
                   {formatTime(currentTime)}
                 </span>
-                <div className="flex-1 relative h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div className="flex-1 relative h-1.5 bg-gray-200 rounded-full overflow-visible">
                   <input
                     type="range"
                     min="0"
@@ -940,11 +991,18 @@ export default function MeditationPlayerPage() {
                     onChange={handleProgressChange}
                     onMouseUp={handleProgressChangeEnd}
                     onTouchEnd={handleProgressChangeEnd}
+                    aria-label="Progresso da meditação"
+                    aria-valuetext={`${formatTime(currentTime)} de ${formatTime(duration)}`}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-manipulation z-10"
                   />
                   <div
                     className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-100"
                     style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+                  />
+                  {/* Thumb visual */}
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-blue-500 rounded-full shadow pointer-events-none"
+                    style={{ left: `calc(${(currentTime / (duration || 1)) * 100}% - 7px)` }}
                   />
                 </div>
                 <span className="text-[11px] font-semibold text-gray-600 flex-shrink-0 tabular-nums">
@@ -984,8 +1042,13 @@ export default function MeditationPlayerPage() {
               onChange={handleProgressChange}
               onMouseUp={handleProgressChangeEnd}
               onTouchEnd={handleProgressChangeEnd}
-              className="flex-1 cursor-pointer h-1"
+              aria-label="Progresso da meditação"
+              aria-valuetext={`${formatTime(currentTime)} de ${formatTime(duration)}`}
+              className="flex-1 cursor-pointer meditation-range-slider"
               style={{
+                height: '4px',
+                WebkitAppearance: 'none',
+                appearance: 'none',
                 background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`,
                 borderRadius: '999px'
               }}
@@ -999,6 +1062,8 @@ export default function MeditationPlayerPage() {
             {/* Favorite Button */}
             <button
               onClick={handleFavoriteToggle}
+              aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+              aria-pressed={isFavorite}
               className="flex items-center justify-center w-8 h-8 flex-shrink-0 hover:opacity-80 transition-opacity"
             >
               <Heart
@@ -1008,17 +1073,22 @@ export default function MeditationPlayerPage() {
               />
             </button>
 
-            {/* Volume Control - Minimalista */}
+            {/* Volume Control */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Volume2 size={16} className="text-gray-600" />
+              <Volume2 size={16} className="text-gray-600" aria-hidden="true" />
               <input
                 type="range"
                 min="0"
                 max="100"
                 value={meditationVolume}
                 onChange={(e) => setMeditationVolume(parseFloat(e.target.value))}
-                className="w-20 sm:w-24 cursor-pointer h-0.5"
+                aria-label="Volume da meditação"
+                aria-valuetext={`${meditationVolume}%`}
+                className="w-20 sm:w-24 cursor-pointer meditation-range-slider"
                 style={{
+                  height: '4px',
+                  WebkitAppearance: 'none',
+                  appearance: 'none',
                   background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${meditationVolume}%, #E5E7EB ${meditationVolume}%, #E5E7EB 100%)`,
                   borderRadius: '999px'
                 }}

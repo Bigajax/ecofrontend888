@@ -1095,3 +1095,33 @@ input[type='range']::-moz-range-track {
   background: transparent;
 }
 
+/* Slider com track visível (meditação / desktop volume) */
+.meditation-range-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+  border-radius: 999px;
+}
+
+.meditation-range-slider::-moz-range-track {
+  height: 4px;
+  background: transparent;
+  border-radius: 999px;
+}
+
+.meditation-range-slider::-webkit-slider-thumb {
+  margin-top: -6px; /* centralizar thumb no track de 4px */
+}
+
+/* Garante que o BackgroundSoundsModal não use o thumb global */
+.bg-sounds-volume::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+  border-radius: 999px;
+}
+
+.bg-sounds-volume::-moz-range-track {
+  height: 4px;
+  background: transparent;
+  border-radius: 999px;
+}
+
