@@ -114,10 +114,13 @@ export default function BackgroundSoundsModal({
                 max="100"
                 value={volume}
                 onChange={handleVolumeChange}
-                className="flex-1 cursor-pointer h-0.5 touch-manipulation"
+                className="flex-1 cursor-pointer touch-manipulation bg-sounds-volume"
                 style={{
                   background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${volume}%, #E5E7EB ${volume}%, #E5E7EB 100%)`,
-                  borderRadius: '999px'
+                  borderRadius: '999px',
+                  height: '4px',
+                  WebkitAppearance: 'none',
+                  appearance: 'none',
                 }}
               />
               <span className="min-w-[2.5rem] text-right text-fluid-sm font-semibold text-gray-700">
@@ -205,24 +208,34 @@ export default function BackgroundSoundsModal({
       </div>
     </div>
 
-    {/* Estilos para ocultar thumb do input range */}
+    {/* Estilos para thumb do slider de volume */}
     <style>{`
-      input[type="range"]::-webkit-slider-thumb {
+      .bg-sounds-volume::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        width: 0;
-        height: 0;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #6B7280;
+        cursor: pointer;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+        transition: background 0.15s;
       }
-      input[type="range"]::-moz-range-thumb {
-        width: 0;
-        height: 0;
+      .bg-sounds-volume::-webkit-slider-thumb:active {
+        background: #4B5563;
+        transform: scale(1.15);
+      }
+      .bg-sounds-volume::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #6B7280;
+        cursor: pointer;
         border: none;
-        background: transparent;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
       }
-      input[type="range"]::-ms-thumb {
-        width: 0;
-        height: 0;
-        background: transparent;
+      .bg-sounds-volume::-moz-range-thumb:active {
+        background: #4B5563;
       }
     `}</style>
     </>
