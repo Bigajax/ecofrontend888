@@ -9,6 +9,7 @@ interface Recommendation {
   imagePosition?: string;
   isPremium?: boolean;
   categoryType?: 'meditacao' | 'musica' | 'programa';
+  progress?: number; // 0–100
 }
 
 interface DailyRecommendationsSectionProps {
@@ -63,6 +64,15 @@ export default function DailyRecommendationsSection({
               {rec.isPremium && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                   <Lock size={16} className="text-white drop-shadow" />
+                </div>
+              )}
+              {/* Progress bar dentro do thumbnail */}
+              {(rec.progress ?? 0) > 0 && (
+                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/20">
+                  <div
+                    className="h-full bg-eco-baby"
+                    style={{ width: `${rec.progress}%` }}
+                  />
                 </div>
               )}
             </div>

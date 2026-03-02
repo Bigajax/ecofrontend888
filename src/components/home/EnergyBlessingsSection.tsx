@@ -10,6 +10,8 @@ interface Blessing {
   isPremium?: boolean;
   imagePosition?: string;
   category?: string;
+  progress?: number; // 0–100, undefined = não mostrar
+  stackCount?: number; // quando > 1, renderiza cards empilhados atrás
 }
 
 interface EnergyBlessingsSectionProps {
@@ -149,19 +151,12 @@ interface BlessingCardProps {
 }
 
 function BlessingCard({ blessing, mobile, onClick }: BlessingCardProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={`group relative flex-shrink-0 overflow-hidden rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.14)] transition-all duration-300 md:hover:scale-[0.97] md:hover:shadow-[0_2px_12px_rgba(0,0,0,0.10)] active:scale-95 cursor-pointer touch-manipulation ${
-        mobile ? 'w-[155px]' : 'w-[190px]'
-      }`}
-      style={{
-        backgroundImage: blessing.image,
-        backgroundSize: 'cover',
-        backgroundPosition: blessing.imagePosition || 'center',
-        minHeight: mobile ? '248px' : '285px',
-      }}
-    >
+  const isStacked = (blessing.stackCount ?? 1) > 1;
+  const cardW = mobile ? 'w-[155px]' : 'w-[190px]';
+  const cardH = mobile ? '248px' : '285px';
+
+  const innerContent = (
+    <>
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
 
@@ -198,7 +193,100 @@ function BlessingCard({ blessing, mobile, onClick }: BlessingCardProps) {
             {blessing.title}
           </h3>
         </div>
+
+        {/* Progress bar — só quando progress > 0 */}
+        {(blessing.progress ?? 0) > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/20">
+            <div
+              className="h-full bg-eco-baby"
+              style={{ width: `${blessing.progress}%` }}
+            />
+          </div>
+        )}
       </div>
+    </>
+  );
+
+  if (isStacked) {
+    // Wrapper mais alto para acomodar os cards que aparecem embaixo
+    const wrapperH = mobile ? 'calc(248px + 18px)' : 'calc(285px + 18px)';
+
+    return (
+      <div
+        className={`relative flex-shrink-0 ${cardW}`}
+        style={{ height: wrapperH }}
+      >
+        {/* Card fantasma — mais atrás: deslocado 14px para baixo, mais estreito, rotação */}
+        <div
+          className="absolute rounded-2xl overflow-hidden"
+          style={{
+            top: 14,
+            left: 8,
+            right: 8,
+            height: cardH,
+            backgroundImage: blessing.image,
+            backgroundSize: 'cover',
+            backgroundPosition: blessing.imagePosition || 'center',
+            transform: 'rotate(-2.5deg)',
+            transformOrigin: 'center top',
+            zIndex: 1,
+          }}
+        >
+          <div className="absolute inset-0 bg-black/55 rounded-2xl" />
+        </div>
+
+        {/* Card fantasma — meio: deslocado 7px para baixo, levemente estreito, rotação oposta */}
+        <div
+          className="absolute rounded-2xl overflow-hidden"
+          style={{
+            top: 7,
+            left: 4,
+            right: 4,
+            height: cardH,
+            backgroundImage: blessing.image,
+            backgroundSize: 'cover',
+            backgroundPosition: blessing.imagePosition || 'center',
+            transform: 'rotate(2deg)',
+            transformOrigin: 'center top',
+            zIndex: 2,
+          }}
+        >
+          <div className="absolute inset-0 bg-black/30 rounded-2xl" />
+        </div>
+
+        {/* Card principal — ocupa o topo, cobre os fantasmas deixando apenas o fundo visível */}
+        <button
+          onClick={onClick}
+          className="group absolute overflow-hidden rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.14)] transition-all duration-300 md:hover:scale-[0.97] md:hover:shadow-[0_2px_12px_rgba(0,0,0,0.10)] active:scale-95 cursor-pointer touch-manipulation"
+          style={{
+            top: 0,
+            left: 0,
+            right: 0,
+            height: cardH,
+            backgroundImage: blessing.image,
+            backgroundSize: 'cover',
+            backgroundPosition: blessing.imagePosition || 'center',
+            zIndex: 3,
+          }}
+        >
+          {innerContent}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className={`group relative flex-shrink-0 overflow-hidden rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.14)] transition-all duration-300 md:hover:scale-[0.97] md:hover:shadow-[0_2px_12px_rgba(0,0,0,0.10)] active:scale-95 cursor-pointer touch-manipulation ${cardW}`}
+      style={{
+        backgroundImage: blessing.image,
+        backgroundSize: 'cover',
+        backgroundPosition: blessing.imagePosition || 'center',
+        minHeight: cardH,
+      }}
+    >
+      {innerContent}
     </button>
   );
 }

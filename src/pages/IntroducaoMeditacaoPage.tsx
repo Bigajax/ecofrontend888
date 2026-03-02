@@ -33,7 +33,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
   {
     id: 'intro_1',
     title: 'Primeiros passos',
-    description: 'Descubra o que é meditar e prepare-se para sua jornada',
+    description: '5 minutos para entender o que acontece quando você para.',
     duration: '5 min',
     audioUrl: '/audio/intro-primeiros-passos.mp3',
     image: 'url("/images/meditacao-introducao.webp")',
@@ -44,7 +44,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
   {
     id: 'intro_2',
     title: 'Observando a respiração',
-    description: 'Aprenda a focar sua atenção na respiração',
+    description: 'Sua respiração sempre esteve lá. Agora você vai ouvi-la.',
     duration: '4 min',
     audioUrl: '/audio/observando-respiracao.mp3',
     image: 'url("/images/observando-respiracao.webp")',
@@ -56,7 +56,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
   {
     id: 'intro_3',
     title: 'Sentindo',
-    description: 'Conecte-se com suas sensações e emoções',
+    description: 'O que o seu corpo sente quando a mente para de falar?',
     duration: '4 min',
     audioUrl: '/audio/sentindo.mp3',
     image: 'url("/images/sentindo.webp")',
@@ -68,7 +68,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
   {
     id: 'intro_4',
     title: 'Desacelerando e relaxando',
-    description: 'Reduza o ritmo e alcance um estado profundo de relaxamento',
+    description: 'Para o dia que não quer terminar. 8 min para soltar tudo.',
     duration: '8 min',
     audioUrl: '/audio/intro-relaxando.mp3',
     image: 'url("/images/meditacao-introducao.webp")',
@@ -80,7 +80,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
   {
     id: 'intro_5',
     title: 'Observando o corpo',
-    description: 'Desenvolva consciência corporal através do body scan',
+    description: 'Uma viagem de cima a baixo. Você vai se surpreender com o que vai sentir.',
     duration: '9 min',
     audioUrl: '/audio/intro-corpo.mp3',
     image: 'url("/images/meditacao-introducao.webp")',
@@ -167,6 +167,7 @@ export default function IntroducaoMeditacaoPage() {
     trackMeditationEvent('Front-end: Meditation Selected', payload);
 
     sessionStorage.setItem('introducaoPageScrollPosition', window.scrollY.toString());
+    sessionStorage.setItem('eco.intro.lastPlayedId', meditation.id);
 
     navigate('/app/meditation-player', {
       state: {
@@ -214,7 +215,7 @@ export default function IntroducaoMeditacaoPage() {
   const remaining = totalCount - completedCount;
   const urgencyLabel =
     pct === 0
-      ? 'Comece sua primeira sessão'
+      ? `Comece por aqui · ${completedCount} de ${totalCount} sessões`
       : pct === 100
       ? 'Programa concluído 🎉'
       : pct >= 80
@@ -269,6 +270,30 @@ export default function IntroducaoMeditacaoPage() {
     setShowExitModal(false);
     navigate('/login');
   };
+
+  // Marcar sessão como concluída automaticamente ao voltar do player
+  useEffect(() => {
+    if (!location.state?.returnFromMeditation) return;
+    const lastId = sessionStorage.getItem('eco.intro.lastPlayedId');
+    if (!lastId) return;
+    sessionStorage.removeItem('eco.intro.lastPlayedId');
+
+    if (localStorage.getItem(`eco.meditation.completed80pct.${lastId}`) !== 'true') return;
+
+    setMeditations(prev => {
+      if (prev.find(m => m.id === lastId)?.completed) return prev;
+      const next = prev.map(m => m.id === lastId ? { ...m, completed: true } : m);
+      const newPct = Math.round(next.filter(m => m.completed).length / next.length * 100);
+      setSessionJustCompleted(newPct);
+      setTimeout(() => setSessionJustCompleted(null), 3000);
+      localStorage.setItem(
+        `eco.program.lastActive.intro.${user?.id || 'guest'}`,
+        new Date().toISOString()
+      );
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -341,7 +366,7 @@ export default function IntroducaoMeditacaoPage() {
                 Inicie Sua Jornada
               </h1>
               <p className="mt-3 max-w-2xl text-sm text-white/95 drop-shadow-md sm:mt-4 sm:text-base md:text-lg lg:text-xl" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>
-                Bem-vindo ao Ecotopia! Dê os primeiros passos na prática meditativa e descubra um caminho de paz, clareza e conexão com seu interior.
+                Nunca meditou antes? Perfeito. Esta jornada foi feita exatamente para onde você está agora.
               </p>
 
               <button

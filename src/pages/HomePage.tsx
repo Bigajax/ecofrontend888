@@ -87,6 +87,8 @@ export default function HomePage() {
         ? 'prog_riqueza'
         : p.programId === 'intro'
         ? 'prog_intro'
+        : p.programId === 'drjoe'
+        ? 'prog_drjoe'
         : 'prog_caleidoscopio',
       { progress: p.progress, isInactive: p.isInactive, isNearComplete: p.isNearComplete },
     ])
@@ -175,6 +177,7 @@ export default function HomePage() {
         imagePosition: 'center center',
         isPremium: false,
         categoryType: 'programa' as const,
+        progress: programProgressList.find(p => p.programId === 'intro')?.progress ?? 0,
       },
       {
         id: 'rec_2',
@@ -197,7 +200,7 @@ export default function HomePage() {
         categoryType: 'programa' as const,
       },
     ],
-    [],
+    [programProgressList],
   );
 
   // Meditações - Dr. Joe unificado + outras categorias
@@ -213,6 +216,8 @@ export default function HomePage() {
         imagePosition: 'center 40%',
         isPremium: false,
         category: 'Dr. Joe Dispenza',
+        progress: programProgressList.find(p => p.programId === 'drjoe')?.progress ?? 0,
+        stackCount: 3,
       },
       // Caleidoscópio e Mind Movie — produto separado (premium)
       {
@@ -224,6 +229,7 @@ export default function HomePage() {
         imagePosition: 'center center',
         isPremium: true,
         category: 'Dr. Joe Dispenza',
+        progress: programProgressList.find(p => p.programId === 'caleidoscopio')?.progress ?? 0,
       },
       // Sono
       {
@@ -274,7 +280,7 @@ export default function HomePage() {
         category: 'Relaxamento',
       },
     ],
-    [],
+    [programProgressList],
   );
 
   // Conteúdos para "Aprenda e Explore"

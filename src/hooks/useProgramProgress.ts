@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProgram } from '@/contexts/ProgramContext';
 
 export interface ProgramProgressData {
-  programId: 'intro' | 'caleidoscopio' | 'riqueza' | 'sono_protocol';
+  programId: 'intro' | 'caleidoscopio' | 'riqueza' | 'sono_protocol' | 'drjoe';
   completedSessions: number;
   totalSessions: number;
   progress: number;        // 0–100 rounded
@@ -114,6 +114,28 @@ export function useProgramProgress(): ProgramProgressData[] {
       status: sonoPct === 0 ? 'not_started' : sonoPct === 100 ? 'completed' : 'in_progress',
       isInactive: sonoPct > 0 && getDaysSince(sonoLastActive) >= 2,
       isNearComplete: sonoPct >= 80,
+    });
+
+    // ── Dr. Joe Dispenza ──────────────────────────────────────────────────
+    const drjoeTotal = 5;
+    let drjoeCompleted = 0;
+    try {
+      const raw = localStorage.getItem(`eco.drJoe.meditations.v1.${uid}`);
+      if (raw) {
+        const arr: { completed: boolean }[] = JSON.parse(raw);
+        drjoeCompleted = arr.filter(m => m.completed).length;
+      }
+    } catch {/* ignore */}
+    const drjoePct = Math.round((drjoeCompleted / drjoeTotal) * 100);
+    const drjoeLastActive = localStorage.getItem(`eco.program.lastActive.drJoe.${uid}`);
+    results.push({
+      programId: 'drjoe',
+      completedSessions: drjoeCompleted,
+      totalSessions: drjoeTotal,
+      progress: drjoePct,
+      status: drjoePct === 0 ? 'not_started' : drjoePct === 100 ? 'completed' : 'in_progress',
+      isInactive: drjoePct > 0 && getDaysSince(drjoeLastActive) >= 2,
+      isNearComplete: drjoePct >= 80,
     });
 
     return results;

@@ -223,7 +223,7 @@ export default function MeditacoesSonoPage() {
               className="mt-3 text-sm text-white/65 font-light leading-relaxed sm:text-[0.95rem]"
               style={{ textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}
             >
-              Em 7 noites você recondiciona seu sistema nervoso para desligar naturalmente.
+              7 noites. Cada uma resolve uma camada diferente do que te mantém acordado.
             </p>
 
             {/* Benefits — uniform-width pills, same axis as headline */}
@@ -272,9 +272,8 @@ export default function MeditacoesSonoPage() {
         <section className="mx-auto max-w-4xl px-4 pt-8 pb-2 sm:px-8">
           <div className="rounded-2xl bg-eco-babySoft border border-eco-baby/30 px-5 py-4 sm:px-6 sm:py-5">
             <p className="text-sm text-[var(--eco-text)] sm:text-base leading-relaxed">
-              Se você deita cansado, mas sua mente começa a trabalhar…<br />
-              Se o corpo quer dormir, mas o cérebro insiste em resolver a vida…<br />
-              <span className="font-semibold text-eco-babyDark">Esse protocolo foi feito para você.</span>
+              Você não tem insônia porque é fraco. Você tem insônia porque seu sistema nervoso nunca recebeu permissão para desligar.<br />
+              <span className="font-semibold text-eco-babyDark">É isso que vamos mudar.</span>
             </p>
           </div>
         </section>
@@ -436,7 +435,7 @@ export default function MeditacoesSonoPage() {
                   🎁 Áudio Extra – SOS: Não Consigo Dormir Hoje
                 </h3>
                 <p className="mt-0.5 text-xs text-[var(--eco-muted)] sm:text-sm">
-                  Uma prática curta para momentos de insônia inesperada.
+                  Para quando nada está funcionando e o teto parece longe demais.
                 </p>
               </div>
               <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
@@ -468,19 +467,19 @@ export default function MeditacoesSonoPage() {
               <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-eco-babySoft">
                 <Activity className="h-4 w-4 text-eco-babyDark" />
               </div>
-              Regulação do sistema nervoso
+              Seu sistema nervoso aprende a desligar — não por força de vontade, mas por condicionamento.
             </li>
             <li className="flex items-center gap-3 text-sm text-[var(--eco-muted)] sm:text-base">
               <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-eco-babySoft">
                 <Zap className="h-4 w-4 text-eco-babyDark" />
               </div>
-              Desaceleração cognitiva
+              Você para de tentar "apagar" os pensamentos. Aprende a deixá-los ir.
             </li>
             <li className="flex items-center gap-3 text-sm text-[var(--eco-muted)] sm:text-base">
               <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-eco-babySoft">
                 <TrendingUp className="h-4 w-4 text-eco-babyDark" />
               </div>
-              Condicionamento progressivo do sono
+              Cada noite constrói em cima da anterior. No 7º dia, o corpo já sabe o que fazer.
             </li>
           </ul>
         </section>
