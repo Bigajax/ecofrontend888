@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
 import { PROTOCOL_NIGHTS, type ProtocolNight } from '@/data/protocolNights';
 
 // Nights 1–2 always free; nights 3–7 require paid + sequential completion
@@ -25,6 +26,8 @@ export default function MeditacoesSonoPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isVipUser } = useAuth();
+  const { hasAccess: hasSonoEntitlement } = useSonoEntitlement();
+  const isPaid = isVipUser || hasSonoEntitlement;
   const uid = user?.id || 'guest';
 
   const [completedNights, setCompletedNights] = useState<Set<number>>(() => {
@@ -81,7 +84,7 @@ export default function MeditacoesSonoPage() {
       : `Continuar Noite ${nextNight}`;
 
   const handleNightClick = (night: ProtocolNight) => {
-    const accessible = isNightAccessible(night.night, completedNights, isVipUser, isVipUser);
+    const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser);
 
     if (!accessible && night.night > 2) {
       navigate(UPGRADE_PATH);
@@ -308,10 +311,10 @@ export default function MeditacoesSonoPage() {
 
           <div className="space-y-3">
             {PROTOCOL_NIGHTS.map((night, index) => {
-              const accessible = isNightAccessible(night.night, completedNights, isVipUser, isVipUser);
+              const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser);
               const completed = completedNights.has(night.night);
-              const paidLocked = night.night > 2 && !isVipUser;
-              const sequentialLocked = night.night > 2 && isVipUser && !accessible;
+              const paidLocked = night.night > 2 && !isPaid;
+              const sequentialLocked = night.night > 2 && isPaid && !accessible;
               const comingSoon = accessible && !night.hasAudio;
 
               return (
@@ -390,7 +393,7 @@ export default function MeditacoesSonoPage() {
                   </div>
 
                   {/* CTA intermediário após noite 2 */}
-                  {index === 1 && !isVipUser && (
+                  {index === 1 && !isPaid && (
                     <div className="rounded-2xl border border-eco-baby/30 bg-eco-babySoft px-4 py-5 sm:px-5 text-center">
                       <p className="text-sm font-medium text-[var(--eco-text)] sm:text-base leading-snug">
                         Você já começou a sentir a diferença.<br />
@@ -414,12 +417,12 @@ export default function MeditacoesSonoPage() {
         <section className="mx-auto max-w-4xl px-4 pt-2 pb-4 sm:px-8">
           <div
             className={`flex items-center gap-3 rounded-2xl border p-3 sm:p-4 transition-all duration-200 ${
-              isVipUser
+              isPaid
                 ? 'border-amber-200 bg-amber-50/40 cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]'
                 : 'opacity-60 cursor-not-allowed border-[var(--eco-line)] bg-gray-50/60'
             }`}
             onClick={() => {
-              if (!isVipUser) return;
+              if (!isPaid) return;
               navigate('/app/meditation-player', {
                 state: {
                   meditation: {
@@ -439,10 +442,10 @@ export default function MeditacoesSonoPage() {
           >
             <div
               className={`flex-shrink-0 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full ${
-                isVipUser ? 'bg-amber-100' : 'bg-gray-100'
+                isPaid ? 'bg-amber-100' : 'bg-gray-100'
               }`}
             >
-              {isVipUser
+              {isPaid
                 ? <Gift className="h-4 w-4 text-amber-600" />
                 : <Lock className="h-3.5 w-3.5 text-gray-400" />
               }
@@ -460,12 +463,12 @@ export default function MeditacoesSonoPage() {
                 <span className="text-xs text-[var(--eco-muted)] whitespace-nowrap">5 min</span>
                 <span
                   className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${
-                    isVipUser
+                    isPaid
                       ? 'bg-amber-100 text-amber-700'
                       : 'bg-gray-100 text-gray-500'
                   }`}
                 >
-                  {isVipUser ? 'Disponível' : 'Premium'}
+                  {isPaid ? 'Disponível' : 'Premium'}
                 </span>
               </div>
             </div>

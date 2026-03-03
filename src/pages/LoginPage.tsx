@@ -123,8 +123,8 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    navigate('/app');
-  }, [user, navigate]);
+    navigate(returnTo);
+  }, [user, navigate, returnTo]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);

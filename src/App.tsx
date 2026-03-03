@@ -76,6 +76,8 @@ const FluxoAssinaturaDemo = lazy(() => import("@/pages/FluxoAssinaturaDemo"));
 const GuestMeditationPage = lazy(() => import("@/pages/GuestMeditationPage"));
 const MemoryPageGuestTeaser = lazy(() => import("@/pages/memory/MemoryPageGuestTeaser"));
 const UpgradeModalTest = lazy(() => import("@/pages/UpgradeModalTest"));
+const SonoObrigadoPage = lazy(() => import("@/pages/SonoObrigadoPage"));
+const SonoErroPage = lazy(() => import("@/pages/SonoErroPage"));
 
 // Lightweight loading fallback (no heavy dependencies)
 function LoadingFallback() {
@@ -155,6 +157,8 @@ function AppRoutes() {
         <Route path="guest/meditation-player" element={renderWithBoundary(<MeditationPlayerPage />)} />
         <Route path="memory-preview" element={renderWithSuspense(<MemoryPageGuestTeaser />)} />
         <Route path="test-upgrade-modal" element={renderWithSuspense(<UpgradeModalTest />)} />
+        <Route path="sono/obrigado" element={renderWithSuspense(<SonoObrigadoPage />)} />
+        <Route path="sono/erro" element={renderWithSuspense(<SonoErroPage />)} />
       </Route>
       <Route
         path="/app/*"
