@@ -1,32 +1,32 @@
-import { Fragment, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Play, Check, Lock, ArrowLeft, Gift,
   Moon, ShieldCheck, Wind,
-  Activity, Zap, TrendingUp,
+  Activity, Zap, TrendingUp, Loader2,
 } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
+import { useSonoCheckout } from '@/hooks/useSonoCheckout';
 import { PROTOCOL_NIGHTS, type ProtocolNight } from '@/data/protocolNights';
 
-// Nights 1–2 always free; nights 3–7 require paid + sequential completion
-// VIP users bypass sequential requirement and get all nights unlocked
+// All 7 nights require payment; VIP bypasses sequential requirement
 function isNightAccessible(night: number, completed: Set<number>, isPaid: boolean, isVip: boolean): boolean {
-  if (night === 1) return true;
-  if (night === 2) return true;
   if (isVip) return true;
   if (!isPaid) return false;
+  if (night === 1) return true;
   return completed.has(night - 1);
 }
 
-const UPGRADE_PATH = '/app/subscription/demo';
+const SUBSCRIPTION_PATH = '/app/subscription/demo';
 
 export default function MeditacoesSonoPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isVipUser } = useAuth();
   const { hasAccess: hasSonoEntitlement } = useSonoEntitlement();
+  const { loading: checkoutLoading, openCheckout } = useSonoCheckout();
   const isPaid = isVipUser || hasSonoEntitlement;
   const uid = user?.id || 'guest';
 
@@ -77,7 +77,9 @@ export default function MeditacoesSonoPage() {
   const nextNight = Math.min(completedCount + 1, 7);
 
   const heroButtonLabel =
-    completedCount === 0
+    !isPaid
+      ? 'Desbloquear o Protocolo — R$ 37'
+      : completedCount === 0
       ? 'Começar Minha Primeira Noite'
       : completedCount === 7
       ? 'Protocolo Concluído 🎉'
@@ -86,12 +88,10 @@ export default function MeditacoesSonoPage() {
   const handleNightClick = (night: ProtocolNight) => {
     const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser);
 
-    if (!accessible && night.night > 2) {
-      navigate(UPGRADE_PATH);
+    if (!accessible) {
+      openCheckout();
       return;
     }
-
-    if (!accessible) return;
     if (!night.hasAudio || !night.audioUrl) return;
 
     sessionStorage.setItem('eco.sono.lastPlayedNight', String(night.night));
@@ -115,6 +115,10 @@ export default function MeditacoesSonoPage() {
   };
 
   const handleHeroButtonClick = () => {
+    if (!isPaid) {
+      openCheckout();
+      return;
+    }
     if (completedCount === 7) {
       setShowCompletion(true);
       return;
@@ -144,7 +148,7 @@ export default function MeditacoesSonoPage() {
               Explorar outros programas
             </button>
             <button
-              onClick={() => navigate(UPGRADE_PATH)}
+              onClick={() => navigate(SUBSCRIPTION_PATH)}
               className="w-full rounded-full border border-eco-baby px-6 py-3 text-sm font-semibold text-eco-babyDark hover:bg-eco-babySoft transition-all active:scale-95"
             >
               Conhecer o Plano Completo
@@ -256,7 +260,8 @@ export default function MeditacoesSonoPage() {
             {/* CTA — same width as pills column */}
             <button
               onClick={handleHeroButtonClick}
-              className="mt-8 flex w-full items-center justify-center gap-2.5 rounded-full py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:scale-105 active:scale-95 sm:mt-9 sm:py-4 sm:text-base"
+              disabled={checkoutLoading}
+              className="mt-8 flex w-full items-center justify-center gap-2.5 rounded-full py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:scale-105 active:scale-95 sm:mt-9 sm:py-4 sm:text-base disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
               style={{
                 background: 'rgba(255,255,255,0.18)',
                 backdropFilter: 'blur(20px)',
@@ -265,8 +270,12 @@ export default function MeditacoesSonoPage() {
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 24px rgba(0,0,0,0.2)',
               }}
             >
-              {completedCount < 7 && <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-eco-baby" fill="currentColor" />}
-              {heroButtonLabel}
+              {checkoutLoading
+                ? <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+                : isPaid && completedCount < 7
+                ? <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-eco-baby" fill="currentColor" />
+                : null}
+              {checkoutLoading ? 'Abrindo pagamento…' : heroButtonLabel}
             </button>
           </div>
         </section>
@@ -304,22 +313,34 @@ export default function MeditacoesSonoPage() {
 
         {/* Night Cards */}
         <section className="mx-auto max-w-4xl px-4 py-4 sm:px-8">
-          {/* Free tier seal */}
-          <p className="mb-3 text-xs font-medium text-eco-babyDark">
-            🔓 2 primeiras noites liberadas gratuitamente
-          </p>
+          {!isPaid && (
+            <div className="mb-4 rounded-2xl border border-eco-baby/30 bg-eco-babySoft px-4 py-5 sm:px-5 text-center">
+              <p className="text-sm font-medium text-[var(--eco-text)] sm:text-base leading-snug">
+                Acesso completo às 7 noites do protocolo.<br />
+                <span className="text-[var(--eco-muted)] font-normal">Pagamento único. Sem mensalidade.</span>
+              </p>
+              <button
+                onClick={openCheckout}
+                disabled={checkoutLoading}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-eco-babyDark px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:brightness-110 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {checkoutLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {checkoutLoading ? 'Abrindo pagamento…' : 'Desbloquear agora — R$ 37'}
+              </button>
+            </div>
+          )}
 
           <div className="space-y-3">
-            {PROTOCOL_NIGHTS.map((night, index) => {
+            {PROTOCOL_NIGHTS.map((night) => {
               const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser);
               const completed = completedNights.has(night.night);
-              const paidLocked = night.night > 2 && !isPaid;
-              const sequentialLocked = night.night > 2 && isPaid && !accessible;
+              const paidLocked = !isPaid;
+              const sequentialLocked = isPaid && !accessible;
               const comingSoon = accessible && !night.hasAudio;
 
               return (
-                <Fragment key={night.id}>
-                  <div
+                <div
+                    key={night.id}
                     onClick={() => handleNightClick(night)}
                     className={`flex items-center gap-3 rounded-2xl border p-3 sm:p-4 transition-all duration-200 ${
                       sequentialLocked
@@ -367,8 +388,9 @@ export default function MeditacoesSonoPage() {
                         </span>
 
                         {paidLocked ? (
-                          <span className="text-xs font-semibold text-eco-babyDark bg-eco-babySoft border border-eco-baby/40 px-2.5 py-1.5 rounded-full whitespace-nowrap">
-                            Desbloquear
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-eco-babyDark bg-eco-babySoft border border-eco-baby/40 px-2.5 py-1.5 rounded-full whitespace-nowrap">
+                            {checkoutLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+                            {checkoutLoading ? 'Abrindo…' : 'Desbloquear'}
                           </span>
                         ) : comingSoon ? (
                           <span className="text-xs font-medium text-eco-babyDark bg-eco-babySoft px-2 py-1 rounded-full whitespace-nowrap">
@@ -390,24 +412,7 @@ export default function MeditacoesSonoPage() {
                         )}
                       </div>
                     </div>
-                  </div>
-
-                  {/* CTA intermediário após noite 2 */}
-                  {index === 1 && !isPaid && (
-                    <div className="rounded-2xl border border-eco-baby/30 bg-eco-babySoft px-4 py-5 sm:px-5 text-center">
-                      <p className="text-sm font-medium text-[var(--eco-text)] sm:text-base leading-snug">
-                        Você já começou a sentir a diferença.<br />
-                        <span className="text-[var(--eco-muted)] font-normal">Desbloqueie o restante do protocolo e complete as 7 noites.</span>
-                      </p>
-                      <button
-                        onClick={() => navigate(UPGRADE_PATH)}
-                        className="mt-4 inline-flex items-center gap-2 rounded-full bg-eco-babyDark px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:brightness-110 hover:scale-105 active:scale-95 transition-all duration-200"
-                      >
-                        Quero desbloquear agora
-                      </button>
-                    </div>
-                  )}
-                </Fragment>
+                </div>
               );
             })}
           </div>

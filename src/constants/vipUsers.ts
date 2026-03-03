@@ -9,7 +9,7 @@
  */
 export const VIP_EMAILS = [
   'acessoriaintuitivo@gmail.com',
-  'rafaelrazeira@hotmail.com',
+  // 'rafaelrazeira@hotmail.com', // temporariamente removido para teste de checkout
 ];
 
 /**
