@@ -709,6 +709,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'A maior parte das pessoas resiste à ideia de uma verdadeira autoavaliação, provavelmente porque teme que isso signifique depreciar algumas de suas crenças sobre aquilo que é e do que é capaz. Como diz a máxima de Goethe, é um grande defeito "ver-se como mais do que você é". Como você pode ser considerado autoconsciente quando se recusa a reconhecer suas fraquezas?\n\nNão tema a autoavaliação porque a possibilidade de ter de admitir algumas coisas sobre você mesmo o preocupa. A segunda metade da máxima de Goethe é importante também. Ele afirma que é igualmente danoso "atribuir-se menos do que seu verdadeiro valor". Não é comum ficarmos surpresos ao ver como conseguimos lidar bem com uma situação que temíamos? A maneira como somos capazes de deixar de lado o luto pela perda de um ente querido e importar-nos com os outros — embora sempre tivéssemos pensado que ficaríamos destruídos se algo acontecesse com nossos pais ou com um irmão. A maneira como somos capazes de reagir à altura a uma situação estressante ou a uma oportunidade que transformará nossa vida.\n\nSubestimamos algumas de nossas capacidades tanto e tão perigosamente quanto superestimamos outras. Cultive a capacidade de se avaliar com precisão e honestidade. Olhe para dentro de si com o propósito de discernir do que você é capaz e o que será necessário para liberar esse potencial.',
     background: getBackgroundForDay(2),
   },
+  {
+    date: '3 de março',
+    month: 'marco',
+    dayNumber: 3,
+    title: '(DES)INTEGRAÇÃO',
+    text: '"Essas coisas não andam juntas. Deves ser um ser humano unificado, bom ou mau. Deves trabalhar diligentemente ou sobre teu raciocínio, ou sobre coisas fora de teu controle — toma muito cuidado com o interior e não com o que está fora; isto é, fica com o filósofo ou então com a multidão."',
+    author: 'Epicteto',
+    source: 'Discursos, 3.15.13',
+    comment: 'Todos nós somos pessoas complicadas. Temos múltiplas facetas em nosso interior — vontades, desejos e medos conflitantes. O mundo externo não é menos confuso e contraditório. Se não tomarmos cuidado, todas essas forças — que empurram e puxam — vão nos despedaçar. Não podemos viver ao mesmo tempo como Jekyll e Hyde. Não por muito tempo.\n\nTemos uma escolha: ficar com o filósofo, e nos concentrarmos arduamente no interior, ou nos comportarmos como o líder de uma multidão, tornando-nos o que quer que a turba queira em dado momento.\n\nSe não nos concentrarmos em nossa integração interior, na autoconsciência, corremos o risco de sofrer uma desintegração externa.',
+    background: getBackgroundForDay(3),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
