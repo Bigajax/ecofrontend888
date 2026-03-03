@@ -418,6 +418,24 @@ export default function MeditacoesSonoPage() {
                 ? 'border-amber-200 bg-amber-50/40 cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]'
                 : 'opacity-60 cursor-not-allowed border-[var(--eco-line)] bg-gray-50/60'
             }`}
+            onClick={() => {
+              if (!isVipUser) return;
+              navigate('/app/meditation-player', {
+                state: {
+                  meditation: {
+                    id: 'sos_track',
+                    title: 'SOS: Não Consigo Dormir Hoje',
+                    duration: '5 min',
+                    audioUrl: '/audio/sos-nao-consigo-dormir.mp3',
+                    imageUrl: '/images/meditacoes-sono-hero.webp',
+                    backgroundMusic: 'Sono',
+                    gradient: 'linear-gradient(to bottom, #8A4A4A 0%, #2E1414 100%)',
+                    category: 'sono',
+                  },
+                  returnTo: '/app/meditacoes-sono',
+                },
+              });
+            }}
           >
             <div
               className={`flex-shrink-0 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full ${

@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Play, Check, Circle, ArrowLeft, Lock } from 'lucide-react';
+import { Play, Check, ArrowLeft, Lock } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import MeditationPageSkeleton from '@/components/MeditationPageSkeleton';
@@ -97,7 +97,7 @@ const EXIT_MODAL_SHOWN_KEY = 'eco.meditacao.exitModalShown';
 export default function IntroducaoMeditacaoPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isVipUser } = useAuth();
   const { checkAccess, requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const [isLoading, setIsLoading] = useState(true);
   const [showExitModal, setShowExitModal] = useState(false);
@@ -189,30 +189,18 @@ export default function IntroducaoMeditacaoPage() {
 
   const [sessionJustCompleted, setSessionJustCompleted] = useState<number | null>(null);
 
-  const handleToggleComplete = (id: string) => {
-    const current = meditations.find(m => m.id === id);
-    const isMarkingComplete = !!(current && !current.completed);
-
-    setMeditations(prev =>
-      prev.map(m => (m.id === id ? { ...m, completed: !m.completed } : m))
-    );
-
-    if (isMarkingComplete) {
-      const newCompletedCount = meditations.filter(m => m.completed).length + 1;
-      const newPct = Math.round((newCompletedCount / meditations.length) * 100);
-      localStorage.setItem(
-        `eco.program.lastActive.intro.${user?.id || 'guest'}`,
-        new Date().toISOString()
-      );
-      setSessionJustCompleted(newPct);
-      setTimeout(() => setSessionJustCompleted(null), 3000);
-    }
-  };
-
   const completedCount = meditations.filter(m => m.completed).length;
   const totalCount = meditations.length;
   const pct = Math.round((completedCount / totalCount) * 100);
   const remaining = totalCount - completedCount;
+  const nextMeditation = meditations.find(m => !m.completed);
+  const nextIndex = meditations.findIndex(m => !m.completed);
+  const heroCTALabel =
+    completedCount === 0
+      ? `Começar: ${meditations[0].title}`
+      : completedCount === totalCount
+      ? 'Programa concluído 🎉'
+      : `Continuar: ${nextMeditation?.title ?? meditations[0].title}`;
   const urgencyLabel =
     pct === 0
       ? `Comece por aqui · ${completedCount} de ${totalCount} sessões`
@@ -370,11 +358,16 @@ export default function IntroducaoMeditacaoPage() {
               </p>
 
               <button
-                onClick={() => handleMeditationClick(meditations[0])}
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[#2D88B8] shadow-lg transition-all duration-300 hover:bg-white/95 hover:shadow-xl hover:scale-105 active:scale-95 sm:mt-8 sm:px-8 sm:py-3 sm:text-base"
+                onClick={() => {
+                  if (completedCount < totalCount) {
+                    handleMeditationClick(nextMeditation ?? meditations[0]);
+                  }
+                }}
+                disabled={completedCount === totalCount}
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[#2D88B8] shadow-lg transition-all duration-300 hover:bg-white/95 hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-default sm:mt-8 sm:px-8 sm:py-3 sm:text-base"
               >
-                <Play className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" />
-                Tocar
+                {completedCount < totalCount && <Play className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" />}
+                {heroCTALabel}
               </button>
             </div>
           </section>
@@ -405,7 +398,7 @@ export default function IntroducaoMeditacaoPage() {
                     background:
                       pct === 100
                         ? 'linear-gradient(to right, #34d399, #10b981)'
-                        : 'linear-gradient(to right, #a78bfa, #7c3aed)',
+                        : '#6EC1E4',
                   }}
                 />
               </div>
@@ -416,58 +409,89 @@ export default function IntroducaoMeditacaoPage() {
             </div>
 
             <div className="space-y-3 sm:space-y-4">
-              {meditations.map((meditation) => (
-              <div
-                key={meditation.id}
-                className="flex items-start gap-3 rounded-2xl border border-[var(--eco-line)] bg-white p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] sm:items-center sm:gap-4 sm:p-4"
-              >
-                <button
-                  onClick={() => handleToggleComplete(meditation.id)}
-                  className="flex-shrink-0 pt-1 sm:pt-0"
-                  disabled={meditation.isPremium}
-                >
-                  {meditation.completed ? (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#6EC1E4] sm:h-8 sm:w-8">
-                      <Check className="h-4 w-4 text-white sm:h-5 sm:w-5" strokeWidth={3} />
-                    </div>
-                  ) : (
-                    <Circle className="h-7 w-7 text-[var(--eco-line)] sm:h-8 sm:w-8" strokeWidth={2} />
-                  )}
-                </button>
+              {meditations.map((meditation, index) => {
+                const isNext = index === nextIndex && !meditation.completed;
+                return (
+                  <div key={meditation.id} className="space-y-3 sm:space-y-4">
+                    {/* Card da meditação */}
+                    <div
+                      className={`flex items-center gap-3 rounded-2xl border p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] sm:gap-4 sm:p-4 ${
+                        isNext
+                          ? 'border-[#6EC1E4]/60 bg-[#6EC1E4]/5'
+                          : 'border-[var(--eco-line)] bg-white'
+                      }`}
+                    >
+                      {/* A — Círculo numerado */}
+                      <div className={`flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                        meditation.completed
+                          ? 'bg-[#6EC1E4] text-white'
+                          : isNext
+                          ? 'border-2 border-[#6EC1E4] text-[#6EC1E4]'
+                          : 'border-2 border-[var(--eco-line)] text-[var(--eco-muted)]'
+                      }`}>
+                        {meditation.completed
+                          ? <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                          : index + 1}
+                      </div>
 
-                <button
-                  onClick={() => handleMeditationClick(meditation)}
-                  className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold text-[var(--eco-text)] sm:text-base">
-                        {meditation.title}
-                      </h3>
-                      {meditation.isPremium && (
-                        <Lock className="h-3.5 w-3.5 text-[var(--eco-muted)] sm:h-4 sm:w-4" />
-                      )}
-                    </div>
-                    <p className="mt-0.5 text-xs text-[var(--eco-muted)] sm:mt-1 sm:text-sm">
-                      {meditation.description}
-                    </p>
-                  </div>
+                      <button
+                        onClick={() => handleMeditationClick(meditation)}
+                        className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-sm font-semibold text-[var(--eco-text)] sm:text-base">
+                              {meditation.title}
+                            </h3>
+                            {isNext && (
+                              <span className="rounded-full bg-[#6EC1E4]/15 px-2 py-0.5 text-[10px] font-semibold text-[#6EC1E4]">
+                                Próxima
+                              </span>
+                            )}
+                            {meditation.isPremium && !isNext && (
+                              <Lock className="h-3.5 w-3.5 text-[var(--eco-muted)] sm:h-4 sm:w-4" />
+                            )}
+                          </div>
+                          <p className="mt-0.5 text-xs text-[var(--eco-muted)] sm:mt-1 sm:text-sm">
+                            {meditation.description}
+                          </p>
+                        </div>
 
-                  <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                    <span className="text-xs text-[var(--eco-muted)] sm:text-sm">
-                      {meditation.duration}
-                    </span>
-                    <div className={`flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10 ${
-                      meditation.isPremium ? 'bg-gray-200' : 'bg-[#6EC1E4]/10'
-                    }`}>
-                      <Play className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                        meditation.isPremium ? 'text-gray-400' : 'text-[#6EC1E4]'
-                      }`} fill="currentColor" />
+                        <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
+                          <span className="text-xs text-[var(--eco-muted)] sm:text-sm">
+                            {meditation.duration}
+                          </span>
+                          <div className={`flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10 ${
+                            meditation.isPremium ? 'bg-gray-200' : 'bg-[#6EC1E4]/10'
+                          }`}>
+                            <Play className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                              meditation.isPremium ? 'text-gray-400' : 'text-[#6EC1E4]'
+                            }`} fill="currentColor" />
+                          </div>
+                        </div>
+                      </button>
                     </div>
+
+                    {/* B — CTA intermediária após item 0 para não-VIP */}
+                    {index === 0 && !isVipUser && (
+                      <div className="rounded-2xl border border-[#6EC1E4]/30 bg-[#6EC1E4]/5 px-4 py-5 text-center">
+                        <p className="text-sm font-medium text-[var(--eco-text)] leading-snug">
+                          Você deu o primeiro passo.<br />
+                          <span className="text-[var(--eco-muted)] font-normal">
+                            Continue com as 4 práticas seguintes e forme o hábito.
+                          </span>
+                        </p>
+                        <button
+                          onClick={() => requestUpgrade('introducao_list_cta')}
+                          className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#2D88B8] px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:brightness-110 hover:scale-105 active:scale-95 transition-all duration-200"
+                        >
+                          Desbloquear sessões →
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </button>
-              </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         </main>

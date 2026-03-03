@@ -182,12 +182,6 @@ export default function DrJoeDispenzaPage() {
     });
   };
 
-  const handleToggleComplete = (id: string) => {
-    setMeditations(prev =>
-      prev.map(m => (m.id === id ? { ...m, completed: !m.completed } : m))
-    );
-  };
-
   const completedCount = meditations.filter(m => m.completed).length;
   const totalCount = meditations.length;
   const pct = Math.round((completedCount / totalCount) * 100);
@@ -336,7 +330,7 @@ export default function DrJoeDispenzaPage() {
                     background:
                       pct === 100
                         ? 'linear-gradient(to right, #34d399, #10b981)'
-                        : 'linear-gradient(to right, #a78bfa, #7c3aed)',
+                        : '#89CFF0',
                   }}
                 />
               </div>
@@ -355,27 +349,23 @@ export default function DrJoeDispenzaPage() {
                   <div key={meditation.id} className="space-y-3 sm:space-y-4">
                     {/* Card da meditação */}
                     <div
-                      className={`flex items-start gap-3 rounded-2xl border p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] sm:items-center sm:gap-4 sm:p-4 ${
+                      className={`flex items-center gap-3 rounded-2xl border p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] sm:gap-4 sm:p-4 ${
                         isNext
                           ? 'border-[#89CFF0]/60 bg-[#89CFF0]/5'
                           : 'border-[var(--eco-line)] bg-white'
                       }`}
                     >
-                      {/* C — Mini-thumbnail com gradiente */}
-                      <div
-                        className={`relative flex-shrink-0 h-12 w-12 rounded-xl overflow-hidden ${isNext ? 'ring-2 ring-[#89CFF0]' : ''}`}
-                        style={{ background: meditation.gradient }}
-                      >
-                        {meditation.completed && (
-                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                            <Check className="h-5 w-5 text-white" strokeWidth={3} />
-                          </div>
-                        )}
-                        {!meditation.completed && meditation.isPremium && (
-                          <div className="absolute inset-0 bg-black/45 flex items-center justify-center">
-                            <Lock className="h-4 w-4 text-white/80" />
-                          </div>
-                        )}
+                      {/* A — Círculo numerado */}
+                      <div className={`flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                        meditation.completed
+                          ? 'bg-[#89CFF0] text-white'
+                          : isNext
+                          ? 'border-2 border-[#89CFF0] text-[#89CFF0]'
+                          : 'border-2 border-[var(--eco-line)] text-[var(--eco-muted)]'
+                      }`}>
+                        {meditation.completed
+                          ? <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                          : index + 1}
                       </div>
 
                       <button
@@ -383,9 +373,7 @@ export default function DrJoeDispenzaPage() {
                         className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
                       >
                         <div className="flex-1">
-                          {/* A — Título com badge "Próxima" e número */}
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-bold text-[#89CFF0]">{index + 1}</span>
                             <h3 className="text-sm font-semibold text-[var(--eco-text)] sm:text-base">
                               {meditation.title}
                             </h3>
