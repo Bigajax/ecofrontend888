@@ -720,6 +720,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Todos nós somos pessoas complicadas. Temos múltiplas facetas em nosso interior — vontades, desejos e medos conflitantes. O mundo externo não é menos confuso e contraditório. Se não tomarmos cuidado, todas essas forças — que empurram e puxam — vão nos despedaçar. Não podemos viver ao mesmo tempo como Jekyll e Hyde. Não por muito tempo.\n\nTemos uma escolha: ficar com o filósofo, e nos concentrarmos arduamente no interior, ou nos comportarmos como o líder de uma multidão, tornando-nos o que quer que a turba queira em dado momento.\n\nSe não nos concentrarmos em nossa integração interior, na autoconsciência, corremos o risco de sofrer uma desintegração externa.',
     background: getBackgroundForDay(3),
   },
+  {
+    date: '4 de março',
+    month: 'marco',
+    dayNumber: 4,
+    title: 'CONSCIÊNCIA É LIBERDADE',
+    text: '"É livre a pessoa que vive como deseja, nem compelida, nem atrapalhada, nem limitada. A pessoa cujas escolhas não são estorvadas, cujos desejos se realizam e que não cai naquilo que a repele. Quem deseja viver na mentira — iludido, enganado, indisciplinado, queixando-se, preso a uma rotina? Ninguém. São pessoas inferiores que não vivem como desejam; portanto, nenhuma pessoa vulgar é livre."',
+    author: 'Epicteto',
+    source: 'Discursos, 4.1.1–3A',
+    comment: 'É triste considerar quanto tempo as pessoas gastam no curso de um dia fazendo coisas que elas "têm" de fazer — não obrigações como o trabalho ou a família, mas aquelas que aceitamos sem necessidade por vaidade ou ignorância. Considere as ações que empreendemos para impressionar ou os esforços que fazemos para satisfazer ânsias ou saciar desejos que nem sequer questionamos. Numa de suas famosas cartas, Sêneca observa a frequência com que pessoas poderosas eram escravas de seu dinheiro, de suas posições, de suas amantes, até de seus escravos. "Nenhuma escravidão é mais infame", gracejou ele, "do que aquela que é autoimposta".\n\nVemos essa escravidão o tempo todo — uma pessoa muito apegada que insiste em limpar a barra de um amigo problemático, um chefe que microgerencia seus empregados e se preocupa com cada centavo. As incontáveis causas, eventos e reuniões dos quais não participamos por estarmos ocupados demais, mas com que nos comprometemos mesmo assim.\n\nFaça um inventário de suas obrigações. Quantas delas são autoimpostas? Quantas são mesmo necessárias? Você é tão livre quanto pensa?',
+    background: getBackgroundForDay(4),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
