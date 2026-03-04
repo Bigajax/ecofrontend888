@@ -337,10 +337,10 @@ export default function DiarioEstoicoPage() {
   };
 
   // Obter apenas os cards disponíveis — memoizado por tier
-  // Guests veem todos os meses (sem gate de conteúdo)
+  // Visitantes não logados veem todos os meses (sem gate de conteúdo)
   const availableMaxims = useMemo(
-    () => getAvailableMaxims(isGuestMode ? 'essentials' : tier),
-    [tier, isGuestMode]
+    () => getAvailableMaxims(!user ? 'essentials' : tier),
+    [tier, user]
   );
 
   // Reflexão de hoje baseada no calendário real
@@ -848,7 +848,7 @@ export default function DiarioEstoicoPage() {
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {partMonths.map((month) => {
                       const isActive = openMonth === month.id;
-                      const isUnlocked = tier === 'premium' || tier === 'vip' || tier === 'essentials' || month.isFreeAccess || isGuestMode;
+                      const isUnlocked = tier === 'premium' || tier === 'vip' || tier === 'essentials' || month.isFreeAccess || !user;
                       const hasToday = todayMaxim?.month === month.monthName;
                       const monthMaxims = availableMaxims.filter(m => m.month === month.monthName);
 
