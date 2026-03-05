@@ -22,6 +22,14 @@ export default function SonoObrigadoPage() {
   const [claimError, setClaimError] = useState('');
   const [claiming, setClaiming] = useState(false);
 
+  // Disparar evento de Purchase quando pagamento aprovado (uma única vez no mount)
+  useEffect(() => {
+    if (pageState === 'approved' && typeof (window as any).fbq === 'function') {
+      (window as any).fbq('track', 'Purchase', { value: 37, currency: 'BRL' });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Persistir params no sessionStorage para sobreviver ao login redirect
   useEffect(() => {
     if (externalRef) sessionStorage.setItem('eco.sono.external_reference', externalRef);
