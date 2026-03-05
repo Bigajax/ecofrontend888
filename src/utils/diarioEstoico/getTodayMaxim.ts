@@ -731,6 +731,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'É triste considerar quanto tempo as pessoas gastam no curso de um dia fazendo coisas que elas "têm" de fazer — não obrigações como o trabalho ou a família, mas aquelas que aceitamos sem necessidade por vaidade ou ignorância. Considere as ações que empreendemos para impressionar ou os esforços que fazemos para satisfazer ânsias ou saciar desejos que nem sequer questionamos. Numa de suas famosas cartas, Sêneca observa a frequência com que pessoas poderosas eram escravas de seu dinheiro, de suas posições, de suas amantes, até de seus escravos. "Nenhuma escravidão é mais infame", gracejou ele, "do que aquela que é autoimposta".\n\nVemos essa escravidão o tempo todo — uma pessoa muito apegada que insiste em limpar a barra de um amigo problemático, um chefe que microgerencia seus empregados e se preocupa com cada centavo. As incontáveis causas, eventos e reuniões dos quais não participamos por estarmos ocupados demais, mas com que nos comprometemos mesmo assim.\n\nFaça um inventário de suas obrigações. Quantas delas são autoimpostas? Quantas são mesmo necessárias? Você é tão livre quanto pensa?',
     background: getBackgroundForDay(4),
   },
+  {
+    date: '5 de março',
+    month: 'marco',
+    dayNumber: 5,
+    title: 'REDUZINDO O DISPENDIOSO',
+    text: '"Assim, com relação às coisas que buscamos, e pelas quais lutamos com todas as forças, devemos fazer esta consideração: ou não há nada de útil nelas, ou a maioria delas não é útil. Algumas são supérfluas, ao passo que outras não valem tanto. Contudo, não fazemos essa distinção e as vemos como gratuitas, quando nos custam muito caro."',
+    author: 'Sêneca',
+    source: 'Cartas morais, 42.6',
+    comment: 'Das muitas cartas de Sêneca, esta é provavelmente uma das mais importantes — e uma das menos compreendidas. Ele está expondo uma ideia inédita numa sociedade em que se veem casas cada vez maiores e na qual cada vez mais bens são adquiridos: que há um custo oculto em toda essa acumulação. E quanto mais cedo se tomar consciência disso, melhor.\n\nLembre-se: mesmo o que obtemos gratuitamente tem um custo, ainda que seja o que pagamos para armazená-lo — em nossas garagens e em nossa mente. Quando passar pelos seus bens hoje, pergunte a si mesmo: Preciso disto? É supérfluo? Quanto isto vale realmente? O que está me custando?\n\nVocê pode se surpreender com as respostas e com quanto vem pagando sem nem mesmo saber.',
+    background: getBackgroundForDay(5),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
