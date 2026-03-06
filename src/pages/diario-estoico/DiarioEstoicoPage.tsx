@@ -266,9 +266,8 @@ export default function DiarioEstoicoPage() {
   const renderComment = (maxim: DailyMaxim, textSizeClass: string = 'text-[13px]') => {
     if (!maxim.comment) return null;
 
-    const isGuest = !isPremium || isGuestMode;
-
-    if (isGuest) {
+    // Não logado → teaser parcial com CTA para criar conta
+    if (!user) {
       const reflectionId = `${maxim.month}-${maxim.dayNumber}`;
       return (
         <>
@@ -286,39 +285,25 @@ export default function DiarioEstoicoPage() {
                 style={{ background: 'linear-gradient(to top, rgba(248,247,245,0.98) 0%, rgba(248,247,245,0) 100%)' }}
               />
             </div>
-            {user ? (
-              // Usuário logado mas free → upgrade
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  mixpanel.track('Free Reflection Teaser CTA Clicked', { reflection_id: reflectionId });
-                  setShowUpgradeModal(true);
-                }}
-                className="mt-3 w-full bg-eco-baby text-white px-4 py-2.5 rounded-lg font-primary font-semibold text-sm hover:bg-eco-baby/90 active:scale-95 transition-all duration-200"
-              >
-                Leia a reflexão completa →
-              </button>
-            ) : (
-              // Não logado → criar conta
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: reflectionId });
-                  navigate('/register?returnTo=/app/diario-estoico');
-                }}
-                className="mt-3 w-full bg-eco-baby text-white px-4 py-2.5 rounded-lg font-primary font-semibold text-sm hover:bg-eco-baby/90 active:scale-95 transition-all duration-200"
-              >
-                Leia a reflexão completa →
-              </button>
-            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: reflectionId });
+                navigate('/register?returnTo=/app/diario-estoico');
+              }}
+              className="mt-3 w-full bg-eco-baby text-white px-4 py-2.5 rounded-lg font-primary font-semibold text-sm hover:bg-eco-baby/90 active:scale-95 transition-all duration-200"
+            >
+              Leia a reflexão completa →
+            </button>
             <p className="text-center text-xs text-eco-muted mt-2 font-primary">
-              {user ? 'Assine o ECO Premium — cancele quando quiser' : 'Crie sua conta em 30 segundos — sempre gratuito'}
+              Crie sua conta em 30 segundos — sempre gratuito
             </p>
           </div>
         </>
       );
     }
 
+    // Logado (qualquer tier) → comentário completo
     return (
       <>
         <hr className="border-eco-line" />
