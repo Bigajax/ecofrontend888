@@ -742,6 +742,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Das muitas cartas de Sêneca, esta é provavelmente uma das mais importantes — e uma das menos compreendidas. Ele está expondo uma ideia inédita numa sociedade em que se veem casas cada vez maiores e na qual cada vez mais bens são adquiridos: que há um custo oculto em toda essa acumulação. E quanto mais cedo se tomar consciência disso, melhor.\n\nLembre-se: mesmo o que obtemos gratuitamente tem um custo, ainda que seja o que pagamos para armazená-lo — em nossas garagens e em nossa mente. Quando passar pelos seus bens hoje, pergunte a si mesmo: Preciso disto? É supérfluo? Quanto isto vale realmente? O que está me custando?\n\nVocê pode se surpreender com as respostas e com quanto vem pagando sem nem mesmo saber.',
     background: getBackgroundForDay(5),
   },
+  {
+    date: '6 de março',
+    month: 'marco',
+    dayNumber: 6,
+    title: 'NÃO CONTE HISTÓRIAS PARA VOCÊ MESMO',
+    text: '"Em público, evita falar demais das tuas realizações e urgências, pois, por mais que gostes de contá-las, não é tão agradável para os outros ouvir sobre teus assuntos."',
+    author: 'Epicteto',
+    source: 'Encheiridion, 33.14',
+    comment: 'O filósofo moderno Nassim Taleb advertiu para a "falácia da narrativa" — a tendência a criar histórias reunindo fatos do passado não relacionados. Essas histórias, por mais que seja prazeroso criá-las, são enganosas por natureza. Elas levam a uma sensação de coesão e certeza que não é real.\n\nSe isso for muito empolgante, lembre-se de que, como Epicteto ressalta, há mais uma razão para não contar histórias sobre seu passado. É entediante, irritante e egocêntrico. Talvez o faça se sentir bem dominar a conversa e fazê-la girar em torno de você, mas como acha que os outros se sentem? Acha que as pessoas estão mesmo gostando das glórias dos seus dias de futebol no ensino médio? É este realmente o momento para mais uma história exagerada sobre suas proezas sexuais?\n\nEsforce-se ao máximo para não criar essa bolha de fantasia: viva no que é real. Ouça outras pessoas e relacione-se com elas, não atue para elas.',
+    background: getBackgroundForDay(6),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
