@@ -283,7 +283,7 @@ export default function DiarioEstoicoPage() {
   const renderComment = (maxim: DailyMaxim, textSizeClass: string = 'text-[13px]') => {
     if (!maxim.comment) return null;
 
-    const isGuest = !user;
+    const isGuest = !user || isGuestMode;
 
     if (isGuest) {
       const reflectionId = `${maxim.month}-${maxim.dayNumber}`;
@@ -294,13 +294,13 @@ export default function DiarioEstoicoPage() {
             <h4 className="font-primary text-xs font-semibold text-eco-muted tracking-[0.12em] uppercase mb-3">
               Comentário
             </h4>
-            <div className="relative overflow-hidden" style={{ maxHeight: '72px' }}>
+            <div className="relative overflow-hidden" style={{ maxHeight: '180px' }}>
               <p className={`font-primary ${textSizeClass} leading-[1.7] text-eco-text whitespace-pre-line`}>
                 {maxim.comment}
               </p>
               <div
-                className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none"
-                style={{ background: 'linear-gradient(to top, rgba(248,247,245,0.97) 0%, rgba(248,247,245,0) 100%)' }}
+                className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+                style={{ background: 'linear-gradient(to top, rgba(248,247,245,0.98) 0%, rgba(248,247,245,0) 100%)' }}
               />
             </div>
             <button
@@ -311,7 +311,7 @@ export default function DiarioEstoicoPage() {
               }}
               className="mt-3 w-full bg-eco-baby text-white px-4 py-2.5 rounded-lg font-primary font-semibold text-sm hover:bg-eco-baby/90 active:scale-95 transition-all duration-200"
             >
-              Continue esta reflexão →
+              Leia a reflexão completa →
             </button>
             <p className="text-center text-xs text-eco-muted mt-2 font-primary">
               Crie sua conta em 30 segundos — sempre gratuito
@@ -339,8 +339,8 @@ export default function DiarioEstoicoPage() {
   // Obter apenas os cards disponíveis — memoizado por tier
   // Visitantes não logados veem todos os meses (sem gate de conteúdo)
   const availableMaxims = useMemo(
-    () => getAvailableMaxims(!user ? 'essentials' : tier),
-    [tier, user]
+    () => getAvailableMaxims((!user || isGuestMode) ? 'essentials' : tier),
+    [tier, user, isGuestMode]
   );
 
   // Reflexão de hoje baseada no calendário real
@@ -848,7 +848,7 @@ export default function DiarioEstoicoPage() {
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {partMonths.map((month) => {
                       const isActive = openMonth === month.id;
-                      const isUnlocked = tier === 'premium' || tier === 'vip' || tier === 'essentials' || month.isFreeAccess || !user;
+                      const isUnlocked = tier === 'premium' || tier === 'vip' || tier === 'essentials' || month.isFreeAccess || !user || isGuestMode;
                       const hasToday = todayMaxim?.month === month.monthName;
                       const monthMaxims = availableMaxims.filter(m => m.month === month.monthName);
 
