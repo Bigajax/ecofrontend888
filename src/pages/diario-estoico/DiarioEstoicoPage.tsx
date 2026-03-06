@@ -290,7 +290,7 @@ export default function DiarioEstoicoPage() {
               onClick={(e) => {
                 e.stopPropagation();
                 mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: reflectionId });
-                navigate('/login?returnTo=/app/diario-estoico');
+                navigate('/register?returnTo=/app/diario-estoico');
               }}
               className="mt-3 w-full bg-eco-baby text-white px-4 py-2.5 rounded-lg font-primary font-semibold text-sm hover:bg-eco-baby/90 active:scale-95 transition-all duration-200"
             >
