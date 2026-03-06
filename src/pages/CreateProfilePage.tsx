@@ -242,7 +242,12 @@ const CreateProfilePage: React.FC = () => {
       mixpanel.track('Front-end: Cadastro Iniciado', { email: email.trim() });
 
       // 1. Registrar usuário
-      const { needsConfirmation } = await register(email.trim(), password, '', '');
+      // Se veio de compra do protocolo sono, passar emailRedirectTo para que o link
+      // de confirmação do Supabase leve direto à página de claim após a verificação.
+      const emailRedirectTo = returnTo.includes('/sono/')
+        ? `${window.location.origin}${returnTo}`
+        : undefined;
+      const { needsConfirmation } = await register(email.trim(), password, '', '', emailRedirectTo);
 
       // 2. Supabase requer confirmação de email → mostrar tela de aviso
       if (needsConfirmation) {
@@ -387,17 +392,22 @@ const CreateProfilePage: React.FC = () => {
               Enviamos um link de confirmação para{' '}
               <span className="font-medium text-[var(--eco-text)]">{confirmedEmail}</span>.
               <br />
-              Clique no link para ativar sua conta e entrar.
+              Clique no link para ativar sua conta — você será levado direto ao protocolo.
             </p>
+            {returnTo.includes('/sono/') && (
+              <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+                Seu acesso ao Protocolo Sono está reservado e será liberado automaticamente após a confirmação.
+              </p>
+            )}
             <p className="text-xs text-[var(--eco-muted)]">
               Não recebeu? Verifique a pasta de spam.
             </p>
             <button
               type="button"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`)}
               className="flex h-12 w-full items-center justify-center rounded-xl bg-eco-baby text-sm font-normal text-white transition-all duration-300 ease-out hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-eco-baby/40 focus:ring-offset-2"
             >
-              Ir para o login
+              Já confirmei — Entrar
             </button>
           </motion.div>
         </div>

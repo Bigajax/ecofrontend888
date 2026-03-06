@@ -27,7 +27,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signInWithGoogleIdToken: (idToken: string) => Promise<void>;
   signOut: () => Promise<void>;
-  register: (email: string, password: string, nome: string, telefone: string) => Promise<{ needsConfirmation: boolean }>;
+  register: (email: string, password: string, nome: string, telefone: string, emailRedirectTo?: string) => Promise<{ needsConfirmation: boolean }>;
   loginAsGuest: () => Promise<void>;
   migrateGuestData: (newUserId: string) => Promise<PreservedData>;
 
@@ -862,12 +862,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string, nome: string, telefone: string): Promise<{ needsConfirmation: boolean }> => {
+  const register = async (email: string, password: string, nome: string, telefone: string, emailRedirectTo?: string): Promise<{ needsConfirmation: boolean }> => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: nome },
+        ...(emailRedirectTo ? { emailRedirectTo } : {}),
       },
     });
     if (error) throw error;
