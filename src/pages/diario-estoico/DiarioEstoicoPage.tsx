@@ -222,23 +222,6 @@ const getAvailableMaxims = (tier: 'free' | 'essentials' | 'premium' | 'vip'): Da
   }
 };
 
-/**
- * Obter meses bloqueados para o usuário free
- */
-const getLockedMonths = (tier: 'free' | 'essentials' | 'premium' | 'vip'): MonthMetadata[] => {
-  if (tier === 'premium' || tier === 'vip' || tier === 'essentials') {
-    return []; // Não tem meses bloqueados
-  }
-
-  return MONTH_THEMES.filter(m => !m.isFreeAccess);
-};
-
-/**
- * Obter mês acessível para free user
- */
-const getFreeMonth = (): MonthMetadata | undefined => {
-  return MONTH_THEMES.find(m => m.isFreeAccess);
-};
 
 export default function DiarioEstoicoPage() {
   const navigate = useNavigate();
@@ -283,7 +266,7 @@ export default function DiarioEstoicoPage() {
   const renderComment = (maxim: DailyMaxim, textSizeClass: string = 'text-[13px]') => {
     if (!maxim.comment) return null;
 
-    const isGuest = !user || isGuestMode;
+    const isGuest = !isPremium || isGuestMode;
 
     if (isGuest) {
       const reflectionId = `${maxim.month}-${maxim.dayNumber}`;
@@ -339,8 +322,8 @@ export default function DiarioEstoicoPage() {
   // Obter apenas os cards disponíveis — memoizado por tier
   // Visitantes não logados veem todos os meses (sem gate de conteúdo)
   const availableMaxims = useMemo(
-    () => getAvailableMaxims((!user || isGuestMode) ? 'essentials' : tier),
-    [tier, user, isGuestMode]
+    () => getAvailableMaxims((tier === 'premium' || tier === 'vip') ? tier : 'essentials'),
+    [tier]
   );
 
   // Reflexão de hoje baseada no calendário real
@@ -732,49 +715,7 @@ export default function DiarioEstoicoPage() {
         {/* Header - apenas se usuário logado */}
         {user && <HomeHeader onLogout={handleLogout} />}
 
-        {/* FREE TIER: Banner informativo */}
-        {user && !isPremium && !isGuestMode && tier === 'free' && (() => {
-          const freeMonth = getFreeMonth();
-          const lockedMonths = getLockedMonths(tier);
-          const lockedReflectionsCount = lockedMonths.reduce((sum, m) => sum + m.reflectionsCount, 0);
-
-          if (!freeMonth) return null;
-
-          return (
-            <div className="w-full px-4 pt-4 md:px-8">
-              <div className="mx-auto max-w-7xl">
-                <div className="bg-gradient-to-r from-eco-primary/10 to-eco-accent/10 border border-eco-primary/30 rounded-xl p-5">
-                  <div className="text-center space-y-2">
-                    <p className="text-sm font-medium text-eco-text">
-                      Você tem acesso ao mês <span className="font-bold">{freeMonth.theme}</span> ({freeMonth.displayName} — {freeMonth.reflectionsCount} reflexões)
-                    </p>
-                    <p className="text-xs text-eco-muted">
-                      Aprofunde sua jornada estoica com {lockedReflectionsCount} reflexões premium
-                    </p>
-                    <button
-                      onClick={() => {
-                        mixpanel.track('Diario Archive Upgrade Click', {
-                          user_id: user.id,
-                          free_month: freeMonth.id,
-                          free_month_theme: freeMonth.theme,
-                          reflections_available: freeMonth.reflectionsCount,
-                          reflections_locked: lockedReflectionsCount,
-                          total_reflections: 61,
-                          tier: 'free',
-                          source: 'banner',
-                        });
-                        setShowUpgradeModal(true);
-                      }}
-                      className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-eco-primary text-white text-sm font-semibold rounded-full hover:bg-eco-primary/90 transition-all shadow-sm hover:shadow-md"
-                    >
-                      Desbloquear {lockedMonths.map(m => m.theme).join(' + ')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+        {/* FREE TIER: Banner removido — todos os meses agora acessíveis, conteúdo gateado via teaser */}
 
         {/* Navegação */}
         <div className="w-full px-4 pt-6 md:px-8">
@@ -848,7 +789,7 @@ export default function DiarioEstoicoPage() {
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {partMonths.map((month) => {
                       const isActive = openMonth === month.id;
-                      const isUnlocked = tier === 'premium' || tier === 'vip' || tier === 'essentials' || month.isFreeAccess || !user || isGuestMode;
+                      const isUnlocked = true; // Todos os meses acessíveis; conteúdo gateado via teaser no comentário
                       const hasToday = todayMaxim?.month === month.monthName;
                       const monthMaxims = availableMaxims.filter(m => m.month === month.monthName);
 
