@@ -62,8 +62,8 @@ function translateRegisterError(err: any): string {
     .join(' | ')
     .toLowerCase();
 
-  if (/email.*already|already.*in.*use|duplicate.*email/.test(raw)) {
-    return 'Este email já está em uso.';
+  if (/email.*already|already.*in.*use|duplicate.*email|already.*registered|user.*already/.test(raw)) {
+    return 'Este email já está em uso. Tente entrar com ele.';
   }
   if (/invalid[-_\s]*email/.test(raw)) {
     return 'Email inválido.';
@@ -106,9 +106,11 @@ const CreateProfilePage: React.FC = () => {
   const [useAutoPassword, setUseAutoPassword] = useState(false);
   const [copiedPassword, setCopiedPassword] = useState(false);
 
-  // Estados para WelcomeScreen
+  // Estados para WelcomeScreen e confirmação de email
   const [showWelcome, setShowWelcome] = useState(false);
   const [preservedData, setPreservedData] = useState<PreservedData | undefined>(undefined);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [confirmedEmail, setConfirmedEmail] = useState('');
 
   const basicValid = email.trim().length > 3 && password.length >= 6;
 
@@ -239,19 +241,25 @@ const CreateProfilePage: React.FC = () => {
       mixpanel.track('Front-end: Cadastro Iniciado', { email: email.trim() });
 
       // 1. Registrar usuário
-      await register(email.trim(), password, '', '');
+      const { needsConfirmation } = await register(email.trim(), password, '', '');
 
-      // 2. Obter user recém-criado
+      // 2. Supabase requer confirmação de email → mostrar tela de aviso
+      if (needsConfirmation) {
+        setConfirmedEmail(email.trim());
+        setShowEmailConfirmation(true);
+        mixpanel.track('Front-end: Cadastro Pendente Confirmação', { email: email.trim() });
+        return;
+      }
+
+      // 3. Conta criada e sessão ativa → obter user e prosseguir
       const { data: { user: newUser } } = await supabaseClient.auth.getUser();
 
       if (newUser) {
         mixpanel.track('Front-end: Cadastro Concluído', { userId: newUser.id });
         fbq('CompleteRegistration', { value: 1, currency: 'BRL' });
 
-        // 3. Migrar dados guest
         const migrated = await migrateGuestData(newUser.id);
 
-        // 4. Mostrar WelcomeScreen se houver dados preservados
         if (
           (migrated.chatMessages ?? 0) > 0 ||
           (migrated.favorites ?? 0) > 0 ||
@@ -261,11 +269,9 @@ const CreateProfilePage: React.FC = () => {
           setPreservedData(migrated);
           setShowWelcome(true);
         } else {
-          // Sem dados preservados, redirecionar diretamente
           navigate(returnTo);
         }
       } else {
-        // Fallback se não conseguir obter user
         navigate(returnTo);
       }
     } catch (err: any) {
@@ -302,6 +308,46 @@ const CreateProfilePage: React.FC = () => {
       setError(translatedError);
     }
   };
+
+  // Tela de confirmação de email (Supabase requer verificação)
+  if (showEmailConfirmation) {
+    return (
+      <PhoneFrame backgroundImage="/images/login-background.webp">
+        <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 gap-8 text-slate-900">
+          <div className="flex-shrink-0">
+            <img src="/images/ECOTOPIA.webp" alt="Ecotopia" className="w-32 h-32 object-contain drop-shadow-lg" loading="lazy" />
+          </div>
+          <motion.div
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            className="w-full max-w-md space-y-5 rounded-3xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8 text-center"
+          >
+            <div className="text-4xl">📬</div>
+            <h1 className="font-display text-2xl font-normal text-[var(--eco-text)]">
+              Confirme seu email
+            </h1>
+            <p className="text-sm text-[var(--eco-muted)] leading-relaxed">
+              Enviamos um link de confirmação para{' '}
+              <span className="font-medium text-[var(--eco-text)]">{confirmedEmail}</span>.
+              <br />
+              Clique no link para ativar sua conta e entrar.
+            </p>
+            <p className="text-xs text-[var(--eco-muted)]">
+              Não recebeu? Verifique a pasta de spam.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="flex h-12 w-full items-center justify-center rounded-xl bg-eco-baby text-sm font-normal text-white transition-all duration-300 ease-out hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-eco-baby/40 focus:ring-offset-2"
+            >
+              Ir para o login
+            </button>
+          </motion.div>
+        </div>
+      </PhoneFrame>
+    );
+  }
 
   // Se deve mostrar WelcomeScreen, renderizá-lo
   if (showWelcome) {

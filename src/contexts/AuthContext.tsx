@@ -27,7 +27,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signInWithGoogleIdToken: (idToken: string) => Promise<void>;
   signOut: () => Promise<void>;
-  register: (email: string, password: string, nome: string, telefone: string) => Promise<void>;
+  register: (email: string, password: string, nome: string, telefone: string) => Promise<{ needsConfirmation: boolean }>;
   loginAsGuest: () => Promise<void>;
   migrateGuestData: (newUserId: string) => Promise<PreservedData>;
 
@@ -862,7 +862,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string, nome: string, telefone: string) => {
+  const register = async (email: string, password: string, nome: string, telefone: string): Promise<{ needsConfirmation: boolean }> => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -872,9 +872,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     if (error) throw error;
 
+    // When Supabase requires email confirmation, session is null but no error is thrown.
+    // In that case we skip the DB insert — ensureProfile will handle it after SIGNED_IN.
+    const needsConfirmation = !data.session;
+
     const newUserId = data.user?.id;
-    if (newUserId) {
-      await supabase.from('usuarios').insert([
+    if (newUserId && !needsConfirmation) {
+      const { error: insertError } = await supabase.from('usuarios').insert([
         {
           id: newUserId,
           nome,
@@ -885,7 +889,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ativo: true,
         },
       ]);
+      // 23505 = unique_violation (ensureProfile may have already inserted)
+      if (insertError && insertError.code !== '23505') {
+        console.error('[Auth] Failed to create user profile:', insertError);
+        // Don't throw — user exists in Auth; ensureProfile will retry on SIGNED_IN
+      }
     }
+
+    return { needsConfirmation };
   };
 
   return (
