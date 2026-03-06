@@ -94,7 +94,7 @@ const generateSecurePassword = (): string => {
 };
 
 const CreateProfilePage: React.FC = () => {
-  const { register, migrateGuestData } = useAuth();
+  const { register, migrateGuestData, signOut, user, userName } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -111,6 +111,7 @@ const CreateProfilePage: React.FC = () => {
   const [preservedData, setPreservedData] = useState<PreservedData | undefined>(undefined);
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [confirmedEmail, setConfirmedEmail] = useState('');
+  const [signingOut, setSigningOut] = useState(false);
 
   const basicValid = email.trim().length > 3 && password.length >= 6;
 
@@ -308,6 +309,61 @@ const CreateProfilePage: React.FC = () => {
       setError(translatedError);
     }
   };
+
+  // Guarda: usuário já está logado → não mostrar formulário de cadastro
+  if (user) {
+    const displayName = userName || user.email || 'sua conta';
+    return (
+      <PhoneFrame backgroundImage="/images/login-background.webp">
+        <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 gap-8 text-slate-900">
+          <div className="flex-shrink-0">
+            <img src="/images/ECOTOPIA.webp" alt="Ecotopia" className="w-32 h-32 object-contain drop-shadow-lg" loading="lazy" />
+          </div>
+          <motion.div
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            className="w-full max-w-md space-y-5 rounded-3xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8 text-center"
+          >
+            <div className="text-4xl">👤</div>
+            <h1 className="font-display text-2xl font-normal text-[var(--eco-text)]">
+              Você já está logado
+            </h1>
+            <p className="text-sm text-[var(--eco-muted)] leading-relaxed">
+              Esta sessão pertence a{' '}
+              <span className="font-medium text-[var(--eco-text)]">{displayName}</span>.
+              <br />
+              Para criar uma nova conta, saia primeiro.
+            </p>
+            <div className="space-y-3 pt-1">
+              <button
+                type="button"
+                onClick={() => navigate(returnTo)}
+                className="flex h-12 w-full items-center justify-center rounded-xl bg-eco-baby text-sm font-normal text-white transition-all duration-300 ease-out hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-eco-baby/40 focus:ring-offset-2"
+              >
+                Continuar como {userName || 'eu'}
+              </button>
+              <button
+                type="button"
+                disabled={signingOut}
+                onClick={async () => {
+                  setSigningOut(true);
+                  try {
+                    await signOut();
+                  } finally {
+                    setSigningOut(false);
+                  }
+                }}
+                className="flex h-12 w-full items-center justify-center rounded-xl border border-[var(--eco-line)] bg-white/80 text-sm font-normal text-[var(--eco-text)] transition-all duration-300 ease-out hover:bg-white hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {signingOut ? 'Saindo…' : 'Sair e criar nova conta'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </PhoneFrame>
+    );
+  }
 
   // Tela de confirmação de email (Supabase requer verificação)
   if (showEmailConfirmation) {
