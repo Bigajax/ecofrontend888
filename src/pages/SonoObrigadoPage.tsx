@@ -21,6 +21,7 @@ export default function SonoObrigadoPage() {
   );
   const [claimError, setClaimError] = useState('');
   const [claiming, setClaiming] = useState(false);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   // Disparar evento de Purchase quando pagamento aprovado (uma única vez no mount)
   useEffect(() => {
@@ -30,6 +31,14 @@ export default function SonoObrigadoPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Timeout de segurança: se ficar em loading por mais de 6s, provavelmente o MP
+  // não enviou status na URL (usuário digitou a URL manualmente, etc.)
+  useEffect(() => {
+    if (pageState !== 'loading') return;
+    const t = setTimeout(() => setLoadingTimeout(true), 6000);
+    return () => clearTimeout(t);
+  }, [pageState]);
+
   // Persistir params no sessionStorage para sobreviver ao login redirect
   useEffect(() => {
     if (externalRef) sessionStorage.setItem('eco.sono.external_reference', externalRef);
@@ -38,50 +47,47 @@ export default function SonoObrigadoPage() {
   }, [externalRef, paymentId, mpStatus]);
 
   // Quando usuário já está logado e pagamento aprovado: claim automático
-  useEffect(() => {
-    if (!user || pageState !== 'approved') return;
-
+  const doClaim = async () => {
     const storedRef = externalRef || sessionStorage.getItem('eco.sono.external_reference') || '';
     const storedPaymentId = paymentId || sessionStorage.getItem('eco.sono.payment_id') || '';
 
     if (!storedRef && !storedPaymentId) return;
 
-    const doClaim = async () => {
-      setClaiming(true);
-      setClaimError('');
+    setClaiming(true);
+    setClaimError('');
 
-      const result = await apiFetchJson('/api/entitlements/claim', {
-        method: 'POST',
-        body: JSON.stringify({
-          external_reference: storedRef || undefined,
-          payment_id: storedPaymentId || undefined,
-          email: user.email,
-        }),
-      });
+    const result = await apiFetchJson('/api/entitlements/claim', {
+      method: 'POST',
+      body: JSON.stringify({
+        external_reference: storedRef || undefined,
+        payment_id: storedPaymentId || undefined,
+        email: user?.email,
+      }),
+    });
 
-      setClaiming(false);
+    setClaiming(false);
 
-      if (result.ok) {
-        setPageState('claimed');
-        sessionStorage.removeItem('eco.sono.external_reference');
-        sessionStorage.removeItem('eco.sono.payment_id');
-        sessionStorage.removeItem('eco.sono.status');
+    if (result.ok) {
+      setPageState('claimed');
+      sessionStorage.removeItem('eco.sono.external_reference');
+      sessionStorage.removeItem('eco.sono.payment_id');
+      sessionStorage.removeItem('eco.sono.status');
+    } else {
+      const data = result.data as any;
+      if (result.status === 409) {
+        setClaimError(
+          'Este pedido já está associado a outra conta. Entre em contato com ecotopia.app777@gmail.com informando o número do pedido.'
+        );
+      } else if (result.status === 404) {
+        setClaimError('Pagamento ainda sendo confirmado. Aguarde um momento e tente novamente.');
       } else {
-        const data = result.data as any;
-        if (result.status === 409) {
-          // Entitlement já vinculado a outra conta — erro real, acionar suporte
-          setClaimError(
-            'Este pedido já está associado a outra conta. Entre em contato com suporte@ecotopia.com informando o número do pedido.'
-          );
-        } else if (result.status === 404) {
-          // Webhook ainda não chegou — mostrar mensagem de espera
-          setClaimError('Pagamento ainda sendo confirmado. Aguarde um momento e tente novamente.');
-        } else {
-          setClaimError(data?.message || 'Erro ao liberar acesso. Tente novamente.');
-        }
+        setClaimError(data?.message || 'Erro ao liberar acesso. Tente novamente.');
       }
-    };
+    }
+  };
 
+  useEffect(() => {
+    if (!user || pageState !== 'approved') return;
     doClaim();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, pageState]);
@@ -103,6 +109,24 @@ export default function SonoObrigadoPage() {
 
   // ── Estado: carregando ───────────────────────────────────────────────────
   if (pageState === 'loading') {
+    if (loadingTimeout) {
+      return (
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 text-center">
+          <div className="max-w-sm w-full">
+            <p className="text-gray-700 font-medium mb-2">Não foi possível verificar o pagamento.</p>
+            <p className="text-sm text-gray-500 mb-6">
+              Se você acabou de pagar, verifique seu e-mail — enviamos as instruções de acesso para você.
+            </p>
+            <a
+              href="mailto:ecotopia.app777@gmail.com"
+              className="text-sm underline text-eco-babyDark"
+            >
+              Precisa de ajuda? Fale com a gente
+            </a>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -209,8 +233,9 @@ export default function SonoObrigadoPage() {
         {/* Usuário logado mas claim ainda não completou */}
         {user && claimError && (
           <button
-            onClick={() => window.location.reload()}
-            className="mt-4 w-full rounded-full border border-eco-baby px-6 py-3 text-sm font-semibold text-eco-babyDark hover:bg-eco-babySoft transition-all"
+            onClick={doClaim}
+            disabled={claiming}
+            className="mt-4 w-full rounded-full border border-eco-baby px-6 py-3 text-sm font-semibold text-eco-babyDark hover:bg-eco-babySoft transition-all disabled:opacity-50"
           >
             Tentar novamente
           </button>
