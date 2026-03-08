@@ -753,6 +753,28 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'O filósofo moderno Nassim Taleb advertiu para a "falácia da narrativa" — a tendência a criar histórias reunindo fatos do passado não relacionados. Essas histórias, por mais que seja prazeroso criá-las, são enganosas por natureza. Elas levam a uma sensação de coesão e certeza que não é real.\n\nSe isso for muito empolgante, lembre-se de que, como Epicteto ressalta, há mais uma razão para não contar histórias sobre seu passado. É entediante, irritante e egocêntrico. Talvez o faça se sentir bem dominar a conversa e fazê-la girar em torno de você, mas como acha que os outros se sentem? Acha que as pessoas estão mesmo gostando das glórias dos seus dias de futebol no ensino médio? É este realmente o momento para mais uma história exagerada sobre suas proezas sexuais?\n\nEsforce-se ao máximo para não criar essa bolha de fantasia: viva no que é real. Ouça outras pessoas e relacione-se com elas, não atue para elas.',
     background: getBackgroundForDay(6),
   },
+  {
+    date: '7 de março',
+    month: 'marco',
+    dayNumber: 7,
+    title: 'NÃO CONFIE NOS SENTIDOS',
+    text: '"Heráclito chamava o autoengano de uma horrível doença e a visão de um sentido mentiroso."',
+    author: 'Diógenes Laércio',
+    source: 'Vida e doutrinas de filósofos ilustres, 9.7',
+    comment: 'A consciência de si mesmo é a capacidade de avaliar-se objetivamente. É a capacidade de questionar os próprios instintos, padrões e suposições. Oiêsis, autoengano ou opinião arrogante e incontestada, requer que submetamos todas as nossas opiniões a um duro escrutínio; até nossos olhos nos enganam.\n\nPor conseguinte, isso é alarmante. Não posso acreditar nem em meus próprios sentidos? Certamente você poderia pensar dessa maneira. Ou poderia encarar de outra forma: como nossos sentidos são frequentemente enganados, nossas emoções excessivamente alarmadas, nossas projeções otimistas demais, fazemos melhor ao evitar tirar conclusões precipitadas sobre seja lá o que for. Podemos fazer uma pausa e nos tornar conscientes de tudo que está acontecendo, para então tomarmos a decisão certa.',
+    background: getBackgroundForDay(7),
+  },
+  {
+    date: '8 de março',
+    month: 'marco',
+    dayNumber: 8,
+    title: 'NÃO ENTREGUE SUA LIBERDADE SEM TER A INTENÇÃO',
+    text: '"Se o teu corpo fosse entregue a outra pessoa, ficarias indignado. No entanto, entregas tua mente a qualquer um que apareça, para que ele possa abusar de ti, deixando-a perturbada e apreensiva. Não tens vergonha disso?"',
+    author: 'Epicteto',
+    source: 'Encheiridion, 28',
+    comment: 'Instintivamente, nós protegemos nossos eus físicos. Não deixamos que as pessoas nos toquem, nos empurrem ou controlem para onde vamos. Mas quando se trata da mente, somos menos disciplinados. Nós a entregamos de bandeja às redes sociais, à televisão, ao que outras pessoas estão fazendo, pensando ou dizendo. Sentamo-nos para trabalhar, e a primeira coisa que fazemos é navegar na internet. Sentamo-nos com nossa família, mas em poucos minutos já pegamos o celular. Sentamo-nos tranquilamente num parque, mas em vez de olhar para dentro de nós mesmos, ficamos julgando as pessoas que passam por nós.\n\nE fazemos isso sem perceber. Não nos damos conta de quanto desperdício há nisso, de quanto nos tornamos ineficientes e distraídos. E o que é pior — ninguém está fazendo isso acontecer. É algo totalmente autoinfligido.\n\nPara os estoicos, isso é abominável. Eles sabem que o mundo pode controlar nosso corpo — podemos ser atirados numa prisão ou jogados de um lado para outro pelo tempo. Mas a mente? Ela é nossa. Devemos protegê-la. Mantenha o controle sobre sua mente e suas percepções, diriam eles. É seu bem mais valioso.',
+    background: getBackgroundForDay(8),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
