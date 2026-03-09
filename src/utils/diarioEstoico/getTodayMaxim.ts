@@ -775,6 +775,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Instintivamente, nós protegemos nossos eus físicos. Não deixamos que as pessoas nos toquem, nos empurrem ou controlem para onde vamos. Mas quando se trata da mente, somos menos disciplinados. Nós a entregamos de bandeja às redes sociais, à televisão, ao que outras pessoas estão fazendo, pensando ou dizendo. Sentamo-nos para trabalhar, e a primeira coisa que fazemos é navegar na internet. Sentamo-nos com nossa família, mas em poucos minutos já pegamos o celular. Sentamo-nos tranquilamente num parque, mas em vez de olhar para dentro de nós mesmos, ficamos julgando as pessoas que passam por nós.\n\nE fazemos isso sem perceber. Não nos damos conta de quanto desperdício há nisso, de quanto nos tornamos ineficientes e distraídos. E o que é pior — ninguém está fazendo isso acontecer. É algo totalmente autoinfligido.\n\nPara os estoicos, isso é abominável. Eles sabem que o mundo pode controlar nosso corpo — podemos ser atirados numa prisão ou jogados de um lado para outro pelo tempo. Mas a mente? Ela é nossa. Devemos protegê-la. Mantenha o controle sobre sua mente e suas percepções, diriam eles. É seu bem mais valioso.',
     background: getBackgroundForDay(8),
   },
+  {
+    date: '9 de março',
+    month: 'marco',
+    dayNumber: 9,
+    title: 'ENCONTRE O AMBIENTE CERTO',
+    text: '"Acima de tudo, fica de olho nisto: que nunca fiques tão preso a teus velhos amigos e conhecidos a ponto de seres rebaixado até o nível deles. Se não o fizeres, estarás arruinado. [...] Deves escolher se vais ser amado por esses amigos e continuar sendo o mesmo ou se vais te tornar uma pessoa melhor em detrimento dessas companhias [...] se tentares conciliar as duas coisas, nunca farás progresso nem conservarás o que tiveste um dia."\n\n"De boas pessoas aprenderás o bem, mas se te misturares aos maus, destruirás a alma que tinhas."',
+    author: 'Epicteto / Musônio Rufo',
+    source: 'Discursos, 4.2.1; 4-5 / Palestras, 11.53.21-22',
+    comment: 'A frase mais citada do empresário e palestrante Jim Rohn é: "Você é a média das cinco pessoas com quem passou mais tempo." O empresário James Altucher aconselha jovens escritores e empreendedores a encontrar seu "ambiente" — um grupo de pessoas que os pressionem a ser melhores. Seu pai pode lhe ter dado um aviso quando o viu andando com más companhias: "Lembre-se, você acaba se tornando seus amigos." Uma das máximas de Goethe transmite melhor essa ideia: "Diz-me com quem andas e dir-te-ei quem és."\n\nTome consciência de quem você permite que entre na sua vida — não como um elitista esnobe, mas como alguém que está tentando cultivar a melhor vida possível. Pergunte a você mesmo sobre as pessoas que conhece e com quem passa tempo: Elas estão me tornando melhor? Elas me encorajam a seguir em frente e me consideram responsável? Ou me arrastam para o nível delas? Agora, com isso em mente, faça a pergunta mais importante: Devo passar mais ou menos tempo com essas pessoas?\n\nA segunda parte da citação de Goethe nos diz o que está em jogo nessa escolha: "Se eu sei como passas teu tempo", disse ele, "então sei o que pode vir a ser de ti".',
+    background: getBackgroundForDay(9),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
