@@ -786,6 +786,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'A frase mais citada do empresário e palestrante Jim Rohn é: "Você é a média das cinco pessoas com quem passou mais tempo." O empresário James Altucher aconselha jovens escritores e empreendedores a encontrar seu "ambiente" — um grupo de pessoas que os pressionem a ser melhores. Seu pai pode lhe ter dado um aviso quando o viu andando com más companhias: "Lembre-se, você acaba se tornando seus amigos." Uma das máximas de Goethe transmite melhor essa ideia: "Diz-me com quem andas e dir-te-ei quem és."\n\nTome consciência de quem você permite que entre na sua vida — não como um elitista esnobe, mas como alguém que está tentando cultivar a melhor vida possível. Pergunte a você mesmo sobre as pessoas que conhece e com quem passa tempo: Elas estão me tornando melhor? Elas me encorajam a seguir em frente e me consideram responsável? Ou me arrastam para o nível delas? Agora, com isso em mente, faça a pergunta mais importante: Devo passar mais ou menos tempo com essas pessoas?\n\nA segunda parte da citação de Goethe nos diz o que está em jogo nessa escolha: "Se eu sei como passas teu tempo", disse ele, "então sei o que pode vir a ser de ti".',
     background: getBackgroundForDay(9),
   },
+  {
+    date: '10 de março',
+    month: 'marco',
+    dayNumber: 10,
+    title: 'ENCONTRE UM CATÃO PARA VOCÊ',
+    text: 'Podemos evitar a maioria dos pecados se tivermos uma testemunha a postos quando estivermos prestes a errar. A alma deveria ter alguém que ela possa respeitar, por cujo exemplo ela possa tornar seu santuário interior mais inviolável. Feliz é a pessoa que pode tornar outras melhores, não só quando presente, mas mesmo em pensamento.',
+    author: 'Sêneca',
+    source: 'Cartas Morais, 11.9',
+    comment: 'Catão, o Jovem, um político romano mais conhecido por sua autodisciplina e por sua heroica defesa da República contra Júlio César, aparece constantemente em toda a literatura estoica — o que é interessante, porque ele não deixou nada escrito. Não deu aulas. Não deu entrevistas. Seu exemplo ousado e corajoso foi o que fez dele um filósofo muito mencionado e citado.\n\nSêneca nos diz que cada um de nós devia ter seu próprio Catão — uma pessoa grande e nobre que podemos admitir em nossa mente e usar para guiar nossas ações, mesmo quando ela não está fisicamente presente. O economista Adam Smith tinha um conceito similar, que ele chamava de "espectador indiferente". Não precisava ser uma pessoa real, apenas alguém que, como disse Sêneca, pudesse ser testemunha de nosso comportamento. Alguém que possa nos repreender com calma se estivermos pensando em fazer alguma coisa desonesta, egoísta ou de forma negligente.\n\nE se fizermos isso da maneira correta, e vivermos nossa vida assim, talvez possamos servir como o Catão ou o espectador indiferente de outra pessoa quando ela precisar.',
+    background: getBackgroundForDay(10),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
