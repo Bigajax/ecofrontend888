@@ -114,13 +114,14 @@ export default function BackgroundSoundsModal({
                 max="100"
                 value={volume}
                 onChange={handleVolumeChange}
-                className="flex-1 cursor-pointer touch-manipulation bg-sounds-volume"
+                className="flex-1 cursor-pointer bg-sounds-volume"
                 style={{
                   background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${volume}%, #E5E7EB ${volume}%, #E5E7EB 100%)`,
                   borderRadius: '999px',
                   height: '4px',
                   WebkitAppearance: 'none',
                   appearance: 'none',
+                  touchAction: 'none',
                 }}
               />
               <span className="min-w-[2.5rem] text-right text-fluid-sm font-semibold text-gray-700">

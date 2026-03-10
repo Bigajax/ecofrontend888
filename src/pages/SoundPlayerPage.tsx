@@ -363,7 +363,8 @@ export default function SoundPlayerPage() {
                         max={totalSeconds}
                         value={currentTime}
                         onChange={handleProgressChange}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-manipulation z-10"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        style={{ touchAction: 'none' }}
                       />
                       <div
                         className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-100"
@@ -402,9 +403,10 @@ export default function SoundPlayerPage() {
                       max="100"
                       value={volume}
                       onChange={handleVolumeChange}
-                      className="w-full cursor-pointer touch-manipulation appearance-none bg-transparent"
+                      className="w-full cursor-pointer appearance-none bg-transparent"
                       style={{
                         height: '6px',
+                        touchAction: 'none',
                       }}
                     />
                     <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1.5 bg-gray-200 rounded-full pointer-events-none">
@@ -439,7 +441,8 @@ export default function SoundPlayerPage() {
               className="flex-1 cursor-pointer h-1"
               style={{
                 background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${(currentTime / (totalSeconds || 1)) * 100}%, #E5E7EB ${(currentTime / (totalSeconds || 1)) * 100}%, #E5E7EB 100%)`,
-                borderRadius: '999px'
+                borderRadius: '999px',
+                touchAction: 'none',
               }}
             />
 
@@ -472,7 +475,8 @@ export default function SoundPlayerPage() {
                 className="w-20 sm:w-24 cursor-pointer h-0.5"
                 style={{
                   background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${volume}%, #E5E7EB ${volume}%, #E5E7EB 100%)`,
-                  borderRadius: '999px'
+                  borderRadius: '999px',
+                  touchAction: 'none',
                 }}
               />
             </div>

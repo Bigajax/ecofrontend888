@@ -993,7 +993,8 @@ export default function MeditationPlayerPage() {
                     onTouchEnd={handleProgressChangeEnd}
                     aria-label="Progresso da meditação"
                     aria-valuetext={`${formatTime(currentTime)} de ${formatTime(duration)}`}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-manipulation z-10"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    style={{ touchAction: 'none' }}
                   />
                   <div
                     className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-100"
@@ -1050,7 +1051,8 @@ export default function MeditationPlayerPage() {
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`,
-                borderRadius: '999px'
+                borderRadius: '999px',
+                touchAction: 'none',
               }}
             />
 
@@ -1090,7 +1092,8 @@ export default function MeditationPlayerPage() {
                   WebkitAppearance: 'none',
                   appearance: 'none',
                   background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${meditationVolume}%, #E5E7EB ${meditationVolume}%, #E5E7EB 100%)`,
-                  borderRadius: '999px'
+                  borderRadius: '999px',
+                  touchAction: 'none',
                 }}
               />
             </div>
