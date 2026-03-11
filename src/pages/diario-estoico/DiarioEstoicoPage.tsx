@@ -976,7 +976,7 @@ export default function DiarioEstoicoPage() {
                                   {!isGuest && (
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                                      className="self-start sm:self-auto flex-shrink-0 flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-eco-text glass-shell rounded-full hover:bg-eco-accent/10 transition-all duration-300"
+                                      className="self-start sm:self-auto flex-shrink-0 flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-white bg-eco-baby hover:bg-eco-baby/90 active:scale-95 rounded-full transition-all duration-200"
                                     >
                                       <BookOpen size={11} />
                                       Modo Leitura
