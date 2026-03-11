@@ -969,9 +969,20 @@ export default function DiarioEstoicoPage() {
                                 <p className="font-display text-[13px] leading-[1.75] text-eco-text italic">
                                   "{maxim.text}"
                                 </p>
-                                <p className="font-primary text-[11px] font-semibold uppercase tracking-wide text-eco-accent">
-                                  — {maxim.author}{maxim.source && `, ${maxim.source}`}
-                                </p>
+                                <div className="flex items-center justify-between">
+                                  <p className="font-primary text-[11px] font-semibold uppercase tracking-wide text-eco-accent">
+                                    — {maxim.author}{maxim.source && `, ${maxim.source}`}
+                                  </p>
+                                  {!isGuest && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
+                                      className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-eco-text glass-shell rounded-full hover:bg-eco-accent/10 transition-all duration-300"
+                                    >
+                                      <BookOpen size={11} />
+                                      Modo Leitura
+                                    </button>
+                                  )}
+                                </div>
                                 {renderComment(maxim, 'text-[13px]')}
                                 {!isGuest && (
                                   <div className="space-y-2 pt-1">
@@ -994,22 +1005,13 @@ export default function DiarioEstoicoPage() {
                                         Reflexão concluída
                                       </div>
                                     )}
-                                    <div className="flex gap-2">
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-eco-text glass-shell rounded-lg hover:bg-eco-accent/10 transition-all duration-300"
-                                      >
-                                        <BookOpen size={12} />
-                                        Modo Leitura
-                                      </button>
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-eco-text glass-shell rounded-lg hover:bg-eco-accent/10 transition-all duration-300"
-                                      >
-                                        <Share2 size={12} />
-                                        Compartilhar
-                                      </button>
-                                    </div>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
+                                      className="w-full flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-eco-text glass-shell rounded-lg hover:bg-eco-accent/10 transition-all duration-300"
+                                    >
+                                      <Share2 size={12} />
+                                      Compartilhar
+                                    </button>
                                   </div>
                                 )}
                               </div>
