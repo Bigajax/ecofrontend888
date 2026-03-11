@@ -797,6 +797,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Catão, o Jovem, um político romano mais conhecido por sua autodisciplina e por sua heroica defesa da República contra Júlio César, aparece constantemente em toda a literatura estoica — o que é interessante, porque ele não deixou nada escrito. Não deu aulas. Não deu entrevistas. Seu exemplo ousado e corajoso foi o que fez dele um filósofo muito mencionado e citado.\n\nSêneca nos diz que cada um de nós devia ter seu próprio Catão — uma pessoa grande e nobre que podemos admitir em nossa mente e usar para guiar nossas ações, mesmo quando ela não está fisicamente presente. O economista Adam Smith tinha um conceito similar, que ele chamava de "espectador indiferente". Não precisava ser uma pessoa real, apenas alguém que, como disse Sêneca, pudesse ser testemunha de nosso comportamento. Alguém que possa nos repreender com calma se estivermos pensando em fazer alguma coisa desonesta, egoísta ou de forma negligente.\n\nE se fizermos isso da maneira correta, e vivermos nossa vida assim, talvez possamos servir como o Catão ou o espectador indiferente de outra pessoa quando ela precisar.',
     background: getBackgroundForDay(10),
   },
+  {
+    date: '11 de março',
+    month: 'marco',
+    dayNumber: 11,
+    title: 'VIVER SEM RESTRIÇÕES',
+    text: '"A pessoa para a qual não há limites, que tem nas mãos o que quer não importa a circunstância, é livre. Todo aquele, porém, que pode sofrer restrições, ser coagido ou pressionado a alguma coisa contra a sua vontade é um escravo."',
+    author: 'Epicteto',
+    source: 'Discursos, 4.1.128B-129A',
+    comment: 'Dê uma olhada em algumas das pessoas mais poderosas, ricas e famosas do mundo. Ignore os adereços de seu sucesso e o que elas são capazes de comprar. Olhe, em vez disso, para o que elas são obrigadas a negociar em troca. Olhe para o que o sucesso lhes custou.\n\nE o que lhes custou mais? A liberdade. O trabalho delas exige que usem terno. Seu sucesso depende de que compareçam a certas festas, cumprimentando com beijinho pessoas de que não gostam. Ele exigirá, inevitavelmente, que elas se deem conta de que são incapazes de dizer o que pensam de verdade. Pior, ele exige que se tornem um tipo diferente de pessoa ou que façam coisas más.\n\nSem dúvida, isso pode pagar bem — mas elas não avaliaram de verdade essa transação. Como disse Sêneca: "A escravidão reside sob mármore e ouro." Muitíssimas pessoas de sucesso são prisioneiras em celas fabricadas por elas próprias. É isso que você quer? É para isso que está trabalhando tanto? Esperamos que não.',
+    background: getBackgroundForDay(11),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
