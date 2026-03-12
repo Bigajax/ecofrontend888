@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import HomeHeader from '@/components/home/HomeHeader';
 import BackgroundSoundsModal from '@/components/BackgroundSoundsModal';
 import MeditationCompletion from '@/components/meditation/MeditationCompletion';
+import AbundanciaCompletion from '@/components/meditation/AbundanciaCompletion';
 import { type Sound, getAllSounds } from '@/data/sounds';
 import { useMeditationAnalytics } from '@/hooks/useMeditationAnalytics';
 import { parseDurationToSeconds, getCategoryFromPath, trackMeditationEvent } from '@/analytics/meditation';
@@ -67,6 +68,11 @@ export default function MeditationPlayerPage() {
   // Inferir categoria do returnTo se não fornecido
   const returnTo = location.state?.returnTo || '/app';
   const category = meditationData.category || getCategoryFromPath(returnTo);
+
+  // Tema dourado para o Código da Abundância
+  const isAbundancia = category === 'abundancia';
+  const GOLD = '#FFB932';
+  const GOLD_DARK = '#C49A00';
 
   //Initialize analytics
   const analytics = useMeditationAnalytics({
@@ -787,7 +793,13 @@ export default function MeditationPlayerPage() {
       />
 
       {/* Dark overlay for text readability */}
-      <div className="absolute inset-0 bg-black/25" />
+      <div
+        className="absolute inset-0"
+        style={isAbundancia
+          ? { background: 'linear-gradient(to bottom, rgba(9,9,15,0.55) 0%, rgba(9,9,15,0.40) 50%, rgba(9,9,15,0.65) 100%)' }
+          : { background: 'rgba(0,0,0,0.25)' }
+        }
+      />
 
       {/* HomeHeader */}
       <div className="relative z-10">
@@ -800,10 +812,14 @@ export default function MeditationPlayerPage() {
         <div className="w-full max-w-4xl mb-4">
           <button
             onClick={handleBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation"
+            className="flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation"
             aria-label="Voltar"
+            style={isAbundancia
+              ? { background: 'rgba(255,185,50,0.15)', border: '1px solid rgba(255,185,50,0.4)' }
+              : { background: 'rgba(255,255,255,0.9)' }
+            }
           >
-            <ChevronLeft size={22} className="text-gray-800" />
+            <ChevronLeft size={22} style={{ color: isAbundancia ? GOLD : '#1F2937' }} />
           </button>
         </div>
         {/* Meditation Image Card */}
@@ -828,7 +844,8 @@ export default function MeditationPlayerPage() {
           initial="hidden"
           animate="visible"
           transition={{ delay: 0.2 }}
-          className="mb-6 text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 text-center px-4 drop-shadow-sm"
+          className={`mb-6 text-2xl sm:text-3xl md:text-4xl font-bold text-center px-4 drop-shadow-sm ${isAbundancia ? '' : 'text-gray-900'}`}
+          style={isAbundancia ? { color: GOLD, textShadow: '0 2px 16px rgba(255,185,50,0.4)' } : undefined}
         >
           {meditationData.title}
         </motion.h1>
@@ -845,22 +862,30 @@ export default function MeditationPlayerPage() {
           <button
             onClick={() => handleSkip(-15)}
             aria-label="Retroceder 15 segundos"
-            className="flex flex-col h-12 w-12 items-center justify-center gap-0.5 rounded-full bg-white/90 backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation border border-gray-200/50"
+            className="flex flex-col h-12 w-12 items-center justify-center gap-0.5 rounded-full backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation"
+            style={isAbundancia
+              ? { background: 'rgba(255,185,50,0.15)', border: '1px solid rgba(255,185,50,0.4)' }
+              : { background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(229,231,235,0.5)' }
+            }
           >
-            <SkipBack size={16} className="text-gray-700" strokeWidth={1.5} />
-            <span className="text-[9px] font-bold text-gray-700 leading-none">15s</span>
+            <SkipBack size={16} strokeWidth={1.5} style={{ color: isAbundancia ? GOLD : '#374151' }} />
+            <span className="text-[9px] font-bold leading-none" style={{ color: isAbundancia ? GOLD : '#374151' }}>15s</span>
           </button>
 
           {/* Play/Pause Button */}
           <button
             onClick={handlePlayPause}
             aria-label={isPlaying ? 'Pausar meditação' : 'Reproduzir meditação'}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 backdrop-blur-sm shadow-xl md:hover:shadow-2xl transition-all active:scale-95 touch-manipulation border border-gray-200/50"
+            className="flex h-16 w-16 items-center justify-center rounded-full backdrop-blur-sm shadow-xl md:hover:shadow-2xl transition-all active:scale-95 touch-manipulation"
+            style={isAbundancia
+              ? { background: GOLD, border: '1px solid rgba(255,185,50,0.3)', boxShadow: '0 8px 32px rgba(255,185,50,0.45)' }
+              : { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(229,231,235,0.5)' }
+            }
           >
             {isPlaying ? (
-              <Pause size={28} className="text-gray-900" strokeWidth={2} />
+              <Pause size={28} strokeWidth={2} style={{ color: isAbundancia ? '#09090F' : '#111827' }} />
             ) : (
-              <Play size={28} className="text-gray-900 ml-0.5" strokeWidth={2} fill="currentColor" />
+              <Play size={28} strokeWidth={2} fill="currentColor" className="ml-0.5" style={{ color: isAbundancia ? '#09090F' : '#111827' }} />
             )}
           </button>
 
@@ -868,10 +893,14 @@ export default function MeditationPlayerPage() {
           <button
             onClick={() => handleSkip(15)}
             aria-label="Avançar 15 segundos"
-            className="flex flex-col h-12 w-12 items-center justify-center gap-0.5 rounded-full bg-white/90 backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation border border-gray-200/50"
+            className="flex flex-col h-12 w-12 items-center justify-center gap-0.5 rounded-full backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation"
+            style={isAbundancia
+              ? { background: 'rgba(255,185,50,0.15)', border: '1px solid rgba(255,185,50,0.4)' }
+              : { background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(229,231,235,0.5)' }
+            }
           >
-            <SkipForward size={16} className="text-gray-700" strokeWidth={1.5} />
-            <span className="text-[9px] font-bold text-gray-700 leading-none">15s</span>
+            <SkipForward size={16} strokeWidth={1.5} style={{ color: isAbundancia ? GOLD : '#374151' }} />
+            <span className="text-[9px] font-bold leading-none" style={{ color: isAbundancia ? GOLD : '#374151' }}>15s</span>
           </button>
         </motion.div>
 
@@ -886,17 +915,35 @@ export default function MeditationPlayerPage() {
           {/* Mobile Layout - Premium Clean */}
           <div className="md:hidden relative" ref={volumePopoverRef}>
             {/* Barra Principal - Mobile Premium */}
-            <div className="flex items-center justify-between gap-4 bg-white/95 backdrop-blur-lg rounded-2xl px-5 py-4 shadow-xl border border-gray-100/50">
+            <div
+              className="flex items-center justify-between gap-4 backdrop-blur-lg rounded-2xl px-5 py-4 shadow-xl"
+              style={isAbundancia
+                ? { background: 'rgba(9,9,15,0.85)', border: '1px solid rgba(255,185,50,0.25)' }
+                : { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(243,244,246,0.5)' }
+              }
+            >
               {/* Background Sound Chip */}
               <button
                 onClick={handleOpenBackgroundModal}
                 aria-label={`Sons de fundo: ${selectedBackgroundSound?.title ?? 'Nenhum'}`}
-                className="flex items-center gap-2.5 px-3.5 py-2 bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-sm border border-gray-200/50 hover:shadow-md transition-all active:scale-95 touch-manipulation"
+                className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 touch-manipulation"
+                style={isAbundancia
+                  ? { background: 'rgba(255,185,50,0.12)', border: '1px solid rgba(255,185,50,0.3)' }
+                  : { background: 'linear-gradient(to bottom right, #F9FAFB, #FFFFFF)', border: '1px solid rgba(229,231,235,0.5)' }
+                }
               >
-                <Music size={16} className="text-gray-600 flex-shrink-0" strokeWidth={2} />
+                <Music size={16} strokeWidth={2} style={{ color: isAbundancia ? GOLD : '#4B5563', flexShrink: 0 }} />
                 <div className="flex flex-col items-start min-w-0">
-                  <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide leading-tight">Sons de fundo</span>
-                  <span className="text-xs font-bold text-gray-800 leading-tight truncate max-w-[120px]">
+                  <span
+                    className="text-[9px] font-semibold uppercase tracking-wide leading-tight"
+                    style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : '#9CA3AF' }}
+                  >
+                    Sons de fundo
+                  </span>
+                  <span
+                    className="text-xs font-bold leading-tight truncate max-w-[120px]"
+                    style={{ color: isAbundancia ? 'rgba(255,255,255,0.9)' : '#1F2937' }}
+                  >
                     {selectedBackgroundSound?.title || 'Nenhum'}
                   </span>
                 </div>
@@ -907,12 +954,17 @@ export default function MeditationPlayerPage() {
                 onClick={handleFavoriteToggle}
                 aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                 aria-pressed={isFavorite}
-                className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-gray-50 to-white shadow-sm border border-gray-200/50 hover:shadow-md transition-all active:scale-95 touch-manipulation"
+                className="flex items-center justify-center w-11 h-11 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 touch-manipulation"
+                style={isAbundancia
+                  ? { background: 'rgba(255,185,50,0.12)', border: '1px solid rgba(255,185,50,0.3)' }
+                  : { background: 'linear-gradient(to bottom right, #F9FAFB, #FFFFFF)', border: '1px solid rgba(229,231,235,0.5)' }
+                }
               >
                 <Heart
                   size={20}
-                  className={`transition-all ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
                   strokeWidth={2}
+                  className={`transition-all ${isFavorite ? 'fill-red-500 text-red-500' : ''}`}
+                  style={!isFavorite ? { color: isAbundancia ? GOLD : '#4B5563' } : undefined}
                 />
               </button>
 
@@ -922,9 +974,13 @@ export default function MeditationPlayerPage() {
                   onClick={() => setShowVolumePopover(!showVolumePopover)}
                   aria-label="Controle de volume"
                   aria-expanded={showVolumePopover}
-                  className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-gray-50 to-white shadow-sm border border-gray-200/50 hover:shadow-md transition-all active:scale-95 touch-manipulation"
+                  className="flex items-center justify-center w-11 h-11 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 touch-manipulation"
+                  style={isAbundancia
+                    ? { background: 'rgba(255,185,50,0.12)', border: '1px solid rgba(255,185,50,0.3)' }
+                    : { background: 'linear-gradient(to bottom right, #F9FAFB, #FFFFFF)', border: '1px solid rgba(229,231,235,0.5)' }
+                  }
                 >
-                  <Volume2 size={18} className="text-gray-600" strokeWidth={2} />
+                  <Volume2 size={18} strokeWidth={2} style={{ color: isAbundancia ? GOLD : '#4B5563' }} />
                 </button>
 
                 {/* Volume Popover Vertical - Aparece acima do botão */}
@@ -933,10 +989,16 @@ export default function MeditationPlayerPage() {
                     ? 'opacity-100 translate-y-0 pointer-events-auto'
                     : 'opacity-0 translate-y-2 pointer-events-none'
                 }`}>
-                  <div className="bg-white/95 backdrop-blur-lg rounded-2xl px-3 py-4 shadow-2xl border border-gray-100/50">
+                  <div
+                    className="backdrop-blur-lg rounded-2xl px-3 py-4 shadow-2xl"
+                    style={isAbundancia
+                      ? { background: 'rgba(9,9,15,0.95)', border: '1px solid rgba(255,185,50,0.25)' }
+                      : { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(243,244,246,0.5)' }
+                    }
+                  >
                     <div className="flex flex-col items-center gap-3 h-[180px]">
                       {/* Porcentagem no topo */}
-                      <span className="text-xs font-bold text-gray-700">
+                      <span className="text-xs font-bold" style={{ color: isAbundancia ? GOLD : '#374151' }}>
                         {Math.round(meditationVolume)}%
                       </span>
 
@@ -955,21 +1017,33 @@ export default function MeditationPlayerPage() {
                         className="flex-1 relative w-12 flex items-center justify-center cursor-pointer [touch-action:none] active:cursor-grabbing"
                       >
                         {/* Barra de fundo vertical */}
-                        <div className="absolute inset-x-0 top-0 bottom-0 w-2 mx-auto bg-gray-200 rounded-full pointer-events-none">
+                        <div
+                          className="absolute inset-x-0 top-0 bottom-0 w-2 mx-auto rounded-full pointer-events-none"
+                          style={{ background: isAbundancia ? 'rgba(255,185,50,0.2)' : '#E5E7EB' }}
+                        >
                           <div
-                            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-500 to-blue-600 rounded-full transition-all duration-150"
-                            style={{ height: `${meditationVolume}%` }}
+                            className="absolute bottom-0 left-0 right-0 rounded-full transition-all duration-150"
+                            style={{
+                              height: `${meditationVolume}%`,
+                              background: isAbundancia
+                                ? `linear-gradient(to top, ${GOLD_DARK}, ${GOLD})`
+                                : 'linear-gradient(to top, #3B82F6, #2563EB)',
+                            }}
                           />
                         </div>
                         {/* Thumb visual */}
                         <div
-                          className="absolute left-1/2 -translate-x-1/2 w-5 h-5 bg-white rounded-full shadow-md border-2 border-blue-500 pointer-events-none transition-all duration-150"
-                          style={{ bottom: `calc(${meditationVolume}% - 10px)` }}
+                          className="absolute left-1/2 -translate-x-1/2 w-5 h-5 rounded-full shadow-md pointer-events-none transition-all duration-150"
+                          style={{
+                            bottom: `calc(${meditationVolume}% - 10px)`,
+                            background: '#FFFFFF',
+                            border: `2px solid ${isAbundancia ? GOLD : '#3B82F6'}`,
+                          }}
                         />
                       </div>
 
                       {/* Ícone no bottom */}
-                      <Volume2 size={14} className="text-gray-500" strokeWidth={2} />
+                      <Volume2 size={14} strokeWidth={2} style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : '#6B7280' }} />
                     </div>
                   </div>
                 </div>
@@ -977,12 +1051,24 @@ export default function MeditationPlayerPage() {
             </div>
 
             {/* Progress Bar - Separado abaixo */}
-            <div className="mt-3 bg-white/90 backdrop-blur-md rounded-full px-4 py-2.5 shadow-md border border-gray-100/50">
+            <div
+              className="mt-3 backdrop-blur-md rounded-full px-4 py-2.5 shadow-md"
+              style={isAbundancia
+                ? { background: 'rgba(9,9,15,0.80)', border: '1px solid rgba(255,185,50,0.2)' }
+                : { background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(243,244,246,0.5)' }
+              }
+            >
               <div className="flex items-center gap-3">
-                <span className="text-[11px] font-semibold text-gray-600 flex-shrink-0 tabular-nums">
+                <span
+                  className="text-[11px] font-semibold flex-shrink-0 tabular-nums"
+                  style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : '#4B5563' }}
+                >
                   {formatTime(currentTime)}
                 </span>
-                <div className="flex-1 relative h-1.5 bg-gray-200 rounded-full overflow-visible">
+                <div
+                  className="flex-1 relative h-1.5 rounded-full overflow-visible"
+                  style={{ background: isAbundancia ? 'rgba(255,185,50,0.2)' : '#E5E7EB' }}
+                >
                   <input
                     type="range"
                     min="0"
@@ -997,16 +1083,27 @@ export default function MeditationPlayerPage() {
                     style={{ touchAction: 'none' }}
                   />
                   <div
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-100"
-                    style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+                    className="absolute inset-y-0 left-0 rounded-full transition-all duration-100"
+                    style={{
+                      width: `${(currentTime / (duration || 1)) * 100}%`,
+                      background: isAbundancia
+                        ? `linear-gradient(to right, ${GOLD_DARK}, ${GOLD})`
+                        : 'linear-gradient(to right, #3B82F6, #2563EB)',
+                    }}
                   />
                   {/* Thumb visual */}
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-blue-500 rounded-full shadow pointer-events-none"
-                    style={{ left: `calc(${(currentTime / (duration || 1)) * 100}% - 7px)` }}
+                    className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full shadow pointer-events-none"
+                    style={{
+                      left: `calc(${(currentTime / (duration || 1)) * 100}% - 7px)`,
+                      background: isAbundancia ? GOLD : '#3B82F6',
+                    }}
                   />
                 </div>
-                <span className="text-[11px] font-semibold text-gray-600 flex-shrink-0 tabular-nums">
+                <span
+                  className="text-[11px] font-semibold flex-shrink-0 tabular-nums"
+                  style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : '#4B5563' }}
+                >
                   {formatTime(duration)}
                 </span>
               </div>
@@ -1175,7 +1272,24 @@ export default function MeditationPlayerPage() {
       )}
 
       {/* Meditation Completion Screen */}
-      {showCompletionScreen && (
+      {showCompletionScreen && isAbundancia && (
+        <AbundanciaCompletion
+          meditationId={meditationData.id || 'abundancia_1'}
+          meditationTitle={meditationData.title}
+          meditationDuration={duration}
+          onDismiss={() => {
+            setShowCompletionScreen(false);
+            handleBack();
+          }}
+          sessionMetrics={{
+            pauseCount: analytics.getSessionMetrics().pauseCount,
+            skipCount: analytics.getSessionMetrics().skipCount,
+            actualPlayTime: currentTime,
+          }}
+        />
+      )}
+
+      {showCompletionScreen && !isAbundancia && (
         <MeditationCompletion
           meditationId={meditationData.id || 'unknown'}
           meditationTitle={meditationData.title}

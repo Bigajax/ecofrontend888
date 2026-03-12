@@ -255,6 +255,17 @@ export default function HomePage() {
         isPremium: false,
         category: 'Sono',
       },
+      // Código da Abundância — protocolo de 7 dias
+      {
+        id: 'abundancia_protocol',
+        title: 'Código da Abundância',
+        description: 'Reprograme sua mente para a prosperidade em 7 dias',
+        duration: '7 dias',
+        image: 'url("/images/abundancia-card.webp")',
+        imagePosition: 'center center',
+        isPremium: false,
+        category: 'Abundância',
+      },
       // Respiração
       {
         id: 'blessing_10',
@@ -449,6 +460,12 @@ export default function HomePage() {
         lastAccessedAt: new Date().toISOString(),
       });
       navigate('/app/riqueza-mental');
+      return;
+    }
+
+    // Código da Abundância — navega para página dedicada
+    if (blessingId === 'abundancia_protocol') {
+      navigate('/app/codigo-da-abundancia');
       return;
     }
 

@@ -64,6 +64,7 @@ const MeditationPlayerPage = lazy(() => import("@/pages/energy-blessings/Meditat
 const DrJoeDispenzaPage = lazy(() => import("@/pages/DrJoeDispenzaPage"));
 const IntroducaoMeditacaoPage = lazy(() => import("@/pages/IntroducaoMeditacaoPage"));
 const MeditacoesSonoPage = lazy(() => import("@/pages/MeditacoesSonoPage"));
+const CodigoDaAbundanciaPage = lazy(() => import("@/pages/CodigoDaAbundanciaPage"));
 const ProgramasPage = lazy(() => import("@/pages/ProgramasPage"));
 const CaleidoscopioMindMovieProgramPage = lazy(() => import("@/pages/CaleidoscopioMindMovieProgramPage"));
 const ManifestacaoSaudePage = lazy(() => import("@/pages/ManifestacaoSaudePage"));
@@ -78,6 +79,8 @@ const MemoryPageGuestTeaser = lazy(() => import("@/pages/memory/MemoryPageGuestT
 const UpgradeModalTest = lazy(() => import("@/pages/UpgradeModalTest"));
 const SonoObrigadoPage = lazy(() => import("@/pages/SonoObrigadoPage"));
 const SonoErroPage = lazy(() => import("@/pages/SonoErroPage"));
+const AbundanciaObrigadoPage = lazy(() => import("@/pages/AbundanciaObrigadoPage"));
+const AbundanciaErroPage = lazy(() => import("@/pages/AbundanciaErroPage"));
 
 // Lightweight loading fallback (no heavy dependencies)
 function LoadingFallback() {
@@ -159,6 +162,8 @@ function AppRoutes() {
         <Route path="test-upgrade-modal" element={renderWithSuspense(<UpgradeModalTest />)} />
         <Route path="sono/obrigado" element={renderWithSuspense(<SonoObrigadoPage />)} />
         <Route path="sono/erro" element={renderWithSuspense(<SonoErroPage />)} />
+        <Route path="abundancia/obrigado" element={renderWithSuspense(<AbundanciaObrigadoPage />)} />
+        <Route path="abundancia/erro" element={renderWithSuspense(<AbundanciaErroPage />)} />
       </Route>
       <Route
         path="/app/*"
@@ -222,6 +227,16 @@ function AppRoutes() {
         }
       >
         <Route index element={renderWithSuspense(<MeditacoesSonoPage />)} />
+      </Route>
+      <Route
+        path="/app/codigo-da-abundancia"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<CodigoDaAbundanciaPage />)} />
       </Route>
       <Route
         path="/app/programas/caleidoscopio-mind-movie"
