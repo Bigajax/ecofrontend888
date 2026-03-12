@@ -808,6 +808,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Dê uma olhada em algumas das pessoas mais poderosas, ricas e famosas do mundo. Ignore os adereços de seu sucesso e o que elas são capazes de comprar. Olhe, em vez disso, para o que elas são obrigadas a negociar em troca. Olhe para o que o sucesso lhes custou.\n\nE o que lhes custou mais? A liberdade. O trabalho delas exige que usem terno. Seu sucesso depende de que compareçam a certas festas, cumprimentando com beijinho pessoas de que não gostam. Ele exigirá, inevitavelmente, que elas se deem conta de que são incapazes de dizer o que pensam de verdade. Pior, ele exige que se tornem um tipo diferente de pessoa ou que façam coisas más.\n\nSem dúvida, isso pode pagar bem — mas elas não avaliaram de verdade essa transação. Como disse Sêneca: "A escravidão reside sob mármore e ouro." Muitíssimas pessoas de sucesso são prisioneiras em celas fabricadas por elas próprias. É isso que você quer? É para isso que está trabalhando tanto? Esperamos que não.',
     background: getBackgroundForDay(11),
   },
+  {
+    date: '12 de março',
+    month: 'marco',
+    dayNumber: 12,
+    title: 'VER AS COISAS COMO A PESSOA CULPADA AS VÊ',
+    text: '"Sempre que uma pessoa faz algo de errado perto de ti, considera que noção de bem ou mal ela tinha em mente. Pois quando fizeres isso, sentirás compaixão, em vez de espanto ou raiva. Pois tu mesmo podes ter as mesmas noções de bem e mal, ou parecidas, caso em que serás tolerante com o que ela fez. E caso não tiveres as mesmas noções, estarás mais disposto a ser complacente com o erro dessa pessoa."',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 7.26',
+    comment: 'Sócrates, talvez a pessoa mais sábia que já viveu, costumava dizer que "ninguém comete erros de bom grado". Querendo dizer também que ninguém erra de propósito. Ninguém pensa que está errado, mesmo quando está. As pessoas pensam que estão certas, quando estão apenas enganadas. Do contrário, não pensariam assim!\n\nSeria possível que as desfeitas que você experimentou ou o mal que outros lhe causaram não tenham sido intencionais? E se eles simplesmente estivessem pensando que faziam a coisa certa — para eles, até para você? É como o memorial para os soldados confederados em Arlington (obviamente uma causa equivocada defendida por pessoas que se equivocaram), que declara, em parte, que os soldados confederados serviram "em simples obediência ao dever tal como o compreendiam". Mais uma vez — eles entendiam errado, mas era um entendimento genuíno, assim como Lincoln foi genuíno quando concluiu seu famoso discurso na Cooper Union dizendo: "Ousemos, até o fim, cumprir nosso dever tal como o compreendemos."\n\nQuão mais tolerante e compreensivo você seria hoje se pudesse ver as ações de outras pessoas como tentativas de fazer a coisa certa? Quer você concorde, quer não, quão radicalmente essa nova visão mudaria sua perspectiva sobre ações consideradas ofensivas ou beligerantes?',
+    background: getBackgroundForDay(12),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
