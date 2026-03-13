@@ -819,6 +819,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Sócrates, talvez a pessoa mais sábia que já viveu, costumava dizer que "ninguém comete erros de bom grado". Querendo dizer também que ninguém erra de propósito. Ninguém pensa que está errado, mesmo quando está. As pessoas pensam que estão certas, quando estão apenas enganadas. Do contrário, não pensariam assim!\n\nSeria possível que as desfeitas que você experimentou ou o mal que outros lhe causaram não tenham sido intencionais? E se eles simplesmente estivessem pensando que faziam a coisa certa — para eles, até para você? É como o memorial para os soldados confederados em Arlington (obviamente uma causa equivocada defendida por pessoas que se equivocaram), que declara, em parte, que os soldados confederados serviram "em simples obediência ao dever tal como o compreendiam". Mais uma vez — eles entendiam errado, mas era um entendimento genuíno, assim como Lincoln foi genuíno quando concluiu seu famoso discurso na Cooper Union dizendo: "Ousemos, até o fim, cumprir nosso dever tal como o compreendemos."\n\nQuão mais tolerante e compreensivo você seria hoje se pudesse ver as ações de outras pessoas como tentativas de fazer a coisa certa? Quer você concorde, quer não, quão radicalmente essa nova visão mudaria sua perspectiva sobre ações consideradas ofensivas ou beligerantes?',
     background: getBackgroundForDay(12),
   },
+  {
+    date: '13 de março',
+    month: 'marco',
+    dayNumber: 13,
+    title: 'UM DIA TUDO ISSO FARÁ SENTIDO',
+    text: '"Sempre que te vires culpando a Providência, vê a situação de outro ângulo em tua mente e perceberás que tudo que aconteceu está de acordo com a razão."',
+    author: 'Epicteto',
+    source: 'Discursos, 3.17.1',
+    comment: 'Lutamos contra as coisas que acontecem em parte porque estamos tão concentrados em nosso plano que esquecemos que pode haver um plano maior, do qual não temos conhecimento. Não é verdade que muitas vezes algo que tínhamos considerado um desastre acaba se revelando, com o passar do tempo, um golpe de sorte? Também esquecemos que não somos as únicas pessoas dignas de importância e que nossa perda pode ser o ganho de alguém.\n\nEssa sensação de estar sendo injustiçado é um simples problema de consciência. Precisamos lembrar que todas as coisas são guiadas pela razão — uma razão vasta e universal que nem sempre podemos ver. Que o furacão repentino foi o resultado do bater das asas de uma borboleta no outro hemisfério, ou que o infortúnio vivenciado é simplesmente o prelúdio para um futuro agradável e invejável.',
+    background: getBackgroundForDay(13),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
