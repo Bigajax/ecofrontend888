@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { ChevronLeft, MoreHorizontal, BookOpen, Share2 } from 'lucide-react';
+import { ChevronLeft, BookOpen, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import AnimatedSection from '@/components/AnimatedSection';
@@ -905,122 +905,286 @@ export default function DiarioEstoicoPage() {
                           ref={(el) => { if (el) cardRefs.current.set(maxim.dayNumber, el); }}
                           className="w-full md:snap-center md:flex-shrink-0 md:w-[calc(100%-180px)]"
                         >
-                          {/* Imagem + citação */}
+                          {/* Imagem + título */}
                           <div
                             data-diario-card
                             data-day-number={maxim.dayNumber}
-                            className={`relative rounded-2xl overflow-hidden cursor-pointer transition-shadow duration-300 ${
+                            className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 active:scale-[0.97] hover:scale-[1.02] ${
                               isToday
                                 ? 'ring-2 ring-eco-baby shadow-[0_6px_28px_rgba(110,200,255,0.30)]'
                                 : 'shadow-eco hover:shadow-eco-glow'
-                            } ${isExpanded ? 'rounded-b-none' : ''}`}
+                            } ${isExpanded ? 'rounded-b-none md:rounded-2xl' : ''}`}
                             style={{
                               backgroundImage: maxim.background,
                               backgroundSize: 'cover',
                               backgroundPosition: 'center',
-                              minHeight: '280px',
+                              minHeight: '300px',
                             }}
                             onClick={() => toggleExpanded(maxim.dayNumber)}
                           >
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/55 to-black/75 pointer-events-none" />
+                            {/* Gradiente mais forte para legibilidade do título */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/45 to-black/85 pointer-events-none" />
 
-                            <div className="relative h-full flex flex-col justify-between p-5" style={{ minHeight: '280px' }}>
-                              {/* Topo: badge data */}
+                            <div className="relative h-full flex flex-col justify-between p-5 md:p-7" style={{ minHeight: '300px' }}>
+                              {/* Topo: badge data + badges direita */}
                               <div className="flex items-start justify-between gap-2">
                                 <span className={`inline-flex rounded-full px-3 py-1.5 ${isToday ? 'bg-eco-baby' : 'bg-black/40 backdrop-blur-sm'}`}>
                                   <span className="text-[11px] font-semibold text-white tracking-wide">
                                     {isToday ? `HOJE • ${maxim.date}` : maxim.date}
                                   </span>
                                 </span>
-                                {isToday && (
-                                  <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/30">
-                                    ✦ Reflexão do dia
+                                <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                                  {/* Badge "✓ Lido" quando reflexão já foi lida */}
+                                  {readDays.has(maxim.dayNumber) && (
+                                    <span className="inline-flex items-center gap-1 bg-white/25 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/30">
+                                      ✓ Lido
+                                    </span>
+                                  )}
+                                  {isToday && !readDays.has(maxim.dayNumber) && (
+                                    <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/30">
+                                      ✦ Reflexão do dia
+                                    </span>
+                                  )}
+                                  <span className="inline-flex items-center gap-1 bg-black/30 backdrop-blur-sm text-white/75 text-[10px] px-2.5 py-1 rounded-full border border-white/10">
+                                    ⏱ 1 min de leitura
                                   </span>
-                                )}
+                                </div>
                               </div>
 
                               {/* Centro: título */}
-                              <div className="flex-1 flex items-center justify-center px-4 py-4">
+                              <div className="flex-1 flex items-center justify-center px-2 py-6 md:px-8">
                                 <p
-                                  className="font-display text-white text-center text-base sm:text-xl leading-snug drop-shadow-lg tracking-wide break-words"
-                                  style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5)' }}
+                                  className="font-display text-white text-center text-[1.35rem] sm:text-2xl md:text-3xl leading-snug drop-shadow-lg tracking-wide break-words"
+                                  style={{ textShadow: '0 2px 16px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.6)' }}
                                 >
                                   {maxim.title}
                                 </p>
                               </div>
 
-                              {/* Rodapé: botão */}
-                              <div className="flex items-end justify-end">
+                              {/* Rodapé: botão pill */}
+                              <div className="flex items-end justify-between gap-2">
+                                {/* Indicador de progresso sutil quando lido */}
+                                {readDays.has(maxim.dayNumber) ? (
+                                  <span className="text-[10px] text-white/50 font-primary italic">
+                                    reflexão concluída
+                                  </span>
+                                ) : (
+                                  <span />
+                                )}
                                 <button
                                   onClick={(e) => { e.stopPropagation(); toggleExpanded(maxim.dayNumber); }}
-                                  className="flex-shrink-0 inline-flex items-center gap-1.5 text-[11px] font-medium rounded-full px-3.5 py-1.5 text-white bg-black/50 hover:bg-black/70 backdrop-blur-sm transition-all"
+                                  className="flex-shrink-0 inline-flex items-center gap-1.5 text-[12px] font-semibold rounded-full px-4 py-2 text-white bg-white/15 hover:bg-white/25 active:scale-95 backdrop-blur-sm border border-white/20 transition-all duration-200"
                                 >
-                                  <MoreHorizontal size={12} />
-                                  {isExpanded ? 'Fechar' : 'Leia mais'}
+                                  {isExpanded
+                                    ? 'Fechar'
+                                    : <><BookOpen size={12} /> Ler reflexão</>
+                                  }
                                 </button>
                               </div>
                             </div>
                           </div>
 
-                          {/* Seção expandida */}
+                          {/* Seção expandida — MOBILE ONLY (inline, sem conflito de overflow) */}
                           {isExpanded && (
-                            <div className="glass-shell rounded-b-2xl p-5 border-t border-eco-line/30">
-                              <div className="space-y-3">
-                                <p className="font-display text-[13px] leading-[1.75] text-eco-text italic">
+                            <div className="md:hidden rounded-b-2xl border-t border-eco-line/30 bg-white/80 backdrop-blur-sm overflow-hidden" style={{ animation: 'fadeIn 0.2s ease-out' }}>
+                              {/* Citação */}
+                              <div className="px-5 pt-5 pb-4 border-b border-eco-line/30">
+                                <p className="font-primary text-[9px] font-semibold uppercase tracking-[0.18em] text-eco-muted mb-3">
+                                  {maxim.author}{maxim.source && ` · ${maxim.source}`}
+                                </p>
+                                <p className="font-display text-[15px] leading-[1.75] text-eco-text italic">
                                   "{maxim.text}"
                                 </p>
-                                <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-                                  <p className="font-primary text-[11px] font-semibold uppercase tracking-wide text-eco-accent min-w-0">
-                                    — {maxim.author}{maxim.source && `, ${maxim.source}`}
-                                  </p>
-                                  {!isGuest && (
+                              </div>
+
+                              {/* Comentário */}
+                              <div className="px-5 py-4">
+                                {renderComment(maxim, 'text-[14px]')}
+
+                                {/* Botão Ler reflexão completa — pill centralizado */}
+                                {!isGuest && user && (
+                                  <div className="mt-4 flex justify-center">
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                                      className="self-start sm:self-auto flex-shrink-0 flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-white bg-eco-baby hover:bg-eco-baby/90 active:scale-95 rounded-full transition-all duration-200"
+                                      className="inline-flex items-center gap-2 px-6 py-2.5 text-[13px] font-semibold text-white bg-eco-baby hover:bg-eco-baby/90 active:scale-95 rounded-full transition-all duration-200 shadow-md"
                                     >
-                                      <BookOpen size={11} />
-                                      Modo Leitura
-                                    </button>
-                                  )}
-                                </div>
-                                {renderComment(maxim, 'text-[13px]')}
-                                {!isGuest && (
-                                  <div className="space-y-2 pt-1">
-                                    {!readDays.has(maxim.dayNumber) && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          markDayAsRead(maxim.dayNumber);
-                                          mixpanel.track('Diario Estoico: Marked As Read', { day_number: maxim.dayNumber, is_guest: !user, method: 'button' });
-                                        }}
-                                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-eco-baby hover:bg-eco-baby/90 rounded-lg active:scale-95 transition-all duration-200"
-                                      >
-                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                        Marcar como lida
-                                      </button>
-                                    )}
-                                    {readDays.has(maxim.dayNumber) && (
-                                      <div className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-eco-accent glass-shell rounded-lg">
-                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                        Reflexão concluída
-                                      </div>
-                                    )}
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                                      className="w-full flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-eco-text glass-shell rounded-lg hover:bg-eco-accent/10 transition-all duration-300"
-                                    >
-                                      <Share2 size={12} />
-                                      Compartilhar
+                                      <BookOpen size={13} />
+                                      📖 Ler reflexão completa
                                     </button>
                                   </div>
                                 )}
                               </div>
+
+                              {/* Ações */}
+                              {!isGuest && (
+                                <div className="px-5 pb-5 flex items-center gap-2.5">
+                                  {!readDays.has(maxim.dayNumber) ? (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        markDayAsRead(maxim.dayNumber);
+                                        mixpanel.track('Diario Estoico: Marked As Read', { day_number: maxim.dayNumber, is_guest: !user, method: 'button' });
+                                      }}
+                                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-[13px] font-semibold text-white bg-eco-baby hover:bg-eco-baby/90 rounded-full active:scale-95 transition-all duration-200"
+                                    >
+                                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                      Marcar como lida
+                                    </button>
+                                  ) : (
+                                    <div className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-[13px] font-medium text-eco-accent bg-eco-accent/8 rounded-full border border-eco-accent/20">
+                                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                      Lida ✓
+                                    </div>
+                                  )}
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
+                                    className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium text-eco-muted glass-shell rounded-full hover:text-eco-text transition-all duration-200"
+                                  >
+                                    <Share2 size={13} />
+                                    Compartilhar
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
                       );
                     })}
                   </div>
+
+                  {/* Seção expandida — DESKTOP ONLY (fora do overflow-x-auto para não ser cortada) */}
+                  {monthMaxims.map((maxim) => {
+                    const isExpanded = expandedCards.has(maxim.dayNumber);
+                    const isGuest = isGuestMode && !user && !isVipUser;
+                    if (!isExpanded) return null;
+
+                    const commentParagraphs = maxim.comment
+                      ? maxim.comment.split('\n\n').filter(Boolean)
+                      : [];
+
+                    return (
+                      <div
+                        key={`desktop-expanded-${maxim.dayNumber}`}
+                        className="hidden md:block mt-4 rounded-2xl border border-eco-line/40 shadow-eco overflow-hidden bg-white/70 backdrop-blur-sm"
+                        style={{ animation: 'fadeIn 0.3s ease-out' }}
+                      >
+                        {/* Bloco da citação — foco principal */}
+                        <div className="px-10 pt-10 pb-8 text-center border-b border-eco-line/30">
+                          <p className="font-primary text-[10px] font-semibold uppercase tracking-[0.2em] text-eco-muted mb-6">
+                            {maxim.author}{maxim.source && ` · ${maxim.source}`}
+                          </p>
+                          <blockquote
+                            className="font-display text-2xl md:text-[1.65rem] leading-[1.65] text-eco-text italic max-w-xl mx-auto"
+                            style={{ textShadow: 'none' }}
+                          >
+                            "{maxim.text}"
+                          </blockquote>
+                          <p className="mt-6 inline-flex items-center gap-1.5 text-[11px] text-eco-muted/70 font-primary">
+                            <span>⏱</span> Tempo de leitura: 1 minuto
+                          </p>
+                        </div>
+
+                        {/* Bloco do comentário */}
+                        <div className="px-10 py-8">
+                          <div className="max-w-xl mx-auto">
+                            <h4 className="font-primary text-[10px] font-semibold text-eco-muted tracking-[0.18em] uppercase mb-5">
+                              Comentário
+                            </h4>
+
+                            {/* Guest: teaser com fade */}
+                            {!user ? (
+                              <>
+                                <div className="relative overflow-hidden" style={{ maxHeight: '110px' }}>
+                                  <p className="font-primary text-[15px] leading-[1.85] text-eco-text">
+                                    {commentParagraphs[0] ?? maxim.comment}
+                                  </p>
+                                  <div
+                                    className="absolute bottom-0 left-0 right-0 h-14 pointer-events-none"
+                                    style={{ background: 'linear-gradient(to top, rgba(255,255,255,0.97) 0%, transparent 100%)' }}
+                                  />
+                                </div>
+                                <div className="mt-6 flex flex-col items-center gap-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: `${maxim.month}-${maxim.dayNumber}` });
+                                      navigate('/register?returnTo=/app/diario-estoico');
+                                    }}
+                                    className="inline-flex items-center gap-2 px-7 py-2.5 bg-eco-baby text-white font-primary font-semibold text-sm rounded-full hover:bg-eco-baby/90 active:scale-95 transition-all duration-200 shadow-md"
+                                  >
+                                    Leia a reflexão completa →
+                                  </button>
+                                  <p className="text-[11px] text-eco-muted font-primary">
+                                    Crie sua conta em 30 segundos — sempre gratuito
+                                  </p>
+                                </div>
+                              </>
+                            ) : (
+                              /* Logado: comentário completo em parágrafos */
+                              <div className="space-y-5">
+                                {commentParagraphs.length > 0
+                                  ? commentParagraphs.map((para, i) => (
+                                      <p key={i} className="font-primary text-[15px] leading-[1.9] text-eco-text">
+                                        {para}
+                                      </p>
+                                    ))
+                                  : (
+                                      <p className="font-primary text-[15px] leading-[1.9] text-eco-text">
+                                        {maxim.comment}
+                                      </p>
+                                    )
+                                }
+                              </div>
+                            )}
+
+                            {/* Botão Ler reflexão completa — centralizado, pill */}
+                            {!isGuest && user && (
+                              <div className="mt-8 flex justify-center">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
+                                  className="inline-flex items-center gap-2 px-7 py-2.5 text-sm font-semibold text-white bg-eco-baby hover:bg-eco-baby/90 active:scale-95 rounded-full transition-all duration-200 shadow-md"
+                                >
+                                  <BookOpen size={14} />
+                                  📖 Ler reflexão completa
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Rodapé: ações */}
+                        {!isGuest && (
+                          <div className="px-10 pb-8 flex items-center gap-3">
+                            {!readDays.has(maxim.dayNumber) ? (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markDayAsRead(maxim.dayNumber);
+                                  mixpanel.track('Diario Estoico: Marked As Read', { day_number: maxim.dayNumber, is_guest: !user, method: 'button' });
+                                }}
+                                className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-eco-baby hover:bg-eco-baby/90 rounded-full active:scale-95 transition-all duration-200"
+                              >
+                                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                Marcar como lida
+                              </button>
+                            ) : (
+                              <div className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-eco-accent bg-eco-accent/8 rounded-full border border-eco-accent/20">
+                                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                Reflexão concluída
+                              </div>
+                            )}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-eco-muted hover:text-eco-text glass-shell rounded-full transition-all duration-200"
+                            >
+                              <Share2 size={13} />
+                              Compartilhar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           );

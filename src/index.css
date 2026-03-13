@@ -767,6 +767,11 @@ button, [role="button"], a { touch-action: manipulation; }
   to { opacity: 1; }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes slideUpFadeAnimation {
   from { opacity: 0; transform: translateY(50px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
