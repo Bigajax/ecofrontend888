@@ -285,19 +285,28 @@ export default function DiarioEstoicoPage() {
                 style={{ background: 'linear-gradient(to top, rgba(248,247,245,0.98) 0%, rgba(248,247,245,0) 100%)' }}
               />
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: reflectionId });
-                navigate('/register?returnTo=/app/diario-estoico');
-              }}
-              className="mt-3 w-full bg-eco-baby text-white px-4 py-2.5 rounded-lg font-primary font-semibold text-sm hover:bg-eco-baby/90 active:scale-95 transition-all duration-200"
-            >
-              Leia a reflexão completa →
-            </button>
-            <p className="text-center text-xs text-eco-muted mt-2 font-primary">
-              Crie sua conta em 30 segundos — sempre gratuito
-            </p>
+            <div className="mt-3 flex flex-col gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: reflectionId, action: 'login' });
+                  navigate('/login?returnTo=/app/diario-estoico');
+                }}
+                className="w-full bg-eco-baby text-white px-4 py-2.5 rounded-lg font-primary font-semibold text-sm hover:bg-eco-baby/90 active:scale-95 transition-all duration-200"
+              >
+                Entrar para ler →
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: reflectionId, action: 'register' });
+                  navigate('/register?returnTo=/app/diario-estoico');
+                }}
+                className="w-full border border-eco-baby text-eco-baby px-4 py-2 rounded-lg font-primary font-medium text-sm hover:bg-eco-baby/5 active:scale-95 transition-all duration-200"
+              >
+                Criar conta grátis
+              </button>
+            </div>
           </div>
         </>
       );
@@ -1102,20 +1111,27 @@ export default function DiarioEstoicoPage() {
                                     style={{ background: 'linear-gradient(to top, rgba(255,255,255,0.97) 0%, transparent 100%)' }}
                                   />
                                 </div>
-                                <div className="mt-6 flex flex-col items-center gap-2">
+                                <div className="mt-6 flex flex-col items-center gap-2.5">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: `${maxim.month}-${maxim.dayNumber}` });
-                                      navigate('/register?returnTo=/app/diario-estoico');
+                                      mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: `${maxim.month}-${maxim.dayNumber}`, action: 'login' });
+                                      navigate('/login?returnTo=/app/diario-estoico');
                                     }}
                                     className="inline-flex items-center gap-2 px-7 py-2.5 bg-eco-baby text-white font-primary font-semibold text-sm rounded-full hover:bg-eco-baby/90 active:scale-95 transition-all duration-200 shadow-md"
                                   >
-                                    Leia a reflexão completa →
+                                    Entrar para ler →
                                   </button>
-                                  <p className="text-[11px] text-eco-muted font-primary">
-                                    Crie sua conta em 30 segundos — sempre gratuito
-                                  </p>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: `${maxim.month}-${maxim.dayNumber}`, action: 'register' });
+                                      navigate('/register?returnTo=/app/diario-estoico');
+                                    }}
+                                    className="inline-flex items-center gap-2 px-6 py-2 border border-eco-baby text-eco-baby font-primary font-medium text-sm rounded-full hover:bg-eco-baby/5 active:scale-95 transition-all duration-200"
+                                  >
+                                    Criar conta grátis
+                                  </button>
                                 </div>
                               </>
                             ) : (
