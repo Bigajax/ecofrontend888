@@ -101,7 +101,7 @@ export default function MeditationPlayerPage() {
     const allSounds = getAllSounds();
     return allSounds.find(sound => sound.id === 'freq_1') || null;
   });
-  const [backgroundVolume, setBackgroundVolume] = useState(67); // Volume padrão para som de fundo (67%)
+  const [backgroundVolume, setBackgroundVolume] = useState(35); // Volume padrão para som de fundo (35% — mais suave no início)
   const backgroundAudioRef = useRef<HTMLAudioElement>(null);
 
   // Estado para volume da meditação
@@ -718,7 +718,12 @@ export default function MeditationPlayerPage() {
 
     // Inverter o cálculo porque o volume 100% fica no topo
     const percentage = Math.max(0, Math.min(100, ((sliderHeight - clickY) / sliderHeight) * 100));
-    setMeditationVolume(Math.round(percentage));
+    const rounded = Math.round(percentage);
+    setBackgroundVolume(rounded);
+    // Sync imediato ao elemento de áudio (Android/desktop) — iOS Safari ignora audio.volume por design do sistema
+    if (backgroundAudioRef.current) {
+      backgroundAudioRef.current.volume = Math.max(0, Math.min(0.08, (rounded / 100) * 0.08));
+    }
   };
 
   const handleVolumeSliderStart = (e: React.TouchEvent | React.MouseEvent) => {
@@ -737,9 +742,10 @@ export default function MeditationPlayerPage() {
 
     const handleMove = (e: TouchEvent | MouseEvent) => {
       if ('touches' in e) {
+        e.preventDefault(); // Evita scroll do browser durante drag do slider
         handleVolumeSliderInteraction(e.touches[0].clientY);
       } else {
-        handleVolumeSliderInteraction(e.clientY);
+        handleVolumeSliderInteraction((e as MouseEvent).clientY);
       }
     };
 
@@ -747,7 +753,7 @@ export default function MeditationPlayerPage() {
       setIsDragging(false);
     };
 
-    document.addEventListener('touchmove', handleMove, { passive: true });
+    document.addEventListener('touchmove', handleMove, { passive: false }); // passive:false obrigatório para preventDefault funcionar
     document.addEventListener('touchend', handleEnd);
     document.addEventListener('mousemove', handleMove);
     document.addEventListener('mouseup', handleEnd);
@@ -807,7 +813,7 @@ export default function MeditationPlayerPage() {
       </div>
 
       {/* Main Content - Centered */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-start px-4 sm:px-8 pt-24 pb-8">
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-start px-4 sm:px-8 pt-16 sm:pt-24 pb-12 sm:pb-8">
         {/* Back Button - Inline no topo (mobile) */}
         <div className="w-full max-w-4xl mb-4">
           <button
@@ -828,12 +834,12 @@ export default function MeditationPlayerPage() {
           initial="hidden"
           animate="visible"
           transition={{ delay: 0.1 }}
-          className="mb-6 overflow-hidden rounded-3xl shadow-2xl"
+          className="mb-4 sm:mb-6 overflow-hidden rounded-3xl shadow-2xl"
         >
           <img
             src={meditationData.imageUrl}
             alt={meditationData.title}
-            className="h-40 w-40 sm:h-48 sm:w-48 object-cover"
+            className="h-32 w-32 sm:h-48 sm:w-48 object-cover"
             style={{ objectPosition: 'center 35%' }}
           />
         </motion.div>
@@ -844,8 +850,8 @@ export default function MeditationPlayerPage() {
           initial="hidden"
           animate="visible"
           transition={{ delay: 0.2 }}
-          className={`mb-6 text-2xl sm:text-3xl md:text-4xl font-bold text-center px-4 drop-shadow-sm ${isAbundancia ? '' : 'text-gray-900'}`}
-          style={isAbundancia ? { color: GOLD, textShadow: '0 2px 16px rgba(255,185,50,0.4)' } : undefined}
+          className={`mb-3 sm:mb-6 text-xl sm:text-3xl md:text-4xl font-bold text-center px-2 leading-snug drop-shadow-sm ${isAbundancia ? '' : 'text-gray-900'}`}
+          style={isAbundancia ? { color: GOLD, textShadow: '0 2px 16px rgba(255,185,50,0.4)', textWrap: 'balance' } : { textWrap: 'balance' }}
         >
           {meditationData.title}
         </motion.h1>
@@ -856,7 +862,7 @@ export default function MeditationPlayerPage() {
           initial="hidden"
           animate="visible"
           transition={{ delay: 0.3 }}
-          className="mb-6 flex items-center gap-4"
+          className="mb-4 sm:mb-6 flex items-center gap-4"
         >
           {/* Skip Back 15s */}
           <button
@@ -910,10 +916,10 @@ export default function MeditationPlayerPage() {
           initial="hidden"
           animate="visible"
           transition={{ delay: 0.4 }}
-          className="w-full max-w-4xl px-2 sm:px-6 mt-4"
+          className="w-full max-w-4xl px-0 sm:px-6 mt-2 sm:mt-4"
         >
           {/* Mobile Layout - Premium Clean */}
-          <div className="md:hidden relative" ref={volumePopoverRef}>
+          <div className="md:hidden relative max-w-sm mx-auto" ref={volumePopoverRef}>
             {/* Barra Principal - Mobile Premium */}
             <div
               className="flex items-center justify-between gap-4 backdrop-blur-lg rounded-2xl px-5 py-4 shadow-xl"
@@ -999,22 +1005,23 @@ export default function MeditationPlayerPage() {
                     <div className="flex flex-col items-center gap-3 h-[180px]">
                       {/* Porcentagem no topo */}
                       <span className="text-xs font-bold" style={{ color: isAbundancia ? GOLD : '#374151' }}>
-                        {Math.round(meditationVolume)}%
+                        {Math.round(backgroundVolume)}%
                       </span>
 
-                      {/* Slider Vertical */}
+                      {/* Slider Vertical — controla som de fundo */}
                       <div
                         ref={volumeSliderRef}
                         onTouchStart={handleVolumeSliderStart}
                         onMouseDown={handleVolumeSliderStart}
                         role="slider"
-                        aria-label="Volume da meditação"
-                        aria-valuenow={meditationVolume}
+                        aria-label="Volume do som de fundo"
+                        aria-valuenow={backgroundVolume}
                         aria-valuemin={0}
                         aria-valuemax={100}
-                        aria-valuetext={`${meditationVolume}%`}
+                        aria-valuetext={`${backgroundVolume}%`}
                         tabIndex={0}
-                        className="flex-1 relative w-12 flex items-center justify-center cursor-pointer [touch-action:none] active:cursor-grabbing"
+                        className="flex-1 relative w-12 flex items-center justify-center cursor-pointer active:cursor-grabbing"
+                        style={{ touchAction: 'none' }}
                       >
                         {/* Barra de fundo vertical */}
                         <div
@@ -1024,7 +1031,7 @@ export default function MeditationPlayerPage() {
                           <div
                             className="absolute bottom-0 left-0 right-0 rounded-full transition-all duration-150"
                             style={{
-                              height: `${meditationVolume}%`,
+                              height: `${backgroundVolume}%`,
                               background: isAbundancia
                                 ? `linear-gradient(to top, ${GOLD_DARK}, ${GOLD})`
                                 : 'linear-gradient(to top, #3B82F6, #2563EB)',
@@ -1035,7 +1042,7 @@ export default function MeditationPlayerPage() {
                         <div
                           className="absolute left-1/2 -translate-x-1/2 w-5 h-5 rounded-full shadow-md pointer-events-none transition-all duration-150"
                           style={{
-                            bottom: `calc(${meditationVolume}% - 10px)`,
+                            bottom: `calc(${backgroundVolume}% - 10px)`,
                             background: '#FFFFFF',
                             border: `2px solid ${isAbundancia ? GOLD : '#3B82F6'}`,
                           }}
@@ -1043,7 +1050,7 @@ export default function MeditationPlayerPage() {
                       </div>
 
                       {/* Ícone no bottom */}
-                      <Volume2 size={14} strokeWidth={2} style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : '#6B7280' }} />
+                      <Music size={14} strokeWidth={2} style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : '#6B7280' }} />
                     </div>
                   </div>
                 </div>
