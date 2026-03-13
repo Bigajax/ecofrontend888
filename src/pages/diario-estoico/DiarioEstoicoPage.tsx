@@ -259,6 +259,10 @@ export default function DiarioEstoicoPage() {
   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const didAutoExpand = useRef(false);
 
+  // Desktop carousel: card deck layout
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [activeCarouselDay, setActiveCarouselDay] = useState<number | null>(null);
+
   /**
    * Helper para renderizar comentário.
    * Guests veem teaser (fade + CTA), usuários autenticados veem completo.
@@ -658,6 +662,28 @@ export default function DiarioEstoicoPage() {
     };
   }, []);
 
+  // Detecta qual card está mais próximo do centro do carrossel (desktop)
+  const handleCarouselScroll = useCallback(() => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const containerCenter = el.scrollLeft + el.offsetWidth / 2;
+    let closestDay: number | null = null;
+    let closestDist = Infinity;
+    cardRefs.current.forEach((cardEl, dayNumber) => {
+      const cardCenter = cardEl.offsetLeft + cardEl.offsetWidth / 2;
+      const dist = Math.abs(containerCenter - cardCenter);
+      if (dist < closestDist) { closestDist = dist; closestDay = dayNumber; }
+    });
+    if (closestDay !== null) setActiveCarouselDay(closestDay);
+  }, []);
+
+  // Inicializa card ativo ao abrir um mês
+  useEffect(() => {
+    setActiveCarouselDay(null);
+    const t = setTimeout(handleCarouselScroll, 60);
+    return () => clearTimeout(t);
+  }, [openMonth, handleCarouselScroll]);
+
   // Ref para evitar que o observer reconecte a cada mudança de handleCardView
   const handleCardViewRef = useRef(handleCardView);
   useEffect(() => {
@@ -894,8 +920,10 @@ export default function DiarioEstoicoPage() {
                   <p className="text-xs text-eco-muted mt-1">{month.themeDescription}</p>
                 </div>
 
-                {/* Lista de reflexões — vertical no mobile, carrossel no desktop */}
+                {/* Lista de reflexões — vertical no mobile, card deck centrado no desktop */}
                 <div
+                  ref={carouselRef}
+                  onScroll={handleCarouselScroll}
                   className="flex flex-col gap-5 md:flex-row md:overflow-x-auto md:snap-x md:snap-mandatory md:gap-4 md:pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 >
                     {monthMaxims.length === 0 && (
@@ -907,21 +935,29 @@ export default function DiarioEstoicoPage() {
                       const isToday = todayMaxim?.dayNumber === maxim.dayNumber && todayMaxim?.month === maxim.month;
                       const isExpanded = expandedCards.has(maxim.dayNumber);
                       const isGuest = isGuestMode && !user && !isVipUser;
+                      const isActiveDeck = activeCarouselDay === maxim.dayNumber ||
+                        (activeCarouselDay === null && maxim.dayNumber === monthMaxims[0]?.dayNumber);
 
                       return (
                         <div
                           key={maxim.dayNumber}
                           ref={(el) => { if (el) cardRefs.current.set(maxim.dayNumber, el); }}
-                          className="w-full md:snap-center md:flex-shrink-0 md:w-[calc(100%-180px)]"
+                          className={`w-full md:snap-center md:flex-shrink-0 md:min-w-[420px] md:w-[calc(100%-80px)] md:max-w-[620px] md:transition-all md:duration-300 md:ease-out
+                            ${isActiveDeck
+                              ? 'md:scale-100 md:opacity-100'
+                              : 'md:scale-[0.9] md:opacity-55'
+                            }`}
                         >
                           {/* Imagem + título */}
                           <div
                             data-diario-card
                             data-day-number={maxim.dayNumber}
-                            className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 active:scale-[0.97] hover:scale-[1.02] ${
+                            className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 active:scale-[0.97] ${
                               isToday
                                 ? 'ring-2 ring-eco-baby shadow-[0_6px_28px_rgba(110,200,255,0.30)]'
-                                : 'shadow-eco hover:shadow-eco-glow'
+                                : isActiveDeck
+                                  ? 'shadow-[0_12px_40px_rgba(0,0,0,0.18)] md:hover:scale-[1.01]'
+                                  : 'shadow-eco'
                             } ${isExpanded ? 'rounded-b-none md:rounded-2xl' : ''}`}
                             style={{
                               backgroundImage: maxim.background,
