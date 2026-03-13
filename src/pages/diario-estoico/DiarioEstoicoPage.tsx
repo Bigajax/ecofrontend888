@@ -988,20 +988,14 @@ export default function DiarioEstoicoPage() {
                           {isExpanded && (
                             <div className="md:hidden rounded-b-2xl border-t border-eco-line/30 bg-white/80 backdrop-blur-sm overflow-hidden" style={{ animation: 'fadeIn 0.2s ease-out' }}>
                               {/* Citação */}
-                              <div className="px-5 pt-5 pb-4 border-b border-eco-line/30">
+                              <div className="px-5 pt-5 pb-5 border-b border-eco-line/30">
                                 <p className="font-primary text-[9px] font-semibold uppercase tracking-[0.18em] text-eco-muted mb-3">
                                   {maxim.author}{maxim.source && ` · ${maxim.source}`}
                                 </p>
                                 <p className="font-display text-[15px] leading-[1.75] text-eco-text italic">
                                   "{maxim.text}"
                                 </p>
-                              </div>
-
-                              {/* Comentário */}
-                              <div className="px-5 py-4">
-                                {renderComment(maxim, 'text-[14px]')}
-
-                                {/* Botão Ler reflexão completa — pill centralizado */}
+                                {/* Botão logo abaixo da frase */}
                                 {!isGuest && user && (
                                   <div className="mt-4 flex justify-center">
                                     <button
@@ -1013,6 +1007,11 @@ export default function DiarioEstoicoPage() {
                                     </button>
                                   </div>
                                 )}
+                              </div>
+
+                              {/* Comentário */}
+                              <div className="px-5 py-4">
+                                {renderComment(maxim, 'text-[14px]')}
                               </div>
 
                               {/* Ações */}
