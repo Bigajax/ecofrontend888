@@ -470,13 +470,6 @@ export default function CodigoDaAbundanciaPage() {
                           {checkoutLoading && <Loader2 className="h-3 w-3 animate-spin" />}
                           {checkoutLoading ? 'Abrindo…' : 'Desbloquear'}
                         </span>
-                      ) : session.isFree && !completed ? (
-                        <span
-                          className="text-xs font-semibold px-2.5 py-1.5 rounded-full whitespace-nowrap"
-                          style={{ color: GOLD_DARK, background: GOLD_SOFT, border: `1px solid ${GOLD_BORDER}` }}
-                        >
-                          Grátis
-                        </span>
                       ) : comingSoon ? (
                         <span
                           className="text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap"
