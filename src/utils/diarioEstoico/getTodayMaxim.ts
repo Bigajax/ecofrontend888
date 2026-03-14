@@ -830,6 +830,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Lutamos contra as coisas que acontecem em parte porque estamos tão concentrados em nosso plano que esquecemos que pode haver um plano maior, do qual não temos conhecimento. Não é verdade que muitas vezes algo que tínhamos considerado um desastre acaba se revelando, com o passar do tempo, um golpe de sorte? Também esquecemos que não somos as únicas pessoas dignas de importância e que nossa perda pode ser o ganho de alguém.\n\nEssa sensação de estar sendo injustiçado é um simples problema de consciência. Precisamos lembrar que todas as coisas são guiadas pela razão — uma razão vasta e universal que nem sempre podemos ver. Que o furacão repentino foi o resultado do bater das asas de uma borboleta no outro hemisfério, ou que o infortúnio vivenciado é simplesmente o prelúdio para um futuro agradável e invejável.',
     background: getBackgroundForDay(13),
   },
+  {
+    date: '14 de março',
+    month: 'marco',
+    dayNumber: 14,
+    title: 'O AUTOENGANO É NOSSO INIMIGO',
+    text: '"Zenão também dizia que nada é mais hostil a um firme domínio do conhecimento que o autoengano."',
+    author: 'Diógenes Laércio',
+    source: 'Vida e doutrinas de filósofos ilustres, 7.23',
+    comment: 'Autoengano, delírios de grandeza — esses não são apenas traços de personalidade irritantes. O ego é mais do que apenas repulsivo e detestável, é o inimigo jurado de nossa capacidade de aprender e crescer.\n\nComo disse Epicteto: "É impossível para uma pessoa começar a aprender o que ela pensa que já sabe." Hoje, seremos incapazes de melhorar, incapazes de aprender, incapazes de ganhar o respeito de outros se pensarmos que já somos perfeitos, um gênio admirado de norte a sul. Nesse sentido, ego e autoengano são os inimigos das coisas que desejamos ter porque nos enganamos, induzindo-nos a pensar que já as possuímos.\n\nDevemos, portanto, enfrentar o ego com a hostilidade e o desprezo que ele insidiosamente emprega contra nós — mantê-lo longe, ainda que ao menos por 24 horas de cada vez.',
+    background: getBackgroundForDay(14),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
