@@ -841,6 +841,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Autoengano, delírios de grandeza — esses não são apenas traços de personalidade irritantes. O ego é mais do que apenas repulsivo e detestável, é o inimigo jurado de nossa capacidade de aprender e crescer.\n\nComo disse Epicteto: "É impossível para uma pessoa começar a aprender o que ela pensa que já sabe." Hoje, seremos incapazes de melhorar, incapazes de aprender, incapazes de ganhar o respeito de outros se pensarmos que já somos perfeitos, um gênio admirado de norte a sul. Nesse sentido, ego e autoengano são os inimigos das coisas que desejamos ter porque nos enganamos, induzindo-nos a pensar que já as possuímos.\n\nDevemos, portanto, enfrentar o ego com a hostilidade e o desprezo que ele insidiosamente emprega contra nós — mantê-lo longe, ainda que ao menos por 24 horas de cada vez.',
     background: getBackgroundForDay(14),
   },
+  {
+    date: '15 de março',
+    month: 'marco',
+    dayNumber: 15,
+    title: 'O PRESENTE É TUDO O QUE TEMOS',
+    text: '"Se viveres três mil anos, ou mesmo um incontável múltiplo disso, tem em mente que ninguém jamais perde uma vida diferente daquela que está vivendo, e ninguém vive uma vida diferente daquela que está perdendo. A vida mais longa e a mais curta, portanto, se equivalem, pois o presente momento tem a mesma duração para todos e é o único bem que possuímos. Ninguém pode perder o passado ou o futuro, pois como pode alguém ser privado do que não é seu?"',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 2.14',
+    comment: 'Hoje, observe com que frequência você busca mais. Isto é, querendo que o passado seja mais do que ele foi (diferente, melhor, ainda presente etc.) ou querendo que o futuro se desdobre exatamente como você espera (quase sem pensar em como isso poderia afetar outras pessoas).\n\nQuando você faz isso, está negligenciando o momento presente. Veja que ingratidão! Há um dito, atribuído a Bil Keane, o cartunista, que merece ser lembrado: "Ontem é o passado, amanhã é o futuro, mas hoje é uma dádiva. É por isso que é chamado de presente." Esse presente nos pertence, mas tem uma data de expiração cada vez mais próxima. Se você o aproveitar de corpo e alma, ele será suficiente. Poderá durar uma existência inteira.',
+    background: getBackgroundForDay(15),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
