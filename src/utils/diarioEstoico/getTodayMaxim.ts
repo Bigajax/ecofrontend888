@@ -852,6 +852,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Hoje, observe com que frequência você busca mais. Isto é, querendo que o passado seja mais do que ele foi (diferente, melhor, ainda presente etc.) ou querendo que o futuro se desdobre exatamente como você espera (quase sem pensar em como isso poderia afetar outras pessoas).\n\nQuando você faz isso, está negligenciando o momento presente. Veja que ingratidão! Há um dito, atribuído a Bil Keane, o cartunista, que merece ser lembrado: "Ontem é o passado, amanhã é o futuro, mas hoje é uma dádiva. É por isso que é chamado de presente." Esse presente nos pertence, mas tem uma data de expiração cada vez mais próxima. Se você o aproveitar de corpo e alma, ele será suficiente. Poderá durar uma existência inteira.',
     background: getBackgroundForDay(15),
   },
+  {
+    date: '16 de março',
+    month: 'marco',
+    dayNumber: 16,
+    title: 'AQUELA PARTE SAGRADA DE VOCÊ',
+    text: '"Considera sagrada tua capacidade de compreensão. Pois nela está tudo, pois nosso princípio orientador não permitirá que entre nada que seja incompatível com a natureza ou com a constituição de uma criatura racional. Ela é o que exige a devida diligência, o cuidado com os outros e a obediência a Deus."',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 3.9',
+    comment: 'O fato de você poder pensar, poder ler este livro, ser capaz de raciocinar sobre uma situação estando dentro ou fora dela: isso tudo é o que lhe dá a capacidade de melhorar suas circunstâncias e se tornar alguém melhor. É importante valorizar isso, porque se trata de uma capacidade genuína. Nem todos têm tanta sorte.\n\nDe verdade: o que você dá por garantido, outros nem sequer sonhariam em ter.\n\nDedique um pouco de tempo hoje para se lembrar de que você foi abençoado com a capacidade de usar a lógica e a razão para abrir caminho em quaisquer circunstâncias. Isso lhe dá um poder inimaginável de alterar sua condição e a de outros. E lembre-se de que com o poder vem a responsabilidade.',
+    background: getBackgroundForDay(16),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
