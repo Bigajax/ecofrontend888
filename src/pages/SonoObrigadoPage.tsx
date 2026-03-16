@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Clock, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiFetchJson } from '@/lib/apiFetch';
+import { trackWithCAPI } from '@/lib/fbpixel';
 
 type PageState = 'loading' | 'approved' | 'pending' | 'claimed';
 
@@ -27,11 +28,23 @@ export default function SonoObrigadoPage() {
   const [claimRetry, setClaimRetry] = useState(0);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
-  // Disparar evento de Purchase quando pagamento aprovado (uma única vez no mount)
+  // Purchase: Pixel + CAPI com deduplicação — dispara uma única vez por pedido.
+  // A chave no sessionStorage previne re-disparo em refresh da página.
   useEffect(() => {
-    if (pageState === 'approved' && typeof (window as any).fbq === 'function') {
-      (window as any).fbq('track', 'Purchase', { value: 37, currency: 'BRL' });
-    }
+    if (pageState !== 'approved') return;
+
+    const ref = externalRef || paymentId;
+    if (!ref) return;
+
+    const dedupeKey = `capi.purchase.sono:${ref}`;
+    if (sessionStorage.getItem(dedupeKey)) return;
+    sessionStorage.setItem(dedupeKey, '1');
+
+    trackWithCAPI('Purchase', {
+      value: 37,
+      currency: 'BRL',
+      contentIds: ['protocolo_sono_profundo'],
+    }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

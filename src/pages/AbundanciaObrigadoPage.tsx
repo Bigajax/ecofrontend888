@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Clock, Loader2, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiFetchJson } from '@/lib/apiFetch';
+import { trackWithCAPI } from '@/lib/fbpixel';
 
 type PageState = 'loading' | 'approved' | 'pending' | 'claimed';
 
@@ -27,11 +28,24 @@ export default function AbundanciaObrigadoPage() {
   const [claimRetry, setClaimRetry] = useState(0);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
-  // FB Pixel Purchase ao montar (uma única vez)
+  // Purchase: Pixel + CAPI com deduplicação — dispara uma única vez por pedido.
+  // A chave no sessionStorage previne re-disparo em refresh da página.
   useEffect(() => {
-    if (pageState === 'approved' && typeof (window as any).fbq === 'function') {
-      (window as any).fbq('track', 'Purchase', { value: 67, currency: 'BRL' });
-    }
+    if (pageState !== 'approved') return;
+
+    // Requer identificador do pedido para garantir unicidade
+    const ref = externalRef || paymentId;
+    if (!ref) return;
+
+    const dedupeKey = `capi.purchase.abundancia:${ref}`;
+    if (sessionStorage.getItem(dedupeKey)) return;
+    sessionStorage.setItem(dedupeKey, '1');
+
+    trackWithCAPI('Purchase', {
+      value: 67,
+      currency: 'BRL',
+      contentIds: ['protocolo_abundancia_7_dias'],
+    }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
