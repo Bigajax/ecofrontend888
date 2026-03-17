@@ -863,6 +863,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'O fato de você poder pensar, poder ler este livro, ser capaz de raciocinar sobre uma situação estando dentro ou fora dela: isso tudo é o que lhe dá a capacidade de melhorar suas circunstâncias e se tornar alguém melhor. É importante valorizar isso, porque se trata de uma capacidade genuína. Nem todos têm tanta sorte.\n\nDe verdade: o que você dá por garantido, outros nem sequer sonhariam em ter.\n\nDedique um pouco de tempo hoje para se lembrar de que você foi abençoado com a capacidade de usar a lógica e a razão para abrir caminho em quaisquer circunstâncias. Isso lhe dá um poder inimaginável de alterar sua condição e a de outros. E lembre-se de que com o poder vem a responsabilidade.',
     background: getBackgroundForDay(16),
   },
+  {
+    date: '17 de março',
+    month: 'marco',
+    dayNumber: 17,
+    title: 'A BELEZA DA ESCOLHA',
+    text: '"Tu não és teu corpo e teu penteado, mas tua capacidade de escolher bem. Se tuas escolhas forem belas, tu também serás."',
+    author: 'Epicteto',
+    source: 'Discursos, 3.1.39b-40a',
+    comment: 'É aquela fala do filme Clube da Luta: "Você não é o seu emprego, nem quanto ganha ou quanto dinheiro tem no banco. Nem o carro que dirige, nem o que tem na sua carteira." Obviamente nosso amigo Epicteto nunca viu esse filme ou leu o livro; mas, ao que parece, o consumismo dos anos 1990 existia na Roma Antiga também.\n\nÉ fácil confundir a imagem que apresentamos ao mundo com o que realmente somos, em especial quando as mensagens ditas pela mídia deturpam deliberadamente essa distinção.\n\nVocê pode parecer bonito hoje, mas se isso foi o resultado de uma vaidade obsessiva diante do espelho esta manhã, os estoicos perguntariam: você é realmente bonito? Um corpo moldado por um trabalho árduo é admirável. Um corpo moldado para impressionar ratos de academia, não.\n\nÉ isso que os estoicos nos encorajam a considerar. Não como as coisas parecem, mas de que esforço, atividade e escolhas elas resultam.',
+    background: getBackgroundForDay(17),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
