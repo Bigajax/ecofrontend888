@@ -33,7 +33,7 @@ export const PROTOCOL_SESSIONS: ProtocolSession[] = [
     audioUrl: '/audio/abundancia-contrato-antigo.mp3',
     imageUrl: '/images/abundancia-contrato-antigo.webp',
     hasAudio: true,
-    isFree: true,
+    isFree: false,
     gradient: 'linear-gradient(to bottom, #C49A00 0%, #1A1005 100%)',
   },
   {
@@ -45,7 +45,7 @@ export const PROTOCOL_SESSIONS: ProtocolSession[] = [
     audioUrl: '/audio/abundancia-frequencia-receber.mp3',
     imageUrl: '/images/abundancia-frequencia-receber.webp',
     hasAudio: true,
-    isFree: true,
+    isFree: false,
     gradient: 'linear-gradient(to bottom, #D4A017 0%, #1A0E00 100%)',
   },
   {
@@ -57,7 +57,7 @@ export const PROTOCOL_SESSIONS: ProtocolSession[] = [
     audioUrl: '/audio/abundancia-futuro-prospero.mp3',
     imageUrl: '/images/abundancia-futuro-prospero.webp',
     hasAudio: true,
-    isFree: true,
+    isFree: false,
     gradient: 'linear-gradient(to bottom, #E6B800 0%, #150E00 100%)',
   },
   {
@@ -69,7 +69,7 @@ export const PROTOCOL_SESSIONS: ProtocolSession[] = [
     audioUrl: '/audio/abundancia-gratidao-ima.mp3',
     imageUrl: '/images/abundancia-gratidao-ima.webp',
     hasAudio: true,
-    isFree: true,
+    isFree: false,
     gradient: 'linear-gradient(to bottom, #BFA020 0%, #100C00 100%)',
   },
   {
@@ -81,7 +81,7 @@ export const PROTOCOL_SESSIONS: ProtocolSession[] = [
     audioUrl: '/audio/abundancia-merecimento.mp3',
     imageUrl: '/images/abundancia-merecimento.webp',
     hasAudio: true,
-    isFree: true,
+    isFree: false,
     gradient: 'linear-gradient(to bottom, #C8961A 0%, #120900 100%)',
   },
   {
@@ -93,7 +93,7 @@ export const PROTOCOL_SESSIONS: ProtocolSession[] = [
     audioUrl: '/audio/abundancia-nova-identidade.mp3',
     imageUrl: '/images/abundancia-nova-identidade.webp',
     hasAudio: true,
-    isFree: true,
+    isFree: false,
     gradient: 'linear-gradient(to bottom, #FFB932 0%, #09090F 100%)',
   },
 ];

@@ -11,11 +11,11 @@ import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
 import { useSonoCheckout } from '@/hooks/useSonoCheckout';
 import { PROTOCOL_NIGHTS, type ProtocolNight } from '@/data/protocolNights';
 
-// All 7 nights require payment; VIP bypasses sequential requirement
-function isNightAccessible(night: number, completed: Set<number>, isPaid: boolean, isVip: boolean): boolean {
+// Night 1 is free; nights 2-7 require payment
+function isNightAccessible(night: number, completed: Set<number>, isPaid: boolean, isVip: boolean, isFree: boolean): boolean {
   if (isVip) return true;
+  if (isFree) return true;
   if (!isPaid) return false;
-  if (night === 1) return true;
   return completed.has(night - 1);
 }
 
@@ -77,16 +77,16 @@ export default function MeditacoesSonoPage() {
   const nextNight = Math.min(completedCount + 1, 7);
 
   const heroButtonLabel =
-    !isPaid
-      ? 'Desbloquear o Protocolo — R$ 37'
-      : completedCount === 0
-      ? 'Começar Minha Primeira Noite'
+    completedCount === 0
+      ? 'Iniciar Noite 1 — Grátis'
       : completedCount === 7
       ? 'Protocolo Concluído 🎉'
+      : !isPaid
+      ? 'Desbloquear o Protocolo — R$ 37'
       : `Continuar Noite ${nextNight}`;
 
   const handleNightClick = (night: ProtocolNight) => {
-    const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser);
+    const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser, night.isFree);
 
     if (!accessible) {
       openCheckout();
@@ -115,7 +115,7 @@ export default function MeditacoesSonoPage() {
   };
 
   const handleHeroButtonClick = () => {
-    if (!isPaid) {
+    if (!isPaid && nextNight > 1) {
       openCheckout();
       return;
     }
@@ -316,8 +316,8 @@ export default function MeditacoesSonoPage() {
           {!isPaid && (
             <div className="mb-4 rounded-2xl border border-eco-baby/30 bg-eco-babySoft px-4 py-5 sm:px-5 text-center">
               <p className="text-sm font-medium text-[var(--eco-text)] sm:text-base leading-snug">
-                Acesso completo às 7 noites do protocolo.<br />
-                <span className="text-[var(--eco-muted)] font-normal">Pagamento único. Sem mensalidade.</span>
+                A primeira noite é gratuita.<br />
+                <span className="text-[var(--eco-muted)] font-normal">Desbloqueie as 7 noites. Pagamento único. Sem mensalidade.</span>
               </p>
               <button
                 onClick={openCheckout}
@@ -332,10 +332,10 @@ export default function MeditacoesSonoPage() {
 
           <div className="space-y-3">
             {PROTOCOL_NIGHTS.map((night) => {
-              const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser);
+              const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser, night.isFree);
               const completed = completedNights.has(night.night);
-              const paidLocked = !isPaid;
-              const sequentialLocked = isPaid && !accessible;
+              const paidLocked = !night.isFree && !isPaid;
+              const sequentialLocked = !paidLocked && !accessible;
               const comingSoon = accessible && !night.hasAudio;
 
               return (

@@ -134,13 +134,11 @@ export default function CodigoDaAbundanciaPage() {
   const nextSession = Math.min(completedCount + 1, 7);
 
   const heroButtonLabel =
-    !isPaid && completedCount >= 2
-      ? 'Iniciar meu Código da Abundância — R$ 67'
-      : completedCount === 0
+    completedCount === 0
       ? 'Iniciar Dia 1 — Grátis'
       : completedCount === 7
       ? 'Protocolo Concluído 🎉'
-      : !isPaid && nextSession > 2
+      : !isPaid
       ? 'Iniciar meu Código da Abundância — R$ 67'
       : `Continuar Dia ${nextSession}`;
 
@@ -174,7 +172,7 @@ export default function CodigoDaAbundanciaPage() {
   };
 
   const handleHeroButtonClick = () => {
-    if (!isPaid && nextSession > 2) {
+    if (!isPaid && nextSession > 1) {
       openCheckout();
       return;
     }
