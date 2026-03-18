@@ -84,21 +84,19 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
   },
   {
     id: 2,
-    badge: 'JORNADA SAMURAI',
-    mainTitle: 'DOMINE OS 5 ANÉIS DA DISCIPLINA',
-    title: 'Ritual Diário de Miyamoto Musashi',
-    description: 'Miyamoto Musashi treinou a mente antes do corpo. Em 5 práticas, você também vai.',
-    background:
-      'url("/images/5-aneis-hero.webp")',
+    badge: 'PROTOCOLO · 7 DIAS',
+    mainTitle: 'REPROGRAME SUA MENTE PARA A PROSPERIDADE',
+    title: 'Código da Abundância',
+    description: 'Dissolva crenças limitantes sobre dinheiro com neurociência e meditação guiada',
+    background: 'url("/images/abundancia-card.webp")',
   },
   {
     id: 3,
-    badge: 'TRANSFORMAÇÃO QUÂNTICA',
-    mainTitle: 'DESPERTE SEU POTENCIAL INFINITO',
-    title: 'Meditações Guiadas Dr. Joe Dispenza',
-    description: 'Recondicione sua mente e manifeste a realidade que você deseja viver',
-    background:
-      'url("/images/dr-joe-hero.webp")',
+    badge: 'PROTOCOLO DO SONO',
+    mainTitle: 'DURMA PROFUNDAMENTE EM 7 NOITES',
+    title: 'Protocolo do Sono',
+    description: 'Meditações guiadas para induzir sono profundo e restaurador toda noite',
+    background: 'url("/images/meditacoes-sono-hero.webp")',
   },
 ];
 
@@ -259,13 +257,13 @@ export default function HeroCarousel({
     // Regular carousel content
     const item = CAROUSEL_ITEMS[currentIndex];
     const isDiarioEstoico = item.id === 1;
-    const is5Aneis = item.id === 2;
-    const isDrJoe = item.id === 3;
+    const isAbundancia = item.id === 2;
+    const isSono = item.id === 3;
 
     return (
       <div className="relative flex h-full flex-col justify-between p-4 sm:p-6 pb-12 sm:pb-14">
         {/* Badge superior para cards especiais */}
-        {(isDiarioEstoico || is5Aneis || isDrJoe) && item.badge && (
+        {(isDiarioEstoico || isAbundancia || isSono) && item.badge && (
           <div className="flex justify-center pt-2">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 border border-white/30">
               <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
@@ -280,7 +278,7 @@ export default function HeroCarousel({
 
         <div className="space-y-2 sm:space-y-3">
           {/* Título principal grande para cards especiais */}
-          {(isDiarioEstoico || is5Aneis || isDrJoe) && item.mainTitle ? (
+          {(isDiarioEstoico || isAbundancia || isSono) && item.mainTitle ? (
             <>
               <h2 className="font-display text-[22px] sm:text-[26px] md:text-[28px] font-bold text-white drop-shadow-2xl leading-tight text-center px-2 tracking-tight">
                 {item.mainTitle}
@@ -337,43 +335,43 @@ export default function HeroCarousel({
             </div>
           )}
 
-          {/* CTA Button for 5 Anéis - Melhorado */}
-          {is5Aneis && (
+          {/* CTA Button for Código da Abundância */}
+          {isAbundancia && (
             <div className="mt-4 sm:mt-5 flex justify-center">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/app/rings');
+                  navigate('/app/codigo-da-abundancia');
                 }}
-                className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-purple-900 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"
+                className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-amber-900 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <svg className="w-4 h-4 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
                 <span className="text-[13px] sm:text-[14px] font-bold relative z-10">
-                  Começar Jornada Agora
+                  Iniciar Protocolo
                 </span>
               </button>
             </div>
           )}
 
-          {/* CTA Button for Dr. Joe - Melhorado */}
-          {isDrJoe && (
+          {/* CTA Button for Protocolo do Sono */}
+          {isSono && (
             <div className="mt-4 sm:mt-5 flex justify-center">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/app/dr-joe-dispenza');
+                  navigate('/app/meditacoes-sono');
                 }}
-                className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-purple-900 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"
+                className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-indigo-900 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-50 via-pink-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 via-blue-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <svg className="w-4 h-4 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
                 <span className="text-[13px] sm:text-[14px] font-bold relative z-10">
-                  Começar Transformação
+                  Descobrir o Protocolo
                 </span>
               </button>
             </div>
