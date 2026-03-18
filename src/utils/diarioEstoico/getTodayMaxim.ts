@@ -874,6 +874,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'É aquela fala do filme Clube da Luta: "Você não é o seu emprego, nem quanto ganha ou quanto dinheiro tem no banco. Nem o carro que dirige, nem o que tem na sua carteira." Obviamente nosso amigo Epicteto nunca viu esse filme ou leu o livro; mas, ao que parece, o consumismo dos anos 1990 existia na Roma Antiga também.\n\nÉ fácil confundir a imagem que apresentamos ao mundo com o que realmente somos, em especial quando as mensagens ditas pela mídia deturpam deliberadamente essa distinção.\n\nVocê pode parecer bonito hoje, mas se isso foi o resultado de uma vaidade obsessiva diante do espelho esta manhã, os estoicos perguntariam: você é realmente bonito? Um corpo moldado por um trabalho árduo é admirável. Um corpo moldado para impressionar ratos de academia, não.\n\nÉ isso que os estoicos nos encorajam a considerar. Não como as coisas parecem, mas de que esforço, atividade e escolhas elas resultam.',
     background: getBackgroundForDay(17),
   },
+  {
+    date: '18 de março',
+    month: 'marco',
+    dayNumber: 18,
+    title: 'IMPOSSÍVEL SEM SEU CONSENTIMENTO',
+    text: '"Hoje escapei das circunstâncias difíceis, ou melhor dizendo, rejeitei-as; pois elas não se encontravam fora de mim, mas em minhas próprias suposições."',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 9.13',
+    comment: 'Em dias difíceis podemos dizer: "Meu trabalho é massacrante", ou "Meu chefe é muito frustrante". Se ao menos pudéssemos entender que isso é impossível. Uma pessoa não pode frustrar você, o trabalho não pode massacrar você — esses são fatores externos, e eles não têm acesso à sua mente. Essas emoções que você sente, por mais reais que sejam, vêm de dentro, não de fora.\n\nOs estoicos usam a palavra hypolēpsis, que significa "aceitação" — de percepções, pensamentos e julgamentos por nossa mente. O que supomos, o que geramos por espontânea vontade em nossa mente, está em nós. Não podemos culpar outras pessoas por nos fazerem sentir estressados ou frustrados, assim como não podemos culpá-las por nosso ciúme. A causa está dentro de nós. Elas são só o alvo.',
+    background: getBackgroundForDay(18),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
