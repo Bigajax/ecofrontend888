@@ -885,6 +885,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Em dias difíceis podemos dizer: "Meu trabalho é massacrante", ou "Meu chefe é muito frustrante". Se ao menos pudéssemos entender que isso é impossível. Uma pessoa não pode frustrar você, o trabalho não pode massacrar você — esses são fatores externos, e eles não têm acesso à sua mente. Essas emoções que você sente, por mais reais que sejam, vêm de dentro, não de fora.\n\nOs estoicos usam a palavra hypolēpsis, que significa "aceitação" — de percepções, pensamentos e julgamentos por nossa mente. O que supomos, o que geramos por espontânea vontade em nossa mente, está em nós. Não podemos culpar outras pessoas por nos fazerem sentir estressados ou frustrados, assim como não podemos culpá-las por nosso ciúme. A causa está dentro de nós. Elas são só o alvo.',
     background: getBackgroundForDay(18),
   },
+  {
+    date: '19 de março',
+    month: 'marco',
+    dayNumber: 19,
+    title: 'SABEDORIA ATEMPORAL',
+    text: '"Pois há duas regras a manter de prontidão — que não há nada bom ou mau fora de minha escolha racional, e que não devemos tentar conduzir os acontecimentos, mas segui-los."',
+    author: 'Epicteto',
+    source: 'Discursos, 3.10.18',
+    comment: 'Anthony de Mello foi um padre jesuíta indiano que viveu no século XX. Nascido em Mumbai quando ela ainda estava sob domínio britânico, de Mello era um amálgama de diferentes culturas e diferentes perspectivas: Oriente, Ocidente; tinha até formação como psicoterapeuta. É interessante quando vemos a sabedoria atemporal desenvolver-se através de escolas, épocas e ideias. Aqui está uma citação do livro de Anthony de Mello, The Way to Love, que soa quase exatamente como Epicteto:\n\nA causa de minha irritação não está nesta pessoa, mas em mim.\n\nLembre-se: todo indivíduo tem uma escolha. É sempre você quem está no controle. A causa da irritação — ou nossa noção de que algo é nocivo — vem de nós, de nossos rótulos e expectativas. Podemos mudar esses rótulos com igual facilidade; podemos mudar nossa prerrogativa e decidir aceitar e amar o que está acontecendo à nossa volta. E essa sabedoria foi repetida e descoberta de maneira independente em todos os séculos e todos os países desde o início dos tempos.',
+    background: getBackgroundForDay(19),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
