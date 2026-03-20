@@ -896,6 +896,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Anthony de Mello foi um padre jesuíta indiano que viveu no século XX. Nascido em Mumbai quando ela ainda estava sob domínio britânico, de Mello era um amálgama de diferentes culturas e diferentes perspectivas: Oriente, Ocidente; tinha até formação como psicoterapeuta. É interessante quando vemos a sabedoria atemporal desenvolver-se através de escolas, épocas e ideias. Aqui está uma citação do livro de Anthony de Mello, The Way to Love, que soa quase exatamente como Epicteto:\n\nA causa de minha irritação não está nesta pessoa, mas em mim.\n\nLembre-se: todo indivíduo tem uma escolha. É sempre você quem está no controle. A causa da irritação — ou nossa noção de que algo é nocivo — vem de nós, de nossos rótulos e expectativas. Podemos mudar esses rótulos com igual facilidade; podemos mudar nossa prerrogativa e decidir aceitar e amar o que está acontecendo à nossa volta. E essa sabedoria foi repetida e descoberta de maneira independente em todos os séculos e todos os países desde o início dos tempos.',
     background: getBackgroundForDay(19),
   },
+  {
+    date: '20 de março',
+    month: 'marco',
+    dayNumber: 20,
+    title: 'EM CASA E PRONTOS',
+    text: '"Posso desejar estar livre de tortura, mas se chegar a hora de sofrê-la, desejarei suportá-la corajosamente com bravura e honra. Não preferiria eu estar em paz? Mas se a guerra me acontecer, desejo aguentar nobremente os ferimentos, a fome e o que mais for necessário. Também não sou louco a ponto de ansiar pela doença, mas se eu for acometido por uma, desejarei não fazer nada temerário ou desonroso. O que importa não é desejar essas adversidades, mas ansiar pela virtude que as torna suportáveis."',
+    author: 'Sêneca',
+    source: 'Cartas morais, 67.4',
+    comment: 'O presidente James Garfield foi um grande homem — criado na pobreza, autodidata e que virou um herói da Guerra Civil Americana — cujo governo foi interrompido pela bala de um assassino. Em seu breve período no cargo, enfrentou um país amargamente dividido, assim como um Partido Republicano desunido de forma cruel. Durante uma luta, que desafiou sua própria autoridade, ele se manteve firme e disse a um conselheiro: "É claro que eu condeno a guerra, mas se ela for trazida à minha porta, o portador me encontrará em casa."\n\nÉ isso que Sêneca está dizendo aqui. Seríamos loucos de querer enfrentar dificuldade na vida. Mas seríamos igualmente loucos se fingíssemos que isso não vai acontecer. É por isso que, quando ela bater na nossa porta — como pode muito bem fazer esta manhã —, devemos tratar de estar preparados. Não da maneira como ficamos quando um visitante chega de surpresa tarde da noite, mas como quando esperamos por um convidado importante: vestidos, bem-dispostos, prontos.',
+    background: getBackgroundForDay(20),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
