@@ -907,6 +907,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'O presidente James Garfield foi um grande homem — criado na pobreza, autodidata e que virou um herói da Guerra Civil Americana — cujo governo foi interrompido pela bala de um assassino. Em seu breve período no cargo, enfrentou um país amargamente dividido, assim como um Partido Republicano desunido de forma cruel. Durante uma luta, que desafiou sua própria autoridade, ele se manteve firme e disse a um conselheiro: "É claro que eu condeno a guerra, mas se ela for trazida à minha porta, o portador me encontrará em casa."\n\nÉ isso que Sêneca está dizendo aqui. Seríamos loucos de querer enfrentar dificuldade na vida. Mas seríamos igualmente loucos se fingíssemos que isso não vai acontecer. É por isso que, quando ela bater na nossa porta — como pode muito bem fazer esta manhã —, devemos tratar de estar preparados. Não da maneira como ficamos quando um visitante chega de surpresa tarde da noite, mas como quando esperamos por um convidado importante: vestidos, bem-dispostos, prontos.',
     background: getBackgroundForDay(20),
   },
+  {
+    date: '21 de março',
+    month: 'marco',
+    dayNumber: 21,
+    title: 'O MELHOR REFÚGIO É AQUI, NÃO LÁ',
+    text: '"As pessoas procuram refúgio no campo, junto ao mar ou nas montanhas. Tu também estás muito habituado a desejar isso. Mas essa é inteiramente a característica de uma pessoa vulgar, quando podes encontrar esse refúgio em ti mesmo, a qualquer momento. Pois em lugar nenhum podes encontrar um refúgio mais calmo que em tua própria alma — especialmente se ela está repleta de tranquilidade, o que eu digo que nada mais é que estar bem ordenado. Desfruta mais vezes desse refúgio e renova-te."',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 4.3.1',
+    comment: 'Suas férias estão próximas? Você espera ansiosamente pelo fim de semana para poder ter um pouco de paz e sossego? Talvez, você pensa, depois que as coisas se acalmarem ou depois que eu terminar isto. Mas quantas vezes isso realmente funcionou?\n\nO professor de meditação zen Jon Kabat-Zinn cunhou uma expressão famosa: "Aonde quer que você vá, lá está você". Podemos encontrar um refúgio a qualquer momento ao olhar para dentro de nós. Podemos nos sentar com os olhos fechados e sentir nossa respiração entrando e saindo. Podemos pôr uma música para tocar e nos desconectar do mundo. Podemos desligar os dispositivos ou desconectar aqueles pensamentos desenfreados em nossa cabeça. Isso nos proporcionará paz. Nada além disso.',
+    background: getBackgroundForDay(21),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
