@@ -918,6 +918,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Suas férias estão próximas? Você espera ansiosamente pelo fim de semana para poder ter um pouco de paz e sossego? Talvez, você pensa, depois que as coisas se acalmarem ou depois que eu terminar isto. Mas quantas vezes isso realmente funcionou?\n\nO professor de meditação zen Jon Kabat-Zinn cunhou uma expressão famosa: "Aonde quer que você vá, lá está você". Podemos encontrar um refúgio a qualquer momento ao olhar para dentro de nós. Podemos nos sentar com os olhos fechados e sentir nossa respiração entrando e saindo. Podemos pôr uma música para tocar e nos desconectar do mundo. Podemos desligar os dispositivos ou desconectar aqueles pensamentos desenfreados em nossa cabeça. Isso nos proporcionará paz. Nada além disso.',
     background: getBackgroundForDay(21),
   },
+  {
+    date: '22 de março',
+    month: 'marco',
+    dayNumber: 22,
+    title: 'O SINAL DE UMA VERDADEIRA EDUCAÇÃO',
+    text: '"Que é então ser bem-educado? É aprender a aplicar nossas preconcepções às coisas certas segundo a Natureza e, além disso, distinguir o que está em nosso poder daquilo que não está."',
+    author: 'Epicteto',
+    source: 'Discursos, 1.22.9-10A',
+    comment: 'Um diploma na parede significa que você é bem-educado tanto quanto os sapatos em seus pés significam que você está andando. É um começo, mas está longe de ser suficiente.\n\nDe outro modo, como poderiam tantas pessoas "bem-educadas" tomar decisões insensatas? Ou deixar de perceber coisas tão óbvias? Em parte, é porque elas esquecem que devem se concentrar somente naquilo que está em seu poder de controle. Um fragmento sobrevivente do filósofo Heráclito expressa essa realidade:\n\nMuitos que aprenderam\ncom Hesíodo os incontáveis nomes\nde deuses e monstros\nnunca compreendem\nque noite e dia são uma só coisa.\n\nAssim como você pode muito bem andar sem sapatos, não precisa entrar numa sala de aula para compreender a realidade básica, fundamental, da natureza e nosso papel adequado nela. Comece com consciência e reflexão. Não apenas uma vez, mas a cada segundo do dia.',
+    background: getBackgroundForDay(22),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
