@@ -929,6 +929,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Um diploma na parede significa que você é bem-educado tanto quanto os sapatos em seus pés significam que você está andando. É um começo, mas está longe de ser suficiente.\n\nDe outro modo, como poderiam tantas pessoas "bem-educadas" tomar decisões insensatas? Ou deixar de perceber coisas tão óbvias? Em parte, é porque elas esquecem que devem se concentrar somente naquilo que está em seu poder de controle. Um fragmento sobrevivente do filósofo Heráclito expressa essa realidade:\n\nMuitos que aprenderam\ncom Hesíodo os incontáveis nomes\nde deuses e monstros\nnunca compreendem\nque noite e dia são uma só coisa.\n\nAssim como você pode muito bem andar sem sapatos, não precisa entrar numa sala de aula para compreender a realidade básica, fundamental, da natureza e nosso papel adequado nela. Comece com consciência e reflexão. Não apenas uma vez, mas a cada segundo do dia.',
     background: getBackgroundForDay(22),
   },
+  {
+    date: '23 de março',
+    month: 'marco',
+    dayNumber: 23,
+    title: 'A ALMA PRESA EM UMA CAMISA DE FORÇA',
+    text: '"As doenças da alma racional são vícios duradouros e empedernidos, como a cobiça e a ambição. Elas puseram a alma em uma camisa de força e se firmaram como males permanentes dentro dela. Em resumo, a doença é uma implacável distorção do julgamento, fazendo com que coisas não tão desejáveis assim sejam perseguidas com vigor."',
+    author: 'Sêneca',
+    source: 'Cartas morais, 75.11',
+    comment: 'No desastre financeiro do fim dos anos 2000, centenas de pessoas inteligentes e racionais perderam trilhões de dólares. Como indivíduos tão inteligentes puderam ser tão insensatos? Eles conheciam o sistema, sabiam como os mercados deviam operar e tinham controlado bilhões, se não trilhões, de dólares. No entanto, quase unanimemente, estavam errados — e em uma escala que devastaria o mercado global.\n\nNão é difícil olhar para essa situação e entender que a cobiça foi uma parte do problema. Foi a cobiça que levou as pessoas a criar mercados complexos que ninguém compreendia, na esperança de ganhar dinheiro rapidamente. A cobiça levou outros a fazer negócios com estranhos financiamentos de dívidas. A cobiça impediu que alguém chamasse essa situação pelo que era: um castelo de cartas esperando apenas que a mais leve brisa o derrubasse.\n\nCriticar essas pessoas agora não traz muitas vantagens para você. O melhor a fazer é perceber como a cobiça e os vícios podem estar causando um efeito semelhante em sua vida. Quais deturpações seus vícios podem estar provocando em seus julgamentos? Que "doença" você poderia ter? E como sua mente racional pode intervir para ajustá-los?',
+    background: getBackgroundForDay(23),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
