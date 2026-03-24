@@ -940,6 +940,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'No desastre financeiro do fim dos anos 2000, centenas de pessoas inteligentes e racionais perderam trilhões de dólares. Como indivíduos tão inteligentes puderam ser tão insensatos? Eles conheciam o sistema, sabiam como os mercados deviam operar e tinham controlado bilhões, se não trilhões, de dólares. No entanto, quase unanimemente, estavam errados — e em uma escala que devastaria o mercado global.\n\nNão é difícil olhar para essa situação e entender que a cobiça foi uma parte do problema. Foi a cobiça que levou as pessoas a criar mercados complexos que ninguém compreendia, na esperança de ganhar dinheiro rapidamente. A cobiça levou outros a fazer negócios com estranhos financiamentos de dívidas. A cobiça impediu que alguém chamasse essa situação pelo que era: um castelo de cartas esperando apenas que a mais leve brisa o derrubasse.\n\nCriticar essas pessoas agora não traz muitas vantagens para você. O melhor a fazer é perceber como a cobiça e os vícios podem estar causando um efeito semelhante em sua vida. Quais deturpações seus vícios podem estar provocando em seus julgamentos? Que "doença" você poderia ter? E como sua mente racional pode intervir para ajustá-los?',
     background: getBackgroundForDay(23),
   },
+  {
+    date: '24 de março',
+    month: 'marco',
+    dayNumber: 24,
+    title: 'HÁ FILOSOFIA EM TUDO',
+    text: '"Come como um ser humano, bebe como um ser humano, veste-te, casa-te, tem filhos, torna-te ativo politicamente — sofre ofensas, sê paciente com um irmão, pai, filho, vizinho ou companheiro teimoso. Mostra-nos essas coisas para que possamos ver que tu realmente aprendeste com os filósofos."',
+    author: 'Epicteto',
+    source: 'Discursos, 3.21.5-6',
+    comment: 'Plutarco, um biógrafo romano admirador dos estoicos, só iniciou seu estudo dos grandes da literatura romana tarde na vida. Mas, como narra na biografia sobre Demóstenes, ficou surpreso com a rapidez com que absorveu tudo. Ele escreveu: "Não foram bem as palavras que me levaram a uma plena compreensão dos eventos, uma vez que, de algum modo, a experiência pessoal que eu já possuía me permitiu acompanhar de perto o significado delas."\n\nÉ isso que Epicteto quer dizer sobre o estudo da filosofia. Estude, sim, mas vá viver sua vida também. Essa é a única maneira de você de fato compreender o que significa tudo isso. E, mais importante, somente pela observação das suas ações e escolhas ao longo do tempo será possível verificar se você levou a sério algum dos ensinamentos.\n\nEsteja ciente disso hoje, quando estiver a caminho do trabalho, indo para um encontro, decidindo em quem votar, telefonando para seus pais à noite, cumprimentando seu vizinho, dando uma gorjeta para o entregador, dizendo boa-noite para alguém que você ama. Tudo isso é filosofia. Tudo isso é a experiência que dá sentido às palavras.',
+    background: getBackgroundForDay(24),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
