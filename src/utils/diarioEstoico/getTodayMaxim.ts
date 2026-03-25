@@ -951,6 +951,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Plutarco, um biógrafo romano admirador dos estoicos, só iniciou seu estudo dos grandes da literatura romana tarde na vida. Mas, como narra na biografia sobre Demóstenes, ficou surpreso com a rapidez com que absorveu tudo. Ele escreveu: "Não foram bem as palavras que me levaram a uma plena compreensão dos eventos, uma vez que, de algum modo, a experiência pessoal que eu já possuía me permitiu acompanhar de perto o significado delas."\n\nÉ isso que Epicteto quer dizer sobre o estudo da filosofia. Estude, sim, mas vá viver sua vida também. Essa é a única maneira de você de fato compreender o que significa tudo isso. E, mais importante, somente pela observação das suas ações e escolhas ao longo do tempo será possível verificar se você levou a sério algum dos ensinamentos.\n\nEsteja ciente disso hoje, quando estiver a caminho do trabalho, indo para um encontro, decidindo em quem votar, telefonando para seus pais à noite, cumprimentando seu vizinho, dando uma gorjeta para o entregador, dizendo boa-noite para alguém que você ama. Tudo isso é filosofia. Tudo isso é a experiência que dá sentido às palavras.',
     background: getBackgroundForDay(24),
   },
+  {
+    date: '25 de março',
+    month: 'marco',
+    dayNumber: 25,
+    title: 'RIQUEZA E LIBERDADE SÃO GRATUITAS',
+    text: '"[…] não se conquista a liberdade realizando o que teu coração deseja, mas eliminando o teu desejo."',
+    author: 'Epicteto',
+    source: 'Discursos, 4.1.175',
+    comment: 'Há duas maneiras de ser rico: tendo tudo que você quer ou querendo tudo que você tem. Qual é a mais fácil aqui e agora? O mesmo se aplica à liberdade. Se você se irrita, luta e se esforça por mais, nunca será livre. E se você pudesse encontrar as zonas de liberdade que já possui e se concentrar nelas? Bem, então seria livre aqui mesmo, agora mesmo.',
+    background: getBackgroundForDay(25),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
