@@ -962,6 +962,28 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Há duas maneiras de ser rico: tendo tudo que você quer ou querendo tudo que você tem. Qual é a mais fácil aqui e agora? O mesmo se aplica à liberdade. Se você se irrita, luta e se esforça por mais, nunca será livre. E se você pudesse encontrar as zonas de liberdade que já possui e se concentrar nelas? Bem, então seria livre aqui mesmo, agora mesmo.',
     background: getBackgroundForDay(25),
   },
+  {
+    date: '26 de março',
+    month: 'marco',
+    dayNumber: 26,
+    title: 'O QUE GOVERNA SUA RAZÃO ORIENTADORA?',
+    text: '"Como tua razão orientadora governa a si mesma? Pois nisso está a chave de tudo. O que mais restar, esteja no poder de tua escolha ou não, não passa de um cadáver e fumaça."',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 12.33',
+    comment: 'O satirista romano Juvenal é famoso por esta pergunta: Quis custodiet ipsos custodes? [Quem vigia os vigilantes?] De certa forma, é o que Marco Aurélio está perguntando a si mesmo — e o que você poderia perguntar a você mesmo durante todo o dia. O que influencia a razão orientadora que guia sua vida?\n\nIsso exigiria uma investigação que abrangeria a biologia evolucionária, a psicologia, a neurologia e até o subconsciente. Porque essas forças mais profundas moldam até as mentes mais disciplinadas e racionais. Você pode ser a pessoa mais paciente do mundo, mas, se a ciência mostra que tomamos decisões ruins com o estômago vazio, de que vale toda essa paciência?\n\nPor isso não se limite a explorar o estoicismo; investigue também as forças que o impulsionam e o tornam possível. Aprenda o que sustenta essa filosofia que você está estudando, como o corpo e a mente funcionam. Compreenda não só sua razão orientadora — o vigilante —, mas também quem quer e o que quer que governe isso também.',
+    background: getBackgroundForDay(26),
+  },
+  {
+    date: '27 de março',
+    month: 'marco',
+    dayNumber: 27,
+    title: 'PAGUE O QUE AS COISAS VALEM',
+    text: '"Diógenes de Sinope disse que vendemos coisas de grande valor por coisas de pouco valor, e vice-versa."',
+    author: 'Diógenes Laércio',
+    source: 'Vida e doutrinas de filósofos ilustres, 6.2.35B',
+    comment: 'Você pode comprar um sofá Plume Blanche incrustado de diamantes por cerca de duzentos mil dólares. Também é possível contratar uma pessoa para matar outra por quinhentos dólares. Lembre-se disso da próxima vez que ouvir alguém divagar sobre como o mercado decide quanto as coisas valem. O mercado pode ser racional... mas as pessoas que o constituem não são.\n\nDiógenes, que fundou a escola cínica, enfatizava o verdadeiro valor (axia) das coisas, um tema que persistiu no estoicismo e se refletiu fortemente tanto em Epicteto quanto em Marco Aurélio. É fácil perder a noção. Quando as pessoas à sua volta despejam uma fortuna em quinquilharias que elas não poderão levar quando morrerem, pode parecer que esse seria um bom investimento para você fazer também.\n\nMas é claro que não é. As coisas boas da vida custam o que custam. As desnecessárias não valem a pena, não importa o preço. O essencial é ter consciência da diferença entre elas.',
+    background: getBackgroundForDay(27),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
