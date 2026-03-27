@@ -79,7 +79,18 @@ const MemoryPageGuestTeaser = lazy(() => import("@/pages/memory/MemoryPageGuestT
 const UpgradeModalTest = lazy(() => import("@/pages/UpgradeModalTest"));
 const SonoObrigadoPage = lazy(() => import("@/pages/SonoObrigadoPage"));
 const SonoErroPage = lazy(() => import("@/pages/SonoErroPage"));
-const GuestNight1Page = lazy(() => import("@/pages/sono/GuestNight1Page"));
+const GuestNight1Page = lazy(() =>
+  import("@/pages/sono/GuestNight1Page").catch(() => {
+    // Chunk failed to load (stale CDN cache after deployment).
+    // Reload once so the browser picks up the new index.html and fresh chunks.
+    const key = "chunk_reload_sono_noite1";
+    if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, "1");
+      window.location.reload();
+    }
+    throw new Error("Chunk não carregou. Recarregue a página.");
+  })
+);
 const AbundanciaObrigadoPage = lazy(() => import("@/pages/AbundanciaObrigadoPage"));
 const AbundanciaErroPage = lazy(() => import("@/pages/AbundanciaErroPage"));
 
@@ -161,7 +172,7 @@ function AppRoutes() {
         <Route path="guest/meditation-player" element={renderWithBoundary(<MeditationPlayerPage />)} />
         <Route path="memory-preview" element={renderWithSuspense(<MemoryPageGuestTeaser />)} />
         <Route path="test-upgrade-modal" element={renderWithSuspense(<UpgradeModalTest />)} />
-        <Route path="sono/noite-1" element={renderWithSuspense(<GuestNight1Page />)} />
+        <Route path="sono/noite-1" element={renderWithBoundary(<GuestNight1Page />)} />
         <Route path="sono/obrigado" element={renderWithSuspense(<SonoObrigadoPage />)} />
         <Route path="sono/erro" element={renderWithSuspense(<SonoErroPage />)} />
         <Route path="abundancia/obrigado" element={renderWithSuspense(<AbundanciaObrigadoPage />)} />
