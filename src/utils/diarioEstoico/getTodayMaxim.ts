@@ -1017,6 +1017,17 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
     comment: 'Se nossa vida não for governada pela razão, é governada pelo quê, então? Pelo impulso? Pelo capricho? Pela imitação? Por um hábito impensado? Quando examinamos nosso comportamento, é lamentável quantas vezes descobrimos que não agimos consciente ou deliberadamente, mas sim somos movidos por forças que não nos damos ao trabalho de avaliar. Acontece que essas são as ocasiões de que temos maior probabilidade de nos arrepender.',
     background: getBackgroundForDay(30),
   },
+  {
+    date: '31 de março',
+    month: 'marco',
+    dayNumber: 31,
+    title: 'VOCÊ É UM PRODUTO DE SEU TREINAMENTO',
+    text: '"Buscar o impossível é loucura. Mas a pessoa vulgar é incapaz de fazer qualquer outra coisa."',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 5.17',
+    comment: 'Um cachorro que tem permissão para correr atrás de carros correrá atrás de carros. Uma criança a quem nada é negado ficará mimada. Um investidor sem disciplina não é um investidor, é um jogador. Uma mente que não está no controle de si própria, que não compreende seu poder de se autorregular, será lançada de um lado para outro por acontecimentos externos e impulsos não questionados.\n\nNão é possível que você queira que o amanhã seja assim. Por essa razão, você deve ter consciência disso. Deve colocar em prática um treinamento e incorporar já alguns hábitos para substituir a ignorância e a indisciplina. Só então começará a se comportar e a agir de maneira diferente. Só então vai parar de buscar o impossível, o mesquinho, o desnecessário.',
+    background: getBackgroundForDay(31),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
