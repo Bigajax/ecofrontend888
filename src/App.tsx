@@ -62,6 +62,7 @@ const DiarioEstoicoPage = lazy(() => import("@/pages/diario-estoico/DiarioEstoic
 const EnergyBlessingsPage = lazy(() => import("@/pages/energy-blessings/EnergyBlessingsPage"));
 const MeditationPlayerPage = lazy(() => import("@/pages/energy-blessings/MeditationPlayerPage"));
 const DrJoeDispenzaPage = lazy(() => import("@/pages/DrJoeDispenzaPage"));
+const MinigamePotencialPage = lazy(() => import("@/pages/MinigamePotencialPage"));
 const IntroducaoMeditacaoPage = lazy(() => import("@/pages/IntroducaoMeditacaoPage"));
 const MeditacoesSonoPage = lazy(() => import("@/pages/MeditacoesSonoPage"));
 const CodigoDaAbundanciaPage = lazy(() => import("@/pages/CodigoDaAbundanciaPage"));
@@ -220,6 +221,16 @@ function AppRoutes() {
         }
       >
         <Route index element={renderWithSuspense(<DrJoeDispenzaPage />)} />
+      </Route>
+      <Route
+        path="/app/minigame-potencial"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<MinigamePotencialPage />)} />
       </Route>
       <Route
         path="/app/introducao-meditacao"
