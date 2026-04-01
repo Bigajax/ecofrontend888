@@ -1030,10 +1030,25 @@ export const MARCH_REFLECTIONS: DailyMaxim[] = [
   },
 ];
 
+export const APRIL_REFLECTIONS: DailyMaxim[] = [
+  {
+    date: '1 de abril',
+    month: 'abril',
+    dayNumber: 1,
+    title: 'A COR DOS SEUS PENSAMENTOS',
+    text: '"Tua mente tomará a forma do que a habita com mais frequência, pois o espírito humano é colorido por tais impressões."',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 5.16',
+    comment: 'Se você se sentar arqueado todos os dias, depois de um tempo, a curvatura da sua coluna mudará. Avaliando uma radiografia (ou uma autópsia), um médico pode dizer se uma pessoa ganhou a vida sentado a uma mesa. Se você enfia seus pés em sapatos sociais pequeninos, estreitos, todos os dias, seus pés começam a adquirir essa forma.\n\nO mesmo é verdade em relação à sua mente. Se você mantém um ponto de vista sempre negativo, logo tudo que encontrar parecerá negativo. Estreite sua mente e você se tornará intolerante. Pinte sua mente com os pensamentos nocivos e sua vida ganhará o mesmo colorido.',
+    background: getBackgroundForDay(1),
+  },
+];
+
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
   ...JANUARY_REFLECTIONS,
   ...FEBRUARY_REFLECTIONS,
   ...MARCH_REFLECTIONS,
+  ...APRIL_REFLECTIONS,
   ...DECEMBER_REFLECTIONS,
 ];
 
@@ -1065,6 +1080,10 @@ export function getTodayMaxim(): DailyMaxim | null {
     monthName = 'marco';
     startDay = 1;
     endDay = 31;
+  } else if (currentMonth === 3) { // Abril
+    monthName = 'abril';
+    startDay = 1;
+    endDay = 30;
   } else if (currentMonth === 11) { // Dezembro
     monthName = 'dezembro';
     startDay = 8;
