@@ -1020,105 +1020,75 @@ export default function DrJoeDispenzaPage() {
                 const index = sliceIndex + 1;
                 const isNext = index === nextIndex && !meditation.completed;
                 return (
-                  <div key={meditation.id} className="space-y-3 sm:space-y-4">
-                    <div
-                      className="flex items-center gap-3 rounded-2xl p-3 transition-all duration-200 sm:gap-4 sm:p-4"
-                      style={{
-                        background: meditation.completed ? BLUE_SOFT : '#FFFFFF',
-                        border: `1px solid ${meditation.completed ? BLUE_BORDER : isNext ? BLUE : 'var(--eco-line)'}`,
-                        boxShadow: meditation.completed
-                          ? `0 2px 8px rgba(59,130,246,0.12)`
-                          : '0 2px 8px rgba(0,0,0,0.04)',
-                      }}
-                    >
-                      {/* A — Círculo numerado */}
-                      {meditation.completed ? (
-                        <div
-                          className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full"
-                          style={{ background: BLUE }}
-                        >
-                          <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
-                        </div>
-                      ) : (
-                        <div
-                          className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold"
-                          style={{
-                            borderColor: isNext ? BLUE : 'var(--eco-line)',
-                            color: isNext ? BLUE_DARK : 'var(--eco-muted)',
-                          }}
-                        >
-                          {index + 1}
-                        </div>
-                      )}
-
-                      <button
-                        onClick={() => handleMeditationClick(meditation)}
-                        className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-semibold text-[var(--eco-text)] sm:text-base">
-                              {meditation.title}
-                            </h3>
-                            {isNext && (
-                              <span className="rounded-full border border-[#3B82F6]/30 bg-[#3B82F6]/10 px-2 py-0.5 text-[10px] font-bold text-[#3B82F6] backdrop-blur-sm">
-                                Próxima
-                              </span>
-                            )}
-                            {meditation.isPremium && !isNext && (
-                              <Lock className="h-3.5 w-3.5 text-[var(--eco-muted)] sm:h-4 sm:w-4" />
-                            )}
-                          </div>
-                          <p className="mt-0.5 text-xs text-[var(--eco-muted)] sm:mt-1 sm:text-sm">
-                            {meditation.description}
-                          </p>
-                        </div>
-
-                        <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                          <span className="text-xs text-[var(--eco-muted)] sm:text-sm">
-                            {meditation.duration}
-                          </span>
-                          <div
-                            className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10"
-                            style={{ background: meditation.isPremium ? '#F3F4F6' : BLUE_SOFT }}
-                          >
-                            <Play
-                              className="h-4 w-4 sm:h-5 sm:w-5"
-                              style={{ color: meditation.isPremium ? '#D1D5DB' : BLUE_DARK }}
-                              fill="currentColor"
-                            />
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-
-                    {/* B — CTA intermediária após item 0 para não-VIP */}
-                    {index === 0 && !isVipUser && (
+                  <div
+                    key={meditation.id}
+                    className="flex items-center gap-3 rounded-2xl p-3 transition-all duration-200 sm:gap-4 sm:p-4"
+                    style={{
+                      background: meditation.completed ? BLUE_SOFT : '#FFFFFF',
+                      border: `1px solid ${meditation.completed ? BLUE_BORDER : isNext ? BLUE : 'var(--eco-line)'}`,
+                      boxShadow: meditation.completed
+                        ? `0 2px 8px rgba(59,130,246,0.12)`
+                        : '0 2px 8px rgba(0,0,0,0.04)',
+                    }}
+                  >
+                    {meditation.completed ? (
                       <div
-                        className="rounded-2xl px-5 py-5 text-center"
-                        style={{ background: BLUE_SOFT, border: `1px solid ${BLUE_BORDER}` }}
+                        className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full"
+                        style={{ background: BLUE }}
                       >
-                        <div
-                          className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-xl"
-                          style={{ background: BLUE_SOFT }}
-                        >
-                          <Lock className="h-4 w-4" style={{ color: BLUE_DARK }} />
-                        </div>
-                        <p className="text-sm font-semibold text-gray-800 leading-snug">
-                          Você sentiu o primeiro passo.
-                        </p>
-                        <p className="mt-1 text-xs text-gray-400">
-                          Desbloqueie as 4 sessões restantes para completar a jornada.
-                        </p>
-                        <button
-                          onClick={() => requestUpgrade('dr_joe_list_cta')}
-                          className="mt-4 inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold transition-all hover:scale-105 active:scale-95"
-                          style={{ background: BLUE, color: '#FFFFFF', boxShadow: `0 4px 16px rgba(59,130,246,0.32)` }}
-                        >
-                          Continuar a jornada →
-                        </button>
+                        <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                      </div>
+                    ) : (
+                      <div
+                        className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold"
+                        style={{
+                          borderColor: isNext ? BLUE : 'var(--eco-line)',
+                          color: isNext ? BLUE_DARK : 'var(--eco-muted)',
+                        }}
+                      >
+                        {index + 1}
                       </div>
                     )}
+
+                    <button
+                      onClick={() => handleMeditationClick(meditation)}
+                      className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-sm font-semibold text-[var(--eco-text)] sm:text-base">
+                            {meditation.title}
+                          </h3>
+                          {isNext && (
+                            <span className="rounded-full border border-[#3B82F6]/30 bg-[#3B82F6]/10 px-2 py-0.5 text-[10px] font-bold text-[#3B82F6] backdrop-blur-sm">
+                              Próxima
+                            </span>
+                          )}
+                          {meditation.isPremium && !isNext && (
+                            <Lock className="h-3.5 w-3.5 text-[var(--eco-muted)] sm:h-4 sm:w-4" />
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-xs text-[var(--eco-muted)] sm:mt-1 sm:text-sm">
+                          {meditation.description}
+                        </p>
+                      </div>
+
+                      <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
+                        <span className="text-xs text-[var(--eco-muted)] sm:text-sm">
+                          {meditation.duration}
+                        </span>
+                        <div
+                          className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10"
+                          style={{ background: meditation.isPremium ? '#F3F4F6' : BLUE_SOFT }}
+                        >
+                          <Play
+                            className="h-4 w-4 sm:h-5 sm:w-5"
+                            style={{ color: meditation.isPremium ? '#D1D5DB' : BLUE_DARK }}
+                            fill="currentColor"
+                          />
+                        </div>
+                      </div>
+                    </button>
                   </div>
                 );
               })}

@@ -1042,6 +1042,17 @@ export const APRIL_REFLECTIONS: DailyMaxim[] = [
     comment: 'Se você se sentar arqueado todos os dias, depois de um tempo, a curvatura da sua coluna mudará. Avaliando uma radiografia (ou uma autópsia), um médico pode dizer se uma pessoa ganhou a vida sentado a uma mesa. Se você enfia seus pés em sapatos sociais pequeninos, estreitos, todos os dias, seus pés começam a adquirir essa forma.\n\nO mesmo é verdade em relação à sua mente. Se você mantém um ponto de vista sempre negativo, logo tudo que encontrar parecerá negativo. Estreite sua mente e você se tornará intolerante. Pinte sua mente com os pensamentos nocivos e sua vida ganhará o mesmo colorido.',
     background: getBackgroundForDay(1),
   },
+  {
+    date: '2 de abril',
+    month: 'abril',
+    dayNumber: 2,
+    title: 'CUIDADO COM O QUE VOCÊ DEIXA ENTRAR',
+    text: '"Drama, combate, terror, torpor e subserviência — todos os dias essas coisas destroem teus princípios sagrados, sempre que tua mente as considera de maneira acrítica ou permite que elas entrem."',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 10.9',
+    comment: 'Quão mais difícil é fazer a coisa certa quando você está cercado por pessoas que não têm muitos critérios? Quão mais difícil é ser positivo e empático no meio da bolha de negatividade e da tagarelice da televisão? Quão mais difícil é concentrar-se em seus problemas quando você é distraído pelo drama e o conflito de outras pessoas?\n\nInevitavelmente, estaremos expostos a essas influências em algum momento, por mais que tentemos evitá-las. Mas quando isso acontecer, não há nada que nos impeça de proibir que tais influências penetrem em nossa mente. Temos a capacidade de levantar nossa guarda e decidir o que vamos permitir que entre. Visitas inesperadas podem bater na sua porta, mas você não tem de convidá-las para jantar. Não tem de deixar que penetrem na sua mente.',
+    background: getBackgroundForDay(2),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
