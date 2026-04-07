@@ -96,6 +96,7 @@ const GuestNight1Page = lazy(() =>
     throw new Error("Chunk não carregou. Recarregue a página.");
   })
 );
+const PublicLandingPage = lazy(() => import("@/pages/PublicLandingPage"));
 const AbundanciaObrigadoPage = lazy(() => import("@/pages/AbundanciaObrigadoPage"));
 const AbundanciaErroPage = lazy(() => import("@/pages/AbundanciaErroPage"));
 const DrJoeObrigadoPage = lazy(() => import("@/pages/DrJoeObrigadoPage"));
@@ -143,8 +144,7 @@ function PublicShell() {
 }
 
 function PublicHome() {
-  // Homepage pública sempre mostra HomePage
-  return renderWithSuspense(<HomePage />);
+  return renderWithSuspense(<PublicLandingPage />);
 }
 
 function AppProtectedShell() {

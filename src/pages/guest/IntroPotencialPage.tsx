@@ -13,12 +13,6 @@ const fadeUp = {
   }),
 };
 
-const ITEMS = [
-  'Definir o que você quer viver',
-  'Dar clareza a essa experiência',
-  'Sentir isso como se já fosse real',
-];
-
 export default function IntroPotencialPage() {
   const navigate = useNavigate();
   const { guestUser, initGuestSession } = useGuest();
@@ -33,20 +27,16 @@ export default function IntroPotencialPage() {
 
   function handleStart() {
     initGuestSession('intro_potencial');
-
     mixpanel.track('Guest Intro Continued', {
       source: 'intro_potencial',
       guestId: guestUser?.id ?? null,
       timestamp: new Date().toISOString(),
     });
-
     navigate('/app/minigame-potencial');
   }
 
   return (
     <div className="relative min-h-[100dvh] bg-[#070A12] font-primary">
-
-      {/* Background glow */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 z-0"
@@ -59,102 +49,70 @@ export default function IntroPotencialPage() {
         }}
       />
 
-      {/* Centered content */}
-      <main className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[480px] flex-col justify-center px-6 py-14">
+      <main className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[420px] flex-col justify-center px-8 py-14">
 
-        {/* ── Label ── */}
         <motion.p
-          initial="hidden"
-          animate="visible"
-          custom={0}
-          variants={fadeUp}
-          className="mb-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35"
-        >
-          Antes de começar
-        </motion.p>
-
-        {/* ── Título ── */}
-        <motion.h1
           initial="hidden"
           animate="visible"
           custom={0.08}
           variants={fadeUp}
-          className="font-display text-[1.75rem] font-bold leading-[1.25] text-white sm:text-[2.1rem]"
+          className="text-[1.0625rem] leading-[1.85] text-white/55"
         >
-          Você não vai apenas imaginar.
-          <br />
-          <span className="text-eco-baby">
-            Vai começar a condicionar&nbsp;um novo estado.
-          </span>
-        </motion.h1>
+          Antes de começar…
+        </motion.p>
 
-        {/* ── Texto curto ── */}
         <motion.p
           initial="hidden"
           animate="visible"
-          custom={0.18}
+          custom={0.2}
           variants={fadeUp}
-          className="mt-5 text-[0.9375rem] leading-[1.65] text-white/55"
+          className="mt-6 text-[1.0625rem] leading-[1.85] text-white/80"
         >
-          Nos próximos minutos, você vai criar com clareza uma experiência
-          que deseja viver, associar a ela uma emoção elevada e começar a
-          ensinar isso ao seu corpo.
+          A experiência que você quer viver
+          <br />
+          já existe como um potencial.
         </motion.p>
 
-        {/* ── Bloco de apoio ── */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          custom={0.28}
-          variants={fadeUp}
-          className="mt-7 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-5 py-4 backdrop-blur-sm"
-        >
-          <p className="text-[0.875rem] leading-[1.6] text-white/65 italic">
-            "É essa combinação entre intenção clara + emoção sentida que
-            começa a interromper o padrão automático."
-          </p>
-        </motion.div>
-
-        {/* ── Mini lista ── */}
-        <motion.ul
-          initial="hidden"
-          animate="visible"
-          custom={0.36}
-          variants={fadeUp}
-          className="mt-7 space-y-2.5"
-          aria-label="O que você vai fazer"
-        >
-          {ITEMS.map((item) => (
-            <li key={item} className="flex items-center gap-3">
-              <span
-                aria-hidden
-                className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-eco-baby/60"
-              />
-              <span className="text-sm text-white/70">{item}</span>
-            </li>
-          ))}
-        </motion.ul>
-
-        {/* ── Fechamento ── */}
         <motion.p
           initial="hidden"
           animate="visible"
-          custom={0.44}
+          custom={0.34}
           variants={fadeUp}
-          className="mt-8 text-[0.9375rem] leading-[1.6] text-white/45"
+          className="mt-5 text-[1.0625rem] leading-[1.85] text-white/60"
         >
-          Não é sobre pensar mais.
+          O que você vai fazer agora
           <br />
-          É sobre começar a sentir diferente.
+          é aprender a se sintonizar com ela.
         </motion.p>
 
-        {/* ── CTA ── */}
+        <motion.p
+          initial="hidden"
+          animate="visible"
+          custom={0.48}
+          variants={fadeUp}
+          className="mt-6 text-[1.0625rem] leading-[1.85] text-white/45"
+        >
+          Para isso, são necessárias duas coisas:
+        </motion.p>
+
+        <motion.p
+          initial="hidden"
+          animate="visible"
+          custom={0.62}
+          variants={fadeUp}
+          className="mt-4 text-[1.125rem] font-semibold leading-[1.7] text-white/90"
+        >
+          Intenção clara…
+          <br />
+          <span className="text-eco-baby">e emoção elevada.</span>
+        </motion.p>
+
         <motion.div
           initial="hidden"
           animate="visible"
-          custom={0.54}
+          custom={0.78}
           variants={fadeUp}
-          className="mt-10"
+          className="mt-14"
         >
           <button
             onClick={handleStart}
@@ -165,12 +123,8 @@ export default function IntroPotencialPage() {
               boxShadow: '0 14px 40px rgba(110,200,255,0.16)',
             }}
           >
-            Começar experiência
+            Começar
           </button>
-
-          <p className="mt-3 text-center text-[11px] text-white/28">
-            Sem cadastro&nbsp;•&nbsp;leva menos de 3 minutos
-          </p>
         </motion.div>
 
       </main>

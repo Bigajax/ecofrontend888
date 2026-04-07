@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import mixpanel from '@/lib/mixpanel';
 import { useGuest } from '@/hooks/useGuest';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiFetchJson } from '@/lib/apiFetch';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
@@ -69,6 +70,11 @@ export default function DrJoePreviewPage() {
   // Funil
   const [stage, setStage]       = useState<Stage>('idle');
   const [currentTime, setCurrentTime] = useState(0);
+
+  // Checkout modal
+  const [checkoutOpen,    setCheckoutOpen]    = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError,   setCheckoutError]   = useState('');
 
   // Formulário de cadastro
   const [email,       setEmail]       = useState('');
@@ -223,7 +229,7 @@ export default function DrJoePreviewPage() {
     setStage('offer');
   }
 
-  function startCheckout(source: string = 'offer', step: string = 'offer') {
+  async function startCheckout(source: string = 'offer', step: string = 'offer') {
     mixpanel.track('Guest Offer Clicked', {
       guestId:         guestUser?.id ?? null,
       produto:         'dr_joe_colecao',
@@ -233,26 +239,53 @@ export default function DrJoePreviewPage() {
       tempo_ate_corte: PREVIEW_DURATION,
       timestamp:       new Date().toISOString(),
     });
-    mixpanel.track('Guest Checkout Started', {
-      guestId:         guestUser?.id ?? null,
-      source,
-      etapa_funil:     step,
-      meditation:      'sintonize_novos_potenciais',
-      tempo_ate_corte: PREVIEW_DURATION,
-      timestamp:       new Date().toISOString(),
-    });
-    // TODO: redirecionar para checkout direto (Mercado Pago / Stripe)
-    // const checkoutUrl = new URL(import.meta.env.VITE_CHECKOUT_URL_DR_JOE);
-    // checkoutUrl.searchParams.set('back_url', `${window.location.origin}/dr-joe/obrigado`);
-    // checkoutUrl.searchParams.set('failure_url', `${window.location.origin}/dr-joe/erro`);
-    // window.location.href = checkoutUrl.toString();
-    navigate('/dr-joe/obrigado', { state: { from: 'guest_funnel_checkout', produto: 'dr_joe_colecao' } });
-  }
 
-  function handleContinueWithoutAccess() {
-    // Mantém estado emocional — não reinicia o fluxo
-    // Player permanece pausado no ponto do corte
-    setStage('locked');
+    setCheckoutError('');
+    setCheckoutLoading(true);
+    setCheckoutOpen(true);
+
+    try {
+      const result = await apiFetchJson<{ init_point: string; external_reference: string }>(
+        '/api/mp/create-preference',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            productKey: 'dr_joe_colecao',
+            origin: source,
+            siteUrl: window.location.origin,
+          }),
+        },
+      );
+
+      if (!result.ok || !(result.data as { init_point?: string })?.init_point) {
+        const msg = (result.data as { message?: string })?.message;
+        throw new Error(msg || 'Não foi possível iniciar o pagamento.');
+      }
+
+      const { init_point, external_reference } = result.data as {
+        init_point: string;
+        external_reference: string;
+      };
+
+      // Persiste para a página de obrigado recuperar após redirect
+      sessionStorage.setItem('eco.drjoe.external_reference', external_reference);
+
+      mixpanel.track('Guest Checkout Started', {
+        guestId:          guestUser?.id ?? null,
+        source,
+        etapa_funil:      step,
+        external_reference,
+        meditation:       'sintonize_novos_potenciais',
+        tempo_ate_corte:  PREVIEW_DURATION,
+        timestamp:        new Date().toISOString(),
+      });
+
+      // Redireciona para o checkout do Mercado Pago
+      window.location.href = init_point;
+    } catch (err) {
+      setCheckoutLoading(false);
+      setCheckoutError(err instanceof Error ? err.message : 'Não foi possível iniciar o pagamento. Tente novamente.');
+    }
   }
 
   // ─── Derivados ─────────────────────────────────────────────────────────────
@@ -553,25 +586,27 @@ export default function DrJoePreviewPage() {
             >
               {/* Headline */}
               <h2 className="font-display text-2xl font-bold leading-snug text-white">
-                Você já começou a sentir.
+                Você já ativou algo dentro de você.
                 <br />
-                <span className="text-eco-baby">Agora é onde a mudança realmente acontece.</span>
+                <span className="text-eco-baby">Agora é sobre sustentar isso.</span>
               </h2>
 
               {/* Subhead */}
-              <p className="mt-4 text-sm leading-relaxed text-white/55">
-                Nos primeiros minutos, você apenas acessou o estado.
-                <br />
-                É na repetição que seu corpo começa a acreditar.
+              <p className="mt-4 text-sm leading-[1.85] text-white/55">
+                Esse estado que você sentiu…
+                <br /><br />
+                não é imaginação.
+                <br /><br />
+                É o começo de uma nova forma de funcionar.
               </p>
 
               {/* Benefícios */}
               <ul className="mt-5 space-y-2">
                 {[
-                  'Reprogramar seu estado emocional diariamente',
-                  'Criar coerência entre intenção e emoção',
-                  'Treinar seu corpo a sentir o futuro antes dele acontecer',
-                  'Sair do padrão automático que mantém sua vida igual',
+                  'Sustentar esse estado no seu dia a dia',
+                  'Ensinar seu corpo a viver esse novo padrão',
+                  'Criar coerência entre pensamento e emoção',
+                  'Tornar essa experiência real, não passageira',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5">
                     <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-eco-baby/60" />
@@ -580,20 +615,20 @@ export default function DrJoePreviewPage() {
                 ))}
               </ul>
 
-              {/* Reforço racional */}
-              <p className="mt-5 text-sm leading-relaxed text-white/40">
-                Não é sobre acreditar.
-                <br />
-                É sobre treinar seu sistema para funcionar diferente.
+              {/* Frase de quebra */}
+              <p className="mt-5 text-sm leading-[1.85] text-white/40">
+                Não é sobre entender.
+                <br /><br />
+                É sobre repetir até se tornar você.
               </p>
 
               {/* Oferta */}
               <div className="mt-5 border-t border-white/[0.07] pt-5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">
-                  Acesso completo à jornada
+                  Acesso completo à prática
                 </p>
                 <p className="mt-1 text-xs text-white/40">
-                  Meditações guiadas + prática progressiva
+                  Meditações guiadas para sustentar esse estado
                 </p>
                 <div className="mt-3 flex items-baseline gap-2">
                   <span className="font-display text-3xl font-bold text-white">R$&nbsp;37</span>
@@ -610,11 +645,11 @@ export default function DrJoePreviewPage() {
                   boxShadow: '0 14px 40px rgba(110,200,255,0.16)',
                 }}
               >
-                Desbloquear agora
+                Continuar essa experiência
               </button>
 
               <p className="mt-2 text-center text-[11px] text-white/25">
-                Acesso imediato após liberação
+                Acesso imediato · Você já começou — não pare agora.
               </p>
 
               {/* CTA secundário */}
@@ -690,7 +725,7 @@ export default function DrJoePreviewPage() {
                   boxShadow: '0 14px 40px rgba(110,200,255,0.14)',
                 }}
               >
-                Desbloquear agora
+                Continuar essa experiência
               </button>
               <button
                 onClick={() => {
@@ -714,6 +749,92 @@ export default function DrJoePreviewPage() {
         )}
 
       </AnimatePresence>
+
+      {/* ── CHECKOUT MODAL ──────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {checkoutOpen && (
+          <motion.div
+            key="checkout-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-5"
+          >
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => { if (!checkoutLoading) setCheckoutOpen(false); }}
+            />
+
+            {/* Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.97 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="relative z-10 w-full max-w-sm rounded-3xl border border-white/10 bg-[#0C1525] p-8 text-center"
+              style={{ boxShadow: '0 32px 64px rgba(0,0,0,0.55)' }}
+            >
+              {/* Fechar — só quando não está carregando */}
+              {!checkoutLoading && (
+                <button
+                  onClick={() => setCheckoutOpen(false)}
+                  className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white/40 transition-colors hover:text-white/70"
+                  aria-label="Fechar"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+
+              {checkoutLoading ? (
+                <>
+                  {/* Pulsing orb enquanto redireciona */}
+                  <div className="relative mx-auto mb-6 flex h-16 w-16 items-center justify-center">
+                    <motion.div
+                      className="absolute inset-0 rounded-full border border-eco-baby/25"
+                      animate={{ scale: [1, 1.35, 1], opacity: [0.3, 0.7, 0.3] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                    <Loader2 className="h-7 w-7 animate-spin text-eco-baby/80" />
+                  </div>
+                  <p className="text-[0.9375rem] font-semibold text-white/90">
+                    Preparando seu pagamento…
+                  </p>
+                  <p className="mt-2 text-sm text-white/40">
+                    Você será redirecionado em instantes.
+                  </p>
+                </>
+              ) : checkoutError ? (
+                <>
+                  <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-red-500/25 bg-red-500/10">
+                    <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-white/70 leading-relaxed">{checkoutError}</p>
+                  <button
+                    onClick={() => startCheckout('offer_retry', 'offer')}
+                    className="mt-5 w-full rounded-full py-3 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-95"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(110,200,255,0.96) 0%, rgba(59,130,246,0.96) 52%, rgba(30,58,138,0.96) 100%)',
+                    }}
+                  >
+                    Tentar novamente
+                  </button>
+                  <button
+                    onClick={() => setCheckoutOpen(false)}
+                    className="mt-3 w-full rounded-full border border-white/10 py-2.5 text-sm text-white/35 transition-colors hover:text-white/55"
+                  >
+                    Voltar
+                  </button>
+                </>
+              ) : null}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

@@ -15,11 +15,11 @@ const EMOTION_CHIPS = [
   'Digno',
 ];
 
-const REFINEMENT_PLACEHOLDERS = [
-  'Ex: trabalhar com propósito',
-  'Ex: ganhar mais',
-  'Ex: mais liberdade',
-  'Ex: viajar',
+const INTENTION_PLACEHOLDERS = [
+  'Trabalhar de qualquer lugar do mundo',
+  'Ganhar mais do que ganho hoje',
+  'Amar o que faço todos os dias',
+  'Ter liberdade financeira',
 ];
 
 const fadeUp = {
@@ -49,15 +49,12 @@ export default function MinigamePotencialPage() {
   const navigate = useNavigate();
   const { guestUser } = useGuest();
 
-  // State
   const [intention, setIntention] = useState('');
   const [letter, setLetter] = useState('');
   const [refinements, setRefinements] = useState(['', '', '', '']);
   const [emotions, setEmotions] = useState<string[]>([]);
-  const [breathingStarted, setBreathingStarted] = useState(false);
   const [embodimentDone, setEmbodimentDone] = useState(false);
 
-  // Refs for auto-scroll
   const step2Ref = useRef<HTMLDivElement>(null);
   const step3Ref = useRef<HTMLDivElement>(null);
   const step4Ref = useRef<HTMLDivElement>(null);
@@ -65,7 +62,6 @@ export default function MinigamePotencialPage() {
   const step6Ref = useRef<HTMLDivElement>(null);
   const shownSteps = useRef(new Set<number>());
 
-  // Derived unlock conditions
   const show2 = intention.trim().length > 0;
   const show3 = show2 && /^[A-Za-z]$/.test(letter);
   const filledCount = refinements.filter(r => r.trim().length > 0).length;
@@ -73,7 +69,6 @@ export default function MinigamePotencialPage() {
   const show5 = show4 && emotions.length >= 1;
   const show6 = show5 && embodimentDone;
 
-  // Auto-scroll helper — stable, only reads refs
   const revealStep = useCallback((n: number, ref: React.RefObject<HTMLDivElement>) => {
     if (!shownSteps.current.has(n)) {
       shownSteps.current.add(n);
@@ -92,13 +87,6 @@ export default function MinigamePotencialPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (show6) revealStep(6, step6Ref); }, [show6]);
 
-  // Breathing timer — 10 seconds, then unlock step 6
-  useEffect(() => {
-    if (!breathingStarted) return;
-    const timer = setTimeout(() => setEmbodimentDone(true), 10000);
-    return () => clearTimeout(timer);
-  }, [breathingStarted]);
-
   function toggleEmotion(e: string) {
     setEmotions(prev => prev.includes(e) ? prev.filter(x => x !== e) : [...prev, e]);
   }
@@ -109,7 +97,6 @@ export default function MinigamePotencialPage() {
 
   return (
     <div className="relative min-h-screen bg-[#070A12] font-primary">
-      {/* Background */}
       <div
         className="pointer-events-none fixed inset-0 z-0"
         style={{
@@ -118,7 +105,6 @@ export default function MinigamePotencialPage() {
         }}
       />
 
-      {/* Sticky header */}
       <div className="sticky top-0 z-20">
         <div className="mx-auto flex h-14 max-w-lg items-center px-4">
           <button
@@ -136,34 +122,35 @@ export default function MinigamePotencialPage() {
       </div>
 
       <main className="relative z-10 mx-auto max-w-lg space-y-12 px-4 py-10 pb-28">
-        {/* ── STEP 1 — Intenção ── */}
+
+        {/* ── STEP 1 — Experiência Macro ── */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp} className={cardClass}>
           <StepBadge number={1} />
           <h2 className="text-xl font-semibold leading-snug text-white sm:text-2xl">
-            Escolha uma experiência que você quer criar
+            O que você quer criar?
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-white/70">
-            Pense em uma experiência que você quer viver.
+          <p className="mt-2 text-sm leading-relaxed text-white/60">
+            Escolha uma experiência que você quer viver.
           </p>
           <textarea
             rows={3}
             className="mt-4 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white/90 placeholder:text-white/35 transition-all focus:border-eco-baby/50 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-eco-baby/20 sm:text-base"
-            placeholder="Ex: um novo trabalho, mais liberdade, um relacionamento saudável..."
+            placeholder="Ex: mais liberdade, crescimento financeiro, um novo estilo de vida"
             value={intention}
             onChange={e => setIntention(e.target.value)}
           />
         </motion.div>
 
-        {/* ── STEP 2 — Letra / Símbolo ── */}
+        {/* ── STEP 2 — Símbolo ── */}
         <AnimatePresence>
           {show2 && (
             <motion.div ref={step2Ref} key="s2" initial="hidden" animate="visible" variants={fadeUp} className={cardClass}>
               <StepBadge number={2} />
               <h2 className="text-xl font-semibold leading-snug text-white sm:text-2xl">
-                Atribua uma letra a essa experiência
+                Escolha um símbolo
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/70">
-                Pense nessa letra como um símbolo dessa possibilidade.
+              <p className="mt-2 text-sm leading-relaxed text-white/60">
+                Ele representará essa nova possibilidade.
               </p>
               <div className="mt-4 flex items-center gap-5">
                 <input
@@ -207,23 +194,25 @@ export default function MinigamePotencialPage() {
           )}
         </AnimatePresence>
 
-        {/* ── STEP 3 — Refinamentos ── */}
+        {/* ── STEP 3 — Intenção (Mente) ── */}
         <AnimatePresence>
           {show3 && (
             <motion.div ref={step3Ref} key="s3" initial="hidden" animate="visible" variants={fadeUp} className={cardClass}>
               <StepBadge number={3} />
               <h2 className="text-xl font-semibold leading-snug text-white sm:text-2xl">
-                Dê mais clareza ao que você quer criar
+                Defina com clareza o que você quer criar
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/70">
-                Liste pelo menos quatro detalhes dessa experiência.
+              <p className="mt-2 text-sm leading-relaxed text-white/60">
+                Seus pensamentos dão direção.
+                <br /><br />
+                Seja específico sobre o que você quer tornar real.
               </p>
               <div className="mt-4 space-y-3">
                 {refinements.map((r, i) => (
                   <input
                     key={i}
                     className="w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white/90 placeholder:text-white/35 transition-all focus:border-eco-baby/50 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-eco-baby/20"
-                    placeholder={REFINEMENT_PLACEHOLDERS[i]}
+                    placeholder={INTENTION_PLACEHOLDERS[i]}
                     value={r}
                     onChange={e => updateRefinement(i, e.target.value)}
                   />
@@ -245,19 +234,20 @@ export default function MinigamePotencialPage() {
           )}
         </AnimatePresence>
 
-        {/* ── STEP 4 — Emoções ── */}
+        {/* ── STEP 4 — Emoção (Corpo) ── */}
         <AnimatePresence>
           {show4 && (
             <motion.div ref={step4Ref} key="s4" initial="hidden" animate="visible" variants={fadeUp} className={cardClass}>
               <StepBadge number={4} />
               <h2 className="text-xl font-semibold leading-snug text-white sm:text-2xl">
-                Como você vai se sentir quando isso acontecer?
+                Como você se sente quando isso já é real?
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/70">
-                Essas emoções são a energia que transmite sua intenção.
+              <p className="mt-2 text-sm leading-relaxed text-white/60">
+                Essas emoções são a energia
+                <br />
+                que sustenta essa criação.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
-                {/* Gratidão — destaque especial */}
                 <button
                   onClick={() => toggleEmotion('Grato')}
                   className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95 ${
@@ -287,7 +277,7 @@ export default function MinigamePotencialPage() {
           )}
         </AnimatePresence>
 
-        {/* ── STEP 5 — Ativação / Respiração ── */}
+        {/* ── STEP 5 — Integração (Corpo) ── */}
         <AnimatePresence>
           {show5 && (
             <motion.div ref={step5Ref} key="s5" initial="hidden" animate="visible" variants={fadeUp} className={cardClass}>
@@ -295,92 +285,65 @@ export default function MinigamePotencialPage() {
               <h2 className="text-xl font-semibold leading-snug text-white sm:text-2xl">
                 Sinta isso no seu corpo
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/70">
-                Isso não é um processo intelectual. É visceral.
+              <p className="mt-2 text-sm leading-relaxed text-white/60">
+                Isso não é sobre pensar.
+                <br /><br />
+                É sobre sentir.
+                <br /><br />
+                Ensine ao seu corpo
+                <br />
+                como esse futuro se sente.
               </p>
 
-              <div className="mt-8 flex flex-col items-center gap-5">
-                {!breathingStarted ? (
-                  <button
-                    onClick={() => setBreathingStarted(true)}
-                    className="rounded-full border border-eco-baby/30 bg-eco-baby/10 px-8 py-3 text-sm font-semibold text-white transition-all hover:bg-eco-baby/15 active:scale-95"
-                  >
-                    Começar
-                  </button>
-                ) : (
-                  <div className="relative flex h-36 w-36 items-center justify-center">
-                    {/* Outer pulse ring */}
-                    <motion.div
-                      className="absolute inset-0 rounded-full border-2"
-                      style={{ borderColor: 'rgba(110,200,255,0.22)' }}
-                      animate={embodimentDone
-                        ? { scale: 1, opacity: 0.30 }
-                        : { scale: [1, 1.38, 1], opacity: [0.28, 0.70, 0.28] }
-                      }
-                      transition={{ duration: 8, repeat: embodimentDone ? 0 : Infinity, ease: 'easeInOut' }}
-                    />
-                    {/* Mid ring */}
-                    <motion.div
-                      className="absolute rounded-full border"
-                      style={{ inset: 10, borderColor: 'rgba(110,200,255,0.14)' }}
-                      animate={embodimentDone
-                        ? { scale: 1, opacity: 0.22 }
-                        : { scale: [1, 1.25, 1], opacity: [0.18, 0.50, 0.18] }
-                      }
-                      transition={{ duration: 8, repeat: embodimentDone ? 0 : Infinity, ease: 'easeInOut', delay: 0.3 }}
-                    />
-                    {/* Inner filled circle */}
-                    <motion.div
-                      className="rounded-full"
-                      style={{ width: 72, height: 72, background: 'rgba(110,200,255,0.10)' }}
-                      animate={embodimentDone
-                        ? { scale: 1 }
-                        : { scale: [1, 1.2, 1], opacity: [0.65, 1, 0.65] }
-                      }
-                      transition={{ duration: 8, repeat: embodimentDone ? 0 : Infinity, ease: 'easeInOut' }}
-                    />
-                    {/* Letter inside */}
-                    {letter && (
-                      <span className="absolute font-display text-2xl font-bold text-white/70">
-                        {letter}
-                      </span>
-                    )}
-                  </div>
-                )}
+              <div className="mt-8 flex flex-col items-center gap-8">
+                <div className="relative flex h-36 w-36 items-center justify-center">
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-2"
+                    style={{ borderColor: 'rgba(110,200,255,0.22)' }}
+                    animate={{ scale: [1, 1.38, 1], opacity: [0.28, 0.70, 0.28] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  <motion.div
+                    className="absolute rounded-full border"
+                    style={{ inset: 10, borderColor: 'rgba(110,200,255,0.14)' }}
+                    animate={{ scale: [1, 1.25, 1], opacity: [0.18, 0.50, 0.18] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+                  />
+                  <motion.div
+                    className="rounded-full"
+                    style={{ width: 72, height: 72, background: 'rgba(110,200,255,0.10)' }}
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.65, 1, 0.65] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  {letter && (
+                    <motion.span
+                      className="absolute font-display text-2xl font-bold text-white/80"
+                      animate={{
+                        textShadow: [
+                          '0 0 6px rgba(110,200,255,0.0)',
+                          '0 0 28px rgba(110,200,255,0.55)',
+                          '0 0 6px rgba(110,200,255,0.0)',
+                        ],
+                      }}
+                      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      {letter}
+                    </motion.span>
+                  )}
+                </div>
 
-                {breathingStarted && (
-                  <AnimatePresence mode="wait">
-                    {embodimentDone ? (
-                      <motion.p
-                        key="done"
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-sm font-semibold text-white/90"
-                      >
-                        ✓ Feito
-                      </motion.p>
-                    ) : (
-                      <motion.p
-                        key="breathing"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-xs text-white/45"
-                      >
-                        Respire fundo e sinta...
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                )}
-
-                <p className="max-w-xs text-center text-xs text-white/45">
-                  Ensine ao seu corpo como esse futuro se sente.
-                </p>
+                <button
+                  onClick={() => setEmbodimentDone(true)}
+                  className="rounded-full border border-eco-baby/30 bg-eco-baby/10 px-10 py-3 text-sm font-semibold text-white transition-all hover:bg-eco-baby/15 active:scale-95"
+                >
+                  Continuar
+                </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ── STEP 6 — Final CTA ── */}
+        {/* ── STEP 6 — Assinatura Energética ── */}
         <AnimatePresence>
           {show6 && (
             <motion.div
@@ -389,14 +352,44 @@ export default function MinigamePotencialPage() {
               initial="hidden"
               animate="visible"
               variants={fadeUp}
-              className="flex flex-col items-center gap-6 text-center"
+              className="flex flex-col items-center gap-8 py-6 text-center"
             >
-              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-eco-baby/25 bg-eco-baby/10">
-                <span className="font-display text-2xl font-bold text-white">{letter}</span>
+              <div className="relative flex h-24 w-24 items-center justify-center">
+                <motion.div
+                  className="absolute inset-0 rounded-full"
+                  style={{ background: 'rgba(110,200,255,0.07)', border: '1px solid rgba(110,200,255,0.20)' }}
+                  animate={{ scale: [1, 1.30, 1], opacity: [0.50, 1, 0.50] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <motion.div
+                  className="absolute rounded-full"
+                  style={{ inset: 10, background: 'rgba(110,200,255,0.05)', border: '1px solid rgba(110,200,255,0.12)' }}
+                  animate={{ scale: [1, 1.18, 1], opacity: [0.35, 0.80, 0.35] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                />
+                <motion.span
+                  className="font-display text-2xl font-bold text-white"
+                  animate={{
+                    textShadow: [
+                      '0 0 6px rgba(110,200,255,0.0)',
+                      '0 0 32px rgba(110,200,255,0.65)',
+                      '0 0 6px rgba(110,200,255,0.0)',
+                    ],
+                  }}
+                  transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  {letter}
+                </motion.span>
               </div>
-              <p className="text-xl font-semibold leading-snug text-white sm:text-2xl">
-                Seu corpo começou a reconhecer esse futuro.
+
+              <p className="max-w-[280px] text-[1.0625rem] leading-relaxed text-white/80">
+                Quando intenção e emoção se alinham,
+                <br />
+                você cria uma nova assinatura.
+                <br /><br />
+                <span className="text-white/50">Esse processo já começou em você.</span>
               </p>
+
               <button
                 onClick={() => {
                   mixpanel.track('Guest Minigame Completed', {
@@ -406,7 +399,7 @@ export default function MinigamePotencialPage() {
                   });
                   navigate('/app/guest/dr-joe-preview');
                 }}
-                className="inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:brightness-110 hover:scale-105 active:scale-95"
+                className="inline-flex items-center gap-2 rounded-full px-10 py-3.5 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:brightness-110 hover:scale-105 active:scale-95"
                 style={{
                   background:
                     'linear-gradient(135deg, rgba(110,200,255,0.95) 0%, rgba(59,130,246,0.95) 50%, rgba(30,58,138,0.95) 100%)',
@@ -418,8 +411,8 @@ export default function MinigamePotencialPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
       </main>
     </div>
   );
 }
-
