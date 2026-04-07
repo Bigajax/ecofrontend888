@@ -11,6 +11,12 @@ import { getSubscriptionStatus } from '../api/subscription';
 import * as ringsApi from '../api/ringsApi';
 import { isVipUser as checkIsVipUser } from '../constants/vipUsers';
 import { apiFetch } from '../api/apiFetch';
+import {
+  type GuestUser,
+  getGuestSession,
+  createGuestSession,
+  clearLandingGuestSession,
+} from '../utils/landingGuest';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
@@ -30,6 +36,11 @@ interface AuthContextType {
   register: (email: string, password: string, nome: string, telefone: string, emailRedirectTo?: string) => Promise<{ needsConfirmation: boolean }>;
   loginAsGuest: () => Promise<void>;
   migrateGuestData: (newUserId: string) => Promise<PreservedData>;
+
+  // Landing guest session (minigame / sem login)
+  isGuest: boolean;
+  guestUser: GuestUser | null;
+  initGuestSession: (source?: string) => GuestUser;
 
   // Subscription fields
   subscription: SubscriptionState;
@@ -290,6 +301,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isRecoveringSessionRef = useRef(false);
   const sessionRecoveryAttemptsRef = useRef(0);
   const MAX_RECOVERY_ATTEMPTS = 2;
+
+  // Landing guest session (eco_guest_user) — for minigame / no-login flow
+  const [guestUser, setGuestUser] = useState<GuestUser | null>(() => getGuestSession());
+
+  const isGuest = !user && guestUser !== null;
+
+  const initGuestSession = (source = 'landing'): GuestUser => {
+    const guest = createGuestSession(source);
+    setGuestUser(guest);
+    return guest;
+  };
 
   // Guest mode state - persisted in localStorage
   const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
@@ -666,6 +688,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('eco.auth.guestMode');
       }
+      clearLandingGuestSession();
+      setGuestUser(null);
     } finally {
       setLoading(false);
     }
@@ -696,6 +720,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('eco.auth.guestMode');
       }
+      clearLandingGuestSession();
+      setGuestUser(null);
     } catch (err) {
       setLoading(false);
       throw err;
@@ -719,6 +745,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('eco.auth.guestMode');
       }
+      clearLandingGuestSession();
+      setGuestUser(null);
 
       // Sync with Mixpanel
       if (data.user) {
@@ -750,6 +778,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('eco.auth.guestMode');
       }
+      clearLandingGuestSession();
+      setGuestUser(null);
 
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
@@ -765,6 +795,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('eco.auth.guestMode');
       }
+      clearLandingGuestSession();
+      setGuestUser(null);
 
       if (typeof mixpanel.unregister_all === 'function') {
         mixpanel.unregister_all();
@@ -918,6 +950,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         loginAsGuest,
         migrateGuestData,
+
+        // Landing guest session
+        isGuest,
+        guestUser,
+        initGuestSession,
 
         // Subscription
         subscription,

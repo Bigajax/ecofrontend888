@@ -469,9 +469,14 @@ export default function HomePage() {
       return;
     }
 
-    // Dr. Joe Dispenza — card unificado navega para página dedicada
+    // Dr. Joe Dispenza — card unificado
+    // Guests entram pelo funil; usuários autenticados vão direto
     if (blessingId === 'drjoe_collection') {
-      navigate('/app/dr-joe-dispenza');
+      if (!user) {
+        navigate('/app/guest/intro-potencial');
+      } else {
+        navigate('/app/dr-joe-dispenza');
+      }
       return;
     }
 

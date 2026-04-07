@@ -63,6 +63,10 @@ const EnergyBlessingsPage = lazy(() => import("@/pages/energy-blessings/EnergyBl
 const MeditationPlayerPage = lazy(() => import("@/pages/energy-blessings/MeditationPlayerPage"));
 const DrJoeDispenzaPage = lazy(() => import("@/pages/DrJoeDispenzaPage"));
 const MinigamePotencialPage = lazy(() => import("@/pages/MinigamePotencialPage"));
+const RecondicioneCorpoMentePage = lazy(() => import("@/pages/RecondicioneCorpoMentePage"));
+const IntroPotencialPage = lazy(() => import("@/pages/guest/IntroPotencialPage"));
+const DrJoePreviewPage = lazy(() => import("@/pages/guest/DrJoePreviewPage"));
+const RecondicioneAntesDeComecarPage = lazy(() => import("@/pages/RecondicioneAntesDeComecarPage"));
 const IntroducaoMeditacaoPage = lazy(() => import("@/pages/IntroducaoMeditacaoPage"));
 const MeditacoesSonoPage = lazy(() => import("@/pages/MeditacoesSonoPage"));
 const CodigoDaAbundanciaPage = lazy(() => import("@/pages/CodigoDaAbundanciaPage"));
@@ -94,6 +98,8 @@ const GuestNight1Page = lazy(() =>
 );
 const AbundanciaObrigadoPage = lazy(() => import("@/pages/AbundanciaObrigadoPage"));
 const AbundanciaErroPage = lazy(() => import("@/pages/AbundanciaErroPage"));
+const DrJoeObrigadoPage = lazy(() => import("@/pages/DrJoeObrigadoPage"));
+const DrJoeErroPage = lazy(() => import("@/pages/DrJoeErroPage"));
 
 // Lightweight loading fallback (no heavy dependencies)
 function LoadingFallback() {
@@ -153,6 +159,22 @@ function AppProtectedShellNoLayout() {
   return <Outlet />;
 }
 
+function MinigameGuestShell() {
+  const { initGuestSession } = useAuth();
+  useEffect(() => {
+    initGuestSession('landing');
+  }, [initGuestSession]);
+  return <Outlet />;
+}
+
+function GuestFunnelShell() {
+  const { initGuestSession } = useAuth();
+  useEffect(() => {
+    initGuestSession('landing');
+  }, [initGuestSession]);
+  return <Outlet />;
+}
+
 function AppRoutes() {
   useEffect(() => {
     mixpanel.track("App iniciado", { origem: "App.tsx", data: new Date().toISOString() });
@@ -178,6 +200,8 @@ function AppRoutes() {
         <Route path="sono/erro" element={renderWithSuspense(<SonoErroPage />)} />
         <Route path="abundancia/obrigado" element={renderWithSuspense(<AbundanciaObrigadoPage />)} />
         <Route path="abundancia/erro" element={renderWithSuspense(<AbundanciaErroPage />)} />
+        <Route path="dr-joe/obrigado" element={renderWithSuspense(<DrJoeObrigadoPage />)} />
+        <Route path="dr-joe/erro" element={renderWithSuspense(<DrJoeErroPage />)} />
       </Route>
       <Route
         path="/app/*"
@@ -222,15 +246,32 @@ function AppRoutes() {
       >
         <Route index element={renderWithSuspense(<DrJoeDispenzaPage />)} />
       </Route>
+      <Route path="/app/minigame-potencial" element={<MinigameGuestShell />}>
+        <Route index element={renderWithSuspense(<MinigamePotencialPage />)} />
+      </Route>
+      <Route path="/app/guest" element={<GuestFunnelShell />}>
+        <Route path="intro-potencial" element={renderWithSuspense(<IntroPotencialPage />)} />
+        <Route path="dr-joe-preview" element={renderWithSuspense(<DrJoePreviewPage />)} />
+      </Route>
       <Route
-        path="/app/minigame-potencial"
+        path="/app/recondicione-corpo-mente"
         element={
           <RequireAuth>
             <AppProtectedShellNoLayout />
           </RequireAuth>
         }
       >
-        <Route index element={renderWithSuspense(<MinigamePotencialPage />)} />
+        <Route index element={renderWithSuspense(<RecondicioneCorpoMentePage />)} />
+      </Route>
+      <Route
+        path="/app/recondicione-antes-de-comecar"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<RecondicioneAntesDeComecarPage />)} />
       </Route>
       <Route
         path="/app/introducao-meditacao"
