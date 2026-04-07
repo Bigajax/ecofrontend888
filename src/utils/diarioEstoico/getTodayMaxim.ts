@@ -1053,6 +1053,17 @@ export const APRIL_REFLECTIONS: DailyMaxim[] = [
     comment: 'Quão mais difícil é fazer a coisa certa quando você está cercado por pessoas que não têm muitos critérios? Quão mais difícil é ser positivo e empático no meio da bolha de negatividade e da tagarelice da televisão? Quão mais difícil é concentrar-se em seus problemas quando você é distraído pelo drama e o conflito de outras pessoas?\n\nInevitavelmente, estaremos expostos a essas influências em algum momento, por mais que tentemos evitá-las. Mas quando isso acontecer, não há nada que nos impeça de proibir que tais influências penetrem em nossa mente. Temos a capacidade de levantar nossa guarda e decidir o que vamos permitir que entre. Visitas inesperadas podem bater na sua porta, mas você não tem de convidá-las para jantar. Não tem de deixar que penetrem na sua mente.',
     background: getBackgroundForDay(2),
   },
+  {
+    date: '3 de abril',
+    month: 'abril',
+    dayNumber: 3,
+    title: 'ENGANADO E DIVIDIDO',
+    text: '“As circunstâncias são o que nos engana — tens de discernir entre elas. Abraçamos o mal antes do bem. Desejamos o oposto do que desejávamos antes. Nossas preces estão em guerra com elas mesmas, e nossos planos, com eles mesmos.”',
+    author: 'Sêneca',
+    source: 'Cartas morais, 45.6',
+    comment: 'Uma mulher diz que quer conhecer um bom rapaz e se casar, no entanto, ela passa todo o tempo cercada de idiotas. Um homem diz que deseja encontrar um excelente emprego, mas não se deu ao trabalho de procurar de verdade. Executivos tentam seguir duas estratégias diferentes ao mesmo tempo e ficam chocados quando nenhuma delas dá certo.\n\nTodas essas pessoas, assim como muitas vezes acontece conosco, estão enganadas e divididas. Uma das mãos está agindo contra a outra. Como disse certa vez Martin Luther King, Jr.: “Há uma espécie de guerra civil em curso em nossa vida.” Uma guerra dentro de cada indivíduo, entre o lado bom e o mau de sua alma.\n\nOs estoicos dizem que essa guerra é geralmente um resultado de nossos desejos conflitantes, maus julgamentos, pensamentos tendenciosos. Não paramos e nos perguntamos: Ok, o que eu realmente quero? O que estou buscando aqui? Se fizéssemos isso, perceberíamos os desejos contraditórios e incongruentes que temos. E então pararíamos de agir contra nós mesmos.',
+    background: getBackgroundForDay(3),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
