@@ -28,8 +28,8 @@ export default function Favoritos() {
     {
       id: 'blessing_2',
       title: 'Meditação para sintonizar novos potenciais',
-      duration: '7 min',
-      audioUrl: '/audio/sintonizar-novos-potenciais.mp3',
+      duration: '5 min',
+      audioUrl: '/audio/sintonizar-novos-potenciais-v3.mp3',
       image: '/images/meditacao-novos-potenciais.webp',
       category: 'Dr. Joe Dispenza',
       gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #3D6BB8 20%, #3358A3 40%, #2A478E 60%, #213779 80%, #182864 100%)',

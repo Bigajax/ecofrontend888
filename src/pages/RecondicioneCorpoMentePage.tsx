@@ -19,7 +19,7 @@ const fadeScale = {
 };
 
 const cardClass =
-  'rounded-3xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur-md sm:p-6';
+  'rounded-3xl border border-white/15 bg-[#0C1525] p-5 text-white sm:p-6';
 
 function OptionPill({
   label,
@@ -38,8 +38,8 @@ function OptionPill({
       className="rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200"
       style={{
         borderColor: active ? 'rgba(110,200,255,0.55)' : 'rgba(255,255,255,0.12)',
-        background: active ? 'rgba(110,200,255,0.14)' : 'rgba(255,255,255,0.04)',
-        color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.78)',
+        background: active ? 'rgba(110,200,255,0.14)' : 'rgba(255,255,255,0.10)',
+        color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.88)',
         boxShadow: active ? '0 16px 46px rgba(110,200,255,0.16)' : 'none',
       }}
       animate={
@@ -154,8 +154,8 @@ export default function RecondicioneCorpoMentePage() {
           </header>
 
           {/* Pause block */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 backdrop-blur-md">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/55">
+          <div className="rounded-2xl border border-white/15 bg-[#0C1525] px-4 py-3 text-white">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/75">
               Observe por um instante.
             </p>
             <p className="mt-2 text-sm leading-relaxed text-white/75">
@@ -167,7 +167,7 @@ export default function RecondicioneCorpoMentePage() {
 
           {/* Block 1 */}
           <section className={cardClass}>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/75">
               Presente
             </p>
             <p className="mt-2 text-sm text-white/80">O que está presente no seu corpo agora?</p>
@@ -185,7 +185,7 @@ export default function RecondicioneCorpoMentePage() {
 
           {/* Block 2 */}
           <section className={cardClass}>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/75">
               Direção
             </p>
             <p className="mt-2 text-sm text-white/80">Qual estado você quer começar a sentir?</p>
@@ -232,7 +232,7 @@ export default function RecondicioneCorpoMentePage() {
             >
               Levar esse estado comigo
             </button>
-            <p className="mt-2 text-center text-xs text-white/55">
+            <p className="mt-2 text-center text-xs text-white/70">
               {canStart ? 'Continue no seu ritmo.' : 'Escolha um estado atual e um novo estado.'}
             </p>
           </div>

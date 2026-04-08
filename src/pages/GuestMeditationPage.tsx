@@ -14,7 +14,7 @@ const MEDITATION_DATA = {
   id: 'blessing_2',
   title: 'Sintonize Novos Potenciais',
   duration: '7 min',
-  audioUrl: '/audio/sintonizar-novos-potenciais.mp3',
+  audioUrl: '/audio/sintonizar-novos-potenciais-v2.mp3',
   imageUrl: '/images/meditacao-novos-potenciais.webp',
   backgroundMusic: 'Cristais',
   gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #3D6BB8 20%, #3358A3 40%, #2A478E 60%, #213779 80%, #182864 100%)',

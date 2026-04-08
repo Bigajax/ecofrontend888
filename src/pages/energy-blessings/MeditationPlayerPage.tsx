@@ -52,6 +52,8 @@ export default function MeditationPlayerPage() {
   const { trackInteraction } = useGuestExperience();
   const { checkTrigger } = useGuestConversionTriggers();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
 
   // Dados da meditação passados via navigation state
   const meditationData: MeditationData = location.state?.meditation || {
@@ -73,6 +75,11 @@ export default function MeditationPlayerPage() {
   const isAbundancia = category === 'abundancia';
   const GOLD = '#FFB932';
   const GOLD_DARK = '#C49A00';
+
+  // Tema azul escuro para Dr. Joe Dispenza
+  const isDrJoe = category === 'dr_joe_dispenza';
+  const DJ_BLUE = '#3B82F6';
+  const DJ_BLUE_DARK = '#2563EB';
 
   //Initialize analytics
   const analytics = useMeditationAnalytics({
@@ -182,6 +189,11 @@ export default function MeditationPlayerPage() {
       if (favoriteToastTimerRef.current) {
         clearTimeout(favoriteToastTimerRef.current);
       }
+
+      // Cleanup Web Audio
+      audioCtxRef.current?.close();
+      audioCtxRef.current = null;
+      gainRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -250,6 +262,30 @@ export default function MeditationPlayerPage() {
   // Track previous volumes for change detection
   const previousMeditationVolume = useRef(meditationVolume);
   const previousBackgroundVolumeRef = useRef(backgroundVolume);
+
+  // Amplificar voz da meditação via Web Audio API (2x gain)
+  // Retorna Promise para garantir que o AudioContext está running antes do play
+  const initAudioGain = async (): Promise<void> => {
+    const el = audioRef.current;
+    if (!el || audioCtxRef.current) return;
+    try {
+      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!Ctx) return;
+      const ctx: AudioContext = new Ctx();
+      const src = ctx.createMediaElementSource(el);
+      const gain = ctx.createGain();
+      gain.gain.value = 2.0;
+      src.connect(gain).connect(ctx.destination);
+      audioCtxRef.current = ctx;
+      gainRef.current = gain;
+      // Garantir que o contexto está rodando antes do áudio começar
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+    } catch {
+      // fallback: sem amplificação
+    }
+  };
 
   // Controlar volume do áudio da meditação
   useEffect(() => {
@@ -414,8 +450,9 @@ export default function MeditationPlayerPage() {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const tryAutoPlay = () => {
+    const tryAutoPlay = async () => {
       if (hasPlayedOnce.current) return;
+      await initAudioGain();
       audio.volume = 0;
       audio.play()
         .then(() => {
@@ -566,7 +603,8 @@ export default function MeditationPlayerPage() {
     };
   }, [meditationVolume, backgroundVolume, selectedBackgroundSound, analytics]);
 
-  const handlePlayPause = () => {
+  const handlePlayPause = async () => {
+    await initAudioGain();
     if (audioRef.current) {
       if (isPlaying) {
         // PAUSE
@@ -801,7 +839,7 @@ export default function MeditationPlayerPage() {
       {/* Dark overlay for text readability */}
       <div
         className="absolute inset-0"
-        style={isAbundancia
+        style={isAbundancia || isDrJoe
           ? { background: 'linear-gradient(to bottom, rgba(9,9,15,0.55) 0%, rgba(9,9,15,0.40) 50%, rgba(9,9,15,0.65) 100%)' }
           : { background: 'rgba(0,0,0,0.25)' }
         }
@@ -822,10 +860,12 @@ export default function MeditationPlayerPage() {
             aria-label="Voltar"
             style={isAbundancia
               ? { background: 'rgba(255,185,50,0.15)', border: '1px solid rgba(255,185,50,0.4)' }
+              : isDrJoe
+              ? { background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.4)' }
               : { background: 'rgba(255,255,255,0.9)' }
             }
           >
-            <ChevronLeft size={22} style={{ color: isAbundancia ? GOLD : '#1F2937' }} />
+            <ChevronLeft size={22} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#1F2937' }} />
           </button>
         </div>
         {/* Meditation Image Card */}
@@ -850,8 +890,12 @@ export default function MeditationPlayerPage() {
           initial="hidden"
           animate="visible"
           transition={{ delay: 0.2 }}
-          className={`mb-3 sm:mb-6 text-xl sm:text-3xl md:text-4xl font-bold text-center px-2 leading-snug drop-shadow-sm ${isAbundancia ? '' : 'text-gray-900'}`}
-          style={isAbundancia ? { color: GOLD, textShadow: '0 2px 16px rgba(255,185,50,0.4)', textWrap: 'balance' } : { textWrap: 'balance' }}
+          className={`mb-3 sm:mb-6 text-xl sm:text-3xl md:text-4xl font-bold text-center px-2 leading-snug drop-shadow-sm ${isAbundancia || isDrJoe ? '' : 'text-gray-900'}`}
+          style={isAbundancia
+            ? { color: GOLD, textShadow: '0 2px 16px rgba(255,185,50,0.4)', textWrap: 'balance' }
+            : isDrJoe
+            ? { color: '#FFFFFF', textShadow: '0 2px 16px rgba(59,130,246,0.4)', textWrap: 'balance' }
+            : { textWrap: 'balance' }}
         >
           {meditationData.title}
         </motion.h1>
@@ -871,11 +915,13 @@ export default function MeditationPlayerPage() {
             className="flex flex-col h-12 w-12 items-center justify-center gap-0.5 rounded-full backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation"
             style={isAbundancia
               ? { background: 'rgba(255,185,50,0.15)', border: '1px solid rgba(255,185,50,0.4)' }
+              : isDrJoe
+              ? { background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.4)' }
               : { background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(229,231,235,0.5)' }
             }
           >
-            <SkipBack size={16} strokeWidth={1.5} style={{ color: isAbundancia ? GOLD : '#374151' }} />
-            <span className="text-[9px] font-bold leading-none" style={{ color: isAbundancia ? GOLD : '#374151' }}>15s</span>
+            <SkipBack size={16} strokeWidth={1.5} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151' }} />
+            <span className="text-[9px] font-bold leading-none" style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151' }}>15s</span>
           </button>
 
           {/* Play/Pause Button */}
@@ -885,13 +931,15 @@ export default function MeditationPlayerPage() {
             className="flex h-16 w-16 items-center justify-center rounded-full backdrop-blur-sm shadow-xl md:hover:shadow-2xl transition-all active:scale-95 touch-manipulation"
             style={isAbundancia
               ? { background: GOLD, border: '1px solid rgba(255,185,50,0.3)', boxShadow: '0 8px 32px rgba(255,185,50,0.45)' }
+              : isDrJoe
+              ? { background: DJ_BLUE, border: '1px solid rgba(59,130,246,0.3)', boxShadow: '0 8px 32px rgba(59,130,246,0.45)' }
               : { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(229,231,235,0.5)' }
             }
           >
             {isPlaying ? (
-              <Pause size={28} strokeWidth={2} style={{ color: isAbundancia ? '#09090F' : '#111827' }} />
+              <Pause size={28} strokeWidth={2} style={{ color: isAbundancia || isDrJoe ? '#FFFFFF' : '#111827' }} />
             ) : (
-              <Play size={28} strokeWidth={2} fill="currentColor" className="ml-0.5" style={{ color: isAbundancia ? '#09090F' : '#111827' }} />
+              <Play size={28} strokeWidth={2} fill="currentColor" className="ml-0.5" style={{ color: isAbundancia || isDrJoe ? '#FFFFFF' : '#111827' }} />
             )}
           </button>
 
@@ -902,11 +950,13 @@ export default function MeditationPlayerPage() {
             className="flex flex-col h-12 w-12 items-center justify-center gap-0.5 rounded-full backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation"
             style={isAbundancia
               ? { background: 'rgba(255,185,50,0.15)', border: '1px solid rgba(255,185,50,0.4)' }
+              : isDrJoe
+              ? { background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.4)' }
               : { background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(229,231,235,0.5)' }
             }
           >
-            <SkipForward size={16} strokeWidth={1.5} style={{ color: isAbundancia ? GOLD : '#374151' }} />
-            <span className="text-[9px] font-bold leading-none" style={{ color: isAbundancia ? GOLD : '#374151' }}>15s</span>
+            <SkipForward size={16} strokeWidth={1.5} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151' }} />
+            <span className="text-[9px] font-bold leading-none" style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151' }}>15s</span>
           </button>
         </motion.div>
 
@@ -925,6 +975,8 @@ export default function MeditationPlayerPage() {
               className="flex items-center justify-between gap-4 backdrop-blur-lg rounded-2xl px-5 py-4 shadow-xl"
               style={isAbundancia
                 ? { background: 'rgba(9,9,15,0.85)', border: '1px solid rgba(255,185,50,0.25)' }
+                : isDrJoe
+                ? { background: 'rgba(9,9,15,0.85)', border: '1px solid rgba(59,130,246,0.25)' }
                 : { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(243,244,246,0.5)' }
               }
             >
@@ -935,20 +987,22 @@ export default function MeditationPlayerPage() {
                 className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 touch-manipulation"
                 style={isAbundancia
                   ? { background: 'rgba(255,185,50,0.12)', border: '1px solid rgba(255,185,50,0.3)' }
+                  : isDrJoe
+                  ? { background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)' }
                   : { background: 'linear-gradient(to bottom right, #F9FAFB, #FFFFFF)', border: '1px solid rgba(229,231,235,0.5)' }
                 }
               >
-                <Music size={16} strokeWidth={2} style={{ color: isAbundancia ? GOLD : '#4B5563', flexShrink: 0 }} />
+                <Music size={16} strokeWidth={2} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#4B5563', flexShrink: 0 }} />
                 <div className="flex flex-col items-start min-w-0">
                   <span
                     className="text-[9px] font-semibold uppercase tracking-wide leading-tight"
-                    style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : '#9CA3AF' }}
+                    style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : isDrJoe ? 'rgba(59,130,246,0.7)' : '#9CA3AF' }}
                   >
                     Sons de fundo
                   </span>
                   <span
                     className="text-xs font-bold leading-tight truncate max-w-[120px]"
-                    style={{ color: isAbundancia ? 'rgba(255,255,255,0.9)' : '#1F2937' }}
+                    style={{ color: isAbundancia || isDrJoe ? 'rgba(255,255,255,0.9)' : '#1F2937' }}
                   >
                     {selectedBackgroundSound?.title || 'Nenhum'}
                   </span>
@@ -963,6 +1017,8 @@ export default function MeditationPlayerPage() {
                 className="flex items-center justify-center w-11 h-11 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 touch-manipulation"
                 style={isAbundancia
                   ? { background: 'rgba(255,185,50,0.12)', border: '1px solid rgba(255,185,50,0.3)' }
+                  : isDrJoe
+                  ? { background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)' }
                   : { background: 'linear-gradient(to bottom right, #F9FAFB, #FFFFFF)', border: '1px solid rgba(229,231,235,0.5)' }
                 }
               >
@@ -970,7 +1026,7 @@ export default function MeditationPlayerPage() {
                   size={20}
                   strokeWidth={2}
                   className={`transition-all ${isFavorite ? 'fill-red-500 text-red-500' : ''}`}
-                  style={!isFavorite ? { color: isAbundancia ? GOLD : '#4B5563' } : undefined}
+                  style={!isFavorite ? { color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#4B5563' } : undefined}
                 />
               </button>
 
@@ -983,10 +1039,12 @@ export default function MeditationPlayerPage() {
                   className="flex items-center justify-center w-11 h-11 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 touch-manipulation"
                   style={isAbundancia
                     ? { background: 'rgba(255,185,50,0.12)', border: '1px solid rgba(255,185,50,0.3)' }
+                    : isDrJoe
+                    ? { background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)' }
                     : { background: 'linear-gradient(to bottom right, #F9FAFB, #FFFFFF)', border: '1px solid rgba(229,231,235,0.5)' }
                   }
                 >
-                  <Volume2 size={18} strokeWidth={2} style={{ color: isAbundancia ? GOLD : '#4B5563' }} />
+                  <Volume2 size={18} strokeWidth={2} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#4B5563' }} />
                 </button>
 
                 {/* Volume Popover Vertical - Aparece acima do botão */}
@@ -999,12 +1057,14 @@ export default function MeditationPlayerPage() {
                     className="backdrop-blur-lg rounded-2xl px-3 py-4 shadow-2xl"
                     style={isAbundancia
                       ? { background: 'rgba(9,9,15,0.95)', border: '1px solid rgba(255,185,50,0.25)' }
+                      : isDrJoe
+                      ? { background: 'rgba(9,9,15,0.95)', border: '1px solid rgba(59,130,246,0.25)' }
                       : { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(243,244,246,0.5)' }
                     }
                   >
                     <div className="flex flex-col items-center gap-3 h-[180px]">
                       {/* Porcentagem no topo */}
-                      <span className="text-xs font-bold" style={{ color: isAbundancia ? GOLD : '#374151' }}>
+                      <span className="text-xs font-bold" style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151' }}>
                         {Math.round(backgroundVolume)}%
                       </span>
 
@@ -1026,7 +1086,7 @@ export default function MeditationPlayerPage() {
                         {/* Barra de fundo vertical */}
                         <div
                           className="absolute inset-x-0 top-0 bottom-0 w-2 mx-auto rounded-full pointer-events-none"
-                          style={{ background: isAbundancia ? 'rgba(255,185,50,0.2)' : '#E5E7EB' }}
+                          style={{ background: isAbundancia ? 'rgba(255,185,50,0.2)' : isDrJoe ? 'rgba(59,130,246,0.2)' : '#E5E7EB' }}
                         >
                           <div
                             className="absolute bottom-0 left-0 right-0 rounded-full transition-all duration-150"
@@ -1034,7 +1094,7 @@ export default function MeditationPlayerPage() {
                               height: `${backgroundVolume}%`,
                               background: isAbundancia
                                 ? `linear-gradient(to top, ${GOLD_DARK}, ${GOLD})`
-                                : 'linear-gradient(to top, #3B82F6, #2563EB)',
+                                : `linear-gradient(to top, ${DJ_BLUE_DARK}, ${DJ_BLUE})`,
                             }}
                           />
                         </div>
@@ -1044,13 +1104,13 @@ export default function MeditationPlayerPage() {
                           style={{
                             bottom: `calc(${backgroundVolume}% - 10px)`,
                             background: '#FFFFFF',
-                            border: `2px solid ${isAbundancia ? GOLD : '#3B82F6'}`,
+                            border: `2px solid ${isAbundancia ? GOLD : DJ_BLUE}`,
                           }}
                         />
                       </div>
 
                       {/* Ícone no bottom */}
-                      <Music size={14} strokeWidth={2} style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : '#6B7280' }} />
+                      <Music size={14} strokeWidth={2} style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : isDrJoe ? 'rgba(59,130,246,0.7)' : '#6B7280' }} />
                     </div>
                   </div>
                 </div>
@@ -1062,19 +1122,21 @@ export default function MeditationPlayerPage() {
               className="mt-3 backdrop-blur-md rounded-full px-4 py-2.5 shadow-md"
               style={isAbundancia
                 ? { background: 'rgba(9,9,15,0.80)', border: '1px solid rgba(255,185,50,0.2)' }
+                : isDrJoe
+                ? { background: 'rgba(9,9,15,0.80)', border: '1px solid rgba(59,130,246,0.2)' }
                 : { background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(243,244,246,0.5)' }
               }
             >
               <div className="flex items-center gap-3">
                 <span
                   className="text-[11px] font-semibold flex-shrink-0 tabular-nums"
-                  style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : '#4B5563' }}
+                  style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : isDrJoe ? 'rgba(255,255,255,0.7)' : '#4B5563' }}
                 >
                   {formatTime(currentTime)}
                 </span>
                 <div
                   className="flex-1 relative h-1.5 rounded-full overflow-visible"
-                  style={{ background: isAbundancia ? 'rgba(255,185,50,0.2)' : '#E5E7EB' }}
+                  style={{ background: isAbundancia ? 'rgba(255,185,50,0.2)' : isDrJoe ? 'rgba(59,130,246,0.2)' : '#E5E7EB' }}
                 >
                   <input
                     type="range"
@@ -1095,7 +1157,7 @@ export default function MeditationPlayerPage() {
                       width: `${(currentTime / (duration || 1)) * 100}%`,
                       background: isAbundancia
                         ? `linear-gradient(to right, ${GOLD_DARK}, ${GOLD})`
-                        : 'linear-gradient(to right, #3B82F6, #2563EB)',
+                        : `linear-gradient(to right, ${DJ_BLUE_DARK}, ${DJ_BLUE})`,
                     }}
                   />
                   {/* Thumb visual */}
@@ -1103,13 +1165,13 @@ export default function MeditationPlayerPage() {
                     className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full shadow pointer-events-none"
                     style={{
                       left: `calc(${(currentTime / (duration || 1)) * 100}% - 7px)`,
-                      background: isAbundancia ? GOLD : '#3B82F6',
+                      background: isAbundancia ? GOLD : DJ_BLUE,
                     }}
                   />
                 </div>
                 <span
                   className="text-[11px] font-semibold flex-shrink-0 tabular-nums"
-                  style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : '#4B5563' }}
+                  style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : isDrJoe ? 'rgba(255,255,255,0.7)' : '#4B5563' }}
                 >
                   {formatTime(duration)}
                 </span>
@@ -1118,23 +1180,31 @@ export default function MeditationPlayerPage() {
           </div>
 
           {/* Desktop Layout - Single Row */}
-          <div className="hidden md:flex items-center justify-between gap-3 sm:gap-4 bg-white/90 backdrop-blur-md rounded-full px-4 sm:px-6 py-3 sm:py-4 shadow-lg">
+          <div
+            className="hidden md:flex items-center justify-between gap-3 sm:gap-4 backdrop-blur-md rounded-full px-4 sm:px-6 py-3 sm:py-4 shadow-lg"
+            style={isAbundancia
+              ? { background: 'rgba(9,9,15,0.85)', border: '1px solid rgba(255,185,50,0.25)' }
+              : isDrJoe
+              ? { background: 'rgba(9,9,15,0.85)', border: '1px solid rgba(59,130,246,0.25)' }
+              : { background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(243,244,246,0.5)' }
+            }
+          >
             {/* Background Sound Selector */}
             <button
               onClick={handleOpenBackgroundModal}
               className="flex items-center gap-2 min-w-0 flex-shrink-0 hover:opacity-80 transition-opacity"
             >
-              <Music size={18} className="text-gray-700 flex-shrink-0" />
+              <Music size={18} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151', flexShrink: 0 }} />
               <div className="flex flex-col items-start min-w-0">
-                <span className="text-[10px] font-medium text-gray-500 uppercase leading-tight">Sons de Fundo</span>
-                <span className="text-xs font-semibold text-gray-900 leading-tight truncate max-w-[100px]">
+                <span className="text-[10px] font-medium uppercase leading-tight" style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : isDrJoe ? 'rgba(59,130,246,0.7)' : '#6B7280' }}>Sons de Fundo</span>
+                <span className="text-xs font-semibold leading-tight truncate max-w-[100px]" style={{ color: isAbundancia || isDrJoe ? 'rgba(255,255,255,0.9)' : '#111827' }}>
                   {selectedBackgroundSound?.title || 'Nenhum'}
                 </span>
               </div>
             </button>
 
             {/* Time Display */}
-            <span className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">
+            <span className="text-xs sm:text-sm font-medium flex-shrink-0" style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : isDrJoe ? 'rgba(255,255,255,0.7)' : '#374151' }}>
               {formatTime(currentTime)}
             </span>
 
@@ -1154,14 +1224,18 @@ export default function MeditationPlayerPage() {
                 height: '4px',
                 WebkitAppearance: 'none',
                 appearance: 'none',
-                background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`,
+                background: isAbundancia
+                  ? `linear-gradient(to right, ${GOLD_DARK} 0%, ${GOLD_DARK} ${(currentTime / (duration || 1)) * 100}%, rgba(255,185,50,0.2) ${(currentTime / (duration || 1)) * 100}%, rgba(255,185,50,0.2) 100%)`
+                  : isDrJoe
+                  ? `linear-gradient(to right, ${DJ_BLUE_DARK} 0%, ${DJ_BLUE_DARK} ${(currentTime / (duration || 1)) * 100}%, rgba(59,130,246,0.2) ${(currentTime / (duration || 1)) * 100}%, rgba(59,130,246,0.2) 100%)`
+                  : `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`,
                 borderRadius: '999px',
                 touchAction: 'none',
               }}
             />
 
             {/* Time Duration */}
-            <span className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">
+            <span className="text-xs sm:text-sm font-medium flex-shrink-0" style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : isDrJoe ? 'rgba(255,255,255,0.7)' : '#374151' }}>
               {formatTime(duration)}
             </span>
 
@@ -1174,14 +1248,15 @@ export default function MeditationPlayerPage() {
             >
               <Heart
                 size={20}
-                className={`transition-all ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
+                className={`transition-all ${isFavorite ? 'fill-red-500 text-red-500' : ''}`}
                 strokeWidth={1.5}
+                style={!isFavorite ? { color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151' } : undefined}
               />
             </button>
 
             {/* Volume Control */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Volume2 size={16} className="text-gray-600" aria-hidden="true" />
+              <Volume2 size={16} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#4B5563' }} aria-hidden="true" />
               <input
                 type="range"
                 min="0"
@@ -1195,7 +1270,11 @@ export default function MeditationPlayerPage() {
                   height: '4px',
                   WebkitAppearance: 'none',
                   appearance: 'none',
-                  background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${meditationVolume}%, #E5E7EB ${meditationVolume}%, #E5E7EB 100%)`,
+                  background: isAbundancia
+                    ? `linear-gradient(to right, ${GOLD_DARK} 0%, ${GOLD_DARK} ${meditationVolume}%, rgba(255,185,50,0.2) ${meditationVolume}%, rgba(255,185,50,0.2) 100%)`
+                    : isDrJoe
+                    ? `linear-gradient(to right, ${DJ_BLUE_DARK} 0%, ${DJ_BLUE_DARK} ${meditationVolume}%, rgba(59,130,246,0.2) ${meditationVolume}%, rgba(59,130,246,0.2) 100%)`
+                    : `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${meditationVolume}%, #E5E7EB ${meditationVolume}%, #E5E7EB 100%)`,
                   borderRadius: '999px',
                   touchAction: 'none',
                 }}

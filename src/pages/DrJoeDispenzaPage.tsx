@@ -50,8 +50,8 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     id: 'blessing_2',
     title: 'Sintonize Novos Potenciais',
     description: 'Acesse o campo de possibilidades além do seu passado',
-    duration: '7 min',
-    audioUrl: '/audio/sintonizar-novos-potenciais.mp3',
+    duration: '5 min',
+    audioUrl: '/audio/sintonizar-novos-potenciais-v3.mp3',
     image: 'url("/images/meditacao-novos-potenciais.webp")',
     imagePosition: 'center 32%',
     gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #3D6BB8 20%, #3358A3 40%, #2A478E 60%, #213779 80%, #182864 100%)',
@@ -111,12 +111,14 @@ export default function DrJoeDispenzaPage() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Merge with INITIAL_MEDITATIONS to ensure isPremium is updated
+        // Merge with INITIAL_MEDITATIONS to ensure isPremium, audioUrl and duration are updated
         return parsed.map((saved: Meditation) => {
           const initial = INITIAL_MEDITATIONS.find(m => m.id === saved.id);
           return {
             ...saved,
             isPremium: initial?.isPremium || false,
+            audioUrl: initial?.audioUrl || saved.audioUrl,
+            duration: initial?.duration || saved.duration,
           };
         });
       } catch {
@@ -353,7 +355,7 @@ export default function DrJoeDispenzaPage() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-10% 0px -10% 0px' }}
       transition={{ duration: 0.55 }}
-      className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.05] shadow-[0_18px_55px_rgba(0,0,0,0.45)] backdrop-blur-sm"
+      className="overflow-hidden rounded-3xl border border-white/10 bg-[#080E1E] shadow-[0_18px_55px_rgba(0,0,0,0.45)]"
     >
       <EtapaHeader
         label={label}
@@ -362,7 +364,7 @@ export default function DrJoeDispenzaPage() {
         backgroundImage={backgroundImage}
         backgroundPosition={backgroundPosition}
       />
-      <div className="px-5 py-5 sm:px-8 sm:py-6">
+      <div className="px-5 py-5 sm:px-8 sm:py-6 text-white">
         {children}
       </div>
     </motion.div>
@@ -797,7 +799,7 @@ export default function DrJoeDispenzaPage() {
             </div>
 
             {/* ── 🔹 DIAGRAMA (bloco 5 visualizado) ── */}
-            <div className="mb-10 rounded-3xl border border-white/10 bg-white/[0.04] px-6 py-8 sm:px-8 sm:py-10">
+            <div className="mb-10 rounded-3xl border border-white/15 bg-white/[0.09] px-6 py-8 sm:px-8 sm:py-10">
               <h3 className="mb-7 text-center font-display text-lg font-semibold tracking-tight text-white sm:text-xl">
                 <span className="text-blue-400">Intenção clara</span>{' '}
                 <span className="text-white/30">+</span>{' '}
@@ -820,7 +822,7 @@ export default function DrJoeDispenzaPage() {
                   ].map(item => (
                     <span
                       key={item}
-                      className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-2 text-center text-[10px] font-medium leading-snug text-white/80 sm:text-xs"
+                      className="w-full rounded-2xl border border-blue-400/30 bg-blue-500/[0.14] px-2.5 py-2 text-center text-[10px] font-medium leading-snug text-white/90 sm:text-xs"
                     >
                       {item}
                     </span>
@@ -855,7 +857,7 @@ export default function DrJoeDispenzaPage() {
                   {['1. Empoderado', '2. Apaixonado pela vida', '3. Livre', '4. Grato'].map(item => (
                     <span
                       key={item}
-                      className="w-full rounded-2xl border border-blue-500/20 bg-blue-500/[0.06] px-2.5 py-2 text-center text-[10px] font-medium leading-snug text-white/80 sm:text-xs"
+                      className="w-full rounded-2xl border border-blue-400/35 bg-blue-500/[0.18] px-2.5 py-2 text-center text-[10px] font-medium leading-snug text-white/90 sm:text-xs"
                     >
                       {item}
                     </span>
@@ -870,7 +872,7 @@ export default function DrJoeDispenzaPage() {
             {/* ── 🔹 EMOÇÃO + GRATIDÃO (blocos 13 e 14) ── */}
             <div className="mb-10">
               {/* Bloco 13: Gratidão */}
-              <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.05] px-6 py-5 sm:px-8">
+              <div className="mb-4 rounded-2xl border border-white/20 bg-white/[0.10] px-6 py-5 sm:px-8">
                 <p className="text-sm font-semibold text-white/90 sm:text-base">
                   Se você não souber o que sentir, comece pela gratidão.
                 </p>
@@ -880,7 +882,7 @@ export default function DrJoeDispenzaPage() {
               </div>
 
               {/* Bloco 14: Integração */}
-              <div className="rounded-2xl border border-blue-500/20 bg-blue-500/[0.07] px-6 py-5 sm:px-8">
+              <div className="rounded-2xl border border-blue-400/35 bg-blue-500/[0.15] px-6 py-5 sm:px-8">
                 <p className="text-sm font-semibold text-white/90 sm:text-base">
                   Isso não é um processo intelectual. É um processo visceral.
                 </p>
@@ -943,8 +945,8 @@ export default function DrJoeDispenzaPage() {
                   <div
                     className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
                     style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: `1px solid rgba(59,130,246,0.20)`,
+                      background: 'rgba(255,255,255,0.10)',
+                      border: `1px solid rgba(59,130,246,0.50)`,
                     }}
                   >
                     <div
@@ -959,7 +961,7 @@ export default function DrJoeDispenzaPage() {
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold text-white/90 sm:text-base">
+                          <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
                             Criando seu novo potencial
                           </h3>
                           <span
@@ -975,12 +977,12 @@ export default function DrJoeDispenzaPage() {
                             EXPERIÊNCIA
                           </span>
                         </div>
-                        <p className="mt-0.5 text-xs text-white/65 sm:mt-1 sm:text-sm">
+                        <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
                           3 minutos para definir sua intenção e sentir a emoção.
                         </p>
                       </div>
                       <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                        <span className="text-xs text-white/55 sm:text-sm">3 min</span>
+                        <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>3 min</span>
                         <div
                           className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10"
                           style={{ background: 'rgba(59,130,246,0.12)' }}
@@ -1004,8 +1006,8 @@ export default function DrJoeDispenzaPage() {
                   <div
                     className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
                     style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: `1px solid rgba(59,130,246,0.20)`,
+                      background: 'rgba(255,255,255,0.10)',
+                      border: `1px solid rgba(59,130,246,0.50)`,
                     }}
                   >
                     {sintonizeMeditation.completed ? (
@@ -1026,19 +1028,19 @@ export default function DrJoeDispenzaPage() {
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold text-white/90 sm:text-base">
+                          <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
                             {sintonizeMeditation.title}
                           </h3>
                           {sintonizeMeditation.isPremium && !sintonizeMeditation.completed && (
                             <Lock className="h-3.5 w-3.5 text-white/40" />
                           )}
                         </div>
-                        <p className="mt-0.5 text-xs text-white/65 sm:mt-1 sm:text-sm">
+                        <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
                           {sintonizeMeditation.description}
                         </p>
                       </div>
                       <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                        <span className="text-xs text-white/55 sm:text-sm">{sintonizeMeditation.duration}</span>
+                        <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{sintonizeMeditation.duration}</span>
                         <div className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10" style={{ background: 'rgba(59,130,246,0.12)' }}>
                           <Play className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: sintonizeMeditation.isPremium && !sintonizeMeditation.completed ? 'rgba(255,255,255,0.30)' : BLUE }} fill="currentColor" />
                         </div>
@@ -1059,8 +1061,8 @@ export default function DrJoeDispenzaPage() {
                   <div
                     className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
                     style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: `1px solid rgba(59,130,246,0.20)`,
+                      background: 'rgba(255,255,255,0.10)',
+                      border: `1px solid rgba(59,130,246,0.50)`,
                     }}
                   >
                     {etapa1Meditation.completed ? (
@@ -1081,19 +1083,19 @@ export default function DrJoeDispenzaPage() {
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold text-white/90 sm:text-base">
+                          <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
                             {etapa1Meditation.title}
                           </h3>
                           {etapa1Meditation.isPremium && !etapa1Meditation.completed && (
                             <Lock className="h-3.5 w-3.5 text-white/40" />
                           )}
                         </div>
-                        <p className="mt-0.5 text-xs text-white/65 sm:mt-1 sm:text-sm">
+                        <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
                           {etapa1Meditation.description}
                         </p>
                       </div>
                       <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                        <span className="text-xs text-white/55 sm:text-sm">{etapa1Meditation.duration}</span>
+                        <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{etapa1Meditation.duration}</span>
                         <div className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10" style={{ background: 'rgba(59,130,246,0.12)' }}>
                           <Play className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: etapa1Meditation.isPremium && !etapa1Meditation.completed ? 'rgba(255,255,255,0.30)' : BLUE }} fill="currentColor" />
                         </div>
@@ -1114,8 +1116,8 @@ export default function DrJoeDispenzaPage() {
                   <div
                     className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
                     style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: `1px solid rgba(59,130,246,0.20)`,
+                      background: 'rgba(255,255,255,0.10)',
+                      border: `1px solid rgba(59,130,246,0.50)`,
                     }}
                   >
                     {recondicioneMeditation.completed ? (
@@ -1136,19 +1138,19 @@ export default function DrJoeDispenzaPage() {
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold text-white/90 sm:text-base">
+                          <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
                             {recondicioneMeditation.title}
                           </h3>
                           {recondicioneMeditation.isPremium && !recondicioneMeditation.completed && (
                             <Lock className="h-3.5 w-3.5 text-white/40" />
                           )}
                         </div>
-                        <p className="mt-0.5 text-xs text-white/65 sm:mt-1 sm:text-sm">
+                        <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
                           {recondicioneMeditation.description}
                         </p>
                       </div>
                       <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                        <span className="text-xs text-white/55 sm:text-sm">{recondicioneMeditation.duration}</span>
+                        <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{recondicioneMeditation.duration}</span>
                         <div className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10" style={{ background: 'rgba(59,130,246,0.12)' }}>
                           <Play className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: recondicioneMeditation.isPremium && !recondicioneMeditation.completed ? 'rgba(255,255,255,0.30)' : BLUE }} fill="currentColor" />
                         </div>
@@ -1169,8 +1171,8 @@ export default function DrJoeDispenzaPage() {
                   <div
                     className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
                     style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: `1px solid rgba(59,130,246,0.20)`,
+                      background: 'rgba(255,255,255,0.10)',
+                      border: `1px solid rgba(59,130,246,0.50)`,
                     }}
                   >
                     {caminhandoMeditation.completed ? (
@@ -1191,19 +1193,19 @@ export default function DrJoeDispenzaPage() {
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold text-white/90 sm:text-base">
+                          <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
                             {caminhandoMeditation.title}
                           </h3>
                           {caminhandoMeditation.isPremium && !caminhandoMeditation.completed && (
                             <Lock className="h-3.5 w-3.5 text-white/40" />
                           )}
                         </div>
-                        <p className="mt-0.5 text-xs text-white/65 sm:mt-1 sm:text-sm">
+                        <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
                           {caminhandoMeditation.description}
                         </p>
                       </div>
                       <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                        <span className="text-xs text-white/55 sm:text-sm">{caminhandoMeditation.duration}</span>
+                        <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{caminhandoMeditation.duration}</span>
                         <div className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10" style={{ background: 'rgba(59,130,246,0.12)' }}>
                           <Play className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: caminhandoMeditation.isPremium && !caminhandoMeditation.completed ? 'rgba(255,255,255,0.30)' : BLUE }} fill="currentColor" />
                         </div>
@@ -1224,8 +1226,8 @@ export default function DrJoeDispenzaPage() {
                   <div
                     className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
                     style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: `1px solid rgba(59,130,246,0.20)`,
+                      background: 'rgba(255,255,255,0.10)',
+                      border: `1px solid rgba(59,130,246,0.50)`,
                     }}
                   >
                     {espacoTempoMeditation.completed ? (
@@ -1246,19 +1248,19 @@ export default function DrJoeDispenzaPage() {
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold text-white/90 sm:text-base">
+                          <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
                             {espacoTempoMeditation.title}
                           </h3>
                           {espacoTempoMeditation.isPremium && !espacoTempoMeditation.completed && (
                             <Lock className="h-3.5 w-3.5 text-white/40" />
                           )}
                         </div>
-                        <p className="mt-0.5 text-xs text-white/65 sm:mt-1 sm:text-sm">
+                        <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
                           {espacoTempoMeditation.description}
                         </p>
                       </div>
                       <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                        <span className="text-xs text-white/55 sm:text-sm">{espacoTempoMeditation.duration}</span>
+                        <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{espacoTempoMeditation.duration}</span>
                         <div className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10" style={{ background: 'rgba(59,130,246,0.12)' }}>
                           <Play className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: espacoTempoMeditation.isPremium && !espacoTempoMeditation.completed ? 'rgba(255,255,255,0.30)' : BLUE }} fill="currentColor" />
                         </div>
@@ -1269,7 +1271,7 @@ export default function DrJoeDispenzaPage() {
               </div>
 
               {/* ── Progresso da jornada ── */}
-              <div className="mt-10 mb-4 rounded-3xl border border-white/10 bg-white/[0.05] p-5 backdrop-blur-sm sm:p-6">
+              <div className="mt-10 mb-4 rounded-3xl border border-white/20 bg-white/[0.10] p-5 backdrop-blur-sm sm:p-6">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm font-semibold text-white/90">{urgencyLabel}</span>
                   <span className="text-sm font-bold text-white">{pct}%</span>

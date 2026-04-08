@@ -12,8 +12,8 @@ import mixpanel from '@/lib/mixpanel';
 const SINTONIZE_MEDITATION = {
   id: 'blessing_2',
   title: 'Sintonize Novos Potenciais',
-  duration: '7 min',
-  audioUrl: '/audio/sintonizar-novos-potenciais.mp3',
+  duration: '5 min',
+  audioUrl: '/audio/sintonizar-novos-potenciais-v3.mp3',
   imageUrl: '/images/meditacao-novos-potenciais.webp',
   backgroundMusic: 'Cristais',
   gradient:

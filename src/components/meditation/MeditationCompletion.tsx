@@ -39,7 +39,7 @@ const RELATED_BY_CATEGORY: Record<string, RelatedMeditation[]> = {
   ],
   dr_joe_dispenza: [
     { id: 'blessing_1', title: 'Bênção dos Centros de Energia', duration: '7 min', imageUrl: '/images/meditacao-bencao-energia.webp', audioUrl: '/audio/energy-blessings-meditation.mp3', gradient: 'linear-gradient(to bottom, #F5C563 0%, #A63428 100%)', isPremium: false, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
-    { id: 'blessing_2', title: 'Sintonize Novos Potenciais', duration: '7 min', imageUrl: '/images/meditacao-novos-potenciais.webp', audioUrl: '/audio/sintonizar-novos-potenciais.mp3', gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #182864 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
+    { id: 'blessing_2', title: 'Sintonize Novos Potenciais', duration: '5 min', imageUrl: '/images/meditacao-novos-potenciais.webp', audioUrl: '/audio/sintonizar-novos-potenciais-v3.mp3', gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #182864 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
     { id: 'blessing_3', title: 'Recondicione Seu Corpo e Mente', duration: '7 min', imageUrl: '/images/meditacao-recondicionar.webp', audioUrl: '/audio/recondicionar-corpo-nova-mente.mp3', gradient: 'linear-gradient(to bottom, #9B79C9 0%, #3B2463 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
     { id: 'blessing_5', title: 'Meditação Caminhando', duration: '5 min', imageUrl: '/images/meditacao-caminhando.webp', audioUrl: '/audio/meditacao-caminhando.mp3', gradient: 'linear-gradient(to bottom right, #FF8C42 0%, #2D1B3D 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
   ],

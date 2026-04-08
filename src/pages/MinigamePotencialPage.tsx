@@ -33,7 +33,7 @@ const fadeUp = {
 };
 
 const cardClass =
-  'rounded-3xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur-md sm:p-6';
+  'rounded-3xl border border-white/15 bg-[#0C1525] p-5 text-white sm:p-6';
 
 // ─── Sub-components ───────────────────────────────────────────
 function StepBadge({ number }: { number: number }) {
@@ -129,12 +129,12 @@ export default function MinigamePotencialPage() {
           <h2 className="text-xl font-semibold leading-snug text-white sm:text-2xl">
             O que você quer criar?
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-white/60">
+          <p className="mt-2 text-sm leading-relaxed text-white/75">
             Escolha uma experiência que você quer viver.
           </p>
           <textarea
             rows={3}
-            className="mt-4 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white/90 placeholder:text-white/35 transition-all focus:border-eco-baby/50 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-eco-baby/20 sm:text-base"
+            className="mt-4 w-full resize-none rounded-2xl border border-white/10 bg-[#0C1525] px-4 py-3 text-sm text-white/90 placeholder:text-white/45 transition-all focus:border-eco-baby/50 focus:bg-[#111e36] focus:outline-none focus:ring-2 focus:ring-eco-baby/20 sm:text-base"
             placeholder="Ex: mais liberdade, crescimento financeiro, um novo estilo de vida"
             value={intention}
             onChange={e => setIntention(e.target.value)}
@@ -149,13 +149,13 @@ export default function MinigamePotencialPage() {
               <h2 className="text-xl font-semibold leading-snug text-white sm:text-2xl">
                 Escolha um símbolo
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/60">
+              <p className="mt-2 text-sm leading-relaxed text-white/75">
                 Ele representará essa nova possibilidade.
               </p>
               <div className="mt-4 flex items-center gap-5">
                 <input
                   maxLength={1}
-                  className="h-14 w-14 flex-shrink-0 rounded-xl border border-white/10 bg-white/[0.05] text-center text-2xl font-bold uppercase text-white/90 transition-all focus:border-eco-baby/50 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-eco-baby/20"
+                  className="h-14 w-14 flex-shrink-0 rounded-xl border border-white/15 bg-[#0C1525] text-center text-2xl font-bold uppercase text-white/90 transition-all focus:border-eco-baby/50 focus:bg-[#111e36] focus:outline-none focus:ring-2 focus:ring-eco-baby/20"
                   value={letter}
                   onChange={e => setLetter(e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase())}
                   placeholder="A"
@@ -202,7 +202,7 @@ export default function MinigamePotencialPage() {
               <h2 className="text-xl font-semibold leading-snug text-white sm:text-2xl">
                 Defina com clareza o que você quer criar
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/60">
+              <p className="mt-2 text-sm leading-relaxed text-white/75">
                 Seus pensamentos dão direção.
                 <br /><br />
                 Seja específico sobre o que você quer tornar real.
@@ -211,13 +211,13 @@ export default function MinigamePotencialPage() {
                 {refinements.map((r, i) => (
                   <input
                     key={i}
-                    className="w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white/90 placeholder:text-white/35 transition-all focus:border-eco-baby/50 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-eco-baby/20"
+                    className="w-full rounded-2xl border border-white/10 bg-[#0C1525] px-4 py-3 text-sm text-white/90 placeholder:text-white/45 transition-all focus:border-eco-baby/50 focus:bg-[#111e36] focus:outline-none focus:ring-2 focus:ring-eco-baby/20"
                     placeholder={INTENTION_PLACEHOLDERS[i]}
                     value={r}
                     onChange={e => updateRefinement(i, e.target.value)}
                   />
                 ))}
-                <p className="text-xs text-white/45">
+                <p className="text-xs text-white/65">
                   {filledCount} / 4 preenchidos
                   {filledCount >= 4 && (
                     <motion.span
@@ -242,7 +242,7 @@ export default function MinigamePotencialPage() {
               <h2 className="text-xl font-semibold leading-snug text-white sm:text-2xl">
                 Como você se sente quando isso já é real?
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/60">
+              <p className="mt-2 text-sm leading-relaxed text-white/75">
                 Essas emoções são a energia
                 <br />
                 que sustenta essa criação.
@@ -253,7 +253,7 @@ export default function MinigamePotencialPage() {
                   className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95 ${
                     emotions.includes('Grato')
                       ? 'border-blue-400/40 bg-blue-400/15 text-white shadow-[0_10px_30px_rgba(59,130,246,0.14)]'
-                      : 'border-white/12 bg-white/[0.04] text-white/80 hover:bg-white/[0.06]'
+                      : 'border-white/20 bg-white/[0.10] text-white/85 hover:bg-white/[0.15]'
                   }`}
                 >
                   ✦ Gratidão
@@ -265,7 +265,7 @@ export default function MinigamePotencialPage() {
                     className={`rounded-full border px-4 py-2 text-sm transition-all active:scale-95 ${
                       emotions.includes(label)
                         ? 'border-eco-baby/40 bg-eco-baby/15 text-white shadow-[0_10px_30px_rgba(110,200,255,0.10)]'
-                        : 'border-white/12 bg-white/[0.04] text-white/80 hover:bg-white/[0.06]'
+                        : 'border-white/20 bg-white/[0.10] text-white/85 hover:bg-white/[0.15]'
                     }`}
                   >
                     {label}
@@ -285,7 +285,7 @@ export default function MinigamePotencialPage() {
               <h2 className="text-xl font-semibold leading-snug text-white sm:text-2xl">
                 Sinta isso no seu corpo
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/60">
+              <p className="mt-2 text-sm leading-relaxed text-white/75">
                 Isso não é sobre pensar.
                 <br /><br />
                 É sobre sentir.
