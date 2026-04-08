@@ -144,7 +144,8 @@ function PublicShell() {
 }
 
 function PublicHome() {
-  return renderWithSuspense(<PublicLandingPage />);
+  // Homepage pública sempre mostra HomePage
+  return renderWithSuspense(<HomePage />);
 }
 
 function AppProtectedShell() {

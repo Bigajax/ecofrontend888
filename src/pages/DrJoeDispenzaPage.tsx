@@ -284,7 +284,7 @@ export default function DrJoeDispenzaPage() {
     backgroundImage: string;
     backgroundPosition?: string;
   }) => (
-    <div className="relative" style={{ minHeight: 220 }}>
+    <div className="relative overflow-hidden" style={{ minHeight: 220 }}>
       <div
         className="absolute inset-0 bg-cover"
         style={{
@@ -297,7 +297,7 @@ export default function DrJoeDispenzaPage() {
       <div
         className="absolute inset-0"
         style={{
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.68) 55%, rgba(0,0,0,0.92) 100%)',
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.68) 55%, rgba(0,0,0,0.88) 100%)',
         }}
       />
       <div
@@ -364,7 +364,7 @@ export default function DrJoeDispenzaPage() {
         backgroundImage={backgroundImage}
         backgroundPosition={backgroundPosition}
       />
-      <div className="px-5 py-5 sm:px-8 sm:py-6 text-white">
+      <div className="relative z-10 px-5 py-5 sm:px-8 sm:py-6 text-white">
         {children}
       </div>
     </motion.div>
