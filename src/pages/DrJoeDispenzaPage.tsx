@@ -74,7 +74,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     title: 'Bênção dos Centros de Energia',
     description: 'Ative seu corpo para um novo estado interno',
     duration: '7 min',
-    audioUrl: '/audio/energy-blessings-meditation.mp3',
+    audioUrl: '/audio/bencao-centros-energia.mp3',
     image: 'url("/images/meditacao-bencao-energia.webp")',
     imagePosition: 'center 32%',
     gradient: 'linear-gradient(to bottom, #F5C563 0%, #F5A84D 15%, #F39439 30%, #E67E3C 45%, #D95B39 60%, #C74632 80%, #A63428 100%)',
@@ -97,7 +97,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     title: 'Recondicione Seu Corpo e Mente',
     description: 'O que você repete, vira padrão. Esta sessão interrompe o ciclo antigo.',
     duration: '7 min',
-    audioUrl: '/audio/recondicionar-corpo-nova-mente.mp3',
+    audioUrl: '/audio/recondicione-corpo-mente.mp3',
     image: 'url("/images/meditacao-recondicionar.webp")',
     imagePosition: 'center 32%',
     gradient: 'linear-gradient(to bottom, #9B79C9 0%, #8766B5 20%, #7454A0 40%, #61438C 60%, #4E3377 80%, #3B2463 100%)',
@@ -109,7 +109,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     title: 'Meditação Caminhando',
     description: 'Para quando sentar não for suficiente. Leve a prática para o movimento.',
     duration: '5 min',
-    audioUrl: '/audio/meditacao-caminhando.mp3',
+    audioUrl: '/audio/meditacao-caminhando-nova.mp3',
     image: 'url("/images/meditacao-caminhando.webp")',
     imagePosition: 'center 15%',
     gradient: 'linear-gradient(to bottom right, #FF8C42 0%, #F7931E 20%, #D8617A 40%, #8B3A62 60%, #6B2C5C 80%, #2D1B3D 100%)',
@@ -121,7 +121,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     title: 'Espaço-Tempo, Tempo-Espaço',
     description: 'A sessão mais profunda da jornada. Reserve um momento só seu.',
     duration: '5 min',
-    audioUrl: '/audio/meditacao-espaco-tempo.mp3',
+    audioUrl: '/audio/espaco-tempo-completa.mp3',
     image: 'url("/images/meditacao-espaco-tempo.webp")',
     imagePosition: 'center 32%',
     gradient: 'linear-gradient(to bottom, #FCD670 0%, #FBCA5D 15%, #F7B84A 30%, #F39A3C 45%, #EC7D2E 60%, #E26224 75%, #D7491F 90%, #C43520 100%)',
@@ -235,7 +235,7 @@ function EtapaHeader({
   backgroundPosition?: string;
 }) {
   return (
-    <div className="relative overflow-hidden" style={{ minHeight: 220 }}>
+    <div className="relative overflow-hidden" style={{ minHeight: 'clamp(180px, 45vw, 220px)' }}>
       <div
         className="absolute inset-0 bg-cover"
         style={{
@@ -638,7 +638,7 @@ export default function DrJoeDispenzaPage() {
         <DrJoeDispenzaSkeleton />
       ) : (
         <main className="pb-20">
-          <section className="relative flex min-h-[640px] flex-col items-center justify-end overflow-hidden sm:min-h-[720px] md:min-h-[780px]">
+          <section className="relative flex min-h-[560px] flex-col items-center justify-end overflow-hidden sm:min-h-[680px] md:min-h-[760px]">
             <button
               onClick={() => navigate('/app')}
               className="absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-black/20 sm:left-6 sm:top-6 md:left-8 md:top-8"
@@ -680,9 +680,9 @@ export default function DrJoeDispenzaPage() {
               style={{ background: 'radial-gradient(ellipse 65% 55% at 50% 35%, rgba(148,136,196,0.20) 0%, transparent 68%)' }}
             />
 
-            <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-col items-center px-6 pb-16 pt-28 text-center sm:px-8 sm:pb-20">
+            <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-col items-center px-4 pb-14 pt-12 text-center sm:px-8 sm:pb-20 sm:pt-24">
               <div
-                className="w-full max-w-2xl rounded-3xl px-5 py-7 sm:px-8 sm:py-8"
+                className="w-full max-w-2xl rounded-2xl px-4 py-5 sm:rounded-3xl sm:px-8 sm:py-8"
                 style={{
                   background: 'rgba(0,0,0,0.25)',
                   backdropFilter: 'blur(8px)',
@@ -718,11 +718,10 @@ export default function DrJoeDispenzaPage() {
                 </div>
 
                 <h1
-                  className="font-display text-4xl font-bold leading-[1.06] tracking-tight text-white sm:text-5xl md:text-6xl"
+                  className="font-display text-[1.85rem] font-bold leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl"
                   style={{ textShadow: '0px 4px 20px rgba(0,0,0,0.6)' }}
                 >
-                  Você não precisa repetir o passado.
-                  <br />
+                  Você não precisa repetir o passado.{' '}
                   <span
                     style={{
                       color: '#FFFFFF',
@@ -734,11 +733,10 @@ export default function DrJoeDispenzaPage() {
                 </h1>
 
                 <p
-                  className="mt-6 max-w-xl text-base leading-relaxed sm:text-lg"
+                  className="mt-4 max-w-xl text-sm leading-relaxed sm:mt-6 sm:text-lg"
                   style={{ color: 'rgba(255,255,255,0.82)', textShadow: '0px 4px 20px rgba(0,0,0,0.6)' }}
                 >
-                  Um processo guiado para alinhar intenção clara e frequência elevada,<br />
-                  e transformar sua mente, seu corpo e sua vida.
+                  Um processo guiado para alinhar intenção clara e frequência elevada, e transformar sua mente, seu corpo e sua vida.
                 </p>
               </div>
 
@@ -838,6 +836,44 @@ export default function DrJoeDispenzaPage() {
                 {completedCount} de {totalCount} práticas concluídas
                 {pct >= 50 && pct < 100 ? ' · A maioria desiste antes da metade. Você passou.' : ''}
               </p>
+
+              {/* ── Dots de ciclo ── mostrar só a partir do ciclo 1 completado */}
+              {cyclesCompleted > 0 && (
+                <div className="mt-4 flex items-center gap-2">
+                  {Array.from({ length: Math.min(cyclesCompleted + 4, 8) }).map((_, i) => {
+                    const isPast = i < cyclesCompleted;
+                    const isCurrent = i === cyclesCompleted;
+                    return (
+                      <span
+                        key={i}
+                        title={isPast ? `Ciclo ${i + 1} completo` : isCurrent ? `Ciclo ${i + 1} em andamento` : ''}
+                        style={{
+                          display: 'inline-block',
+                          width: isCurrent ? 10 : isPast ? 8 : 6,
+                          height: isCurrent ? 10 : isPast ? 8 : 6,
+                          borderRadius: '50%',
+                          flexShrink: 0,
+                          background: isPast
+                            ? 'rgba(148,136,196,0.70)'
+                            : isCurrent
+                            ? '#9488C4'
+                            : 'rgba(148,136,196,0.18)',
+                          border: isCurrent
+                            ? '1px solid rgba(192,180,224,0.60)'
+                            : isPast
+                            ? '1px solid rgba(148,136,196,0.40)'
+                            : '1px solid rgba(148,136,196,0.20)',
+                          boxShadow: isCurrent ? '0 0 8px rgba(148,136,196,0.55)' : undefined,
+                          animation: isCurrent ? 'eco-pulse 2.5s ease-in-out infinite' : undefined,
+                        }}
+                      />
+                    );
+                  })}
+                  <span className="ml-1 text-[10px] text-white/35">
+                    {cyclesCompleted} ciclo{cyclesCompleted > 1 ? 's' : ''} completo{cyclesCompleted > 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
             </motion.div>
           </div>
 
@@ -1011,53 +1047,13 @@ export default function DrJoeDispenzaPage() {
                   backgroundPosition={sintonizeMeditation.imagePosition}
                   completed={sintonizeMeditation.completed}
                 >
-                  <div
-                    className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
-                    style={{
-                      background: 'rgba(255,255,255,0.10)',
-                      border: `1px solid rgba(148,136,196,0.50)`,
-                    }}
-                  >
-                    {sintonizeMeditation.completed ? (
-                      <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full" style={{ background: BLUE }}>
-                        <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
-                      </div>
-                    ) : (
-                      <div
-                        className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold"
-                        style={{ borderColor: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.45)', background: 'rgba(255,255,255,0.06)' }}
-                      >
-                        2
-                      </div>
-                    )}
-                    <button
-                      onClick={() => handleMeditationClick(sintonizeMeditation)}
-                      className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
-                            {sintonizeMeditation.title}
-                          </h3>
-                          {sintonizeMeditation.isPremium && !sintonizeMeditation.completed && (
-                            <Lock className="h-3.5 w-3.5 text-white/40" />
-                          )}
-                        </div>
-                        <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
-                          {sintonizeMeditation.description}
-                        </p>
-                      </div>
-                      <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                        <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{sintonizeMeditation.duration}</span>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10" style={{ background: 'rgba(148,136,196,0.12)' }}>
-                          <Play className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: sintonizeMeditation.isPremium && !sintonizeMeditation.completed ? 'rgba(255,255,255,0.30)' : BLUE }} fill="currentColor" />
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-
-                  {/* Saiba mais — Dia 1 */}
-                  <LearnMorePanel id="blessing_2" open={openLearnMore} onToggle={setOpenLearnMore} />
+                  <MeditationCard
+                    meditation={sintonizeMeditation}
+                    stepNumber={2}
+                    onClick={() => handleMeditationClick(sintonizeMeditation)}
+                    openLearnMore={openLearnMore}
+                    onToggleLearnMore={setOpenLearnMore}
+                  />
                 </EtapaSection>
               </div>
 
@@ -1070,53 +1066,13 @@ export default function DrJoeDispenzaPage() {
                   backgroundPosition={etapa1Meditation.imagePosition}
                   completed={etapa1Meditation.completed}
                 >
-                  <div
-                    className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
-                    style={{
-                      background: 'rgba(255,255,255,0.10)',
-                      border: `1px solid rgba(148,136,196,0.50)`,
-                    }}
-                  >
-                    {etapa1Meditation.completed ? (
-                      <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full" style={{ background: BLUE }}>
-                        <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
-                      </div>
-                    ) : (
-                      <div
-                        className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold"
-                        style={{ borderColor: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.45)', background: 'rgba(255,255,255,0.06)' }}
-                      >
-                        3
-                      </div>
-                    )}
-                    <button
-                      onClick={() => handleMeditationClick(etapa1Meditation)}
-                      className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
-                            {etapa1Meditation.title}
-                          </h3>
-                          {etapa1Meditation.isPremium && !etapa1Meditation.completed && (
-                            <Lock className="h-3.5 w-3.5 text-white/40" />
-                          )}
-                        </div>
-                        <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
-                          {etapa1Meditation.description}
-                        </p>
-                      </div>
-                      <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                        <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{etapa1Meditation.duration}</span>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10" style={{ background: 'rgba(148,136,196,0.12)' }}>
-                          <Play className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: etapa1Meditation.isPremium && !etapa1Meditation.completed ? 'rgba(255,255,255,0.30)' : BLUE }} fill="currentColor" />
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-
-                  {/* Saiba mais — Dia 2 */}
-                  <LearnMorePanel id="blessing_1" open={openLearnMore} onToggle={setOpenLearnMore} />
+                  <MeditationCard
+                    meditation={etapa1Meditation}
+                    stepNumber={3}
+                    onClick={() => handleMeditationClick(etapa1Meditation)}
+                    openLearnMore={openLearnMore}
+                    onToggleLearnMore={setOpenLearnMore}
+                  />
                 </EtapaSection>
               </div>
 
@@ -1129,53 +1085,13 @@ export default function DrJoeDispenzaPage() {
                   backgroundPosition={recondicioneMeditation.imagePosition}
                   completed={recondicioneMeditation.completed}
                 >
-                  <div
-                    className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
-                    style={{
-                      background: 'rgba(255,255,255,0.10)',
-                      border: `1px solid rgba(148,136,196,0.50)`,
-                    }}
-                  >
-                    {recondicioneMeditation.completed ? (
-                      <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full" style={{ background: BLUE }}>
-                        <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
-                      </div>
-                    ) : (
-                      <div
-                        className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold"
-                        style={{ borderColor: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.45)', background: 'rgba(255,255,255,0.06)' }}
-                      >
-                        4
-                      </div>
-                    )}
-                    <button
-                      onClick={() => navigate('/app/recondicione-antes-de-comecar')}
-                      className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
-                            {recondicioneMeditation.title}
-                          </h3>
-                          {recondicioneMeditation.isPremium && !recondicioneMeditation.completed && (
-                            <Lock className="h-3.5 w-3.5 text-white/40" />
-                          )}
-                        </div>
-                        <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
-                          {recondicioneMeditation.description}
-                        </p>
-                      </div>
-                      <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                        <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{recondicioneMeditation.duration}</span>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10" style={{ background: 'rgba(148,136,196,0.12)' }}>
-                          <Play className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: recondicioneMeditation.isPremium && !recondicioneMeditation.completed ? 'rgba(255,255,255,0.30)' : BLUE }} fill="currentColor" />
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-
-                  {/* Saiba mais — Dia 3 */}
-                  <LearnMorePanel id="blessing_3" open={openLearnMore} onToggle={setOpenLearnMore} />
+                  <MeditationCard
+                    meditation={recondicioneMeditation}
+                    stepNumber={4}
+                    onClick={() => navigate('/app/recondicione-antes-de-comecar')}
+                    openLearnMore={openLearnMore}
+                    onToggleLearnMore={setOpenLearnMore}
+                  />
                 </EtapaSection>
               </div>
 
@@ -1188,53 +1104,13 @@ export default function DrJoeDispenzaPage() {
                   backgroundPosition={caminhandoMeditation.imagePosition}
                   completed={caminhandoMeditation.completed}
                 >
-                  <div
-                    className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
-                    style={{
-                      background: 'rgba(255,255,255,0.10)',
-                      border: `1px solid rgba(148,136,196,0.50)`,
-                    }}
-                  >
-                    {caminhandoMeditation.completed ? (
-                      <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full" style={{ background: BLUE }}>
-                        <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
-                      </div>
-                    ) : (
-                      <div
-                        className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold"
-                        style={{ borderColor: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.45)', background: 'rgba(255,255,255,0.06)' }}
-                      >
-                        5
-                      </div>
-                    )}
-                    <button
-                      onClick={() => handleMeditationClick(caminhandoMeditation)}
-                      className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
-                            {caminhandoMeditation.title}
-                          </h3>
-                          {caminhandoMeditation.isPremium && !caminhandoMeditation.completed && (
-                            <Lock className="h-3.5 w-3.5 text-white/40" />
-                          )}
-                        </div>
-                        <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
-                          {caminhandoMeditation.description}
-                        </p>
-                      </div>
-                      <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                        <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{caminhandoMeditation.duration}</span>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10" style={{ background: 'rgba(148,136,196,0.12)' }}>
-                          <Play className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: caminhandoMeditation.isPremium && !caminhandoMeditation.completed ? 'rgba(255,255,255,0.30)' : BLUE }} fill="currentColor" />
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-
-                  {/* Saiba mais — Dia 4 */}
-                  <LearnMorePanel id="blessing_5" open={openLearnMore} onToggle={setOpenLearnMore} />
+                  <MeditationCard
+                    meditation={caminhandoMeditation}
+                    stepNumber={5}
+                    onClick={() => handleMeditationClick(caminhandoMeditation)}
+                    openLearnMore={openLearnMore}
+                    onToggleLearnMore={setOpenLearnMore}
+                  />
                 </EtapaSection>
               </div>
 
@@ -1247,53 +1123,13 @@ export default function DrJoeDispenzaPage() {
                   backgroundPosition={espacoTempoMeditation.imagePosition}
                   completed={espacoTempoMeditation.completed}
                 >
-                  <div
-                    className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
-                    style={{
-                      background: 'rgba(255,255,255,0.10)',
-                      border: `1px solid rgba(148,136,196,0.50)`,
-                    }}
-                  >
-                    {espacoTempoMeditation.completed ? (
-                      <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full" style={{ background: BLUE }}>
-                        <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
-                      </div>
-                    ) : (
-                      <div
-                        className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold"
-                        style={{ borderColor: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.45)', background: 'rgba(255,255,255,0.06)' }}
-                      >
-                        6
-                      </div>
-                    )}
-                    <button
-                      onClick={() => handleMeditationClick(espacoTempoMeditation)}
-                      className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
-                            {espacoTempoMeditation.title}
-                          </h3>
-                          {espacoTempoMeditation.isPremium && !espacoTempoMeditation.completed && (
-                            <Lock className="h-3.5 w-3.5 text-white/40" />
-                          )}
-                        </div>
-                        <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
-                          {espacoTempoMeditation.description}
-                        </p>
-                      </div>
-                      <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                        <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{espacoTempoMeditation.duration}</span>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10" style={{ background: 'rgba(148,136,196,0.12)' }}>
-                          <Play className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: espacoTempoMeditation.isPremium && !espacoTempoMeditation.completed ? 'rgba(255,255,255,0.30)' : BLUE }} fill="currentColor" />
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-
-                  {/* Saiba mais — Dia 5 */}
-                  <LearnMorePanel id="blessing_6" open={openLearnMore} onToggle={setOpenLearnMore} />
+                  <MeditationCard
+                    meditation={espacoTempoMeditation}
+                    stepNumber={6}
+                    onClick={() => handleMeditationClick(espacoTempoMeditation)}
+                    openLearnMore={openLearnMore}
+                    onToggleLearnMore={setOpenLearnMore}
+                  />
                 </EtapaSection>
               </div>
 
@@ -1356,8 +1192,8 @@ export default function DrJoeDispenzaPage() {
                     boxShadow: '0 8px 32px rgba(148,136,196,0.35)',
                   }}
                 >
-                  <Play className="h-4 w-4" fill="currentColor" />
-                  Continuar: {nextMeditation?.title ?? meditations[0].title}
+                  <Play className="h-4 w-4 flex-shrink-0" fill="currentColor" />
+                  <span className="truncate">Continuar: {nextMeditation?.title ?? meditations[0].title}</span>
                 </button>
               ) : null}
             </div>

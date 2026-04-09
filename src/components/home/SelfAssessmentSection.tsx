@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Lock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface Program {
   id: string;
@@ -13,7 +14,7 @@ interface Program {
 const PROGRAMS: Program[] = [
   {
     id: 'prog_rings',
-    label: 'Construa sua disciplina diária',
+    label: 'Disciplina que dura',
     title: '5 Anéis da Disciplina',
     image: '/images/five-rings-visual.webp',
     imagePosition: 'center center',
@@ -21,7 +22,7 @@ const PROGRAMS: Program[] = [
   },
   {
     id: 'prog_riqueza',
-    label: 'Transforme seu mindset financeiro',
+    label: 'Pense diferente sobre dinheiro',
     title: 'Quem Pensa Enriquece',
     image: '/images/quem-pensa-enriquece.webp',
     imagePosition: 'center center',
@@ -29,7 +30,7 @@ const PROGRAMS: Program[] = [
   },
   {
     id: 'prog_diario',
-    label: 'Cultive a sabedoria diária',
+    label: 'Sabedoria estoica, todo dia',
     title: 'Diário Estoico',
     image: '/images/diario-estoico.webp',
     imagePosition: 'center center',
@@ -69,15 +70,18 @@ export default function SelfAssessmentSection({ onProgramClick, programProgress 
   };
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12 bg-white">
+    <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="font-display text-2xl font-bold text-[var(--eco-text)] md:text-3xl">
-          Programas
-        </h2>
-        <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
-          Jornadas estruturadas para sua transformação
-        </p>
+      <div className="mb-8 flex items-start gap-3">
+        <div className="mt-1 w-1 h-7 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(180deg, #6EC8FF, #4BAEE8)' }} />
+        <div>
+          <h2 className="font-display text-2xl font-bold text-[var(--eco-text)] md:text-3xl">
+            Programas
+          </h2>
+          <p className="mt-1 text-[14px] text-[var(--eco-muted)]">
+            Feitos para mudar algo real em você.
+          </p>
+        </div>
       </div>
 
       {/* Desktop scroll */}
@@ -85,7 +89,8 @@ export default function SelfAssessmentSection({ onProgramClick, programProgress 
         {canScrollLeft && (
           <button
             onClick={() => scroll('left')}
-            className="absolute left-0 top-[45%] z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-lg border border-[var(--eco-line)] transition-all hover:scale-110 active:scale-95"
+            className="absolute left-0 top-[45%] z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white transition-all hover:scale-110 active:scale-95"
+            style={{ border: '1px solid rgba(110,200,255,0.28)', boxShadow: '0 2px 16px rgba(110,200,255,0.18)' }}
           >
             <ChevronLeft size={20} className="text-[var(--eco-text)]" />
           </button>
@@ -93,7 +98,8 @@ export default function SelfAssessmentSection({ onProgramClick, programProgress 
         {canScrollRight && (
           <button
             onClick={() => scroll('right')}
-            className="absolute right-0 top-[45%] z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-lg border border-[var(--eco-line)] transition-all hover:scale-110 active:scale-95"
+            className="absolute right-0 top-[45%] z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white transition-all hover:scale-110 active:scale-95"
+            style={{ border: '1px solid rgba(110,200,255,0.28)', boxShadow: '0 2px 16px rgba(110,200,255,0.18)' }}
           >
             <ChevronRight size={20} className="text-[var(--eco-text)]" />
           </button>
@@ -104,13 +110,21 @@ export default function SelfAssessmentSection({ onProgramClick, programProgress 
           className="flex gap-5 overflow-x-auto pb-2 scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {PROGRAMS.map((p) => (
-            <ProgramCard
+          {PROGRAMS.map((p, index) => (
+            <motion.div
               key={p.id}
-              program={p}
-              onClick={() => onProgramClick?.(p.id)}
-              progressEntry={programProgress[p.id]}
-            />
+              className="flex-shrink-0"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ type: 'spring', stiffness: 80, damping: 20, delay: index * 0.08 }}
+            >
+              <ProgramCard
+                program={p}
+                onClick={() => onProgramClick?.(p.id)}
+                progressEntry={programProgress[p.id]}
+              />
+            </motion.div>
           ))}
         </div>
       </div>
@@ -121,14 +135,22 @@ export default function SelfAssessmentSection({ onProgramClick, programProgress 
           className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {PROGRAMS.map((p) => (
-            <ProgramCard
+          {PROGRAMS.map((p, index) => (
+            <motion.div
               key={p.id}
-              program={p}
-              mobile
-              onClick={() => onProgramClick?.(p.id)}
-              progressEntry={programProgress[p.id]}
-            />
+              className="flex-shrink-0"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-20px' }}
+              transition={{ type: 'spring', stiffness: 80, damping: 20, delay: index * 0.07 }}
+            >
+              <ProgramCard
+                program={p}
+                mobile
+                onClick={() => onProgramClick?.(p.id)}
+                progressEntry={programProgress[p.id]}
+              />
+            </motion.div>
           ))}
         </div>
       </div>
@@ -158,10 +180,11 @@ function ProgramCard({ program, mobile, onClick, progressEntry }: ProgramCardPro
       }`}
     >
       {/* Card */}
-      <div className="rounded-2xl bg-white shadow-[0_2px_18px_rgba(0,0,0,0.09)] overflow-hidden mb-3">
+      <div className="rounded-2xl bg-white overflow-hidden mb-3"
+        style={{ border: '1px solid rgba(110,200,255,0.20)', boxShadow: '0 4px 28px rgba(110,200,255,0.12)' }}>
         {/* Label area */}
         <div className="relative px-4 pt-4 pb-3">
-          <p className="font-display text-[18px] font-bold leading-snug text-[#3B2D8F] pr-10">
+          <p className="font-display text-[18px] font-bold leading-snug pr-10" style={{ color: '#1A5C8A' }}>
             {program.label}
           </p>
           {program.isPremium && (
@@ -181,7 +204,8 @@ function ProgramCard({ program, mobile, onClick, progressEntry }: ProgramCardPro
             }}
           />
           {/* Bottom fade */}
-          <div className="absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-gray-200/80 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-14 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgba(232,244,255,0.55), transparent)' }} />
 
           {/* Badge de inatividade */}
           {isInactive && progress > 0 && (

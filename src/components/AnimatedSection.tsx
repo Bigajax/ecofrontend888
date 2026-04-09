@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { useInView } from '@/hooks/useInView';
+import { motion, Variants } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 type AnimationType = 'fade-in' | 'slide-up-fade' | 'slide-left-fade' | 'slide-right-fade';
@@ -12,50 +12,76 @@ interface AnimatedSectionProps {
   id?: string;
 }
 
-const animationClassMap: Record<AnimationType, string> = {
-  'fade-in': 'animate-fade-in',
-  'slide-up-fade': 'animate-slide-up-fade',
-  'slide-left-fade': 'animate-slide-left-fade',
-  'slide-right-fade': 'animate-slide-right-fade',
-};
-
-const delayClassMap: Record<number, string> = {
-  0: 'delay-0',
-  100: 'delay-100',
-  200: 'delay-200',
-  300: 'delay-300',
-  400: 'delay-400',
-  500: 'delay-500',
+const variantsMap: Record<AnimationType, Variants> = {
+  'fade-in': {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { duration: 0.5, ease: 'easeOut' } },
+  },
+  'slide-up-fade': {
+    hidden: { opacity: 0, y: 32 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: 'spring', stiffness: 60, damping: 20, mass: 0.9 },
+    },
+  },
+  'slide-left-fade': {
+    hidden: { opacity: 0, x: -28 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { type: 'spring', stiffness: 60, damping: 20, mass: 0.9 },
+    },
+  },
+  'slide-right-fade': {
+    hidden: { opacity: 0, x: 28 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { type: 'spring', stiffness: 60, damping: 20, mass: 0.9 },
+    },
+  },
 };
 
 export default function AnimatedSection({
   children,
-  animation = 'fade-in',
+  animation = 'slide-up-fade',
   className = '',
   delay = 0,
   id,
 }: AnimatedSectionProps) {
-  const { ref, isInView } = useInView({ threshold: 0.1 });
   const prefersReducedMotion = useReducedMotion();
 
-  const animationClass = animationClassMap[animation];
-  const delayClass = delayClassMap[delay as keyof typeof delayClassMap] || '';
+  if (prefersReducedMotion) {
+    return (
+      <div className={className} id={id}>
+        {children}
+      </div>
+    );
+  }
 
-  // Respeitar prefers-reduced-motion: mostrar sem animação se preferido
-  const finalClassName = [
-    className,
-    prefersReducedMotion
-      ? '' // Sem animação, apenas mostrar normalmente
-      : isInView
-        ? [animationClass, delayClass].filter(Boolean).join(' ')
-        : 'opacity-0 pointer-events-none',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const base = variantsMap[animation];
+  const baseVisible = base.visible as Record<string, unknown>;
+  const baseTransition = (baseVisible.transition ?? {}) as Record<string, unknown>;
+
+  const variants: Variants = {
+    hidden: base.hidden,
+    visible: {
+      ...baseVisible,
+      transition: { ...baseTransition, delay: delay / 1000 },
+    },
+  };
 
   return (
-    <div ref={ref} className={finalClassName} id={id}>
+    <motion.div
+      id={id}
+      className={className}
+      variants={variants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-80px' }}
+    >
       {children}
-    </div>
+    </motion.div>
   );
 }

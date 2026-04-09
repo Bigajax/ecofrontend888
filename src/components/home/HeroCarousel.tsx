@@ -386,9 +386,9 @@ export default function HeroCarousel({
       className={`group relative h-[340px] md:h-[320px] overflow-hidden select-none ${
         variant === 'mobile'
           ? 'rounded-none border-0'
-          : 'rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)]'
+          : 'rounded-2xl'
       }`}
-      style={{ touchAction: 'pan-y' }}
+      style={{ touchAction: 'pan-y', border: variant === 'desktop' ? '1px solid rgba(110,200,255,0.22)' : undefined, boxShadow: variant === 'desktop' ? '0 4px 32px rgba(110,200,255,0.14)' : undefined }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

@@ -54,13 +54,15 @@ export default function MeditationPlayerPage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const gainRef = useRef<GainNode | null>(null);
+  // GainNode para som de fundo — controla volume via Web Audio (funciona no iOS, ao contrário de audio.volume)
+  const bgGainRef = useRef<GainNode | null>(null);
 
   // Dados da meditação passados via navigation state
   const meditationData: MeditationData = location.state?.meditation || {
     id: 'fallback_1',
     title: 'Bênçãos dos Centros de Energia',
     duration: '07:42',
-    audioUrl: '/audio/energy-blessings-meditation.mp3',
+    audioUrl: '/audio/bencao-centros-energia.mp3',
     imageUrl: '/images/energy-blessings.webp',
     backgroundMusic: 'Cristais',
     category: 'fallback',
@@ -134,6 +136,10 @@ export default function MeditationPlayerPage() {
   // Fade-in on first play
   const fadeInIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Dica de tela bloqueada — aparece uma vez após o play iniciar
+  const [showLockTip, setShowLockTip] = useState(false);
+  const lockTipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Progress persistence
   const PROGRESS_KEY = `eco.meditation.progress.v1.${meditationData.id || 'default'}`;
   const lastSavedTimeRef = useRef(0);
@@ -190,6 +196,11 @@ export default function MeditationPlayerPage() {
         clearTimeout(favoriteToastTimerRef.current);
       }
 
+      // Cleanup lock tip timer
+      if (lockTipTimerRef.current) {
+        clearTimeout(lockTipTimerRef.current);
+      }
+
       // Cleanup Web Audio
       audioCtxRef.current?.close();
       audioCtxRef.current = null;
@@ -212,11 +223,14 @@ export default function MeditationPlayerPage() {
     }
   }, [selectedBackgroundSound, isPlaying]);
 
-  // Controlar volume do áudio de fundo diretamente no elemento (compatível com background/lock screen)
+  // Controlar volume do áudio de fundo via GainNode (funciona no iOS) ou audio.volume como fallback
   useEffect(() => {
-    if (backgroundAudioRef.current) {
-      // Sons de fundo suaves: máximo 8% do volume total
-      const softVolume = (backgroundVolume / 100) * 0.08;
+    const softVolume = (backgroundVolume / 100) * 0.08;
+    if (bgGainRef.current) {
+      // GainNode funciona no iOS Safari (ao contrário de audio.volume que é read-only no iOS)
+      bgGainRef.current.gain.value = softVolume;
+    } else if (backgroundAudioRef.current) {
+      // Fallback para browsers sem Web Audio API
       backgroundAudioRef.current.volume = softVolume;
     }
 
@@ -264,18 +278,36 @@ export default function MeditationPlayerPage() {
   const previousBackgroundVolumeRef = useRef(backgroundVolume);
 
   // Amplificar voz da meditação via Web Audio API (2x gain)
+  // Também roteia som de fundo pelo mesmo AudioContext para controle de volume real no iOS
   // Retorna Promise para garantir que o AudioContext está running antes do play
   const initAudioGain = async (): Promise<void> => {
     const el = audioRef.current;
+    const bgEl = backgroundAudioRef.current;
     if (!el || audioCtxRef.current) return;
     try {
       const Ctx = window.AudioContext || (window as any).webkitAudioContext;
       if (!Ctx) return;
       const ctx: AudioContext = new Ctx();
+
+      // Voz da meditação: amplificada 2x
       const src = ctx.createMediaElementSource(el);
       const gain = ctx.createGain();
       gain.gain.value = 2.0;
       src.connect(gain).connect(ctx.destination);
+
+      // Som de fundo: GainNode com volume suave — funciona no iOS ao contrário de audio.volume
+      if (bgEl) {
+        try {
+          const bgSrc = ctx.createMediaElementSource(bgEl);
+          const bgGain = ctx.createGain();
+          bgGain.gain.value = (backgroundVolume / 100) * 0.08;
+          bgSrc.connect(bgGain).connect(ctx.destination);
+          bgGainRef.current = bgGain;
+        } catch {
+          // bgEl pode não estar pronto — fallback: sem controle de gain para fundo
+        }
+      }
+
       audioCtxRef.current = ctx;
       gainRef.current = gain;
       // Garantir que o contexto está rodando antes do áudio começar
@@ -374,8 +406,8 @@ export default function MeditationPlayerPage() {
     const fadeDurationMs = 10000; // 10 segundos
     const fadeSteps = 100; // 100 passos
     const stepDurationMs = fadeDurationMs / fadeSteps;
-    const initialVolume = audio.volume;
-    const initialBackgroundVolume = backgroundAudio?.volume || 0;
+    const initialVolume = gainRef.current?.gain.value ?? audio.volume;
+    const initialBgGain = bgGainRef.current?.gain.value ?? backgroundAudio?.volume ?? 0;
 
     let currentStep = 0;
 
@@ -383,16 +415,19 @@ export default function MeditationPlayerPage() {
       currentStep++;
 
       const progress = currentStep / fadeSteps;
-      const newVolume = initialVolume * (1 - progress);
 
-      // Fade áudio principal
-      if (audio) {
-        audio.volume = Math.max(0, newVolume);
+      // Fade áudio principal via GainNode (funciona no iOS) ou audio.volume
+      if (gainRef.current) {
+        gainRef.current.gain.value = Math.max(0, initialVolume * (1 - progress));
+      } else if (audio) {
+        audio.volume = Math.max(0, initialVolume * (1 - progress));
       }
 
-      // Fade áudio de fundo
-      if (backgroundAudio) {
-        backgroundAudio.volume = Math.max(0, initialBackgroundVolume * (1 - progress));
+      // Fade áudio de fundo via GainNode (funciona no iOS) ou audio.volume
+      if (bgGainRef.current) {
+        bgGainRef.current.gain.value = Math.max(0, initialBgGain * (1 - progress));
+      } else if (backgroundAudio) {
+        backgroundAudio.volume = Math.max(0, initialBgGain * (1 - progress));
       }
 
       // Após 5 segundos (50% do fade), mostrar gate
@@ -428,21 +463,36 @@ export default function MeditationPlayerPage() {
     const audio = audioRef.current;
     if (!audio) return;
 
-    audio.volume = 0;
-    const targetVolume = meditationVolume / 100;
     const fadeSteps = 60; // ~50 ms each → 3 s total
     const stepMs = 3000 / fadeSteps;
     let step = 0;
 
-    fadeInIntervalRef.current = setInterval(() => {
-      step++;
-      if (audio) {
-        audio.volume = Math.min(targetVolume, targetVolume * (step / fadeSteps));
-      }
-      if (step >= fadeSteps) {
-        if (fadeInIntervalRef.current) clearInterval(fadeInIntervalRef.current);
-      }
-    }, stepMs);
+    if (gainRef.current) {
+      // Via GainNode — funciona no iOS (audio.volume é ignorado no iOS Safari)
+      gainRef.current.gain.value = 0;
+      fadeInIntervalRef.current = setInterval(() => {
+        step++;
+        if (gainRef.current) {
+          gainRef.current.gain.value = Math.min(2.0, 2.0 * (step / fadeSteps));
+        }
+        if (step >= fadeSteps) {
+          if (fadeInIntervalRef.current) clearInterval(fadeInIntervalRef.current);
+        }
+      }, stepMs);
+    } else {
+      // Fallback para browsers sem Web Audio
+      const targetVolume = meditationVolume / 100;
+      audio.volume = 0;
+      fadeInIntervalRef.current = setInterval(() => {
+        step++;
+        if (audio) {
+          audio.volume = Math.min(targetVolume, targetVolume * (step / fadeSteps));
+        }
+        if (step >= fadeSteps) {
+          if (fadeInIntervalRef.current) clearInterval(fadeInIntervalRef.current);
+        }
+      }, stepMs);
+    }
   };
 
   // Auto-play ao entrar na página
@@ -469,6 +519,12 @@ export default function MeditationPlayerPage() {
           if (backgroundAudioRef.current && selectedBackgroundSound?.audioUrl) {
             backgroundAudioRef.current.play().catch(() => {});
           }
+          // Mostrar dica de tela bloqueada 3s após o play iniciar
+          lockTipTimerRef.current = setTimeout(() => {
+            setShowLockTip(true);
+            // Auto-ocultar após 5s
+            lockTipTimerRef.current = setTimeout(() => setShowLockTip(false), 5000);
+          }, 3000);
         })
         .catch(() => {
           // Autoplay bloqueado pelo browser — usuário precisa pressionar play manualmente
@@ -662,6 +718,11 @@ export default function MeditationPlayerPage() {
           }
 
           hasPlayedOnce.current = true;
+          // Dica de tela bloqueada — mostrar 3s após o primeiro play manual
+          lockTipTimerRef.current = setTimeout(() => {
+            setShowLockTip(true);
+            lockTipTimerRef.current = setTimeout(() => setShowLockTip(false), 5000);
+          }, 3000);
         } else {
           analytics.trackResumed(audioRef.current.currentTime);
         }
@@ -758,9 +819,12 @@ export default function MeditationPlayerPage() {
     const percentage = Math.max(0, Math.min(100, ((sliderHeight - clickY) / sliderHeight) * 100));
     const rounded = Math.round(percentage);
     setBackgroundVolume(rounded);
-    // Sync imediato ao elemento de áudio (Android/desktop) — iOS Safari ignora audio.volume por design do sistema
-    if (backgroundAudioRef.current) {
-      backgroundAudioRef.current.volume = Math.max(0, Math.min(0.08, (rounded / 100) * 0.08));
+    // Sync imediato: GainNode (iOS compatível) ou audio.volume como fallback
+    const softVol = (rounded / 100) * 0.08;
+    if (bgGainRef.current) {
+      bgGainRef.current.gain.value = softVol;
+    } else if (backgroundAudioRef.current) {
+      backgroundAudioRef.current.volume = Math.max(0, Math.min(0.08, softVol));
     }
   };
 
@@ -1288,15 +1352,13 @@ export default function MeditationPlayerPage() {
       {/* Hidden Audio Element */}
       <audio ref={audioRef} src={meditationData.audioUrl} />
 
-      {/* Background Sound Audio Element */}
-      {selectedBackgroundSound?.audioUrl && (
-        <audio
-          ref={backgroundAudioRef}
-          src={selectedBackgroundSound.audioUrl}
-          loop
-          preload="auto"
-        />
-      )}
+      {/* Background Sound Audio Element — sempre montado para preservar o GainNode do Web Audio API */}
+      <audio
+        ref={backgroundAudioRef}
+        src={selectedBackgroundSound?.audioUrl || ''}
+        loop
+        preload={selectedBackgroundSound?.audioUrl ? 'auto' : 'none'}
+      />
 
       {/* Background Sounds Modal */}
       <BackgroundSoundsModal
@@ -1307,6 +1369,36 @@ export default function MeditationPlayerPage() {
         backgroundVolume={backgroundVolume}
         onVolumeChange={setBackgroundVolume}
       />
+
+      {/* Dica de tela bloqueada — aparece uma vez após o áudio iniciar */}
+      {showLockTip && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm animate-slide-down">
+          <div
+            className="flex items-center gap-3 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-md border"
+            style={{
+              background: 'rgba(10,10,20,0.82)',
+              borderColor: 'rgba(255,255,255,0.12)',
+            }}
+          >
+            <span className="text-xl select-none">🎧</span>
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-sm font-semibold text-white leading-tight">
+                Pode bloquear a tela à vontade
+              </span>
+              <span className="text-xs text-white/60 mt-0.5 leading-snug">
+                A voz e os sons de fundo continuam tocando
+              </span>
+            </div>
+            <button
+              onClick={() => setShowLockTip(false)}
+              className="ml-1 flex-shrink-0 text-white/40 hover:text-white/70 transition-colors text-lg leading-none"
+              aria-label="Fechar dica"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Toast de Confirmação de Favorito */}
       {showFavoriteToast && (

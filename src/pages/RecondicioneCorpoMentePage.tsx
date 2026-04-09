@@ -91,7 +91,7 @@ export default function RecondicioneCorpoMentePage() {
           id: 'blessing_3',
           title: 'Recondicione Seu Corpo e Mente',
           duration: '7 min',
-          audioUrl: '/audio/recondicionar-corpo-nova-mente.mp3',
+          audioUrl: '/audio/recondicione-corpo-mente.mp3',
           imageUrl: '/images/meditacao-recondicionar.webp',
           backgroundMusic: 'Cristais',
           gradient: 'linear-gradient(to bottom, #9B79C9 0%, #3B2463 100%)',

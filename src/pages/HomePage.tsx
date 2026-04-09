@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram } from '@/contexts/ProgramContext';
@@ -170,8 +171,8 @@ export default function HomePage() {
     () => [
       {
         id: 'rec_1',
-        title: 'Seu primeiro passo começa aqui',
-        description: '8 min para plantar o hábito que vai mudar sua rotina',
+        title: 'Plante o hábito que muda tudo',
+        description: '8 min. Um começo que fica.',
         duration: '8 min',
         image: 'url("/images/introducao-meditacao-hero.webp")',
         imagePosition: 'center center',
@@ -181,8 +182,8 @@ export default function HomePage() {
       },
       {
         id: 'rec_2',
-        title: 'Comece o dia do seu jeito',
-        description: '7 min para soltar a tensão antes de qualquer coisa',
+        title: 'Solte o peso antes do dia começar',
+        description: '7 min de respiração. O dia muda.',
         duration: '7 min',
         image: 'url("/images/acolhendo-respiracao.webp")',
         imagePosition: 'center center',
@@ -191,8 +192,8 @@ export default function HomePage() {
       },
       {
         id: 'rec_3',
-        title: 'Durma melhor a partir desta noite',
-        description: '15 min — e seu corpo vai agradecer amanhã',
+        title: 'Seu corpo pediu isso',
+        description: '15 min para dormir de verdade.',
         duration: '15 min',
         image: 'url("/images/meditacao-sono-new.webp")',
         imagePosition: 'center 32%',
@@ -210,7 +211,7 @@ export default function HomePage() {
       {
         id: 'drjoe_collection',
         title: 'Ative o que já está em você',
-        description: '5 meditações para transformação profunda',
+        description: '5 meditações com Dr. Joe Dispenza.',
         duration: '5 meditações',
         image: 'url("/images/caduceu-dourado.webp")',
         imagePosition: 'center 40%',
@@ -223,7 +224,7 @@ export default function HomePage() {
       {
         id: 'blessing_4',
         title: 'Visualize quem você quer ser',
-        description: 'Visualize e crie sua nova realidade',
+        description: '22 min de reprogramação visual profunda.',
         duration: '22 min',
         image: 'url("/images/caleidoscopio-mind-movie.webp")',
         imagePosition: 'center center',
@@ -235,7 +236,7 @@ export default function HomePage() {
       {
         id: 'blessing_8',
         title: 'Adormeça sem carregar o dia',
-        description: 'Relaxe profundamente e tenha uma noite tranquila',
+        description: '9 min. O dia fica do lado de fora.',
         duration: '9 min',
         audioUrl: '/audio/meditacao-sono.mp4',
         image: 'url("/images/meditacao-sono-new.webp")',
@@ -246,8 +247,8 @@ export default function HomePage() {
       // Sono — ansiedade + sono
       {
         id: 'blessing_12',
-        title: 'Ansiedade + Sono Profundo',
-        description: 'Acalme a mente ansiosa e encontre paz para uma noite tranquila',
+        title: 'Mente quieta. Noite tranquila.',
+        description: '15 min para silenciar o barulho interno.',
         duration: '15 min',
         audioUrl: '/audio/meditacao-ansiedade-sono.mp3',
         image: 'url("/images/meditacao-ansiedade-sono.webp")',
@@ -270,7 +271,7 @@ export default function HomePage() {
       {
         id: 'blessing_10',
         title: 'Pause. Respire. Recomece.',
-        description: 'Encontre presença e calma através da sua respiração',
+        description: '7 min para voltar para dentro de você.',
         duration: '7 min',
         audioUrl: '/audio/acolhendo-respiracao.mp3',
         image: 'url("/images/acolhendo-respiracao.webp")',
@@ -281,8 +282,8 @@ export default function HomePage() {
       // Estresse
       {
         id: 'blessing_11',
-        title: 'Liberte o peso do dia em 5 min',
-        description: 'Solte as tensões do dia e restaure sua paz interior',
+        title: 'Solte o que o dia deixou',
+        description: '5 min. Mais leve agora.',
         duration: '5 min',
         audioUrl: '/audio/liberando-estresse.mp3',
         image: 'url("/images/liberando-estresse.png")',
@@ -500,7 +501,7 @@ export default function HomePage() {
           meditation: {
             title: blessing.title,
             duration: blessing.duration,
-            audioUrl: (blessing as { audioUrl?: string }).audioUrl || '/audio/energy-blessings-meditation.mp3',
+            audioUrl: (blessing as { audioUrl?: string }).audioUrl || '/audio/bencao-centros-energia.mp3',
             imageUrl: blessing.image.replace('url("', '').replace('")', ''),
             backgroundMusic: 'Cristais',
             gradient: (blessing as { gradient?: string }).gradient,
@@ -511,7 +512,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-primary pb-16 md:pb-0">
+    <div className="min-h-screen font-primary pb-16 md:pb-0" style={{ background: 'linear-gradient(170deg, #DFF0FF 0%, #EEF7FF 12%, #F6FAFF 28%, #FFFFFF 50%)' }}>
       {/* Header - Always render first */}
       <HomeHeader onLogout={handleLogout} />
 
@@ -530,38 +531,70 @@ export default function HomePage() {
           {/* Desktop: Grid 2 colunas com mesma altura */}
           <div className="hidden gap-6 md:grid md:grid-cols-2">
             {/* Left Card - Greeting */}
-            <div className="flex flex-col justify-center rounded-2xl border border-[var(--eco-line)] bg-white p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)] md:h-[320px]">
-              <h1 className="font-display text-5xl font-bold text-[var(--eco-text)] leading-tight">
+            <motion.div
+              className="flex flex-col justify-center rounded-2xl p-8 md:h-[320px] relative overflow-hidden"
+              initial={{ opacity: 0, y: 24, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 70, damping: 20, delay: 0.15 }}
+              style={{
+                background: 'linear-gradient(135deg, #FFFFFF 0%, #EFF8FF 100%)',
+                border: '1px solid rgba(110,200,255,0.22)',
+                boxShadow: '0 4px 40px rgba(110,200,255,0.14)',
+              }}
+            >
+              {/* Decorative orb top-right */}
+              <div style={{
+                position: 'absolute', top: -50, right: -50,
+                width: 180, height: 180, borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(110,200,255,0.18) 0%, transparent 70%)',
+                pointerEvents: 'none',
+              }} />
+              <h1 className="font-display text-5xl font-bold text-[var(--eco-text)] leading-tight relative">
                 {greeting},
                 <br />
-                {displayName}
+                <span style={{ color: '#4BAEE8' }}>{displayName}</span>
               </h1>
-              <p className="mt-4 text-[16px] font-medium text-[var(--eco-text)]">
-                O que está passando pela sua mente agora?
+              <p className="mt-4 text-[16px] font-medium text-[var(--eco-text)] relative">
+                O que você está carregando hoje?
               </p>
-              <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
-                A Eco está aqui para ouvir — sem julgamento.
+              <p className="mt-2 text-[14px] text-[var(--eco-muted)] relative">
+                A Eco está aqui. Sem julgamento. Sem roteiro.
               </p>
               <button
                 onClick={handleStartChat}
-                className="mt-6 inline-flex items-center justify-center rounded-full bg-[var(--eco-user)] px-6 py-3 text-[15px] font-semibold text-white transition-all duration-300 hover:bg-[var(--eco-user)]/90 hover:scale-105 active:scale-95 shadow-md"
+                className="mt-6 inline-flex items-center justify-center rounded-full px-6 py-3 text-[15px] font-semibold text-white transition-all duration-300 hover:scale-105 active:scale-95 relative"
+                style={{
+                  background: 'linear-gradient(135deg, #6EC8FF 0%, #4BAEE8 100%)',
+                  boxShadow: '0 4px 20px rgba(110,200,255,0.45)',
+                }}
               >
-                Começar minha reflexão
+                Conversar com a Eco
               </button>
-            </div>
+            </motion.div>
 
             {/* Right Card - Hero Carousel */}
-            <HeroCarousel />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 70, damping: 20, delay: 0.28 }}
+            >
+              <HeroCarousel />
+            </motion.div>
           </div>
 
           {/* Mobile: Diário Estoico Card */}
-          <div className="block md:hidden">
+          <motion.div
+            className="block md:hidden"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 70, damping: 20, delay: 0.1 }}
+          >
             <HeroCarousel
               variant="mobile"
               userName={displayName}
               onStartChat={handleStartChat}
             />
-          </div>
+          </motion.div>
         </div>
 
         {/* ECO AI Recommendation Card */}

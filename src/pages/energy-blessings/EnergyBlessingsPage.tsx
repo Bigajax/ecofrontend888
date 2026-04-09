@@ -29,7 +29,7 @@ export default function EnergyBlessingsPage() {
         meditation: {
           title: 'Bênçãos dos Centros de Energia',
           duration: '07:42',
-          audioUrl: '/audio/energy-blessings-meditation.mp3',
+          audioUrl: '/audio/bencao-centros-energia.mp3',
           imageUrl: '/images/energy-blessings.webp',
           backgroundMusic: 'Cristais'
         }

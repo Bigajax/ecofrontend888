@@ -1,4 +1,5 @@
 import { Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface Category {
   id: string;
@@ -37,13 +38,16 @@ export default function LearnExploreSection({
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
       {/* Header */}
-      <div className="mb-8 pb-6 border-b border-[var(--eco-line)]">
-        <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
-          Leituras para ir mais fundo
-        </h2>
-        <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
-          Quando você estiver pronto para entender o porquê
-        </p>
+      <div className="mb-8 pb-6 flex items-start gap-3" style={{ borderBottom: '1px solid rgba(110,200,255,0.14)' }}>
+        <div className="mt-1 w-1 h-6 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(180deg, #6EC8FF, #4BAEE8)' }} />
+        <div>
+          <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
+            Leituras para ir mais fundo
+          </h2>
+          <p className="mt-1 text-[14px] text-[var(--eco-muted)]">
+            Para quem quer entender, não só sentir.
+          </p>
+        </div>
       </div>
 
       {/* Category Filters - Desktop horizontal */}
@@ -55,9 +59,14 @@ export default function LearnExploreSection({
               onClick={() => onCategoryChange(cat.id)}
               className={`whitespace-nowrap rounded-full px-6 py-2.5 font-medium transition-all duration-300 text-[14px] touch-manipulation ${
                 selectedCategory === cat.id
-                  ? 'bg-[var(--eco-user)] text-white shadow-[0_4px_15px_rgba(167,132,108,0.3)]'
-                  : 'border border-[var(--eco-line)] bg-white/60 text-[var(--eco-text)] backdrop-blur-sm md:hover:bg-white/80 active:scale-95'
+                  ? 'text-white'
+                  : 'text-[#4A90B8] hover:bg-[rgba(110,200,255,0.14)] active:scale-95'
               }`}
+              style={
+                selectedCategory === cat.id
+                  ? { background: 'linear-gradient(135deg,#6EC8FF,#4BAEE8)', boxShadow: '0 3px 14px rgba(110,200,255,0.38)' }
+                  : { background: 'rgba(110,200,255,0.09)', border: '1px solid rgba(110,200,255,0.20)' }
+              }
             >
               {cat.label}
             </button>
@@ -74,9 +83,14 @@ export default function LearnExploreSection({
               onClick={() => onCategoryChange(cat.id)}
               className={`rounded-full px-4 py-2 font-medium transition-all duration-300 text-[13px] ${
                 selectedCategory === cat.id
-                  ? 'bg-[var(--eco-user)] text-white shadow-[0_2px_10px_rgba(167,132,108,0.2)]'
-                  : 'border border-[var(--eco-line)] bg-white/60 text-[var(--eco-text)] backdrop-blur-sm'
+                  ? 'text-white'
+                  : 'text-[#4A90B8]'
               }`}
+              style={
+                selectedCategory === cat.id
+                  ? { background: 'linear-gradient(135deg,#6EC8FF,#4BAEE8)', boxShadow: '0 3px 14px rgba(110,200,255,0.38)' }
+                  : { background: 'rgba(110,200,255,0.09)', border: '1px solid rgba(110,200,255,0.20)' }
+              }
             >
               {cat.label}
             </button>
@@ -85,15 +99,28 @@ export default function LearnExploreSection({
       </div>
 
       {/* Content Grid */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <motion.div
+        className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-60px' }}
+        variants={{ visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } } }}
+      >
         {contentItems.map((item) => (
-          <ContentCard
+          <motion.div
             key={item.id}
-            item={item}
-            onClick={() => onContentClick(item.id)}
-          />
+            variants={{
+              hidden: { opacity: 0, y: 24 },
+              visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 75, damping: 20 } },
+            }}
+          >
+            <ContentCard
+              item={item}
+              onClick={() => onContentClick(item.id)}
+            />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Empty state */}
       {contentItems.length === 0 && (
@@ -130,9 +157,13 @@ function ContentCard({ item, onClick }: ContentCardProps) {
 
   if (isDiarioEstoico) {
     return (
-      <button
+      <motion.button
         onClick={onClick}
-        className="relative h-80 w-full overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 md:hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] active:scale-95 touch-manipulation"
+        className="relative h-80 w-full overflow-hidden rounded-2xl touch-manipulation"
+        style={{ boxShadow: '0 4px 30px rgba(0,0,0,0.04)' }}
+        whileHover={{ scale: 1.02, boxShadow: '0 12px 50px rgba(0,0,0,0.18)' }}
+        whileTap={{ scale: 0.97 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 24 }}
       >
         {/* Background Image */}
         {imageUrl ? (
@@ -174,18 +205,22 @@ function ContentCard({ item, onClick }: ContentCardProps) {
             </div>
           </div>
         </div>
-      </button>
+      </motion.button>
     );
   }
 
   // Standard layout for other cards
   return (
-    <button
+    <motion.button
       onClick={onClick}
-      className="flex flex-col overflow-hidden rounded-2xl border border-[var(--eco-line)] shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all duration-300 md:hover:shadow-[0_12px_50px_rgba(0,0,0,0.2)] active:scale-95 touch-manipulation"
+      className="flex flex-col overflow-hidden rounded-2xl touch-manipulation w-full"
+      style={{ border: '1px solid rgba(110,200,255,0.18)', boxShadow: '0 4px 24px rgba(110,200,255,0.08)' }}
+      whileHover={{ y: -4, boxShadow: '0 10px 36px rgba(110,200,255,0.18)' }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 24 }}
     >
       {/* Image Section */}
-      <div className="relative h-40 overflow-hidden bg-gray-200">
+      <div className="relative h-40 overflow-hidden" style={{ background: '#E8F4FF' }}>
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -207,8 +242,9 @@ function ContentCard({ item, onClick }: ContentCardProps) {
 
         {/* Badge "Artigo" no canto superior esquerdo */}
         <div className="absolute left-3 top-3">
-          <span className="inline-flex items-center rounded-full bg-white/90 px-3 py-1 backdrop-blur-sm shadow-sm">
-            <span className="text-[11px] font-medium text-[var(--eco-text)]">
+          <span className="inline-flex items-center rounded-full px-3 py-1"
+            style={{ background: 'rgba(110,200,255,0.18)', border: '1px solid rgba(110,200,255,0.30)', backdropFilter: 'blur(8px)' }}>
+            <span className="text-[11px] font-semibold" style={{ color: '#1A5C8A' }}>
               Artigo
             </span>
           </span>
@@ -216,7 +252,7 @@ function ContentCard({ item, onClick }: ContentCardProps) {
       </div>
 
       {/* Content Section - below image */}
-      <div className="flex flex-col justify-between bg-white p-4">
+      <div className="flex flex-col justify-between bg-white p-4 flex-1">
         {/* Top: Premium badge if needed */}
         {item.isPremium && (
           <div className="mb-2 flex items-center gap-1 w-fit rounded-full bg-gray-100 px-2 py-1">
@@ -237,6 +273,6 @@ function ContentCard({ item, onClick }: ContentCardProps) {
           </p>
         </div>
       </div>
-    </button>
+    </motion.button>
   );
 }

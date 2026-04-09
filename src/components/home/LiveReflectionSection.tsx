@@ -109,7 +109,8 @@ export default function LiveReflectionSection() {
   return (
     <section className="relative mx-auto max-w-6xl px-4 py-16 md:px-8 md:py-24">
       {/* White Background Container */}
-      <div className="relative overflow-hidden rounded-[32px] bg-white px-6 py-16 sm:px-8 sm:py-20 md:px-16 md:py-32">
+      <div className="relative overflow-hidden rounded-[32px] bg-white px-6 py-16 sm:px-8 sm:py-20 md:px-16 md:py-32"
+        style={{ border: '1px solid rgba(110,200,255,0.20)', boxShadow: '0 8px 48px rgba(110,200,255,0.10)' }}>
 
         {/* Floating Avatars Container */}
         <div className="pointer-events-none absolute inset-0">
@@ -148,12 +149,12 @@ export default function LiveReflectionSection() {
         <div className="relative z-10 flex flex-col items-center justify-center text-center px-8 sm:px-2">
           {/* Main message */}
           <p className="text-base sm:text-lg font-medium text-gray-600 md:text-xl mb-6 max-w-xs">
-            Você nunca medita sozinho no Ecotopia.
+            Ninguém precisa fazer isso sozinho.
           </p>
 
           {/* Counter and Live Badge */}
           <div className="mb-3 flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-            <h2 className="font-display text-4xl sm:text-5xl font-bold text-gray-800 md:text-7xl">
+            <h2 className="font-display text-4xl sm:text-5xl font-bold md:text-7xl" style={{ color: '#1A5C8A' }}>
               {count.toLocaleString('pt-BR')}
             </h2>
             <div className="flex items-center gap-1.5 rounded-full bg-red-500 px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-lg">
@@ -172,9 +173,10 @@ export default function LiveReflectionSection() {
           {/* CTA */}
           <button
             onClick={() => navigate('/app')}
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--eco-user)] px-6 py-3 text-[15px] font-semibold text-white shadow-md transition-all duration-300 hover:bg-[var(--eco-user)]/90 hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-[15px] font-semibold text-white transition-all duration-300 hover:scale-105 active:scale-95"
+            style={{ background: 'linear-gradient(135deg, #6EC8FF, #4BAEE8)', boxShadow: '0 4px 20px rgba(110,200,255,0.45)' }}
           >
-            Junte-se a elas →
+            Entrar agora →
           </button>
         </div>
 

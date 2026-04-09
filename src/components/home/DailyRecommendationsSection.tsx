@@ -1,4 +1,10 @@
 import { ChevronRight, Lock, Volume2, Music } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+const rowVariants = {
+  hidden: { opacity: 0, x: -16 },
+  visible: { opacity: 1, x: 0, transition: { type: 'spring' as const, stiffness: 100, damping: 22 } },
+};
 
 interface Recommendation {
   id: string;
@@ -30,18 +36,31 @@ export default function DailyRecommendationsSection({
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
       {/* Title */}
-      <div className="mb-5">
-        <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
-          Para você, hoje
-        </h2>
-        <p className="mt-1 text-[14px] text-[var(--eco-muted)]">{dateLabel}</p>
+      <div className="mb-5 flex items-start gap-3">
+        <div className="mt-1 w-1 h-6 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(180deg, #6EC8FF, #4BAEE8)' }} />
+        <div>
+          <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
+            Para você, hoje
+          </h2>
+          <p className="mt-0.5 text-[14px] text-[var(--eco-muted)]">{dateLabel}</p>
+        </div>
       </div>
 
       {/* List card */}
-      <div className="rounded-2xl bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)] overflow-hidden">
+      <motion.div
+        className="rounded-2xl bg-white overflow-hidden"
+        style={{ border: '1px solid rgba(110,200,255,0.16)', boxShadow: '0 4px 28px rgba(110,200,255,0.10)' }}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-60px' }}
+        variants={{ visible: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } } }}
+      >
         {recommendations.map((rec, index) => (
-          <button
+          <motion.button
             key={rec.id}
+            variants={rowVariants}
+            whileHover={{ x: 3 }}
+            whileTap={{ scale: 0.99 }}
             onClick={() => onRecommendationClick?.(rec.id)}
             className={`w-full flex items-center gap-4 px-4 py-4 text-left transition-colors duration-150 active:bg-gray-50 md:hover:bg-gray-50 ${
               index < recommendations.length - 1 ? 'border-b border-gray-100' : ''
@@ -95,9 +114,9 @@ export default function DailyRecommendationsSection({
 
             {/* Chevron */}
             <ChevronRight size={18} className="flex-shrink-0 text-gray-400" />
-          </button>
+          </motion.button>
         ))}
-      </div>
+      </motion.div>
     </section>
   );
 }

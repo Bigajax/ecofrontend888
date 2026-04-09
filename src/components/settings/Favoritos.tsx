@@ -20,7 +20,7 @@ export default function Favoritos() {
       id: 'blessing_1',
       title: 'Meditação Bênção dos centros de energia',
       duration: '7 min',
-      audioUrl: '/audio/energy-blessings-meditation.mp3',
+      audioUrl: '/audio/bencao-centros-energia.mp3',
       image: '/images/meditacao-bencao-energia.webp',
       category: 'Dr. Joe Dispenza',
       gradient: 'linear-gradient(to bottom, #F5C563 0%, #F5A84D 15%, #F39439 30%, #E67E3C 45%, #D95B39 60%, #C74632 80%, #A63428 100%)',

@@ -49,7 +49,10 @@ export default function HomeHeader() {
   return (
     <>
       {/* Desktop Header */}
-      <header className="sticky top-0 z-40 hidden border-b border-[var(--eco-line)]/20 bg-white/95 backdrop-blur-sm md:block">
+      <header
+        className="sticky top-0 z-40 hidden md:block bg-white/95 backdrop-blur-sm"
+        style={{ borderBottom: '1px solid rgba(110,200,255,0.18)', boxShadow: '0 2px 24px rgba(110,200,255,0.10)' }}
+      >
         <div className="mx-auto flex max-w-7xl items-center justify-center px-8 py-5">
           {/* Logo */}
           <button
@@ -212,7 +215,10 @@ export default function HomeHeader() {
       </header>
 
       {/* Mobile Header - Logo + Feedback */}
-      <header className="sticky top-0 z-40 border-b border-[var(--eco-line)]/20 bg-white/95 backdrop-blur-sm md:hidden">
+      <header
+        className="sticky top-0 z-40 md:hidden bg-white/95 backdrop-blur-sm"
+        style={{ borderBottom: '1px solid rgba(110,200,255,0.18)', boxShadow: '0 2px 24px rgba(110,200,255,0.10)' }}
+      >
         <div className="flex items-center justify-between px-4 py-4">
           <button
             onClick={() => navigate('/app')}

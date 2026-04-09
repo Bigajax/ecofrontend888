@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import { Lock, ChevronLeft, ChevronRight, Headphones } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface Blessing {
   id: string;
@@ -61,13 +62,18 @@ export default function EnergyBlessingsSection({
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12 bg-white">
       {/* Title */}
-      <div className="mb-6 pb-4 border-b border-[var(--eco-line)]">
-        <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
-          Jornadas
-        </h2>
-        <p className="mt-2 text-[14px] text-[var(--eco-muted)]">
-          Cada jornada foi criada para levar você de um ponto a outro — com intenção.
-        </p>
+      <div className="mb-6 pb-4" style={{ borderBottom: '1px solid rgba(110,200,255,0.14)' }}>
+        <div className="flex items-start gap-3">
+          <div className="mt-1 w-1 h-6 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(180deg, #6EC8FF, #4BAEE8)' }} />
+          <div>
+            <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
+              Jornadas
+            </h2>
+            <p className="mt-0.5 text-[14px] text-[var(--eco-muted)]">
+              De onde você está para onde quer chegar.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Category Tabs */}
@@ -79,11 +85,16 @@ export default function EnergyBlessingsSection({
           <button
             key={category}
             onClick={() => setSelectedCategory(category)}
-            className={`flex-shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-all duration-200 ${
+            className={`flex-shrink-0 rounded-full px-4 py-1.5 text-[13px] font-medium transition-all duration-200 ${
               selectedCategory === category
-                ? 'bg-[var(--eco-user)] text-white shadow-sm'
-                : 'bg-gray-100 text-[var(--eco-muted)] hover:bg-gray-200'
+                ? 'text-white'
+                : 'text-[#4A90B8] hover:bg-[rgba(110,200,255,0.14)]'
             }`}
+          style={
+            selectedCategory === category
+              ? { background: 'linear-gradient(135deg,#6EC8FF,#4BAEE8)', boxShadow: '0 3px 14px rgba(110,200,255,0.38)' }
+              : { background: 'rgba(110,200,255,0.09)', border: '1px solid rgba(110,200,255,0.20)' }
+          }
           >
             {category}
           </button>
@@ -95,7 +106,8 @@ export default function EnergyBlessingsSection({
         {canScrollLeft && (
           <button
             onClick={() => scroll('left')}
-            className="absolute left-0 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-lg border border-[var(--eco-line)] transition-all hover:scale-110 active:scale-95"
+            className="absolute left-0 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white transition-all hover:scale-110 active:scale-95"
+            style={{ border: '1px solid rgba(110,200,255,0.28)', boxShadow: '0 2px 16px rgba(110,200,255,0.18)' }}
           >
             <ChevronLeft size={20} className="text-[var(--eco-text)]" />
           </button>
@@ -103,7 +115,8 @@ export default function EnergyBlessingsSection({
         {canScrollRight && (
           <button
             onClick={() => scroll('right')}
-            className="absolute right-0 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-lg border border-[var(--eco-line)] transition-all hover:scale-110 active:scale-95"
+            className="absolute right-0 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white transition-all hover:scale-110 active:scale-95"
+            style={{ border: '1px solid rgba(110,200,255,0.28)', boxShadow: '0 2px 16px rgba(110,200,255,0.18)' }}
           >
             <ChevronRight size={20} className="text-[var(--eco-text)]" />
           </button>
@@ -114,12 +127,20 @@ export default function EnergyBlessingsSection({
           className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 bg-white"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {filteredBlessings.map((blessing) => (
-            <BlessingCard
+          {filteredBlessings.map((blessing, index) => (
+            <motion.div
               key={blessing.id}
-              blessing={blessing}
-              onClick={() => onBlessingClick?.(blessing.id)}
-            />
+              className="flex-shrink-0"
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ type: 'spring', stiffness: 75, damping: 20, delay: index * 0.06 }}
+            >
+              <BlessingCard
+                blessing={blessing}
+                onClick={() => onBlessingClick?.(blessing.id)}
+              />
+            </motion.div>
           ))}
         </div>
       </div>
@@ -130,13 +151,21 @@ export default function EnergyBlessingsSection({
           className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide bg-white"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {filteredBlessings.map((blessing) => (
-            <BlessingCard
+          {filteredBlessings.map((blessing, index) => (
+            <motion.div
               key={blessing.id}
-              blessing={blessing}
-              mobile
-              onClick={() => onBlessingClick?.(blessing.id)}
-            />
+              className="flex-shrink-0"
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-20px' }}
+              transition={{ type: 'spring', stiffness: 75, damping: 20, delay: index * 0.05 }}
+            >
+              <BlessingCard
+                blessing={blessing}
+                mobile
+                onClick={() => onBlessingClick?.(blessing.id)}
+              />
+            </motion.div>
           ))}
         </div>
       </div>
