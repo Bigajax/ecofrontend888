@@ -304,7 +304,7 @@ export default function DrJoeObrigadoPage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 260, damping: 20 }}
             className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-eco-baby/30 bg-eco-baby/10"
-            style={{ boxShadow: '0 0 0 12px rgba(110,200,255,0.05), 0 0 0 28px rgba(59,130,246,0.03)' }}
+            style={{ boxShadow: '0 0 0 12px rgba(148,136,196,0.10), 0 0 0 28px rgba(148,136,196,0.05)' }}
           >
             <svg className="h-7 w-7 text-eco-baby" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -344,8 +344,8 @@ export default function DrJoeObrigadoPage() {
         className="pointer-events-none fixed inset-0 z-0"
         style={{
           background: [
-            'radial-gradient(ellipse 700px 460px at 55% -5%, rgba(110,200,255,0.10) 0%, transparent 65%)',
-            'radial-gradient(ellipse 400px 300px at 10% 90%, rgba(59,130,246,0.06) 0%, transparent 60%)',
+            'radial-gradient(ellipse 700px 460px at 55% -5%, rgba(192,180,224,0.10) 0%, transparent 65%)',
+            'radial-gradient(ellipse 400px 300px at 10% 90%, rgba(148,136,196,0.06) 0%, transparent 60%)',
             'linear-gradient(175deg, #070A12 0%, #0B1220 55%, #080C18 100%)',
           ].join(', '),
         }}
@@ -359,7 +359,7 @@ export default function DrJoeObrigadoPage() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
           className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-full border border-eco-baby/25 bg-eco-baby/10"
-          style={{ boxShadow: '0 0 0 12px rgba(110,200,255,0.05), 0 0 0 28px rgba(59,130,246,0.03)' }}
+          style={{ boxShadow: '0 0 0 12px rgba(148,136,196,0.10), 0 0 0 28px rgba(148,136,196,0.05)' }}
         >
           <svg className="h-7 w-7 text-eco-baby" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -471,8 +471,8 @@ export default function DrJoeObrigadoPage() {
                     className="w-full rounded-full py-[15px] text-[0.9375rem] font-bold text-white transition-all duration-200 hover:brightness-110 hover:scale-[1.015] active:scale-[0.98] disabled:opacity-50"
                     style={{
                       background:
-                        'linear-gradient(135deg, rgba(110,200,255,0.96) 0%, rgba(59,130,246,0.96) 52%, rgba(30,58,138,0.96) 100%)',
-                      boxShadow: '0 14px 40px rgba(110,200,255,0.16)',
+                        'linear-gradient(135deg, rgba(176,166,216,0.96) 0%, rgba(148,136,196,0.96) 52%, rgba(100,90,160,0.96) 100%)',
+                      boxShadow: '0 14px 40px rgba(192,180,224,0.16)',
                     }}
                   >
                     {isSubmitting ? 'Criando conta…' : 'Acessar minhas meditações'}

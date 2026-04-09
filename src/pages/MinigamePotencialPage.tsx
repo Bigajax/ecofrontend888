@@ -101,7 +101,7 @@ export default function MinigamePotencialPage() {
         className="pointer-events-none fixed inset-0 z-0"
         style={{
           background:
-            'radial-gradient(1000px 520px at 30% 10%, rgba(110,200,255,0.18) 0%, transparent 62%), linear-gradient(135deg, #070A12 0%, #0B1220 42%, #0A0F1C 100%)',
+            'radial-gradient(1000px 520px at 30% 10%, rgba(192,180,224,0.18) 0%, transparent 62%), linear-gradient(135deg, #070A12 0%, #0B1220 42%, #0A0F1C 100%)',
         }}
       />
 
@@ -170,16 +170,16 @@ export default function MinigamePotencialPage() {
                       transition={{ type: 'spring', stiffness: 220, damping: 18 }}
                       className="relative flex h-16 w-16 items-center justify-center rounded-full border border-eco-baby/25 bg-eco-baby/10"
                       style={{
-                        boxShadow: '0 0 0 8px rgba(110,200,255,0.06), 0 0 0 18px rgba(59,130,246,0.04)',
+                        boxShadow: '0 0 0 8px rgba(192,180,224,0.06), 0 0 0 18px rgba(148,136,196,0.06)',
                       }}
                     >
                       <motion.span
                         className="font-display text-3xl font-bold text-white"
                         animate={{
                           textShadow: [
-                            '0 0 6px rgba(110,200,255,0.0)',
-                            '0 0 28px rgba(110,200,255,0.55)',
-                            '0 0 6px rgba(110,200,255,0.0)',
+                            '0 0 6px rgba(192,180,224,0.0)',
+                            '0 0 28px rgba(192,180,224,0.55)',
+                            '0 0 6px rgba(192,180,224,0.0)',
                           ],
                         }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
@@ -252,7 +252,7 @@ export default function MinigamePotencialPage() {
                   onClick={() => toggleEmotion('Grato')}
                   className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95 ${
                     emotions.includes('Grato')
-                      ? 'border-blue-400/40 bg-blue-400/15 text-white shadow-[0_10px_30px_rgba(59,130,246,0.14)]'
+                      ? 'border-[#9488C4]/40 bg-[#9488C4]/15 text-white shadow-[0_10px_30px_rgba(148,136,196,0.14)]'
                       : 'border-white/20 bg-white/[0.10] text-white/85 hover:bg-white/[0.15]'
                   }`}
                 >
@@ -264,7 +264,7 @@ export default function MinigamePotencialPage() {
                     onClick={() => toggleEmotion(label)}
                     className={`rounded-full border px-4 py-2 text-sm transition-all active:scale-95 ${
                       emotions.includes(label)
-                        ? 'border-eco-baby/40 bg-eco-baby/15 text-white shadow-[0_10px_30px_rgba(110,200,255,0.10)]'
+                        ? 'border-eco-baby/40 bg-eco-baby/15 text-white shadow-[0_10px_30px_rgba(192,180,224,0.10)]'
                         : 'border-white/20 bg-white/[0.10] text-white/85 hover:bg-white/[0.15]'
                     }`}
                   >
@@ -299,19 +299,19 @@ export default function MinigamePotencialPage() {
                 <div className="relative flex h-36 w-36 items-center justify-center">
                   <motion.div
                     className="absolute inset-0 rounded-full border-2"
-                    style={{ borderColor: 'rgba(110,200,255,0.22)' }}
+                    style={{ borderColor: 'rgba(192,180,224,0.22)' }}
                     animate={{ scale: [1, 1.38, 1], opacity: [0.28, 0.70, 0.28] }}
                     transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
                   />
                   <motion.div
                     className="absolute rounded-full border"
-                    style={{ inset: 10, borderColor: 'rgba(110,200,255,0.14)' }}
+                    style={{ inset: 10, borderColor: 'rgba(192,180,224,0.14)' }}
                     animate={{ scale: [1, 1.25, 1], opacity: [0.18, 0.50, 0.18] }}
                     transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
                   />
                   <motion.div
                     className="rounded-full"
-                    style={{ width: 72, height: 72, background: 'rgba(110,200,255,0.10)' }}
+                    style={{ width: 72, height: 72, background: 'rgba(192,180,224,0.10)' }}
                     animate={{ scale: [1, 1.2, 1], opacity: [0.65, 1, 0.65] }}
                     transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
                   />
@@ -320,9 +320,9 @@ export default function MinigamePotencialPage() {
                       className="absolute font-display text-2xl font-bold text-white/80"
                       animate={{
                         textShadow: [
-                          '0 0 6px rgba(110,200,255,0.0)',
-                          '0 0 28px rgba(110,200,255,0.55)',
-                          '0 0 6px rgba(110,200,255,0.0)',
+                          '0 0 6px rgba(192,180,224,0.0)',
+                          '0 0 28px rgba(192,180,224,0.55)',
+                          '0 0 6px rgba(192,180,224,0.0)',
                         ],
                       }}
                       transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
@@ -357,13 +357,13 @@ export default function MinigamePotencialPage() {
               <div className="relative flex h-24 w-24 items-center justify-center">
                 <motion.div
                   className="absolute inset-0 rounded-full"
-                  style={{ background: 'rgba(110,200,255,0.07)', border: '1px solid rgba(110,200,255,0.20)' }}
+                  style={{ background: 'rgba(192,180,224,0.07)', border: '1px solid rgba(192,180,224,0.20)' }}
                   animate={{ scale: [1, 1.30, 1], opacity: [0.50, 1, 0.50] }}
                   transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 <motion.div
                   className="absolute rounded-full"
-                  style={{ inset: 10, background: 'rgba(110,200,255,0.05)', border: '1px solid rgba(110,200,255,0.12)' }}
+                  style={{ inset: 10, background: 'rgba(192,180,224,0.05)', border: '1px solid rgba(192,180,224,0.12)' }}
                   animate={{ scale: [1, 1.18, 1], opacity: [0.35, 0.80, 0.35] }}
                   transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
                 />
@@ -371,9 +371,9 @@ export default function MinigamePotencialPage() {
                   className="font-display text-2xl font-bold text-white"
                   animate={{
                     textShadow: [
-                      '0 0 6px rgba(110,200,255,0.0)',
-                      '0 0 32px rgba(110,200,255,0.65)',
-                      '0 0 6px rgba(110,200,255,0.0)',
+                      '0 0 6px rgba(192,180,224,0.0)',
+                      '0 0 32px rgba(192,180,224,0.65)',
+                      '0 0 6px rgba(192,180,224,0.0)',
                     ],
                   }}
                   transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
@@ -402,8 +402,8 @@ export default function MinigamePotencialPage() {
                 className="inline-flex items-center gap-2 rounded-full px-10 py-3.5 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:brightness-110 hover:scale-105 active:scale-95"
                 style={{
                   background:
-                    'linear-gradient(135deg, rgba(110,200,255,0.95) 0%, rgba(59,130,246,0.95) 50%, rgba(30,58,138,0.95) 100%)',
-                  boxShadow: '0 16px 45px rgba(110,200,255,0.16)',
+                    'linear-gradient(135deg, rgba(192,180,224,0.95) 0%, rgba(148,136,196,0.95) 50%, rgba(100,90,160,0.95) 100%)',
+                  boxShadow: '0 16px 45px rgba(192,180,224,0.16)',
                 }}
               >
                 Iniciar meditação

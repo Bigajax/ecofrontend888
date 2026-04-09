@@ -55,8 +55,8 @@ export default function DrJoeErroPage() {
             className="w-full rounded-full py-[15px] text-[0.9375rem] font-bold text-white transition-all duration-200 hover:brightness-110 hover:scale-[1.015] active:scale-[0.98]"
             style={{
               background:
-                'linear-gradient(135deg, rgba(110,200,255,0.96) 0%, rgba(59,130,246,0.96) 52%, rgba(30,58,138,0.96) 100%)',
-              boxShadow: '0 14px 40px rgba(110,200,255,0.16)',
+                'linear-gradient(135deg, rgba(176,166,216,0.96) 0%, rgba(148,136,196,0.96) 52%, rgba(100,90,160,0.96) 100%)',
+              boxShadow: '0 14px 40px rgba(148,136,196,0.35)',
             }}
           >
             Tentar novamente

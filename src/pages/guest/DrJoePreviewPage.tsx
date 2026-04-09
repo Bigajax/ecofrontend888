@@ -306,8 +306,8 @@ export default function DrJoePreviewPage() {
         className="pointer-events-none fixed inset-0 z-0"
         style={{
           background: [
-            'radial-gradient(ellipse 700px 500px at 50% 10%, rgba(110,200,255,0.10) 0%, transparent 65%)',
-            'radial-gradient(ellipse 400px 300px at 15% 85%, rgba(59,130,246,0.06) 0%, transparent 60%)',
+            'radial-gradient(ellipse 700px 500px at 50% 10%, rgba(192,180,224,0.10) 0%, transparent 65%)',
+            'radial-gradient(ellipse 400px 300px at 15% 85%, rgba(148,136,196,0.06) 0%, transparent 60%)',
             'linear-gradient(170deg, #070A12 0%, #0B1220 55%, #080C18 100%)',
           ].join(', '),
         }}
@@ -325,7 +325,7 @@ export default function DrJoePreviewPage() {
             <motion.div
               variants={fadeUp} initial="hidden" animate="visible" custom={0}
               className="mx-auto mb-8 flex h-14 w-14 items-center justify-center rounded-full border border-eco-baby/25 bg-eco-baby/10"
-              style={{ boxShadow: '0 0 0 10px rgba(110,200,255,0.05), 0 0 0 22px rgba(59,130,246,0.03)' }}
+              style={{ boxShadow: '0 0 0 10px rgba(192,180,224,0.05), 0 0 0 22px rgba(148,136,196,0.05)' }}
             >
               <svg className="h-6 w-6 text-eco-baby" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -372,8 +372,8 @@ export default function DrJoePreviewPage() {
                 onClick={handleStartPractice}
                 className="w-full rounded-full py-[15px] text-[0.9375rem] font-bold text-white transition-all duration-200 hover:brightness-110 hover:scale-[1.015] active:scale-[0.98]"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(110,200,255,0.96) 0%, rgba(59,130,246,0.96) 52%, rgba(30,58,138,0.96) 100%)',
-                  boxShadow: '0 14px 40px rgba(110,200,255,0.16)',
+                  background: 'linear-gradient(135deg, rgba(176,166,216,0.96) 0%, rgba(148,136,196,0.96) 52%, rgba(100,90,160,0.96) 100%)',
+                  boxShadow: '0 14px 40px rgba(192,180,224,0.16)',
                 }}
               >
                 Iniciar prática
@@ -398,7 +398,7 @@ export default function DrJoePreviewPage() {
                   className="absolute rounded-full border"
                   style={{
                     width: size, height: size,
-                    borderColor: `rgba(110,200,255,${0.18 - i * 0.05})`,
+                    borderColor: `rgba(192,180,224,${0.18 - i * 0.05})`,
                   }}
                   animate={{ scale: [1, 1.12 - i * 0.02, 1], opacity: [0.5 - i * 0.12, 0.9 - i * 0.18, 0.5 - i * 0.12] }}
                   transition={{ duration: 4 + i, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 }}
@@ -406,7 +406,7 @@ export default function DrJoePreviewPage() {
               ))}
               <div
                 className="relative flex h-14 w-14 items-center justify-center rounded-full bg-eco-baby/15"
-                style={{ boxShadow: '0 0 28px rgba(110,200,255,0.22)' }}
+                style={{ boxShadow: '0 0 28px rgba(192,180,224,0.22)' }}
               >
                 <svg className="h-6 w-6 text-eco-baby" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 3a9 9 0 100 18A9 9 0 0012 3zM9.5 8.5a1 1 0 011-1h.01a1 1 0 011 1v7a1 1 0 01-1 1H10.5a1 1 0 01-1-1v-7zm3.99 0a1 1 0 011-1h.01a1 1 0 011 1v7a1 1 0 01-1 1h-.01a1 1 0 01-1-1v-7z" />
@@ -557,8 +557,8 @@ export default function DrJoePreviewPage() {
                       disabled={isSubmitting || !email || !password}
                       className="w-full rounded-full py-[14px] text-[0.9375rem] font-bold text-white transition-all duration-200 hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
                       style={{
-                        background: 'linear-gradient(135deg, rgba(110,200,255,0.96) 0%, rgba(59,130,246,0.96) 52%, rgba(30,58,138,0.96) 100%)',
-                        boxShadow: '0 10px 30px rgba(110,200,255,0.14)',
+                        background: 'linear-gradient(135deg, rgba(176,166,216,0.96) 0%, rgba(148,136,196,0.96) 52%, rgba(100,90,160,0.96) 100%)',
+                        boxShadow: '0 10px 30px rgba(192,180,224,0.14)',
                       }}
                     >
                       {isSubmitting ? 'Criando conta…' : 'Continuar minha experiência'}
@@ -641,8 +641,8 @@ export default function DrJoePreviewPage() {
                 onClick={() => startCheckout('guest_funnel', 'offer')}
                 className="mt-6 w-full rounded-full py-[14px] text-[0.9375rem] font-bold text-white transition-all duration-200 hover:brightness-110 hover:scale-[1.015] active:scale-[0.98]"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(110,200,255,0.96) 0%, rgba(59,130,246,0.96) 52%, rgba(30,58,138,0.96) 100%)',
-                  boxShadow: '0 14px 40px rgba(110,200,255,0.16)',
+                  background: 'linear-gradient(135deg, rgba(176,166,216,0.96) 0%, rgba(148,136,196,0.96) 52%, rgba(100,90,160,0.96) 100%)',
+                  boxShadow: '0 14px 40px rgba(192,180,224,0.16)',
                 }}
               >
                 Continuar essa experiência
@@ -682,7 +682,7 @@ export default function DrJoePreviewPage() {
                   className="absolute rounded-full border"
                   style={{
                     width: size, height: size,
-                    borderColor: `rgba(110,200,255,${0.08 - i * 0.02})`,
+                    borderColor: `rgba(192,180,224,${0.08 - i * 0.02})`,
                   }}
                 />
               ))}
@@ -721,8 +721,8 @@ export default function DrJoePreviewPage() {
                 onClick={() => startCheckout('guest_funnel', 'locked')}
                 className="w-full rounded-full py-[14px] text-[0.9375rem] font-bold text-white transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(110,200,255,0.96) 0%, rgba(59,130,246,0.96) 52%, rgba(30,58,138,0.96) 100%)',
-                  boxShadow: '0 14px 40px rgba(110,200,255,0.14)',
+                  background: 'linear-gradient(135deg, rgba(176,166,216,0.96) 0%, rgba(148,136,196,0.96) 52%, rgba(100,90,160,0.96) 100%)',
+                  boxShadow: '0 14px 40px rgba(192,180,224,0.14)',
                 }}
               >
                 Continuar essa experiência
@@ -817,7 +817,7 @@ export default function DrJoePreviewPage() {
                     onClick={() => startCheckout('offer_retry', 'offer')}
                     className="mt-5 w-full rounded-full py-3 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-95"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(110,200,255,0.96) 0%, rgba(59,130,246,0.96) 52%, rgba(30,58,138,0.96) 100%)',
+                      background: 'linear-gradient(135deg, rgba(176,166,216,0.96) 0%, rgba(148,136,196,0.96) 52%, rgba(100,90,160,0.96) 100%)',
                     }}
                   >
                     Tentar novamente

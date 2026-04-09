@@ -22,7 +22,7 @@ export default function RecondicioneAntesDeComecarPage() {
         className="pointer-events-none fixed inset-0 z-0"
         style={{
           background:
-            'radial-gradient(900px 520px at 35% 12%, rgba(110,200,255,0.16) 0%, transparent 62%), linear-gradient(135deg, #070A12 0%, #0B1220 42%, #0A0F1C 100%)',
+            'radial-gradient(900px 520px at 35% 12%, rgba(192,180,224,0.16) 0%, transparent 62%), linear-gradient(135deg, #070A12 0%, #0B1220 42%, #0A0F1C 100%)',
         }}
       />
 
@@ -93,8 +93,8 @@ export default function RecondicioneAntesDeComecarPage() {
               className="w-full rounded-full px-6 py-3.5 text-sm font-semibold text-white transition-all duration-300 active:scale-[0.99] sm:text-base"
               style={{
                 background:
-                  'linear-gradient(135deg, rgba(110,200,255,0.95) 0%, rgba(59,130,246,0.95) 50%, rgba(30,58,138,0.95) 100%)',
-                boxShadow: '0 16px 45px rgba(110,200,255,0.18)',
+                  'linear-gradient(135deg, rgba(192,180,224,0.95) 0%, rgba(148,136,196,0.95) 50%, rgba(100,90,160,0.95) 100%)',
+                boxShadow: '0 16px 45px rgba(192,180,224,0.18)',
               }}
             >
               Preparar meu estado

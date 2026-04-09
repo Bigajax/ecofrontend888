@@ -37,19 +37,19 @@ function OptionPill({
       whileTap={{ scale: active ? 1.03 : 0.99 }}
       className="rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200"
       style={{
-        borderColor: active ? 'rgba(110,200,255,0.55)' : 'rgba(255,255,255,0.12)',
-        background: active ? 'rgba(110,200,255,0.14)' : 'rgba(255,255,255,0.10)',
+        borderColor: active ? 'rgba(192,180,224,0.55)' : 'rgba(255,255,255,0.12)',
+        background: active ? 'rgba(192,180,224,0.14)' : 'rgba(255,255,255,0.10)',
         color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.88)',
-        boxShadow: active ? '0 16px 46px rgba(110,200,255,0.16)' : 'none',
+        boxShadow: active ? '0 16px 46px rgba(192,180,224,0.16)' : 'none',
       }}
       animate={
         active
           ? {
               scale: 1.05,
               boxShadow: [
-                '0 16px 46px rgba(110,200,255,0.12)',
-                '0 16px 46px rgba(110,200,255,0.20)',
-                '0 16px 46px rgba(110,200,255,0.12)',
+                '0 16px 46px rgba(192,180,224,0.12)',
+                '0 16px 46px rgba(192,180,224,0.20)',
+                '0 16px 46px rgba(192,180,224,0.12)',
               ],
             }
           : { scale: 1, boxShadow: 'none' }
@@ -110,7 +110,7 @@ export default function RecondicioneCorpoMentePage() {
         className="pointer-events-none fixed inset-0 z-0"
         style={{
           background:
-            'radial-gradient(900px 520px at 35% 12%, rgba(110,200,255,0.18) 0%, transparent 62%), linear-gradient(135deg, #070A12 0%, #0B1220 42%, #0A0F1C 100%)',
+            'radial-gradient(900px 520px at 35% 12%, rgba(192,180,224,0.18) 0%, transparent 62%), linear-gradient(135deg, #070A12 0%, #0B1220 42%, #0A0F1C 100%)',
         }}
       />
 
@@ -226,8 +226,8 @@ export default function RecondicioneCorpoMentePage() {
               className="w-full rounded-full px-6 py-3.5 text-sm font-semibold text-white transition-all duration-300 active:scale-[0.99] disabled:cursor-default disabled:opacity-60 sm:text-base"
               style={{
                 background:
-                  'linear-gradient(135deg, rgba(110,200,255,0.95) 0%, rgba(59,130,246,0.95) 50%, rgba(30,58,138,0.95) 100%)',
-                boxShadow: '0 16px 45px rgba(110,200,255,0.18)',
+                  'linear-gradient(135deg, rgba(192,180,224,0.95) 0%, rgba(148,136,196,0.95) 50%, rgba(100,90,160,0.95) 100%)',
+                boxShadow: '0 16px 45px rgba(192,180,224,0.18)',
               }}
             >
               Levar esse estado comigo

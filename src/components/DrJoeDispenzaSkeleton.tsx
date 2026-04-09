@@ -30,7 +30,7 @@ export default function DrJoeDispenzaSkeleton() {
             className="absolute inset-0"
             style={{
               background:
-                'radial-gradient(ellipse 60% 50% at 50% 35%, rgba(59,130,246,0.08) 0%, transparent 70%)',
+                'radial-gradient(ellipse 60% 50% at 50% 35%, rgba(148,136,196,0.08) 0%, transparent 70%)',
             }}
           />
 
@@ -137,7 +137,7 @@ export default function DrJoeDispenzaSkeleton() {
                   className="absolute inset-0"
                   style={{
                     background:
-                      'radial-gradient(ellipse 55% 55% at 50% 35%, rgba(59,130,246,0.07) 0%, transparent 68%)',
+                      'radial-gradient(ellipse 55% 55% at 50% 35%, rgba(148,136,196,0.07) 0%, transparent 68%)',
                   }}
                 />
                 <div className="relative z-10 px-6 py-8 sm:px-8">
