@@ -586,17 +586,15 @@ export default function DrJoePreviewPage() {
             >
               {/* Headline */}
               <h2 className="font-display text-2xl font-bold leading-snug text-white">
-                Você já ativou algo dentro de você.
+                Você já acessou algo dentro de você.
                 <br />
-                <span className="text-eco-baby">Agora é sobre sustentar isso.</span>
+                <span className="text-eco-baby">Agora é sobre sustentar.</span>
               </h2>
 
               {/* Subhead */}
               <p className="mt-4 text-sm leading-[1.85] text-white/55">
-                Esse estado que você sentiu…
-                <br /><br />
-                não é imaginação.
-                <br /><br />
+                O que você sentiu não é imaginação.
+                <br />
                 É o começo de uma nova forma de funcionar.
               </p>
 
@@ -604,9 +602,9 @@ export default function DrJoePreviewPage() {
               <ul className="mt-5 space-y-2">
                 {[
                   'Sustentar esse estado no seu dia a dia',
-                  'Ensinar seu corpo a viver esse novo padrão',
+                  'Treinar seu corpo para viver esse novo padrão',
                   'Criar coerência entre pensamento e emoção',
-                  'Tornar essa experiência real, não passageira',
+                  'Tornar essa experiência estável (não passageira)',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5">
                     <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-eco-baby/60" />
@@ -625,12 +623,13 @@ export default function DrJoePreviewPage() {
               {/* Oferta */}
               <div className="mt-5 border-t border-white/[0.07] pt-5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">
-                  Acesso completo à prática
+                  Oferta especial de entrada
                 </p>
                 <p className="mt-1 text-xs text-white/40">
-                  Meditações guiadas para sustentar esse estado
+                  Acesso completo à prática + meditações guiadas
                 </p>
-                <div className="mt-3 flex items-baseline gap-2">
+                <div className="mt-3 flex items-baseline gap-2.5">
+                  <span className="text-sm text-white/30 line-through">R$&nbsp;97</span>
                   <span className="font-display text-3xl font-bold text-white">R$&nbsp;37</span>
                   <span className="text-sm text-white/35">· acesso vitalício</span>
                 </div>
