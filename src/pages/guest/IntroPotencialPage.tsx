@@ -4,6 +4,11 @@ import { motion } from 'framer-motion';
 import mixpanel from '@/lib/mixpanel';
 import { useGuest } from '@/hooks/useGuest';
 
+// ── Paleta Dr. Joe Dispenza ────────────────────────────────────────────────
+const LAVENDER      = 'rgba(148,136,196,0.96)';
+const LAVENDER_LIGHT = 'rgba(176,166,216,0.96)';
+const LAVENDER_DARK  = 'rgba(100,90,160,0.96)';
+
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
   visible: (delay = 0) => ({
@@ -36,15 +41,16 @@ export default function IntroPotencialPage() {
   }
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#070A12] font-primary">
+    <div className="relative min-h-[100dvh] bg-[#07090F] font-primary">
+      {/* Background — lavanda igual ao Dr. Joe */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 z-0"
         style={{
           background: [
-            'radial-gradient(ellipse 700px 460px at 60% -5%, rgba(110,200,255,0.11) 0%, transparent 65%)',
-            'radial-gradient(ellipse 500px 300px at 10% 90%, rgba(59,130,246,0.07) 0%, transparent 60%)',
-            'linear-gradient(175deg, #070A12 0%, #0B1220 55%, #080C18 100%)',
+            'radial-gradient(ellipse 700px 500px at 50% 10%, rgba(192,180,224,0.10) 0%, transparent 65%)',
+            'radial-gradient(ellipse 400px 300px at 15% 85%, rgba(148,136,196,0.06) 0%, transparent 60%)',
+            'linear-gradient(170deg, #07090F 0%, #0B0D1C 55%, #080C18 100%)',
           ].join(', '),
         }}
       />
@@ -56,7 +62,8 @@ export default function IntroPotencialPage() {
           animate="visible"
           custom={0.08}
           variants={fadeUp}
-          className="text-[1.0625rem] leading-[1.85] text-white/55"
+          className="text-[1.0625rem] leading-[1.85]"
+          style={{ color: 'rgba(255,255,255,0.40)' }}
         >
           Antes de começar…
         </motion.p>
@@ -66,7 +73,8 @@ export default function IntroPotencialPage() {
           animate="visible"
           custom={0.2}
           variants={fadeUp}
-          className="mt-6 text-[1.0625rem] leading-[1.85] text-white/80"
+          className="mt-6 text-[1.0625rem] leading-[1.85]"
+          style={{ color: 'rgba(255,255,255,0.80)' }}
         >
           A experiência que você quer viver
           <br />
@@ -78,7 +86,8 @@ export default function IntroPotencialPage() {
           animate="visible"
           custom={0.34}
           variants={fadeUp}
-          className="mt-5 text-[1.0625rem] leading-[1.85] text-white/60"
+          className="mt-5 text-[1.0625rem] leading-[1.85]"
+          style={{ color: 'rgba(255,255,255,0.55)' }}
         >
           O que você vai fazer agora
           <br />
@@ -90,7 +99,8 @@ export default function IntroPotencialPage() {
           animate="visible"
           custom={0.48}
           variants={fadeUp}
-          className="mt-6 text-[1.0625rem] leading-[1.85] text-white/45"
+          className="mt-6 text-[1.0625rem] leading-[1.85]"
+          style={{ color: 'rgba(255,255,255,0.40)' }}
         >
           Para isso, são necessárias duas coisas:
         </motion.p>
@@ -100,11 +110,12 @@ export default function IntroPotencialPage() {
           animate="visible"
           custom={0.62}
           variants={fadeUp}
-          className="mt-4 text-[1.125rem] font-semibold leading-[1.7] text-white/90"
+          className="mt-4 text-[1.125rem] font-semibold leading-[1.7]"
+          style={{ color: 'rgba(255,255,255,0.90)' }}
         >
           Intenção clara…
           <br />
-          <span className="text-eco-baby">e emoção elevada.</span>
+          <span style={{ color: 'rgba(192,180,224,0.90)' }}>e emoção elevada.</span>
         </motion.p>
 
         <motion.div
@@ -118,9 +129,8 @@ export default function IntroPotencialPage() {
             onClick={handleStart}
             className="w-full rounded-full py-[15px] text-[0.9375rem] font-bold text-white transition-all duration-200 hover:brightness-110 hover:scale-[1.015] active:scale-[0.98]"
             style={{
-              background:
-                'linear-gradient(135deg, rgba(110,200,255,0.96) 0%, rgba(59,130,246,0.96) 52%, rgba(30,58,138,0.96) 100%)',
-              boxShadow: '0 14px 40px rgba(110,200,255,0.16)',
+              background: `linear-gradient(135deg, ${LAVENDER_LIGHT} 0%, ${LAVENDER} 52%, ${LAVENDER_DARK} 100%)`,
+              boxShadow: '0 14px 40px rgba(192,180,224,0.16)',
             }}
           >
             Começar
