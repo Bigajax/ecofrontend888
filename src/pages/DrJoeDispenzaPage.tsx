@@ -346,58 +346,110 @@ function MeditationCard({
   onToggleLearnMore: (v: string | null) => void;
 }) {
   const isLocked = meditation.isPremium && !meditation.completed;
+
   return (
     <>
-      <div
-        className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
-        style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(148,136,196,0.50)' }}
+      <motion.div
+        className="overflow-hidden rounded-2xl"
+        style={{ border: '1px solid rgba(148,136,196,0.22)', background: 'rgba(255,255,255,0.05)' }}
+        whileHover={{ borderColor: 'rgba(148,136,196,0.45)', background: 'rgba(255,255,255,0.08)' }}
+        transition={{ duration: 0.18 }}
       >
-        {/* Status badge */}
-        {meditation.completed ? (
-          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full" style={{ background: BLUE }}>
-            <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
-          </div>
-        ) : (
-          <div
-            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold"
-            style={{ borderColor: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.45)', background: 'rgba(255,255,255,0.06)' }}
-          >
-            {stepNumber}
-          </div>
-        )}
-
-        {/* Content + action */}
         <button
           onClick={onClick}
-          className="flex flex-1 cursor-pointer flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0"
+          className="flex w-full items-stretch text-left cursor-pointer"
         >
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
-                {meditation.title}
-              </h3>
-              {isLocked && <Lock className="h-3.5 w-3.5 text-white/40" />}
+          {/* Thumbnail */}
+          <div
+            className="relative flex-shrink-0 w-[90px] sm:w-[108px]"
+            style={{
+              backgroundImage: meditation.image,
+              backgroundSize: 'cover',
+              backgroundPosition: meditation.imagePosition || 'center',
+            }}
+          >
+            {/* Right-side fade so thumbnail blends into card */}
+            <div
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(to right, transparent 55%, rgba(8,14,30,0.90) 100%)' }}
+            />
+            {/* Bottom dark vignette */}
+            <div
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.45) 100%)' }}
+            />
+
+            {/* Status badge — centred over image */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              {meditation.completed ? (
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-full shadow-lg"
+                  style={{ background: BLUE, boxShadow: '0 0 18px rgba(148,136,196,0.55)' }}
+                >
+                  <Check className="h-4 w-4 text-white" strokeWidth={3} />
+                </div>
+              ) : isLocked ? (
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-full"
+                  style={{ background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.14)' }}
+                >
+                  <Lock className="h-4 w-4 text-white/50" />
+                </div>
+              ) : (
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold"
+                  style={{
+                    background: 'rgba(0,0,0,0.60)',
+                    border: '1px solid rgba(148,136,196,0.40)',
+                    color: 'rgba(192,180,224,0.90)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                  }}
+                >
+                  {stepNumber}
+                </div>
+              )}
             </div>
-            <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
-              {meditation.description}
-            </p>
           </div>
 
-          <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-            <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{meditation.duration}</span>
-            <div
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10"
-              style={{ background: 'rgba(148,136,196,0.12)' }}
-            >
-              <Play
-                className="h-4 w-4 sm:h-5 sm:w-5"
-                style={{ color: isLocked ? 'rgba(255,255,255,0.30)' : BLUE }}
-                fill="currentColor"
-              />
+          {/* Content */}
+          <div className="flex flex-1 items-center gap-3 px-4 py-4 min-w-0">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-semibold sm:text-base leading-snug" style={{ color: 'rgba(255,255,255,0.92)' }}>
+                  {meditation.title}
+                </h3>
+              </div>
+              <p className="mt-1 text-xs leading-relaxed sm:text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                {meditation.description}
+              </p>
+            </div>
+
+            {/* Duration + play */}
+            <div className="flex flex-shrink-0 flex-col items-end gap-2.5">
+              <span className="text-[11px] tabular-nums" style={{ color: 'rgba(255,255,255,0.40)' }}>
+                {meditation.duration}
+              </span>
+              <motion.div
+                className="flex h-9 w-9 items-center justify-center rounded-full"
+                style={{
+                  background: isLocked ? 'rgba(255,255,255,0.06)' : 'rgba(148,136,196,0.18)',
+                  border: `1px solid ${isLocked ? 'rgba(255,255,255,0.10)' : 'rgba(148,136,196,0.38)'}`,
+                }}
+                whileHover={isLocked ? {} : { scale: 1.14, background: 'rgba(148,136,196,0.32)' }}
+                whileTap={{ scale: 0.90 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+              >
+                <Play
+                  className="h-4 w-4"
+                  style={{ color: isLocked ? 'rgba(255,255,255,0.22)' : BLUE, marginLeft: '2px' }}
+                  fill="currentColor"
+                />
+              </motion.div>
             </div>
           </div>
         </button>
-      </div>
+      </motion.div>
 
       <LearnMorePanel id={meditation.id} open={openLearnMore} onToggle={onToggleLearnMore} />
     </>
@@ -985,56 +1037,81 @@ export default function DrJoeDispenzaPage() {
                   backgroundPosition="center 40%"
                   completed={false}
                 >
-                  <div
-                    className="flex items-center gap-3 rounded-2xl p-3 sm:gap-4 sm:p-4"
-                    style={{
-                      background: 'rgba(255,255,255,0.10)',
-                      border: `1px solid rgba(148,136,196,0.50)`,
-                    }}
+                  <motion.div
+                    className="overflow-hidden rounded-2xl"
+                    style={{ border: '1px solid rgba(148,136,196,0.22)', background: 'rgba(255,255,255,0.05)' }}
+                    whileHover={{ borderColor: 'rgba(148,136,196,0.45)', background: 'rgba(255,255,255,0.08)' }}
+                    transition={{ duration: 0.18 }}
                   >
-                    <div
-                      className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold"
-                      style={{ borderColor: BLUE, color: BLUE, background: 'rgba(148,136,196,0.10)' }}
-                    >
-                      ✦
-                    </div>
                     <button
                       onClick={() => navigate('/app/minigame-potencial')}
-                      className="flex flex-1 flex-col items-start gap-2 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-0 cursor-pointer"
+                      className="flex w-full items-stretch text-left cursor-pointer"
                     >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold sm:text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
-                            Criando seu novo potencial
-                          </h3>
-                          <span
-                            className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                      {/* Thumbnail — usa a capa do programa */}
+                      <div
+                        className="relative flex-shrink-0 w-[90px] sm:w-[108px]"
+                        style={{
+                          backgroundImage: 'url("/images/capa-dr-joe-dispenza.png")',
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center 40%',
+                        }}
+                      >
+                        <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, transparent 55%, rgba(8,14,30,0.90) 100%)' }} />
+                        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.45) 100%)' }} />
+                        {/* ✦ Ícone de experiência */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div
+                            className="flex h-8 w-8 items-center justify-center rounded-full text-sm"
                             style={{
-                              background: BLUE_SOFT,
-                              backdropFilter: 'blur(12px)',
-                              WebkitBackdropFilter: 'blur(12px)',
+                              background: 'rgba(0,0,0,0.60)',
                               border: `1px solid ${BLUE_BORDER}`,
-                              color: 'rgba(192,180,224,0.95)',
+                              color: BLUE,
+                              backdropFilter: 'blur(8px)',
+                              WebkitBackdropFilter: 'blur(8px)',
                             }}
                           >
-                            EXPERIÊNCIA
-                          </span>
+                            ✦
+                          </div>
                         </div>
-                        <p className="mt-0.5 text-xs sm:mt-1 sm:text-sm" style={{ color: 'rgba(255,255,255,0.80)' }}>
-                          3 minutos para definir sua intenção e sentir a emoção.
-                        </p>
                       </div>
-                      <div className="flex w-full items-center justify-between sm:ml-4 sm:w-auto sm:justify-end sm:gap-3">
-                        <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>3 min</span>
-                        <div
-                          className="flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10"
-                          style={{ background: 'rgba(148,136,196,0.12)' }}
-                        >
-                          <Play className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: BLUE }} fill="currentColor" />
+
+                      {/* Content */}
+                      <div className="flex flex-1 items-center gap-3 px-4 py-4 min-w-0">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-sm font-semibold sm:text-base leading-snug" style={{ color: 'rgba(255,255,255,0.92)' }}>
+                              Criando seu novo potencial
+                            </h3>
+                            <span
+                              className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                              style={{
+                                background: BLUE_SOFT,
+                                border: `1px solid ${BLUE_BORDER}`,
+                                color: 'rgba(192,180,224,0.95)',
+                              }}
+                            >
+                              EXPERIÊNCIA
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs leading-relaxed sm:text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                            3 minutos para definir sua intenção e sentir a emoção.
+                          </p>
+                        </div>
+                        <div className="flex flex-shrink-0 flex-col items-end gap-2.5">
+                          <span className="text-[11px] tabular-nums" style={{ color: 'rgba(255,255,255,0.40)' }}>3 min</span>
+                          <motion.div
+                            className="flex h-9 w-9 items-center justify-center rounded-full"
+                            style={{ background: 'rgba(148,136,196,0.18)', border: '1px solid rgba(148,136,196,0.38)' }}
+                            whileHover={{ scale: 1.14, background: 'rgba(148,136,196,0.32)' }}
+                            whileTap={{ scale: 0.90 }}
+                            transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+                          >
+                            <Play className="h-4 w-4" style={{ color: BLUE, marginLeft: '2px' }} fill="currentColor" />
+                          </motion.div>
                         </div>
                       </div>
                     </button>
-                  </div>
+                  </motion.div>
                 </EtapaSection>
               </div>
 
