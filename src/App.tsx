@@ -210,8 +210,8 @@ function AppRoutes() {
         <Route index element={renderWithSuspense(<MinigamePotencialPage />)} />
       </Route>
       <Route path="/app/guest" element={<GuestFunnelShell />}>
-        <Route path="intro-potencial" element={renderWithSuspense(<IntroPotencialPage />)} />
-        <Route path="dr-joe-preview" element={renderWithSuspense(<DrJoePreviewPage />)} />
+        <Route path="intro-potencial" element={renderWithBoundary(<IntroPotencialPage />)} />
+        <Route path="dr-joe-preview" element={renderWithBoundary(<DrJoePreviewPage />)} />
       </Route>
       <Route
         path="/app/*"
