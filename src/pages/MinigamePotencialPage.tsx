@@ -33,7 +33,7 @@ const fadeUp = {
 };
 
 const cardClass =
-  'rounded-3xl border border-white/15 bg-[#0C1525] p-5 text-white sm:p-6';
+  'rounded-3xl border border-[#9488C4]/20 bg-[#080E1E] p-5 text-white sm:p-6';
 
 // ─── Sub-components ───────────────────────────────────────────
 function StepBadge({ number }: { number: number }) {
