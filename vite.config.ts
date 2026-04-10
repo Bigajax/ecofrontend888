@@ -45,7 +45,7 @@ export default defineConfig(async ({ mode }) => {
   }
 
   return {
-    base: '',
+    base: '/',
 
     plugins: [
       react(),
