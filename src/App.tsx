@@ -204,6 +204,15 @@ function AppRoutes() {
         <Route path="dr-joe/obrigado" element={renderWithSuspense(<DrJoeObrigadoPage />)} />
         <Route path="dr-joe/erro" element={renderWithSuspense(<DrJoeErroPage />)} />
       </Route>
+      {/* ── Rotas guest (sem autenticação) — devem vir ANTES do /app/* para não
+          serem capturadas pelo catch-all filho do bloco RequireAuth ── */}
+      <Route path="/app/minigame-potencial" element={<MinigameGuestShell />}>
+        <Route index element={renderWithSuspense(<MinigamePotencialPage />)} />
+      </Route>
+      <Route path="/app/guest" element={<GuestFunnelShell />}>
+        <Route path="intro-potencial" element={renderWithSuspense(<IntroPotencialPage />)} />
+        <Route path="dr-joe-preview" element={renderWithSuspense(<DrJoePreviewPage />)} />
+      </Route>
       <Route
         path="/app/*"
         element={
@@ -246,13 +255,6 @@ function AppRoutes() {
         }
       >
         <Route index element={renderWithSuspense(<DrJoeDispenzaPage />)} />
-      </Route>
-      <Route path="/app/minigame-potencial" element={<MinigameGuestShell />}>
-        <Route index element={renderWithSuspense(<MinigamePotencialPage />)} />
-      </Route>
-      <Route path="/app/guest" element={<GuestFunnelShell />}>
-        <Route path="intro-potencial" element={renderWithSuspense(<IntroPotencialPage />)} />
-        <Route path="dr-joe-preview" element={renderWithSuspense(<DrJoePreviewPage />)} />
       </Route>
       <Route
         path="/app/recondicione-corpo-mente"
