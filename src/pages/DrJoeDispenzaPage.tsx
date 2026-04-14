@@ -6,7 +6,8 @@ import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import DrJoeDispenzaSkeleton from '@/components/DrJoeDispenzaSkeleton';
 import { usePremiumContent } from '@/hooks/usePremiumContent';
-import UpgradeModal from '@/components/subscription/UpgradeModal';
+import { useDrJoeEntitlement } from '@/hooks/useDrJoeEntitlement';
+import DrJoeOfferModal from '@/components/drjoe/DrJoeOfferModal';
 import {
   trackMeditationEvent,
   parseDurationToSeconds,
@@ -335,17 +336,19 @@ function EtapaSection({
 function MeditationCard({
   meditation,
   stepNumber,
+  isPremiumLocked,
   onClick,
   openLearnMore,
   onToggleLearnMore,
 }: {
   meditation: Meditation;
   stepNumber: number;
+  isPremiumLocked: boolean;
   onClick: () => void;
   openLearnMore: string | null;
   onToggleLearnMore: (v: string | null) => void;
 }) {
-  const isLocked = meditation.isPremium && !meditation.completed;
+  const isLocked = meditation.isPremium && isPremiumLocked;
 
   return (
     <>
@@ -461,7 +464,9 @@ export default function DrJoeDispenzaPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { checkAccess, requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
+  const { checkAccess } = usePremiumContent();
+  const { hasAccess: hasDrJoeEntitlement } = useDrJoeEntitlement();
+  const [offerOpen, setOfferOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sessionJustCompleted, setSessionJustCompleted] = useState<number | null>(null);
   const [showMore, setShowMore] = useState(false);
@@ -507,28 +512,26 @@ export default function DrJoeDispenzaPage() {
     localStorage.setItem(storageKey, JSON.stringify(meditations));
   }, [meditations, user?.id]);
 
+  const premiumValidation = checkAccess(true);
+  const hasPremiumAccess = premiumValidation.hasAccess || hasDrJoeEntitlement;
+
   const handleMeditationClick = (meditation: Meditation) => {
     // Check premium access
-    if (meditation.isPremium) {
-      const { hasAccess } = checkAccess(true);
+    if (meditation.isPremium && !hasPremiumAccess) {
+      // Track premium content blocked
+      const payload: Omit<PremiumContentBlockedPayload, 'user_id' | 'session_id' | 'timestamp'> = {
+        meditation_id: meditation.id,
+        meditation_title: meditation.title,
+        category: 'dr_joe_dispenza',
+        duration_seconds: parseDurationToSeconds(meditation.duration),
+        is_premium: true,
+        source_page: location.pathname,
+        has_subscription: false,
+      };
+      trackMeditationEvent('Front-end: Premium Content Blocked', payload);
 
-      if (!hasAccess) {
-        // Track premium content blocked
-        const payload: Omit<PremiumContentBlockedPayload, 'user_id' | 'session_id' | 'timestamp'> = {
-          meditation_id: meditation.id,
-          meditation_title: meditation.title,
-          category: 'dr_joe_dispenza',
-          duration_seconds: parseDurationToSeconds(meditation.duration),
-          is_premium: true,
-          source_page: location.pathname,
-          has_subscription: false,
-        };
-        trackMeditationEvent('Front-end: Premium Content Blocked', payload);
-
-        // Show upgrade modal
-        requestUpgrade('dr_joe_dispenza_meditation');
-        return;
-      }
+      setOfferOpen(true);
+      return;
     }
 
     // Track meditation selected
@@ -1127,6 +1130,7 @@ export default function DrJoeDispenzaPage() {
                   <MeditationCard
                     meditation={sintonizeMeditation}
                     stepNumber={2}
+                    isPremiumLocked={!hasPremiumAccess}
                     onClick={() => handleMeditationClick(sintonizeMeditation)}
                     openLearnMore={openLearnMore}
                     onToggleLearnMore={setOpenLearnMore}
@@ -1146,6 +1150,7 @@ export default function DrJoeDispenzaPage() {
                   <MeditationCard
                     meditation={etapa1Meditation}
                     stepNumber={3}
+                    isPremiumLocked={!hasPremiumAccess}
                     onClick={() => handleMeditationClick(etapa1Meditation)}
                     openLearnMore={openLearnMore}
                     onToggleLearnMore={setOpenLearnMore}
@@ -1165,6 +1170,7 @@ export default function DrJoeDispenzaPage() {
                   <MeditationCard
                     meditation={recondicioneMeditation}
                     stepNumber={4}
+                    isPremiumLocked={!hasPremiumAccess}
                     onClick={() => navigate('/app/recondicione-antes-de-comecar')}
                     openLearnMore={openLearnMore}
                     onToggleLearnMore={setOpenLearnMore}
@@ -1184,6 +1190,7 @@ export default function DrJoeDispenzaPage() {
                   <MeditationCard
                     meditation={caminhandoMeditation}
                     stepNumber={5}
+                    isPremiumLocked={!hasPremiumAccess}
                     onClick={() => handleMeditationClick(caminhandoMeditation)}
                     openLearnMore={openLearnMore}
                     onToggleLearnMore={setOpenLearnMore}
@@ -1203,6 +1210,7 @@ export default function DrJoeDispenzaPage() {
                   <MeditationCard
                     meditation={espacoTempoMeditation}
                     stepNumber={6}
+                    isPremiumLocked={!hasPremiumAccess}
                     onClick={() => handleMeditationClick(espacoTempoMeditation)}
                     openLearnMore={openLearnMore}
                     onToggleLearnMore={setOpenLearnMore}
@@ -1390,12 +1398,7 @@ export default function DrJoeDispenzaPage() {
         )}
       </AnimatePresence>
 
-      {/* Upgrade Modal */}
-      <UpgradeModal
-        open={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        source="dr_joe_dispenza"
-      />
+      <DrJoeOfferModal open={offerOpen} onClose={() => setOfferOpen(false)} origin="dr_joe_dispenza_locked" />
     </div>
   );
 }

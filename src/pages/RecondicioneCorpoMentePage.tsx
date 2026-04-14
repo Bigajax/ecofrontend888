@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import UpgradeModal from '@/components/subscription/UpgradeModal';
 import { usePremiumContent } from '@/hooks/usePremiumContent';
+import { useDrJoeEntitlement } from '@/hooks/useDrJoeEntitlement';
+import DrJoeOfferModal from '@/components/drjoe/DrJoeOfferModal';
 
 const NOW_OPTIONS = ['Tensão', 'Ansiedade', 'Cansaço', 'Agitação', 'Neutro'] as const;
 const INSTALL_OPTIONS = ['Calma', 'Leveza', 'Confiança', 'Presença', 'Clareza'] as const;
@@ -64,7 +65,9 @@ function OptionPill({
 
 export default function RecondicioneCorpoMentePage() {
   const navigate = useNavigate();
-  const { checkAccess, requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
+  const { checkAccess } = usePremiumContent();
+  const { hasAccess: hasDrJoeEntitlement } = useDrJoeEntitlement();
+  const [offerOpen, setOfferOpen] = useState(false);
 
   const [nowFeeling, setNowFeeling] = useState<(typeof NOW_OPTIONS)[number] | null>(null);
   const [installState, setInstallState] = useState<(typeof INSTALL_OPTIONS)[number] | null>(null);
@@ -80,8 +83,9 @@ export default function RecondicioneCorpoMentePage() {
     sessionStorage.setItem('eco.recondition.v1', JSON.stringify(payload));
 
     const { hasAccess } = checkAccess(true);
-    if (!hasAccess) {
-      requestUpgrade('dr_joe_dispenza_meditation');
+    const hasPremiumAccess = hasAccess || hasDrJoeEntitlement;
+    if (!hasPremiumAccess) {
+      setOfferOpen(true);
       return;
     }
 
@@ -239,11 +243,7 @@ export default function RecondicioneCorpoMentePage() {
         </div>
       </div>
 
-      <UpgradeModal
-        open={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        source="dr_joe_dispenza"
-      />
+      <DrJoeOfferModal open={offerOpen} onClose={() => setOfferOpen(false)} origin="dr_joe_recondicione_locked" />
     </div>
   );
 }
