@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import mixpanel from '@/lib/mixpanel';
 import { useGuest } from '@/hooks/useGuest';
+import { fbq } from '@/lib/fbpixel';
 
 // ── Paleta Dr. Joe Dispenza ────────────────────────────────────────────────
 const LAVENDER      = 'rgba(148,136,196,0.96)';
@@ -28,6 +29,10 @@ export default function IntroPotencialPage() {
       guestId: guestUser?.id ?? null,
       timestamp: new Date().toISOString(),
     });
+    fbq('ViewContent', {
+      content_name: 'Intro Potencial',
+      content_category: 'Guest Funnel',
+    });
   }, [guestUser?.id]);
 
   function handleStart() {
@@ -36,6 +41,9 @@ export default function IntroPotencialPage() {
       source: 'intro_potencial',
       guestId: guestUser?.id ?? null,
       timestamp: new Date().toISOString(),
+    });
+    fbq('Lead', {
+      content_name: 'Intro Potencial — Começar',
     });
     navigate('/app/minigame-potencial');
   }
