@@ -1064,6 +1064,17 @@ export const APRIL_REFLECTIONS: DailyMaxim[] = [
     comment: 'Uma mulher diz que quer conhecer um bom rapaz e se casar, no entanto, ela passa todo o tempo cercada de idiotas. Um homem diz que deseja encontrar um excelente emprego, mas não se deu ao trabalho de procurar de verdade. Executivos tentam seguir duas estratégias diferentes ao mesmo tempo e ficam chocados quando nenhuma delas dá certo.\n\nTodas essas pessoas, assim como muitas vezes acontece conosco, estão enganadas e divididas. Uma das mãos está agindo contra a outra. Como disse certa vez Martin Luther King, Jr.: “Há uma espécie de guerra civil em curso em nossa vida.” Uma guerra dentro de cada indivíduo, entre o lado bom e o mau de sua alma.\n\nOs estoicos dizem que essa guerra é geralmente um resultado de nossos desejos conflitantes, maus julgamentos, pensamentos tendenciosos. Não paramos e nos perguntamos: Ok, o que eu realmente quero? O que estou buscando aqui? Se fizéssemos isso, perceberíamos os desejos contraditórios e incongruentes que temos. E então pararíamos de agir contra nós mesmos.',
     background: getBackgroundForDay(3),
   },
+  {
+    date: '16 de abril',
+    month: 'abril',
+    dayNumber: 16,
+    title: 'OBSERVE A CAUSA E O EFEITO',
+    text: '"Presta muita atenção ao que está sendo dito durante as conversas e ao que decorre de qualquer ação. Na ação, olha imediatamente para o alvo; quanto às palavras, ouve atentamente o que é indicado."',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 7.4',
+    comment: 'Com a obra do psicólogo Albert Ellis, o estoicismo atingiu milhões de pessoas por meio do que é conhecido como terapia cognitivo-comportamental (TCC). Como uma forma de terapia, a TCC ajuda pacientes a identificar padrões destrutivos em seus pensamentos e em seu comportamento de modo que eles possam, com o tempo, orientá-los e influenciá-los numa direção positiva.\n\nÉ claro que Marco Aurélio não tinha uma formação em psicologia, mas suas palavras são tão importantes quanto as de qualquer médico. Ele está pedindo que você se torne um observador de seus próprios pensamentos e das ações provocadas por eles. De onde eles vêm? Que tendenciosidades demonstram? São construtivos ou destrutivos? Levam você a cometer erros ou a tomar atitudes de que pode se arrepender mais tarde? Procure padrões; descubra onde a causa encontra o efeito.\n\nSomente quando isso acontece, os padrões de comportamento negativos podem ser rompidos. E só então podem ser feitos aprimoramentos na vida real.',
+    background: getBackgroundForDay(16),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
