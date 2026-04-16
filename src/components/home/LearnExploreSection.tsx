@@ -209,68 +209,75 @@ function ContentCard({ item, onClick }: ContentCardProps) {
     );
   }
 
-  // Standard layout for other cards
+  // Standard layout — editorial full-image card
   return (
     <motion.button
       onClick={onClick}
-      className="flex flex-col overflow-hidden rounded-2xl touch-manipulation w-full"
-      style={{ border: '1px solid rgba(110,200,255,0.18)', boxShadow: '0 4px 24px rgba(110,200,255,0.08)' }}
-      whileHover={{ y: -4, boxShadow: '0 10px 36px rgba(110,200,255,0.18)' }}
-      whileTap={{ scale: 0.98 }}
+      className="group relative h-64 w-full overflow-hidden rounded-3xl touch-manipulation"
+      style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.16)' }}
+      whileHover={{ scale: 1.02, boxShadow: '0 16px 48px rgba(0,0,0,0.22)' }}
+      whileTap={{ scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 300, damping: 24 }}
     >
-      {/* Image Section */}
-      <div className="relative h-40 overflow-hidden" style={{ background: '#E8F4FF' }}>
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={item.title}
-            className="h-full w-full object-cover transition-transform duration-300"
-          />
-        ) : isGradient ? (
-          <div
-            className="h-full w-full transition-transform duration-300"
-            style={{
-              backgroundImage: item.image,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          />
-        ) : (
-          <div className={`h-full w-full ${item.image}`} />
-        )}
+      {/* Background image */}
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={item.title}
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      ) : isGradient ? (
+        <div
+          className="absolute inset-0 h-full w-full transition-transform duration-500 group-hover:scale-105"
+          style={{ backgroundImage: item.image, backgroundSize: 'cover', backgroundPosition: 'center' }}
+        />
+      ) : (
+        <div className={`absolute inset-0 h-full w-full ${item.image}`} />
+      )}
 
-        {/* Badge "Artigo" no canto superior esquerdo */}
-        <div className="absolute left-3 top-3">
-          <span className="inline-flex items-center rounded-full px-3 py-1"
-            style={{ background: 'rgba(110,200,255,0.18)', border: '1px solid rgba(110,200,255,0.30)', backdropFilter: 'blur(8px)' }}>
-            <span className="text-[11px] font-semibold" style={{ color: '#1A5C8A' }}>
-              Artigo
-            </span>
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/05" />
+
+      {/* Top badges */}
+      <div className="absolute top-0 left-0 right-0 flex items-start justify-between p-4">
+        <span
+          className="inline-flex items-center rounded-full px-2.5 py-1 backdrop-blur-md"
+          style={{ background: 'rgba(110,200,255,0.22)', border: '1px solid rgba(110,200,255,0.35)' }}
+        >
+          <span className="text-[10px] font-bold uppercase tracking-wider text-white">
+            Artigo
           </span>
-        </div>
-      </div>
-
-      {/* Content Section - below image */}
-      <div className="flex flex-col justify-between bg-white p-4 flex-1">
-        {/* Top: Premium badge if needed */}
+        </span>
         {item.isPremium && (
-          <div className="mb-2 flex items-center gap-1 w-fit rounded-full bg-gray-100 px-2 py-1">
-            <Lock size={12} className="text-[var(--eco-user)]" />
-            <span className="text-[11px] font-medium text-[var(--eco-user)]">
-              Premium
-            </span>
+          <div
+            className="flex items-center justify-center rounded-xl p-1.5 backdrop-blur-md"
+            style={{ background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.18)' }}
+          >
+            <Lock size={12} className="text-white" />
           </div>
         )}
+      </div>
 
-        {/* Title and Description */}
-        <div>
-          <h3 className="font-display text-base font-normal text-[var(--eco-text)]">
-            {item.title}
-          </h3>
-          <p className="mt-2 text-[13px] text-[var(--eco-text)]/70 leading-relaxed">
-            {item.description}
-          </p>
+      {/* Bottom content */}
+      <div className="absolute bottom-0 left-0 right-0 p-5">
+        <h3 className="font-display text-[17px] font-bold leading-snug text-white mb-1.5">
+          {item.title}
+        </h3>
+        <p className="text-[13px] text-white/70 leading-snug line-clamp-2 mb-3">
+          {item.description}
+        </p>
+        <div
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all duration-200 group-hover:scale-105"
+          style={{
+            background: 'rgba(255,255,255,0.15)',
+            border: '1px solid rgba(255,255,255,0.25)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <span className="text-[11px] font-semibold text-white">Ler artigo</span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
         </div>
       </div>
     </motion.button>

@@ -15,13 +15,10 @@ interface EcoAIRecommendationCardProps {
 export default function EcoAIRecommendationCard({ onStartChat }: EcoAIRecommendationCardProps) {
   const navigate = useNavigate();
 
-  const tileClass = 'flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left cursor-pointer';
-  const tileStyle = { background: 'rgba(110,200,255,0.09)', border: '1px solid rgba(110,200,255,0.22)' };
-
   return (
-    <section className="mx-auto max-w-6xl px-4 py-3 md:px-8 md:py-4">
+    <section className="mx-auto max-w-6xl px-4 py-4 md:px-8 md:py-5">
       <motion.div
-        className="grid grid-cols-3 gap-2"
+        className="grid grid-cols-3 gap-3"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-40px' }}
@@ -29,38 +26,50 @@ export default function EcoAIRecommendationCard({ onStartChat }: EcoAIRecommenda
       >
         <motion.button
           variants={tileVariant}
-          whileHover={{ scale: 1.04, y: -1 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.03, y: -2 }}
+          whileTap={{ scale: 0.96 }}
           onClick={onStartChat}
-          className={tileClass}
-          style={tileStyle}
+          className="flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-4 text-center cursor-pointer min-h-[72px] transition-all duration-150 active:scale-95"
+          style={{
+            background: 'linear-gradient(145deg, rgba(110,200,255,0.14) 0%, rgba(75,174,232,0.08) 100%)',
+            border: '1px solid rgba(110,200,255,0.30)',
+            boxShadow: '0 2px 12px rgba(110,200,255,0.10)',
+          }}
         >
-          <EcoBubbleOneEye size={22} />
-          <span className="text-xs font-semibold text-[#2E7FB8] truncate">ECO AI</span>
+          <EcoBubbleOneEye size={26} />
+          <span className="text-[13px] font-semibold text-[#1E6FA5] leading-none">ECO AI</span>
         </motion.button>
 
         <motion.button
           variants={tileVariant}
-          whileHover={{ scale: 1.04, y: -1 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.03, y: -2 }}
+          whileTap={{ scale: 0.96 }}
           onClick={() => navigate('/app/configuracoes?menu=favoritos')}
-          className={tileClass}
-          style={tileStyle}
+          className="flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-4 text-center cursor-pointer min-h-[72px] transition-all duration-150 active:scale-95"
+          style={{
+            background: 'linear-gradient(145deg, rgba(110,200,255,0.14) 0%, rgba(75,174,232,0.08) 100%)',
+            border: '1px solid rgba(110,200,255,0.30)',
+            boxShadow: '0 2px 12px rgba(110,200,255,0.10)',
+          }}
         >
-          <Heart size={18} color="#6EC8FF" fill="#6EC8FF" strokeWidth={0} />
-          <span className="text-xs font-semibold text-[#2E7FB8] truncate">Salvos</span>
+          <Heart size={22} color="#6EC8FF" fill="#6EC8FF" strokeWidth={0} />
+          <span className="text-[13px] font-semibold text-[#1E6FA5] leading-none">Salvos</span>
         </motion.button>
 
         <motion.button
           variants={tileVariant}
-          whileHover={{ scale: 1.04, y: -1 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.03, y: -2 }}
+          whileTap={{ scale: 0.96 }}
           onClick={() => navigate('/app/diario-estoico')}
-          className={tileClass}
-          style={tileStyle}
+          className="flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-4 text-center cursor-pointer min-h-[72px] transition-all duration-150 active:scale-95"
+          style={{
+            background: 'linear-gradient(145deg, rgba(110,200,255,0.14) 0%, rgba(75,174,232,0.08) 100%)',
+            border: '1px solid rgba(110,200,255,0.30)',
+            boxShadow: '0 2px 12px rgba(110,200,255,0.10)',
+          }}
         >
-          <BookOpen size={18} color="#6EC8FF" strokeWidth={1.5} />
-          <span className="text-xs font-semibold text-[#2E7FB8] truncate">Diário</span>
+          <BookOpen size={22} color="#6EC8FF" strokeWidth={1.5} />
+          <span className="text-[13px] font-semibold text-[#1E6FA5] leading-none">Diário</span>
         </motion.button>
       </motion.div>
     </section>

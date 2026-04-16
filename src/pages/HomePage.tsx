@@ -172,7 +172,7 @@ export default function HomePage() {
       {
         id: 'rec_1',
         title: 'Plante o hábito que muda tudo',
-        description: '8 min. Um começo que fica.',
+        description: 'Crie sua rotina matinal em 8 minutos',
         duration: '8 min',
         image: 'url("/images/introducao-meditacao-hero.webp")',
         imagePosition: 'center center',
@@ -183,7 +183,7 @@ export default function HomePage() {
       {
         id: 'rec_2',
         title: 'Solte o peso antes do dia começar',
-        description: '7 min de respiração. O dia muda.',
+        description: '7 min · Deixe a ansiedade ir embora',
         duration: '7 min',
         image: 'url("/images/acolhendo-respiracao.webp")',
         imagePosition: 'center center',
@@ -193,7 +193,7 @@ export default function HomePage() {
       {
         id: 'rec_3',
         title: 'Seu corpo pediu isso',
-        description: '15 min para dormir de verdade.',
+        description: '15 min · Relaxamento corporal profundo',
         duration: '15 min',
         image: 'url("/images/meditacao-sono-new.webp")',
         imagePosition: 'center 32%',
@@ -210,8 +210,8 @@ export default function HomePage() {
       // Dr. Joe Dispenza — card unificado (navega para página dedicada)
       {
         id: 'drjoe_collection',
-        title: 'Ative o que já está em você',
-        description: '5 meditações com Dr. Joe Dispenza.',
+        title: 'Desperte seu potencial interior',
+        description: '5 meditações · aprox. 40 min',
         duration: '5 meditações',
         image: 'url("/images/capa-dr-joe-dispenza.png")',
         imagePosition: 'center 20%',
@@ -260,7 +260,7 @@ export default function HomePage() {
       {
         id: 'abundancia_protocol',
         title: 'Código da Abundância',
-        description: 'Reprograme sua mente para a prosperidade em 7 dias',
+        description: '7 dias · 12 min por dia',
         duration: '7 dias',
         image: 'url("/images/abundancia-card.webp")',
         imagePosition: 'center 30%',
@@ -512,7 +512,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen font-primary pb-16 md:pb-0" style={{ background: 'linear-gradient(170deg, #DFF0FF 0%, #EEF7FF 12%, #F6FAFF 28%, #FFFFFF 50%)' }}>
+    <div className="min-h-screen font-primary pb-16 md:pb-0" style={{ background: 'linear-gradient(175deg, #C8E8FF 0%, #D8EFFF 6%, #E6F4FF 14%, #EEF8FF 26%, #F5FAFF 44%, #FAFCFF 62%, #FFFFFF 80%)' }}>
       {/* Header - Always render first */}
       <HomeHeader onLogout={handleLogout} />
 
@@ -532,43 +532,56 @@ export default function HomePage() {
           <div className="hidden gap-6 md:grid md:grid-cols-2">
             {/* Left Card - Greeting */}
             <motion.div
-              className="flex flex-col justify-center rounded-2xl p-8 md:h-[320px] relative overflow-hidden"
+              className="flex flex-col justify-center rounded-3xl p-9 md:h-[320px] relative overflow-hidden"
               initial={{ opacity: 0, y: 24, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: 'spring', stiffness: 70, damping: 20, delay: 0.15 }}
               style={{
-                background: 'linear-gradient(135deg, #FFFFFF 0%, #EFF8FF 100%)',
-                border: '1px solid rgba(110,200,255,0.22)',
-                boxShadow: '0 4px 40px rgba(110,200,255,0.14)',
+                background: 'linear-gradient(150deg, #FFFFFF 0%, #EAF6FF 60%, #D8EFFF 100%)',
+                border: '1px solid rgba(110,200,255,0.26)',
+                boxShadow: '0 8px 48px rgba(110,200,255,0.18), 0 2px 8px rgba(110,200,255,0.10)',
               }}
             >
-              {/* Decorative orb top-right */}
+              {/* Large decorative orb top-right */}
               <div style={{
-                position: 'absolute', top: -50, right: -50,
-                width: 180, height: 180, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(110,200,255,0.18) 0%, transparent 70%)',
+                position: 'absolute', top: -70, right: -70,
+                width: 240, height: 240, borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(110,200,255,0.22) 0%, transparent 65%)',
                 pointerEvents: 'none',
               }} />
-              <h1 className="font-display text-5xl font-bold text-[var(--eco-text)] leading-tight relative">
-                {greeting},
-                <br />
-                <span style={{ color: '#4BAEE8' }}>{displayName}</span>
-              </h1>
-              <p className="mt-4 text-[16px] font-medium text-[var(--eco-text)] relative">
-                O que você está carregando hoje?
+              {/* Small orb bottom-left */}
+              <div style={{
+                position: 'absolute', bottom: -40, left: -20,
+                width: 140, height: 140, borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(75,174,232,0.14) 0%, transparent 65%)',
+                pointerEvents: 'none',
+              }} />
+              {/* Subtle greeting label */}
+              <p className="text-[11px] font-bold text-[#4BAEE8]/70 relative tracking-[0.18em] uppercase mb-1">
+                {greeting}
               </p>
-              <p className="mt-2 text-[14px] text-[var(--eco-muted)] relative">
-                A Eco está aqui. Sem julgamento. Sem roteiro.
+              <h1 className="font-display text-[38px] font-bold leading-tight relative" style={{ color: '#0D3461' }}>
+                {displayName}
+              </h1>
+              <div className="mt-4 h-[1px] w-12 relative" style={{ background: 'linear-gradient(90deg, #6EC8FF, transparent)' }} />
+              <p className="mt-4 text-[17px] font-semibold relative leading-snug" style={{ color: '#1A3A5C' }}>
+                O que está pesando no seu coração hoje?
+              </p>
+              <p className="mt-2 text-[14px] relative" style={{ color: '#5A8AAD' }}>
+                A Eco está aqui para ouvir, sem julgar.
               </p>
               <button
                 onClick={handleStartChat}
-                className="mt-6 inline-flex items-center justify-center rounded-full px-6 py-3 text-[15px] font-semibold text-white transition-all duration-300 hover:scale-105 active:scale-95 relative"
+                className="mt-7 inline-flex items-center gap-2.5 justify-center self-start rounded-full px-7 py-3.5 text-[15px] font-bold text-white transition-all duration-300 hover:scale-105 active:scale-95 relative min-h-[48px]"
                 style={{
-                  background: 'linear-gradient(135deg, #6EC8FF 0%, #4BAEE8 100%)',
-                  boxShadow: '0 4px 20px rgba(110,200,255,0.45)',
+                  background: 'linear-gradient(135deg, #5BC4F0 0%, #3A9ED4 100%)',
+                  boxShadow: '0 6px 24px rgba(58,158,212,0.40), 0 2px 8px rgba(58,158,212,0.20)',
                 }}
               >
                 Conversar com a Eco
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
               </button>
             </motion.div>
 

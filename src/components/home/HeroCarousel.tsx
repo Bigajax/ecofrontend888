@@ -57,14 +57,14 @@ const getDailyReflectionContent = (): {
       badge: `HOJE • ${day} ${month}`,
       mainTitle: todayMaxim.title.toUpperCase(),
       title: 'Reflexão Diária Estoica',
-      description: 'Comece seu dia com sabedoria e clareza'
+      description: 'Reflexão matinal para clareza e sabedoria'
     };
   }
 
   // Fallback quando não há reflexão disponível
   return {
-    title: 'Um minuto para organizar seus pensamentos',
-    description: 'Uma reflexão estoica para começar o dia com clareza.'
+    title: 'Veja as coisas como realmente são',
+    description: 'Reflexão matinal para clareza e sabedoria'
   };
 };
 
@@ -85,9 +85,9 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
   {
     id: 2,
     badge: 'PROTOCOLO · 7 DIAS',
-    mainTitle: 'REPROGRAME SUA MENTE PARA A PROSPERIDADE',
+    mainTitle: 'LIBERTE-SE DE CRENÇAS LIMITANTES',
     title: 'Código da Abundância',
-    description: 'Dissolva crenças limitantes sobre dinheiro com neurociência e meditação guiada',
+    description: '7 dias para transformar sua relação com dinheiro e abundância',
     background: 'url("/images/abundancia-card.webp")',
   },
   {
@@ -95,7 +95,7 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
     badge: 'PROTOCOLO DO SONO',
     mainTitle: 'DURMA PROFUNDAMENTE EM 7 NOITES',
     title: 'Protocolo do Sono',
-    description: 'Meditações guiadas para induzir sono profundo e restaurador toda noite',
+    description: 'Meditações guiadas que acalmam sua mente e transformam suas noites',
     background: 'url("/images/meditacoes-sono-hero.webp")',
   },
 ];
@@ -350,7 +350,7 @@ export default function HeroCarousel({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
                 <span className="text-[13px] sm:text-[14px] font-bold relative z-10">
-                  Iniciar Protocolo
+                  Iniciar Jornada
                 </span>
               </button>
             </div>
@@ -371,7 +371,7 @@ export default function HeroCarousel({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
                 <span className="text-[13px] sm:text-[14px] font-bold relative z-10">
-                  Descobrir o Protocolo
+                  Começar Protocolo
                 </span>
               </button>
             </div>

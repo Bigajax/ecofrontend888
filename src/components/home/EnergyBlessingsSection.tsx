@@ -181,25 +181,25 @@ interface BlessingCardProps {
 
 function BlessingCard({ blessing, mobile, onClick }: BlessingCardProps) {
   const isStacked = (blessing.stackCount ?? 1) > 1;
-  const cardW = mobile ? 'w-[155px]' : 'w-[190px]';
-  const cardH = mobile ? '248px' : '285px';
+  const cardW = mobile ? 'w-[165px]' : 'w-[200px]';
+  const cardH = mobile ? '260px' : '295px';
 
   const innerContent = (
     <>
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+      {/* Multi-stop gradient for strong readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/40 via-50% to-black/10" />
 
       {/* Hover darken */}
-      <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/15 transition-all duration-300" />
+      <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/20 transition-all duration-300" />
 
       {/* Content */}
-      <div className="relative flex h-full flex-col justify-between p-3">
+      <div className="relative flex h-full flex-col justify-between p-4">
         {/* Top row: category badge + lock */}
         <div className="flex items-start justify-between gap-1">
           {blessing.category ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 backdrop-blur-md">
-              <Headphones size={9} className="text-white/90 flex-shrink-0" />
-              <span className="text-[9px] font-bold uppercase tracking-wide text-white leading-none">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1 backdrop-blur-md">
+              <Headphones size={10} className="text-white/95 flex-shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-wide text-white leading-none">
                 {blessing.category}
               </span>
             </span>
@@ -207,25 +207,25 @@ function BlessingCard({ blessing, mobile, onClick }: BlessingCardProps) {
             <span />
           )}
           {blessing.isPremium && (
-            <div className="flex items-center justify-center rounded-lg bg-black/55 p-1.5 backdrop-blur-md">
-              <Lock size={11} className="text-white" />
+            <div className="flex items-center justify-center rounded-lg bg-black/50 p-1.5 backdrop-blur-md">
+              <Lock size={12} className="text-white" />
             </div>
           )}
         </div>
 
         {/* Bottom: duration + title */}
         <div className="text-left">
-          <p className="mb-1 text-[11px] font-semibold text-white/75 drop-shadow">
+          <p className="mb-1.5 text-[12px] font-semibold text-white/80 drop-shadow">
             {blessing.duration}
           </p>
-          <h3 className="font-display text-[15px] font-bold leading-snug text-white drop-shadow-lg line-clamp-3">
+          <h3 className="font-display text-[16px] font-bold leading-snug text-white drop-shadow-lg line-clamp-3">
             {blessing.title}
           </h3>
         </div>
 
-        {/* Progress bar — só quando progress > 0 */}
+        {/* Progress bar */}
         {(blessing.progress ?? 0) > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/20">
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 rounded-b-2xl overflow-hidden">
             <div
               className="h-full bg-eco-baby"
               style={{ width: `${blessing.progress}%` }}

@@ -14,7 +14,7 @@ interface Program {
 const PROGRAMS: Program[] = [
   {
     id: 'prog_rings',
-    label: 'Disciplina que dura',
+    label: 'Construa hábitos que duram',
     title: '5 Anéis da Disciplina',
     image: '/images/five-rings-visual.webp',
     imagePosition: 'center center',
@@ -22,7 +22,7 @@ const PROGRAMS: Program[] = [
   },
   {
     id: 'prog_riqueza',
-    label: 'Pense diferente sobre dinheiro',
+    label: 'Reprograme sua mente financeira',
     title: 'Quem Pensa Enriquece',
     image: '/images/quem-pensa-enriquece.webp',
     imagePosition: 'center center',
@@ -30,7 +30,7 @@ const PROGRAMS: Program[] = [
   },
   {
     id: 'prog_diario',
-    label: 'Sabedoria estoica, todo dia',
+    label: 'Sabedoria estoica diária',
     title: 'Diário Estoico',
     image: '/images/diario-estoico.webp',
     imagePosition: 'center center',
@@ -171,88 +171,113 @@ function ProgramCard({ program, mobile, onClick, progressEntry }: ProgramCardPro
   const progress = progressEntry?.progress ?? 0;
   const isInactive = progressEntry?.isInactive ?? false;
   const isNearComplete = progressEntry?.isNearComplete ?? false;
+  const cardH = mobile ? '240px' : '280px';
+  const cardW = mobile ? 'w-[62vw] max-w-[260px]' : 'w-[272px]';
 
   return (
     <button
       onClick={onClick}
-      className={`flex-shrink-0 text-left active:scale-[0.98] transition-transform duration-150 ${
-        mobile ? 'w-[62vw] max-w-[260px]' : 'w-[272px]'
-      }`}
+      className={`group relative flex-shrink-0 overflow-hidden rounded-3xl text-left active:scale-[0.97] transition-all duration-200 ${cardW}`}
+      style={{
+        height: cardH,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)',
+      }}
     >
-      {/* Card */}
-      <div className="rounded-2xl bg-white overflow-hidden mb-3"
-        style={{ border: '1px solid rgba(110,200,255,0.20)', boxShadow: '0 4px 28px rgba(110,200,255,0.12)' }}>
-        {/* Label area */}
-        <div className="relative px-4 pt-4 pb-3">
-          <p className="font-display text-[18px] font-bold leading-snug pr-10" style={{ color: '#1A5C8A' }}>
-            {program.label}
-          </p>
-          {program.isPremium && (
-            <div className="absolute top-3.5 right-3.5 flex h-9 w-9 items-center justify-center rounded-full bg-gray-200/90">
-              <Lock size={15} className="text-gray-500" />
-            </div>
-          )}
-        </div>
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover transition-transform duration-500 group-hover:scale-105"
+        style={{
+          backgroundImage: `url("${program.image}")`,
+          backgroundPosition: program.imagePosition || 'center',
+        }}
+      />
 
-        {/* Image area */}
-        <div className="relative h-[178px] overflow-hidden">
+      {/* Multi-stop gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/05" />
+
+      {/* Top row */}
+      <div className="absolute top-0 left-0 right-0 flex items-start justify-between p-4">
+        <span
+          className="inline-flex items-center rounded-full px-2.5 py-1 backdrop-blur-md"
+          style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.22)' }}
+        >
+          <span className="text-[10px] font-bold uppercase tracking-wider text-white/90">
+            Programa
+          </span>
+        </span>
+        {program.isPremium && (
           <div
-            className="absolute inset-0 bg-cover"
-            style={{
-              backgroundImage: `url("${program.image}")`,
-              backgroundPosition: program.imagePosition || 'center',
-            }}
-          />
-          {/* Bottom fade */}
-          <div className="absolute bottom-0 left-0 right-0 h-14 pointer-events-none"
-            style={{ background: 'linear-gradient(to top, rgba(232,244,255,0.55), transparent)' }} />
-
-          {/* Badge de inatividade */}
-          {isInactive && progress > 0 && (
-            <div className="absolute top-3 left-3 right-3">
-              <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 backdrop-blur-sm">
-                <span className="text-[10px] font-semibold text-amber-300">Sua jornada está esperando</span>
-              </span>
-            </div>
-          )}
-
-          {/* % + barra na base da imagem */}
-          {progress > 0 && (
-            <>
-              <div className="absolute bottom-4 left-3">
-                <span className="text-[13px] font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)]">
-                  {progress >= 100 ? '✓' : `${progress}%`}
-                </span>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/25">
-                <div
-                  className="h-full transition-all duration-700"
-                  style={{
-                    width: `${progress}%`,
-                    background:
-                      progress >= 100
-                        ? '#34d399'
-                        : 'linear-gradient(to right, #a78bfa, #7c3aed)',
-                  }}
-                />
-              </div>
-            </>
-          )}
-        </div>
+            className="flex items-center justify-center rounded-xl p-1.5 backdrop-blur-md"
+            style={{ background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.18)' }}
+          >
+            <Lock size={12} className="text-white" />
+          </div>
+        )}
       </div>
 
-      {/* Title below card */}
-      <p className="text-[15px] font-semibold text-[var(--eco-text)]">{program.title}</p>
+      {/* Inactivity badge */}
+      {isInactive && progress > 0 && (
+        <div className="absolute top-12 left-4">
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 backdrop-blur-sm"
+            style={{ background: 'rgba(0,0,0,0.55)' }}
+          >
+            <span className="text-[10px] font-semibold text-amber-300">Jornada esperando</span>
+          </span>
+        </div>
+      )}
 
-      {/* Micro copy */}
-      {progress > 0 && progress < 100 && (
-        <p className="mt-0.5 text-[12px] text-[var(--eco-muted)]">
-          {isNearComplete ? 'Você está quase lá' : 'Continue sua jornada'}
+      {/* Bottom content */}
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        <p className="text-[12px] font-medium text-white/65 mb-1 uppercase tracking-wide">
+          {program.label}
         </p>
-      )}
-      {progress >= 100 && (
-        <p className="mt-0.5 text-[12px] text-emerald-600 font-medium">Programa concluído</p>
-      )}
+        <h3 className="font-display text-[18px] font-bold leading-snug text-white mb-3">
+          {program.title}
+        </h3>
+
+        {/* Progress */}
+        {progress > 0 && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] font-semibold text-white/70">
+                {progress >= 100 ? 'Concluído' : isNearComplete ? 'Quase lá' : 'Em andamento'}
+              </span>
+              <span className="text-[11px] font-bold text-white/80">
+                {progress >= 100 ? '✓' : `${progress}%`}
+              </span>
+            </div>
+            <div className="h-1 rounded-full bg-white/20 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${progress}%`,
+                  background: progress >= 100
+                    ? '#34d399'
+                    : 'linear-gradient(90deg, #a78bfa, #7c3aed)',
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* CTA pill */}
+        <div
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all duration-200 group-hover:scale-105"
+          style={{
+            background: 'rgba(255,255,255,0.15)',
+            border: '1px solid rgba(255,255,255,0.25)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <span className="text-[12px] font-semibold text-white">
+            {progress > 0 && progress < 100 ? 'Continuar' : progress >= 100 ? 'Rever' : 'Começar'}
+          </span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
     </button>
   );
 }

@@ -107,14 +107,15 @@ export default function LiveReflectionSection() {
   }, []);
 
   return (
-    <section className="relative mx-auto max-w-6xl px-4 py-16 md:px-8 md:py-24">
-      {/* White Background Container */}
-      <div className="relative overflow-hidden rounded-[32px] bg-white px-6 py-16 sm:px-8 sm:py-20 md:px-16 md:py-32"
-        style={{ border: '1px solid rgba(110,200,255,0.20)', boxShadow: '0 8px 48px rgba(110,200,255,0.10)' }}>
-
-        {/* Floating Avatars Container */}
+    <section className="relative mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
+      {/* Compact horizontal card */}
+      <div
+        className="relative overflow-hidden rounded-3xl bg-white px-6 py-8 sm:px-8 sm:py-10 md:px-12 md:py-10"
+        style={{ border: '1px solid rgba(110,200,255,0.20)', boxShadow: '0 4px 32px rgba(110,200,255,0.10)' }}
+      >
+        {/* Floating Avatars — visible only on larger screens, fewer avatars on mobile */}
         <div className="pointer-events-none absolute inset-0">
-          {AVATARS.map((avatar) => {
+          {AVATARS.slice(0, isMobile ? 6 : AVATARS.length).map((avatar) => {
             const position = isMobile ? avatar.mobile : avatar.desktop;
             return (
               <div
@@ -134,10 +135,10 @@ export default function LiveReflectionSection() {
                   src={avatar.image}
                   alt={`Avatar ${avatar.id}`}
                   loading="lazy"
-                  className={`${SIZE_MAP[avatar.size as keyof typeof SIZE_MAP]} rounded-full object-cover opacity-60 sm:opacity-80 md:opacity-90 shadow-md md:shadow-lg transition-all duration-300 hover:scale-110 hover:opacity-100`}
+                  className={`${SIZE_MAP[avatar.size as keyof typeof SIZE_MAP]} rounded-full object-cover opacity-50 sm:opacity-70 md:opacity-85 shadow-md transition-all duration-300`}
                   style={{
-                    boxShadow: `0 0 0 3px ${avatar.color}, 0 4px 20px rgba(0, 0, 0, 0.08)`,
-                    border: `3px solid ${avatar.color}`
+                    boxShadow: `0 0 0 2px ${avatar.color}, 0 4px 16px rgba(0,0,0,0.08)`,
+                    border: `2px solid ${avatar.color}`
                   }}
                 />
               </div>
@@ -145,54 +146,43 @@ export default function LiveReflectionSection() {
           })}
         </div>
 
-        {/* Central Content */}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center px-8 sm:px-2">
-          {/* Main message */}
-          <p className="text-base sm:text-lg font-medium text-gray-600 md:text-xl mb-6 max-w-xs">
-            Ninguém precisa fazer isso sozinho.
+        {/* Central Content — compact horizontal layout */}
+        <div className="relative z-10 flex flex-col items-center justify-center text-center gap-3">
+          <p className="text-[15px] font-medium text-gray-500 max-w-xs">
+            Você não está sozinho(a) nessa jornada.
           </p>
 
-          {/* Counter and Live Badge */}
-          <div className="mb-3 flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-            <h2 className="font-display text-4xl sm:text-5xl font-bold md:text-7xl" style={{ color: '#1A5C8A' }}>
+          <div className="flex items-center gap-3">
+            <h2 className="font-display text-3xl sm:text-4xl font-bold" style={{ color: '#1A5C8A' }}>
               {count.toLocaleString('pt-BR')}
             </h2>
-            <div className="flex items-center gap-1.5 rounded-full bg-red-500 px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-lg">
-              <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 animate-pulse rounded-full bg-white"></div>
-              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-white">
+            <div className="flex items-center gap-1.5 rounded-full bg-red-500 px-2.5 py-1 shadow-md">
+              <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-white">
                 AO VIVO
               </span>
             </div>
           </div>
 
-          {/* Subtitle */}
-          <p className="text-sm sm:text-lg font-medium text-gray-600 md:text-xl mb-8">
-            pessoas estão aqui agora.
+          <p className="text-[15px] font-medium text-gray-500">
+            pessoas estão transformando suas vidas com a Ecotopia.
           </p>
 
-          {/* CTA */}
           <button
             onClick={() => navigate('/app')}
-            className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-[15px] font-semibold text-white transition-all duration-300 hover:scale-105 active:scale-95"
-            style={{ background: 'linear-gradient(135deg, #6EC8FF, #4BAEE8)', boxShadow: '0 4px 20px rgba(110,200,255,0.45)' }}
+            className="mt-1 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-semibold text-white transition-all duration-300 hover:scale-105 active:scale-95"
+            style={{ background: 'linear-gradient(135deg, #6EC8FF, #4BAEE8)', boxShadow: '0 4px 18px rgba(110,200,255,0.40)' }}
           >
-            Entrar agora →
+            Junte-se a elas →
           </button>
         </div>
 
-        {/* Keyframes for floating animations */}
         <style>{`
           ${AVATARS.map((avatar) => `
             @keyframes float-${avatar.id} {
-              0%, 100% {
-                transform: translateY(0px) translateX(0px);
-              }
-              33% {
-                transform: translateY(-6px) translateX(4px);
-              }
-              66% {
-                transform: translateY(4px) translateX(-4px);
-              }
+              0%, 100% { transform: translateY(0px) translateX(0px); }
+              33% { transform: translateY(-5px) translateX(3px); }
+              66% { transform: translateY(3px) translateX(-3px); }
             }
           `).join('\n')}
         `}</style>
