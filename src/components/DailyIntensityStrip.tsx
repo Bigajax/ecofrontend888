@@ -54,17 +54,23 @@ const DailyIntensityStrip: React.FC<Props> = ({
   const keys = useMemo(() => {
     if (domainsOverride?.length) return domainsOverride;
     const agg: Record<string, number> = {};
-    for (const r of data) {
-      for (const k of Object.keys(r)) if (k !== "data") agg[k] = (agg[k] || 0) + num((r as any)[k]);
+    for (const row of data) {
+      for (const k of Object.keys(row)) {
+        if (k === "data") continue;
+        agg[k] = (agg[k] || 0) + num(row[k]);
+      }
     }
-    return Object.entries(agg).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k])=>k);
+    return Object.entries(agg)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([k]) => k);
   }, [data, domainsOverride]);
 
   /** 2) soma por dia (0..10) */
   const byDayAll = useMemo(() => {
-    return data.map((r) => {
-      const total = keys.reduce((acc, k) => acc + num((r as any)[k]), 0);
-      return { day: r.data.slice(0,10), value: clamp01to10(total) };
+    return data.map((row) => {
+      const total = keys.reduce((acc, k) => acc + num(row[k]), 0);
+      return { day: row.data.slice(0, 10), value: clamp01to10(total) };
     });
   }, [data, keys]);
 
