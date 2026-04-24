@@ -907,7 +907,7 @@ function ChatPage() {
   }, [navigate]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-white via-blue-50/20 to-purple-50/10">
+    <div className="flex h-screen overflow-hidden bg-white">
       {/* Desktop Sidebar */}
       <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleBackToHome} />
 
@@ -936,18 +936,35 @@ function ChatPage() {
               <div className="mx-auto flex w-full max-w-3xl flex-col">
                 {isEmptyState && (
                   <motion.div
-                    className="w-full pt-12 pb-8"
-                    initial={{ opacity: 0, y: 12 }}
+                    className="w-full pt-16 pb-8"
+                    initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.28 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    <div className="text-center space-y-2">
-                      <h1 className="text-2xl sm:text-3xl font-medium text-gray-900">
-                        {saudacao}, {displayName || rawUserName}
-                      </h1>
-                      <p className="text-base text-gray-600" data-testid="chat-hero-subtitle">
-                        {heroSubtitle || OPENING_VARIATIONS[0] || ''}
-                      </p>
+                    <div className="flex flex-col items-center text-center gap-5">
+                      {/* Olho ECO */}
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        <EcoBubbleOneEye size={48} state="idle" />
+                      </motion.div>
+
+                      {/* Saudação */}
+                      <motion.div
+                        className="space-y-2"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35, delay: 0.18 }}
+                      >
+                        <h1 className="font-display text-[28px] sm:text-[34px] font-bold leading-tight" style={{ color: '#0D3461' }}>
+                          {saudacao}, {displayName || rawUserName}
+                        </h1>
+                        <p className="text-[15px] text-gray-400 max-w-xs mx-auto leading-relaxed" data-testid="chat-hero-subtitle">
+                          {heroSubtitle || OPENING_VARIATIONS[0] || ''}
+                        </p>
+                      </motion.div>
                     </div>
                   </motion.div>
                 )}
@@ -1003,7 +1020,8 @@ function ChatPage() {
               <button
                 type="button"
                 onClick={handleJumpToBottom}
-                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-eco-baby to-eco-babyDark px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-2 focus:ring-eco-baby/50 active:scale-95 pointer-events-auto"
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-105 focus:outline-none active:scale-95 pointer-events-auto"
+                style={{ background: 'linear-gradient(135deg, #1A4FB5, #0D3461)' }}
                 aria-label="Rolar para novas mensagens"
               >
                 Novas mensagens

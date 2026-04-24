@@ -49,70 +49,53 @@ export default function EcoAIGuidanceCard({
         whileTap={{ scale: 0.995 }}
         style={{
           background: 'linear-gradient(135deg, #07192E 0%, #0D2E4F 35%, #103A62 65%, #0F4476 100%)',
-          boxShadow: '0 20px 60px rgba(7,25,46,0.45), 0 4px 16px rgba(110,200,255,0.12)',
+          boxShadow: '0 20px 60px rgba(7,25,46,0.40), 0 4px 16px rgba(7,25,46,0.20)',
         }}
       >
-        {/* Glow orbs */}
-        <div
-          className="pointer-events-none absolute"
-          style={{
-            top: '-60px', right: '-40px',
-            width: '280px', height: '280px', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(110,200,255,0.18) 0%, transparent 65%)',
-          }}
-        />
-        <div
-          className="pointer-events-none absolute"
-          style={{
-            bottom: '-80px', left: '-20px',
-            width: '220px', height: '220px', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(75,174,232,0.12) 0%, transparent 65%)',
-          }}
-        />
+        {/* Subtle glow orbs */}
+        <div className="pointer-events-none absolute" style={{ top: '-60px', right: '-40px', width: '280px', height: '280px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 65%)' }} />
+        <div className="pointer-events-none absolute" style={{ bottom: '-80px', left: '-20px', width: '220px', height: '220px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 65%)' }} />
 
-        {/* Subtle star dots */}
+        {/* Star dots */}
         {[
-          { top: '18%', left: '12%', size: 2, opacity: 0.4 },
-          { top: '60%', left: '28%', size: 1.5, opacity: 0.3 },
-          { top: '30%', left: '55%', size: 2, opacity: 0.25 },
-          { top: '72%', left: '70%', size: 1.5, opacity: 0.35 },
-          { top: '15%', left: '80%', size: 2, opacity: 0.3 },
+          { top: '18%', left: '12%', size: 2, opacity: 0.25 },
+          { top: '60%', left: '28%', size: 1.5, opacity: 0.18 },
+          { top: '30%', left: '55%', size: 2, opacity: 0.15 },
+          { top: '72%', left: '70%', size: 1.5, opacity: 0.22 },
+          { top: '15%', left: '80%', size: 2, opacity: 0.18 },
         ].map((dot, i) => (
-          <div
-            key={i}
-            className="pointer-events-none absolute rounded-full bg-white"
-            style={{
-              top: dot.top, left: dot.left,
-              width: dot.size, height: dot.size,
-              opacity: dot.opacity,
-            }}
-          />
+          <div key={i} className="pointer-events-none absolute rounded-full bg-white" style={{ top: dot.top, left: dot.left, width: dot.size, height: dot.size, opacity: dot.opacity }} />
         ))}
 
         {/* Content */}
         <div className="relative z-10 flex flex-col gap-4 px-6 py-7 sm:flex-row sm:items-center sm:gap-6 md:px-8 md:py-8">
-          {/* Avatar with glow ring */}
+
+          {/* Avatar — olho com anéis brancos no dark */}
           <div className="flex-shrink-0 self-start sm:self-auto">
             <div
               className="relative flex h-14 w-14 items-center justify-center rounded-2xl sm:h-16 sm:w-16"
               style={{
-                background: 'rgba(110,200,255,0.14)',
-                border: '1px solid rgba(110,200,255,0.28)',
-                boxShadow: '0 0 24px rgba(110,200,255,0.22), inset 0 1px 0 rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.12)',
               }}
             >
-              <EcoBubbleOneEye variant="icon" size={32} />
+              <EcoBubbleOneEye
+                variant="icon"
+                size={34}
+                color="rgba(255,255,255,0.80)"
+                accentColor="#6EC8FF"
+              />
               {/* Pulse ring */}
               <div
-                className="absolute inset-[-4px] animate-ping rounded-2xl opacity-20"
-                style={{ border: '1px solid rgba(110,200,255,0.8)', animationDuration: '3s' }}
+                className="absolute inset-[-4px] animate-ping rounded-2xl opacity-15"
+                style={{ border: '1px solid rgba(255,255,255,0.5)', animationDuration: '3s' }}
               />
             </div>
           </div>
 
           {/* Text */}
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#6EC8FF]/70 mb-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-1.5">
               ECO AI — Sua companheira de jornada
             </p>
             <p className="font-display text-[20px] font-semibold leading-snug text-white sm:text-[22px]">
@@ -125,10 +108,9 @@ export default function EcoAIGuidanceCard({
             <div
               className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-[14px] font-bold transition-all duration-200 group-hover:scale-105"
               style={{
-                background: 'rgba(110,200,255,0.18)',
-                border: '1px solid rgba(110,200,255,0.35)',
-                color: '#E8F7FF',
-                boxShadow: '0 0 16px rgba(110,200,255,0.15)',
+                background: 'rgba(255,255,255,0.10)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                color: 'rgba(255,255,255,0.90)',
                 backdropFilter: 'blur(8px)',
               }}
             >
@@ -140,11 +122,8 @@ export default function EcoAIGuidanceCard({
           </div>
         </div>
 
-        {/* Bottom shimmer line */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-[1px]"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(110,200,255,0.30), transparent)' }}
-        />
+        {/* Bottom line */}
+        <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)' }} />
       </motion.button>
     </section>
   );

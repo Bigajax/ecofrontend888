@@ -176,7 +176,7 @@ const EyeBubbleBase: React.FC<EyeBubbleBaseProps> = ({
           background: `linear-gradient(135deg, ${token.gradient[0]}, ${token.gradient[1]})`,
           border: '1px solid rgba(255,255,255,0.28)',
           boxShadow:
-            '0 18px 34px rgba(15,23,42,0.18), inset 0 1px 18px rgba(255,255,255,0.45)',
+            '0 6px 20px rgba(15,23,42,0.14), 0 1px 4px rgba(15,23,42,0.08), inset 0 1px 20px rgba(255,255,255,0.60)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
         }}
@@ -199,7 +199,7 @@ const EyeBubbleBase: React.FC<EyeBubbleBaseProps> = ({
             width: irisSize,
             height: irisSize,
             background: `radial-gradient(120% 120% at 32% 24%, ${token.irisGradient[0]}, ${token.irisGradient[1]})`,
-            boxShadow: 'inset 0 0 12px rgba(32, 54, 120, 0.35), inset 0 2px 8px rgba(255,255,255,0.45)',
+            boxShadow: 'inset 0 0 14px rgba(20, 50, 140, 0.50), inset 0 2px 10px rgba(255,255,255,0.55), 0 2px 8px rgba(20,65,160,0.22)',
           }}
           animate={irisMotion.animate}
           transition={irisMotion.transition}
