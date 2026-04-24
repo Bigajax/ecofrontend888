@@ -290,7 +290,7 @@ export default function ProgramasPage() {
   return (
     <div
       className="min-h-screen pb-20 md:pb-0"
-      style={{ background: 'linear-gradient(175deg, #C8E8FF 0%, #D8EFFF 6%, #E6F4FF 14%, #EEF8FF 26%, #F5FAFF 44%, #FAFCFF 62%, #FFFFFF 80%)' }}
+      style={{ background: '#FFFFFF' }}
     >
       <HomeHeader />
 
@@ -303,7 +303,7 @@ export default function ProgramasPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 70, damping: 20 }}
         >
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-2" style={{ color: '#4BAEE8' }}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-2" style={{ color: '#0A6BBF' }}>
             Biblioteca
           </p>
           <h1 className="font-display text-[38px] sm:text-[48px] font-bold leading-tight" style={{ color: '#0D3461' }}>
@@ -330,7 +330,7 @@ export default function ProgramasPage() {
             <div className="pointer-events-none absolute" style={{ top: '-50px', right: '-30px', width: '200px', height: '200px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(110,200,255,0.16) 0%, transparent 65%)' }} />
             <div className="relative z-10 flex flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:gap-6 md:px-8">
               <div className="flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-[#6EC8FF]/70 mb-1.5">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-[#A8DEFF]/80 mb-1.5">
                   {tier === 'free' ? 'Plano Gratuito' : 'Plano Essentials'}
                 </p>
                 <p className="font-display text-[18px] font-semibold text-white leading-snug">
@@ -370,7 +370,7 @@ export default function ProgramasPage() {
               transition={{ type: 'spring', stiffness: 80, damping: 20, delay: sectionIdx * 0.04 }}
             >
               <div className="flex items-start gap-3">
-                <div className="mt-1.5 w-1 h-6 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(180deg, #6EC8FF, #4BAEE8)' }} />
+                <div className="mt-1.5 w-1 h-6 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(180deg, #1A4FB5, #0D3461)' }} />
                 <div>
                   <h2 className="font-display text-[22px] font-bold leading-tight" style={{ color: '#0D3461' }}>
                     {section.title}
@@ -452,7 +452,7 @@ export default function ProgramasPage() {
                         {isPremiumBadge && (
                           <span
                             className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 flex-shrink-0 backdrop-blur-md"
-                            style={{ background: isLocked ? 'rgba(110,200,255,0.30)' : 'rgba(110,200,255,0.22)', border: '1px solid rgba(110,200,255,0.40)' }}
+                            style={{ background: isLocked ? 'rgba(167,139,250,0.30)' : 'rgba(167,139,250,0.22)', border: '1px solid rgba(167,139,250,0.40)' }}
                           >
                             {isLocked && <Lock size={10} className="text-white" />}
                             <span className="text-[10px] font-bold uppercase tracking-wide text-white">
@@ -550,7 +550,7 @@ export default function ProgramasPage() {
                   requestUpgrade('meditation_library_footer');
                 }}
                 className="inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 text-[15px] font-bold text-[#07192E] transition-all duration-200 hover:scale-105 active:scale-95 mt-1"
-                style={{ background: 'linear-gradient(135deg, #A8DEFF 0%, #6EC8FF 100%)', boxShadow: '0 6px 24px rgba(110,200,255,0.35)' }}
+                style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #1A4FB5 100%)', boxShadow: '0 6px 24px rgba(26,79,181,0.30)' }}
               >
                 <Lock size={16} />
                 Desbloquear tudo

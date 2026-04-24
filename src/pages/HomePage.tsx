@@ -512,7 +512,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen font-primary pb-16 md:pb-0" style={{ background: 'linear-gradient(175deg, #C8E8FF 0%, #D8EFFF 6%, #E6F4FF 14%, #EEF8FF 26%, #F5FAFF 44%, #FAFCFF 62%, #FFFFFF 80%)' }}>
+    <div className="min-h-screen font-primary pb-16 md:pb-0" style={{ background: '#FFFFFF' }}>
       {/* Header - Always render first */}
       <HomeHeader onLogout={handleLogout} />
 
@@ -537,33 +537,33 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: 'spring', stiffness: 70, damping: 20, delay: 0.15 }}
               style={{
-                background: 'linear-gradient(150deg, #FFFFFF 0%, #EAF6FF 60%, #D8EFFF 100%)',
-                border: '1px solid rgba(110,200,255,0.26)',
-                boxShadow: '0 8px 48px rgba(110,200,255,0.18), 0 2px 8px rgba(110,200,255,0.10)',
+                background: '#FFFFFF',
+                border: '1px solid rgba(0,0,0,0.06)',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.07), 0 2px 8px rgba(0,0,0,0.04)',
               }}
             >
               {/* Large decorative orb top-right */}
               <div style={{
                 position: 'absolute', top: -70, right: -70,
                 width: 240, height: 240, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(110,200,255,0.22) 0%, transparent 65%)',
+                background: 'radial-gradient(circle, rgba(10,107,191,0.07) 0%, transparent 65%)',
                 pointerEvents: 'none',
               }} />
               {/* Small orb bottom-left */}
               <div style={{
                 position: 'absolute', bottom: -40, left: -20,
                 width: 140, height: 140, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(75,174,232,0.14) 0%, transparent 65%)',
+                background: 'radial-gradient(circle, rgba(10,107,191,0.05) 0%, transparent 65%)',
                 pointerEvents: 'none',
               }} />
               {/* Subtle greeting label */}
-              <p className="text-[11px] font-bold text-[#4BAEE8]/70 relative tracking-[0.18em] uppercase mb-1">
+              <p className="text-[11px] font-bold text-[#0A6BBF]/60 relative tracking-[0.18em] uppercase mb-1">
                 {greeting}
               </p>
               <h1 className="font-display text-[38px] font-bold leading-tight relative" style={{ color: '#0D3461' }}>
                 {displayName}
               </h1>
-              <div className="mt-4 h-[1px] w-12 relative" style={{ background: 'linear-gradient(90deg, #6EC8FF, transparent)' }} />
+              <div className="mt-4 h-[1px] w-12 relative" style={{ background: 'linear-gradient(90deg, #0A6BBF, transparent)' }} />
               <p className="mt-4 text-[17px] font-semibold relative leading-snug" style={{ color: '#1A3A5C' }}>
                 O que está pesando no seu coração hoje?
               </p>
@@ -574,8 +574,8 @@ export default function HomePage() {
                 onClick={handleStartChat}
                 className="mt-7 inline-flex items-center gap-2.5 justify-center self-start rounded-full px-7 py-3.5 text-[15px] font-bold text-white transition-all duration-300 hover:scale-105 active:scale-95 relative min-h-[48px]"
                 style={{
-                  background: 'linear-gradient(135deg, #5BC4F0 0%, #3A9ED4 100%)',
-                  boxShadow: '0 6px 24px rgba(58,158,212,0.40), 0 2px 8px rgba(58,158,212,0.20)',
+                  background: 'linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)',
+                  boxShadow: '0 6px 24px rgba(13,52,97,0.30), 0 2px 8px rgba(13,52,97,0.15)',
                 }}
               >
                 Conversar com a Eco

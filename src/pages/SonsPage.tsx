@@ -103,7 +103,7 @@ export default function SonsPage() {
     <div
       className="min-h-screen"
       style={{
-        background: 'linear-gradient(175deg, #C8E8FF 0%, #D4EDFF 15%, #E8F5FF 30%, #F0F8FF 45%, #F8FBFF 60%, #FAFCFE 70%, #FFFFFF 80%)',
+        background: '#FFFFFF',
       }}
     >
       <HomeHeader />
@@ -119,7 +119,7 @@ export default function SonsPage() {
         >
           <p
             className="text-[11px] font-bold uppercase tracking-[0.2em] mb-2"
-            style={{ color: '#4BAEE8' }}
+            style={{ color: '#0A6BBF' }}
           >
             BIBLIOTECA
           </p>
@@ -151,14 +151,14 @@ export default function SonsPage() {
                 onClick={() => setSelectedPill(pill.id)}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-medium whitespace-nowrap transition-all duration-200 active:scale-95 flex-shrink-0"
                 style={isActive ? {
-                  background: 'linear-gradient(135deg, #6EC8FF, #4BAEE8)',
+                  background: 'linear-gradient(135deg, #1A4FB5, #0D3461)',
                   color: 'white',
-                  boxShadow: '0 4px 16px rgba(110,200,255,0.38)',
+                  boxShadow: '0 4px 16px rgba(13,52,97,0.28)',
                   border: '1px solid transparent',
                 } : {
                   background: 'rgba(255,255,255,0.78)',
                   color: '#38322A',
-                  border: '1px solid rgba(110,200,255,0.22)',
+                  border: '1px solid rgba(0,0,0,0.09)',
                   backdropFilter: 'blur(8px)',
                 }}
               >
@@ -183,7 +183,7 @@ export default function SonsPage() {
                 <div className="flex items-center gap-3">
                   <div
                     className="w-1 h-6 rounded-full flex-shrink-0"
-                    style={{ background: 'linear-gradient(180deg, #6EC8FF, #4BAEE8)' }}
+                    style={{ background: 'linear-gradient(180deg, #1A4FB5, #0D3461)' }}
                   />
                   <h2
                     className="font-display text-[22px] font-bold"
@@ -194,7 +194,7 @@ export default function SonsPage() {
                 </div>
                 <button
                   className="text-[13px] font-semibold transition-opacity hover:opacity-70"
-                  style={{ color: '#4BAEE8' }}
+                  style={{ color: '#0A6BBF' }}
                 >
                   Ver todos
                 </button>
@@ -393,12 +393,12 @@ function DurationModal({ sound, duration, onDurationChange, onClose, onStart }: 
                 onClick={() => onDurationChange(mins)}
                 className="flex flex-col items-center justify-center w-[88px] h-[88px] rounded-2xl transition-all duration-200 active:scale-95"
                 style={duration === mins ? {
-                  background: 'linear-gradient(135deg, #6EC8FF, #4BAEE8)',
-                  boxShadow: '0 6px 20px rgba(110,200,255,0.40)',
+                  background: 'linear-gradient(135deg, #1A4FB5, #0D3461)',
+                  boxShadow: '0 6px 20px rgba(13,52,97,0.30)',
                   transform: 'scale(1.06)',
                 } : {
-                  background: 'rgba(110,200,255,0.08)',
-                  border: '1.5px solid rgba(110,200,255,0.22)',
+                  background: 'rgba(13,52,97,0.05)',
+                  border: '1.5px solid rgba(13,52,97,0.14)',
                 }}
               >
                 <span
@@ -429,8 +429,8 @@ function DurationModal({ sound, duration, onDurationChange, onClose, onStart }: 
             onClick={onStart}
             className="w-full py-4 rounded-2xl font-semibold text-[15px] text-white transition-all duration-200 active:scale-[0.98] hover:opacity-90 mb-3"
             style={{
-              background: 'linear-gradient(135deg, #6EC8FF, #4BAEE8)',
-              boxShadow: '0 6px 20px rgba(110,200,255,0.38)',
+              background: 'linear-gradient(135deg, #1A4FB5, #0D3461)',
+              boxShadow: '0 6px 20px rgba(13,52,97,0.28)',
             }}
           >
             Iniciar sessão →

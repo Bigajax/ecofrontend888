@@ -87,7 +87,7 @@ export default function ConfiguracoesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F5FBFF] via-[#E3F5FF] to-[#F5FBFF]">
+    <div className="min-h-screen bg-white">
       <HomeHeader />
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -101,7 +101,7 @@ export default function ConfiguracoesPage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#6EC8FF] to-[#4BA8E0] text-white text-2xl font-bold">
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1A4FB5] to-[#0D3461] text-white text-2xl font-bold">
                 {user?.user_metadata?.full_name?.charAt(0) || (isGuestMode ? 'C' : 'U')}
               </div>
             )}
@@ -132,8 +132,8 @@ export default function ConfiguracoesPage() {
                       onClick={() => handleMenuClick(item.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                         isSelected
-                          ? 'bg-[#F5FBFF] text-[#6EC8FF]'
-                          : 'text-gray-600 hover:bg-gray-50'
+                          ? 'bg-[#F0F5FF] text-[#0D3461] font-semibold'
+                          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
                       }`}
                     >
                       <Icon size={20} />
@@ -190,7 +190,7 @@ export default function ConfiguracoesPage() {
                             onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                             disabled={isGuestMode}
                             placeholder={isGuestMode ? "Disponível apenas para usuários registrados" : ""}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#1A4FB5] focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                           />
                         </div>
 
@@ -203,7 +203,7 @@ export default function ConfiguracoesPage() {
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             disabled={isGuestMode}
                             placeholder={isGuestMode ? "Disponível apenas para usuários registrados" : ""}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#1A4FB5] focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                           />
                         </div>
 
@@ -216,7 +216,7 @@ export default function ConfiguracoesPage() {
                             onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
                             disabled={isGuestMode}
                             placeholder={isGuestMode ? "Disponível apenas para usuários registrados" : ""}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#1A4FB5] focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                           />
                         </div>
                       </div>
@@ -226,14 +226,14 @@ export default function ConfiguracoesPage() {
                     {isGuestMode ? (
                       <button
                         onClick={() => navigate('/register')}
-                        className="px-8 py-3 bg-[#6EC8FF] text-white font-medium rounded-full hover:bg-[#4BA8E0] transition-colors shadow-md hover:shadow-lg active:scale-95"
+                        className="px-8 py-3 text-white font-medium rounded-full transition-all shadow-md hover:shadow-lg active:scale-95 hover:scale-105" style={{ background: 'linear-gradient(135deg, #1A4FB5, #0D3461)' }}
                       >
                         Criar conta gratuita
                       </button>
                     ) : (
                       <button
                         onClick={handleUpdate}
-                        className="px-8 py-3 bg-[#6EC8FF] text-white font-medium rounded-full hover:bg-[#4BA8E0] transition-colors shadow-md hover:shadow-lg active:scale-95"
+                        className="px-8 py-3 text-white font-medium rounded-full transition-all shadow-md hover:shadow-lg active:scale-95 hover:scale-105" style={{ background: 'linear-gradient(135deg, #1A4FB5, #0D3461)' }}
                       >
                         Atualizar
                       </button>

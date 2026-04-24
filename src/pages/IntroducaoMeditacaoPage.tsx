@@ -38,7 +38,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     audioUrl: '/audio/intro-primeiros-passos.mp3',
     image: 'url("/images/meditacao-introducao.webp")',
     imagePosition: 'center 32%',
-    gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
+    gradient: 'linear-gradient(to bottom, #1A4FB5 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #0D3461 80%, #1F7BAD 100%)',
     completed: false,
   },
   {
@@ -49,7 +49,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     audioUrl: '/audio/observando-respiracao.mp3',
     image: 'url("/images/observando-respiracao.webp")',
     imagePosition: 'center 32%',
-    gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
+    gradient: 'linear-gradient(to bottom, #1A4FB5 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #0D3461 80%, #1F7BAD 100%)',
     completed: false,
     isPremium: false,
   },
@@ -61,7 +61,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     audioUrl: '/audio/sentindo.mp3',
     image: 'url("/images/sentindo.webp")',
     imagePosition: 'center 32%',
-    gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
+    gradient: 'linear-gradient(to bottom, #1A4FB5 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #0D3461 80%, #1F7BAD 100%)',
     completed: false,
     isPremium: true,
   },
@@ -73,7 +73,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     audioUrl: '/audio/intro-relaxando.mp3',
     image: 'url("/images/meditacao-introducao.webp")',
     imagePosition: 'center 32%',
-    gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
+    gradient: 'linear-gradient(to bottom, #1A4FB5 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #0D3461 80%, #1F7BAD 100%)',
     completed: false,
     isPremium: true,
   },
@@ -85,7 +85,7 @@ const INITIAL_MEDITATIONS: Meditation[] = [
     audioUrl: '/audio/intro-corpo.mp3',
     image: 'url("/images/meditacao-introducao.webp")',
     imagePosition: 'center 32%',
-    gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
+    gradient: 'linear-gradient(to bottom, #1A4FB5 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #0D3461 80%, #1F7BAD 100%)',
     completed: false,
     isPremium: true,
   },
@@ -345,7 +345,7 @@ export default function IntroducaoMeditacaoPage() {
             <div
               className="absolute inset-0"
               style={{
-                background: 'linear-gradient(to bottom, rgba(200,215,235,0) 0%, rgba(200,215,235,0) 40%, rgba(255,255,255,1) 100%)',
+                background: 'linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 40%, rgba(255,255,255,1) 100%)',
               }}
             />
 
@@ -364,7 +364,7 @@ export default function IntroducaoMeditacaoPage() {
                   }
                 }}
                 disabled={completedCount === totalCount}
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[#2D88B8] shadow-lg transition-all duration-300 hover:bg-white/95 hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-default sm:mt-8 sm:px-8 sm:py-3 sm:text-base"
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[#0D3461] shadow-[0_4px_20px_rgba(0,0,0,0.20)] transition-all duration-300 hover:shadow-[0_8px_32px_rgba(0,0,0,0.25)] hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-default sm:mt-8 sm:px-8 sm:py-3 sm:text-base"
               >
                 {completedCount < totalCount && <Play className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" />}
                 {heroCTALabel}
@@ -398,7 +398,7 @@ export default function IntroducaoMeditacaoPage() {
                     background:
                       pct === 100
                         ? 'linear-gradient(to right, #34d399, #10b981)'
-                        : '#6EC1E4',
+                        : 'linear-gradient(to right, #1A4FB5, #0D3461)',
                   }}
                 />
               </div>
@@ -415,19 +415,19 @@ export default function IntroducaoMeditacaoPage() {
                   <div key={meditation.id} className="space-y-3 sm:space-y-4">
                     {/* Card da meditação */}
                     <div
-                      className={`flex items-center gap-3 rounded-2xl border p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] sm:gap-4 sm:p-4 ${
+                      className={`flex items-center gap-3 rounded-2xl p-3 transition-all duration-200 sm:gap-4 sm:p-4 ${
                         isNext
-                          ? 'border-[#6EC1E4]/60 bg-[#6EC1E4]/5'
-                          : 'border-[var(--eco-line)] bg-white'
+                          ? 'bg-[#F0F5FF] border border-[#1A4FB5]/20 shadow-[0_4px_16px_rgba(26,79,181,0.08)]'
+                          : 'bg-white border border-[rgba(0,0,0,0.06)] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.10)]'
                       }`}
                     >
                       {/* A — Círculo numerado */}
-                      <div className={`flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                      <div className={`flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold flex-shrink-0 ${
                         meditation.completed
-                          ? 'bg-[#6EC1E4] text-white'
+                          ? 'bg-[#0D3461] text-white shadow-[0_2px_8px_rgba(13,52,97,0.25)]'
                           : isNext
-                          ? 'border-2 border-[#6EC1E4] text-[#6EC1E4]'
-                          : 'border-2 border-[var(--eco-line)] text-[var(--eco-muted)]'
+                          ? 'bg-[#1A4FB5] text-white shadow-[0_2px_8px_rgba(26,79,181,0.25)]'
+                          : 'bg-[rgba(0,0,0,0.05)] text-[var(--eco-muted)]'
                       }`}>
                         {meditation.completed
                           ? <Check className="h-3.5 w-3.5" strokeWidth={3} />
@@ -444,7 +444,7 @@ export default function IntroducaoMeditacaoPage() {
                               {meditation.title}
                             </h3>
                             {isNext && (
-                              <span className="rounded-full bg-[#6EC1E4]/15 px-2 py-0.5 text-[10px] font-semibold text-[#6EC1E4]">
+                              <span className="rounded-full bg-[#1A4FB5]/15 px-2 py-0.5 text-[10px] font-semibold text-[#1A4FB5]">
                                 Próxima
                               </span>
                             )}
@@ -461,11 +461,11 @@ export default function IntroducaoMeditacaoPage() {
                           <span className="text-xs text-[var(--eco-muted)] sm:text-sm">
                             {meditation.duration}
                           </span>
-                          <div className={`flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10 ${
-                            meditation.isPremium ? 'bg-gray-200' : 'bg-[#6EC1E4]/10'
+                          <div className={`flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10 transition-all duration-200 group-hover:scale-110 ${
+                            meditation.isPremium ? 'bg-gray-100' : isNext ? 'bg-[#0D3461] shadow-[0_4px_12px_rgba(13,52,97,0.22)]' : 'bg-[#1A4FB5]/12'
                           }`}>
                             <Play className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                              meditation.isPremium ? 'text-gray-400' : 'text-[#6EC1E4]'
+                              meditation.isPremium ? 'text-gray-300' : isNext ? 'text-white' : 'text-[#1A4FB5]'
                             }`} fill="currentColor" />
                           </div>
                         </div>
@@ -474,16 +474,23 @@ export default function IntroducaoMeditacaoPage() {
 
                     {/* B — CTA intermediária após item 0 para não-VIP */}
                     {index === 0 && !isVipUser && (
-                      <div className="rounded-2xl border border-[#6EC1E4]/30 bg-[#6EC1E4]/5 px-4 py-5 text-center">
-                        <p className="text-sm font-medium text-[var(--eco-text)] leading-snug">
-                          Você deu o primeiro passo.<br />
-                          <span className="text-[var(--eco-muted)] font-normal">
-                            Continue com as 4 práticas seguintes e forme o hábito.
-                          </span>
+                      <div
+                        className="rounded-2xl px-5 py-5 text-center"
+                        style={{
+                          background: 'linear-gradient(135deg, #07192E 0%, #0D2E4F 60%, #103A62 100%)',
+                          boxShadow: '0 8px 32px rgba(7,25,46,0.20)',
+                        }}
+                      >
+                        <p className="text-[13px] font-semibold text-white/90 leading-snug">
+                          Você deu o primeiro passo.
+                        </p>
+                        <p className="mt-1 text-[12px] text-white/50">
+                          Continue com as 4 práticas seguintes e forme o hábito.
                         </p>
                         <button
                           onClick={() => requestUpgrade('introducao_list_cta')}
-                          className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#2D88B8] px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:brightness-110 hover:scale-105 active:scale-95 transition-all duration-200"
+                          className="mt-4 inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-[13px] font-bold text-[#07192E] transition-all hover:scale-105 active:scale-95"
+                          style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #A8DEFF 100%)', boxShadow: '0 4px 16px rgba(167,139,250,0.30)' }}
                         >
                           Desbloquear sessões →
                         </button>

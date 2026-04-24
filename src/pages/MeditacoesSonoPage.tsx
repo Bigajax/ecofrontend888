@@ -133,7 +133,7 @@ export default function MeditacoesSonoPage() {
             <button
               onClick={() => navigate('/app')}
               className="w-full rounded-full px-6 py-3.5 text-[15px] font-bold text-[#06091A] transition-all hover:scale-105 active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #A8DEFF 0%, #6EC8FF 100%)', boxShadow: '0 6px 24px rgba(110,200,255,0.35)' }}
+              style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #A78BFA 100%)', boxShadow: '0 6px 24px rgba(167,139,250,0.35)' }}
             >
               Explorar outros programas
             </button>
@@ -180,7 +180,7 @@ export default function MeditacoesSonoPage() {
               <button
                 onClick={() => navigate('/register')}
                 className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-full transition-all hover:scale-105"
-                style={{ background: 'rgba(110,200,255,0.22)', border: '1px solid rgba(110,200,255,0.38)', backdropFilter: 'blur(8px)' }}
+                style={{ background: 'rgba(167,139,250,0.22)', border: '1px solid rgba(167,139,250,0.38)', backdropFilter: 'blur(8px)' }}
               >
                 Criar conta grátis
               </button>
@@ -215,7 +215,7 @@ export default function MeditacoesSonoPage() {
                   className="flex w-full items-center gap-3 rounded-full px-5 py-2.5 text-sm font-medium text-white"
                   style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.28)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 14px rgba(0,0,0,0.18)' }}
                 >
-                  <Icon className="h-4 w-4 text-[#6EC8FF] flex-shrink-0" strokeWidth={2} />
+                  <Icon className="h-4 w-4 text-[#A78BFA] flex-shrink-0" strokeWidth={2} />
                   {label}
                 </span>
               ))}
@@ -227,7 +227,7 @@ export default function MeditacoesSonoPage() {
               style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 24px rgba(0,0,0,0.2)' }}
             >
               {checkoutLoading ? <Loader2 className="h-4 w-4 animate-spin" />
-                : isPaid && completedCount < 7 ? <Play className="h-4 w-4 text-[#6EC8FF]" fill="currentColor" />
+                : isPaid && completedCount < 7 ? <Play className="h-4 w-4 text-[#A78BFA]" fill="currentColor" />
                 : null}
               {checkoutLoading ? 'Abrindo pagamento…' : heroButtonLabel}
             </button>
@@ -246,7 +246,7 @@ export default function MeditacoesSonoPage() {
           >
             <p className="text-[15px] text-white/70 sm:text-base leading-relaxed">
               Você não tem insônia porque é fraco. Você tem insônia porque seu sistema nervoso nunca recebeu permissão para desligar.{' '}
-              <span className="font-semibold text-[#6EC8FF]">É isso que vamos mudar.</span>
+              <span className="font-semibold text-[#A78BFA]">É isso que vamos mudar.</span>
             </p>
           </motion.div>
         </section>
@@ -265,12 +265,12 @@ export default function MeditacoesSonoPage() {
               <p className="text-[13px] font-semibold text-white/70">
                 {completedCount === 7 ? 'Programa concluído!' : `Noite ${nextNight} de 7`}
               </p>
-              <span className="text-[13px] font-bold text-[#6EC8FF]">{pct}%</span>
+              <span className="text-[13px] font-bold text-[#A78BFA]">{pct}%</span>
             </div>
             <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.10)' }}>
               <div
                 className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #6EC8FF, #4BAEE8)' }}
+                style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #A78BFA, #7C3AED)' }}
               />
             </div>
             <p className="mt-2 text-[12px] text-white/35">{completedCount} de 7 noites concluídas</p>
@@ -286,11 +286,11 @@ export default function MeditacoesSonoPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ type: 'spring', stiffness: 70, damping: 20 }}
-              style={{ background: 'linear-gradient(135deg, #07192E 0%, #0D2E4F 40%, #0F4476 100%)', boxShadow: '0 16px 48px rgba(7,25,46,0.60), 0 4px 16px rgba(110,200,255,0.10)' }}
+              style={{ background: 'linear-gradient(135deg, #07192E 0%, #0D2E4F 40%, #0F4476 100%)', boxShadow: '0 16px 48px rgba(7,25,46,0.60), 0 4px 16px rgba(167,139,250,0.10)' }}
             >
-              <div className="pointer-events-none absolute" style={{ top: '-40px', right: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(110,200,255,0.20) 0%, transparent 65%)' }} />
+              <div className="pointer-events-none absolute" style={{ top: '-40px', right: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.20) 0%, transparent 65%)' }} />
               <div className="relative z-10 px-5 py-6 sm:px-6">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-[#6EC8FF]/70 mb-2">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-[#A78BFA]/70 mb-2">
                   Pagamento Único · Sem Mensalidade
                 </p>
                 <p className="font-display text-[18px] font-semibold text-white leading-snug mb-1">
@@ -303,13 +303,13 @@ export default function MeditacoesSonoPage() {
                   onClick={openCheckout}
                   disabled={checkoutLoading}
                   className="inline-flex items-center gap-2.5 rounded-full px-6 py-3 text-[14px] font-bold text-[#07192E] transition-all hover:scale-105 active:scale-95 disabled:opacity-70"
-                  style={{ background: 'linear-gradient(135deg, #A8DEFF 0%, #6EC8FF 100%)', boxShadow: '0 6px 24px rgba(110,200,255,0.35)' }}
+                  style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #A78BFA 100%)', boxShadow: '0 6px 24px rgba(167,139,250,0.35)' }}
                 >
                   {checkoutLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                   {checkoutLoading ? 'Abrindo pagamento…' : 'Desbloquear agora — R$ 37'}
                 </button>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(110,200,255,0.25), transparent)' }} />
+              <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.25), transparent)' }} />
             </motion.div>
           </section>
         )}
@@ -344,10 +344,10 @@ export default function MeditacoesSonoPage() {
                   }`}
                   style={{
                     background: completed
-                      ? 'rgba(110,200,255,0.10)'
+                      ? 'rgba(167,139,250,0.10)'
                       : 'rgba(255,255,255,0.05)',
                     border: completed
-                      ? '1px solid rgba(110,200,255,0.25)'
+                      ? '1px solid rgba(167,139,250,0.25)'
                       : '1px solid rgba(255,255,255,0.08)',
                   }}
                 >
@@ -370,7 +370,7 @@ export default function MeditacoesSonoPage() {
                       </div>
                     )}
                     {completed && (
-                      <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(110,200,255,0.25)' }}>
+                      <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(167,139,250,0.25)' }}>
                         <Check className="h-5 w-5 text-white" strokeWidth={2.5} />
                       </div>
                     )}
@@ -400,7 +400,7 @@ export default function MeditacoesSonoPage() {
                     {paidLocked ? (
                       <span
                         className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold text-white"
-                        style={{ background: 'rgba(110,200,255,0.20)', border: '1px solid rgba(110,200,255,0.35)' }}
+                        style={{ background: 'rgba(167,139,250,0.20)', border: '1px solid rgba(167,139,250,0.35)' }}
                       >
                         {checkoutLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Lock size={10} />}
                         {checkoutLoading ? '…' : 'R$ 37'}
@@ -414,7 +414,7 @@ export default function MeditacoesSonoPage() {
                           background: sequentialLocked
                             ? 'rgba(255,255,255,0.05)'
                             : completed
-                            ? 'rgba(110,200,255,0.22)'
+                            ? 'rgba(167,139,250,0.22)'
                             : 'rgba(255,255,255,0.12)',
                           border: sequentialLocked
                             ? '1px solid rgba(255,255,255,0.06)'
@@ -496,13 +496,13 @@ export default function MeditacoesSonoPage() {
             viewport={{ once: true, margin: '-40px' }}
             transition={{ type: 'spring', stiffness: 70, damping: 20 }}
           >
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#6EC8FF]/50 mb-2">Ciência</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#A78BFA]/50 mb-2">Ciência</p>
             <h3 className="font-display text-[20px] font-bold text-white mb-6">
               Por que este protocolo funciona?
             </h3>
             <div className="space-y-3">
               {[
-                { icon: Activity, text: 'Seu sistema nervoso aprende a desligar — não por força de vontade, mas por condicionamento.', color: '#6EC8FF' },
+                { icon: Activity, text: 'Seu sistema nervoso aprende a desligar — não por força de vontade, mas por condicionamento.', color: '#A78BFA' },
                 { icon: Zap,      text: 'Você para de tentar "apagar" os pensamentos. Aprende a deixá-los ir.', color: '#A78BFA' },
                 { icon: TrendingUp, text: 'Cada noite constrói em cima da anterior. No 7º dia, o corpo já sabe o que fazer.', color: '#34D399' },
               ].map(({ icon: Icon, text, color }, i) => (
