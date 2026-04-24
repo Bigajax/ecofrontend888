@@ -1075,6 +1075,17 @@ export const APRIL_REFLECTIONS: DailyMaxim[] = [
     comment: 'Com a obra do psicólogo Albert Ellis, o estoicismo atingiu milhões de pessoas por meio do que é conhecido como terapia cognitivo-comportamental (TCC). Como uma forma de terapia, a TCC ajuda pacientes a identificar padrões destrutivos em seus pensamentos e em seu comportamento de modo que eles possam, com o tempo, orientá-los e influenciá-los numa direção positiva.\n\nÉ claro que Marco Aurélio não tinha uma formação em psicologia, mas suas palavras são tão importantes quanto as de qualquer médico. Ele está pedindo que você se torne um observador de seus próprios pensamentos e das ações provocadas por eles. De onde eles vêm? Que tendenciosidades demonstram? São construtivos ou destrutivos? Levam você a cometer erros ou a tomar atitudes de que pode se arrepender mais tarde? Procure padrões; descubra onde a causa encontra o efeito.\n\nSomente quando isso acontece, os padrões de comportamento negativos podem ser rompidos. E só então podem ser feitos aprimoramentos na vida real.',
     background: getBackgroundForDay(16),
   },
+  {
+    date: '17 de abril',
+    month: 'abril',
+    dayNumber: 17,
+    title: 'NENHUM DANO, NENHUMA INFRAÇÃO',
+    text: '"Elimina a suposição de que foste prejudicado, e o dano também será eliminado. Deixa de estar prejudicado, e o dano desaparecerá."',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 4.7',
+    comment: 'Uma palavra pode ter múltiplos significados. Pode ser usada tanto com rapidez quanto com completa inocência. A mesma palavra pode significar um insulto cruel ou uma bobina qualquer. Da mesma maneira, existe uma diferença drástica entre o que foi dito com sarcasmo e o comentário mordaz e maldoso.\n\nA interpretação de um comentário ou uma palavra tem um imenso poder. É a diferença entre um riso e um sentimento ferido. A diferença entre uma briga irrompendo e duas pessoas se conectando. Entre o irromper de uma briga e o início da conexão entre duas pessoas.\n\nÉ por isso que é tão importante controlar as tendenciosidades e preconcepções que levamos para nossas interações. Quando você ouve ou vê alguma coisa, a que interpretação você recorre? Como costuma interpretar as intenções de outra pessoa?\n\nSe você gostaria de experimentar ficar contrariado ou magoado com menos frequência, trate de interpretar as palavras dos outros de forma a tornar isso possível. Escolha a conclusão mais adequada sobre as ações de alguém ou os acontecimentos externos, e é muito mais provável que você tenha a reação correta.',
+    background: getBackgroundForDay(17),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [

@@ -224,162 +224,180 @@ const LoginPage: React.FC = () => {
   return (
     <PhoneFrame backgroundImage="/images/login-background.webp">
       <div className="relative min-h-[100dvh] w-full overflow-hidden text-slate-900">
-        <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom)]] gap-8">
+        <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom))]">
           {isTourActive && (
             <HomePageTour onClose={closeTour} reason="login" nextPath="/" forceStart={true} />
           )}
 
-          {/* Logo no topo */}
-          <div className="flex-shrink-0">
-            <img
-              src="/images/ECOTOPIA.webp"
-              alt="Ecotopia"
-              className="w-32 h-32 object-contain drop-shadow-lg"
-              loading="lazy"
-            />
-          </div>
-
           <motion.div
-            initial={{ y: 12, opacity: 0 }}
+            initial={{ y: 16, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="w-full max-w-md space-y-6 rounded-3xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8"
+            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+            className="w-full max-w-sm"
           >
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="sr-only" htmlFor="email">
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                    inputMode="email"
-                    aria-invalid={Boolean(error)}
-                    aria-describedby={error ? 'login-error' : undefined}
-                    className="w-full h-12 rounded-xl border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm px-4 text-base text-[var(--eco-text)] placeholder:text-[var(--eco-muted)] transition-all duration-300 ease-out focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40"
-                  />
-                </div>
+            {/* Card principal — logo + boas-vindas integrados */}
+            <div className="rounded-3xl border border-white/30 bg-white/88 backdrop-blur-xl shadow-[0_12px_48px_rgba(0,0,0,0.14)] overflow-hidden">
 
-                <div className="space-y-1">
-                  <label className="sr-only" htmlFor="password">
-                    Senha
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Senha"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      autoComplete="current-password"
-                      aria-invalid={Boolean(error)}
-                      aria-describedby={error ? 'login-error' : undefined}
-                      className="w-full h-12 rounded-xl border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm px-4 pr-12 text-base text-[var(--eco-text)] placeholder:text-[var(--eco-muted)] transition-all duration-300 ease-out focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute inset-y-0 right-1.5 my-1.5 flex items-center rounded-xl px-2 text-[var(--eco-muted)] transition-all duration-300 ease-out hover:bg-[var(--eco-bubble)] hover:text-[var(--eco-text)] focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40"
-                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                      aria-pressed={showPassword}
-                      title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
+              {/* Topo do card: logo + título */}
+              <div className="flex flex-col items-center px-6 pt-7 pb-5"
+                style={{ background: 'linear-gradient(160deg, #FDF8F2 0%, #FAF6F0 60%, #FFFFFF 100%)' }}>
+                <img
+                  src="/images/ECOTOPIA.webp"
+                  alt="Ecotopia"
+                  className="w-16 h-16 object-contain mb-3"
+                  loading="lazy"
+                />
+                <h1 className="font-display text-[1.35rem] font-bold leading-tight text-eco-text">
+                  Bem-vindo de volta
+                </h1>
+                <p className="text-[12px] text-eco-muted mt-1 font-primary">
+                  Continue sua jornada com a Eco
+                </p>
               </div>
 
-              <div className="flex justify-center">
-                <button
-                  type="button"
-                  onClick={handleForgotPassword}
-                  disabled={forgotLoading}
-                  title="Enviaremos um link para o seu e-mail"
-                  className="text-sm font-normal text-[#6EC8FF] hover:text-[#5AB8E5] transition-all duration-300 ease-out disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {forgotLoading ? 'Enviando…' : 'Esqueceu a senha?'}
-                </button>
-              </div>
-
-              <div role="alert" id="login-error" aria-live="assertive" className="min-h-[1.25rem] text-center text-sm text-rose-500">
-                {error && (
-                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    {error}
-                  </motion.p>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  className={[
-                    'flex h-12 w-full items-center justify-center rounded-xl text-sm font-normal transition-all duration-300 ease-out',
-                    'bg-eco-baby text-white shadow-[0_4px_30px_rgba(0,0,0,0.04)]',
-                    'hover:bg-gradient-to-r hover:from-eco-babyDark hover:to-eco-baby hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]',
-                    'focus:outline-none focus:ring-2 focus:ring-eco-baby/40 focus:ring-offset-2',
-                    'active:translate-y-0',
-                    'disabled:cursor-not-allowed disabled:opacity-60 disabled:transform-none',
-                  ].join(' ')}
-                >
-                  {loading ? 'Entrando…' : 'Entrar'}
-                </button>
-
+              <div className="px-6 pb-6 space-y-4">
+                {/* Google — CTA de menor fricção */}
                 <button
                   type="button"
                   onClick={handleGoogleLogin}
                   disabled={loading}
-                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm text-sm font-normal text-[var(--eco-text)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-300 ease-out hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--eco-line)] bg-white text-[14px] font-medium text-[var(--eco-text)] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40"
                 >
                   <GoogleIcon />
-                  Entrar com Google
+                  Continuar com Google
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => navigate(`/register?returnTo=${encodeURIComponent(returnTo)}`)}
-                  disabled={loading}
-                  className="flex h-12 w-full items-center justify-center rounded-xl border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm text-sm font-normal text-[var(--eco-text)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-300 ease-out hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Criar uma nova conta
-                </button>
+                <Divider label="ou entre com email" />
 
-                <Divider />
+                {/* Form email + senha */}
+                <form onSubmit={handleSubmit} className="space-y-3" noValidate>
+                  <div>
+                    <label className="sr-only" htmlFor="email">Email</label>
+                    <input
+                      id="email"
+                      type="email"
+                      placeholder="Email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      autoComplete="email"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      inputMode="email"
+                      aria-invalid={Boolean(error)}
+                      aria-describedby={error ? 'login-error' : undefined}
+                      className="w-full h-12 rounded-xl border border-[var(--eco-line)] bg-white/90 px-4 text-[15px] text-[var(--eco-text)] placeholder:text-[var(--eco-muted)] transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-eco-baby/40"
+                    />
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsTourActive(true)}
-                  disabled={loading}
-                  className="flex h-12 w-full items-center justify-center rounded-xl border border-[var(--eco-line)] bg-white/80 backdrop-blur-sm text-sm font-normal text-[var(--eco-text)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-300 ease-out hover:bg-white hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Experimentar gratuitamente →
-                </button>
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-semibold tracking-wide text-eco-muted uppercase" htmlFor="password">
+                        Senha
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleForgotPassword}
+                        disabled={forgotLoading}
+                        className="text-[12px] font-medium text-eco-user hover:text-eco-text transition-colors duration-200 disabled:opacity-60"
+                      >
+                        {forgotLoading ? 'Enviando…' : 'Esqueceu?'}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        autoComplete="current-password"
+                        aria-invalid={Boolean(error)}
+                        aria-describedby={error ? 'login-error' : undefined}
+                        className="w-full h-12 rounded-xl border border-[var(--eco-line)] bg-white/90 px-4 pr-12 text-[15px] text-[var(--eco-text)] placeholder:text-[var(--eco-muted)]/50 transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-eco-baby/40"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute inset-y-0 right-0 flex items-center px-3.5 text-[var(--eco-muted)] hover:text-[var(--eco-text)] transition-colors duration-200"
+                        aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                        aria-pressed={showPassword}
+                      >
+                        {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                      </button>
+                    </div>
+                  </div>
 
-                <div role="status" aria-live="polite" className="min-h-[1.25rem] text-center text-sm">
-                  {forgotMessage && (
-                    <motion.p className="text-emerald-500" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                      {forgotMessage}
-                    </motion.p>
-                  )}
-                  {forgotError && !forgotMessage && (
-                    <motion.p className="text-rose-500" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                      {forgotError}
-                    </motion.p>
-                  )}
-                </div>
+                  {/* Feedback inline */}
+                  <div className="min-h-[1rem]">
+                    <div role="alert" id="login-error" aria-live="assertive">
+                      {error && (
+                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                          className="text-[12px] text-rose-500 text-center">
+                          {error}
+                        </motion.p>
+                      )}
+                    </div>
+                    <div role="status" aria-live="polite">
+                      {forgotMessage && (
+                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                          className="text-[12px] text-emerald-600 text-center">
+                          {forgotMessage}
+                        </motion.p>
+                      )}
+                      {forgotError && !forgotMessage && (
+                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                          className="text-[12px] text-rose-500 text-center">
+                          {forgotError}
+                        </motion.p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* CTA principal */}
+                  <button
+                    type="submit"
+                    disabled={!canSubmit}
+                    className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-eco-text/30 focus:ring-offset-2"
+                    style={{
+                      background: 'linear-gradient(135deg, #4A3F35 0%, #38322A 100%)',
+                      boxShadow: canSubmit ? '0 4px 20px rgba(56,50,42,0.30)' : 'none',
+                      opacity: canSubmit ? 1 : 0.45,
+                      cursor: canSubmit ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    {loading ? 'Entrando…' : 'Entrar'}
+                  </button>
+                </form>
               </div>
-            </form>
+            </div>
+
+            {/* Links abaixo do card */}
+            <div className="mt-5 flex flex-col items-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate(`/register?returnTo=${encodeURIComponent(returnTo)}`)}
+                disabled={loading}
+                className="text-[13px] font-medium text-eco-text/70 hover:text-eco-text transition-colors duration-200 disabled:opacity-60 drop-shadow-sm"
+                style={{ textShadow: '0 1px 4px rgba(255,255,255,0.8)' }}
+              >
+                Não tem conta?{' '}
+                <span className="font-semibold text-eco-text" style={{ textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+                  Criar conta grátis
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsTourActive(true)}
+                disabled={loading}
+                className="text-[12px] text-eco-muted hover:text-eco-text transition-colors duration-200 disabled:opacity-60"
+                style={{ textShadow: '0 1px 4px rgba(255,255,255,0.7)' }}
+              >
+                Explorar sem conta →
+              </button>
+            </div>
           </motion.div>
         </div>
       </div>

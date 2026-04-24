@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Clock, Headphones, Music2, Flame, Brain, Moon, CloudRain, Sparkles, Radio, User, Leaf, type LucideIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import HomeHeader from '@/components/home/HomeHeader';
 import { SOUND_CATEGORIES, type Sound } from '@/data/sounds';
 
@@ -30,38 +31,27 @@ export default function SonsPage() {
   const [selectedDuration, setSelectedDuration] = useState<number>(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Função para filtrar categorias baseado no pill selecionado
   const getFilteredCategories = () => {
     switch (selectedPill) {
       case 'all':
         return SOUND_CATEGORIES;
-
       case 'musicas':
-        // Mostrar apenas sons com badge "MÚSICA"
         return SOUND_CATEGORIES.map(cat => ({
           ...cat,
           sounds: cat.sounds.filter(sound => sound.badge === 'MÚSICA')
         })).filter(cat => cat.sounds.length > 0);
-
       case 'populares':
-        // Mostrar os primeiros 3 sons de cada categoria (mais populares)
         return SOUND_CATEGORIES.map(cat => ({
           ...cat,
           sounds: cat.sounds.slice(0, 3)
         }));
-
       case 'concentracao':
-        // Frequências energéticas + meditação
         return SOUND_CATEGORIES.filter(cat =>
           cat.id === 'frequencias' || cat.id === 'meditacao'
         );
-
       case 'dormir':
-        // Sons relaxantes da natureza
         return SOUND_CATEGORIES.filter(cat => cat.id === 'natureza');
-
       case 'chuva':
-        // Sons que contêm "chuva" no título
         return SOUND_CATEGORIES.map(cat => ({
           ...cat,
           sounds: cat.sounds.filter(sound =>
@@ -69,24 +59,17 @@ export default function SonsPage() {
             sound.title.toLowerCase().includes('tempestade')
           )
         })).filter(cat => cat.sounds.length > 0);
-
       case 'misticos':
-        // Sons de meditação (místicos)
         return SOUND_CATEGORIES.filter(cat => cat.id === 'meditacao');
-
       case 'radio':
-        // Mix de todas as músicas
         return SOUND_CATEGORIES.map(cat => ({
           ...cat,
           sounds: cat.sounds.filter(sound => sound.badge === 'MÚSICA')
         })).filter(cat => cat.sounds.length > 0);
-
       case 'meditacao':
         return SOUND_CATEGORIES.filter(cat => cat.id === 'meditacao');
-
       case 'natureza':
         return SOUND_CATEGORIES.filter(cat => cat.id === 'natureza');
-
       default:
         return SOUND_CATEGORIES;
     }
@@ -117,178 +100,353 @@ export default function SonsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div
+      className="min-h-screen"
+      style={{
+        background: 'linear-gradient(175deg, #C8E8FF 0%, #D4EDFF 15%, #E8F5FF 30%, #F0F8FF 45%, #F8FBFF 60%, #FAFCFE 70%, #FFFFFF 80%)',
+      }}
+    >
       <HomeHeader />
 
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
-        {/* Header */}
-        <h1 className="text-5xl sm:text-6xl font-bold text-[#38322A] mb-8">
-          Sons
-        </h1>
+      <div className="max-w-7xl mx-auto px-4 pt-8 pb-28 sm:px-6 lg:px-8">
+
+        {/* Page Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-8"
+        >
+          <p
+            className="text-[11px] font-bold uppercase tracking-[0.2em] mb-2"
+            style={{ color: '#4BAEE8' }}
+          >
+            BIBLIOTECA
+          </p>
+          <h1
+            className="font-display text-[48px] sm:text-[56px] font-bold leading-none mb-3"
+            style={{ color: '#0D3461' }}
+          >
+            Sons
+          </h1>
+          <p className="text-[15px]" style={{ color: 'rgba(56,50,42,0.55)' }}>
+            Música ambiente e sons para qualquer momento.
+          </p>
+        </motion.div>
 
         {/* Category Pills */}
-        <div
-          className="flex gap-3 mb-12 overflow-x-auto scrollbar-hide pb-2 snap-x snap-proximity touch-pan-x"
-          style={{
-            scrollBehavior: 'smooth',
-            WebkitOverflowScrolling: 'touch'
-          }}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.12 }}
+          className="flex gap-2.5 mb-10 overflow-x-auto pb-2"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {CATEGORY_PILLS.map((pill) => {
             const Icon = pill.icon;
+            const isActive = selectedPill === pill.id;
             return (
               <button
                 key={pill.id}
                 onClick={() => setSelectedPill(pill.id)}
-                className={`flex items-center gap-2 px-5 py-3 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 snap-start touch-manipulation ${
-                  selectedPill === pill.id
-                    ? 'bg-white text-[#38322A] shadow-md'
-                    : 'bg-white/60 text-[#38322A]/70 active:bg-white/90 md:hover:bg-white/80'
-                }`}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-medium whitespace-nowrap transition-all duration-200 active:scale-95 flex-shrink-0"
+                style={isActive ? {
+                  background: 'linear-gradient(135deg, #6EC8FF, #4BAEE8)',
+                  color: 'white',
+                  boxShadow: '0 4px 16px rgba(110,200,255,0.38)',
+                  border: '1px solid transparent',
+                } : {
+                  background: 'rgba(255,255,255,0.78)',
+                  color: '#38322A',
+                  border: '1px solid rgba(110,200,255,0.22)',
+                  backdropFilter: 'blur(8px)',
+                }}
               >
-                <Icon size={16} strokeWidth={2} />
+                <Icon size={15} strokeWidth={2} />
                 {pill.label}
               </button>
             );
           })}
-        </div>
+        </motion.div>
 
         {/* Sound Sections */}
-        <div className="space-y-12">
-          {filteredCategories.map((category) => (
-            <div key={category.id}>
+        <div className="space-y-10">
+          {filteredCategories.map((category, catIndex) => (
+            <motion.div
+              key={category.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.18 + catIndex * 0.08 }}
+            >
               {/* Section Header */}
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold text-[#38322A]">
-                  {category.title}
-                </h2>
-                <button className="text-sm font-medium text-[#38322A]/60 hover:text-[#38322A] transition-colors">
+              <div className="flex items-center justify-between mb-5 px-0.5">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-1 h-6 rounded-full flex-shrink-0"
+                    style={{ background: 'linear-gradient(180deg, #6EC8FF, #4BAEE8)' }}
+                  />
+                  <h2
+                    className="font-display text-[22px] font-bold"
+                    style={{ color: '#0D3461' }}
+                  >
+                    {category.title}
+                  </h2>
+                </div>
+                <button
+                  className="text-[13px] font-semibold transition-opacity hover:opacity-70"
+                  style={{ color: '#4BAEE8' }}
+                >
                   Ver todos
                 </button>
               </div>
 
-              {/* Horizontal Scroll Container - With Touch Support */}
+              {/* Horizontal Scroll */}
               <div
-                className="flex gap-5 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory touch-pan-x"
-                style={{
-                  scrollBehavior: 'smooth',
-                  WebkitOverflowScrolling: 'touch'
-                }}
+                className="flex gap-4 overflow-x-auto pb-3"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
               >
-                {category.sounds.map((sound) => (
-                  <div
+                {category.sounds.map((sound, soundIndex) => (
+                  <motion.div
                     key={sound.id}
-                    className="flex-none w-[240px] snap-start"
+                    className="flex-none w-[185px] sm:w-[210px]"
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-20px' }}
+                    transition={{ type: 'spring', stiffness: 80, damping: 20, delay: soundIndex * 0.06 }}
                   >
-                    {/* Sound Card */}
-                    <div
-                      onClick={() => handleCardClick(sound)}
-                      className="relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 active:scale-95 md:hover:scale-95 md:hover:shadow-xl touch-manipulation"
-                      style={{
-                        background: sound.image,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        aspectRatio: '4/5',
-                      }}
-                    >
-                      {/* Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-                      {/* Content */}
-                      <div className="relative h-full flex flex-col justify-between p-5">
-                        {/* Top - Badge and Lock */}
-                        <div className="flex items-start justify-between">
-                          <span className="text-[9px] font-bold text-white/90 tracking-wider bg-white/20 px-2.5 py-1.5 rounded-lg backdrop-blur-sm">
-                            {sound.badge}
-                          </span>
-                          {sound.isPremium && (
-                            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-1.5">
-                              <Lock size={14} className="text-white" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Bottom - Empty space for layout */}
-                        <div></div>
-                      </div>
-                    </div>
-
-                    {/* Title Below Card */}
-                    <h3 className="mt-3 text-base font-medium text-[#38322A]/80">
-                      {sound.title}
-                    </h3>
-                  </div>
+                    <SoundCard sound={sound} onClick={() => handleCardClick(sound)} />
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
 
       {/* Duration Modal */}
-      {isModalOpen && selectedSound && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl overflow-hidden w-full max-w-md shadow-2xl">
-            {/* Header with curve */}
-            <div className="relative bg-gradient-to-br from-[#A8D8EA] to-[#8BC6DB] h-32 flex items-center justify-center">
-              <div className="absolute -bottom-12 bg-white rounded-full p-6 shadow-lg">
-                <Clock size={40} className="text-[#A8D8EA]" strokeWidth={2} />
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="pt-16 pb-8 px-8">
-              <h2 className="text-xl font-medium text-[#38322A]/70 text-center mb-8">
-                Escolha a duração
-              </h2>
-
-              {/* Duration Options */}
-              <div className="flex justify-center gap-5 mb-12">
-                {[5, 10, 20].map((duration) => (
-                  <button
-                    key={duration}
-                    onClick={() => setSelectedDuration(duration)}
-                    className={`w-20 h-20 rounded-full border-2 transition-all duration-300 ${
-                      selectedDuration === duration
-                        ? 'border-[#5DADE2] bg-[#5DADE2]/15 text-[#2E86AB] scale-105 font-semibold'
-                        : 'border-gray-300 text-[#38322A]/60 hover:border-[#5DADE2]/50'
-                    }`}
-                  >
-                    <span className="text-sm font-medium">{duration} min.</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Footer Buttons */}
-            <div className="flex border-t border-gray-200">
-              <button
-                onClick={handleCloseModal}
-                className="flex-1 py-4 text-[#38322A]/60 font-medium hover:bg-gray-50 transition-colors"
-              >
-                Voltar
-              </button>
-              <div className="w-px bg-gray-200" />
-              <button
-                onClick={handleStartSound}
-                className="flex-1 py-4 text-[#2E86AB] font-semibold hover:bg-[#5DADE2]/10 transition-colors"
-              >
-                Iniciar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {isModalOpen && selectedSound && (
+          <DurationModal
+            sound={selectedSound}
+            duration={selectedDuration}
+            onDurationChange={setSelectedDuration}
+            onClose={handleCloseModal}
+            onStart={handleStartSound}
+          />
+        )}
+      </AnimatePresence>
 
       <style>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </div>
+  );
+}
+
+/* ─── Sound Card ─────────────────────────────────────────────── */
+
+function SoundCard({ sound, onClick }: { sound: Sound; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="group w-full text-left">
+      {/* Card */}
+      <div
+        className="relative overflow-hidden rounded-3xl"
+        style={{
+          aspectRatio: '3/4',
+          boxShadow: '0 8px 28px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)',
+        }}
+      >
+        {/* Background image */}
+        <div
+          className="absolute inset-0 transition-transform duration-500 group-hover:scale-105"
+          style={{
+            background: sound.image,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/05" />
+
+        {/* Top row: badge + lock */}
+        <div className="absolute top-0 left-0 right-0 flex items-start justify-between p-3">
+          <span
+            className="inline-flex items-center rounded-full px-2.5 py-1 backdrop-blur-md"
+            style={{
+              background: 'rgba(255,255,255,0.14)',
+              border: '1px solid rgba(255,255,255,0.22)',
+            }}
+          >
+            <span className="text-[9px] font-bold uppercase tracking-wider text-white/90">
+              {sound.badge}
+            </span>
+          </span>
+          {sound.isPremium && (
+            <div
+              className="flex items-center justify-center rounded-xl p-1.5 backdrop-blur-md"
+              style={{
+                background: 'rgba(0,0,0,0.45)',
+                border: '1px solid rgba(255,255,255,0.18)',
+              }}
+            >
+              <Lock size={12} className="text-white" />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom: play pill */}
+        <div className="absolute bottom-0 left-0 right-0 p-3">
+          <div
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all duration-200 group-hover:scale-105"
+            style={{
+              background: 'rgba(255,255,255,0.16)',
+              border: '1px solid rgba(255,255,255,0.26)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+              <polygon points="5,3 19,12 5,21" />
+            </svg>
+            <span className="text-[11px] font-semibold text-white">Ouvir</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Title + duration below */}
+      <div className="mt-2.5 px-0.5">
+        <p
+          className="text-[14px] font-semibold leading-snug truncate"
+          style={{ color: '#1A3A5C' }}
+        >
+          {sound.title}
+        </p>
+        <p className="text-[12px] mt-0.5" style={{ color: 'rgba(56,50,42,0.45)' }}>
+          {sound.duration}
+        </p>
+      </div>
+    </button>
+  );
+}
+
+/* ─── Duration Modal ─────────────────────────────────────────── */
+
+interface DurationModalProps {
+  sound: Sound;
+  duration: number;
+  onDurationChange: (d: number) => void;
+  onClose: () => void;
+  onStart: () => void;
+}
+
+function DurationModal({ sound, duration, onDurationChange, onClose, onStart }: DurationModalProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.60)', backdropFilter: 'blur(6px)' }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 40, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 30, scale: 0.96 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+        className="w-full max-w-md overflow-hidden rounded-3xl"
+        style={{ background: '#FFFFFF', boxShadow: '0 32px 80px rgba(0,0,0,0.30)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Hero header */}
+        <div
+          className="relative h-36 flex items-end p-6 overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #07192E 0%, #0D2E4F 40%, #0F4476 100%)' }}
+        >
+          {/* Orbs */}
+          <div
+            className="absolute top-[-40px] right-[-40px] w-48 h-48 rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(circle, rgba(110,200,255,0.20) 0%, transparent 70%)' }}
+          />
+          <div
+            className="absolute bottom-[-30px] left-[-20px] w-36 h-36 rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(circle, rgba(75,174,232,0.14) 0%, transparent 70%)' }}
+          />
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/50 mb-1">
+              Duração da sessão
+            </p>
+            <h3 className="font-display text-[22px] font-bold text-white leading-tight">
+              {sound.title}
+            </h3>
+          </div>
+        </div>
+
+        {/* Duration picker */}
+        <div className="px-7 pt-7 pb-6">
+          <div className="flex items-center justify-center gap-4 mb-7">
+            {[5, 10, 20].map((mins) => (
+              <button
+                key={mins}
+                onClick={() => onDurationChange(mins)}
+                className="flex flex-col items-center justify-center w-[88px] h-[88px] rounded-2xl transition-all duration-200 active:scale-95"
+                style={duration === mins ? {
+                  background: 'linear-gradient(135deg, #6EC8FF, #4BAEE8)',
+                  boxShadow: '0 6px 20px rgba(110,200,255,0.40)',
+                  transform: 'scale(1.06)',
+                } : {
+                  background: 'rgba(110,200,255,0.08)',
+                  border: '1.5px solid rgba(110,200,255,0.22)',
+                }}
+              >
+                <span
+                  className="text-[22px] font-bold leading-none"
+                  style={{ color: duration === mins ? 'white' : '#1A3A5C' }}
+                >
+                  {mins}
+                </span>
+                <span
+                  className="text-[11px] font-medium mt-1"
+                  style={{ color: duration === mins ? 'rgba(255,255,255,0.80)' : 'rgba(56,50,42,0.50)' }}
+                >
+                  min
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 mb-7 justify-center">
+            <Clock size={13} style={{ color: 'rgba(56,50,42,0.40)' }} />
+            <span className="text-[13px]" style={{ color: 'rgba(56,50,42,0.45)' }}>
+              Sessão de {duration} minutos selecionada
+            </span>
+          </div>
+
+          {/* Actions */}
+          <button
+            onClick={onStart}
+            className="w-full py-4 rounded-2xl font-semibold text-[15px] text-white transition-all duration-200 active:scale-[0.98] hover:opacity-90 mb-3"
+            style={{
+              background: 'linear-gradient(135deg, #6EC8FF, #4BAEE8)',
+              boxShadow: '0 6px 20px rgba(110,200,255,0.38)',
+            }}
+          >
+            Iniciar sessão →
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-3.5 rounded-2xl font-medium text-[14px] transition-all duration-200 active:scale-[0.98]"
+            style={{
+              color: 'rgba(56,50,42,0.55)',
+              background: 'rgba(0,0,0,0.04)',
+            }}
+          >
+            Cancelar
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }

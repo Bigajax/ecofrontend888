@@ -7,7 +7,6 @@ import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsPremium, useSubscriptionTier } from '@/hooks/usePremiumContent';
 import DiarioExitModal from '@/components/DiarioExitModal';
-import DiarioProgress from '@/components/diario-estoico/DiarioProgress';
 import ReadingModeModal from '@/components/diario-estoico/ReadingModeModal';
 import ShareReflectionModal from '@/components/diario-estoico/ShareReflectionModal';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
@@ -743,7 +742,7 @@ export default function DiarioEstoicoPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-eco-bg">
+    <div className="min-h-screen" style={{ background: '#FAF9F7' }}>
       <Toaster position="top-center" />
 
       <div className="w-full min-h-full">
@@ -754,25 +753,23 @@ export default function DiarioEstoicoPage() {
 
         {/* Navegação */}
         <div className="w-full px-4 pt-6 md:px-8">
-          <div className="mx-auto max-w-7xl flex items-center justify-between">
-            {/* Botão Voltar */}
+          <div className="mx-auto max-w-3xl flex items-center justify-between">
             <button
               onClick={handleBackClick}
               className="inline-flex items-center justify-center w-10 h-10 text-eco-text
-                         glass-shell rounded-full hover:bg-eco-accent/10
+                         bg-white border border-eco-line/60 rounded-full hover:border-eco-accent/40
                          transition-all duration-300 shadow-minimal hover:shadow-eco"
               aria-label="Voltar"
             >
               <ChevronLeft size={20} />
             </button>
 
-            {/* CTA para guest */}
             {!user && (
               <button
                 onClick={() => navigate('/register')}
-                className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-semibold
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold
                            text-white bg-eco-baby rounded-full hover:bg-eco-baby/90
-                           hover:scale-105 active:scale-95 transition-all duration-200"
+                           hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm"
               >
                 Criar conta grátis
               </button>
@@ -780,51 +777,90 @@ export default function DiarioEstoicoPage() {
           </div>
         </div>
 
-        {/* Título e Subtítulo */}
-        <div className="w-full px-4 pt-6 md:px-8">
-          <div className="mx-auto max-w-7xl text-center">
-            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-eco-text mb-2">
-              DIÁRIO ESTOICO
-            </h1>
-            <p className="font-primary text-xs sm:text-sm md:text-base lg:text-lg font-medium tracking-wider text-eco-muted">
-              366 LIÇÕES SOBRE SABEDORIA, PERSEVERANÇA E A ARTE DE VIVER
-            </p>
+        {/* Hero Editorial — Título e Subtítulo */}
+        <div className="w-full px-4 pt-8 pb-2 md:px-8">
+          <div className="mx-auto max-w-3xl">
+            {/* Ornamento topo */}
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="h-px flex-1 max-w-[60px]" style={{ background: 'linear-gradient(90deg, transparent, #C6A995)' }} />
+              <span className="text-[10px] font-semibold tracking-[0.3em] text-eco-accent uppercase">Ano I</span>
+              <div className="h-px flex-1 max-w-[60px]" style={{ background: 'linear-gradient(90deg, #C6A995, transparent)' }} />
+            </div>
 
-            {/* Progress Bar */}
-            {availableMaxims.length > 0 && (
-              <div className="mt-6 max-w-xs sm:max-w-md mx-auto px-4">
-                <DiarioProgress
-                  totalDays={availableMaxims.length}
-                  readDays={readDays}
-                />
+            {/* Título principal */}
+            <div className="text-center">
+              <h1 className="font-display font-bold text-eco-text leading-none tracking-tight"
+                style={{ fontSize: 'clamp(2.2rem, 8vw, 4.5rem)' }}>
+                Diário Estoico
+              </h1>
+              <p className="mt-3 font-primary text-[11px] sm:text-xs font-medium tracking-[0.25em] text-eco-muted uppercase">
+                366 lições · sabedoria · perseverança · a arte de viver
+              </p>
+
+              {/* Linha decorativa */}
+              <div className="flex items-center justify-center gap-2 mt-5">
+                <div className="h-px w-12" style={{ background: 'linear-gradient(90deg, transparent, #C6A995 50%, transparent)' }} />
+                <span style={{ color: '#C6A995', fontSize: '6px' }}>◆◆◆</span>
+                <div className="h-px w-12" style={{ background: 'linear-gradient(90deg, transparent, #C6A995 50%, transparent)' }} />
+              </div>
+            </div>
+
+            {/* Progress integrado ao hero */}
+            {availableMaxims.length > 0 && readDays.size > 0 && (
+              <div className="mt-6 mx-auto max-w-xs">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-medium text-eco-muted tracking-wide">Seu progresso</span>
+                  <span className="text-[11px] font-semibold text-eco-accent">
+                    {readDays.size}/{availableMaxims.length} reflexões
+                  </span>
+                </div>
+                <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(198,169,149,0.18)' }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${(readDays.size / availableMaxims.length) * 100}%`,
+                      background: 'linear-gradient(90deg, #C6A995, #A7846C)',
+                    }}
+                  />
+                </div>
               </div>
             )}
           </div>
         </div>
 
         {/* Partes — seleção de mês */}
-        <div className="w-full px-4 pt-6 md:px-8 space-y-8">
-          <div className="mx-auto max-w-3xl space-y-8">
-            {PARTS.map((part) => {
+        <div className="w-full px-4 pt-8 md:px-8 pb-4 space-y-10">
+          <div className="mx-auto max-w-3xl space-y-10">
+            {PARTS.map((part, partIndex) => {
               const partMonths = MONTH_THEMES.filter(m => part.monthIds.includes(m.id));
 
               return (
                 <div key={part.number}>
-                  {/* Header da parte */}
-                  <div className="mb-4">
-                    <p className="text-xs font-bold tracking-[0.2em] text-eco-muted uppercase mb-0.5">
-                      Parte {part.number}
-                    </p>
-                    <p className="font-display text-base font-bold text-eco-text tracking-wide uppercase">
-                      {part.title}
-                    </p>
+                  {/* Header da parte — editorial */}
+                  <div className="mb-5 flex items-center gap-4">
+                    <div className="flex-shrink-0 flex flex-col items-center">
+                      <span className="font-display text-[28px] font-bold leading-none"
+                        style={{ color: 'rgba(198,169,149,0.45)' }}>
+                        {part.number}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[10px] font-bold tracking-[0.25em] uppercase mb-0.5"
+                        style={{ color: '#C6A995' }}>
+                        Parte {['um', 'dois', 'três'][partIndex]}
+                      </p>
+                      <p className="font-display text-sm sm:text-base font-bold text-eco-text tracking-wide">
+                        {part.title}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0 h-px w-8 sm:w-16" style={{ background: 'rgba(198,169,149,0.3)' }} />
                   </div>
 
                   {/* Grid 2x2 dos meses */}
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {partMonths.map((month) => {
                       const isActive = openMonth === month.id;
-                      const isUnlocked = true; // Todos os meses acessíveis; conteúdo gateado via teaser no comentário
+                      const isUnlocked = true;
                       const hasToday = todayMaxim?.month === month.monthName;
                       const monthMaxims = availableMaxims.filter(m => m.month === month.monthName);
 
@@ -842,39 +878,55 @@ export default function DiarioEstoicoPage() {
                           }}
                           className={`relative flex flex-col rounded-2xl overflow-hidden text-left transition-all duration-300 active:scale-[0.97]
                             ${isActive
-                              ? 'ring-2 ring-[#3B2D8F] shadow-[0_4px_20px_rgba(59,45,143,0.25)]'
-                              : 'shadow-sm border border-eco-line/40 hover:shadow-md'
+                              ? 'shadow-[0_8px_32px_rgba(198,169,149,0.35)]'
+                              : 'hover:shadow-[0_4px_20px_rgba(0,0,0,0.10)] hover:-translate-y-0.5'
                             }`}
+                          style={isActive
+                            ? { outline: '2px solid #C6A995', outlineOffset: '0px' }
+                            : { border: '1px solid rgba(232,227,221,0.7)' }
+                          }
                         >
-                          {/* Espaço para imagem */}
-                          <div className={`w-full h-[110px] relative overflow-hidden ${
-                            isActive ? 'bg-[#3B2D8F]/10' : 'bg-gray-100'
-                          }`}>
+                          {/* Imagem */}
+                          <div className={`w-full relative overflow-hidden`} style={{ height: '110px' }}>
                             {month.image ? (
-                              <img
-                                src={month.image}
-                                alt={month.displayName}
-                                className="w-full h-full object-cover"
-                              />
+                              <>
+                                <img
+                                  src={month.image}
+                                  alt={month.displayName}
+                                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                                />
+                                {/* Overlay gradiente elegante */}
+                                <div className="absolute inset-0" style={{
+                                  background: isActive
+                                    ? 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.38) 100%)'
+                                    : 'linear-gradient(to bottom, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.28) 100%)',
+                                }} />
+                              </>
                             ) : (
-                              <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${
-                                isActive
-                                  ? 'from-[#3B2D8F]/15 to-[#3B2D8F]/5'
-                                  : 'from-gray-200 to-gray-100'
-                              }`}>
-                                <span className={`text-[10px] font-medium tracking-wide uppercase ${isActive ? 'text-[#3B2D8F]/50' : 'text-gray-400'}`}>
+                              <div className="w-full h-full flex items-center justify-center"
+                                style={{ background: 'linear-gradient(135deg, #F3EEE7 0%, #EAE4DC 100%)' }}>
+                                <span className="text-[10px] font-medium tracking-wide uppercase text-eco-muted/50">
                                   Em breve
                                 </span>
                               </div>
                             )}
-                            {/* Badge hoje */}
+
+                            {/* Badge "hoje" */}
                             {hasToday && (
-                              <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-eco-baby shadow" />
+                              <span className="absolute top-2 left-2 h-2 w-2 rounded-full bg-eco-baby shadow-sm"
+                                style={{ boxShadow: '0 0 6px rgba(110,200,255,0.7)' }} />
                             )}
-                            {/* Lock overlay */}
+
+                            {/* Nome do mês sobre a imagem */}
+                            <div className="absolute bottom-0 left-0 right-0 px-3 pb-2">
+                              <p className="font-display text-white text-sm font-bold leading-tight tracking-wider drop-shadow-sm">
+                                {month.shortName}
+                              </p>
+                            </div>
+
                             {!isUnlocked && (
-                              <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-                                <span className="text-[11px] font-bold text-gray-500 bg-white/90 px-2.5 py-1 rounded-full tracking-wide shadow-sm">
+                              <div className="absolute inset-0 backdrop-blur-[2px] bg-white/50 flex items-center justify-center">
+                                <span className="text-[11px] font-bold text-eco-muted bg-white/90 px-2.5 py-1 rounded-full tracking-wide shadow-sm">
                                   Premium
                                 </span>
                               </div>
@@ -882,15 +934,20 @@ export default function DiarioEstoicoPage() {
                           </div>
 
                           {/* Info do mês */}
-                          <div className={`px-3 py-3 ${isActive ? 'bg-[#3B2D8F]' : 'bg-white'}`}>
-                            <p className={`font-bold text-sm leading-tight tracking-wider uppercase ${isActive ? 'text-white' : 'text-eco-text'}`}>
-                              {month.shortName}
-                            </p>
-                            <p className={`text-xs mt-1 leading-snug ${isActive ? 'text-white/80' : 'text-eco-muted'}`}>
+                          <div className={`px-3 py-2.5 transition-colors duration-300 ${
+                            isActive
+                              ? 'bg-[#38322A]'
+                              : 'bg-white'
+                          }`}>
+                            <p className={`text-[10px] font-bold tracking-[0.18em] uppercase leading-tight ${
+                              isActive ? 'text-eco-accent' : 'text-eco-muted'
+                            }`}>
                               {month.theme}
                             </p>
-                            <p className={`text-[11px] mt-1.5 font-medium ${isActive ? 'text-white/55' : 'text-eco-muted/70'}`}>
-                              {monthMaxims.length > 0 ? `${monthMaxims.length} dias` : 'Em breve'}
+                            <p className={`text-[11px] mt-1 font-medium ${
+                              isActive ? 'text-white/50' : 'text-eco-muted/60'
+                            }`}>
+                              {monthMaxims.length > 0 ? `${monthMaxims.length} reflexões` : 'Em breve'}
                             </p>
                           </div>
                         </button>
@@ -910,21 +967,28 @@ export default function DiarioEstoicoPage() {
           const monthMaxims = availableMaxims.filter(m => m.month === month.monthName);
 
           return (
-            <div className="w-full px-4 pt-5 pb-12 md:px-8">
+            <div className="w-full px-4 pt-2 pb-16 md:px-8" style={{ animation: 'slideUpFade 0.35s ease-out' }}>
               <div className="mx-auto max-w-3xl">
-                {/* Header do mês */}
-                <div className="mb-5">
-                  <h2 className="font-display font-bold text-eco-text text-lg leading-tight">
-                    {month.displayName} — {month.theme}
-                  </h2>
-                  <p className="text-xs text-eco-muted mt-1">{month.themeDescription}</p>
+                {/* Header do mês — elegante, compacto */}
+                <div className="mb-6 flex items-center gap-3 py-4 border-y"
+                  style={{ borderColor: 'rgba(198,169,149,0.2)' }}>
+                  <div>
+                    <p className="text-[10px] font-bold tracking-[0.25em] uppercase mb-0.5"
+                      style={{ color: '#C6A995' }}>
+                      {month.displayName}
+                    </p>
+                    <h2 className="font-display font-bold text-eco-text text-base leading-tight">
+                      {month.theme}
+                    </h2>
+                    <p className="text-[11px] text-eco-muted mt-0.5">{month.themeDescription}</p>
+                  </div>
                 </div>
 
-                {/* Lista de reflexões — vertical no mobile, card deck centrado no desktop */}
+                {/* Lista de reflexões */}
                 <div
                   ref={carouselRef}
                   onScroll={handleCarouselScroll}
-                  className="flex flex-col gap-5 md:flex-row md:overflow-x-auto md:snap-x md:snap-mandatory md:gap-4 md:pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  className="flex flex-col gap-4 md:flex-row md:overflow-x-auto md:snap-x md:snap-mandatory md:gap-4 md:pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 >
                     {monthMaxims.length === 0 && (
                       <p className="text-center text-sm text-eco-muted py-8 w-full">
@@ -945,117 +1009,131 @@ export default function DiarioEstoicoPage() {
                           className={`w-full md:snap-center md:flex-shrink-0 md:min-w-[420px] md:w-[calc(100%-80px)] md:max-w-[620px] md:transition-all md:duration-300 md:ease-out
                             ${isActiveDeck
                               ? 'md:scale-100 md:opacity-100'
-                              : 'md:scale-[0.9] md:opacity-55'
+                              : 'md:scale-[0.88] md:opacity-45'
                             }`}
                         >
-                          {/* Imagem + título */}
+                          {/* Card visual da reflexão */}
                           <div
                             data-diario-card
                             data-day-number={maxim.dayNumber}
-                            className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 active:scale-[0.97] ${
+                            className={`relative overflow-hidden cursor-pointer transition-all duration-250 active:scale-[0.98] ${
+                              isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'
+                            } ${
                               isToday
-                                ? 'ring-2 ring-eco-baby shadow-[0_6px_28px_rgba(110,200,255,0.30)]'
+                                ? 'shadow-[0_8px_32px_rgba(110,200,255,0.28)]'
                                 : isActiveDeck
-                                  ? 'shadow-[0_12px_40px_rgba(0,0,0,0.18)] md:hover:scale-[1.01]'
-                                  : 'shadow-eco'
-                            } ${isExpanded ? 'rounded-b-none md:rounded-2xl' : ''}`}
+                                  ? 'shadow-[0_12px_40px_rgba(0,0,0,0.16)]'
+                                  : 'shadow-[0_4px_20px_rgba(0,0,0,0.10)]'
+                            }`}
                             style={{
                               backgroundImage: maxim.background,
                               backgroundSize: 'cover',
                               backgroundPosition: 'center',
-                              minHeight: '300px',
+                              minHeight: '280px',
+                              outline: isToday ? '2px solid rgba(110,200,255,0.6)' : 'none',
+                              outlineOffset: '0px',
                             }}
                             onClick={() => toggleExpanded(maxim.dayNumber)}
                           >
-                            {/* Gradiente mais forte para legibilidade do título */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/45 to-black/85 pointer-events-none" />
+                            {/* Gradiente dramático de baixo para cima */}
+                            <div className="absolute inset-0 pointer-events-none"
+                              style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.30) 45%, rgba(0,0,0,0.82) 100%)' }} />
 
-                            <div className="relative h-full flex flex-col justify-between p-5 md:p-7" style={{ minHeight: '300px' }}>
-                              {/* Topo: badge data + badges direita */}
+                            <div className="relative h-full flex flex-col justify-between p-5 md:p-7" style={{ minHeight: '280px' }}>
+                              {/* Topo */}
                               <div className="flex items-start justify-between gap-2">
-                                <span className={`inline-flex rounded-full px-3 py-1.5 ${isToday ? 'bg-eco-baby' : 'bg-black/40 backdrop-blur-sm'}`}>
-                                  <span className="text-[11px] font-semibold text-white tracking-wide">
-                                    {isToday ? `HOJE • ${maxim.date}` : maxim.date}
+                                <span className={`inline-flex rounded-full px-3 py-1 ${isToday ? 'bg-eco-baby' : 'bg-black/35 backdrop-blur-sm'}`}>
+                                  <span className="text-[10px] font-semibold text-white tracking-widest uppercase">
+                                    {isToday ? `Hoje · ${maxim.date}` : maxim.date}
                                   </span>
                                 </span>
-                                <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                                  {/* Badge "✓ Lido" quando reflexão já foi lida */}
+                                <div className="flex items-center gap-1.5">
                                   {readDays.has(maxim.dayNumber) && (
-                                    <span className="inline-flex items-center gap-1 bg-white/25 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/30">
-                                      ✓ Lido
+                                    <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded-full border border-white/25 tracking-wide">
+                                      ✓ LIDA
                                     </span>
                                   )}
                                   {isToday && !readDays.has(maxim.dayNumber) && (
-                                    <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/30">
-                                      ✦ Reflexão do dia
+                                    <span className="inline-flex items-center gap-1 bg-white/15 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded-full border border-white/20 tracking-wide">
+                                      ✦ HOJE
                                     </span>
                                   )}
-                                  <span className="inline-flex items-center gap-1 bg-black/30 backdrop-blur-sm text-white/75 text-[10px] px-2.5 py-1 rounded-full border border-white/10">
-                                    ⏱ 1 min de leitura
-                                  </span>
                                 </div>
                               </div>
 
                               {/* Centro: título */}
-                              <div className="flex-1 flex items-center justify-center px-2 py-6 md:px-8">
+                              <div className="flex-1 flex items-center justify-center px-2 py-5 md:px-6">
                                 <p
-                                  className="font-display text-white text-center text-[1.35rem] sm:text-2xl md:text-3xl leading-snug drop-shadow-lg tracking-wide break-words"
-                                  style={{ textShadow: '0 2px 16px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.6)' }}
+                                  className="font-display text-white text-center leading-snug tracking-wide break-words"
+                                  style={{
+                                    fontSize: 'clamp(1.15rem, 4vw, 1.75rem)',
+                                    textShadow: '0 2px 20px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.5)',
+                                  }}
                                 >
                                   {maxim.title}
                                 </p>
                               </div>
 
-                              {/* Rodapé: botão pill */}
-                              <div className="flex items-end justify-between gap-2">
-                                {/* Indicador de progresso sutil quando lido */}
-                                {readDays.has(maxim.dayNumber) ? (
-                                  <span className="text-[10px] text-white/50 font-primary italic">
-                                    reflexão concluída
-                                  </span>
-                                ) : (
-                                  <span />
-                                )}
+                              {/* Rodapé */}
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] text-white/45 font-primary tracking-wide">
+                                  — {maxim.author}
+                                </span>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); toggleExpanded(maxim.dayNumber); }}
-                                  className="flex-shrink-0 inline-flex items-center gap-1.5 text-[12px] font-semibold rounded-full px-4 py-2 text-white bg-white/15 hover:bg-white/25 active:scale-95 backdrop-blur-sm border border-white/20 transition-all duration-200"
+                                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold rounded-full px-4 py-1.5 text-white transition-all duration-200 active:scale-95"
+                                  style={{
+                                    background: isExpanded ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.18)',
+                                    backdropFilter: 'blur(8px)',
+                                    border: '1px solid rgba(255,255,255,0.22)',
+                                  }}
                                 >
-                                  {isExpanded
-                                    ? 'Fechar'
-                                    : <><BookOpen size={12} /> Ler reflexão</>
-                                  }
+                                  {isExpanded ? 'Fechar' : <><BookOpen size={11} /> Ler</>}
                                 </button>
                               </div>
                             </div>
                           </div>
 
-                          {/* Seção expandida — MOBILE ONLY (inline, sem conflito de overflow) */}
+                          {/* Seção expandida — MOBILE ONLY */}
                           {isExpanded && (
-                            <div className="md:hidden rounded-b-2xl border-t border-eco-line/30 bg-white/80 backdrop-blur-sm overflow-hidden" style={{ animation: 'fadeIn 0.2s ease-out' }}>
+                            <div className="md:hidden rounded-b-2xl overflow-hidden"
+                              style={{
+                                background: 'linear-gradient(to bottom, #FFFFFF, #FAF9F7)',
+                                border: '1px solid rgba(232,227,221,0.7)',
+                                borderTop: 'none',
+                                animation: 'slideDown 0.25s ease-out',
+                              }}>
                               {/* Citação */}
-                              <div className="px-5 pt-5 pb-5 border-b border-eco-line/30">
-                                <p className="font-primary text-[9px] font-semibold uppercase tracking-[0.18em] text-eco-muted mb-3">
+                              <div className="px-5 pt-6 pb-5">
+                                <p className="text-[9px] font-bold tracking-[0.25em] uppercase mb-4"
+                                  style={{ color: '#C6A995' }}>
                                   {maxim.author}{maxim.source && ` · ${maxim.source}`}
                                 </p>
-                                <p className="font-display text-[15px] leading-[1.75] text-eco-text italic">
-                                  "{maxim.text}"
+                                {/* Aspas decorativas */}
+                                <div className="font-display text-[2.5rem] leading-none mb-2"
+                                  style={{ color: 'rgba(198,169,149,0.3)', lineHeight: '1' }}>"</div>
+                                <p className="font-display text-[15px] leading-[1.8] text-eco-text italic -mt-3">
+                                  {maxim.text}
                                 </p>
-                                {/* Botão logo abaixo da frase */}
                                 {!isGuest && user && (
-                                  <div className="mt-4 flex justify-center">
+                                  <div className="mt-5 flex justify-center">
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                                      className="inline-flex items-center gap-2 px-6 py-2.5 text-[13px] font-semibold text-white bg-eco-baby hover:bg-eco-baby/90 active:scale-95 rounded-full transition-all duration-200 shadow-md"
+                                      className="inline-flex items-center gap-2 px-6 py-2.5 text-[12px] font-semibold text-white rounded-full active:scale-95 transition-all duration-200"
+                                      style={{ background: 'linear-gradient(135deg, #6EC8FF, #36B3FF)', boxShadow: '0 4px 16px rgba(110,200,255,0.35)' }}
                                     >
-                                      <BookOpen size={13} />
-                                      📖 Ler reflexão completa
+                                      <BookOpen size={12} />
+                                      Ler reflexão completa
                                     </button>
                                   </div>
                                 )}
                               </div>
 
+                              {/* Divider */}
+                              <div className="mx-5 h-px" style={{ background: 'rgba(198,169,149,0.2)' }} />
+
                               {/* Comentário */}
-                              <div className="px-5 py-4">
+                              <div className="px-5 py-5">
                                 {renderComment(maxim, 'text-[14px]')}
                               </div>
 
@@ -1069,23 +1147,26 @@ export default function DiarioEstoicoPage() {
                                         markDayAsRead(maxim.dayNumber);
                                         mixpanel.track('Diario Estoico: Marked As Read', { day_number: maxim.dayNumber, is_guest: !user, method: 'button' });
                                       }}
-                                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-[13px] font-semibold text-white bg-eco-baby hover:bg-eco-baby/90 rounded-full active:scale-95 transition-all duration-200"
+                                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-semibold text-white rounded-full active:scale-95 transition-all duration-200"
+                                      style={{ background: 'linear-gradient(135deg, #6EC8FF, #36B3FF)' }}
                                     >
-                                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                       Marcar como lida
                                     </button>
                                   ) : (
-                                    <div className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-[13px] font-medium text-eco-accent bg-eco-accent/8 rounded-full border border-eco-accent/20">
-                                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                    <div className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-medium rounded-full"
+                                      style={{ background: 'rgba(198,169,149,0.1)', color: '#A7846C', border: '1px solid rgba(198,169,149,0.3)' }}>
+                                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                       Lida ✓
                                     </div>
                                   )}
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                                    className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium text-eco-muted glass-shell rounded-full hover:text-eco-text transition-all duration-200"
+                                    className="flex items-center gap-1.5 px-4 py-2.5 text-[12px] font-medium text-eco-muted rounded-full transition-all duration-200 hover:text-eco-text"
+                                    style={{ background: 'rgba(232,227,221,0.5)', border: '1px solid rgba(232,227,221,0.7)' }}
                                   >
-                                    <Share2 size={13} />
-                                    Compartilhar
+                                    <Share2 size={12} />
+                                    Partilhar
                                   </button>
                                 </div>
                               )}
@@ -1096,7 +1177,7 @@ export default function DiarioEstoicoPage() {
                     })}
                   </div>
 
-                  {/* Seção expandida — DESKTOP ONLY (fora do overflow-x-auto para não ser cortada) */}
+                  {/* Seção expandida — DESKTOP ONLY */}
                   {monthMaxims.map((maxim) => {
                     const isExpanded = expandedCards.has(maxim.dayNumber);
                     const isGuest = isGuestMode && !user && !isVipUser;
@@ -1109,52 +1190,64 @@ export default function DiarioEstoicoPage() {
                     return (
                       <div
                         key={`desktop-expanded-${maxim.dayNumber}`}
-                        className="hidden md:block mt-4 rounded-2xl border border-eco-line/40 shadow-eco overflow-hidden bg-white/70 backdrop-blur-sm"
-                        style={{ animation: 'fadeIn 0.3s ease-out' }}
+                        className="hidden md:block mt-5 rounded-2xl overflow-hidden"
+                        style={{
+                          animation: 'slideUpFade 0.3s ease-out',
+                          background: 'linear-gradient(to bottom, #FFFFFF, #FAF9F7)',
+                          border: '1px solid rgba(198,169,149,0.25)',
+                          boxShadow: '0 8px 40px rgba(0,0,0,0.06)',
+                        }}
                       >
-                        {/* Bloco da citação — foco principal */}
-                        <div className="px-10 pt-10 pb-8 text-center border-b border-eco-line/30">
-                          <p className="font-primary text-[10px] font-semibold uppercase tracking-[0.2em] text-eco-muted mb-6">
+                        {/* Linha acento decorativo no topo */}
+                        <div className="h-[3px] w-full"
+                          style={{ background: 'linear-gradient(90deg, rgba(198,169,149,0.4), rgba(198,169,149,0.1), transparent)' }} />
+
+                        {/* Citação — foco principal */}
+                        <div className="px-12 pt-10 pb-8 text-center"
+                          style={{ borderBottom: '1px solid rgba(198,169,149,0.15)' }}>
+                          <p className="text-[9px] font-bold tracking-[0.3em] uppercase mb-8"
+                            style={{ color: '#C6A995' }}>
                             {maxim.author}{maxim.source && ` · ${maxim.source}`}
                           </p>
+                          {/* Aspas decorativas grandes */}
+                          <div className="font-display text-[5rem] leading-none mb-0 -mb-4"
+                            style={{ color: 'rgba(198,169,149,0.18)', lineHeight: '0.8' }}>"</div>
                           <blockquote
-                            className="font-display text-2xl md:text-[1.65rem] leading-[1.65] text-eco-text italic max-w-xl mx-auto"
-                            style={{ textShadow: 'none' }}
+                            className="font-display leading-[1.7] text-eco-text italic max-w-lg mx-auto relative z-10"
+                            style={{ fontSize: 'clamp(1.15rem, 2.2vw, 1.55rem)' }}
                           >
-                            "{maxim.text}"
+                            {maxim.text}
                           </blockquote>
-                          <p className="mt-6 inline-flex items-center gap-1.5 text-[11px] text-eco-muted/70 font-primary">
-                            <span>⏱</span> Tempo de leitura: 1 minuto
-                          </p>
                         </div>
 
-                        {/* Bloco do comentário */}
-                        <div className="px-10 py-8">
-                          <div className="max-w-xl mx-auto">
-                            <h4 className="font-primary text-[10px] font-semibold text-eco-muted tracking-[0.18em] uppercase mb-5">
+                        {/* Comentário */}
+                        <div className="px-12 py-9">
+                          <div className="max-w-lg mx-auto">
+                            <p className="text-[9px] font-bold tracking-[0.28em] uppercase mb-6"
+                              style={{ color: '#C6A995' }}>
                               Comentário
-                            </h4>
+                            </p>
 
-                            {/* Guest: teaser com fade */}
                             {!user ? (
                               <>
                                 <div className="relative overflow-hidden" style={{ maxHeight: '110px' }}>
-                                  <p className="font-primary text-[15px] leading-[1.85] text-eco-text">
+                                  <p className="font-primary text-[15px] leading-[1.9] text-eco-text">
                                     {commentParagraphs[0] ?? maxim.comment}
                                   </p>
                                   <div
-                                    className="absolute bottom-0 left-0 right-0 h-14 pointer-events-none"
-                                    style={{ background: 'linear-gradient(to top, rgba(255,255,255,0.97) 0%, transparent 100%)' }}
+                                    className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+                                    style={{ background: 'linear-gradient(to top, #FAF9F7 0%, transparent 100%)' }}
                                   />
                                 </div>
-                                <div className="mt-6 flex flex-col items-center gap-2.5">
+                                <div className="mt-7 flex flex-col items-center gap-3">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: `${maxim.month}-${maxim.dayNumber}`, action: 'login' });
                                       navigate('/login?returnTo=/app/diario-estoico');
                                     }}
-                                    className="inline-flex items-center gap-2 px-7 py-2.5 bg-eco-baby text-white font-primary font-semibold text-sm rounded-full hover:bg-eco-baby/90 active:scale-95 transition-all duration-200 shadow-md"
+                                    className="inline-flex items-center gap-2 px-8 py-3 font-primary font-semibold text-sm text-white rounded-full active:scale-95 transition-all duration-200"
+                                    style={{ background: 'linear-gradient(135deg, #6EC8FF, #36B3FF)', boxShadow: '0 4px 18px rgba(110,200,255,0.38)' }}
                                   >
                                     Entrar para ler →
                                   </button>
@@ -1164,23 +1257,23 @@ export default function DiarioEstoicoPage() {
                                       mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: `${maxim.month}-${maxim.dayNumber}`, action: 'register' });
                                       navigate('/register?returnTo=/app/diario-estoico');
                                     }}
-                                    className="inline-flex items-center gap-2 px-6 py-2 border border-eco-baby text-eco-baby font-primary font-medium text-sm rounded-full hover:bg-eco-baby/5 active:scale-95 transition-all duration-200"
+                                    className="inline-flex items-center gap-2 px-6 py-2 font-primary font-medium text-sm rounded-full active:scale-95 transition-all duration-200"
+                                    style={{ border: '1px solid rgba(110,200,255,0.5)', color: '#36B3FF' }}
                                   >
                                     Criar conta grátis
                                   </button>
                                 </div>
                               </>
                             ) : (
-                              /* Logado: comentário completo em parágrafos */
                               <div className="space-y-5">
                                 {commentParagraphs.length > 0
                                   ? commentParagraphs.map((para, i) => (
-                                      <p key={i} className="font-primary text-[15px] leading-[1.9] text-eco-text">
+                                      <p key={i} className="font-primary text-[15px] leading-[1.95] text-eco-text">
                                         {para}
                                       </p>
                                     ))
                                   : (
-                                      <p className="font-primary text-[15px] leading-[1.9] text-eco-text">
+                                      <p className="font-primary text-[15px] leading-[1.95] text-eco-text">
                                         {maxim.comment}
                                       </p>
                                     )
@@ -1188,15 +1281,15 @@ export default function DiarioEstoicoPage() {
                               </div>
                             )}
 
-                            {/* Botão Ler reflexão completa — centralizado, pill */}
                             {!isGuest && user && (
-                              <div className="mt-8 flex justify-center">
+                              <div className="mt-9 flex justify-center">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                                  className="inline-flex items-center gap-2 px-7 py-2.5 text-sm font-semibold text-white bg-eco-baby hover:bg-eco-baby/90 active:scale-95 rounded-full transition-all duration-200 shadow-md"
+                                  className="inline-flex items-center gap-2 px-8 py-3 text-sm font-semibold text-white rounded-full active:scale-95 transition-all duration-200"
+                                  style={{ background: 'linear-gradient(135deg, #6EC8FF, #36B3FF)', boxShadow: '0 4px 18px rgba(110,200,255,0.35)' }}
                                 >
                                   <BookOpen size={14} />
-                                  📖 Ler reflexão completa
+                                  Ler reflexão completa
                                 </button>
                               </div>
                             )}
@@ -1205,7 +1298,8 @@ export default function DiarioEstoicoPage() {
 
                         {/* Rodapé: ações */}
                         {!isGuest && (
-                          <div className="px-10 pb-8 flex items-center gap-3">
+                          <div className="px-12 pb-8 flex items-center gap-3"
+                            style={{ borderTop: '1px solid rgba(198,169,149,0.12)', paddingTop: '20px' }}>
                             {!readDays.has(maxim.dayNumber) ? (
                               <button
                                 onClick={(e) => {
@@ -1213,20 +1307,23 @@ export default function DiarioEstoicoPage() {
                                   markDayAsRead(maxim.dayNumber);
                                   mixpanel.track('Diario Estoico: Marked As Read', { day_number: maxim.dayNumber, is_guest: !user, method: 'button' });
                                 }}
-                                className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-eco-baby hover:bg-eco-baby/90 rounded-full active:scale-95 transition-all duration-200"
+                                className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-full active:scale-95 transition-all duration-200"
+                                style={{ background: 'linear-gradient(135deg, #6EC8FF, #36B3FF)' }}
                               >
-                                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                 Marcar como lida
                               </button>
                             ) : (
-                              <div className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-eco-accent bg-eco-accent/8 rounded-full border border-eco-accent/20">
-                                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                              <div className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-full"
+                                style={{ background: 'rgba(198,169,149,0.1)', color: '#A7846C', border: '1px solid rgba(198,169,149,0.3)' }}>
+                                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                 Reflexão concluída
                               </div>
                             )}
                             <button
                               onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-eco-muted hover:text-eco-text glass-shell rounded-full transition-all duration-200"
+                              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-eco-muted rounded-full transition-all duration-200 hover:text-eco-text"
+                              style={{ background: 'rgba(232,227,221,0.5)', border: '1px solid rgba(232,227,221,0.8)' }}
                             >
                               <Share2 size={13} />
                               Compartilhar

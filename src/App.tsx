@@ -101,6 +101,7 @@ const AbundanciaObrigadoPage = lazy(() => import("@/pages/AbundanciaObrigadoPage
 const AbundanciaErroPage = lazy(() => import("@/pages/AbundanciaErroPage"));
 const DrJoeObrigadoPage = lazy(() => import("@/pages/DrJoeObrigadoPage"));
 const DrJoeErroPage = lazy(() => import("@/pages/DrJoeErroPage"));
+const DrJoeAdCreativePage = lazy(() => import("@/pages/DrJoeAdCreativePage"));
 
 // Lightweight loading fallback (no heavy dependencies)
 function LoadingFallback() {
@@ -203,6 +204,7 @@ function AppRoutes() {
         <Route path="abundancia/erro" element={renderWithSuspense(<AbundanciaErroPage />)} />
         <Route path="dr-joe/obrigado" element={renderWithSuspense(<DrJoeObrigadoPage />)} />
         <Route path="dr-joe/erro" element={renderWithSuspense(<DrJoeErroPage />)} />
+        <Route path="dr-joe/criativo" element={renderWithSuspense(<DrJoeAdCreativePage />)} />
       </Route>
       {/* ── Rotas guest (sem autenticação) — devem vir ANTES do /app/* para não
           serem capturadas pelo catch-all filho do bloco RequireAuth ── */}

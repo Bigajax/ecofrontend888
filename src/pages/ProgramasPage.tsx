@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useProgram } from '@/contexts/ProgramContext';
 import { usePremiumContent, useSubscriptionTier } from '@/hooks/usePremiumContent';
@@ -11,7 +12,6 @@ import mixpanel from '@/lib/mixpanel';
 import {
   canAccessMeditation,
   getRequiredTier,
-  getUpgradeMessage,
   MEDITATION_TIER_MAP,
 } from '@/constants/meditationTiers';
 
@@ -20,7 +20,7 @@ interface Meditation {
   title: string;
   description: string;
   duration: string;
-  durationMinutes?: number; // Para tier logic
+  durationMinutes?: number;
   audioUrl?: string;
   image: string;
   imagePosition?: string;
@@ -29,6 +29,11 @@ interface Meditation {
   category: string;
 }
 
+const cardVariant = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 80, damping: 20 } },
+};
+
 export default function ProgramasPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -36,7 +41,6 @@ export default function ProgramasPage() {
   const { requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const tier = useSubscriptionTier();
 
-  // Meditações (mesmas do HomePage)
   const meditations: Meditation[] = useMemo(() => [
     {
       id: 'blessing_9',
@@ -46,7 +50,7 @@ export default function ProgramasPage() {
       durationMinutes: 25,
       image: 'url("/images/quem-pensa-enriquece.webp")',
       gradient: 'linear-gradient(to bottom, #1E3A5F 0%, #2C5282 20%, #3B6BA5 40%, #4A84C8 60%, #5A9DEB 80%, #6BB6FF 100%)',
-      isPremium: true, // PREMIUM: 25 min
+      isPremium: true,
       category: 'Programas',
     },
     {
@@ -143,7 +147,7 @@ export default function ProgramasPage() {
       image: 'url("/images/meditacao-sono-new.webp")',
       imagePosition: 'center 32%',
       gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
-      isPremium: true, // PREMIUM: 15 min
+      isPremium: true,
       category: 'Sono',
     },
     {
@@ -172,20 +176,20 @@ export default function ProgramasPage() {
     },
   ], []);
 
-  // Seções por objetivo emocional (layout Meditopia)
   const sections = useMemo(() => [
     {
       title: 'Comece Aqui',
+      subtitle: 'O primeiro passo é o mais importante.',
       meditations: meditations.filter(m => m.id === 'blessing_7'),
     },
     {
       title: 'Transforme sua Mente',
-      meditations: meditations.filter(m =>
-        m.id === 'blessing_3' || m.id === 'blessing_9'
-      ),
+      subtitle: 'Reprograme crenças e padrões limitantes.',
+      meditations: meditations.filter(m => m.id === 'blessing_3' || m.id === 'blessing_9'),
     },
     {
       title: 'Energize e Manifeste',
+      subtitle: 'Ative sua energia e alinhe seu propósito.',
       meditations: meditations.filter(m =>
         m.id === 'blessing_1' || m.id === 'blessing_2' ||
         m.id === 'blessing_6' || m.id === 'blessing_4'
@@ -193,28 +197,24 @@ export default function ProgramasPage() {
     },
     {
       title: 'Alivie e Acalme',
+      subtitle: 'Solte o que o dia deixou acumulado.',
       meditations: meditations.filter(m =>
-        m.id === 'blessing_5' || m.id === 'blessing_10' ||
-        m.id === 'blessing_11'
+        m.id === 'blessing_5' || m.id === 'blessing_10' || m.id === 'blessing_11'
       ),
     },
     {
       title: 'Para Dormir',
+      subtitle: 'Prepare o corpo e a mente para um descanso profundo.',
       meditations: meditations.filter(m => m.id === 'blessing_8'),
     },
   ], [meditations]);
 
-  // Helper para verificar se meditação está locked
-  const isMeditationLocked = (meditation: Meditation): boolean => {
-    // Usar helper centralizado de tiers
-    const hasAccess = canAccessMeditation(meditation.id, tier);
-    return !hasAccess;
-  };
+  const isMeditationLocked = (meditation: Meditation): boolean =>
+    !canAccessMeditation(meditation.id, tier);
 
   const handleMeditationClick = (meditationId: string) => {
     const meditation = meditations.find(m => m.id === meditationId);
 
-    // Usar MEDITATION_TIER_MAP como fonte única de verdade para acesso
     if (!canAccessMeditation(meditationId, tier)) {
       trackPremiumFeatureAttempted({
         feature_id: meditationId,
@@ -223,7 +223,6 @@ export default function ProgramasPage() {
         is_premium_user: false,
         user_id: user?.id,
       });
-
       mixpanel.track('Meditation Premium Clicked', {
         meditation_id: meditationId,
         meditation_title: meditation?.title,
@@ -233,12 +232,10 @@ export default function ProgramasPage() {
         is_locked: true,
         user_id: user?.id,
       });
-
       requestUpgrade('programas_' + meditationId);
       return;
     }
 
-    // Track acesso bem-sucedido a meditação
     mixpanel.track('Meditation Started', {
       meditation_id: meditationId,
       meditation_title: meditation?.title,
@@ -248,10 +245,9 @@ export default function ProgramasPage() {
       user_id: user?.id,
     });
 
-    // Quem Pensa Enriquece - navega para sua própria página
     if (meditationId === 'blessing_9') {
       startProgram({
-        id: 'rec_2', // ✅ ID CORRETO para sync com backend
+        id: 'rec_2',
         title: 'Quem Pensa Enriquece',
         description: 'Transforme seu mindset financeiro',
         currentLesson: 'Passo 1: Onde você está',
@@ -263,19 +259,14 @@ export default function ProgramasPage() {
       navigate('/app/riqueza-mental');
       return;
     }
-
-    // Programa do Caleidoscópio navega para sua própria página
     if (meditationId === 'blessing_4') {
       navigate('/app/programas/caleidoscopio-mind-movie');
       return;
     }
-
-    // Introdução à Meditação - navega para sua própria página
     if (meditationId === 'blessing_7') {
       navigate('/app/introducao-meditacao');
       return;
     }
-
     if (meditation) {
       navigate('/app/meditation-player', {
         state: {
@@ -285,197 +276,292 @@ export default function ProgramasPage() {
             audioUrl: meditation.audioUrl || '/audio/bencao-centros-energia.mp3',
             imageUrl: meditation.image.replace('url("', '').replace('")', ''),
             backgroundMusic: 'Cristais',
-            gradient: meditation.gradient
-          }
-        }
+            gradient: meditation.gradient,
+          },
+        },
       });
     }
   };
 
-  // Calcular estatísticas de acesso
   const totalMeditations = meditations.length;
   const accessibleMeditations = meditations.filter(m => canAccessMeditation(m.id, tier)).length;
   const lockedMeditations = totalMeditations - accessibleMeditations;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div
+      className="min-h-screen pb-20 md:pb-0"
+      style={{ background: 'linear-gradient(175deg, #C8E8FF 0%, #D8EFFF 6%, #E6F4FF 14%, #EEF8FF 26%, #F5FAFF 44%, #FAFCFF 62%, #FFFFFF 80%)' }}
+    >
       <HomeHeader />
 
-      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-        {/* Título Explorar */}
-        <h1 className="text-4xl sm:text-5xl font-display font-bold text-[#38322A] mb-6">
-          Explorar
-        </h1>
+      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
 
-        {/* Banner informativo de tier - apenas para free/essentials */}
+        {/* ── Page Header ── */}
+        <motion.div
+          className="mb-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 70, damping: 20 }}
+        >
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-2" style={{ color: '#4BAEE8' }}>
+            Biblioteca
+          </p>
+          <h1 className="font-display text-[38px] sm:text-[48px] font-bold leading-tight" style={{ color: '#0D3461' }}>
+            Explorar
+          </h1>
+          <p className="mt-2 text-[16px]" style={{ color: '#5A8AAD' }}>
+            Escolha sua jornada de hoje.
+          </p>
+        </motion.div>
+
+        {/* ── Upgrade Banner ── */}
         {(tier === 'free' || tier === 'essentials') && lockedMeditations > 0 && (
-          <div className="mb-6 rounded-2xl bg-eco-babySoft border border-eco-baby/30 p-4">
-            <div className="flex items-start justify-between gap-4">
+          <motion.div
+            className="mb-10 relative overflow-hidden rounded-3xl"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, type: 'spring', stiffness: 70, damping: 20 }}
+            style={{
+              background: 'linear-gradient(135deg, #07192E 0%, #0D2E4F 40%, #103A62 70%, #0F4476 100%)',
+              boxShadow: '0 16px 48px rgba(7,25,46,0.35), 0 4px 16px rgba(110,200,255,0.10)',
+            }}
+          >
+            {/* Glow orb */}
+            <div className="pointer-events-none absolute" style={{ top: '-50px', right: '-30px', width: '200px', height: '200px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(110,200,255,0.16) 0%, transparent 65%)' }} />
+            <div className="relative z-10 flex flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:gap-6 md:px-8">
               <div className="flex-1">
-                <p className="text-sm font-semibold text-[#1a6fa8] mb-1">
-                  {tier === 'free'
-                    ? '📚 Você tem acesso a 6 meditações gratuitas'
-                    : '✨ Plano Essentials: Meditações até 15 minutos'}
+                <p className="text-[11px] font-bold uppercase tracking-widest text-[#6EC8FF]/70 mb-1.5">
+                  {tier === 'free' ? 'Plano Gratuito' : 'Plano Essentials'}
                 </p>
-                <p className="text-xs text-[#2e8fc4]">
-                  {accessibleMeditations} de {totalMeditations} meditações disponíveis •{' '}
-                  {lockedMeditations} meditações premium bloqueadas
+                <p className="font-display text-[18px] font-semibold text-white leading-snug">
+                  {tier === 'free'
+                    ? `Você tem acesso a ${accessibleMeditations} meditações gratuitas`
+                    : `${accessibleMeditations} de ${totalMeditations} meditações disponíveis`}
+                </p>
+                <p className="mt-1 text-[13px] text-white/55">
+                  {lockedMeditations} meditações premium esperando por você
                 </p>
               </div>
               <button
                 onClick={() => {
-                  mixpanel.track('Meditation Library Upgrade Banner Click', {
-                    user_tier: tier,
-                    accessible_count: accessibleMeditations,
-                    locked_count: lockedMeditations,
-                    user_id: user?.id,
-                  });
+                  mixpanel.track('Meditation Library Upgrade Banner Click', { user_tier: tier, user_id: user?.id });
                   requestUpgrade('meditation_library_banner');
                 }}
-                className="shrink-0 px-3 py-1.5 bg-eco-baby text-white text-xs font-semibold rounded-full hover:bg-eco-babyDark transition-all"
+                className="flex-shrink-0 inline-flex items-center gap-2 rounded-full px-5 py-3 text-[14px] font-bold transition-all duration-200 hover:scale-105 active:scale-95"
+                style={{ background: 'rgba(110,200,255,0.20)', border: '1px solid rgba(110,200,255,0.38)', color: '#E8F7FF', backdropFilter: 'blur(8px)' }}
               >
                 {tier === 'free' ? 'Ver Planos' : 'Upgrade Premium'}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </button>
             </div>
-          </div>
+            <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(110,200,255,0.28), transparent)' }} />
+          </motion.div>
         )}
 
-        {/* Seções com scroll horizontal — estilo Meditopia */}
-        {sections.map((section) => (
-          <div key={section.title} className="mb-10">
-            <div className="flex items-center justify-between mb-4 px-4 sm:px-0">
-              <h2 className="text-2xl font-display font-semibold text-[#38322A]">
-                {section.title}
-              </h2>
-              <button className="text-sm text-[#A7846C] hover:underline">
-                Ver todos
-              </button>
-            </div>
+        {/* ── Sections ── */}
+        {sections.map((section, sectionIdx) => (
+          <div key={section.title} className="mb-12">
+            {/* Section header */}
+            <motion.div
+              className="mb-5 flex items-end justify-between"
+              initial={{ opacity: 0, x: -12 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ type: 'spring', stiffness: 80, damping: 20, delay: sectionIdx * 0.04 }}
+            >
+              <div className="flex items-start gap-3">
+                <div className="mt-1.5 w-1 h-6 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(180deg, #6EC8FF, #4BAEE8)' }} />
+                <div>
+                  <h2 className="font-display text-[22px] font-bold leading-tight" style={{ color: '#0D3461' }}>
+                    {section.title}
+                  </h2>
+                  <p className="mt-0.5 text-[13px]" style={{ color: '#5A8AAD' }}>
+                    {section.subtitle}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
 
-            {/* Scroll horizontal com snap */}
-            <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide snap-x snap-mandatory pl-4 sm:pl-0">
+            {/* Cards scroll */}
+            <motion.div
+              className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide snap-x snap-mandatory pl-0"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-40px' }}
+              variants={{ visible: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } } }}
+            >
               {section.meditations.map((meditation, idx) => {
                 const isLocked = isMeditationLocked(meditation);
                 const isLast = idx === section.meditations.length - 1;
+                const isPremiumBadge = MEDITATION_TIER_MAP[meditation.id] !== 'free';
 
                 return (
-                  <button
+                  <motion.button
                     key={meditation.id}
+                    variants={cardVariant}
                     onClick={() => handleMeditationClick(meditation.id)}
-                    className={`group relative flex-shrink-0 snap-start overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] transition-all duration-300 active:scale-95 cursor-pointer touch-manipulation ${isLast ? 'mr-4 sm:mr-0' : ''}`}
+                    className={`group relative flex-shrink-0 snap-start overflow-hidden rounded-3xl text-left active:scale-[0.97] transition-all duration-200 touch-manipulation ${isLast ? 'mr-1' : ''}`}
                     style={{
-                      width: '260px',
-                      height: '200px',
+                      width: '280px',
+                      height: '230px',
                       backgroundImage: meditation.image,
                       backgroundSize: 'cover',
                       backgroundPosition: meditation.imagePosition || 'center',
-                      filter: isLocked ? 'grayscale(0.2)' : 'none',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)',
                     }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
                   >
-                    {/* Gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                    {/* Image zoom on hover */}
+                    <div
+                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                      style={{
+                        backgroundImage: meditation.image,
+                        backgroundPosition: meditation.imagePosition || 'center',
+                      }}
+                    />
 
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/20 transition-all duration-300" />
+                    {/* Strong gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/38 to-black/08" />
 
-                    {/* Lock overlay para meditações locked */}
-                    {isLocked && (
-                      <div className="absolute inset-0 bg-black/10 backdrop-blur-[0.5px]" />
-                    )}
+                    {/* Lock blur */}
+                    {isLocked && <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]" />}
 
                     {/* Content */}
                     <div className="relative flex h-full flex-col justify-between p-4">
-                      {/* Top: Duration Badge and Premium Badge */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className="inline-flex items-center rounded-full bg-white/20 border border-white/30 px-2.5 py-1 backdrop-blur-md">
-                            <span className="text-[11px] font-medium text-white">
-                              {meditation.duration}
-                            </span>
+
+                      {/* Top badges */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className="inline-flex items-center rounded-full px-2.5 py-1 backdrop-blur-md"
+                            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.22)' }}
+                          >
+                            <span className="text-[11px] font-semibold text-white">{meditation.duration}</span>
                           </span>
                           {meditation.category && (
-                            <span className="inline-flex items-center rounded-full bg-white/20 border border-white/30 px-2.5 py-1 backdrop-blur-md">
-                              <span className="text-[11px] font-medium text-white">
-                                {meditation.category}
-                              </span>
+                            <span
+                              className="inline-flex items-center rounded-full px-2.5 py-1 backdrop-blur-md"
+                              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}
+                            >
+                              <span className="text-[10px] font-bold uppercase tracking-wide text-white/90">{meditation.category}</span>
                             </span>
                           )}
                         </div>
-                        {MEDITATION_TIER_MAP[meditation.id] !== 'free' && (
-                          <div className="flex items-center gap-1.5 rounded-full bg-eco-baby px-2.5 py-1 backdrop-blur-md shadow-md">
-                            {isLocked && <Lock size={11} className="text-white" />}
-                            <span className="text-[10px] font-bold text-white tracking-wide">
+                        {isPremiumBadge && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 flex-shrink-0 backdrop-blur-md"
+                            style={{ background: isLocked ? 'rgba(110,200,255,0.30)' : 'rgba(110,200,255,0.22)', border: '1px solid rgba(110,200,255,0.40)' }}
+                          >
+                            {isLocked && <Lock size={10} className="text-white" />}
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-white">
                               {getRequiredTier(meditation.id).toUpperCase()}
                             </span>
-                          </div>
+                          </span>
                         )}
                       </div>
 
-                      {/* Bottom: Title, Description, Play Button */}
-                      <div className="flex items-end justify-between gap-4">
+                      {/* Bottom: title + play */}
+                      <div className="flex items-end justify-between gap-3">
                         <div className="flex-1 text-left">
-                          <h3 className="font-display text-base font-normal text-white drop-shadow-lg leading-tight">
+                          <h3 className="font-display text-[17px] font-bold leading-snug text-white drop-shadow-lg line-clamp-2">
                             {meditation.title}
                           </h3>
-                          <p className="mt-0.5 text-[12px] text-white/85 drop-shadow-md line-clamp-1">
+                          <p className="mt-1 text-[12px] text-white/70 line-clamp-1">
                             {meditation.description}
                           </p>
                         </div>
 
-                        {/* Play Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMeditationClick(meditation.id);
+                        {/* Premium play button */}
+                        <div
+                          className="flex-shrink-0 flex items-center justify-center rounded-full transition-all duration-300 group-hover:scale-110 active:scale-95"
+                          style={{
+                            width: '44px',
+                            height: '44px',
+                            background: isLocked
+                              ? 'rgba(255,255,255,0.18)'
+                              : 'rgba(255,255,255,0.92)',
+                            backdropFilter: 'blur(8px)',
+                            boxShadow: isLocked ? 'none' : '0 4px 16px rgba(0,0,0,0.20)',
                           }}
-                          className="shrink-0 flex items-center justify-center rounded-full bg-white/85 p-3 shadow-lg transition-all duration-300 md:hover:bg-white active:scale-95 touch-manipulation backdrop-blur-md"
                         >
-                          <Play size={18} className="fill-black text-black ml-0.5" />
-                        </button>
+                          {isLocked
+                            ? <Lock size={16} className="text-white" />
+                            : <Play size={18} className="fill-[#0D3461] text-[#0D3461] ml-0.5" />
+                          }
+                        </div>
                       </div>
                     </div>
-                  </button>
+                  </motion.button>
                 );
               })}
-            </div>
+            </motion.div>
           </div>
         ))}
+
+        {/* ── Upgrade Footer Card ── */}
+        {(tier === 'free' || tier === 'essentials') && (
+          <motion.div
+            className="mt-4 relative overflow-hidden rounded-3xl"
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ type: 'spring', stiffness: 70, damping: 20 }}
+            style={{
+              background: 'linear-gradient(135deg, #07192E 0%, #0D2E4F 40%, #103A62 70%, #0F4476 100%)',
+              boxShadow: '0 20px 60px rgba(7,25,46,0.40), 0 4px 16px rgba(110,200,255,0.10)',
+            }}
+          >
+            <div className="pointer-events-none absolute" style={{ top: '-60px', right: '-40px', width: '260px', height: '260px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(110,200,255,0.16) 0%, transparent 65%)' }} />
+            <div className="pointer-events-none absolute" style={{ bottom: '-60px', left: '-20px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(75,174,232,0.10) 0%, transparent 65%)' }} />
+
+            <div className="relative z-10 px-6 py-8 md:px-8 md:py-10 flex flex-col items-center text-center gap-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6EC8FF]/70">
+                Acesso Completo
+              </p>
+              <h3 className="font-display text-[24px] sm:text-[28px] font-bold text-white leading-snug max-w-sm">
+                Desbloqueie as {lockedMeditations} meditações premium
+              </h3>
+              <p className="text-[14px] text-white/55 max-w-xs">
+                Todas as jornadas, sem limites de tempo, a qualquer momento.
+              </p>
+
+              {/* Progress bar */}
+              <div className="w-full max-w-xs">
+                <div className="flex justify-between mb-2">
+                  <span className="text-[12px] text-white/50">{accessibleMeditations} desbloqueadas</span>
+                  <span className="text-[12px] text-white/50">{totalMeditations} total</span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.12)' }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${(accessibleMeditations / totalMeditations) * 100}%`,
+                      background: 'linear-gradient(90deg, #6EC8FF, #4BAEE8)',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  mixpanel.track('Meditation Footer Upgrade Click', { user_tier: tier, user_id: user?.id });
+                  requestUpgrade('meditation_library_footer');
+                }}
+                className="inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 text-[15px] font-bold text-[#07192E] transition-all duration-200 hover:scale-105 active:scale-95 mt-1"
+                style={{ background: 'linear-gradient(135deg, #A8DEFF 0%, #6EC8FF 100%)', boxShadow: '0 6px 24px rgba(110,200,255,0.35)' }}
+              >
+                <Lock size={16} />
+                Desbloquear tudo
+              </button>
+            </div>
+
+            <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(110,200,255,0.28), transparent)' }} />
+          </motion.div>
+        )}
       </div>
 
-      {/* Footer com estatísticas - apenas para free/essentials */}
-      {(tier === 'free' || tier === 'essentials') && (
-        <div className="mt-12 pt-8 border-t border-gray-200">
-          <div className="text-center">
-            <p className="text-sm text-gray-600 mb-2">
-              Você desbloqueou <span className="font-bold text-gray-900">{accessibleMeditations}</span> de{' '}
-              <span className="font-bold text-gray-900">{totalMeditations}</span> meditações
-            </p>
-            <div className="w-full max-w-md mx-auto bg-gray-200 rounded-full h-2 mb-4">
-              <div
-                className="bg-eco-baby h-2 rounded-full transition-all duration-500"
-                style={{ width: `${(accessibleMeditations / totalMeditations) * 100}%` }}
-              />
-            </div>
-            <button
-              onClick={() => {
-                mixpanel.track('Meditation Footer Upgrade Click', {
-                  user_tier: tier,
-                  accessible_count: accessibleMeditations,
-                  locked_count: lockedMeditations,
-                  user_id: user?.id,
-                });
-                requestUpgrade('meditation_library_footer');
-              }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-eco-baby text-white font-semibold rounded-full hover:bg-eco-babyDark transition-all shadow-md hover:shadow-lg"
-            >
-              <Lock size={16} />
-              Desbloquear todas as {lockedMeditations} meditações premium
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Upgrade Modal */}
       <UpgradeModal
         open={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}

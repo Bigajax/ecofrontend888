@@ -5,13 +5,13 @@ import {
   Moon, ShieldCheck, Wind,
   Activity, Zap, TrendingUp, Loader2,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
 import { useSonoCheckout } from '@/hooks/useSonoCheckout';
 import { PROTOCOL_NIGHTS, type ProtocolNight } from '@/data/protocolNights';
 
-// Night 1 is free; nights 2-7 require payment
 function isNightAccessible(night: number, completed: Set<number>, isPaid: boolean, isVip: boolean, isFree: boolean): boolean {
   if (isVip) return true;
   if (isFree) return true;
@@ -20,6 +20,11 @@ function isNightAccessible(night: number, completed: Set<number>, isPaid: boolea
 }
 
 const SUBSCRIPTION_PATH = '/app/subscription/demo';
+
+const cardVariant = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 80, damping: 20 } },
+};
 
 export default function MeditacoesSonoPage() {
   const navigate = useNavigate();
@@ -33,11 +38,8 @@ export default function MeditacoesSonoPage() {
   const [completedNights, setCompletedNights] = useState<Set<number>>(() => {
     const raw = localStorage.getItem(`eco.sono.protocol.v1.${uid}`);
     if (raw) {
-      try {
-        return new Set<number>(JSON.parse(raw).completedNights || []);
-      } catch {
-        return new Set<number>();
-      }
+      try { return new Set<number>(JSON.parse(raw).completedNights || []); }
+      catch { return new Set<number>(); }
     }
     return new Set<number>();
   });
@@ -68,46 +70,31 @@ export default function MeditacoesSonoPage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   const completedCount = completedNights.size;
   const pct = Math.round((completedCount / 7) * 100);
   const nextNight = Math.min(completedCount + 1, 7);
 
   const heroButtonLabel =
-    completedCount === 0
-      ? 'Iniciar Noite 1 — Grátis'
-      : completedCount === 7
-      ? 'Protocolo Concluído 🎉'
-      : !isPaid
-      ? 'Desbloquear o Protocolo — R$ 37'
-      : `Continuar Noite ${nextNight}`;
+    completedCount === 0 ? 'Iniciar Noite 1 — Grátis'
+    : completedCount === 7 ? 'Protocolo Concluído 🎉'
+    : !isPaid ? 'Desbloquear o Protocolo — R$ 37'
+    : `Continuar Noite ${nextNight}`;
 
   const handleNightClick = (night: ProtocolNight) => {
     const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser, night.isFree);
-
-    if (!accessible) {
-      openCheckout();
-      return;
-    }
+    if (!accessible) { openCheckout(); return; }
     if (!night.hasAudio || !night.audioUrl) return;
-
     sessionStorage.setItem('eco.sono.lastPlayedNight', String(night.night));
-
     navigate('/app/meditation-player', {
       state: {
         meditation: {
-          id: night.id,
-          title: night.title,
-          duration: night.duration,
+          id: night.id, title: night.title, duration: night.duration,
           audioUrl: night.audioUrl,
           imageUrl: night.imageUrl ?? '/images/meditacoes-sono-hero.webp',
-          backgroundMusic: 'Sono',
-          gradient: night.gradient,
-          category: 'sono',
-          isPremium: false,
+          backgroundMusic: 'Sono', gradient: night.gradient,
+          category: 'sono', isPremium: false,
         },
         returnTo: '/app/meditacoes-sono',
       },
@@ -115,108 +102,98 @@ export default function MeditacoesSonoPage() {
   };
 
   const handleHeroButtonClick = () => {
-    if (!isPaid && nextNight > 1) {
-      openCheckout();
-      return;
-    }
-    if (completedCount === 7) {
-      setShowCompletion(true);
-      return;
-    }
+    if (!isPaid && nextNight > 1) { openCheckout(); return; }
+    if (completedCount === 7) { setShowCompletion(true); return; }
     const targetNight = PROTOCOL_NIGHTS[nextNight - 1];
     if (targetNight) handleNightClick(targetNight);
   };
 
-  // ── Tela de Conclusão ─────────────────────────────────────────────────────
+  // ── Completion Screen ──────────────────────────────────────────
   if (showCompletion) {
     return (
-      <div className="min-h-screen bg-white font-primary flex flex-col items-center justify-center px-6 text-center">
-        <div className="max-w-sm w-full">
+      <div
+        className="min-h-screen font-primary flex flex-col items-center justify-center px-6 text-center"
+        style={{ background: 'linear-gradient(160deg, #06091A 0%, #0C1226 40%, #0F1A38 100%)' }}
+      >
+        <motion.div
+          className="max-w-sm w-full"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 70, damping: 20 }}
+        >
           <div className="text-6xl mb-6">🎉</div>
-          <h1 className="font-display text-2xl font-bold text-[var(--eco-text)] sm:text-3xl mb-4 leading-tight">
+          <h1 className="font-display text-[28px] font-bold text-white sm:text-[32px] mb-4 leading-tight">
             Protocolo Concluído
           </h1>
-          <p className="text-sm text-[var(--eco-muted)] sm:text-base leading-relaxed mb-8">
+          <p className="text-[15px] text-white/55 leading-relaxed mb-8">
             Você recondicionou seu sistema para o descanso.<br />
             Agora você possui ferramentas para dormir sem depender do áudio.
           </p>
           <div className="flex flex-col gap-3">
             <button
               onClick={() => navigate('/app')}
-              className="w-full rounded-full bg-eco-babyDark px-6 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg hover:brightness-110 transition-all active:scale-95"
+              className="w-full rounded-full px-6 py-3.5 text-[15px] font-bold text-[#06091A] transition-all hover:scale-105 active:scale-95"
+              style={{ background: 'linear-gradient(135deg, #A8DEFF 0%, #6EC8FF 100%)', boxShadow: '0 6px 24px rgba(110,200,255,0.35)' }}
             >
               Explorar outros programas
             </button>
             <button
               onClick={() => navigate(SUBSCRIPTION_PATH)}
-              className="w-full rounded-full border border-eco-baby px-6 py-3 text-sm font-semibold text-eco-babyDark hover:bg-eco-babySoft transition-all active:scale-95"
+              className="w-full rounded-full border px-6 py-3.5 text-[15px] font-semibold text-white/70 transition-all hover:text-white active:scale-95"
+              style={{ borderColor: 'rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)' }}
             >
               Conhecer o Plano Completo
             </button>
           </div>
           <button
             onClick={() => setShowCompletion(false)}
-            className="mt-6 text-xs text-[var(--eco-muted)] underline underline-offset-2"
+            className="mt-6 text-[12px] text-white/30 underline underline-offset-2"
           >
             Ver protocolo novamente
           </button>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
-  // ── Página Principal ──────────────────────────────────────────────────────
+  // ── Main Page ──────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-white font-primary">
+    <div
+      className="min-h-screen font-primary"
+      style={{ background: 'linear-gradient(180deg, #06091A 0%, #06091A 38%, #0A1020 55%, #0D1530 75%, #0F1A38 100%)' }}
+    >
       {user && <HomeHeader />}
 
-      <main className="pb-20">
-        {/* Hero Section */}
+      <main className="pb-24">
+
+        {/* ── Hero ────────────────────────────────────────────── */}
         <section className="relative flex min-h-[600px] flex-col overflow-hidden sm:min-h-[680px]">
-          {/* Navigation */}
           <div className="absolute left-4 top-4 right-4 z-20 flex items-center justify-between sm:left-6 sm:top-6">
             <button
               onClick={() => navigate('/app')}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-[var(--eco-text)] shadow-md backdrop-blur-sm transition-all hover:bg-white hover:shadow-lg"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-white shadow-md transition-all hover:scale-105 active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             {!user && (
               <button
                 onClick={() => navigate('/register')}
-                className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-eco-babyDark to-eco-baby rounded-full hover:shadow-lg transition-all duration-200"
+                className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-full transition-all hover:scale-105"
+                style={{ background: 'rgba(110,200,255,0.22)', border: '1px solid rgba(110,200,255,0.38)', backdropFilter: 'blur(8px)' }}
               >
                 Criar conta grátis
               </button>
             )}
           </div>
 
-          {/* Background Image */}
-          <div
-            className="absolute inset-0 bg-cover"
-            style={{
-              backgroundImage: 'url("/images/meditacoes-sono-hero.webp")',
-              backgroundPosition: 'center center',
-              transform: 'scale(1.05)',
-            }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(to bottom, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0.38) 65%, rgba(255,255,255,1) 100%)',
-            }}
-          />
+          <div className="absolute inset-0 bg-cover" style={{ backgroundImage: 'url("/images/meditacoes-sono-hero.webp")', backgroundPosition: 'center center', transform: 'scale(1.05)' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.38) 55%, rgba(6,9,26,1) 100%)' }} />
 
-          {/* Content — constrained column, all elements share one axis */}
           <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col items-center px-6 pt-24 pb-16 text-center sm:max-w-md sm:px-8 sm:pt-28 sm:pb-20">
-
-            {/* Eyebrow */}
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/50 sm:text-xs">
               7 Noites · Protocolo Progressivo
             </p>
-
-            {/* Headline */}
             <h1
               className="mt-4 font-display text-[2rem] font-bold text-white sm:text-[2.75rem] leading-[1.12]"
               style={{ textShadow: '0 2px 20px rgba(0,0,0,0.55), 0 1px 4px rgba(0,0,0,0.35)' }}
@@ -224,16 +201,9 @@ export default function MeditacoesSonoPage() {
               Você não tem insônia.<br />
               Você está preso em modo alerta.
             </h1>
-
-            {/* Subtitle — tight to headline */}
-            <p
-              className="mt-3 text-sm text-white/65 font-light leading-relaxed sm:text-[0.95rem]"
-              style={{ textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}
-            >
+            <p className="mt-3 text-sm text-white/65 font-light leading-relaxed sm:text-[0.95rem]" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
               7 noites. Cada uma resolve uma camada diferente do que te mantém acordado.
             </p>
-
-            {/* Benefits — uniform-width pills, same axis as headline */}
             <div className="mt-10 flex w-full flex-col gap-2.5 sm:mt-11">
               {[
                 { icon: Moon,        label: 'Adormecer mais rápido' },
@@ -243,94 +213,116 @@ export default function MeditacoesSonoPage() {
                 <span
                   key={label}
                   className="flex w-full items-center gap-3 rounded-full px-5 py-2.5 text-sm font-medium text-white"
-                  style={{
-                    background: 'rgba(255,255,255,0.14)',
-                    backdropFilter: 'blur(24px)',
-                    WebkitBackdropFilter: 'blur(24px)',
-                    border: '1px solid rgba(255,255,255,0.28)',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 14px rgba(0,0,0,0.18)',
-                  }}
+                  style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.28)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 14px rgba(0,0,0,0.18)' }}
                 >
-                  <Icon className="h-4 w-4 text-eco-baby flex-shrink-0" strokeWidth={2} />
+                  <Icon className="h-4 w-4 text-[#6EC8FF] flex-shrink-0" strokeWidth={2} />
                   {label}
                 </span>
               ))}
             </div>
-
-            {/* CTA — same width as pills column */}
             <button
               onClick={handleHeroButtonClick}
               disabled={checkoutLoading}
-              className="mt-8 flex w-full items-center justify-center gap-2.5 rounded-full py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:scale-105 active:scale-95 sm:mt-9 sm:py-4 sm:text-base disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
-              style={{
-                background: 'rgba(255,255,255,0.18)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.35)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 24px rgba(0,0,0,0.2)',
-              }}
+              className="mt-8 flex w-full items-center justify-center gap-2.5 rounded-full py-3.5 text-sm font-bold text-white transition-all duration-300 hover:scale-105 active:scale-95 sm:mt-9 sm:py-4 sm:text-base disabled:opacity-70 disabled:cursor-not-allowed"
+              style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 24px rgba(0,0,0,0.2)' }}
             >
-              {checkoutLoading
-                ? <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
-                : isPaid && completedCount < 7
-                ? <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-eco-baby" fill="currentColor" />
+              {checkoutLoading ? <Loader2 className="h-4 w-4 animate-spin" />
+                : isPaid && completedCount < 7 ? <Play className="h-4 w-4 text-[#6EC8FF]" fill="currentColor" />
                 : null}
               {checkoutLoading ? 'Abrindo pagamento…' : heroButtonLabel}
             </button>
           </div>
         </section>
 
-        {/* Identification Block */}
+        {/* ── Identification Block ─────────────────────────────── */}
         <section className="mx-auto max-w-4xl px-4 pt-8 pb-2 sm:px-8">
-          <div className="rounded-2xl bg-eco-babySoft border border-eco-baby/30 px-5 py-4 sm:px-6 sm:py-5">
-            <p className="text-sm text-[var(--eco-text)] sm:text-base leading-relaxed">
-              Você não tem insônia porque é fraco. Você tem insônia porque seu sistema nervoso nunca recebeu permissão para desligar.<br />
-              <span className="font-semibold text-eco-babyDark">É isso que vamos mudar.</span>
+          <motion.div
+            className="rounded-3xl px-5 py-5 sm:px-6 sm:py-6"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ type: 'spring', stiffness: 70, damping: 20 }}
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
+          >
+            <p className="text-[15px] text-white/70 sm:text-base leading-relaxed">
+              Você não tem insônia porque é fraco. Você tem insônia porque seu sistema nervoso nunca recebeu permissão para desligar.{' '}
+              <span className="font-semibold text-[#6EC8FF]">É isso que vamos mudar.</span>
             </p>
-          </div>
+          </motion.div>
         </section>
 
-        {/* Progress Bar */}
+        {/* ── Progress ─────────────────────────────────────────── */}
         <section className="mx-auto max-w-4xl px-4 pt-6 pb-2 sm:px-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-[var(--eco-text)]">
-              {completedCount === 7
-                ? 'Programa concluído!'
-                : `Você está na Noite ${nextNight} de 7`}
-            </span>
-            <span className="text-sm font-semibold text-eco-babyDark">{pct}%</span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-eco-babySoft">
-            <div
-              className="h-2 rounded-full bg-eco-babyDark transition-all duration-500"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <p className="mt-1.5 text-xs text-[var(--eco-muted)]">
-            {completedCount} de 7 noites concluídas
-          </p>
+          <motion.div
+            className="rounded-3xl px-5 py-5 sm:px-6"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ type: 'spring', stiffness: 70, damping: 20, delay: 0.05 }}
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[13px] font-semibold text-white/70">
+                {completedCount === 7 ? 'Programa concluído!' : `Noite ${nextNight} de 7`}
+              </p>
+              <span className="text-[13px] font-bold text-[#6EC8FF]">{pct}%</span>
+            </div>
+            <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.10)' }}>
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #6EC8FF, #4BAEE8)' }}
+              />
+            </div>
+            <p className="mt-2 text-[12px] text-white/35">{completedCount} de 7 noites concluídas</p>
+          </motion.div>
         </section>
 
-        {/* Night Cards */}
-        <section className="mx-auto max-w-4xl px-4 py-4 sm:px-8">
-          {!isPaid && (
-            <div className="mb-4 rounded-2xl border border-eco-baby/30 bg-eco-babySoft px-4 py-5 sm:px-5 text-center">
-              <p className="text-sm font-medium text-[var(--eco-text)] sm:text-base leading-snug">
-                A primeira noite é gratuita.<br />
-                <span className="text-[var(--eco-muted)] font-normal">Desbloqueie as 7 noites. Pagamento único. Sem mensalidade.</span>
-              </p>
-              <button
-                onClick={openCheckout}
-                disabled={checkoutLoading}
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-eco-babyDark px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:brightness-110 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                {checkoutLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {checkoutLoading ? 'Abrindo pagamento…' : 'Desbloquear agora — R$ 37'}
-              </button>
-            </div>
-          )}
+        {/* ── Unlock Banner ────────────────────────────────────── */}
+        {!isPaid && (
+          <section className="mx-auto max-w-4xl px-4 pt-6 pb-2 sm:px-8">
+            <motion.div
+              className="relative overflow-hidden rounded-3xl"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ type: 'spring', stiffness: 70, damping: 20 }}
+              style={{ background: 'linear-gradient(135deg, #07192E 0%, #0D2E4F 40%, #0F4476 100%)', boxShadow: '0 16px 48px rgba(7,25,46,0.60), 0 4px 16px rgba(110,200,255,0.10)' }}
+            >
+              <div className="pointer-events-none absolute" style={{ top: '-40px', right: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(110,200,255,0.20) 0%, transparent 65%)' }} />
+              <div className="relative z-10 px-5 py-6 sm:px-6">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-[#6EC8FF]/70 mb-2">
+                  Pagamento Único · Sem Mensalidade
+                </p>
+                <p className="font-display text-[18px] font-semibold text-white leading-snug mb-1">
+                  A primeira noite é gratuita.
+                </p>
+                <p className="text-[13px] text-white/50 mb-5">
+                  Desbloqueie as 7 noites completas por R$ 37.
+                </p>
+                <button
+                  onClick={openCheckout}
+                  disabled={checkoutLoading}
+                  className="inline-flex items-center gap-2.5 rounded-full px-6 py-3 text-[14px] font-bold text-[#07192E] transition-all hover:scale-105 active:scale-95 disabled:opacity-70"
+                  style={{ background: 'linear-gradient(135deg, #A8DEFF 0%, #6EC8FF 100%)', boxShadow: '0 6px 24px rgba(110,200,255,0.35)' }}
+                >
+                  {checkoutLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {checkoutLoading ? 'Abrindo pagamento…' : 'Desbloquear agora — R$ 37'}
+                </button>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(110,200,255,0.25), transparent)' }} />
+            </motion.div>
+          </section>
+        )}
 
-          <div className="space-y-3">
+        {/* ── Night Cards ─────────────────────────────────────── */}
+        <section className="mx-auto max-w-4xl px-4 py-6 sm:px-8">
+          <motion.div
+            className="space-y-3"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-40px' }}
+            variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } } }}
+          >
             {PROTOCOL_NIGHTS.map((night) => {
               const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser, night.isFree);
               const completed = completedNights.has(night.night);
@@ -339,175 +331,201 @@ export default function MeditacoesSonoPage() {
               const comingSoon = accessible && !night.hasAudio;
 
               return (
-                <div
-                    key={night.id}
-                    onClick={() => handleNightClick(night)}
-                    className={`flex items-center gap-3 rounded-2xl border p-3 sm:p-4 transition-all duration-200 ${
-                      sequentialLocked
-                        ? 'opacity-50 cursor-not-allowed border-[var(--eco-line)] bg-white'
-                        : paidLocked
-                        ? 'cursor-pointer border-eco-baby/30 bg-white hover:border-eco-baby hover:shadow-[0_4px_16px_rgba(110,200,255,0.15)]'
-                        : comingSoon
-                        ? 'cursor-default border-[var(--eco-line)] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]'
-                        : completed
-                        ? 'cursor-pointer border-eco-baby/40 bg-eco-babySoft/40 shadow-[0_2px_8px_rgba(110,200,255,0.1)] hover:shadow-[0_4px_16px_rgba(110,200,255,0.2)]'
-                        : 'cursor-pointer border-[var(--eco-line)] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:border-eco-baby/40 hover:shadow-[0_4px_16px_rgba(110,200,255,0.1)]'
-                    }`}
-                  >
-                    {/* Status Icon */}
-                    <div className="flex-shrink-0">
-                      {completed ? (
-                        <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-eco-babyDark">
-                          <Check className="h-4 w-4 sm:h-5 sm:w-5 text-white" strokeWidth={3} />
-                        </div>
-                      ) : sequentialLocked ? (
-                        <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-gray-100">
-                          <Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400" />
-                        </div>
-                      ) : (
-                        <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 border-eco-baby">
-                          <span className="text-xs font-bold text-eco-babyDark">{night.night}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex flex-1 items-center justify-between gap-2 min-w-0">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-semibold text-[var(--eco-text)] sm:text-base">
-                          Noite {night.night} – {night.title}
-                        </h3>
-                        <p className="mt-0.5 text-xs text-[var(--eco-muted)] sm:text-sm">
-                          {night.description}
-                        </p>
+                <motion.div
+                  key={night.id}
+                  variants={cardVariant}
+                  onClick={() => handleNightClick(night)}
+                  className={`group relative flex items-center gap-4 overflow-hidden rounded-3xl p-4 transition-all duration-200 ${
+                    sequentialLocked
+                      ? 'opacity-40 cursor-not-allowed'
+                      : comingSoon
+                      ? 'cursor-default'
+                      : 'cursor-pointer hover:scale-[1.01] active:scale-[0.99]'
+                  }`}
+                  style={{
+                    background: completed
+                      ? 'rgba(110,200,255,0.10)'
+                      : 'rgba(255,255,255,0.05)',
+                    border: completed
+                      ? '1px solid rgba(110,200,255,0.25)'
+                      : '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  {/* Thumbnail */}
+                  <div className="relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden">
+                    {night.imageUrl ? (
+                      <img
+                        src={night.imageUrl}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    ) : (
+                      <div className="absolute inset-0" style={{ background: night.gradient }} />
+                    )}
+                    <div className="absolute inset-0" style={{ background: night.gradient, opacity: 0.45 }} />
+                    {/* Night number overlay */}
+                    {!completed && !sequentialLocked && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-[13px] font-bold text-white/80 drop-shadow">{night.night}</span>
                       </div>
-
-                      <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
-                        <span className="text-xs text-[var(--eco-muted)] sm:text-sm whitespace-nowrap">
-                          {night.duration}
-                        </span>
-
-                        {paidLocked ? (
-                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-eco-babyDark bg-eco-babySoft border border-eco-baby/40 px-2.5 py-1.5 rounded-full whitespace-nowrap">
-                            {checkoutLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-                            {checkoutLoading ? 'Abrindo…' : 'Desbloquear'}
-                          </span>
-                        ) : comingSoon ? (
-                          <span className="text-xs font-medium text-eco-babyDark bg-eco-babySoft px-2 py-1 rounded-full whitespace-nowrap">
-                            Em breve
-                          </span>
-                        ) : (
-                          <div
-                            className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full ${
-                              sequentialLocked ? 'bg-gray-100' : 'bg-eco-babySoft'
-                            }`}
-                          >
-                            <Play
-                              className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                                sequentialLocked ? 'text-gray-300' : 'text-eco-babyDark'
-                              }`}
-                              fill="currentColor"
-                            />
-                          </div>
-                        )}
+                    )}
+                    {completed && (
+                      <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(110,200,255,0.25)' }}>
+                        <Check className="h-5 w-5 text-white" strokeWidth={2.5} />
                       </div>
-                    </div>
-                </div>
+                    )}
+                    {sequentialLocked && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <Lock className="h-4 w-4 text-white/50" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/30 mb-0.5">
+                      Noite {night.night}
+                    </p>
+                    <h3 className="font-display text-[15px] sm:text-[16px] font-semibold leading-snug text-white line-clamp-1">
+                      {night.title}
+                    </h3>
+                    <p className="mt-0.5 text-[12px] text-white/45 line-clamp-1">
+                      {night.description}
+                    </p>
+                  </div>
+
+                  {/* Right: duration + action */}
+                  <div className="flex-shrink-0 flex flex-col items-end gap-2">
+                    <span className="text-[11px] text-white/35 font-medium">{night.duration}</span>
+                    {paidLocked ? (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold text-white"
+                        style={{ background: 'rgba(110,200,255,0.20)', border: '1px solid rgba(110,200,255,0.35)' }}
+                      >
+                        {checkoutLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Lock size={10} />}
+                        {checkoutLoading ? '…' : 'R$ 37'}
+                      </span>
+                    ) : comingSoon ? (
+                      <span className="text-[11px] font-medium text-white/30 bg-white/08 px-2 py-1 rounded-full">Em breve</span>
+                    ) : (
+                      <div
+                        className="flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 group-hover:scale-110"
+                        style={{
+                          background: sequentialLocked
+                            ? 'rgba(255,255,255,0.05)'
+                            : completed
+                            ? 'rgba(110,200,255,0.22)'
+                            : 'rgba(255,255,255,0.12)',
+                          border: sequentialLocked
+                            ? '1px solid rgba(255,255,255,0.06)'
+                            : '1px solid rgba(255,255,255,0.18)',
+                        }}
+                      >
+                        <Play
+                          className={`h-4 w-4 ${sequentialLocked ? 'text-white/15' : 'text-white/70'}`}
+                          fill="currentColor"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </section>
 
-        {/* Bonus SOS */}
+        {/* ── SOS Bonus ─────────────────────────────────────────── */}
         <section className="mx-auto max-w-4xl px-4 pt-2 pb-4 sm:px-8">
-          <div
-            className={`flex items-center gap-3 rounded-2xl border p-3 sm:p-4 transition-all duration-200 ${
-              isPaid
-                ? 'border-amber-200 bg-amber-50/40 cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]'
-                : 'opacity-60 cursor-not-allowed border-[var(--eco-line)] bg-gray-50/60'
-            }`}
+          <motion.div
             onClick={() => {
               if (!isPaid) return;
               navigate('/app/meditation-player', {
                 state: {
                   meditation: {
-                    id: 'sos_track',
-                    title: 'SOS: Não Consigo Dormir Hoje',
-                    duration: '5 min',
-                    audioUrl: '/audio/sos-nao-consigo-dormir.mp3',
-                    imageUrl: '/images/meditacoes-sono-hero.webp',
-                    backgroundMusic: 'Sono',
-                    gradient: 'linear-gradient(to bottom, #8A4A4A 0%, #2E1414 100%)',
-                    category: 'sono',
+                    id: 'sos_track', title: 'SOS: Não Consigo Dormir Hoje',
+                    duration: '5 min', audioUrl: '/audio/sos-nao-consigo-dormir.mp3',
+                    imageUrl: '/images/meditacoes-sono-hero.webp', backgroundMusic: 'Sono',
+                    gradient: 'linear-gradient(to bottom, #8A4A4A 0%, #2E1414 100%)', category: 'sono',
                   },
                   returnTo: '/app/meditacoes-sono',
                 },
               });
             }}
+            className={`flex items-center gap-4 rounded-3xl p-4 transition-all duration-200 ${isPaid ? 'cursor-pointer hover:scale-[1.01] active:scale-[0.99]' : 'opacity-40 cursor-not-allowed'}`}
+            style={{
+              background: isPaid ? 'rgba(251,191,36,0.08)' : 'rgba(255,255,255,0.04)',
+              border: isPaid ? '1px solid rgba(251,191,36,0.20)' : '1px solid rgba(255,255,255,0.06)',
+            }}
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: isPaid ? 1 : 0.4, y: 0 }}
+            viewport={{ once: true, margin: '-30px' }}
+            transition={{ type: 'spring', stiffness: 70, damping: 20 }}
           >
             <div
-              className={`flex-shrink-0 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full ${
-                isPaid ? 'bg-amber-100' : 'bg-gray-100'
-              }`}
+              className="flex-shrink-0 flex h-16 w-16 items-center justify-center rounded-2xl"
+              style={{ background: isPaid ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.05)', border: isPaid ? '1px solid rgba(251,191,36,0.25)' : '1px solid rgba(255,255,255,0.06)' }}
             >
-              {isPaid
-                ? <Gift className="h-4 w-4 text-amber-600" />
-                : <Lock className="h-3.5 w-3.5 text-gray-400" />
-              }
+              {isPaid ? <Gift className="h-6 w-6 text-amber-400" /> : <Lock className="h-5 w-5 text-white/25" />}
             </div>
-            <div className="flex flex-1 items-center justify-between gap-2 min-w-0">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-[var(--eco-text)] sm:text-base">
-                  🎁 Áudio Extra – SOS: Não Consigo Dormir Hoje
-                </h3>
-                <p className="mt-0.5 text-xs text-[var(--eco-muted)] sm:text-sm">
-                  Para quando nada está funcionando e o teto parece longe demais.
-                </p>
-              </div>
-              <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
-                <span className="text-xs text-[var(--eco-muted)] whitespace-nowrap">5 min</span>
-                <span
-                  className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${
-                    isPaid
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-gray-100 text-gray-500'
-                  }`}
-                >
-                  {isPaid ? 'Disponível' : 'Premium'}
-                </span>
-              </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wider mb-0.5" style={{ color: isPaid ? 'rgba(251,191,36,0.60)' : 'rgba(255,255,255,0.25)' }}>Áudio Extra</p>
+              <h3 className="font-display text-[15px] font-semibold text-white leading-snug">
+                SOS: Não Consigo Dormir Hoje
+              </h3>
+              <p className="mt-0.5 text-[12px] text-white/40">
+                Para quando nada está funcionando e o teto parece longe demais.
+              </p>
             </div>
-          </div>
+            <div className="flex-shrink-0 flex flex-col items-end gap-2">
+              <span className="text-[11px] text-white/30">5 min</span>
+              <span
+                className="text-[11px] font-medium px-2.5 py-1 rounded-full"
+                style={{ background: isPaid ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.06)', color: isPaid ? '#FBBF24' : 'rgba(255,255,255,0.25)' }}
+              >
+                {isPaid ? 'Disponível' : 'Premium'}
+              </span>
+            </div>
+          </motion.div>
         </section>
 
-        {/* Authority Block */}
+        {/* ── Why It Works ──────────────────────────────────────── */}
         <section className="mx-auto max-w-4xl px-4 pt-6 pb-12 sm:px-8">
-          <h3 className="text-base font-semibold text-[var(--eco-text)] sm:text-lg mb-2">
-            Por que este protocolo funciona?
-          </h3>
-          <p className="text-sm text-[var(--eco-muted)] sm:text-base mb-4">
-            Baseado em princípios de:
-          </p>
-          <ul className="space-y-3">
-            <li className="flex items-center gap-3 text-sm text-[var(--eco-muted)] sm:text-base">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-eco-babySoft">
-                <Activity className="h-4 w-4 text-eco-babyDark" />
-              </div>
-              Seu sistema nervoso aprende a desligar — não por força de vontade, mas por condicionamento.
-            </li>
-            <li className="flex items-center gap-3 text-sm text-[var(--eco-muted)] sm:text-base">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-eco-babySoft">
-                <Zap className="h-4 w-4 text-eco-babyDark" />
-              </div>
-              Você para de tentar "apagar" os pensamentos. Aprende a deixá-los ir.
-            </li>
-            <li className="flex items-center gap-3 text-sm text-[var(--eco-muted)] sm:text-base">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-eco-babySoft">
-                <TrendingUp className="h-4 w-4 text-eco-babyDark" />
-              </div>
-              Cada noite constrói em cima da anterior. No 7º dia, o corpo já sabe o que fazer.
-            </li>
-          </ul>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ type: 'spring', stiffness: 70, damping: 20 }}
+          >
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#6EC8FF]/50 mb-2">Ciência</p>
+            <h3 className="font-display text-[20px] font-bold text-white mb-6">
+              Por que este protocolo funciona?
+            </h3>
+            <div className="space-y-3">
+              {[
+                { icon: Activity, text: 'Seu sistema nervoso aprende a desligar — não por força de vontade, mas por condicionamento.', color: '#6EC8FF' },
+                { icon: Zap,      text: 'Você para de tentar "apagar" os pensamentos. Aprende a deixá-los ir.', color: '#A78BFA' },
+                { icon: TrendingUp, text: 'Cada noite constrói em cima da anterior. No 7º dia, o corpo já sabe o que fazer.', color: '#34D399' },
+              ].map(({ icon: Icon, text, color }, i) => (
+                <motion.div
+                  key={i}
+                  className="flex items-start gap-4 rounded-3xl p-4"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                  initial={{ opacity: 0, x: -12 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: '-30px' }}
+                  transition={{ type: 'spring', stiffness: 70, damping: 20, delay: i * 0.08 }}
+                >
+                  <div
+                    className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-2xl"
+                    style={{ background: `${color}18`, border: `1px solid ${color}30` }}
+                  >
+                    <Icon className="h-5 w-5" style={{ color }} />
+                  </div>
+                  <p className="text-[14px] text-white/55 leading-relaxed pt-1">{text}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
         </section>
       </main>
     </div>
