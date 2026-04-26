@@ -102,6 +102,7 @@ const AbundanciaErroPage = lazy(() => import("@/pages/AbundanciaErroPage"));
 const DrJoeObrigadoPage = lazy(() => import("@/pages/DrJoeObrigadoPage"));
 const DrJoeErroPage = lazy(() => import("@/pages/DrJoeErroPage"));
 const DrJoeAdCreativePage = lazy(() => import("@/pages/DrJoeAdCreativePage"));
+const EcoDreamPage = lazy(() => import("@/pages/EcoDreamPage"));
 
 // Lightweight loading fallback (no heavy dependencies)
 function LoadingFallback() {
@@ -387,6 +388,16 @@ function AppRoutes() {
         }
       >
         <Route index element={renderWithSuspense(<FluxoAssinaturaDemo />)} />
+      </Route>
+      <Route
+        path="/app/dream"
+        element={
+          <RequireAuth>
+            <AppProtectedShell />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithBoundary(<EcoDreamPage />)} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

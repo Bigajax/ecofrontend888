@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, NavLink, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, BarChart3, MessageSquare } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, BarChart3, MessageSquare, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrolled } from '@/hooks/useScrolled';
 import EcoBubbleOneEye from './EcoBubbleOneEye';
@@ -249,6 +249,18 @@ const Header: React.FC<HeaderProps> = ({
                 )}
               </NavLink>
 
+              <NavLink
+                to="/app/dream"
+                onClick={() => setDrawerOpen(false)}
+                className={({ isActive }) => navItem(isActive)}
+              >
+                {({ isActive }) => (
+                  <>
+                    <Moon className={iconCls} strokeWidth={1.5} style={{ color: isActive ? '#A7846C' : 'rgba(56, 50, 42, 0.6)' }} />
+                    <span className={labelCls}>Eco Dream</span>
+                  </>
+                )}
+              </NavLink>
               <NavLink
                 to="/app/memory"
                 end

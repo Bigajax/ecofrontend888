@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Heart, BookOpen } from 'lucide-react';
+import { Heart, BookOpen, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import EcoBubbleOneEye from '@/components/EcoBubbleOneEye';
 
@@ -24,7 +24,7 @@ export default function EcoAIRecommendationCard({ onStartChat }: EcoAIRecommenda
   return (
     <section className="mx-auto max-w-6xl px-4 py-4 md:px-8 md:py-5">
       <motion.div
-        className="grid grid-cols-3 gap-3"
+        className="grid grid-cols-2 gap-3 md:grid-cols-4"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-40px' }}
@@ -64,6 +64,22 @@ export default function EcoAIRecommendationCard({ onStartChat }: EcoAIRecommenda
         >
           <BookOpen size={20} color="#0D3461" strokeWidth={1.5} />
           <span className="text-[12px] font-medium text-[#0D3461] leading-none">Diário</span>
+        </motion.button>
+
+        <motion.button
+          variants={tileVariant}
+          whileHover={{ scale: 1.02, boxShadow: '0 4px 12px rgba(0,0,0,0.09)' }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => navigate('/app/dream')}
+          className="flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-4 text-center cursor-pointer min-h-[72px] transition-all duration-150"
+          style={{
+            background: 'linear-gradient(135deg, #1a1035 0%, #2d1f5e 100%)',
+            border: '1px solid rgba(167,132,255,0.18)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+          }}
+        >
+          <Moon size={20} color="#c4aaff" strokeWidth={1.5} />
+          <span className="text-[12px] font-medium text-[#c4aaff] leading-none">Eco Dream</span>
         </motion.button>
       </motion.div>
     </section>
