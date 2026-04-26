@@ -393,7 +393,7 @@ function AppRoutes() {
         path="/app/dream"
         element={
           <RequireAuth>
-            <AppProtectedShell />
+            <AppProtectedShellNoLayout />
           </RequireAuth>
         }
       >
