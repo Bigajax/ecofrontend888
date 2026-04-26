@@ -34,6 +34,16 @@ export function useEcoDream() {
     abortRef.current = null;
   }, []);
 
+  const resetar = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setDreamText('');
+    setInterpretation('');
+    setStatus('idle');
+    setErrorMsg(null);
+    setDreamId(null);
+  }, []);
+
   const interpretar = useCallback(async () => {
     const text = dreamText.trim();
     if (!text || text.length < 10) return;
@@ -134,6 +144,7 @@ export function useEcoDream() {
     history,
     interpretar,
     cancelar,
+    resetar,
     carregarHistorico,
   };
 }

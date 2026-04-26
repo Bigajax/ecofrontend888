@@ -99,13 +99,6 @@ export default function HomePage() {
   const { hasSeenTour } = useHomePageTour();
   const [isTourActive, setIsTourActive] = useState(false);
 
-  // Redireciona authenticated users de / para /app imediatamente
-  useEffect(() => {
-    if (user && !isGuestMode) {
-      navigate('/app', { replace: true });
-    }
-  }, [user, isGuestMode, navigate]);
-
   // Show tour only for guest users who haven't seen it
   useEffect(() => {
     if (isGuestMode && !hasSeenTour) {
@@ -522,7 +515,7 @@ export default function HomePage() {
       ) : (
         <main className="md:pt-0">
         {/* Trial Onboarding - Show for trial users */}
-        <div className="mx-auto max-w-6xl md:px-8 pt-4 md:pt-0">
+        <div className="mx-auto max-w-6xl md:px-8">
           <TrialOnboarding />
         </div>
 

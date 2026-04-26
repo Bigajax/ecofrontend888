@@ -206,7 +206,7 @@ export default function EcoDreamPage() {
     status,
     errorMsg,
     interpretar,
-    cancelar,
+    resetar,
     history,
   } = useEcoDream();
 
@@ -244,8 +244,7 @@ export default function EcoDreamPage() {
   const canInterpret = dreamText.trim().length >= 10;
 
   const handleReset = () => {
-    cancelar();
-    setDreamText('');
+    resetar();
   };
 
   return (

@@ -129,7 +129,7 @@ export default function TrialOnboarding() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        className="bg-gradient-to-br from-eco-primary/10 to-eco-accent/10 border border-eco-primary/30 rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6"
+        className="bg-gradient-to-br from-eco-primary/10 to-eco-accent/10 border border-eco-primary/30 rounded-2xl p-4 sm:p-6 mt-4 md:mt-0 mb-4 sm:mb-6"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">

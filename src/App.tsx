@@ -146,7 +146,15 @@ function PublicShell() {
 }
 
 function PublicHome() {
-  // Homepage pública sempre mostra HomePage
+  const { user, isGuestMode, loading } = useAuth();
+
+  // Redirect authenticated users straight to /app so they always get MainLayout + BottomNav.
+  // Using Navigate at render time is faster than the useEffect inside HomePage and avoids
+  // the flash where the page renders without BottomNav before the redirect fires.
+  if (!loading && user && !isGuestMode) {
+    return <Navigate to="/app" replace />;
+  }
+
   return renderWithSuspense(<HomePage />);
 }
 
