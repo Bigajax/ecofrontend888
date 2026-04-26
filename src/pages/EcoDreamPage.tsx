@@ -107,6 +107,7 @@ function DreamHistoryItem({ dream }: { dream: DreamRow }) {
                 fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
                 fontSize: '14px',
                 lineHeight: '1.8',
+                color: 'rgba(237,229,208,0.78)',
               }}
             >
               <ReactMarkdown>{dream.interpretation}</ReactMarkdown>
@@ -471,6 +472,7 @@ export default function EcoDreamPage() {
                         fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
                         fontSize: '16px',
                         lineHeight: '1.9',
+                        color: 'rgba(237,229,208,0.88)',
                       }}
                     >
                       <ReactMarkdown>{interpretation}</ReactMarkdown>
