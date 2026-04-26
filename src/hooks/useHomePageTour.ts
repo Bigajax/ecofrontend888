@@ -8,51 +8,70 @@ export interface TourStep {
   id: string;
   title: string;
   description: string;
-  targetId?: string; // ID do elemento para destacar
+  category?: string;
+  image?: string;         // path to background image
+  imagePosition?: string; // CSS object-position (default: 'center')
+  isCta?: boolean;        // marks the final CTA slide (no image, enter guest mode)
+  targetId?: string;
   position?: 'center' | 'top' | 'bottom' | 'left' | 'right';
   showOverlay?: boolean;
 }
 
 export const HOMEPAGE_TOUR_STEPS: TourStep[] = [
   {
-    id: 'promise',
-    title: '❇️ Criamos sua nova realidade interior',
-    description: 'Bem-vindo à Ecotopia. Um espaço para você transformar sua energia, mente e presença.',
-    position: 'center',
-    showOverlay: true,
-  },
-  {
-    id: 'why',
-    title: 'Você não precisa viver no automático',
-    description: 'A Ecotopia te ajuda a criar consciência, calma e direção — todos os dias.',
+    id: 'eco-ai',
+    category: 'ECO IA',
+    title: 'Uma conversa que muda como você pensa',
+    description: 'A Eco ouve, lembra e cresce com você. Ela não responde por script — ela te conhece e evolui a cada conversa.',
     position: 'center',
     showOverlay: true,
   },
   {
     id: 'meditations',
-    title: '🧘🏻‍♂️ Meditações que transformam energia',
-    description: 'Inspiradas no Dr. Joe Dispenza para reprogramar padrões e elevar seu estado interior.',
+    category: 'MEDITAÇÃO',
+    title: 'Recondicione seu corpo em 7 minutos',
+    description: 'Meditações guiadas do Dr. Joe Dispenza que ensinam seu sistema nervoso a sentir um estado novo — antes que ele aconteça.',
+    image: '/images/capa-dr-joe-dispenza.png',
+    imagePosition: 'center top',
     position: 'center',
     showOverlay: true,
   },
   {
     id: 'stoicism',
-    title: '📘 Reflexões Estoicas',
-    description: 'Reflexões diárias para você pensar melhor, decidir melhor e viver com mais propósito.',
+    category: 'DIÁRIO ESTOICO',
+    title: 'A sabedoria de Marco Aurélio no seu dia',
+    description: 'Uma reflexão estoica toda manhã. Para pensar com clareza, decidir com propósito e agir com intenção real.',
+    image: '/images/diario-estoico.webp',
+    imagePosition: 'center',
     position: 'center',
     showOverlay: true,
   },
   {
     id: 'discipline',
-    title: '🌀 Disciplina com Significado',
-    description: 'Os 5 Anéis da Disciplina. Hábitos pequenos, consistentes e espirituais para criar ordem interna e força de ação.',
+    category: 'PROGRAMA',
+    title: '5 Anéis da Disciplina',
+    description: 'Rituais simples e consistentes que, repetidos, se tornam quem você é. Não apenas o que você faz.',
+    image: '/images/five-rings-visual.webp',
+    imagePosition: 'center',
     position: 'center',
     showOverlay: true,
   },
   {
-    id: 'eco-ai',
-    title: '🤖 Eco IA — seu guia interior',
-    description: 'Uma inteligência emocional que te ajuda a refletir, entender e criar uma nova realidade.',
+    id: 'sleep',
+    category: 'SONS & SONO',
+    title: 'Adormeça sem carregar o dia',
+    description: 'Sons ambiente e meditações guiadas para noites mais tranquilas. Seu corpo já sabe o que precisa — o ECO te guia até lá.',
+    image: '/images/meditacao-sono-new.webp',
+    imagePosition: 'center',
+    position: 'center',
+    showOverlay: true,
+  },
+  {
+    id: 'cta',
+    category: '',
+    title: 'Tudo isso está esperando por você.',
+    description: 'Sem conta. Sem cartão. Explore o ECO completo agora e sinta a diferença antes de qualquer decisão.',
+    isCta: true,
     position: 'center',
     showOverlay: true,
   },
@@ -63,14 +82,12 @@ export function useHomePageTour() {
   const [currentStep, setCurrentStep] = useState(0);
   const [hasSeenTour, setHasSeenTour] = useState(false);
 
-  // Check if user has seen the tour
   useEffect(() => {
     const seen = localStorage.getItem(TOUR_SEEN_KEY);
     const savedStep = localStorage.getItem(TOUR_STEP_KEY);
 
     setHasSeenTour(!!seen);
 
-    // Resume tour if it was in progress
     if (!seen && savedStep) {
       const step = parseInt(savedStep, 10);
       if (step > 0 && step < HOMEPAGE_TOUR_STEPS.length) {
@@ -79,8 +96,14 @@ export function useHomePageTour() {
     }
   }, []);
 
+  const completeTour = useCallback(() => {
+    setIsActive(false);
+    localStorage.setItem(TOUR_SEEN_KEY, '1');
+    localStorage.removeItem(TOUR_STEP_KEY);
+    setHasSeenTour(true);
+  }, []);
+
   const startTour = useCallback(() => {
-    // Don't start if already seen
     const seen = localStorage.getItem(TOUR_SEEN_KEY);
     if (seen) {
       setIsActive(false);
@@ -97,10 +120,9 @@ export function useHomePageTour() {
       setCurrentStep(nextStepIndex);
       localStorage.setItem(TOUR_STEP_KEY, nextStepIndex.toString());
     } else {
-      // Tour complete
       completeTour();
     }
-  }, [currentStep]);
+  }, [currentStep, completeTour]);
 
   const previousStep = useCallback(() => {
     if (currentStep > 0) {
@@ -111,13 +133,6 @@ export function useHomePageTour() {
   }, [currentStep]);
 
   const skipTour = useCallback(() => {
-    setIsActive(false);
-    localStorage.setItem(TOUR_SEEN_KEY, '1');
-    localStorage.removeItem(TOUR_STEP_KEY);
-    setHasSeenTour(true);
-  }, []);
-
-  const completeTour = useCallback(() => {
     setIsActive(false);
     localStorage.setItem(TOUR_SEEN_KEY, '1');
     localStorage.removeItem(TOUR_STEP_KEY);
