@@ -57,6 +57,24 @@ const buildPerfilUrl = (userId: string) => {
   return `${PERFIL_ENDPOINT}?${params.toString()}`;
 };
 
+/* ---------------- Atualizar perfil (POST) ---------------- */
+export async function atualizarPerfilEmocional(userId: string): Promise<boolean> {
+  if (!userId) return false;
+  try {
+    const result = await apiFetchJson<any>(PERFIL_ENDPOINT + '/update', {
+      method: 'POST',
+      timeoutMs: 30_000,
+      body: JSON.stringify({ userId }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!result.ok) return false;
+    const d = result.data as any;
+    return Boolean(d?.success ?? d?.ok ?? true);
+  } catch {
+    return false;
+  }
+}
+
 /* ---------------- API principal ---------------- */
 export async function buscarPerfilEmocional(
   userId?: string,

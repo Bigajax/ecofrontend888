@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useIsPremium, useSubscriptionTier } from '../../hooks/usePremiumContent';
 import { useChat } from '../../contexts/ChatContext';
 import { buscarMemoriasPorUsuario } from '../../api/memoriaApi';
-import { buscarPerfilEmocional } from '../../api/perfilApi';
+import { buscarPerfilEmocional, atualizarPerfilEmocional } from '../../api/perfilApi';
 import { buscarRelatorioEmocional } from '../../api/relatorioEmocionalApi';
 import {
   MemoryDataContext,
@@ -229,6 +229,7 @@ const MemoryLayout: React.FC = () => {
   const { clearMessages } = useChat();
   const navigate = useNavigate();
   const mountedRef = useRef(true);
+  const profileUpdateTriedRef = useRef(false);
   const [state, setState] = useState<MemoryState>(INITIAL_STATE);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -385,6 +386,25 @@ const MemoryLayout: React.FC = () => {
     setState(INITIAL_STATE);
     void Promise.allSettled([loadMemories(), loadPerfil(), loadRelatorio()]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  // Auto-gerar perfil se carregamento terminou, perfil é nulo e existem memórias
+  useEffect(() => {
+    if (!userId) return;
+    if (state.memoriesLoading || state.perfilLoading) return;
+    if (state.perfil !== null) return;
+    if (state.memories.length === 0) return;
+    if (profileUpdateTriedRef.current) return;
+    profileUpdateTriedRef.current = true;
+    void atualizarPerfilEmocional(userId).then((ok) => {
+      if (ok && mountedRef.current) void loadPerfil();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, state.memoriesLoading, state.perfilLoading, state.perfil, state.memories.length]);
+
+  // Reset da tentativa ao trocar de userId
+  useEffect(() => {
+    profileUpdateTriedRef.current = false;
   }, [userId]);
 
   useEffect(() => {
