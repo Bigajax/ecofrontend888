@@ -41,9 +41,9 @@ const Card: FC<PropsWithChildren<{ title: string; subtitle?: string; id?: string
     id={id}
     className="rounded-2xl border backdrop-blur-md p-6 md:p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]"
     style={{
-      backgroundColor: 'rgba(243, 238, 231, 0.6)',
-      borderColor: 'var(--eco-line, #E8E3DD)',
-      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.04)',
+      backgroundColor: '#FFFFFF',
+      border: '1px solid rgba(0,0,0,0.07)',
+      boxShadow: '0 4px 24px rgba(13,52,97,0.06)',
     }}
     role="region"
     aria-label={title}
@@ -69,7 +69,7 @@ const Card: FC<PropsWithChildren<{ title: string; subtitle?: string; id?: string
     </header>
     <div
       className="border-t pt-4"
-      style={{ borderColor: 'var(--eco-line, #E8E3DD)' }}
+      style={{ borderColor: 'rgba(0,0,0,0.06)' }}
     >
       {children}
     </div>
@@ -199,8 +199,8 @@ const SegmentedControl: FC<{ value: Period; onChange: (p: Period)=>void }> = ({ 
       aria-label="Período"
       className="inline-flex p-1 rounded-full border gap-1 backdrop-blur-sm"
       style={{
-        backgroundColor: 'rgba(255, 255, 255, 0.6)',
-        borderColor: 'var(--eco-line, #E8E3DD)',
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        borderColor: 'rgba(0,0,0,0.07)',
       }}
     >
       {[7,28,90].map(p => (
@@ -213,11 +213,11 @@ const SegmentedControl: FC<{ value: Period; onChange: (p: Period)=>void }> = ({ 
           style={
             value === p
               ? {
-                  background: 'linear-gradient(90deg, var(--eco-user, #A7846C), var(--eco-accent, #C6A995))',
+                  background: 'linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)',
                   color: 'white',
                 }
               : {
-                  color: 'var(--eco-text, #38322A)',
+                  color: '#5A8AAD',
                 }
           }
         >
@@ -313,7 +313,7 @@ const ProfileSection: FC = () => {
   return (
     <div
       className="min-h-0 h-[calc(100vh-96px)] overflow-y-auto transition-colors duration-300"
-      style={{ backgroundColor: 'var(--eco-bg, #FAF9F7)' }}
+      style={{ backgroundColor: '#FFFFFF' }}
     >
       {noRemoteData && (
         <div className="mx-auto w-full max-w-[980px] px-4 md:px-6 pt-4">
@@ -408,7 +408,7 @@ const ProfileSection: FC = () => {
                 <div
                   className="text-[32px] leading-[1.1] font-semibold transition-colors duration-300"
                   style={{
-                    color: 'var(--eco-user, #A7846C)',
+                    color: '#1A4FB5',
                     fontFamily: 'var(--font-display, Playfair Display, Georgia, serif)',
                   }}
                 >
@@ -433,7 +433,7 @@ const ProfileSection: FC = () => {
 
           <div
             className="mt-4 border-t pt-4"
-            style={{ borderColor: 'var(--eco-line, #E8E3DD)' }}
+            style={{ borderColor: 'rgba(0,0,0,0.06)' }}
           >
             <div className="h-[96px]">
               {isClient && hasLinePoints ? (
@@ -466,10 +466,10 @@ const ProfileSection: FC = () => {
                         <Line
                           type="monotone"
                           dataKey="y"
-                          stroke="var(--eco-user, #A7846C)"
+                          stroke="#1A4FB5"
                           strokeWidth={2}
                           dot={false}
-                          fill="var(--eco-user, #A7846C)"
+                          fill="#1A4FB5"
                           fillOpacity={0.15}
                         />
                       </LineChart>

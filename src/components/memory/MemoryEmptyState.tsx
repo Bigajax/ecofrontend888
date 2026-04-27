@@ -13,43 +13,55 @@ const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = ({ hasFilters }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center text-center py-16"
+      transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="flex flex-col items-center text-center py-16 px-4"
     >
-      <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-slate-50">
-        <svg className="h-12 w-12 text-slate-300" viewBox="0 0 48 48" fill="none" aria-hidden>
-          <path
-            d="M24 8c-6.627 0-12 5.373-12 12v6c0 2.21-1.79 4-4 4h0"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            opacity={0.4}
-          />
-          <path
-            d="M38 30c-2.21 0-4 1.79-4 4v6"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            opacity={0.6}
-          />
-          <circle cx={24} cy={20} r={6} stroke="currentColor" strokeWidth={2} opacity={0.7} />
+      <div
+        className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border"
+        style={{
+          backgroundColor: 'rgba(243,238,231,0.7)',
+          borderColor: 'var(--eco-line,#E8E3DD)',
+          boxShadow: '0 4px 24px rgba(167,132,108,0.10)',
+        }}
+      >
+        <svg className="h-9 w-9" viewBox="0 0 36 36" fill="none" aria-hidden>
+          <circle cx="18" cy="18" r="7.5" stroke="var(--eco-user,#A7846C)" strokeWidth="1.4" opacity="0.65" />
+          <path d="M18 6C18 6 10 12 10 18" stroke="var(--eco-user,#A7846C)" strokeWidth="1.4" strokeLinecap="round" opacity="0.35" />
+          <path d="M18 30C18 30 26 24 26 18" stroke="var(--eco-accent,#C6A995)" strokeWidth="1.4" strokeLinecap="round" opacity="0.35" />
+          <circle cx="18" cy="18" r="2.5" fill="var(--eco-user,#A7846C)" opacity="0.55" />
         </svg>
       </div>
-      <p className="text-[19px] font-semibold text-slate-900 mb-2">
-        {hasFilters ? 'Nenhum resultado com esses filtros' : 'Você ainda não registrou memórias'}
+
+      <p
+        className="text-[18px] font-semibold mb-2"
+        style={{
+          color: 'var(--eco-text,#38322A)',
+          fontFamily: 'var(--font-display,Playfair Display,Georgia,serif)',
+        }}
+      >
+        {hasFilters ? 'Nenhum resultado com esses filtros' : 'Seus registros aparecem aqui'}
       </p>
-      <p className="text-[15px] text-slate-500 mb-6 max-w-sm leading-[1.5]">
+
+      <p className="text-[14px] mb-7 max-w-xs leading-relaxed" style={{ color: 'var(--eco-muted,#9C938A)' }}>
         {hasFilters
           ? 'Experimente remover alguns filtros ou ajustar a busca para ver mais lembranças.'
-          : 'Comece gravando um momento marcante com a Eco. Ele aparece aqui organizado por intensidade e emoção.'}
+          : 'Comece uma conversa com a Eco e compartilhe um momento marcante. Ele aparece aqui organizado por emoção e intensidade.'}
       </p>
+
       {!hasFilters && (
         <button
           onClick={() => navigate('/app')}
-          className="px-6 py-3 rounded-full border border-slate-200 bg-white/90 text-slate-700 font-semibold text-[15px] transition hover:bg-white"
+          className="rounded-full border px-6 py-2.5 text-[14px] font-medium transition-all duration-300 hover:-translate-y-0.5"
+          style={{
+            borderColor: 'var(--eco-line,#E8E3DD)',
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            color: 'var(--eco-user,#A7846C)',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 20px rgba(167,132,108,0.18)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}
         >
-          Grave sua primeira memória
+          Conversar com a Eco
         </button>
       )}
     </motion.div>

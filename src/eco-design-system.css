@@ -10,6 +10,21 @@
    FUNDAMENTOS
    ============================================ */
 
+/* ============================================
+   MEMORY SECTION — HOME THEME OVERRIDE
+   Alinha /app/memory com o visual do homepage:
+   fundo branco, texto navy, azul como acento.
+   ============================================ */
+.memory-home-theme {
+  --eco-bg:     #FFFFFF;
+  --eco-bubble: #EDF4FF;
+  --eco-text:   #0D3461;
+  --eco-muted:  #5A8AAD;
+  --eco-line:   rgba(0, 0, 0, 0.07);
+  --eco-user:   #1A4FB5;
+  --eco-accent: #0A6BBF;
+}
+
 :root {
   /* Cores Soft Minimal */
   --eco-bg: #FAF9F7;

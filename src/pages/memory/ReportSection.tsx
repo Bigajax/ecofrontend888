@@ -47,9 +47,9 @@ const Pill: React.FC<{ children: React.ReactNode; tone?: "blue" | "gray" | "oran
       borderColor: 'rgba(163, 145, 126, 0.2)',
     },
     gray: {
-      backgroundColor: 'rgba(243, 238, 231, 0.6)',
+      backgroundColor: '#FFFFFF',
       color: 'var(--eco-text, #38322A)',
-      borderColor: 'var(--eco-line, #E8E3DD)',
+      borderColor: 'rgba(0,0,0,0.07)',
     },
     orange: {
       backgroundColor: 'rgba(198, 169, 149, 0.12)',
@@ -76,9 +76,9 @@ const Card: React.FC<{ title: string; right?: React.ReactNode; children: React.R
   <div
     className="rounded-2xl border p-4 sm:p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]"
     style={{
-      backgroundColor: 'rgba(243, 238, 231, 0.6)',
-      borderColor: 'var(--eco-line, #E8E3DD)',
-      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.04)',
+      backgroundColor: '#FFFFFF',
+      border: '1px solid rgba(0,0,0,0.07)',
+      boxShadow: '0 4px 24px rgba(13,52,97,0.06)',
     }}
   >
     <div className="flex items-start justify-between mb-3">
@@ -152,7 +152,7 @@ const Disclosure: React.FC<{ title: string; children: React.ReactNode }> = ({ ti
   return (
     <div
       className="mt-3 border-t pt-3 transition-colors duration-300"
-      style={{ borderColor: 'var(--eco-line, #E8E3DD)' }}
+      style={{ borderColor: 'rgba(0,0,0,0.07)' }}
     >
       <button
         type="button"
@@ -197,8 +197,8 @@ const QuadrantLegend = () => (
         key={idx}
         className="rounded-lg border p-2 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5"
         style={{
-          backgroundColor: 'rgba(243, 238, 231, 0.6)',
-          borderColor: 'var(--eco-line, #E8E3DD)',
+          backgroundColor: '#FFFFFF',
+          borderColor: 'rgba(0,0,0,0.07)',
         }}
       >
         <div
@@ -224,7 +224,7 @@ const RelatorioPremiumTeaser: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade
   <section className="space-y-4">
     <div
       className="sticky top-0 z-20 -mx-1 px-1 py-2 border-b backdrop-blur"
-      style={{ backgroundColor: 'rgba(243, 238, 231, 0.7)', borderColor: 'var(--eco-line, #E8E3DD)' }}
+      style={{ backgroundColor: 'rgba(255,255,255,0.92)', borderColor: 'rgba(0,0,0,0.07)' }}
     >
       <SectionHeader title="Resumo" subtitle="Relatório Emocional" />
     </div>
@@ -232,7 +232,7 @@ const RelatorioPremiumTeaser: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade
     <div className="grid grid-cols-1 gap-4">
       {/* Placeholder 1 */}
       {(['Intensidade por Dia', 'Volume Semanal', 'Mapa Emocional 2D'] as const).map((title) => (
-        <div key={title} className="relative rounded-2xl overflow-hidden border" style={{ borderColor: 'var(--eco-line, #E8E3DD)', minHeight: 200 }}>
+        <div key={title} className="relative rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(0,0,0,0.07)', minHeight: 200 }}>
           {/* Simulated blurred content */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#f3eeE7] to-[#e8ddd5] blur-[3px] opacity-60" />
           <div className="absolute inset-0 backdrop-blur-[6px] bg-white/30" />
@@ -247,7 +247,7 @@ const RelatorioPremiumTeaser: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade
     </div>
 
     {/* CTA */}
-    <div className="rounded-2xl border p-5 text-center" style={{ borderColor: 'var(--eco-line, #E8E3DD)', backgroundColor: 'rgba(243, 238, 231, 0.5)' }}>
+    <div className="rounded-2xl border p-5 text-center" style={{ borderColor: 'rgba(0,0,0,0.07)', backgroundColor: 'rgba(237,244,255,0.5)' }}>
       <p className="font-semibold text-[var(--eco-text,#38322A)] mb-1">Relatório Emocional Premium</p>
       <p className="text-sm text-[var(--eco-muted,#9C938A)] mb-4">
         Visualize padrões, mapa 2D e intensidade emocional ao longo do tempo. Exclusivo para Premium.
@@ -255,7 +255,7 @@ const RelatorioPremiumTeaser: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade
       <button
         onClick={onUpgrade}
         className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-        style={{ background: 'linear-gradient(90deg, var(--eco-user,#A7846C), var(--eco-accent,#C6A995))' }}
+        style={{ background: 'linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)' }}
       >
         <Lock size={14} />
         Desbloquear Relatório
@@ -316,13 +316,13 @@ const ReportSection: React.FC = () => {
     return (
       <section
         className="space-y-4 max-h-[82vh] overflow-y-auto pr-1 transition-colors duration-300"
-        style={{ backgroundColor: 'var(--eco-bg, #FAF9F7)' }}
+        style={{ backgroundColor: '#FFFFFF' }}
       >
         <div
           className="sticky top-0 z-20 -mx-1 px-1 py-2 border-b backdrop-blur supports-[backdrop-filter]:backdrop-blur transition-colors duration-300"
           style={{
-            backgroundColor: 'rgba(243, 238, 231, 0.7)',
-            borderColor: 'var(--eco-line, #E8E3DD)',
+            backgroundColor: 'rgba(255,255,255,0.92)',
+            borderColor: 'rgba(0,0,0,0.07)',
           }}
         >
           <div className="flex items-center justify-between">
@@ -387,14 +387,14 @@ const ReportSection: React.FC = () => {
   return (
     <section
       className="space-y-4 max-h-[82vh] overflow-y-auto pr-1 transition-colors duration-300"
-      style={{ backgroundColor: 'var(--eco-bg, #FAF9F7)' }}
+      style={{ backgroundColor: '#FFFFFF' }}
     >
       {/* Header sticky */}
       <div
         className="sticky top-0 z-20 -mx-1 px-1 py-2 border-b backdrop-blur supports-[backdrop-filter]:backdrop-blur transition-colors duration-300"
         style={{
-          backgroundColor: 'rgba(243, 238, 231, 0.7)',
-          borderColor: 'var(--eco-line, #E8E3DD)',
+          backgroundColor: 'rgba(255,255,255,0.92)',
+          borderColor: 'rgba(0,0,0,0.07)',
         }}
       >
         <div className="flex items-center justify-between">
@@ -417,15 +417,15 @@ const ReportSection: React.FC = () => {
                   style={
                     heatmapRange === v
                       ? {
-                          background: 'linear-gradient(90deg, var(--eco-user, #A7846C), var(--eco-accent, #C6A995))',
+                          background: 'linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)',
                           color: 'white',
-                          borderColor: 'var(--eco-accent, #C6A995)',
-                          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+                          borderColor: '#1A4FB5',
+                          boxShadow: '0 2px 12px rgba(26,79,181,0.20)',
                         }
                       : {
-                          backgroundColor: 'rgba(243, 238, 231, 0.6)',
+                          backgroundColor: '#FFFFFF',
                           color: 'var(--eco-text, #38322A)',
-                          borderColor: 'var(--eco-line, #E8E3DD)',
+                          borderColor: 'rgba(0,0,0,0.07)',
                         }
                   }
                 >
@@ -444,9 +444,9 @@ const ReportSection: React.FC = () => {
                         boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
                       }
                     : {
-                        backgroundColor: 'rgba(243, 238, 231, 0.6)',
+                        backgroundColor: '#FFFFFF',
                         color: 'var(--eco-text, #38322A)',
-                        borderColor: 'var(--eco-line, #E8E3DD)',
+                        borderColor: 'rgba(0,0,0,0.07)',
                       }
                 }
               >
@@ -457,8 +457,8 @@ const ReportSection: React.FC = () => {
             <div
               className="rounded-2xl overflow-hidden px-3 py-2 border transition-all duration-300"
               style={{
-                backgroundColor: 'rgba(243, 238, 231, 0.3)',
-                borderColor: 'var(--eco-line, #E8E3DD)',
+                backgroundColor: 'rgba(237,244,255,0.35)',
+                borderColor: 'rgba(0,0,0,0.07)',
               }}
             >
               <DailyIntensityStrip
@@ -492,8 +492,8 @@ const ReportSection: React.FC = () => {
             <div
               className="rounded-2xl overflow-hidden border transition-all duration-300"
               style={{
-                backgroundColor: 'rgba(243, 238, 231, 0.3)',
-                borderColor: 'var(--eco-line, #E8E3DD)',
+                backgroundColor: 'rgba(237,244,255,0.35)',
+                borderColor: 'rgba(0,0,0,0.07)',
               }}
             >
               <StackedAreaSemanalEmocional
@@ -525,8 +525,8 @@ const ReportSection: React.FC = () => {
             <div
               className="rounded-2xl overflow-hidden border transition-all duration-300"
               style={{
-                backgroundColor: 'rgba(243, 238, 231, 0.3)',
-                borderColor: 'var(--eco-line, #E8E3DD)',
+                backgroundColor: 'rgba(237,244,255,0.35)',
+                borderColor: 'rgba(0,0,0,0.07)',
               }}
             >
               <MapaEmocional2D data={mapaEmocional2D} height={340} radius={14} />
@@ -575,8 +575,8 @@ const ReportSection: React.FC = () => {
             <div
               className="relative rounded-2xl overflow-hidden border transition-all duration-300"
               style={{
-                backgroundColor: 'rgba(243, 238, 231, 0.3)',
-                borderColor: 'var(--eco-line, #E8E3DD)',
+                backgroundColor: 'rgba(237,244,255,0.35)',
+                borderColor: 'rgba(0,0,0,0.07)',
               }}
             >
               {/* Conteúdo "embaçado" */}
@@ -588,14 +588,14 @@ const ReportSection: React.FC = () => {
               <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
                 <div
                   className="absolute inset-0 backdrop-blur-sm"
-                  style={{ backgroundColor: 'rgba(243, 238, 231, 0.8)' }}
+                  style={{ backgroundColor: 'rgba(237,244,255,0.85)' }}
                 />
                 <div className="relative">
                   <span
                     className="px-3 py-1.5 rounded-full border text-sm font-medium backdrop-blur-sm transition-all duration-300"
                     style={{
-                      borderColor: 'var(--eco-line, #E8E3DD)',
-                      backgroundColor: 'rgba(243, 238, 231, 0.9)',
+                      borderColor: 'rgba(0,0,0,0.07)',
+                      backgroundColor: 'rgba(255,255,255,0.97)',
                       color: 'var(--eco-text, #38322A)',
                     }}
                   >

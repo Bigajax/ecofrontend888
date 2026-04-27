@@ -23,8 +23,11 @@ const MemoriesFilterBar: React.FC<MemoriesFilterBarProps> = ({
   onQueryChange,
   onReset,
 }) => (
-  <div className="p-4 rounded-2xl bg-white/80 border border-black/[0.06]">
-    <div className="flex flex-col sm:flex-row gap-3">
+  <div
+    className="p-3.5 rounded-2xl border backdrop-blur-sm"
+    style={{ borderColor: 'var(--eco-line,#E8E3DD)', backgroundColor: 'rgba(255,255,255,0.75)' }}
+  >
+    <div className="flex flex-col sm:flex-row gap-2.5">
       <div className="flex-1">
         <label className="sr-only" htmlFor="emotion-filter">
           Filtrar por emoção
@@ -33,7 +36,12 @@ const MemoriesFilterBar: React.FC<MemoriesFilterBarProps> = ({
           id="emotion-filter"
           value={filters.emotion}
           onChange={(event) => onEmotionChange(event.target.value)}
-          className="w-full h-11 rounded-xl px-4 bg-white/90 backdrop-blur-sm border border-black/[0.06] text-[15px] text-gray-700 focus:border-eco-baby focus:ring-2 focus:ring-eco-baby/30 transition-all duration-150"
+          className="w-full h-10 rounded-xl px-3.5 backdrop-blur-sm border text-[14px] transition-all duration-150 focus:outline-none focus:ring-2"
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            borderColor: 'var(--eco-line,#E8E3DD)',
+            color: 'var(--eco-text,#38322A)',
+          }}
         >
           <option value="all">Todas as emoções</option>
           {emotionOptions.map((emo) => (
@@ -54,7 +62,12 @@ const MemoriesFilterBar: React.FC<MemoriesFilterBarProps> = ({
           value={filters.query}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Buscar em reflexões, tags, domínios..."
-          className="w-full h-11 rounded-xl px-4 bg-white/90 backdrop-blur-sm border border-black/[0.06] text-[15px] text-gray-700 placeholder-gray-400 focus:border-eco-baby focus:ring-2 focus:ring-eco-baby/30 transition-all duration-150"
+          className="w-full h-10 rounded-xl px-3.5 backdrop-blur-sm border text-[14px] transition-all duration-150 focus:outline-none focus:ring-2"
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            borderColor: 'var(--eco-line,#E8E3DD)',
+            color: 'var(--eco-text,#38322A)',
+          }}
         />
       </div>
 
@@ -63,7 +76,12 @@ const MemoriesFilterBar: React.FC<MemoriesFilterBarProps> = ({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           onClick={onReset}
-          className="h-11 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-[14px] font-medium text-gray-700 transition-colors duration-150 shrink-0"
+          className="h-10 px-4 rounded-xl border text-[13px] font-medium transition-all duration-150 shrink-0 hover:opacity-80"
+          style={{
+            borderColor: 'var(--eco-line,#E8E3DD)',
+            backgroundColor: 'rgba(243,238,231,0.6)',
+            color: 'var(--eco-muted,#9C938A)',
+          }}
         >
           Limpar
         </motion.button>

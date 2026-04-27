@@ -107,12 +107,18 @@ const MemoriesSection: React.FC = () => {
   return (
     <div className="min-h-0 h-full max-h-[calc(100vh-96px)] overflow-y-auto overflow-x-hidden">
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-8">
-        <section className="rounded-[28px] border border-black/[0.08] bg-white/90 backdrop-blur-sm p-6 md:p-8 mb-8">
+        <section
+          className="rounded-3xl p-6 md:p-8 mb-8"
+          style={{ border: '1px solid rgba(0,0,0,0.06)', backgroundColor: '#FFFFFF', boxShadow: '0 4px 24px rgba(13,52,97,0.06)' }}
+        >
           <header className="mb-6">
-            <h1 className="font-display text-[36px] md:text-[48px] leading-[1.06] font-semibold text-gray-900 tracking-tight">
+            <h1
+              className="text-[36px] md:text-[44px] leading-[1.06] font-semibold tracking-tight"
+              style={{ fontFamily: 'var(--font-display,Playfair Display,Georgia,serif)', color: 'var(--eco-text,#38322A)' }}
+            >
               Memórias
             </h1>
-            <p className="mt-3 text-[13px] md:text-[14px] leading-[1.7] text-gray-600 font-medium max-w-2xl">
+            <p className="mt-3 text-[13px] md:text-[14px] leading-[1.7] font-medium max-w-2xl" style={{ color: 'var(--eco-muted,#9C938A)' }}>
               Padrões, insights e reflexões organizados pela Eco.
             </p>
           </header>
@@ -137,7 +143,7 @@ const MemoriesSection: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <h3 className="text-[12px] font-semibold text-gray-500 uppercase tracking-wide mb-4">{bucket}</h3>
+                <h3 className="text-[11px] font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--eco-muted,#9C938A)' }}>{bucket}</h3>
                 <ul className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
                   {limitedGroups[bucket]!.map((memory) => (
                     <MemoryCard key={memory.id} mem={memory} />

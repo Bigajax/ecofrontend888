@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import clsx from 'clsx';
 import PhoneFrame from '../../components/PhoneFrame';
 import { useAuth } from '../../contexts/AuthContext';
 import { useIsPremium, useSubscriptionTier } from '../../hooks/usePremiumContent';
@@ -222,12 +223,22 @@ const formatTechnicalDetails = (details: ApiErrorDetails | null) => {
   return parts.join(' • ');
 };
 
+const MEMORY_TABS = [
+  { key: 'memories', to: '/app/memory', label: 'Memórias' },
+  { key: 'profile',  to: '/app/memory/profile', label: 'Perfil' },
+  { key: 'report',   to: '/app/memory/report',  label: 'Relatório' },
+] as const;
+
 const MemoryLayout: React.FC = () => {
   const { userId, loading, user, signOut, isGuestMode, isVipUser } = useAuth();
   const isPremium = useIsPremium();
   const tier = useSubscriptionTier();
   const { clearMessages } = useChat();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const activeTab = pathname.endsWith('/profile') ? 'profile'
+    : pathname.endsWith('/report') ? 'report'
+    : 'memories';
   const mountedRef = useRef(true);
   const profileUpdateTriedRef = useRef(false);
   const [state, setState] = useState<MemoryState>(INITIAL_STATE);
@@ -465,7 +476,7 @@ const MemoryLayout: React.FC = () => {
   if (loading) {
     return (
       <MemoryDataContext.Provider value={LOGGED_OUT_CONTEXT}>
-        <div className="flex h-screen overflow-hidden bg-gradient-to-br from-white via-blue-50/20 to-purple-50/10">
+        <div className="memory-home-theme flex h-screen overflow-hidden bg-white">
           <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleLogout} />
           <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
 
@@ -486,7 +497,7 @@ const MemoryLayout: React.FC = () => {
   if (!userId) {
     return (
       <MemoryDataContext.Provider value={LOGGED_OUT_CONTEXT}>
-        <div className="flex h-screen overflow-hidden bg-gradient-to-br from-white via-blue-50/20 to-purple-50/10">
+        <div className="memory-home-theme flex h-screen overflow-hidden bg-white">
           <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleLogout} />
           <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
 
@@ -515,11 +526,11 @@ const MemoryLayout: React.FC = () => {
 
   return (
     <MemoryDataContext.Provider value={contextValue}>
-      <div className="flex h-screen overflow-hidden bg-gradient-to-br from-white via-blue-50/20 to-purple-50/10">
+      <div className="memory-home-theme flex h-screen overflow-hidden bg-white">
         <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleLogout} />
         <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
 
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex flex-col flex-1 min-w-0 bg-white">
           {/* Top Bar - APENAS DESKTOP */}
           <div className="hidden lg:block">
             <TopBar onMenuClick={() => setSidebarOpen(true)} showMenuButton={false} />
@@ -527,6 +538,38 @@ const MemoryLayout: React.FC = () => {
 
           <main className="flex-1 overflow-y-auto px-4 py-4 lg:py-4 pt-6 lg:pt-4 pb-20 lg:pb-4 bg-transparent">
             <div className="mx-auto max-w-4xl">
+
+              {/* ── Tab navigation ── */}
+              <div className="sticky top-0 z-10 -mx-4 px-4 pb-3 pt-1 bg-gradient-to-b from-white via-white/80 to-transparent">
+                <nav aria-label="Seções de memória" className="flex justify-center">
+                  <div
+                    className="inline-flex items-center gap-0.5 rounded-full p-1 backdrop-blur-md"
+                    style={{ border: '1px solid rgba(0,0,0,0.07)', backgroundColor: 'rgba(255,255,255,0.95)', boxShadow: '0 2px 16px rgba(13,52,97,0.08)' }}
+                  >
+                    {MEMORY_TABS.map((tab) => (
+                      <Link
+                        key={tab.key}
+                        to={tab.to}
+                        aria-current={activeTab === tab.key ? 'page' : undefined}
+                        className={clsx(
+                          'rounded-full px-5 py-2 text-[13px] font-semibold transition-all duration-300',
+                          activeTab === tab.key
+                            ? 'text-white shadow-[0_2px_10px_rgba(26,79,181,0.28)]'
+                            : 'hover:bg-[#EDF4FF]'
+                        )}
+                        style={
+                          activeTab === tab.key
+                            ? { background: 'linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)' }
+                            : { color: '#5A8AAD' }
+                        }
+                      >
+                        {tab.label}
+                      </Link>
+                    ))}
+                  </div>
+                </nav>
+              </div>
+
               {/* FREE/ESSENTIALS TIER: Banner informativo */}
               {user && !isPremium && !isGuestMode && (
                 <div className="mb-4 bg-gradient-to-r from-eco-primary/10 to-eco-accent/10 border border-eco-primary/30 rounded-xl p-4">
