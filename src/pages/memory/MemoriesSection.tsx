@@ -143,7 +143,27 @@ const MemoriesSection: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <h3 className="text-[11px] font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--eco-muted,#9C938A)' }}>{bucket}</h3>
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="h-px flex-1 bg-black/[0.06]" />
+                  <div
+                    className="flex items-center gap-2 rounded-full px-3.5 py-1"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)' }}
+                  >
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-widest"
+                      style={{ color: 'var(--eco-muted,#9C938A)' }}
+                    >
+                      {bucket}
+                    </span>
+                    <span
+                      className="text-[10px] font-semibold rounded-full px-1.5 py-0.5"
+                      style={{ backgroundColor: 'rgba(0,0,0,0.06)', color: 'var(--eco-muted,#9C938A)' }}
+                    >
+                      {limitedGroups[bucket]!.length}
+                    </span>
+                  </div>
+                  <div className="h-px flex-1 bg-black/[0.06]" />
+                </div>
                 <ul className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
                   {limitedGroups[bucket]!.map((memory) => (
                     <MemoryCard key={memory.id} mem={memory} />

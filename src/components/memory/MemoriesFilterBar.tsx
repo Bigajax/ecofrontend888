@@ -103,23 +103,23 @@ const MemoriesFilterBar: React.FC<MemoriesFilterBarProps> = ({
                   ? {
                       background: `linear-gradient(135deg, ${token.gradient[0]} 0%, ${token.gradient[1]} 100%)`,
                       color: 'white',
-                      boxShadow: `0 2px 8px ${token.accent}55`,
+                      boxShadow: `0 2px 10px ${token.accent}55`,
                     }
                   : {
-                      border: '1px solid rgba(0,0,0,0.08)',
-                      backgroundColor: '#FFFFFF',
-                      color: '#5A8AAD',
+                      border: `1px solid ${token.accent}30`,
+                      backgroundColor: `${token.gradient[0]}10`,
+                      color: token.accent,
                     }
               }
             >
-              {!isActive && (
-                <span
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{
-                    background: `linear-gradient(135deg, ${token.gradient[0]}, ${token.gradient[1]})`,
-                  }}
-                />
-              )}
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{
+                  background: isActive
+                    ? 'rgba(255,255,255,0.7)'
+                    : `linear-gradient(135deg, ${token.gradient[0]}, ${token.gradient[1]})`,
+                }}
+              />
               {capitalize(emo)}
             </motion.button>
           );

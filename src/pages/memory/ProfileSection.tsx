@@ -12,7 +12,7 @@ import { emotionPalette, resolveEmotionKey } from './emotionTokens';
 
 import EcoBubbleLoading from '../../components/EcoBubbleLoading';
 
-/* ===== Recharts (replacement for Nivo) ===== */
+/* ===== Recharts ===== */
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 /* ===== Error Boundary ===== */
@@ -382,53 +382,57 @@ const ProfileSection: FC = () => {
 
         {/* CARD 1 — Resumo */}
         <Card title="Resumo" id="resumo">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div className="pb-2">
-              <p
-                className="text-[15px] md:text-[16px] transition-colors duration-300"
-                style={{ color: 'var(--eco-text, #38322A)' }}
+          <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+            <p
+              className="text-[14px] md:text-[15px] leading-relaxed max-w-sm transition-colors duration-300"
+              style={{ color: 'var(--eco-text, #38322A)' }}
+            >
+              {insight}
+            </p>
+            <div className="shrink-0"><SegmentedControl value={period} onChange={setPeriod} /></div>
+          </div>
+
+          <div className="flex gap-4 flex-wrap mb-4">
+            <div
+              className="flex-1 min-w-[120px] rounded-2xl p-4 border"
+              style={{ backgroundColor: 'rgba(26,79,181,0.04)', borderColor: 'rgba(26,79,181,0.10)' }}
+            >
+              <div className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#5A8AAD' }}>
+                Média diária
+              </div>
+              <div
+                className="text-[34px] leading-none font-semibold"
+                style={{
+                  color: '#1A4FB5',
+                  fontFamily: 'var(--font-display, Playfair Display, Georgia, serif)',
+                }}
               >
-                {insight}
-              </p>
-              {comp && (
-                <p
-                  className="mt-1 text-[13px]"
-                  style={{ color: 'var(--eco-muted, #9C938A)' }}
-                >
-                  {comp}
-                </p>
-              )}
-              <div className="mt-3">
-                <div
-                  className="text-[13px]"
-                  style={{ color: 'var(--eco-muted, #9C938A)' }}
-                >
-                  Média diária (28d)
-                </div>
-                <div
-                  className="text-[32px] leading-[1.1] font-semibold transition-colors duration-300"
-                  style={{
-                    color: '#1A4FB5',
-                    fontFamily: 'var(--font-display, Playfair Display, Georgia, serif)',
-                  }}
-                >
-                  {media28?.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
-                  <span
-                    className="ml-1 text-[14px] font-normal transition-colors duration-300"
-                    style={{ color: 'var(--eco-muted, #9C938A)' }}
-                  >
-                    reg/dia
-                  </span>
-                </div>
-                <div
-                  className="mt-1 text-[13px]"
-                  style={{ color: 'var(--eco-muted, #9C938A)' }}
-                >
-                  Período {periodLabel}: {totalPeriodo} registros
-                </div>
+                {media28?.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+              </div>
+              <div className="text-[12px] mt-1" style={{ color: 'var(--eco-muted, #9C938A)' }}>
+                reg/dia (28d)
               </div>
             </div>
-            <div className="sticky top-2"><SegmentedControl value={period} onChange={setPeriod} /></div>
+            <div
+              className="flex-1 min-w-[120px] rounded-2xl p-4 border"
+              style={{ backgroundColor: 'rgba(0,0,0,0.02)', borderColor: 'rgba(0,0,0,0.06)' }}
+            >
+              <div className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#5A8AAD' }}>
+                Período {periodLabel}
+              </div>
+              <div
+                className="text-[34px] leading-none font-semibold"
+                style={{
+                  color: 'var(--eco-text, #38322A)',
+                  fontFamily: 'var(--font-display, Playfair Display, Georgia, serif)',
+                }}
+              >
+                {totalPeriodo}
+              </div>
+              <div className="text-[12px] mt-1" style={{ color: 'var(--eco-muted, #9C938A)' }}>
+                registros
+              </div>
+            </div>
           </div>
 
           <div
@@ -440,10 +444,16 @@ const ProfileSection: FC = () => {
                 <ChartErrorBoundary>
                   <Suspense fallback={<div className="w-full h-full grid place-items-center"><EcoBubbleLoading size={28} /></div>}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
+                      <AreaChart
                         data={lineData[0]?.data ?? []}
-                        margin={{ top: 6, right: 8, bottom: 6, left: 8 }}
+                        margin={{ top: 6, right: 8, bottom: 2, left: 8 }}
                       >
+                        <defs>
+                          <linearGradient id="sparkGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#1A4FB5" stopOpacity={0.22} />
+                            <stop offset="100%" stopColor="#1A4FB5" stopOpacity={0.01} />
+                          </linearGradient>
+                        </defs>
                         <XAxis dataKey="x" hide />
                         <YAxis hide domain={[0, 'auto']} />
                         <Tooltip
@@ -463,16 +473,15 @@ const ProfileSection: FC = () => {
                             ) : null
                           }
                         />
-                        <Line
+                        <Area
                           type="monotone"
                           dataKey="y"
                           stroke="#1A4FB5"
                           strokeWidth={2}
                           dot={false}
-                          fill="#1A4FB5"
-                          fillOpacity={0.15}
+                          fill="url(#sparkGradient)"
                         />
-                      </LineChart>
+                      </AreaChart>
                     </ResponsiveContainer>
                   </Suspense>
                 </ChartErrorBoundary>

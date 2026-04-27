@@ -3,19 +3,9 @@ import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
-import EcoEyeBadge from '../EcoEyeBadge';
+import EmotionOrb from '../EmotionOrb';
+import { getEmotionToken } from '../../pages/memory/emotionTokens';
 import type { MemoryCardDTO } from '../../pages/memory/memoryCardDto';
-
-const toRgb = (hex?: string) => {
-  if (!hex) return null;
-  const sanitized = hex.replace('#', '');
-  if (sanitized.length !== 6) return null;
-  const bigint = Number.parseInt(sanitized, 16);
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
-  const b = bigint & 255;
-  return { r, g, b };
-};
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -36,7 +26,10 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
 
   const detailsId = `memory-details-${mem.id}`;
   const excerptId = `memory-excerpt-${mem.id}`;
-  const accentRgb = useMemo(() => toRgb(mem.accent), [mem.accent]);
+
+  const emotionToken = useMemo(() => getEmotionToken(mem.emocao), [mem.emocao]);
+  const [gradStart, gradEnd] = emotionToken.gradient;
+  const accent = emotionToken.accent;
 
   const intensityPercent = mem.intensidade == null ? 0 : clamp((mem.intensidade / 10) * 100, 0, 100);
   const intensityLabel = mem.intensidade == null ? '—' : `${mem.intensidade}/10`;
@@ -53,73 +46,64 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
   const hasExcerpt = Boolean(context);
   const shouldShowExcerptToggle = hasExcerpt && context.length > CONTEXT_PREVIEW_LIMIT;
 
-  const metadataParts = useMemo(() => {
-    const parts: string[] = [];
-    if (mem.nivelAbertura != null) {
-      parts.push(`Abertura ${mem.nivelAbertura}`);
-    }
-    if (mem.timeAgo) {
-      parts.push(mem.timeAgo);
-    } else if (mem.fallbackDate) {
-      parts.push(mem.fallbackDate);
-    }
-    if (mem.domain) {
-      parts.push(mem.domain);
-    }
-    return parts;
-  }, [mem.domain, mem.fallbackDate, mem.nivelAbertura, mem.timeAgo]);
-
-  const handleToggleDetails = () => setDetailsOpen((value) => !value);
+  const handleToggleDetails = () => setDetailsOpen((v) => !v);
   const handleOpenChat = () => {
-    if (onOpenChat) {
-      onOpenChat(mem);
-      return;
-    }
+    if (onOpenChat) { onOpenChat(mem); return; }
     window.dispatchEvent(
       new CustomEvent('eco:memory-open-chat', {
-        detail: {
-          memoryId: mem.id,
-          mensagemId: mem.mensagemId,
-          contexto: mem.contexto,
-        },
+        detail: { memoryId: mem.id, mensagemId: mem.mensagemId, contexto: mem.contexto },
       }),
     );
   };
-
   const handleToggleFavorite = () => {
-    setIsFavorite((previous) => {
-      const next = !previous;
-      onToggleFavorite?.(mem, next);
-      return next;
-    });
+    setIsFavorite((prev) => { const next = !prev; onToggleFavorite?.(mem, next); return next; });
   };
-
-  const handleEditTags = () => {
-    onEditTags?.(mem);
-  };
+  const handleEditTags = () => { onEditTags?.(mem); };
 
   return (
     <motion.li
       layout
       className={clsx(
-        'group relative flex flex-col rounded-2xl bg-white',
+        'group relative flex flex-col rounded-2xl bg-white overflow-hidden',
         'transition-all duration-300',
         'border border-black/[0.07] shadow-[0_4px_24px_rgba(13,52,97,0.06)]',
         'hover:shadow-[0_8px_40px_rgba(13,52,97,0.12)] hover:-translate-y-0.5',
         'focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#1A4FB5]/40',
-        isFavorite && 'ring-1 ring-[#1A4FB5]/30 shadow-[0_8px_40px_rgba(26,79,181,0.10)]',
+        isFavorite && 'ring-1 ring-[#1A4FB5]/30',
       )}
     >
-      {/* Header: Emoção + Título + Data */}
-      <div className="flex items-start gap-4 px-5 pt-5 pb-4 border-b border-black/[0.06]">
-        <EcoEyeBadge emotion={mem.emocao} className="shrink-0" size={36} />
+      {/* Emotion accent strip — left edge */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full"
+        style={{ background: `linear-gradient(180deg, ${gradStart}, ${gradEnd})` }}
+        aria-hidden
+      />
+
+      {/* Header — emotion tinted background */}
+      <div
+        className="flex items-start gap-4 pl-6 pr-5 pt-5 pb-4 border-b border-black/[0.06]"
+        style={{ background: `linear-gradient(135deg, ${gradStart}10 0%, transparent 55%)` }}
+      >
+        <EmotionOrb emotion={mem.emocao} size={44} className="shrink-0 mt-0.5" />
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-display text-lg font-normal text-[#0D3461] leading-tight break-words">
+          <h3 className="font-display text-[17px] font-normal text-[#0D3461] leading-snug break-words">
             {mem.titulo || mem.emocao}
           </h3>
-          <p className="mt-2 text-xs text-[#5A8AAD] font-primary">
-            {mem.timeAgo || mem.fallbackDate}
+          <p className="mt-1.5 text-[11px] text-[#5A8AAD] font-primary flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span>{mem.timeAgo || mem.fallbackDate}</span>
+            {mem.domain && (
+              <>
+                <span className="opacity-40">·</span>
+                <span>{mem.domain}</span>
+              </>
+            )}
+            {mem.categoria && mem.categoria !== mem.domain && (
+              <>
+                <span className="opacity-40">·</span>
+                <span>{mem.categoria}</span>
+              </>
+            )}
           </p>
         </div>
 
@@ -128,28 +112,31 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
           onClick={handleToggleDetails}
           aria-expanded={detailsOpen}
           aria-controls={detailsId}
-          aria-label={detailsOpen ? 'Recolher detalhes da memória' : 'Expandir detalhes da memória'}
+          aria-label={detailsOpen ? 'Recolher detalhes' : 'Expandir detalhes'}
           className={clsx(
             'shrink-0 mt-0.5 rounded-full p-1.5 text-[#5A8AAD]',
             'transition-all duration-300',
             'hover:bg-[#EDF4FF] hover:text-[#0D3461]',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A4FB5]/40'
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A4FB5]/40',
           )}
         >
           <ChevronDown
-            className={clsx('h-5 w-5 transition-transform duration-300', detailsOpen && 'rotate-180')}
-            strokeWidth={1.5}
+            className={clsx('h-4 w-4 transition-transform duration-300', detailsOpen && 'rotate-180')}
+            strokeWidth={2}
           />
         </button>
       </div>
 
-      {/* Intensidade */}
-      <div className="px-5 pt-4 pb-3 border-b border-black/[0.06]">
-        <div className="flex items-center justify-between gap-3 mb-2.5">
-          <label htmlFor={intensityLabelId} className="text-xs font-display font-normal text-[#5A8AAD] uppercase tracking-widest">
+      {/* Intensity */}
+      <div className="pl-6 pr-5 pt-3.5 pb-3 border-b border-black/[0.05]">
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <label
+            htmlFor={intensityLabelId}
+            className="text-[10px] font-primary font-semibold text-[#5A8AAD] uppercase tracking-widest"
+          >
             Intensidade
           </label>
-          <span id={intensityLabelId} className="text-sm font-primary font-semibold text-[#0D3461]">
+          <span id={intensityLabelId} className="text-[12px] font-primary font-semibold text-[#0D3461]">
             {intensityLabel}
           </span>
         </div>
@@ -167,40 +154,19 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
             )}
             style={{
               width: `${intensityPercent}%`,
-              background: 'linear-gradient(90deg, #1A4FB5, #0A6BBF)',
+              background: `linear-gradient(90deg, ${gradStart}, ${gradEnd})`,
             }}
           />
         </div>
       </div>
 
-      {/* Domínio + Categoria */}
-      {(mem.domain || mem.categoria) && (
-        <div className="flex flex-wrap gap-2 px-5 py-3 border-b border-black/[0.06]">
-          {mem.domain && (
-            <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-primary font-medium text-[#1A4FB5] bg-[#EDF4FF] border border-[#1A4FB5]/10">
-              {mem.domain}
-            </span>
-          )}
-          {mem.categoria && (
-            <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-primary font-medium text-[#1A4FB5] bg-[#EDF4FF] border border-[#1A4FB5]/10">
-              {mem.categoria}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Contexto + Tags */}
-      <div className="px-5 py-4 space-y-3 flex-1 min-w-0">
-        {hasExcerpt ? (
-          <motion.div
-            layout
-            transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-            className="relative"
-            id={excerptId}
-          >
+      {/* Context + Tags */}
+      <div className="pl-6 pr-5 py-4 space-y-3 flex-1 min-w-0">
+        {hasExcerpt && (
+          <motion.div layout transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }} id={excerptId}>
             <p
               className={clsx(
-                'text-sm font-primary font-light text-[#1A3A5C] leading-relaxed whitespace-pre-line',
+                'text-[13px] font-primary font-light text-[#1A3A5C] leading-relaxed whitespace-pre-line',
                 !excerptExpanded &&
                   'overflow-hidden [display:-webkit-box] [-webkit-line-clamp:3] [-webkit-box-orient:vertical]',
               )}
@@ -210,12 +176,9 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
             {shouldShowExcerptToggle && (
               <button
                 type="button"
-                onClick={() => setExcerptExpanded((value) => !value)}
-                className={clsx(
-                  'mt-2 text-xs font-primary font-medium text-[#1A4FB5]',
-                  'transition-all duration-200',
-                  'hover:text-[#0D3461]'
-                )}
+                onClick={() => setExcerptExpanded((v) => !v)}
+                className="mt-1.5 text-[11px] font-primary font-semibold transition-colors duration-200"
+                style={{ color: accent }}
                 aria-expanded={excerptExpanded}
                 aria-controls={excerptId}
               >
@@ -223,58 +186,71 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
               </button>
             )}
           </motion.div>
-        ) : null}
+        )}
 
-        {normalizedTags.length > 0 || extraTags > 0 ? (
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+        {(normalizedTags.length > 0 || extraTags > 0) && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
             {normalizedTags.map((tag, index) => (
               <span
                 key={`${tag}-${index}`}
-                className={clsx(
-                  'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-primary font-medium',
-                  'bg-[#EDF4FF] border border-[#1A4FB5]/10 text-[#1A4FB5]',
-                  'transition-all duration-200',
-                  'hover:bg-[#D8EBFF] hover:-translate-y-0.5'
-                )}
+                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-primary font-medium transition-all duration-200 hover:-translate-y-0.5"
+                style={{
+                  backgroundColor: `${accent}12`,
+                  border: `1px solid ${accent}28`,
+                  color: accent,
+                }}
               >
                 {tag}
               </span>
             ))}
-            {extraTags > 0 ? (
-              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-primary font-medium bg-[#EDF4FF] border border-[#1A4FB5]/10 text-[#5A8AAD]">
+            {extraTags > 0 && (
+              <span
+                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-primary font-medium"
+                style={{
+                  backgroundColor: '#EDF4FF',
+                  border: '1px solid rgba(26,79,181,0.10)',
+                  color: '#5A8AAD',
+                }}
+              >
                 +{extraTags}
               </span>
-            ) : null}
+            )}
           </div>
-        ) : null}
+        )}
       </div>
 
-      {/* ECO Insight Preview — visible without expanding */}
+      {/* ECO Insight */}
       {mem.resumoEco && mem.resumoEco !== mem.contexto && (
         <div
-          className="mx-5 mb-4 rounded-xl p-3.5 flex gap-2.5"
-          style={{ backgroundColor: '#EDF4FF', border: '1px solid rgba(26,79,181,0.08)' }}
+          className="mx-5 mb-4 rounded-xl p-3 flex gap-2.5"
+          style={{
+            backgroundColor: `${gradStart}0E`,
+            border: `1px solid ${accent}22`,
+          }}
         >
           <div className="shrink-0 mt-0.5">
             <div
-              className="w-5 h-5 rounded-full flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #1A4FB5, #0D3461)' }}
+              className="w-4.5 h-4.5 rounded-full flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${gradStart}, ${gradEnd})`, width: 18, height: 18 }}
             >
-              <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" aria-hidden>
+              <svg viewBox="0 0 24 24" className="w-2.5 h-2.5" fill="none" aria-hidden>
                 <circle cx="12" cy="12" r="4.5" fill="white" fillOpacity="0.9" />
-                <path d="M3 12c2.4-4 5.4-6.5 9-6.5S18.6 8 21 12c-2.4 4-5.4 6.5-9 6.5S5.4 16 3 12Z"
-                  stroke="white" strokeOpacity="0.6" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+                <path
+                  d="M3 12c2.4-4 5.4-6.5 9-6.5S18.6 8 21 12c-2.4 4-5.4 6.5-9 6.5S5.4 16 3 12Z"
+                  stroke="white" strokeOpacity="0.5" strokeWidth="1.2" fill="none" strokeLinecap="round"
+                />
               </svg>
             </div>
           </div>
-          <p className="text-[12px] leading-relaxed flex-1" style={{ color: '#1A3A5C' }}>
+          <p className="text-[11.5px] leading-relaxed flex-1" style={{ color: '#1A3A5C' }}>
             {mem.resumoEco.length > 120 ? mem.resumoEco.slice(0, 120) + '…' : mem.resumoEco}
           </p>
         </div>
       )}
 
+      {/* Expandable details */}
       <AnimatePresence initial={false}>
-        {detailsOpen ? (
+        {detailsOpen && (
           <motion.div
             key="details"
             id={detailsId}
@@ -282,45 +258,71 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="space-y-3 border-t border-black/[0.06] px-5 pt-4 pb-5"
+            className="space-y-3 border-t border-black/[0.06] pl-6 pr-5 pt-4 pb-5"
           >
-            {mem.padrao ? (
-              <div className="space-y-2 rounded-xl border border-black/[0.06] bg-[#EDF4FF]/40 p-3.5">
-                <span className="text-xs font-display font-normal text-[#5A8AAD] uppercase tracking-widest block">Padrão</span>
-                <p className="text-sm font-primary font-light text-[#1A3A5C] leading-relaxed">{mem.padrao}</p>
+            {mem.padrao && (
+              <div
+                className="space-y-1.5 rounded-xl p-3"
+                style={{ backgroundColor: `${gradStart}0A`, border: `1px solid ${accent}18` }}
+              >
+                <span
+                  className="text-[10px] font-display font-normal uppercase tracking-widest block"
+                  style={{ color: accent }}
+                >
+                  Padrão
+                </span>
+                <p className="text-[12.5px] font-primary font-light text-[#1A3A5C] leading-relaxed">{mem.padrao}</p>
               </div>
-            ) : null}
+            )}
 
-            {mem.resumo ? (
-              <div className="space-y-2 rounded-xl border border-black/[0.06] bg-[#EDF4FF]/40 p-3.5">
-                <span className="text-xs font-display font-normal text-[#5A8AAD] uppercase tracking-widest block">Análise</span>
-                <p className="text-sm font-primary font-light text-[#1A3A5C] leading-relaxed">{mem.resumo}</p>
-                {mem.resumoCompleto && mem.resumoCompleto !== mem.resumo ? (
-                  <p className="text-xs text-[#5A8AAD] italic">→ Resumido</p>
-                ) : null}
+            {mem.resumo && (
+              <div
+                className="space-y-1.5 rounded-xl p-3"
+                style={{ backgroundColor: `${gradStart}0A`, border: `1px solid ${accent}18` }}
+              >
+                <span
+                  className="text-[10px] font-display font-normal uppercase tracking-widest block"
+                  style={{ color: accent }}
+                >
+                  Análise
+                </span>
+                <p className="text-[12.5px] font-primary font-light text-[#1A3A5C] leading-relaxed">{mem.resumo}</p>
+                {mem.resumoCompleto && mem.resumoCompleto !== mem.resumo && (
+                  <p className="text-[11px] text-[#5A8AAD] italic">→ Resumido</p>
+                )}
               </div>
-            ) : null}
+            )}
 
-            {mem.resumoEco ? (
-              <div className="space-y-2 rounded-xl border border-black/[0.06] bg-[#EDF4FF]/40 p-3.5">
-                <span className="text-xs font-display font-normal text-[#5A8AAD] uppercase tracking-widest block">
+            {mem.resumoEco && (
+              <div
+                className="space-y-1.5 rounded-xl p-3"
+                style={{ backgroundColor: `${gradStart}0A`, border: `1px solid ${accent}18` }}
+              >
+                <span
+                  className="text-[10px] font-display font-normal uppercase tracking-widest block"
+                  style={{ color: accent }}
+                >
                   Resumo da Eco
                 </span>
-                <p className="text-sm font-primary font-light text-[#1A3A5C] leading-relaxed">{mem.resumoEco}</p>
+                <p className="text-[12.5px] font-primary font-light text-[#1A3A5C] leading-relaxed">{mem.resumoEco}</p>
               </div>
-            ) : null}
+            )}
 
-            <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:flex-wrap">
+            <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap">
               <button
                 type="button"
                 onClick={handleOpenChat}
                 className={clsx(
-                  'flex-1 px-4 py-2.5 rounded-xl text-sm font-primary font-medium',
-                  'border border-black/[0.07] bg-white text-[#1A4FB5]',
+                  'flex-1 px-4 py-2.5 rounded-xl text-[12.5px] font-primary font-semibold',
                   'transition-all duration-200',
-                  'hover:bg-[#EDF4FF] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(26,79,181,0.12)]',
-                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A4FB5]/40'
+                  'hover:-translate-y-0.5',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A4FB5]/40',
                 )}
+                style={{
+                  backgroundColor: `${gradStart}14`,
+                  border: `1px solid ${accent}28`,
+                  color: accent,
+                }}
                 aria-label="Abrir memória no chat"
               >
                 Abrir no chat
@@ -329,37 +331,39 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
                 type="button"
                 onClick={handleToggleFavorite}
                 className={clsx(
-                  'flex-1 px-4 py-2.5 rounded-xl text-sm font-primary font-medium',
+                  'flex-1 px-4 py-2.5 rounded-xl text-[12.5px] font-primary font-semibold',
                   'transition-all duration-200',
                   'hover:-translate-y-0.5',
                   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A4FB5]/40',
-                  isFavorite
-                    ? 'border border-[#1A4FB5]/30 bg-[#EDF4FF] text-[#1A4FB5] hover:bg-[#D8EBFF] hover:shadow-[0_4px_16px_rgba(26,79,181,0.12)]'
-                    : 'border border-black/[0.07] bg-white text-[#1A4FB5] hover:bg-[#EDF4FF] hover:shadow-[0_4px_16px_rgba(26,79,181,0.10)]',
                 )}
-                aria-label={isFavorite ? 'Remover memória dos favoritos' : 'Marcar memória como favorita'}
+                style={
+                  isFavorite
+                    ? { backgroundColor: `${gradStart}22`, border: `1px solid ${accent}40`, color: accent }
+                    : { backgroundColor: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', color: '#5A8AAD' }
+                }
+                aria-label={isFavorite ? 'Remover dos favoritos' : 'Marcar como favorito'}
               >
                 {isFavorite ? 'Desfavoritar' : 'Favoritar'}
               </button>
-              {onEditTags ? (
+              {onEditTags && (
                 <button
                   type="button"
                   onClick={handleEditTags}
                   className={clsx(
-                    'flex-1 px-4 py-2.5 rounded-xl text-sm font-primary font-medium',
-                    'border border-black/[0.07] bg-white text-[#1A4FB5]',
+                    'flex-1 px-4 py-2.5 rounded-xl text-[12.5px] font-primary font-semibold',
+                    'border border-black/[0.07] bg-white text-[#5A8AAD]',
                     'transition-all duration-200',
-                    'hover:bg-[#EDF4FF] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(26,79,181,0.12)]',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A4FB5]/40'
+                    'hover:bg-[#EDF4FF] hover:-translate-y-0.5',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A4FB5]/40',
                   )}
-                  aria-label="Editar tags da memória"
+                  aria-label="Editar tags"
                 >
                   Editar tags
                 </button>
-              ) : null}
+              )}
             </div>
           </motion.div>
-        ) : null}
+        )}
       </AnimatePresence>
     </motion.li>
   );
