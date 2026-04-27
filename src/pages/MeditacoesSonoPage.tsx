@@ -77,10 +77,10 @@ export default function MeditacoesSonoPage() {
   const nextNight = Math.min(completedCount + 1, 7);
 
   const heroButtonLabel =
-    completedCount === 0 ? 'Iniciar Noite 1 — Grátis'
-    : completedCount === 7 ? 'Protocolo Concluído 🎉'
-    : !isPaid ? 'Desbloquear o Protocolo — R$ 37'
-    : `Continuar Noite ${nextNight}`;
+    completedCount === 0 ? 'Iniciar Noite 1'
+    : completedCount === 7 ? 'Protocolo Concluído'
+    : !isPaid ? 'Garantir acesso completo — R$ 37'
+    : `Continuar — Noite ${nextNight}`;
 
   const handleNightClick = (night: ProtocolNight) => {
     const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser, night.isFree);
@@ -198,10 +198,10 @@ export default function MeditacoesSonoPage() {
               className="mt-4 font-display text-[2rem] font-bold text-white sm:text-[2.75rem] leading-[1.12]"
               style={{ textShadow: '0 2px 20px rgba(0,0,0,0.55), 0 1px 4px rgba(0,0,0,0.35)' }}
             >
-              Você não tem insônia.<br />
-              Você está preso em modo alerta.
+              Você deita.<br />
+              <span style={{ color: '#C4B5FD', fontStyle: 'italic' }}>Sua mente não desliga.</span>
             </h1>
-            <p className="mt-3 text-sm text-white/65 font-light leading-relaxed sm:text-[0.95rem]" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
+            <p className="mt-3 text-sm text-white/60 font-light leading-relaxed sm:text-[0.95rem]" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
               7 noites. Cada uma resolve uma camada diferente do que te mantém acordado.
             </p>
             <div className="mt-10 flex w-full flex-col gap-2.5 sm:mt-11">
@@ -224,7 +224,11 @@ export default function MeditacoesSonoPage() {
               onClick={handleHeroButtonClick}
               disabled={checkoutLoading}
               className="mt-8 flex w-full items-center justify-center gap-2.5 rounded-full py-3.5 text-sm font-bold text-white transition-all duration-300 hover:scale-105 active:scale-95 sm:mt-9 sm:py-4 sm:text-base disabled:opacity-70 disabled:cursor-not-allowed"
-              style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 24px rgba(0,0,0,0.2)' }}
+              style={
+                !isPaid && completedCount > 0
+                  ? { background: 'linear-gradient(135deg, #7B5FD4 0%, #5A3DB0 100%)', boxShadow: '0 8px 28px rgba(107,79,187,0.45)' }
+                  : { background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 24px rgba(0,0,0,0.2)' }
+              }
             >
               {checkoutLoading ? <Loader2 className="h-4 w-4 animate-spin" />
                 : isPaid && completedCount < 7 ? <Play className="h-4 w-4 text-[#A78BFA]" fill="currentColor" />
@@ -244,9 +248,10 @@ export default function MeditacoesSonoPage() {
             transition={{ type: 'spring', stiffness: 70, damping: 20 }}
             style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
           >
-            <p className="text-[15px] text-white/70 sm:text-base leading-relaxed">
-              Você não tem insônia porque é fraco. Você tem insônia porque seu sistema nervoso nunca recebeu permissão para desligar.{' '}
-              <span className="font-semibold text-[#A78BFA]">É isso que vamos mudar.</span>
+            <p className="text-[15px] text-white/65 sm:text-base leading-relaxed">
+              Você não tem dificuldade para dormir.{' '}
+              <span className="text-white/85">Você tem dificuldade para desligar.</span>
+              {' '}Seu sistema nervoso ainda acredita que precisa estar em alerta. Essas 7 noites ensinam ele a parar.
             </p>
           </motion.div>
         </section>
@@ -290,23 +295,23 @@ export default function MeditacoesSonoPage() {
             >
               <div className="pointer-events-none absolute" style={{ top: '-40px', right: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.20) 0%, transparent 65%)' }} />
               <div className="relative z-10 px-5 py-6 sm:px-6">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-[#A78BFA]/70 mb-2">
-                  Pagamento Único · Sem Mensalidade
+                <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: 'rgba(196,181,253,0.6)', letterSpacing: '0.2em' }}>
+                  Oferta por tempo limitado
                 </p>
-                <p className="font-display text-[18px] font-semibold text-white leading-snug mb-1">
-                  A primeira noite é gratuita.
+                <p className="font-display text-[20px] font-semibold text-white leading-snug mb-1">
+                  Desbloqueie as 7 noites.
                 </p>
-                <p className="text-[13px] text-white/50 mb-5">
-                  Desbloqueie as 7 noites completas por R$ 37.
+                <p className="text-[13px] text-white/45 mb-5">
+                  Pagamento único de R$ 37. Sem mensalidade. Acesso imediato.
                 </p>
                 <button
                   onClick={openCheckout}
                   disabled={checkoutLoading}
-                  className="inline-flex items-center gap-2.5 rounded-full px-6 py-3 text-[14px] font-bold text-[#07192E] transition-all hover:scale-105 active:scale-95 disabled:opacity-70"
-                  style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #A78BFA 100%)', boxShadow: '0 6px 24px rgba(167,139,250,0.35)' }}
+                  className="inline-flex items-center gap-2.5 rounded-full px-6 py-3 text-[14px] font-bold text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-70"
+                  style={{ background: 'linear-gradient(135deg, #7B5FD4 0%, #5A3DB0 100%)', boxShadow: '0 8px 28px rgba(107,79,187,0.45)' }}
                 >
                   {checkoutLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {checkoutLoading ? 'Abrindo pagamento…' : 'Desbloquear agora — R$ 37'}
+                  {checkoutLoading ? 'Abrindo pagamento…' : 'Garantir acesso — R$ 37 →'}
                 </button>
               </div>
               <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.25), transparent)' }} />
@@ -496,15 +501,15 @@ export default function MeditacoesSonoPage() {
             viewport={{ once: true, margin: '-40px' }}
             transition={{ type: 'spring', stiffness: 70, damping: 20 }}
           >
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#A78BFA]/50 mb-2">Ciência</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#A78BFA]/50 mb-2" style={{ letterSpacing: '0.2em' }}>O que muda</p>
             <h3 className="font-display text-[20px] font-bold text-white mb-6">
-              Por que este protocolo funciona?
+              O que acontece quando você para de lutar.
             </h3>
             <div className="space-y-3">
               {[
-                { icon: Activity, text: 'Seu sistema nervoso aprende a desligar — não por força de vontade, mas por condicionamento.', color: '#A78BFA' },
-                { icon: Zap,      text: 'Você para de tentar "apagar" os pensamentos. Aprende a deixá-los ir.', color: '#A78BFA' },
-                { icon: TrendingUp, text: 'Cada noite constrói em cima da anterior. No 7º dia, o corpo já sabe o que fazer.', color: '#34D399' },
+                { icon: Activity, text: 'Sua respiração desacelera — sem você tentar. Seu peito afrouxa. Os pensamentos perdem força.', color: '#A78BFA' },
+                { icon: Zap,      text: 'Você para de calcular quantas horas de sono ainda dá pra pegar. Sua mente solta.', color: '#A78BFA' },
+                { icon: TrendingUp, text: 'Cada noite aprofunda mais. No 7º dia, seu corpo já sabe o que fazer — sem o áudio.', color: '#34D399' },
               ].map(({ icon: Icon, text, color }, i) => (
                 <motion.div
                   key={i}
