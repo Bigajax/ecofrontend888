@@ -249,6 +249,30 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
         ) : null}
       </div>
 
+      {/* ECO Insight Preview — visible without expanding */}
+      {mem.resumoEco && mem.resumoEco !== mem.contexto && (
+        <div
+          className="mx-5 mb-4 rounded-xl p-3.5 flex gap-2.5"
+          style={{ backgroundColor: '#EDF4FF', border: '1px solid rgba(26,79,181,0.08)' }}
+        >
+          <div className="shrink-0 mt-0.5">
+            <div
+              className="w-5 h-5 rounded-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #1A4FB5, #0D3461)' }}
+            >
+              <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" aria-hidden>
+                <circle cx="12" cy="12" r="4.5" fill="white" fillOpacity="0.9" />
+                <path d="M3 12c2.4-4 5.4-6.5 9-6.5S18.6 8 21 12c-2.4 4-5.4 6.5-9 6.5S5.4 16 3 12Z"
+                  stroke="white" strokeOpacity="0.6" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-[12px] leading-relaxed flex-1" style={{ color: '#1A3A5C' }}>
+            {mem.resumoEco.length > 120 ? mem.resumoEco.slice(0, 120) + '…' : mem.resumoEco}
+          </p>
+        </div>
+      )}
+
       <AnimatePresence initial={false}>
         {detailsOpen ? (
           <motion.div

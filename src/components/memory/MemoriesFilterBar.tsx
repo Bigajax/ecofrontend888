@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-
+import { Search, X } from 'lucide-react';
 import { capitalize } from '../../pages/memory/utils';
+import { getEmotionToken } from '../../pages/memory/emotionTokens';
 
 type MemoriesFilterBarProps = {
   emotionOptions: string[];
@@ -23,70 +24,128 @@ const MemoriesFilterBar: React.FC<MemoriesFilterBarProps> = ({
   onQueryChange,
   onReset,
 }) => (
-  <div
-    className="p-3.5 rounded-2xl border backdrop-blur-sm"
-    style={{ borderColor: 'var(--eco-line,#E8E3DD)', backgroundColor: 'rgba(255,255,255,0.75)' }}
-  >
-    <div className="flex flex-col sm:flex-row gap-2.5">
-      <div className="flex-1">
-        <label className="sr-only" htmlFor="emotion-filter">
-          Filtrar por emoção
-        </label>
-        <select
-          id="emotion-filter"
-          value={filters.emotion}
-          onChange={(event) => onEmotionChange(event.target.value)}
-          className="w-full h-10 rounded-xl px-3.5 backdrop-blur-sm border text-[14px] transition-all duration-150 focus:outline-none focus:ring-2"
-          style={{
-            backgroundColor: 'rgba(255,255,255,0.9)',
-            borderColor: 'var(--eco-line,#E8E3DD)',
-            color: 'var(--eco-text,#38322A)',
-          }}
+  <div className="space-y-3">
+    {/* Search input */}
+    <div className="relative">
+      <Search
+        className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+        style={{ color: '#5A8AAD' }}
+        strokeWidth={2}
+      />
+      <input
+        id="search"
+        type="text"
+        value={filters.query}
+        onChange={(e) => onQueryChange(e.target.value)}
+        placeholder="Buscar reflexões, tags, domínios…"
+        className="w-full h-11 rounded-2xl pl-10 pr-10 text-[14px] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[#1A4FB5]/20"
+        style={{
+          border: '1px solid rgba(0,0,0,0.08)',
+          color: '#0D3461',
+          backgroundColor: '#FFFFFF',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        }}
+      />
+      {filters.query && (
+        <button
+          type="button"
+          onClick={() => onQueryChange('')}
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 transition-colors duration-150"
+          style={{ color: '#5A8AAD' }}
+          aria-label="Limpar busca"
         >
-          <option value="all">Todas as emoções</option>
-          {emotionOptions.map((emo) => (
-            <option key={emo} value={emo}>
-              {capitalize(emo)}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="flex-[2]">
-        <label className="sr-only" htmlFor="search">
-          Buscar
-        </label>
-        <input
-          id="search"
-          type="text"
-          value={filters.query}
-          onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Buscar em reflexões, tags, domínios..."
-          className="w-full h-10 rounded-xl px-3.5 backdrop-blur-sm border text-[14px] transition-all duration-150 focus:outline-none focus:ring-2"
-          style={{
-            backgroundColor: 'rgba(255,255,255,0.9)',
-            borderColor: 'var(--eco-line,#E8E3DD)',
-            color: 'var(--eco-text,#38322A)',
-          }}
-        />
-      </div>
-
-      {filtersActive && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          onClick={onReset}
-          className="h-10 px-4 rounded-xl border text-[13px] font-medium transition-all duration-150 shrink-0 hover:opacity-80"
-          style={{
-            borderColor: 'var(--eco-line,#E8E3DD)',
-            backgroundColor: 'rgba(243,238,231,0.6)',
-            color: 'var(--eco-muted,#9C938A)',
-          }}
-        >
-          Limpar
-        </motion.button>
+          <X className="w-3.5 h-3.5" strokeWidth={2.5} />
+        </button>
       )}
     </div>
+
+    {/* Emotion pills — scroll horizontal sem barra visível */}
+    {emotionOptions.length > 0 && (
+      <div
+        className="flex items-center gap-1.5 overflow-x-auto"
+        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+      >
+        {/* "Todas" pill */}
+        <button
+          type="button"
+          onClick={() => onEmotionChange('all')}
+          className="shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all duration-200"
+          style={
+            filters.emotion === 'all'
+              ? {
+                  background: 'linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)',
+                  color: 'white',
+                  boxShadow: '0 2px 8px rgba(26,79,181,0.28)',
+                }
+              : {
+                  border: '1px solid rgba(0,0,0,0.08)',
+                  backgroundColor: '#FFFFFF',
+                  color: '#5A8AAD',
+                }
+          }
+        >
+          Todas
+        </button>
+
+        {emotionOptions.map((emo) => {
+          const token = getEmotionToken(emo);
+          const isActive = filters.emotion === emo;
+          return (
+            <motion.button
+              key={emo}
+              type="button"
+              onClick={() => onEmotionChange(emo)}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              className="shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-all duration-200"
+              style={
+                isActive
+                  ? {
+                      background: `linear-gradient(135deg, ${token.gradient[0]} 0%, ${token.gradient[1]} 100%)`,
+                      color: 'white',
+                      boxShadow: `0 2px 8px ${token.accent}55`,
+                    }
+                  : {
+                      border: '1px solid rgba(0,0,0,0.08)',
+                      backgroundColor: '#FFFFFF',
+                      color: '#5A8AAD',
+                    }
+              }
+            >
+              {!isActive && (
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{
+                    background: `linear-gradient(135deg, ${token.gradient[0]}, ${token.gradient[1]})`,
+                  }}
+                />
+              )}
+              {capitalize(emo)}
+            </motion.button>
+          );
+        })}
+
+        {/* Limpar button — only when filters active */}
+        {filtersActive && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={onReset}
+            className="shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-medium ml-1 transition-all duration-150"
+            style={{
+              border: '1px solid rgba(0,0,0,0.08)',
+              backgroundColor: '#FFFFFF',
+              color: '#5A8AAD',
+            }}
+            aria-label="Limpar todos os filtros"
+          >
+            <X className="w-3 h-3" strokeWidth={2.5} />
+            Limpar
+          </motion.button>
+        )}
+      </div>
+    )}
   </div>
 );
 

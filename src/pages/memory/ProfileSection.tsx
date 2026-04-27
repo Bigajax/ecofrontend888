@@ -13,7 +13,7 @@ import { emotionPalette, resolveEmotionKey } from './emotionTokens';
 import EcoBubbleLoading from '../../components/EcoBubbleLoading';
 
 /* ===== Recharts (replacement for Nivo) ===== */
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 /* ===== Error Boundary ===== */
 type EBState = { hasError: boolean };
