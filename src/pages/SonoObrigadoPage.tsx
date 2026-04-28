@@ -4,6 +4,7 @@ import { CheckCircle, Clock, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiFetchJson } from '@/lib/apiFetch';
 import { trackWithCAPI } from '@/lib/fbpixel';
+import mixpanel from '@/lib/mixpanel';
 
 type PageState = 'loading' | 'approved' | 'pending' | 'claimed';
 
@@ -86,6 +87,11 @@ export default function SonoObrigadoPage() {
     if (result.ok) {
       setClaiming(false);
       setPageState('claimed');
+      mixpanel.track('Entitlement Claimed', {
+        product: 'protocolo_sono_7_noites',
+        source: sessionStorage.getItem('eco.sono.source') || '',
+        guest_id: sessionStorage.getItem('eco.sono.guest_id') || '',
+      });
       sessionStorage.removeItem('eco.sono.external_reference');
       sessionStorage.removeItem('eco.sono.payment_id');
       sessionStorage.removeItem('eco.sono.status');

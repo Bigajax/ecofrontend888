@@ -217,6 +217,9 @@ function AppRoutes() {
       </Route>
       {/* ── Rotas guest (sem autenticação) — devem vir ANTES do /app/* para não
           serem capturadas pelo catch-all filho do bloco RequireAuth ── */}
+      <Route path="/app/meditacoes/sono" element={<AppProtectedShellNoLayout />}>
+        <Route index element={renderWithSuspense(<MeditacoesSonoPage />)} />
+      </Route>
       <Route path="/app/minigame-potencial" element={<MinigameGuestShell />}>
         <Route index element={renderWithSuspense(<MinigamePotencialPage />)} />
       </Route>

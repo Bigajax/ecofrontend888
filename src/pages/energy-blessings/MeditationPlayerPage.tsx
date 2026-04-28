@@ -71,6 +71,7 @@ export default function MeditationPlayerPage() {
 
   // Inferir categoria do returnTo se não fornecido
   const returnTo = location.state?.returnTo || '/app';
+  const sonoGuestMode = location.state?.sonoGuestMode === true;
   const category = meditationData.category || getCategoryFromPath(returnTo);
 
   // Tema dourado para o Código da Abundância
@@ -1483,7 +1484,8 @@ export default function MeditationPlayerPage() {
             if (isNaN(currentNum) || currentNum >= 7) return undefined;
             const next = PROTOCOL_NIGHTS.find(n => n.night === currentNum + 1);
             if (!next || !next.hasAudio) return undefined;
-            const isLocked = next.night > 2 && !isVipUser;
+            // Guests see all next nights as locked (offer modal will open on return)
+            const isLocked = sonoGuestMode || (next.night > 2 && !isVipUser);
             return {
               nightNumber: next.night,
               title: next.title,
@@ -1492,7 +1494,12 @@ export default function MeditationPlayerPage() {
               isLocked,
               onPlay: () => {
                 if (isLocked) {
-                  navigate('/app/subscription/demo');
+                  // Guest: return to sono page which will show the offer modal
+                  if (sonoGuestMode) {
+                    navigate(returnTo, { state: { returnFromMeditation: true } });
+                  } else {
+                    navigate('/app/subscription/demo');
+                  }
                   return;
                 }
                 navigate('/app/meditation-player', {

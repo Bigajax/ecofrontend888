@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Play, Check, Lock, ArrowLeft, Gift,
   Moon, ShieldCheck, Wind,
@@ -11,6 +11,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
 import { useSonoCheckout } from '@/hooks/useSonoCheckout';
 import { PROTOCOL_NIGHTS, type ProtocolNight } from '@/data/protocolNights';
+import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
+import mixpanel from '@/lib/mixpanel';
+import { trackGuestUnlockClicked } from '@/lib/mixpanelSonoGuestEvents';
 
 function isNightAccessible(night: number, completed: Set<number>, isPaid: boolean, isVip: boolean, isFree: boolean): boolean {
   if (isVip) return true;
@@ -29,12 +32,39 @@ const cardVariant = {
 export default function MeditacoesSonoPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { user, isVipUser } = useAuth();
   const { hasAccess: hasSonoEntitlement } = useSonoEntitlement();
   const { loading: checkoutLoading, openCheckout } = useSonoCheckout();
   const isPaid = isVipUser || hasSonoEntitlement;
   const uid = user?.id || 'guest';
 
+  // ── Guest sono mode ────────────────────────────────────────────
+  const source = searchParams.get('source') || '';
+  const isGuestSono =
+    searchParams.get('guestSono') === '1' ||
+    localStorage.getItem('sono_guest_mode') === 'true';
+
+  const guestId = useMemo(() => {
+    const fromUrl = searchParams.get('guest_id');
+    const fromStorage = localStorage.getItem('eco_guest_id');
+    if (fromUrl) { localStorage.setItem('eco_guest_id', fromUrl); return fromUrl; }
+    if (fromStorage) return fromStorage;
+    const newId = `guest_${crypto.randomUUID()}`;
+    localStorage.setItem('eco_guest_id', newId);
+    return newId;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!isGuestSono) return;
+    localStorage.setItem('sono_guest_mode', 'true');
+    localStorage.setItem('sono_guest_started_at', new Date().toISOString());
+    sessionStorage.setItem('eco.sono.guest_id', guestId);
+    sessionStorage.setItem('eco.sono.source', source || 'quiz_sono');
+    mixpanel.track('Sleep Guest Page Viewed', { source, guest_id: guestId });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Night completion state ─────────────────────────────────────
   const [completedNights, setCompletedNights] = useState<Set<number>>(() => {
     const raw = localStorage.getItem(`eco.sono.protocol.v1.${uid}`);
     if (raw) {
@@ -45,6 +75,7 @@ export default function MeditacoesSonoPage() {
   });
 
   const [showCompletion, setShowCompletion] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(`eco.sono.protocol.v1.${uid}`, JSON.stringify({
@@ -54,17 +85,25 @@ export default function MeditacoesSonoPage() {
   }, [completedNights, uid]);
 
   useEffect(() => {
-    if (location.state?.returnFromMeditation) {
-      const lastPlayedNight = sessionStorage.getItem('eco.sono.lastPlayedNight');
-      if (lastPlayedNight) {
-        const nightNum = parseInt(lastPlayedNight);
-        const markerKey = `eco.meditation.completed80pct.night_${nightNum}`;
-        if (localStorage.getItem(markerKey) === 'true') {
-          setCompletedNights(prev => {
-            const next = new Set([...prev, nightNum]);
-            if (next.size === 7) setShowCompletion(true);
-            return next;
-          });
+    if (!location.state?.returnFromMeditation) return;
+    const lastPlayedNight = sessionStorage.getItem('eco.sono.lastPlayedNight');
+    if (lastPlayedNight) {
+      const nightNum = parseInt(lastPlayedNight);
+      const markerKey = `eco.meditation.completed80pct.night_${nightNum}`;
+      if (localStorage.getItem(markerKey) === 'true') {
+        setCompletedNights(prev => {
+          const next = new Set([...prev, nightNum]);
+          if (next.size === 7) setShowCompletion(true);
+          return next;
+        });
+        // Open offer modal for guest after night 1 completion
+        if (isGuestSono && nightNum === 1) {
+          const offerKey = `eco.sono.offer_modal_shown.${guestId}`;
+          if (!localStorage.getItem(offerKey)) {
+            setShowOfferModal(true);
+            localStorage.setItem(offerKey, 'true');
+            mixpanel.track('Free Experience Completed', { night_id: 'night_1', source, guest_id: guestId });
+          }
         }
       }
     }
@@ -76,18 +115,42 @@ export default function MeditacoesSonoPage() {
   const pct = Math.round((completedCount / 7) * 100);
   const nextNight = Math.min(completedCount + 1, 7);
 
-  const heroButtonLabel =
-    completedCount === 0 ? 'Iniciar Noite 1'
+  const heroButtonLabel = isGuestSono && completedCount === 0
+    ? 'Iniciar Noite 1 grátis'
+    : completedCount === 0 ? 'Iniciar Noite 1'
     : completedCount === 7 ? 'Protocolo Concluído'
     : !isPaid ? 'Garantir acesso completo — R$ 37'
     : `Continuar — Noite ${nextNight}`;
 
+  const handleGuestCheckout = () => {
+    openCheckout({ origin: 'quiz_sono_guest' });
+  };
+
   const handleNightClick = (night: ProtocolNight) => {
     const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser, night.isFree);
-    if (!accessible) { openCheckout(); return; }
+    if (!accessible) {
+      if (isGuestSono) {
+        trackGuestUnlockClicked(night.id);
+        setShowOfferModal(true);
+      } else {
+        openCheckout();
+      }
+      return;
+    }
     if (!night.hasAudio || !night.audioUrl) return;
     sessionStorage.setItem('eco.sono.lastPlayedNight', String(night.night));
-    navigate('/app/meditation-player', {
+
+    // Guests use the public meditation player route
+    const playerRoute = isGuestSono ? '/guest/meditation-player' : '/app/meditation-player';
+    const returnTo = isGuestSono
+      ? `/app/meditacoes/sono?guestSono=1&source=${encodeURIComponent(source || 'quiz_sono')}&guest_id=${encodeURIComponent(guestId)}`
+      : '/app/meditacoes-sono';
+
+    if (isGuestSono && night.night === 1) {
+      mixpanel.track('Free Experience Started', { night_id: night.id, source, guest_id: guestId });
+    }
+
+    navigate(playerRoute, {
       state: {
         meditation: {
           id: night.id, title: night.title, duration: night.duration,
@@ -96,7 +159,8 @@ export default function MeditacoesSonoPage() {
           backgroundMusic: 'Sono', gradient: night.gradient,
           category: 'sono', isPremium: false,
         },
-        returnTo: '/app/meditacoes-sono',
+        returnTo,
+        sonoGuestMode: isGuestSono,
       },
     });
   };
@@ -162,7 +226,7 @@ export default function MeditacoesSonoPage() {
       className="min-h-screen font-primary"
       style={{ background: 'linear-gradient(180deg, #06091A 0%, #06091A 38%, #0A1020 55%, #0D1530 75%, #0F1A38 100%)' }}
     >
-      {user && <HomeHeader />}
+      {user && !isGuestSono && <HomeHeader />}
 
       <main className="pb-24">
 
@@ -194,16 +258,33 @@ export default function MeditacoesSonoPage() {
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/50 sm:text-xs">
               7 Noites · Protocolo Progressivo
             </p>
-            <h1
-              className="mt-4 font-display text-[2rem] font-bold text-white sm:text-[2.75rem] leading-[1.12]"
-              style={{ textShadow: '0 2px 20px rgba(0,0,0,0.55), 0 1px 4px rgba(0,0,0,0.35)' }}
-            >
-              Você deita.<br />
-              <span style={{ color: '#C4B5FD', fontStyle: 'italic' }}>Sua mente não desliga.</span>
-            </h1>
-            <p className="mt-3 text-sm text-white/60 font-light leading-relaxed sm:text-[0.95rem]" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
-              7 noites. Cada uma resolve uma camada diferente do que te mantém acordado.
-            </p>
+            {isGuestSono ? (
+              <>
+                <h1
+                  className="mt-4 font-display text-[2rem] font-bold text-white sm:text-[2.75rem] leading-[1.12]"
+                  style={{ textShadow: '0 2px 20px rgba(0,0,0,0.55), 0 1px 4px rgba(0,0,0,0.35)' }}
+                >
+                  Você chegou à{' '}
+                  <span style={{ color: '#C4B5FD', fontStyle: 'italic' }}>Noite 1.</span>
+                </h1>
+                <p className="mt-3 text-sm text-white/60 font-light leading-relaxed sm:text-[0.95rem]" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
+                  Teste agora e sinta sua mente desacelerar.
+                </p>
+              </>
+            ) : (
+              <>
+                <h1
+                  className="mt-4 font-display text-[2rem] font-bold text-white sm:text-[2.75rem] leading-[1.12]"
+                  style={{ textShadow: '0 2px 20px rgba(0,0,0,0.55), 0 1px 4px rgba(0,0,0,0.35)' }}
+                >
+                  Você deita.<br />
+                  <span style={{ color: '#C4B5FD', fontStyle: 'italic' }}>Sua mente não desliga.</span>
+                </h1>
+                <p className="mt-3 text-sm text-white/60 font-light leading-relaxed sm:text-[0.95rem]" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
+                  7 noites. Cada uma resolve uma camada diferente do que te mantém acordado.
+                </p>
+              </>
+            )}
             <div className="mt-10 flex w-full flex-col gap-2.5 sm:mt-11">
               {[
                 { icon: Moon,        label: 'Adormecer mais rápido' },
@@ -492,6 +573,14 @@ export default function MeditacoesSonoPage() {
             </div>
           </motion.div>
         </section>
+
+        {/* ── Offer modal (guest sono) ───────────────────────────── */}
+        <SonoPostExperienceModal
+          open={showOfferModal}
+          onClose={() => setShowOfferModal(false)}
+          onCheckout={handleGuestCheckout}
+          checkoutLoading={checkoutLoading}
+        />
 
         {/* ── Why It Works ──────────────────────────────────────── */}
         <section className="mx-auto max-w-4xl px-4 pt-6 pb-12 sm:px-8">
