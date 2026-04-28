@@ -498,12 +498,12 @@ export default function MeditacoesSonoPage() {
             {/* ── Divider ─────────────────────────────────────────── */}
             <div className="mx-auto max-w-lg px-4 pt-10 sm:px-6">
               <div className="flex items-center gap-4">
-                <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
-                <div className="flex items-center gap-2 rounded-full px-4 py-1.5" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)' }}>
-                  <Lock className="h-3 w-3" style={{ color: 'rgba(255,255,255,0.30)' }} />
-                  <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.30)' }}>Noites 2 a 7</span>
+                <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, transparent, rgba(167,139,250,0.20))' }} />
+                <div className="flex items-center gap-2 rounded-full px-4 py-1.5" style={{ background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.22)' }}>
+                  <Lock className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.55)' }} />
+                  <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'rgba(196,181,253,0.55)' }}>Noites 2 a 7</span>
                 </div>
-                <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, rgba(167,139,250,0.20))' }} />
               </div>
             </div>
 
@@ -516,28 +516,32 @@ export default function MeditacoesSonoPage() {
                 transition={{ type: 'spring', stiffness: 65, damping: 18 }}
               >
                 {/* Compact locked list */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {PROTOCOL_NIGHTS.slice(1).map((night, idx) => (
                     <motion.div
                       key={night.id}
                       initial={{ opacity: 0, x: -6 }}
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true, margin: '-20px' }}
-                      transition={{ type: 'spring', stiffness: 80, damping: 22, delay: idx * 0.035 }}
+                      transition={{ type: 'spring', stiffness: 80, damping: 22, delay: idx * 0.04 }}
                       onClick={() => handleNightClick(night)}
-                      className="flex items-center gap-3 rounded-2xl px-4 py-3 cursor-pointer"
-                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                      className="group flex items-center gap-3 rounded-2xl px-4 py-3.5 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
                     >
                       {/* Night number */}
                       <div
-                        className="flex-shrink-0 h-8 w-8 rounded-lg flex items-center justify-center"
-                        style={{ background: 'rgba(255,255,255,0.05)' }}
+                        className="flex-shrink-0 h-9 w-9 rounded-xl flex items-center justify-center"
+                        style={{ background: 'rgba(167,139,250,0.14)', border: '1px solid rgba(167,139,250,0.22)' }}
                       >
-                        <span className="text-[12px] font-bold" style={{ color: 'rgba(255,255,255,0.25)' }}>{night.night}</span>
+                        <span className="text-[12px] font-bold" style={{ color: 'rgba(196,181,253,0.70)' }}>{night.night}</span>
                       </div>
-                      <p className="flex-1 text-[13px] line-clamp-1" style={{ color: 'rgba(255,255,255,0.30)' }}>{night.title}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium line-clamp-1 text-white/60">{night.title}</p>
+                        <p className="text-[11px] mt-0.5 line-clamp-1 text-white/30">{night.description}</p>
+                      </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <Lock className="h-3 w-3" style={{ color: 'rgba(255,255,255,0.18)' }} />
+                        <span className="text-[11px] font-semibold" style={{ color: 'rgba(167,139,250,0.50)' }}>R$37</span>
+                        <Lock className="h-3.5 w-3.5" style={{ color: 'rgba(167,139,250,0.40)' }} />
                       </div>
                     </motion.div>
                   ))}
