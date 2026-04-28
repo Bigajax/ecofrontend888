@@ -399,113 +399,146 @@ export default function MeditacoesSonoPage() {
               <span className="text-[12px] font-semibold" style={{ color: 'rgba(251,191,36,0.65)' }}>Oferta por tempo limitado</span>
             </div>
 
-            {/* ── Night 1 Featured Card ───────────────────────────── */}
-            <section className="mx-auto max-w-lg px-4 pt-4 sm:px-6">
+            {/* ── Night 1 — "Sua sessão de hoje" ──────────────────── */}
+            <section className="mx-auto max-w-lg px-4 pt-6 sm:px-6">
+
+              {/* Section label */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-30px' }}
+                transition={{ duration: 0.5 }}
+                className="flex items-center gap-3 mb-4"
+              >
+                <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, transparent, rgba(167,139,250,0.35))' }} />
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(196,181,253,0.60)' }}>Sua sessão de hoje</span>
+                <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, rgba(167,139,250,0.35))' }} />
+              </motion.div>
+
+              {/* Night 1 card — featured, glowing */}
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
-                transition={{ type: 'spring', stiffness: 65, damping: 18 }}
+                transition={{ type: 'spring', stiffness: 60, damping: 16 }}
                 onClick={() => { const n = PROTOCOL_NIGHTS[0]; if (n) handleNightClick(n); }}
                 className="group relative overflow-hidden rounded-[28px] cursor-pointer"
                 style={{
-                  background: 'linear-gradient(150deg, rgba(124,58,237,0.20) 0%, rgba(167,139,250,0.07) 100%)',
-                  border: '1px solid rgba(167,139,250,0.28)',
-                  boxShadow: '0 12px 50px rgba(124,58,237,0.22), 0 2px 16px rgba(0,0,0,0.35)',
+                  background: 'linear-gradient(160deg, rgba(124,58,237,0.28) 0%, rgba(10,10,30,0.95) 60%)',
+                  border: '1px solid rgba(167,139,250,0.42)',
+                  boxShadow: '0 0 0 1px rgba(167,139,250,0.10), 0 20px 70px rgba(124,58,237,0.32), 0 4px 20px rgba(0,0,0,0.50)',
                 }}
               >
-                {/* Top-right ambient glow */}
-                <div className="pointer-events-none absolute" style={{ top: '-40px', right: '-40px', width: '200px', height: '200px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(196,181,253,0.14) 0%, transparent 70%)' }} />
+                {/* Corner glow */}
+                <div className="pointer-events-none absolute" style={{ top: '-60px', right: '-40px', width: '240px', height: '240px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(196,181,253,0.18) 0%, transparent 65%)' }} />
+                <div className="pointer-events-none absolute" style={{ bottom: '-40px', left: '-20px', width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%)' }} />
 
-                {/* Hero image */}
+                {/* GRÁTIS badge — top right corner */}
+                <div className="absolute top-4 right-4 z-20">
+                  <div
+                    className="flex flex-col items-center justify-center h-[58px] w-[58px] rounded-full font-bold text-white text-center leading-tight"
+                    style={{
+                      background: 'linear-gradient(135deg, #C4B5FD 0%, #7C3AED 100%)',
+                      boxShadow: '0 4px 20px rgba(124,58,237,0.65), 0 0 0 2px rgba(196,181,253,0.25)',
+                      fontSize: '9px',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    <span style={{ fontSize: '18px', lineHeight: 1 }}>★</span>
+                    <span className="uppercase tracking-widest" style={{ fontSize: '9px', marginTop: '2px' }}>Grátis</span>
+                  </div>
+                </div>
+
+                {/* Image */}
                 {PROTOCOL_NIGHTS[0]?.imageUrl ? (
-                  <div className="relative w-full overflow-hidden rounded-t-[28px]" style={{ height: '200px' }}>
+                  <div className="relative w-full overflow-hidden rounded-t-[28px]" style={{ height: '220px' }}>
                     <img
                       src={PROTOCOL_NIGHTS[0].imageUrl}
                       alt=""
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.05]"
                     />
-                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(6,9,26,0.10) 0%, rgba(6,9,26,0.80) 100%)' }} />
-                    {/* Free badge over image */}
-                    <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between">
-                      <span
-                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold"
-                        style={{ background: 'rgba(167,139,250,0.22)', border: '1px solid rgba(167,139,250,0.42)', color: '#E9D5FF', backdropFilter: 'blur(10px)' }}
-                      >
-                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#C4B5FD', boxShadow: '0 0 5px rgba(196,181,253,0.9)' }} />
-                        Gratuita
-                      </span>
-                      <span className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                        {PROTOCOL_NIGHTS[0]?.duration}
-                      </span>
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(6,9,26,0.05) 0%, rgba(6,9,26,0.85) 100%)' }} />
+                    {/* Bottom row in image */}
+                    <div className="absolute bottom-4 left-5 flex items-center gap-2">
+                      <span className="text-[11px] font-semibold" style={{ color: 'rgba(196,181,253,0.80)' }}>Noite 1</span>
+                      <span style={{ color: 'rgba(255,255,255,0.20)' }}>·</span>
+                      <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.40)' }}>{PROTOCOL_NIGHTS[0]?.duration}</span>
                     </div>
                   </div>
                 ) : (
-                  <div className="w-full h-48 rounded-t-[28px]" style={{ background: PROTOCOL_NIGHTS[0]?.gradient }} />
+                  <div className="w-full rounded-t-[28px]" style={{ height: '220px', background: PROTOCOL_NIGHTS[0]?.gradient }} />
                 )}
 
-                {/* Card body */}
+                {/* Body */}
                 <div className="px-5 pt-5 pb-6">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] mb-1.5" style={{ color: 'rgba(196,181,253,0.55)' }}>Noite 1</p>
-                  <h3 className="font-display text-[21px] font-bold text-white leading-snug mb-2">
+                  <h3 className="font-display text-[22px] font-bold text-white leading-snug mb-2">
                     {PROTOCOL_NIGHTS[0]?.title ?? 'O Sinal de Repouso'}
                   </h3>
-                  <p className="text-[13px] leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.48)' }}>
+                  <p className="text-[13px] leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
                     {PROTOCOL_NIGHTS[0]?.description ?? 'Áudio guiado que ensina seu sistema nervoso a reconhecer o sinal para dormir.'}
                   </p>
-                  <div className="flex items-center gap-3">
+
+                  {/* Play row */}
+                  <div className="flex items-center gap-4">
                     <div
-                      className="flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 group-hover:scale-110"
-                      style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)', boxShadow: '0 6px 20px rgba(124,58,237,0.50)' }}
+                      className="flex h-12 w-12 items-center justify-center rounded-full flex-shrink-0 transition-all duration-300 group-hover:scale-110 group-hover:shadow-[0_0_28px_rgba(167,139,250,0.60)]"
+                      style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #7C3AED 100%)', boxShadow: '0 6px 24px rgba(124,58,237,0.55)' }}
                     >
-                      <Play className="h-4 w-4 text-white ml-0.5" fill="currentColor" />
+                      <Play className="h-5 w-5 text-white ml-0.5" fill="currentColor" />
                     </div>
                     <div>
-                      <p className="text-[14px] font-semibold text-white">Iniciar agora</p>
-                      <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>Sem cadastro · Sem cartão</p>
+                      <p className="text-[15px] font-bold text-white">Iniciar agora — grátis</p>
+                      <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>Sem cadastro · Sem cartão de crédito</p>
                     </div>
                   </div>
                 </div>
               </motion.div>
             </section>
 
+            {/* ── Divider ─────────────────────────────────────────── */}
+            <div className="mx-auto max-w-lg px-4 pt-10 sm:px-6">
+              <div className="flex items-center gap-4">
+                <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                <div className="flex items-center gap-2 rounded-full px-4 py-1.5" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)' }}>
+                  <Lock className="h-3 w-3" style={{ color: 'rgba(255,255,255,0.30)' }} />
+                  <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.30)' }}>Noites 2 a 7</span>
+                </div>
+                <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              </div>
+            </div>
+
             {/* ── Protocol preview — Noites 2-7 ─────────────────── */}
-            <section className="mx-auto max-w-lg px-4 pt-10 sm:px-6">
+            <section className="mx-auto max-w-lg px-4 pt-4 pb-0 sm:px-6">
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
-                transition={{ type: 'spring', stiffness: 65, damping: 18, delay: 0.05 }}
+                transition={{ type: 'spring', stiffness: 65, damping: 18 }}
               >
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-1" style={{ color: 'rgba(167,139,250,0.45)' }}>O protocolo completo</p>
-                <h3 className="font-display text-[20px] font-bold text-white mb-2 leading-snug">
-                  6 noites que aprofundam o processo.
-                </h3>
-                <p className="text-[13px] mb-6" style={{ color: 'rgba(255,255,255,0.38)' }}>
-                  Cada sessão condiciona uma camada diferente do estado de alerta.
-                </p>
-
                 {/* Compact locked list */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {PROTOCOL_NIGHTS.slice(1).map((night, idx) => (
                     <motion.div
                       key={night.id}
-                      initial={{ opacity: 0, x: -8 }}
+                      initial={{ opacity: 0, x: -6 }}
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true, margin: '-20px' }}
-                      transition={{ type: 'spring', stiffness: 80, damping: 20, delay: idx * 0.04 }}
+                      transition={{ type: 'spring', stiffness: 80, damping: 22, delay: idx * 0.035 }}
                       onClick={() => handleNightClick(night)}
-                      className="flex items-center gap-3 rounded-2xl px-4 py-3 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                      className="flex items-center gap-3 rounded-2xl px-4 py-3 cursor-pointer"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
                     >
+                      {/* Night number */}
                       <div
-                        className="flex-shrink-0 h-9 w-9 rounded-xl flex items-center justify-center"
-                        style={{ background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.18)' }}
+                        className="flex-shrink-0 h-8 w-8 rounded-lg flex items-center justify-center"
+                        style={{ background: 'rgba(255,255,255,0.05)' }}
                       >
-                        <span className="text-[12px] font-bold" style={{ color: 'rgba(196,181,253,0.55)' }}>{night.night}</span>
+                        <span className="text-[12px] font-bold" style={{ color: 'rgba(255,255,255,0.25)' }}>{night.night}</span>
                       </div>
-                      <p className="flex-1 text-[13px] font-medium line-clamp-1" style={{ color: 'rgba(255,255,255,0.45)' }}>{night.title}</p>
-                      <Lock className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.20)' }} />
+                      <p className="flex-1 text-[13px] line-clamp-1" style={{ color: 'rgba(255,255,255,0.30)' }}>{night.title}</p>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <Lock className="h-3 w-3" style={{ color: 'rgba(255,255,255,0.18)' }} />
+                      </div>
                     </motion.div>
                   ))}
                 </div>
@@ -515,32 +548,35 @@ export default function MeditacoesSonoPage() {
                   initial={{ opacity: 0, y: 12 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-30px' }}
-                  transition={{ type: 'spring', stiffness: 65, damping: 18, delay: 0.25 }}
-                  className="mt-5 relative overflow-hidden rounded-2xl px-5 py-5 text-center"
-                  style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(167,139,250,0.07) 100%)', border: '1px solid rgba(167,139,250,0.20)' }}
+                  transition={{ type: 'spring', stiffness: 65, damping: 18, delay: 0.22 }}
+                  className="mt-4 relative overflow-hidden rounded-2xl px-5 py-6 text-center"
+                  style={{
+                    background: 'linear-gradient(160deg, rgba(124,58,237,0.18) 0%, rgba(10,10,30,0.95) 100%)',
+                    border: '1px solid rgba(167,139,250,0.22)',
+                    boxShadow: '0 8px 40px rgba(124,58,237,0.16)',
+                  }}
                 >
-                  <div className="pointer-events-none absolute" style={{ top: '-30px', right: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.14) 0%, transparent 70%)' }} />
-                  <p className="text-[12px] uppercase tracking-widest font-bold mb-2" style={{ color: 'rgba(251,191,36,0.70)' }}>⚡ Oferta especial de lançamento</p>
-                  <div className="flex items-center justify-center gap-3 mb-0.5">
-                    <span className="text-[15px] line-through font-medium" style={{ color: 'rgba(255,255,255,0.28)' }}>R$97</span>
-                    <p className="font-display text-[32px] font-bold text-white leading-none">R$37</p>
+                  <div className="pointer-events-none absolute" style={{ top: '-30px', right: '-20px', width: '140px', height: '140px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.16) 0%, transparent 70%)' }} />
+                  <p className="text-[11px] uppercase tracking-[0.2em] font-bold mb-3" style={{ color: 'rgba(251,191,36,0.75)' }}>⚡ Oferta especial de lançamento</p>
+                  <div className="flex items-baseline justify-center gap-3 mb-1">
+                    <span className="text-[14px] line-through" style={{ color: 'rgba(255,255,255,0.28)' }}>R$97</span>
+                    <span className="font-display text-[34px] font-bold text-white leading-none">R$37</span>
                   </div>
-                  <p className="text-[12px] mb-2" style={{ color: 'rgba(255,255,255,0.35)' }}>Pagamento único · Sem mensalidade</p>
-                  <div className="flex items-center justify-center gap-1.5 mb-4">
+                  <p className="text-[12px] mb-2" style={{ color: 'rgba(255,255,255,0.32)' }}>Pagamento único · Sem mensalidade</p>
+                  <div className="flex items-center justify-center gap-1.5 mb-5">
                     <span style={{ color: '#FBBF24', fontSize: '12px' }}>⏱</span>
                     <span className="text-[12px]" style={{ color: 'rgba(251,191,36,0.70)' }}>
-                      Expira em{' '}
-                      <span className="font-mono font-bold">{formatCountdown(timeLeft)}</span>
+                      Expira em <span className="font-mono font-bold">{formatCountdown(timeLeft)}</span>
                     </span>
                   </div>
                   <button
                     onClick={() => setShowOfferModal(true)}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold text-white transition-all hover:scale-105 active:scale-95"
-                    style={{ background: 'linear-gradient(135deg, #7B5FD4 0%, #5A3DB0 100%)', boxShadow: '0 6px 24px rgba(107,79,187,0.50)' }}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)', boxShadow: '0 8px 28px rgba(107,79,187,0.55)' }}
                   >
                     Garantir as 7 noites agora — R$37 →
                   </button>
-                  <p className="mt-2 text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>Acesso imediato · Sem risco</p>
+                  <p className="mt-2.5 text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>Acesso imediato · Sem risco</p>
                 </motion.div>
               </motion.div>
             </section>
