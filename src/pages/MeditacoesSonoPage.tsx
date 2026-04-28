@@ -270,10 +270,10 @@ export default function MeditacoesSonoPage() {
           <>
             {/* ── Guest Hero ─────────────────────────────────────── */}
             <section className="relative flex min-h-[720px] flex-col overflow-hidden sm:min-h-[800px]">
-              {/* Nav */}
+              {/* Nav — guest: volta para o quiz (histórico do browser) */}
               <div className="absolute left-4 top-4 z-20 sm:left-6 sm:top-6">
                 <button
-                  onClick={() => navigate('/app')}
+                  onClick={() => navigate(-1)}
                   className="flex h-9 w-9 items-center justify-center rounded-full text-white/50 transition-all hover:text-white/80"
                   style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}
                 >
