@@ -885,13 +885,10 @@ export default function MeditationPlayerPage() {
 
   return (
     <div
-      className="relative min-h-screen font-primary overflow-x-hidden overflow-y-auto"
-      style={{
-        overscrollBehaviorX: 'none',
-        touchAction: 'pan-y'
-      }}
+      className="relative font-primary overflow-x-hidden"
+      style={{ minHeight: '100dvh', touchAction: 'pan-y' }}
     >
-      {/* Background Image Blurred */}
+      {/* ── Background ── */}
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
@@ -900,28 +897,67 @@ export default function MeditationPlayerPage() {
           transform: 'scale(1.1)',
         }}
       />
-
-      {/* Dark overlay for text readability */}
       <div
         className="absolute inset-0"
         style={isAbundancia || isDrJoe
-          ? { background: 'linear-gradient(to bottom, rgba(9,9,15,0.55) 0%, rgba(9,9,15,0.40) 50%, rgba(9,9,15,0.65) 100%)' }
-          : { background: 'rgba(0,0,0,0.25)' }
+          ? { background: 'linear-gradient(to bottom, rgba(9,9,15,0.65) 0%, rgba(9,9,15,0.45) 50%, rgba(9,9,15,0.85) 100%)' }
+          : { background: 'linear-gradient(to bottom, rgba(0,0,0,0.50) 0%, rgba(0,0,0,0.22) 45%, rgba(0,0,0,0.72) 100%)' }
         }
       />
 
-      {/* HomeHeader */}
-      <div className="relative z-10">
+      {/* ── Desktop HomeHeader — hidden on mobile ── */}
+      <div className="hidden md:block relative z-10">
         <HomeHeader />
       </div>
 
-      {/* Main Content - Centered */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-start px-4 sm:px-8 pt-16 sm:pt-24 pb-12 sm:pb-8">
-        {/* Back Button - Inline no topo (mobile) */}
-        <div className="w-full max-w-4xl mb-4">
+      {/* ── Main layout: fills full viewport height on mobile ── */}
+      <div className="relative z-10 flex flex-col" style={{ minHeight: '100dvh' }}>
+
+        {/* Mobile top bar */}
+        <div
+          className="md:hidden flex items-center justify-between px-5 pb-3 flex-shrink-0"
+          style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
+        >
           <button
             onClick={handleBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation"
+            aria-label="Voltar"
+            className="flex h-11 w-11 items-center justify-center rounded-full touch-manipulation active:scale-95 transition-transform"
+            style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.18)' }}
+          >
+            <ChevronLeft size={22} className="text-white" />
+          </button>
+
+          <p
+            className="text-[11px] font-semibold uppercase tracking-widest"
+            style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : 'rgba(255,255,255,0.40)' }}
+          >
+            {sonoGuestMode ? 'Protocolo Sono' : 'Meditação'}
+          </p>
+
+          {!sonoGuestMode ? (
+            <button
+              onClick={handleFavoriteToggle}
+              aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+              aria-pressed={isFavorite}
+              className="flex h-11 w-11 items-center justify-center rounded-full touch-manipulation active:scale-95 transition-transform"
+              style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.18)' }}
+            >
+              <Heart
+                size={18}
+                strokeWidth={2}
+                className={`transition-all ${isFavorite ? 'fill-red-400 text-red-400' : 'text-white/60'}`}
+              />
+            </button>
+          ) : (
+            <div className="w-11" />
+          )}
+        </div>
+
+        {/* Desktop back button */}
+        <div className="hidden md:flex px-8 pt-4 w-full max-w-4xl mx-auto flex-shrink-0">
+          <button
+            onClick={handleBack}
+            className="flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-sm shadow-md hover:shadow-lg transition-all active:scale-95"
             aria-label="Voltar"
             style={isAbundancia
               ? { background: 'rgba(255,185,50,0.15)', border: '1px solid rgba(255,185,50,0.4)' }
@@ -933,347 +969,318 @@ export default function MeditationPlayerPage() {
             <ChevronLeft size={22} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#1F2937' }} />
           </button>
         </div>
-        {/* Meditation Image Card */}
-        <motion.div
-          variants={fadeSlideUp}
-          initial="hidden"
-          animate="visible"
-          transition={{ delay: 0.1 }}
-          className="mb-4 sm:mb-6 overflow-hidden rounded-3xl shadow-2xl"
-        >
-          <img
-            src={meditationData.imageUrl}
-            alt={meditationData.title}
-            className="h-32 w-32 sm:h-48 sm:w-48 object-cover"
-            style={{ objectPosition: 'center 35%' }}
-          />
-        </motion.div>
 
-        {/* Title */}
-        <motion.h1
-          variants={fadeSlideUp}
-          initial="hidden"
-          animate="visible"
-          transition={{ delay: 0.2 }}
-          className={`mb-3 sm:mb-6 text-xl sm:text-3xl md:text-4xl font-bold text-center px-2 leading-snug drop-shadow-sm ${isAbundancia || isDrJoe ? '' : 'text-gray-900'}`}
-          style={isAbundancia
-            ? { color: GOLD, textShadow: '0 2px 16px rgba(255,185,50,0.4)', textWrap: 'balance' }
-            : isDrJoe
-            ? { color: '#FFFFFF', textShadow: '0 2px 16px rgba(59,130,246,0.4)', textWrap: 'balance' }
-            : { textWrap: 'balance' }}
-        >
-          {meditationData.title}
-        </motion.h1>
+        {/* ── Center: art + title + playback controls ── */}
+        <div className="flex-1 flex flex-col items-center justify-center gap-5 md:gap-6 px-6 py-3">
 
-        {/* Playback Controls - Reduzidos */}
-        <motion.div
-          variants={fadeSlideUp}
-          initial="hidden"
-          animate="visible"
-          transition={{ delay: 0.3 }}
-          className="mb-4 sm:mb-6 flex items-center gap-4"
-        >
-          {/* Skip Back 15s */}
-          <button
-            onClick={() => handleSkip(-15)}
-            aria-label="Retroceder 15 segundos"
-            className="flex flex-col h-12 w-12 items-center justify-center gap-0.5 rounded-full backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation"
-            style={isAbundancia
-              ? { background: 'rgba(255,185,50,0.15)', border: '1px solid rgba(255,185,50,0.4)' }
-              : isDrJoe
-              ? { background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.4)' }
-              : { background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(229,231,235,0.5)' }
-            }
+          {/* Album Art — much larger on mobile */}
+          <motion.div
+            variants={fadeSlideUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.1 }}
+            className="overflow-hidden rounded-[2rem] shadow-2xl flex-shrink-0"
+            style={{
+              width: 'min(62vw, 280px)',
+              height: 'min(62vw, 280px)',
+            }}
           >
-            <SkipBack size={16} strokeWidth={1.5} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151' }} />
-            <span className="text-[9px] font-bold leading-none" style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151' }}>15s</span>
-          </button>
+            <img
+              src={meditationData.imageUrl}
+              alt={meditationData.title}
+              className="w-full h-full object-cover"
+              style={{ objectPosition: 'center 35%' }}
+            />
+          </motion.div>
 
-          {/* Play/Pause Button */}
-          <button
-            onClick={handlePlayPause}
-            aria-label={isPlaying ? 'Pausar meditação' : 'Reproduzir meditação'}
-            className="flex h-16 w-16 items-center justify-center rounded-full backdrop-blur-sm shadow-xl md:hover:shadow-2xl transition-all active:scale-95 touch-manipulation"
-            style={isAbundancia
-              ? { background: GOLD, border: '1px solid rgba(255,185,50,0.3)', boxShadow: '0 8px 32px rgba(255,185,50,0.45)' }
-              : isDrJoe
-              ? { background: DJ_BLUE, border: '1px solid rgba(59,130,246,0.3)', boxShadow: '0 8px 32px rgba(59,130,246,0.45)' }
-              : { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(229,231,235,0.5)' }
-            }
+          {/* Title + duration */}
+          <motion.div
+            variants={fadeSlideUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.2 }}
+            className="text-center px-4"
           >
-            {isPlaying ? (
-              <Pause size={28} strokeWidth={2} style={{ color: isAbundancia || isDrJoe ? '#FFFFFF' : '#111827' }} />
-            ) : (
-              <Play size={28} strokeWidth={2} fill="currentColor" className="ml-0.5" style={{ color: isAbundancia || isDrJoe ? '#FFFFFF' : '#111827' }} />
-            )}
-          </button>
+            <h1
+              className="text-xl sm:text-2xl md:text-3xl font-bold leading-snug"
+              style={isAbundancia
+                ? { color: GOLD, textShadow: '0 2px 16px rgba(255,185,50,0.4)' }
+                : isDrJoe
+                ? { color: '#FFFFFF', textShadow: '0 2px 16px rgba(59,130,246,0.4)' }
+                : { color: '#FFFFFF', textShadow: '0 2px 12px rgba(0,0,0,0.45)' }
+              }
+            >
+              {meditationData.title}
+            </h1>
+            <p className="text-sm mt-1 font-medium" style={{ color: isAbundancia ? 'rgba(255,185,50,0.55)' : 'rgba(255,255,255,0.40)' }}>
+              {meditationData.duration}
+            </p>
+          </motion.div>
 
-          {/* Skip Forward 15s */}
-          <button
-            onClick={() => handleSkip(15)}
-            aria-label="Avançar 15 segundos"
-            className="flex flex-col h-12 w-12 items-center justify-center gap-0.5 rounded-full backdrop-blur-sm shadow-md md:hover:shadow-lg transition-all active:scale-95 touch-manipulation"
-            style={isAbundancia
-              ? { background: 'rgba(255,185,50,0.15)', border: '1px solid rgba(255,185,50,0.4)' }
-              : isDrJoe
-              ? { background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.4)' }
-              : { background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(229,231,235,0.5)' }
-            }
+          {/* Playback controls */}
+          <motion.div
+            variants={fadeSlideUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.3 }}
+            className="flex items-center gap-7 md:gap-5"
           >
-            <SkipForward size={16} strokeWidth={1.5} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151' }} />
-            <span className="text-[9px] font-bold leading-none" style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151' }}>15s</span>
-          </button>
-        </motion.div>
+            {/* Skip Back 15s */}
+            <button
+              onClick={() => handleSkip(-15)}
+              aria-label="Retroceder 15 segundos"
+              className="flex flex-col h-14 w-14 items-center justify-center gap-0.5 rounded-full touch-manipulation active:scale-95 transition-transform"
+              style={isAbundancia
+                ? { background: 'rgba(255,185,50,0.15)', border: '1px solid rgba(255,185,50,0.35)' }
+                : isDrJoe
+                ? { background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.35)' }
+                : { background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.18)' }
+              }
+            >
+              <SkipBack size={18} strokeWidth={1.5} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : 'rgba(255,255,255,0.85)' }} />
+              <span className="text-[9px] font-bold leading-none" style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : isDrJoe ? 'rgba(59,130,246,0.7)' : 'rgba(255,255,255,0.50)' }}>15s</span>
+            </button>
 
-        {/* Controls Bar - Responsive */}
+            {/* Play/Pause */}
+            <button
+              onClick={handlePlayPause}
+              aria-label={isPlaying ? 'Pausar meditação' : 'Reproduzir meditação'}
+              className="flex h-[72px] w-[72px] items-center justify-center rounded-full touch-manipulation active:scale-95 transition-transform"
+              style={isAbundancia
+                ? { background: GOLD, boxShadow: '0 8px 40px rgba(255,185,50,0.55)' }
+                : isDrJoe
+                ? { background: DJ_BLUE, boxShadow: '0 8px 40px rgba(59,130,246,0.55)' }
+                : { background: 'rgba(255,255,255,0.95)', boxShadow: '0 8px 40px rgba(255,255,255,0.18)' }
+              }
+            >
+              {isPlaying ? (
+                <Pause size={30} strokeWidth={2} style={{ color: isAbundancia || isDrJoe ? '#FFFFFF' : '#111827' }} />
+              ) : (
+                <Play size={30} strokeWidth={2} fill="currentColor" className="ml-0.5" style={{ color: isAbundancia || isDrJoe ? '#FFFFFF' : '#111827' }} />
+              )}
+            </button>
+
+            {/* Skip Forward 15s */}
+            <button
+              onClick={() => handleSkip(15)}
+              aria-label="Avançar 15 segundos"
+              className="flex flex-col h-14 w-14 items-center justify-center gap-0.5 rounded-full touch-manipulation active:scale-95 transition-transform"
+              style={isAbundancia
+                ? { background: 'rgba(255,185,50,0.15)', border: '1px solid rgba(255,185,50,0.35)' }
+                : isDrJoe
+                ? { background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.35)' }
+                : { background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.18)' }
+              }
+            >
+              <SkipForward size={18} strokeWidth={1.5} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : 'rgba(255,255,255,0.85)' }} />
+              <span className="text-[9px] font-bold leading-none" style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : isDrJoe ? 'rgba(59,130,246,0.7)' : 'rgba(255,255,255,0.50)' }}>15s</span>
+            </button>
+          </motion.div>
+        </div>
+
+        {/* ── Bottom controls ── */}
         <motion.div
           variants={fadeSlideUp}
           initial="hidden"
           animate="visible"
           transition={{ delay: 0.4 }}
-          className="w-full max-w-4xl px-0 sm:px-6 mt-2 sm:mt-4"
+          className="w-full flex-shrink-0 px-5 md:px-8 md:max-w-4xl md:mx-auto"
+          style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
         >
-          {/* Mobile Layout - Premium Clean */}
-          <div className="md:hidden relative max-w-sm mx-auto" ref={volumePopoverRef}>
-            {/* Barra Principal - Mobile Premium */}
-            <div
-              className="flex items-center justify-between gap-4 backdrop-blur-lg rounded-2xl px-5 py-4 shadow-xl"
-              style={isAbundancia
-                ? { background: 'rgba(9,9,15,0.85)', border: '1px solid rgba(255,185,50,0.25)' }
-                : isDrJoe
-                ? { background: 'rgba(9,9,15,0.85)', border: '1px solid rgba(59,130,246,0.25)' }
-                : { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(243,244,246,0.5)' }
-              }
-            >
-              {/* Background Sound Chip */}
-              <button
-                onClick={handleOpenBackgroundModal}
-                aria-label={`Sons de fundo: ${selectedBackgroundSound?.title ?? 'Nenhum'}`}
-                className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 touch-manipulation"
-                style={isAbundancia
-                  ? { background: 'rgba(255,185,50,0.12)', border: '1px solid rgba(255,185,50,0.3)' }
-                  : isDrJoe
-                  ? { background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)' }
-                  : { background: 'linear-gradient(to bottom right, #F9FAFB, #FFFFFF)', border: '1px solid rgba(229,231,235,0.5)' }
-                }
+          {/* Progress bar — unified for mobile; desktop uses its own below */}
+          <div className="md:hidden mb-4">
+            <div className="flex items-center gap-3">
+              <span
+                className="text-[11px] font-semibold tabular-nums flex-shrink-0 w-10 text-center"
+                style={{ color: isAbundancia ? 'rgba(255,185,50,0.75)' : 'rgba(255,255,255,0.50)' }}
               >
-                <Music size={16} strokeWidth={2} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#4B5563', flexShrink: 0 }} />
-                <div className="flex flex-col items-start min-w-0">
-                  <span
-                    className="text-[9px] font-semibold uppercase tracking-wide leading-tight"
-                    style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : isDrJoe ? 'rgba(59,130,246,0.7)' : '#9CA3AF' }}
-                  >
-                    Sons de fundo
-                  </span>
-                  <span
-                    className="text-xs font-bold leading-tight truncate max-w-[120px]"
-                    style={{ color: isAbundancia || isDrJoe ? 'rgba(255,255,255,0.9)' : '#1F2937' }}
-                  >
-                    {selectedBackgroundSound?.title || 'Nenhum'}
-                  </span>
-                </div>
-              </button>
+                {formatTime(currentTime)}
+              </span>
+              <div
+                className="flex-1 relative h-1 rounded-full"
+                style={{ background: isAbundancia ? 'rgba(255,185,50,0.2)' : isDrJoe ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.18)' }}
+              >
+                <input
+                  type="range"
+                  min="0"
+                  max={duration || 0}
+                  value={currentTime}
+                  onChange={handleProgressChange}
+                  onMouseUp={handleProgressChangeEnd}
+                  onTouchEnd={handleProgressChangeEnd}
+                  aria-label="Progresso da meditação"
+                  aria-valuetext={`${formatTime(currentTime)} de ${formatTime(duration)}`}
+                  className="absolute w-full opacity-0 cursor-pointer z-10"
+                  style={{ top: '-0.75rem', height: 'calc(100% + 1.5rem)', touchAction: 'none' }}
+                />
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full transition-all duration-100"
+                  style={{
+                    width: `${(currentTime / (duration || 1)) * 100}%`,
+                    background: isAbundancia
+                      ? `linear-gradient(to right, ${GOLD_DARK}, ${GOLD})`
+                      : isDrJoe
+                      ? `linear-gradient(to right, ${DJ_BLUE_DARK}, ${DJ_BLUE})`
+                      : 'linear-gradient(to right, #A78BFA, #7C3AED)',
+                  }}
+                />
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow pointer-events-none"
+                  style={{
+                    left: `calc(${(currentTime / (duration || 1)) * 100}% - 6px)`,
+                    background: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#FFFFFF',
+                  }}
+                />
+              </div>
+              <span
+                className="text-[11px] font-semibold tabular-nums flex-shrink-0 w-10 text-center"
+                style={{ color: isAbundancia ? 'rgba(255,185,50,0.45)' : 'rgba(255,255,255,0.32)' }}
+              >
+                {formatTime(duration)}
+              </span>
+            </div>
+          </div>
 
-              {/* Favorite Button */}
+          {/* Mobile secondary controls */}
+          <div className="md:hidden flex items-center justify-between gap-3" ref={volumePopoverRef}>
+            {/* Background sound chip */}
+            <button
+              onClick={handleOpenBackgroundModal}
+              aria-label={`Sons de fundo: ${selectedBackgroundSound?.title ?? 'Nenhum'}`}
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl touch-manipulation active:scale-95 transition-transform"
+              style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
+            >
+              <Music size={15} strokeWidth={2} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : 'rgba(255,255,255,0.65)', flexShrink: 0 }} />
+              <div className="flex flex-col items-start min-w-0">
+                <span className="text-[9px] font-semibold uppercase tracking-wide leading-tight" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  Sons de fundo
+                </span>
+                <span className="text-xs font-bold leading-tight truncate max-w-[100px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
+                  {selectedBackgroundSound?.title || 'Nenhum'}
+                </span>
+              </div>
+            </button>
+
+            {/* Favorite — hidden for sono guest (no account to save to) */}
+            {!sonoGuestMode && (
               <button
                 onClick={handleFavoriteToggle}
                 aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                 aria-pressed={isFavorite}
-                className="flex items-center justify-center w-11 h-11 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 touch-manipulation"
-                style={isAbundancia
-                  ? { background: 'rgba(255,185,50,0.12)', border: '1px solid rgba(255,185,50,0.3)' }
-                  : isDrJoe
-                  ? { background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)' }
-                  : { background: 'linear-gradient(to bottom right, #F9FAFB, #FFFFFF)', border: '1px solid rgba(229,231,235,0.5)' }
-                }
+                className="flex items-center justify-center w-11 h-11 rounded-xl touch-manipulation active:scale-95 transition-transform"
+                style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
               >
                 <Heart
-                  size={20}
+                  size={18}
                   strokeWidth={2}
-                  className={`transition-all ${isFavorite ? 'fill-red-500 text-red-500' : ''}`}
-                  style={!isFavorite ? { color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#4B5563' } : undefined}
+                  className={`transition-all ${isFavorite ? 'fill-red-400 text-red-400' : ''}`}
+                  style={!isFavorite ? { color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : 'rgba(255,255,255,0.60)' } : undefined}
                 />
               </button>
+            )}
 
-              {/* Volume Button Container - With Popover */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowVolumePopover(!showVolumePopover)}
-                  aria-label="Controle de volume"
-                  aria-expanded={showVolumePopover}
-                  className="flex items-center justify-center w-11 h-11 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 touch-manipulation"
+            {/* Volume button + popover */}
+            <div className="relative">
+              <button
+                onClick={() => setShowVolumePopover(!showVolumePopover)}
+                aria-label="Controle de volume"
+                aria-expanded={showVolumePopover}
+                className="flex items-center justify-center w-11 h-11 rounded-xl touch-manipulation active:scale-95 transition-transform"
+                style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
+              >
+                <Volume2 size={18} strokeWidth={2} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : 'rgba(255,255,255,0.60)' }} />
+              </button>
+
+              {/* Volume Popover Vertical */}
+              <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-3 transition-all duration-300 ease-out ${
+                showVolumePopover
+                  ? 'opacity-100 translate-y-0 pointer-events-auto'
+                  : 'opacity-0 translate-y-2 pointer-events-none'
+              }`}>
+                <div
+                  className="backdrop-blur-lg rounded-2xl px-3 py-4 shadow-2xl"
                   style={isAbundancia
-                    ? { background: 'rgba(255,185,50,0.12)', border: '1px solid rgba(255,185,50,0.3)' }
+                    ? { background: 'rgba(9,9,15,0.95)', border: '1px solid rgba(255,185,50,0.25)' }
                     : isDrJoe
-                    ? { background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)' }
-                    : { background: 'linear-gradient(to bottom right, #F9FAFB, #FFFFFF)', border: '1px solid rgba(229,231,235,0.5)' }
+                    ? { background: 'rgba(9,9,15,0.95)', border: '1px solid rgba(59,130,246,0.25)' }
+                    : { background: 'rgba(9,9,15,0.92)', border: '1px solid rgba(255,255,255,0.12)' }
                   }
                 >
-                  <Volume2 size={18} strokeWidth={2} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#4B5563' }} />
-                </button>
-
-                {/* Volume Popover Vertical - Aparece acima do botão */}
-                <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-3 transition-all duration-300 ease-out ${
-                  showVolumePopover
-                    ? 'opacity-100 translate-y-0 pointer-events-auto'
-                    : 'opacity-0 translate-y-2 pointer-events-none'
-                }`}>
-                  <div
-                    className="backdrop-blur-lg rounded-2xl px-3 py-4 shadow-2xl"
-                    style={isAbundancia
-                      ? { background: 'rgba(9,9,15,0.95)', border: '1px solid rgba(255,185,50,0.25)' }
-                      : isDrJoe
-                      ? { background: 'rgba(9,9,15,0.95)', border: '1px solid rgba(59,130,246,0.25)' }
-                      : { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(243,244,246,0.5)' }
-                    }
-                  >
-                    <div className="flex flex-col items-center gap-3 h-[180px]">
-                      {/* Porcentagem no topo */}
-                      <span className="text-xs font-bold" style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151' }}>
-                        {Math.round(backgroundVolume)}%
-                      </span>
-
-                      {/* Slider Vertical — controla som de fundo */}
+                  <div className="flex flex-col items-center gap-3 h-[180px]">
+                    <span className="text-xs font-bold" style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#FFFFFF' }}>
+                      {Math.round(backgroundVolume)}%
+                    </span>
+                    <div
+                      ref={volumeSliderRef}
+                      onTouchStart={handleVolumeSliderStart}
+                      onMouseDown={handleVolumeSliderStart}
+                      role="slider"
+                      aria-label="Volume do som de fundo"
+                      aria-valuenow={backgroundVolume}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuetext={`${backgroundVolume}%`}
+                      tabIndex={0}
+                      className="flex-1 relative w-12 flex items-center justify-center cursor-pointer active:cursor-grabbing"
+                      style={{ touchAction: 'none' }}
+                    >
                       <div
-                        ref={volumeSliderRef}
-                        onTouchStart={handleVolumeSliderStart}
-                        onMouseDown={handleVolumeSliderStart}
-                        role="slider"
-                        aria-label="Volume do som de fundo"
-                        aria-valuenow={backgroundVolume}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-valuetext={`${backgroundVolume}%`}
-                        tabIndex={0}
-                        className="flex-1 relative w-12 flex items-center justify-center cursor-pointer active:cursor-grabbing"
-                        style={{ touchAction: 'none' }}
+                        className="absolute inset-x-0 top-0 bottom-0 w-2 mx-auto rounded-full pointer-events-none"
+                        style={{ background: isAbundancia ? 'rgba(255,185,50,0.2)' : isDrJoe ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.15)' }}
                       >
-                        {/* Barra de fundo vertical */}
                         <div
-                          className="absolute inset-x-0 top-0 bottom-0 w-2 mx-auto rounded-full pointer-events-none"
-                          style={{ background: isAbundancia ? 'rgba(255,185,50,0.2)' : isDrJoe ? 'rgba(59,130,246,0.2)' : '#E5E7EB' }}
-                        >
-                          <div
-                            className="absolute bottom-0 left-0 right-0 rounded-full transition-all duration-150"
-                            style={{
-                              height: `${backgroundVolume}%`,
-                              background: isAbundancia
-                                ? `linear-gradient(to top, ${GOLD_DARK}, ${GOLD})`
-                                : `linear-gradient(to top, ${DJ_BLUE_DARK}, ${DJ_BLUE})`,
-                            }}
-                          />
-                        </div>
-                        {/* Thumb visual */}
-                        <div
-                          className="absolute left-1/2 -translate-x-1/2 w-5 h-5 rounded-full shadow-md pointer-events-none transition-all duration-150"
+                          className="absolute bottom-0 left-0 right-0 rounded-full transition-all duration-150"
                           style={{
-                            bottom: `calc(${backgroundVolume}% - 10px)`,
-                            background: '#FFFFFF',
-                            border: `2px solid ${isAbundancia ? GOLD : DJ_BLUE}`,
+                            height: `${backgroundVolume}%`,
+                            background: isAbundancia
+                              ? `linear-gradient(to top, ${GOLD_DARK}, ${GOLD})`
+                              : isDrJoe
+                              ? `linear-gradient(to top, ${DJ_BLUE_DARK}, ${DJ_BLUE})`
+                              : 'linear-gradient(to top, #6D28D9, #A78BFA)',
                           }}
                         />
                       </div>
-
-                      {/* Ícone no bottom */}
-                      <Music size={14} strokeWidth={2} style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : isDrJoe ? 'rgba(59,130,246,0.7)' : '#6B7280' }} />
+                      <div
+                        className="absolute left-1/2 -translate-x-1/2 w-5 h-5 rounded-full shadow-md pointer-events-none transition-all duration-150"
+                        style={{
+                          bottom: `calc(${backgroundVolume}% - 10px)`,
+                          background: '#FFFFFF',
+                          border: `2px solid ${isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#A78BFA'}`,
+                        }}
+                      />
                     </div>
+                    <Music size={14} strokeWidth={2} style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : isDrJoe ? 'rgba(59,130,246,0.7)' : 'rgba(255,255,255,0.35)' }} />
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Progress Bar - Separado abaixo */}
-            <div
-              className="mt-3 backdrop-blur-md rounded-full px-4 py-2.5 shadow-md"
-              style={isAbundancia
-                ? { background: 'rgba(9,9,15,0.80)', border: '1px solid rgba(255,185,50,0.2)' }
-                : isDrJoe
-                ? { background: 'rgba(9,9,15,0.80)', border: '1px solid rgba(59,130,246,0.2)' }
-                : { background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(243,244,246,0.5)' }
-              }
-            >
-              <div className="flex items-center gap-3">
-                <span
-                  className="text-[11px] font-semibold flex-shrink-0 tabular-nums"
-                  style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : isDrJoe ? 'rgba(255,255,255,0.7)' : '#4B5563' }}
-                >
-                  {formatTime(currentTime)}
-                </span>
-                <div
-                  className="flex-1 relative h-1.5 rounded-full overflow-visible"
-                  style={{ background: isAbundancia ? 'rgba(255,185,50,0.2)' : isDrJoe ? 'rgba(59,130,246,0.2)' : '#E5E7EB' }}
-                >
-                  <input
-                    type="range"
-                    min="0"
-                    max={duration || 0}
-                    value={currentTime}
-                    onChange={handleProgressChange}
-                    onMouseUp={handleProgressChangeEnd}
-                    onTouchEnd={handleProgressChangeEnd}
-                    aria-label="Progresso da meditação"
-                    aria-valuetext={`${formatTime(currentTime)} de ${formatTime(duration)}`}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    style={{ touchAction: 'none' }}
-                  />
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full transition-all duration-100"
-                    style={{
-                      width: `${(currentTime / (duration || 1)) * 100}%`,
-                      background: isAbundancia
-                        ? `linear-gradient(to right, ${GOLD_DARK}, ${GOLD})`
-                        : `linear-gradient(to right, ${DJ_BLUE_DARK}, ${DJ_BLUE})`,
-                    }}
-                  />
-                  {/* Thumb visual */}
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full shadow pointer-events-none"
-                    style={{
-                      left: `calc(${(currentTime / (duration || 1)) * 100}% - 7px)`,
-                      background: isAbundancia ? GOLD : DJ_BLUE,
-                    }}
-                  />
-                </div>
-                <span
-                  className="text-[11px] font-semibold flex-shrink-0 tabular-nums"
-                  style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : isDrJoe ? 'rgba(255,255,255,0.7)' : '#4B5563' }}
-                >
-                  {formatTime(duration)}
-                </span>
-              </div>
-            </div>
           </div>
 
-          {/* Desktop Layout - Single Row */}
+          {/* Desktop controls row */}
           <div
             className="hidden md:flex items-center justify-between gap-3 sm:gap-4 backdrop-blur-md rounded-full px-4 sm:px-6 py-3 sm:py-4 shadow-lg"
             style={isAbundancia
               ? { background: 'rgba(9,9,15,0.85)', border: '1px solid rgba(255,185,50,0.25)' }
               : isDrJoe
               ? { background: 'rgba(9,9,15,0.85)', border: '1px solid rgba(59,130,246,0.25)' }
-              : { background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(243,244,246,0.5)' }
+              : { background: 'rgba(9,9,15,0.78)', border: '1px solid rgba(255,255,255,0.12)' }
             }
           >
-            {/* Background Sound Selector */}
             <button
               onClick={handleOpenBackgroundModal}
               className="flex items-center gap-2 min-w-0 flex-shrink-0 hover:opacity-80 transition-opacity"
             >
-              <Music size={18} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151', flexShrink: 0 }} />
+              <Music size={18} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : 'rgba(255,255,255,0.65)', flexShrink: 0 }} />
               <div className="flex flex-col items-start min-w-0">
-                <span className="text-[10px] font-medium uppercase leading-tight" style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : isDrJoe ? 'rgba(59,130,246,0.7)' : '#6B7280' }}>Sons de Fundo</span>
-                <span className="text-xs font-semibold leading-tight truncate max-w-[100px]" style={{ color: isAbundancia || isDrJoe ? 'rgba(255,255,255,0.9)' : '#111827' }}>
+                <span className="text-[10px] font-medium uppercase leading-tight" style={{ color: isAbundancia ? 'rgba(255,185,50,0.6)' : isDrJoe ? 'rgba(59,130,246,0.7)' : 'rgba(255,255,255,0.40)' }}>Sons de Fundo</span>
+                <span className="text-xs font-semibold leading-tight truncate max-w-[100px]" style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : 'rgba(255,255,255,0.85)' }}>
                   {selectedBackgroundSound?.title || 'Nenhum'}
                 </span>
               </div>
             </button>
-
-            {/* Time Display */}
-            <span className="text-xs sm:text-sm font-medium flex-shrink-0" style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : isDrJoe ? 'rgba(255,255,255,0.7)' : '#374151' }}>
+            <span className="text-xs sm:text-sm font-medium flex-shrink-0" style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : isDrJoe ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.55)' }}>
               {formatTime(currentTime)}
             </span>
-
-            {/* Progress Bar */}
             <input
               type="range"
               min="0"
@@ -1293,18 +1300,14 @@ export default function MeditationPlayerPage() {
                   ? `linear-gradient(to right, ${GOLD_DARK} 0%, ${GOLD_DARK} ${(currentTime / (duration || 1)) * 100}%, rgba(255,185,50,0.2) ${(currentTime / (duration || 1)) * 100}%, rgba(255,185,50,0.2) 100%)`
                   : isDrJoe
                   ? `linear-gradient(to right, ${DJ_BLUE_DARK} 0%, ${DJ_BLUE_DARK} ${(currentTime / (duration || 1)) * 100}%, rgba(59,130,246,0.2) ${(currentTime / (duration || 1)) * 100}%, rgba(59,130,246,0.2) 100%)`
-                  : `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${(currentTime / (duration || 1)) * 100}%, #E5E7EB ${(currentTime / (duration || 1)) * 100}%, #E5E7EB 100%)`,
+                  : `linear-gradient(to right, #A78BFA 0%, #7C3AED ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.15) ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.15) 100%)`,
                 borderRadius: '999px',
                 touchAction: 'none',
               }}
             />
-
-            {/* Time Duration */}
-            <span className="text-xs sm:text-sm font-medium flex-shrink-0" style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : isDrJoe ? 'rgba(255,255,255,0.7)' : '#374151' }}>
+            <span className="text-xs sm:text-sm font-medium flex-shrink-0" style={{ color: isAbundancia ? 'rgba(255,185,50,0.8)' : isDrJoe ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)' }}>
               {formatTime(duration)}
             </span>
-
-            {/* Favorite Button */}
             <button
               onClick={handleFavoriteToggle}
               aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
@@ -1315,13 +1318,11 @@ export default function MeditationPlayerPage() {
                 size={20}
                 className={`transition-all ${isFavorite ? 'fill-red-500 text-red-500' : ''}`}
                 strokeWidth={1.5}
-                style={!isFavorite ? { color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#374151' } : undefined}
+                style={!isFavorite ? { color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : 'rgba(255,255,255,0.60)' } : undefined}
               />
             </button>
-
-            {/* Volume Control */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Volume2 size={16} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : '#4B5563' }} aria-hidden="true" />
+              <Volume2 size={16} style={{ color: isAbundancia ? GOLD : isDrJoe ? DJ_BLUE : 'rgba(255,255,255,0.55)' }} aria-hidden="true" />
               <input
                 type="range"
                 min="0"
@@ -1339,7 +1340,7 @@ export default function MeditationPlayerPage() {
                     ? `linear-gradient(to right, ${GOLD_DARK} 0%, ${GOLD_DARK} ${meditationVolume}%, rgba(255,185,50,0.2) ${meditationVolume}%, rgba(255,185,50,0.2) 100%)`
                     : isDrJoe
                     ? `linear-gradient(to right, ${DJ_BLUE_DARK} 0%, ${DJ_BLUE_DARK} ${meditationVolume}%, rgba(59,130,246,0.2) ${meditationVolume}%, rgba(59,130,246,0.2) 100%)`
-                    : `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${meditationVolume}%, #E5E7EB ${meditationVolume}%, #E5E7EB 100%)`,
+                    : `linear-gradient(to right, #A78BFA 0%, #A78BFA ${meditationVolume}%, rgba(255,255,255,0.15) ${meditationVolume}%, rgba(255,255,255,0.15) 100%)`,
                   borderRadius: '999px',
                   touchAction: 'none',
                 }}
