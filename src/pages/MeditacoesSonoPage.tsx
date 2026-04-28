@@ -111,6 +111,39 @@ export default function MeditacoesSonoPage() {
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
+  // ── Urgency countdown (15 min, session-persistent) ─────────────
+  const [timeLeft, setTimeLeft] = useState<number>(() => {
+    if (!isGuestSono) return 0;
+    const stored = sessionStorage.getItem('eco.sono.offer_expires');
+    if (stored) return Math.max(0, parseInt(stored) - Date.now());
+    const expires = Date.now() + 15 * 60 * 1000;
+    sessionStorage.setItem('eco.sono.offer_expires', String(expires));
+    return 15 * 60 * 1000;
+  });
+
+  const viewerCount = useMemo(() => {
+    if (!isGuestSono) return 0;
+    const stored = sessionStorage.getItem('eco.sono.viewer_count');
+    if (stored) return parseInt(stored);
+    const count = Math.floor(Math.random() * 20) + 18;
+    sessionStorage.setItem('eco.sono.viewer_count', String(count));
+    return count;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!isGuestSono) return;
+    const id = setInterval(() => {
+      const stored = sessionStorage.getItem('eco.sono.offer_expires');
+      setTimeLeft(stored ? Math.max(0, parseInt(stored) - Date.now()) : 0);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isGuestSono]);
+
+  const formatCountdown = (ms: number) => {
+    const s = Math.floor(ms / 1000);
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  };
+
   const completedCount = completedNights.size;
   const pct = Math.round((completedCount / 7) * 100);
   const nextNight = Math.min(completedCount + 1, 7);
@@ -309,21 +342,36 @@ export default function MeditacoesSonoPage() {
                   <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.38)' }}>12.400+ pessoas dormindo melhor</span>
                 </motion.div>
 
+                {/* Urgency countdown */}
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.32 }}
+                  className="mt-6 flex items-center justify-center gap-2 rounded-full px-4 py-2"
+                  style={{ background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.22)' }}
+                >
+                  <span style={{ color: '#FBBF24', fontSize: '13px' }}>⏱</span>
+                  <span className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                    Acesso gratuito disponível por{' '}
+                    <span className="font-mono font-bold" style={{ color: '#FBBF24' }}>{formatCountdown(timeLeft)}</span>
+                  </span>
+                </motion.div>
+
                 {/* CTA */}
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.65, delay: 0.35, ease: 'easeOut' }}
+                  transition={{ duration: 0.65, delay: 0.38, ease: 'easeOut' }}
                   onClick={handleHeroButtonClick}
                   disabled={checkoutLoading}
-                  className="mt-9 flex w-full items-center justify-center gap-3 rounded-full py-4 text-[15px] font-bold text-white transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-70"
+                  className="mt-4 flex w-full items-center justify-center gap-3 rounded-full py-4 text-[15px] font-bold text-white transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-70"
                   style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)', boxShadow: '0 10px 48px rgba(124,58,237,0.60), 0 2px 10px rgba(0,0,0,0.35)' }}
                 >
                   {checkoutLoading
                     ? <Loader2 className="h-4 w-4 animate-spin" />
                     : <Play className="h-4 w-4" fill="currentColor" />
                   }
-                  {checkoutLoading ? 'Carregando…' : 'Iniciar Noite 1 grátis'}
+                  {checkoutLoading ? 'Carregando…' : 'Iniciar Noite 1 grátis — agora'}
                 </motion.button>
 
                 <motion.p
@@ -337,6 +385,19 @@ export default function MeditacoesSonoPage() {
                 </motion.p>
               </div>
             </section>
+
+            {/* ── Urgency strip ──────────────────────────────────── */}
+            <div
+              className="flex items-center justify-center gap-2 px-4 py-2.5"
+              style={{ background: 'rgba(251,191,36,0.07)', borderTop: '1px solid rgba(251,191,36,0.14)', borderBottom: '1px solid rgba(251,191,36,0.14)' }}
+            >
+              <span style={{ color: '#FBBF24', fontSize: '14px' }}>🔥</span>
+              <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                <span className="font-semibold" style={{ color: 'rgba(251,191,36,0.85)' }}>{viewerCount} pessoas</span> estão vendo isso agora
+              </span>
+              <span className="mx-1 text-white/15">·</span>
+              <span className="text-[12px] font-semibold" style={{ color: 'rgba(251,191,36,0.65)' }}>Oferta por tempo limitado</span>
+            </div>
 
             {/* ── Night 1 Featured Card ───────────────────────────── */}
             <section className="mx-auto max-w-lg px-4 pt-4 sm:px-6">
@@ -459,18 +520,27 @@ export default function MeditacoesSonoPage() {
                   style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(167,139,250,0.07) 100%)', border: '1px solid rgba(167,139,250,0.20)' }}
                 >
                   <div className="pointer-events-none absolute" style={{ top: '-30px', right: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.14) 0%, transparent 70%)' }} />
-                  <p className="text-[13px] leading-relaxed mb-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                    Desbloqueie as 7 noites por
-                  </p>
-                  <p className="font-display text-[26px] font-bold text-white mb-1">R$37</p>
-                  <p className="text-[11px] mb-4" style={{ color: 'rgba(255,255,255,0.32)' }}>Pagamento único · Sem mensalidade · Acesso imediato</p>
+                  <p className="text-[12px] uppercase tracking-widest font-bold mb-2" style={{ color: 'rgba(251,191,36,0.70)' }}>⚡ Oferta especial de lançamento</p>
+                  <div className="flex items-center justify-center gap-3 mb-0.5">
+                    <span className="text-[15px] line-through font-medium" style={{ color: 'rgba(255,255,255,0.28)' }}>R$97</span>
+                    <p className="font-display text-[32px] font-bold text-white leading-none">R$37</p>
+                  </div>
+                  <p className="text-[12px] mb-2" style={{ color: 'rgba(255,255,255,0.35)' }}>Pagamento único · Sem mensalidade</p>
+                  <div className="flex items-center justify-center gap-1.5 mb-4">
+                    <span style={{ color: '#FBBF24', fontSize: '12px' }}>⏱</span>
+                    <span className="text-[12px]" style={{ color: 'rgba(251,191,36,0.70)' }}>
+                      Expira em{' '}
+                      <span className="font-mono font-bold">{formatCountdown(timeLeft)}</span>
+                    </span>
+                  </div>
                   <button
                     onClick={() => setShowOfferModal(true)}
-                    className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-[14px] font-bold text-white transition-all hover:scale-105 active:scale-95"
-                    style={{ background: 'linear-gradient(135deg, #7B5FD4 0%, #5A3DB0 100%)', boxShadow: '0 6px 24px rgba(107,79,187,0.45)' }}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold text-white transition-all hover:scale-105 active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #7B5FD4 0%, #5A3DB0 100%)', boxShadow: '0 6px 24px rgba(107,79,187,0.50)' }}
                   >
-                    Desbloquear protocolo completo
+                    Garantir as 7 noites agora — R$37 →
                   </button>
+                  <p className="mt-2 text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>Acesso imediato · Sem risco</p>
                 </motion.div>
               </motion.div>
             </section>
