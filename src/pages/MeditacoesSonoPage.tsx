@@ -260,15 +260,22 @@ export default function MeditacoesSonoPage() {
             </p>
             {isGuestSono ? (
               <>
+                <div
+                  className="mt-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest"
+                  style={{ background: 'rgba(167,139,250,0.18)', border: '1px solid rgba(167,139,250,0.35)', color: '#C4B5FD', backdropFilter: 'blur(8px)' }}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#C4B5FD] animate-pulse" />
+                  Noite 1 — Gratuita
+                </div>
                 <h1
-                  className="mt-4 font-display text-[2rem] font-bold text-white sm:text-[2.75rem] leading-[1.12]"
+                  className="mt-4 font-display text-[2rem] font-bold text-white sm:text-[2.6rem] leading-[1.1]"
                   style={{ textShadow: '0 2px 20px rgba(0,0,0,0.55), 0 1px 4px rgba(0,0,0,0.35)' }}
                 >
-                  Você chegou à{' '}
-                  <span style={{ color: '#C4B5FD', fontStyle: 'italic' }}>Noite 1.</span>
+                  Esta noite,<br />
+                  <span style={{ color: '#C4B5FD', fontStyle: 'italic' }}>sua mente descansa.</span>
                 </h1>
-                <p className="mt-3 text-sm text-white/60 font-light leading-relaxed sm:text-[0.95rem]" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
-                  Teste agora e sinta sua mente desacelerar.
+                <p className="mt-3 text-sm text-white/55 font-light leading-relaxed sm:text-[0.95rem]" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
+                  7 minutos de áudio guiado para ensinar<br className="hidden sm:block" /> seu sistema nervoso a desligar.
                 </p>
               </>
             ) : (
@@ -306,12 +313,15 @@ export default function MeditacoesSonoPage() {
               disabled={checkoutLoading}
               className="mt-8 flex w-full items-center justify-center gap-2.5 rounded-full py-3.5 text-sm font-bold text-white transition-all duration-300 hover:scale-105 active:scale-95 sm:mt-9 sm:py-4 sm:text-base disabled:opacity-70 disabled:cursor-not-allowed"
               style={
-                !isPaid && completedCount > 0
+                isGuestSono && completedCount === 0
+                  ? { background: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)', boxShadow: '0 8px 32px rgba(124,58,237,0.50), 0 2px 8px rgba(0,0,0,0.25)' }
+                  : !isPaid && completedCount > 0
                   ? { background: 'linear-gradient(135deg, #7B5FD4 0%, #5A3DB0 100%)', boxShadow: '0 8px 28px rgba(107,79,187,0.45)' }
                   : { background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 24px rgba(0,0,0,0.2)' }
               }
             >
               {checkoutLoading ? <Loader2 className="h-4 w-4 animate-spin" />
+                : isGuestSono && completedCount === 0 ? <Play className="h-4 w-4 text-white/80" fill="currentColor" />
                 : isPaid && completedCount < 7 ? <Play className="h-4 w-4 text-[#A78BFA]" fill="currentColor" />
                 : null}
               {checkoutLoading ? 'Abrindo pagamento…' : heroButtonLabel}
@@ -364,7 +374,7 @@ export default function MeditacoesSonoPage() {
         </section>
 
         {/* ── Unlock Banner ────────────────────────────────────── */}
-        {!isPaid && (
+        {!isPaid && !isGuestSono && (
           <section className="mx-auto max-w-4xl px-4 pt-6 pb-2 sm:px-8">
             <motion.div
               className="relative overflow-hidden rounded-3xl"
@@ -400,6 +410,15 @@ export default function MeditacoesSonoPage() {
           </section>
         )}
 
+        {/* ── Guest subtle pricing note (replaces full banner) ─── */}
+        {isGuestSono && !isPaid && (
+          <section className="mx-auto max-w-4xl px-4 pt-4 pb-0 sm:px-8">
+            <p className="text-center text-[12px] text-white/30 tracking-wide">
+              Noite 1 gratuita · As próximas 6 noites por R$37 · Sem mensalidade
+            </p>
+          </section>
+        )}
+
         {/* ── Night Cards ─────────────────────────────────────── */}
         <section className="mx-auto max-w-4xl px-4 py-6 sm:px-8">
           <motion.div
@@ -415,6 +434,7 @@ export default function MeditacoesSonoPage() {
               const paidLocked = !night.isFree && !isPaid;
               const sequentialLocked = !paidLocked && !accessible;
               const comingSoon = accessible && !night.hasAudio;
+              const isGuestFreeNight = isGuestSono && night.night === 1 && !completed;
 
               return (
                 <motion.div
@@ -429,12 +449,19 @@ export default function MeditacoesSonoPage() {
                       : 'cursor-pointer hover:scale-[1.01] active:scale-[0.99]'
                   }`}
                   style={{
-                    background: completed
+                    background: isGuestFreeNight
+                      ? 'rgba(167,139,250,0.08)'
+                      : completed
                       ? 'rgba(167,139,250,0.10)'
                       : 'rgba(255,255,255,0.05)',
-                    border: completed
+                    border: isGuestFreeNight
+                      ? '1px solid rgba(167,139,250,0.38)'
+                      : completed
                       ? '1px solid rgba(167,139,250,0.25)'
                       : '1px solid rgba(255,255,255,0.08)',
+                    boxShadow: isGuestFreeNight
+                      ? '0 0 20px rgba(167,139,250,0.12), 0 4px 16px rgba(0,0,0,0.20)'
+                      : undefined,
                   }}
                 >
                   {/* Thumbnail */}
@@ -483,13 +510,20 @@ export default function MeditacoesSonoPage() {
                   {/* Right: duration + action */}
                   <div className="flex-shrink-0 flex flex-col items-end gap-2">
                     <span className="text-[11px] text-white/35 font-medium">{night.duration}</span>
-                    {paidLocked ? (
+                    {isGuestFreeNight ? (
                       <span
-                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold text-white"
-                        style={{ background: 'rgba(167,139,250,0.20)', border: '1px solid rgba(167,139,250,0.35)' }}
+                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                        style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.28), rgba(124,58,237,0.20))', border: '1px solid rgba(167,139,250,0.50)', color: '#C4B5FD' }}
                       >
-                        {checkoutLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Lock size={10} />}
-                        {checkoutLoading ? '…' : 'R$ 37'}
+                        Grátis
+                      </span>
+                    ) : paidLocked ? (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-white/40"
+                        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
+                      >
+                        <Lock size={9} className="opacity-60" />
+                        R$37
                       </span>
                     ) : comingSoon ? (
                       <span className="text-[11px] font-medium text-white/30 bg-white/08 px-2 py-1 rounded-full">Em breve</span>
