@@ -21,9 +21,9 @@ const fmt = (ms: number) => {
 const NIGHTS_2_7 = PROTOCOL_NIGHTS.slice(1);
 
 const VALIDATION: Record<ReflectionAnswer, { lead: string; body: string }> = {
-  yes:    { lead: 'Perfeito.',        body: 'Isso significa que seu corpo já respondeu.' },
-  little: { lead: 'Isso já é o começo.', body: 'Seu corpo ainda está aprendendo.' },
-  no:     { lead: 'Normal.',          body: 'Na primeira noite, o corpo ainda está saindo do padrão antigo.' },
+  yes:    { lead: 'Perfeito.',             body: 'Isso significa que seu corpo já respondeu.' },
+  little: { lead: 'Isso já é o começo.',   body: 'Seu corpo ainda está aprendendo.' },
+  no:     { lead: 'Normal.',               body: 'Na primeira noite, o corpo ainda está saindo do padrão antigo.' },
 };
 
 const stepVariants = {
