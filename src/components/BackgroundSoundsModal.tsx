@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Volume2, Lock } from 'lucide-react';
-import { getAllSounds, type Sound } from '@/data/sounds';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Volume2, VolumeX, Check } from 'lucide-react';
+import { SOUND_CATEGORIES, type Sound } from '@/data/sounds';
 
 interface BackgroundSoundsModalProps {
   isOpen: boolean;
@@ -16,229 +18,249 @@ export default function BackgroundSoundsModal({
   onClose,
   selectedSoundId,
   onSelectSound,
-  backgroundVolume = 13, // Volume mais suave para som de fundo (13%)
+  backgroundVolume = 70,
   onVolumeChange,
 }: BackgroundSoundsModalProps) {
   const [volume, setVolume] = useState(backgroundVolume);
-  const allSounds = getAllSounds();
 
-  // Sincronizar volume local com prop quando mudar
-  useEffect(() => {
-    setVolume(backgroundVolume);
-  }, [backgroundVolume]);
-
-  // Estilo customizado para scrollbar
-  const scrollbarStyles = `
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 8px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #F3F4F6;
-      border-radius: 10px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #9CA3AF;
-      border-radius: 10px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #6B7280;
-    }
-  `;
+  useEffect(() => { setVolume(backgroundVolume); }, [backgroundVolume]);
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseFloat(e.target.value);
-    setVolume(newVolume);
-    onVolumeChange?.(newVolume);
+    const v = parseFloat(e.target.value);
+    setVolume(v);
+    onVolumeChange?.(v);
   };
 
-  const handleSoundClick = (sound: Sound) => {
-    onSelectSound(sound);
-  };
-  
-  if (!isOpen) return null;
+  // Featured sound = first of meditacao category
+  const featuredCategory = SOUND_CATEGORIES.find(c => c.id === 'meditacao');
+  const featuredSound = featuredCategory?.sounds[0] ?? null;
+  const isFeaturedSelected = selectedSoundId === featuredSound?.id;
 
-  return (
-    <>
-      {/* Inject scrollbar styles */}
-      <style>{scrollbarStyles}</style>
-
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-fluid-xs md:p-fluid-md"
-        style={{
-          overscrollBehaviorX: 'none',
-          touchAction: 'pan-y'
-        }}
-      >
-        {/* Backdrop */}
-        <div
-          className="absolute inset-0 bg-black/50"
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="bg-sounds-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22 }}
+          className="fixed inset-0 z-[9000] flex items-end sm:items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(12px)' }}
           onClick={onClose}
-        />
-
-        {/* Modal Content - Responsive */}
-        <div className="relative flex w-full max-w-content-wide max-h-[90vh] bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden">
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="absolute right-fluid-sm top-fluid-sm z-10 flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-gray-200 touch-manipulation active:scale-95"
-            aria-label="Fechar"
-          >
-            <X size={18} className="text-gray-700" />
-          </button>
-
-          {/* Scrollable Content */}
-          <div className="custom-scrollbar flex-1 overflow-y-auto px-fluid-md py-fluid-md md:px-fluid-lg md:py-fluid-lg overscroll-contain scroll-smooth"
+        >
+          <motion.div
+            key="bg-sounds-panel"
+            initial={{ opacity: 0, y: 40, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.97 }}
+            transition={{ duration: 0.30, ease: [0.4, 0, 0.2, 1] }}
+            className="relative w-full max-w-sm overflow-hidden rounded-3xl"
             style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#9CA3AF #E5E7EB'
+              background: 'linear-gradient(160deg, #0A0D1F 0%, #06091A 60%, #0D1530 100%)',
+              border: '1px solid rgba(167,139,250,0.18)',
+              boxShadow: '0 24px 80px rgba(0,0,0,0.70), 0 8px 40px rgba(124,58,237,0.14)',
+              maxHeight: '88vh',
             }}
+            onClick={e => e.stopPropagation()}
           >
-          {/* Header */}
-          <div className="mb-fluid-md pr-10 md:pr-0">
-            {/* Title Section */}
-            <div className="mb-fluid-sm">
-              <h1 className="mb-fluid-2xs text-fluid-xl font-semibold text-gray-900">
-                Sons de fundo
-              </h1>
-              <p className="text-fluid-sm text-gray-500">
-                Fazemos sugestões personalizadas para você
-              </p>
+            {/* Top purple glow */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-40"
+              style={{ background: 'linear-gradient(to bottom, rgba(124,58,237,0.12) 0%, transparent 100%)' }} />
+
+            {/* Header */}
+            <div className="relative z-10 flex items-center justify-between px-6 pt-6 pb-4">
+              <div>
+                <h2 className="text-[16px] font-bold text-white">Sons de fundo</h2>
+                <p className="text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,0.38)' }}>
+                  Toca junto com a meditação
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="flex h-8 w-8 items-center justify-center rounded-full transition-colors"
+                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.10)' }}
+              >
+                <X className="h-3.5 w-3.5" style={{ color: 'rgba(255,255,255,0.50)' }} />
+              </button>
             </div>
 
-            {/* Volume Control - Minimalista */}
-            <div className="flex w-full items-center gap-fluid-xs rounded-full bg-gray-50 px-fluid-sm py-fluid-xs md:w-auto">
-              <Volume2 size={14} className="text-gray-600 flex-shrink-0" />
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={volume}
-                onChange={handleVolumeChange}
-                className="flex-1 cursor-pointer bg-sounds-volume"
-                style={{
-                  background: `linear-gradient(to right, #9CA3AF 0%, #9CA3AF ${volume}%, #E5E7EB ${volume}%, #E5E7EB 100%)`,
-                  borderRadius: '999px',
-                  height: '4px',
-                  WebkitAppearance: 'none',
-                  appearance: 'none',
-                  touchAction: 'none',
-                }}
-              />
-              <span className="min-w-[2.5rem] text-right text-fluid-sm font-semibold text-gray-700">
-                {Math.round(volume)}%
-              </span>
-            </div>
-          </div>
+            {/* Scrollable body */}
+            <div className="relative z-10 overflow-y-auto px-6 pb-6" style={{ maxHeight: 'calc(88vh - 130px)' }}>
 
-          {/* Sounds Grid - Fully Responsive */}
-          <div className="pb-fluid-sm">
-            <div className="grid grid-cols-2 w390:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-fluid-xs md:gap-fluid-sm">
-              {allSounds.map((sound) => {
-                const isSelected = selectedSoundId === sound.id;
-                const imageStyle = sound.image.startsWith('url(')
-                  ? {
-                      backgroundImage: sound.image,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                    }
-                  : {
-                      background: sound.image,
-                    };
+              {/* Volume row */}
+              <div
+                className="flex items-center gap-3 rounded-2xl px-4 py-3 mb-5"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <button
+                  onClick={() => { const v = volume > 0 ? 0 : 35; setVolume(v); onVolumeChange?.(v); }}
+                  className="flex-shrink-0 transition-opacity hover:opacity-70"
+                >
+                  {volume === 0
+                    ? <VolumeX className="h-4 w-4" style={{ color: 'rgba(255,255,255,0.35)' }} />
+                    : <Volume2 className="h-4 w-4" style={{ color: '#C4B5FD' }} />
+                  }
+                </button>
+                <div className="relative flex-1 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.12)' }}>
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full"
+                    style={{ width: `${volume}%`, background: 'linear-gradient(to right, #A78BFA, #7C3AED)' }}
+                  />
+                  <input
+                    type="range" min="0" max="100" value={volume}
+                    onChange={handleVolumeChange}
+                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
+                    style={{ height: '100%' }}
+                  />
+                </div>
+                <span className="flex-shrink-0 text-[12px] font-mono font-semibold w-8 text-right"
+                  style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  {Math.round(volume)}%
+                </span>
+              </div>
 
-                return (
+              {/* Featured sound */}
+              {featuredSound && (
+                <div className="mb-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] mb-2.5"
+                    style={{ color: 'rgba(196,181,253,0.55)' }}>
+                    Principal
+                  </p>
                   <button
-                    key={sound.id}
-                    onClick={sound.isPremium ? undefined : () => handleSoundClick(sound)}
-                    disabled={sound.isPremium}
-                    className={`
-                      relative aspect-square rounded-2xl md:rounded-[22px] overflow-hidden
-                      transition-all duration-300 touch-manipulation
-                      ${sound.isPremium ? 'cursor-not-allowed' : 'active:scale-95 sm:hover:scale-105 cursor-pointer'}
-                      ${isSelected ? 'ring-2 md:ring-3 ring-[#6EC8FF] shadow-lg' : 'shadow-sm md:hover:shadow-md'}
-                    `}
+                    onClick={() => onSelectSound(featuredSound)}
+                    className="relative w-full overflow-hidden rounded-2xl transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
                     style={{
-                      ...imageStyle,
-                      opacity: 1,
-                      filter: 'none',
+                      height: '90px',
+                      border: isFeaturedSelected
+                        ? '1.5px solid rgba(196,181,253,0.60)'
+                        : '1px solid rgba(255,255,255,0.08)',
+                      boxShadow: isFeaturedSelected ? '0 0 20px rgba(124,58,237,0.30)' : 'none',
                     }}
                   >
-                    {/* Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                    {/* Background image */}
+                    <img
+                      src="/images/sounds/meditacao-profunda.png"
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{ filter: isFeaturedSelected ? 'brightness(0.65)' : 'brightness(0.45) saturate(0.8)' }}
+                    />
+                    <div className="absolute inset-0"
+                      style={{ background: 'linear-gradient(to right, rgba(6,9,26,0.85) 0%, rgba(6,9,26,0.30) 100%)' }} />
 
-                    {/* Sound Title */}
-                    <div className="absolute inset-0 flex items-end justify-center p-fluid-xs">
-                      <h3 className="text-fluid-xs text-center font-medium leading-tight text-white">
-                        {sound.title}
-                      </h3>
-                    </div>
-
-                    {/* Lock Icon for Premium */}
-                    {sound.isPremium && (
-                      <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center">
-                        <Lock size={12} className="text-white" />
+                    <div className="absolute inset-0 flex items-center px-4 gap-3">
+                      {/* Play indicator */}
+                      <div
+                        className="flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-full"
+                        style={{
+                          background: isFeaturedSelected
+                            ? 'linear-gradient(135deg, #A78BFA 0%, #6D42C9 100%)'
+                            : 'rgba(255,255,255,0.12)',
+                          border: isFeaturedSelected ? 'none' : '1px solid rgba(255,255,255,0.16)',
+                          boxShadow: isFeaturedSelected ? '0 4px 16px rgba(124,58,237,0.50)' : 'none',
+                        }}
+                      >
+                        {isFeaturedSelected
+                          ? <Check className="h-4 w-4 text-white" />
+                          : <div className="flex gap-0.5 items-end h-4">
+                              {[3, 5, 4, 6, 3].map((h, i) => (
+                                <div key={i} className="w-0.5 rounded-full" style={{ height: `${h * 3}px`, background: 'rgba(255,255,255,0.50)' }} />
+                              ))}
+                            </div>
+                        }
                       </div>
-                    )}
 
-                    {/* Selected Indicator */}
-                    {isSelected && !sound.isPremium && (
-                      <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-4 h-4 sm:w-5 sm:h-5 bg-[#6EC8FF] rounded-full flex items-center justify-center">
-                        <svg
-                          width="10"
-                          height="8"
-                          viewBox="0 0 14 10"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="sm:w-3 sm:h-2.5"
+                      <div className="flex-1 text-left">
+                        <p className="text-[15px] font-bold text-white leading-tight">{featuredSound.title}</p>
+                        <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                          {featuredSound.duration} · {featuredSound.category === 'meditacao' ? 'Meditação' : featuredSound.category}
+                        </p>
+                      </div>
+
+                      {isFeaturedSelected && (
+                        <div
+                          className="flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
+                          style={{ background: 'rgba(167,139,250,0.20)', border: '1px solid rgba(167,139,250,0.35)', color: '#C4B5FD' }}
                         >
-                          <path
-                            d="M1 5L5 9L13 1"
-                            stroke="white"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </div>
-                    )}
+                          Ativo
+                        </div>
+                      )}
+                    </div>
                   </button>
+                </div>
+              )}
+
+              {/* Categories */}
+              {SOUND_CATEGORIES.map(category => {
+                // Skip meditacao category first sound (already shown as featured)
+                const sounds = category.id === 'meditacao' ? category.sounds.slice(1) : category.sounds;
+                if (sounds.length === 0) return null;
+
+                return (
+                  <div key={category.id} className="mb-5">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] mb-2.5"
+                      style={{ color: 'rgba(255,255,255,0.30)' }}>
+                      {category.emoji} {category.title}
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {sounds.map(sound => {
+                        const isSelected = selectedSoundId === sound.id;
+                        const isImageUrl = sound.image.startsWith('url(');
+                        const imgSrc = isImageUrl
+                          ? sound.image.replace(/^url\(["']?/, '').replace(/["']?\)$/, '')
+                          : null;
+
+                        return (
+                          <button
+                            key={sound.id}
+                            onClick={() => onSelectSound(sound)}
+                            className="relative overflow-hidden rounded-xl transition-all duration-200 active:scale-[0.95] hover:scale-[1.02]"
+                            style={{
+                              height: '72px',
+                              border: isSelected
+                                ? '1.5px solid rgba(196,181,253,0.55)'
+                                : '1px solid rgba(255,255,255,0.08)',
+                              boxShadow: isSelected ? '0 0 14px rgba(124,58,237,0.28)' : 'none',
+                            }}
+                          >
+                            {/* Background */}
+                            {imgSrc ? (
+                              <img src={imgSrc} alt="" className="absolute inset-0 w-full h-full object-cover"
+                                style={{ filter: isSelected ? 'brightness(0.55)' : 'brightness(0.35) saturate(0.7)' }} />
+                            ) : (
+                              <div className="absolute inset-0" style={{ background: sound.image }} />
+                            )}
+                            <div className="absolute inset-0"
+                              style={{ background: 'linear-gradient(to bottom, transparent 20%, rgba(4,6,15,0.80) 100%)' }} />
+
+                            {/* Selected check */}
+                            {isSelected && (
+                              <div className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full"
+                                style={{ background: 'linear-gradient(135deg, #A78BFA, #6D42C9)' }}>
+                                <Check className="h-2.5 w-2.5 text-white" />
+                              </div>
+                            )}
+
+                            {/* Title */}
+                            <div className="absolute inset-x-0 bottom-0 px-2 pb-2">
+                              <p className="text-[10px] font-medium text-white leading-tight text-center"
+                                style={{ textShadow: '0 1px 4px rgba(0,0,0,0.80)' }}>
+                                {sound.title}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 );
               })}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    {/* Estilos para thumb do slider de volume */}
-    <style>{`
-      .bg-sounds-volume::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #6B7280;
-        cursor: pointer;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
-        transition: background 0.15s;
-      }
-      .bg-sounds-volume::-webkit-slider-thumb:active {
-        background: #4B5563;
-        transform: scale(1.15);
-      }
-      .bg-sounds-volume::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #6B7280;
-        cursor: pointer;
-        border: none;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
-      }
-      .bg-sounds-volume::-moz-range-thumb:active {
-        background: #4B5563;
-      }
-    `}</style>
-    </>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body
   );
 }

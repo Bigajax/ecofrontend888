@@ -134,9 +134,9 @@ export default function MeditationPlayerPage() {
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
   const [selectedBackgroundSound, setSelectedBackgroundSound] = useState<Sound | null>(() => {
     const allSounds = getAllSounds();
-    return allSounds.find(sound => sound.id === 'freq_1') || null;
+    return allSounds.find(sound => sound.id === 'med_profunda') || null;
   });
-  const [backgroundVolume, setBackgroundVolume] = useState(35); // Volume padrão para som de fundo (35% — mais suave no início)
+  const [backgroundVolume, setBackgroundVolume] = useState(70);
   const backgroundAudioRef = useRef<HTMLAudioElement>(null);
 
   // Estado para volume da meditação
@@ -237,17 +237,26 @@ export default function MeditationPlayerPage() {
 
   // Sincronizar som de fundo com o estado de reprodução
   useEffect(() => {
-    if (backgroundAudioRef.current && selectedBackgroundSound?.audioUrl) {
-      // Só tocar se a meditação estiver tocando
+    const el = backgroundAudioRef.current;
+    if (!el) return;
+    if (selectedBackgroundSound?.audioUrl) {
       if (isPlaying) {
-        backgroundAudioRef.current.play().catch(err => {
-          console.error('Erro ao reproduzir som de fundo:', err);
-        });
+        el.play().catch(() => {/* autoplay bloqueado — usuário precisa interagir */});
       } else {
-        backgroundAudioRef.current.pause();
+        el.pause();
       }
+    } else {
+      el.pause();
     }
   }, [selectedBackgroundSound, isPlaying]);
+
+  // Recarregar áudio de fundo quando o som selecionado muda (src nova)
+  useEffect(() => {
+    const el = backgroundAudioRef.current;
+    if (el && selectedBackgroundSound?.audioUrl) {
+      el.load();
+    }
+  }, [selectedBackgroundSound?.id]);
 
   // Controlar volume do áudio de fundo via GainNode (funciona no iOS) ou audio.volume como fallback
   useEffect(() => {

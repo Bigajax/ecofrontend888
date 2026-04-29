@@ -37,6 +37,7 @@ export const SOUND_CATEGORIES: SoundCategory[] = [
     title: 'Meditação & Presença',
     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     sounds: [
+      { id: 'med_profunda', title: 'Meditação Profunda', duration: '60 min', image: 'url(/images/sounds/meditacao-profunda.png)', category: 'meditacao', isPremium: false, badge: 'PRINCIPAL', audioUrl: '/sounds/meditacao-profunda.mp3' },
       { id: 'med_1', title: 'Taças tibetanas', duration: '45 min', image: 'url(/images/sounds/tibetan-bowl.webp)', category: 'meditacao', isPremium: false, badge: 'MÚSICA', audioUrl: '/sounds/tibetan-bowl-26240.mp3' },
       { id: 'med_2', title: 'Flauta nativa', duration: '40 min', image: 'url(/images/sounds/flauta-nativa.webp)', category: 'meditacao', isPremium: false, badge: 'MÚSICA', audioUrl: '/sounds/flute-recorder-18816.mp3' },
       { id: 'med_3', title: 'Mantras', duration: '60 min', image: 'url(/images/sounds/mantras.webp)', category: 'meditacao', isPremium: false, badge: 'MÚSICA', audioUrl: '/sounds/aum_02_528hz-22432.mp3' },
