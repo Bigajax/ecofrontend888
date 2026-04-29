@@ -7,7 +7,8 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { SonoGuestPostFlow } from '@/components/sono/SonoGuestPostFlow';
 import { ChevronLeft, Moon, Play, Lock, BookOpen, Loader2 } from 'lucide-react';
 import { getTodayMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
 import { useMeditationStreak } from '@/hooks/useMeditationStreak';
@@ -103,29 +104,8 @@ export default function MeditationCompletion({
   // Sono guest locked = maximum conversion moment
   const isSonoGuestLocked = isSonoGuestMode && nextNight?.isLocked === true;
 
-  // Countdown for sono guest offer
-  const [timeLeft, setTimeLeft] = useState<number>(() => {
-    if (!isSonoGuestLocked) return 0;
-    const stored = sessionStorage.getItem('eco.sono.offer_expires');
-    if (stored) return Math.max(0, parseInt(stored) - Date.now());
-    const expires = Date.now() + 15 * 60 * 1000;
-    sessionStorage.setItem('eco.sono.offer_expires', String(expires));
-    return 15 * 60 * 1000;
-  });
-
-  useEffect(() => {
-    if (!isSonoGuestLocked) return;
-    const id = setInterval(() => {
-      const stored = sessionStorage.getItem('eco.sono.offer_expires');
-      setTimeLeft(stored ? Math.max(0, parseInt(stored) - Date.now()) : 0);
-    }, 1000);
-    return () => clearInterval(id);
-  }, [isSonoGuestLocked]);
-
-  const formatCountdown = (ms: number) => {
-    const s = Math.floor(ms / 1000);
-    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-  };
+  // Post-flow overlay for sono guest (6-step sequence)
+  const [showPostFlow, setShowPostFlow] = useState(false);
 
   const relatedMeditations = useMemo(() => {
     const pool = RELATED_BY_CATEGORY[meditationCategory] ?? RELATED_BY_CATEGORY.default;
@@ -245,145 +225,49 @@ export default function MeditationCompletion({
           animate="visible"
         >
 
-          {/* ── "Muito bem!" heading ── */}
-          <motion.div variants={itemVariants} className="flex justify-center">
-            <h1
-              className="font-display font-bold text-white"
-              style={{
-                fontSize: isSonoGuestLocked ? '2.2rem' : '2.8rem',
-                textShadow: '0 0 40px rgba(148,136,196,0.50)',
-              }}
-            >
-              Muito bem!
-            </h1>
-          </motion.div>
+          {/* ── "Muito bem!" heading (standard flow only) ── */}
+          {!isSonoGuestLocked && (
+            <motion.div variants={itemVariants} className="flex justify-center">
+              <h1
+                className="font-display font-bold text-white"
+                style={{ fontSize: '2.8rem', textShadow: '0 0 40px rgba(148,136,196,0.50)' }}
+              >
+                Muito bem!
+              </h1>
+            </motion.div>
+          )}
 
           {/* ══════════════════════════════════════════════════════
-              SONO GUEST LOCKED — Hero Conversion Block
+              SONO GUEST LOCKED — Celebração + trigger do post-flow
               ══════════════════════════════════════════════════════ */}
           {isSonoGuestLocked && (
-            <motion.div variants={itemVariants}>
+            <motion.div variants={itemVariants} className="flex flex-col items-center text-center py-6">
+              {/* Badge */}
               <div
-                className="relative overflow-hidden rounded-3xl"
-                style={{
-                  background: 'linear-gradient(160deg, rgba(124,58,237,0.20) 0%, rgba(6,9,26,0.97) 65%)',
-                  border: '1px solid rgba(167,139,250,0.28)',
-                  boxShadow: '0 0 0 1px rgba(167,139,250,0.06), 0 24px 80px rgba(124,58,237,0.32)',
-                }}
+                className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 mb-8 text-[10px] font-bold uppercase tracking-[0.18em]"
+                style={{ background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.28)', color: '#C4B5FD' }}
               >
-                {/* Ambient glows */}
-                <div className="pointer-events-none absolute" style={{ top: '-50px', right: '-30px', width: '220px', height: '220px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(196,181,253,0.14) 0%, transparent 65%)' }} />
-                <div className="pointer-events-none absolute" style={{ bottom: '-30px', left: '-20px', width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)' }} />
-
-                <div className="relative z-10 px-6 pt-7 pb-8">
-                  {/* Badge */}
-                  <div
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 mb-5 text-[10px] font-bold uppercase tracking-[0.18em]"
-                    style={{ background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.28)', color: '#C4B5FD' }}
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: '#A78BFA', boxShadow: '0 0 4px rgba(167,139,250,0.9)' }} />
-                    Noite 1 concluída · Protocolo Sono
-                  </div>
-
-                  {/* Headline */}
-                  <h2 className="font-display text-[23px] font-bold text-white leading-[1.18] mb-3">
-                    Sua mente recebeu o primeiro sinal.<br />
-                    <em style={{ color: '#C4B5FD', fontStyle: 'italic' }}>As próximas 6 noites aprofundam.</em>
-                  </h2>
-
-                  <p className="text-[13px] leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.48)' }}>
-                    Cada noite resolve uma camada diferente do que te mantém acordado. No 7.º dia, seu corpo já sabe o que fazer — sem precisar do áudio.
-                  </p>
-
-                  {/* 7 nights progress */}
-                  <div className="flex items-start gap-1.5 mb-6">
-                    {/* Night 1 – completed */}
-                    <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                      <div
-                        className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                        style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #7C3AED 100%)', boxShadow: '0 0 18px rgba(124,58,237,0.60)' }}
-                      >
-                        ✓
-                      </div>
-                      <span className="text-[8px] font-bold" style={{ color: 'rgba(196,181,253,0.65)' }}>Noite 1</span>
-                    </div>
-                    {/* Connector */}
-                    <div className="flex-1 mt-[18px] h-px" style={{ background: 'linear-gradient(to right, rgba(167,139,250,0.35), rgba(255,255,255,0.06))' }} />
-                    {/* Nights 2–7 locked */}
-                    {([2, 3, 4, 5, 6, 7] as const).map((n, idx) => (
-                      <div key={n} className="flex flex-col items-center gap-1 flex-shrink-0" style={{ opacity: Math.max(0.35, 0.90 - idx * 0.08) }}>
-                        <div
-                          className="h-9 w-9 rounded-full flex items-center justify-center"
-                          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
-                        >
-                          <Lock className="h-3.5 w-3.5 text-white/30" />
-                        </div>
-                        <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.22)' }}>N.{n}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Price */}
-                  <div className="flex items-baseline gap-3 mb-2">
-                    <span className="text-[15px] line-through" style={{ color: 'rgba(255,255,255,0.25)' }}>R$97</span>
-                    <span className="font-display text-[38px] font-bold leading-none text-white">R$37</span>
-                    <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.38)' }}>pagamento único</span>
-                  </div>
-
-                  {/* Countdown */}
-                  {timeLeft > 0 && (
-                    <div className="flex items-center gap-2 mb-4">
-                      <span style={{ color: '#FBBF24', fontSize: '13px' }}>⏱</span>
-                      <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.52)' }}>
-                        Oferta expira em{' '}
-                        <span className="font-mono font-bold" style={{ color: '#FCD34D' }}>{formatCountdown(timeLeft)}</span>
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Social proof */}
-                  <div className="flex items-center gap-2 mb-5">
-                    <span style={{ color: '#FBBF24', fontSize: '11px', letterSpacing: '1px' }}>★★★★★</span>
-                    <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.40)' }}>12.400+ pessoas dormem melhor</span>
-                  </div>
-
-                  {/* CTA principal */}
-                  <button
-                    onClick={handleCtaClick}
-                    disabled={sonoCheckoutLoading}
-                    className="w-full rounded-full py-[1.05rem] text-[15px] font-bold text-white mb-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
-                    style={{
-                      background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
-                      boxShadow: '0 10px 40px rgba(124,58,237,0.65)',
-                    }}
-                  >
-                    {sonoCheckoutLoading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Abrindo pagamento…
-                      </span>
-                    ) : (
-                      'Garantir as 7 noites — R$37 →'
-                    )}
-                  </button>
-
-                  {/* Micro-copy */}
-                  <p className="text-center text-[11px] mb-6" style={{ color: 'rgba(255,255,255,0.28)' }}>
-                    Acesso imediato · Sem assinatura mensal · Sem risco
-                  </p>
-
-                  {/* Separator */}
-                  <div className="h-px mb-5" style={{ background: 'linear-gradient(to right, transparent, rgba(167,139,250,0.20), transparent)' }} />
-
-                  {/* Testimonial */}
-                  <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <p className="text-[13px] leading-relaxed italic" style={{ color: 'rgba(255,255,255,0.58)' }}>
-                      "Finalmente consigo dormir antes da meia-noite. Minha cabeça para de girar assim que o áudio começa. Na semana 2 já não precisava mais."
-                    </p>
-                    <p className="mt-2 text-[10px]" style={{ color: 'rgba(255,255,255,0.28)' }}>— Ana P., São Paulo · verificado</p>
-                  </div>
-                </div>
+                <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: '#A78BFA', boxShadow: '0 0 4px rgba(167,139,250,0.7)' }} />
+                Noite 1 · Protocolo Sono
               </div>
+
+              <h1
+                className="font-display text-[3rem] font-bold text-white mb-3 leading-none"
+                style={{ textShadow: '0 0 40px rgba(167,139,250,0.40)' }}
+              >
+                Muito bem.
+              </h1>
+              <p className="text-[16px] mb-12" style={{ color: 'rgba(255,255,255,0.40)' }}>
+                Você chegou até o fim.
+              </p>
+
+              <button
+                onClick={() => setShowPostFlow(true)}
+                className="w-full max-w-xs rounded-full py-4 text-[15px] font-bold text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.97]"
+                style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #6D42C9 100%)', boxShadow: '0 10px 36px rgba(107,79,187,0.50)' }}
+              >
+                O que isso significa →
+              </button>
             </motion.div>
           )}
 
@@ -533,6 +417,17 @@ export default function MeditationCompletion({
 
         </motion.div>
       </div>
+
+      {/* ── Sono Guest Post-Flow (6-step conversion sequence) ── */}
+      <AnimatePresence>
+        {showPostFlow && isSonoGuestLocked && onCheckout && (
+          <SonoGuestPostFlow
+            onCheckout={onCheckout}
+            checkoutLoading={sonoCheckoutLoading}
+            onDismiss={onDismiss}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

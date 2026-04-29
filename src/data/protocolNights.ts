@@ -27,8 +27,8 @@ export const PROTOCOL_NIGHTS: ProtocolNight[] = [
   {
     id: 'night_2',
     night: 2,
-    title: 'Respiração que Induz o Sono',
-    description: 'Uma técnica que desacelera seu sistema nervoso em minutos.',
+    title: 'Soltando o Controle da Mente',
+    description: 'Quando a mente solta, o corpo segue.',
     duration: '5 min',
     audioUrl: '/audio/respiracao-induz-sono.mp3',
     imageUrl: '/images/respiracao-induz-sono.webp',
@@ -39,8 +39,8 @@ export const PROTOCOL_NIGHTS: ProtocolNight[] = [
   {
     id: 'night_3',
     night: 3,
-    title: 'Esvaziando Pensamentos Repetitivos',
-    description: 'Para quando a mesma coisa fica passando na sua cabeça às 2h da manhã.',
+    title: 'Desligamento Profundo do Corpo',
+    description: 'Cada músculo, cada articulação, cada tensão escondida.',
     duration: '5 min',
     audioUrl: '/audio/esvaziando-pensamentos.mp3',
     imageUrl: '/images/esvaziando-pensamentos.webp',
@@ -51,8 +51,8 @@ export const PROTOCOL_NIGHTS: ProtocolNight[] = [
   {
     id: 'night_4',
     night: 4,
-    title: 'Liberando Preocupações do Dia',
-    description: 'O amanhã pode esperar. Esta noite, você descansa.',
+    title: 'Quebrando o Ciclo de Pensamentos',
+    description: 'O laço que te mantém acordado, finalmente soltando.',
     duration: '5 min',
     audioUrl: '/audio/liberando-preocupacoes.mp3',
     imageUrl: '/images/liberando-preocupacoes.webp',
@@ -63,8 +63,8 @@ export const PROTOCOL_NIGHTS: ProtocolNight[] = [
   {
     id: 'night_5',
     night: 5,
-    title: 'Silêncio Interno Guiado',
-    description: 'Quando o silêncio de fora ainda não é suficiente para calar o de dentro.',
+    title: 'Entrando em Segurança Profunda',
+    description: 'O sistema nervoso aprende que pode baixar a guarda.',
     duration: '4 min',
     audioUrl: '/audio/silencio-interno-guiado.mp3',
     imageUrl: '/images/silencio-interno-guiado.webp',
@@ -75,8 +75,8 @@ export const PROTOCOL_NIGHTS: ProtocolNight[] = [
   {
     id: 'night_6',
     night: 6,
-    title: 'Indução ao Sono Profundo',
-    description: 'A noite mais profunda da jornada. Prepare-se para despertar diferente.',
+    title: 'Quando o Sono Começa Sozinho',
+    description: 'Você não precisa fazer nada. Ele simplesmente chega.',
     duration: '4 min',
     audioUrl: '/audio/inducao-sono-profundo.mp3',
     imageUrl: '/images/inducao-sono-profundo.png',
@@ -87,7 +87,7 @@ export const PROTOCOL_NIGHTS: ProtocolNight[] = [
   {
     id: 'night_7',
     night: 7,
-    title: 'Consolidação do Novo Padrão de Sono',
+    title: 'Seu Corpo Já Sabe Dormir',
     description: 'Você chegou até aqui. Agora isso vira parte de quem você é.',
     duration: '4 min',
     audioUrl: '/audio/consolidacao-padrao-sono.mp3',
