@@ -16,6 +16,7 @@ import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestC
 import MeditationGuestGate from '@/components/meditation/MeditationGuestGate';
 import { useMediaSession } from '@/hooks/useMediaSession';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
+import MeditationAmbientScreen from '@/components/meditation/MeditationAmbientScreen';
 
 interface MeditationData {
   id?: string;
@@ -171,6 +172,34 @@ export default function MeditationPlayerPage() {
   const lastSavedTimeRef = useRef(0);
   const [savedProgress, setSavedProgress] = useState<number | null>(null);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
+
+  // Ambient screen (anti-abandonment) — aparece após 3 min de play sem interação
+  const AMBIENT_INACTIVITY_MS = 15 * 1000;
+  const [showAmbient, setShowAmbient] = useState(false);
+  const ambientTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetAmbientTimer = () => {
+    if (ambientTimerRef.current) clearTimeout(ambientTimerRef.current);
+    setShowAmbient(false);
+    ambientTimerRef.current = setTimeout(() => setShowAmbient(true), AMBIENT_INACTIVITY_MS);
+  };
+
+  const clearAmbientTimer = () => {
+    if (ambientTimerRef.current) clearTimeout(ambientTimerRef.current);
+    ambientTimerRef.current = null;
+  };
+
+  // Inicia/reinicia o timer quando play começa; cancela quando pausa ou conclui
+  useEffect(() => {
+    if (isPlaying && !showCompletionScreen) {
+      resetAmbientTimer();
+    } else {
+      clearAmbientTimer();
+      setShowAmbient(false);
+    }
+    return () => clearAmbientTimer();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, showCompletionScreen]);
 
   // Scroll para o topo quando a página carregar
   useEffect(() => {
@@ -919,6 +948,9 @@ export default function MeditationPlayerPage() {
     <div
       className="relative font-primary overflow-x-hidden"
       style={{ minHeight: '100dvh', touchAction: 'pan-y' }}
+      onTouchStart={resetAmbientTimer}
+      onMouseMove={resetAmbientTimer}
+      onClick={resetAmbientTimer}
     >
       {/* ── Background ── */}
       <div
@@ -1547,6 +1579,15 @@ export default function MeditationPlayerPage() {
           </div>
         </div>
       )}
+
+      {/* Ambient Screen (anti-abandonment) */}
+      <MeditationAmbientScreen
+        visible={showAmbient && !showCompletionScreen}
+        elapsedSeconds={Math.floor(currentTime)}
+        meditationTitle={meditationData.title}
+        category={category}
+        onDismiss={resetAmbientTimer}
+      />
 
       {/* Meditation Completion Screen */}
       {showCompletionScreen && isAbundancia && (
