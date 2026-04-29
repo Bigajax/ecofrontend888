@@ -260,13 +260,11 @@ export default function MeditationPlayerPage() {
 
   // Controlar volume do áudio de fundo via GainNode (funciona no iOS) ou audio.volume como fallback
   useEffect(() => {
-    const softVolume = (backgroundVolume / 100) * 0.08;
+    const softVolume = (backgroundVolume / 100) * 1.2;
     if (bgGainRef.current) {
-      // GainNode funciona no iOS Safari (ao contrário de audio.volume que é read-only no iOS)
       bgGainRef.current.gain.value = softVolume;
     } else if (backgroundAudioRef.current) {
-      // Fallback para browsers sem Web Audio API
-      backgroundAudioRef.current.volume = softVolume;
+      backgroundAudioRef.current.volume = Math.min(1, softVolume);
     }
 
     // Track background volume change (with debounce handled by analytics hook)
@@ -335,7 +333,7 @@ export default function MeditationPlayerPage() {
         try {
           const bgSrc = ctx.createMediaElementSource(bgEl);
           const bgGain = ctx.createGain();
-          bgGain.gain.value = (backgroundVolume / 100) * 0.08;
+          bgGain.gain.value = (backgroundVolume / 100) * 1.2;
           bgSrc.connect(bgGain).connect(ctx.destination);
           bgGainRef.current = bgGain;
         } catch {
@@ -855,11 +853,11 @@ export default function MeditationPlayerPage() {
     const rounded = Math.round(percentage);
     setBackgroundVolume(rounded);
     // Sync imediato: GainNode (iOS compatível) ou audio.volume como fallback
-    const softVol = (rounded / 100) * 0.08;
+    const softVol = (rounded / 100) * 1.2;
     if (bgGainRef.current) {
       bgGainRef.current.gain.value = softVol;
     } else if (backgroundAudioRef.current) {
-      backgroundAudioRef.current.volume = Math.max(0, Math.min(0.08, softVol));
+      backgroundAudioRef.current.volume = Math.max(0, Math.min(1, softVol));
     }
   };
 
