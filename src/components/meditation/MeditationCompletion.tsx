@@ -2,13 +2,13 @@
  * Meditation Completion Screen
  *
  * Full-screen celebration shown after meditation completes (≥95% or ended).
- * Displays: "Muito bem!" + stoic card + streak + feedback
+ * For sono guest locked: shows high-impact conversion hero instead of nextNight card.
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Moon, Play, Lock, BookOpen } from 'lucide-react';
+import { ChevronLeft, Moon, Play, Lock, BookOpen, Loader2 } from 'lucide-react';
 import { getTodayMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
 import { useMeditationStreak } from '@/hooks/useMeditationStreak';
 import { trackMeditationFeedback } from '@/analytics/meditation';
@@ -18,10 +18,8 @@ import MeditationFeedback from '@/components/meditation/MeditationFeedback';
 import { trackDiarioViewedPostMeditation } from '@/lib/mixpanelDiarioEvents';
 import { useAuth } from '@/contexts/AuthContext';
 
-// ── Paleta ────────────────────────────────────────────────────────────────────
 const BLUE_SOFT = 'rgba(148,136,196,0.12)';
 const BLUE_BORDER = 'rgba(148,136,196,0.28)';
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface RelatedMeditation {
   id: string;
@@ -70,7 +68,7 @@ interface NextNightInfo {
 interface MeditationCompletionProps {
   meditationId: string;
   meditationTitle: string;
-  meditationDuration: number; // seconds
+  meditationDuration: number;
   meditationCategory: string;
   onDismiss: () => void;
   nextNight?: NextNightInfo;
@@ -79,6 +77,10 @@ interface MeditationCompletionProps {
     skipCount: number;
     actualPlayTime: number;
   };
+  // Sono guest conversion
+  isSonoGuestMode?: boolean;
+  onCheckout?: () => void;
+  sonoCheckoutLoading?: boolean;
 }
 
 export default function MeditationCompletion({
@@ -89,11 +91,41 @@ export default function MeditationCompletion({
   onDismiss,
   nextNight,
   sessionMetrics,
+  isSonoGuestMode = false,
+  onCheckout,
+  sonoCheckoutLoading = false,
 }: MeditationCompletionProps) {
   const navigate = useNavigate();
   const { currentStreak, updateStreak, isLoading: streakLoading } = useMeditationStreak();
   const { user } = useAuth();
   const todayMaxim = getTodayMaxim();
+
+  // Sono guest locked = maximum conversion moment
+  const isSonoGuestLocked = isSonoGuestMode && nextNight?.isLocked === true;
+
+  // Countdown for sono guest offer
+  const [timeLeft, setTimeLeft] = useState<number>(() => {
+    if (!isSonoGuestLocked) return 0;
+    const stored = sessionStorage.getItem('eco.sono.offer_expires');
+    if (stored) return Math.max(0, parseInt(stored) - Date.now());
+    const expires = Date.now() + 15 * 60 * 1000;
+    sessionStorage.setItem('eco.sono.offer_expires', String(expires));
+    return 15 * 60 * 1000;
+  });
+
+  useEffect(() => {
+    if (!isSonoGuestLocked) return;
+    const id = setInterval(() => {
+      const stored = sessionStorage.getItem('eco.sono.offer_expires');
+      setTimeLeft(stored ? Math.max(0, parseInt(stored) - Date.now()) : 0);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isSonoGuestLocked]);
+
+  const formatCountdown = (ms: number) => {
+    const s = Math.floor(ms / 1000);
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  };
 
   const relatedMeditations = useMemo(() => {
     const pool = RELATED_BY_CATEGORY[meditationCategory] ?? RELATED_BY_CATEGORY.default;
@@ -119,25 +151,28 @@ export default function MeditationCompletion({
     });
   };
 
+  const handleCtaClick = () => {
+    if (onCheckout) { onCheckout(); return; }
+    if (nextNight) nextNight.onPlay();
+  };
+
   useEffect(() => {
     updateStreak();
   }, [updateStreak]);
 
   useEffect(() => {
-    if (todayMaxim) {
-      const completionPercentage = sessionMetrics?.actualPlayTime
-        ? Math.round((sessionMetrics.actualPlayTime / meditationDuration) * 100)
-        : 100;
-
-      trackDiarioViewedPostMeditation({
-        meditation_id: meditationId,
-        meditation_completion: completionPercentage,
-        reflection_date: todayMaxim.date,
-        author: todayMaxim.author,
-        user_id: user?.id || 'unknown',
-      });
-    }
-  }, [todayMaxim, meditationId, meditationDuration, sessionMetrics, user]);
+    if (!todayMaxim || isSonoGuestLocked) return;
+    const completionPercentage = sessionMetrics?.actualPlayTime
+      ? Math.round((sessionMetrics.actualPlayTime / meditationDuration) * 100)
+      : 100;
+    trackDiarioViewedPostMeditation({
+      meditation_id: meditationId,
+      meditation_completion: completionPercentage,
+      reflection_date: todayMaxim.date,
+      author: todayMaxim.author,
+      user_id: user?.id || 'unknown',
+    });
+  }, [todayMaxim, meditationId, meditationDuration, sessionMetrics, user, isSonoGuestLocked]);
 
   const handleFeedbackSubmitted = async (vote: 'positive' | 'negative', reasons?: string[]) => {
     const payload = {
@@ -156,39 +191,25 @@ export default function MeditationCompletion({
       seek_count: 0,
       feedback_source: 'meditation_completion',
     };
-
     try {
       await submitMeditationFeedback(payload);
     } catch (error) {
       console.error('[MeditationCompletion] Failed to send feedback to backend:', error);
     }
-
     trackMeditationFeedback(
       vote,
-      {
-        meditationId,
-        meditationTitle,
-        meditationDuration,
-        meditationCategory,
-        actualPlayTime: sessionMetrics?.actualPlayTime,
-        pauseCount: sessionMetrics?.pauseCount,
-        skipCount: sessionMetrics?.skipCount,
-      },
+      { meditationId, meditationTitle, meditationDuration, meditationCategory, actualPlayTime: sessionMetrics?.actualPlayTime, pauseCount: sessionMetrics?.pauseCount, skipCount: sessionMetrics?.skipCount },
       reasons
     );
   };
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { when: 'beforeChildren', staggerChildren: 0.14 },
-    },
+    visible: { opacity: 1, transition: { when: 'beforeChildren', staggerChildren: 0.12 } },
   };
-
   const itemVariants = {
-    hidden: { opacity: 0, y: 22 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.45 } },
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.42 } },
   };
 
   return (
@@ -196,63 +217,187 @@ export default function MeditationCompletion({
       className="fixed inset-0 z-50 overflow-y-auto font-primary"
       style={{ background: '#07090F' }}
     >
-      {/* ── Ambient glow ── */}
+      {/* Ambient glow */}
       <div
         className="pointer-events-none fixed inset-0 z-0"
         style={{
-          background: 'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(148,136,196,0.13) 0%, transparent 70%)',
+          background: isSonoGuestLocked
+            ? 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(124,58,237,0.18) 0%, transparent 70%)'
+            : 'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(148,136,196,0.13) 0%, transparent 70%)',
         }}
       />
 
-      {/* ── Back button ── */}
+      {/* Back button */}
       <button
         onClick={onDismiss}
         className="fixed top-3 left-3 sm:top-5 sm:left-5 z-20 flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:shadow-lg"
-        style={{
-          background: 'rgba(148,136,196,0.14)',
-          border: '1px solid rgba(148,136,196,0.32)',
-          backdropFilter: 'blur(18px)',
-          WebkitBackdropFilter: 'blur(18px)',
-        }}
+        style={{ background: 'rgba(148,136,196,0.14)', border: '1px solid rgba(148,136,196,0.32)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' }}
         aria-label="Voltar"
       >
         <ChevronLeft className="h-5 w-5" style={{ color: 'rgba(255,255,255,0.88)' }} />
       </button>
 
-      {/* ── Scrollable content ── */}
       <div className="relative z-10 min-h-screen flex items-start justify-center py-20 px-4">
         <motion.div
-          className="w-full max-w-2xl space-y-8"
+          className="w-full max-w-2xl space-y-6"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
 
-          {/* ── "Muito bem!" + Diário Estoico ── */}
-          {todayMaxim && (
-            <motion.div variants={itemVariants} className="space-y-5">
-              <div className="flex justify-center">
-                <h1
-                  className="font-display text-4xl sm:text-5xl font-bold text-white"
-                  style={{ textShadow: '0 0 40px rgba(148,136,196,0.50)' }}
-                >
-                  Muito bem!
-                </h1>
+          {/* ── "Muito bem!" heading ── */}
+          <motion.div variants={itemVariants} className="flex justify-center">
+            <h1
+              className="font-display font-bold text-white"
+              style={{
+                fontSize: isSonoGuestLocked ? '2.2rem' : '2.8rem',
+                textShadow: '0 0 40px rgba(148,136,196,0.50)',
+              }}
+            >
+              Muito bem!
+            </h1>
+          </motion.div>
+
+          {/* ══════════════════════════════════════════════════════
+              SONO GUEST LOCKED — Hero Conversion Block
+              ══════════════════════════════════════════════════════ */}
+          {isSonoGuestLocked && (
+            <motion.div variants={itemVariants}>
+              <div
+                className="relative overflow-hidden rounded-3xl"
+                style={{
+                  background: 'linear-gradient(160deg, rgba(124,58,237,0.20) 0%, rgba(6,9,26,0.97) 65%)',
+                  border: '1px solid rgba(167,139,250,0.28)',
+                  boxShadow: '0 0 0 1px rgba(167,139,250,0.06), 0 24px 80px rgba(124,58,237,0.32)',
+                }}
+              >
+                {/* Ambient glows */}
+                <div className="pointer-events-none absolute" style={{ top: '-50px', right: '-30px', width: '220px', height: '220px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(196,181,253,0.14) 0%, transparent 65%)' }} />
+                <div className="pointer-events-none absolute" style={{ bottom: '-30px', left: '-20px', width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)' }} />
+
+                <div className="relative z-10 px-6 pt-7 pb-8">
+                  {/* Badge */}
+                  <div
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 mb-5 text-[10px] font-bold uppercase tracking-[0.18em]"
+                    style={{ background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.28)', color: '#C4B5FD' }}
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: '#A78BFA', boxShadow: '0 0 4px rgba(167,139,250,0.9)' }} />
+                    Noite 1 concluída · Protocolo Sono
+                  </div>
+
+                  {/* Headline */}
+                  <h2 className="font-display text-[23px] font-bold text-white leading-[1.18] mb-3">
+                    Sua mente recebeu o primeiro sinal.<br />
+                    <em style={{ color: '#C4B5FD', fontStyle: 'italic' }}>As próximas 6 noites aprofundam.</em>
+                  </h2>
+
+                  <p className="text-[13px] leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.48)' }}>
+                    Cada noite resolve uma camada diferente do que te mantém acordado. No 7.º dia, seu corpo já sabe o que fazer — sem precisar do áudio.
+                  </p>
+
+                  {/* 7 nights progress */}
+                  <div className="flex items-start gap-1.5 mb-6">
+                    {/* Night 1 – completed */}
+                    <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                      <div
+                        className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
+                        style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #7C3AED 100%)', boxShadow: '0 0 18px rgba(124,58,237,0.60)' }}
+                      >
+                        ✓
+                      </div>
+                      <span className="text-[8px] font-bold" style={{ color: 'rgba(196,181,253,0.65)' }}>Noite 1</span>
+                    </div>
+                    {/* Connector */}
+                    <div className="flex-1 mt-[18px] h-px" style={{ background: 'linear-gradient(to right, rgba(167,139,250,0.35), rgba(255,255,255,0.06))' }} />
+                    {/* Nights 2–7 locked */}
+                    {([2, 3, 4, 5, 6, 7] as const).map((n, idx) => (
+                      <div key={n} className="flex flex-col items-center gap-1 flex-shrink-0" style={{ opacity: Math.max(0.35, 0.90 - idx * 0.08) }}>
+                        <div
+                          className="h-9 w-9 rounded-full flex items-center justify-center"
+                          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
+                        >
+                          <Lock className="h-3.5 w-3.5 text-white/30" />
+                        </div>
+                        <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.22)' }}>N.{n}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Price */}
+                  <div className="flex items-baseline gap-3 mb-2">
+                    <span className="text-[15px] line-through" style={{ color: 'rgba(255,255,255,0.25)' }}>R$97</span>
+                    <span className="font-display text-[38px] font-bold leading-none text-white">R$37</span>
+                    <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.38)' }}>pagamento único</span>
+                  </div>
+
+                  {/* Countdown */}
+                  {timeLeft > 0 && (
+                    <div className="flex items-center gap-2 mb-4">
+                      <span style={{ color: '#FBBF24', fontSize: '13px' }}>⏱</span>
+                      <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.52)' }}>
+                        Oferta expira em{' '}
+                        <span className="font-mono font-bold" style={{ color: '#FCD34D' }}>{formatCountdown(timeLeft)}</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Social proof */}
+                  <div className="flex items-center gap-2 mb-5">
+                    <span style={{ color: '#FBBF24', fontSize: '11px', letterSpacing: '1px' }}>★★★★★</span>
+                    <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.40)' }}>12.400+ pessoas dormem melhor</span>
+                  </div>
+
+                  {/* CTA principal */}
+                  <button
+                    onClick={handleCtaClick}
+                    disabled={sonoCheckoutLoading}
+                    className="w-full rounded-full py-[1.05rem] text-[15px] font-bold text-white mb-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                    style={{
+                      background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
+                      boxShadow: '0 10px 40px rgba(124,58,237,0.65)',
+                    }}
+                  >
+                    {sonoCheckoutLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Abrindo pagamento…
+                      </span>
+                    ) : (
+                      'Garantir as 7 noites — R$37 →'
+                    )}
+                  </button>
+
+                  {/* Micro-copy */}
+                  <p className="text-center text-[11px] mb-6" style={{ color: 'rgba(255,255,255,0.28)' }}>
+                    Acesso imediato · Sem assinatura mensal · Sem risco
+                  </p>
+
+                  {/* Separator */}
+                  <div className="h-px mb-5" style={{ background: 'linear-gradient(to right, transparent, rgba(167,139,250,0.20), transparent)' }} />
+
+                  {/* Testimonial */}
+                  <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    <p className="text-[13px] leading-relaxed italic" style={{ color: 'rgba(255,255,255,0.58)' }}>
+                      "Finalmente consigo dormir antes da meia-noite. Minha cabeça para de girar assim que o áudio começa. Na semana 2 já não precisava mais."
+                    </p>
+                    <p className="mt-2 text-[10px]" style={{ color: 'rgba(255,255,255,0.28)' }}>— Ana P., São Paulo · verificado</p>
+                  </div>
+                </div>
               </div>
+            </motion.div>
+          )}
 
+          {/* ══════════════════════════════════════════════════════
+              STANDARD FLOW — Diário Estoico card
+              ══════════════════════════════════════════════════════ */}
+          {!isSonoGuestLocked && todayMaxim && (
+            <motion.div variants={itemVariants} className="space-y-5">
               <DiarioEstoicoCard maxim={todayMaxim} size="medium" />
-
               <div className="flex justify-center">
                 <button
                   onClick={() => navigate('/app/diario-estoico')}
                   className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
-                  style={{
-                    background: BLUE_SOFT,
-                    border: `1px solid ${BLUE_BORDER}`,
-                    color: 'rgba(192,180,224,0.90)',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                  }}
+                  style={{ background: BLUE_SOFT, border: `1px solid ${BLUE_BORDER}`, color: 'rgba(192,180,224,0.90)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
                 >
                   <BookOpen className="h-4 w-4" />
                   Ler reflexão de hoje
@@ -266,14 +411,7 @@ export default function MeditationCompletion({
             <motion.div className="flex justify-center" variants={itemVariants}>
               <div
                 className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-base font-semibold"
-                style={{
-                  background: BLUE_SOFT,
-                  border: `1px solid ${BLUE_BORDER}`,
-                  color: 'rgba(255,255,255,0.92)',
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
-                  boxShadow: '0 8px 32px rgba(148,136,196,0.15)',
-                }}
+                style={{ background: BLUE_SOFT, border: `1px solid ${BLUE_BORDER}`, color: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(148,136,196,0.15)' }}
               >
                 <span>{currentStreak} {currentStreak === 1 ? 'dia seguido!' : 'dias seguidos!'}</span>
                 <span>🔥</span>
@@ -281,17 +419,12 @@ export default function MeditationCompletion({
             </motion.div>
           )}
 
-          {/* ── Próxima noite (sono) ── */}
-          {nextNight && (
+          {/* ── Próxima noite (sono autenticado / não-guest) ── */}
+          {!isSonoGuestLocked && nextNight && (
             <motion.div variants={itemVariants}>
               <div
                 className="rounded-2xl px-5 py-5 sm:px-6"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(74,78,138,0.30) 0%, rgba(20,23,46,0.60) 100%)',
-                  border: '1px solid rgba(74,91,138,0.30)',
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
-                }}
+                style={{ background: 'linear-gradient(135deg, rgba(74,78,138,0.30) 0%, rgba(20,23,46,0.60) 100%)', border: '1px solid rgba(74,91,138,0.30)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
               >
                 <div className="flex items-center gap-2 mb-3">
                   <Moon className="h-4 w-4" style={{ color: '#8BA4E8' }} />
@@ -309,9 +442,7 @@ export default function MeditationCompletion({
                   <button
                     onClick={nextNight.onPlay}
                     className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-95 hover:-translate-y-0.5 ${
-                      nextNight.isLocked
-                        ? 'bg-white/10 text-white/60 hover:bg-white/15'
-                        : 'text-[#14172E] hover:brightness-110 shadow-md'
+                      nextNight.isLocked ? 'bg-white/10 text-white/60 hover:bg-white/15' : 'text-[#14172E] hover:brightness-110 shadow-md'
                     }`}
                     style={!nextNight.isLocked ? { background: '#8BA4E8' } : undefined}
                   >
@@ -327,13 +458,10 @@ export default function MeditationCompletion({
             </motion.div>
           )}
 
-          {/* ── Continue sua jornada ── */}
-          {relatedMeditations.length > 0 && (
+          {/* ── Continue sua jornada (apenas standard) ── */}
+          {!isSonoGuestLocked && relatedMeditations.length > 0 && (
             <motion.div variants={itemVariants}>
-              <h3
-                className="text-base sm:text-lg font-semibold mb-4"
-                style={{ color: 'rgba(255,255,255,0.80)' }}
-              >
+              <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ color: 'rgba(255,255,255,0.80)' }}>
                 Continue sua jornada
               </h3>
               <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -342,62 +470,29 @@ export default function MeditationCompletion({
                     key={med.id}
                     onClick={() => handleNavigateToMeditation(med)}
                     className="flex-shrink-0 w-40 sm:w-44 rounded-2xl overflow-hidden relative active:scale-95 transition-transform duration-150 snap-start"
-                    style={{
-                      height: '180px',
-                      border: '1px solid rgba(255,255,255,0.10)',
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.40)',
-                    }}
+                    style={{ height: '180px', border: '1px solid rgba(255,255,255,0.10)', boxShadow: '0 8px 32px rgba(0,0,0,0.40)' }}
                     aria-label={`Meditar: ${med.title}`}
                   >
-                    <img
-                      src={med.imageUrl}
-                      alt=""
-                      className="absolute inset-0 w-full h-full object-cover"
-                      loading="lazy"
-                    />
+                    <img src={med.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
-
-                    {/* Day label */}
                     {med.dayLabel && (
                       <div
                         className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                        style={{
-                          background: 'rgba(0,0,0,0.55)',
-                          border: '1px solid rgba(255,255,255,0.22)',
-                          color: 'rgba(255,255,255,0.92)',
-                          backdropFilter: 'blur(8px)',
-                          WebkitBackdropFilter: 'blur(8px)',
-                        }}
+                        style={{ background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.22)', color: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
                       >
                         {med.dayLabel}
                       </div>
                     )}
-
-                    {/* Lock badge */}
                     {med.isPremium && (
-                      <div
-                        className="absolute top-2 right-2 rounded-full p-1"
-                        style={{ background: 'rgba(251,191,36,0.85)', backdropFilter: 'blur(6px)' }}
-                      >
+                      <div className="absolute top-2 right-2 rounded-full p-1" style={{ background: 'rgba(251,191,36,0.85)', backdropFilter: 'blur(6px)' }}>
                         <Lock className="w-3 h-3 text-amber-900" />
                       </div>
                     )}
-
-                    {/* Play button */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center"
-                        style={{
-                          background: 'rgba(148,136,196,0.22)',
-                          border: '1px solid rgba(148,136,196,0.45)',
-                          backdropFilter: 'blur(8px)',
-                          WebkitBackdropFilter: 'blur(8px)',
-                        }}
-                      >
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(148,136,196,0.22)', border: '1px solid rgba(148,136,196,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
                         <Play className="w-4 h-4 text-white fill-white ml-0.5" />
                       </div>
                     </div>
-
                     <div className="absolute bottom-0 left-0 right-0 p-3 text-left">
                       <p className="text-white text-xs font-semibold leading-tight line-clamp-2">{med.title}</p>
                       <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>{med.duration}</p>
@@ -412,12 +507,7 @@ export default function MeditationCompletion({
           <motion.div
             variants={itemVariants}
             className="rounded-2xl pt-2 pb-6"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-            }}
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
           >
             <MeditationFeedback
               meditationId={meditationId}
@@ -430,17 +520,11 @@ export default function MeditationCompletion({
             />
           </motion.div>
 
-          {/* ── Linha separadora final ── */}
-          <motion.div
-            variants={itemVariants}
-            className="flex items-center justify-center pb-8"
-          >
+          {/* Linha separadora final */}
+          <motion.div variants={itemVariants} className="flex items-center justify-center pb-8">
             <div className="flex items-center gap-3">
               <div className="h-px w-12" style={{ background: BLUE_BORDER }} />
-              <span
-                className="text-[10px] font-semibold uppercase tracking-[0.18em]"
-                style={{ color: 'rgba(148,136,196,0.45)' }}
-              >
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(148,136,196,0.45)' }}>
                 {meditationTitle}
               </span>
               <div className="h-px w-12" style={{ background: BLUE_BORDER }} />

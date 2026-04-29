@@ -10,6 +10,7 @@ import { type Sound, getAllSounds } from '@/data/sounds';
 import { useMeditationAnalytics } from '@/hooks/useMeditationAnalytics';
 import { parseDurationToSeconds, getCategoryFromPath, trackMeditationEvent } from '@/analytics/meditation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSonoCheckout } from '@/hooks/useSonoCheckout';
 import { useGuestExperience } from '@/contexts/GuestExperienceContext';
 import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestConversionTriggers';
 import MeditationGuestGate from '@/components/meditation/MeditationGuestGate';
@@ -51,6 +52,7 @@ export default function MeditationPlayerPage() {
   const { user, isGuestMode, isVipUser } = useAuth();
   const { trackInteraction } = useGuestExperience();
   const { checkTrigger } = useGuestConversionTriggers();
+  const { loading: sonoCheckoutLoading, openCheckout: openSonoCheckout } = useSonoCheckout();
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const gainRef = useRef<GainNode | null>(null);
@@ -1563,6 +1565,9 @@ export default function MeditationPlayerPage() {
           meditationTitle={meditationData.title}
           meditationDuration={duration}
           meditationCategory={category}
+          isSonoGuestMode={sonoGuestMode}
+          onCheckout={sonoGuestMode ? () => openSonoCheckout({ origin: 'meditation_completion_sono_guest' }) : undefined}
+          sonoCheckoutLoading={sonoCheckoutLoading}
           onDismiss={() => {
             setShowCompletionScreen(false);
             handleBack();
