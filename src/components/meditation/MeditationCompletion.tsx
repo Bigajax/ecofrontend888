@@ -101,8 +101,8 @@ export default function MeditationCompletion({
   const { user } = useAuth();
   const todayMaxim = getTodayMaxim();
 
-  // Sono guest locked = maximum conversion moment
-  const isSonoGuestLocked = isSonoGuestMode && nextNight?.isLocked === true;
+  // Sono guest locked = maximum conversion moment — apenas na Noite 1
+  const isSonoGuestLocked = isSonoGuestMode && nextNight?.isLocked === true && meditationId === 'night_1';
 
   // Post-flow overlay for sono guest (6-step sequence)
   const [showPostFlow, setShowPostFlow] = useState(false);
