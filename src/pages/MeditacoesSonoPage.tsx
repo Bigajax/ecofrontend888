@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
 import { useSonoCheckout } from '@/hooks/useSonoCheckout';
 import { PROTOCOL_NIGHTS, type ProtocolNight } from '@/data/protocolNights';
-import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
+import { SonoPostExperienceModal, type SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal';
 import mixpanel from '@/lib/mixpanel';
 import { trackGuestUnlockClicked } from '@/lib/mixpanelSonoGuestEvents';
 
@@ -54,7 +54,7 @@ export default function MeditacoesSonoPage() {
     localStorage.setItem('sono_guest_started_at', new Date().toISOString());
     sessionStorage.setItem('eco.sono.guest_id', guestId);
     sessionStorage.setItem('eco.sono.source', source || 'quiz_sono');
-    mixpanel.track('Sleep Guest Page Viewed', { source, guest_id: guestId });
+    mixpanel.track('Sleep Guest Page Viewed', { source, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Night completion state ─────────────────────────────────────
@@ -69,6 +69,7 @@ export default function MeditacoesSonoPage() {
 
   const [showCompletion, setShowCompletion] = useState(false);
   const [showOfferModal, setShowOfferModal] = useState(false);
+  const [offerVariant, setOfferVariant] = useState<SonoOfferVariant>('locked_night');
 
   useEffect(() => {
     localStorage.setItem(`eco.sono.protocol.v1.${uid}`, JSON.stringify({
@@ -91,9 +92,10 @@ export default function MeditacoesSonoPage() {
         if (isGuestSono && nightNum === 1) {
           const offerKey = `eco.sono.offer_modal_shown.${guestId}`;
           if (!localStorage.getItem(offerKey)) {
+            setOfferVariant('final');
             setShowOfferModal(true);
             localStorage.setItem(offerKey, 'true');
-            mixpanel.track('Free Experience Completed', { night_id: 'night_1', source, guest_id: guestId });
+            mixpanel.track('Sleep Free Experience Completed', { night_id: 'night_1', source, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
           }
         }
       }
@@ -137,6 +139,7 @@ export default function MeditacoesSonoPage() {
     if (!accessible) {
       if (isGuestSono) {
         trackGuestUnlockClicked(night.id);
+        setOfferVariant('locked_night');
         setShowOfferModal(true);
       } else {
         openCheckout();
@@ -152,7 +155,7 @@ export default function MeditacoesSonoPage() {
       : `/app/meditacoes/sono?guestSono=1&source=${encodeURIComponent(source || 'quiz_sono')}&guest_id=${encodeURIComponent(guestId)}`;
 
     if (isGuestSono && night.night === 1) {
-      mixpanel.track('Free Experience Started', { night_id: night.id, source, guest_id: guestId });
+      mixpanel.track('Sleep Free Experience Started', { night_id: night.id, source, guest_id: guestId });
     }
 
     navigate(playerRoute, {
@@ -726,6 +729,9 @@ export default function MeditacoesSonoPage() {
         {/* ── Offer modal (guest sono) ──────────────────────────────── */}
         <SonoPostExperienceModal
           open={showOfferModal}
+          variant={offerVariant}
+          guestId={guestId}
+          source={source || 'quiz_sono_guest'}
           onClose={() => setShowOfferModal(false)}
           onCheckout={() => openCheckout({ origin: 'quiz_sono_guest' })}
           checkoutLoading={checkoutLoading}

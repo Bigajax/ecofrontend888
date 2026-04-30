@@ -17,6 +17,8 @@ import MeditationGuestGate from '@/components/meditation/MeditationGuestGate';
 import { useMediaSession } from '@/hooks/useMediaSession';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import MeditationAmbientScreen from '@/components/meditation/MeditationAmbientScreen';
+import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
+import mixpanel from '@/lib/mixpanel';
 
 interface MeditationData {
   id?: string;
@@ -114,6 +116,15 @@ export default function MeditationPlayerPage() {
     const n = parseInt(meditationData.id.replace('night_', ''), 10);
     return isNaN(n) ? null : n;
   }, [isSono, meditationData.id]);
+  const isSonoGuestNight1 = sonoGuestMode && category === 'sono' && nightNumber === 1;
+  const sonoGuestId = useMemo(() => (
+    sessionStorage.getItem('eco.sono.guest_id') ||
+    localStorage.getItem('eco_guest_id') ||
+    'guest'
+  ), []);
+  const sonoGuestSource = useMemo(() => (
+    sessionStorage.getItem('eco.sono.source') || 'quiz_sono_guest'
+  ), []);
 
   // Noites já concluídas (lê do localStorage para os dots de progresso)
   const sonoCompletedNights = useMemo(() => {
@@ -158,6 +169,11 @@ export default function MeditationPlayerPage() {
   const [showGuestGate, setShowGuestGate] = useState(false);
   const [isAudioFading, setIsAudioFading] = useState(false);
   const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const cutoffShownRef = useRef(false);
+  const cutoffDelayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finalOfferShownRef = useRef(false);
+  const [showSonoCutoffOffer, setShowSonoCutoffOffer] = useState(false);
+  const [showSonoFinalOffer, setShowSonoFinalOffer] = useState(false);
   const favoriteToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fade-in on first play
@@ -248,6 +264,7 @@ export default function MeditationPlayerPage() {
       if (fadeInIntervalRef.current) clearInterval(fadeInIntervalRef.current);
       if (bgFadeInIntervalRef.current) clearInterval(bgFadeInIntervalRef.current);
       if (endFadeOutIntervalRef.current) clearInterval(endFadeOutIntervalRef.current);
+      if (cutoffDelayTimerRef.current) clearTimeout(cutoffDelayTimerRef.current);
 
       // Cleanup favorite toast timer
       if (favoriteToastTimerRef.current) {
@@ -535,6 +552,108 @@ export default function MeditationPlayerPage() {
     }, stepDurationMs);
   };
 
+  const restoreAudioLevels = () => {
+    const audio = audioRef.current;
+    const backgroundAudio = backgroundAudioRef.current;
+    if (gainRef.current) {
+      gainRef.current.gain.value = 2.0;
+    } else if (audio) {
+      audio.volume = meditationVolume / 100;
+    }
+    if (bgGainRef.current) {
+      bgGainRef.current.gain.value = (backgroundVolume / 100) * 1.2;
+    } else if (backgroundAudio) {
+      backgroundAudio.volume = Math.min(1, (backgroundVolume / 100) * 1.2);
+    }
+  };
+
+  const pauseForSonoCutoff = () => {
+    const audio = audioRef.current;
+    const backgroundAudio = backgroundAudioRef.current;
+    if (!audio) return;
+
+    setIsAudioFading(true);
+    const fadeSteps = 10;
+    const stepDurationMs = 300 / fadeSteps;
+    const initialGain = gainRef.current?.gain.value ?? audio.volume;
+    const initialBgGain = bgGainRef.current?.gain.value ?? backgroundAudio?.volume ?? 0;
+    let step = 0;
+
+    if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+    fadeIntervalRef.current = setInterval(() => {
+      step++;
+      const remaining = Math.max(0, 1 - step / fadeSteps);
+
+      if (gainRef.current) {
+        gainRef.current.gain.value = initialGain * remaining;
+      } else {
+        audio.volume = initialGain * remaining;
+      }
+
+      if (bgGainRef.current) {
+        bgGainRef.current.gain.value = initialBgGain * remaining;
+      } else if (backgroundAudio) {
+        backgroundAudio.volume = initialBgGain * remaining;
+      }
+
+      if (step >= fadeSteps) {
+        if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+        audio.pause();
+        backgroundAudio?.pause();
+        setIsPlaying(false);
+        setIsAudioFading(false);
+        cutoffDelayTimerRef.current = setTimeout(() => setShowSonoCutoffOffer(true), 200);
+      }
+    }, stepDurationMs);
+  };
+
+  const handleSonoCutoff = () => {
+    mixpanel.track('Sleep Cutoff Reached', {
+      guest_id: sonoGuestId,
+      source: 'quiz_sono_guest',
+      product_key: 'protocolo_sono_7_noites',
+      cutoff_time: 240,
+    });
+    pauseForSonoCutoff();
+  };
+
+  const triggerSonoCutoffIfNeeded = (timeInSeconds: number) => {
+    if (
+      isSonoGuestNight1 &&
+      timeInSeconds >= 240 &&
+      !cutoffShownRef.current &&
+      !localStorage.getItem(`eco.sono.guest.cutoff_shown.${sonoGuestId}`)
+    ) {
+      cutoffShownRef.current = true;
+      localStorage.setItem(`eco.sono.guest.cutoff_shown.${sonoGuestId}`, 'true');
+      handleSonoCutoff();
+      return true;
+    }
+    return false;
+  };
+
+  const maybeTriggerSonoFinalOffer = () => {
+    if (!isSonoGuestNight1 || finalOfferShownRef.current) return false;
+    const offerKey = `eco.sono.offer_modal_shown.${sonoGuestId}`;
+    if (localStorage.getItem(offerKey)) return false;
+    finalOfferShownRef.current = true;
+    localStorage.setItem(offerKey, 'true');
+    setShowSonoFinalOffer(true);
+    return true;
+  };
+
+  const resumeAfterSonoCutoffDismiss = async () => {
+    setShowSonoCutoffOffer(false);
+    await initAudioGain();
+    restoreAudioLevels();
+    audioRef.current?.play().then(() => {
+      setIsPlaying(true);
+      if (backgroundAudioRef.current && selectedBackgroundSound?.audioUrl && backgroundVolume > 0) {
+        backgroundAudioRef.current.play().catch(() => {});
+      }
+    }).catch(() => {});
+  };
+
   /**
    * Smoothly fade audio volume from 0 to the user's current setting over 3 s.
    * Only called on the very first play of a session.
@@ -694,9 +813,12 @@ export default function MeditationPlayerPage() {
         }
       }
 
+      if (triggerSonoCutoffIfNeeded(audio.currentTime)) return;
+
       // NOVO: Guest mode - detectar limite de 2 minutos
       if (
         isGuest &&
+        !isSonoGuestNight1 &&
         !showGuestGate &&
         !isAudioFading &&
         audio.currentTime >= GUEST_TIME_LIMIT_SECONDS
@@ -720,6 +842,7 @@ export default function MeditationPlayerPage() {
         if (!localStorage.getItem(markerKey)) {
           localStorage.setItem(markerKey, 'true');
         }
+        maybeTriggerSonoFinalOffer();
       }
 
       // Fade out last ~20 s of audio (both main and background)
@@ -747,6 +870,7 @@ export default function MeditationPlayerPage() {
           meditationVolumeFinal: meditationVolume,
           backgroundVolumeFinal: backgroundVolume,
         });
+        if (maybeTriggerSonoFinalOffer()) return;
         setShowCompletionScreen(true);
       }
     };
@@ -755,6 +879,7 @@ export default function MeditationPlayerPage() {
       setDuration(audio.duration);
       // Inicializar volume quando metadata carregar
       audio.volume = meditationVolume / 100;
+      triggerSonoCutoffIfNeeded(audio.currentTime);
     };
 
     const handleEnded = () => {
@@ -791,6 +916,7 @@ export default function MeditationPlayerPage() {
           }));
         }
 
+        if (maybeTriggerSonoFinalOffer()) return;
         setShowCompletionScreen(true);
       }
     };
@@ -804,7 +930,19 @@ export default function MeditationPlayerPage() {
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [meditationVolume, backgroundVolume, selectedBackgroundSound, analytics]);
+  }, [
+    meditationVolume,
+    backgroundVolume,
+    selectedBackgroundSound,
+    analytics,
+    isGuest,
+    isSonoGuestNight1,
+    isAudioFading,
+    showGuestGate,
+    sonoGuestId,
+    user,
+    category,
+  ]);
 
   const handlePlayPause = async () => {
     await initAudioGain();
@@ -1649,6 +1787,7 @@ export default function MeditationPlayerPage() {
                   if (audioRef.current) audioRef.current.currentTime = savedProgress;
                   setCurrentTime(savedProgress);
                   setShowResumePrompt(false);
+                  triggerSonoCutoffIfNeeded(savedProgress);
                 }}
                 className="px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-full touch-manipulation"
               >
@@ -1672,6 +1811,28 @@ export default function MeditationPlayerPage() {
         meditationTitle={meditationData.title}
         category={category}
         onDismiss={resetAmbientTimer}
+      />
+
+      <SonoPostExperienceModal
+        open={showSonoCutoffOffer}
+        variant="cutoff"
+        startWithQuiz
+        guestId={sonoGuestId}
+        source={sonoGuestSource}
+        onClose={() => setShowSonoCutoffOffer(false)}
+        onCutoffDismiss={resumeAfterSonoCutoffDismiss}
+        onCheckout={() => openSonoCheckout({ origin: 'quiz_sono_guest' })}
+        checkoutLoading={sonoCheckoutLoading}
+      />
+
+      <SonoPostExperienceModal
+        open={showSonoFinalOffer}
+        variant="final"
+        guestId={sonoGuestId}
+        source={sonoGuestSource}
+        onClose={() => setShowSonoFinalOffer(false)}
+        onCheckout={() => openSonoCheckout({ origin: 'quiz_sono_guest' })}
+        checkoutLoading={sonoCheckoutLoading}
       />
 
       {/* Meditation Completion Screen */}
@@ -1698,7 +1859,7 @@ export default function MeditationPlayerPage() {
           meditationTitle={meditationData.title}
           meditationDuration={duration}
           meditationCategory={category}
-          isSonoGuestMode={sonoGuestMode}
+          isSonoGuestMode={sonoGuestMode && !isSonoGuestNight1}
           onCheckout={sonoGuestMode ? () => openSonoCheckout({ origin: 'meditation_completion_sono_guest' }) : undefined}
           sonoCheckoutLoading={sonoCheckoutLoading}
           onDismiss={() => {

@@ -1,26 +1,79 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle, Clock, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiFetchJson } from '@/lib/apiFetch';
 import { trackWithCAPI } from '@/lib/fbpixel';
-import mixpanel from '@/lib/mixpanel';
 
 type PageState = 'loading' | 'approved' | 'pending' | 'claimed';
 
 const CLAIM_MAX_RETRIES = 4;
 const CLAIM_RETRY_DELAY_MS = 3000;
 
+function PageShell({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className="min-h-screen font-primary flex flex-col items-center justify-center px-6 relative overflow-hidden"
+      style={{ background: 'linear-gradient(160deg, #06091A 0%, #0C1226 40%, #0F1A38 100%)' }}
+    >
+      <div className="pointer-events-none absolute inset-0">
+        <div
+          style={{
+            position: 'absolute',
+            top: '10%', left: '50%', transform: 'translateX(-50%)',
+            width: '560px', height: '440px', borderRadius: '50%',
+            background: 'radial-gradient(ellipse, rgba(124,58,237,0.16) 0%, transparent 68%)',
+            filter: 'blur(70px)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '5%', right: '-80px',
+            width: '280px', height: '280px', borderRadius: '50%',
+            background: 'radial-gradient(ellipse, rgba(196,181,253,0.06) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
+      </div>
+      <div className="relative z-10 w-full max-w-sm text-center">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function IconRing({ children, glow = false }: { children: ReactNode; glow?: boolean }) {
+  return (
+    <div
+      className="w-20 h-20 mx-auto mb-7 flex items-center justify-center rounded-full"
+      style={{
+        background: 'linear-gradient(135deg, rgba(167,139,250,0.16) 0%, rgba(124,58,237,0.22) 100%)',
+        border: '1px solid rgba(196,181,253,0.30)',
+        boxShadow: glow ? '0 0 60px rgba(124,58,237,0.40), 0 0 120px rgba(124,58,237,0.18)' : '0 0 40px rgba(124,58,237,0.22)',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function SonoObrigadoPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const externalRef = searchParams.get('external_reference') || sessionStorage.getItem('eco.sono.external_reference') || '';
-  const paymentId = searchParams.get('payment_id') || sessionStorage.getItem('eco.sono.payment_id') || '';
-  const mpStatus = searchParams.get('status') || sessionStorage.getItem('eco.sono.status') || '';
+  const externalRef =
+    searchParams.get('external_reference') ||
+    sessionStorage.getItem('eco.sono.external_reference') || '';
+  const paymentId =
+    searchParams.get('payment_id') ||
+    sessionStorage.getItem('eco.sono.payment_id') || '';
+  const mpStatus =
+    searchParams.get('status') ||
+    sessionStorage.getItem('eco.sono.status') || '';
 
-  // mpStatus já inclui fallback para sessionStorage
   const [pageState, setPageState] = useState<PageState>(
     mpStatus === 'approved' ? 'approved' : mpStatus === 'pending' ? 'pending' : 'loading'
   );
@@ -29,46 +82,39 @@ export default function SonoObrigadoPage() {
   const [claimRetry, setClaimRetry] = useState(0);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
-  // Purchase: Pixel + CAPI com deduplicação — dispara uma única vez por pedido.
-  // A chave no sessionStorage previne re-disparo em refresh da página.
+  // Purchase: Pixel + CAPI — fires once per order
   useEffect(() => {
     if (pageState !== 'approved') return;
-
     const ref = externalRef || paymentId;
     if (!ref) return;
-
     const dedupeKey = `capi.purchase.sono:${ref}`;
     if (sessionStorage.getItem(dedupeKey)) return;
     sessionStorage.setItem(dedupeKey, '1');
-
     trackWithCAPI('Purchase', {
       value: 37,
       currency: 'BRL',
       contentIds: ['protocolo_sono_profundo'],
     }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Timeout de segurança: se ficar em loading por mais de 6s, provavelmente o MP
-  // não enviou status na URL (usuário digitou a URL manualmente, etc.)
+  // Loading timeout: if no status after 6s, something went wrong
   useEffect(() => {
     if (pageState !== 'loading') return;
     const t = setTimeout(() => setLoadingTimeout(true), 6000);
     return () => clearTimeout(t);
   }, [pageState]);
 
-  // Persistir params no sessionStorage para sobreviver ao login redirect
+  // Persist Mercado Pago params across login redirect
   useEffect(() => {
     if (externalRef) sessionStorage.setItem('eco.sono.external_reference', externalRef);
     if (paymentId) sessionStorage.setItem('eco.sono.payment_id', paymentId);
     if (mpStatus) sessionStorage.setItem('eco.sono.status', mpStatus);
   }, [externalRef, paymentId, mpStatus]);
 
-  // Quando usuário já está logado e pagamento aprovado: claim automático
   const doClaim = async (attempt = 0) => {
     const storedRef = externalRef || sessionStorage.getItem('eco.sono.external_reference') || '';
     const storedPaymentId = paymentId || sessionStorage.getItem('eco.sono.payment_id') || '';
-
     if (!storedRef && !storedPaymentId) return;
 
     setClaiming(true);
@@ -87,25 +133,20 @@ export default function SonoObrigadoPage() {
     if (result.ok) {
       setClaiming(false);
       setPageState('claimed');
-      mixpanel.track('Entitlement Claimed', {
-        product: 'protocolo_sono_7_noites',
-        source: sessionStorage.getItem('eco.sono.source') || '',
-        guest_id: sessionStorage.getItem('eco.sono.guest_id') || '',
-      });
       sessionStorage.removeItem('eco.sono.external_reference');
       sessionStorage.removeItem('eco.sono.payment_id');
       sessionStorage.removeItem('eco.sono.status');
       return;
     }
 
-    // 404 = webhook ainda não processou; retry automático até CLAIM_MAX_RETRIES
+    // 404 = webhook still processing; retry automatically
     if (result.status === 404 && attempt < CLAIM_MAX_RETRIES) {
       setTimeout(() => doClaim(attempt + 1), CLAIM_RETRY_DELAY_MS);
-      return; // mantém claiming=true, aguarda próximo ciclo
+      return;
     }
 
     setClaiming(false);
-    const data = result.data as any;
+    const data = result.data as { message?: string };
     if (result.status === 409) {
       setClaimError(
         'Este pedido já está associado a outra conta. Entre em contato com ecotopia.app777@gmail.com informando o número do pedido.'
@@ -117,184 +158,316 @@ export default function SonoObrigadoPage() {
     }
   };
 
+  // Auto-claim when user is already logged in
   useEffect(() => {
     if (!user || pageState !== 'approved') return;
     doClaim(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, pageState]);
 
-  // Auto-navegar para o protocolo após claim bem-sucedido
+  // Auto-navigate after successful claim
   useEffect(() => {
     if (pageState !== 'claimed') return;
-    const t = setTimeout(() => navigate('/app/meditacoes-sono'), 2000);
+    const t = setTimeout(() => navigate('/app/meditacoes-sono'), 2400);
     return () => clearTimeout(t);
   }, [pageState, navigate]);
 
   const buildReturnUrl = () => {
-    // Codificar o caminho completo (com params MP) dentro do valor de returnTo,
-    // para que navigate(returnTo) restaure tudo após o login.
-    const targetParams = new URLSearchParams();
-    const refToUse = externalRef || sessionStorage.getItem('eco.sono.external_reference') || '';
-    const pidToUse = paymentId || sessionStorage.getItem('eco.sono.payment_id') || '';
-    const statusToUse = mpStatus || sessionStorage.getItem('eco.sono.status') || '';
-    if (refToUse) targetParams.set('external_reference', refToUse);
-    if (pidToUse) targetParams.set('payment_id', pidToUse);
-    if (statusToUse) targetParams.set('status', statusToUse);
-    const qs = targetParams.toString();
-    const targetPath = `/sono/obrigado${qs ? `?${qs}` : ''}`;
-    return `returnTo=${encodeURIComponent(targetPath)}`;
+    const p = new URLSearchParams();
+    const ref = externalRef || sessionStorage.getItem('eco.sono.external_reference') || '';
+    const pid = paymentId || sessionStorage.getItem('eco.sono.payment_id') || '';
+    const status = mpStatus || sessionStorage.getItem('eco.sono.status') || '';
+    if (ref) p.set('external_reference', ref);
+    if (pid) p.set('payment_id', pid);
+    if (status) p.set('status', status);
+    const qs = p.toString();
+    const target = `/sono/obrigado${qs ? `?${qs}` : ''}`;
+    return `returnTo=${encodeURIComponent(target)}`;
   };
 
-  // ── Estado: carregando ───────────────────────────────────────────────────
+  // ── Loading ──────────────────────────────────────────────────────────────
   if (pageState === 'loading') {
     if (loadingTimeout) {
       return (
-        <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 text-center">
-          <div className="max-w-sm w-full">
-            <p className="text-gray-700 font-medium mb-2">Não foi possível verificar o pagamento.</p>
-            <p className="text-sm text-gray-500 mb-6">
-              Se você acabou de pagar, verifique seu e-mail — enviamos as instruções de acesso para você.
+        <PageShell>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+            <IconRing>
+              <span style={{ fontSize: '28px' }}>🌙</span>
+            </IconRing>
+            <h1 className="font-display text-[24px] font-bold text-white mb-3 leading-tight">
+              Não conseguimos verificar o pagamento.
+            </h1>
+            <p className="text-[14px] leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.48)' }}>
+              Se você acabou de pagar, verifique seu e-mail — enviamos as instruções para você.
             </p>
             <a
               href="mailto:ecotopia.app777@gmail.com"
-              className="text-sm underline text-eco-babyDark"
+              className="text-[13px] underline underline-offset-2"
+              style={{ color: 'rgba(196,181,253,0.65)' }}
             >
               Precisa de ajuda? Fale com a gente
             </a>
-          </div>
-        </div>
+          </motion.div>
+        </PageShell>
       );
     }
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-10 w-10 animate-spin text-eco-babyDark" />
-          <p className="text-sm text-gray-500">Verificando pagamento…</p>
-        </div>
-      </div>
+      <PageShell>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+          <IconRing>
+            <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#A78BFA' }} />
+          </IconRing>
+          <p className="text-[15px] font-medium" style={{ color: 'rgba(255,255,255,0.50)' }}>
+            Verificando pagamento…
+          </p>
+        </motion.div>
+      </PageShell>
     );
   }
 
-  // ── Estado: pendente ─────────────────────────────────────────────────────
+  // ── Pending ──────────────────────────────────────────────────────────────
   if (pageState === 'pending') {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 text-center">
-        <div className="max-w-sm w-full">
-          <Clock className="h-14 w-14 text-amber-500 mx-auto mb-4" />
-          <h1 className="font-display text-2xl font-bold text-gray-900 mb-3">
+      <PageShell>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        >
+          <div
+            className="w-20 h-20 mx-auto mb-7 flex items-center justify-center rounded-full"
+            style={{
+              background: 'rgba(251,191,36,0.10)',
+              border: '1px solid rgba(251,191,36,0.24)',
+              boxShadow: '0 0 40px rgba(251,191,36,0.14)',
+            }}
+          >
+            <span style={{ fontSize: '32px' }}>⏱</span>
+          </div>
+          <h1 className="font-display text-[26px] font-bold text-white mb-3 leading-tight">
             Pagamento em análise
           </h1>
-          <p className="text-sm text-gray-600 leading-relaxed mb-6">
+          <p className="text-[14px] leading-relaxed mb-7" style={{ color: 'rgba(255,255,255,0.48)' }}>
             Seu pagamento está sendo processado. Você receberá o acesso assim que for confirmado.
           </p>
-          <p className="text-xs text-gray-400">
-            Número do pedido: <span className="font-mono">{externalRef || '—'}</span>
-          </p>
-          <p className="mt-3 text-xs text-gray-400">
-            Dúvidas? Envie para{' '}
-            <a href="mailto:suporte@ecotopia.com" className="underline text-eco-babyDark">
-              suporte@ecotopia.com
-            </a>
-          </p>
-        </div>
-      </div>
+          <div
+            className="rounded-2xl px-4 py-4 text-left"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <p className="text-[11px] break-all" style={{ color: 'rgba(255,255,255,0.32)' }}>
+              <span style={{ color: 'rgba(255,255,255,0.42)' }}>Pedido: </span>
+              <span className="font-mono">{externalRef || '—'}</span>
+            </p>
+            <p className="text-[11px] mt-1.5" style={{ color: 'rgba(255,255,255,0.32)' }}>
+              Dúvidas?{' '}
+              <a
+                href="mailto:suporte@ecotopia.com"
+                className="underline"
+                style={{ color: 'rgba(196,181,253,0.55)' }}
+              >
+                suporte@ecotopia.com
+              </a>
+            </p>
+          </div>
+        </motion.div>
+      </PageShell>
     );
   }
 
-  // ── Estado: acesso liberado (claim feito) ────────────────────────────────
+  // ── Claimed ───────────────────────────────────────────────────────────────
   if (pageState === 'claimed') {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 text-center">
-        <div className="max-w-sm w-full">
-          <CheckCircle className="h-14 w-14 text-green-500 mx-auto mb-4" />
-          <h1 className="font-display text-2xl font-bold text-gray-900 mb-3">
-            Acesso liberado!
-          </h1>
-          <p className="text-sm text-gray-600 leading-relaxed mb-6">
-            Seu Protocolo Sono Profundo está pronto. Boa primeira noite.
-          </p>
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-            <Loader2 className="h-4 w-4 animate-spin text-eco-babyDark" />
+      <PageShell>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 60, damping: 18 }}
+        >
+          <motion.div
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 80, damping: 12, delay: 0.08 }}
+          >
+            <IconRing glow>
+              <span style={{ fontSize: '36px' }}>🌙</span>
+            </IconRing>
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.18 }}
+            className="font-display text-[30px] font-bold text-white mb-3 leading-tight"
+          >
+            Acesso liberado.
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.45, delay: 0.28 }}
+            className="text-[15px] leading-relaxed mb-8"
+            style={{ color: 'rgba(255,255,255,0.48)' }}
+          >
+            Seu Protocolo Sono Profundo está pronto.<br />
+            Boa primeira noite.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.42 }}
+            className="flex items-center justify-center gap-2 text-[13px]"
+            style={{ color: 'rgba(196,181,253,0.52)' }}
+          >
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
             Abrindo o protocolo…
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        </motion.div>
+      </PageShell>
     );
   }
 
-  // ── Estado: aprovado, aguardando claim ──────────────────────────────────
+  // ── Approved — main conversion state ─────────────────────────────────────
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 text-center">
-      <div className="max-w-sm w-full">
-        <CheckCircle className="h-14 w-14 text-green-500 mx-auto mb-4" />
-        <h1 className="font-display text-2xl font-bold text-gray-900 mb-3">
-          Pagamento confirmado!
-        </h1>
-        <p className="text-sm text-gray-600 leading-relaxed mb-2">
-          Preparando seu acesso ao Protocolo Sono Profundo.
-        </p>
+    <PageShell>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 70, damping: 16, delay: 0.08 }}
+        >
+          <IconRing>
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <path
+                d="M6 16L13 23L26 9"
+                stroke="#C4B5FD"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </IconRing>
+        </motion.div>
 
+        <motion.h1
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.14 }}
+          className="font-display text-[28px] font-bold text-white mb-3 leading-tight"
+        >
+          Pagamento confirmado.
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.22 }}
+          className="text-[15px] leading-relaxed mb-8"
+          style={{ color: 'rgba(255,255,255,0.48)' }}
+        >
+          As 7 noites do Protocolo Sono Profundo já estão reservadas para você.
+        </motion.p>
+
+        {/* Claiming spinner */}
         {claiming && (
-          <div className="flex items-center justify-center gap-2 my-4">
-            <Loader2 className="h-4 w-4 animate-spin text-eco-babyDark" />
-            <span className="text-sm text-gray-500">
-              {claimRetry > 0
-                ? `Confirmando pagamento… (tentativa ${claimRetry + 1})`
-                : 'Liberando acesso…'}
-            </span>
-          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center gap-2 mb-6 text-[13px]"
+            style={{ color: 'rgba(196,181,253,0.58)' }}
+          >
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            {claimRetry > 0
+              ? `Confirmando pagamento… (tentativa ${claimRetry + 1})`
+              : 'Liberando acesso…'}
+          </motion.div>
         )}
 
         {claimError && (
-          <p className="text-sm text-red-500 mb-4">{claimError}</p>
+          <p className="text-[13px] text-red-400 mb-4 px-2 leading-snug text-left">
+            {claimError}
+          </p>
         )}
 
-        {/* Usuário NÃO logado */}
-        {!user && (
-          <div className="mt-6 space-y-3">
-            <p className="text-sm text-gray-700 font-medium">
+        {/* Not logged in — show register / login buttons */}
+        {!user && !claiming && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.30 }}
+            className="space-y-3"
+          >
+            <p className="text-[13px] font-semibold mb-4" style={{ color: 'rgba(255,255,255,0.55)' }}>
               Crie sua conta gratuita para acessar o protocolo:
             </p>
             <button
               onClick={() => navigate(`/register?${buildReturnUrl()}`)}
-              className="w-full rounded-full bg-eco-babyDark px-6 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg hover:brightness-110 transition-all active:scale-95"
+              className="w-full rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
+              style={{
+                background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
+                boxShadow: '0 10px 36px rgba(124,58,237,0.50)',
+              }}
             >
               Criar conta e acessar
             </button>
             <button
               onClick={() => navigate(`/login?${buildReturnUrl()}`)}
-              className="w-full rounded-full border border-eco-baby px-6 py-3 text-sm font-semibold text-eco-babyDark hover:bg-eco-babySoft transition-all active:scale-95"
+              className="w-full rounded-full py-3.5 text-[14px] font-semibold transition-all hover:border-white/30 active:scale-[0.97]"
+              style={{
+                border: '1px solid rgba(196,181,253,0.22)',
+                background: 'rgba(255,255,255,0.04)',
+                color: 'rgba(255,255,255,0.60)',
+              }}
             >
               Já tenho conta — Entrar
             </button>
-          </div>
+          </motion.div>
         )}
 
-        {/* Usuário logado mas claim ainda não completou */}
-        {user && claimError && (
-          <button
-            onClick={doClaim}
-            disabled={claiming}
-            className="mt-4 w-full rounded-full border border-eco-baby px-6 py-3 text-sm font-semibold text-eco-babyDark hover:bg-eco-babySoft transition-all disabled:opacity-50"
+        {/* Logged in + claim error */}
+        {user && claimError && !claiming && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={() => doClaim(0)}
+            className="w-full rounded-full py-3.5 text-[14px] font-semibold text-white transition-all hover:scale-[1.01] active:scale-[0.97]"
+            style={{
+              border: '1px solid rgba(196,181,253,0.25)',
+              background: 'rgba(167,139,250,0.10)',
+            }}
           >
             Tentar novamente
-          </button>
+          </motion.button>
         )}
 
-        {/* Fallback de suporte */}
-        <div className="mt-8 rounded-xl bg-gray-50 px-4 py-4 text-left">
-          <p className="text-xs text-gray-500">
-            <span className="font-medium">Número do pedido:</span>{' '}
+        {/* Order ref + support fallback */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.45 }}
+          className="mt-8 rounded-2xl px-4 py-4 text-left"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.30)' }}>
+            <span style={{ color: 'rgba(255,255,255,0.40)' }}>Número do pedido:</span>{' '}
             <span className="font-mono break-all">{externalRef || '—'}</span>
           </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Não consegue acessar? Envie esse número para{' '}
-            <a href="mailto:suporte@ecotopia.com" className="underline text-eco-babyDark">
+          <p className="text-[11px] mt-1.5" style={{ color: 'rgba(255,255,255,0.30)' }}>
+            Não consegue acessar? Envie para{' '}
+            <a
+              href="mailto:suporte@ecotopia.com"
+              className="underline"
+              style={{ color: 'rgba(196,181,253,0.52)' }}
+            >
               suporte@ecotopia.com
             </a>
           </p>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </PageShell>
   );
 }

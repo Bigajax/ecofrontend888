@@ -40,9 +40,11 @@ export function useSonoCheckout() {
         sessionStorage.setItem('eco.sono.external_reference', external_reference);
       }
 
-      mixpanel.track('Checkout Started', {
+      mixpanel.track('Sleep Checkout Started', {
         origin: opts.origin || 'app',
-        product: PRODUCT_KEY,
+        product_key: PRODUCT_KEY,
+        source: sessionStorage.getItem('eco.sono.source') || '',
+        guest_id: sessionStorage.getItem('eco.sono.guest_id') || '',
       });
 
       window.location.href = init_point;
