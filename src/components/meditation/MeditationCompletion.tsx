@@ -169,9 +169,9 @@ export default function MeditationCompletion({
       reasons,
       meditation_id: meditationId,
       meditation_title: meditationTitle,
-      meditation_duration_seconds: meditationDuration,
+      meditation_duration_seconds: Math.round(meditationDuration),
       meditation_category: meditationCategory,
-      actual_play_time_seconds: sessionMetrics?.actualPlayTime || meditationDuration,
+      actual_play_time_seconds: Math.round(sessionMetrics?.actualPlayTime || meditationDuration),
       completion_percentage: sessionMetrics?.actualPlayTime
         ? Math.round((sessionMetrics.actualPlayTime / meditationDuration) * 100)
         : 100,
