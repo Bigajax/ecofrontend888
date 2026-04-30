@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
-  Play, Check, Lock, ArrowLeft, Gift,
-  Moon, ShieldCheck, Wind,
+  Play, Check, Lock, ArrowLeft,
   Activity, Zap, TrendingUp, Loader2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -15,19 +14,13 @@ import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceMod
 import mixpanel from '@/lib/mixpanel';
 import { trackGuestUnlockClicked } from '@/lib/mixpanelSonoGuestEvents';
 
-function isNightAccessible(night: number, completed: Set<number>, isPaid: boolean, isVip: boolean, isFree: boolean): boolean {
-  if (isVip) return true;
-  if (isFree) return true;
-  if (!isPaid) return false;
-  return completed.has(night - 1);
+// Paid/VIP: full access. Others: only free nights (night 1).
+function isNightAccessible(night: ProtocolNight, isPaid: boolean, isVip: boolean): boolean {
+  if (isVip || isPaid) return true;
+  return night.isFree;
 }
 
 const SUBSCRIPTION_PATH = '/app/subscription/demo';
-
-const cardVariant = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 80, damping: 20 } },
-};
 
 export default function MeditacoesSonoPage() {
   const navigate = useNavigate();
@@ -39,7 +32,7 @@ export default function MeditacoesSonoPage() {
   const isPaid = isVipUser || hasSonoEntitlement;
   const uid = user?.id || 'guest';
 
-  // ── Guest sono mode ────────────────────────────────────────────
+  // ── Guest sono mode detection ──────────────────────────────────
   const source = searchParams.get('source') || '';
   const isGuestSono =
     searchParams.get('guestSono') === '1' ||
@@ -89,14 +82,12 @@ export default function MeditacoesSonoPage() {
     const lastPlayedNight = sessionStorage.getItem('eco.sono.lastPlayedNight');
     if (lastPlayedNight) {
       const nightNum = parseInt(lastPlayedNight);
-      const markerKey = `eco.meditation.completed80pct.night_${nightNum}`;
-      if (localStorage.getItem(markerKey) === 'true') {
+      if (localStorage.getItem(`eco.meditation.completed80pct.night_${nightNum}`) === 'true') {
         setCompletedNights(prev => {
           const next = new Set([...prev, nightNum]);
           if (next.size === 7) setShowCompletion(true);
           return next;
         });
-        // Open offer modal for guest after night 1 completion
         if (isGuestSono && nightNum === 1) {
           const offerKey = `eco.sono.offer_modal_shown.${guestId}`;
           if (!localStorage.getItem(offerKey)) {
@@ -111,7 +102,7 @@ export default function MeditacoesSonoPage() {
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  // ── Urgency countdown (15 min, session-persistent) ─────────────
+  // ── Urgency countdown — guest funnel only ──────────────────────
   const [timeLeft, setTimeLeft] = useState<number>(() => {
     if (!isGuestSono) return 0;
     const stored = sessionStorage.getItem('eco.sono.offer_expires');
@@ -138,20 +129,11 @@ export default function MeditacoesSonoPage() {
   const completedCount = completedNights.size;
   const pct = Math.round((completedCount / 7) * 100);
   const nextNight = Math.min(completedCount + 1, 7);
+  const night1IsCompleted = completedNights.has(1);
 
-  const heroButtonLabel = isGuestSono && completedCount === 0
-    ? 'Iniciar Noite 1 grátis'
-    : completedCount === 0 ? 'Iniciar Noite 1'
-    : completedCount === 7 ? 'Protocolo Concluído'
-    : !isPaid ? 'Garantir acesso completo — R$ 37'
-    : `Continuar — Noite ${nextNight}`;
-
-  const handleGuestCheckout = () => {
-    openCheckout({ origin: 'quiz_sono_guest' });
-  };
-
+  // ── Navigation ─────────────────────────────────────────────────
   const handleNightClick = (night: ProtocolNight) => {
-    const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser, night.isFree);
+    const accessible = isNightAccessible(night, isPaid, isVipUser);
     if (!accessible) {
       if (isGuestSono) {
         trackGuestUnlockClicked(night.id);
@@ -164,11 +146,10 @@ export default function MeditacoesSonoPage() {
     if (!night.hasAudio || !night.audioUrl) return;
     sessionStorage.setItem('eco.sono.lastPlayedNight', String(night.night));
 
-    // Guests use the public meditation player route
-    const playerRoute = isGuestSono ? '/guest/meditation-player' : '/app/meditation-player';
-    const returnTo = isGuestSono
-      ? `/app/meditacoes/sono?guestSono=1&source=${encodeURIComponent(source || 'quiz_sono')}&guest_id=${encodeURIComponent(guestId)}`
-      : '/app/meditacoes-sono';
+    const playerRoute = user ? '/app/meditation-player' : '/guest/meditation-player';
+    const returnTo = user
+      ? '/app/meditacoes-sono'
+      : `/app/meditacoes/sono?guestSono=1&source=${encodeURIComponent(source || 'quiz_sono')}&guest_id=${encodeURIComponent(guestId)}`;
 
     if (isGuestSono && night.night === 1) {
       mixpanel.track('Free Experience Started', { night_id: night.id, source, guest_id: guestId });
@@ -190,11 +171,25 @@ export default function MeditacoesSonoPage() {
   };
 
   const handleHeroButtonClick = () => {
-    if (!isPaid && nextNight > 1) { openCheckout(); return; }
     if (completedCount === 7) { setShowCompletion(true); return; }
     const targetNight = PROTOCOL_NIGHTS[nextNight - 1];
     if (targetNight) handleNightClick(targetNight);
   };
+
+  // ── Derived labels ─────────────────────────────────────────────
+  const pillLabel = isPaid
+    ? 'Protocolo Sono Profundo · Acesso Completo'
+    : 'Protocolo Sono Profundo · Noite 1 Gratuita';
+
+  const heroCTALabel = checkoutLoading
+    ? 'Carregando…'
+    : completedCount === 7
+      ? 'Protocolo Concluído'
+      : isPaid
+        ? completedCount === 0 ? 'Iniciar Noite 1' : `Continuar — Noite ${nextNight}`
+        : completedCount === 0
+          ? isGuestSono ? 'Iniciar Noite 1 grátis — agora' : 'Iniciar Noite 1 grátis'
+          : 'Garantir acesso completo — R$37';
 
   // ── Completion Screen ──────────────────────────────────────────
   if (showCompletion) {
@@ -254,310 +249,421 @@ export default function MeditacoesSonoPage() {
 
       <main className="pb-24">
 
-        {isGuestSono ? (
-          /* ════════════════════════════════════════════════════════
-             GUEST LAYOUT — premium, cinematic, invitation-focused
-             ════════════════════════════════════════════════════════ */
-          <>
-            {/* ── Guest Hero ─────────────────────────────────────── */}
-            <section className="relative flex min-h-[720px] flex-col overflow-hidden sm:min-h-[800px]">
-              {/* Nav — guest: volta para o quiz (histórico do browser) */}
-              <div className="absolute left-4 top-4 z-20 sm:left-6 sm:top-6">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-white/50 transition-all hover:text-white/80"
-                  style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
-              </div>
+        {/* ══════════════════════════════════════════════════════════
+            HERO — cinematic, unified
+            ══════════════════════════════════════════════════════════ */}
+        <section className="relative flex min-h-[720px] flex-col overflow-hidden sm:min-h-[800px]">
+          {/* Back button — shown only when no HomeHeader above */}
+          {(!user || isGuestSono) && (
+            <div className="absolute left-4 top-4 z-20 sm:left-6 sm:top-6">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-white/50 transition-all hover:text-white/80"
+                style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            </div>
+          )}
 
-              {/* Background image */}
-              <div
-                className="absolute inset-0 bg-cover"
-                style={{ backgroundImage: 'url("/images/meditacoes-sono-hero.webp")', backgroundPosition: 'center 30%', transform: 'scale(1.06)' }}
+          {/* Background */}
+          <div
+            className="absolute inset-0 bg-cover"
+            style={{ backgroundImage: 'url("/images/meditacoes-sono-hero.webp")', backgroundPosition: 'center 30%', transform: 'scale(1.06)' }}
+          />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(6,9,26,0.25) 0%, rgba(6,9,26,0.10) 25%, rgba(6,9,26,0.65) 60%, rgba(6,9,26,1) 100%)' }} />
+          <div
+            className="pointer-events-none absolute"
+            style={{ bottom: '12%', left: '50%', transform: 'translateX(-50%)', width: '300px', height: '220px', borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(70,55,140,0.09) 0%, transparent 70%)', filter: 'blur(60px)' }}
+          />
+
+          {/* Content */}
+          <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col items-center px-6 pt-32 pb-20 text-center sm:max-w-md sm:px-8 sm:pt-40">
+            {/* Pill */}
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: 'easeOut' }}
+              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-bold tracking-[0.18em] uppercase"
+              style={{ background: 'rgba(167,139,250,0.14)', border: '1px solid rgba(167,139,250,0.28)', color: '#C4B5FD', backdropFilter: 'blur(12px)' }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: '#A78BFA', boxShadow: '0 0 4px rgba(167,139,250,0.45)' }} />
+              {pillLabel}
+            </motion.div>
+
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, delay: 0.1, ease: 'easeOut' }}
+              className="mt-5 font-display font-bold text-white leading-[1.06]"
+              style={{ fontSize: 'clamp(2.1rem, 7vw, 3.1rem)', textShadow: '0 4px 40px rgba(0,0,0,0.70), 0 1px 6px rgba(0,0,0,0.50)' }}
+            >
+              Esta noite,<br />
+              <em style={{ color: '#C4B5FD', fontStyle: 'italic' }}>sua mente descansa.</em>
+            </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+              className="mt-4 text-[15px] leading-relaxed font-light"
+              style={{ color: 'rgba(255,255,255,0.48)' }}
+            >
+              7 minutos. Sem remédio.<br />Sem contar ovelhas.
+            </motion.p>
+
+            {/* Stars */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.55, delay: 0.3 }}
+              className="mt-5 flex items-center gap-2.5"
+            >
+              <span style={{ color: '#FBBF24', fontSize: '14px', letterSpacing: '2px' }}>★★★★★</span>
+              <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.38)' }}>12.400+ pessoas dormindo melhor</span>
+            </motion.div>
+
+            {/* Urgency countdown — guest funnel only */}
+            {isGuestSono && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.32 }}
+                className="mt-6 flex items-center justify-center gap-2 rounded-full px-4 py-2"
+                style={{ background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.22)' }}
+              >
+                <span style={{ color: '#FBBF24', fontSize: '13px' }}>⏱</span>
+                <span className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  Acesso gratuito disponível por{' '}
+                  <span className="font-mono font-bold" style={{ color: '#FBBF24' }}>{formatCountdown(timeLeft)}</span>
+                </span>
+              </motion.div>
+            )}
+
+            {/* Progress badge — paid users with progress */}
+            {isPaid && completedCount > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.32 }}
+                className="mt-6 flex items-center gap-2 rounded-full px-4 py-2"
+                style={{ background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.22)' }}
+              >
+                <span className="text-[12px] font-medium" style={{ color: 'rgba(196,181,253,0.80)' }}>
+                  {completedCount === 7 ? '✓ Protocolo concluído' : `${completedCount} de 7 noites concluídas`}
+                </span>
+              </motion.div>
+            )}
+
+            {/* CTA */}
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, delay: 0.38, ease: 'easeOut' }}
+              onClick={handleHeroButtonClick}
+              disabled={checkoutLoading}
+              className="mt-4 flex w-full items-center justify-center gap-3 rounded-full py-4 text-[15px] font-bold text-white transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-70"
+              style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #6D42C9 100%)', boxShadow: '0 10px 40px rgba(100,70,190,0.32), 0 2px 10px rgba(0,0,0,0.35)' }}
+            >
+              {checkoutLoading
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Play className="h-4 w-4" fill="currentColor" />
+              }
+              {heroCTALabel}
+            </motion.button>
+
+            {/* Subtext */}
+            {!isPaid && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="mt-3 text-[11px]"
+                style={{ color: 'rgba(255,255,255,0.28)' }}
+              >
+                {isGuestSono ? 'Sem cadastro · Sem cartão · Acesso imediato' : 'Acesso imediato à Noite 1 grátis'}
+              </motion.p>
+            )}
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════
+            NIGHT 1 — cinematic full-bleed card
+            ══════════════════════════════════════════════════════════ */}
+        <section className="mx-auto max-w-lg px-4 pt-6 sm:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ type: 'spring', stiffness: 60, damping: 16 }}
+            onClick={() => { const n = PROTOCOL_NIGHTS[0]; if (n) handleNightClick(n); }}
+            className="group relative overflow-hidden rounded-[28px] cursor-pointer"
+            style={{ height: '300px' }}
+          >
+            {PROTOCOL_NIGHTS[0]?.imageUrl ? (
+              <img
+                src={PROTOCOL_NIGHTS[0].imageUrl}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
               />
-              {/* Deep cinematic overlay */}
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(6,9,26,0.25) 0%, rgba(6,9,26,0.10) 25%, rgba(6,9,26,0.65) 60%, rgba(6,9,26,1) 100%)' }} />
-              {/* Ambient glow suave na base — apenas para profundidade */}
-              <div
-                className="pointer-events-none absolute"
-                style={{ bottom: '12%', left: '50%', transform: 'translateX(-50%)', width: '300px', height: '220px', borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(70,55,140,0.09) 0%, transparent 70%)', filter: 'blur(60px)' }}
-              />
+            ) : (
+              <div className="absolute inset-0" style={{ background: PROTOCOL_NIGHTS[0]?.gradient }} />
+            )}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(6,9,26,0.05) 0%, rgba(6,9,26,0.22) 35%, rgba(6,9,26,0.96) 88%)' }} />
 
-              {/* Content */}
-              <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col items-center px-6 pt-32 pb-20 text-center sm:max-w-md sm:px-8 sm:pt-40">
-                {/* Pill */}
-                <motion.div
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, ease: 'easeOut' }}
-                  className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-bold tracking-[0.18em] uppercase"
-                  style={{ background: 'rgba(167,139,250,0.14)', border: '1px solid rgba(167,139,250,0.28)', color: '#C4B5FD', backdropFilter: 'blur(12px)' }}
+            {/* Top row */}
+            <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em]"
+                style={{ background: 'rgba(6,9,26,0.65)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.13)', color: 'rgba(196,181,253,0.80)' }}
+              >
+                <span className="h-1 w-1 rounded-full" style={{ background: '#A78BFA' }} />
+                Noite 1 de 7
+              </span>
+              {!isPaid && (
+                <div
+                  className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold text-white"
+                  style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #7C3AED 100%)', boxShadow: '0 4px 14px rgba(124,58,237,0.50)' }}
                 >
-                  <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: '#A78BFA', boxShadow: '0 0 4px rgba(167,139,250,0.45)' }} />
-                  Protocolo Sono Profundo · Noite 1 Gratuita
-                </motion.div>
+                  ★ Grátis
+                </div>
+              )}
+              {isPaid && night1IsCompleted && (
+                <div
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
+                  style={{ background: 'rgba(52,211,153,0.18)', border: '1px solid rgba(52,211,153,0.35)', color: '#34D399' }}
+                >
+                  <Check className="h-3 w-3" strokeWidth={2.5} />
+                  Concluída
+                </div>
+              )}
+            </div>
 
-                {/* Headline */}
-                <motion.h1
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.65, delay: 0.1, ease: 'easeOut' }}
-                  className="mt-5 font-display font-bold text-white leading-[1.06]"
-                  style={{ fontSize: 'clamp(2.1rem, 7vw, 3.1rem)', textShadow: '0 4px 40px rgba(0,0,0,0.70), 0 1px 6px rgba(0,0,0,0.50)' }}
-                >
-                  Esta noite,<br />
-                  <em style={{ color: '#C4B5FD', fontStyle: 'italic' }}>sua mente descansa.</em>
-                </motion.h1>
-
-                {/* Subtitle */}
-                <motion.p
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
-                  className="mt-4 text-[15px] leading-relaxed font-light"
-                  style={{ color: 'rgba(255,255,255,0.48)' }}
-                >
-                  7 minutos. Sem remédio.<br />Sem contar ovelhas.
-                </motion.p>
-
-                {/* Stars */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.55, delay: 0.3 }}
-                  className="mt-5 flex items-center gap-2.5"
-                >
-                  <span style={{ color: '#FBBF24', fontSize: '14px', letterSpacing: '2px' }}>★★★★★</span>
-                  <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.38)' }}>12.400+ pessoas dormindo melhor</span>
-                </motion.div>
-
-                {/* Urgency countdown */}
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.32 }}
-                  className="mt-6 flex items-center justify-center gap-2 rounded-full px-4 py-2"
-                  style={{ background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.22)' }}
-                >
-                  <span style={{ color: '#FBBF24', fontSize: '13px' }}>⏱</span>
-                  <span className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                    Acesso gratuito disponível por{' '}
-                    <span className="font-mono font-bold" style={{ color: '#FBBF24' }}>{formatCountdown(timeLeft)}</span>
-                  </span>
-                </motion.div>
-
-                {/* CTA — sempre inicia a Noite 1 (não depende de completedCount) */}
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.65, delay: 0.38, ease: 'easeOut' }}
-                  onClick={() => { const n = PROTOCOL_NIGHTS[0]; if (n) handleNightClick(n); }}
-                  disabled={checkoutLoading}
-                  className="mt-4 flex w-full items-center justify-center gap-3 rounded-full py-4 text-[15px] font-bold text-white transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-70"
-                  style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #6D42C9 100%)', boxShadow: '0 10px 40px rgba(100,70,190,0.32), 0 2px 10px rgba(0,0,0,0.35)' }}
-                >
-                  {checkoutLoading
-                    ? <Loader2 className="h-4 w-4 animate-spin" />
-                    : <Play className="h-4 w-4" fill="currentColor" />
+            {/* Bottom content */}
+            <div className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-6">
+              <h3
+                className="font-display text-[21px] font-bold text-white leading-snug mb-1"
+                style={{ textShadow: '0 2px 16px rgba(0,0,0,0.65)' }}
+              >
+                {PROTOCOL_NIGHTS[0]?.title ?? 'Desligando o Estado de Alerta'}
+              </h3>
+              <p className="text-[12px] mb-4" style={{ color: 'rgba(255,255,255,0.48)' }}>
+                {PROTOCOL_NIGHTS[0]?.description ?? 'Ensina seu sistema nervoso a reconhecer o sinal para dormir.'}
+              </p>
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex h-12 w-12 items-center justify-center rounded-full flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                  style={
+                    isPaid && night1IsCompleted
+                      ? { background: 'rgba(52,211,153,0.22)', boxShadow: '0 6px 24px rgba(52,211,153,0.30)', border: '1px solid rgba(52,211,153,0.40)' }
+                      : { background: 'linear-gradient(135deg, #C4B5FD 0%, #7C3AED 100%)', boxShadow: '0 6px 24px rgba(124,58,237,0.60)' }
                   }
-                  {checkoutLoading ? 'Carregando…' : 'Iniciar Noite 1 grátis — agora'}
-                </motion.button>
-
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                  className="mt-3 text-[11px]"
-                  style={{ color: 'rgba(255,255,255,0.28)' }}
                 >
-                  Sem cadastro · Sem cartão · Acesso imediato
-                </motion.p>
-              </div>
-            </section>
-
-            {/* ── Night 1 — cinematic full-bleed card ─────────────── */}
-            <section className="mx-auto max-w-lg px-4 pt-6 sm:px-6">
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ type: 'spring', stiffness: 60, damping: 16 }}
-                onClick={() => { const n = PROTOCOL_NIGHTS[0]; if (n) handleNightClick(n); }}
-                className="group relative overflow-hidden rounded-[28px] cursor-pointer"
-                style={{ height: '300px' }}
-              >
-                {PROTOCOL_NIGHTS[0]?.imageUrl ? (
-                  <img
-                    src={PROTOCOL_NIGHTS[0].imageUrl}
-                    alt=""
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
-                  />
-                ) : (
-                  <div className="absolute inset-0" style={{ background: PROTOCOL_NIGHTS[0]?.gradient }} />
-                )}
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(6,9,26,0.05) 0%, rgba(6,9,26,0.22) 35%, rgba(6,9,26,0.96) 88%)' }} />
-
-                {/* Top row: night label + grátis badge */}
-                <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-                  <span
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em]"
-                    style={{ background: 'rgba(6,9,26,0.65)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.13)', color: 'rgba(196,181,253,0.80)' }}
-                  >
-                    <span className="h-1 w-1 rounded-full" style={{ background: '#A78BFA' }} />
-                    Noite 1 de 7
-                  </span>
-                  <div
-                    className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold text-white"
-                    style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #7C3AED 100%)', boxShadow: '0 4px 14px rgba(124,58,237,0.50)' }}
-                  >
-                    ★ Grátis
-                  </div>
+                  {isPaid && night1IsCompleted
+                    ? <Check className="h-5 w-5 text-emerald-400" strokeWidth={2.5} />
+                    : <Play className="h-5 w-5 text-white ml-0.5" fill="currentColor" />
+                  }
                 </div>
-
-                {/* Bottom content */}
-                <div className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-6">
-                  <h3
-                    className="font-display text-[21px] font-bold text-white leading-snug mb-1"
-                    style={{ textShadow: '0 2px 16px rgba(0,0,0,0.65)' }}
-                  >
-                    {PROTOCOL_NIGHTS[0]?.title ?? 'Desligando o Estado de Alerta'}
-                  </h3>
-                  <p className="text-[12px] mb-4" style={{ color: 'rgba(255,255,255,0.48)' }}>
-                    {PROTOCOL_NIGHTS[0]?.description ?? 'Ensina seu sistema nervoso a reconhecer o sinal para dormir.'}
+                <div>
+                  <p className="text-[14px] font-bold text-white">
+                    {isPaid
+                      ? night1IsCompleted ? 'Rever Noite 1' : 'Iniciar Noite 1'
+                      : 'Iniciar agora — grátis'}
                   </p>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="flex h-12 w-12 items-center justify-center rounded-full flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-                      style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #7C3AED 100%)', boxShadow: '0 6px 24px rgba(124,58,237,0.60)' }}
-                    >
-                      <Play className="h-5 w-5 text-white ml-0.5" fill="currentColor" />
-                    </div>
-                    <div>
-                      <p className="text-[14px] font-bold text-white">Iniciar agora — grátis</p>
-                      <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.38)' }}>Sem cadastro · Sem cartão</p>
-                    </div>
-                  </div>
+                  {!isPaid && (
+                    <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.38)' }}>
+                      {isGuestSono ? 'Sem cadastro · Sem cartão' : 'Acesso imediato'}
+                    </p>
+                  )}
+                  {isPaid && night1IsCompleted && (
+                    <p className="text-[11px]" style={{ color: 'rgba(52,211,153,0.60)' }}>Concluída</p>
+                  )}
                 </div>
-              </motion.div>
-            </section>
+              </div>
+            </div>
+          </motion.div>
+        </section>
 
-            {/* ── Benefits ──────────────────────────────────────────── */}
-            <section className="mx-auto max-w-lg px-4 pt-8 sm:px-6">
+        {/* ══════════════════════════════════════════════════════════
+            BENEFITS
+            ══════════════════════════════════════════════════════════ */}
+        <section className="mx-auto max-w-lg px-4 pt-8 sm:px-6">
+          <motion.div
+            className="space-y-3"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ type: 'spring', stiffness: 65, damping: 18 }}
+          >
+            {[
+              { icon: Activity,    text: 'Sua respiração desacelera — sem você tentar. Seu peito afrouxa. Os pensamentos perdem força.', color: '#A78BFA' },
+              { icon: Zap,         text: 'Você para de calcular quantas horas de sono ainda dá pra pegar. Sua mente solta.', color: '#A78BFA' },
+              { icon: TrendingUp,  text: 'Cada noite aprofunda mais. No 7º dia, seu corpo já sabe o que fazer — sem o áudio.', color: '#34D399' },
+            ].map(({ icon: Icon, text, color }, i) => (
               <motion.div
-                className="space-y-3"
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ type: 'spring', stiffness: 65, damping: 18 }}
+                key={i}
+                className="flex items-start gap-4 rounded-2xl px-4 py-4"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                initial={{ opacity: 0, x: -10 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: '-20px' }}
+                transition={{ type: 'spring', stiffness: 80, damping: 20, delay: i * 0.07 }}
               >
-                {[
-                  { icon: Activity, text: 'Sua respiração desacelera — sem você tentar. Seu peito afrouxa. Os pensamentos perdem força.', color: '#A78BFA' },
-                  { icon: Zap,      text: 'Você para de calcular quantas horas de sono ainda dá pra pegar. Sua mente solta.', color: '#A78BFA' },
-                  { icon: TrendingUp, text: 'Cada noite aprofunda mais. No 7º dia, seu corpo já sabe o que fazer — sem o áudio.', color: '#34D399' },
-                ].map(({ icon: Icon, text, color }, i) => (
+                <div className="flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `${color}18`, border: `1px solid ${color}28` }}>
+                  <Icon className="h-4 w-4" style={{ color }} />
+                </div>
+                <p className="text-[13px] leading-relaxed pt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{text}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════
+            NIGHTS 2–7 — 2-column grid
+            ══════════════════════════════════════════════════════════ */}
+        <section className="mx-auto max-w-lg px-4 pt-10 sm:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ type: 'spring', stiffness: 65, damping: 18 }}
+          >
+            {/* Section divider */}
+            <div className="flex items-center gap-3 mb-5">
+              <div
+                className="h-px flex-1"
+                style={{ background: `linear-gradient(to right, transparent, ${isPaid ? 'rgba(52,211,153,0.25)' : 'rgba(167,139,250,0.25)'})` }}
+              />
+              <div
+                className="flex items-center gap-2 rounded-full px-4 py-1.5"
+                style={{
+                  background: isPaid ? 'rgba(52,211,153,0.10)' : 'rgba(167,139,250,0.10)',
+                  border: `1px solid ${isPaid ? 'rgba(52,211,153,0.20)' : 'rgba(167,139,250,0.20)'}`,
+                }}
+              >
+                {isPaid
+                  ? <Play className="h-3 w-3" style={{ color: 'rgba(52,211,153,0.70)' }} fill="currentColor" />
+                  : <Lock className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.55)' }} />
+                }
+                <span
+                  className="text-[11px] font-bold uppercase tracking-widest"
+                  style={{ color: isPaid ? 'rgba(52,211,153,0.70)' : 'rgba(196,181,253,0.55)' }}
+                >
+                  {isPaid ? 'Noites 2 a 7 — Desbloqueadas' : 'Noites 2 a 7'}
+                </span>
+              </div>
+              <div
+                className="h-px flex-1"
+                style={{ background: `linear-gradient(to left, transparent, ${isPaid ? 'rgba(52,211,153,0.25)' : 'rgba(167,139,250,0.25)'})` }}
+              />
+            </div>
+
+            {/* Grid */}
+            <div className="grid grid-cols-2 gap-2.5">
+              {PROTOCOL_NIGHTS.slice(1).map((night, idx) => {
+                const nightCompleted = completedNights.has(night.night);
+                return (
                   <motion.div
-                    key={i}
-                    className="flex items-start gap-4 rounded-2xl px-4 py-4"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                    initial={{ opacity: 0, x: -10 }}
-                    whileInView={{ opacity: 1, x: 0 }}
+                    key={night.id}
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true, margin: '-20px' }}
-                    transition={{ type: 'spring', stiffness: 80, damping: 20, delay: i * 0.07 }}
+                    transition={{ type: 'spring', stiffness: 80, damping: 20, delay: idx * 0.05 }}
+                    onClick={() => handleNightClick(night)}
+                    className="group relative overflow-hidden rounded-2xl cursor-pointer"
+                    style={{ height: '130px' }}
                   >
-                    <div className="flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `${color}18`, border: `1px solid ${color}28` }}>
-                      <Icon className="h-4 w-4" style={{ color }} />
-                    </div>
-                    <p className="text-[13px] leading-relaxed pt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{text}</p>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </section>
+                    {night.imageUrl ? (
+                      <img
+                        src={night.imageUrl}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover"
+                        style={isPaid ? undefined : { filter: 'brightness(0.30) saturate(0.50)' }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0" style={{ background: night.gradient, opacity: isPaid ? 1 : 0.35 }} />
+                    )}
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 15%, rgba(6,9,26,0.85) 100%)' }} />
 
-            {/* ── Protocol preview: nights 2–7 (2-col image grid) ───── */}
-            <section className="mx-auto max-w-lg px-4 pt-10 sm:px-6">
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ type: 'spring', stiffness: 65, damping: 18 }}
-              >
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, transparent, rgba(167,139,250,0.25))' }} />
-                  <div className="flex items-center gap-2 rounded-full px-4 py-1.5" style={{ background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.20)' }}>
-                    <Lock className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.55)' }} />
-                    <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'rgba(196,181,253,0.55)' }}>Noites 2 a 7</span>
-                  </div>
-                  <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, rgba(167,139,250,0.25))' }} />
-                </div>
+                    <div className="absolute inset-0 flex flex-col justify-between p-3.5">
+                      <div className="flex items-center justify-between">
+                        <span
+                          className="text-[9px] font-bold uppercase tracking-wider"
+                          style={{ color: isPaid ? 'rgba(255,255,255,0.65)' : 'rgba(196,181,253,0.55)' }}
+                        >
+                          Noite {night.night}
+                        </span>
 
-                <div className="grid grid-cols-2 gap-2.5">
-                  {PROTOCOL_NIGHTS.slice(1).map((night, idx) => (
-                    <motion.div
-                      key={night.id}
-                      initial={{ opacity: 0, scale: 0.96 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true, margin: '-20px' }}
-                      transition={{ type: 'spring', stiffness: 80, damping: 20, delay: idx * 0.05 }}
-                      onClick={() => handleNightClick(night)}
-                      className="group relative overflow-hidden rounded-2xl cursor-pointer"
-                      style={{ height: '130px' }}
-                    >
-                      {night.imageUrl ? (
-                        <img
-                          src={night.imageUrl}
-                          alt=""
-                          className="absolute inset-0 w-full h-full object-cover"
-                          style={{ filter: 'brightness(0.30) saturate(0.50)' }}
-                        />
-                      ) : (
-                        <div className="absolute inset-0" style={{ background: night.gradient, opacity: 0.35 }} />
-                      )}
-                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 15%, rgba(6,9,26,0.85) 100%)' }} />
-                      <div className="absolute inset-0 flex flex-col justify-between p-3.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'rgba(196,181,253,0.55)' }}>
-                            Noite {night.night}
-                          </span>
+                        {isPaid ? (
+                          nightCompleted ? (
+                            <div
+                              className="h-5 w-5 flex items-center justify-center rounded-full"
+                              style={{ background: 'rgba(52,211,153,0.25)', border: '1px solid rgba(52,211,153,0.45)' }}
+                            >
+                              <Check className="h-2.5 w-2.5 text-emerald-400" strokeWidth={2.5} />
+                            </div>
+                          ) : (
+                            <div
+                              className="h-5 w-5 flex items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110"
+                              style={{ background: 'rgba(167,139,250,0.20)', border: '1px solid rgba(167,139,250,0.35)' }}
+                            >
+                              <Play className="h-2.5 w-2.5 ml-px" style={{ color: 'rgba(196,181,253,0.80)' }} fill="currentColor" />
+                            </div>
+                          )
+                        ) : (
                           <div
                             className="h-5 w-5 flex items-center justify-center rounded-full"
                             style={{ background: 'rgba(6,9,26,0.72)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.12)' }}
                           >
                             <Lock className="h-2.5 w-2.5 text-white/40" />
                           </div>
-                        </div>
-                        <p className="text-[11px] font-semibold leading-snug line-clamp-2" style={{ color: 'rgba(255,255,255,0.58)' }}>
-                          {night.title}
-                        </p>
+                        )}
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            </section>
 
-            {/* ── Conversion block ─────────────────────────────────── */}
-            <section className="mx-auto max-w-lg px-4 pt-6 pb-12 sm:px-6">
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-30px' }}
-                transition={{ type: 'spring', stiffness: 65, damping: 18, delay: 0.1 }}
-                className="relative overflow-hidden rounded-3xl px-6 py-7 text-center"
-                style={{
-                  background: 'linear-gradient(160deg, rgba(70,52,140,0.16) 0%, rgba(10,10,30,0.98) 100%)',
-                  border: '1px solid rgba(140,115,210,0.22)',
-                  boxShadow: '0 8px 40px rgba(50,40,100,0.20)',
-                }}
-              >
-                <div className="pointer-events-none absolute" style={{ top: '-40px', right: '-30px', width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.12) 0%, transparent 70%)' }} />
-                <p className="text-[11px] uppercase tracking-[0.2em] font-bold mb-4" style={{ color: 'rgba(251,191,36,0.80)' }}>⚡ Oferta especial de lançamento</p>
-                <div className="flex items-baseline justify-center gap-3 mb-1">
-                  <span className="text-[14px] line-through" style={{ color: 'rgba(255,255,255,0.25)' }}>R$97</span>
-                  <span className="font-display text-[40px] font-bold text-white leading-none">R$37</span>
-                </div>
-                <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.32)' }}>Pagamento único · Sem mensalidade</p>
+                      <p
+                        className="text-[11px] font-semibold leading-snug line-clamp-2"
+                        style={{ color: isPaid ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.58)' }}
+                      >
+                        {night.title}
+                      </p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════
+            CONVERSION BLOCK — non-paid users
+            ══════════════════════════════════════════════════════════ */}
+        {!isPaid && (
+          <section className="mx-auto max-w-lg px-4 pt-6 pb-12 sm:px-6">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ type: 'spring', stiffness: 65, damping: 18, delay: 0.1 }}
+              className="relative overflow-hidden rounded-3xl px-6 py-7 text-center"
+              style={{
+                background: 'linear-gradient(160deg, rgba(70,52,140,0.16) 0%, rgba(10,10,30,0.98) 100%)',
+                border: '1px solid rgba(140,115,210,0.22)',
+                boxShadow: '0 8px 40px rgba(50,40,100,0.20)',
+              }}
+            >
+              <div className="pointer-events-none absolute" style={{ top: '-40px', right: '-30px', width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.12) 0%, transparent 70%)' }} />
+              <p className="text-[11px] uppercase tracking-[0.2em] font-bold mb-4" style={{ color: 'rgba(251,191,36,0.80)' }}>
+                ⚡ Oferta especial de lançamento
+              </p>
+              <div className="flex items-baseline justify-center gap-3 mb-1">
+                <span className="text-[14px] line-through" style={{ color: 'rgba(255,255,255,0.25)' }}>R$97</span>
+                <span className="font-display text-[40px] font-bold text-white leading-none">R$37</span>
+              </div>
+              <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.32)' }}>Pagamento único · Sem mensalidade</p>
+
+              {isGuestSono ? (
                 <div className="flex items-center justify-center gap-1.5 mb-6">
                   <span style={{ color: '#FBBF24', fontSize: '12px' }}>⏱</span>
                   <span className="text-[12px]" style={{ color: 'rgba(251,191,36,0.70)' }}>
@@ -565,220 +671,63 @@ export default function MeditacoesSonoPage() {
                     <span className="font-mono font-bold">{formatCountdown(timeLeft)}</span>
                   </span>
                 </div>
-                <button
-                  onClick={handleGuestCheckout}
-                  disabled={checkoutLoading}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 mb-3"
-                  style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)', boxShadow: '0 10px 36px rgba(107,79,187,0.60)' }}
-                >
-                  {checkoutLoading
-                    ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Abrindo…</span>
-                    : 'Garantir as 7 noites — R$37 →'}
-                </button>
-                <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>Acesso imediato · Sem risco</p>
-              </motion.div>
-            </section>
-          </>
-        ) : (
-          /* ════════════════════════════════════════════════════════
-             STANDARD LAYOUT — authenticated / paid users
-             ════════════════════════════════════════════════════════ */
-          <>
-            {/* ── Standard Hero ───────────────────────────────── */}
-            <section className="relative flex min-h-[600px] flex-col overflow-hidden sm:min-h-[680px]">
-              <div className="absolute left-4 top-4 right-4 z-20 flex items-center justify-between sm:left-6 sm:top-6">
-                <button
-                  onClick={() => navigate('/app')}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-white shadow-md transition-all hover:scale-105 active:scale-95"
-                  style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="absolute inset-0 bg-cover" style={{ backgroundImage: 'url("/images/meditacoes-sono-hero.webp")', backgroundPosition: 'center center', transform: 'scale(1.05)' }} />
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.38) 55%, rgba(6,9,26,1) 100%)' }} />
-              <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col items-center px-6 pt-24 pb-16 text-center sm:max-w-md sm:px-8 sm:pt-28 sm:pb-20">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/50 sm:text-xs">7 Noites · Protocolo Progressivo</p>
-                <h1
-                  className="mt-4 font-display text-[2rem] font-bold text-white sm:text-[2.75rem] leading-[1.12]"
-                  style={{ textShadow: '0 2px 20px rgba(0,0,0,0.55), 0 1px 4px rgba(0,0,0,0.35)' }}
-                >
-                  Você deita.<br />
-                  <span style={{ color: '#C4B5FD', fontStyle: 'italic' }}>Sua mente não desliga.</span>
-                </h1>
-                <p className="mt-3 text-sm text-white/60 font-light leading-relaxed sm:text-[0.95rem]">
-                  7 noites. Cada uma resolve uma camada diferente do que te mantém acordado.
-                </p>
-                <div className="mt-10 flex w-full flex-col gap-2.5 sm:mt-11">
-                  {[
-                    { icon: Moon,        label: 'Adormecer mais rápido' },
-                    { icon: ShieldCheck, label: 'Reduzir despertares noturnos' },
-                    { icon: Wind,        label: 'Diminuir ansiedade antes de deitar' },
-                  ].map(({ icon: Icon, label }) => (
-                    <span key={label} className="flex w-full items-center gap-3 rounded-full px-5 py-2.5 text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.28)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 14px rgba(0,0,0,0.18)' }}>
-                      <Icon className="h-4 w-4 text-[#A78BFA] flex-shrink-0" strokeWidth={2} />
-                      {label}
-                    </span>
-                  ))}
-                </div>
-                <button
-                  onClick={handleHeroButtonClick}
-                  disabled={checkoutLoading}
-                  className="mt-8 flex w-full items-center justify-center gap-2.5 rounded-full py-3.5 text-sm font-bold text-white transition-all duration-300 hover:scale-105 active:scale-95 sm:mt-9 sm:py-4 sm:text-base disabled:opacity-70 disabled:cursor-not-allowed"
-                  style={
-                    !isPaid && completedCount > 0
-                      ? { background: 'linear-gradient(135deg, #7B5FD4 0%, #5A3DB0 100%)', boxShadow: '0 8px 28px rgba(107,79,187,0.45)' }
-                      : { background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 24px rgba(0,0,0,0.2)' }
-                  }
-                >
-                  {checkoutLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : isPaid && completedCount < 7 ? <Play className="h-4 w-4 text-[#A78BFA]" fill="currentColor" /> : null}
-                  {checkoutLoading ? 'Abrindo pagamento…' : heroButtonLabel}
-                </button>
-              </div>
-            </section>
+              ) : (
+                <div className="mb-6" />
+              )}
 
-            {/* ── Identification Block ─────────────────────────── */}
-            <section className="mx-auto max-w-4xl px-4 pt-8 pb-2 sm:px-8">
-              <motion.div className="rounded-3xl px-5 py-5 sm:px-6 sm:py-6" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ type: 'spring', stiffness: 70, damping: 20 }} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
-                <p className="text-[15px] text-white/65 sm:text-base leading-relaxed">
-                  Você não tem dificuldade para dormir.{' '}
-                  <span className="text-white/85">Você tem dificuldade para desligar.</span>
-                  {' '}Seu sistema nervoso ainda acredita que precisa estar em alerta. Essas 7 noites ensinam ele a parar.
-                </p>
-              </motion.div>
-            </section>
-
-            {/* ── Progress ─────────────────────────────────────── */}
-            <section className="mx-auto max-w-4xl px-4 pt-6 pb-2 sm:px-8">
-              <motion.div className="rounded-3xl px-5 py-5 sm:px-6" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ type: 'spring', stiffness: 70, damping: 20, delay: 0.05 }} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-[13px] font-semibold text-white/70">{completedCount === 7 ? 'Programa concluído!' : `Noite ${nextNight} de 7`}</p>
-                  <span className="text-[13px] font-bold text-[#A78BFA]">{pct}%</span>
-                </div>
-                <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.10)' }}>
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #A78BFA, #7C3AED)' }} />
-                </div>
-                <p className="mt-2 text-[12px] text-white/35">{completedCount} de 7 noites concluídas</p>
-              </motion.div>
-            </section>
-
-            {/* ── Unlock Banner (non-paid, non-guest) ──────────── */}
-            {!isPaid && (
-              <section className="mx-auto max-w-4xl px-4 pt-6 pb-2 sm:px-8">
-                <motion.div className="relative overflow-hidden rounded-3xl" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ type: 'spring', stiffness: 70, damping: 20 }} style={{ background: 'linear-gradient(135deg, #07192E 0%, #0D2E4F 40%, #0F4476 100%)', boxShadow: '0 16px 48px rgba(7,25,46,0.60), 0 4px 16px rgba(167,139,250,0.10)' }}>
-                  <div className="pointer-events-none absolute" style={{ top: '-40px', right: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.20) 0%, transparent 65%)' }} />
-                  <div className="relative z-10 px-5 py-6 sm:px-6">
-                    <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: 'rgba(196,181,253,0.6)', letterSpacing: '0.2em' }}>Oferta por tempo limitado</p>
-                    <p className="font-display text-[20px] font-semibold text-white leading-snug mb-1">Desbloqueie as 7 noites.</p>
-                    <p className="text-[13px] text-white/45 mb-5">Pagamento único de R$ 37. Sem mensalidade. Acesso imediato.</p>
-                    <button onClick={openCheckout} disabled={checkoutLoading} className="inline-flex items-center gap-2.5 rounded-full px-6 py-3 text-[14px] font-bold text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-70" style={{ background: 'linear-gradient(135deg, #7B5FD4 0%, #5A3DB0 100%)', boxShadow: '0 8px 28px rgba(107,79,187,0.45)' }}>
-                      {checkoutLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {checkoutLoading ? 'Abrindo pagamento…' : 'Garantir acesso — R$ 37 →'}
-                    </button>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.25), transparent)' }} />
-                </motion.div>
-              </section>
-            )}
-
-            {/* ── Night Cards ───────────────────────────────────── */}
-            <section className="mx-auto max-w-4xl px-4 py-6 sm:px-8">
-              <motion.div className="space-y-3" initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } } }}>
-                {PROTOCOL_NIGHTS.map((night) => {
-                  const accessible = isNightAccessible(night.night, completedNights, isPaid, isVipUser, night.isFree);
-                  const completed = completedNights.has(night.night);
-                  const paidLocked = !night.isFree && !isPaid;
-                  const sequentialLocked = !paidLocked && !accessible;
-                  const comingSoon = accessible && !night.hasAudio;
-                  return (
-                    <motion.div key={night.id} variants={cardVariant} onClick={() => handleNightClick(night)} className={`group relative flex items-center gap-4 overflow-hidden rounded-3xl p-4 transition-all duration-200 ${sequentialLocked ? 'opacity-40 cursor-not-allowed' : comingSoon ? 'cursor-default' : 'cursor-pointer hover:scale-[1.01] active:scale-[0.99]'}`} style={{ background: completed ? 'rgba(167,139,250,0.10)' : 'rgba(255,255,255,0.05)', border: completed ? '1px solid rgba(167,139,250,0.25)' : '1px solid rgba(255,255,255,0.08)' }}>
-                      <div className="relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden">
-                        {night.imageUrl ? <img src={night.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" /> : <div className="absolute inset-0" style={{ background: night.gradient }} />}
-                        <div className="absolute inset-0" style={{ background: night.gradient, opacity: 0.45 }} />
-                        {!completed && !sequentialLocked && <div className="absolute inset-0 flex items-center justify-center"><span className="text-[13px] font-bold text-white/80 drop-shadow">{night.night}</span></div>}
-                        {completed && <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(167,139,250,0.25)' }}><Check className="h-5 w-5 text-white" strokeWidth={2.5} /></div>}
-                        {sequentialLocked && <div className="absolute inset-0 flex items-center justify-center bg-black/40"><Lock className="h-4 w-4 text-white/50" /></div>}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-white/30 mb-0.5">Noite {night.night}</p>
-                        <h3 className="font-display text-[15px] sm:text-[16px] font-semibold leading-snug text-white line-clamp-1">{night.title}</h3>
-                        <p className="mt-0.5 text-[12px] text-white/45 line-clamp-1">{night.description}</p>
-                      </div>
-                      <div className="flex-shrink-0 flex flex-col items-end gap-2">
-                        <span className="text-[11px] text-white/35 font-medium">{night.duration}</span>
-                        {paidLocked ? (
-                          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold text-white" style={{ background: 'rgba(167,139,250,0.20)', border: '1px solid rgba(167,139,250,0.35)' }}><Lock size={10} />R$ 37</span>
-                        ) : comingSoon ? (
-                          <span className="text-[11px] font-medium text-white/30 px-2 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>Em breve</span>
-                        ) : (
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 group-hover:scale-110" style={{ background: sequentialLocked ? 'rgba(255,255,255,0.05)' : completed ? 'rgba(167,139,250,0.22)' : 'rgba(255,255,255,0.12)', border: sequentialLocked ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(255,255,255,0.18)' }}>
-                            <Play className={`h-4 w-4 ${sequentialLocked ? 'text-white/15' : 'text-white/70'}`} fill="currentColor" />
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-            </section>
-
-            {/* ── SOS Bonus ─────────────────────────────────────── */}
-            <section className="mx-auto max-w-4xl px-4 pt-2 pb-4 sm:px-8">
-              <motion.div
-                onClick={() => { if (!isPaid) return; navigate('/app/meditation-player', { state: { meditation: { id: 'sos_track', title: 'SOS: Não Consigo Dormir Hoje', duration: '5 min', audioUrl: '/audio/sos-nao-consigo-dormir.mp3', imageUrl: '/images/meditacoes-sono-hero.webp', backgroundMusic: 'Sono', gradient: 'linear-gradient(to bottom, #8A4A4A 0%, #2E1414 100%)', category: 'sono' }, returnTo: '/app/meditacoes-sono' } }); }}
-                className={`flex items-center gap-4 rounded-3xl p-4 transition-all duration-200 ${isPaid ? 'cursor-pointer hover:scale-[1.01] active:scale-[0.99]' : 'opacity-40 cursor-not-allowed'}`}
-                style={{ background: isPaid ? 'rgba(251,191,36,0.08)' : 'rgba(255,255,255,0.04)', border: isPaid ? '1px solid rgba(251,191,36,0.20)' : '1px solid rgba(255,255,255,0.06)' }}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: isPaid ? 1 : 0.4, y: 0 }}
-                viewport={{ once: true, margin: '-30px' }}
-                transition={{ type: 'spring', stiffness: 70, damping: 20 }}
+              <button
+                onClick={() => {
+                  if (isGuestSono) openCheckout({ origin: 'quiz_sono_guest' });
+                  else openCheckout();
+                }}
+                disabled={checkoutLoading}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 mb-3"
+                style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)', boxShadow: '0 10px 36px rgba(107,79,187,0.60)' }}
               >
-                <div className="flex-shrink-0 flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: isPaid ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.05)', border: isPaid ? '1px solid rgba(251,191,36,0.25)' : '1px solid rgba(255,255,255,0.06)' }}>
-                  {isPaid ? <Gift className="h-6 w-6 text-amber-400" /> : <Lock className="h-5 w-5 text-white/25" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-bold uppercase tracking-wider mb-0.5" style={{ color: isPaid ? 'rgba(251,191,36,0.60)' : 'rgba(255,255,255,0.25)' }}>Áudio Extra</p>
-                  <h3 className="font-display text-[15px] font-semibold text-white leading-snug">SOS: Não Consigo Dormir Hoje</h3>
-                  <p className="mt-0.5 text-[12px] text-white/40">Para quando nada está funcionando e o teto parece longe demais.</p>
-                </div>
-                <div className="flex-shrink-0 flex flex-col items-end gap-2">
-                  <span className="text-[11px] text-white/30">5 min</span>
-                  <span className="text-[11px] font-medium px-2.5 py-1 rounded-full" style={{ background: isPaid ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.06)', color: isPaid ? '#FBBF24' : 'rgba(255,255,255,0.25)' }}>
-                    {isPaid ? 'Disponível' : 'Premium'}
-                  </span>
-                </div>
-              </motion.div>
-            </section>
-
-            {/* ── Why It Works ─────────────────────────────────── */}
-            <section className="mx-auto max-w-4xl px-4 pt-6 pb-12 sm:px-8">
-              <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ type: 'spring', stiffness: 70, damping: 20 }}>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-[#A78BFA]/50 mb-2" style={{ letterSpacing: '0.2em' }}>O que muda</p>
-                <h3 className="font-display text-[20px] font-bold text-white mb-6">O que acontece quando você para de lutar.</h3>
-                <div className="space-y-3">
-                  {[
-                    { icon: Activity, text: 'Sua respiração desacelera — sem você tentar. Seu peito afrouxa. Os pensamentos perdem força.', color: '#A78BFA' },
-                    { icon: Zap,      text: 'Você para de calcular quantas horas de sono ainda dá pra pegar. Sua mente solta.', color: '#A78BFA' },
-                    { icon: TrendingUp, text: 'Cada noite aprofunda mais. No 7º dia, seu corpo já sabe o que fazer — sem o áudio.', color: '#34D399' },
-                  ].map(({ icon: Icon, text, color }, i) => (
-                    <motion.div key={i} className="flex items-start gap-4 rounded-3xl p-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }} initial={{ opacity: 0, x: -12 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: '-30px' }} transition={{ type: 'spring', stiffness: 70, damping: 20, delay: i * 0.08 }}>
-                      <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: `${color}18`, border: `1px solid ${color}30` }}>
-                        <Icon className="h-5 w-5" style={{ color }} />
-                      </div>
-                      <p className="text-[14px] text-white/55 leading-relaxed pt-1">{text}</p>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            </section>
-          </>
+                {checkoutLoading
+                  ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Abrindo…</span>
+                  : isGuestSono ? 'Garantir as 7 noites — R$37 →' : 'Desbloquear as 7 noites — R$37 →'}
+              </button>
+              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>Acesso imediato · Sem risco</p>
+            </motion.div>
+          </section>
         )}
 
-        {/* ── Offer modal (guest sono) — shared ─────────────────── */}
+        {/* ══════════════════════════════════════════════════════════
+            PROGRESS BLOCK — paid users
+            ══════════════════════════════════════════════════════════ */}
+        {isPaid && (
+          <section className="mx-auto max-w-lg px-4 pt-6 pb-12 sm:px-6">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ type: 'spring', stiffness: 65, damping: 18 }}
+              className="rounded-3xl px-6 py-6"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(167,139,250,0.15)' }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[13px] font-semibold text-white/70">
+                  {completedCount === 7 ? 'Programa concluído!' : `Noite ${nextNight} de 7`}
+                </p>
+                <span className="text-[13px] font-bold text-[#A78BFA]">{pct}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.10)' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #A78BFA, #7C3AED)' }}
+                />
+              </div>
+              <p className="mt-2 text-[12px] text-white/35">{completedCount} de 7 noites concluídas</p>
+            </motion.div>
+          </section>
+        )}
+
+        {/* ── Offer modal (guest sono) ──────────────────────────────── */}
         <SonoPostExperienceModal
           open={showOfferModal}
           onClose={() => setShowOfferModal(false)}
-          onCheckout={handleGuestCheckout}
+          onCheckout={() => openCheckout({ origin: 'quiz_sono_guest' })}
           checkoutLoading={checkoutLoading}
         />
 
