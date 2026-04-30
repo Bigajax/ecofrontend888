@@ -148,7 +148,7 @@ export default function MeditationPlayerPage() {
     const allSounds = getAllSounds();
     return allSounds.find(sound => sound.id === 'med_profunda') || null;
   });
-  const [backgroundVolume, setBackgroundVolume] = useState(isSono ? 16 : 70);
+  const [backgroundVolume, setBackgroundVolume] = useState(50);
   const backgroundAudioRef = useRef<HTMLAudioElement>(null);
 
   // Estado para volume da meditação
@@ -744,9 +744,12 @@ export default function MeditationPlayerPage() {
       if (bgGainRef.current) {
         bgGainRef.current.gain.value = Math.max(0, initialBgGain * remaining);
       } else if (backgroundAudioRef.current) {
-        backgroundAudioRef.current.volume = Math.max(0, backgroundAudioRef.current.volume * remaining);
+        backgroundAudioRef.current.volume = Math.max(0, initialBgGain * remaining);
       }
-      if (step >= fadeSteps && endFadeOutIntervalRef.current) clearInterval(endFadeOutIntervalRef.current);
+      if (step >= fadeSteps && endFadeOutIntervalRef.current) {
+        clearInterval(endFadeOutIntervalRef.current);
+        backgroundAudioRef.current?.pause();
+      }
     }, stepMs);
   };
 
