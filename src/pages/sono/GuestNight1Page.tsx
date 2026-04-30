@@ -10,7 +10,7 @@ import { PostMeditationScreen } from '@/components/sono-guest/PostMeditationScre
 import { ProtocolScreen } from '@/components/sono-guest/ProtocolScreen';
 import { PurchaseModal } from '@/components/sono-guest/PurchaseModal';
 import { SoundOption, LS_KEYS } from '@/components/sono-guest/types';
-import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
+import { SonoCutoffQuizOffer } from '@/components/sono/SonoCutoffQuizOffer';
 import mixpanel from '@/lib/mixpanel';
 
 type Screen = 'player' | 'playback' | 'post_meditation' | 'protocol';
@@ -194,15 +194,12 @@ export default function GuestNight1Page() {
         />
       )}
 
-      <SonoPostExperienceModal
+      <SonoCutoffQuizOffer
         open={showCutoffOffer}
-        variant="cutoff"
-        startWithQuiz
         guestId={guestId}
         source={source}
-        onClose={() => setShowCutoffOffer(false)}
-        onCutoffDismiss={resumeAfterCutoffDismiss}
         onCheckout={() => openSonoCheckout({ origin: 'quiz_sono_guest' })}
+        onDismiss={resumeAfterCutoffDismiss}
         checkoutLoading={sonoCheckoutLoading}
       />
     </>

@@ -18,6 +18,7 @@ import { useMediaSession } from '@/hooks/useMediaSession';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import MeditationAmbientScreen from '@/components/meditation/MeditationAmbientScreen';
 import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
+import { SonoCutoffQuizOffer } from '@/components/sono/SonoCutoffQuizOffer';
 import mixpanel from '@/lib/mixpanel';
 
 interface MeditationData {
@@ -1814,15 +1815,12 @@ export default function MeditationPlayerPage() {
         onDismiss={resetAmbientTimer}
       />
 
-      <SonoPostExperienceModal
+      <SonoCutoffQuizOffer
         open={showSonoCutoffOffer}
-        variant="cutoff"
-        startWithQuiz
         guestId={sonoGuestId}
         source={sonoGuestSource}
-        onClose={() => setShowSonoCutoffOffer(false)}
-        onCutoffDismiss={resumeAfterSonoCutoffDismiss}
         onCheckout={() => openSonoCheckout({ origin: 'quiz_sono_guest' })}
+        onDismiss={resumeAfterSonoCutoffDismiss}
         checkoutLoading={sonoCheckoutLoading}
       />
 
