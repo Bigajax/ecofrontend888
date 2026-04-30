@@ -106,6 +106,8 @@ export default function MeditationCompletion({
 
   // Post-flow overlay for sono guest (6-step sequence)
   const [showPostFlow, setShowPostFlow] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const [autoAdvanceCancelled, setAutoAdvanceCancelled] = useState(false);
 
   const relatedMeditations = useMemo(() => {
     const pool = RELATED_BY_CATEGORY[meditationCategory] ?? RELATED_BY_CATEGORY.default;
@@ -139,6 +141,13 @@ export default function MeditationCompletion({
   useEffect(() => {
     updateStreak();
   }, [updateStreak]);
+
+  useEffect(() => {
+    if (!isSonoGuestLocked || autoAdvanceCancelled || showPostFlow) return;
+    if (countdown <= 0) { setShowPostFlow(true); return; }
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown, isSonoGuestLocked, autoAdvanceCancelled, showPostFlow]);
 
   useEffect(() => {
     if (!todayMaxim || isSonoGuestLocked) return;
@@ -257,17 +266,55 @@ export default function MeditationCompletion({
               >
                 Muito bem.
               </h1>
-              <p className="text-[16px] mb-12" style={{ color: 'rgba(255,255,255,0.40)' }}>
+              <p className="text-[16px] mb-5" style={{ color: 'rgba(255,255,255,0.40)' }}>
                 Você chegou até o fim.
               </p>
 
-              <button
-                onClick={() => setShowPostFlow(true)}
-                className="w-full max-w-xs rounded-full py-4 text-[15px] font-bold text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.97]"
-                style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #6D42C9 100%)', boxShadow: '0 10px 36px rgba(107,79,187,0.50)' }}
-              >
-                O que isso significa →
-              </button>
+              <p className="text-[13px] mb-7 italic" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                Seu corpo processou algo. Descubra o que foi.
+              </p>
+
+              <div className="w-full max-w-xs">
+                <button
+                  onClick={() => setShowPostFlow(true)}
+                  className="relative w-full overflow-hidden rounded-full py-4 text-[15px] font-bold text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.97]"
+                  style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #6D42C9 100%)', boxShadow: '0 10px 36px rgba(107,79,187,0.50)' }}
+                >
+                  <motion.div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ background: 'linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.22) 50%, transparent 80%)' }}
+                    animate={{ x: ['-100%', '120%'] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
+                  />
+                  O que você acabou de ativar →
+                </button>
+
+                {!autoAdvanceCancelled && (
+                  <div className="mt-3">
+                    <div className="h-[2px] rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ background: 'linear-gradient(90deg, #A78BFA, #C4B5FD)', transformOrigin: 'left' }}
+                        initial={{ scaleX: 1 }}
+                        animate={{ scaleX: 0 }}
+                        transition={{ duration: 5, ease: 'linear' }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
+                        Abrindo em {countdown}s
+                      </span>
+                      <button
+                        onClick={() => setAutoAdvanceCancelled(true)}
+                        className="text-[11px] underline underline-offset-2"
+                        style={{ color: 'rgba(255,255,255,0.28)' }}
+                      >
+                        agora não
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
 

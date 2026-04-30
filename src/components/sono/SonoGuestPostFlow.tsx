@@ -143,7 +143,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
 
       {/* ── Scrollable content area ───────────────────── */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto flex flex-col items-center px-6 pb-10">
-        <div className="w-full max-w-[320px] flex flex-col justify-center min-h-full py-4">
+        <div className="w-full max-w-[320px] flex flex-col min-h-full py-4">
           <AnimatePresence mode="wait">
 
             {/* ── Step 1 — Reflexão ──────────────────────── */}
