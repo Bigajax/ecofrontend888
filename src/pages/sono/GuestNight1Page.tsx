@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getStoredLead } from '@/api/guestLead';
+import { useSonoCheckout } from '@/hooks/useSonoCheckout';
 import { trackGuestPlayerOpened } from '@/lib/mixpanelSonoGuestEvents';
 import { PlayerScreen } from '@/components/sono-guest/PlayerScreen';
 import { PlaybackScreen } from '@/components/sono-guest/PlaybackScreen';
@@ -9,6 +10,8 @@ import { PostMeditationScreen } from '@/components/sono-guest/PostMeditationScre
 import { ProtocolScreen } from '@/components/sono-guest/ProtocolScreen';
 import { PurchaseModal } from '@/components/sono-guest/PurchaseModal';
 import { SoundOption, LS_KEYS } from '@/components/sono-guest/types';
+import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
+import mixpanel from '@/lib/mixpanel';
 
 type Screen = 'player' | 'playback' | 'post_meditation' | 'protocol';
 
@@ -46,14 +49,23 @@ function markNight1Completed(): void {
 export default function GuestNight1Page() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { loading: sonoCheckoutLoading, openCheckout: openSonoCheckout } = useSonoCheckout();
 
   const [screen, setScreen] = useState<Screen>('player');
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [showCutoffOffer, setShowCutoffOffer] = useState(false);
   const [selectedSound, setSelectedSound] = useState<SoundOption>('rain');
   const [startTime, setStartTime] = useState(0);
   const [leadCaptured, setLeadCaptured] = useState(false);
   const [capturedEmail, setCapturedEmail] = useState<string | null>(null);
   const [resumeTime, setResumeTime] = useState<number | null>(null);
+  const [resumeSignal, setResumeSignal] = useState(0);
+
+  const guestId =
+    sessionStorage.getItem('eco.sono.guest_id') ||
+    localStorage.getItem('eco_guest_id') ||
+    'guest';
+  const source = sessionStorage.getItem('eco.sono.source') || 'quiz_sono_guest';
 
   // Authenticated users go to the full app
   useEffect(() => {
@@ -112,6 +124,27 @@ export default function GuestNight1Page() {
     setScreen('post_meditation');
   };
 
+  const handleCutoffReached = useCallback((time: number) => {
+    const cutoffKey = `eco.sono.guest.cutoff_shown.${guestId}`;
+    if (localStorage.getItem(cutoffKey)) return false;
+
+    localStorage.setItem(cutoffKey, 'true');
+    mixpanel.track('Sleep Cutoff Reached', {
+      guest_id: guestId,
+      source,
+      product_key: 'protocolo_sono_7_noites',
+      cutoff_time: 240,
+      time_listened_seconds: time,
+    });
+    setShowCutoffOffer(true);
+    return true;
+  }, [guestId, source]);
+
+  const resumeAfterCutoffDismiss = useCallback(() => {
+    setShowCutoffOffer(false);
+    setResumeSignal((value) => value + 1);
+  }, []);
+
   const handleGoToProtocol = (captured: boolean) => {
     if (captured) {
       setLeadCaptured(true);
@@ -140,6 +173,8 @@ export default function GuestNight1Page() {
           selectedSound={selectedSound}
           startTime={startTime}
           onComplete={handleAudioComplete}
+          onCutoffReached={handleCutoffReached}
+          resumeSignal={resumeSignal}
         />
       )}
 
@@ -162,6 +197,18 @@ export default function GuestNight1Page() {
           onClose={() => setShowPurchaseModal(false)}
         />
       )}
+
+      <SonoPostExperienceModal
+        open={showCutoffOffer}
+        variant="cutoff"
+        startWithQuiz
+        guestId={guestId}
+        source={source}
+        onClose={() => setShowCutoffOffer(false)}
+        onCutoffDismiss={resumeAfterCutoffDismiss}
+        onCheckout={() => openSonoCheckout({ origin: 'quiz_sono_guest' })}
+        checkoutLoading={sonoCheckoutLoading}
+      />
     </>
   );
 }

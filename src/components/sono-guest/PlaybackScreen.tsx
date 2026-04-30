@@ -13,6 +13,8 @@ interface PlaybackScreenProps {
   selectedSound: SoundOption;
   startTime: number;
   onComplete: () => void;
+  onCutoffReached?: (time: number) => boolean;
+  resumeSignal?: number;
 }
 
 const night1 = PROTOCOL_NIGHTS[0];
@@ -34,10 +36,17 @@ function saveProgress(time: number): void {
   }
 }
 
-export function PlaybackScreen({ selectedSound, startTime, onComplete }: PlaybackScreenProps) {
+export function PlaybackScreen({
+  selectedSound,
+  startTime,
+  onComplete,
+  onCutoffReached,
+  resumeSignal = 0,
+}: PlaybackScreenProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const bgRef = useRef<HTMLAudioElement>(null);
   const completedRef = useRef(false);
+  const cutoffTriggeredRef = useRef(false);
   const analyticsRef = useRef({ fired25: false, fired50: false, fired75: false });
   const saveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -70,6 +79,11 @@ export function PlaybackScreen({ selectedSound, startTime, onComplete }: Playbac
     if (isPlaying) handlePause();
     else handlePlay();
   }, [isPlaying, handlePlay, handlePause]);
+
+  useEffect(() => {
+    if (resumeSignal <= 0) return;
+    handlePlay();
+  }, [handlePlay, resumeSignal]);
 
   useMediaSession({
     title: night1.title,
@@ -165,6 +179,15 @@ export function PlaybackScreen({ selectedSound, startTime, onComplete }: Playbac
       const d = audio.duration;
       setCurrentTime(t);
 
+      if (t >= 240 && !cutoffTriggeredRef.current && onCutoffReached?.(t)) {
+        cutoffTriggeredRef.current = true;
+        saveProgress(t);
+        audio.pause();
+        bgRef.current?.pause();
+        setIsPlaying(false);
+        return;
+      }
+
       if (!d || d === 0) return;
       const pct = (t / d) * 100;
 
@@ -205,7 +228,7 @@ export function PlaybackScreen({ selectedSound, startTime, onComplete }: Playbac
       audio.removeEventListener('ended', onEnded);
       audio.removeEventListener('pause', onPauseEvent);
     };
-  }, [onComplete]);
+  }, [onComplete, onCutoffReached]);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
