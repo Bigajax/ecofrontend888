@@ -321,17 +321,26 @@ export default function MeditationPlayerPage() {
     }
   }, [backgroundVolume, isPlaying, selectedBackgroundSound, analytics]);
 
-  // Retomar áudio de fundo quando o utilizador desbloqueia o telemóvel
+  // Retomar áudio e AudioContext quando o utilizador desbloqueia o telemóvel
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (
-        document.visibilityState === 'visible' &&
-        isPlaying &&
-        backgroundVolume > 0 &&
-        selectedBackgroundSound?.audioUrl &&
-        backgroundAudioRef.current?.paused
-      ) {
-        backgroundAudioRef.current.play().catch(() => {/* silêncio */});
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== 'visible') return;
+
+      // Resumir AudioContext suspenso (ocorre em alguns Android/Chrome ao bloquear tela)
+      if (audioCtxRef.current?.state === 'suspended') {
+        await audioCtxRef.current.resume().catch(() => {});
+      }
+
+      if (!isPlaying) return;
+
+      // Retomar voz principal se pausou
+      if (audioRef.current?.paused) {
+        audioRef.current.play().catch(() => {});
+      }
+
+      // Retomar som de fundo se pausou
+      if (backgroundVolume > 0 && selectedBackgroundSound?.audioUrl && backgroundAudioRef.current?.paused) {
+        backgroundAudioRef.current.play().catch(() => {});
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -349,6 +358,12 @@ export default function MeditationPlayerPage() {
     const el = audioRef.current;
     const bgEl = backgroundAudioRef.current;
     if (!el || audioCtxRef.current) return;
+
+    // iOS Safari suspende o AudioContext ao bloquear a tela, parando todo áudio
+    // roteado via createMediaElementSource. No iOS o <audio> nativo continua
+    // tocando em background sem AudioContext — priorizamos isso sobre o ganho 2×.
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) return;
+
     try {
       const Ctx = window.AudioContext || (window as any).webkitAudioContext;
       if (!Ctx) return;
@@ -1016,8 +1031,8 @@ export default function MeditationPlayerPage() {
 
   return (
     <div
-      className="relative font-primary overflow-x-hidden"
-      style={{ minHeight: '100dvh', touchAction: 'pan-y' }}
+      className="relative font-primary overflow-hidden flex flex-col"
+      style={{ height: '100dvh', touchAction: 'pan-y' }}
       onTouchStart={resetAmbientTimer}
       onMouseMove={resetAmbientTimer}
       onClick={resetAmbientTimer}
@@ -1058,8 +1073,8 @@ export default function MeditationPlayerPage() {
         <HomeHeader />
       </div>
 
-      {/* ── Main layout: fills full viewport height on mobile ── */}
-      <div className="relative z-10 flex flex-col" style={{ minHeight: '100dvh' }}>
+      {/* ── Main layout: fills remaining space after header ── */}
+      <div className="relative z-10 flex flex-col flex-1 min-h-0">
 
         {/* Mobile top bar */}
         <div

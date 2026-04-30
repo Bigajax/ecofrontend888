@@ -295,7 +295,7 @@ export default function MeditationCompletion({
             <motion.div className="flex justify-center" variants={itemVariants}>
               <div
                 className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-base font-semibold"
-                style={{ background: BLUE_SOFT, border: `1px solid ${BLUE_BORDER}`, color: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(148,136,196,0.15)' }}
+                style={{ background: 'rgba(148,136,196,0.20)', border: '1px solid rgba(148,136,196,0.45)', color: '#FFFFFF', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(148,136,196,0.20)' }}
               >
                 <span>{currentStreak} {currentStreak === 1 ? 'dia seguido!' : 'dias seguidos!'}</span>
                 <span>🔥</span>

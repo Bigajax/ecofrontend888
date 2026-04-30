@@ -51,10 +51,16 @@ function getDaysDifference(date1: string, date2: string): number {
 }
 
 /**
- * Gets today's date in ISO format (YYYY-MM-DD)
+ * Gets today's date in ISO format (YYYY-MM-DD) using LOCAL time.
+ * Using toISOString() would return UTC, which causes off-by-one errors
+ * for users in UTC-negative timezones (e.g. Brazil UTC-3).
  */
 function getTodayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 /**
