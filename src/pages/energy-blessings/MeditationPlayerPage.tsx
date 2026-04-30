@@ -621,11 +621,9 @@ export default function MeditationPlayerPage() {
     if (
       isSonoGuestNight1 &&
       timeInSeconds >= 240 &&
-      !cutoffShownRef.current &&
-      !localStorage.getItem(`eco.sono.guest.cutoff_shown.${sonoGuestId}`)
+      !cutoffShownRef.current
     ) {
       cutoffShownRef.current = true;
-      localStorage.setItem(`eco.sono.guest.cutoff_shown.${sonoGuestId}`, 'true');
       handleSonoCutoff();
       return true;
     }

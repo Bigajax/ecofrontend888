@@ -125,10 +125,6 @@ export default function GuestNight1Page() {
   };
 
   const handleCutoffReached = useCallback((time: number) => {
-    const cutoffKey = `eco.sono.guest.cutoff_shown.${guestId}`;
-    if (localStorage.getItem(cutoffKey)) return false;
-
-    localStorage.setItem(cutoffKey, 'true');
     mixpanel.track('Sleep Cutoff Reached', {
       guest_id: guestId,
       source,
