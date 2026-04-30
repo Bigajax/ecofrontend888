@@ -137,11 +137,11 @@ export default function MeditationPlayerPage() {
     const allSounds = getAllSounds();
     return allSounds.find(sound => sound.id === 'med_profunda') || null;
   });
-  const [backgroundVolume, setBackgroundVolume] = useState(70);
+  const [backgroundVolume, setBackgroundVolume] = useState(isSono ? 16 : 70);
   const backgroundAudioRef = useRef<HTMLAudioElement>(null);
 
   // Estado para volume da meditação
-  const [meditationVolume, setMeditationVolume] = useState(100);
+  const [meditationVolume, setMeditationVolume] = useState(isSono ? 17 : 100);
 
   // Estado para controlar popover de volume (mobile)
   const [showVolumePopover, setShowVolumePopover] = useState(false);
@@ -162,6 +162,11 @@ export default function MeditationPlayerPage() {
 
   // Fade-in on first play
   const fadeInIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const bgFadeInIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // End fade-out (last ~20 s of audio)
+  const endFadeOutStartedRef = useRef(false);
+  const endFadeOutIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Dica de tela bloqueada — aparece uma vez após o play iniciar
   const [showLockTip, setShowLockTip] = useState(false);
@@ -239,12 +244,10 @@ export default function MeditationPlayerPage() {
       }
 
       // Cleanup fade intervals
-      if (fadeIntervalRef.current) {
-        clearInterval(fadeIntervalRef.current);
-      }
-      if (fadeInIntervalRef.current) {
-        clearInterval(fadeInIntervalRef.current);
-      }
+      if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+      if (fadeInIntervalRef.current) clearInterval(fadeInIntervalRef.current);
+      if (bgFadeInIntervalRef.current) clearInterval(bgFadeInIntervalRef.current);
+      if (endFadeOutIntervalRef.current) clearInterval(endFadeOutIntervalRef.current);
 
       // Cleanup favorite toast timer
       if (favoriteToastTimerRef.current) {
@@ -557,6 +560,62 @@ export default function MeditationPlayerPage() {
     }
   };
 
+  /**
+   * Fade background audio from 0 to target gain over 3 s on first play.
+   */
+  const startBgFadeIn = () => {
+    const bgEl = backgroundAudioRef.current;
+    if (!bgEl) return;
+    const fadeSteps = 60;
+    const stepMs = 3000 / fadeSteps;
+    const targetGain = (backgroundVolume / 100) * 1.2;
+    let step = 0;
+    if (bgGainRef.current) {
+      bgGainRef.current.gain.value = 0;
+      bgFadeInIntervalRef.current = setInterval(() => {
+        step++;
+        if (bgGainRef.current) bgGainRef.current.gain.value = Math.min(targetGain, targetGain * (step / fadeSteps));
+        if (step >= fadeSteps && bgFadeInIntervalRef.current) clearInterval(bgFadeInIntervalRef.current);
+      }, stepMs);
+    } else {
+      bgEl.volume = 0;
+      bgFadeInIntervalRef.current = setInterval(() => {
+        step++;
+        if (bgEl) bgEl.volume = Math.min(1, Math.min(targetGain, targetGain * (step / fadeSteps)));
+        if (step >= fadeSteps && bgFadeInIntervalRef.current) clearInterval(bgFadeInIntervalRef.current);
+      }, stepMs);
+    }
+  };
+
+  /**
+   * Fade both audios to silence over 15 s near the end of the meditation.
+   * Triggered once when ~20 s remain.
+   */
+  const startEndFadeOut = () => {
+    if (endFadeOutStartedRef.current) return;
+    endFadeOutStartedRef.current = true;
+    const fadeSteps = 75; // ~200 ms each → 15 s total
+    const stepMs = 15000 / fadeSteps;
+    const initialGain = gainRef.current?.gain.value ?? (meditationVolume / 100);
+    const initialBgGain = bgGainRef.current?.gain.value ?? (backgroundAudioRef.current?.volume ?? 0);
+    let step = 0;
+    endFadeOutIntervalRef.current = setInterval(() => {
+      step++;
+      const remaining = 1 - step / fadeSteps;
+      if (gainRef.current) {
+        gainRef.current.gain.value = Math.max(0, initialGain * remaining);
+      } else if (audioRef.current) {
+        audioRef.current.volume = Math.max(0, (meditationVolume / 100) * remaining);
+      }
+      if (bgGainRef.current) {
+        bgGainRef.current.gain.value = Math.max(0, initialBgGain * remaining);
+      } else if (backgroundAudioRef.current) {
+        backgroundAudioRef.current.volume = Math.max(0, backgroundAudioRef.current.volume * remaining);
+      }
+      if (step >= fadeSteps && endFadeOutIntervalRef.current) clearInterval(endFadeOutIntervalRef.current);
+    }, stepMs);
+  };
+
   // Auto-play ao entrar na página
   useEffect(() => {
     const audio = audioRef.current;
@@ -579,7 +638,7 @@ export default function MeditationPlayerPage() {
             sourcePage: returnTo,
           });
           if (backgroundAudioRef.current && selectedBackgroundSound?.audioUrl) {
-            backgroundAudioRef.current.play().catch(() => {});
+            backgroundAudioRef.current.play().then(() => startBgFadeIn()).catch(() => {});
           }
           // Mostrar dica de tela bloqueada 3s após o play iniciar
           lockTipTimerRef.current = setTimeout(() => {
@@ -646,6 +705,17 @@ export default function MeditationPlayerPage() {
         if (!localStorage.getItem(markerKey)) {
           localStorage.setItem(markerKey, 'true');
         }
+      }
+
+      // Fade out last ~20 s of audio (both main and background)
+      if (
+        !endFadeOutStartedRef.current &&
+        !isAudioFading &&
+        audio.duration > 0 &&
+        audio.duration - audio.currentTime <= 20 &&
+        audio.duration - audio.currentTime > 0
+      ) {
+        startEndFadeOut();
       }
 
       // Check if meditation is 95%+ complete (send only ONCE)
