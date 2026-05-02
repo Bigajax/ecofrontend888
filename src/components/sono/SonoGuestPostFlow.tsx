@@ -228,7 +228,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                   className="w-full rounded-full py-3.5 text-[14px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
                   style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}
                 >
-                  Continuar →
+                  Ver o protocolo →
                 </motion.button>
               </motion.div>
             )}
@@ -311,7 +311,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                     boxShadow: '0 10px 32px rgba(107,79,187,0.50)',
                   }}
                 >
-                  Quero acessar →
+                  Garantir meu acesso →
                 </button>
               </motion.div>
             )}

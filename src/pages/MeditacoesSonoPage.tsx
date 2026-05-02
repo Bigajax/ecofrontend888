@@ -49,6 +49,15 @@ export default function MeditacoesSonoPage() {
     return newId;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const heroSubtitle: string | null = (() => {
+    if (!isGuestSono) return null;
+    const q5 = sessionStorage.getItem('eco.sono.q5_answer') || '';
+    if (q5.includes('desligar minha mente')) return '7 minutos que ensinam sua mente a silenciar.';
+    if (q5.includes('energia real')) return '7 minutos. Sono profundo. Energia real amanhã.';
+    if (q5.includes('ansiedade')) return '7 minutos para dissolver a ansiedade noturna.';
+    return null;
+  })();
+
   useEffect(() => {
     if (!isGuestSono) return;
     localStorage.setItem('sono_guest_mode', 'true');
@@ -325,7 +334,7 @@ export default function MeditacoesSonoPage() {
               className="mt-4 text-[15px] leading-relaxed font-light"
               style={{ color: 'rgba(255,255,255,0.48)' }}
             >
-              7 minutos. Sem remédio.<br />Sem contar ovelhas.
+              {heroSubtitle ?? <>7 minutos. Sem remédio.<br />Sem contar ovelhas.</>}
             </motion.p>
 
             {/* Stars */}

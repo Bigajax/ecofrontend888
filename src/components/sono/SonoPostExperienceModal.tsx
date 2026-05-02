@@ -5,7 +5,6 @@ import { Check, Loader2, Lock } from 'lucide-react';
 import mixpanel from '@/lib/mixpanel';
 
 const PRODUCT_KEY = 'protocolo_sono_7_noites';
-const OFFER_DURATION_MS = 12 * 60 * 1000;
 
 export type SonoOfferVariant = 'cutoff' | 'final' | 'locked_night';
 export type SonoMicroAnswer = 'Sim, relaxei' | 'Um pouco' | 'Ainda estou agitado';
@@ -45,15 +44,6 @@ function formatCountdown(ms: number) {
   return `${String(Math.floor(totalSeconds / 60)).padStart(2, '0')}:${String(totalSeconds % 60).padStart(2, '0')}`;
 }
 
-function getTimerStart(guestId: string) {
-  const timerKey = `eco.sono.offer_timer_started_at.${guestId}`;
-  const stored = localStorage.getItem(timerKey);
-  if (stored) return Number(stored);
-  const startedAt = Date.now();
-  localStorage.setItem(timerKey, String(startedAt));
-  return startedAt;
-}
-
 export function SonoPostExperienceModal({
   open,
   onClose,
@@ -70,7 +60,10 @@ export function SonoPostExperienceModal({
     const stored = localStorage.getItem(`eco.sono.guest.micro_answer.${guestId}`);
     return ANSWERS.includes(stored as SonoMicroAnswer) ? (stored as SonoMicroAnswer) : null;
   });
-  const [timeLeft, setTimeLeft] = useState(OFFER_DURATION_MS);
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const stored = sessionStorage.getItem('eco.sono.offer_expires');
+    return stored ? Math.max(0, parseInt(stored) - Date.now()) : 0;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -80,8 +73,8 @@ export function SonoPostExperienceModal({
   useEffect(() => {
     if (!open) return;
     const update = () => {
-      const startedAt = getTimerStart(guestId);
-      setTimeLeft(Math.max(0, OFFER_DURATION_MS - (Date.now() - startedAt)));
+      const stored = sessionStorage.getItem('eco.sono.offer_expires');
+      setTimeLeft(stored ? Math.max(0, parseInt(stored) - Date.now()) : 0);
     };
     update();
     const id = setInterval(update, 1000);
@@ -98,9 +91,9 @@ export function SonoPostExperienceModal({
     if (variant === 'locked_night') {
       return {
         eyebrow: 'Noites 2 a 7',
-        title: 'Essa noite faz parte do protocolo completo.',
+        title: 'A Noite 1 foi o início.',
         subtitle:
-          'A Noite 1 inicia o desligamento do estado de alerta. As próximas noites aprofundam esse processo para seu corpo aprender a desacelerar antes de dormir.',
+          'Cada noite que vem depois aprofunda uma camada diferente. É o que transforma este ritual em um padrão permanente de sono.',
         body: '',
         cta: 'Desbloquear as 7 noites — R$37',
       };
@@ -108,17 +101,17 @@ export function SonoPostExperienceModal({
 
     if (variant === 'final') {
       return {
-        eyebrow: 'Noite 1 iniciada',
+        eyebrow: 'Noite 1 · Concluída',
         title: 'Você já começou — agora é continuar',
         subtitle:
-          'Essa primeira noite mostrou ao seu corpo um caminho diferente. Mas é a continuidade que transforma isso em um novo padrão de sono.',
+          'Esta noite seu corpo descobriu um caminho diferente. As próximas 6 noites ensinam ele a percorrê-lo sozinho.',
         body: '',
-        cta: 'Continuar o protocolo completo',
+        cta: 'Garantir as 7 noites — R$37',
       };
     }
 
     return {
-      eyebrow: 'Você já começou. Agora é continuar.',
+      eyebrow: 'Noite 1 · Em andamento',
       title: 'Agora é onde o resultado acontece.',
       subtitle: 'A primeira mudança já começou. As próximas noites aprofundam esse processo.',
       body: answer ? ANSWER_COPY[answer] : ANSWER_COPY['Um pouco'],
@@ -319,7 +312,7 @@ export function SonoPostExperienceModal({
 
                       {timeLeft > 0 && (
                         <div className="mb-5 text-center text-[12px]" style={{ color: 'rgba(255,255,255,0.52)' }}>
-                          Condição especial expira em:{' '}
+                          Esta oferta expira em:{' '}
                           <span className="font-mono font-bold" style={{ color: '#FCD34D' }}>
                             {formatCountdown(timeLeft)}
                           </span>
@@ -344,6 +337,10 @@ export function SonoPostExperienceModal({
                           offer.cta
                         )}
                       </button>
+
+                      <p className="mb-2 text-[12px] leading-relaxed text-center" style={{ color: 'rgba(255,255,255,0.30)' }}>
+                        🔒 Garantia de 7 dias. Se não funcionar, devolvemos tudo.
+                      </p>
 
                       <button
                         onClick={handleClose}

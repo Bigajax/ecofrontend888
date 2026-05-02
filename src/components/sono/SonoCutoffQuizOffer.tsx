@@ -3,7 +3,6 @@ import { Check, Loader2 } from 'lucide-react';
 import mixpanel from '@/lib/mixpanel';
 
 const PRODUCT_KEY = 'protocolo_sono_7_noites';
-const OFFER_DURATION_MS = 12 * 60 * 1000;
 
 type SonoMicroAnswer = 'Sim, relaxei' | 'Um pouco' | 'Ainda estou agitado';
 
@@ -39,16 +38,6 @@ function formatCountdown(ms: number) {
   return `${String(Math.floor(totalSeconds / 60)).padStart(2, '0')}:${String(totalSeconds % 60).padStart(2, '0')}`;
 }
 
-function getTimerStart(guestId: string) {
-  const key = `eco.sono.offer_timer_started_at.${guestId}`;
-  const stored = localStorage.getItem(key);
-  if (stored) return Number(stored);
-
-  const startedAt = Date.now();
-  localStorage.setItem(key, String(startedAt));
-  return startedAt;
-}
-
 export function SonoCutoffQuizOffer({
   open,
   guestId,
@@ -59,7 +48,10 @@ export function SonoCutoffQuizOffer({
 }: SonoCutoffQuizOfferProps) {
   const [step, setStep] = useState<'quiz' | 'offer'>('quiz');
   const [answer, setAnswer] = useState<SonoMicroAnswer | null>(null);
-  const [timeLeft, setTimeLeft] = useState(OFFER_DURATION_MS);
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const stored = sessionStorage.getItem('eco.sono.offer_expires');
+    return stored ? Math.max(0, parseInt(stored) - Date.now()) : 0;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -69,16 +61,14 @@ export function SonoCutoffQuizOffer({
 
   useEffect(() => {
     if (!open) return;
-
     const update = () => {
-      const startedAt = getTimerStart(guestId);
-      setTimeLeft(Math.max(0, OFFER_DURATION_MS - (Date.now() - startedAt)));
+      const stored = sessionStorage.getItem('eco.sono.offer_expires');
+      setTimeLeft(stored ? Math.max(0, parseInt(stored) - Date.now()) : 0);
     };
-
     update();
     const id = window.setInterval(update, 1000);
     return () => window.clearInterval(id);
-  }, [guestId, open]);
+  }, [open]);
 
   const dynamicCopy = useMemo(() => {
     return ANSWER_COPY[answer ?? 'Um pouco'];
@@ -198,7 +188,7 @@ export function SonoCutoffQuizOffer({
 
               {timeLeft > 0 && (
                 <div className="mb-5 text-[12px]" style={{ color: 'rgba(255,255,255,0.54)' }}>
-                  Condição especial expira em:{' '}
+                  Esta oferta expira em:{' '}
                   <span className="font-mono font-bold" style={{ color: '#FCD34D' }}>
                     {formatCountdown(timeLeft)}
                   </span>
@@ -223,6 +213,10 @@ export function SonoCutoffQuizOffer({
                   'Quero continuar dormindo assim'
                 )}
               </button>
+
+              <p className="mb-2 text-[12px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.32)' }}>
+                🔒 Garantia de 7 dias. Se não funcionar, devolvemos tudo.
+              </p>
 
               <button
                 onClick={onDismiss}
