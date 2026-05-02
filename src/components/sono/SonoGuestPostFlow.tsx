@@ -10,7 +10,7 @@ interface SonoGuestPostFlowProps {
   onDismiss: () => void;
 }
 
-type Step = 1 | 2 | 3 | 4 | 5 | 6;
+type Step = 1 | 2 | 3 | 4;
 type ReflectionAnswer = 'yes' | 'little' | 'no';
 
 const fmt = (ms: number) => {
@@ -21,9 +21,9 @@ const fmt = (ms: number) => {
 const NIGHTS_2_7 = PROTOCOL_NIGHTS.slice(1);
 
 const VALIDATION: Record<ReflectionAnswer, { lead: string; body: string }> = {
-  yes:    { lead: 'Perfeito.',             body: 'Isso significa que seu corpo já respondeu.' },
-  little: { lead: 'Isso já é o começo.',   body: 'Seu corpo ainda está aprendendo.' },
-  no:     { lead: 'Normal.',               body: 'Na primeira noite, o corpo ainda está saindo do padrão antigo.' },
+  yes:    { lead: 'Perfeito.',           body: 'Seu corpo já respondeu ao primeiro estímulo. Agora ele precisa de continuidade para aprender a desacelerar sozinho.' },
+  little: { lead: 'Isso já é o começo.', body: 'Primeiro o corpo reduz a resistência. Com repetição, ele aprende a desligar com mais facilidade.' },
+  no:     { lead: 'Normal.',             body: 'Na primeira noite, o corpo ainda está saindo do padrão antigo. É exatamente assim que o processo começa.' },
 };
 
 const stepVariants = {
@@ -75,7 +75,6 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
     return () => clearInterval(id);
   }, []);
 
-  // Scroll to top on step change
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [step]);
@@ -83,7 +82,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
   const advance = (to?: Step) => {
     const next = (to ?? (step + 1)) as Step;
     setStep(next);
-    upsertEvent({ max_step_reached: next, ...(next === 6 ? { reached_offer: true } : {}) });
+    upsertEvent({ max_step_reached: next, ...(next === 4 ? { reached_offer: true } : {}) });
   };
 
   const selectAnswer = (a: ReflectionAnswer) => {
@@ -108,11 +107,10 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
       className="fixed inset-0 z-[9998] flex flex-col"
       style={{ background: 'linear-gradient(180deg, #04060F 0%, #080C1E 100%)' }}
     >
-      {/* ── Sticky top bar: progress + close ────────── */}
+      {/* ── Top bar: progress dots + close ────────── */}
       <div className="flex-shrink-0 flex items-center justify-between px-6 pt-10 pb-4">
-        {/* Progress dots */}
         <div className="flex gap-1.5">
-          {([1, 2, 3, 4, 5, 6] as Step[]).map(s => (
+          {([1, 2, 3, 4] as Step[]).map(s => (
             <span
               key={s}
               className="rounded-full transition-all duration-300"
@@ -129,8 +127,6 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
             />
           ))}
         </div>
-
-        {/* Close button */}
         <button
           onClick={onDismiss}
           className="flex h-8 w-8 items-center justify-center rounded-full transition-colors"
@@ -141,12 +137,12 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
         </button>
       </div>
 
-      {/* ── Scrollable content area ───────────────────── */}
+      {/* ── Scrollable content ───────────────────── */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto flex flex-col items-center px-6 pb-10">
         <div className="w-full max-w-[320px] flex flex-col min-h-full py-4">
           <AnimatePresence mode="wait">
 
-            {/* ── Step 1 — Reflexão ──────────────────────── */}
+            {/* ── Step 1 — Reflexão ──────────────────── */}
             {step === 1 && (
               <motion.div
                 key="step1"
@@ -167,7 +163,6 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                   Você conseguiu sentir<br />
                   <em style={{ color: '#C4B5FD', fontStyle: 'italic' }}>alguma diferença agora?</em>
                 </h2>
-
                 <div className="flex flex-col gap-3 w-full">
                   <button
                     onClick={() => selectAnswer('yes')}
@@ -196,7 +191,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
               </motion.div>
             )}
 
-            {/* ── Step 2 — Validação ─────────────────────── */}
+            {/* ── Step 2 — Validação ─────────────────── */}
             {step === 2 && validation && (
               <motion.div
                 key="step2"
@@ -238,68 +233,10 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
               </motion.div>
             )}
 
-            {/* ── Step 3 — Revelação ─────────────────────── */}
+            {/* ── Step 3 — Noites (produto) ──────────── */}
             {step === 3 && (
               <motion.div
                 key="step3"
-                variants={stepVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
-                className="flex flex-col items-center text-center"
-              >
-                <motion.h2
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05, duration: 0.55 }}
-                  className="font-display text-[28px] font-bold text-white leading-snug mb-5"
-                  style={{ textShadow: '0 2px 20px rgba(0,0,0,0.60)' }}
-                >
-                  O que você sentiu agora…<br />
-                  <em style={{ color: '#C4B5FD' }}>não é sorte.</em>
-                </motion.h2>
-
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ delay: 0.40, duration: 0.45, ease: 'easeOut' }}
-                  className="w-12 h-px mb-5"
-                  style={{ background: 'rgba(196,181,253,0.35)' }}
-                />
-
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.55, duration: 0.50 }}
-                  className="space-y-3 mb-14"
-                >
-                  <p className="font-display text-[22px] font-semibold text-white/90">É um processo.</p>
-                  <p className="text-[15px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.50)' }}>
-                    E o seu corpo já começou<br />a responder a ele.
-                  </p>
-                  <p className="text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)' }}>
-                    Ele só funciona quando<br />existe continuidade.
-                  </p>
-                </motion.div>
-
-                <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.75 }}
-                  onClick={() => advance()}
-                  className="w-full rounded-full py-3.5 text-[14px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
-                  style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}
-                >
-                  Continuar →
-                </motion.button>
-              </motion.div>
-            )}
-
-            {/* ── Step 4 — Progressão ────────────────────── */}
-            {step === 4 && (
-              <motion.div
-                key="step4"
                 variants={stepVariants}
                 initial="enter"
                 animate="center"
@@ -311,7 +248,6 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                   Cada noite resolve<br />
                   <em style={{ color: '#C4B5FD' }}>uma camada diferente:</em>
                 </p>
-
                 <div className="space-y-2 mb-8">
                   {NIGHTS_2_7.map((night, idx) => (
                     <motion.div
@@ -325,7 +261,6 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                         border: idx === 0 ? '1px solid rgba(167,139,250,0.22)' : '1px solid rgba(255,255,255,0.07)',
                       }}
                     >
-                      {/* Thumbnail */}
                       <div
                         className="relative flex-shrink-0 overflow-hidden"
                         style={{ width: '44px', height: '44px' }}
@@ -344,7 +279,6 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                         ) : (
                           <div className="w-full h-full" style={{ background: night.gradient }} />
                         )}
-                        {/* Lock overlay */}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Lock
                             className="h-3 w-3"
@@ -352,8 +286,6 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                           />
                         </div>
                       </div>
-
-                      {/* Text */}
                       <div className="flex-1 min-w-0 pr-3 py-3">
                         <span
                           className="block text-[10px] font-bold uppercase tracking-wider mb-0.5"
@@ -371,93 +303,23 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                     </motion.div>
                   ))}
                 </div>
-
                 <button
                   onClick={() => advance()}
-                  className="w-full rounded-full py-3.5 text-[14px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
-                  style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}
-                >
-                  Continuar →
-                </button>
-              </motion.div>
-            )}
-
-            {/* ── Step 5 — Tensão ────────────────────────── */}
-            {step === 5 && (
-              <motion.div
-                key="step5"
-                variants={stepVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
-                className="relative flex flex-col items-center text-center"
-              >
-                {/* Amber radial decoration */}
-                <div
-                  className="pointer-events-none absolute"
-                  style={{
-                    top: '-40px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '240px',
-                    height: '240px',
-                    borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(251,191,36,0.10) 0%, transparent 65%)',
-                    filter: 'blur(30px)',
-                  }}
-                />
-
-                <motion.h2
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.08, duration: 0.55 }}
-                  className="font-display text-[28px] font-bold text-white leading-snug mb-6 relative z-10"
-                  style={{ textShadow: '0 2px 24px rgba(0,0,0,0.70)' }}
-                >
-                  A maioria das pessoas<br />
-                  para{' '}
-                  <em style={{ color: 'rgba(251,191,36,0.90)', fontStyle: 'italic' }}>exatamente aqui.</em>
-                </motion.h2>
-
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ delay: 0.38, duration: 0.40 }}
-                  className="w-8 h-px mb-6 relative z-10"
-                  style={{ background: 'rgba(251,191,36,0.35)' }}
-                />
-
-                <motion.p
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.52, duration: 0.50 }}
-                  className="text-[16px] leading-relaxed mb-14 relative z-10"
-                  style={{ color: 'rgba(255,255,255,0.48)' }}
-                >
-                  E nunca chega no ponto onde<br />o corpo realmente muda.
-                </motion.p>
-
-                <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.72 }}
-                  onClick={() => advance()}
-                  className="w-full rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97] relative z-10"
+                  className="w-full rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
                   style={{
                     background: 'linear-gradient(135deg, #A78BFA 0%, #6D42C9 100%)',
                     boxShadow: '0 10px 32px rgba(107,79,187,0.50)',
                   }}
                 >
-                  Não vou parar →
-                </motion.button>
+                  Quero acessar →
+                </button>
               </motion.div>
             )}
 
-            {/* ── Step 6 — Oferta ────────────────────────── */}
-            {step === 6 && (
+            {/* ── Step 4 — Oferta ────────────────────── */}
+            {step === 4 && (
               <motion.div
-                key="step6"
+                key="step4"
                 variants={stepVariants}
                 initial="enter"
                 animate="center"
@@ -480,7 +342,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                   }}
                 />
 
-                {/* Night progress */}
+                {/* Night progress dots */}
                 <div className="flex items-center gap-1.5 mb-6 relative z-10">
                   <div
                     className="flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-bold text-white"
@@ -514,7 +376,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                   <span style={{ color: '#C4B5FD' }}>Agora é onde o resultado acontece.</span>
                 </h2>
 
-                {/* Offer glass card */}
+                {/* Offer card */}
                 <div
                   className="w-full rounded-2xl px-5 py-5 mb-5 relative z-10"
                   style={{
@@ -523,7 +385,6 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                     backdropFilter: 'blur(12px)',
                   }}
                 >
-                  {/* Price */}
                   <div className="flex items-baseline justify-center gap-2.5 mb-1">
                     <span className="text-[13px] line-through" style={{ color: 'rgba(255,255,255,0.25)' }}>R$97</span>
                     <span className="font-display text-[38px] font-bold text-white leading-none">R$37</span>
@@ -531,8 +392,6 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                   <p className="text-[12px] mb-4" style={{ color: 'rgba(255,255,255,0.32)' }}>
                     Pagamento único · Sem mensalidade
                   </p>
-
-                  {/* Countdown */}
                   {timeLeft > 0 && (
                     <div className="flex items-center justify-center gap-1.5 mb-3">
                       <span style={{ color: '#FBBF24', fontSize: '12px' }}>⏱</span>
@@ -542,15 +401,12 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                       </span>
                     </div>
                   )}
-
-                  {/* Stars */}
                   <div className="flex items-center justify-center gap-2">
                     <span style={{ color: '#FBBF24', fontSize: '11px', letterSpacing: '1px' }}>★★★★★</span>
                     <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>12.400+ dormem melhor</span>
                   </div>
                 </div>
 
-                {/* CTA */}
                 <button
                   onClick={handleCheckout}
                   disabled={checkoutLoading}
@@ -571,10 +427,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                 </button>
 
                 <p className="text-[12px] leading-relaxed mb-3 relative z-10" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                  Você já começou. Interromper agora faz o<br />corpo voltar ao padrão antigo.
-                </p>
-                <p className="text-[11px] mb-5 relative z-10" style={{ color: 'rgba(255,255,255,0.22)' }}>
-                  Acesso imediato · Sem assinatura · Sem risco
+                  🔒 Garantia de 7 dias. Se não funcionar, devolvemos tudo.
                 </p>
 
                 <button

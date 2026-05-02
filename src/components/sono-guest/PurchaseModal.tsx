@@ -11,7 +11,6 @@ export function PurchaseModal({ capturedEmail, onClose }: PurchaseModalProps) {
   const { loading, openCheckout } = useSonoCheckout();
   const [email, setEmail] = useState(capturedEmail ?? '');
   const [error, setError] = useState<string | null>(null);
-  const [showRedirectWarning, setShowRedirectWarning] = useState(false);
 
   const handlePay = () => {
     const trimmed = email.trim();
@@ -20,10 +19,6 @@ export function PurchaseModal({ capturedEmail, onClose }: PurchaseModalProps) {
       return;
     }
     setError(null);
-    setShowRedirectWarning(true);
-  };
-
-  const handleConfirmRedirect = () => {
     trackGuestPurchaseStarted();
     openCheckout();
   };
@@ -49,7 +44,10 @@ export function PurchaseModal({ capturedEmail, onClose }: PurchaseModalProps) {
         <div className="flex flex-col gap-4 px-5 py-5">
           {/* Price */}
           <div className="text-center">
-            <p className="text-3xl font-bold text-gray-800">R$37</p>
+            <div className="flex items-baseline justify-center gap-2">
+              <p className="text-sm line-through text-gray-300">R$97</p>
+              <p className="text-3xl font-bold text-gray-800">R$37</p>
+            </div>
             <p className="text-sm text-gray-400">Pagamento único · Acesso vitalício</p>
           </div>
 
@@ -68,80 +66,50 @@ export function PurchaseModal({ capturedEmail, onClose }: PurchaseModalProps) {
             ))}
           </ul>
 
-          {!showRedirectWarning ? (
-            <>
-              {/* Email field */}
-              <div className="flex flex-col gap-1.5">
-                {capturedEmail ? (
-                  <div
-                    className="rounded-xl px-4 py-3 text-sm"
-                    style={{ background: 'rgba(124,110,246,0.06)', border: '1px solid rgba(124,110,246,0.2)' }}
-                  >
-                    <span className="text-gray-500">Receber acesso em: </span>
-                    <span className="font-medium text-gray-700">{capturedEmail}</span>
-                    <button
-                      onClick={() => setEmail('')}
-                      className="ml-2 text-xs text-violet-500 hover:underline"
-                    >
-                      alterar
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <label className="text-xs font-medium text-gray-500">
-                      Email para receber seu acesso
-                    </label>
-                    <input
-                      type="email"
-                      inputMode="email"
-                      placeholder="seu@email.com"
-                      value={email}
-                      onChange={(e) => { setEmail(e.target.value); setError(null); }}
-                      className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
-                    />
-                    <p className="text-xs text-gray-400">A conta é criada automaticamente após o pagamento.</p>
-                  </>
-                )}
-                {error && <p className="text-xs text-red-500">{error}</p>}
-              </div>
-
-              {/* Pay button */}
-              <button
-                onClick={handlePay}
-                disabled={loading}
-                className="w-full rounded-xl py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-                style={{ background: '#7C6EF6' }}
-              >
-                Ir para pagamento seguro →
-              </button>
-            </>
-          ) : (
-            /* Redirect warning */
-            <div className="flex flex-col gap-3">
+          {/* Email field */}
+          <div className="flex flex-col gap-1.5">
+            {capturedEmail ? (
               <div
-                className="rounded-xl px-4 py-3 text-center"
-                style={{ background: '#FFF9E6', border: '1px solid #F0C040' }}
+                className="rounded-xl px-4 py-3 text-sm"
+                style={{ background: 'rgba(124,110,246,0.06)', border: '1px solid rgba(124,110,246,0.2)' }}
               >
-                <p className="text-sm text-amber-700">
-                  Você será redirecionado para o pagamento seguro via Mercado Pago e voltará automaticamente após concluir.
-                </p>
+                <span className="text-gray-500">Receber acesso em: </span>
+                <span className="font-medium text-gray-700">{capturedEmail}</span>
+                <button
+                  onClick={() => setEmail('')}
+                  className="ml-2 text-xs text-violet-500 hover:underline"
+                >
+                  alterar
+                </button>
               </div>
-              <button
-                onClick={handleConfirmRedirect}
-                disabled={loading}
-                className="w-full rounded-xl py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-                style={{ background: '#7C6EF6' }}
-              >
-                {loading ? 'Abrindo pagamento...' : 'Continuar para pagamento →'}
-              </button>
-              <button
-                onClick={() => setShowRedirectWarning(false)}
-                className="text-center text-sm text-gray-400 hover:text-gray-600"
-              >
-                Voltar
-              </button>
-            </div>
-          )}
+            ) : (
+              <>
+                <label className="text-xs font-medium text-gray-500">
+                  Email para receber seu acesso
+                </label>
+                <input
+                  type="email"
+                  inputMode="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
+                />
+                <p className="text-xs text-gray-400">A conta é criada automaticamente após o pagamento.</p>
+              </>
+            )}
+            {error && <p className="text-xs text-red-500">{error}</p>}
+          </div>
+
+          {/* Pay button — goes directly to checkout */}
+          <button
+            onClick={handlePay}
+            disabled={loading}
+            className="w-full rounded-xl py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)', boxShadow: '0 8px 28px rgba(107,79,187,0.40)' }}
+          >
+            {loading ? 'Abrindo pagamento...' : 'Garantir acesso completo — R$37 →'}
+          </button>
 
           {/* Guarantee */}
           <p className="text-center text-xs text-gray-400">

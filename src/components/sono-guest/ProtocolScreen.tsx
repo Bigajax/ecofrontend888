@@ -262,23 +262,6 @@ export function ProtocolScreen({ leadCaptured, capturedEmail, onOpenPurchase, on
         )}
       </div>
 
-      {/* Sticky bottom bar */}
-      <div
-        className="fixed bottom-0 left-0 right-0 border-t px-5 py-4"
-        style={{ background: '#fff', borderColor: '#F0EDE8' }}
-      >
-        <div className="mx-auto flex max-w-lg items-center justify-between gap-4">
-          <p className="text-xs text-gray-500">Protocolo completo · R$37 · Acesso vitalício</p>
-          <button
-            onClick={onOpenPurchase}
-            className="shrink-0 rounded-xl px-5 py-3 text-sm font-bold text-white"
-            style={{ background: '#7C6EF6' }}
-          >
-            Desbloquear tudo →
-          </button>
-        </div>
-      </div>
-
       {/* Mini locked-night modal */}
       {lockedModal && (
         <div
