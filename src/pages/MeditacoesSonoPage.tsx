@@ -4,13 +4,14 @@ import {
   Play, Check, Lock, ArrowLeft,
   Activity, Zap, TrendingUp, Loader2,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
 import { useSonoCheckout } from '@/hooks/useSonoCheckout';
 import { PROTOCOL_NIGHTS, type ProtocolNight } from '@/data/protocolNights';
 import { SonoPostExperienceModal, type SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal';
+import { SonoGuestPostFlow } from '@/components/sono/SonoGuestPostFlow';
 import mixpanel from '@/lib/mixpanel';
 import { trackGuestUnlockClicked } from '@/lib/mixpanelSonoGuestEvents';
 
@@ -70,6 +71,7 @@ export default function MeditacoesSonoPage() {
   const [showCompletion, setShowCompletion] = useState(false);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [offerVariant, setOfferVariant] = useState<SonoOfferVariant>('locked_night');
+  const [showGuestPostFlow, setShowGuestPostFlow] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(`eco.sono.protocol.v1.${uid}`, JSON.stringify({
@@ -92,8 +94,7 @@ export default function MeditacoesSonoPage() {
         if (isGuestSono && nightNum === 1) {
           const offerKey = `eco.sono.offer_modal_shown.${guestId}`;
           if (!localStorage.getItem(offerKey)) {
-            setOfferVariant('final');
-            setShowOfferModal(true);
+            setShowGuestPostFlow(true);
             localStorage.setItem(offerKey, 'true');
             mixpanel.track('Sleep Free Experience Completed', { night_id: 'night_1', source, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
           }
@@ -175,6 +176,16 @@ export default function MeditacoesSonoPage() {
 
   const handleHeroButtonClick = () => {
     if (completedCount === 7) { setShowCompletion(true); return; }
+    if (isGuestSono && completedCount > 0 && !isPaid) {
+      const offerKey = `eco.sono.offer_modal_shown.${guestId}`;
+      if (localStorage.getItem(offerKey)) {
+        openCheckout({ origin: 'hero_cta_guest' });
+      } else {
+        setShowGuestPostFlow(true);
+        localStorage.setItem(offerKey, 'true');
+      }
+      return;
+    }
     const targetNight = PROTOCOL_NIGHTS[nextNight - 1];
     if (targetNight) handleNightClick(targetNight);
   };
@@ -738,6 +749,17 @@ export default function MeditacoesSonoPage() {
         />
 
       </main>
+
+      {/* ── Mini quiz pós-meditação (6 passos) ───────────────────────── */}
+      <AnimatePresence>
+        {showGuestPostFlow && (
+          <SonoGuestPostFlow
+            onCheckout={() => openCheckout({ origin: 'quiz_sono_guest_post_meditation' })}
+            checkoutLoading={checkoutLoading}
+            onDismiss={() => setShowGuestPostFlow(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
