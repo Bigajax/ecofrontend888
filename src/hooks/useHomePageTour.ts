@@ -61,7 +61,7 @@ export const HOMEPAGE_TOUR_STEPS: TourStep[] = [
     category: 'SONS & SONO',
     title: 'Adormeça sem carregar o dia',
     description: 'Sons ambiente e meditações guiadas para noites mais tranquilas. Seu corpo já sabe o que precisa — o ECO te guia até lá.',
-    image: '/images/meditacao-sono-new.webp',
+    image: '/images/meditacoes-sono-hero.webp',
     imagePosition: 'center',
     position: 'center',
     showOverlay: true,

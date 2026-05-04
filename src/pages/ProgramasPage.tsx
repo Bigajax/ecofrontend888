@@ -144,7 +144,7 @@ export default function ProgramasPage() {
       duration: '15 min',
       durationMinutes: 15,
       audioUrl: '/audio/meditacao-sono.mp3',
-      image: 'url("/images/meditacao-sono-new.webp")',
+      image: 'url("/images/meditacoes-sono-hero.webp")',
       imagePosition: 'center 32%',
       gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #3E4277 20%, #333665 40%, #282B52 60%, #1E2140 80%, #14172E 100%)',
       isPremium: true,

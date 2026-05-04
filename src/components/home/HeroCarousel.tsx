@@ -92,10 +92,10 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
   },
   {
     id: 3,
-    badge: 'PROTOCOLO DO SONO',
-    mainTitle: 'DURMA PROFUNDAMENTE EM 7 NOITES',
-    title: 'Protocolo do Sono',
-    description: 'Meditações guiadas que acalmam sua mente e transformam suas noites',
+    badge: 'NOITE 1 · GRATUITA',
+    mainTitle: 'ESTA NOITE, SUA MENTE DESCANSA.',
+    title: 'Protocolo Sono Profundo',
+    description: '7 minutos. Sem remédio. Sem contar ovelhas.',
     background: 'url("/images/meditacoes-sono-hero.webp")',
   },
 ];
@@ -364,14 +364,14 @@ export default function HeroCarousel({
                   e.stopPropagation();
                   navigate('/app/meditacoes-sono');
                 }}
-                className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-indigo-900 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"
+                className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-stone-900 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 via-blue-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <svg className="w-4 h-4 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
                 <span className="text-[13px] sm:text-[14px] font-bold relative z-10">
-                  Começar Protocolo
+                  Começar grátis — Noite 1
                 </span>
               </button>
             </div>
