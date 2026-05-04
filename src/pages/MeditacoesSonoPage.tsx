@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Play, Check, Lock, ArrowLeft,
@@ -10,10 +10,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
 import { useSonoCheckout } from '@/hooks/useSonoCheckout';
 import { PROTOCOL_NIGHTS, type ProtocolNight } from '@/data/protocolNights';
-import { SonoPostExperienceModal, type SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal';
-import { SonoGuestPostFlow } from '@/components/sono/SonoGuestPostFlow';
 import mixpanel from '@/lib/mixpanel';
 import { trackGuestUnlockClicked } from '@/lib/mixpanelSonoGuestEvents';
+import type { SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal';
+
+const SonoPostExperienceModal = lazy(() =>
+  import('@/components/sono/SonoPostExperienceModal').then(m => ({ default: m.SonoPostExperienceModal }))
+);
+const SonoGuestPostFlow = lazy(() =>
+  import('@/components/sono/SonoGuestPostFlow').then(m => ({ default: m.SonoGuestPostFlow }))
+);
 
 // Paid/VIP: full access. Others: only free nights (night 1).
 function isNightAccessible(night: ProtocolNight, isPaid: boolean, isVip: boolean): boolean {
@@ -64,7 +70,9 @@ export default function MeditacoesSonoPage() {
     localStorage.setItem('sono_guest_started_at', new Date().toISOString());
     sessionStorage.setItem('eco.sono.guest_id', guestId);
     sessionStorage.setItem('eco.sono.source', source || 'quiz_sono');
-    mixpanel.track('Sleep Guest Page Viewed', { source, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
+    const track = () => mixpanel.track('Sleep Guest Page Viewed', { source, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
+    if ('requestIdleCallback' in window) requestIdleCallback(track);
+    else setTimeout(track, 300);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Night completion state ─────────────────────────────────────
@@ -620,6 +628,8 @@ export default function MeditacoesSonoPage() {
                       <img
                         src={night.imageUrl}
                         alt=""
+                        loading="lazy"
+                        decoding="async"
                         className="absolute inset-0 w-full h-full object-cover"
                         style={isPaid ? undefined : { filter: 'brightness(0.30) saturate(0.50)' }}
                       />
@@ -765,26 +775,32 @@ export default function MeditacoesSonoPage() {
         )}
 
         {/* ── Offer modal (guest sono) ──────────────────────────────── */}
-        <SonoPostExperienceModal
-          open={showOfferModal}
-          variant={offerVariant}
-          guestId={guestId}
-          source={source || 'quiz_sono_guest'}
-          onClose={() => setShowOfferModal(false)}
-          onCheckout={() => openCheckout({ origin: 'quiz_sono_guest' })}
-          checkoutLoading={checkoutLoading}
-        />
+        {showOfferModal && (
+          <Suspense fallback={null}>
+            <SonoPostExperienceModal
+              open={showOfferModal}
+              variant={offerVariant}
+              guestId={guestId}
+              source={source || 'quiz_sono_guest'}
+              onClose={() => setShowOfferModal(false)}
+              onCheckout={() => openCheckout({ origin: 'quiz_sono_guest' })}
+              checkoutLoading={checkoutLoading}
+            />
+          </Suspense>
+        )}
 
       </main>
 
       {/* ── Mini quiz pós-meditação (6 passos) ───────────────────────── */}
       <AnimatePresence>
         {showGuestPostFlow && (
-          <SonoGuestPostFlow
-            onCheckout={() => openCheckout({ origin: 'quiz_sono_guest_post_meditation' })}
-            checkoutLoading={checkoutLoading}
-            onDismiss={() => setShowGuestPostFlow(false)}
-          />
+          <Suspense fallback={null}>
+            <SonoGuestPostFlow
+              onCheckout={() => openCheckout({ origin: 'quiz_sono_guest_post_meditation' })}
+              checkoutLoading={checkoutLoading}
+              onDismiss={() => setShowGuestPostFlow(false)}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
     </div>
