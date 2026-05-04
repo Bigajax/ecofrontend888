@@ -1088,11 +1088,26 @@ export const APRIL_REFLECTIONS: DailyMaxim[] = [
   },
 ];
 
+export const MAIO_REFLECTIONS: DailyMaxim[] = [
+  {
+    date: '4 de maio',
+    month: 'maio',
+    dayNumber: 4,
+    title: 'O QUE É VERDADEIRAMENTE IMPRESSIONANTE',
+    text: '"Quão melhor é ser conhecido por muitos por fazer o bem do que por viver de maneira extravagante? Quão mais digno é gastar com paus e pedras do que com pessoas?"',
+    author: 'Musônio Rufo',
+    source: 'Palestras, 19.9.1.26-28',
+    comment: 'Pense em tudo que você sabe sobre o estilo de vida dos ricos e famosos. Que fulano comprou uma casa por tantos milhões. Que beltrano viaja com seu barbeiro pessoal. Que sicrano tem um tigre ou um elefante de estimação.\n\nExatamente as mesmas fofocas e a mesma notoriedade eram comuns nos tempos de Roma. Certos romanos eram conhecidos pelos milhares de sestércios que gastavam com seus tanques de carpas. Outros eram famosos por festas orgíacas e banquetes suntuosos. As obras de poetas romanos como Juvenal e Marcial estão cheias de falatórios sobre esses tipos.\n\nOs conspicuamente ricos conseguem — e em última instância obtêm — o que querem com seus gastos: reputação. Mas que reputação vazia! Será realmente tão impressionante gastar, gastar e gastar? Tendo recursos, quem não seria capaz de fazer isso?\n\nMarco Aurélio, corajosamente, vendeu algumas das mobílias imperiais para pagar dívidas de guerra. Mais recentemente, José Mujica, ex-presidente do Uruguai, chamou atenção por doar 90% de seu salário presidencial para caridade e dirigir um carro de 25 anos. Quem pode fazer coisas como essas? Nem todo mundo. Sendo assim, quem é o mais impressionante?',
+    background: getBackgroundForDay(4),
+  },
+];
+
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
   ...JANUARY_REFLECTIONS,
   ...FEBRUARY_REFLECTIONS,
   ...MARCH_REFLECTIONS,
   ...APRIL_REFLECTIONS,
+  ...MAIO_REFLECTIONS,
   ...DECEMBER_REFLECTIONS,
 ];
 
@@ -1128,6 +1143,10 @@ export function getTodayMaxim(): DailyMaxim | null {
     monthName = 'abril';
     startDay = 1;
     endDay = 30;
+  } else if (currentMonth === 4) { // Maio
+    monthName = 'maio';
+    startDay = 1;
+    endDay = 31;
   } else if (currentMonth === 11) { // Dezembro
     monthName = 'dezembro';
     startDay = 8;
