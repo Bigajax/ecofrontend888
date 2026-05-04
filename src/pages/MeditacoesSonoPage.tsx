@@ -397,6 +397,24 @@ export default function MeditacoesSonoPage() {
               {heroCTALabel}
             </motion.button>
 
+            {/* Free night replay button — shown after night 1 is completed, guest not paid */}
+            {isGuestSono && !isPaid && completedCount > 0 && (
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.48 }}
+                onClick={() => { const n = PROTOCOL_NIGHTS[0]; if (n) handleNightClick(n); }}
+                className="mt-3 w-full rounded-full py-3 text-[13px] font-semibold transition-all hover:scale-[1.02] active:scale-[0.97]"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(196,181,253,0.20)',
+                  color: 'rgba(196,181,253,0.75)',
+                }}
+              >
+                Rever Noite 1 — gratuita
+              </motion.button>
+            )}
+
             {/* Subtext */}
             {!isPaid && (
               <motion.p
