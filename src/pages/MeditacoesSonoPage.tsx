@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Play, Check, Lock, ArrowLeft,
-  Activity, Zap, TrendingUp, Loader2,
+  Moon, Wind, TrendingUp, Loader2,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import HomeHeader from '@/components/home/HomeHeader';
@@ -20,6 +20,23 @@ const SonoPostExperienceModal = lazy(() =>
 const SonoGuestPostFlow = lazy(() =>
   import('@/components/sono/SonoGuestPostFlow').then(m => ({ default: m.SonoGuestPostFlow }))
 );
+
+// ── Design tokens — sleep palette ─────────────────────────────────────────────
+// Warm amber (candlelight) → primary CTA
+// Steel blue-gray          → labels, secondary accents
+// Ivory/warm white         → headline italic highlight
+// Emerald green            → completed/success states
+const T = {
+  amber:       '#C9922A',
+  amberLight:  '#D4A847',
+  amberGlow:   'rgba(212,168,71,',
+  ivory:       '#F0E3C0',
+  steel:       'rgba(148,163,184,',   // slate-400 base
+  steelSolid:  '#94A3B8',
+  bg0:         '#060609',
+  bg1:         '#08080C',
+  bg2:         '#0B0A10',
+};
 
 // Paid/VIP: full access. Others: only free nights (night 1).
 function isNightAccessible(night: ProtocolNight, isPaid: boolean, isVip: boolean): boolean {
@@ -227,7 +244,7 @@ export default function MeditacoesSonoPage() {
     return (
       <div
         className="min-h-screen font-primary flex flex-col items-center justify-center px-6 text-center"
-        style={{ background: 'linear-gradient(160deg, #06091A 0%, #0C1226 40%, #0F1A38 100%)' }}
+        style={{ background: `linear-gradient(160deg, ${T.bg0} 0%, ${T.bg1} 40%, ${T.bg2} 100%)` }}
       >
         <motion.div
           className="max-w-sm w-full"
@@ -235,7 +252,7 @@ export default function MeditacoesSonoPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: 'spring', stiffness: 70, damping: 20 }}
         >
-          <div className="text-6xl mb-6">🎉</div>
+          <div className="text-6xl mb-6">🌙</div>
           <h1 className="font-display text-[28px] font-bold text-white sm:text-[32px] mb-4 leading-tight">
             Protocolo Concluído
           </h1>
@@ -246,15 +263,19 @@ export default function MeditacoesSonoPage() {
           <div className="flex flex-col gap-3">
             <button
               onClick={() => navigate('/app')}
-              className="w-full rounded-full px-6 py-3.5 text-[15px] font-bold text-[#06091A] transition-all hover:scale-105 active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #A78BFA 100%)', boxShadow: '0 6px 24px rgba(167,139,250,0.35)' }}
+              className="w-full rounded-full px-6 py-3.5 text-[15px] font-bold transition-all hover:scale-105 active:scale-95"
+              style={{
+                background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                color: '#0D1120',
+                boxShadow: `0 6px 24px ${T.amberGlow}0.30)`,
+              }}
             >
               Explorar outros programas
             </button>
             <button
               onClick={() => navigate(SUBSCRIPTION_PATH)}
               className="w-full rounded-full border px-6 py-3.5 text-[15px] font-semibold text-white/70 transition-all hover:text-white active:scale-95"
-              style={{ borderColor: 'rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)' }}
+              style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)' }}
             >
               Conhecer o Plano Completo
             </button>
@@ -274,51 +295,70 @@ export default function MeditacoesSonoPage() {
   return (
     <div
       className="min-h-screen font-primary"
-      style={{ background: 'linear-gradient(180deg, #06091A 0%, #06091A 38%, #0A1020 55%, #0D1530 75%, #0F1A38 100%)' }}
+      style={{ background: `linear-gradient(180deg, ${T.bg0} 0%, ${T.bg0} 38%, ${T.bg1} 55%, #09090E 75%, ${T.bg2} 100%)` }}
     >
       {user && !isGuestSono && <HomeHeader />}
 
       <main className="pb-24">
 
         {/* ══════════════════════════════════════════════════════════
-            HERO — cinematic, unified
+            HERO
             ══════════════════════════════════════════════════════════ */}
         <section className="relative flex min-h-[720px] flex-col overflow-hidden sm:min-h-[800px]">
-          {/* Back button — shown only when no HomeHeader above */}
+          {/* Back button */}
           {(!user || isGuestSono) && (
             <div className="absolute left-4 top-4 z-20 sm:left-6 sm:top-6">
               <button
                 onClick={() => navigate(-1)}
                 className="flex h-9 w-9 items-center justify-center rounded-full text-white/50 transition-all hover:text-white/80"
-                style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}
+                style={{ background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.09)' }}
               >
                 <ArrowLeft className="h-4 w-4" />
               </button>
             </div>
           )}
 
-          {/* Background */}
+          {/* Background image */}
           <div
             className="absolute inset-0 bg-cover"
             style={{ backgroundImage: 'url("/images/meditacoes-sono-hero.webp")', backgroundPosition: 'center 30%', transform: 'scale(1.06)' }}
           />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(6,9,26,0.25) 0%, rgba(6,9,26,0.10) 25%, rgba(6,9,26,0.65) 60%, rgba(6,9,26,1) 100%)' }} />
+          {/* Vignette — deeper at bottom, lighter at top so image breathes */}
+          <div
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(to bottom, rgba(6,6,9,0.18) 0%, rgba(6,6,9,0.06) 22%, rgba(6,6,9,0.55) 58%, ${T.bg0} 100%)` }}
+          />
+          {/* Subtle warm glow at bottom — candlelight, not purple */}
           <div
             className="pointer-events-none absolute"
-            style={{ bottom: '12%', left: '50%', transform: 'translateX(-50%)', width: '300px', height: '220px', borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(70,55,140,0.09) 0%, transparent 70%)', filter: 'blur(60px)' }}
+            style={{
+              bottom: '8%', left: '50%', transform: 'translateX(-50%)',
+              width: '280px', height: '180px', borderRadius: '50%',
+              background: `radial-gradient(ellipse, ${T.amberGlow}0.07) 0%, transparent 70%)`,
+              filter: 'blur(50px)',
+            }}
           />
 
           {/* Content */}
           <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col items-center px-6 pt-32 pb-20 text-center sm:max-w-md sm:px-8 sm:pt-40">
-            {/* Pill */}
+
+            {/* Pill — glass, no color tint */}
             <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, ease: 'easeOut' }}
               className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-bold tracking-[0.18em] uppercase"
-              style={{ background: 'rgba(167,139,250,0.14)', border: '1px solid rgba(167,139,250,0.28)', color: '#C4B5FD', backdropFilter: 'blur(12px)' }}
+              style={{
+                background: 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                color: 'rgba(255,255,255,0.55)',
+                backdropFilter: 'blur(12px)',
+              }}
             >
-              <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: '#A78BFA', boxShadow: '0 0 4px rgba(167,139,250,0.45)' }} />
+              <span
+                className="h-1.5 w-1.5 rounded-full animate-pulse"
+                style={{ background: T.amberLight, boxShadow: `0 0 5px ${T.amberGlow}0.60)` }}
+              />
               {pillLabel}
             </motion.div>
 
@@ -331,7 +371,8 @@ export default function MeditacoesSonoPage() {
               style={{ fontSize: 'clamp(2.1rem, 7vw, 3.1rem)', textShadow: '0 4px 40px rgba(0,0,0,0.70), 0 1px 6px rgba(0,0,0,0.50)' }}
             >
               Esta noite,<br />
-              <em style={{ color: '#C4B5FD', fontStyle: 'italic' }}>sua mente descansa.</em>
+              {/* Ivory/warm white instead of lavender */}
+              <em style={{ color: T.ivory, fontStyle: 'italic' }}>sua mente descansa.</em>
             </motion.h1>
 
             {/* Subtitle */}
@@ -340,7 +381,7 @@ export default function MeditacoesSonoPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
               className="mt-4 text-[15px] leading-relaxed font-light"
-              style={{ color: 'rgba(255,255,255,0.48)' }}
+              style={{ color: 'rgba(255,255,255,0.46)' }}
             >
               {heroSubtitle ?? <>7 minutos. Sem remédio.<br />Sem contar ovelhas.</>}
             </motion.p>
@@ -353,7 +394,7 @@ export default function MeditacoesSonoPage() {
               className="mt-5 flex items-center gap-2.5"
             >
               <span style={{ color: '#FBBF24', fontSize: '14px', letterSpacing: '2px' }}>★★★★★</span>
-              <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.38)' }}>12.400+ pessoas dormindo melhor</span>
+              <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.34)' }}>12.400+ pessoas dormindo melhor</span>
             </motion.div>
 
             {/* Urgency countdown — guest funnel only */}
@@ -363,10 +404,10 @@ export default function MeditacoesSonoPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.32 }}
                 className="mt-6 flex items-center justify-center gap-2 rounded-full px-4 py-2"
-                style={{ background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.22)' }}
+                style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.18)' }}
               >
-                <span style={{ color: '#FBBF24', fontSize: '13px' }}>⏱</span>
-                <span className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                <span style={{ color: '#FBBF24', fontSize: '12px' }}>⏱</span>
+                <span className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.50)' }}>
                   Acesso gratuito disponível por{' '}
                   <span className="font-mono font-bold" style={{ color: '#FBBF24' }}>{formatCountdown(timeLeft)}</span>
                 </span>
@@ -380,23 +421,27 @@ export default function MeditacoesSonoPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.32 }}
                 className="mt-6 flex items-center gap-2 rounded-full px-4 py-2"
-                style={{ background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.22)' }}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.11)' }}
               >
-                <span className="text-[12px] font-medium" style={{ color: 'rgba(196,181,253,0.80)' }}>
+                <span className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.60)' }}>
                   {completedCount === 7 ? '✓ Protocolo concluído' : `${completedCount} de 7 noites concluídas`}
                 </span>
               </motion.div>
             )}
 
-            {/* CTA */}
+            {/* CTA — amber-gold, reads "candlelight" not "app button" */}
             <motion.button
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.65, delay: 0.38, ease: 'easeOut' }}
               onClick={handleHeroButtonClick}
               disabled={checkoutLoading}
-              className="mt-4 flex w-full items-center justify-center gap-3 rounded-full py-4 text-[15px] font-bold text-white transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-70"
-              style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #6D42C9 100%)', boxShadow: '0 10px 40px rgba(100,70,190,0.32), 0 2px 10px rgba(0,0,0,0.35)' }}
+              className="mt-6 flex w-full items-center justify-center gap-3 rounded-full py-4 text-[15px] font-bold transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-70"
+              style={{
+                background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                color: '#0D1120',
+                boxShadow: `0 10px 36px ${T.amberGlow}0.28), 0 2px 8px rgba(0,0,0,0.40)`,
+              }}
             >
               {checkoutLoading
                 ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -405,7 +450,7 @@ export default function MeditacoesSonoPage() {
               {heroCTALabel}
             </motion.button>
 
-            {/* Free night replay button — shown after night 1 is completed, guest not paid */}
+            {/* Free night replay — ghost, no purple */}
             {isGuestSono && !isPaid && completedCount > 0 && (
               <motion.button
                 initial={{ opacity: 0 }}
@@ -414,9 +459,9 @@ export default function MeditacoesSonoPage() {
                 onClick={() => { const n = PROTOCOL_NIGHTS[0]; if (n) handleNightClick(n); }}
                 className="mt-3 w-full rounded-full py-3 text-[13px] font-semibold transition-all hover:scale-[1.02] active:scale-[0.97]"
                 style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(196,181,253,0.20)',
-                  color: 'rgba(196,181,253,0.75)',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.13)',
+                  color: 'rgba(255,255,255,0.55)',
                 }}
               >
                 Rever Noite 1 — gratuita
@@ -430,7 +475,7 @@ export default function MeditacoesSonoPage() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.5 }}
                 className="mt-3 text-[11px]"
-                style={{ color: 'rgba(255,255,255,0.28)' }}
+                style={{ color: 'rgba(255,255,255,0.24)' }}
               >
                 {isGuestSono ? 'Sem cadastro · Sem cartão · Acesso imediato' : 'Acesso imediato à Noite 1 grátis'}
               </motion.p>
@@ -460,21 +505,33 @@ export default function MeditacoesSonoPage() {
             ) : (
               <div className="absolute inset-0" style={{ background: PROTOCOL_NIGHTS[0]?.gradient }} />
             )}
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(6,9,26,0.05) 0%, rgba(6,9,26,0.22) 35%, rgba(6,9,26,0.96) 88%)' }} />
+            <div
+              className="absolute inset-0"
+              style={{ background: `linear-gradient(to bottom, rgba(6,6,9,0.04) 0%, rgba(6,6,9,0.20) 35%, rgba(6,6,9,0.96) 88%)` }}
+            />
 
             {/* Top row */}
             <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
               <span
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em]"
-                style={{ background: 'rgba(6,9,26,0.65)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.13)', color: 'rgba(196,181,253,0.80)' }}
+                style={{
+                  background: 'rgba(6,6,9,0.60)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.11)',
+                  color: 'rgba(255,255,255,0.55)',
+                }}
               >
-                <span className="h-1 w-1 rounded-full" style={{ background: '#A78BFA' }} />
+                <span className="h-1 w-1 rounded-full" style={{ background: T.amberLight }} />
                 Noite 1 de 7
               </span>
               {!isPaid && (
                 <div
-                  className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #7C3AED 100%)', boxShadow: '0 4px 14px rgba(124,58,237,0.50)' }}
+                  className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold"
+                  style={{
+                    background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                    color: '#0D1120',
+                    boxShadow: `0 4px 14px ${T.amberGlow}0.35)`,
+                  }}
                 >
                   ★ Grátis
                 </div>
@@ -498,7 +555,7 @@ export default function MeditacoesSonoPage() {
               >
                 {PROTOCOL_NIGHTS[0]?.title ?? 'Desligando o Estado de Alerta'}
               </h3>
-              <p className="text-[12px] mb-4" style={{ color: 'rgba(255,255,255,0.48)' }}>
+              <p className="text-[12px] mb-4" style={{ color: 'rgba(255,255,255,0.44)' }}>
                 {PROTOCOL_NIGHTS[0]?.description ?? 'Ensina seu sistema nervoso a reconhecer o sinal para dormir.'}
               </p>
               <div className="flex items-center gap-3">
@@ -506,13 +563,16 @@ export default function MeditacoesSonoPage() {
                   className="flex h-12 w-12 items-center justify-center rounded-full flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
                   style={
                     isPaid && night1IsCompleted
-                      ? { background: 'rgba(52,211,153,0.22)', boxShadow: '0 6px 24px rgba(52,211,153,0.30)', border: '1px solid rgba(52,211,153,0.40)' }
-                      : { background: 'linear-gradient(135deg, #C4B5FD 0%, #7C3AED 100%)', boxShadow: '0 6px 24px rgba(124,58,237,0.60)' }
+                      ? { background: 'rgba(52,211,153,0.22)', boxShadow: '0 6px 24px rgba(52,211,153,0.28)', border: '1px solid rgba(52,211,153,0.40)' }
+                      : {
+                          background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                          boxShadow: `0 6px 24px ${T.amberGlow}0.40)`,
+                        }
                   }
                 >
                   {isPaid && night1IsCompleted
                     ? <Check className="h-5 w-5 text-emerald-400" strokeWidth={2.5} />
-                    : <Play className="h-5 w-5 text-white ml-0.5" fill="currentColor" />
+                    : <Play className="h-5 w-5 ml-0.5" fill="currentColor" style={{ color: '#0D1120' }} />
                   }
                 </div>
                 <div>
@@ -522,7 +582,7 @@ export default function MeditacoesSonoPage() {
                       : 'Iniciar agora — grátis'}
                   </p>
                   {!isPaid && (
-                    <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.38)' }}>
+                    <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.34)' }}>
                       {isGuestSono ? 'Sem cadastro · Sem cartão' : 'Acesso imediato'}
                     </p>
                   )}
@@ -547,23 +607,26 @@ export default function MeditacoesSonoPage() {
             transition={{ type: 'spring', stiffness: 65, damping: 18 }}
           >
             {[
-              { icon: Activity,    text: 'Sua respiração desacelera — sem você tentar. Seu peito afrouxa. Os pensamentos perdem força.', color: '#A78BFA' },
-              { icon: Zap,         text: 'Você para de calcular quantas horas de sono ainda dá pra pegar. Sua mente solta.', color: '#A78BFA' },
-              { icon: TrendingUp,  text: 'Cada noite aprofunda mais. No 7º dia, seu corpo já sabe o que fazer — sem o áudio.', color: '#34D399' },
+              { icon: Moon,        text: 'Sua respiração desacelera — sem você tentar. Seu peito afrouxa. Os pensamentos perdem força.', color: T.steelSolid },
+              { icon: Wind,        text: 'Você para de calcular quantas horas de sono ainda dá pra pegar. Sua mente solta.',             color: T.steelSolid },
+              { icon: TrendingUp,  text: 'Cada noite aprofunda mais. No 7º dia, seu corpo já sabe o que fazer — sem o áudio.',          color: '#34D399' },
             ].map(({ icon: Icon, text, color }, i) => (
               <motion.div
                 key={i}
                 className="flex items-start gap-4 rounded-2xl px-4 py-4"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.06)' }}
                 initial={{ opacity: 0, x: -10 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: '-20px' }}
                 transition={{ type: 'spring', stiffness: 80, damping: 20, delay: i * 0.07 }}
               >
-                <div className="flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `${color}18`, border: `1px solid ${color}28` }}>
+                <div
+                  className="flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-xl"
+                  style={{ background: `${color}14`, border: `1px solid ${color}22` }}
+                >
                   <Icon className="h-4 w-4" style={{ color }} />
                 </div>
-                <p className="text-[13px] leading-relaxed pt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{text}</p>
+                <p className="text-[13px] leading-relaxed pt-0.5" style={{ color: 'rgba(255,255,255,0.46)' }}>{text}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -579,33 +642,33 @@ export default function MeditacoesSonoPage() {
             viewport={{ once: true, margin: '-40px' }}
             transition={{ type: 'spring', stiffness: 65, damping: 18 }}
           >
-            {/* Section divider */}
+            {/* Section divider — neutral, no purple */}
             <div className="flex items-center gap-3 mb-5">
               <div
                 className="h-px flex-1"
-                style={{ background: `linear-gradient(to right, transparent, ${isPaid ? 'rgba(52,211,153,0.25)' : 'rgba(167,139,250,0.25)'})` }}
+                style={{ background: `linear-gradient(to right, transparent, ${isPaid ? 'rgba(52,211,153,0.20)' : 'rgba(255,255,255,0.10)'})` }}
               />
               <div
                 className="flex items-center gap-2 rounded-full px-4 py-1.5"
                 style={{
-                  background: isPaid ? 'rgba(52,211,153,0.10)' : 'rgba(167,139,250,0.10)',
-                  border: `1px solid ${isPaid ? 'rgba(52,211,153,0.20)' : 'rgba(167,139,250,0.20)'}`,
+                  background: isPaid ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${isPaid ? 'rgba(52,211,153,0.18)' : 'rgba(255,255,255,0.10)'}`,
                 }}
               >
                 {isPaid
-                  ? <Play className="h-3 w-3" style={{ color: 'rgba(52,211,153,0.70)' }} fill="currentColor" />
-                  : <Lock className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.55)' }} />
+                  ? <Play className="h-3 w-3" style={{ color: 'rgba(52,211,153,0.65)' }} fill="currentColor" />
+                  : <Lock className="h-3 w-3" style={{ color: 'rgba(255,255,255,0.35)' }} />
                 }
                 <span
                   className="text-[11px] font-bold uppercase tracking-widest"
-                  style={{ color: isPaid ? 'rgba(52,211,153,0.70)' : 'rgba(196,181,253,0.55)' }}
+                  style={{ color: isPaid ? 'rgba(52,211,153,0.65)' : 'rgba(255,255,255,0.35)' }}
                 >
                   {isPaid ? 'Noites 2 a 7 — Desbloqueadas' : 'Noites 2 a 7'}
                 </span>
               </div>
               <div
                 className="h-px flex-1"
-                style={{ background: `linear-gradient(to left, transparent, ${isPaid ? 'rgba(52,211,153,0.25)' : 'rgba(167,139,250,0.25)'})` }}
+                style={{ background: `linear-gradient(to left, transparent, ${isPaid ? 'rgba(52,211,153,0.20)' : 'rgba(255,255,255,0.10)'})` }}
               />
             </div>
 
@@ -631,18 +694,21 @@ export default function MeditacoesSonoPage() {
                         loading="lazy"
                         decoding="async"
                         className="absolute inset-0 w-full h-full object-cover"
-                        style={isPaid ? undefined : { filter: 'brightness(0.30) saturate(0.50)' }}
+                        style={isPaid ? undefined : { filter: 'brightness(0.25) saturate(0.40)' }}
                       />
                     ) : (
-                      <div className="absolute inset-0" style={{ background: night.gradient, opacity: isPaid ? 1 : 0.35 }} />
+                      <div className="absolute inset-0" style={{ background: night.gradient, opacity: isPaid ? 1 : 0.30 }} />
                     )}
-                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 15%, rgba(6,9,26,0.85) 100%)' }} />
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: 'linear-gradient(to bottom, transparent 15%, rgba(6,6,9,0.88) 100%)' }}
+                    />
 
                     <div className="absolute inset-0 flex flex-col justify-between p-3.5">
                       <div className="flex items-center justify-between">
                         <span
                           className="text-[9px] font-bold uppercase tracking-wider"
-                          style={{ color: isPaid ? 'rgba(255,255,255,0.65)' : 'rgba(196,181,253,0.55)' }}
+                          style={{ color: isPaid ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.30)' }}
                         >
                           Noite {night.night}
                         </span>
@@ -651,31 +717,31 @@ export default function MeditacoesSonoPage() {
                           nightCompleted ? (
                             <div
                               className="h-5 w-5 flex items-center justify-center rounded-full"
-                              style={{ background: 'rgba(52,211,153,0.25)', border: '1px solid rgba(52,211,153,0.45)' }}
+                              style={{ background: 'rgba(52,211,153,0.22)', border: '1px solid rgba(52,211,153,0.40)' }}
                             >
                               <Check className="h-2.5 w-2.5 text-emerald-400" strokeWidth={2.5} />
                             </div>
                           ) : (
                             <div
                               className="h-5 w-5 flex items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110"
-                              style={{ background: 'rgba(167,139,250,0.20)', border: '1px solid rgba(167,139,250,0.35)' }}
+                              style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.18)' }}
                             >
-                              <Play className="h-2.5 w-2.5 ml-px" style={{ color: 'rgba(196,181,253,0.80)' }} fill="currentColor" />
+                              <Play className="h-2.5 w-2.5 ml-px text-white/70" fill="currentColor" />
                             </div>
                           )
                         ) : (
                           <div
                             className="h-5 w-5 flex items-center justify-center rounded-full"
-                            style={{ background: 'rgba(6,9,26,0.72)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.12)' }}
+                            style={{ background: 'rgba(6,6,9,0.70)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.10)' }}
                           >
-                            <Lock className="h-2.5 w-2.5 text-white/40" />
+                            <Lock className="h-2.5 w-2.5 text-white/35" />
                           </div>
                         )}
                       </div>
 
                       <p
                         className="text-[11px] font-semibold leading-snug line-clamp-2"
-                        style={{ color: isPaid ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.58)' }}
+                        style={{ color: isPaid ? 'rgba(255,255,255,0.80)' : 'rgba(255,255,255,0.40)' }}
                       >
                         {night.title}
                       </p>
@@ -699,25 +765,34 @@ export default function MeditacoesSonoPage() {
               transition={{ type: 'spring', stiffness: 65, damping: 18, delay: 0.1 }}
               className="relative overflow-hidden rounded-3xl px-6 py-7 text-center"
               style={{
-                background: 'linear-gradient(160deg, rgba(70,52,140,0.16) 0%, rgba(10,10,30,0.98) 100%)',
-                border: '1px solid rgba(140,115,210,0.22)',
-                boxShadow: '0 8px 40px rgba(50,40,100,0.20)',
+                background: 'linear-gradient(160deg, rgba(14,12,9,0.97) 0%, rgba(8,8,11,0.99) 100%)',
+                border: `1px solid ${T.amberGlow}0.18)`,
+                boxShadow: `0 8px 40px rgba(0,0,0,0.30), inset 0 1px 0 ${T.amberGlow}0.06)`,
               }}
             >
-              <div className="pointer-events-none absolute" style={{ top: '-40px', right: '-30px', width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.12) 0%, transparent 70%)' }} />
-              <p className="text-[11px] uppercase tracking-[0.2em] font-bold mb-4" style={{ color: 'rgba(251,191,36,0.80)' }}>
+              {/* Subtle warm glow top-right */}
+              <div
+                className="pointer-events-none absolute"
+                style={{
+                  top: '-50px', right: '-40px',
+                  width: '180px', height: '180px', borderRadius: '50%',
+                  background: `radial-gradient(circle, ${T.amberGlow}0.08) 0%, transparent 70%)`,
+                }}
+              />
+
+              <p className="text-[11px] uppercase tracking-[0.2em] font-bold mb-4" style={{ color: 'rgba(251,191,36,0.75)' }}>
                 ⚡ Oferta especial de lançamento
               </p>
               <div className="flex items-baseline justify-center gap-3 mb-1">
-                <span className="text-[14px] line-through" style={{ color: 'rgba(255,255,255,0.25)' }}>R$97</span>
+                <span className="text-[14px] line-through" style={{ color: 'rgba(255,255,255,0.22)' }}>R$97</span>
                 <span className="font-display text-[40px] font-bold text-white leading-none">R$37</span>
               </div>
-              <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.32)' }}>Pagamento único · Sem mensalidade</p>
+              <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.28)' }}>Pagamento único · Sem mensalidade</p>
 
               {isGuestSono ? (
                 <div className="flex items-center justify-center gap-1.5 mb-6">
                   <span style={{ color: '#FBBF24', fontSize: '12px' }}>⏱</span>
-                  <span className="text-[12px]" style={{ color: 'rgba(251,191,36,0.70)' }}>
+                  <span className="text-[12px]" style={{ color: 'rgba(251,191,36,0.65)' }}>
                     Expira em{' '}
                     <span className="font-mono font-bold">{formatCountdown(timeLeft)}</span>
                   </span>
@@ -732,14 +807,18 @@ export default function MeditacoesSonoPage() {
                   else openCheckout();
                 }}
                 disabled={checkoutLoading}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 mb-3"
-                style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)', boxShadow: '0 10px 36px rgba(107,79,187,0.60)' }}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-[15px] font-bold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 mb-3"
+                style={{
+                  background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                  color: '#0D1120',
+                  boxShadow: `0 10px 32px ${T.amberGlow}0.32)`,
+                }}
               >
                 {checkoutLoading
                   ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Abrindo…</span>
                   : isGuestSono ? 'Garantir as 7 noites — R$37 →' : 'Desbloquear as 7 noites — R$37 →'}
               </button>
-              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>Acesso imediato · Sem risco</p>
+              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.24)' }}>Acesso imediato · Sem risco</p>
             </motion.div>
           </section>
         )}
@@ -755,26 +834,26 @@ export default function MeditacoesSonoPage() {
               viewport={{ once: true, margin: '-30px' }}
               transition={{ type: 'spring', stiffness: 65, damping: 18 }}
               className="rounded-3xl px-6 py-6"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(167,139,250,0.15)' }}
+              style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[13px] font-semibold text-white/70">
+                <p className="text-[13px] font-semibold text-white/65">
                   {completedCount === 7 ? 'Programa concluído!' : `Noite ${nextNight} de 7`}
                 </p>
-                <span className="text-[13px] font-bold text-[#A78BFA]">{pct}%</span>
+                <span className="text-[13px] font-bold" style={{ color: T.amberLight }}>{pct}%</span>
               </div>
-              <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.10)' }}>
+              <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
                 <div
                   className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #A78BFA, #7C3AED)' }}
+                  style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${T.amberLight}, ${T.amber})` }}
                 />
               </div>
-              <p className="mt-2 text-[12px] text-white/35">{completedCount} de 7 noites concluídas</p>
+              <p className="mt-2 text-[12px] text-white/30">{completedCount} de 7 noites concluídas</p>
             </motion.div>
           </section>
         )}
 
-        {/* ── Offer modal (guest sono) ──────────────────────────────── */}
+        {/* ── Offer modal ───────────────────────────────────────────── */}
         {showOfferModal && (
           <Suspense fallback={null}>
             <SonoPostExperienceModal
@@ -791,7 +870,7 @@ export default function MeditacoesSonoPage() {
 
       </main>
 
-      {/* ── Mini quiz pós-meditação (6 passos) ───────────────────────── */}
+      {/* ── Mini quiz pós-meditação ───────────────────────────────────── */}
       <AnimatePresence>
         {showGuestPostFlow && (
           <Suspense fallback={null}>
