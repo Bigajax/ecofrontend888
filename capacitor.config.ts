@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.ecotopia.app',
-  appName: 'ECO',
+  appName: 'Ecotopia',
   webDir: 'dist',
   server: {
     // Em desenvolvimento, aponta para o servidor local

@@ -20,8 +20,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   const pageTitle =
     location.pathname.startsWith('/app/memory') ? 'Memórias' :
-    location.pathname.startsWith('/app/voice') ? 'ECO — Voz' :
-    'ECO';
+    location.pathname.startsWith('/app/voice') ? 'Ecotopia — Voz' :
+    'Ecotopia';
 
   const handleLogout = async () => {
     try {
