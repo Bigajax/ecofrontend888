@@ -60,18 +60,11 @@ export default {
         'fluid-xl': [fluidType.xl, { lineHeight: '1.35' }],
         'fluid-2xl': [fluidType['2xl'], { lineHeight: '1.25' }],
       },
-      /* Tipografia — Inter (primária) + Playfair Display (display) */
+      /* Tipografia — Geist (UI) + Lora (Content/Display) */
       fontFamily: {
-        sans: [
-          'Inter',
-          '-apple-system','BlinkMacSystemFont',
-          'Segoe UI','system-ui','Roboto',
-          'Helvetica Neue','Arial','sans-serif'
-        ],
-        display: [
-          'Playfair Display',
-          'Georgia', 'serif'
-        ],
+        sans: ['Geist', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'system-ui', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        serif: ['Lora', 'Georgia', 'serif'],
+        display: ['Lora', 'Georgia', 'serif'],
       },
 
       fontWeight: {
