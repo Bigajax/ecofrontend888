@@ -1,62 +1,51 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Play, Music, User } from 'lucide-react';
-import clsx from 'clsx';
+import { Home, Compass, Moon, Music2, User } from 'lucide-react';
+
+const navItems = [
+  { to: '/app',               icon: Home,    label: 'Início',   end: true  },
+  { to: '/app/programas',     icon: Compass, label: 'Explorar', end: false },
+  { to: '/app/sono',          icon: Moon,    label: 'Sono',     end: false },
+  { to: '/app/sons',          icon: Music2,  label: 'Sons',     end: false },
+  { to: '/app/configuracoes', icon: User,    label: 'Perfil',   end: false },
+];
 
 export default function BottomNav() {
-  const navItems = [
-    { to: '/app', icon: Home, label: 'Hoje' },
-    { to: '/app/programas', icon: Play, label: 'Programas' },
-    { to: '/app/sons', icon: Music, label: 'Sons' },
-    { to: '/app/configuracoes', icon: User, label: 'Perfil' },
-  ];
-
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm pb-safe md:hidden"
-      style={{ borderTop: '1px solid rgba(110,200,255,0.20)', boxShadow: '0 -4px 24px rgba(110,200,255,0.10)' }}
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+      style={{
+        background: 'var(--nav-bg)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderTop: '1px solid var(--neutral-border)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
     >
-      <div className="flex min-h-[60px] items-center justify-around px-2">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/app'}
-              className={({ isActive }) =>
-                clsx(
-                  'relative flex min-w-[60px] min-h-[52px] flex-col items-center justify-center gap-1 rounded-2xl px-3 py-2 transition-all duration-200',
-                  isActive
-                    ? 'text-[#1E6FA5]'
-                    : 'text-gray-400'
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {/* Active pill background */}
-                  {isActive && (
-                    <span
-                      className="absolute inset-0 rounded-2xl"
-                      style={{ background: 'rgba(110,200,255,0.14)' }}
-                    />
-                  )}
-                  <Icon
-                    size={20}
-                    strokeWidth={isActive ? 2.2 : 1.5}
-                    className="relative z-10 transition-all duration-200"
-                  />
-                  <span className={clsx(
-                    'relative z-10 text-[11px] leading-none transition-all duration-200',
-                    isActive ? 'font-bold' : 'font-medium'
-                  )}>
-                    {item.label}
-                  </span>
-                </>
-              )}
-            </NavLink>
-          );
-        })}
+      <div className="flex items-center justify-around h-[60px] px-1">
+        {navItems.map(({ to, icon: Icon, label, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className="flex-1 flex flex-col items-center justify-center gap-[3px] py-2 min-h-[44px]"
+          >
+            {({ isActive }) => (
+              <>
+                <Icon
+                  size={22}
+                  strokeWidth={isActive ? 2.2 : 1.6}
+                  style={{ color: isActive ? 'var(--accent)' : 'var(--text-muted)' }}
+                />
+                <span
+                  className="text-[10px] font-medium leading-none"
+                  style={{ color: isActive ? 'var(--accent)' : 'var(--text-muted)' }}
+                >
+                  {label}
+                </span>
+              </>
+            )}
+          </NavLink>
+        ))}
       </div>
     </nav>
   );
