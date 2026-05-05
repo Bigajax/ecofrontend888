@@ -30,11 +30,10 @@ export const BACKGROUNDS = [
   'url("/images/meditacao-19-nov.webp")',
   'url("/images/meditacao-20-nov.webp")',
   'url("/images/meditacao-21-nov.webp")',
-  'url("/images/diario-01.webp")', // 🚀 OPT#7: Converted PNG→WebP (-1.93 MB)
-  'url("/images/diario-02.webp")', // 🚀 OPT#7: Converted PNG→WebP (-1.76 MB)
-  'url("/images/diario-03.webp")', // 🚀 OPT#7: Converted PNG→WebP (-2.21 MB)
-  'url("/images/diario-04.webp")', // 🚀 OPT#7: Converted PNG→WebP (-2.20 MB)
-
+  'url("/images/diario-01.webp")',
+  'url("/images/diario-02.webp")',
+  'url("/images/diario-03.webp")',
+  'url("/images/diario-04.webp")',
 ];
 
 // Função para atribuir background baseado no número do dia (rotação inteligente)
@@ -1099,6 +1098,17 @@ export const MAIO_REFLECTIONS: DailyMaxim[] = [
     source: 'Palestras, 19.9.1.26-28',
     comment: 'Pense em tudo que você sabe sobre o estilo de vida dos ricos e famosos. Que fulano comprou uma casa por tantos milhões. Que beltrano viaja com seu barbeiro pessoal. Que sicrano tem um tigre ou um elefante de estimação.\n\nExatamente as mesmas fofocas e a mesma notoriedade eram comuns nos tempos de Roma. Certos romanos eram conhecidos pelos milhares de sestércios que gastavam com seus tanques de carpas. Outros eram famosos por festas orgíacas e banquetes suntuosos. As obras de poetas romanos como Juvenal e Marcial estão cheias de falatórios sobre esses tipos.\n\nOs conspicuamente ricos conseguem — e em última instância obtêm — o que querem com seus gastos: reputação. Mas que reputação vazia! Será realmente tão impressionante gastar, gastar e gastar? Tendo recursos, quem não seria capaz de fazer isso?\n\nMarco Aurélio, corajosamente, vendeu algumas das mobílias imperiais para pagar dívidas de guerra. Mais recentemente, José Mujica, ex-presidente do Uruguai, chamou atenção por doar 90% de seu salário presidencial para caridade e dirigir um carro de 25 anos. Quem pode fazer coisas como essas? Nem todo mundo. Sendo assim, quem é o mais impressionante?',
     background: getBackgroundForDay(4),
+  },
+  {
+    date: '5 de maio',
+    month: 'maio',
+    dayNumber: 5,
+    title: 'VOCÊ É O PROJETO',
+    text: '"A matéria-prima para o trabalho de uma boa e excelente pessoa é sua razão orientadora, o corpo é a dos médicos e dos treinadores físicos, e a terra, a dos agricultores."',
+    author: 'Epicteto',
+    source: 'Discursos, 3.3.1',
+    comment: 'Os profissionais não têm de justificar o tempo que gastam com capacitação ou prática de seu trabalho. É o ofício deles, e é praticando que se tornam bons. As matérias-primas variam de uma carreira para outra, assim como os locais e a duração variam dependendo da pessoa e da profissão. Mas a única constante é o trabalho desses materiais, as melhorias graduais e a proficiência.\n\nSegundo os estoicos, sua mente é o recurso que deve ser mais trabalhado — e mais bem compreendido.',
+    background: getBackgroundForDay(5),
   },
 ];
 
