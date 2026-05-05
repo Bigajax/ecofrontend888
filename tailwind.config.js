@@ -106,6 +106,20 @@ export default {
           babyDark: '#36B3FF',
           babySoft: '#E9F6FF',
         },
+        ecotopia: {
+          'bg':     'var(--bg-primary)',
+          'bg-2':   'var(--bg-secondary)',
+          'bg-3':   'var(--bg-tertiary)',
+          'text':   'var(--text-primary)',
+          'text-2': 'var(--text-secondary)',
+          'muted':  'var(--text-muted)',
+          'accent': 'var(--accent)',
+          'warm':   'var(--accent-warm)',
+          'gold':   'var(--accent-gold)',
+          'border': 'var(--neutral-border)',
+          'card':   'var(--surface-card)',
+          'glass':  'var(--surface-glass)',
+        },
       },
 
       backgroundImage: {
