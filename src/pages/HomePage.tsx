@@ -505,7 +505,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen font-primary pb-16 md:pb-0" style={{ background: '#FFFFFF' }}>
+    <div className="min-h-screen font-primary" style={{ backgroundColor: 'var(--bg-primary)', minHeight: '100dvh' }}>
       {/* Header - Always render first */}
       <HomeHeader onLogout={handleLogout} />
 
@@ -513,14 +513,14 @@ export default function HomePage() {
       {isLoading ? (
         <ContentSkeletonLoader />
       ) : (
-        <main className="md:pt-0">
+        <main className="md:pt-0 page-with-nav" style={{ backgroundColor: 'var(--bg-primary)' }}>
         {/* Trial Onboarding - Show for trial users */}
         <div className="mx-auto max-w-6xl md:px-8">
           <TrialOnboarding />
         </div>
 
         {/* Hero Section */}
-        <div className="mx-auto max-w-6xl md:px-8 md:py-8">
+        <div className="mx-auto max-w-6xl md:px-8 md:py-8" style={{ paddingTop: 'calc(12px + env(safe-area-inset-top))' }}>
           {/* Desktop: Grid 2 colunas com mesma altura */}
           <div className="hidden gap-6 md:grid md:grid-cols-2">
             {/* Left Card - Greeting */}
@@ -530,9 +530,9 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: 'spring', stiffness: 70, damping: 20, delay: 0.15 }}
               style={{
-                background: '#FFFFFF',
-                border: '1px solid rgba(0,0,0,0.06)',
-                boxShadow: '0 8px 40px rgba(0,0,0,0.07), 0 2px 8px rgba(0,0,0,0.04)',
+                backgroundColor: 'var(--surface-card)',
+                boxShadow: 'var(--shadow-card)',
+                border: '1px solid var(--neutral-border)',
               }}
             >
               {/* Large decorative orb top-right */}
