@@ -81,16 +81,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         children
       ) : (
         <main
-          className={`
-            min-h-[100svh] md:min-h-[100dvh]
-            ${showOldHeader ? 'pt-[var(--eco-topbar-h,56px)] md:pt-0' : ''}
-            ${showBottomNav ? 'pb-16 md:pb-0' : ''}
-            pl-0 ${showOldHeader ? 'md:pl-[var(--eco-sidebar-w,0px)]' : ''}
-            transition-[padding] duration-200 ease-out
-            bg-transparent text-[color:var(--color-text-primary)]
-          `}
+          className="scroll-touch"
+          style={{
+            minHeight: '100dvh',
+            paddingTop: showOldHeader ? 'calc(56px + env(safe-area-inset-top))' : 'env(safe-area-inset-top)',
+            paddingBottom: showBottomNav ? 'calc(72px + env(safe-area-inset-bottom))' : 'env(safe-area-inset-bottom)',
+            backgroundColor: 'var(--bg-primary)',
+            color: 'var(--text-primary)',
+          }}
         >
-          <div className={`${showOldHeader ? 'container-content' : 'w-full'}`}>
+          <div className={showOldHeader ? 'container-content' : 'w-full'}>
             {children}
           </div>
         </main>

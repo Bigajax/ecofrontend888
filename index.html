@@ -101,13 +101,8 @@
       html, body, #root { height: 100%; }
       body {
         margin: 0;
-        /* Soft Minimal: areia clara com orbs pastéis suaves */
-        background:
-          radial-gradient(680px 560px at 16% -12%, rgba(198, 169, 149, 0.04), transparent 58%),
-          radial-gradient(540px 420px at 88% -6%, rgba(230, 235, 239, 0.035), transparent 62%),
-          radial-gradient(720px 620px at 50% 120%, rgba(243, 238, 231, 0.03), transparent 70%),
-          linear-gradient(180deg, #FAF9F7 0%, #F3EEE7 100%);
-        color: #38322A; /* Terra úmida */
+        background-color: var(--bg-primary, #0A0F1E);
+        color: var(--text-primary, #F4F1EC);
       }
       /* fallback p/ browsers sem svh: 100*var(--vh) */
       .min-h-viewport {
