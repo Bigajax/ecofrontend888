@@ -312,11 +312,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
       <GuestSonoPlayer
         startTime={guestPlayback.startTime}
         onComplete={handleGuestNight1Complete}
-        onBack={() => {
-          setGuestPlayback(null);
-          setOfferVariant('locked_night');
-          setShowOfferModal(true);
-        }}
+        onBack={() => setGuestPlayback(null)}
       />
     );
   }
