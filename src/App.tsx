@@ -68,7 +68,8 @@ const IntroPotencialPage = lazy(() => import("@/pages/guest/IntroPotencialPage")
 const DrJoePreviewPage = lazy(() => import("@/pages/guest/DrJoePreviewPage"));
 const RecondicioneAntesDeComecarPage = lazy(() => import("@/pages/RecondicioneAntesDeComecarPage"));
 const IntroducaoMeditacaoPage = lazy(() => import("@/pages/IntroducaoMeditacaoPage"));
-const MeditacoesSonoPage = lazy(() => import("@/pages/MeditacoesSonoPage"));
+const SleepMeditationsPage = lazy(() => import("@/pages/sleep/SleepMeditationsPage"));
+const SleepGuestExperiencePage = lazy(() => import("@/pages/sleep/SleepGuestExperiencePage"));
 const CodigoDaAbundanciaPage = lazy(() => import("@/pages/CodigoDaAbundanciaPage"));
 const ProgramasPage = lazy(() => import("@/pages/ProgramasPage"));
 const CaleidoscopioMindMovieProgramPage = lazy(() => import("@/pages/CaleidoscopioMindMovieProgramPage"));
@@ -212,9 +213,13 @@ function AppRoutes() {
       </Route>
       {/* ── Rotas guest (sem autenticação) — devem vir ANTES do /app/* para não
           serem capturadas pelo catch-all filho do bloco RequireAuth ── */}
-      <Route path="/app/meditacoes/sono" element={<SonoGuestShell />}>
-        <Route index element={renderWithSuspense(<MeditacoesSonoPage />)} />
+      {/* ── /sono/experiencia — public guest funnel (official) ── */}
+      <Route path="/sono/experiencia" element={<SonoGuestShell />}>
+        <Route index element={renderWithSuspense(<SleepGuestExperiencePage />)} />
       </Route>
+
+      {/* ── /app/meditacoes/sono — legacy redirect ── */}
+      <Route path="/app/meditacoes/sono" element={<Navigate to="/sono/experiencia" replace />} />
       <Route path="/app/minigame-potencial" element={<MinigameGuestShell />}>
         <Route index element={renderWithSuspense(<MinigamePotencialPage />)} />
       </Route>
@@ -303,7 +308,7 @@ function AppRoutes() {
           </RequireAuth>
         }
       >
-        <Route index element={renderWithSuspense(<MeditacoesSonoPage />)} />
+        <Route index element={renderWithSuspense(<SleepMeditationsPage />)} />
       </Route>
       <Route
         path="/app/codigo-da-abundancia"
@@ -459,7 +464,7 @@ function AppChrome() {
   // Guest Experience Modal - Verificar periodicamente se deve mostrar
   useEffect(() => {
     if (user) return; // Só para guests
-    if (location.pathname === '/app/meditacoes/sono') return; // Funil Sono guest sem cadastro/interrupções
+    if (location.pathname === '/sono/experiencia') return; // Funil Sono guest sem cadastro/interrupções
 
     const interval = setInterval(() => {
       if (shouldShowModal()) {
