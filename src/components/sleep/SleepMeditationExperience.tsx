@@ -1,0 +1,999 @@
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import {
+  Play, Check, Lock, ArrowLeft,
+  Moon, Wind, TrendingUp, Loader2,
+} from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import HomeHeader from '@/components/home/HomeHeader';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
+import { useSonoCheckout } from '@/hooks/useSonoCheckout';
+import { PROTOCOL_NIGHTS, type ProtocolNight } from '@/data/protocolNights';
+import mixpanel from '@/lib/mixpanel';
+import {
+  trackGuestUnlockClicked,
+  trackSonoGuestNight1Completed,
+  trackSonoGuestNight1Started,
+  trackSonoGuestPageViewed,
+} from '@/lib/mixpanelSonoGuestEvents';
+import { GuestSonoPlayer } from '@/components/sono-guest/GuestSonoPlayer';
+import { LS_KEYS } from '@/components/sono-guest/types';
+import type { SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal';
+
+const SonoPostExperienceModal = lazy(() =>
+  import('@/components/sono/SonoPostExperienceModal').then(m => ({ default: m.SonoPostExperienceModal }))
+);
+
+// ── Design tokens — sleep palette ─────────────────────────────────────────────
+// Warm amber (candlelight) → primary CTA
+// Steel blue-gray          → labels, secondary accents
+// Ivory/warm white         → headline italic highlight
+// Emerald green            → completed/success states
+const T = {
+  amber:       '#C9922A',
+  amberLight:  '#D4A847',
+  amberGlow:   'rgba(212,168,71,',
+  ivory:       '#F0E3C0',
+  steel:       'rgba(148,163,184,',   // slate-400 base
+  steelSolid:  '#94A3B8',
+  bg0:         '#060609',
+  bg1:         '#08080C',
+  bg2:         '#0B0A10',
+};
+
+// Paid/VIP: full access. Others: only free nights (night 1).
+function isNightAccessible(night: ProtocolNight, isPaid: boolean, isVip: boolean): boolean {
+  if (isVip || isPaid) return true;
+  return night.isFree;
+}
+
+const SUBSCRIPTION_PATH = '/app/subscription/demo';
+
+interface GuestProgressData {
+  time: number;
+  savedAt: number;
+}
+
+function getSavedGuestNight1Progress(): number | null {
+  try {
+    const raw = localStorage.getItem(LS_KEYS.progress);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as GuestProgressData;
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    if (Date.now() - data.savedAt > sevenDays) {
+      localStorage.removeItem(LS_KEYS.progress);
+      return null;
+    }
+    return data.time > 10 ? data.time : null;
+  } catch {
+    return null;
+  }
+}
+
+function markGuestNight1Completed(): void {
+  localStorage.setItem(LS_KEYS.completed, 'true');
+  localStorage.removeItem(LS_KEYS.progress);
+}
+
+interface SleepMeditationExperienceProps {
+  mode: 'app' | 'guest';
+}
+
+export function SleepMeditationExperience({ mode }: SleepMeditationExperienceProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const { user, isVipUser } = useAuth();
+  const { hasAccess: hasSonoEntitlement } = useSonoEntitlement();
+  const { loading: checkoutLoading, openCheckout } = useSonoCheckout();
+  const isPaid = isVipUser || hasSonoEntitlement;
+  const uid = user?.id || 'guest';
+
+  // ── Mode: explicit via prop ──────────────────────────────────
+  const source = searchParams.get('source') || '';
+  const isGuestSono = mode === 'guest';
+
+  const guestId = useMemo(() => {
+    const fromUrl = searchParams.get('guest_id');
+    const fromStorage = localStorage.getItem('eco_guest_id');
+    if (fromUrl) { localStorage.setItem('eco_guest_id', fromUrl); return fromUrl; }
+    if (fromStorage) return fromStorage;
+    const newId = `guest_${crypto.randomUUID()}`;
+    localStorage.setItem('eco_guest_id', newId);
+    return newId;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const heroSubtitle: string | null = (() => {
+    if (!isGuestSono) return null;
+    const q5 = sessionStorage.getItem('eco.sono.q5_answer') || '';
+    if (q5.includes('desligar minha mente')) return '7 minutos que ensinam sua mente a silenciar.';
+    if (q5.includes('energia real')) return '7 minutos. Sono profundo. Energia real amanhã.';
+    if (q5.includes('ansiedade')) return '7 minutos para dissolver a ansiedade noturna.';
+    return null;
+  })();
+
+  useEffect(() => {
+    if (!isGuestSono) return;
+    sessionStorage.setItem('eco.sono.guest_id', guestId);
+    sessionStorage.setItem('eco.sono.source', source || 'sono_paid_traffic');
+    const resolvedSource = source || 'sono_paid_traffic';
+    const track = () => {
+      mixpanel.track('Sleep Guest Page Viewed', { source: resolvedSource, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
+      trackSonoGuestPageViewed({ source: resolvedSource, guestId });
+    };
+    if ('requestIdleCallback' in window) requestIdleCallback(track);
+    else setTimeout(track, 300);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Night completion state ─────────────────────────────────────
+  const [completedNights, setCompletedNights] = useState<Set<number>>(() => {
+    const raw = localStorage.getItem(`eco.sono.protocol.v1.${uid}`);
+    if (raw) {
+      try { return new Set<number>(JSON.parse(raw).completedNights || []); }
+      catch { return new Set<number>(); }
+    }
+    return new Set<number>();
+  });
+
+  const [showCompletion, setShowCompletion] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [showStartNightPrompt, setShowStartNightPrompt] = useState(false);
+  const [offerVariant, setOfferVariant] = useState<SonoOfferVariant>('locked_night');
+  const [guestPlayback, setGuestPlayback] = useState<{ startTime: number } | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(`eco.sono.protocol.v1.${uid}`, JSON.stringify({
+      completedNights: [...completedNights],
+      lastActive: new Date().toISOString(),
+    }));
+  }, [completedNights, uid]);
+
+  useEffect(() => {
+    if (!location.state?.returnFromMeditation) return;
+    const lastPlayedNight = sessionStorage.getItem('eco.sono.lastPlayedNight');
+    if (lastPlayedNight) {
+      const nightNum = parseInt(lastPlayedNight);
+      if (localStorage.getItem(`eco.meditation.completed80pct.night_${nightNum}`) === 'true') {
+        setCompletedNights(prev => {
+          const next = new Set([...prev, nightNum]);
+          if (next.size === 7) setShowCompletion(true);
+          return next;
+        });
+        if (isGuestSono && nightNum === 1) {
+          const offerKey = `eco.sono.offer_modal_shown.${guestId}`;
+          if (!localStorage.getItem(offerKey)) {
+            setOfferVariant('final');
+            setShowOfferModal(true);
+            localStorage.setItem(offerKey, 'true');
+            mixpanel.track('Sleep Free Experience Completed', { night_id: 'night_1', source, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
+            trackSonoGuestNight1Completed({ source: source || 'sono_paid_traffic', guestId });
+          }
+        }
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+
+  // ── Urgency countdown — guest funnel only ──────────────────────
+  const [timeLeft, setTimeLeft] = useState<number>(() => {
+    if (!isGuestSono) return 0;
+    const stored = sessionStorage.getItem('eco.sono.offer_expires');
+    if (stored) return Math.max(0, parseInt(stored) - Date.now());
+    const expires = Date.now() + 15 * 60 * 1000;
+    sessionStorage.setItem('eco.sono.offer_expires', String(expires));
+    return 15 * 60 * 1000;
+  });
+
+  useEffect(() => {
+    if (!isGuestSono) return;
+    const id = setInterval(() => {
+      const stored = sessionStorage.getItem('eco.sono.offer_expires');
+      setTimeLeft(stored ? Math.max(0, parseInt(stored) - Date.now()) : 0);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isGuestSono]);
+
+  const formatCountdown = (ms: number) => {
+    const s = Math.floor(ms / 1000);
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  };
+
+  const completedCount = completedNights.size;
+  const pct = Math.round((completedCount / 7) * 100);
+  const nextNight = Math.min(completedCount + 1, 7);
+  const night1IsCompleted = completedNights.has(1);
+
+  // ── Navigation ─────────────────────────────────────────────────
+  const startGuestNight1Playback = () => {
+    sessionStorage.setItem('eco.sono.lastPlayedNight', '1');
+    sessionStorage.setItem('eco.sono.guest_id', guestId);
+    sessionStorage.setItem('eco.sono.source', source || 'sono_paid_traffic');
+    localStorage.setItem('sono_guest_mode', 'true');
+    trackSonoGuestNight1Started({ source: source || 'sono_paid_traffic', guestId });
+    mixpanel.track('Sleep Free Experience Started', {
+      night_id: 'night_1',
+      source: source || 'sono_paid_traffic',
+      guest_id: guestId,
+      product_key: 'protocolo_sono_7_noites',
+    });
+    setGuestPlayback({
+      startTime: getSavedGuestNight1Progress() ?? 0,
+    });
+  };
+
+  const handleGuestNight1Complete = () => {
+    markGuestNight1Completed();
+    setCompletedNights(prev => new Set([...prev, 1]));
+    setGuestPlayback(null);
+    setOfferVariant('final');
+    setShowOfferModal(true);
+    localStorage.setItem(`eco.sono.offer_modal_shown.${guestId}`, 'true');
+    trackSonoGuestNight1Completed({ source: source || 'sono_paid_traffic', guestId });
+    mixpanel.track('Sleep Free Experience Completed', {
+      night_id: 'night_1',
+      source: source || 'sono_paid_traffic',
+      guest_id: guestId,
+      product_key: 'protocolo_sono_7_noites',
+    });
+  };
+
+  const handleNightClick = (night: ProtocolNight) => {
+    const accessible = isNightAccessible(night, isPaid, isVipUser);
+    if (!accessible) {
+      trackGuestUnlockClicked(night.id);
+      if (!night1IsCompleted) {
+        setShowStartNightPrompt(true);
+        return;
+      }
+      setOfferVariant('locked_night');
+      setShowOfferModal(true);
+      return;
+    }
+    if (!night.hasAudio || !night.audioUrl) return;
+
+    if (isGuestSono && night.night === 1) {
+      startGuestNight1Playback();
+      return;
+    }
+
+    if (!user) {
+      setOfferVariant(night1IsCompleted ? 'locked_night' : 'final');
+      if (!night1IsCompleted) setShowStartNightPrompt(true);
+      else setShowOfferModal(true);
+      return;
+    }
+
+    sessionStorage.setItem('eco.sono.lastPlayedNight', String(night.night));
+
+    const returnTo = '/app/meditacoes-sono';
+
+    navigate('/app/meditation-player', {
+      state: {
+        meditation: {
+          id: night.id, title: night.title, duration: night.duration,
+          audioUrl: night.audioUrl,
+          imageUrl: night.imageUrl ?? '/images/meditacoes-sono-hero.webp',
+          backgroundMusic: 'Sono', gradient: night.gradient,
+          category: 'sono', isPremium: false,
+        },
+        returnTo,
+        sonoGuestMode: isGuestSono,
+      },
+    });
+  };
+
+  const handleHeroButtonClick = () => {
+    if (completedCount === 7) { setShowCompletion(true); return; }
+    const targetNight = isPaid ? PROTOCOL_NIGHTS[nextNight - 1] : PROTOCOL_NIGHTS[0];
+    if (targetNight) handleNightClick(targetNight);
+  };
+
+  const handleStartNight1 = () => {
+    const night = PROTOCOL_NIGHTS[0];
+    if (night) handleNightClick(night);
+  };
+
+  // ── Derived labels ─────────────────────────────────────────────
+  const pillLabel = isPaid
+    ? 'Protocolo Sono Profundo • Acesso completo'
+    : 'Protocolo Sono Profundo • Noite 1 gratuita';
+
+  const heroCTALabel = checkoutLoading
+    ? 'Carregando...'
+    : completedCount === 7
+      ? 'Protocolo Concluído'
+      : isPaid
+        ? completedCount === 0 ? 'Iniciar Noite 1' : `Continuar — Noite ${nextNight}`
+        : 'Iniciar Noite 1 gratuita';
+
+  if (guestPlayback) {
+    return (
+      <GuestSonoPlayer
+        startTime={guestPlayback.startTime}
+        onComplete={handleGuestNight1Complete}
+        onBack={() => setGuestPlayback(null)}
+      />
+    );
+  }
+
+  // ── Completion Screen ──────────────────────────────────────────
+  if (showCompletion) {
+    return (
+      <div
+        className="font-primary flex flex-col items-center justify-center px-6 text-center"
+        style={{
+          minHeight: '100dvh',
+          background: `linear-gradient(160deg, ${T.bg0} 0%, ${T.bg1} 40%, ${T.bg2} 100%)`,
+          backgroundColor: 'var(--bg-primary)',
+        }}
+      >
+        <motion.div
+          className="max-w-sm w-full"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 70, damping: 20 }}
+        >
+          <div className="text-6xl mb-6">🌙</div>
+          <h1 className="font-display text-[28px] font-bold text-white sm:text-[32px] mb-4 leading-tight">
+            Protocolo Concluído
+          </h1>
+          <p className="text-[15px] text-white/55 leading-relaxed mb-8">
+            Você recondicionou seu sistema para o descanso.<br />
+            Agora você possui ferramentas para dormir sem depender do áudio.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => navigate('/app')}
+              className="w-full rounded-full px-6 py-3.5 text-[15px] font-bold transition-all hover:scale-105 active:scale-95"
+              style={{
+                background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                color: '#0D1120',
+                boxShadow: `0 6px 24px ${T.amberGlow}0.30)`,
+              }}
+            >
+              Explorar outros programas
+            </button>
+            <button
+              onClick={() => navigate(SUBSCRIPTION_PATH)}
+              className="w-full rounded-full border px-6 py-3.5 text-[15px] font-semibold text-white/70 transition-all hover:text-white active:scale-95"
+              style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)' }}
+            >
+              Conhecer o Plano Completo
+            </button>
+          </div>
+          <button
+            onClick={() => setShowCompletion(false)}
+            className="mt-6 text-[12px] text-white/30 underline underline-offset-2"
+          >
+            Ver protocolo novamente
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ── Main Page ──────────────────────────────────────────────────
+  return (
+    <div
+      className="font-primary"
+      style={{
+        minHeight: '100dvh',
+        background: `linear-gradient(180deg, ${T.bg0} 0%, ${T.bg0} 38%, ${T.bg1} 55%, #09090E 75%, ${T.bg2} 100%)`,
+        backgroundColor: 'var(--bg-primary)',
+      }}
+    >
+      {user && !isGuestSono && <HomeHeader />}
+
+      <main className="page-with-nav">
+
+        {/* ══════════════════════════════════════════════════════════
+            HERO
+            ══════════════════════════════════════════════════════════ */}
+        <section
+          className="relative flex min-h-[720px] flex-col overflow-hidden sm:min-h-[800px]"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
+          {/* Back button */}
+          {(!user || isGuestSono) && (
+            <div className="absolute left-4 top-4 z-20 sm:left-6 sm:top-6">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-white/50 transition-all hover:text-white/80"
+                style={{ background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.09)' }}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Background image */}
+          <div
+            className="absolute inset-0 bg-cover"
+            style={{ backgroundImage: 'url("/images/meditacoes-sono-hero.webp")', backgroundPosition: 'center 30%', transform: 'scale(1.06)' }}
+          />
+          {/* Vignette — deeper at bottom, lighter at top so image breathes */}
+          <div
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(to bottom, rgba(6,6,9,0.18) 0%, rgba(6,6,9,0.06) 22%, rgba(6,6,9,0.55) 58%, ${T.bg0} 100%)` }}
+          />
+          {/* Subtle warm glow at bottom — candlelight, not purple */}
+          <div
+            className="pointer-events-none absolute"
+            style={{
+              bottom: '8%', left: '50%', transform: 'translateX(-50%)',
+              width: '280px', height: '180px', borderRadius: '50%',
+              background: `radial-gradient(ellipse, ${T.amberGlow}0.07) 0%, transparent 70%)`,
+              filter: 'blur(50px)',
+            }}
+          />
+
+          {/* Content */}
+          <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col items-center px-6 pt-32 pb-20 text-center sm:max-w-md sm:px-8 sm:pt-40">
+
+            {/* Pill — glass, no color tint */}
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: 'easeOut' }}
+              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-bold tracking-[0.18em] uppercase"
+              style={{
+                background: 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                color: 'rgba(255,255,255,0.55)',
+                backdropFilter: 'blur(12px)',
+              }}
+            >
+              <span
+                className="h-1.5 w-1.5 rounded-full animate-pulse"
+                style={{ background: T.amberLight, boxShadow: `0 0 5px ${T.amberGlow}0.60)` }}
+              />
+              {pillLabel}
+            </motion.div>
+
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, delay: 0.1, ease: 'easeOut' }}
+              className="mt-5 font-display font-bold text-white leading-[1.06]"
+              style={{ fontSize: 'clamp(2.1rem, 7vw, 3.1rem)', textShadow: '0 4px 40px rgba(0,0,0,0.70), 0 1px 6px rgba(0,0,0,0.50)' }}
+            >
+              Esta noite,<br />
+              {/* Ivory/warm white instead of lavender */}
+              <em style={{ color: T.ivory, fontStyle: 'italic' }}>sua mente descansa.</em>
+            </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+              className="mt-4 text-[15px] leading-relaxed font-light"
+              style={{ color: 'rgba(255,255,255,0.46)' }}
+            >
+              {heroSubtitle ?? <>7 minutos. Sem remédio.<br />Sem contar ovelhas.</>}
+            </motion.p>
+
+            {/* Stars */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.55, delay: 0.3 }}
+              className="mt-5 flex items-center gap-2.5"
+            >
+              <span style={{ color: '#FBBF24', fontSize: '14px', letterSpacing: '2px' }}>★★★★★</span>
+              <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.34)' }}>12.400+ pessoas dormindo melhor</span>
+            </motion.div>
+
+            {/* Progress badge — paid users with progress */}
+            {isPaid && completedCount > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.32 }}
+                className="mt-6 flex items-center gap-2 rounded-full px-4 py-2"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.11)' }}
+              >
+                <span className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.60)' }}>
+                  {completedCount === 7 ? '✓ Protocolo concluído' : `${completedCount} de 7 noites concluídas`}
+                </span>
+              </motion.div>
+            )}
+
+            {/* CTA — amber-gold, reads "candlelight" not "app button" */}
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, delay: 0.38, ease: 'easeOut' }}
+              onClick={handleHeroButtonClick}
+              disabled={checkoutLoading}
+              className="mt-6 flex w-full items-center justify-center gap-3 rounded-full py-4 text-[15px] font-bold transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-70"
+              style={{
+                background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                color: '#0D1120',
+                boxShadow: `0 10px 36px ${T.amberGlow}0.28), 0 2px 8px rgba(0,0,0,0.40)`,
+              }}
+            >
+              {checkoutLoading
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Play className="h-4 w-4" fill="currentColor" />
+              }
+              {heroCTALabel}
+            </motion.button>
+
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.48 }}
+              onClick={() => document.getElementById('sono-protocolo-completo')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="mt-3 w-full rounded-full py-3 text-[13px] font-semibold transition-all hover:scale-[1.02] active:scale-[0.97]"
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.13)',
+                color: 'rgba(255,255,255,0.55)',
+              }}
+            >
+              Conhecer as próximas noites
+            </motion.button>
+
+            {/* Subtext */}
+            {!isPaid && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="mt-3 text-[11px]"
+                style={{ color: 'rgba(255,255,255,0.24)' }}
+              >
+                Sem cadastro · Sem cartão · Acesso imediato
+              </motion.p>
+            )}
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════
+            NIGHT 1 — cinematic full-bleed card
+            ══════════════════════════════════════════════════════════ */}
+        <section className="mx-auto max-w-lg px-4 pt-6 sm:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ type: 'spring', stiffness: 60, damping: 16 }}
+            onClick={() => { const n = PROTOCOL_NIGHTS[0]; if (n) handleNightClick(n); }}
+            className="group relative overflow-hidden rounded-[28px] cursor-pointer"
+            style={{ height: '300px' }}
+          >
+            {PROTOCOL_NIGHTS[0]?.imageUrl ? (
+              <img
+                src={PROTOCOL_NIGHTS[0].imageUrl}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+              />
+            ) : (
+              <div className="absolute inset-0" style={{ background: PROTOCOL_NIGHTS[0]?.gradient }} />
+            )}
+            <div
+              className="absolute inset-0"
+              style={{ background: `linear-gradient(to bottom, rgba(6,6,9,0.04) 0%, rgba(6,6,9,0.20) 35%, rgba(6,6,9,0.96) 88%)` }}
+            />
+
+            {/* Top row */}
+            <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em]"
+                style={{
+                  background: 'rgba(6,6,9,0.60)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.11)',
+                  color: 'rgba(255,255,255,0.55)',
+                }}
+              >
+                <span className="h-1 w-1 rounded-full" style={{ background: T.amberLight }} />
+                Noite 1 de 7
+              </span>
+              {!isPaid && (
+                <div
+                  className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold"
+                  style={{
+                    background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                    color: '#0D1120',
+                    boxShadow: `0 4px 14px ${T.amberGlow}0.35)`,
+                  }}
+                >
+                  ★ Grátis
+                </div>
+              )}
+              {isPaid && night1IsCompleted && (
+                <div
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold"
+                  style={{ background: 'rgba(52,211,153,0.18)', border: '1px solid rgba(52,211,153,0.35)', color: '#34D399' }}
+                >
+                  <Check className="h-3 w-3" strokeWidth={2.5} />
+                  Concluída
+                </div>
+              )}
+            </div>
+
+            {/* Bottom content */}
+            <div className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-6">
+              <h3
+                className="font-display text-[21px] font-bold text-white leading-snug mb-1"
+                style={{ textShadow: '0 2px 16px rgba(0,0,0,0.65)' }}
+              >
+                {PROTOCOL_NIGHTS[0]?.title ?? 'Desligando o Estado de Alerta'}
+              </h3>
+              <p className="text-[12px] mb-4" style={{ color: 'rgba(255,255,255,0.44)' }}>
+                {PROTOCOL_NIGHTS[0]?.description ?? 'Ensina seu sistema nervoso a reconhecer o sinal para dormir.'}
+              </p>
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex h-12 w-12 items-center justify-center rounded-full flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                  style={
+                    isPaid && night1IsCompleted
+                      ? { background: 'rgba(52,211,153,0.22)', boxShadow: '0 6px 24px rgba(52,211,153,0.28)', border: '1px solid rgba(52,211,153,0.40)' }
+                      : {
+                          background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                          boxShadow: `0 6px 24px ${T.amberGlow}0.40)`,
+                        }
+                  }
+                >
+                  {isPaid && night1IsCompleted
+                    ? <Check className="h-5 w-5 text-emerald-400" strokeWidth={2.5} />
+                    : <Play className="h-5 w-5 ml-0.5" fill="currentColor" style={{ color: '#0D1120' }} />
+                  }
+                </div>
+                <div>
+                  <p className="text-[14px] font-bold text-white">
+                    {isPaid
+                      ? night1IsCompleted ? 'Rever Noite 1' : 'Iniciar Noite 1'
+                      : 'Iniciar agora — grátis'}
+                  </p>
+                  {!isPaid && (
+                    <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.34)' }}>
+                      {isGuestSono ? 'Sem cadastro · Sem cartão' : 'Acesso imediato'}
+                    </p>
+                  )}
+                  {isPaid && night1IsCompleted && (
+                    <p className="text-[11px]" style={{ color: 'rgba(52,211,153,0.60)' }}>Concluída</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════
+            BENEFITS
+            ══════════════════════════════════════════════════════════ */}
+        <section className="mx-auto max-w-lg px-4 pt-8 sm:px-6">
+          <motion.div
+            className="space-y-3"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ type: 'spring', stiffness: 65, damping: 18 }}
+          >
+            {[
+              { icon: Moon,        text: 'Sua respiração desacelera — sem você tentar. Seu peito afrouxa. Os pensamentos perdem força.', color: T.steelSolid },
+              { icon: Wind,        text: 'Você para de calcular quantas horas de sono ainda dá pra pegar. Sua mente solta.',             color: T.steelSolid },
+              { icon: TrendingUp,  text: 'Cada noite aprofunda mais. No 7º dia, seu corpo já sabe o que fazer — sem o áudio.',          color: '#34D399' },
+            ].map(({ icon: Icon, text, color }, i) => (
+              <motion.div
+                key={i}
+                className="flex items-start gap-4 rounded-2xl px-4 py-4"
+                style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.06)' }}
+                initial={{ opacity: 0, x: -10 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: '-20px' }}
+                transition={{ type: 'spring', stiffness: 80, damping: 20, delay: i * 0.07 }}
+              >
+                <div
+                  className="flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-xl"
+                  style={{ background: `${color}14`, border: `1px solid ${color}22` }}
+                >
+                  <Icon className="h-4 w-4" style={{ color }} />
+                </div>
+                <p className="text-[13px] leading-relaxed pt-0.5" style={{ color: 'rgba(255,255,255,0.46)' }}>{text}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════
+            NIGHTS 2–7 — 2-column grid
+            ══════════════════════════════════════════════════════════ */}
+        <section id="sono-protocolo-completo" className="mx-auto max-w-lg px-4 pt-10 sm:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ type: 'spring', stiffness: 65, damping: 18 }}
+          >
+            {/* Section divider — neutral, no purple */}
+            <div className="flex items-center gap-3 mb-5">
+              <div
+                className="h-px flex-1"
+                style={{ background: `linear-gradient(to right, transparent, ${isPaid ? 'rgba(52,211,153,0.20)' : 'rgba(255,255,255,0.10)'})` }}
+              />
+              <div
+                className="flex items-center gap-2 rounded-full px-4 py-1.5"
+                style={{
+                  background: isPaid ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${isPaid ? 'rgba(52,211,153,0.18)' : 'rgba(255,255,255,0.10)'}`,
+                }}
+              >
+                {isPaid
+                  ? <Play className="h-3 w-3" style={{ color: 'rgba(52,211,153,0.65)' }} fill="currentColor" />
+                  : <Lock className="h-3 w-3" style={{ color: 'rgba(255,255,255,0.35)' }} />
+                }
+                <span
+                  className="text-[11px] font-bold uppercase tracking-widest"
+                  style={{ color: isPaid ? 'rgba(52,211,153,0.65)' : 'rgba(255,255,255,0.35)' }}
+                >
+                  {isPaid ? 'Noites 2 a 7 — Desbloqueadas' : 'Noites 2 a 7'}
+                </span>
+              </div>
+              <div
+                className="h-px flex-1"
+                style={{ background: `linear-gradient(to left, transparent, ${isPaid ? 'rgba(52,211,153,0.20)' : 'rgba(255,255,255,0.10)'})` }}
+              />
+            </div>
+
+            {/* Grid */}
+            <div className="grid grid-cols-2 gap-2.5">
+              {PROTOCOL_NIGHTS.slice(1).map((night, idx) => {
+                const nightCompleted = completedNights.has(night.night);
+                return (
+                  <motion.div
+                    key={night.id}
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true, margin: '-20px' }}
+                    transition={{ type: 'spring', stiffness: 80, damping: 20, delay: idx * 0.05 }}
+                    onClick={() => handleNightClick(night)}
+                    className="group relative overflow-hidden rounded-2xl cursor-pointer"
+                    style={{ height: '130px' }}
+                  >
+                    {night.imageUrl ? (
+                      <img
+                        src={night.imageUrl}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        style={isPaid ? undefined : { filter: 'brightness(0.25) saturate(0.40)' }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0" style={{ background: night.gradient, opacity: isPaid ? 1 : 0.30 }} />
+                    )}
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: 'linear-gradient(to bottom, transparent 15%, rgba(6,6,9,0.88) 100%)' }}
+                    />
+
+                    <div className="absolute inset-0 flex flex-col justify-between p-3.5">
+                      <div className="flex items-center justify-between">
+                        <span
+                          className="text-[9px] font-bold uppercase tracking-wider"
+                          style={{ color: isPaid ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.30)' }}
+                        >
+                          Noite {night.night}
+                        </span>
+
+                        {isPaid ? (
+                          nightCompleted ? (
+                            <div
+                              className="h-5 w-5 flex items-center justify-center rounded-full"
+                              style={{ background: 'rgba(52,211,153,0.22)', border: '1px solid rgba(52,211,153,0.40)' }}
+                            >
+                              <Check className="h-2.5 w-2.5 text-emerald-400" strokeWidth={2.5} />
+                            </div>
+                          ) : (
+                            <div
+                              className="h-5 w-5 flex items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110"
+                              style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.18)' }}
+                            >
+                              <Play className="h-2.5 w-2.5 ml-px text-white/70" fill="currentColor" />
+                            </div>
+                          )
+                        ) : (
+                          <div
+                            className="h-5 w-5 flex items-center justify-center rounded-full"
+                            style={{ background: 'rgba(6,6,9,0.70)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.10)' }}
+                          >
+                            <Lock className="h-2.5 w-2.5 text-white/35" />
+                          </div>
+                        )}
+                      </div>
+
+                      <p
+                        className="text-[11px] font-semibold leading-snug line-clamp-2"
+                        style={{ color: isPaid ? 'rgba(255,255,255,0.80)' : 'rgba(255,255,255,0.40)' }}
+                      >
+                        {night.title}
+                      </p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════
+            CONVERSION BLOCK — non-paid users
+            ══════════════════════════════════════════════════════════ */}
+        {!isGuestSono && !isPaid && night1IsCompleted && (
+          <section className="mx-auto max-w-lg px-4 pt-6 pb-12 sm:px-6">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ type: 'spring', stiffness: 65, damping: 18, delay: 0.1 }}
+              className="relative overflow-hidden rounded-3xl px-6 py-7 text-center"
+              style={{
+                background: 'linear-gradient(160deg, rgba(14,12,9,0.97) 0%, rgba(8,8,11,0.99) 100%)',
+                border: `1px solid ${T.amberGlow}0.18)`,
+                boxShadow: `0 8px 40px rgba(0,0,0,0.30), inset 0 1px 0 ${T.amberGlow}0.06)`,
+              }}
+            >
+              {/* Subtle warm glow top-right */}
+              <div
+                className="pointer-events-none absolute"
+                style={{
+                  top: '-50px', right: '-40px',
+                  width: '180px', height: '180px', borderRadius: '50%',
+                  background: `radial-gradient(circle, ${T.amberGlow}0.08) 0%, transparent 70%)`,
+                }}
+              />
+
+              <p className="text-[11px] uppercase tracking-[0.2em] font-bold mb-4" style={{ color: 'rgba(251,191,36,0.75)' }}>
+                Protocolo Sono Profundo
+              </p>
+              <div className="flex items-baseline justify-center gap-3 mb-1">
+                <span className="font-display text-[40px] font-bold text-white leading-none">R$97</span>
+              </div>
+              <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.28)' }}>7 noites completas · Pagamento único · Sem mensalidade</p>
+
+              {isGuestSono ? (
+                <div className="flex items-center justify-center gap-1.5 mb-6">
+                  <span style={{ color: '#FBBF24', fontSize: '12px' }}>⏱</span>
+                  <span className="text-[12px]" style={{ color: 'rgba(251,191,36,0.65)' }}>
+                    Condição disponível por{' '}
+                    <span className="font-mono font-bold">{formatCountdown(timeLeft)}</span>
+                  </span>
+                </div>
+              ) : (
+                <div className="mb-6" />
+              )}
+
+              <button
+                onClick={() => {
+                  if (isGuestSono) openCheckout({ origin: 'quiz_sono_guest' });
+                  else openCheckout();
+                }}
+                disabled={checkoutLoading}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-[15px] font-bold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 mb-3"
+                style={{
+                  background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                  color: '#0D1120',
+                  boxShadow: `0 10px 32px ${T.amberGlow}0.32)`,
+                }}
+              >
+                {checkoutLoading
+                  ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Abrindo...</span>
+                  : 'Continuar o processo completo'}
+              </button>
+              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.24)' }}>Acesso imediato · 7 noites completas · Garantia de 7 dias</p>
+            </motion.div>
+          </section>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════
+            PROGRESS BLOCK — paid users
+            ══════════════════════════════════════════════════════════ */}
+        {isPaid && (
+          <section className="mx-auto max-w-lg px-4 pt-6 pb-12 sm:px-6">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ type: 'spring', stiffness: 65, damping: 18 }}
+              className="rounded-3xl px-6 py-6"
+              style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)' }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[13px] font-semibold text-white/65">
+                  {completedCount === 7 ? 'Programa concluído!' : `Noite ${nextNight} de 7`}
+                </p>
+                <span className="text-[13px] font-bold" style={{ color: T.amberLight }}>{pct}%</span>
+              </div>
+              <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${T.amberLight}, ${T.amber})` }}
+                />
+              </div>
+              <p className="mt-2 text-[12px] text-white/30">{completedCount} de 7 noites concluídas</p>
+            </motion.div>
+          </section>
+        )}
+
+        {/* ── Offer modal ───────────────────────────────────────────── */}
+        {showOfferModal && (
+          <Suspense fallback={null}>
+            <SonoPostExperienceModal
+              open={showOfferModal}
+              variant={offerVariant}
+              guestId={guestId}
+              source={source || 'sono_paid_traffic'}
+              onClose={() => setShowOfferModal(false)}
+              onCheckout={() => openCheckout({ origin: 'sono_guest_final_offer' })}
+              checkoutLoading={checkoutLoading}
+            />
+          </Suspense>
+        )}
+
+      </main>
+
+      <AnimatePresence>
+        {showStartNightPrompt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex items-end justify-center p-4 sm:items-center"
+            style={{ background: 'rgba(3,6,18,0.72)', backdropFilter: 'blur(12px)' }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.97 }}
+              transition={{ duration: 0.22 }}
+              className="w-full max-w-sm rounded-3xl px-6 py-7 text-center"
+              style={{
+                background: 'linear-gradient(160deg, #070B1D 0%, #050817 58%, #101733 100%)',
+                border: '1px solid rgba(196,181,253,0.18)',
+                boxShadow: '0 24px 80px rgba(0,0,0,0.62)',
+              }}
+            >
+              <h2 className="font-display mb-3 text-[24px] font-bold leading-tight text-white">
+                Comece pela Noite 1 gratuita.
+              </h2>
+              <p className="mb-6 text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.54)' }}>
+                Ela prepara seu corpo para as próximas etapas.
+              </p>
+              <button
+                onClick={() => {
+                  setShowStartNightPrompt(false);
+                  handleStartNight1();
+                }}
+                className="mb-3 w-full rounded-full py-4 text-[15px] font-bold transition-transform active:scale-[0.98]"
+                style={{
+                  background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                  color: '#0D1120',
+                  boxShadow: `0 10px 32px ${T.amberGlow}0.30)`,
+                }}
+              >
+                Iniciar Noite 1
+              </button>
+              <button
+                onClick={() => setShowStartNightPrompt(false)}
+                className="w-full py-2 text-[13px]"
+                style={{ color: 'rgba(255,255,255,0.36)' }}
+              >
+                Agora não
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+    </div>
+  );
+}
