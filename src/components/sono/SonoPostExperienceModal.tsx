@@ -73,15 +73,6 @@ const OFFER_COPY_VARIANTS = {
 
 void OFFER_COPY_VARIANTS;
 
-const ANSWER_COPY: Record<SonoMicroAnswer, string> = {
-  'Sim, relaxei':
-    'Isso não foi sorte. Seu corpo respondeu ao primeiro estímulo. Agora ele precisa de continuidade para aprender a desacelerar sozinho.',
-  'Um pouco':
-    'É exatamente assim que começa. Primeiro o corpo reduz a resistência. Depois, com repetição, ele aprende a desligar com mais facilidade.',
-  'Ainda estou agitado':
-    'Isso também faz parte do padrão. Quando o corpo ficou muito tempo em alerta, ele precisa de repetição guiada para começar a soltar.',
-};
-
 export function SonoPostExperienceModal({
   open,
   onClose,
