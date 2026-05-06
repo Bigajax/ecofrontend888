@@ -27,10 +27,11 @@ const ANSWER_COPY: Record<SonoMicroAnswer, string> = {
 };
 
 const BENEFITS = [
+  '7 noites guiadas',
   'Pagamento único',
-  'Sem mensalidade',
   'Acesso imediato',
-  'Noites 2 a 7 desbloqueadas',
+  'Sem mensalidade',
+  'Garantia de 7 dias',
 ];
 
 function formatCountdown(ms: number) {
@@ -160,7 +161,7 @@ export function SonoCutoffQuizOffer({
           ) : (
             <>
               <h2 className="font-display mb-3 text-[23px] font-bold leading-tight text-white">
-                Agora é onde o resultado acontece.
+                Seu corpo respondeu. Agora ele precisa repetir.
               </h2>
               <p className="mb-4 text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.58)' }}>
                 A primeira mudança já começou. As próximas noites aprofundam esse processo.
@@ -174,7 +175,10 @@ export function SonoCutoffQuizOffer({
                 style={{ background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(196,181,253,0.16)' }}
               >
                 <p className="mb-3 text-[14px] font-semibold text-white">
-                  Desbloqueie as 7 noites completas por R$37.
+                  Desbloqueie o protocolo completo
+                </p>
+                <p className="mb-3 font-display text-[32px] font-bold leading-none text-white">
+                  R$97
                 </p>
                 <div className="grid grid-cols-2 gap-2 text-left">
                   {BENEFITS.map((item) => (
@@ -188,7 +192,7 @@ export function SonoCutoffQuizOffer({
 
               {timeLeft > 0 && (
                 <div className="mb-5 text-[12px]" style={{ color: 'rgba(255,255,255,0.54)' }}>
-                  Esta oferta expira em:{' '}
+                  Condição disponível por:{' '}
                   <span className="font-mono font-bold" style={{ color: '#FCD34D' }}>
                     {formatCountdown(timeLeft)}
                   </span>
@@ -210,12 +214,12 @@ export function SonoCutoffQuizOffer({
                     Abrindo pagamento...
                   </span>
                 ) : (
-                  'Quero continuar dormindo assim'
+                  'Continuar o processo completo'
                 )}
               </button>
 
               <p className="mb-2 text-[12px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.32)' }}>
-                🔒 Garantia de 7 dias. Se não funcionar, devolvemos tudo.
+                Garantia tranquila de 7 dias. Se não fizer sentido para você, devolvemos o valor.
               </p>
 
               <button

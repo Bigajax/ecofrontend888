@@ -24,11 +24,51 @@ interface SonoPostExperienceModalProps {
 const ANSWERS: SonoMicroAnswer[] = ['Sim, relaxei', 'Um pouco', 'Ainda estou agitado'];
 
 const BENEFITS = [
+  '7 noites guiadas',
   'Pagamento único',
-  'Sem mensalidade',
   'Acesso imediato',
-  'Noites 2 a 7 desbloqueadas',
+  'Sem mensalidade',
+  'Garantia de 7 dias',
 ];
+
+const MAIN_OFFER_COPY = {
+  eyebrow: 'Noite 1 concluída',
+  title: 'Seu corpo respondeu. Agora ele precisa repetir.',
+  subtitle:
+    'A primeira noite não foi apenas um teste. Foi o primeiro estímulo para tirar seu sistema nervoso do estado de alerta.',
+  body:
+    'Quando o corpo sente segurança uma vez, ele relaxa por alguns minutos. Quando sente segurança repetidas noites, ele começa a aprender o caminho de volta.\n\nAs próximas noites aprofundam esse processo: menos controle, menos tensão, menos luta para dormir.',
+  offerTitle: 'Desbloqueie o protocolo completo',
+  price: 'R$97',
+  supportingText:
+    'Um processo noturno para ensinar seu corpo a desacelerar progressivamente - noite após noite.',
+  cta: 'Continuar o processo completo',
+  microcopy: 'Acesso imediato • 7 noites completas • Garantia de 7 dias',
+};
+
+// Opções preparadas para futuro teste A/B. A versão ativa é MAIN_OFFER_COPY.
+const OFFER_COPY_VARIANTS = {
+  emotional: {
+    title: 'Não pare no primeiro alívio.',
+    subtitle:
+      'Se seu corpo começou a desacelerar agora, as próximas noites servem para transformar esse alívio em um caminho mais familiar.',
+    cta: 'Quero continuar desacelerando',
+  },
+  mechanism: {
+    title: 'O sono aprende por repetição.',
+    subtitle:
+      'Seu sistema nervoso não muda por força. Ele muda quando recebe sinais de segurança de forma consistente.',
+    cta: 'Desbloquear as próximas noites',
+  },
+  direct: {
+    title: 'Continue de onde seu corpo parou.',
+    subtitle:
+      'A primeira noite iniciou o processo. As próximas aprofundam a resposta de relaxamento até o sono começar a vir com menos esforço.',
+    cta: 'Desbloquear protocolo completo',
+  },
+} as const;
+
+void OFFER_COPY_VARIANTS;
 
 const ANSWER_COPY: Record<SonoMicroAnswer, string> = {
   'Sim, relaxei':
@@ -91,31 +131,25 @@ export function SonoPostExperienceModal({
     if (variant === 'locked_night') {
       return {
         eyebrow: 'Noites 2 a 7',
-        title: 'A Noite 1 foi o início.',
+        title: 'Continue de onde seu corpo parou.',
         subtitle:
-          'Cada noite que vem depois aprofunda uma camada diferente. É o que transforma este ritual em um padrão permanente de sono.',
-        body: '',
-        cta: 'Desbloquear as 7 noites — R$37',
+          'A primeira noite iniciou o processo. As próximas aprofundam a resposta de relaxamento até o sono começar a vir com menos esforço.',
+        body: MAIN_OFFER_COPY.supportingText,
+        cta: 'Desbloquear protocolo completo',
       };
     }
 
     if (variant === 'final') {
-      return {
-        eyebrow: 'Noite 1 · Concluída',
-        title: 'Você já começou — agora é continuar',
-        subtitle:
-          'Esta noite seu corpo descobriu um caminho diferente. As próximas 6 noites ensinam ele a percorrê-lo sozinho.',
-        body: '',
-        cta: 'Garantir as 7 noites — R$37',
-      };
+      return MAIN_OFFER_COPY;
     }
 
     return {
-      eyebrow: 'Noite 1 · Em andamento',
-      title: 'Agora é onde o resultado acontece.',
-      subtitle: 'A primeira mudança já começou. As próximas noites aprofundam esse processo.',
+      eyebrow: 'Continuidade',
+      title: 'Seu corpo respondeu. Agora ele precisa repetir.',
+      subtitle:
+        'As próximas noites aprofundam esse processo: menos controle, menos tensão, menos luta para dormir.',
       body: answer ? ANSWER_COPY[answer] : ANSWER_COPY['Um pouco'],
-      cta: 'Quero continuar dormindo assim',
+      cta: MAIN_OFFER_COPY.cta,
     };
   }, [answer, variant]);
 
@@ -270,7 +304,7 @@ export function SonoPostExperienceModal({
                         {offer.subtitle}
                       </p>
                       {offer.body && (
-                        <p className="mb-5 text-center text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.46)' }}>
+                        <p className="mb-5 whitespace-pre-line text-center text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.46)' }}>
                           {offer.body}
                         </p>
                       )}
@@ -297,8 +331,14 @@ export function SonoPostExperienceModal({
                         className="mb-5 rounded-2xl px-5 py-4"
                         style={{ background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(196,181,253,0.16)' }}
                       >
-                        <p className="mb-2 text-center text-[14px] font-semibold text-white">
-                          Desbloqueie as 7 noites completas por R$37.
+                        <p className="mb-3 text-center text-[14px] font-semibold text-white">
+                          {variant === 'final' ? MAIN_OFFER_COPY.offerTitle : 'Desbloqueie o protocolo completo'}
+                        </p>
+                        <p className="mb-3 text-center font-display text-[34px] font-bold leading-none text-white">
+                          {MAIN_OFFER_COPY.price}
+                        </p>
+                        <p className="mb-4 text-center text-[12px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.44)' }}>
+                          {MAIN_OFFER_COPY.supportingText}
                         </p>
                         <div className="grid grid-cols-2 gap-2">
                           {BENEFITS.map(item => (
@@ -312,7 +352,7 @@ export function SonoPostExperienceModal({
 
                       {timeLeft > 0 && (
                         <div className="mb-5 text-center text-[12px]" style={{ color: 'rgba(255,255,255,0.52)' }}>
-                          Esta oferta expira em:{' '}
+                          Condição disponível por:{' '}
                           <span className="font-mono font-bold" style={{ color: '#FCD34D' }}>
                             {formatCountdown(timeLeft)}
                           </span>
@@ -338,8 +378,11 @@ export function SonoPostExperienceModal({
                         )}
                       </button>
 
-                      <p className="mb-2 text-[12px] leading-relaxed text-center" style={{ color: 'rgba(255,255,255,0.30)' }}>
-                        🔒 Garantia de 7 dias. Se não funcionar, devolvemos tudo.
+                      <p className="mb-1 text-center text-[12px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.34)' }}>
+                        {MAIN_OFFER_COPY.microcopy}
+                      </p>
+                      <p className="mb-2 text-center text-[12px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.30)' }}>
+                        Garantia tranquila de 7 dias. Se não fizer sentido para você, devolvemos o valor.
                       </p>
 
                       <button

@@ -294,67 +294,67 @@ body::before {
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --bg-primary:     #F4F1EC;
-  --bg-secondary:   #FFFFFF;
-  --bg-tertiary:    #E4DFD9;
-  --bg-overlay:     rgba(244, 241, 236, 0.95);
+  --bg-primary:     #FFFFFF;
+  --bg-secondary:   #F5FBFF;
+  --bg-tertiary:    #EBF6FF;
+  --bg-overlay:     rgba(255, 255, 255, 0.97);
 
-  --text-primary:   #0A0F1E;
+  --text-primary:   #0D1B2A;
   --text-secondary: #1E2A44;
-  --text-muted:     #C9C3BC;
+  --text-muted:     #6B8099;
 
-  --accent:         #1E2A44;
-  --accent-dark:    #0A0F1E;
-  --accent-warm:    #C9782B;
-  --accent-gold:    #E6C79C;
+  --accent:         #6EC8FF;
+  --accent-dark:    #1E2A44;
+  --accent-warm:    #36A8E8;
+  --accent-gold:    #6EC8FF;
 
   --success:        #5F6F52;
   --success-light:  #7F8F6D;
   --danger:         #D69B98;
 
-  --neutral-border: #E4DFD9;
-  --neutral-hover:  rgba(30, 42, 68, 0.06);
+  --neutral-border: rgba(110, 200, 255, 0.25);
+  --neutral-hover:  rgba(110, 200, 255, 0.1);
 
-  --surface-glass:  rgba(244, 241, 236, 0.88);
-  --surface-card:   #FFFFFF;
+  --surface-glass:  rgba(255, 255, 255, 0.75);
+  --surface-card:   rgba(255, 255, 255, 0.92);
 
-  --shadow-card:    0 4px 16px rgba(0, 0, 0, 0.08);
-  --shadow-float:   0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-card:    0 4px 24px rgba(30, 42, 68, 0.08);
+  --shadow-float:   0 8px 32px rgba(30, 42, 68, 0.12);
 
-  --nav-bg:         rgba(244, 241, 236, 0.92);
+  --nav-bg:         rgba(255, 255, 255, 0.88);
 
   /* Legado */
-  --color-bg-base:      var(--bg-primary);
-  --color-bg-surface:   var(--surface-glass);
-  --color-glass-tint:   rgba(255,255,255,0.6);
-  --color-glass-stroke: var(--neutral-border);
-  --color-text-primary: var(--text-primary);
-  --color-text-muted:   var(--text-muted);
-  --color-accent:       var(--accent);
+  --color-bg-base:      #FFFFFF;
+  --color-bg-surface:   rgba(255, 255, 255, 0.75);
+  --color-glass-tint:   rgba(255,255,255,0.75);
+  --color-glass-stroke: rgba(110, 200, 255, 0.25);
+  --color-text-primary: #0D1B2A;
+  --color-text-muted:   #6B8099;
+  --color-accent:       #6EC8FF;
   --color-success:      var(--success);
   --color-warn:         var(--accent-gold);
   --color-danger:       var(--danger);
-  --eco-bg:             var(--bg-primary);
-  --eco-text:           var(--text-primary);
-  --eco-muted:          var(--text-muted);
-  --eco-user:           var(--accent);
-  --eco-bubble:         var(--surface-card);
-  --eco-line:           var(--neutral-border);
-  --eco-accent:         var(--accent-warm);
-  --hairline:           rgba(228, 223, 217, 0.8);
-  --hairline-strong:    rgba(228, 223, 217, 1);
-  --blur-glass:         12px;
-  --blur-glass-strong:  18px;
-  --shadow-glass:       0 4px 30px rgba(0, 0, 0, 0.04);
-  --shadow-floating:    0 2px 12px rgba(0, 0, 0, 0.03);
-  --stroke-glass:       1px solid var(--neutral-border);
+  --eco-bg:             #FFFFFF;
+  --eco-text:           #0D1B2A;
+  --eco-muted:          #6B8099;
+  --eco-user:           #6EC8FF;
+  --eco-bubble:         #EBF6FF;
+  --eco-line:           rgba(110, 200, 255, 0.25);
+  --eco-accent:         #1E2A44;
+  --hairline:           rgba(110, 200, 255, 0.15);
+  --hairline-strong:    rgba(110, 200, 255, 0.3);
+  --blur-glass:         20px;
+  --blur-glass-strong:  28px;
+  --shadow-glass:       0 4px 24px rgba(30, 42, 68, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --shadow-floating:    0 2px 12px rgba(30, 42, 68, 0.05);
+  --stroke-glass:       1px solid rgba(255, 255, 255, 0.6);
   --radius-xl:          16px;
   --radius-2xl:         20px;
-  --bubble-eco-bg:      var(--surface-card);
-  --bubble-user-bg:     var(--accent);
-  --orb-a: radial-gradient(680px 560px at 16% -12%, rgba(198,169,149,0.04), transparent 58%);
-  --orb-b: radial-gradient(540px 420px at 88% -6%, rgba(230,235,239,0.035), transparent 62%);
-  --orb-c: radial-gradient(720px 620px at 50% 120%, rgba(243,238,231,0.03), transparent 70%);
+  --bubble-eco-bg:      #EBF6FF;
+  --bubble-user-bg:     #6EC8FF;
+  --orb-a: radial-gradient(680px 560px at 16% -12%, rgba(110,200,255,0.07), transparent 58%);
+  --orb-b: radial-gradient(540px 420px at 88% -6%, rgba(30,42,68,0.03), transparent 62%);
+  --orb-c: radial-gradient(720px 620px at 50% 120%, rgba(110,200,255,0.05), transparent 70%);
 }
 
 /* Fallback: dark para quem não tem data-theme */

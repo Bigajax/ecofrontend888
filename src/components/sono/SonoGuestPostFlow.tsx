@@ -386,8 +386,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                   }}
                 >
                   <div className="flex items-baseline justify-center gap-2.5 mb-1">
-                    <span className="text-[13px] line-through" style={{ color: 'rgba(255,255,255,0.25)' }}>R$97</span>
-                    <span className="font-display text-[38px] font-bold text-white leading-none">R$37</span>
+                    <span className="font-display text-[38px] font-bold text-white leading-none">R$97</span>
                   </div>
                   <p className="text-[12px] mb-4" style={{ color: 'rgba(255,255,255,0.32)' }}>
                     Pagamento único · Sem mensalidade
@@ -396,7 +395,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                     <div className="flex items-center justify-center gap-1.5 mb-3">
                       <span style={{ color: '#FBBF24', fontSize: '12px' }}>⏱</span>
                       <span className="text-[12px]" style={{ color: 'rgba(251,191,36,0.70)' }}>
-                        Expira em{' '}
+                        Condição disponível por{' '}
                         <span className="font-mono font-bold">{fmt(timeLeft)}</span>
                       </span>
                     </div>
@@ -422,12 +421,12 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                       Abrindo pagamento…
                     </span>
                   ) : (
-                    'Quero continuar dormindo assim →'
+                    'Continuar o processo completo'
                   )}
                 </button>
 
                 <p className="text-[12px] leading-relaxed mb-3 relative z-10" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                  🔒 Garantia de 7 dias. Se não funcionar, devolvemos tudo.
+                  Garantia tranquila de 7 dias. Se não fizer sentido para você, devolvemos o valor.
                 </p>
 
                 <button

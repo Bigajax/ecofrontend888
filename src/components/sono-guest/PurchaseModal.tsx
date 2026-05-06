@@ -45,8 +45,7 @@ export function PurchaseModal({ capturedEmail, onClose }: PurchaseModalProps) {
           {/* Price */}
           <div className="text-center">
             <div className="flex items-baseline justify-center gap-2">
-              <p className="text-sm line-through text-gray-300">R$97</p>
-              <p className="text-3xl font-bold text-gray-800">R$37</p>
+              <p className="text-3xl font-bold text-gray-800">R$97</p>
             </div>
             <p className="text-sm text-gray-400">Pagamento único · Acesso vitalício</p>
           </div>
@@ -108,12 +107,12 @@ export function PurchaseModal({ capturedEmail, onClose }: PurchaseModalProps) {
             className="w-full rounded-xl py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)', boxShadow: '0 8px 28px rgba(107,79,187,0.40)' }}
           >
-            {loading ? 'Abrindo pagamento...' : 'Garantir acesso completo — R$37 →'}
+            {loading ? 'Abrindo pagamento...' : 'Continuar o processo completo'}
           </button>
 
           {/* Guarantee */}
           <p className="text-center text-xs text-gray-400">
-            🔒 Garantia incondicional de 7 dias. Se não funcionar, devolvemos tudo.
+            Garantia tranquila de 7 dias. Se não fizer sentido para você, devolvemos o valor.
           </p>
         </div>
       </div>
