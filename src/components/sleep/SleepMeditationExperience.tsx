@@ -210,7 +210,6 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     sessionStorage.setItem('eco.sono.lastPlayedNight', '1');
     sessionStorage.setItem('eco.sono.guest_id', guestId);
     sessionStorage.setItem('eco.sono.source', source || 'sono_paid_traffic');
-    localStorage.setItem('sono_guest_mode', 'true');
     trackSonoGuestNight1Started({ source: source || 'sono_paid_traffic', guestId });
     mixpanel.track('Sleep Free Experience Started', {
       night_id: 'night_1',
