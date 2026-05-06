@@ -14,8 +14,8 @@ const CLAIM_RETRY_DELAY_MS = 3000;
 function PageShell({ children }: { children: ReactNode }) {
   return (
     <div
-      className="min-h-screen font-primary flex flex-col items-center justify-center px-6 relative overflow-hidden"
-      style={{ background: 'linear-gradient(160deg, #06091A 0%, #0C1226 40%, #0F1A38 100%)' }}
+      className="font-primary flex flex-col items-center justify-center px-6 relative overflow-hidden"
+      style={{ minHeight: '100dvh', background: 'linear-gradient(160deg, #06091A 0%, #0C1226 40%, #0F1A38 100%)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="pointer-events-none absolute inset-0">
         <div
@@ -406,7 +406,7 @@ export default function SonoObrigadoPage() {
             </p>
             <button
               onClick={() => navigate(`/register?${buildReturnUrl()}`)}
-              className="w-full rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
+              className="w-full min-h-[48px] rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
               style={{
                 background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
                 boxShadow: '0 10px 36px rgba(124,58,237,0.50)',
@@ -416,7 +416,7 @@ export default function SonoObrigadoPage() {
             </button>
             <button
               onClick={() => navigate(`/login?${buildReturnUrl()}`)}
-              className="w-full rounded-full py-3.5 text-[14px] font-semibold transition-all hover:border-white/30 active:scale-[0.97]"
+              className="w-full min-h-[48px] rounded-full py-3.5 text-[14px] font-semibold transition-all hover:border-white/30 active:scale-[0.97]"
               style={{
                 border: '1px solid rgba(196,181,253,0.22)',
                 background: 'rgba(255,255,255,0.04)',

@@ -76,7 +76,7 @@ function PrimaryButton({
   return (
     <button
       onClick={onClick}
-      className={`group inline-flex min-h-[44px] items-center justify-center rounded-full text-[1.125rem] font-semibold transition-all duration-300 focus-visible:outline-[2px] focus-visible:outline-offset-2 ${
+      className={`group inline-flex min-h-[48px] items-center justify-center rounded-full text-[1.125rem] font-semibold transition-all duration-300 focus-visible:outline-[2px] focus-visible:outline-offset-2 ${
         fullWidth ? 'w-full px-8 py-4' : 'px-10 py-4'
       }`}
       style={{
@@ -167,7 +167,7 @@ export default function PublicLandingPage() {
   }
 
   return (
-    <div className="min-h-screen font-primary text-white" style={{ background: BG }}>
+    <div className="font-primary text-white" style={{ minHeight: '100dvh', background: BG }}>
 
       {/* ── Sticky Nav ────────────────────────────────────────────────────────── */}
       <nav
@@ -176,6 +176,7 @@ export default function PublicLandingPage() {
           background: 'rgba(0,31,43,0.9)',
           backdropFilter: 'blur(12px)',
           borderColor: `rgba(0,217,255,0.1)`,
+          paddingTop: 'env(safe-area-inset-top)',
         }}
       >
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6 md:px-8">

@@ -4,7 +4,7 @@ import HomeHeader from '@/components/home/HomeHeader';
 
 export default function SonoPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-primary)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'calc(72px + env(safe-area-inset-bottom))' }}>
       <HomeHeader />
 
       <div className="max-w-6xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -21,10 +21,10 @@ export default function SonoPage() {
                 Em breve
               </span>
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-[#38322A] mb-2">
+            <h3 className="text-lg sm:text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
               Meditação para Dormir
             </h3>
-            <p className="text-sm text-[#38322A]/60 leading-relaxed">
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
               Técnicas guiadas de meditação para relaxar e adormecer profundamente.
             </p>
           </div>
@@ -39,10 +39,10 @@ export default function SonoPage() {
                 Em breve
               </span>
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-[#38322A] mb-2">
+            <h3 className="text-lg sm:text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
               Histórias para Dormir
             </h3>
-            <p className="text-sm text-[#38322A]/60 leading-relaxed">
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
               Narrativas relaxantes para acalmar a mente antes de dormir.
             </p>
           </div>
@@ -57,10 +57,10 @@ export default function SonoPage() {
                 Em breve
               </span>
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-[#38322A] mb-2">
+            <h3 className="text-lg sm:text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
               Rotina de Sono
             </h3>
-            <p className="text-sm text-[#38322A]/60 leading-relaxed">
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
               Estabeleça uma rotina saudável para melhorar seu padrão de sono.
             </p>
           </div>
@@ -75,10 +75,10 @@ export default function SonoPage() {
                 Em breve
               </span>
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-[#38322A] mb-2">
+            <h3 className="text-lg sm:text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
               Sons Relaxantes
             </h3>
-            <p className="text-sm text-[#38322A]/60 leading-relaxed">
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
               Áudios ambientais para criar o ambiente perfeito para dormir.
             </p>
           </div>
