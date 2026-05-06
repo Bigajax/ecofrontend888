@@ -59,7 +59,7 @@ export default function FiveRingsHub() {
   }, [ongoingProgram?.id, currentRitual, ritualCompleted, updateProgress]);
 
   return (
-    <div className="min-h-screen bg-white font-primary">
+    <div className="min-h-screen font-primary" style={{ backgroundColor: 'var(--bg-primary)', minHeight: '100dvh', color: 'var(--text-primary)' }}>
       {/* Header */}
       <HomeHeader />
 
@@ -68,17 +68,17 @@ export default function FiveRingsHub() {
         <OnboardingModal onComplete={completeOnboarding} onDismiss={dismissOnboarding} />
       )}
 
-      <main className="relative mx-auto max-w-4xl px-4 py-8 md:px-8 md:py-12">
+      <main className="page-with-nav relative mx-auto max-w-4xl px-4 py-8 md:px-8 md:py-12">
         {/* Back Button */}
         <button
           onClick={() => navigate('/app')}
-          className="absolute left-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--eco-text)] shadow-md border border-[var(--eco-line)] transition-all hover:bg-gray-50 hover:shadow-lg active:scale-95 md:left-8 md:top-8"
+          className="absolute left-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-[var(--eco-text)] shadow-md border border-[var(--eco-line)] transition-all hover:shadow-lg active:scale-95 md:left-8 md:top-8" style={{ backgroundColor: 'var(--surface-card)' }}
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
 
         {/* Header */}
-        <div className="mb-12 space-y-4 pt-16 md:pt-4">
+        <div className="mb-12 space-y-4 pt-16 md:pt-4" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
           <div>
             <h1 className="font-display text-4xl font-normal text-[var(--eco-text)] md:text-5xl">
               Cinco Anéis da Disciplina
@@ -92,7 +92,7 @@ export default function FiveRingsHub() {
           {isGuest && (
             <div className="rounded-2xl border-2 border-eco-accent/30 bg-gradient-to-br from-eco-accent/5 to-eco-user/5 p-6 shadow-sm">
               <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-md">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-md" style={{ backgroundColor: 'var(--surface-card)' }}>
                   <Lock size={24} className="text-eco-accent" />
                 </div>
                 <div className="flex-1">
@@ -144,7 +144,7 @@ export default function FiveRingsHub() {
         {activeTab === 'ritual' ? (
           <>
             {/* Status Card */}
-            <div className="rounded-2xl border border-[var(--eco-line)] bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-[var(--eco-line)] p-6 shadow-sm" style={{ backgroundColor: 'var(--surface-card)' }}>
             {ritualCompleted ? (
               <div className="flex items-center justify-between">
                 <div>
@@ -205,14 +205,14 @@ export default function FiveRingsHub() {
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <button
                 onClick={() => navigate('/app/rings/timeline')}
-                className="flex items-center justify-center gap-2 rounded-xl border border-[var(--eco-line)] bg-white px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 hover:bg-gray-50 active:scale-95"
+                className="flex items-center justify-center gap-2 rounded-xl border border-[var(--eco-line)] px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 active:scale-95" style={{ backgroundColor: 'var(--surface-card)' }}
               >
                 <span>📅</span>
                 <span>Ver Linha do Tempo</span>
               </button>
               <button
                 onClick={() => navigate('/app/rings/progress')}
-                className="flex items-center justify-center gap-2 rounded-xl border border-[var(--eco-line)] bg-white px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 hover:bg-gray-50 active:scale-95"
+                className="flex items-center justify-center gap-2 rounded-xl border border-[var(--eco-line)] px-6 py-3 font-medium text-[var(--eco-text)] transition-all duration-300 active:scale-95" style={{ backgroundColor: 'var(--surface-card)' }}
               >
                 <span>📊</span>
                 <span>Ver Progresso</span>
@@ -221,7 +221,7 @@ export default function FiveRingsHub() {
 
             {/* Stats Footer */}
             {progress && (
-              <div className="mt-12 rounded-xl border border-[var(--eco-line)] bg-white/50 p-6 text-center">
+              <div className="mt-12 rounded-xl border border-[var(--eco-line)] p-6 text-center" style={{ backgroundColor: 'var(--surface-card)' }}>
                 <p className="text-sm text-[var(--eco-muted)]">Seu compromisso</p>
                 <p className="mt-2 font-display text-3xl font-normal text-[var(--eco-text)]">
                   {progress.currentStreak} 🔥

@@ -56,12 +56,12 @@ export default function EnergyBlessingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-primary">
+    <div className="min-h-screen font-primary" style={{ backgroundColor: 'var(--bg-primary)', minHeight: '100dvh', color: 'var(--text-primary)' }}>
       {/* Header */}
       <HomeHeader />
 
       {/* Main Content */}
-      <main className="md:pt-0">
+      <main className="page-with-nav md:pt-0">
         {/* Hero Section com imagem de fundo */}
         <div
           className="relative h-[80vh] flex items-center justify-center"
@@ -69,6 +69,7 @@ export default function EnergyBlessingsPage() {
           backgroundImage: 'url("/images/energy-blessings-hero.webp")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
+          paddingTop: 'env(safe-area-inset-top)',
         }}
       >
         {/* Overlay suave */}
@@ -102,7 +103,7 @@ export default function EnergyBlessingsPage() {
 
       {/* Seção "E agora?" */}
       <div className="max-w-4xl mx-auto px-4 py-12 md:px-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">E agora?</h2>
+        <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>E agora?</h2>
 
         {/* Lista de centros de energia */}
         <div className="space-y-3">
@@ -110,7 +111,7 @@ export default function EnergyBlessingsPage() {
             <button
               key={center.id}
               onClick={() => handlePlayCenter(center.id)}
-              className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-all hover:scale-[1.02] border border-gray-100"
+              className="w-full flex items-center gap-4 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all hover:scale-[1.02]" style={{ backgroundColor: 'var(--surface-card)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--neutral-border)' }}
             >
               {/* Ícone Play Circular */}
               <div className="flex-shrink-0 flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
@@ -119,10 +120,10 @@ export default function EnergyBlessingsPage() {
 
               {/* Conteúdo */}
               <div className="flex-1 text-left">
-                <h3 className="font-semibold text-gray-800 text-[15px]">
+                <h3 className="font-semibold text-[15px]" style={{ color: 'var(--text-primary)' }}>
                   {center.title}
                 </h3>
-                <p className="text-sm text-gray-500 mt-0.5">{center.duration}</p>
+                <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>{center.duration}</p>
               </div>
             </button>
           ))}
