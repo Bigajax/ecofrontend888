@@ -49,7 +49,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const isProgramasPage = location.pathname.startsWith('/app/programas');
   const isSonoPage =
     location.pathname.startsWith('/app/meditacoes-sono') ||
-    location.pathname.startsWith('/app/meditacoes/sono');
+    location.pathname.startsWith('/sono/experiencia');
   const isSonsPage = location.pathname.startsWith('/app/sons');
   const isEnergyBlessingsPage = location.pathname.startsWith('/app/energy-blessings');
   const isMeditationPlayerPage = location.pathname.startsWith('/app/meditation-player');

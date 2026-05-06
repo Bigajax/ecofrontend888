@@ -362,7 +362,7 @@ export default function HeroCarousel({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/app/meditacoes/sono');
+                  navigate('/app/meditacoes-sono');
                 }}
                 className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-stone-900 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"
               >
