@@ -1,6 +1,48 @@
 import mixpanel from './mixpanel';
 
 const SRC = 'sono_noite_1';
+const PRODUCT_KEY = 'protocolo_sono_7_noites';
+
+type SonoGuestEventProps = {
+  guestId?: string;
+  source?: string;
+  nightId?: string;
+  context?: string;
+};
+
+function trackSonoGuestEvent(eventName: string, props: SonoGuestEventProps = {}): void {
+  mixpanel.track(eventName, {
+    source: props.source || SRC,
+    guest_id: props.guestId || sessionStorage.getItem('eco.sono.guest_id') || localStorage.getItem('eco_guest_id') || 'guest',
+    product_key: PRODUCT_KEY,
+    ...(props.nightId ? { night_id: props.nightId } : {}),
+    ...(props.context ? { context: props.context } : {}),
+  });
+}
+
+export function trackSonoGuestPageViewed(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('sono_guest_page_viewed', props);
+}
+
+export function trackSonoGuestNight1Started(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('sono_guest_night1_started', { ...props, nightId: props?.nightId || 'night_1' });
+}
+
+export function trackSonoGuestNight1Completed(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('sono_guest_night1_completed', { ...props, nightId: props?.nightId || 'night_1' });
+}
+
+export function trackSonoGuestOfferViewed(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('sono_guest_offer_viewed', props);
+}
+
+export function trackSonoGuestCheckoutClicked(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('sono_guest_checkout_clicked', props);
+}
+
+export function trackSonoGuestOfferDismissed(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('sono_guest_offer_dismissed', props);
+}
 
 export function trackGuestPlayerOpened(): void {
   mixpanel.track('guest_player_opened', { source: SRC });

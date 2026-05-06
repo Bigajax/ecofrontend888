@@ -3,6 +3,11 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Loader2, Lock } from 'lucide-react';
 import mixpanel from '@/lib/mixpanel';
+import {
+  trackSonoGuestCheckoutClicked,
+  trackSonoGuestOfferDismissed,
+  trackSonoGuestOfferViewed,
+} from '@/lib/mixpanelSonoGuestEvents';
 
 const PRODUCT_KEY = 'protocolo_sono_7_noites';
 
@@ -33,15 +38,14 @@ const BENEFITS = [
 
 const MAIN_OFFER_COPY = {
   eyebrow: 'Noite 1 concluída',
-  title: 'Seu corpo respondeu. Agora ele precisa repetir.',
+  title: 'Seu corpo respondeu.\nAgora ele precisa repetir.',
   subtitle:
     'A primeira noite não foi apenas um teste. Foi o primeiro estímulo para tirar seu sistema nervoso do estado de alerta.',
   body:
     'Quando o corpo sente segurança uma vez, ele relaxa por alguns minutos. Quando sente segurança repetidas noites, ele começa a aprender o caminho de volta.\n\nAs próximas noites aprofundam esse processo: menos controle, menos tensão, menos luta para dormir.',
-  offerTitle: 'Desbloqueie o protocolo completo',
+  offerTitle: 'Protocolo Sono Profundo — 7 noites',
   price: 'R$97',
-  supportingText:
-    'Um processo noturno para ensinar seu corpo a desacelerar progressivamente - noite após noite.',
+  supportingText: 'Pagamento único • Sem mensalidade',
   cta: 'Continuar o processo completo',
   microcopy: 'Acesso imediato • 7 noites completas • Garantia de 7 dias',
 };
@@ -124,6 +128,7 @@ export function SonoPostExperienceModal({
       product_key: PRODUCT_KEY,
       context: variant,
     });
+    trackSonoGuestOfferViewed({ guestId, source, context: variant });
     return () => clearInterval(id);
   }, [guestId, open, source, variant]);
 
@@ -161,7 +166,6 @@ export function SonoPostExperienceModal({
       answer: selectedAnswer,
       source: 'quiz_sono_guest',
       product_key: PRODUCT_KEY,
-      cutoff_time: 240,
     });
     setStep('offer');
   };
@@ -169,8 +173,13 @@ export function SonoPostExperienceModal({
   const handleCheckout = () => {
     mixpanel.track('Sleep Offer CTA Clicked', {
       guest_id: guestId,
-      source: 'quiz_sono_guest',
+      source,
       product_key: PRODUCT_KEY,
+      context: variant === 'cutoff' ? 'cutoff_offer' : variant,
+    });
+    trackSonoGuestCheckoutClicked({
+      guestId,
+      source,
       context: variant === 'cutoff' ? 'cutoff_offer' : variant,
     });
     onCheckout();
@@ -180,13 +189,21 @@ export function SonoPostExperienceModal({
     if (variant === 'cutoff') {
       mixpanel.track('Sleep Offer Dismissed', {
         guest_id: guestId,
-        source: 'quiz_sono_guest',
+        source,
         product_key: PRODUCT_KEY,
         context: 'cutoff_offer',
       });
+      trackSonoGuestOfferDismissed({ guestId, source, context: 'cutoff_offer' });
       onCutoffDismiss?.();
       return;
     }
+    mixpanel.track('Sleep Offer Dismissed', {
+      guest_id: guestId,
+      source,
+      product_key: PRODUCT_KEY,
+      context: variant,
+    });
+    trackSonoGuestOfferDismissed({ guestId, source, context: variant });
     onClose();
   };
 
@@ -297,7 +314,7 @@ export function SonoPostExperienceModal({
                         </div>
                       </div>
 
-                      <h2 className="font-display mb-3 text-center text-[23px] font-bold leading-tight text-white">
+                      <h2 className="font-display mb-3 whitespace-pre-line text-center text-[23px] font-bold leading-tight text-white">
                         {offer.title}
                       </h2>
                       <p className="mb-4 text-center text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.56)' }}>

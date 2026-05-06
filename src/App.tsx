@@ -84,18 +84,6 @@ const MemoryPageGuestTeaser = lazy(() => import("@/pages/memory/MemoryPageGuestT
 const UpgradeModalTest = lazy(() => import("@/pages/UpgradeModalTest"));
 const SonoObrigadoPage = lazy(() => import("@/pages/SonoObrigadoPage"));
 const SonoErroPage = lazy(() => import("@/pages/SonoErroPage"));
-const GuestNight1Page = lazy(() =>
-  import("@/pages/sono/GuestNight1Page").catch(() => {
-    // Chunk failed to load (stale CDN cache after deployment).
-    // Reload once so the browser picks up the new index.html and fresh chunks.
-    const key = "chunk_reload_sono_noite1";
-    if (!sessionStorage.getItem(key)) {
-      sessionStorage.setItem(key, "1");
-      window.location.reload();
-    }
-    throw new Error("Chunk não carregou. Recarregue a página.");
-  })
-);
 const PublicLandingPage = lazy(() => import("@/pages/PublicLandingPage"));
 const AbundanciaObrigadoPage = lazy(() => import("@/pages/AbundanciaObrigadoPage"));
 const AbundanciaErroPage = lazy(() => import("@/pages/AbundanciaErroPage"));
@@ -186,6 +174,14 @@ function GuestFunnelShell() {
   return <Outlet />;
 }
 
+function SonoGuestShell() {
+  const { initGuestSession } = useAuth();
+  useEffect(() => {
+    initGuestSession('sono');
+  }, [initGuestSession]);
+  return <Outlet />;
+}
+
 function AppRoutes() {
   useEffect(() => {
     mixpanel.track("App iniciado", { origem: "App.tsx", data: new Date().toISOString() });
@@ -206,7 +202,6 @@ function AppRoutes() {
         <Route path="guest/meditation-player" element={renderWithBoundary(<MeditationPlayerPage />)} />
         <Route path="memory-preview" element={renderWithSuspense(<MemoryPageGuestTeaser />)} />
         <Route path="test-upgrade-modal" element={renderWithSuspense(<UpgradeModalTest />)} />
-        <Route path="sono/noite-1" element={renderWithBoundary(<GuestNight1Page />)} />
         <Route path="sono/obrigado" element={renderWithSuspense(<SonoObrigadoPage />)} />
         <Route path="sono/erro" element={renderWithSuspense(<SonoErroPage />)} />
         <Route path="abundancia/obrigado" element={renderWithSuspense(<AbundanciaObrigadoPage />)} />
@@ -217,7 +212,7 @@ function AppRoutes() {
       </Route>
       {/* ── Rotas guest (sem autenticação) — devem vir ANTES do /app/* para não
           serem capturadas pelo catch-all filho do bloco RequireAuth ── */}
-      <Route path="/app/meditacoes/sono" element={<AppProtectedShellNoLayout />}>
+      <Route path="/app/meditacoes/sono" element={<SonoGuestShell />}>
         <Route index element={renderWithSuspense(<MeditacoesSonoPage />)} />
       </Route>
       <Route path="/app/minigame-potencial" element={<MinigameGuestShell />}>
@@ -417,6 +412,7 @@ function AppRoutes() {
 
 function AppChrome() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { shouldShowModal, markModalShown, dismissModal, state } = useGuestExperience();
 
@@ -463,6 +459,7 @@ function AppChrome() {
   // Guest Experience Modal - Verificar periodicamente se deve mostrar
   useEffect(() => {
     if (user) return; // Só para guests
+    if (location.pathname === '/app/meditacoes/sono') return; // Funil Sono guest sem cadastro/interrupções
 
     const interval = setInterval(() => {
       if (shouldShowModal()) {
@@ -483,7 +480,7 @@ function AppChrome() {
     }, GUEST_EXPERIENCE_CONFIG.MODAL_CHECK_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [user, shouldShowModal, markModalShown, state]);
+  }, [user, location.pathname, shouldShowModal, markModalShown, state]);
 
   // Keepalive ping — mantém o backend Render acordado (evita cold start)
   useEffect(() => {

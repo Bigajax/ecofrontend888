@@ -415,7 +415,7 @@ export default function HomePage() {
       });
     } else if (recId === 'rec_3') {
       // Meditações de Sono - navegar para página dedicada
-      navigate('/app/meditacoes-sono');
+      navigate('/app/meditacoes/sono');
     } else {
       console.log('Recomendação clicada:', recId);
     }

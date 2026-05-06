@@ -159,7 +159,7 @@ export function ProtocolScreen({ leadCaptured, capturedEmail, onOpenPurchase, on
             className="w-full rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
             style={{ background: '#7C6EF6' }}
           >
-            Desbloquear as 7 noites — R$37 →
+            Continuar o processo completo
           </button>
         </div>
 
@@ -275,14 +275,14 @@ export function ProtocolScreen({ leadCaptured, capturedEmail, onOpenPurchase, on
           >
             <p className="mb-1 font-semibold text-gray-800">{lockedModal}</p>
             <p className="mb-4 text-sm text-gray-500">
-              Essa noite faz parte do protocolo completo. Desbloqueie todas as 7 noites + bônus por R$37.
+              Essa noite faz parte do protocolo completo. Desbloqueie todas as 7 noites por R$97.
             </p>
             <button
               onClick={() => { setLockedModal(null); onOpenPurchase(); }}
               className="w-full rounded-xl py-3 text-sm font-bold text-white"
               style={{ background: '#7C6EF6' }}
             >
-              Desbloquear agora — R$37
+              Continuar o processo completo
             </button>
             <button
               onClick={() => setLockedModal(null)}

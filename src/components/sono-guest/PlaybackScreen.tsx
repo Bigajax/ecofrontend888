@@ -13,7 +13,6 @@ interface PlaybackScreenProps {
   selectedSound: SoundOption;
   startTime: number;
   onComplete: () => void;
-  onCutoffReached?: (time: number) => boolean;
   resumeSignal?: number;
 }
 
@@ -40,13 +39,11 @@ export function PlaybackScreen({
   selectedSound,
   startTime,
   onComplete,
-  onCutoffReached,
   resumeSignal = 0,
 }: PlaybackScreenProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const bgRef = useRef<HTMLAudioElement>(null);
   const completedRef = useRef(false);
-  const cutoffTriggeredRef = useRef(false);
   const analyticsRef = useRef({ fired25: false, fired50: false, fired75: false });
   const saveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -56,9 +53,6 @@ export function PlaybackScreen({
   const [isDimmed, setIsDimmed] = useState(false);
   const [bgVolume, setBgVolume] = useState(0.35);
   const [showMutedWarning, setShowMutedWarning] = useState(false);
-  const [showCutoffWarning, setShowCutoffWarning] = useState(false);
-  const cutoffWarnedRef = useRef(false);
-
   // Sync bg audio volume
   useEffect(() => {
     if (bgRef.current) bgRef.current.volume = bgVolume;
@@ -181,22 +175,6 @@ export function PlaybackScreen({
       const d = audio.duration;
       setCurrentTime(t);
 
-      // Warn 30s before cutoff
-      if (t >= 210 && !cutoffWarnedRef.current && !cutoffTriggeredRef.current && onCutoffReached) {
-        cutoffWarnedRef.current = true;
-        setShowCutoffWarning(true);
-      }
-
-      if (t >= 240 && !cutoffTriggeredRef.current && onCutoffReached?.(t)) {
-        cutoffTriggeredRef.current = true;
-        setShowCutoffWarning(false);
-        saveProgress(t);
-        audio.pause();
-        bgRef.current?.pause();
-        setIsPlaying(false);
-        return;
-      }
-
       if (!d || d === 0) return;
       const pct = (t / d) * 100;
 
@@ -237,7 +215,7 @@ export function PlaybackScreen({
       audio.removeEventListener('ended', onEnded);
       audio.removeEventListener('pause', onPauseEvent);
     };
-  }, [onComplete, onCutoffReached]);
+  }, [onComplete]);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -321,22 +299,6 @@ export function PlaybackScreen({
           </p>
         </div>
       </div>
-
-      {/* Cutoff approach warning */}
-      {showCutoffWarning && (
-        <div
-          className="absolute top-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 rounded-full px-4 py-2"
-          style={{
-            background: 'rgba(167,139,250,0.14)',
-            border: '1px solid rgba(167,139,250,0.28)',
-            backdropFilter: 'blur(8px)',
-          }}
-        >
-          <span className="text-[11px] font-medium" style={{ color: 'rgba(196,181,253,0.85)' }}>
-            ✨ Em instantes, uma reflexão rápida
-          </span>
-        </div>
-      )}
 
       {/* Bottom controls */}
       <div className="flex w-full flex-col items-center gap-4 pb-12 px-8">

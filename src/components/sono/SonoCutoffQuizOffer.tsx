@@ -83,7 +83,6 @@ export function SonoCutoffQuizOffer({
       answer: selectedAnswer,
       source,
       product_key: PRODUCT_KEY,
-      cutoff_time: 240,
     });
     setStep('offer');
   };
