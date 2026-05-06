@@ -1172,7 +1172,7 @@ export default function MeditationPlayerPage() {
   return (
     <div
       className="relative font-primary overflow-hidden flex flex-col"
-      style={{ height: '100dvh', touchAction: 'pan-y' }}
+      style={{ height: '100dvh', touchAction: 'pan-y', backgroundColor: 'var(--bg-primary)' }}
       onTouchStart={resetAmbientTimer}
       onMouseMove={resetAmbientTimer}
       onClick={resetAmbientTimer}
@@ -1759,15 +1759,21 @@ export default function MeditationPlayerPage() {
       {/* Toast de Confirmação de Favorito */}
       {showFavoriteToast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-slide-down">
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl px-6 py-4 flex items-center gap-3 border border-gray-200/50">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-50">
+          <div
+            className="backdrop-blur-md rounded-2xl shadow-2xl px-6 py-4 flex items-center gap-3 border"
+            style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--neutral-border)' }}
+          >
+            <div
+              className="flex items-center justify-center w-10 h-10 rounded-full"
+              style={{ backgroundColor: 'rgba(239,68,68,0.10)' }}
+            >
               <Heart size={20} className="text-red-500 fill-red-500" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-900">
+              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                 Adicionado aos favoritos!
               </span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 {meditationData.title}
               </span>
             </div>
@@ -1778,10 +1784,13 @@ export default function MeditationPlayerPage() {
       {/* Resume Progress Prompt */}
       {showResumePrompt && savedProgress !== null && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm animate-slide-down">
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl px-4 py-3 flex items-center justify-between gap-3 border border-gray-200/50">
+          <div
+            className="backdrop-blur-md rounded-2xl shadow-2xl px-4 py-3 flex items-center justify-between gap-3 border"
+            style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--neutral-border)' }}
+          >
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900">Continuar de onde parou?</p>
-              <p className="text-xs text-gray-500">{formatTime(savedProgress)}</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Continuar de onde parou?</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{formatTime(savedProgress)}</p>
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <button
@@ -1791,13 +1800,15 @@ export default function MeditationPlayerPage() {
                   setShowResumePrompt(false);
                   triggerSonoCutoffIfNeeded(savedProgress);
                 }}
-                className="px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-full touch-manipulation"
+                className="px-3 py-1.5 text-xs font-semibold rounded-full touch-manipulation"
+                style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)' }}
               >
                 Continuar
               </button>
               <button
                 onClick={() => setShowResumePrompt(false)}
-                className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full touch-manipulation"
+                className="px-3 py-1.5 text-xs font-semibold rounded-full touch-manipulation"
+                style={{ backgroundColor: 'var(--surface-card)', color: 'var(--text-muted)', border: '1px solid var(--neutral-border)' }}
               >
                 Não
               </button>

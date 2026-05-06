@@ -243,8 +243,12 @@ export default function MeditacoesSonoPage() {
   if (showCompletion) {
     return (
       <div
-        className="min-h-screen font-primary flex flex-col items-center justify-center px-6 text-center"
-        style={{ background: `linear-gradient(160deg, ${T.bg0} 0%, ${T.bg1} 40%, ${T.bg2} 100%)` }}
+        className="font-primary flex flex-col items-center justify-center px-6 text-center"
+        style={{
+          minHeight: '100dvh',
+          background: `linear-gradient(160deg, ${T.bg0} 0%, ${T.bg1} 40%, ${T.bg2} 100%)`,
+          backgroundColor: 'var(--bg-primary)',
+        }}
       >
         <motion.div
           className="max-w-sm w-full"
@@ -294,17 +298,24 @@ export default function MeditacoesSonoPage() {
   // ── Main Page ──────────────────────────────────────────────────
   return (
     <div
-      className="min-h-screen font-primary"
-      style={{ background: `linear-gradient(180deg, ${T.bg0} 0%, ${T.bg0} 38%, ${T.bg1} 55%, #09090E 75%, ${T.bg2} 100%)` }}
+      className="font-primary"
+      style={{
+        minHeight: '100dvh',
+        background: `linear-gradient(180deg, ${T.bg0} 0%, ${T.bg0} 38%, ${T.bg1} 55%, #09090E 75%, ${T.bg2} 100%)`,
+        backgroundColor: 'var(--bg-primary)',
+      }}
     >
       {user && !isGuestSono && <HomeHeader />}
 
-      <main className="pb-24">
+      <main className="page-with-nav">
 
         {/* ══════════════════════════════════════════════════════════
             HERO
             ══════════════════════════════════════════════════════════ */}
-        <section className="relative flex min-h-[720px] flex-col overflow-hidden sm:min-h-[800px]">
+        <section
+          className="relative flex min-h-[720px] flex-col overflow-hidden sm:min-h-[800px]"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
           {/* Back button */}
           {(!user || isGuestSono) && (
             <div className="absolute left-4 top-4 z-20 sm:left-6 sm:top-6">
