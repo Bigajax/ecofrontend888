@@ -185,7 +185,7 @@ export default function HomePage() {
       },
       {
         id: 'rec_3',
-        title: 'Esta noite, sua mente descansa.',
+        title: 'Protocolo do Sono',
         description: '7 min · Noite 1 gratuita',
         duration: '7 min',
         image: 'url("/images/meditacoes-sono-hero.webp")',
