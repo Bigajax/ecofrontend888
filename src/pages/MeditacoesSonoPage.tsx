@@ -17,8 +17,8 @@ import {
   trackSonoGuestNight1Started,
   trackSonoGuestPageViewed,
 } from '@/lib/mixpanelSonoGuestEvents';
-import { PlaybackScreen } from '@/components/sono-guest/PlaybackScreen';
-import { LS_KEYS, type SoundOption } from '@/components/sono-guest/types';
+import { GuestSonoPlayer } from '@/components/sono-guest/GuestSonoPlayer';
+import { LS_KEYS } from '@/components/sono-guest/types';
 import type { SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal';
 
 const SonoPostExperienceModal = lazy(() =>
@@ -143,11 +143,7 @@ export default function MeditacoesSonoPage() {
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showStartNightPrompt, setShowStartNightPrompt] = useState(false);
   const [offerVariant, setOfferVariant] = useState<SonoOfferVariant>('locked_night');
-  const [guestPlayback, setGuestPlayback] = useState<{
-    selectedSound: SoundOption;
-    startTime: number;
-    resumeSignal: number;
-  } | null>(null);
+  const [guestPlayback, setGuestPlayback] = useState<{ startTime: number } | null>(null);
 
   useEffect(() => {
     localStorage.setItem(`eco.sono.protocol.v1.${uid}`, JSON.stringify({
@@ -226,9 +222,7 @@ export default function MeditacoesSonoPage() {
       product_key: 'protocolo_sono_7_noites',
     });
     setGuestPlayback({
-      selectedSound: 'rain',
       startTime: getSavedGuestNight1Progress() ?? 0,
-      resumeSignal: Date.now(),
     });
   };
 
@@ -319,11 +313,10 @@ export default function MeditacoesSonoPage() {
 
   if (guestPlayback) {
     return (
-      <PlaybackScreen
-        selectedSound={guestPlayback.selectedSound}
+      <GuestSonoPlayer
         startTime={guestPlayback.startTime}
-        resumeSignal={guestPlayback.resumeSignal}
         onComplete={handleGuestNight1Complete}
+        onBack={() => setGuestPlayback(null)}
       />
     );
   }
