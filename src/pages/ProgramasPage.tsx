@@ -383,13 +383,9 @@ export default function ProgramasPage() {
             </motion.div>
 
             {/* Cards scroll */}
-            <motion.div
+            <div
               className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide snap-x snap-mandatory pl-0"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-40px' }}
-              variants={{ visible: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } } }}
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
             >
               {section.meditations.map((meditation, idx) => {
                 const isLocked = isMeditationLocked(meditation);
@@ -397,11 +393,10 @@ export default function ProgramasPage() {
                 const isPremiumBadge = MEDITATION_TIER_MAP[meditation.id] !== 'free';
 
                 return (
-                  <motion.button
+                  <button
                     key={meditation.id}
-                    variants={cardVariant}
                     onClick={() => handleMeditationClick(meditation.id)}
-                    className={`group relative flex-shrink-0 snap-start overflow-hidden rounded-3xl text-left active:scale-[0.97] transition-all duration-200 touch-manipulation ${isLast ? 'mr-1' : ''}`}
+                    className={`group relative flex-shrink-0 snap-start overflow-hidden rounded-3xl text-left active:scale-[0.97] transition-transform duration-200 touch-manipulation animate-slide-up-fade ${isLast ? 'mr-1' : ''}`}
                     style={{
                       width: '280px',
                       height: '230px',
@@ -409,9 +404,9 @@ export default function ProgramasPage() {
                       backgroundSize: 'cover',
                       backgroundPosition: meditation.imagePosition || 'center',
                       boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)',
+                      animationDelay: `${idx * 60}ms`,
+                      animationFillMode: 'both',
                     }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
                   >
                     {/* Image zoom on hover */}
                     <div
@@ -493,10 +488,10 @@ export default function ProgramasPage() {
                         </div>
                       </div>
                     </div>
-                  </motion.button>
+                  </button>
                 );
               })}
-            </motion.div>
+            </div>
           </div>
         ))}
 

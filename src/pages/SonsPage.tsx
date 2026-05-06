@@ -141,7 +141,7 @@ export default function SonsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.12 }}
           className="flex gap-2.5 mb-10 overflow-x-auto pb-2"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {CATEGORY_PILLS.map((pill) => {
             const Icon = pill.icon;
@@ -204,7 +204,7 @@ export default function SonsPage() {
               {/* Horizontal Scroll */}
               <div
                 className="flex gap-4 overflow-x-auto pb-3"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' } as React.CSSProperties}
               >
                 {category.sounds.map((sound, soundIndex) => (
                   <motion.div
