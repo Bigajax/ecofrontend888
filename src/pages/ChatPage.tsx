@@ -907,7 +907,10 @@ function ChatPage() {
   }, [navigate]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
+    <div
+      className="flex h-[100dvh] overflow-hidden"
+      style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+    >
       {/* Desktop Sidebar */}
       <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleBackToHome} />
 
@@ -961,7 +964,7 @@ function ChatPage() {
                         <h1 className="font-display text-[28px] sm:text-[34px] font-bold leading-tight" style={{ color: '#0D3461' }}>
                           {saudacao}, {displayName || rawUserName}
                         </h1>
-                        <p className="text-[15px] text-gray-400 max-w-xs mx-auto leading-relaxed" data-testid="chat-hero-subtitle">
+                        <p className="text-[15px] max-w-xs mx-auto leading-relaxed" style={{ color: 'var(--text-muted)' }} data-testid="chat-hero-subtitle">
                           {heroSubtitle || OPENING_VARIATIONS[0] || ''}
                         </p>
                       </motion.div>
@@ -1033,10 +1036,12 @@ function ChatPage() {
         {/* Footer Input */}
         <footer
           ref={chatInputWrapperRef}
-          className="fixed lg:sticky z-40 w-full border-t border-black/5 bg-white/80 backdrop-blur-xl max-lg:[backdrop-filter:none] max-lg:[-webkit-backdrop-filter:none] max-lg:bg-white px-4 pt-3 pb-3 sm:px-6 lg:px-8 bottom-0 left-0 right-0"
+          className="fixed lg:sticky z-40 w-full border-t backdrop-blur-xl max-lg:[backdrop-filter:none] max-lg:[-webkit-backdrop-filter:none] px-4 pt-3 pb-3 sm:px-6 lg:px-8 bottom-0 left-0 right-0"
           style={{
             ...footerStyle,
             paddingBottom: `calc(${safeAreaBottom + 12}px + env(safe-area-inset-bottom))`,
+            backgroundColor: 'var(--bg-primary)',
+            borderColor: 'var(--neutral-border)',
           }}
         >
           <div className="mx-auto w-full max-w-3xl space-y-2">

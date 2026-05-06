@@ -175,10 +175,15 @@ export default function SoundPlayerPage() {
 
   return (
     <div
-      className="relative min-h-screen font-primary overflow-x-hidden overflow-y-auto"
+      className="relative font-primary overflow-x-hidden overflow-y-auto"
       style={{
+        minHeight: '100dvh',
+        backgroundColor: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
         overscrollBehaviorX: 'none',
-        touchAction: 'pan-y'
+        touchAction: 'pan-y',
       }}
     >
       {/* Background Image Blurred */}
@@ -201,18 +206,20 @@ export default function SoundPlayerPage() {
       {/* Back Button - Top Left */}
       <button
         onClick={handleBack}
-        className="fixed top-6 left-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all active:scale-95"
+        className="fixed left-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all active:scale-95"
+        style={{ top: 'calc(1.5rem + env(safe-area-inset-top))' }}
         aria-label="Voltar"
       >
-        <ChevronLeft size={24} className="text-gray-800" />
+        <ChevronLeft size={24} style={{ color: 'var(--text-primary)' }} />
       </button>
 
       {/* Bell Icon - Top Right */}
       <button
-        className="fixed top-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all active:scale-95"
+        className="fixed right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all active:scale-95"
+        style={{ top: 'calc(1.5rem + env(safe-area-inset-top))' }}
         aria-label="Notificações"
       >
-        <Bell size={20} className="text-gray-800" />
+        <Bell size={20} style={{ color: 'var(--text-primary)' }} />
       </button>
 
       {/* Main Content - Centered */}
@@ -286,7 +293,7 @@ export default function SoundPlayerPage() {
         </div>
 
         {/* Title */}
-        <h1 className="mb-12 text-3xl font-bold text-[#38322A] text-center">
+        <h1 className="mb-12 text-3xl font-bold text-center" style={{ color: 'var(--text-primary)' }}>
           {soundData.title}
         </h1>
 
