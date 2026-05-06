@@ -11,7 +11,7 @@ import {
 
 const PRODUCT_KEY = 'protocolo_sono_7_noites';
 
-export type SonoOfferVariant = 'cutoff' | 'final' | 'locked_night';
+export type SonoOfferVariant = 'final' | 'locked_night';
 export type SonoMicroAnswer = 'Sim, relaxei' | 'Um pouco' | 'Ainda estou agitado';
 
 interface SonoPostExperienceModalProps {
@@ -23,7 +23,6 @@ interface SonoPostExperienceModalProps {
   guestId?: string;
   source?: string;
   startWithQuiz?: boolean;
-  onCutoffDismiss?: () => void;
 }
 
 const ANSWERS: SonoMicroAnswer[] = ['Sim, relaxei', 'Um pouco', 'Ainda estou agitado'];
@@ -92,7 +91,6 @@ export function SonoPostExperienceModal({
   guestId = localStorage.getItem('eco_guest_id') || sessionStorage.getItem('eco.sono.guest_id') || 'guest',
   source = 'quiz_sono_guest',
   startWithQuiz = false,
-  onCutoffDismiss,
 }: SonoPostExperienceModalProps) {
   const [step, setStep] = useState<'quiz' | 'offer'>(startWithQuiz ? 'quiz' : 'offer');
   const [answer, setAnswer] = useState<SonoMicroAnswer | null>(() => {
@@ -127,20 +125,8 @@ export function SonoPostExperienceModal({
         cta: 'Desbloquear protocolo completo',
       };
     }
-
-    if (variant === 'final') {
-      return MAIN_OFFER_COPY;
-    }
-
-    return {
-      eyebrow: 'Continuidade',
-      title: 'Seu corpo respondeu. Agora ele precisa repetir.',
-      subtitle:
-        'As próximas noites aprofundam esse processo: menos controle, menos tensão, menos luta para dormir.',
-      body: answer ? ANSWER_COPY[answer] : ANSWER_COPY['Um pouco'],
-      cta: MAIN_OFFER_COPY.cta,
-    };
-  }, [answer, variant]);
+    return MAIN_OFFER_COPY;
+  }, [variant]);
 
   const handleAnswer = (selectedAnswer: SonoMicroAnswer) => {
     setAnswer(selectedAnswer);
@@ -159,28 +145,17 @@ export function SonoPostExperienceModal({
       guest_id: guestId,
       source,
       product_key: PRODUCT_KEY,
-      context: variant === 'cutoff' ? 'cutoff_offer' : variant,
+      context: variant,
     });
     trackSonoGuestCheckoutClicked({
       guestId,
       source,
-      context: variant === 'cutoff' ? 'cutoff_offer' : variant,
+      context: variant,
     });
     onCheckout();
   };
 
   const handleClose = () => {
-    if (variant === 'cutoff') {
-      mixpanel.track('Sleep Offer Dismissed', {
-        guest_id: guestId,
-        source,
-        product_key: PRODUCT_KEY,
-        context: 'cutoff_offer',
-      });
-      trackSonoGuestOfferDismissed({ guestId, source, context: 'cutoff_offer' });
-      onCutoffDismiss?.();
-      return;
-    }
     mixpanel.track('Sleep Offer Dismissed', {
       guest_id: guestId,
       source,
