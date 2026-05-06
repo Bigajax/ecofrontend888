@@ -1096,43 +1096,19 @@ export default function DiarioEstoicoPage() {
                           {isExpanded && (
                             <div className="md:hidden relative rounded-b-2xl overflow-hidden"
                               style={{
-                                background: 'linear-gradient(160deg, #F5E898 0%, #EDD060 30%, #D8A830 60%, #B87818 85%, #8B4E08 100%)',
-                                borderTop: 'none',
+                                backgroundColor: 'var(--surface-card)',
+                                borderTop: '1px solid rgba(232,227,221,0.6)',
                                 animation: 'slideDown 0.25s ease-out',
-                                boxShadow: [
-                                  '0 8px 32px rgba(80,25,0,0.35)',
-                                  'inset 0 55px 38px -18px rgba(8,2,0,0.92)',
-                                  'inset 0 -55px 38px -18px rgba(8,2,0,0.92)',
-                                  'inset 38px 0 28px -12px rgba(10,2,0,0.75)',
-                                  'inset -38px 0 28px -12px rgba(10,2,0,0.75)',
-                                  'inset 0 0 0 2px rgba(50,12,0,0.45)',
-                                ].join(', '),
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
                               }}>
-                              {/* Grain — fibras de papel */}
-                              <div className="absolute inset-0 pointer-events-none" style={{
-                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
-                                opacity: 0.12,
-                                mixBlendMode: 'multiply' as const,
-                              }} />
-                              {/* Manchas de envelhecimento */}
-                              <div className="absolute inset-0 pointer-events-none" style={{
-                                background: [
-                                  'radial-gradient(circle at 18% 72%, rgba(90,40,5,0.13) 0%, transparent 22%)',
-                                  'radial-gradient(circle at 82% 22%, rgba(70,30,3,0.10) 0%, transparent 18%)',
-                                  'radial-gradient(circle at 88% 80%, rgba(100,45,8,0.11) 0%, transparent 16%)',
-                                ].join(', '),
-                              }} />
 
                               {/* Citação */}
-                              <div className="relative px-7 pt-14 pb-5">
-                                <p className="text-[9px] font-bold tracking-[0.28em] uppercase mb-4"
-                                  style={{ color: 'rgba(255,230,140,0.75)' }}>
+                              <div className="relative px-7 pt-8 pb-5">
+                                <p className="text-[9px] font-bold tracking-[0.28em] uppercase mb-4 text-eco-muted">
                                   {maxim.author}{maxim.source && ` · ${maxim.source}`}
                                 </p>
-                                <div className="font-display text-[2.8rem] leading-none mb-1"
-                                  style={{ color: 'rgba(255,210,100,0.35)', lineHeight: '1' }}>"</div>
-                                <p className="font-display text-[15px] leading-[1.85] italic -mt-3"
-                                  style={{ color: '#2A1200' }}>
+                                <div className="font-display text-[2.8rem] leading-none mb-1 text-eco-accent/30" style={{ lineHeight: '1' }}>"</div>
+                                <p className="font-display text-[15px] leading-[1.85] italic -mt-3 text-eco-text">
                                   {maxim.text}
                                 </p>
                                 {!isGuest && user && (
@@ -1150,7 +1126,7 @@ export default function DiarioEstoicoPage() {
                               </div>
 
                               {/* Divider */}
-                              <div className="relative mx-7 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(180,120,30,0.4), transparent)' }} />
+                              <div className="relative mx-7 h-px" style={{ backgroundColor: 'rgba(232,227,221,0.6)' }} />
 
                               {/* Comentário */}
                               <div className="relative px-7 py-5">
@@ -1159,7 +1135,7 @@ export default function DiarioEstoicoPage() {
 
                               {/* Ações */}
                               {!isGuest && (
-                                <div className="relative px-7 pb-14 flex items-center gap-2.5">
+                                <div className="relative px-7 pb-8 flex items-center gap-2.5">
                                   {!readDays.has(maxim.dayNumber) ? (
                                     <button
                                       onClick={(e) => {
@@ -1174,16 +1150,16 @@ export default function DiarioEstoicoPage() {
                                       Marcar como lida
                                     </button>
                                   ) : (
-                                    <div className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-medium rounded-full"
-                                      style={{ background: 'rgba(255,220,130,0.18)', color: '#C88020', border: '1px solid rgba(200,140,30,0.4)' }}>
+                                    <div className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-medium rounded-full text-eco-muted"
+                                      style={{ backgroundColor: 'rgba(198,169,149,0.12)', border: '1px solid rgba(198,169,149,0.3)' }}>
                                       <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                       Lida ✓
                                     </div>
                                   )}
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                                    className="flex items-center gap-1.5 px-4 py-2.5 text-[12px] font-medium rounded-full transition-all duration-200"
-                                    style={{ background: 'rgba(255,220,130,0.15)', border: '1px solid rgba(200,150,40,0.35)', color: '#C88020' }}
+                                    className="flex items-center gap-1.5 px-4 py-2.5 text-[12px] font-medium rounded-full transition-all duration-200 text-eco-muted"
+                                    style={{ backgroundColor: 'rgba(198,169,149,0.08)', border: '1px solid rgba(198,169,149,0.25)' }}
                                   >
                                     <Share2 size={12} />
                                     Partilhar
@@ -1213,45 +1189,21 @@ export default function DiarioEstoicoPage() {
                         className="hidden md:block relative mt-5 rounded-2xl overflow-hidden"
                         style={{
                           animation: 'slideUpFade 0.3s ease-out',
-                          background: 'linear-gradient(160deg, #F5E898 0%, #EDD060 30%, #D8A830 60%, #B87818 85%, #8B4E08 100%)',
-                          boxShadow: [
-                            '0 15px 55px rgba(80,25,0,0.38)',
-                            'inset 0 65px 45px -20px rgba(8,2,0,0.92)',
-                            'inset 0 -65px 45px -20px rgba(8,2,0,0.92)',
-                            'inset 50px 0 38px -15px rgba(10,2,0,0.75)',
-                            'inset -50px 0 38px -15px rgba(10,2,0,0.75)',
-                            'inset 0 0 0 2px rgba(50,12,0,0.45)',
-                          ].join(', '),
+                          backgroundColor: 'var(--surface-card)',
+                          border: '1px solid rgba(232,227,221,0.6)',
+                          boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
                         }}
                       >
-                        {/* Grain — fibras de papel */}
-                        <div className="absolute inset-0 pointer-events-none" style={{
-                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
-                          opacity: 0.12,
-                          mixBlendMode: 'multiply' as const,
-                        }} />
-                        {/* Manchas de envelhecimento */}
-                        <div className="absolute inset-0 pointer-events-none" style={{
-                          background: [
-                            'radial-gradient(circle at 12% 68%, rgba(90,40,5,0.13) 0%, transparent 20%)',
-                            'radial-gradient(circle at 78% 18%, rgba(70,30,3,0.10) 0%, transparent 16%)',
-                            'radial-gradient(circle at 90% 82%, rgba(100,45,8,0.11) 0%, transparent 14%)',
-                            'radial-gradient(circle at 45% 55%, rgba(80,35,4,0.07) 0%, transparent 25%)',
-                          ].join(', '),
-                        }} />
-
                         {/* Citação — foco principal */}
-                        <div className="relative px-16 pt-16 pb-8 text-center"
-                          style={{ borderBottom: '1px solid rgba(180,120,30,0.3)' }}>
-                          <p className="text-[9px] font-bold tracking-[0.3em] uppercase mb-8"
-                            style={{ color: 'rgba(255,230,140,0.75)' }}>
+                        <div className="relative px-16 pt-12 pb-8 text-center"
+                          style={{ borderBottom: '1px solid rgba(232,227,221,0.6)' }}>
+                          <p className="text-[9px] font-bold tracking-[0.3em] uppercase mb-8 text-eco-muted">
                             {maxim.author}{maxim.source && ` · ${maxim.source}`}
                           </p>
-                          <div className="font-display text-[5rem] leading-none -mb-4"
-                            style={{ color: 'rgba(255,210,100,0.32)', lineHeight: '0.8' }}>"</div>
+                          <div className="font-display text-[5rem] leading-none -mb-4 text-eco-accent/25" style={{ lineHeight: '0.8' }}>"</div>
                           <blockquote
-                            className="font-display leading-[1.7] italic max-w-lg mx-auto relative z-10"
-                            style={{ fontSize: 'clamp(1.15rem, 2.2vw, 1.55rem)', color: '#2A1200' }}
+                            className="font-display leading-[1.7] italic max-w-lg mx-auto relative z-10 text-eco-text"
+                            style={{ fontSize: 'clamp(1.15rem, 2.2vw, 1.55rem)' }}
                           >
                             {maxim.text}
                           </blockquote>
@@ -1260,20 +1212,19 @@ export default function DiarioEstoicoPage() {
                         {/* Comentário */}
                         <div className="relative px-16 py-10">
                           <div className="max-w-lg mx-auto">
-                            <p className="text-[9px] font-bold tracking-[0.28em] uppercase mb-6"
-                              style={{ color: 'rgba(255,230,140,0.75)' }}>
+                            <p className="text-[9px] font-bold tracking-[0.28em] uppercase mb-6 text-eco-muted">
                               Comentário
                             </p>
 
                             {!user ? (
                               <>
                                 <div className="relative overflow-hidden" style={{ maxHeight: '110px' }}>
-                                  <p className="font-primary text-[15px] leading-[1.9]" style={{ color: '#2A1200' }}>
+                                  <p className="font-primary text-[15px] leading-[1.9] text-eco-text">
                                     {commentParagraphs[0] ?? maxim.comment}
                                   </p>
                                   <div
                                     className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
-                                    style={{ background: 'linear-gradient(to top, rgba(216,168,48,0.96) 0%, transparent 100%)' }}
+                                    style={{ background: 'linear-gradient(to top, var(--surface-card, #fff) 0%, transparent 100%)' }}
                                   />
                                 </div>
                                 <div className="mt-7 flex flex-col items-center gap-3">
@@ -1305,12 +1256,12 @@ export default function DiarioEstoicoPage() {
                               <div className="space-y-5">
                                 {commentParagraphs.length > 0
                                   ? commentParagraphs.map((para, i) => (
-                                      <p key={i} className="font-primary text-[15px] leading-[1.95]" style={{ color: '#2A1200' }}>
+                                      <p key={i} className="font-primary text-[15px] leading-[1.95] text-eco-text">
                                         {para}
                                       </p>
                                     ))
                                   : (
-                                      <p className="font-primary text-[15px] leading-[1.95]" style={{ color: '#2A1200' }}>
+                                      <p className="font-primary text-[15px] leading-[1.95] text-eco-text">
                                         {maxim.comment}
                                       </p>
                                     )
@@ -1335,8 +1286,8 @@ export default function DiarioEstoicoPage() {
 
                         {/* Rodapé: ações */}
                         {!isGuest && (
-                          <div className="relative px-16 pb-16 flex items-center gap-3"
-                            style={{ borderTop: '1px solid rgba(180,120,30,0.28)', paddingTop: '20px' }}>
+                          <div className="relative px-16 pb-10 flex items-center gap-3"
+                            style={{ borderTop: '1px solid rgba(232,227,221,0.6)', paddingTop: '20px' }}>
                             {!readDays.has(maxim.dayNumber) ? (
                               <button
                                 onClick={(e) => {
@@ -1351,16 +1302,16 @@ export default function DiarioEstoicoPage() {
                                 Marcar como lida
                               </button>
                             ) : (
-                              <div className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-full"
-                                style={{ background: 'rgba(255,220,130,0.18)', color: '#C88020', border: '1px solid rgba(200,140,30,0.42)' }}>
+                              <div className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-full text-eco-muted"
+                                style={{ backgroundColor: 'rgba(198,169,149,0.12)', border: '1px solid rgba(198,169,149,0.3)' }}>
                                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                 Reflexão concluída
                               </div>
                             )}
                             <button
                               onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
-                              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-full transition-all duration-200"
-                              style={{ background: 'rgba(255,220,130,0.15)', border: '1px solid rgba(200,150,40,0.38)', color: '#C88020' }}
+                              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-full transition-all duration-200 text-eco-muted"
+                              style={{ backgroundColor: 'rgba(198,169,149,0.08)', border: '1px solid rgba(198,169,149,0.25)' }}
                             >
                               <Share2 size={13} />
                               Compartilhar

@@ -1110,6 +1110,17 @@ export const MAIO_REFLECTIONS: DailyMaxim[] = [
     comment: 'Os profissionais não têm de justificar o tempo que gastam com capacitação ou prática de seu trabalho. É o ofício deles, e é praticando que se tornam bons. As matérias-primas variam de uma carreira para outra, assim como os locais e a duração variam dependendo da pessoa e da profissão. Mas a única constante é o trabalho desses materiais, as melhorias graduais e a proficiência.\n\nSegundo os estoicos, sua mente é o recurso que deve ser mais trabalhado — e mais bem compreendido.',
     background: getBackgroundForDay(5),
   },
+  {
+    date: '6 de maio',
+    month: 'maio',
+    dayNumber: 6,
+    title: 'A RETIDÃO É BELA',
+    text: '"Então o que faz belo um ser humano? Não é a presença da excelência humana? Jovem amigo, se desejas ser belo, trabalha diligentemente na excelência humana. E o que é isso? Observa aqueles que elogias sem preconceito. Os justos ou os injustos? Os justos. Os calmos ou os indisciplinados? Os calmos. Os autocontrolados ou os descontrolados? Os autocontrolados. Tornando-te esse tipo de pessoa, tu te tornarás belo — mas na medida em que ignoras essas qualidades, serás feio, mesmo que uses todos os truques possíveis para parecer belo."',
+    author: 'Epicteto',
+    source: 'Discursos, 3.1.6B-9',
+    comment: 'As noções contemporâneas de beleza são ridículas. Nossos padrões para o que é atraente são incrivelmente não estoicos, na medida em que apreciamos e louvamos coisas sobre as quais as pessoas não têm quase nenhum controle — maçãs do rosto altas, aparência da pele, altura, olhos penetrantes.\n\nÉ realmente belo ganhar na loteria genética? Ou deveria a beleza depender das escolhas, das ações e dos atributos que desenvolvemos? Equilíbrio, senso de justiça, compromisso com o dever. Esses são belos traços — e vão muito além das aparências.\n\nHoje, você pode escolher não ter preconceitos, agir com justiça, manter o equilíbrio, estar no controle de si mesmo — ainda que isso signifique dedicação e sacrifício. Se isso não é belo, o que é?',
+    background: getBackgroundForDay(6),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
