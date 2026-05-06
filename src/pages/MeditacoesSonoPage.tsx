@@ -267,18 +267,18 @@ export default function MeditacoesSonoPage() {
       return;
     }
 
-    sessionStorage.setItem('eco.sono.lastPlayedNight', String(night.night));
-
-    const playerRoute = user ? '/app/meditation-player' : '/guest/meditation-player';
-    const returnTo = user
-      ? '/app/meditacoes-sono'
-      : `/app/meditacoes/sono?guestSono=1&source=${encodeURIComponent(source || 'quiz_sono')}&guest_id=${encodeURIComponent(guestId)}`;
-
-    if (isGuestSono && night.night === 1) {
-      mixpanel.track('Sleep Free Experience Started', { night_id: night.id, source, guest_id: guestId });
+    if (!user) {
+      setOfferVariant(night1IsCompleted ? 'locked_night' : 'final');
+      if (!night1IsCompleted) setShowStartNightPrompt(true);
+      else setShowOfferModal(true);
+      return;
     }
 
-    navigate(playerRoute, {
+    sessionStorage.setItem('eco.sono.lastPlayedNight', String(night.night));
+
+    const returnTo = '/app/meditacoes-sono';
+
+    navigate('/app/meditation-player', {
       state: {
         meditation: {
           id: night.id, title: night.title, duration: night.duration,
@@ -836,7 +836,7 @@ export default function MeditacoesSonoPage() {
         {/* ══════════════════════════════════════════════════════════
             CONVERSION BLOCK — non-paid users
             ══════════════════════════════════════════════════════════ */}
-        {!isPaid && night1IsCompleted && (
+        {!isGuestSono && !isPaid && night1IsCompleted && (
           <section className="mx-auto max-w-lg px-4 pt-6 pb-12 sm:px-6">
             <motion.div
               initial={{ opacity: 0, y: 12 }}

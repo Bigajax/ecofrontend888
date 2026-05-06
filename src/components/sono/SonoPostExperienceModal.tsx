@@ -40,9 +40,9 @@ const MAIN_OFFER_COPY = {
   eyebrow: 'Noite 1 concluída',
   title: 'Seu corpo respondeu.\nAgora ele precisa repetir.',
   subtitle:
-    'A primeira noite não foi apenas um teste. Foi o primeiro estímulo para tirar seu sistema nervoso do estado de alerta.',
+    'A primeira noite foi o primeiro sinal de segurança para o seu sistema nervoso.',
   body:
-    'Quando o corpo sente segurança uma vez, ele relaxa por alguns minutos. Quando sente segurança repetidas noites, ele começa a aprender o caminho de volta.\n\nAs próximas noites aprofundam esse processo: menos controle, menos tensão, menos luta para dormir.',
+    'Quando o corpo sente segurança uma vez, ele relaxa por alguns minutos. Quando recebe esse sinal por várias noites, começa a reconhecer o caminho de volta.\n\nAs próximas noites aprofundam esse processo: menos controle, menos tensão, menos luta para dormir.',
   offerTitle: 'Protocolo Sono Profundo — 7 noites',
   price: 'R$97',
   supportingText: 'Pagamento único • Sem mensalidade',
@@ -83,11 +83,6 @@ const ANSWER_COPY: Record<SonoMicroAnswer, string> = {
     'Isso também faz parte do padrão. Quando o corpo ficou muito tempo em alerta, ele precisa de repetição guiada para começar a soltar.',
 };
 
-function formatCountdown(ms: number) {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  return `${String(Math.floor(totalSeconds / 60)).padStart(2, '0')}:${String(totalSeconds % 60).padStart(2, '0')}`;
-}
-
 export function SonoPostExperienceModal({
   open,
   onClose,
@@ -104,10 +99,6 @@ export function SonoPostExperienceModal({
     const stored = localStorage.getItem(`eco.sono.guest.micro_answer.${guestId}`);
     return ANSWERS.includes(stored as SonoMicroAnswer) ? (stored as SonoMicroAnswer) : null;
   });
-  const [timeLeft, setTimeLeft] = useState(() => {
-    const stored = sessionStorage.getItem('eco.sono.offer_expires');
-    return stored ? Math.max(0, parseInt(stored) - Date.now()) : 0;
-  });
 
   useEffect(() => {
     if (!open) return;
@@ -116,12 +107,6 @@ export function SonoPostExperienceModal({
 
   useEffect(() => {
     if (!open) return;
-    const update = () => {
-      const stored = sessionStorage.getItem('eco.sono.offer_expires');
-      setTimeLeft(stored ? Math.max(0, parseInt(stored) - Date.now()) : 0);
-    };
-    update();
-    const id = setInterval(update, 1000);
     mixpanel.track('Sleep Offer Viewed', {
       guest_id: guestId,
       source,
@@ -129,7 +114,6 @@ export function SonoPostExperienceModal({
       context: variant,
     });
     trackSonoGuestOfferViewed({ guestId, source, context: variant });
-    return () => clearInterval(id);
   }, [guestId, open, source, variant]);
 
   const offer = useMemo(() => {
@@ -366,15 +350,6 @@ export function SonoPostExperienceModal({
                           ))}
                         </div>
                       </div>
-
-                      {timeLeft > 0 && (
-                        <div className="mb-5 text-center text-[12px]" style={{ color: 'rgba(255,255,255,0.52)' }}>
-                          Condição disponível por:{' '}
-                          <span className="font-mono font-bold" style={{ color: '#FCD34D' }}>
-                            {formatCountdown(timeLeft)}
-                          </span>
-                        </div>
-                      )}
 
                       <button
                         onClick={handleCheckout}

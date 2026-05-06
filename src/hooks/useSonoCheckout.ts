@@ -3,6 +3,7 @@ import { apiFetchJson } from '@/lib/apiFetch';
 import mixpanel from '@/lib/mixpanel';
 
 const PRODUCT_KEY = 'protocolo_sono_7_noites';
+const SONO_PRICE = 97;
 
 interface CheckoutOptions {
   origin?: string;
@@ -22,6 +23,9 @@ export function useSonoCheckout() {
           method: 'POST',
           body: JSON.stringify({
             productKey: PRODUCT_KEY,
+            unit_price: SONO_PRICE,
+            amount: SONO_PRICE,
+            price: SONO_PRICE,
             origin: opts.origin || 'app',
             siteUrl: window.location.origin,
           }),

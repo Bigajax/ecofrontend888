@@ -4,7 +4,7 @@ import { Home, Compass, Moon, Music2, User } from 'lucide-react';
 const navItems = [
   { to: '/app',               icon: Home,    label: 'Início',   end: true  },
   { to: '/app/programas',     icon: Compass, label: 'Explorar', end: false },
-  { to: '/app/sono',          icon: Moon,    label: 'Sono',     end: false },
+  { to: '/app/meditacoes/sono', icon: Moon,  label: 'Sono',     end: false },
   { to: '/app/sons',          icon: Music2,  label: 'Sons',     end: false },
   { to: '/app/configuracoes', icon: User,    label: 'Perfil',   end: false },
 ];
