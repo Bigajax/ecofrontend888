@@ -327,23 +327,22 @@ const CreateProfilePage: React.FC = () => {
             transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
             className="w-full max-w-sm"
           >
-            <div className="rounded-3xl border border-white/30 bg-white/88 backdrop-blur-xl shadow-[0_12px_48px_rgba(0,0,0,0.14)] overflow-hidden">
-              <div className="flex flex-col items-center px-6 pt-7 pb-5 text-center"
-                style={{ background: 'linear-gradient(160deg, #FDF8F2 0%, #FAF6F0 60%, #FFFFFF 100%)' }}>
+            <div className="rounded-3xl overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--neutral-border)', boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex flex-col items-center px-6 pt-7 pb-5 text-center" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                 <div className="text-3xl mb-2">👤</div>
-                <h1 className="font-display text-[1.35rem] font-bold leading-tight text-eco-text">
+                <h1 className="font-display text-[1.35rem] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
                   Você já está logado
                 </h1>
-                <p className="text-[12px] text-eco-muted mt-1">
-                  Sessão de <span className="font-medium text-eco-text">{displayName}</span>
+                <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
+                  Sessão de <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayName}</span>
                 </p>
               </div>
               <div className="px-6 pb-6 pt-4 space-y-3">
                 <button
                   type="button"
                   onClick={() => navigate(returnTo)}
-                  className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
-                  style={{ background: 'linear-gradient(135deg, #4A3F35 0%, #38322A 100%)', boxShadow: '0 4px 20px rgba(56,50,42,0.28)' }}
+                  className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
+                  style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)', boxShadow: 'var(--shadow-card)' }}
                 >
                   Continuar como {userName || 'eu'}
                 </button>
@@ -377,16 +376,15 @@ const CreateProfilePage: React.FC = () => {
             transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
             className="w-full max-w-sm"
           >
-            <div className="rounded-3xl border border-white/30 bg-white/88 backdrop-blur-xl shadow-[0_12px_48px_rgba(0,0,0,0.14)] overflow-hidden">
-              <div className="flex flex-col items-center px-6 pt-7 pb-5 text-center"
-                style={{ background: 'linear-gradient(160deg, #FDF8F2 0%, #FAF6F0 60%, #FFFFFF 100%)' }}>
+            <div className="rounded-3xl overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--neutral-border)', boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex flex-col items-center px-6 pt-7 pb-5 text-center" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                 <div className="text-3xl mb-2">📬</div>
-                <h1 className="font-display text-[1.35rem] font-bold leading-tight text-eco-text">
+                <h1 className="font-display text-[1.35rem] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
                   Confirme seu email
                 </h1>
-                <p className="text-[12px] text-eco-muted mt-1">
+                <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
                   Link enviado para{' '}
-                  <span className="font-medium text-eco-text">{confirmedEmail}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{confirmedEmail}</span>
                 </p>
               </div>
               <div className="px-6 pb-6 pt-4 space-y-4 text-center">
@@ -405,8 +403,8 @@ const CreateProfilePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`)}
-                  className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
-                  style={{ background: 'linear-gradient(135deg, #4A3F35 0%, #38322A 100%)', boxShadow: '0 4px 20px rgba(56,50,42,0.28)' }}
+                  className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
+                  style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)', boxShadow: 'var(--shadow-card)' }}
                 >
                   Já confirmei — Entrar
                 </button>
@@ -441,21 +439,20 @@ const CreateProfilePage: React.FC = () => {
             className="w-full max-w-sm"
           >
             {/* Card principal */}
-            <div className="rounded-3xl border border-white/30 bg-white/88 backdrop-blur-xl shadow-[0_12px_48px_rgba(0,0,0,0.14)] overflow-hidden">
+            <div className="rounded-3xl overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--neutral-border)', boxShadow: 'var(--shadow-card)' }}>
 
               {/* Topo: logo + título */}
-              <div className="flex flex-col items-center px-6 pt-7 pb-5"
-                style={{ background: 'linear-gradient(160deg, #FDF8F2 0%, #FAF6F0 60%, #FFFFFF 100%)' }}>
+              <div className="flex flex-col items-center px-6 pt-7 pb-5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                 <img
                   src="/images/ECOTOPIA.webp"
                   alt="Ecotopia"
                   className="w-16 h-16 object-contain mb-3"
                   loading="lazy"
                 />
-                <h1 className="font-display text-[1.35rem] font-bold leading-tight text-eco-text">
+                <h1 className="font-display text-[1.35rem] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
                   Crie sua conta
                 </h1>
-                <p className="text-[12px] text-eco-muted mt-1 font-primary">
+                <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
                   Menos de 30 segundos · sempre gratuito
                 </p>
               </div>
@@ -466,7 +463,8 @@ const CreateProfilePage: React.FC = () => {
                   type="button"
                   onClick={handleGoogleSignUp}
                   disabled={loading}
-                  className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--eco-line)] bg-white text-[14px] font-medium text-eco-text shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40"
+                  className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-xl text-[14px] font-medium shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                  style={{ border: '1.5px solid var(--neutral-border)', backgroundColor: 'var(--surface-card)', color: 'var(--text-primary)' }}
                 >
                   <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" aria-hidden="true">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -500,7 +498,8 @@ const CreateProfilePage: React.FC = () => {
                       autoCorrect="off"
                       inputMode="email"
                       autoFocus
-                      className="w-full h-12 rounded-xl border border-[var(--eco-line)] bg-white/90 px-4 text-[15px] text-eco-text placeholder:text-eco-muted transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-eco-baby/40"
+                      className="w-full h-12 rounded-xl px-4 text-[15px] transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                      style={{ border: '1.5px solid var(--neutral-border)', backgroundColor: 'var(--surface-card)', color: 'var(--text-primary)' }}
                     />
                   </div>
 
@@ -529,7 +528,8 @@ const CreateProfilePage: React.FC = () => {
                         required
                         autoComplete="new-password"
                         disabled={useAutoPassword}
-                        className="w-full h-12 rounded-xl border border-[var(--eco-line)] bg-white/90 px-4 pr-12 text-[15px] text-eco-text placeholder:text-eco-muted/50 transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-eco-baby/40 disabled:opacity-60"
+                        className="w-full h-12 rounded-xl px-4 pr-12 text-[15px] transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 disabled:opacity-60"
+                        style={{ border: '1.5px solid var(--neutral-border)', backgroundColor: 'var(--surface-card)', color: 'var(--text-primary)' }}
                       />
                       <button
                         type="button"
@@ -579,10 +579,11 @@ const CreateProfilePage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={!canSubmit}
-                    className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-eco-text/30 focus:ring-offset-2"
+                    className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:ring-offset-2"
                     style={{
-                      background: 'linear-gradient(135deg, #4A3F35 0%, #38322A 100%)',
-                      boxShadow: canSubmit ? '0 4px 20px rgba(56,50,42,0.30)' : 'none',
+                      backgroundColor: 'var(--accent)',
+                      color: 'var(--bg-primary)',
+                      boxShadow: canSubmit ? 'var(--shadow-card)' : 'none',
                       opacity: canSubmit ? 1 : 0.45,
                       cursor: canSubmit ? 'pointer' : 'not-allowed',
                     }}

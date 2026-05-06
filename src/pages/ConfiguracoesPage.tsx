@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { TrendingUp, Heart, Award, Settings, MessageCircle, Globe, LogOut } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
@@ -86,14 +86,26 @@ export default function ConfiguracoesPage() {
     }
   };
 
+  const inputStyle: React.CSSProperties = {
+    border: '1.5px solid var(--neutral-border)',
+    backgroundColor: 'var(--surface-card)',
+    color: 'var(--text-primary)',
+  };
+
+  const inputDisabledStyle: React.CSSProperties = {
+    ...inputStyle,
+    opacity: 0.5,
+    cursor: 'not-allowed',
+  };
+
   return (
-    <div className="min-h-screen bg-white">
+    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-primary)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'calc(72px + env(safe-area-inset-bottom))' }}>
       <HomeHeader />
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Profile Header */}
         <div className="flex items-center gap-4 mb-8">
-          <div className="w-16 h-16 rounded-full bg-gray-300 overflow-hidden">
+          <div className="w-16 h-16 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)' }}>
             {user?.user_metadata?.avatar_url ? (
               <img
                 src={user.user_metadata.avatar_url}
@@ -101,16 +113,16 @@ export default function ConfiguracoesPage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1A4FB5] to-[#0D3461] text-white text-2xl font-bold">
+              <div className="w-full h-full flex items-center justify-center text-2xl font-bold" style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)' }}>
                 {user?.user_metadata?.full_name?.charAt(0) || (isGuestMode ? 'C' : 'U')}
               </div>
             )}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
               {user?.user_metadata?.full_name || (isGuestMode ? 'Convidado' : 'Usuário')}
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
               {isGuestMode ? 'Modo convidado' : user?.email?.split('@')[0] || '@usuario'}
             </p>
           </div>
@@ -120,7 +132,7 @@ export default function ConfiguracoesPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Sidebar Menu */}
           <div className="lg:col-span-3">
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm p-4">
+            <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--surface-card)', boxShadow: 'var(--shadow-card)' }}>
               <nav className="space-y-1">
                 {menuItems.map((item) => {
                   const Icon = item.icon;
@@ -130,11 +142,11 @@ export default function ConfiguracoesPage() {
                     <button
                       key={item.id}
                       onClick={() => handleMenuClick(item.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                        isSelected
-                          ? 'bg-[#F0F5FF] text-[#0D3461] font-semibold'
-                          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
-                      }`}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all"
+                      style={isSelected
+                        ? { backgroundColor: 'var(--neutral-hover)', color: 'var(--accent)' }
+                        : { color: 'var(--text-muted)' }
+                      }
                     >
                       <Icon size={20} />
                       <span className="text-sm font-medium">{item.label}</span>
@@ -147,23 +159,24 @@ export default function ConfiguracoesPage() {
 
           {/* Settings Content */}
           <div className="lg:col-span-9">
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm p-6 md:p-8">
+            <div className="rounded-2xl p-6 md:p-8" style={{ backgroundColor: 'var(--surface-card)', boxShadow: 'var(--shadow-card)' }}>
               {selectedMenu === 'estatisticas' && <EstatisticasTotais />}
               {selectedMenu === 'favoritos' && <Favoritos />}
               {selectedMenu === 'assinatura' && <SubscriptionManagement />}
 
               {selectedMenu === 'configuracoes' && (
                 <>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Configurações</h2>
+                  <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>Configurações</h2>
 
                   {/* Guest mode warning */}
                   {isGuestMode && (
-                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                      <p className="text-sm text-blue-800">
-                        <strong>Modo convidado:</strong> Você está usando o ECO como convidado.
+                    <div className="mb-6 p-4 rounded-xl" style={{ backgroundColor: 'var(--neutral-hover)', border: '1px solid var(--neutral-border)' }}>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        <strong>Modo convidado:</strong> Você está usando o Ecotopia como convidado.
                         <button
                           onClick={() => navigate('/register')}
-                          className="ml-1 underline font-semibold hover:text-blue-900"
+                          className="ml-1 underline font-semibold"
+                          style={{ color: 'var(--accent)' }}
                         >
                           Crie uma conta
                         </button>
@@ -175,7 +188,7 @@ export default function ConfiguracoesPage() {
                   <div className="space-y-6">
                     {/* Section Title */}
                     <div>
-                      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
+                      <h3 className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: 'var(--text-muted)' }}>
                         Informações Pessoais
                       </h3>
 
@@ -183,40 +196,43 @@ export default function ConfiguracoesPage() {
                       <div className="space-y-4">
                         {/* Nome */}
                         <div>
-                          <label className="block text-sm text-gray-500 mb-2">Nome</label>
+                          <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>Nome</label>
                           <input
                             type="text"
                             value={formData.nome}
                             onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                             disabled={isGuestMode}
                             placeholder={isGuestMode ? "Disponível apenas para usuários registrados" : ""}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#1A4FB5] focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
+                            className="w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-transparent transition-all"
+                            style={isGuestMode ? inputDisabledStyle : inputStyle}
                           />
                         </div>
 
                         {/* E-mail */}
                         <div>
-                          <label className="block text-sm text-gray-500 mb-2">E-mail</label>
+                          <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>E-mail</label>
                           <input
                             type="email"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             disabled={isGuestMode}
                             placeholder={isGuestMode ? "Disponível apenas para usuários registrados" : ""}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#1A4FB5] focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
+                            className="w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-transparent transition-all"
+                            style={isGuestMode ? inputDisabledStyle : inputStyle}
                           />
                         </div>
 
                         {/* Data de Nascimento */}
                         <div>
-                          <label className="block text-sm text-gray-500 mb-2">Data de nascimento</label>
+                          <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>Data de nascimento</label>
                           <input
                             type="text"
                             value={formData.dataNascimento}
                             onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
                             disabled={isGuestMode}
                             placeholder={isGuestMode ? "Disponível apenas para usuários registrados" : ""}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#1A4FB5] focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
+                            className="w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-transparent transition-all"
+                            style={isGuestMode ? inputDisabledStyle : inputStyle}
                           />
                         </div>
                       </div>
@@ -226,14 +242,16 @@ export default function ConfiguracoesPage() {
                     {isGuestMode ? (
                       <button
                         onClick={() => navigate('/register')}
-                        className="px-8 py-3 text-white font-medium rounded-full transition-all shadow-md hover:shadow-lg active:scale-95 hover:scale-105" style={{ background: 'linear-gradient(135deg, #1A4FB5, #0D3461)' }}
+                        className="min-h-[48px] px-8 py-3 font-medium rounded-full transition-all hover:opacity-90 active:scale-95"
+                        style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)' }}
                       >
                         Criar conta gratuita
                       </button>
                     ) : (
                       <button
                         onClick={handleUpdate}
-                        className="px-8 py-3 text-white font-medium rounded-full transition-all shadow-md hover:shadow-lg active:scale-95 hover:scale-105" style={{ background: 'linear-gradient(135deg, #1A4FB5, #0D3461)' }}
+                        className="min-h-[48px] px-8 py-3 font-medium rounded-full transition-all hover:opacity-90 active:scale-95"
+                        style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)' }}
                       >
                         Atualizar
                       </button>

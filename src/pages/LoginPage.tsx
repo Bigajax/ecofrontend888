@@ -9,6 +9,7 @@ import HomePageTour from '../components/HomePageTour';
 import mixpanel from '../lib/mixpanel';
 import { supabase } from '@/lib/supabaseClient';
 import { useGoogleOneTap } from '../hooks/useGoogleOneTap';
+import { ButtonEco } from '@/components/ui/ButtonEco';
 
 /* Divisor com traço mais marcado */
 const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
@@ -223,7 +224,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <PhoneFrame backgroundImage="/images/login-background.webp">
-      <div className="relative min-h-[100dvh] w-full overflow-hidden text-slate-900">
+      <div className="relative min-h-[100dvh] w-full overflow-hidden" style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-primary)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom))]">
           {isTourActive && (
             <HomePageTour onClose={closeTour} reason="login" nextPath="/" forceStart={true} />
@@ -236,21 +237,20 @@ const LoginPage: React.FC = () => {
             className="w-full max-w-sm"
           >
             {/* Card principal — logo + boas-vindas integrados */}
-            <div className="rounded-3xl border border-white/30 bg-white/88 backdrop-blur-xl shadow-[0_12px_48px_rgba(0,0,0,0.14)] overflow-hidden">
+            <div className="rounded-3xl overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--neutral-border)', boxShadow: 'var(--shadow-card)' }}>
 
               {/* Topo do card: logo + título */}
-              <div className="flex flex-col items-center px-6 pt-7 pb-5"
-                style={{ background: 'linear-gradient(160deg, #FDF8F2 0%, #FAF6F0 60%, #FFFFFF 100%)' }}>
+              <div className="flex flex-col items-center px-6 pt-7 pb-5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                 <img
                   src="/images/ECOTOPIA.webp"
                   alt="Ecotopia"
                   className="w-16 h-16 object-contain mb-3"
                   loading="lazy"
                 />
-                <h1 className="font-display text-[1.35rem] font-bold leading-tight text-eco-text">
+                <h1 className="font-display text-[1.35rem] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
                   Bem-vindo de volta
                 </h1>
-                <p className="text-[12px] text-eco-muted mt-1 font-primary">
+                <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
                   Continue sua jornada com a Eco
                 </p>
               </div>
@@ -261,7 +261,8 @@ const LoginPage: React.FC = () => {
                   type="button"
                   onClick={handleGoogleLogin}
                   disabled={loading}
-                  className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--eco-line)] bg-white text-[14px] font-medium text-[var(--eco-text)] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--eco-accent)]/40"
+                  className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-xl text-[14px] font-medium shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                  style={{ border: '1.5px solid var(--neutral-border)', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
                 >
                   <GoogleIcon />
                   Continuar com Google
@@ -286,20 +287,22 @@ const LoginPage: React.FC = () => {
                       inputMode="email"
                       aria-invalid={Boolean(error)}
                       aria-describedby={error ? 'login-error' : undefined}
-                      className="w-full h-12 rounded-xl border border-[var(--eco-line)] bg-white/90 px-4 text-[15px] text-[var(--eco-text)] placeholder:text-[var(--eco-muted)] transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-eco-baby/40"
+                      className="w-full h-12 rounded-xl px-4 text-[15px] transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                      style={{ border: '1.5px solid var(--neutral-border)', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
                     />
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-semibold tracking-wide text-eco-muted uppercase" htmlFor="password">
+                      <label className="text-[11px] font-semibold tracking-wide uppercase" style={{ color: 'var(--text-muted)' }} htmlFor="password">
                         Senha
                       </label>
                       <button
                         type="button"
                         onClick={handleForgotPassword}
                         disabled={forgotLoading}
-                        className="text-[12px] font-medium text-eco-user hover:text-eco-text transition-colors duration-200 disabled:opacity-60"
+                        className="text-[12px] font-medium transition-colors duration-200 disabled:opacity-60"
+                        style={{ color: 'var(--accent)' }}
                       >
                         {forgotLoading ? 'Enviando…' : 'Esqueceu?'}
                       </button>
@@ -315,7 +318,8 @@ const LoginPage: React.FC = () => {
                         autoComplete="current-password"
                         aria-invalid={Boolean(error)}
                         aria-describedby={error ? 'login-error' : undefined}
-                        className="w-full h-12 rounded-xl border border-[var(--eco-line)] bg-white/90 px-4 pr-12 text-[15px] text-[var(--eco-text)] placeholder:text-[var(--eco-muted)]/50 transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-eco-baby/40"
+                        className="w-full h-12 rounded-xl px-4 pr-12 text-[15px] transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                        style={{ border: '1.5px solid var(--neutral-border)', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
                       />
                       <button
                         type="button"
@@ -356,19 +360,14 @@ const LoginPage: React.FC = () => {
                   </div>
 
                   {/* CTA principal */}
-                  <button
+                  <ButtonEco
                     type="submit"
+                    variant="primary"
+                    fullWidth
                     disabled={!canSubmit}
-                    className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-eco-text/30 focus:ring-offset-2"
-                    style={{
-                      background: 'linear-gradient(135deg, #4A3F35 0%, #38322A 100%)',
-                      boxShadow: canSubmit ? '0 4px 20px rgba(56,50,42,0.30)' : 'none',
-                      opacity: canSubmit ? 1 : 0.45,
-                      cursor: canSubmit ? 'pointer' : 'not-allowed',
-                    }}
                   >
                     {loading ? 'Entrando…' : 'Entrar'}
-                  </button>
+                  </ButtonEco>
                 </form>
               </div>
             </div>
@@ -379,11 +378,11 @@ const LoginPage: React.FC = () => {
                 type="button"
                 onClick={() => navigate(`/register?returnTo=${encodeURIComponent(returnTo)}`)}
                 disabled={loading}
-                className="text-[13px] font-medium text-eco-text/70 hover:text-eco-text transition-colors duration-200 disabled:opacity-60 drop-shadow-sm"
-                style={{ textShadow: '0 1px 4px rgba(255,255,255,0.8)' }}
+                className="text-[13px] font-medium transition-colors duration-200 disabled:opacity-60 drop-shadow-sm"
+                style={{ color: 'var(--text-primary)' }}
               >
                 Não tem conta?{' '}
-                <span className="font-semibold text-eco-text" style={{ textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
                   Criar conta grátis
                 </span>
               </button>
@@ -392,8 +391,8 @@ const LoginPage: React.FC = () => {
                 type="button"
                 onClick={() => setIsTourActive(true)}
                 disabled={loading}
-                className="text-[12px] text-eco-muted hover:text-eco-text transition-colors duration-200 disabled:opacity-60"
-                style={{ textShadow: '0 1px 4px rgba(255,255,255,0.7)' }}
+                className="text-[12px] transition-colors duration-200 disabled:opacity-60"
+                style={{ color: 'var(--text-muted)' }}
               >
                 Explorar sem conta →
               </button>
