@@ -676,7 +676,7 @@ body {
   backdrop-filter: blur(var(--blur-glass));
   -webkit-backdrop-filter: blur(var(--blur-glass));
   border: var(--stroke-glass);
-  box-shadow: none;
+  box-shadow: var(--shadow-glass);
 }
 
 .glass::before,
@@ -689,8 +689,8 @@ body {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
-  opacity: 0.75;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
+  opacity: 0.8;
   pointer-events: none;
 }
 
@@ -713,11 +713,11 @@ body {
 }
 
 .glass-strong {
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(var(--blur-glass-strong));
   -webkit-backdrop-filter: blur(var(--blur-glass-strong));
-  border: var(--stroke-glass);
-  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 24px rgba(30, 42, 68, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .skeleton-glass {
@@ -747,23 +747,23 @@ body {
   height: 48px;
   padding: 0 1.5rem;
   border-radius: 10px;
-  font-weight: 400;
+  font-weight: 500;
   background: var(--eco-user);
-  color: #ffffff;
+  color: #1E2A44;
   border: none;
-  box-shadow: var(--shadow-glass);
+  box-shadow: 0 2px 12px rgba(110, 200, 255, 0.35);
   transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(90deg, #A7846C, #C6A995);
+  background: #52B8F0;
   transform: translateY(-2px);
-  box-shadow: var(--shadow-floating);
+  box-shadow: 0 6px 20px rgba(110, 200, 255, 0.45);
 }
 
 .btn-primary:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(198, 169, 149, 0.3);
+  box-shadow: 0 0 0 3px rgba(110, 200, 255, 0.4);
 }
 
 .btn-secondary {
@@ -774,33 +774,36 @@ body {
   padding: 0 1.5rem;
   border-radius: 10px;
   font-weight: 400;
-  background: transparent;
-  color: var(--eco-user);
-  border: 1px solid var(--eco-line);
-  box-shadow: none;
-  backdrop-filter: blur(calc(var(--blur-glass) - 4px));
-  -webkit-backdrop-filter: blur(calc(var(--blur-glass) - 4px));
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--accent-dark, #1E2A44);
+  border: 1px solid rgba(110, 200, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(30, 42, 68, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transition: all 0.3s ease;
 }
 
 .btn-secondary:hover {
-  background: rgba(167, 132, 108, 0.08);
-  border-color: var(--eco-accent);
+  background: rgba(110, 200, 255, 0.1);
+  border-color: rgba(110, 200, 255, 0.5);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(110, 200, 255, 0.15);
 }
 
 .btn-secondary:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(198, 169, 149, 0.2);
+  box-shadow: 0 0 0 3px rgba(110, 200, 255, 0.25);
 }
 
 .glass-input,
 .glass-textarea,
 .glass-select {
-  background: rgba(255, 255, 255, 0.6);
-  border: var(--stroke-glass);
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(110, 200, 255, 0.25);
   border-radius: 12px;
-  box-shadow: var(--shadow-floating);
+  box-shadow: 0 2px 12px rgba(30, 42, 68, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   color: var(--color-text-primary);
   padding: 0.85rem 1rem;
   font-weight: 300;
@@ -811,8 +814,8 @@ body {
 .glass-textarea:focus,
 .glass-select:focus {
   outline: none;
-  border-color: var(--eco-accent);
-  box-shadow: 0 0 0 3px rgba(198, 169, 149, 0.15);
+  border-color: rgba(110, 200, 255, 0.6);
+  box-shadow: 0 0 0 3px rgba(110, 200, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .glass-input::placeholder,
@@ -1108,10 +1111,12 @@ body.diario-estoico-page html {
 }
 
 .input-glass {
-  background: rgba(255, 255, 255, 0.6);
-  border: var(--stroke-glass);
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(110, 200, 255, 0.25);
   border-radius: 12px;
-  box-shadow: var(--shadow-floating);
+  box-shadow: 0 2px 12px rgba(30, 42, 68, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   color: var(--color-text-primary);
   height: 48px;
   padding: 0 1rem;
@@ -1121,8 +1126,8 @@ body.diario-estoico-page html {
 
 .input-glass:focus {
   outline: none;
-  border-color: var(--eco-accent);
-  box-shadow: 0 0 0 3px rgba(198, 169, 149, 0.15);
+  border-color: rgba(110, 200, 255, 0.6);
+  box-shadow: 0 0 0 3px rgba(110, 200, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .btn-apple {
@@ -1133,22 +1138,24 @@ body.diario-estoico-page html {
   border-radius: 10px;
   padding: 0 1.5rem;
   font-weight: 400;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.72);
   color: var(--color-text-primary);
-  border: 1px solid var(--eco-line);
-  box-shadow: var(--shadow-floating);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 2px 12px rgba(30, 42, 68, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   transition: all 0.3s ease;
 }
 
 .btn-apple:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: var(--shadow-glass);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 6px 20px rgba(30, 42, 68, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .btn-apple:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(198, 169, 149, 0.2);
+  box-shadow: 0 0 0 3px rgba(110, 200, 255, 0.3);
 }
 
 .btn-apple[disabled] {
@@ -1158,20 +1165,21 @@ body.diario-estoico-page html {
 }
 
 .btn-apple-primary {
-  background: var(--eco-user);
-  color: #ffffff;
+  background: #6EC8FF;
+  color: #1E2A44;
   border: none;
-  box-shadow: var(--shadow-glass);
+  box-shadow: 0 2px 12px rgba(110, 200, 255, 0.35);
 }
 
 .btn-apple-primary:hover {
-  background: linear-gradient(90deg, #A7846C, #C6A995);
+  background: #52B8F0;
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(110, 200, 255, 0.45);
 }
 
 .btn-apple-primary:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(198, 169, 149, 0.3);
+  box-shadow: 0 0 0 3px rgba(110, 200, 255, 0.4);
 }
 
 .divider-soft { display:flex; align-items:center; gap:12px; padding-top:2px; }
