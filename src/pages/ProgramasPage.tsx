@@ -289,8 +289,8 @@ export default function ProgramasPage() {
 
   return (
     <div
-      className="min-h-screen pb-20 md:pb-0"
-      style={{ background: '#FFFFFF' }}
+      className="page-with-nav"
+      style={{ backgroundColor: 'var(--bg-primary)', minHeight: '100dvh' }}
     >
       <HomeHeader />
 
@@ -309,7 +309,7 @@ export default function ProgramasPage() {
           <h1 className="font-display text-[38px] sm:text-[48px] font-bold leading-tight" style={{ color: '#0D3461' }}>
             Explorar
           </h1>
-          <p className="mt-2 text-[16px]" style={{ color: '#5A8AAD' }}>
+          <p className="mt-2 text-[16px]" style={{ color: 'var(--text-muted)' }}>
             Escolha sua jornada de hoje.
           </p>
         </motion.div>
@@ -375,7 +375,7 @@ export default function ProgramasPage() {
                   <h2 className="font-display text-[22px] font-bold leading-tight" style={{ color: '#0D3461' }}>
                     {section.title}
                   </h2>
-                  <p className="mt-0.5 text-[13px]" style={{ color: '#5A8AAD' }}>
+                  <p className="mt-0.5 text-[13px]" style={{ color: 'var(--text-muted)' }}>
                     {section.subtitle}
                   </p>
                 </div>

@@ -101,14 +101,15 @@ export default function SonsPage() {
 
   return (
     <div
-      className="min-h-screen"
+      className="min-h-[100dvh]"
       style={{
-        background: '#FFFFFF',
+        backgroundColor: 'var(--bg-primary)',
+        minHeight: '100dvh',
       }}
     >
       <HomeHeader />
 
-      <div className="max-w-7xl mx-auto px-4 pt-8 pb-28 sm:px-6 lg:px-8">
+      <div className="page-with-nav max-w-7xl mx-auto px-4 pt-8 pb-28 sm:px-6 lg:px-8">
 
         {/* Page Header */}
         <motion.div
@@ -156,9 +157,9 @@ export default function SonsPage() {
                   boxShadow: '0 4px 16px rgba(13,52,97,0.28)',
                   border: '1px solid transparent',
                 } : {
-                  background: 'rgba(255,255,255,0.78)',
-                  color: '#38322A',
-                  border: '1px solid rgba(0,0,0,0.09)',
+                  backgroundColor: 'var(--surface-card)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--neutral-border)',
                   backdropFilter: 'blur(8px)',
                 }}
               >
@@ -318,11 +319,11 @@ function SoundCard({ sound, onClick }: { sound: Sound; onClick: () => void }) {
       <div className="mt-2.5 px-0.5">
         <p
           className="text-[14px] font-semibold leading-snug truncate"
-          style={{ color: '#1A3A5C' }}
+          style={{ color: 'var(--text-primary)' }}
         >
           {sound.title}
         </p>
-        <p className="text-[12px] mt-0.5" style={{ color: 'rgba(56,50,42,0.45)' }}>
+        <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
           {sound.duration}
         </p>
       </div>
@@ -357,7 +358,7 @@ function DurationModal({ sound, duration, onDurationChange, onClose, onStart }: 
         exit={{ opacity: 0, y: 30, scale: 0.96 }}
         transition={{ type: 'spring', stiffness: 320, damping: 32 }}
         className="w-full max-w-md overflow-hidden rounded-3xl"
-        style={{ background: '#FFFFFF', boxShadow: '0 32px 80px rgba(0,0,0,0.30)' }}
+        style={{ backgroundColor: 'var(--surface-card)', boxShadow: '0 32px 80px rgba(0,0,0,0.30)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Hero header */}
@@ -397,19 +398,19 @@ function DurationModal({ sound, duration, onDurationChange, onClose, onStart }: 
                   boxShadow: '0 6px 20px rgba(13,52,97,0.30)',
                   transform: 'scale(1.06)',
                 } : {
-                  background: 'rgba(13,52,97,0.05)',
-                  border: '1.5px solid rgba(13,52,97,0.14)',
+                  backgroundColor: 'var(--bg-primary)',
+                  border: '1.5px solid var(--neutral-border)',
                 }}
               >
                 <span
                   className="text-[22px] font-bold leading-none"
-                  style={{ color: duration === mins ? 'white' : '#1A3A5C' }}
+                  style={{ color: duration === mins ? 'white' : 'var(--text-primary)' }}
                 >
                   {mins}
                 </span>
                 <span
                   className="text-[11px] font-medium mt-1"
-                  style={{ color: duration === mins ? 'rgba(255,255,255,0.80)' : 'rgba(56,50,42,0.50)' }}
+                  style={{ color: duration === mins ? 'rgba(255,255,255,0.80)' : 'var(--text-muted)' }}
                 >
                   min
                 </span>
@@ -418,8 +419,8 @@ function DurationModal({ sound, duration, onDurationChange, onClose, onStart }: 
           </div>
 
           <div className="flex items-center gap-1.5 mb-7 justify-center">
-            <Clock size={13} style={{ color: 'rgba(56,50,42,0.40)' }} />
-            <span className="text-[13px]" style={{ color: 'rgba(56,50,42,0.45)' }}>
+            <Clock size={13} style={{ color: 'var(--text-muted)' }} />
+            <span className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
               Sessão de {duration} minutos selecionada
             </span>
           </div>
@@ -439,8 +440,8 @@ function DurationModal({ sound, duration, onDurationChange, onClose, onStart }: 
             onClick={onClose}
             className="w-full py-3.5 rounded-2xl font-medium text-[14px] transition-all duration-200 active:scale-[0.98]"
             style={{
-              color: 'rgba(56,50,42,0.55)',
-              background: 'rgba(0,0,0,0.04)',
+              color: 'var(--text-muted)',
+              backgroundColor: 'var(--bg-primary)',
             }}
           >
             Cancelar
