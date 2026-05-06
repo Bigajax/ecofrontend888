@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Play, Check, Lock, ArrowLeft,
@@ -222,7 +222,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     });
   };
 
-  const handleGuestNight1Complete = () => {
+  const handleGuestNight1Complete = useCallback(() => {
     markGuestNight1Completed();
     setCompletedNights(prev => new Set([...prev, 1]));
     setGuestPlayback(null);
@@ -236,7 +236,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
       guest_id: guestId,
       product_key: 'protocolo_sono_7_noites',
     });
-  };
+  }, [guestId, source]);
 
   const handleNightClick = (night: ProtocolNight) => {
     const accessible = isNightAccessible(night, isPaid, isVipUser);
@@ -266,7 +266,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
 
     sessionStorage.setItem('eco.sono.lastPlayedNight', String(night.night));
 
-    const returnTo = '/app/meditacoes-sono';
+    const returnTo = isGuestSono ? '/sono/experiencia' : '/app/meditacoes-sono';
 
     navigate('/app/meditation-player', {
       state: {
@@ -922,19 +922,18 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
         )}
 
         {/* ── Offer modal ───────────────────────────────────────────── */}
-        {showOfferModal && (
-          <Suspense fallback={null}>
-            <SonoPostExperienceModal
-              open={showOfferModal}
-              variant={offerVariant}
-              guestId={guestId}
-              source={source || 'sono_paid_traffic'}
-              onClose={() => setShowOfferModal(false)}
-              onCheckout={() => openCheckout({ origin: 'sono_guest_final_offer' })}
-              checkoutLoading={checkoutLoading}
-            />
-          </Suspense>
-        )}
+        <Suspense fallback={null}>
+          <SonoPostExperienceModal
+            open={showOfferModal}
+            variant={offerVariant}
+            guestId={guestId}
+            source={source || 'sono_paid_traffic'}
+            onClose={() => setShowOfferModal(false)}
+            onCheckout={() => openCheckout({ origin: 'sono_guest_final_offer' })}
+            checkoutLoading={checkoutLoading}
+            startWithQuiz={isGuestSono && offerVariant === 'final'}
+          />
+        </Suspense>
 
       </main>
 
