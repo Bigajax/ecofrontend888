@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Loader2, Lock } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import mixpanel from '@/lib/mixpanel';
 import {
   trackSonoGuestCheckoutClicked,
@@ -37,17 +37,26 @@ const BENEFITS = [
 
 const MAIN_OFFER_COPY = {
   eyebrow: 'Noite 1 concluída',
-  title: 'Seu corpo respondeu.\nAgora ele precisa repetir.',
+  title: 'Seu corpo acabou de dar o primeiro passo.',
   subtitle:
-    'A primeira noite foi o primeiro sinal de segurança para o seu sistema nervoso.',
-  body:
-    'Quando o corpo sente segurança uma vez, ele relaxa por alguns minutos. Quando recebe esse sinal por várias noites, começa a reconhecer o caminho de volta.\n\nAs próximas noites aprofundam esse processo: menos controle, menos tensão, menos luta para dormir.',
+    'Esta primeira noite foi criada para tirar seu sistema nervoso do modo alerta. Mas o sono profundo raramente muda em uma única tentativa. Ele é treinado por repetição, segurança e continuidade.',
+  body: '',
   offerTitle: 'Protocolo Sono Profundo — 7 noites',
   price: 'R$97',
   supportingText: 'Pagamento único • Sem mensalidade',
-  cta: 'Continuar o processo completo',
-  microcopy: 'Acesso imediato • 7 noites completas • Garantia de 7 dias',
+  cta: 'Liberar protocolo completo por R$97',
+  microcopy: 'Acesso imediato após o pagamento. Você continua exatamente de onde parou.',
 };
+
+const NIGHT_BREAKDOWN = [
+  { night: 1, title: 'Desligando o estado de alerta', completed: true },
+  { night: 2, title: 'Soltando o controle da mente', completed: false },
+  { night: 3, title: 'Desligamento profundo do corpo', completed: false },
+  { night: 4, title: 'Quebrando o ciclo de pensamentos', completed: false },
+  { night: 5, title: 'Entrando em segurança profunda', completed: false },
+  { night: 6, title: 'Quando o sono começa sozinho', completed: false },
+  { night: 7, title: 'Seu corpo já sabe dormir', completed: false },
+];
 
 // Opções preparadas para futuro teste A/B. A versão ativa é MAIN_OFFER_COPY.
 const OFFER_COPY_VARIANTS = {
@@ -276,20 +285,25 @@ export function SonoPostExperienceModal({
                         </p>
                       )}
 
-                      <div className="mb-5 flex justify-center gap-1.5">
-                        <div
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-bold text-white"
-                          style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #7C3AED 100%)' }}
-                        >
-                          <Check className="h-4 w-4" />
-                        </div>
-                        {[2, 3, 4, 5, 6, 7].map(n => (
+                      <div className="mb-5 space-y-1.5">
+                        {NIGHT_BREAKDOWN.map(({ night, title, completed }) => (
                           <div
-                            key={n}
-                            className="flex h-8 w-8 items-center justify-center rounded-full"
-                            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}
+                            key={night}
+                            className="flex items-center gap-3 px-3 py-2 rounded-xl"
+                            style={{
+                              background: completed ? 'rgba(52,211,153,0.07)' : 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${completed ? 'rgba(52,211,153,0.18)' : 'rgba(255,255,255,0.07)'}`,
+                            }}
                           >
-                            <Lock className="h-3 w-3 text-white/32" />
+                            <span className="text-[13px] select-none flex-shrink-0">
+                              {completed ? '✅' : '🔒'}
+                            </span>
+                            <span
+                              className="text-[12px] font-medium"
+                              style={{ color: completed ? 'rgba(52,211,153,0.85)' : 'rgba(255,255,255,0.45)' }}
+                            >
+                              Noite {night} — {title}
+                            </span>
                           </div>
                         ))}
                       </div>
