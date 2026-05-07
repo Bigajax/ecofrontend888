@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Play, Check, Lock, ArrowLeft,
@@ -20,10 +20,8 @@ import {
 import { GuestSonoPlayer } from '@/components/sono-guest/GuestSonoPlayer';
 import { LS_KEYS } from '@/components/sono-guest/types';
 import type { SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal';
-
-const SonoPostExperienceModal = lazy(() =>
-  import('@/components/sono/SonoPostExperienceModal').then(m => ({ default: m.SonoPostExperienceModal }))
-);
+import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
+import { SleepProtocolOfferCard } from '@/components/sono/SleepProtocolOfferCard';
 
 // ── Design tokens — sleep palette ─────────────────────────────────────────────
 // Warm amber (candlelight) → primary CTA
@@ -307,16 +305,6 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
         ? completedCount === 0 ? 'Iniciar Noite 1' : `Continuar — Noite ${nextNight}`
         : 'Iniciar Noite 1 gratuita';
 
-  if (guestPlayback) {
-    return (
-      <GuestSonoPlayer
-        startTime={guestPlayback.startTime}
-        onComplete={handleGuestNight1Complete}
-        onBack={() => setGuestPlayback(null)}
-      />
-    );
-  }
-
   // ── Completion Screen ──────────────────────────────────────────
   if (showCompletion) {
     return (
@@ -375,17 +363,25 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
 
   // ── Main Page ──────────────────────────────────────────────────
   return (
-    <div
-      className="font-primary"
-      style={{
-        minHeight: '100dvh',
-        background: `linear-gradient(180deg, ${T.bg0} 0%, ${T.bg0} 38%, ${T.bg1} 55%, #09090E 75%, ${T.bg2} 100%)`,
-        backgroundColor: 'var(--bg-primary)',
-      }}
-    >
-      {user && !isGuestSono && <HomeHeader />}
+    <>
+      {guestPlayback ? (
+        <GuestSonoPlayer
+          startTime={guestPlayback.startTime}
+          onComplete={handleGuestNight1Complete}
+          onBack={() => setGuestPlayback(null)}
+        />
+      ) : (
+      <div
+        className="font-primary"
+        style={{
+          minHeight: '100dvh',
+          background: `linear-gradient(180deg, ${T.bg0} 0%, ${T.bg0} 38%, ${T.bg1} 55%, #09090E 75%, ${T.bg2} 100%)`,
+          backgroundColor: 'var(--bg-primary)',
+        }}
+      >
+        {user && !isGuestSono && <HomeHeader />}
 
-      <main className="page-with-nav">
+        <main className="page-with-nav pb-24">
 
         {/* ══════════════════════════════════════════════════════════
             HERO
@@ -823,6 +819,19 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
         </section>
 
         {/* ══════════════════════════════════════════════════════════
+            OFFER CARD — guest funnel
+            ══════════════════════════════════════════════════════════ */}
+        {isGuestSono && !isPaid && (
+          <section className="mx-auto max-w-lg px-4 pt-6 sm:px-6">
+            <SleepProtocolOfferCard
+              onStart={handleHeroButtonClick}
+              onCheckout={() => openCheckout({ origin: 'sono_guest_landing_card' })}
+              checkoutLoading={checkoutLoading}
+            />
+          </section>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════
             CONVERSION BLOCK — non-paid users
             ══════════════════════════════════════════════════════════ */}
         {!isGuestSono && !isPaid && night1IsCompleted && (
@@ -921,20 +930,6 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
           </section>
         )}
 
-        {/* ── Offer modal ───────────────────────────────────────────── */}
-        <Suspense fallback={null}>
-          <SonoPostExperienceModal
-            open={showOfferModal}
-            variant={offerVariant}
-            guestId={guestId}
-            source={source || 'sono_paid_traffic'}
-            onClose={() => setShowOfferModal(false)}
-            onCheckout={() => openCheckout({ origin: 'sono_guest_final_offer' })}
-            checkoutLoading={checkoutLoading}
-            startWithQuiz={isGuestSono && offerVariant === 'final'}
-          />
-        </Suspense>
-
       </main>
 
       <AnimatePresence>
@@ -993,5 +988,19 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
       </AnimatePresence>
 
     </div>
+      )}
+
+      {/* Modal — always in tree regardless of player state */}
+      <SonoPostExperienceModal
+        open={showOfferModal}
+        variant={offerVariant}
+        guestId={guestId}
+        source={source || 'sono_paid_traffic'}
+        onClose={() => setShowOfferModal(false)}
+        onCheckout={() => openCheckout({ origin: 'sono_guest_final_offer' })}
+        checkoutLoading={checkoutLoading}
+        startWithQuiz={isGuestSono && offerVariant === 'final'}
+      />
+    </>
   );
 }
