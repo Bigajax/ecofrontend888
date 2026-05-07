@@ -14,6 +14,23 @@ if (!('ResizeObserver' in globalThis)) {
   vi.stubGlobal('ResizeObserver', ResizeObserverMock);
 }
 
+if (!('IntersectionObserver' in globalThis)) {
+  class IntersectionObserverMock {
+    constructor(public callback: IntersectionObserverCallback) {}
+    observe() {
+      // Call callback with all elements in view for tests
+      this.callback([] as any, this as any);
+    }
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  }
+
+  vi.stubGlobal('IntersectionObserver', IntersectionObserverMock);
+}
+
 if (!window.matchMedia) {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
