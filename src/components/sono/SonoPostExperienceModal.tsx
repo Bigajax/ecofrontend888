@@ -93,7 +93,7 @@ export function SonoPostExperienceModal({
   startWithQuiz = false,
 }: SonoPostExperienceModalProps) {
   const [step, setStep] = useState<'quiz' | 'offer'>(startWithQuiz ? 'quiz' : 'offer');
-  const [answer, setAnswer] = useState<SonoMicroAnswer | null>(() => {
+  const [, setAnswer] = useState<SonoMicroAnswer | null>(() => {
     const stored = localStorage.getItem(`eco.sono.guest.micro_answer.${guestId}`);
     return ANSWERS.includes(stored as SonoMicroAnswer) ? (stored as SonoMicroAnswer) : null;
   });
