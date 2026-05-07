@@ -21,6 +21,7 @@ import { GuestSonoPlayer } from '@/components/sono-guest/GuestSonoPlayer';
 import { LS_KEYS } from '@/components/sono-guest/types';
 import type { SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal';
 import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
+import { SonoGuestPostFlow } from '@/components/sono/SonoGuestPostFlow';
 import { SleepProtocolOfferCard } from '@/components/sono/SleepProtocolOfferCard';
 
 // ── Design tokens — sleep palette ─────────────────────────────────────────────
@@ -97,7 +98,14 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     const fromStorage = localStorage.getItem('eco_guest_id');
     if (fromUrl) { localStorage.setItem('eco_guest_id', fromUrl); return fromUrl; }
     if (fromStorage) return fromStorage;
-    const newId = `guest_${crypto.randomUUID()}`;
+    const uuid =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = (Math.random() * 16) | 0;
+            return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+          });
+    const newId = `guest_${uuid}`;
     localStorage.setItem('eco_guest_id', newId);
     return newId;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -136,6 +144,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
 
   const [showCompletion, setShowCompletion] = useState(false);
   const [showOfferModal, setShowOfferModal] = useState(false);
+  const [showPostFlow, setShowPostFlow] = useState(false);
   const [showStartNightPrompt, setShowStartNightPrompt] = useState(false);
   const [offerVariant, setOfferVariant] = useState<SonoOfferVariant>('locked_night');
   const [guestPlayback, setGuestPlayback] = useState<{ startTime: number } | null>(null);
@@ -161,8 +170,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
         if (isGuestSono && nightNum === 1) {
           const offerKey = `eco.sono.offer_modal_shown.${guestId}`;
           if (!localStorage.getItem(offerKey)) {
-            setOfferVariant('final');
-            setShowOfferModal(true);
+            setShowPostFlow(true);
             localStorage.setItem(offerKey, 'true');
             mixpanel.track('Sleep Free Experience Completed', { night_id: 'night_1', source, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
             trackSonoGuestNight1Completed({ source: source || 'sono_paid_traffic', guestId });
@@ -224,8 +232,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     markGuestNight1Completed();
     setCompletedNights(prev => new Set([...prev, 1]));
     setGuestPlayback(null);
-    setOfferVariant('final');
-    setShowOfferModal(true);
+    setShowPostFlow(true);
     localStorage.setItem(`eco.sono.offer_modal_shown.${guestId}`, 'true');
     trackSonoGuestNight1Completed({ source: source || 'sono_paid_traffic', guestId });
     mixpanel.track('Sleep Free Experience Completed', {
@@ -381,7 +388,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
       >
         {user && !isGuestSono && <HomeHeader />}
 
-        <main className="page-with-nav pb-24">
+        <main className={isGuestSono ? 'pb-24' : 'page-with-nav pb-24'}>
 
         {/* ══════════════════════════════════════════════════════════
             HERO
@@ -990,17 +997,28 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     </div>
       )}
 
-      {/* Modal — always in tree regardless of player state */}
+      {/* Locked-night offer modal (shows when guest taps a non-free night) */}
       <SonoPostExperienceModal
         open={showOfferModal}
         variant={offerVariant}
         guestId={guestId}
         source={source || 'sono_paid_traffic'}
         onClose={() => setShowOfferModal(false)}
-        onCheckout={() => openCheckout({ origin: 'sono_guest_final_offer' })}
+        onCheckout={() => openCheckout({ origin: 'sono_guest_locked_night' })}
         checkoutLoading={checkoutLoading}
-        startWithQuiz={isGuestSono && offerVariant === 'final'}
+        startWithQuiz={false}
       />
+
+      {/* Full-screen post-experience flow after completing Night 1 */}
+      <AnimatePresence>
+        {showPostFlow && (
+          <SonoGuestPostFlow
+            onCheckout={() => openCheckout({ origin: 'sono_guest_final_offer' })}
+            checkoutLoading={checkoutLoading}
+            onDismiss={() => setShowPostFlow(false)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }
