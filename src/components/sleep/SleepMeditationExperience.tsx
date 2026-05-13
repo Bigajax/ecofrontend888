@@ -113,9 +113,9 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   const heroSubtitle: string | null = (() => {
     if (!isGuestSono) return null;
     const q5 = sessionStorage.getItem('eco.sono.q5_answer') || '';
-    if (q5.includes('desligar minha mente')) return '7 minutos que ensinam sua mente a silenciar.';
-    if (q5.includes('energia real')) return '7 minutos. Sono profundo. Energia real amanhã.';
-    if (q5.includes('ansiedade')) return '7 minutos para dissolver a ansiedade noturna.';
+    if (q5.includes('desligar minha mente')) return '8 minutos que ensinam sua mente a soltar.';
+    if (q5.includes('energia real')) return '8 minutos. Sono profundo. Energia real amanhã.';
+    if (q5.includes('ansiedade')) return '8 minutos para dissolver a ansiedade noturna.';
     return null;
   })();
 
@@ -310,7 +310,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
       ? 'Protocolo Concluído'
       : isPaid
         ? completedCount === 0 ? 'Iniciar Noite 1' : `Continuar — Noite ${nextNight}`
-        : 'Iniciar Noite 1 gratuita';
+        : 'Ouvir a Noite 1';
 
   // ── Completion Screen ──────────────────────────────────────────
   if (showCompletion) {
@@ -462,9 +462,8 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               className="mt-5 font-display font-bold text-white leading-[1.06]"
               style={{ fontSize: 'clamp(2.1rem, 7vw, 3.1rem)', textShadow: '0 4px 40px rgba(0,0,0,0.70), 0 1px 6px rgba(0,0,0,0.50)' }}
             >
-              Esta noite,<br />
-              {/* Ivory/warm white instead of lavender */}
-              <em style={{ color: T.ivory, fontStyle: 'italic' }}>sua mente descansa.</em>
+              Você está cansado.<br />
+              <em style={{ color: T.ivory, fontStyle: 'italic' }}>Sua mente não.</em>
             </motion.h1>
 
             {/* Subtitle */}
@@ -475,7 +474,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               className="mt-4 text-[15px] leading-relaxed font-light"
               style={{ color: 'rgba(255,255,255,0.46)' }}
             >
-              {heroSubtitle ?? <>7 minutos. Sem remédio.<br />Sem contar ovelhas.</>}
+              {heroSubtitle ?? <>Em sete noites,<br />a mente aprende a soltar.</>}
             </motion.p>
 
             {/* Stars */}
@@ -866,12 +865,13 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               />
 
               <p className="text-[11px] uppercase tracking-[0.2em] font-bold mb-4" style={{ color: 'rgba(251,191,36,0.75)' }}>
-                Protocolo Sono Profundo
+                Protocolo Completo — 7 Noites
               </p>
-              <div className="flex items-baseline justify-center gap-3 mb-1">
-                <span className="font-display text-[40px] font-bold text-white leading-none">R$97</span>
+              <div className="flex items-baseline justify-center gap-2.5 mb-1">
+                <span className="text-[14px] font-medium line-through" style={{ color: 'rgba(255,255,255,0.30)' }}>R$ 400</span>
+                <span className="font-display text-[44px] font-bold text-white leading-none tracking-tight">R$ 147</span>
               </div>
-              <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.28)' }}>7 noites completas · Pagamento único · Sem mensalidade</p>
+              <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.32)' }}>Hoje · Pagamento único · 7 noites completas</p>
 
               {isGuestSono ? (
                 <div className="flex items-center justify-center gap-1.5 mb-6">
@@ -882,7 +882,12 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                   </span>
                 </div>
               ) : (
-                <div className="mb-6" />
+                <p
+                  className="text-[12px] italic mb-6"
+                  style={{ color: 'rgba(251,191,36,0.65)' }}
+                >
+                  Preço de lançamento. Depois passa para R$ 247.
+                </p>
               )}
 
               <button
@@ -902,7 +907,10 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                   ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Abrindo...</span>
                   : 'Continuar o processo completo'}
               </button>
-              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.24)' }}>Acesso imediato · 7 noites completas · Garantia de 7 dias</p>
+              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.32)' }}>
+                <span style={{ color: 'rgba(212,168,71,0.85)' }}>Garantia de 7 dias.</span>{' '}
+                Não funcionou? Devolvemos. Email basta.
+              </p>
             </motion.div>
           </section>
         )}

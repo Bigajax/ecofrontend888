@@ -1,4 +1,4 @@
-import { Play, Loader2 } from 'lucide-react';
+import { Play, Loader2, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const T = {
@@ -45,25 +45,41 @@ export function SleepProtocolOfferCard({
           className="text-[11px] uppercase tracking-[0.2em] font-bold mb-3"
           style={{ color: 'rgba(251,191,36,0.75)' }}
         >
-          Protocolo Sono Profundo — 7 noites guiadas
+          Protocolo Completo — 7 Noites
         </p>
 
-        <h3 className="font-display text-[20px] font-bold text-white mb-3 leading-tight">
-          Experimente a primeira noite gratuitamente.
+        <h3 className="font-display text-[22px] font-bold text-white mb-3 leading-[1.15]">
+          A Noite 1 abre a porta.<br />
+          <span style={{ color: 'rgba(255,255,255,0.55)' }}>As próximas seis fixam o caminho.</span>
         </h3>
 
         <p
-          className="text-[13px] leading-relaxed mb-5"
-          style={{ color: 'rgba(255,255,255,0.46)' }}
+          className="text-[13.5px] leading-relaxed mb-6"
+          style={{ color: 'rgba(255,255,255,0.50)' }}
         >
-          Em 8 minutos, você vai conduzir seu corpo para fora do estado de alerta e iniciar um ritual de desaceleração profunda. Ao final da experiência, você poderá liberar o protocolo completo de 7 noites.
+          Em sete noites, seu corpo aprende a encontrar o sono sem ajuda.<br />
+          O protocolo sai. A capacidade fica.
         </p>
 
-        <div className="flex items-baseline justify-center gap-3 mb-1">
-          <span className="font-display text-[38px] font-bold text-white leading-none">R$97</span>
+        {/* Price block */}
+        <div className="flex items-center justify-center gap-2.5 mb-1">
+          <span className="text-[14px] font-medium line-through" style={{ color: 'rgba(255,255,255,0.30)' }}>
+            R$ 400
+          </span>
+          <span className="font-display text-[44px] font-bold text-white leading-none tracking-tight">
+            R$ 147
+          </span>
         </div>
-        <p className="text-[12px] mb-5" style={{ color: 'rgba(255,255,255,0.28)' }}>
-          7 noites completas · Pagamento único
+        <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.32)' }}>
+          Hoje · Pagamento único · 7 noites completas
+        </p>
+
+        {/* Urgency line — matches landing */}
+        <p
+          className="text-[12px] italic mb-6"
+          style={{ color: 'rgba(251,191,36,0.65)' }}
+        >
+          Preço de lançamento. Depois passa para R$ 247.
         </p>
 
         <button
@@ -76,17 +92,17 @@ export function SleepProtocolOfferCard({
           }}
         >
           <Play className="h-4 w-4" fill="currentColor" />
-          Começar experiência gratuita →
+          Ouvir a Noite 1
         </button>
 
         <button
           onClick={onCheckout}
           disabled={checkoutLoading}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 mb-3"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 mb-4"
           style={{
             background: 'rgba(255,255,255,0.06)',
             border: '1px solid rgba(255,255,255,0.13)',
-            color: 'rgba(255,255,255,0.70)',
+            color: 'rgba(255,255,255,0.78)',
           }}
         >
           {checkoutLoading ? (
@@ -95,13 +111,18 @@ export function SleepProtocolOfferCard({
               Abrindo...
             </>
           ) : (
-            'Liberar protocolo completo'
+            'Liberar protocolo completo · R$ 147'
           )}
         </button>
 
-        <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.24)' }}>
-          Pagamento seguro via Pix/cartão.
-        </p>
+        {/* Guarantee badge — matches landing tone */}
+        <div className="flex items-start justify-center gap-2 text-left">
+          <ShieldCheck className="mt-[2px] h-3.5 w-3.5 shrink-0" style={{ color: T.amberLight }} strokeWidth={2} />
+          <p className="text-[11.5px] leading-[1.5]" style={{ color: 'rgba(255,255,255,0.42)' }}>
+            <span className="font-semibold text-white/70">Garantia de 7 dias.</span>{' '}
+            Não funcionou? Devolvemos. Email basta.
+          </p>
+        </div>
       </div>
     </motion.div>
   );

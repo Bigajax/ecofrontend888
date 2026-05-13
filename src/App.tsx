@@ -167,6 +167,13 @@ function MinigameGuestShell() {
   return <Outlet />;
 }
 
+// Legacy /app/meditacoes/sono — preserva query params no redirect pra
+// rota canônica /sono/experiencia (caso contrário source/utm_* somem).
+function LegacySonoRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/sono/experiencia${search}`} replace />;
+}
+
 function GuestFunnelShell() {
   const { initGuestSession } = useAuth();
   useEffect(() => {
@@ -218,8 +225,8 @@ function AppRoutes() {
         <Route index element={renderWithSuspense(<SleepGuestExperiencePage />)} />
       </Route>
 
-      {/* ── /app/meditacoes/sono — legacy redirect ── */}
-      <Route path="/app/meditacoes/sono" element={<Navigate to="/sono/experiencia" replace />} />
+      {/* ── /app/meditacoes/sono — legacy redirect (preserva ?source=&utm_*) ── */}
+      <Route path="/app/meditacoes/sono" element={<LegacySonoRedirect />} />
       <Route path="/app/minigame-potencial" element={<MinigameGuestShell />}>
         <Route index element={renderWithSuspense(<MinigamePotencialPage />)} />
       </Route>
