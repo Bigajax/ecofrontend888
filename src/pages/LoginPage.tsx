@@ -223,166 +223,241 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <PhoneFrame backgroundImage="/images/login-background.webp">
-      <div className="relative min-h-[100dvh] w-full overflow-hidden" style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-primary)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 pt-[env(safe-area-inset-top)] pb-[calc(16px+env(safe-area-inset-bottom))]">
-          {isTourActive && (
-            <HomePageTour onClose={closeTour} reason="login" nextPath="/" forceStart={true} />
-          )}
+    <PhoneFrame>
+      {isTourActive && (
+        <HomePageTour onClose={closeTour} reason="login" nextPath="/" forceStart={true} />
+      )}
 
-          <motion.div
-            initial={{ y: 16, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-            className="w-full max-w-sm"
-          >
-            {/* Card principal — logo + boas-vindas integrados */}
-            <div className="rounded-3xl overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--neutral-border)', boxShadow: 'var(--shadow-card)' }}>
+      <div className="relative w-full h-full min-h-[100dvh] flex flex-col overflow-hidden rounded-3xl bg-white">
+        {/* ─── Hero: ilustração ECO 3D sangrando até as bordas ─── */}
+        <motion.section
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+          aria-hidden="true"
+          className="relative flex-shrink-0 overflow-hidden"
+          style={{
+            backgroundColor: '#C5DBEE',
+            height: 'clamp(260px, 38vh, 340px)',
+          }}
+        >
+          <motion.img
+            src="/images/eco-welcome-hero.png"
+            alt="Ilustração ECO"
+            initial={{ scale: 1.05, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.9, ease: [0.2, 0.7, 0.1, 1], delay: 0.05 }}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: 'center 42%' }}
+            draggable={false}
+            loading="eager"
+          />
+          {/* gradiente sutil na base para fundir com a curva branca */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-20"
+            style={{
+              background:
+                'linear-gradient(180deg, rgba(197, 219, 238, 0) 0%, rgba(197, 219, 238, 0.7) 100%)',
+            }}
+          />
+        </motion.section>
 
-              {/* Topo do card: logo + título */}
-              <div className="flex flex-col items-center px-6 pt-7 pb-5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                <img
-                  src="/images/ECOTOPIA.webp"
-                  alt="Ecotopia"
-                  className="w-16 h-16 object-contain mb-3"
-                  loading="lazy"
-                />
-                <h1 className="font-display text-[1.35rem] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                  Bem-vindo de volta
-                </h1>
-                <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Continue sua jornada com a Eco
-                </p>
-              </div>
+        {/* ─── Folha branca com topo em arco ─── */}
+        <section
+          className="relative flex-1 min-h-0 bg-white overflow-y-auto"
+          style={{
+            borderTopLeftRadius: '50% 28px',
+            borderTopRightRadius: '50% 28px',
+            marginTop: '-26px',
+            boxShadow: '0 -8px 24px rgba(30, 42, 68, 0.06)',
+          }}
+        >
+          <div className="mx-auto w-full max-w-sm px-6 pt-7 pb-[calc(20px+env(safe-area-inset-bottom))]">
+            {/* Título */}
+            <motion.div
+              initial={{ y: 14, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.45, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
+              className="text-center mb-5"
+            >
+              <h1
+                className="font-display text-[26px] font-bold leading-[1.15] tracking-tight"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                Bem-vindo ao Ecotopia
+              </h1>
+              <p className="mt-2 text-[14px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+                Continue sua jornada emocional
+              </p>
+            </motion.div>
 
-              <div className="px-6 pb-6 space-y-4">
-                {/* Google — CTA de menor fricção */}
-                <button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  disabled={loading}
-                  className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-xl text-[14px] font-medium shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-                  style={{ border: '1.5px solid var(--neutral-border)', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
-                >
-                  <GoogleIcon />
-                  Continuar com Google
-                </button>
+            {/* Form + ações */}
+            <motion.div
+              initial={{ y: 14, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.45, delay: 0.32, ease: [0.4, 0, 0.2, 1] }}
+              className="space-y-3"
+            >
+              {/* Google — CTA de menor fricção */}
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-full text-[14.5px] font-medium transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                style={{
+                  border: '1.5px solid var(--neutral-border)',
+                  background: '#ffffff',
+                  color: 'var(--text-primary)',
+                  boxShadow: '0 1px 2px rgba(30, 42, 68, 0.04)',
+                }}
+              >
+                <GoogleIcon />
+                Continuar com Google
+              </button>
 
-                <Divider label="ou entre com email" />
+              <Divider label="ou entre com email" />
 
-                {/* Form email + senha */}
-                <form onSubmit={handleSubmit} className="space-y-3" noValidate>
-                  <div>
-                    <label className="sr-only" htmlFor="email">Email</label>
+              <form onSubmit={handleSubmit} className="space-y-3" noValidate>
+                <div>
+                  <label className="sr-only" htmlFor="email">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    inputMode="email"
+                    aria-invalid={Boolean(error)}
+                    aria-describedby={error ? 'login-error' : undefined}
+                    className="w-full h-12 rounded-2xl px-4 text-[15px] transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                    style={{
+                      border: '1.5px solid var(--neutral-border)',
+                      background: '#F7FAFD',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5 px-0.5">
+                    <label
+                      className="text-[11px] font-semibold tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                      htmlFor="password"
+                    >
+                      Senha
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      disabled={forgotLoading}
+                      className="text-[12px] font-medium transition-colors duration-200 disabled:opacity-60"
+                      style={{ color: 'var(--accent-warm)' }}
+                    >
+                      {forgotLoading ? 'Enviando…' : 'Esqueceu?'}
+                    </button>
+                  </div>
+                  <div className="relative">
                     <input
-                      id="email"
-                      type="email"
-                      placeholder="Email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       required
-                      autoComplete="email"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      inputMode="email"
+                      autoComplete="current-password"
                       aria-invalid={Boolean(error)}
                       aria-describedby={error ? 'login-error' : undefined}
-                      className="w-full h-12 rounded-xl px-4 text-[15px] transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-                      style={{ border: '1.5px solid var(--neutral-border)', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
+                      className="w-full h-12 rounded-2xl px-4 pr-12 text-[15px] transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                      style={{
+                        border: '1.5px solid var(--neutral-border)',
+                        background: '#F7FAFD',
+                        color: 'var(--text-primary)',
+                      }}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3.5 text-[var(--eco-muted)] hover:text-[var(--eco-text)] transition-colors duration-200"
+                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                      aria-pressed={showPassword}
+                    >
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
                   </div>
+                </div>
 
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-semibold tracking-wide uppercase" style={{ color: 'var(--text-muted)' }} htmlFor="password">
-                        Senha
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handleForgotPassword}
-                        disabled={forgotLoading}
-                        className="text-[12px] font-medium transition-colors duration-200 disabled:opacity-60"
-                        style={{ color: 'var(--accent)' }}
+                {/* Feedback inline */}
+                <div className="min-h-[1rem]">
+                  <div role="alert" id="login-error" aria-live="assertive">
+                    {error && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-[12px] text-rose-500 text-center"
                       >
-                        {forgotLoading ? 'Enviando…' : 'Esqueceu?'}
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <input
-                        id="password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        autoComplete="current-password"
-                        aria-invalid={Boolean(error)}
-                        aria-describedby={error ? 'login-error' : undefined}
-                        className="w-full h-12 rounded-xl px-4 pr-12 text-[15px] transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-                        style={{ border: '1.5px solid var(--neutral-border)', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((v) => !v)}
-                        className="absolute inset-y-0 right-0 flex items-center px-3.5 text-[var(--eco-muted)] hover:text-[var(--eco-text)] transition-colors duration-200"
-                        aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                        aria-pressed={showPassword}
+                        {error}
+                      </motion.p>
+                    )}
+                  </div>
+                  <div role="status" aria-live="polite">
+                    {forgotMessage && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-[12px] text-emerald-600 text-center"
                       >
-                        {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                      </button>
-                    </div>
+                        {forgotMessage}
+                      </motion.p>
+                    )}
+                    {forgotError && !forgotMessage && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-[12px] text-rose-500 text-center"
+                      >
+                        {forgotError}
+                      </motion.p>
+                    )}
                   </div>
+                </div>
 
-                  {/* Feedback inline */}
-                  <div className="min-h-[1rem]">
-                    <div role="alert" id="login-error" aria-live="assertive">
-                      {error && (
-                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                          className="text-[12px] text-rose-500 text-center">
-                          {error}
-                        </motion.p>
-                      )}
-                    </div>
-                    <div role="status" aria-live="polite">
-                      {forgotMessage && (
-                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                          className="text-[12px] text-emerald-600 text-center">
-                          {forgotMessage}
-                        </motion.p>
-                      )}
-                      {forgotError && !forgotMessage && (
-                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                          className="text-[12px] text-rose-500 text-center">
-                          {forgotError}
-                        </motion.p>
-                      )}
-                    </div>
-                  </div>
+                <ButtonEco type="submit" variant="primary" fullWidth disabled={!canSubmit}>
+                  {loading ? 'Entrando…' : 'Entrar'}
+                </ButtonEco>
+              </form>
+            </motion.div>
 
-                  {/* CTA principal */}
-                  <ButtonEco
-                    type="submit"
-                    variant="primary"
-                    fullWidth
-                    disabled={!canSubmit}
-                  >
-                    {loading ? 'Entrando…' : 'Entrar'}
-                  </ButtonEco>
-                </form>
-              </div>
-            </div>
-
-            {/* Links abaixo do card */}
-            <div className="mt-5 flex flex-col items-center gap-3">
+            {/* Links abaixo */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.5 }}
+              className="mt-4 flex flex-col items-center gap-2"
+            >
               <button
                 type="button"
                 onClick={() => navigate(`/register?returnTo=${encodeURIComponent(returnTo)}`)}
                 disabled={loading}
-                className="text-[13px] font-medium transition-colors duration-200 disabled:opacity-60 drop-shadow-sm"
-                style={{ color: 'var(--text-primary)' }}
+                className="text-[13px] transition-colors duration-200 disabled:opacity-60"
+                style={{ color: 'var(--text-muted)' }}
               >
                 Não tem conta?{' '}
-                <span className="font-semibold" style={{ color: 'var(--text-primary)', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+                <span
+                  className="font-semibold"
+                  style={{
+                    color: 'var(--text-primary)',
+                    textDecoration: 'underline',
+                    textUnderlineOffset: '3px',
+                  }}
+                >
                   Criar conta grátis
                 </span>
               </button>
@@ -396,9 +471,9 @@ const LoginPage: React.FC = () => {
               >
                 Explorar sem conta →
               </button>
-            </div>
-          </motion.div>
-        </div>
+            </motion.div>
+          </div>
+        </section>
       </div>
     </PhoneFrame>
   );
