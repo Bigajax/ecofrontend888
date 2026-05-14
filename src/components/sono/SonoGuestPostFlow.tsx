@@ -372,8 +372,8 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                   className="font-display text-[22px] font-bold text-white leading-snug mb-5 relative z-10"
                   style={{ textShadow: '0 2px 18px rgba(0,0,0,0.60)' }}
                 >
-                  Seu corpo já começou a mudar.<br />
-                  <span style={{ color: '#C4B5FD' }}>Agora é onde o resultado acontece.</span>
+                  Você chegou até aqui.<br />
+                  <span style={{ color: '#C4B5FD' }}>Por isso, esta condição é só sua.</span>
                 </h2>
 
                 {/* Offer card */}
@@ -385,11 +385,26 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                     backdropFilter: 'blur(12px)',
                   }}
                 >
+                  <div
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 mb-3"
+                    style={{
+                      background: 'rgba(167,139,250,0.12)',
+                      border: '1px solid rgba(167,139,250,0.28)',
+                    }}
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#A78BFA' }} />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: '#C4B5FD' }}>
+                      Exclusivo · Noite 1 concluída
+                    </span>
+                  </div>
                   <div className="flex items-baseline justify-center gap-2.5 mb-1">
-                    <span className="font-display text-[38px] font-bold text-white leading-none">R$97</span>
+                    <span className="text-[16px] font-medium line-through" style={{ color: 'rgba(255,255,255,0.32)' }}>
+                      R$ 147
+                    </span>
+                    <span className="font-display text-[38px] font-bold text-white leading-none">R$ 97</span>
                   </div>
                   <p className="text-[12px] mb-4" style={{ color: 'rgba(255,255,255,0.32)' }}>
-                    Pagamento único · Sem mensalidade
+                    Pagamento único · Sem mensalidade · Só para quem concluiu a Noite 1
                   </p>
                   {timeLeft > 0 && (
                     <div className="flex items-center justify-center gap-1.5 mb-3">
@@ -421,7 +436,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                       Abrindo pagamento…
                     </span>
                   ) : (
-                    'Continuar o processo completo'
+                    'Garantir meu protocolo por R$ 97'
                   )}
                 </button>
 
