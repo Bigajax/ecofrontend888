@@ -42,9 +42,9 @@ const MAIN_OFFER_COPY = {
     'Esta primeira noite foi criada para tirar seu sistema nervoso do modo alerta. Mas o sono profundo raramente muda em uma única tentativa. Ele é treinado por repetição, segurança e continuidade.',
   body: '',
   offerTitle: 'Protocolo Sono Profundo — 7 noites',
-  price: 'R$97',
+  price: 'R$147',
   supportingText: 'Pagamento único • Sem mensalidade',
-  cta: 'Liberar protocolo completo por R$97',
+  cta: 'Liberar protocolo completo por R$147',
   microcopy: 'Acesso imediato após o pagamento. Você continua exatamente de onde parou.',
 };
 

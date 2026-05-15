@@ -45,7 +45,7 @@ export function PurchaseModal({ capturedEmail, onClose }: PurchaseModalProps) {
           {/* Price */}
           <div className="text-center">
             <div className="flex items-baseline justify-center gap-2">
-              <p className="text-3xl font-bold text-gray-800">R$97</p>
+              <p className="text-3xl font-bold text-gray-800">R$147</p>
             </div>
             <p className="text-sm text-gray-400">Pagamento único · Acesso vitalício</p>
           </div>

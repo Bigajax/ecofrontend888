@@ -3,7 +3,7 @@ import { apiFetchJson } from '@/lib/apiFetch';
 import mixpanel from '@/lib/mixpanel';
 
 const PRODUCT_KEY = 'protocolo_sono_7_noites';
-const SONO_PRICE = 97;
+const SONO_PRICE = 147;
 
 interface CheckoutOptions {
   origin?: string;

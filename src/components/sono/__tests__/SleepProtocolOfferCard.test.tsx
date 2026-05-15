@@ -11,7 +11,7 @@ describe('SleepProtocolOfferCard', () => {
       />
     );
     expect(screen.getByText(/Experimente a primeira noite/i)).toBeInTheDocument();
-    expect(screen.getByText(/R\$97/)).toBeInTheDocument();
+    expect(screen.getByText(/R\$ 147/)).toBeInTheDocument();
   });
 
   it('calls onStart when primary CTA is clicked', () => {
