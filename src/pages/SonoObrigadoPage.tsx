@@ -91,7 +91,7 @@ export default function SonoObrigadoPage() {
     if (sessionStorage.getItem(dedupeKey)) return;
     sessionStorage.setItem(dedupeKey, '1');
     trackWithCAPI('Purchase', {
-      value: 37,
+      value: 147,
       currency: 'BRL',
       contentIds: ['protocolo_sono_profundo'],
     }).catch(() => {});
