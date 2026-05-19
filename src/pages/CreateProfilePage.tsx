@@ -117,9 +117,14 @@ const CreateProfilePage: React.FC = () => {
 
   const canSubmit = basicValid && !loading;
 
-  // Extrair returnTo da URL se existir
+  // Extrair returnTo, plan e from da URL se existirem
   const searchParams = new URLSearchParams(location.search);
   const returnTo = searchParams.get('returnTo') || '/app';
+  const planFromQuery = searchParams.get('plan'); // 'monthly' | 'annual' | null
+  const fromQuery = searchParams.get('from'); // 'hero' | 'pricing' | 'pricing_page' | 'fechamento' | null
+  const isLandingFlow = Boolean(
+    fromQuery && ['hero', 'pricing', 'pricing_page', 'fechamento', 'footer'].includes(fromQuery),
+  );
 
   const handleGeneratePassword = () => {
     const newPassword = generateSecurePassword();
@@ -239,7 +244,11 @@ const CreateProfilePage: React.FC = () => {
     setError('');
     setLoading(true);
     try {
-      mixpanel.track('Front-end: Cadastro Iniciado', { email: email.trim() });
+      mixpanel.track('Front-end: Cadastro Iniciado', {
+        email: email.trim(),
+        plan: planFromQuery,
+        from: fromQuery,
+      });
 
       // 1. Registrar usuário
       // Se veio de compra do protocolo sono, passar emailRedirectTo para que o link
@@ -453,9 +462,26 @@ const CreateProfilePage: React.FC = () => {
                   Crie sua conta
                 </h1>
                 <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Menos de 30 segundos · sempre gratuito
+                  {isLandingFlow
+                    ? `7 dias gratuitos${planFromQuery === 'annual' ? ' · plano anual selecionado' : planFromQuery === 'monthly' ? ' · plano mensal selecionado' : ''}`
+                    : 'Menos de 30 segundos · sempre gratuito'}
                 </p>
               </div>
+
+              {isLandingFlow && (
+                <div
+                  className="mx-6 mt-4 rounded-xl px-4 py-3 text-[12px] leading-relaxed"
+                  style={{
+                    backgroundColor: 'rgba(201, 169, 97, 0.08)',
+                    border: '1px solid rgba(201, 169, 97, 0.25)',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  <strong style={{ color: '#8a7438' }}>7 dias gratuitos.</strong> Pedimos seu
+                  cartão no cadastro para garantir continuidade — mas você só é cobrado no
+                  <strong> 8º dia</strong>. Cancele em 1 clique até lá, sem cobrança, sem pergunta.
+                </div>
+              )}
 
               <div className="px-6 pb-6 space-y-4">
                 {/* Google primeiro */}

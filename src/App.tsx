@@ -85,7 +85,8 @@ const MemoryPageGuestTeaser = lazy(() => import("@/pages/memory/MemoryPageGuestT
 const UpgradeModalTest = lazy(() => import("@/pages/UpgradeModalTest"));
 const SonoObrigadoPage = lazy(() => import("@/pages/SonoObrigadoPage"));
 const SonoErroPage = lazy(() => import("@/pages/SonoErroPage"));
-const PublicLandingPage = lazy(() => import("@/pages/PublicLandingPage"));
+const EcotopiaLandingPage = lazy(() => import("@/pages/EcotopiaLandingPage"));
+const EcotopiaPrecosPage = lazy(() => import("@/pages/EcotopiaPrecosPage"));
 const AbundanciaObrigadoPage = lazy(() => import("@/pages/AbundanciaObrigadoPage"));
 const AbundanciaErroPage = lazy(() => import("@/pages/AbundanciaErroPage"));
 const DrJoeObrigadoPage = lazy(() => import("@/pages/DrJoeObrigadoPage"));
@@ -137,14 +138,13 @@ function PublicShell() {
 function PublicHome() {
   const { user, isGuestMode, loading } = useAuth();
 
-  // Redirect authenticated users straight to /app so they always get MainLayout + BottomNav.
-  // Using Navigate at render time is faster than the useEffect inside HomePage and avoids
-  // the flash where the page renders without BottomNav before the redirect fires.
+  // Authenticated users (não-guest) sempre vão direto para o dashboard.
+  // Não-auth e guest mode veem a Landing de venda.
   if (!loading && user && !isGuestMode) {
     return <Navigate to="/app" replace />;
   }
 
-  return renderWithSuspense(<HomePage />);
+  return renderWithSuspense(<EcotopiaLandingPage />);
 }
 
 function AppProtectedShell() {
@@ -202,6 +202,7 @@ function AppRoutes() {
         <Route path="welcome" element={renderWithSuspense(<WelcomePage />)} />
         <Route path="register" element={renderWithSuspense(<CreateProfilePage />)} />
         <Route path="reset-senha" element={renderWithSuspense(<ResetSenha />)} />
+        <Route path="precos" element={renderWithSuspense(<EcotopiaPrecosPage />)} />
         <Route path="login" element={renderWithSuspense(<LoginPage />)} />
         <Route path="login/tour" element={<Navigate to="/login?tour=1" replace />} />
         <Route path="diario-estoico" element={renderWithBoundary(<DiarioEstoicoPage />)} />
