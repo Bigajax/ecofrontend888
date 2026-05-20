@@ -5,7 +5,9 @@ export default function EcotopiaFooter() {
 
   return (
     <footer className="lp-footer">
-      <h2 className="lp-footer-title">Encontre seu silêncio</h2>
+      <h2 className="lp-footer-title">
+        Encontre seu silêncio
+      </h2>
 
       <div className="lp-footer-top">
         <div className="lp-footer-newsletter">
@@ -63,7 +65,7 @@ export default function EcotopiaFooter() {
           <h4>Em caso de crise</h4>
           <ul>
             <li>
-              <strong style={{ color: 'var(--lp-yellow)' }}>CVV 188</strong>
+              <strong style={{ color: 'var(--eco-baby)' }}>CVV 188</strong>
             </li>
             <li style={{ opacity: 0.72 }}>24h, gratuito</li>
             <li style={{ opacity: 0.72 }}>Não substitui acompanhamento clínico</li>

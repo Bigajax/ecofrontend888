@@ -3,49 +3,52 @@ import { Link } from 'react-router-dom';
 export default function EcotopiaTopbar() {
   return (
     <>
-      {/* Banner amarelo no topo */}
       <div className="top-banner">
         <Link to="/precos">
-          7 dias gratuitos no Ecotopia — autoconhecimento prático em português
+          7 dias gratuitos · autoconhecimento prático em português
         </Link>
       </div>
 
-      {/* Nav branca sticky */}
       <nav className="lp-nav">
         <div className="lp-nav-left">
-          <Link to="/" aria-label="Ecotopia">
+          <Link
+            to="/"
+            aria-label="Ecotopia"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '12px',
+              textDecoration: 'none',
+            }}
+          >
             <img
               src="/images/ECOTOPIA.webp"
-              alt="Ecotopia"
-              width={64}
-              height={64}
+              alt=""
+              width={44}
+              height={44}
               style={{
-                width: '64px',
-                height: '64px',
+                width: '44px',
+                height: '44px',
                 objectFit: 'contain',
                 display: 'block',
               }}
             />
           </Link>
-          <div className="lp-nav-links" style={{ display: 'flex', gap: '24px' }}>
-            <a href="#categorias">Para Você</a>
-            <a href="#biblioteca" className="is-active">A Biblioteca</a>
-            <Link to="/precos">Nossos Planos</Link>
+
+          <div className="lp-nav-links">
+            <a href="#categorias">Para você</a>
+            <a href="#biblioteca">Biblioteca</a>
+            <Link to="/precos">Planos</Link>
             <a href="#faq">Recursos</a>
           </div>
         </div>
+
         <div className="lp-nav-right">
-          <Link
-            to="/login"
-            style={{
-              display: 'none',
-            }}
-            className="lp-nav-links"
-          >
+          <Link to="/login" className="lp-nav-link-text">
             Entrar
           </Link>
           <Link to="/register?plan=annual&from=topbar" className="cta-primary">
-            Teste grátis
+            Experimente grátis
           </Link>
         </div>
       </nav>

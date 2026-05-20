@@ -1,22 +1,63 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useHeadlineVariant } from '@/hooks/useHeadlineVariant';
 import { useSectionInView } from './useSectionInView';
 import { trackLandingCta } from './trackLandingCta';
 
+const HERO_ROTATING_LINES = [
+  'Menos ansiedade',
+  'Durma melhor',
+  'Mais presença',
+  'Sinta-se mais leve',
+  'Entenda suas emoções',
+  'Volte para si',
+] as const;
+
+const ROTATION_INTERVAL_MS = 2400;
+const ENTER_DURATION = 0.35;
+const EXIT_DURATION = 0.4;
+const SLIDE_DISTANCE = 50;
+
 export default function EcotopiaHero() {
   const { variant } = useHeadlineVariant();
   const ref = useSectionInView('hero', variant);
+  const [lineIndex, setLineIndex] = useState(0);
 
-  // Split do headline em 2 linhas
-  const splitH1 = variant === '2'
-    ? { line1: 'Pare de carregar', line2: 'tudo com Ecotopia' }
-    : { line1: 'Conheça-se', line2: 'tudo com Ecotopia' };
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setLineIndex((i) => (i + 1) % HERO_ROTATING_LINES.length);
+    }, ROTATION_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const currentLine = HERO_ROTATING_LINES[lineIndex];
 
   return (
     <section id="topo" ref={ref} className="lp-hero">
       <h1 className="reveal-soft">
-        <span>{splitH1.line1}</span>
-        <span>{splitH1.line2}</span>
+        <span className="lp-hero-rotator-window" aria-live="polite">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={currentLine}
+              className="lp-hero-rotator-line"
+              initial={{ y: SLIDE_DISTANCE, opacity: 0 }}
+              animate={{
+                y: 0,
+                opacity: 1,
+                transition: { duration: ENTER_DURATION, ease: [0.22, 1, 0.36, 1] },
+              }}
+              exit={{
+                y: -SLIDE_DISTANCE,
+                opacity: 0,
+                transition: { duration: EXIT_DURATION, ease: [0.4, 0, 1, 1] },
+              }}
+            >
+              {currentLine}
+            </motion.span>
+          </AnimatePresence>
+        </span>
+        <span><em>tudo com a Ecotopia</em></span>
       </h1>
 
       <div className="lp-hero-cards">

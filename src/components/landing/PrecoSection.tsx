@@ -1,16 +1,23 @@
 import { Link } from 'react-router-dom';
+import { Check } from 'lucide-react';
 import { useHeadlineVariant } from '@/hooks/useHeadlineVariant';
 import { useSectionInView } from './useSectionInView';
 import { trackLandingCta } from './trackLandingCta';
 
-const FEATURES = [
+const FEATURES_FULL = [
   'Eco AI ilimitada · diálogo socrático',
   'Cinco Anéis · ritual diário de 5 min',
   'Diário Estoico · 366 lições',
   'Protocolo do Sono · 7 noites',
-  'Jornadas Dispenza em PT-BR',
+  'Jornadas Dispenza em português',
   'Eco Dream · interpretação de sonhos',
   '7 dias gratuitos · cancele em 1 clique',
+];
+
+const FEATURES_MONTHLY = [
+  'Acesso completo ao método',
+  'Sem fidelidade',
+  '7 dias gratuitos',
 ];
 
 interface Props {
@@ -49,18 +56,12 @@ export default function PrecoSection({
           </div>
           <p className="lp-pricing-note">Renovação mensal · cancele quando quiser</p>
           <ul>
-            <li>
-              <span style={{ color: 'var(--lp-blue)' }}>✓</span>
-              <span>Acesso completo ao método</span>
-            </li>
-            <li>
-              <span style={{ color: 'var(--lp-blue)' }}>✓</span>
-              <span>Sem fidelidade</span>
-            </li>
-            <li>
-              <span style={{ color: 'var(--lp-blue)' }}>✓</span>
-              <span>7 dias gratuitos</span>
-            </li>
+            {FEATURES_MONTHLY.map((f) => (
+              <li key={f}>
+                <Check size={14} strokeWidth={2.25} color="var(--lp-accent-strong)" />
+                <span>{f}</span>
+              </li>
+            ))}
           </ul>
           <Link
             to="/register?plan=monthly&from=pricing"
@@ -82,9 +83,9 @@ export default function PrecoSection({
             R$ 197 cobrado anualmente · economize R$ 127
           </p>
           <ul>
-            {FEATURES.map((f) => (
+            {FEATURES_FULL.map((f) => (
               <li key={f}>
-                <span style={{ color: 'var(--lp-yellow)' }}>✓</span>
+                <Check size={14} strokeWidth={2.25} color="var(--eco-baby)" />
                 <span>{f}</span>
               </li>
             ))}

@@ -43,8 +43,7 @@ export default function FechamentoSection() {
         style={{
           minHeight: '280px',
           borderRadius: '18px',
-          background:
-            'linear-gradient(135deg, #7FA9FF 0%, #3B6EF0 100%)',
+          background: 'linear-gradient(160deg, rgba(110, 200, 255, 0.2), rgba(13, 52, 97, 0.4))',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -60,7 +59,7 @@ export default function FechamentoSection() {
             height: '100%',
             objectFit: 'cover',
             mixBlendMode: 'overlay',
-            opacity: 0.55,
+            opacity: 0.6,
           }}
         />
       </div>

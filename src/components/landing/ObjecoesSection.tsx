@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSectionInView } from './useSectionInView';
 
-// Biblioteca com abas — substitui a antiga Objeções. Grid 3 com cards gradient.
+// Biblioteca com abas — cards com gradients da paleta Ecotopia.
 
 type Tab = 'destaques' | 'populares' | 'sono' | 'estresse' | 'meditacao';
 
@@ -18,56 +18,56 @@ const ALL_CARDS: LibCard[] = [
     tag: 'Em alta',
     title: 'Eco AI',
     body: 'Diálogo socrático em português, 24h. Treinada em Jung, Freud e estoicismo.',
-    grad: 'var(--lp-grad-1)',
+    grad: 'lp-grad-1',
     tabs: ['destaques', 'populares', 'estresse'],
   },
   {
     tag: 'Novo',
     title: 'Diário Estoico',
     body: '366 lições de Marco Aurélio, Sêneca e Epicteto. Uma reflexão por dia.',
-    grad: 'var(--lp-grad-2)',
+    grad: 'lp-grad-2',
     tabs: ['destaques', 'populares'],
   },
   {
     tag: 'Coleção',
     title: 'Cinco Anéis',
     body: 'Ritual diário de 5 min. Terra, Água, Fogo, Vento, Vazio — inspirado em Musashi.',
-    grad: 'var(--lp-grad-3)',
+    grad: 'lp-grad-3',
     tabs: ['destaques', 'meditacao'],
   },
   {
     tag: 'Em alta',
     title: 'Protocolo do Sono',
     body: '7 noites de áudios guiados que reeducam seu sistema nervoso.',
-    grad: 'var(--lp-grad-4)',
+    grad: 'lp-grad-4',
     tabs: ['destaques', 'sono', 'populares'],
   },
   {
     tag: 'Novo',
     title: 'Jornadas Dispenza',
-    body: 'Meditações guiadas no estilo Dispenza. Em português, sem espera por tradução.',
-    grad: 'var(--lp-grad-5)',
+    body: 'Meditações guiadas no estilo Dispenza, em português, sem espera por tradução.',
+    grad: 'lp-grad-5',
     tabs: ['destaques', 'meditacao'],
   },
   {
     tag: 'Curso',
     title: 'Quem Pensa Enriquece',
-    body: '6 passos para mindset financeiro com profundidade socrática — não motivacional vazio.',
-    grad: 'var(--lp-grad-6)',
+    body: '6 passos para mindset financeiro com profundidade socrática.',
+    grad: 'lp-grad-6',
     tabs: ['destaques', 'populares'],
   },
   {
     tag: 'Programa',
     title: 'Caleidoscópio',
     body: 'Mind movie de visualização ativa. Construa o filme da próxima versão de você.',
-    grad: 'var(--lp-grad-7)',
+    grad: 'lp-grad-7',
     tabs: ['meditacao', 'populares'],
   },
   {
     tag: 'Coleção',
     title: 'Energy Blessings',
     body: 'Bênção dos centros de energia, sintonia com novos potenciais, espaço-tempo.',
-    grad: 'var(--lp-grad-8)',
+    grad: 'lp-grad-8',
     tabs: ['meditacao', 'estresse'],
   },
 ];
@@ -110,8 +110,7 @@ export default function ObjecoesSection() {
         {visibleCards.map((card, i) => (
           <article
             key={card.title}
-            className={`lp-lib-card scroll-reveal stagger-${(i % 6) + 1}`}
-            style={{ background: card.grad }}
+            className={`lp-lib-card ${card.grad} scroll-reveal stagger-${(i % 6) + 1}`}
           >
             <span className="lp-lib-tag">{card.tag}</span>
             <h3>{card.title}</h3>

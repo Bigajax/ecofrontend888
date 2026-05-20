@@ -12,7 +12,7 @@ const FAQ = [
     a: 'O cartão é pedido no cadastro, mas você só é cobrado no 8º dia. Cancele em 1 clique a qualquer momento dentro dos 7 dias: sem cobrança, sem pergunta, sem ligação de retenção.',
   },
   {
-    q: 'Quanto custa o Ecotopia?',
+    q: 'Quanto custa?',
     a: 'R$ 27 por mês no plano mensal, ou R$ 16,40/mês no plano anual (R$ 197 cobrado anualmente — economia de R$ 127).',
   },
   {

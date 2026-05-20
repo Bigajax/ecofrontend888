@@ -4,9 +4,10 @@ import EcotopiaTopbar from '@/components/landing/EcotopiaTopbar';
 import EcotopiaHero from '@/components/landing/EcotopiaHero';
 import DiagnosticoSection from '@/components/landing/DiagnosticoSection';
 import TresPilaresSection from '@/components/landing/TresPilaresSection';
-import BibliotecaPraticasSection from '@/components/landing/BibliotecaPraticasSection';
+import MethodMarquee from '@/components/landing/MethodMarquee';
+import BibliotecaSection from '@/components/landing/BibliotecaSection';
+import JoinSection from '@/components/landing/JoinSection';
 import AutoridadeSection from '@/components/landing/AutoridadeSection';
-import ObjecoesSection from '@/components/landing/ObjecoesSection';
 import PrecoSection from '@/components/landing/PrecoSection';
 import FaqSection from '@/components/landing/FaqSection';
 import FechamentoSection from '@/components/landing/FechamentoSection';
@@ -31,9 +32,10 @@ export default function EcotopiaLandingPage() {
       <EcotopiaHero />
       <DiagnosticoSection />
       <TresPilaresSection />
-      <BibliotecaPraticasSection />
+      <MethodMarquee />
+      <BibliotecaSection />
+      <JoinSection />
       <AutoridadeSection />
-      <ObjecoesSection />
       <PrecoSection />
       <FaqSection />
       <FechamentoSection />

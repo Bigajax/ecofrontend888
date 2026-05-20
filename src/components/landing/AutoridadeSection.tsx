@@ -1,6 +1,5 @@
 import { useSectionInView } from './useSectionInView';
 
-// Frases que rotacionam no marquee — comunicam o método sem ser slogan.
 const MARQUEE_PHRASES = [
   'encontre seu silêncio',
   'cinco minutos por dia',
@@ -10,7 +9,6 @@ const MARQUEE_PHRASES = [
   'autoconhecimento prático',
 ];
 
-// Diamante fino dourado/escuro entre cada frase
 function Glyph() {
   return (
     <svg
@@ -28,7 +26,6 @@ function Glyph() {
 export default function AutoridadeSection() {
   const ref = useSectionInView('autoridade');
 
-  // Duplica o array pra garantir loop perfeito com translateX(-50%).
   const loopItems = [...MARQUEE_PHRASES, ...MARQUEE_PHRASES];
 
   return (
@@ -50,7 +47,7 @@ export default function AutoridadeSection() {
 
       <section className="lp-stats">
         <div className="scroll-reveal stagger-1">
-          <div className="lp-stat-value">4,9★</div>
+          <div className="lp-stat-value">4,9</div>
           <div className="lp-stat-label">Avaliação dos praticantes</div>
         </div>
         <div className="scroll-reveal stagger-2">
