@@ -7,6 +7,29 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; text-rendering: o
 
 html, body, #root { height: 100%; }
 
+/* Trava horizontal: impede scroll lateral e fundo aparecendo nas laterais (mobile) */
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
 
 .chat-message-text {
   white-space: pre-wrap;
