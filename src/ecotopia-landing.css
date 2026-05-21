@@ -512,13 +512,27 @@
   position: relative;
   width: calc(100% + 80px);
   margin: 0 -40px;
-  margin-top: auto;
+  margin-top: -56px;
   flex: 1;
-  min-height: 220px;
+  min-height: 320px;
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
-  filter: drop-shadow(0 12px 32px rgba(15, 20, 30, 0.18));
+  /* Fade suave no topo — imagem sai do texto gradualmente, sem corte seco */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.4) 8%,
+    rgba(0, 0, 0, 0.85) 18%,
+    #000 30%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.4) 8%,
+    rgba(0, 0, 0, 0.85) 18%,
+    #000 30%
+  );
 }
 
 /* ─── Responsive · Hero cards ─── */
@@ -546,85 +560,128 @@
   }
   .ecotopia-lp .lp-hero-placeholder {
     width: calc(100% + 48px);
-    margin: auto -24px 0;
-    min-height: 160px;
-    flex: 0 0 160px;
+    margin: -32px -24px 0;
+    min-height: 240px;
+    flex: 0 0 240px;
+    background-position: center 35%;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.5) 6%,
+      rgba(0, 0, 0, 0.9) 14%,
+      #000 22%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.5) 6%,
+      rgba(0, 0, 0, 0.9) 14%,
+      #000 22%
+    );
+  }
+  /* Card 2 (Diário Estoico) — focar no rosto, não no topo do busto */
+  .ecotopia-lp .lp-hero-card:nth-child(2) .lp-hero-placeholder {
+    background-position: center 28%;
   }
 }
 
 @media (max-width: 480px) {
   .ecotopia-lp .lp-hero-card {
-    min-height: 320px;
+    min-height: 360px;
     padding: 28px 20px 0;
   }
   .ecotopia-lp .lp-hero-card h2 {
     font-size: 18px;
   }
   .ecotopia-lp .lp-hero-placeholder {
-    min-height: 140px;
-    flex: 0 0 140px;
+    min-height: 210px;
+    flex: 0 0 210px;
   }
 }
 
 /* â”€â”€â”€ Categorias â”€â”€â”€ */
+/* ─── Section (Headspace spec: full-bleed com padding lateral) ─── */
 .ecotopia-lp .lp-cat-section {
-  padding: 96px 32px;
-  max-width: 1200px;
+  padding: 48px 24px 64px;             /* mobile */
+  max-width: 100%;
   margin: 0 auto;
+  box-sizing: border-box;
+}
+@media (min-width: 768px) {
+  .ecotopia-lp .lp-cat-section { padding: 64px 48px 80px; }
+}
+@media (min-width: 1024px) {
+  .ecotopia-lp .lp-cat-section { padding: 64px 48px 96px; }
+}
+@media (min-width: 1440px) {
+  .ecotopia-lp .lp-cat-section {
+    max-width: 1440px;                 /* 90rem */
+    padding: 64px 48px 128px;
+  }
 }
 
 .ecotopia-lp .lp-cat-section h2 {
   font-family: var(--lp-sans);
   font-weight: 700;
   text-align: center;
-  font-size: clamp(28px, 3.8vw, 40px);
-  color: var(--lp-text);
-  margin-bottom: 48px;
-  letter-spacing: -0.018em;
-  line-height: 1.15;
+  font-size: 24px;
+  line-height: 1.2;
+  color: #2D2C2B;
+  margin: 0 0 32px;
+  letter-spacing: -0.01em;
 }
 
+/* ─── Grid (1 / 2 / 3 colunas, gap progressivo) ─── */
 .ecotopia-lp .lp-cat-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  width: 100%;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 768px) {
+  .ecotopia-lp .lp-cat-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+}
+@media (min-width: 1024px) {
+  .ecotopia-lp .lp-cat-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
 }
 
+/* ─── Card (Headspace: borda 2px, sem sombra de descanso) ─── */
 .ecotopia-lp .lp-cat {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 26px 30px;
-  border: 1px solid #EAE5DE;
-  border-radius: var(--lp-radius-lg);
-  background: var(--lp-bg);
+  gap: 12px;
+  padding: 16px 8px 16px 24px;          /* mobile / tablet */
+  min-height: 84px;
+  background: #FFFFFF;
+  border: 2px solid #E2DED9;
+  border-radius: 8px;
   cursor: pointer;
-  transition: box-shadow 0.28s ease, transform 0.28s ease, border-color 0.28s ease;
+  transition: border-color 0.3s ease;
   text-decoration: none !important;
-  color: var(--lp-text) !important;
-  -webkit-text-fill-color: var(--lp-text);
+  color: #4B4C4D !important;
+  -webkit-text-fill-color: #4B4C4D;
   font-family: var(--lp-sans);
-  font-weight: 600;
-  font-size: 19px;
-  line-height: 1.22;
-  letter-spacing: -0.008em;
-  min-height: 96px;
+}
+@media (min-width: 1024px) {
+  .ecotopia-lp .lp-cat { padding: 16px 8px 16px 16px; }
+}
+@media (min-width: 1440px) {
+  .ecotopia-lp .lp-cat { padding: 8px 16px 8px 24px; }
 }
 
 .ecotopia-lp .lp-cat:hover {
-  box-shadow:
-    0 12px 28px rgba(15, 20, 30, 0.08),
-    0 4px 10px rgba(15, 20, 30, 0.05);
-  border-color: #D6CFC4;
-  transform: translateY(-3px);
+  border-color: #C6C1B9;
 }
 
 .ecotopia-lp .lp-cat-label {
   flex: 1;
   text-align: left;
-  color: var(--lp-text);
-  max-width: 20ch;
+  color: #4B4C4D;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
 }
 
 .ecotopia-lp .lp-cat-end {
@@ -638,14 +695,109 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
+  position: relative;
+  isolation: isolate; /* contém o mix-blend-mode do shimmer dentro do orb */
+  animation: lp-orb-float 5.6s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Shimmer diagonal — gradiente branco em fatia que cruza o orb periodicamente */
+.ecotopia-lp .lp-cat-emoji::after {
+  content: '';
+  position: absolute;
+  inset: -24px;            /* cobre exatamente a área visível do orb (88×88) */
+  border-radius: 50%;      /* clipa a fatia ao círculo do orb */
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.72) 50%,
+    transparent 62%
+  );
+  mix-blend-mode: screen;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-130%);
+  animation: lp-orb-shimmer 6.4s ease-in-out infinite;
+  will-change: transform, opacity;
+  z-index: 1;
+}
+
+/* Stagger do float — cada orb num momento diferente do ciclo */
+.ecotopia-lp .lp-cat:nth-child(1) .lp-cat-emoji { animation-delay: 0s;    }
+.ecotopia-lp .lp-cat:nth-child(2) .lp-cat-emoji { animation-delay: -0.9s; }
+.ecotopia-lp .lp-cat:nth-child(3) .lp-cat-emoji { animation-delay: -1.8s; }
+.ecotopia-lp .lp-cat:nth-child(4) .lp-cat-emoji { animation-delay: -2.7s; }
+.ecotopia-lp .lp-cat:nth-child(5) .lp-cat-emoji { animation-delay: -3.6s; }
+.ecotopia-lp .lp-cat:nth-child(6) .lp-cat-emoji { animation-delay: -4.5s; }
+
+/* Stagger do shimmer — ritmo diferente do float pra evitar sincronia óbvia */
+.ecotopia-lp .lp-cat:nth-child(1) .lp-cat-emoji::after { animation-delay: 0s;    }
+.ecotopia-lp .lp-cat:nth-child(2) .lp-cat-emoji::after { animation-delay: -1.4s; }
+.ecotopia-lp .lp-cat:nth-child(3) .lp-cat-emoji::after { animation-delay: -2.8s; }
+.ecotopia-lp .lp-cat:nth-child(4) .lp-cat-emoji::after { animation-delay: -4.2s; }
+.ecotopia-lp .lp-cat:nth-child(5) .lp-cat-emoji::after { animation-delay: -0.7s; }
+.ecotopia-lp .lp-cat:nth-child(6) .lp-cat-emoji::after { animation-delay: -3.5s; }
+
+/* Hover só anima a seta — orb continua flutuando/cintilando */
+
+@keyframes lp-orb-float {
+  0%   { transform: translateY(0)    rotate(-1.5deg); }
+  50%  { transform: translateY(-5px) rotate( 1.5deg); }
+  100% { transform: translateY(0)    rotate(-1.5deg); }
+}
+
+@keyframes lp-orb-shimmer {
+  0%, 72%  { transform: translateX(-130%); opacity: 0; }
+  77%      { transform: translateX(-130%); opacity: 1; }
+  90%      { transform: translateX(130%);  opacity: 1; }
+  100%     { transform: translateX(130%);  opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ecotopia-lp .lp-cat-emoji { animation: none; }
+  .ecotopia-lp .lp-cat-emoji::after { display: none; }
 }
 
 .ecotopia-lp .lp-cat-emoji svg {
   flex-shrink: 0;
   width: 48px;
   height: 48px;
+}
+
+.ecotopia-lp .lp-cat-emoji .lp-cat-orb {
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  max-width: none;
+  max-height: none;
+  margin: -24px;
+  object-fit: contain;
+  --orb-shadow-rgb: 150, 170, 230;
+  filter:
+    saturate(1.45)
+    drop-shadow(0 5px 12px rgba(var(--orb-shadow-rgb), 0.36))
+    drop-shadow(0 1px 3px rgba(var(--orb-shadow-rgb), 0.22));
+  transition: transform 0.32s cubic-bezier(.32, .94, .6, 1),
+              filter 0.32s cubic-bezier(.32, .94, .6, 1);
+}
+
+.ecotopia-lp .lp-cat-orb--sleep      { --orb-shadow-rgb: 167, 139, 250; }
+.ecotopia-lp .lp-cat-orb--stress     { --orb-shadow-rgb: 240, 195, 100; }
+.ecotopia-lp .lp-cat-orb--anxiety    { --orb-shadow-rgb: 110, 200, 255; }
+.ecotopia-lp .lp-cat-orb--thoughts   { --orb-shadow-rgb: 232, 130, 200; }
+.ecotopia-lp .lp-cat-orb--meditation { --orb-shadow-rgb: 255, 180, 80;  }
+.ecotopia-lp .lp-cat-orb--talk       { --orb-shadow-rgb: 250, 165, 120; }
+
+/* Seta — animação convidativa no hover */
+.ecotopia-lp .lp-cat-arrow {
+  flex-shrink: 0;
+  transition: transform 3.6s cubic-bezier(.45, 0, .25, 1);
+}
+
+.ecotopia-lp .lp-cat:hover .lp-cat-arrow {
+  transform: translateX(10px);
 }
 
 /* â”€â”€â”€ TÃ­tulo de seÃ§Ã£o entre destaques â”€â”€â”€ */
@@ -1047,8 +1199,8 @@
 /* ─── Eco IA (chat bubbles) ─── */
 .ecotopia-lp .lp-feat-vis--chat {
   gap: 20px;
-  padding: 36px 32px 170px;
-  justify-content: flex-start;
+  padding: 36px 32px 48px;
+  justify-content: center;
   overflow: hidden;
 }
 
@@ -1538,15 +1690,16 @@
     padding: 56px 0 48px;
   }
   .ecotopia-lp .lp-features-title {
-    font-size: 30px;
-    line-height: 1.12;
-    margin: 0 20px 28px;
+    font-size: 32px;
+    line-height: 1.1;
+    font-weight: 800;
+    margin: 0 20px 32px;
     padding: 0;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.022em;
   }
   .ecotopia-lp .lp-features-tabs {
     justify-content: flex-start;
-    padding: 0 16px 24px;
+    padding: 0 16px 28px;
     gap: 8px;
     -webkit-overflow-scrolling: touch;
   }
@@ -1562,43 +1715,191 @@
     grid-template-columns: 1fr;
     height: auto;
     min-height: auto;
-    border-radius: 18px;
+    border-radius: 20px;
   }
   /* Mobile: body em cima, visual embaixo (espelha referência Headspace) */
   .ecotopia-lp .lp-features-card-body {
     grid-row: 1;
-    padding: 36px 28px 28px;
+    padding: 16px 18px 10px;
     align-items: center;
     text-align: center;
   }
   .ecotopia-lp .lp-features-card-visual {
     grid-row: 2;
-    min-height: 280px;
-    padding: 0 12px 24px;
+    min-height: 200px;
+    padding: 0 10px 14px;
     align-self: stretch;
   }
   .ecotopia-lp .lp-features-card-title {
-    font-size: 26px;
-    line-height: 1.16;
-    margin-bottom: 16px;
-    letter-spacing: -0.018em;
+    font-size: 22px;
+    line-height: 1.08;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: -0.022em;
+    max-width: 13ch;
   }
   .ecotopia-lp .lp-features-card-para {
-    font-size: 15px;
-    line-height: 22px;
-    margin-bottom: 24px;
-    max-width: 32ch;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 14px;
+    max-width: 30ch;
   }
   .ecotopia-lp .lp-features-eyebrow {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
   }
   .ecotopia-lp .lp-features-cta {
-    font-size: 15.5px;
+    font-size: 14px;
     padding: 0 22px;
-    height: 44px;
+    height: 42px;
+    font-weight: 700;
   }
   .ecotopia-lp .lp-features-audio {
-    margin: 0 auto 22px;
+    margin: 0 auto 10px;
+  }
+
+  /* Chat bubbles mobile — mais compactas, igual referência Headspace */
+  .ecotopia-lp .lp-feat-vis--chat {
+    gap: 8px;
+    padding: 4px 14px 16px;
+  }
+  .ecotopia-lp .lp-feat-chat-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    max-width: 100%;
+    box-shadow: 0 4px 14px rgba(15, 20, 30, 0.08);
+  }
+  .ecotopia-lp .lp-feat-chat-bubble p {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .ecotopia-lp .lp-feat-chat-name {
+    font-size: 12px;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .ecotopia-lp .lp-feat-chat-name .dot {
+    width: 8px;
+    height: 8px;
+  }
+  .ecotopia-lp .lp-feat-thinking {
+    font-size: 13px;
+  }
+
+  /* ─── Phone (Meditações guiadas) ─── */
+  .ecotopia-lp .lp-feat-vis--phone {
+    padding: 12px;
+  }
+  .ecotopia-lp .lp-feat-phone {
+    width: 196px;
+    padding: 14px 12px 16px;
+    border-radius: 22px;
+    gap: 8px;
+  }
+  .ecotopia-lp .lp-feat-phone-tabs {
+    font-size: 10.5px;
+    gap: 10px;
+    padding-bottom: 3px;
+  }
+  .ecotopia-lp .lp-feat-phone-list {
+    gap: 6px;
+  }
+  .ecotopia-lp .lp-feat-phone-pill {
+    padding: 7px 11px;
+    font-size: 11.5px;
+    border-radius: 10px;
+  }
+
+  /* ─── Sono (cards de noites) ─── */
+  .ecotopia-lp .lp-feat-vis--sono {
+    padding: 14px 14px 18px;
+    gap: 10px;
+  }
+  .ecotopia-lp .lp-feat-sono-search {
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+  .ecotopia-lp .lp-feat-sono-nights {
+    gap: 7px;
+    max-width: 280px;
+  }
+  .ecotopia-lp .lp-feat-sono-night {
+    padding: 10px 12px;
+    min-height: 50px;
+    border-radius: 11px;
+  }
+  .ecotopia-lp .lp-feat-sono-night-meta small {
+    font-size: 9.5px;
+  }
+  .ecotopia-lp .lp-feat-sono-night-meta strong {
+    font-size: 12.5px;
+  }
+  .ecotopia-lp .lp-feat-sono-night-play {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* ─── Rings (Cinco Anéis) ─── */
+  .ecotopia-lp .lp-feat-vis--rings {
+    padding: 12px 14px 16px;
+    gap: 10px;
+  }
+  .ecotopia-lp .lp-feat-rings-grid {
+    max-width: 280px;
+    gap: 8px;
+  }
+  .ecotopia-lp .lp-feat-ring-tile {
+    border-radius: 11px;
+  }
+  .ecotopia-lp .lp-feat-ring-meta {
+    left: 8px;
+    right: 8px;
+    bottom: 7px;
+  }
+  .ecotopia-lp .lp-feat-ring-meta strong {
+    font-size: 10.5px;
+  }
+  .ecotopia-lp .lp-feat-ring-meta small {
+    font-size: 8.5px;
+  }
+
+  /* ─── Estoico (card de máxima do dia) ─── */
+  .ecotopia-lp .lp-feat-vis--estoico {
+    padding: 12px 14px 16px;
+    gap: 10px;
+  }
+  .ecotopia-lp .lp-feat-estoico-card {
+    min-height: 220px;
+    border-radius: 14px;
+    max-width: 280px;
+  }
+  .ecotopia-lp .lp-feat-estoico-content {
+    min-height: 220px;
+    padding: 14px;
+    gap: 8px;
+  }
+  .ecotopia-lp .lp-feat-estoico-meta {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+  }
+  .ecotopia-lp .lp-feat-estoico-content h4 {
+    font-size: 15px;
+  }
+  .ecotopia-lp .lp-feat-estoico-content p {
+    font-size: 12px;
+    -webkit-line-clamp: 2;
+  }
+  .ecotopia-lp .lp-feat-estoico-content small {
+    font-size: 10px;
+  }
+  .ecotopia-lp .lp-feat-estoico-pager {
+    font-size: 13px;
+    gap: 10px;
+  }
+  .ecotopia-lp .lp-feat-estoico-pager-dots > span {
+    width: 5px;
+    height: 5px;
   }
 }
 
@@ -1610,9 +1911,10 @@
   --lib-text: #2C2C2C;
   --lib-cream: #F3F1EC;
   --lib-cream-hover: #E8E5DD;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 80px 40px;
+  --lib-edge: max(40px, calc((100% - 1200px) / 2 + 40px));
+  max-width: 100%;
+  margin: 0;
+  padding: 80px 0;
   text-align: center;
 }
 
@@ -1622,7 +1924,9 @@
   font-size: clamp(36px, 5vw, 56px);
   letter-spacing: -0.02em;
   line-height: 1.05;
-  margin: 0 0 40px;
+  margin: 0 auto 40px;
+  max-width: 1200px;
+  padding: 0 40px;
   color: var(--lib-text);
 }
 
@@ -1632,7 +1936,9 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 40px;
+  margin: 0 auto 40px;
+  max-width: 1200px;
+  padding: 0 40px;
 }
 
 .ecotopia-lp .lp-library-tab {
@@ -1671,7 +1977,7 @@
 /* ── Carrossel ── */
 .ecotopia-lp .lp-library-carousel {
   position: relative;
-  overflow: hidden;
+  width: 100%;
 }
 
 .ecotopia-lp .lp-library-cards {
@@ -1679,35 +1985,60 @@
   gap: 20px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  padding-bottom: 16px;
+  padding: 4px 0 16px;
+  scroll-padding-inline-start: var(--lib-edge);
   scrollbar-width: none;
   -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
 }
+
+/* Margin no primeiro/último card — entra no scrollable content,
+   diferente de padding-inline no scroll container (que fica "preso"). */
+.ecotopia-lp .lp-library-cards > .lp-library-card:first-child {
+  margin-inline-start: var(--lib-edge);
+}
+.ecotopia-lp .lp-library-cards > .lp-library-card:last-child {
+  margin-inline-end: 20px;
+}
 .ecotopia-lp .lp-library-cards::-webkit-scrollbar { display: none; }
 
 .ecotopia-lp .lp-library-card {
-  flex: 0 0 320px;
-  height: 380px;
-  border-radius: 16px;
+  flex: 0 0 300px;
+  height: 420px;
+  border-radius: 18px;
   position: relative;
   overflow: hidden;
   color: #FFFFFF !important;
   -webkit-text-fill-color: #FFFFFF;
   text-align: left;
-  padding: 24px;
+  padding: 22px 22px 24px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   scroll-snap-align: start;
   cursor: pointer;
   text-decoration: none !important;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 10px 30px rgba(15, 20, 30, 0.10);
+  transition:
+    transform 0.32s cubic-bezier(.32, .94, .6, 1),
+    box-shadow 0.32s cubic-bezier(.32, .94, .6, 1);
+  box-shadow:
+    0 1px 2px rgba(13, 27, 42, 0.06),
+    0 10px 28px rgba(13, 27, 42, 0.10);
   background-size: cover;
   background-repeat: no-repeat;
   background-color: #1A1A1A;
   isolation: isolate;
+}
+
+/* Subtle inner ring — adds definition on light/desaturated images */
+.ecotopia-lp .lp-library-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .ecotopia-lp .lp-library-card::after {
@@ -1715,62 +2046,77 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.18) 48%, rgba(0, 0, 0, 0) 78%);
+    linear-gradient(to top,
+      rgba(10, 12, 20, 0.92) 0%,
+      rgba(10, 12, 20, 0.55) 32%,
+      rgba(10, 12, 20, 0.15) 60%,
+      rgba(10, 12, 20, 0) 80%);
   z-index: 1;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.32s cubic-bezier(.32, .94, .6, 1);
 }
 
 .ecotopia-lp .lp-library-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 48px rgba(15, 20, 30, 0.20);
+  transform: translateY(-3px);
+  box-shadow:
+    0 2px 4px rgba(13, 27, 42, 0.08),
+    0 22px 44px rgba(13, 52, 97, 0.18);
 }
 
-.ecotopia-lp .lp-library-card:hover::after {
-  opacity: 0.85;
+.ecotopia-lp .lp-library-card:focus-visible {
+  outline: 2px solid var(--lp-accent-strong);
+  outline-offset: 3px;
 }
 
 .ecotopia-lp .lp-library-card-tag {
   position: absolute;
-  top: 16px;
-  left: 16px;
-  background: #FFFFFF;
-  color: var(--lp-accent-strong);
-  -webkit-text-fill-color: var(--lp-accent-strong);
+  top: 14px;
+  left: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  color: var(--lp-accent-navy);
+  -webkit-text-fill-color: var(--lp-accent-navy);
   font-family: var(--lp-sans);
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 700;
-  padding: 6px 12px;
+  padding: 5px 11px;
   border-radius: 999px;
-  letter-spacing: 0.01em;
-  z-index: 2;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  z-index: 3;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.10);
 }
 
 .ecotopia-lp .lp-library-card-body {
   position: relative;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .ecotopia-lp .lp-library-card-body h3 {
   font-family: var(--lp-sans);
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.018em;
-  line-height: 1.15;
-  margin: 0 0 8px;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  line-height: 1.16;
+  margin: 0;
   color: #FFFFFF;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
 }
 
 .ecotopia-lp .lp-library-card-body p {
   font-family: var(--lp-sans);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.42;
   margin: 0;
-  opacity: 0.92;
+  opacity: 0.88;
   color: #FFFFFF;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.30);
 }
 
 /* ── Controles ── */
@@ -1779,7 +2125,9 @@
   justify-content: flex-end;
   align-items: center;
   gap: 16px;
-  margin-top: 16px;
+  margin: 16px auto 0;
+  max-width: 1200px;
+  padding: 0 40px;
 }
 
 .ecotopia-lp .lp-library-viewall {
@@ -1792,8 +2140,8 @@
 }
 
 .ecotopia-lp .lp-library-arrow {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   border: none;
   background: #EEECE6;
@@ -1802,21 +2150,42 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition:
+    background 0.18s cubic-bezier(.32, .94, .6, 1),
+    transform 0.18s cubic-bezier(.32, .94, .6, 1),
+    opacity 0.18s ease;
 }
 
-.ecotopia-lp .lp-library-arrow:hover {
+.ecotopia-lp .lp-library-arrow:hover:not(:disabled) {
   background: #DDD9CF;
   transform: scale(1.05);
 }
 
+.ecotopia-lp .lp-library-arrow:focus-visible {
+  outline: 2px solid var(--lp-accent-strong);
+  outline-offset: 3px;
+}
+
+.ecotopia-lp .lp-library-arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ecotopia-lp .lp-library-arrow:disabled:hover {
+  background: #EEECE6;
+  transform: none;
+}
+
 @media (max-width: 900px) {
   .ecotopia-lp .lp-library {
+    --lib-edge: 20px;
     padding: 56px 0 56px;
   }
   .ecotopia-lp .lp-library-title {
     font-size: 32px;
-    margin: 0 20px 24px;
+    margin: 0 auto 24px;
+    padding: 0 20px;
     letter-spacing: -0.018em;
   }
   .ecotopia-lp .lp-library-tabs {
@@ -1834,23 +2203,37 @@
     font-size: 14.5px;
   }
   .ecotopia-lp .lp-library-cards {
-    padding: 0 20px 16px;
+    padding: 4px 0 16px;
     gap: 16px;
   }
+  .ecotopia-lp .lp-library-cards > .lp-library-card:last-child {
+    margin-inline-end: 12px;
+  }
   .ecotopia-lp .lp-library-card {
-    flex: 0 0 260px;
-    height: 320px;
-    padding: 20px;
+    flex: 0 0 220px;
+    height: 308px;
+    padding: 18px;
+    border-radius: 16px;
+  }
+  .ecotopia-lp .lp-library-card-tag {
+    top: 12px;
+    left: 12px;
+    font-size: 10px;
+    padding: 4px 9px;
+    letter-spacing: 0.07em;
   }
   .ecotopia-lp .lp-library-card-body h3 {
-    font-size: 21px;
+    font-size: 19px;
+    letter-spacing: -0.02em;
   }
   .ecotopia-lp .lp-library-card-body p {
-    font-size: 13.5px;
+    font-size: 12.5px;
+    line-height: 1.38;
   }
   .ecotopia-lp .lp-library-controls {
     justify-content: space-between;
     padding: 0 20px;
+    margin: 16px auto 0;
   }
   .ecotopia-lp .lp-library-arrow {
     width: 40px;
@@ -2139,41 +2522,45 @@
   position: absolute;
   display: inline-flex;
   z-index: 1;
-  filter: drop-shadow(0 10px 22px rgba(15, 30, 60, 0.12));
+  filter:
+    saturate(1.4)
+    drop-shadow(0 14px 30px rgba(15, 30, 60, 0.22))
+    drop-shadow(0 4px 8px rgba(15, 30, 60, 0.14));
+}
+
+.ecotopia-lp .lp-testimonios-orb-img {
+  max-width: none;
+  max-height: none;
+  display: block;
 }
 
 .ecotopia-lp .lp-testimonios-orb--blue {
-  top: 0;
-  left: 18%;
-  transform: rotate(-8deg);
+  top: -12px;
+  left: 14%;
 }
 .ecotopia-lp .lp-testimonios-orb--green {
-  top: 10px;
-  right: 16%;
-  transform: rotate(12deg);
-}
-.ecotopia-lp .lp-testimonios-orb--green svg circle {
-  /* gradient gerado dinâmico — adiciona overlay rosa decorativo */
+  top: -4px;
+  right: 12%;
 }
 .ecotopia-lp .lp-testimonios-orb--orange {
   top: 50%;
-  left: 8%;
-  transform: translateY(-20%) rotate(-4deg);
-  width: 72px;
-  height: 72px;
+  left: 4%;
+  transform: translateY(-30%);
+}
+.ecotopia-lp .lp-testimonios-orb--orange .lp-testimonios-orb-img {
+  width: 140px;
+  height: 110px;
+  object-fit: cover;
+  object-position: center;
 }
 .ecotopia-lp .lp-testimonios-orb--pink {
-  bottom: 4px;
-  right: 10%;
-  transform: rotate(8deg);
-  width: 64px;
-  height: 64px;
+  bottom: -24px;
+  right: 2%;
 }
-
-.ecotopia-lp .lp-testimonios-orb--orange svg,
-.ecotopia-lp .lp-testimonios-orb--pink svg {
-  width: 100%;
-  height: 100%;
+.ecotopia-lp .lp-testimonios-orb--pink .lp-testimonios-orb-img {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
 }
 
 /* ── Sparkles (estrelas decorativas) ── */
@@ -2250,22 +2637,56 @@
     padding: 64px 20px 64px;
   }
   .ecotopia-lp .lp-testimonios-hero {
-    padding: 50px 0 28px;
-    margin-bottom: 36px;
+    padding: 60px 16px 60px;
+    margin-bottom: 32px;
   }
   .ecotopia-lp .lp-testimonios-title {
-    font-size: 30px;
+    font-size: 22px;
     line-height: 1.12;
+    max-width: 30ch;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
   }
   .ecotopia-lp .lp-testimonios-orb {
-    transform: scale(0.7);
+    transform: scale(0.5);
+    transform-origin: center;
   }
-  .ecotopia-lp .lp-testimonios-orb--blue { left: 8%; top: -4px; }
-  .ecotopia-lp .lp-testimonios-orb--green { right: 6%; top: 6px; }
-  .ecotopia-lp .lp-testimonios-orb--orange { display: none; }
-  .ecotopia-lp .lp-testimonios-orb--pink { display: none; }
-  .ecotopia-lp .lp-testimonios-sparkle--yellow { left: 30%; }
-  .ecotopia-lp .lp-testimonios-sparkle--pink { right: 26%; }
+  .ecotopia-lp .lp-testimonios-orb--blue {
+    top: 4px;
+    left: 6%;
+    right: auto;
+  }
+  .ecotopia-lp .lp-testimonios-orb--green {
+    top: 0;
+    right: 4%;
+    left: auto;
+  }
+  .ecotopia-lp .lp-testimonios-orb--orange {
+    display: inline-flex;
+    top: auto;
+    left: 2%;
+    bottom: 4px;
+    transform: scale(0.5);
+  }
+  .ecotopia-lp .lp-testimonios-orb--orange .lp-testimonios-orb-img {
+    width: 140px;
+    height: 110px;
+  }
+  .ecotopia-lp .lp-testimonios-orb--pink {
+    display: inline-flex;
+    right: 4%;
+    bottom: 0;
+    left: auto;
+  }
+  .ecotopia-lp .lp-testimonios-sparkle--yellow {
+    left: 28%;
+    top: 22px;
+  }
+  .ecotopia-lp .lp-testimonios-sparkle--pink {
+    right: 26%;
+    top: 22px;
+  }
 
   .ecotopia-lp .lp-testimonios-grid {
     grid-template-columns: 1fr;
@@ -2297,7 +2718,9 @@
   grid-template-columns: 1.05fr 1fr;
   align-items: center;
   gap: 32px;
-  background: linear-gradient(135deg, #1F61F5 0%, #1A4FB5 100%);
+  background:
+    url("/images/empresas-bg.png") center/cover no-repeat,
+    linear-gradient(135deg, #1F61F5 0%, #1A4FB5 100%);
   border-radius: 28px;
   padding: 64px 56px;
   color: #FFFFFF;
@@ -2534,10 +2957,25 @@
   position: relative;
   width: 100%;
   min-height: 680px;
-  background: #FFCD29;
-  border-top-left-radius: 50% 100px;
-  border-top-right-radius: 50% 100px;
+  background:
+    url("/images/fechamento-bg.png") center/cover no-repeat,
+    #FFCD29;
   overflow: hidden;
+}
+
+/* Curva côncava no topo — pseudo-elemento branco que "raspa" o canto */
+.ecotopia-lp .lp-fechamento-inner::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -2px;
+  right: -2px;
+  height: 100px;
+  background: var(--lp-bg, #FFFFFF);
+  border-bottom-left-radius: 50% 100%;
+  border-bottom-right-radius: 50% 100%;
+  z-index: 4;
+  pointer-events: none;
 }
 
 /* — Arco-íris: posicionado atrás do CTA, com a parte de baixo cortada — */
@@ -2586,35 +3024,6 @@
   transform: translateX(-50%) translateY(-2px) scale(1.02);
   background: #1A4FB5;
   box-shadow: 0 16px 40px rgba(31, 97, 245, 0.42);
-}
-
-/* — Nuvens grandes nas laterais — */
-.ecotopia-lp .lp-fechamento-cloud {
-  position: absolute;
-  z-index: 2;
-  display: inline-flex;
-  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.08));
-  animation: lpFechamentoCloud 8s ease-in-out infinite;
-}
-
-.ecotopia-lp .lp-fechamento-cloud--left {
-  width: 210px;
-  height: 126px;
-  left: 12%;
-  top: 280px;
-}
-
-.ecotopia-lp .lp-fechamento-cloud--right {
-  width: 180px;
-  height: 108px;
-  right: 8%;
-  top: 360px;
-  animation-delay: 2s;
-}
-
-@keyframes lpFechamentoCloud {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-10px); }
 }
 
 /* — Sparkles brancos delicados — */
@@ -2914,13 +3323,7 @@
   flex-wrap: wrap;
 }
 
-/* â”€â”€â”€ Biblioteca com abas â”€â”€â”€ */
-.ecotopia-lp .lp-library {
-  padding: 60px 32px;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
+/* ─── Biblioteca (legado .lp-lib-* — mantido pra compat) ─── */
 .ecotopia-lp .lp-lib-tabs {
   display: flex;
   gap: 28px;
@@ -3440,6 +3843,12 @@
   }
   .ecotopia-lp .lp-nav-links,
   .ecotopia-lp .lp-nav-link-text { display: none !important; }
+
+  /* Logo menor no mobile — inline style 72px sobrescrito */
+  .ecotopia-lp .lp-nav-left a img {
+    width: 44px !important;
+    height: 44px !important;
+  }
 
   /* Diagnóstico (Que tipo de estado de espírito) — mobile */
   .ecotopia-lp .lp-cat-section {

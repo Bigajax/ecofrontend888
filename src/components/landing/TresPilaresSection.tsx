@@ -51,14 +51,6 @@ const VisualEcoAI = () => {
         </p>
       </div>
 
-      <img
-        src="/images/eco-mascote.png"
-        alt=""
-        aria-hidden="true"
-        className="lp-feat-mascote"
-        loading="lazy"
-        decoding="async"
-      />
     </div>
   );
 };
@@ -204,7 +196,7 @@ const TABS: TabConfig[] = [
     cta: 'Conversar com a Eco',
     ctaTo: '/register?plan=annual&from=feature_ecoai',
     from: 'feature_ecoai',
-    bg: '#FFCE00',
+    bg: 'url("/images/eco-ai-bg.png") center/cover no-repeat, #FFCE00',
     textColor: '#1A1A1A',
     Visual: VisualEcoAI,
   },
@@ -219,7 +211,7 @@ const TABS: TabConfig[] = [
     cta: 'Saber mais',
     ctaTo: '/register?plan=annual&from=feature_meditacoes',
     from: 'feature_meditacoes',
-    bg: '#FFA1CC',
+    bg: 'url("/images/meditacoes-bg.png") center/cover no-repeat, #FFA1CC',
     textColor: '#1A1A1A',
     Visual: VisualMeditacoes,
   },
@@ -234,7 +226,7 @@ const TABS: TabConfig[] = [
     cta: 'Explorar recursos de sono',
     ctaTo: '/register?plan=annual&from=feature_sono',
     from: 'feature_sono',
-    bg: '#3B197F',
+    bg: 'url("/images/sono-bg.png") center/cover no-repeat, #3B197F',
     textColor: '#FFFFFF',
     Visual: VisualSono,
   },
@@ -249,7 +241,7 @@ const TABS: TabConfig[] = [
     cta: 'Conhecer os anéis',
     ctaTo: '/register?plan=annual&from=feature_aneis',
     from: 'feature_aneis',
-    bg: '#02873E',
+    bg: 'url("/images/aneis-bg.png") center/cover no-repeat, #02873E',
     textColor: '#FFFFFF',
     Visual: VisualAneis,
   },
@@ -264,7 +256,7 @@ const TABS: TabConfig[] = [
     cta: 'Começar diário',
     ctaTo: '/register?plan=annual&from=feature_estoico',
     from: 'feature_estoico',
-    bg: '#0061EF',
+    bg: 'url("/images/estoico-bg.png") center/cover no-repeat, #0061EF',
     textColor: '#FFFFFF',
     Visual: VisualEstoico,
   },
@@ -421,9 +413,9 @@ export default function TresPilaresSection() {
   return (
     <section className="lp-features" aria-labelledby="features-heading">
       <h2 id="features-heading" className="lp-features-title scroll-reveal">
-        O aplicativo de saúde mental
+        Clareza emocional
         <br />
-        para todos os momentos.
+        para o seu dia.
       </h2>
 
       <div className="lp-features-tabs" role="tablist" aria-label="Módulos do ECO">

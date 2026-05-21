@@ -8,51 +8,37 @@ type Testimonio = {
 
 const TESTIMONIOS: Testimonio[] = [
   {
-    key: 'lembretes',
+    key: 'primeiro-dialogo',
     quote:
-      'Os lembretes diários para ser gentil e paciente comigo mesma — enquanto pratico hábitos novos — me ajudaram a encontrar um espaço interno mais calmo no meu dia.',
-    caption: 'Membro · sobre construir hábitos mais úteis',
+      'Eu achei que ia ser mais um app de meditação. Mas a Eco me fez uma pergunta que meu terapeuta nunca tinha feito.',
+    caption: 'Membro · sobre o primeiro diálogo',
   },
   {
-    key: 'pensamentos',
+    key: 'ritual-diario',
     quote:
-      'O ECO me ajudou a começar o processo de me afastar de pensamentos tóxicos e perceber que faço parte de algo maior do que as minhas próprias mágoas.',
-    caption: 'Membro · sobre aprender a pensar de outros jeitos',
+      'Os 5 minutos do Diário Estoico viraram a parte mais importante do meu dia. Não é motivacional, é prático.',
+    caption: 'Membro · sobre o ritual diário',
   },
   {
-    key: 'relacao',
+    key: 'em-portugues',
     quote:
-      'As estratégias dos programas me permitiram trabalhar em partes de mim que eu vinha empurrando com a barriga. O ECO mudou a relação que eu tinha comigo mesma.',
-    caption: 'Membro · sobre atravessar os próprios sentimentos',
+      'Pela primeira vez tenho uma IA que conversa comigo em português de verdade, e que entende o jeito brasileiro de sentir.',
+    caption: 'Membro · sobre conversar com a Eco',
   },
 ];
 
-// ─── Orb decorativo (mascote ECO com olho fechado) ───────────────────────────
-const Orb = ({ bg, eyeColor = '#1A1A1A' }: { bg: string; eyeColor?: string }) => (
-  <svg viewBox="0 0 80 80" width="80" height="80" aria-hidden="true">
-    <defs>
-      <radialGradient id={`grad-${bg.replace(/[^a-z0-9]/gi, '')}`} cx="35%" cy="32%" r="70%">
-        <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
-        <stop offset="60%" stopColor={bg} />
-        <stop offset="100%" stopColor={bg} />
-      </radialGradient>
-    </defs>
-    <circle cx="40" cy="40" r="36" fill={`url(#grad-${bg.replace(/[^a-z0-9]/gi, '')})`} />
-    <path
-      d="M30 42 q5 6 10 0"
-      stroke={eyeColor}
-      strokeWidth="3"
-      strokeLinecap="round"
-      fill="none"
-    />
-    <path
-      d="M44 42 q5 6 10 0"
-      stroke={eyeColor}
-      strokeWidth="3"
-      strokeLinecap="round"
-      fill="none"
-    />
-  </svg>
+// ─── Orb decorativo (imagens PNG de orbs de vidro) ──────────────────────────
+const Orb = ({ src }: { src: string }) => (
+  <img
+    src={src}
+    alt=""
+    aria-hidden="true"
+    width={160}
+    height={160}
+    loading="lazy"
+    decoding="async"
+    className="lp-testimonios-orb-img"
+  />
 );
 
 const Sparkle = ({ color }: { color: string }) => (
@@ -69,10 +55,10 @@ export default function TestimoniosSection() {
   return (
     <section ref={ref} id="depoimentos" className="lp-testimonios">
       <div className="lp-testimonios-hero">
-        <span className="lp-testimonios-orb lp-testimonios-orb--blue"><Orb bg="#6EC8FF" /></span>
-        <span className="lp-testimonios-orb lp-testimonios-orb--green"><Orb bg="#5BC07F" /></span>
-        <span className="lp-testimonios-orb lp-testimonios-orb--orange"><Orb bg="#F58A2E" /></span>
-        <span className="lp-testimonios-orb lp-testimonios-orb--pink"><Orb bg="#F091A8" /></span>
+        <span className="lp-testimonios-orb lp-testimonios-orb--blue"><Orb src="/images/testimonio-orb-blue.png" /></span>
+        <span className="lp-testimonios-orb lp-testimonios-orb--green"><Orb src="/images/testimonio-orb-green.png" /></span>
+        <span className="lp-testimonios-orb lp-testimonios-orb--orange"><Orb src="/images/testimonio-orb-yellow.png" /></span>
+        <span className="lp-testimonios-orb lp-testimonios-orb--pink"><Orb src="/images/testimonio-orb-pink.png" /></span>
 
         <span className="lp-testimonios-sparkle lp-testimonios-sparkle--yellow"><Sparkle color="#F2C94C" /></span>
         <span className="lp-testimonios-sparkle lp-testimonios-sparkle--pink"><Sparkle color="#F091A8" /></span>

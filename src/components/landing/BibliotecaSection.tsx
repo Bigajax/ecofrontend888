@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useHeadlineVariant } from '@/hooks/useHeadlineVariant';
@@ -20,13 +20,13 @@ type LibraryCard = {
   from: string;
 };
 
-const TABS: { id: TabId; icon: string; label: string }[] = [
-  { id: 'destaques', icon: '⭐', label: 'Destaques' },
-  { id: 'populares', icon: '💗', label: 'Populares' },
-  { id: 'meditacao', icon: '🧘', label: 'Meditação' },
-  { id: 'programas', icon: '📚', label: 'Programas' },
-  { id: 'sono',      icon: '🌙', label: 'Sono' },
-  { id: 'ansiedade', icon: '✳️', label: 'Ansiedade' },
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'destaques', label: 'Destaques' },
+  { id: 'populares', label: 'Populares' },
+  { id: 'meditacao', label: 'Meditação' },
+  { id: 'programas', label: 'Programas' },
+  { id: 'sono',      label: 'Sono' },
+  { id: 'ansiedade', label: 'Ansiedade' },
 ];
 
 // Programas e artigos próprios da Ecotopia (mesmas imagens usadas no app)
@@ -117,6 +117,8 @@ function fromNight(n: ProtocolNight, tag?: string): LibraryCard {
 export default function BibliotecaSection() {
   const { variant } = useHeadlineVariant();
   const [activeTab, setActiveTab] = useState<TabId>('meditacao');
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(true);
   const railRef = useRef<HTMLDivElement>(null);
 
   const cards = useMemo<LibraryCard[]>(() => {
@@ -181,6 +183,24 @@ export default function BibliotecaSection() {
     });
   };
 
+  useEffect(() => {
+    const el = railRef.current;
+    if (!el) return;
+    const update = () => {
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      setCanPrev(el.scrollLeft > 4);
+      setCanNext(el.scrollLeft < maxScroll - 4);
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro.disconnect();
+    };
+  }, [cards.length]);
+
   return (
     <section id="biblioteca" className="lp-library">
       <h2 className="lp-library-title scroll-reveal">Explore nossa biblioteca</h2>
@@ -198,7 +218,6 @@ export default function BibliotecaSection() {
               if (railRef.current) railRef.current.scrollTo({ left: 0, behavior: 'smooth' });
             }}
           >
-            <span className="lp-library-tab-icon" aria-hidden="true">{t.icon}</span>
             {t.label}
           </button>
         ))}
@@ -253,6 +272,7 @@ export default function BibliotecaSection() {
             className="lp-library-arrow"
             onClick={() => scroll('prev')}
             aria-label="Anterior"
+            disabled={!canPrev}
           >
             <ChevronLeft size={20} strokeWidth={2.4} />
           </button>
@@ -261,6 +281,7 @@ export default function BibliotecaSection() {
             className="lp-library-arrow"
             onClick={() => scroll('next')}
             aria-label="Próximo"
+            disabled={!canNext}
           >
             <ChevronRight size={20} strokeWidth={2.4} />
           </button>

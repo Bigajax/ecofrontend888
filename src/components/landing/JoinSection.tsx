@@ -46,24 +46,18 @@ export default function JoinSection() {
 
         <div className="lp-join-stats scroll-reveal">
           <div className="lp-join-stat">
-            <div className="lp-join-stars" aria-label="4.8 de 5 estrelas">★★★★★</div>
-            <div className="lp-join-stat-label">Avaliação App Store</div>
+            <div className="lp-join-stars" aria-label="4.9 de 5 estrelas">★★★★★</div>
+            <div className="lp-join-stat-label">Avaliação 4.9 na App Store</div>
           </div>
           <div className="lp-join-stat">
-            <div className="lp-join-stat-big">50k+</div>
-            <div className="lp-join-stat-label">Pessoas atendidas</div>
+            <div className="lp-join-stat-big">PT-BR</div>
+            <div className="lp-join-stat-label">Conteúdo 100% em português brasileiro</div>
           </div>
           <div className="lp-join-stat">
-            <div className="lp-join-stat-big">2M+</div>
-            <div className="lp-join-stat-label">Minutos meditados</div>
-          </div>
-          <div className="lp-join-stat">
-            <div className="lp-join-awards" aria-hidden="true">
-              <span>🏆</span>
-              <span>🎖️</span>
-              <span>⭐</span>
+            <div className="lp-join-stat-big" aria-hidden="true">Método</div>
+            <div className="lp-join-stat-label">
+              Baseado em estoicismo, psicologia existencial e diálogo socrático
             </div>
-            <div className="lp-join-stat-label">Prêmios e selos</div>
           </div>
         </div>
       </div>

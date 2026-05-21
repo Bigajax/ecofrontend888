@@ -63,8 +63,9 @@ export default function EcotopiaHero() {
       <div className="lp-hero-cards">
         <div className="lp-hero-card reveal-soft animation-delay-100">
           <h2>
-            Aplicativo de autoconhecimento com<br />
-            Eco AI, ritual diário e biblioteca filosófica
+            Autoconhecimento prático
+            <br />
+            em um único app.
           </h2>
           <Link
             to="/register?plan=annual&from=hero_card1"
@@ -78,12 +79,12 @@ export default function EcotopiaHero() {
               })
             }
           >
-            Experimente por R$ 0
+            Começar 7 dias grátis
           </Link>
           <div
             className="lp-hero-placeholder"
             style={{
-              backgroundImage: 'url(/images/5-aneis-hero.webp)',
+              backgroundImage: 'url(/images/hero-orbs-bg.png)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
@@ -94,7 +95,7 @@ export default function EcotopiaHero() {
           <h2>
             Diário Estoico
             <br />
-            366 lições filosóficas
+            Uma lição por dia.
           </h2>
           <Link
             to="/register?plan=annual&from=hero_card2"
@@ -108,12 +109,12 @@ export default function EcotopiaHero() {
               })
             }
           >
-            Começar hoje
+            Ler a lição de hoje
           </Link>
           <div
             className="lp-hero-placeholder"
             style={{
-              backgroundImage: 'url(/images/diario-estoico.webp)',
+              backgroundImage: 'url(/images/diario-estoico-bg.png)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}

@@ -5,7 +5,7 @@ export default function EcotopiaTopbar() {
     <>
       <div className="top-banner">
         <Link to="/precos">
-          7 dias gratuitos · autoconhecimento prático em português
+          7 dias grátis · Autoconhecimento prático
         </Link>
       </div>
 
@@ -24,11 +24,11 @@ export default function EcotopiaTopbar() {
             <img
               src="/images/ECOTOPIA.webp"
               alt=""
-              width={44}
-              height={44}
+              width={72}
+              height={72}
               style={{
-                width: '44px',
-                height: '44px',
+                width: '72px',
+                height: '72px',
                 objectFit: 'contain',
                 display: 'block',
               }}
