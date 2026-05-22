@@ -1,6 +1,16 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 export default function EcotopiaTopbar() {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
     <>
       <div className="top-banner">
@@ -9,29 +19,15 @@ export default function EcotopiaTopbar() {
         </Link>
       </div>
 
-      <nav className="lp-nav">
+      <nav className={`lp-nav ${isScrolled ? 'is-scrolled' : ''}`}>
         <div className="lp-nav-left">
-          <Link
-            to="/"
-            aria-label="Ecotopia"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '12px',
-              textDecoration: 'none',
-            }}
-          >
+          <Link to="/" aria-label="Ecotopia" className="lp-nav-brand">
             <img
-              src="/images/ECOTOPIA.webp"
-              alt=""
-              width={72}
-              height={72}
-              style={{
-                width: '72px',
-                height: '72px',
-                objectFit: 'contain',
-                display: 'block',
-              }}
+              src="/images/ecotopia-logo-horizontal.png"
+              alt="Ecotopia"
+              width={180}
+              height={44}
+              className="lp-nav-brand-img"
             />
           </Link>
 

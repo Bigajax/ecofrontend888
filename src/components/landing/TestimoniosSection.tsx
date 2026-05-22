@@ -33,16 +33,16 @@ const Orb = ({ src }: { src: string }) => (
     src={src}
     alt=""
     aria-hidden="true"
-    width={160}
-    height={160}
+    width={200}
+    height={200}
     loading="lazy"
     decoding="async"
     className="lp-testimonios-orb-img"
   />
 );
 
-const Sparkle = ({ color }: { color: string }) => (
-  <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
+const Sparkle = ({ color, size = 22 }: { color: string; size?: number }) => (
+  <svg viewBox="0 0 20 20" width={size} height={size} aria-hidden="true">
     <path d="M10 0 L12 8 L20 10 L12 12 L10 20 L8 12 L0 10 L8 8 Z" fill={color} />
   </svg>
 );
@@ -55,18 +55,36 @@ export default function TestimoniosSection() {
   return (
     <section ref={ref} id="depoimentos" className="lp-testimonios">
       <div className="lp-testimonios-hero">
-        <span className="lp-testimonios-orb lp-testimonios-orb--blue"><Orb src="/images/testimonio-orb-blue.png" /></span>
-        <span className="lp-testimonios-orb lp-testimonios-orb--green"><Orb src="/images/testimonio-orb-green.png" /></span>
-        <span className="lp-testimonios-orb lp-testimonios-orb--orange"><Orb src="/images/testimonio-orb-yellow.png" /></span>
-        <span className="lp-testimonios-orb lp-testimonios-orb--pink"><Orb src="/images/testimonio-orb-pink.png" /></span>
+        <span className="lp-testimonios-orb lp-testimonios-orb--blue" aria-hidden="true">
+          <Orb src="/images/testimonio-orb-blue.png" />
+        </span>
+        <span className="lp-testimonios-orb lp-testimonios-orb--green" aria-hidden="true">
+          <Orb src="/images/testimonio-orb-green.png" />
+        </span>
+        <span className="lp-testimonios-orb lp-testimonios-orb--orange" aria-hidden="true">
+          <Orb src="/images/testimonio-orb-yellow.png" />
+        </span>
+        <span className="lp-testimonios-orb lp-testimonios-orb--pink" aria-hidden="true">
+          <Orb src="/images/testimonio-orb-pink.png" />
+        </span>
 
-        <span className="lp-testimonios-sparkle lp-testimonios-sparkle--yellow"><Sparkle color="#F2C94C" /></span>
-        <span className="lp-testimonios-sparkle lp-testimonios-sparkle--pink"><Sparkle color="#F091A8" /></span>
+        <span className="lp-testimonios-sparkle lp-testimonios-sparkle--yellow" aria-hidden="true">
+          <Sparkle color="#F4C645" size={64} />
+        </span>
+        <span className="lp-testimonios-sparkle lp-testimonios-sparkle--pink" aria-hidden="true">
+          <Sparkle color="#F2A2B5" size={50} />
+        </span>
+        <span className="lp-testimonios-sparkle lp-testimonios-sparkle--mint" aria-hidden="true">
+          <Sparkle color="#9BD4B9" size={40} />
+        </span>
 
         <h2 className="lp-testimonios-title scroll-reveal">
-          Membros vivendo dias
-          <br />
-          mais leves e equilibrados
+          <span className="lp-testimonios-title-line lp-testimonios-title-line--lead">
+            Membros vivendo dias mais
+          </span>
+          <span className="lp-testimonios-title-line lp-testimonios-title-line--sub">
+            leves e equilibrados
+          </span>
         </h2>
       </div>
 

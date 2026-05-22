@@ -201,6 +201,15 @@ export default function BibliotecaSection() {
     };
   }, [cards.length]);
 
+  // Garante que a troca de aba sempre volte ao primeiro card, depois do re-render
+  useEffect(() => {
+    const el = railRef.current;
+    if (!el) return;
+    el.scrollLeft = 0;
+    setCanPrev(false);
+    setCanNext(el.scrollWidth > el.clientWidth);
+  }, [activeTab]);
+
   return (
     <section id="biblioteca" className="lp-library">
       <h2 className="lp-library-title scroll-reveal">Explore nossa biblioteca</h2>
@@ -213,10 +222,7 @@ export default function BibliotecaSection() {
             role="tab"
             aria-selected={activeTab === t.id}
             className={`lp-library-tab ${activeTab === t.id ? 'is-active' : ''}`}
-            onClick={() => {
-              setActiveTab(t.id);
-              if (railRef.current) railRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-            }}
+            onClick={() => setActiveTab(t.id)}
           >
             {t.label}
           </button>
