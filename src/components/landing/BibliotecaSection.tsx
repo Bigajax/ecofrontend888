@@ -259,6 +259,11 @@ export default function BibliotecaSection() {
         </div>
 
         <div className="lp-library-controls">
+          {activeTab === 'meditacao' && (
+            <Link to="/meditacao" className="lp-library-learn">
+              Saiba mais sobre nossa meditação →
+            </Link>
+          )}
           <Link
             to="/register?plan=annual&from=library_view_all"
             className="lp-library-viewall"

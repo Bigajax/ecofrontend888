@@ -292,7 +292,527 @@
   opacity: 0.65;
 }
 
-/* â”€â”€â”€ Buttons â€” Azul royal sÃ³lido (Headspace-style) â”€â”€â”€ */
+/* ─── Mega menu · trigger ─── */
+.ecotopia-lp .lp-mega-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  height: 100%;
+}
+
+.ecotopia-lp .lp-mega-item {
+  position: static; /* mega panel se alinha ao .lp-nav, não ao li */
+  display: flex;
+  align-items: center;
+  height: 84px;
+}
+
+.ecotopia-lp .lp-mega-trigger {
+  font-family: var(--lp-sans);
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--lp-text);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: -0.005em;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  height: 100%;
+}
+
+.ecotopia-lp .lp-mega-trigger svg {
+  transition: transform 0.28s ease;
+  opacity: 0.55;
+}
+
+.ecotopia-lp .lp-mega-item:hover .lp-mega-trigger,
+.ecotopia-lp .lp-mega-item:focus-within .lp-mega-trigger {
+  color: var(--lp-accent-strong);
+  font-weight: 600;
+}
+
+.ecotopia-lp .lp-mega-item:hover .lp-mega-trigger svg,
+.ecotopia-lp .lp-mega-item:focus-within .lp-mega-trigger svg {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+/* ─── Mega menu · panel ─── */
+.ecotopia-lp .lp-mega-panel {
+  position: absolute;
+  top: 84px;
+  left: 0;
+  width: 100vw;
+  max-width: 100vw;
+  background: #FFFFFF;
+  padding: 40px 56px 44px;
+  z-index: 40;
+  border-bottom-left-radius: var(--lp-radius-2xl);
+  border-bottom-right-radius: var(--lp-radius-2xl);
+  border-top: 1px solid var(--lp-line-neutral);
+  box-shadow:
+    0 18px 40px -16px rgba(13, 52, 97, 0.18),
+    0 4px 12px rgba(13, 52, 97, 0.06);
+  clip-path: inset(0 0 -40px 0);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-12px);
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s ease,
+    visibility 0.28s ease;
+  pointer-events: none;
+}
+
+.ecotopia-lp .lp-mega-item:hover .lp-mega-panel,
+.ecotopia-lp .lp-mega-item:focus-within .lp-mega-panel,
+.ecotopia-lp .lp-mega-panel:hover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.ecotopia-lp .lp-mega-grid {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(260px, 320px);
+  gap: 48px;
+  align-items: start;
+}
+
+.ecotopia-lp .lp-mega-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ecotopia-lp .lp-mega-heading {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: var(--lp-tracking-wide);
+  text-transform: uppercase;
+  color: var(--lp-text-muted);
+  margin: 0;
+}
+
+.ecotopia-lp .lp-mega-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ecotopia-lp .lp-mega-links li {
+  padding: 0;
+  margin: 0;
+}
+
+.ecotopia-lp .lp-mega-link {
+  font-family: var(--lp-sans);
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--lp-text) !important;
+  -webkit-text-fill-color: var(--lp-text);
+  text-decoration: none !important;
+  display: inline-block;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  transition: color 0.2s ease, transform 0.2s ease;
+  position: relative;
+}
+
+.ecotopia-lp .lp-mega-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -3px;
+  height: 1.5px;
+  background: var(--lp-accent-strong);
+  transition: right 0.28s ease;
+  border-radius: 2px;
+}
+
+.ecotopia-lp .lp-mega-link:hover {
+  color: var(--lp-accent-strong) !important;
+  -webkit-text-fill-color: var(--lp-accent-strong);
+}
+
+.ecotopia-lp .lp-mega-link:hover::after {
+  right: 0;
+}
+
+/* CTA card no canto direito do mega menu */
+.ecotopia-lp .lp-mega-cta {
+  background: linear-gradient(160deg, rgba(110, 200, 255, 0.18), rgba(175, 203, 255, 0.10));
+  border: 1px solid var(--lp-line-soft);
+  border-radius: var(--lp-radius-lg);
+  padding: 22px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ecotopia-lp .lp-mega-cta-eyebrow {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: var(--lp-tracking-wide);
+  text-transform: uppercase;
+  color: var(--lp-accent-strong);
+}
+
+.ecotopia-lp .lp-mega-cta-title {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 19px;
+  line-height: 1.25;
+  color: var(--lp-text);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.ecotopia-lp .lp-mega-cta-body {
+  font-family: var(--lp-sans);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--lp-text-secondary);
+  margin: 0;
+}
+
+.ecotopia-lp .lp-mega-cta-link {
+  margin-top: 4px;
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--lp-accent-strong) !important;
+  -webkit-text-fill-color: var(--lp-accent-strong);
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: gap 0.22s ease;
+}
+
+.ecotopia-lp .lp-mega-cta-link:hover {
+  gap: 10px;
+}
+
+/* ─── Hambúrguer (mobile) ─── */
+.ecotopia-lp .lp-hamburger {
+  display: none;
+  background: none;
+  border: 0;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: var(--lp-radius-md);
+  transition: background 0.22s ease;
+  color: var(--lp-text);
+}
+
+.ecotopia-lp .lp-hamburger:hover {
+  background: rgba(13, 27, 42, 0.05);
+}
+
+.ecotopia-lp .lp-hamburger-bars {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 22px;
+  height: 16px;
+}
+
+.ecotopia-lp .lp-hamburger-bars span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.22s ease;
+  transform-origin: center;
+}
+
+.ecotopia-lp .lp-hamburger-bars.is-open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.ecotopia-lp .lp-hamburger-bars.is-open span:nth-child(2) {
+  opacity: 0;
+}
+
+.ecotopia-lp .lp-hamburger-bars.is-open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ─── Drawer mobile ─── */
+.ecotopia-lp .lp-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 27, 42, 0.45);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 90;
+}
+
+.ecotopia-lp .lp-drawer-backdrop.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ecotopia-lp .lp-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(92vw, 400px);
+  background: #FFFFFF;
+  z-index: 100;
+  transform: translateX(100%);
+  transition: transform 0.36s cubic-bezier(0.32, 0.72, 0.32, 1);
+  box-shadow: -8px 0 32px -8px rgba(13, 52, 97, 0.22);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ecotopia-lp .lp-drawer.is-open {
+  transform: translateX(0);
+}
+
+.ecotopia-lp .lp-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 18px;
+  border-bottom: 1px solid var(--lp-line-neutral);
+  position: sticky;
+  top: 0;
+  background: #FFFFFF;
+  z-index: 2;
+}
+
+.ecotopia-lp .lp-drawer-title {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: var(--lp-tracking-wide);
+  text-transform: uppercase;
+  color: var(--lp-text-muted);
+}
+
+.ecotopia-lp .lp-drawer-close {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--lp-radius-md);
+  color: var(--lp-text);
+  transition: background 0.22s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ecotopia-lp .lp-drawer-close:hover {
+  background: rgba(13, 27, 42, 0.06);
+}
+
+.ecotopia-lp .lp-drawer-nav {
+  flex: 1 1 auto;
+  padding: 8px 0;
+}
+
+.ecotopia-lp .lp-acc-item {
+  border-bottom: 1px solid var(--lp-line-neutral);
+}
+
+.ecotopia-lp .lp-acc-trigger {
+  width: 100%;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.005em;
+  color: var(--lp-text);
+  text-align: left;
+  transition: color 0.22s ease;
+}
+
+.ecotopia-lp .lp-acc-trigger:hover {
+  color: var(--lp-accent-strong);
+}
+
+.ecotopia-lp .lp-acc-chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lp-text-muted);
+  transition: transform 0.28s ease, color 0.22s ease;
+}
+
+.ecotopia-lp .lp-acc-item.is-open .lp-acc-chev {
+  transform: rotate(180deg);
+  color: var(--lp-accent-strong);
+}
+
+.ecotopia-lp .lp-acc-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.32s ease;
+  background: var(--lp-bg-secondary);
+}
+
+.ecotopia-lp .lp-acc-inner {
+  padding: 6px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ecotopia-lp .lp-acc-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ecotopia-lp .lp-acc-heading {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: var(--lp-tracking-wide);
+  text-transform: uppercase;
+  color: var(--lp-text-muted);
+  margin: 14px 0 0;
+}
+
+.ecotopia-lp .lp-acc-group ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ecotopia-lp .lp-acc-link {
+  font-family: var(--lp-sans);
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--lp-text) !important;
+  -webkit-text-fill-color: var(--lp-text);
+  text-decoration: none !important;
+  display: inline-block;
+  line-height: 1.4;
+  transition: color 0.22s ease, transform 0.22s ease;
+}
+
+.ecotopia-lp .lp-acc-link:hover,
+.ecotopia-lp .lp-acc-link:active {
+  color: var(--lp-accent-strong) !important;
+  -webkit-text-fill-color: var(--lp-accent-strong);
+  transform: translateX(2px);
+}
+
+.ecotopia-lp .lp-acc-cta {
+  margin-top: 8px;
+  background: linear-gradient(160deg, rgba(110, 200, 255, 0.20), rgba(175, 203, 255, 0.10));
+  border: 1px solid var(--lp-line-soft);
+  border-radius: var(--lp-radius-lg);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ecotopia-lp .lp-acc-flat {
+  display: block;
+  padding: 18px 22px;
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--lp-text) !important;
+  -webkit-text-fill-color: var(--lp-text);
+  text-decoration: none !important;
+  border-bottom: 1px solid var(--lp-line-neutral);
+  transition: color 0.22s ease, background 0.22s ease;
+}
+
+.ecotopia-lp .lp-acc-flat:hover {
+  color: var(--lp-accent-strong) !important;
+  -webkit-text-fill-color: var(--lp-accent-strong);
+  background: var(--lp-bg-secondary);
+}
+
+.ecotopia-lp .lp-drawer-foot {
+  padding: 20px 22px 24px;
+  border-top: 1px solid var(--lp-line-neutral);
+  position: sticky;
+  bottom: 0;
+  background: #FFFFFF;
+  z-index: 2;
+}
+
+.ecotopia-lp .lp-drawer-cta {
+  width: 100%;
+  justify-content: center;
+  padding: 16px 24px;
+  font-size: 15px;
+}
+
+/* Trava o scroll do body quando o drawer está aberto */
+body.eco-no-scroll {
+  overflow: hidden;
+}
+
+/* ─── Nav · breakpoint 1024px (Headspace-style) ─── */
+@media (max-width: 1023px) {
+  .ecotopia-lp .lp-nav {
+    padding: 14px 20px;
+    flex-wrap: nowrap;
+    gap: 12px;
+    height: 72px;
+  }
+  .ecotopia-lp .lp-nav-left {
+    gap: 0;
+  }
+  .ecotopia-lp .lp-mega-list,
+  .ecotopia-lp .lp-nav-link-text {
+    display: none !important;
+  }
+  .ecotopia-lp .lp-nav-right {
+    gap: 8px;
+  }
+  .ecotopia-lp .lp-hamburger {
+    display: inline-flex !important;
+  }
+  .ecotopia-lp .lp-nav .cta-primary {
+    padding: 10px 18px;
+    font-size: 13px;
+  }
+}
+
+/* ─── Buttons — Azul royal sólido (Headspace-style) ─── */
 .ecotopia-lp .cta-primary,
 .ecotopia-lp a.cta-primary,
 .ecotopia-lp button.cta-primary {
@@ -520,16 +1040,10 @@
   transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.ecotopia-lp .lp-hero-card:nth-child(1) {
-  background:
-    radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.55) 0%, transparent 60%),
-    linear-gradient(160deg, #F4F1EC 0%, #ECE6DC 100%);
-}
-
+.ecotopia-lp .lp-hero-card:nth-child(1),
 .ecotopia-lp .lp-hero-card:nth-child(2) {
-  background:
-    radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.35) 0%, transparent 55%),
-    linear-gradient(160deg, #EFE0C7 0%, #E6C79C 100%);
+  background: #FFFFFF;
+  border: 1px solid var(--lp-line-neutral);
 }
 
 .ecotopia-lp .lp-hero-card:hover {
@@ -3729,9 +4243,10 @@
 
 /* â”€â”€â”€ Footer navy profundo â”€â”€â”€ */
 .ecotopia-lp .lp-footer {
-  background: var(--eco-azul-profundo);
-  color: var(--eco-off-white);
+  background: #FFFFFF;
+  color: var(--lp-text);
   padding: 60px 32px 30px;
+  border-top: 1px solid var(--lp-line-neutral);
 }
 
 .ecotopia-lp .lp-footer-title {
@@ -3740,7 +4255,7 @@
   text-align: center;
   font-size: clamp(28px, 3.6vw, 38px);
   margin-bottom: 48px;
-  color: var(--eco-off-white);
+  color: var(--lp-text);
   letter-spacing: var(--lp-tracking-tight);
 }
 
@@ -3759,9 +4274,8 @@
   text-transform: uppercase;
   letter-spacing: var(--lp-tracking-wide);
   margin-bottom: 14px;
-  opacity: 0.72;
-  color: var(--eco-off-white);
-  font-weight: 600;
+  color: var(--lp-text-muted);
+  font-weight: 700;
 }
 
 .ecotopia-lp .lp-footer ul {
@@ -3774,58 +4288,59 @@
   margin-bottom: 10px;
   font-family: var(--lp-sans);
   font-size: 14.5px;
-  color: rgba(244, 241, 236, 0.88);
+  color: var(--lp-text);
 }
 
 .ecotopia-lp .lp-footer a {
-  color: var(--eco-off-white) !important;
-  -webkit-text-fill-color: var(--eco-off-white);
+  color: var(--lp-text) !important;
+  -webkit-text-fill-color: var(--lp-text);
   text-decoration: none !important;
-  opacity: 0.88;
-  transition: opacity 0.22s ease;
+  opacity: 1;
+  transition: color 0.22s ease;
 }
 
 .ecotopia-lp .lp-footer a:hover {
-  opacity: 1;
+  color: var(--lp-accent-strong) !important;
+  -webkit-text-fill-color: var(--lp-accent-strong);
 }
 
 .ecotopia-lp .lp-footer-newsletter p {
   font-size: 14.5px;
-  opacity: 0.78;
   margin-bottom: 6px;
-  color: rgba(244, 241, 236, 0.78);
+  color: var(--lp-text-secondary);
 }
 
 .ecotopia-lp .lp-footer-newsletter input {
   width: 100%;
   padding: 14px 18px;
   border-radius: var(--lp-radius-pill);
-  border: none;
+  border: 1px solid var(--lp-line-neutral);
   margin: 12px 0;
   font-size: 14.5px;
   font-family: var(--lp-sans);
   color: var(--lp-text);
-  background: var(--eco-off-white);
+  background: var(--lp-bg-secondary);
 }
 
 .ecotopia-lp .lp-footer-newsletter input:focus-visible {
-  outline: 2px solid var(--eco-baby);
+  outline: 2px solid var(--lp-accent-strong);
   outline-offset: 2px;
+  border-color: transparent;
 }
 
 .ecotopia-lp .lp-footer-bottom {
-  border-top: 1px solid rgba(244, 241, 236, 0.12);
+  border-top: 1px solid var(--lp-line-neutral);
   padding-top: 24px;
   display: flex;
   justify-content: space-between;
   font-family: var(--lp-mono);
   font-size: 12.5px;
-  opacity: 0.6;
+  opacity: 0.72;
   flex-wrap: wrap;
   gap: 16px;
   max-width: 1200px;
   margin-inline: auto;
-  color: var(--eco-off-white);
+  color: var(--lp-text-secondary);
 }
 
 /* â”€â”€â”€ Reveal â”€â”€â”€ */
@@ -3920,14 +4435,6 @@
   .ecotopia-lp .lp-footer-top {
     grid-template-columns: 1fr;
   }
-  .ecotopia-lp .lp-nav {
-    padding: 14px 20px;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .ecotopia-lp .lp-nav-links,
-  .ecotopia-lp .lp-nav-link-text { display: none !important; }
-
   /* Logo menor no mobile — inline style 72px sobrescrito */
   .ecotopia-lp .lp-nav-left a img {
     width: 44px !important;
@@ -4088,4 +4595,3732 @@
   .ecotopia-lp .lp-faq-section h2 { font-size: 22px; }
   .ecotopia-lp .lp-cta-banner h2 { font-size: 22px; }
   .ecotopia-lp .lp-footer-title { font-size: 22px; }
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Página /meditacao — explainer dedicado
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ─── Hero ─── */
+.ecotopia-lp .lp-med-hero {
+  position: relative;
+  min-height: clamp(620px, 92vh, 880px);
+  padding: 96px clamp(40px, 8vw, 140px);
+  background-color: #F5D67A;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+/* Véu desativado — imagem aparece em sua intensidade total */
+.ecotopia-lp .lp-med-hero-veil {
+  display: none;
+}
+
+.ecotopia-lp .lp-med-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 560px;
+}
+
+.ecotopia-lp .lp-med-hero h1 {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: clamp(42px, 4.8vw, 60px);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--lp-text);
+  margin: 0 0 32px;
+  white-space: nowrap;
+}
+
+.ecotopia-lp .lp-med-hero-lead {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--lp-text);
+  margin: 0 0 22px;
+  max-width: 48ch;
+  letter-spacing: -0.005em;
+}
+
+.ecotopia-lp .lp-med-hero-body {
+  font-family: var(--lp-sans);
+  font-weight: 500;
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: var(--lp-text-secondary);
+  margin: 0 0 40px;
+  max-width: 52ch;
+}
+
+/* Player preview · estilo Headspace */
+.ecotopia-lp .lp-med-hero-player {
+  background: #FFFFFF;
+  border-radius: var(--lp-radius-xl);
+  padding: 18px 22px 18px 18px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  box-shadow:
+    0 1px 2px rgba(13, 27, 42, 0.04),
+    0 16px 36px -12px rgba(101, 70, 18, 0.22);
+  max-width: 520px;
+  margin: 0 0 36px;
+}
+
+.ecotopia-lp .lp-med-hero-play {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--lp-accent-strong);
+  color: #FFFFFF;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(21, 84, 240, 0.32);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+}
+
+.ecotopia-lp .lp-med-hero-play:hover {
+  transform: scale(1.06);
+  background: #1148D6;
+  box-shadow: 0 6px 20px rgba(21, 84, 240, 0.42);
+}
+
+.ecotopia-lp .lp-med-hero-play svg {
+  margin-left: 3px;
+}
+
+.ecotopia-lp .lp-med-hero-player-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ecotopia-lp .lp-med-hero-player-title {
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--lp-text);
+  margin: 0 0 10px;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ecotopia-lp .lp-med-hero-player-bar {
+  position: relative;
+  height: 4px;
+  background: rgba(13, 27, 42, 0.08);
+  border-radius: 4px;
+  overflow: visible;
+  margin-bottom: 6px;
+}
+
+.ecotopia-lp .lp-med-hero-player-progress {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 14%;
+  background: var(--lp-accent-strong);
+  border-radius: 4px;
+}
+
+.ecotopia-lp .lp-med-hero-player-dot {
+  position: absolute;
+  left: 14%;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--lp-accent-strong);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 4px rgba(21, 84, 240, 0.18);
+}
+
+.ecotopia-lp .lp-med-hero-player-time {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--lp-mono);
+  font-size: 11.5px;
+  color: var(--lp-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.ecotopia-lp .lp-med-hero-cta {
+  padding: 22px 44px;
+  font-size: 16px;
+  border-radius: var(--lp-radius-pill);
+  letter-spacing: -0.005em;
+  box-shadow: 0 10px 28px rgba(21, 84, 240, 0.32);
+}
+
+.ecotopia-lp .lp-med-hero-cta:hover {
+  box-shadow: 0 14px 36px rgba(21, 84, 240, 0.42);
+}
+
+/* ─── Bites · carrossel horizontal com swipe (estilo Headspace) ─── */
+.ecotopia-lp .lp-med-bites-section {
+  padding: 88px 0;
+  background: #FFFFFF;
+  overflow: hidden;
+}
+
+.ecotopia-lp .lp-med-bites {
+  display: flex;
+  flex-direction: row;
+  gap: 28px;
+  padding: 12px clamp(24px, 6vw, 80px) 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge legado */
+}
+
+/* Esconde scrollbar no Chrome/Safari, mantém função */
+.ecotopia-lp .lp-med-bites::-webkit-scrollbar {
+  display: none;
+}
+
+.ecotopia-lp .lp-med-bite {
+  flex: 0 0 clamp(240px, 22vw, 280px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+  padding: 8px;
+  scroll-snap-align: start;
+}
+
+.ecotopia-lp .lp-med-bite-icon {
+  flex: 0 0 112px;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.ecotopia-lp .lp-med-bite-icon--doses,
+.ecotopia-lp .lp-med-bite-icon--iniciantes,
+.ecotopia-lp .lp-med-bite-icon--ciencia,
+.ecotopia-lp .lp-med-bite-icon--mindfulness,
+.ecotopia-lp .lp-med-bite-icon--tecnicas,
+.ecotopia-lp .lp-med-bite-icon--passo {
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-med-bite-icon--doses img,
+.ecotopia-lp .lp-med-bite-icon--iniciantes img,
+.ecotopia-lp .lp-med-bite-icon--ciencia img,
+.ecotopia-lp .lp-med-bite-icon--mindfulness img,
+.ecotopia-lp .lp-med-bite-icon--tecnicas img,
+.ecotopia-lp .lp-med-bite-icon--passo img {
+  transform: scale(1.45);
+  transform-origin: center;
+}
+
+.ecotopia-lp .lp-med-bite-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.ecotopia-lp .lp-med-bite-title {
+  margin: 0;
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  width: 100%;
+}
+
+.ecotopia-lp .lp-med-bite-title a {
+  color: var(--lp-text) !important;
+  -webkit-text-fill-color: var(--lp-text);
+  text-decoration: underline !important;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  text-decoration-color: rgba(13, 27, 42, 0.32);
+  transition: text-decoration-color 0.22s ease, color 0.22s ease;
+}
+
+.ecotopia-lp .lp-med-bite-title a:hover {
+  text-decoration-color: var(--lp-accent-strong);
+  color: var(--lp-accent-strong) !important;
+  -webkit-text-fill-color: var(--lp-accent-strong);
+}
+
+.ecotopia-lp .lp-med-bite-desc {
+  font-family: var(--lp-sans);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--lp-text-secondary);
+  text-align: center;
+  margin: 0;
+  width: 100%;
+}
+
+/* Controles do carrossel · prev / next */
+.ecotopia-lp .lp-med-bites-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.ecotopia-lp .lp-med-bites-arrow {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--lp-line-neutral);
+  background: #FFFFFF;
+  color: var(--lp-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(13, 27, 42, 0.06);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease,
+    background 0.22s ease,
+    color 0.22s ease,
+    opacity 0.22s ease;
+}
+
+.ecotopia-lp .lp-med-bites-arrow:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--lp-accent-strong);
+  color: var(--lp-accent-strong);
+  box-shadow: 0 6px 18px rgba(21, 84, 240, 0.16);
+}
+
+.ecotopia-lp .lp-med-bites-arrow:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(21, 84, 240, 0.12);
+}
+
+.ecotopia-lp .lp-med-bites-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.ecotopia-lp .lp-med-bites-arrow:focus-visible {
+  outline: 2px solid var(--lp-accent-strong);
+  outline-offset: 2px;
+}
+
+/* CTA centralizado abaixo das setas */
+.ecotopia-lp .lp-med-bites-cta-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.ecotopia-lp .lp-med-bites-cta {
+  padding: 20px 44px;
+  font-size: 16px;
+  border-radius: var(--lp-radius-pill);
+  letter-spacing: -0.005em;
+  box-shadow: 0 10px 28px rgba(21, 84, 240, 0.30);
+}
+
+.ecotopia-lp .lp-med-bites-cta:hover {
+  box-shadow: 0 14px 36px rgba(21, 84, 240, 0.40);
+}
+
+@media (max-width: 720px) {
+  .ecotopia-lp .lp-med-bites-cta { padding: 16px 36px; font-size: 15px; }
+}
+
+@media (max-width: 720px) {
+  .ecotopia-lp .lp-med-bites-section { padding: 56px 0; }
+  .ecotopia-lp .lp-med-bites {
+    gap: 20px;
+    padding: 8px 20px 28px;
+  }
+  .ecotopia-lp .lp-med-bite { flex-basis: 78vw; gap: 14px; }
+  .ecotopia-lp .lp-med-bite-title { font-size: 18px; }
+  .ecotopia-lp .lp-med-bite-title a { font-size: 18px; }
+}
+
+/* ─── Explore · 3 colunas com categorias e links (estilo Headspace) ─── */
+.ecotopia-lp .lp-med-explore-section {
+  padding: 96px 56px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-med-explore-title {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: clamp(26px, 2.8vw, 36px);
+  line-height: 1.18;
+  letter-spacing: -0.018em;
+  color: var(--lp-text);
+  text-align: center;
+  max-width: 920px;
+  margin: 0 auto 64px;
+  text-wrap: balance;
+}
+
+.ecotopia-lp .lp-med-explore-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 56px;
+}
+
+.ecotopia-lp .lp-med-explore-col + .lp-med-explore-col {
+  border-left: 1px solid var(--lp-line-neutral);
+  padding-left: 32px;
+}
+
+.ecotopia-lp .lp-med-explore-heading {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+  margin: 0 0 16px;
+}
+
+.ecotopia-lp .lp-med-explore-heading a {
+  color: var(--lp-text) !important;
+  -webkit-text-fill-color: var(--lp-text);
+  text-decoration: underline !important;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  text-decoration-color: rgba(13, 27, 42, 0.32);
+  transition: text-decoration-color 0.22s ease, color 0.22s ease;
+}
+
+.ecotopia-lp .lp-med-explore-heading a:hover {
+  color: var(--lp-accent-strong) !important;
+  -webkit-text-fill-color: var(--lp-accent-strong);
+  text-decoration-color: var(--lp-accent-strong);
+}
+
+.ecotopia-lp .lp-med-explore-body {
+  font-family: var(--lp-sans);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--lp-text-secondary);
+  margin: 0 0 24px;
+}
+
+.ecotopia-lp .lp-med-explore-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ecotopia-lp .lp-med-explore-links li {
+  margin: 0;
+  padding: 0;
+}
+
+.ecotopia-lp .lp-med-explore-links a {
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--lp-text) !important;
+  -webkit-text-fill-color: var(--lp-text);
+  text-decoration: underline !important;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(13, 27, 42, 0.28);
+  transition: text-decoration-color 0.22s ease, color 0.22s ease;
+}
+
+.ecotopia-lp .lp-med-explore-links a:hover {
+  color: var(--lp-accent-strong) !important;
+  -webkit-text-fill-color: var(--lp-accent-strong);
+  text-decoration-color: var(--lp-accent-strong);
+}
+
+/* ─── Biblioteca ─── */
+.ecotopia-lp .lp-med-library-section {
+  padding: 96px 56px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-med-library-head {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 56px;
+}
+
+.ecotopia-lp .lp-med-library-head .eyebrow {
+  margin-bottom: 14px;
+}
+
+.ecotopia-lp .lp-med-library-head h2 {
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: clamp(28px, 3.4vw, 42px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--lp-text);
+  margin: 0 0 16px;
+  text-wrap: balance;
+}
+
+.ecotopia-lp .lp-med-library-head p {
+  font-size: 17px;
+  color: var(--lp-text-secondary);
+  margin: 0;
+}
+
+.ecotopia-lp .lp-med-library-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.ecotopia-lp .lp-med-library-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 280px;
+  border-radius: var(--lp-radius-xl);
+  overflow: hidden;
+  background-size: cover;
+  text-decoration: none !important;
+  isolation: isolate;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.32s ease;
+  box-shadow: 0 4px 16px rgba(13, 27, 42, 0.08);
+}
+
+.ecotopia-lp .lp-med-library-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(13, 27, 42, 0.18);
+}
+
+.ecotopia-lp .lp-med-library-overlay {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  opacity: 0.78;
+  mix-blend-mode: multiply;
+  z-index: 0;
+}
+
+.ecotopia-lp .lp-med-library-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10, 15, 30, 0.7) 0%, transparent 55%);
+  z-index: 1;
+}
+
+.ecotopia-lp .lp-med-library-body {
+  position: relative;
+  z-index: 2;
+  padding: 22px;
+  color: var(--lp-text-on-dark);
+}
+
+.ecotopia-lp .lp-med-library-duration {
+  display: inline-block;
+  font-family: var(--lp-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lp-text-on-dark);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 4px 10px;
+  border-radius: var(--lp-radius-pill);
+  margin-bottom: 10px;
+}
+
+.ecotopia-lp .lp-med-library-body h3 {
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.22;
+  color: var(--lp-text-on-dark);
+  margin: 0 0 8px;
+  letter-spacing: -0.005em;
+}
+
+.ecotopia-lp .lp-med-library-body p {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
+}
+
+.ecotopia-lp .lp-med-library-foot {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.ecotopia-lp .lp-med-library-all {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--lp-accent-strong) !important;
+  -webkit-text-fill-color: var(--lp-accent-strong);
+  text-decoration: none !important;
+  display: inline-flex;
+  gap: 6px;
+  transition: gap 0.22s ease;
+}
+
+.ecotopia-lp .lp-med-library-all:hover {
+  gap: 12px;
+}
+
+/* "Saiba mais" no carrossel da landing principal */
+.ecotopia-lp .lp-library-learn {
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--lp-accent-strong) !important;
+  -webkit-text-fill-color: var(--lp-accent-strong);
+  text-decoration: none !important;
+  margin-right: auto;
+  display: inline-flex;
+  gap: 4px;
+  position: relative;
+  transition: gap 0.22s ease;
+}
+
+.ecotopia-lp .lp-library-learn::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -2px;
+  height: 1.5px;
+  background: var(--lp-accent-strong);
+  transition: right 0.28s ease;
+}
+
+.ecotopia-lp .lp-library-learn:hover {
+  gap: 10px;
+}
+
+.ecotopia-lp .lp-library-learn:hover::after {
+  right: 0;
+}
+
+/* ─── FAQ ─── */
+.ecotopia-lp .lp-med-faq-section {
+  padding: 96px 56px;
+  background: var(--lp-bg-secondary);
+}
+
+.ecotopia-lp .lp-med-faq-section .lp-section-title {
+  text-align: center;
+  font-size: clamp(28px, 3.4vw, 42px);
+  margin: 0 auto 56px;
+  max-width: 720px;
+  text-wrap: balance;
+}
+
+.ecotopia-lp .lp-med-faq {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ecotopia-lp .lp-med-faq-item {
+  background: #FFFFFF;
+  border: 1px solid var(--lp-line-neutral);
+  border-radius: var(--lp-radius-lg);
+  transition: border-color 0.22s ease, box-shadow 0.22s ease;
+  overflow: hidden;
+}
+
+.ecotopia-lp .lp-med-faq-item.is-open {
+  border-color: var(--lp-line-soft);
+  box-shadow: var(--lp-shadow-subtle);
+}
+
+.ecotopia-lp .lp-med-faq-q {
+  width: 100%;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 22px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--lp-text);
+  letter-spacing: -0.005em;
+  line-height: 1.35;
+}
+
+.ecotopia-lp .lp-med-faq-chev {
+  font-family: var(--lp-sans);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--lp-text-muted);
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease, color 0.22s ease;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+
+.ecotopia-lp .lp-med-faq-item.is-open .lp-med-faq-chev {
+  transform: rotate(45deg);
+  color: var(--lp-accent-strong);
+}
+
+.ecotopia-lp .lp-med-faq-a {
+  padding: 0 28px 24px;
+}
+
+.ecotopia-lp .lp-med-faq-a p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--lp-text-secondary);
+  margin: 0;
+}
+
+/* ─── CTA final ─── */
+.ecotopia-lp .lp-med-cta {
+  padding: 96px 56px;
+  background:
+    radial-gradient(80% 70% at 50% 30%, rgba(110, 200, 255, 0.18) 0%, transparent 65%),
+    var(--lp-bg);
+  text-align: center;
+}
+
+.ecotopia-lp .lp-med-cta-inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-med-cta h2 {
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: clamp(32px, 3.8vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.022em;
+  color: var(--lp-text);
+  margin: 0 0 20px;
+}
+
+.ecotopia-lp .lp-med-cta p {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--lp-text-secondary);
+  margin: 0 0 32px;
+}
+
+/* ─── Responsivo /meditacao ─── */
+@media (max-width: 1023px) {
+  .ecotopia-lp .lp-med-hero {
+    min-height: clamp(560px, 80vh, 720px);
+    padding: 80px 24px 64px;
+    background-position: center 30%;
+  }
+  .ecotopia-lp .lp-med-hero-inner {
+    max-width: 100%;
+  }
+
+  .ecotopia-lp .lp-med-hero h1 { font-size: 38px; }
+  .ecotopia-lp .lp-med-hero-lead { font-size: 17px; }
+  .ecotopia-lp .lp-med-hero-body { font-size: 15.5px; }
+  .ecotopia-lp .lp-med-hero-player { padding: 14px 16px 14px 14px; gap: 14px; }
+  .ecotopia-lp .lp-med-hero-play { width: 44px; height: 44px; }
+  .ecotopia-lp .lp-med-hero-player-title { font-size: 14px; }
+  .ecotopia-lp .lp-med-hero-cta { padding: 18px 36px; font-size: 15px; }
+
+  .ecotopia-lp .lp-med-explore-section,
+  .ecotopia-lp .lp-med-library-section,
+  .ecotopia-lp .lp-med-faq-section,
+  .ecotopia-lp .lp-med-cta {
+    padding: 64px 24px;
+  }
+
+  .ecotopia-lp .lp-med-explore-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .ecotopia-lp .lp-med-explore-col + .lp-med-explore-col {
+    border-left: none;
+    border-top: 1px solid var(--lp-line-neutral);
+    padding-left: 0;
+    padding-top: 32px;
+  }
+  .ecotopia-lp .lp-med-library-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ecotopia-lp .lp-med-library-grid {
+    grid-template-columns: 1fr;
+  }
+  .ecotopia-lp .lp-med-hero h1 {
+    font-size: 34px;
+    white-space: normal; /* permite quebra em telas muito estreitas */
+  }
+  .ecotopia-lp .lp-med-faq-q { padding: 18px 20px; font-size: 16px; }
+  .ecotopia-lp .lp-med-faq-a { padding: 0 20px 20px; }
+}
+
+/* ─── /meditacao · Oferta (aquarela amarela, estilo Headspace) ─── */
+.ecotopia-lp .lp-med-offer {
+  position: relative;
+  padding: 96px 32px 112px;
+  background-color: #FFD23F;
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.ecotopia-lp .lp-med-offer::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 120px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, var(--lp-bg, #FFFFFF) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ecotopia-lp .lp-med-offer-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-med-offer-content {
+  max-width: 620px;
+}
+
+.ecotopia-lp .lp-med-offer-title {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 700;
+  font-size: clamp(36px, 4.6vw, 56px);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  color: #0F1B33;
+  margin: 0 0 28px;
+}
+
+.ecotopia-lp .lp-med-offer-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ecotopia-lp .lp-med-offer-bullets li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: #1A2842;
+}
+
+.ecotopia-lp .lp-med-offer-bullets li svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: #1E8F4E;
+  stroke: #1E8F4E;
+}
+
+.ecotopia-lp .lp-med-offer-plans {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 0 0 18px;
+}
+
+.ecotopia-lp .lp-med-offer-plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 56px 18px 20px;
+  border-radius: 14px;
+  background: #FFFFFF;
+  border: 1.5px solid rgba(15, 27, 51, 0.08);
+  text-decoration: none !important;
+  color: #0F1B33;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  box-shadow: 0 2px 10px rgba(15, 27, 51, 0.06);
+}
+
+.ecotopia-lp .lp-med-offer-plan:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(15, 27, 51, 0.12);
+}
+
+.ecotopia-lp .lp-med-offer-plan.is-featured {
+  background: #0F1B33;
+  color: #FFFFFF;
+  border-color: #0F1B33;
+  padding-top: 30px;
+}
+
+.ecotopia-lp .lp-med-offer-plan-badge {
+  position: absolute;
+  top: -10px;
+  left: 14px;
+  background: #1A4FB5;
+  color: #FFFFFF;
+  font-family: var(--lp-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(26, 79, 181, 0.32);
+}
+
+.ecotopia-lp .lp-med-offer-plan-meta {
+  font-family: var(--lp-sans);
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.7;
+  letter-spacing: 0;
+}
+
+.ecotopia-lp .lp-med-offer-plan.is-featured .lp-med-offer-plan-meta {
+  opacity: 0.62;
+}
+
+.ecotopia-lp .lp-med-offer-plan-headline {
+  font-family: var(--lp-sans);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  margin: 2px 0 0;
+}
+
+.ecotopia-lp .lp-med-offer-plan-price {
+  font-family: var(--lp-sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  opacity: 0.78;
+}
+
+.ecotopia-lp .lp-med-offer-plan.is-featured .lp-med-offer-plan-price {
+  opacity: 0.72;
+}
+
+.ecotopia-lp .lp-med-offer-plan-radio {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0F1B33;
+}
+
+.ecotopia-lp .lp-med-offer-plan-radio.is-empty {
+  background: transparent;
+  border-color: rgba(15, 27, 51, 0.22);
+}
+
+.ecotopia-lp .lp-med-offer-fine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  color: rgba(15, 27, 51, 0.62);
+  margin: 0 0 28px;
+}
+
+.ecotopia-lp .lp-med-offer-fine a {
+  color: rgba(15, 27, 51, 0.78) !important;
+  -webkit-text-fill-color: rgba(15, 27, 51, 0.78);
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+
+.ecotopia-lp .lp-med-offer-cta {
+  display: inline-flex;
+  padding: 18px 36px;
+  font-size: 16px;
+  border-radius: 999px;
+}
+
+/* Responsivo · Oferta */
+@media (max-width: 900px) {
+  .ecotopia-lp .lp-med-offer {
+    padding: 72px 22px 88px;
+  }
+  .ecotopia-lp .lp-med-offer-content {
+    max-width: 100%;
+  }
+  .ecotopia-lp .lp-med-offer-plans {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ecotopia-lp .lp-med-offer-title {
+    font-size: 34px;
+  }
+  .ecotopia-lp .lp-med-offer-bullets li {
+    font-size: 15px;
+  }
+  .ecotopia-lp .lp-med-offer-fine {
+    flex-wrap: wrap;
+  }
+}
+
+/* ╔══════════════════════════════════════════════════════════════════╗
+   ║  /sono · landing                                                ║
+   ╚══════════════════════════════════════════════════════════════════╝ */
+
+.ecotopia-lp.lp-sono {
+  background: #FFFFFF;
+}
+
+/* ─── Hero cósmico ─── */
+.ecotopia-lp .lp-sono-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: clamp(620px, 92vh, 820px);
+  padding: 130px 72px 110px;
+  background-color: #0A0A1E;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #FFFFFF;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.ecotopia-lp .lp-sono-hero-veil {
+  position: absolute;
+  inset: 0;
+  /* Tinta sutil só atrás do texto (esquerda), fundindo para transparente
+     sobre a parte colorida da imagem — sem lavagem preta global. */
+  background:
+    linear-gradient(90deg, rgba(12, 10, 36, 0.45) 0%, rgba(12, 10, 36, 0.12) 38%, rgba(12, 10, 36, 0) 62%);
+  z-index: 0;
+}
+
+.ecotopia-lp .lp-sono-hero-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-sono-hero-text {
+  max-width: 620px;
+}
+
+.ecotopia-lp .lp-sono-hero h1 {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 800;
+  font-size: clamp(40px, 4.4vw, 56px);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  color: #FFFFFF;
+  white-space: nowrap;
+  margin: 0 0 32px;
+  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.45);
+}
+
+.ecotopia-lp .lp-sono-hero-lead {
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 16.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.94);
+  max-width: 560px;
+  margin: 0 0 24px;
+}
+
+.ecotopia-lp .lp-sono-hero-body {
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 560px;
+  margin: 0 0 38px;
+}
+
+.ecotopia-lp .lp-sono-hero-player {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px 12px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  max-width: 540px;
+  margin-bottom: 42px;
+}
+
+.ecotopia-lp .lp-sono-hero-play {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #0A0A1E;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.ecotopia-lp .lp-sono-hero-play:hover {
+  transform: scale(1.05);
+}
+
+.ecotopia-lp .lp-sono-hero-player-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ecotopia-lp .lp-sono-hero-player-title {
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.94);
+  margin: 0 0 6px;
+}
+
+.ecotopia-lp .lp-sono-hero-player-bar {
+  position: relative;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  overflow: visible;
+}
+
+.ecotopia-lp .lp-sono-hero-player-progress {
+  display: block;
+  width: 24%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+}
+
+.ecotopia-lp .lp-sono-hero-player-dot {
+  position: absolute;
+  top: 50%;
+  left: 24%;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
+}
+
+.ecotopia-lp .lp-sono-hero-player-time {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-family: var(--lp-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.ecotopia-lp .lp-sono-hero-cta {
+  display: inline-block;
+  padding: 17px 44px;
+  background: #FFFFFF;
+  color: #0A0A1E !important;
+  -webkit-text-fill-color: #0A0A1E;
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 999px;
+  text-decoration: none !important;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.32);
+}
+
+.ecotopia-lp .lp-sono-hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+}
+
+/* ─── 3 colunas de valor ─── */
+.ecotopia-lp .lp-sono-value {
+  padding: 88px 32px;
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-sono-value-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 72px;
+  align-items: start;
+}
+
+.ecotopia-lp .lp-sono-value-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ecotopia-lp .lp-sono-value-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin: 0 0 42px;
+  text-align: left;
+}
+
+.ecotopia-lp .lp-sono-value-icon {
+  flex-shrink: 0;
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ecotopia-lp .lp-sono-value-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 22px rgba(15, 27, 51, 0.15));
+}
+
+.ecotopia-lp .lp-sono-value-col h3 {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: var(--lp-text, #0F1B33);
+  margin: 0;
+  max-width: 180px;
+}
+
+.ecotopia-lp .lp-sono-value-col p {
+  font-family: var(--lp-sans);
+  font-size: 18px;
+  line-height: 1.7;
+  color: rgba(10, 15, 30, 0.82);
+  margin: 0;
+  max-width: 340px;
+  text-align: center;
+}
+
+/* ─── Section heading reuso ─── */
+.ecotopia-lp .lp-sono-h2 {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 700;
+  font-size: clamp(26px, 2.6vw, 34px);
+  line-height: 1.18;
+  letter-spacing: -0.018em;
+  color: var(--lp-text, #0F1B33);
+  margin: 0 0 32px;
+}
+
+.ecotopia-lp .lp-sono-h2--center {
+  text-align: center;
+}
+
+/* ─── Artigos · grid ─── */
+.ecotopia-lp .lp-sono-articles {
+  position: relative;
+  padding: 80px 56px 120px;
+}
+
+.ecotopia-lp .lp-sono-articles-inner {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-sono-articles-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.ecotopia-lp .lp-sono-article {
+  text-decoration: none !important;
+  color: var(--lp-text, #0F1B33);
+  transition: transform 0.22s ease;
+}
+
+.ecotopia-lp .lp-sono-article:hover {
+  transform: translateY(-4px);
+}
+
+.ecotopia-lp .lp-sono-article-thumb {
+  position: relative;
+  display: block;
+  aspect-ratio: 1.4 / 1;
+  border-radius: 14px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 16px rgba(15, 27, 51, 0.12);
+}
+
+.ecotopia-lp .lp-sono-article-thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.ecotopia-lp .lp-sono-article-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10, 15, 30, 0.45) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.ecotopia-lp .lp-sono-article-title {
+  font-family: var(--lp-sans);
+  font-size: 15.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--lp-text, #0F1B33);
+  margin: 0;
+}
+
+/* ─── CTA central ─── */
+.ecotopia-lp .lp-sono-cta-mid {
+  padding: 80px 32px;
+  text-align: center;
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-sono-cta-mid h2 {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 700;
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.022em;
+  color: var(--lp-text, #0F1B33);
+  margin: 0 auto 36px;
+  max-width: 720px;
+}
+
+.ecotopia-lp .lp-sono-cta-mid h2 em {
+  font-style: italic;
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+}
+
+/* ─── Tabs section ─── */
+.ecotopia-lp .lp-sono-tabs {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 880px;
+  padding: 80px 32px;
+  background: #FFFFFF;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Artwork onírico contido num card QUADRADO central — imersivo,
+   flutuando sobre fundo branco com bastante negative space ao redor.
+   Imagem ao fundo, vinheta nas bordas e glow violeta suave no centro. */
+.ecotopia-lp .lp-sono-tabs-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(680px, 92vw);
+  aspect-ratio: 1 / 1;
+  z-index: 0;
+  border-radius: 36px;
+  overflow: hidden;
+  box-shadow: 0 30px 70px rgba(20, 16, 60, 0.3);
+  background-color: #07061A;
+  background-image:
+    radial-gradient(ellipse 56% 50% at 50% 44%, rgba(150, 116, 230, 0.30) 0%, rgba(150, 116, 230, 0.10) 46%, transparent 74%),
+    radial-gradient(ellipse 92% 92% at 50% 48%, transparent 0%, transparent 52%, rgba(9, 7, 26, 0.4) 84%, rgba(7, 6, 22, 0.7) 100%),
+    url('/images/sono-tabs-bg.png');
+  background-repeat: no-repeat;
+  background-position: center, center, center;
+  background-size: cover, cover, cover;
+}
+
+/* Reflexos translúcidos gigantes — “espelhos emocionais” quase invisíveis,
+   com leve desfoque para dar profundidade em camadas. */
+.ecotopia-lp .lp-sono-tabs-bg::after {
+  content: '';
+  position: absolute;
+  inset: -10%;
+  background:
+    radial-gradient(circle 280px at 22% 30%, rgba(124, 92, 210, 0.14) 0%, transparent 70%),
+    radial-gradient(circle 340px at 82% 72%, rgba(70, 110, 215, 0.12) 0%, transparent 72%);
+  filter: blur(26px);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.ecotopia-lp .lp-sono-tabs-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 0 16px;
+  text-align: center;
+  color: #FFFFFF;
+}
+
+.ecotopia-lp .lp-sono-tabs-pills {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  margin-bottom: 32px;
+}
+
+.ecotopia-lp .lp-sono-tab-pill {
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 9px 16px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.ecotopia-lp .lp-sono-tab-pill:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.ecotopia-lp .lp-sono-tab-pill.is-active {
+  color: #0F0B2E;
+  background: #C4B5FD;
+  border-color: #C4B5FD;
+}
+
+.ecotopia-lp .lp-sono-tabs-body {
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.86);
+  margin: 0 auto 32px;
+  max-width: 400px;
+}
+
+.ecotopia-lp .lp-sono-tabs-player {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px 12px 12px;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 999px;
+  max-width: 380px;
+  margin: 0 auto;
+  color: #0F0B2E;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.32);
+}
+
+.ecotopia-lp .lp-sono-tabs-play {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: #0F0B2E;
+  color: #FFFFFF;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.ecotopia-lp .lp-sono-tabs-player-body {
+  flex: 1;
+  text-align: left;
+}
+
+.ecotopia-lp .lp-sono-tabs-player-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.ecotopia-lp .lp-sono-tabs-player-bar {
+  position: relative;
+  height: 3px;
+  background: rgba(15, 11, 46, 0.15);
+  border-radius: 999px;
+}
+
+.ecotopia-lp .lp-sono-tabs-player-progress {
+  display: block;
+  width: 30%;
+  height: 100%;
+  background: #0F0B2E;
+  border-radius: 999px;
+}
+
+.ecotopia-lp .lp-sono-tabs-player-dot {
+  position: absolute;
+  top: 50%;
+  left: 30%;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #0F0B2E;
+  transform: translate(-50%, -50%);
+}
+
+.ecotopia-lp .lp-sono-tabs-player-time {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
+  font-size: 10px;
+  color: rgba(15, 11, 46, 0.62);
+}
+
+/* ─── Sleepcasts / Conteúdo grid ─── */
+.ecotopia-lp .lp-sono-grid-section {
+  padding: 88px 32px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-sono-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.ecotopia-lp .lp-sono-grid-card {
+  display: block;
+  text-decoration: none !important;
+  color: var(--lp-text, #0F1B33);
+  transition: transform 0.22s ease;
+}
+
+.ecotopia-lp .lp-sono-grid-card:hover {
+  transform: translateY(-4px);
+}
+
+.ecotopia-lp .lp-sono-grid-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2A1B5A 0%, #4226A0 50%, #1F134A 100%);
+  margin-bottom: 12px;
+  box-shadow: 0 4px 18px rgba(15, 27, 51, 0.16);
+}
+
+.ecotopia-lp .lp-sono-grid-thumb img {
+  width: 64%;
+  height: 64%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+}
+
+.ecotopia-lp .lp-sono-grid-title {
+  font-family: var(--lp-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lp-text, #0F1B33);
+  margin: 0;
+}
+
+/* ─── Protocolo do Sono · carrossel de 7 noites ─── */
+/* Trilho com scroll-snap: arrasta com o dedo no touch e paginado pelos
+   números/setas no desktop. Cada página ocupa 100% da largura. */
+.ecotopia-lp .lp-sono-protocol-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.ecotopia-lp .lp-sono-protocol-track::-webkit-scrollbar {
+  display: none;
+}
+
+.ecotopia-lp .lp-sono-protocol-page {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+  align-content: start;
+}
+
+.ecotopia-lp .lp-sono-protocol-card {
+  display: block;
+  text-decoration: none !important;
+  color: var(--lp-text, #0F1B33);
+  transition: transform 0.22s ease;
+}
+
+.ecotopia-lp .lp-sono-protocol-card:hover {
+  transform: translateY(-4px);
+}
+
+.ecotopia-lp .lp-sono-protocol-card:hover .lp-sono-protocol-thumb img {
+  transform: scale(1.06);
+}
+
+.ecotopia-lp .lp-sono-protocol-thumb {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 18px rgba(15, 27, 51, 0.16);
+}
+
+.ecotopia-lp .lp-sono-protocol-thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.ecotopia-lp .lp-sono-protocol-night {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  font-family: var(--lp-sans);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  padding: 5px 11px;
+}
+
+.ecotopia-lp .lp-sono-protocol-title {
+  font-family: var(--lp-sans);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--lp-text, #0F1B33);
+  margin: 0;
+}
+
+/* navegação: setas + números (1, 2) */
+.ecotopia-lp .lp-sono-protocol-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 36px;
+}
+
+.ecotopia-lp .lp-sono-protocol-arrow,
+.ecotopia-lp .lp-sono-protocol-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--lp-text, #0F1B33);
+  font-family: var(--lp-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.ecotopia-lp .lp-sono-protocol-arrow:hover {
+  background: rgba(15, 27, 51, 0.06);
+}
+
+.ecotopia-lp .lp-sono-protocol-dot {
+  background: #F1EEFA;
+  color: rgba(15, 27, 51, 0.55);
+}
+
+.ecotopia-lp .lp-sono-protocol-dot:hover {
+  color: var(--lp-text, #0F1B33);
+}
+
+.ecotopia-lp .lp-sono-protocol-dot.is-active {
+  background: #1A1435;
+  color: #FFFFFF;
+}
+
+/* ─── 3 colunas de dicas ─── */
+.ecotopia-lp .lp-sono-tips {
+  padding: 80px 32px 104px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-sono-tips-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.ecotopia-lp .lp-sono-tips-col {
+  background: #F7F5F1;
+  border-radius: 14px;
+  padding: 26px 22px 28px;
+}
+
+.ecotopia-lp .lp-sono-tips-col h3 {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.008em;
+  color: var(--lp-text, #0F1B33);
+  margin: 0 0 12px;
+}
+
+.ecotopia-lp .lp-sono-tips-col p {
+  font-family: var(--lp-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--lp-text-secondary, #4A5568);
+  margin: 0 0 18px;
+}
+
+.ecotopia-lp .lp-sono-tips-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ecotopia-lp .lp-sono-tips-col ul li a {
+  font-family: var(--lp-sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--lp-accent-strong, #1A4FB5) !important;
+  -webkit-text-fill-color: var(--lp-accent-strong, #1A4FB5);
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+}
+
+/* ─── Oferta navy (sleep) ─── */
+.ecotopia-lp .lp-sono-offer {
+  position: relative;
+  padding: 96px 32px 104px;
+  background: #0A0F2E;
+  color: #FFFFFF;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 28px 28px 0 0;
+}
+
+.ecotopia-lp .lp-sono-offer-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: #0A0F2E;
+  /* overlay para legibilidade do texto branco + artwork onírico ao fundo */
+  background-image:
+    linear-gradient(100deg, rgba(8, 6, 28, 0.5) 0%, rgba(8, 6, 28, 0.28) 45%, rgba(8, 6, 28, 0.1) 100%),
+    linear-gradient(180deg, rgba(8, 6, 28, 0.08) 0%, rgba(8, 6, 28, 0.32) 100%),
+    url('/images/sono-offer-bg.png');
+  background-repeat: no-repeat;
+  background-position: center, center, center;
+  background-size: cover, cover, cover;
+}
+
+.ecotopia-lp .lp-sono-offer-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-sono-offer-content {
+  max-width: 560px;
+}
+
+.ecotopia-lp .lp-sono-offer h2 {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 700;
+  font-size: clamp(34px, 4.2vw, 50px);
+  line-height: 1.05;
+  letter-spacing: -0.024em;
+  color: #FFFFFF;
+  margin: 0 0 28px;
+}
+
+.ecotopia-lp .lp-sono-offer-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ecotopia-lp .lp-sono-offer-bullets li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF;
+}
+
+.ecotopia-lp .lp-sono-offer-bullets li span {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF;
+}
+
+.ecotopia-lp .lp-sono-offer-bullets li svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: #FFFFFF;
+  stroke: #FFFFFF;
+}
+
+.ecotopia-lp .lp-sono-offer-plans {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0 0 18px;
+}
+
+/* radio-card group no padrão Headspace (anual selecionado roxo, mensal branco) */
+.ecotopia-lp .lp-sono-offer-plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 14px 52px 14px 16px;
+  border-radius: 12px;
+  background: #FFFFFF;
+  color: #3A3938;
+  text-decoration: none !important;
+  border: 1px solid #FFFFFF;
+  box-shadow: rgba(26, 25, 25, 0.2) 0px 2px 0px 0px;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.ecotopia-lp .lp-sono-offer-plan:hover {
+  transform: translateY(-2px);
+}
+
+.ecotopia-lp .lp-sono-offer-plan.is-featured {
+  background: #5431A5;
+  border-color: #5431A5;
+  color: #FFFFFF;
+}
+
+.ecotopia-lp .lp-sono-offer-plan-badge {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  transform: translateY(-50%);
+  z-index: 2;
+  background: #FFFFFF;
+  color: #1A1320;
+  font-family: var(--lp-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 4px 12px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+
+.ecotopia-lp .lp-sono-offer-plan-meta {
+  font-family: var(--lp-sans);
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.82;
+}
+
+.ecotopia-lp .lp-sono-offer-plan-headline {
+  font-family: var(--lp-sans);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  margin: 2px 0 0;
+}
+
+.ecotopia-lp .lp-sono-offer-plan-price {
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 500;
+  opacity: 0.82;
+}
+
+/* card Anual (roxo): texto sempre branco e legível */
+.ecotopia-lp .lp-sono-offer-plan.is-featured .lp-sono-offer-plan-meta,
+.ecotopia-lp .lp-sono-offer-plan.is-featured .lp-sono-offer-plan-price {
+  color: #FFFFFF;
+  -webkit-text-fill-color: #FFFFFF;
+  opacity: 0.92;
+}
+
+.ecotopia-lp .lp-sono-offer-plan.is-featured .lp-sono-offer-plan-headline {
+  color: #FFFFFF;
+  -webkit-text-fill-color: #FFFFFF;
+}
+
+.ecotopia-lp .lp-sono-offer-plan-radio {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 25%;
+  background: #FFFFFF;
+  border: 1px solid #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5431A5;
+}
+
+.ecotopia-lp .lp-sono-offer-plan-radio.is-empty {
+  background: #FFFFFF;
+  border: 1px solid #D2D5DE;
+  color: transparent;
+}
+
+.ecotopia-lp .lp-sono-offer-fine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.62);
+  margin: 0 0 32px;
+}
+
+.ecotopia-lp .lp-sono-offer-fine a {
+  color: rgba(255, 255, 255, 0.86) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.86);
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+
+.ecotopia-lp .lp-sono-offer-cta {
+  display: inline-block;
+  padding: 16px 36px;
+  background: #FFFFFF;
+  color: #0A0F2E !important;
+  -webkit-text-fill-color: #0A0F2E;
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 15px;
+  border-radius: 999px;
+  text-decoration: none !important;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.42);
+}
+
+.ecotopia-lp .lp-sono-offer-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.52);
+}
+
+/* ─── Responsivo /sono ─── */
+@media (max-width: 1023px) {
+  .ecotopia-lp .lp-sono-hero {
+    padding: 100px 28px 80px;
+    min-height: clamp(560px, 80vh, 720px);
+  }
+  .ecotopia-lp .lp-sono-hero h1 {
+    font-size: clamp(36px, 6.6vw, 58px);
+  }
+  .ecotopia-lp .lp-sono-hero-lead {
+    font-size: 16px;
+  }
+  .ecotopia-lp .lp-sono-hero-body {
+    font-size: 14.5px;
+    line-height: 1.65;
+  }
+  .ecotopia-lp .lp-sono-value-grid {
+    grid-template-columns: 1fr;
+    gap: 64px;
+  }
+  .ecotopia-lp .lp-sono-value-head {
+    flex-direction: column;
+    gap: 18px;
+    text-align: center;
+  }
+  .ecotopia-lp .lp-sono-value-col h3 {
+    max-width: 260px;
+    text-align: center;
+  }
+  .ecotopia-lp .lp-sono-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .ecotopia-lp .lp-sono-protocol-page {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .ecotopia-lp .lp-sono-tips-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .ecotopia-lp .lp-sono-articles,
+  .ecotopia-lp .lp-sono-tabs,
+  .ecotopia-lp .lp-sono-grid-section,
+  .ecotopia-lp .lp-sono-tips,
+  .ecotopia-lp .lp-sono-offer {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ecotopia-lp .lp-sono-tabs {
+    min-height: 620px;
+  }
+  .ecotopia-lp .lp-sono-tabs-bg {
+    width: min(500px, 92vw);
+  }
+  .ecotopia-lp .lp-sono-hero h1 {
+    font-size: clamp(26px, 7vw, 42px);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .ecotopia-lp .lp-sono-hero-player {
+    max-width: 100%;
+  }
+  .ecotopia-lp .lp-sono-hero-cta {
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+  .ecotopia-lp .lp-sono-grid,
+  .ecotopia-lp .lp-sono-articles-grid {
+    grid-template-columns: 1fr;
+  }
+  .ecotopia-lp .lp-sono-protocol-page {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ecotopia-lp .lp-sono-value-icon {
+    width: 160px;
+    height: 160px;
+  }
+  .ecotopia-lp .lp-sono-value-col h3 {
+    font-size: 21px;
+    max-width: 280px;
+  }
+  .ecotopia-lp .lp-sono-value-col p {
+    font-size: 16px;
+  }
+  .ecotopia-lp .lp-sono-offer-fine {
+    flex-wrap: wrap;
+  }
+}
+
+/* =====================================================================
+   Eco · IA companheira  (/eco-ia)
+   Estética calorosa: gradiente onírico + orb mascote + voz tranquila.
+   ===================================================================== */
+.ecotopia-lp.lp-eco {
+  --eco-ia-cream: #FBF7EF;
+  --eco-ia-cream-2: #F3ECE0;
+  --eco-ia-ink: #16203A;
+  --eco-ia-ink-soft: rgba(22, 32, 58, 0.72);
+  --eco-ia-blue: #2E6FB7;
+  --eco-ia-blue-soft: #DCEBFB;
+  background: var(--eco-ia-cream);
+}
+
+.ecotopia-lp .lp-eco-h2 {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 700;
+  font-size: clamp(28px, 3.4vw, 42px);
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  color: var(--eco-ia-ink);
+  margin: 0 0 24px;
+}
+
+.ecotopia-lp .lp-eco-h2--center {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ─── Hero ─── */
+.ecotopia-lp .lp-eco-hero {
+  position: relative;
+  padding: 132px 48px 96px;
+  background-color: #F6913E;
+  background-image: url('/images/eco-ia-hero-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.ecotopia-lp .lp-eco-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  align-items: center;
+  gap: 48px;
+}
+
+.ecotopia-lp .lp-eco-eyebrow {
+  display: inline-block;
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--eco-ia-blue);
+  margin-bottom: 18px;
+}
+
+.ecotopia-lp .lp-eco-hero h1 {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 800;
+  font-size: clamp(44px, 5.6vw, 68px);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  color: #16203A;
+  -webkit-text-fill-color: #16203A;
+  margin: 0 0 22px;
+}
+
+.ecotopia-lp .lp-eco-hero-lead {
+  font-family: var(--lp-sans);
+  font-size: 18px;
+  line-height: 1.6;
+  color: rgba(22, 32, 58, 0.82);
+  -webkit-text-fill-color: rgba(22, 32, 58, 0.82);
+  max-width: 460px;
+  margin: 0 0 30px;
+}
+
+.ecotopia-lp .lp-eco-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.ecotopia-lp .lp-eco-cta {
+  display: inline-block;
+  padding: 15px 32px;
+  background: var(--eco-ia-ink);
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF;
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 999px;
+  text-decoration: none !important;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  box-shadow: 0 8px 26px rgba(22, 32, 58, 0.22);
+}
+
+.ecotopia-lp .lp-eco-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(22, 32, 58, 0.3);
+}
+
+.ecotopia-lp .lp-eco-cta--lg {
+  padding: 18px 44px;
+  font-size: 16px;
+}
+
+.ecotopia-lp .lp-eco-cta-ghost {
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--eco-ia-ink) !important;
+  -webkit-text-fill-color: var(--eco-ia-ink);
+  text-decoration: none !important;
+  padding: 15px 10px;
+  border-bottom: 1.5px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.ecotopia-lp .lp-eco-cta-ghost:hover {
+  border-color: var(--eco-ia-ink);
+}
+
+.ecotopia-lp .lp-eco-hero-fine {
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  color: var(--eco-ia-ink-soft);
+  margin: 0;
+}
+
+/* Hero · arte (orb + bolhas) */
+.ecotopia-lp .lp-eco-hero-art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 380px;
+}
+
+.ecotopia-lp .lp-eco-hero-orb {
+  position: relative;
+  z-index: 1;
+  width: clamp(220px, 28vw, 320px);
+  height: auto;
+  filter: drop-shadow(0 24px 48px rgba(46, 111, 183, 0.35));
+  animation: ecoOrbFloat 6s ease-in-out infinite;
+}
+
+.ecotopia-lp .lp-eco-hero-orb-glow {
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(110, 200, 255, 0.5) 0%, rgba(110, 200, 255, 0) 68%);
+  filter: blur(14px);
+  z-index: 0;
+}
+
+@keyframes ecoOrbFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+.ecotopia-lp .lp-eco-hero-bubble {
+  position: absolute;
+  z-index: 2;
+  max-width: 210px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 18px;
+  font-family: var(--lp-sans);
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--eco-ia-ink);
+  box-shadow: 0 10px 30px rgba(22, 32, 58, 0.16);
+}
+
+.ecotopia-lp .lp-eco-hero-bubble--1 {
+  top: 14%;
+  left: -4%;
+  border-bottom-left-radius: 6px;
+}
+
+.ecotopia-lp .lp-eco-hero-bubble--2 {
+  bottom: 14%;
+  right: -2%;
+  background: var(--eco-ia-ink);
+  color: #FFFFFF;
+  border-bottom-right-radius: 6px;
+}
+
+/* ─── Como funciona ─── */
+.ecotopia-lp .lp-eco-how {
+  padding: 104px 48px;
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-eco-how-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-eco-how-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin-top: 130px;
+}
+
+.ecotopia-lp .lp-eco-how-card {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 376px;
+  margin: 0 auto;
+  background: #F9F4F2;
+  border: none;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 0 0 rgba(65, 61, 69, 0.2);
+  text-align: center;
+  color: #2D2C2B;
+}
+
+/* card com orb centralizado, montado 50% fora / 50% dentro da borda superior */
+.ecotopia-lp .lp-eco-how-card.has-orb {
+  padding-top: 132px;
+}
+
+.ecotopia-lp .lp-eco-how-orb {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  width: 280px;
+  height: auto;
+  filter: drop-shadow(0 14px 28px rgba(46, 111, 183, 0.28));
+  pointer-events: none;
+}
+
+.ecotopia-lp .lp-eco-how-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--eco-ia-blue-soft);
+  font-size: 26px;
+  margin-bottom: 20px;
+}
+
+.ecotopia-lp .lp-eco-how-card h3 {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 24px;
+  color: #2D2C2B;
+  margin: 0 0 12px;
+}
+
+.ecotopia-lp .lp-eco-how-card p {
+  font-family: var(--lp-sans);
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 27px;
+  color: #2D2C2B;
+  margin: 0;
+}
+
+/* ─── Banner feature ─── */
+.ecotopia-lp .lp-eco-feature {
+  padding: 24px 48px 80px;
+}
+
+.ecotopia-lp .lp-eco-feature-card {
+  position: relative;
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 52px 56px;
+  border-radius: 28px;
+  overflow: hidden;
+  color: #FFFFFF;
+  background:
+    radial-gradient(ellipse at 80% 20%, rgba(110, 200, 255, 0.4) 0%, transparent 60%),
+    linear-gradient(120deg, #1E2A44 0%, #2E6FB7 100%);
+}
+
+.ecotopia-lp .lp-eco-feature-kicker {
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0 0 10px;
+}
+
+.ecotopia-lp .lp-eco-feature-copy h2 {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 700;
+  font-size: clamp(26px, 3vw, 38px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+  margin: 0 0 12px;
+  max-width: 560px;
+}
+
+.ecotopia-lp .lp-eco-feature-body {
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.86);
+  margin: 0;
+  max-width: 520px;
+}
+
+.ecotopia-lp .lp-eco-feature-play {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  border: none;
+  background: #FFFFFF;
+  color: var(--eco-ia-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.22s ease;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+
+.ecotopia-lp .lp-eco-feature-play:hover {
+  transform: scale(1.06);
+}
+
+/* ─── Canais · etapas + celular + texto (estilo Headspace) ─── */
+.ecotopia-lp .lp-eco-channels {
+  padding: 80px 48px;
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-eco-channels-inner {
+  position: relative;
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 64px;
+}
+
+/* coluna esquerda · etapas */
+.ecotopia-lp .lp-eco-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  justify-self: end;
+}
+
+.ecotopia-lp .lp-eco-step {
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--lp-sans);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 700;
+  color: rgba(22, 32, 58, 0.42);
+  transition: color 0.2s ease;
+}
+
+.ecotopia-lp .lp-eco-step:hover {
+  color: rgba(22, 32, 58, 0.7);
+}
+
+.ecotopia-lp .lp-eco-step.is-active {
+  color: #16203A;
+}
+
+.ecotopia-lp .lp-eco-step-badge {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #D2D5DE;
+  color: var(--eco-ia-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.ecotopia-lp .lp-eco-step.is-active .lp-eco-step-badge {
+  background: var(--eco-ia-blue);
+  color: #FFFFFF;
+}
+
+/* celular central */
+.ecotopia-lp .lp-eco-phone {
+  width: 300px;
+  height: 600px;
+  border: 12px solid #161616;
+  border-radius: 46px;
+  overflow: hidden;
+  background: #161616;
+  box-shadow: 0 24px 60px rgba(22, 32, 58, 0.22);
+  justify-self: center;
+}
+
+.ecotopia-lp .lp-eco-phone-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #EAF3FC 0%, #F3ECFB 55%, #FBF7EF 100%);
+}
+
+.ecotopia-lp .lp-eco-phone-orb {
+  width: 200px;
+  height: auto;
+  filter: drop-shadow(0 18px 40px rgba(46, 111, 183, 0.32));
+  animation: ecoOrbFloat 6s ease-in-out infinite;
+}
+
+.ecotopia-lp .lp-eco-phone-input {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 22px;
+  height: 54px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 18px;
+  box-shadow: 0 6px 18px rgba(22, 32, 58, 0.1);
+}
+
+.ecotopia-lp .lp-eco-phone-placeholder {
+  flex: 1;
+  font-family: var(--lp-sans);
+  font-size: 14px;
+  color: rgba(22, 32, 58, 0.62);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ecotopia-lp .lp-eco-phone-mic,
+.ecotopia-lp .lp-eco-phone-stop {
+  flex-shrink: 0;
+  border: none;
+  background: #FFFFFF;
+  border-radius: 999px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--eco-ia-ink);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(22, 32, 58, 0.1);
+}
+
+.ecotopia-lp .lp-eco-phone-mic {
+  width: 38px;
+  padding: 0;
+  color: var(--eco-ia-blue);
+}
+
+.ecotopia-lp .lp-eco-phone-stop-icon {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--eco-ia-ink);
+}
+
+/* coluna direita · texto + CTA */
+.ecotopia-lp .lp-eco-channels-content {
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+}
+
+.ecotopia-lp .lp-eco-channels-content .lp-eco-h2 {
+  margin: 0;
+}
+
+.ecotopia-lp .lp-eco-channels-content p {
+  font-family: var(--lp-sans);
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--eco-ia-ink-soft);
+  margin: 0;
+}
+
+/* dots de paginação */
+.ecotopia-lp .lp-eco-channels-dots {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.ecotopia-lp .lp-eco-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: #D2D5DE;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.ecotopia-lp .lp-eco-dot:hover {
+  transform: scale(1.2);
+}
+
+.ecotopia-lp .lp-eco-dot.is-active {
+  background: var(--eco-ia-ink);
+}
+
+/* ── telas do mock por etapa ── */
+.ecotopia-lp .lp-eco-screen--chat,
+.ecotopia-lp .lp-eco-screen--safe {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.ecotopia-lp .lp-eco-screen--chat {
+  padding: 18px 14px 92px;
+}
+
+.ecotopia-lp .lp-eco-screen--safe {
+  padding: 18px 14px;
+}
+
+.ecotopia-lp .lp-eco-phone-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(22, 32, 58, 0.45);
+  font-size: 14px;
+}
+
+.ecotopia-lp .lp-eco-phone-dots3 {
+  letter-spacing: 1px;
+}
+
+.ecotopia-lp .lp-eco-phone-head-orb {
+  width: 34px;
+  height: auto;
+}
+
+.ecotopia-lp .lp-eco-phone-x {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.ecotopia-lp .lp-eco-phone-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.ecotopia-lp .lp-eco-screen--safe .lp-eco-phone-body {
+  justify-content: center;
+}
+
+.ecotopia-lp .lp-eco-msg {
+  max-width: 88%;
+  padding: 10px 13px;
+  border-radius: 16px;
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ecotopia-lp .lp-eco-msg--eco {
+  align-self: flex-start;
+  background: #FFFFFF;
+  color: var(--eco-ia-ink);
+  border-bottom-left-radius: 5px;
+  box-shadow: 0 3px 12px rgba(22, 32, 58, 0.08);
+}
+
+.ecotopia-lp .lp-eco-msg--me {
+  align-self: flex-end;
+  background: var(--eco-ia-blue);
+  color: #FFFFFF;
+  border-bottom-right-radius: 5px;
+}
+
+.ecotopia-lp .lp-eco-msg-react {
+  font-size: 13px;
+  color: rgba(22, 32, 58, 0.4);
+  letter-spacing: 4px;
+  padding-left: 4px;
+}
+
+.ecotopia-lp .lp-eco-rec {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #FFFFFF;
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 0 3px 12px rgba(22, 32, 58, 0.08);
+}
+
+.ecotopia-lp .lp-eco-rec-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #6EC8FF 0%, #2E6FB7 100%);
+}
+
+.ecotopia-lp .lp-eco-rec-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ecotopia-lp .lp-eco-rec-info strong {
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  color: var(--eco-ia-ink);
+}
+
+.ecotopia-lp .lp-eco-rec-info span {
+  font-family: var(--lp-sans);
+  font-size: 11px;
+  color: var(--eco-ia-ink-soft);
+}
+
+.ecotopia-lp .lp-eco-rec-play {
+  color: var(--eco-ia-blue);
+  font-size: 12px;
+}
+
+.ecotopia-lp .lp-eco-resource {
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 20px 16px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(22, 32, 58, 0.12);
+}
+
+.ecotopia-lp .lp-eco-resource-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--eco-ia-blue-soft);
+  color: var(--eco-ia-blue);
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.ecotopia-lp .lp-eco-resource strong {
+  display: block;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  color: var(--eco-ia-ink);
+  margin-bottom: 6px;
+}
+
+.ecotopia-lp .lp-eco-resource p {
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--eco-ia-ink-soft);
+  margin: 0 0 14px;
+}
+
+.ecotopia-lp .lp-eco-resource-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.ecotopia-lp .lp-eco-resource-btn {
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #EEF1F6;
+  color: var(--eco-ia-ink);
+}
+
+.ecotopia-lp .lp-eco-resource-btn.is-primary {
+  background: var(--eco-ia-blue);
+  color: #FFFFFF;
+}
+
+/* ─── Care · card bege único (texto + ilustração) ─── */
+.ecotopia-lp .lp-eco-care {
+  padding: 64px 48px;
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-eco-care-card {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #F9F4F2;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.ecotopia-lp .lp-eco-care-text {
+  flex: 0 0 40%;
+  padding: 64px 32px 64px 72px;
+}
+
+.ecotopia-lp .lp-eco-care-kicker {
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(22, 32, 58, 0.5);
+  margin: 0 0 12px;
+}
+
+.ecotopia-lp .lp-eco-care-text .lp-eco-h2 {
+  margin: 0;
+}
+
+.ecotopia-lp .lp-eco-care-list {
+  flex: 1 1 60%;
+  list-style: none;
+  margin: 0;
+  padding: 56px 64px 56px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ecotopia-lp .lp-eco-care-list li {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.ecotopia-lp .lp-eco-care-thumb {
+  flex-shrink: 0;
+  width: 92px;
+  height: 92px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #FFFFFF;
+  box-shadow: 0 6px 18px rgba(22, 32, 58, 0.1);
+}
+
+.ecotopia-lp .lp-eco-care-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
+  display: block;
+}
+
+.ecotopia-lp .lp-eco-care-list h3 {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--eco-ia-ink);
+  margin: 0 0 5px;
+}
+
+.ecotopia-lp .lp-eco-care-list p {
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--eco-ia-ink-soft);
+  margin: 0;
+}
+
+/* ─── Segurança · cards no estilo "Como funciona" ─── */
+.ecotopia-lp .lp-eco-safety {
+  padding: 96px 48px;
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-eco-safety-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-eco-safety-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin-top: 130px;
+}
+
+.ecotopia-lp .lp-eco-safety-card {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 376px;
+  margin: 0 auto;
+  background: #F9F4F2;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 0 0 rgba(65, 61, 69, 0.2);
+  text-align: center;
+  color: #2D2C2B;
+}
+
+/* imagem montada 50% fora / 50% dentro da borda superior */
+.ecotopia-lp .lp-eco-safety-card.has-orb {
+  padding-top: 132px;
+}
+
+.ecotopia-lp .lp-eco-safety-orb {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  width: 280px;
+  height: auto;
+  filter: drop-shadow(0 14px 28px rgba(46, 111, 183, 0.24));
+  pointer-events: none;
+}
+
+.ecotopia-lp .lp-eco-safety-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #E4F3E9;
+  color: #2E9B63;
+  margin: 0 auto 18px;
+}
+
+.ecotopia-lp .lp-eco-safety-card h3 {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 24px;
+  color: #2D2C2B;
+  margin: 0 0 12px;
+}
+
+.ecotopia-lp .lp-eco-safety-card p {
+  font-family: var(--lp-sans);
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 27px;
+  color: #2D2C2B;
+  margin: 0;
+}
+
+.ecotopia-lp .lp-eco-safety-note {
+  max-width: 860px;
+  margin: 56px auto 0;
+  text-align: center;
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(22, 32, 58, 0.55);
+}
+
+.ecotopia-lp .lp-eco-safety-note a {
+  color: var(--eco-ia-blue) !important;
+  -webkit-text-fill-color: var(--eco-ia-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ─── FAQ ─── */
+.ecotopia-lp .lp-eco-faq {
+  padding: 96px 48px;
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-eco-faq-inner {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-eco-faq-title {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: clamp(26px, 3vw, 32px);
+  letter-spacing: -0.01em;
+  color: #2D2C2B;
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+.ecotopia-lp .lp-eco-faq-list {
+  margin-top: 8px;
+}
+
+.ecotopia-lp .lp-eco-faq-item {
+  border-bottom: 1px solid rgba(22, 32, 58, 0.12);
+}
+
+.ecotopia-lp .lp-eco-faq-item summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 4px;
+  font-family: var(--lp-sans);
+  font-weight: 500;
+  font-size: 20px;
+  color: #2D2C2B;
+}
+
+.ecotopia-lp .lp-eco-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.ecotopia-lp .lp-eco-faq-chev {
+  flex-shrink: 0;
+  display: flex;
+  color: #2D2C2B;
+  transition: transform 0.25s ease;
+}
+
+.ecotopia-lp .lp-eco-faq-item[open] .lp-eco-faq-chev {
+  transform: rotate(45deg);
+}
+
+.ecotopia-lp .lp-eco-faq-item p {
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--eco-ia-ink-soft);
+  margin: 0;
+  padding: 0 4px 24px;
+  max-width: 660px;
+}
+
+/* ─── CTA final ─── */
+.ecotopia-lp .lp-eco-final {
+  position: relative;
+  padding: 150px 48px 160px;
+  background-color: #F8B98E;
+  background-image: url('/images/eco-ia-final-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  text-align: center;
+}
+
+.ecotopia-lp .lp-eco-final-inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-eco-final h2 {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 800;
+  font-size: clamp(38px, 5vw, 60px);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  color: var(--eco-ia-ink);
+  margin: 0 0 32px;
+}
+
+/* ─── Responsivo /eco-ia ─── */
+@media (max-width: 1023px) {
+  .ecotopia-lp .lp-eco-hero {
+    padding: 110px 28px 72px;
+  }
+  .ecotopia-lp .lp-eco-hero-inner {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    text-align: center;
+  }
+  .ecotopia-lp .lp-eco-hero-lead {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .ecotopia-lp .lp-eco-hero-actions {
+    justify-content: center;
+  }
+  .ecotopia-lp .lp-eco-hero-art {
+    min-height: 320px;
+  }
+  .ecotopia-lp .lp-eco-how,
+  .ecotopia-lp .lp-eco-channels,
+  .ecotopia-lp .lp-eco-care,
+  .ecotopia-lp .lp-eco-safety,
+  .ecotopia-lp .lp-eco-faq {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+  .ecotopia-lp .lp-eco-how-grid,
+  .ecotopia-lp .lp-eco-safety-grid {
+    grid-template-columns: 1fr;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .ecotopia-lp .lp-eco-channels-inner {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .ecotopia-lp .lp-eco-care-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ecotopia-lp .lp-eco-care-text {
+    flex: 1 1 auto;
+    padding: 40px 28px 8px;
+    text-align: center;
+  }
+  .ecotopia-lp .lp-eco-care-list {
+    flex: 1 1 auto;
+    padding: 16px 28px 40px;
+  }
+  .ecotopia-lp .lp-eco-channels-inner {
+    justify-items: center;
+    text-align: center;
+    padding-bottom: 36px;
+  }
+  .ecotopia-lp .lp-eco-steps {
+    justify-self: center;
+  }
+  .ecotopia-lp .lp-eco-channels-content {
+    align-items: center;
+  }
+  .ecotopia-lp .lp-eco-channels-dots {
+    bottom: 0;
+  }
+  .ecotopia-lp .lp-eco-care-art {
+    order: -1;
+  }
+  .ecotopia-lp .lp-eco-feature-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 44px 32px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ecotopia-lp .lp-eco-hero-bubble {
+    display: none;
+  }
+  .ecotopia-lp .lp-eco-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ecotopia-lp .lp-eco-cta {
+    text-align: center;
+  }
+}
+
+/* =====================================================================
+   Diário Estoico · landing  (/estoicismo)
+   Paleta: azul cósmico profundo + pergaminho quente + ouro discreto.
+   ===================================================================== */
+.ecotopia-lp.lp-diario {
+  --di-ink: #0E1A33;
+  --di-ink-soft: rgba(14, 26, 51, 0.74);
+  --di-blue: #2E5BD0;
+  --di-parchment: #F5EFE3;
+  --di-parchment-2: #EFE7D6;
+  --di-gold: #B58B3C;
+  background: var(--di-parchment);
+}
+
+.ecotopia-lp .lp-diario-h2 {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 700;
+  font-size: clamp(28px, 3.4vw, 42px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--di-ink);
+  margin: 0 0 20px;
+}
+
+.ecotopia-lp .lp-diario-h2--center {
+  text-align: center;
+}
+
+.ecotopia-lp .lp-diario-cta {
+  display: inline-block;
+  padding: 16px 34px;
+  background: var(--di-ink);
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF;
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 999px;
+  text-decoration: none !important;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  box-shadow: 0 8px 26px rgba(14, 26, 51, 0.28);
+}
+
+.ecotopia-lp .lp-diario-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(14, 26, 51, 0.36);
+}
+
+.ecotopia-lp .lp-diario-cta-ghost {
+  display: inline-block;
+  padding: 16px 28px;
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--di-ink) !important;
+  -webkit-text-fill-color: var(--di-ink);
+  text-decoration: none !important;
+  border-bottom: 1.5px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.ecotopia-lp .lp-diario-cta-ghost:hover {
+  border-color: var(--di-ink);
+}
+
+/* ─── Hero ─── */
+.ecotopia-lp .lp-diario-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: clamp(600px, 90vh, 800px);
+  padding: 132px 56px 96px;
+  background-color: #0A1430;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #FFFFFF;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.ecotopia-lp .lp-diario-hero-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(90deg, rgba(8, 16, 38, 0.86) 0%, rgba(8, 16, 38, 0.55) 46%, rgba(8, 16, 38, 0.2) 100%),
+    linear-gradient(180deg, rgba(8, 16, 38, 0.2) 0%, rgba(8, 16, 38, 0.6) 100%);
+}
+
+.ecotopia-lp .lp-diario-hero-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  align-items: center;
+  gap: 56px;
+}
+
+.ecotopia-lp .lp-diario-hero-text {
+  max-width: 560px;
+}
+
+.ecotopia-lp .lp-diario-eyebrow {
+  display: inline-block;
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--di-gold);
+  margin-bottom: 18px;
+}
+
+.ecotopia-lp .lp-diario-hero h1 {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 800;
+  font-size: clamp(40px, 5vw, 62px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: #FFFFFF;
+  margin: 0 0 22px;
+  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.45);
+}
+
+.ecotopia-lp .lp-diario-hero-lead {
+  font-family: var(--lp-sans);
+  font-size: 18px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 480px;
+  margin: 0 0 30px;
+}
+
+.ecotopia-lp .lp-diario-hero-fine {
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.66);
+  margin: 16px 0 0;
+}
+
+/* máxima do dia · card de vidro */
+.ecotopia-lp .lp-diario-hero-card {
+  justify-self: end;
+  max-width: 360px;
+  padding: 30px 30px 26px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.32);
+}
+
+.ecotopia-lp .lp-diario-hero-card-label {
+  display: block;
+  font-family: var(--lp-sans);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--di-gold);
+  margin-bottom: 14px;
+}
+
+.ecotopia-lp .lp-diario-hero-card blockquote {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-size: 22px;
+  line-height: 1.32;
+  color: #FFFFFF;
+  margin: 0 0 14px;
+}
+
+.ecotopia-lp .lp-diario-hero-card cite {
+  font-family: var(--lp-sans);
+  font-style: normal;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* ─── Benefícios ─── */
+.ecotopia-lp .lp-diario-benefits {
+  padding: 96px 56px;
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-diario-benefits-grid {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28px;
+}
+
+.ecotopia-lp .lp-diario-benefit {
+  text-align: center;
+  padding: 0 8px;
+}
+
+.ecotopia-lp .lp-diario-benefit-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: var(--di-parchment);
+  font-size: 30px;
+  margin-bottom: 18px;
+}
+
+.ecotopia-lp .lp-diario-benefit h3 {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.3;
+  color: var(--di-ink);
+  margin: 0 0 10px;
+}
+
+.ecotopia-lp .lp-diario-benefit p {
+  font-family: var(--lp-sans);
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--di-ink-soft);
+  margin: 0;
+}
+
+/* ─── Disciplinas ─── */
+.ecotopia-lp .lp-diario-disciplines {
+  padding: 100px 56px;
+  background: var(--di-parchment);
+}
+
+.ecotopia-lp .lp-diario-disciplines-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.ecotopia-lp .lp-diario-disciplines-lead {
+  font-family: var(--lp-sans);
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--di-ink-soft);
+  max-width: 620px;
+  margin: 0 auto 48px;
+}
+
+.ecotopia-lp .lp-diario-disciplines-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  text-align: left;
+}
+
+.ecotopia-lp .lp-diario-discipline {
+  background: #FFFFFF;
+  border: 1px solid rgba(14, 26, 51, 0.06);
+  border-radius: 20px;
+  padding: 34px 30px;
+  box-shadow: 0 10px 30px rgba(14, 26, 51, 0.05);
+}
+
+.ecotopia-lp .lp-diario-discipline-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  border: 1.5px solid var(--di-gold);
+  color: var(--di-gold);
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.ecotopia-lp .lp-diario-discipline h3 {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 700;
+  font-size: 21px;
+  line-height: 1.2;
+  color: var(--di-ink);
+  margin: 0 0 12px;
+}
+
+.ecotopia-lp .lp-diario-discipline p {
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--di-ink-soft);
+  margin: 0;
+}
+
+/* ─── Meses temáticos ─── */
+.ecotopia-lp .lp-diario-months {
+  padding: 96px 56px;
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-diario-months-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-diario-months-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+  margin-top: 8px;
+}
+
+.ecotopia-lp .lp-diario-month-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none !important;
+  color: var(--di-ink);
+  transition: transform 0.22s ease;
+}
+
+.ecotopia-lp .lp-diario-month-card:hover {
+  transform: translateY(-4px);
+}
+
+.ecotopia-lp .lp-diario-month-card:hover .lp-diario-month-thumb img {
+  transform: scale(1.05);
+}
+
+.ecotopia-lp .lp-diario-month-thumb {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  box-shadow: 0 6px 22px rgba(14, 26, 51, 0.14);
+}
+
+.ecotopia-lp .lp-diario-month-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.ecotopia-lp .lp-diario-month-free {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-family: var(--lp-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--di-ink);
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  padding: 4px 11px;
+}
+
+.ecotopia-lp .lp-diario-month-name {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--di-ink);
+}
+
+.ecotopia-lp .lp-diario-month-theme {
+  font-family: var(--lp-sans);
+  font-size: 13.5px;
+  color: var(--di-ink-soft);
+  margin-top: 2px;
+}
+
+/* ─── Citação ─── */
+.ecotopia-lp .lp-diario-quote {
+  position: relative;
+  padding: 110px 56px;
+  background-color: #0A1430;
+  background-image:
+    linear-gradient(180deg, rgba(8, 16, 38, 0.74) 0%, rgba(8, 16, 38, 0.84) 100%),
+    url('/images/diario-estoico-bg.png');
+  background-size: cover, cover;
+  background-position: center, center 20%;
+  background-repeat: no-repeat;
+  text-align: center;
+}
+
+.ecotopia-lp .lp-diario-quote-inner {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-diario-quote blockquote {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 700;
+  font-size: clamp(26px, 3.6vw, 42px);
+  line-height: 1.22;
+  letter-spacing: -0.018em;
+  color: #FFFFFF;
+  margin: 0 0 20px;
+}
+
+.ecotopia-lp .lp-diario-quote cite {
+  font-family: var(--lp-sans);
+  font-style: normal;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--di-gold);
+}
+
+/* ─── CTA final ─── */
+.ecotopia-lp .lp-diario-final {
+  padding: 100px 56px 112px;
+  background: var(--di-parchment-2);
+  text-align: center;
+}
+
+.ecotopia-lp .lp-diario-final-inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-diario-final h2 {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 800;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  color: var(--di-ink);
+  margin: 0 0 16px;
+}
+
+.ecotopia-lp .lp-diario-final p {
+  font-family: var(--lp-sans);
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--di-ink-soft);
+  margin: 0 0 30px;
+}
+
+.ecotopia-lp .lp-diario-final-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* ─── Responsivo /estoicismo ─── */
+@media (max-width: 1023px) {
+  .ecotopia-lp .lp-diario-hero {
+    padding: 110px 28px 80px;
+  }
+  .ecotopia-lp .lp-diario-hero-inner {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .ecotopia-lp .lp-diario-hero-card {
+    justify-self: start;
+  }
+  .ecotopia-lp .lp-diario-benefits,
+  .ecotopia-lp .lp-diario-disciplines,
+  .ecotopia-lp .lp-diario-months,
+  .ecotopia-lp .lp-diario-quote,
+  .ecotopia-lp .lp-diario-final {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+  .ecotopia-lp .lp-diario-benefits-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 36px 24px;
+  }
+  .ecotopia-lp .lp-diario-disciplines-grid {
+    grid-template-columns: 1fr;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  .ecotopia-lp .lp-diario-months-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .ecotopia-lp .lp-diario-benefits-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .ecotopia-lp .lp-diario-months-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ecotopia-lp .lp-diario-hero-card {
+    max-width: 100%;
+  }
 }

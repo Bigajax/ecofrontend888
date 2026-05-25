@@ -87,6 +87,10 @@ const SonoObrigadoPage = lazy(() => import("@/pages/SonoObrigadoPage"));
 const SonoErroPage = lazy(() => import("@/pages/SonoErroPage"));
 const EcotopiaLandingPage = lazy(() => import("@/pages/EcotopiaLandingPage"));
 const EcotopiaPrecosPage = lazy(() => import("@/pages/EcotopiaPrecosPage"));
+const EcotopiaMeditacaoPage = lazy(() => import("@/pages/EcotopiaMeditacaoPage"));
+const EcotopiaSonoPage = lazy(() => import("@/pages/EcotopiaSonoPage"));
+const EcotopiaEcoIAPage = lazy(() => import("@/pages/EcotopiaEcoIAPage"));
+const EcotopiaDiarioPage = lazy(() => import("@/pages/EcotopiaDiarioPage"));
 const AbundanciaObrigadoPage = lazy(() => import("@/pages/AbundanciaObrigadoPage"));
 const AbundanciaErroPage = lazy(() => import("@/pages/AbundanciaErroPage"));
 const DrJoeObrigadoPage = lazy(() => import("@/pages/DrJoeObrigadoPage"));
@@ -203,6 +207,10 @@ function AppRoutes() {
         <Route path="register" element={renderWithSuspense(<CreateProfilePage />)} />
         <Route path="reset-senha" element={renderWithSuspense(<ResetSenha />)} />
         <Route path="precos" element={renderWithSuspense(<EcotopiaPrecosPage />)} />
+        <Route path="meditacao" element={renderWithSuspense(<EcotopiaMeditacaoPage />)} />
+        <Route path="sono" element={renderWithSuspense(<EcotopiaSonoPage />)} />
+        <Route path="eco-ia" element={renderWithSuspense(<EcotopiaEcoIAPage />)} />
+        <Route path="estoicismo" element={renderWithSuspense(<EcotopiaDiarioPage />)} />
         <Route path="login" element={renderWithSuspense(<LoginPage />)} />
         <Route path="login/tour" element={<Navigate to="/login?tour=1" replace />} />
         <Route path="diario-estoico" element={renderWithBoundary(<DiarioEstoicoPage />)} />

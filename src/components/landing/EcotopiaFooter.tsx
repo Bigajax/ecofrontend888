@@ -65,7 +65,7 @@ export default function EcotopiaFooter() {
           <h4>Em caso de crise</h4>
           <ul>
             <li>
-              <strong style={{ color: 'var(--eco-baby)' }}>CVV 188</strong>
+              <strong style={{ color: 'var(--lp-accent-strong)' }}>CVV 188</strong>
             </li>
             <li style={{ opacity: 0.72 }}>24h, gratuito</li>
             <li style={{ opacity: 0.72 }}>Não substitui acompanhamento clínico</li>
