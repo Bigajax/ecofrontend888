@@ -10,20 +10,26 @@ const TESTIMONIOS: Testimonio[] = [
   {
     key: 'primeiro-dialogo',
     quote:
-      'Eu achei que ia ser mais um app de meditação. Mas a Eco me fez uma pergunta que meu terapeuta nunca tinha feito.',
+      'Entrei pelas meditações. Acabei ficando pelas conversas com a Eco.',
     caption: 'Membro · sobre o primeiro diálogo',
   },
   {
     key: 'ritual-diario',
     quote:
-      'Os 5 minutos do Diário Estoico viraram a parte mais importante do meu dia. Não é motivacional, é prático.',
+      'Os 5 minutos do Diário Estoico viraram a parte mais importante do meu dia.',
     caption: 'Membro · sobre o ritual diário',
   },
   {
     key: 'em-portugues',
     quote:
-      'Pela primeira vez tenho uma IA que conversa comigo em português de verdade, e que entende o jeito brasileiro de sentir.',
+      'Pela primeira vez senti que estava conversando em português de verdade.',
     caption: 'Membro · sobre conversar com a Eco',
+  },
+  {
+    key: 'sono',
+    quote:
+      'Eu não precisava de mais conteúdo. Precisava aprender a desligar a mente antes de dormir.',
+    caption: 'Membro · sobre o sono',
   },
 ];
 
@@ -80,10 +86,10 @@ export default function TestimoniosSection() {
 
         <h2 className="lp-testimonios-title scroll-reveal">
           <span className="lp-testimonios-title-line lp-testimonios-title-line--lead">
-            Membros vivendo dias mais
+            Como a Ecotopia entrou
           </span>
           <span className="lp-testimonios-title-line lp-testimonios-title-line--sub">
-            leves e equilibrados
+            na rotina das pessoas.
           </span>
         </h2>
       </div>

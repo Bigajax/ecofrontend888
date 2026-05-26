@@ -607,7 +607,7 @@ function AppChrome() {
       const controller = healthControllerRef.current;
       if (controller) {
         try {
-          controller.abort();
+          controller.abort('component_unmount');
         } catch {
           /* noop */
         }

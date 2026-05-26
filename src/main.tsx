@@ -57,7 +57,8 @@ class DebugAbortController extends OriginalAbortController {
       'visibilitychange',
       'pagehide',
       'hidden',
-      'timeout'
+      'timeout',
+      'component_unmount'
     ]);
     const logPayload = {
       reason: reason ?? 'no reason',

@@ -138,7 +138,7 @@ const VisualEstoico = () => (
     <div className="lp-feat-estoico-card">
       <div
         className="lp-feat-estoico-bg"
-        style={{ backgroundImage: 'url("/images/diario-janeiro.webp")' }}
+        style={{ backgroundImage: 'url("/images/diario-marco-aurelio.png")' }}
         aria-hidden="true"
       />
       <div className="lp-feat-estoico-content">
@@ -153,14 +153,6 @@ const VisualEstoico = () => (
         </p>
         <small>— Sêneca · Cartas Morais, 83.2</small>
       </div>
-    </div>
-    <div className="lp-feat-estoico-pager" aria-hidden="true">
-      <span className="lp-feat-estoico-pager-prev">‹</span>
-      <span className="lp-feat-estoico-pager-dots">
-        <span className="is-active" />
-        <span /><span /><span />
-      </span>
-      <span className="lp-feat-estoico-pager-next">›</span>
     </div>
   </div>
 );
@@ -189,9 +181,9 @@ const TABS: TabConfig[] = [
     key: 'eco-ai',
     label: 'Eco IA',
     eyebrow: 'DIÁLOGO',
-    title: 'Suporte sempre disponível',
+    title: 'Não carregue tudo sozinho.',
     paragraph:
-      'Converse com a Eco — uma IA empática que faz as perguntas certas. Diálogo socrático em português, 24h por dia.',
+      'Converse com a Eco para organizar pensamentos, emoções e decisões importantes.',
     audio: null,
     cta: 'Conversar com a Eco',
     ctaTo: '/register?plan=annual&from=feature_ecoai',
@@ -204,10 +196,10 @@ const TABS: TabConfig[] = [
     key: 'meditacoes',
     label: 'Meditações guiadas',
     eyebrow: 'PRÁTICA',
-    title: 'Biblioteca que transmite bem-estar',
+    title: 'Encontre a prática certa para hoje.',
     paragraph:
-      'Mais de 60 meditações com Dr. Joe Dispenza e Código da Abundância. Sem anúncios, sempre disponíveis. Experimente.',
-    audio: { label: 'Respire fundo para aliviar', meta: '0:00 / 3:42' },
+      'Meditações para sono, ansiedade, foco, gratidão e equilíbrio emocional.',
+    audio: null,
     cta: 'Saber mais',
     ctaTo: '/register?plan=annual&from=feature_meditacoes',
     from: 'feature_meditacoes',
@@ -219,9 +211,9 @@ const TABS: TabConfig[] = [
     key: 'sono',
     label: 'Recursos para dormir',
     eyebrow: 'SONO',
-    title: 'Adormeça em qualquer lugar',
+    title: 'Adormeça com mais facilidade.',
     paragraph:
-      'Sons, paisagens e meditações para um sono profundo. Acompanhe seu protocolo noite por noite, sem esforço.',
+      'Meditações, sons relaxantes e um protocolo guiado para ajudar sua mente a desacelerar noite após noite.',
     audio: null,
     cta: 'Explorar recursos de sono',
     ctaTo: '/register?plan=annual&from=feature_sono',
@@ -234,9 +226,9 @@ const TABS: TabConfig[] = [
     key: 'aneis',
     label: 'Cinco Anéis',
     eyebrow: 'RITUAL',
-    title: 'Exercícios para fazer em qualquer lugar',
+    title: 'Pequenas práticas. Grandes mudanças.',
     paragraph:
-      'Cinco anéis sagrados que estruturam seu dia: respiração, gratidão, presença, intenção e descanso. Construa hábito.',
+      'Cinco rituais diários para cultivar presença, gratidão, foco e equilíbrio.',
     audio: null,
     cta: 'Conhecer os anéis',
     ctaTo: '/register?plan=annual&from=feature_aneis',
@@ -249,9 +241,9 @@ const TABS: TabConfig[] = [
     key: 'estoico',
     label: 'Diário Estoico',
     eyebrow: 'FILOSOFIA',
-    title: '366 lições para a vida boa',
+    title: 'Uma reflexão por dia.',
     paragraph:
-      'Uma lição estoica por dia. Marco Aurélio, Sêneca, Epicteto — interpretados para o agora, com espaço para escrever.',
+      'Aprenda com Marco Aurélio, Sêneca e Epicteto em poucos minutos.',
     audio: null,
     cta: 'Começar diário',
     ctaTo: '/register?plan=annual&from=feature_estoico',
@@ -413,9 +405,7 @@ export default function TresPilaresSection() {
   return (
     <section className="lp-features" aria-labelledby="features-heading">
       <h2 id="features-heading" className="lp-features-title scroll-reveal">
-        Clareza emocional
-        <br />
-        para o seu dia.
+        Clareza emocional para o seu dia.
       </h2>
 
       <div className="lp-features-tabs" role="tablist" aria-label="Módulos do ECO">
@@ -465,7 +455,9 @@ export default function TresPilaresSection() {
                 role="tabpanel"
                 aria-labelledby={`feat-tab-${tab.key}`}
                 aria-hidden={!isActive}
-                className={`lp-features-card ${isActive ? 'is-active' : ''}`}
+                className={`lp-features-card ${isActive ? 'is-active' : ''} ${
+                  tab.textColor === '#FFFFFF' ? 'lp-features-card--dark' : ''
+                }`}
                 style={{
                   background: tab.bg,
                   color: tab.textColor,

@@ -14,10 +14,35 @@ const HERO_ROTATING_LINES = [
   'Volte para si',
 ] as const;
 
+const HERO_BULLETS = [
+  'Eco IA disponível 24 horas por dia.',
+  'Meditações, sono, estoicismo e práticas guiadas.',
+  '7 dias grátis para experimentar tudo.',
+] as const;
+
 const ROTATION_INTERVAL_MS = 2400;
 const ENTER_DURATION = 0.35;
 const EXIT_DURATION = 0.4;
 const SLIDE_DISTANCE = 50;
+
+function CheckCircleIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8.5 12.2 2.4 2.4 4.6-5" />
+    </svg>
+  );
+}
 
 export default function EcotopiaHero() {
   const { variant } = useHeadlineVariant();
@@ -60,13 +85,18 @@ export default function EcotopiaHero() {
         <span><em>tudo com a Ecotopia</em></span>
       </h1>
 
+      <ul className="lp-hero-bullets reveal-soft animation-delay-100">
+        {HERO_BULLETS.map((bullet) => (
+          <li key={bullet}>
+            <CheckCircleIcon />
+            {bullet}
+          </li>
+        ))}
+      </ul>
+
       <div className="lp-hero-cards">
         <div className="lp-hero-card reveal-soft animation-delay-100">
-          <h2>
-            Autoconhecimento prático
-            <br />
-            em um único app.
-          </h2>
+          <h2>Autoconhecimento prático em um único app.</h2>
           <Link
             to="/register?plan=annual&from=hero_card1"
             className="cta-dark"
@@ -84,7 +114,7 @@ export default function EcotopiaHero() {
           <div
             className="lp-hero-placeholder"
             style={{
-              backgroundImage: 'url(/images/hero-orbs-bg.png)',
+              backgroundImage: 'url(/images/autoconhecimento-card.png)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
@@ -92,11 +122,7 @@ export default function EcotopiaHero() {
         </div>
 
         <div className="lp-hero-card reveal-soft animation-delay-200">
-          <h2>
-            Diário Estoico
-            <br />
-            Uma lição por dia.
-          </h2>
+          <h2>Uma conversa quando você precisar.</h2>
           <Link
             to="/register?plan=annual&from=hero_card2"
             className="cta-dark"
@@ -109,12 +135,12 @@ export default function EcotopiaHero() {
               })
             }
           >
-            Ler a lição de hoje
+            Conhecer a Eco
           </Link>
           <div
             className="lp-hero-placeholder"
             style={{
-              backgroundImage: 'url(/images/diario-estoico-bg.png)',
+              backgroundImage: 'url(/images/eco-ai-card.png)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}

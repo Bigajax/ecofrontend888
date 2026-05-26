@@ -10,6 +10,7 @@ type MegaCta = { eyebrow: string; title: string; body: string; ctaLabel: string;
 type MenuConfig = {
   key: MenuKey;
   label: string;
+  lead?: { label: string; to?: string };
   columns: MegaColumn[];
   cta?: MegaCta;
 };
@@ -18,6 +19,7 @@ const MENUS: MenuConfig[] = [
   {
     key: 'para-voce',
     label: 'Para você',
+    lead: { label: 'Aplicativo Ecotopia' },
     columns: [
       {
         heading: 'O que oferecemos',
@@ -61,6 +63,7 @@ const MENUS: MenuConfig[] = [
   {
     key: 'planos',
     label: 'Nossos planos',
+    lead: { label: 'Ver todos os planos' },
     columns: [
       {
         heading: 'Assinaturas Ecotopia',
@@ -89,6 +92,7 @@ const MENUS: MenuConfig[] = [
   {
     key: 'recursos',
     label: 'Recursos',
+    lead: { label: 'Ver todos os recursos' },
     columns: [
       {
         heading: 'Artigos',
@@ -119,6 +123,7 @@ const MENUS: MenuConfig[] = [
   {
     key: 'sobre',
     label: 'Sobre',
+    lead: { label: 'Sobre nós' },
     columns: [
       {
         heading: 'Sobre Ecotopia',
@@ -144,10 +149,60 @@ const MENUS: MenuConfig[] = [
   },
 ];
 
+// Reúne todos os candidatos a container de scroll: ancestrais da logo +
+// elementos globais (o scroll pode estar em #root/body por overflow-y:auto).
+function collectScrollCandidates(fromEl: HTMLElement | null): HTMLElement[] {
+  const list: HTMLElement[] = [];
+  let node: HTMLElement | null = fromEl;
+  while (node) {
+    list.push(node);
+    node = node.parentElement;
+  }
+  [
+    document.getElementById('root'),
+    document.scrollingElement as HTMLElement | null,
+    document.documentElement,
+    document.body,
+  ].forEach((el) => {
+    if (el && !list.includes(el)) list.push(el);
+  });
+  return list;
+}
+
+// Scroll suave até o topo, animado por JS (duração/easing controlados).
+// Anima TODOS os elementos atualmente rolados — assim acerta o container real.
+function animateScrollToTop(fromEl: HTMLElement | null, duration = 1400) {
+  const scrolled = collectScrollCandidates(fromEl).filter((el) => el.scrollTop > 0);
+
+  if (scrolled.length === 0) {
+    console.warn('[logo-scroll] nenhum container com scrollTop>0 encontrado');
+    return;
+  }
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    scrolled.forEach((el) => (el.scrollTop = 0));
+    return;
+  }
+
+  const starts = scrolled.map((el) => el.scrollTop);
+  const startTime = performance.now();
+  const easeInOutCubic = (t: number) =>
+    t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  const step = (now: number) => {
+    const t = Math.min((now - startTime) / duration, 1);
+    const factor = 1 - easeInOutCubic(t);
+    scrolled.forEach((el, i) => {
+      el.scrollTop = starts[i] * factor;
+    });
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 export default function EcotopiaTopbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [expandedItem, setExpandedItem] = useState<MenuKey | null>(null);
 
   // ESC + body scroll lock for the drawer
   useEffect(() => {
@@ -172,11 +227,6 @@ export default function EcotopiaTopbar() {
 
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
-    setExpandedItem(null);
-  }, []);
-
-  const toggleAccordion = useCallback((key: MenuKey) => {
-    setExpandedItem((prev) => (prev === key ? null : key));
   }, []);
 
   return (
@@ -187,13 +237,29 @@ export default function EcotopiaTopbar() {
 
       <nav className={`lp-nav ${isScrolled ? 'is-scrolled' : ''}`} aria-label="Navegação principal">
         <div className="lp-nav-left">
-          <Link to="/" aria-label="Ecotopia" className="lp-nav-brand">
+          <Link
+            to="/"
+            aria-label="Ecotopia — voltar ao topo"
+            className="lp-nav-brand"
+            onClick={(e) => {
+              // Fica na página atual e sobe suavemente até o topo (hero)
+              e.preventDefault();
+              animateScrollToTop(e.currentTarget as HTMLElement);
+            }}
+          >
             <img
               src="/images/ecotopia-logo-horizontal.png"
               alt="Ecotopia"
               width={180}
               height={44}
-              className="lp-nav-brand-img"
+              className="lp-nav-brand-img lp-nav-brand-img--full"
+            />
+            <img
+              src="/images/ecotopia-logo-mark.png"
+              alt="Ecotopia"
+              width={44}
+              height={44}
+              className="lp-nav-brand-img lp-nav-brand-img--mark"
             />
           </Link>
 
@@ -241,12 +307,7 @@ export default function EcotopiaTopbar() {
         </div>
       </nav>
 
-      <MobileDrawer
-        open={drawerOpen}
-        onClose={closeDrawer}
-        expandedItem={expandedItem}
-        onToggle={toggleAccordion}
-      />
+      <MobileDrawer open={drawerOpen} onClose={closeDrawer} />
     </>
   );
 }
@@ -309,18 +370,51 @@ function MegaLinkRender({ link }: { link: MegaLink }) {
   );
 }
 
-function MobileDrawer({
-  open,
-  onClose,
-  expandedItem,
-  onToggle,
-}: {
-  open: boolean;
-  onClose: () => void;
-  expandedItem: MenuKey | null;
-  onToggle: (key: MenuKey) => void;
-}) {
-  const panelRefs = useRef<Record<string, HTMLDivElement | null>>({});
+function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [drill, setDrill] = useState<MenuKey | null>(null);
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Reseta a navegação interna após o drawer fechar (espera o slide-out)
+  useEffect(() => {
+    if (open) return;
+    const t = window.setTimeout(() => {
+      setDrill(null);
+      setOpenSection(null);
+    }, 1150);
+    return () => window.clearTimeout(t);
+  }, [open]);
+
+  const activeMenu = MENUS.find((m) => m.key === drill) ?? null;
+
+  const goBack = () => {
+    setDrill(null);
+    setOpenSection(null);
+  };
+
+  const footCtaPrimary = (
+    <div className="lp-drawer-foot">
+      <Link
+        to="/register?plan=annual&from=mobile-drawer"
+        onClick={onClose}
+        className="cta-primary lp-drawer-cta"
+      >
+        Começar agora
+      </Link>
+    </div>
+  );
+
+  const footCtaBlue = (
+    <div className="lp-drawer-foot">
+      <Link
+        to="/register?plan=annual&from=mobile-drawer-sub"
+        onClick={onClose}
+        className="cta-primary lp-drawer-cta lp-drawer-cta--blue"
+      >
+        Experimente grátis
+      </Link>
+    </div>
+  );
 
   return (
     <>
@@ -336,95 +430,139 @@ function MobileDrawer({
         aria-hidden={!open}
         aria-label="Menu"
       >
-        <div className="lp-drawer-head">
-          <span className="lp-drawer-title">Menu</span>
-          <button
-            type="button"
-            className="lp-drawer-close"
-            aria-label="Fechar menu"
-            onClick={onClose}
-          >
-            <CloseIcon />
-          </button>
+        {/* ── Nível 1 — categorias ── */}
+        <div className={`lp-drawer-view ${drill ? 'is-pushed' : ''}`}>
+          <div className="lp-drawer-head">
+            <button
+              type="button"
+              className="lp-drawer-close"
+              aria-label="Fechar menu"
+              onClick={onClose}
+            >
+              <CloseIcon />
+            </button>
+          </div>
+
+          <nav className="lp-drawer-nav">
+            {MENUS.map((menu) => (
+              <button
+                key={menu.key}
+                type="button"
+                className="lp-drawer-row"
+                onClick={() => {
+                  setDrill(menu.key);
+                  setOpenSection(null);
+                }}
+              >
+                <span>{menu.label}</span>
+                <span className="lp-drawer-row-chev" aria-hidden>
+                  <ChevronRight />
+                </span>
+              </button>
+            ))}
+
+            <div className="lp-drawer-sep" />
+
+            <Link to="/login" onClick={onClose} className="lp-drawer-row lp-drawer-row--icon">
+              <UserIcon />
+              <span>Entrar</span>
+            </Link>
+            <Link to="/#faq" onClick={onClose} className="lp-drawer-row lp-drawer-row--icon">
+              <HelpIcon />
+              <span>Ajuda</span>
+            </Link>
+          </nav>
+
+          {footCtaPrimary}
         </div>
 
-        <nav className="lp-drawer-nav">
-          {MENUS.map((menu) => {
-            const isOpen = expandedItem === menu.key;
-            const panel = panelRefs.current[menu.key];
-            const maxHeight = isOpen && panel ? `${panel.scrollHeight}px` : '0px';
+        {/* ── Nível 2 — subpágina da categoria ── */}
+        <div
+          className={`lp-drawer-view lp-drawer-view--sub ${drill ? 'is-active' : ''}`}
+          aria-hidden={!drill}
+        >
+          <div className="lp-drawer-head lp-drawer-head--sub">
+            <button
+              type="button"
+              className="lp-drawer-close"
+              aria-label="Voltar"
+              onClick={goBack}
+            >
+              <ChevronLeft />
+            </button>
+            <span className="lp-drawer-subtitle">{activeMenu?.label}</span>
+            <button
+              type="button"
+              className="lp-drawer-close"
+              aria-label="Fechar menu"
+              onClick={onClose}
+            >
+              <CloseIcon />
+            </button>
+          </div>
 
-            return (
-              <div key={menu.key} className={`lp-acc-item ${isOpen ? 'is-open' : ''}`}>
-                <button
-                  type="button"
-                  className="lp-acc-trigger"
-                  aria-expanded={isOpen}
-                  aria-controls={`lp-acc-${menu.key}`}
-                  onClick={() => onToggle(menu.key)}
+          <nav className="lp-drawer-nav">
+            {activeMenu?.lead &&
+              (activeMenu.lead.to ? (
+                <Link
+                  to={activeMenu.lead.to}
+                  onClick={onClose}
+                  className="lp-drawer-lead"
                 >
-                  <span>{menu.label}</span>
-                  <span className="lp-acc-chev" aria-hidden>
-                    <ChevronDown />
-                  </span>
-                </button>
+                  {activeMenu.lead.label}
+                </Link>
+              ) : (
+                <span className="lp-drawer-lead lp-drawer-lead--static">
+                  {activeMenu.lead.label}
+                </span>
+              ))}
 
-                <div
-                  id={`lp-acc-${menu.key}`}
-                  className="lp-acc-panel"
-                  style={{ maxHeight }}
-                  ref={(el) => {
-                    panelRefs.current[menu.key] = el;
-                  }}
-                >
-                  <div className="lp-acc-inner">
-                    {menu.columns.map((col) => (
-                      <div key={col.heading} className="lp-acc-group">
-                        <h6 className="lp-acc-heading">{col.heading}</h6>
-                        <ul>
-                          {col.links.map((link) => (
-                            <li key={link.label}>
-                              <Link
-                                to={link.to}
-                                onClick={onClose}
-                                className="lp-acc-link"
-                              >
-                                {link.label}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
+            {activeMenu?.columns.map((col) => {
+              const isOpen = openSection === col.heading;
+              const panel = sectionRefs.current[col.heading];
+              const maxHeight = isOpen && panel ? `${panel.scrollHeight}px` : '0px';
 
-                    {menu.cta && (
-                      <div className="lp-acc-cta">
-                        <span className="lp-mega-cta-eyebrow">{menu.cta.eyebrow}</span>
-                        <p className="lp-mega-cta-title">{menu.cta.title}</p>
-                        <Link to={menu.cta.to} onClick={onClose} className="lp-mega-cta-link">
-                          {menu.cta.ctaLabel}
-                        </Link>
-                      </div>
-                    )}
+              return (
+                <div key={col.heading} className={`lp-acc-item ${isOpen ? 'is-open' : ''}`}>
+                  <button
+                    type="button"
+                    className="lp-acc-trigger"
+                    aria-expanded={isOpen}
+                    onClick={() =>
+                      setOpenSection((p) => (p === col.heading ? null : col.heading))
+                    }
+                  >
+                    <span>{col.heading}</span>
+                    <span className="lp-acc-chev" aria-hidden>
+                      <ChevronDown />
+                    </span>
+                  </button>
+
+                  <div
+                    className="lp-acc-panel"
+                    style={{ maxHeight }}
+                    ref={(el) => {
+                      sectionRefs.current[col.heading] = el;
+                    }}
+                  >
+                    <div className="lp-acc-inner">
+                      <ul>
+                        {col.links.map((link) => (
+                          <li key={link.label}>
+                            <Link to={link.to} onClick={onClose} className="lp-acc-link">
+                              {link.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </nav>
 
-          <Link to="/login" onClick={onClose} className="lp-acc-flat">
-            Entrar
-          </Link>
-        </nav>
-
-        <div className="lp-drawer-foot">
-          <Link
-            to="/register?plan=annual&from=mobile-drawer"
-            onClick={onClose}
-            className="cta-primary lp-drawer-cta"
-          >
-            Experimente grátis
-          </Link>
+          {footCtaBlue}
         </div>
       </aside>
     </>
@@ -464,6 +602,81 @@ function CloseIcon() {
     >
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function ChevronRight() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <polyline points="9 6 15 12 9 18" />
+    </svg>
+  );
+}
+
+function ChevronLeft() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" />
+    </svg>
+  );
+}
+
+function HelpIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.2 9a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2.2-2.6 4" />
+      <line x1="12" y1="17" x2="12" y2="17" />
     </svg>
   );
 }
