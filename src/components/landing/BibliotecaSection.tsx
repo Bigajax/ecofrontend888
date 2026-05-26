@@ -8,6 +8,15 @@ import { PROTOCOL_NIGHTS, type ProtocolNight } from '@/data/protocolNights';
 
 type TabId = 'destaques' | 'populares' | 'sono' | 'ansiedade' | 'meditacao' | 'programas';
 
+type CardKind = 'meditacao' | 'programa' | 'artigo' | 'sono';
+
+const KIND_LABEL: Record<CardKind, string> = {
+  meditacao: 'Meditação',
+  programa: 'Programa',
+  artigo: 'Artigo',
+  sono: 'Sono',
+};
+
 type LibraryCard = {
   key: string;
   image: string;            // CSS url() ou string vazia (cai pro gradient)
@@ -15,7 +24,8 @@ type LibraryCard = {
   gradient: string;
   title: string;
   subtitle: string;
-  tag?: string;
+  kind: CardKind;           // tipo do conteúdo (badge no canto superior)
+  tag?: string;             // selo promocional opcional ("Em alta", "Top"…)
   to: string;
   from: string;
 };
@@ -36,7 +46,8 @@ const PROGRAM_ANEIS: LibraryCard = {
   imagePosition: 'center center',
   gradient: 'linear-gradient(to bottom, #5F7F52 0%, #1B3A26 100%)',
   title: '5 Anéis da Disciplina',
-  subtitle: 'Programa · Construa hábitos que duram',
+  subtitle: 'Construa hábitos que duram',
+  kind: 'programa',
   to: '/register?plan=annual&from=library_aneis',
   from: 'library_aneis',
 };
@@ -47,7 +58,8 @@ const PROGRAM_RIQUEZA: LibraryCard = {
   imagePosition: 'center center',
   gradient: 'linear-gradient(to bottom, #1E3A5F 0%, #6BB6FF 100%)',
   title: 'Quem Pensa Enriquece',
-  subtitle: 'Programa · Reprograme sua mente financeira',
+  subtitle: 'Reprograme sua mente financeira',
+  kind: 'programa',
   to: '/register?plan=annual&from=library_riqueza',
   from: 'library_riqueza',
 };
@@ -58,9 +70,34 @@ const PROGRAM_ESTOICO: LibraryCard = {
   imagePosition: 'center center',
   gradient: 'linear-gradient(to bottom, #1F3A5E 0%, #0D1F36 100%)',
   title: 'Diário Estoico',
-  subtitle: 'Programa · 366 lições para a vida boa',
+  subtitle: '366 lições para a vida boa',
+  kind: 'programa',
   to: '/register?plan=annual&from=library_estoico',
   from: 'library_estoico',
+};
+
+const PROGRAM_ABUNDANCIA: LibraryCard = {
+  key: 'lib-prog-abundancia',
+  image: 'url("/images/abundancia-diagnostico.webp")',
+  imagePosition: 'center center',
+  gradient: 'linear-gradient(to bottom, #D4A017 0%, #1A0E00 100%)',
+  title: 'Código da Abundância',
+  subtitle: '7 sessões para destravar a prosperidade',
+  kind: 'programa',
+  to: '/register?plan=annual&from=library_abundancia',
+  from: 'library_abundancia',
+};
+
+const PROGRAM_CALEIDOSCOPIO: LibraryCard = {
+  key: 'lib-prog-caleidoscopio',
+  image: 'url("/images/caleidoscopio-mind-movie.webp")',
+  imagePosition: 'center center',
+  gradient: 'linear-gradient(to bottom, #B494D4 0%, #542B88 100%)',
+  title: 'Caleidoscópio & Mind Movie',
+  subtitle: 'Visualize e crie novas realidades internas',
+  kind: 'programa',
+  to: '/register?plan=annual&from=library_caleidoscopio',
+  from: 'library_caleidoscopio',
 };
 
 const ARTICLE_GOOD_NIGHT: LibraryCard = {
@@ -69,7 +106,8 @@ const ARTICLE_GOOD_NIGHT: LibraryCard = {
   imagePosition: 'center center',
   gradient: 'linear-gradient(to bottom, #2A1D5B 0%, #0E0A2C 100%)',
   title: 'Como ter uma boa noite de sono',
-  subtitle: 'Artigo · Leitura de 6 min',
+  subtitle: 'Leitura de 6 min',
+  kind: 'artigo',
   to: '/app/articles/good-night-sleep',
   from: 'library_article_goodnight',
 };
@@ -80,9 +118,59 @@ const ARTICLE_SLEEP_STAGES: LibraryCard = {
   imagePosition: 'center center',
   gradient: 'linear-gradient(to bottom, #3F2378 0%, #15094A 100%)',
   title: 'Os estágios do sono profundo',
-  subtitle: 'Artigo · Leitura de 4 min',
+  subtitle: 'Leitura de 4 min',
+  kind: 'artigo',
   to: '/app/articles/sleep',
   from: 'library_article_sleep',
+};
+
+// Meditações avulsas (fora do conjunto Dr. Joe) — mesmas imagens do app
+const MED_INTRODUCAO: LibraryCard = {
+  key: 'lib-med-introducao',
+  image: 'url("/images/meditacao-introducao.webp")',
+  imagePosition: 'center 32%',
+  gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #1F7BAD 100%)',
+  title: 'Introdução à Meditação',
+  subtitle: '8 min · Seus primeiros passos na prática',
+  kind: 'meditacao',
+  to: '/register?plan=annual&from=library_introducao',
+  from: 'library_introducao',
+};
+
+const MED_ACOLHENDO: LibraryCard = {
+  key: 'lib-med-acolhendo',
+  image: 'url("/images/acolhendo-respiracao.webp")',
+  imagePosition: 'center center',
+  gradient: 'linear-gradient(to bottom, #7BBFB5 0%, #084D42 100%)',
+  title: 'Acolhendo sua respiração',
+  subtitle: '7 min · Presença e calma pela respiração',
+  kind: 'meditacao',
+  to: '/register?plan=annual&from=library_acolhendo',
+  from: 'library_acolhendo',
+};
+
+const MED_ESTRESSE: LibraryCard = {
+  key: 'lib-med-estresse',
+  image: 'url("/images/liberando-estresse.png")',
+  imagePosition: 'center center',
+  gradient: 'linear-gradient(to bottom, #C4A0E8 0%, #341870 100%)',
+  title: 'Liberando o Estresse',
+  subtitle: '5 min · Solte as tensões do dia',
+  kind: 'meditacao',
+  to: '/register?plan=annual&from=library_estresse',
+  from: 'library_estresse',
+};
+
+const MED_SONO: LibraryCard = {
+  key: 'lib-med-sono',
+  image: 'url("/images/meditacoes-sono-hero.webp")',
+  imagePosition: 'center 32%',
+  gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #14172E 100%)',
+  title: 'Meditação do Sono',
+  subtitle: '15 min · Relaxe e durma profundamente',
+  kind: 'meditacao',
+  to: '/register?plan=annual&from=library_meditacao_sono',
+  from: 'library_meditacao_sono',
 };
 
 // ── Adapters ──────────────────────────────────────────────────────────
@@ -94,6 +182,7 @@ function fromDrJoe(m: DrJoeMeditation, tag?: string): LibraryCard {
     gradient: m.gradient,
     title: m.title,
     subtitle: `${m.duration} · Dr. Joe Dispenza`,
+    kind: 'meditacao',
     tag,
     to: `/register?plan=annual&from=library_${m.id}`,
     from: `library_${m.id}`,
@@ -108,6 +197,7 @@ function fromNight(n: ProtocolNight, tag?: string): LibraryCard {
     gradient: n.gradient,
     title: n.title,
     subtitle: `${n.duration} · Protocolo do Sono`,
+    kind: 'sono',
     tag,
     to: `/register?plan=annual&from=library_${n.id}`,
     from: `library_${n.id}`,
@@ -116,7 +206,7 @@ function fromNight(n: ProtocolNight, tag?: string): LibraryCard {
 
 export default function BibliotecaSection() {
   const { variant } = useHeadlineVariant();
-  const [activeTab, setActiveTab] = useState<TabId>('meditacao');
+  const [activeTab, setActiveTab] = useState<TabId>('destaques');
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(true);
   const railRef = useRef<HTMLDivElement>(null);
@@ -127,43 +217,54 @@ export default function BibliotecaSection() {
         return [
           { ...PROGRAM_ANEIS, tag: 'Em alta' },
           fromDrJoe(DR_JOE_MEDITATIONS[0]),
+          PROGRAM_ABUNDANCIA,
+          { ...MED_INTRODUCAO, tag: 'Comece aqui' },
           PROGRAM_ESTOICO,
           PROGRAM_RIQUEZA,
-          fromNight(PROTOCOL_NIGHTS[0]),
           ARTICLE_GOOD_NIGHT,
         ];
       case 'populares':
         return [
           { ...PROGRAM_RIQUEZA, tag: 'Top' },
+          PROGRAM_ABUNDANCIA,
           fromDrJoe(DR_JOE_MEDITATIONS[0]),
           PROGRAM_ANEIS,
           fromDrJoe(DR_JOE_MEDITATIONS[2]),
+          PROGRAM_CALEIDOSCOPIO,
           fromNight(PROTOCOL_NIGHTS[0]),
           PROGRAM_ESTOICO,
         ];
       case 'meditacao':
-        return DR_JOE_MEDITATIONS.map((m, i) =>
-          fromDrJoe(m, i === 0 ? 'Em alta' : undefined),
-        );
+        return [
+          { ...MED_INTRODUCAO, tag: 'Comece aqui' },
+          ...DR_JOE_MEDITATIONS.map((m, i) =>
+            fromDrJoe(m, i === 0 ? 'Em alta' : undefined),
+          ),
+          MED_ACOLHENDO,
+          MED_ESTRESSE,
+          MED_SONO,
+        ];
       case 'programas':
         return [
-          { ...PROGRAM_ANEIS, tag: 'Programa' },
-          { ...PROGRAM_RIQUEZA, tag: 'Programa' },
-          { ...PROGRAM_ESTOICO, tag: 'Programa' },
-          { ...ARTICLE_GOOD_NIGHT, tag: 'Artigo' },
-          { ...ARTICLE_SLEEP_STAGES, tag: 'Artigo' },
+          { ...PROGRAM_ANEIS, tag: 'Em alta' },
+          PROGRAM_RIQUEZA,
+          PROGRAM_ABUNDANCIA,
+          PROGRAM_CALEIDOSCOPIO,
+          PROGRAM_ESTOICO,
+          ARTICLE_GOOD_NIGHT,
+          ARTICLE_SLEEP_STAGES,
         ];
       case 'sono':
         return [
-          ...PROTOCOL_NIGHTS.slice(0, 5).map((n, i) =>
-            fromNight(n, i === 0 ? 'Indicado' : undefined),
-          ),
+          { ...MED_SONO, tag: 'Indicado' },
+          ...PROTOCOL_NIGHTS.slice(0, 5).map((n) => fromNight(n)),
           ARTICLE_GOOD_NIGHT,
           ARTICLE_SLEEP_STAGES,
         ];
       case 'ansiedade':
         return [
           fromDrJoe(DR_JOE_MEDITATIONS[2], 'Recomendado'),
+          MED_ACOLHENDO,
           fromNight(PROTOCOL_NIGHTS[1]),
           fromNight(PROTOCOL_NIGHTS[3]),
           PROGRAM_ANEIS,
@@ -250,6 +351,9 @@ export default function BibliotecaSection() {
               }
             >
               {c.tag && <span className="lp-library-card-tag">{c.tag}</span>}
+              <span className={`lp-library-card-kind lp-kind-${c.kind}`}>
+                {KIND_LABEL[c.kind]}
+              </span>
               <div className="lp-library-card-body">
                 <h3>{c.title}</h3>
                 <p>{c.subtitle}</p>
@@ -259,25 +363,6 @@ export default function BibliotecaSection() {
         </div>
 
         <div className="lp-library-controls">
-          {activeTab === 'meditacao' && (
-            <Link to="/meditacao" className="lp-library-learn">
-              Saiba mais sobre nossa meditação →
-            </Link>
-          )}
-          <Link
-            to="/register?plan=annual&from=library_view_all"
-            className="lp-library-viewall"
-            onClick={() =>
-              trackLandingCta({
-                section: 'library',
-                plan: 'annual',
-                from: 'library_view_all',
-                headline_variant: variant,
-              })
-            }
-          >
-            Ver tudo
-          </Link>
           <button
             type="button"
             className="lp-library-arrow"

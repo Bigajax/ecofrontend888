@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Languages, Sparkles, Gift } from 'lucide-react';
 import { useHeadlineVariant } from '@/hooks/useHeadlineVariant';
 import { useSectionInView } from './useSectionInView';
 import { trackLandingCta } from './trackLandingCta';
@@ -11,14 +12,14 @@ export default function JoinSection() {
     <section ref={ref} className="lp-join">
       <div className="lp-join-inner">
         <h2 className="lp-join-title scroll-reveal">
-          Comece sua jornada
+          Junte-se a quem escolheu
           <br />
-          com o Ecotopia hoje
+          cuidar da mente todos os dias
         </h2>
 
         <p className="lp-join-sub scroll-reveal">
-          Um espaço para conversar, refletir e voltar pra si — no seu tempo,
-          no seu ritmo.
+          Meditações guiadas, Eco IA, sono, Diário Estoico e práticas para uma
+          vida mais equilibrada.
         </p>
 
         <Link
@@ -38,14 +39,22 @@ export default function JoinSection() {
 
         <div className="lp-join-stats scroll-reveal">
           <div className="lp-join-stat">
-            <div className="lp-join-stat-big">Português</div>
-            <div className="lp-join-stat-label">Conteúdo 100% no seu idioma</div>
+            <span className="lp-join-stat-icon">
+              <Languages size={22} strokeWidth={2} />
+            </span>
+            <div className="lp-join-stat-big">Conteúdo em português</div>
           </div>
           <div className="lp-join-stat">
-            <div className="lp-join-stat-big">Método</div>
-            <div className="lp-join-stat-label">
-              Baseado em estoicismo, psicologia existencial e diálogo socrático
-            </div>
+            <span className="lp-join-stat-icon">
+              <Sparkles size={22} strokeWidth={2} />
+            </span>
+            <div className="lp-join-stat-big">Acesso completo</div>
+          </div>
+          <div className="lp-join-stat">
+            <span className="lp-join-stat-icon">
+              <Gift size={22} strokeWidth={2} />
+            </span>
+            <div className="lp-join-stat-big">7 dias grátis</div>
           </div>
         </div>
       </div>
