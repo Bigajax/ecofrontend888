@@ -12,13 +12,11 @@ export default function EmpresasSection() {
       <div className="lp-empresas-card">
         <div className="lp-empresas-body">
           <h2 className="lp-empresas-title scroll-reveal">
-            Para equipes que cuidam
-            <br />
-            das pessoas que cuidam
+            Para equipes que cuidam de pessoas.
           </h2>
           <p className="lp-empresas-text scroll-reveal">
-            Bem-estar emocional prático para o seu time. Em português, com método.
-            Eco IA, Diário Estoico e biblioteca filosófica em um único acesso.
+            Bem-estar emocional prático para o seu time. Eco IA, Diário Estoico,
+            meditações e práticas guiadas em uma única plataforma.
           </p>
           <div className="lp-empresas-actions">
             <Link

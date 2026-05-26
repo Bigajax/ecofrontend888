@@ -3443,30 +3443,71 @@ body.eco-no-scroll {
   }
 }
 
-/* ── Cards editoriais ──────────────────────────────────────────────────── */
-.ecotopia-lp .lp-testimonios-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
-  max-width: 1180px;
+/* ── Carrossel de depoimentos (card único + peek + setas) ───────────────── */
+.ecotopia-lp .lp-testimonios-carousel {
+  position: relative;
+  max-width: 600px;
   margin: 0 auto;
+  padding: 0 20px;
+}
+
+.ecotopia-lp .lp-testimonios-viewport {
+  overflow: hidden;
+}
+
+.ecotopia-lp .lp-testimonios-track {
+  --tw: min(78vw, 480px); /* largura do card */
+  --tg: 16px;             /* espaço entre cards */
+  --n: 0;
+  display: flex;
+  gap: var(--tg);
+  transform: translateX(calc(var(--n) * (var(--tw) + var(--tg)) * -1));
+  transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
+}
+
+.ecotopia-lp .lp-testimonios-nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 22px;
+  padding-right: 4px;
+}
+
+.ecotopia-lp .lp-testimonios-arrow {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: #EDE6E1;
+  color: #1A1A1A;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.ecotopia-lp .lp-testimonios-arrow:hover:not(:disabled) {
+  background: #E1D8D2;
+}
+
+.ecotopia-lp .lp-testimonios-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .ecotopia-lp .lp-testimonios-card {
+  flex: 0 0 var(--tw);
   background: #F5F1EE;
-  border-radius: 28px;
-  padding: 48px 40px;
+  border-radius: 24px;
+  padding: 32px 30px;
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  min-height: 280px;
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
-}
-
-.ecotopia-lp .lp-testimonios-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 16px 36px rgba(20, 25, 45, 0.06);
+  justify-content: center; /* centraliza o bloco citação+legenda */
+  gap: 18px;
+  min-height: 230px;
 }
 
 .ecotopia-lp .lp-testimonios-quote {
@@ -3476,7 +3517,6 @@ body.eco-no-scroll {
   line-height: 1.55;
   color: #1A1A1A;
   margin: 0;
-  flex: 1;
   letter-spacing: -0.011em;
 }
 
@@ -3567,18 +3607,18 @@ body.eco-no-scroll {
     left: 28%;
   }
 
-  .ecotopia-lp .lp-testimonios-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
   .ecotopia-lp .lp-testimonios-card {
-    padding: 32px 26px;
-    gap: 24px;
-    min-height: auto;
+    padding: 28px 24px;
+    gap: 16px;
+    min-height: 220px;
     border-radius: 22px;
   }
   .ecotopia-lp .lp-testimonios-quote {
     font-size: 16px;
+  }
+  .ecotopia-lp .lp-testimonios-arrow {
+    width: 44px;
+    height: 44px;
   }
 }
 
@@ -3985,7 +4025,7 @@ body.eco-no-scroll {
   width: 100%;
   background: #FFCD29;
   overflow: hidden;
-  padding: 22px 0;
+  padding: 11px 0;
   border-top: 2px solid #F0BF12;
   border-bottom: 2px solid #F0BF12;
   margin: 40px 0;
@@ -4008,19 +4048,18 @@ body.eco-no-scroll {
 .ecotopia-lp .lp-method-marquee-item {
   display: inline-flex;
   align-items: center;
-  gap: 60px;
+  gap: 24px;
 }
 
-.ecotopia-lp .lp-method-marquee-row {
+.ecotopia-lp .lp-method-term {
   display: inline-flex;
   align-items: center;
-  gap: 60px;
   font-family: var(--lp-sans);
-  font-size: clamp(28px, 4vw, 44px);
-  font-weight: 800;
+  font-size: clamp(16px, 2.4vw, 26px);
+  font-weight: 500;
   color: #1A1A1A;
   white-space: nowrap;
-  letter-spacing: -0.018em;
+  letter-spacing: -0.012em;
   line-height: 1;
 }
 
@@ -4031,13 +4070,14 @@ body.eco-no-scroll {
 }
 
 .ecotopia-lp .lp-method-eye {
-  width: 38px;
-  height: 38px;
+  width: 24px;
+  height: 24px;
   background: #FFFFFF;
   border: 2px solid #1A1A1A;
   border-radius: 50%;
   position: relative;
   overflow: hidden;
+  transform-origin: center;
 }
 
 .ecotopia-lp .lp-method-eye::after {
@@ -4045,16 +4085,33 @@ body.eco-no-scroll {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 14px;
-  height: 14px;
+  width: 9px;
+  height: 9px;
   background: #1A1A1A;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  animation: lpMethodLook 4s ease-in-out infinite;
 }
 
-.ecotopia-lp .lp-method-eye:nth-child(2)::after {
-  animation-delay: 0.2s;
+/* ── Cada par tem um movimento próprio (lento) ── */
+
+/* Variante 0 — olhando para os lados */
+.ecotopia-lp .lp-method-eyes--0 .lp-method-eye::after {
+  animation: lpLookSide 7s ease-in-out infinite;
+}
+
+/* Variante 1 — pisca um olho (só o 2º fecha) */
+.ecotopia-lp .lp-method-eyes--1 .lp-method-eye:nth-child(2) {
+  animation: lpWink 5.5s ease-in-out infinite;
+}
+
+/* Variante 2 — pisca os dois */
+.ecotopia-lp .lp-method-eyes--2 .lp-method-eye {
+  animation: lpBlinkBoth 6s ease-in-out infinite;
+}
+
+/* Variante 3 — olhando para cima/baixo */
+.ecotopia-lp .lp-method-eyes--3 .lp-method-eye::after {
+  animation: lpLookVert 7.5s ease-in-out infinite;
 }
 
 @keyframes lpMethodScroll {
@@ -4062,11 +4119,30 @@ body.eco-no-scroll {
   to   { transform: translateX(-50%); }
 }
 
-@keyframes lpMethodLook {
-  0%, 100% { transform: translate(-50%, -50%); }
-  25%      { transform: translate(-90%, -50%); }
-  50%      { transform: translate(-50%, -20%); }
-  75%      { transform: translate(-10%, -50%); }
+/* Var 0 — pupila olhando esquerda ↔ direita */
+@keyframes lpLookSide {
+  0%, 18%, 100% { transform: translate(-50%, -50%); }
+  36%, 52%      { transform: translate(-82%, -50%); }  /* esquerda */
+  70%, 86%      { transform: translate(-18%, -50%); }  /* direita */
+}
+
+/* Var 1 — pisca um olho (wink) */
+@keyframes lpWink {
+  0%, 42%, 50%, 100% { transform: scaleY(1); }
+  46% { transform: scaleY(0.08); }
+}
+
+/* Var 2 — pisca os dois */
+@keyframes lpBlinkBoth {
+  0%, 48%, 56%, 100% { transform: scaleY(1); }
+  52% { transform: scaleY(0.08); }
+}
+
+/* Var 3 — pupila olhando baixo ↔ cima */
+@keyframes lpLookVert {
+  0%, 18%, 100% { transform: translate(-50%, -50%); }
+  36%, 52%      { transform: translate(-50%, -8%); }   /* baixo */
+  70%, 86%      { transform: translate(-50%, -92%); }  /* cima */
 }
 
 /* Mantemos a rolagem mesmo com prefers-reduced-motion — a faixa é puramente
@@ -4074,25 +4150,22 @@ body.eco-no-scroll {
 
 @media (max-width: 900px) {
   .ecotopia-lp .lp-method-marquee {
-    padding: 16px 0;
+    padding: 9px 0;
     margin: 24px 0;
   }
   .ecotopia-lp .lp-method-marquee-track {
-    gap: 36px;
+    gap: 18px;
   }
   .ecotopia-lp .lp-method-marquee-item {
-    gap: 36px;
-  }
-  .ecotopia-lp .lp-method-marquee-row {
-    gap: 36px;
+    gap: 18px;
   }
   .ecotopia-lp .lp-method-eye {
-    width: 28px;
-    height: 28px;
+    width: 18px;
+    height: 18px;
   }
   .ecotopia-lp .lp-method-eye::after {
-    width: 10px;
-    height: 10px;
+    width: 7px;
+    height: 7px;
   }
 }
 
@@ -4682,6 +4755,17 @@ body.eco-no-scroll {
   .ecotopia-lp .lp-marquee-track,
   .ecotopia-lp .lp-blob {
     animation: none !important;
+  }
+
+  /* Faixa do método (decorativa) — mantemos rolagem + olhos vivos */
+  .ecotopia-lp .lp-method-marquee-track {
+    animation-duration: 32s !important;
+    animation-iteration-count: infinite !important;
+  }
+  .ecotopia-lp .lp-method-eye,
+  .ecotopia-lp .lp-method-eye::after {
+    animation-duration: 4.5s !important;
+    animation-iteration-count: infinite !important;
   }
 }
 

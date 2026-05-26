@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { useSectionInView } from './useSectionInView';
 
 type Testimonio = {
@@ -57,6 +58,22 @@ const Sparkle = ({ color, size = 22 }: { color: string; size?: number }) => (
 
 export default function TestimoniosSection() {
   const ref = useSectionInView('depoimentos');
+  const [active, setActive] = useState(0);
+  const count = TESTIMONIOS.length;
+  const touchStartX = useRef<number | null>(null);
+
+  const go = (dir: number) =>
+    setActive((i) => Math.max(0, Math.min(count - 1, i + dir)));
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(delta) > 50) go(delta < 0 ? 1 : -1);
+    touchStartX.current = null;
+  };
 
   return (
     <section ref={ref} id="depoimentos" className="lp-testimonios">
@@ -94,17 +111,62 @@ export default function TestimoniosSection() {
         </h2>
       </div>
 
-      <div className="lp-testimonios-grid">
-        {TESTIMONIOS.map((t, i) => (
-          <article
-            key={t.key}
-            className={`lp-testimonios-card scroll-reveal stagger-${(i % 3) + 1}`}
+      <div className="lp-testimonios-carousel">
+        <div
+          className="lp-testimonios-viewport"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          <div
+            className="lp-testimonios-track"
+            style={{ ['--n' as string]: active }}
           >
-            <p className="lp-testimonios-quote">“{t.quote}”</p>
-            <p className="lp-testimonios-caption">{t.caption}</p>
-          </article>
-        ))}
+            {TESTIMONIOS.map((t) => (
+              <article key={t.key} className="lp-testimonios-card">
+                <p className="lp-testimonios-quote">“{t.quote}”</p>
+                <p className="lp-testimonios-caption">{t.caption}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="lp-testimonios-nav">
+          <button
+            type="button"
+            className="lp-testimonios-arrow"
+            aria-label="Depoimento anterior"
+            onClick={() => go(-1)}
+            disabled={active === 0}
+          >
+            <ArrowLeft />
+          </button>
+          <button
+            type="button"
+            className="lp-testimonios-arrow"
+            aria-label="Próximo depoimento"
+            onClick={() => go(1)}
+            disabled={active === count - 1}
+          >
+            <ArrowRight />
+          </button>
+        </div>
       </div>
     </section>
+  );
+}
+
+function ArrowLeft() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  );
+}
+
+function ArrowRight() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="9 6 15 12 9 18" />
+    </svg>
   );
 }
