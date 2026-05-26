@@ -102,12 +102,83 @@ const DrJoeAdCreativePage = lazy(() => import("@/pages/DrJoeAdCreativePage"));
 const EcoDreamPage = lazy(() => import("@/pages/EcoDreamPage"));
 
 // Lightweight loading fallback (no heavy dependencies)
+// Conceito "ECO": ondas que partem do símbolo no ritmo de uma respiração lenta.
 function LoadingFallback() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white">
-      <div className="flex flex-col items-center gap-3">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-500" />
-        <p className="text-sm text-gray-500">Carregando...</p>
+    <div className="eco-loader flex min-h-screen items-center justify-center bg-white px-6">
+      <style>{`
+        @keyframes ecoBreathe {
+          0%, 100% { transform: scale(1);    filter: drop-shadow(0 8px 18px rgba(54,168,232,0.20)); }
+          50%      { transform: scale(1.05); filter: drop-shadow(0 12px 30px rgba(54,168,232,0.34)); }
+        }
+        @keyframes ecoEcho {
+          0%   { transform: scale(0.55); opacity: 0; }
+          14%  { opacity: 0.5; }
+          100% { transform: scale(2.15); opacity: 0; }
+        }
+        @keyframes ecoAura {
+          0%, 100% { transform: scale(1);    opacity: 0.55; }
+          50%      { transform: scale(1.12); opacity: 0.9; }
+        }
+        @keyframes ecoCaption {
+          0%, 100% { opacity: 0.45; }
+          50%      { opacity: 0.95; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .eco-loader * { animation: none !important; }
+        }
+      `}</style>
+
+      <div className="flex flex-col items-center gap-10">
+        <div className="relative flex h-[200px] w-[200px] items-center justify-center">
+          {/* Aura — profundidade, evita o branco chapado */}
+          <span
+            className="absolute rounded-full"
+            style={{
+              width: 260,
+              height: 260,
+              background:
+                'radial-gradient(circle, rgba(110,200,255,0.18) 0%, rgba(110,200,255,0) 68%)',
+              animation: 'ecoAura 5.6s ease-in-out infinite',
+            }}
+          />
+          {/* Ondas-eco: 3 anéis escalonados, easing desacelerado (eco que se dissipa) */}
+          {[0, 1.6, 3.2].map((delay) => (
+            <span
+              key={delay}
+              className="absolute rounded-full"
+              style={{
+                width: 118,
+                height: 118,
+                border: '1px solid rgba(110,200,255,0.45)',
+                animation: 'ecoEcho 4.8s cubic-bezier(0.22,0.61,0.36,1) infinite',
+                animationDelay: `${delay}s`,
+              }}
+            />
+          ))}
+          {/* Símbolo respirando */}
+          <img
+            src="/images/ecotopia-logo-mark.png"
+            alt="Ecotopia"
+            width={74}
+            height={74}
+            className="relative h-[74px] w-[74px] object-contain"
+            style={{ animation: 'ecoBreathe 5.6s ease-in-out infinite' }}
+          />
+        </div>
+
+        <p
+          style={{
+            fontFamily: "'Lora', Georgia, serif",
+            fontStyle: 'italic',
+            fontSize: '15px',
+            letterSpacing: '0.01em',
+            color: '#6B8099',
+            animation: 'ecoCaption 4.4s ease-in-out infinite',
+          }}
+        >
+          carregando…
+        </p>
       </div>
     </div>
   );

@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import NeedModal from './NeedModal';
+import { NEEDS } from './needsModalData';
 
 // ──────────────────────────────────────────────────────────────────────
 // Ícones coloridos — SVGs inline, estilo Headspace (cheios, decorativos)
@@ -30,26 +33,31 @@ const ChatThumbIcon = () => <OrbIcon src="/images/talk-orb.png" tone="talk" />;
 
 // ──────────────────────────────────────────────────────────────────────
 
+// `needKey` casa com a `key` em needsModalData.ts → abre o modal correspondente.
 const CATEGORIAS = [
-  { Icon: StresseIcon,     label: 'Menos estresse',            href: '#biblioteca' },
-  { Icon: MoonIcon,        label: 'Durma bem',                 href: '#biblioteca' },
-  { Icon: SpiralIcon,      label: 'Gerenciar a ansiedade',     href: '#biblioteca' },
-  { Icon: BlobThoughtIcon, label: 'Organizar a cabeça',         href: '#biblioteca' },
-  { Icon: SunIcon,         label: 'Meditar',                    href: '#biblioteca' },
-  { Icon: ChatThumbIcon,   label: 'Conversar com a Eco',       href: '#biblioteca' },
+  { Icon: StresseIcon,     label: 'Menos estresse',        needKey: 'stress' },
+  { Icon: MoonIcon,        label: 'Durma bem',             needKey: 'sleep' },
+  { Icon: SpiralIcon,      label: 'Gerenciar a ansiedade', needKey: 'anxiety' },
+  { Icon: BlobThoughtIcon, label: 'Organizar a cabeça',    needKey: 'thoughts' },
+  { Icon: SunIcon,         label: 'Meditar',               needKey: 'meditation' },
+  { Icon: ChatThumbIcon,   label: 'Conversar com a Eco',   needKey: 'eco' },
 ];
 
 export default function DiagnosticoSection() {
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const activeNeed = NEEDS.find((n) => n.key === openKey) ?? null;
+
   return (
     <section id="categorias" className="lp-cat-section">
       <h2 className="scroll-reveal">
         O que você precisa hoje?
       </h2>
       <div className="lp-cat-grid">
-        {CATEGORIAS.map(({ Icon, label, href }, i) => (
-          <a
+        {CATEGORIAS.map(({ Icon, label, needKey }, i) => (
+          <button
             key={label}
-            href={href}
+            type="button"
+            onClick={() => setOpenKey(needKey)}
             className={`lp-cat scroll-reveal stagger-${(i % 6) + 1}`}
           >
             <span className="lp-cat-label">{label}</span>
@@ -59,9 +67,15 @@ export default function DiagnosticoSection() {
               </span>
               <ChevronRight size={24} strokeWidth={2} color="#4B4C4D" className="lp-cat-arrow" />
             </span>
-          </a>
+          </button>
         ))}
       </div>
+
+      <NeedModal
+        open={openKey !== null}
+        data={activeNeed}
+        onClose={() => setOpenKey(null)}
+      />
     </section>
   );
 }

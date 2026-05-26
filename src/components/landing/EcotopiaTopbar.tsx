@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 type MenuKey = 'para-voce' | 'planos' | 'recursos' | 'sobre';
 
@@ -203,6 +203,8 @@ function animateScrollToTop(fromEl: HTMLElement | null, duration = 1400) {
 export default function EcotopiaTopbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const location = useLocation();
+  const isHome = location.pathname === '/';
 
   // ESC + body scroll lock for the drawer
   useEffect(() => {
@@ -239,12 +241,15 @@ export default function EcotopiaTopbar() {
         <div className="lp-nav-left">
           <Link
             to="/"
-            aria-label="Ecotopia — voltar ao topo"
+            aria-label={isHome ? 'Ecotopia — voltar ao topo' : 'Ecotopia — página inicial'}
             className="lp-nav-brand"
             onClick={(e) => {
-              // Fica na página atual e sobe suavemente até o topo (hero)
-              e.preventDefault();
-              animateScrollToTop(e.currentTarget as HTMLElement);
+              // Na home: sobe suavemente até o topo (hero).
+              // Em outras páginas: deixa o Link navegar para a página inicial.
+              if (isHome) {
+                e.preventDefault();
+                animateScrollToTop(e.currentTarget as HTMLElement);
+              }
             }}
           >
             <img

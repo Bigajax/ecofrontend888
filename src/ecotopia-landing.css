@@ -1162,7 +1162,7 @@ body.eco-no-scroll {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--lp-sans);
+  font-family: var(--lp-serif);
   font-weight: 500;
   font-size: 14px;
   color: var(--eco-cinza-escuro);
@@ -1456,6 +1456,15 @@ body.eco-no-scroll {
 }
 @media (min-width: 1440px) {
   .ecotopia-lp .lp-cat { padding: 8px 16px 8px 24px; }
+}
+
+/* O card pode ser <a> ou <button> (abre modal). Reset p/ herdar igual. */
+.ecotopia-lp button.lp-cat {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .ecotopia-lp .lp-cat:hover {
@@ -10965,4 +10974,56 @@ body.eco-no-scroll {
   .ecotopia-lp .lp-anx-newsletter-form .lp-anx-cta {
     text-align: center;
   }
+}
+
+/* ============================================================
+   TIPOGRAFIA GLOBAL DA LANDING
+   Títulos em Geist (--lp-sans); todo o restante em Lora (--lp-serif).
+   Vale para a landing principal e todas as subpáginas (.ecotopia-lp).
+   Usa !important p/ sobrescrever as declarações font-family das seções.
+   ============================================================ */
+
+/* 1) Todo o conteúdo → Lora */
+.ecotopia-lp,
+.ecotopia-lp p,
+.ecotopia-lp li,
+.ecotopia-lp a,
+.ecotopia-lp span,
+.ecotopia-lp em,
+.ecotopia-lp strong,
+.ecotopia-lp small,
+.ecotopia-lp button,
+.ecotopia-lp label,
+.ecotopia-lp input,
+.ecotopia-lp textarea,
+.ecotopia-lp select,
+.ecotopia-lp blockquote,
+.ecotopia-lp figcaption,
+.ecotopia-lp dt,
+.ecotopia-lp dd,
+.ecotopia-lp th,
+.ecotopia-lp td {
+  font-family: var(--lp-serif) !important;
+}
+
+/* 2) Títulos (e seus filhos) → Geist.
+   Inclui h1–h6 e qualquer classe com "title"; os descendentes (h1 *, etc.)
+   garantem que spans/ems dentro do headline não virem serif. */
+.ecotopia-lp h1,
+.ecotopia-lp h2,
+.ecotopia-lp h3,
+.ecotopia-lp h4,
+.ecotopia-lp h5,
+.ecotopia-lp h6,
+.ecotopia-lp [class*="title"],
+.ecotopia-lp [class*="Title"],
+.ecotopia-lp h1 *,
+.ecotopia-lp h2 *,
+.ecotopia-lp h3 *,
+.ecotopia-lp h4 *,
+.ecotopia-lp h5 *,
+.ecotopia-lp h6 *,
+.ecotopia-lp [class*="title"] *,
+.ecotopia-lp [class*="Title"] * {
+  font-family: var(--lp-sans) !important;
 }
