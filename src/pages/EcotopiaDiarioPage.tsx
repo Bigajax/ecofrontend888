@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import '@/ecotopia-landing.css';
 import EcotopiaTopbar from '@/components/landing/EcotopiaTopbar';
@@ -10,22 +10,22 @@ import mixpanel from '@/lib/mixpanel';
 
 const BENEFITS = [
   {
-    icon: '🪨',
+    image: '/images/diario-benefit-serenidade.png',
     title: 'Serenidade no que não controlo',
     body: 'A dicotomia do controle: separar o que depende de você do que não depende — e soltar o resto.',
   },
   {
-    icon: '🔭',
+    image: '/images/diario-benefit-clareza.png',
     title: 'Clareza diante do caos',
     body: 'Ver as coisas como elas realmente são, sem o véu das opiniões e do julgamento apressado.',
   },
   {
-    icon: '⚓',
+    image: '/images/diario-benefit-resiliencia.png',
     title: 'Resiliência que se constrói',
     body: 'Uma fortaleza interior, um dia de cada vez. O obstáculo deixa de ser inimigo e vira caminho.',
   },
   {
-    icon: '🌅',
+    image: '/images/diario-benefit-proposito.png',
     title: 'Propósito todos os dias',
     body: 'Um ritual matinal que ancora você no que importa antes que o mundo peça a sua atenção.',
   },
@@ -69,6 +69,16 @@ const MONTHS = [
 export default function EcotopiaDiarioPage() {
   useScrollReveal('.ecotopia-lp');
 
+  const monthsTrackRef = useRef<HTMLDivElement>(null);
+
+  const scrollMonths = (dir: 1 | -1) => {
+    const track = monthsTrackRef.current;
+    if (!track) return;
+    const card = track.querySelector<HTMLElement>('.lp-diario-month-card');
+    const step = card ? (card.offsetWidth + 22) * 2 : track.clientWidth * 0.8;
+    track.scrollBy({ left: dir * step, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     try {
       mixpanel.track('Diario Estoico Landing Viewed', { page: 'estoicismo_root' });
@@ -108,15 +118,6 @@ export default function EcotopiaDiarioPage() {
               Janeiro e fevereiro abertos · 7 dias grátis no plano completo
             </p>
           </div>
-
-          <div className="lp-diario-hero-card scroll-reveal stagger-2">
-            <span className="lp-diario-hero-card-label">Máxima de hoje</span>
-            <blockquote>
-              “Você tem poder sobre a sua mente — não sobre os eventos externos.
-              Perceba isso, e encontrará força.”
-            </blockquote>
-            <cite>— Marco Aurélio</cite>
-          </div>
         </div>
       </section>
 
@@ -125,9 +126,13 @@ export default function EcotopiaDiarioPage() {
         <div className="lp-diario-benefits-grid">
           {BENEFITS.map((b, i) => (
             <article key={b.title} className={`lp-diario-benefit scroll-reveal stagger-${i + 1}`}>
-              <span className="lp-diario-benefit-icon" aria-hidden>{b.icon}</span>
-              <h3>{b.title}</h3>
-              <p>{b.body}</p>
+              <span className="lp-diario-benefit-icon" aria-hidden>
+                <img src={b.image} alt="" loading="lazy" />
+              </span>
+              <div className="lp-diario-benefit-card">
+                <h3>{b.title}</h3>
+                <p>{b.body}</p>
+              </div>
             </article>
           ))}
         </div>
@@ -159,14 +164,38 @@ export default function EcotopiaDiarioPage() {
       {/* ─── Doze meses temáticos ─── */}
       <section className="lp-diario-months">
         <div className="lp-diario-months-inner">
-          <h2 className="lp-diario-h2 scroll-reveal">Doze meses, doze temas para atravessar.</h2>
+          <div className="lp-diario-months-head scroll-reveal">
+            <h2 className="lp-diario-h2">Doze meses, doze temas para atravessar.</h2>
+            <div className="lp-diario-months-nav">
+              <button
+                type="button"
+                className="lp-diario-months-arrow"
+                onClick={() => scrollMonths(-1)}
+                aria-label="Ver meses anteriores"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="lp-diario-months-arrow"
+                onClick={() => scrollMonths(1)}
+                aria-label="Ver próximos meses"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
 
-          <div className="lp-diario-months-grid">
-            {MONTHS.map((m, i) => (
+          <div className="lp-diario-months-track" ref={monthsTrackRef}>
+            {MONTHS.map((m) => (
               <Link
                 key={m.id}
                 to="/register?plan=annual&from=diario_mes"
-                className={`lp-diario-month-card scroll-reveal stagger-${(i % 4) + 1}`}
+                className="lp-diario-month-card"
               >
                 <span className="lp-diario-month-thumb">
                   <img src={m.image} alt="" loading="lazy" />
@@ -194,18 +223,9 @@ export default function EcotopiaDiarioPage() {
       <section className="lp-diario-final">
         <div className="lp-diario-final-inner scroll-reveal">
           <h2>Comece hoje. O primeiro passo é uma página.</h2>
-          <p>
-            Janeiro e fevereiro estão abertos para você experimentar. O ano inteiro
-            espera no plano completo.
-          </p>
-          <div className="lp-diario-final-actions">
-            <Link to="/register?plan=annual&from=diario_final" className="lp-diario-cta">
-              Experimente grátis
-            </Link>
-            <Link to="/diario-estoico" className="lp-diario-cta-ghost">
-              Ler a reflexão de hoje
-            </Link>
-          </div>
+          <Link to="/register?plan=annual&from=diario_final" className="lp-diario-cta">
+            Experimente grátis
+          </Link>
         </div>
       </section>
 

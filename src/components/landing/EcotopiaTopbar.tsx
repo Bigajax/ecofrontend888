@@ -5,7 +5,7 @@ type MenuKey = 'para-voce' | 'planos' | 'recursos' | 'sobre';
 
 type MegaLink = { label: string; to: string; external?: boolean };
 type MegaColumn = { heading: string; links: MegaLink[] };
-type MegaCta = { eyebrow: string; title: string; body: string; ctaLabel: string; to: string };
+type MegaCta = { eyebrow: string; title: string; body: string; ctaLabel: string; to: string; image?: string };
 
 type MenuConfig = {
   key: MenuKey;
@@ -25,14 +25,15 @@ const MENUS: MenuConfig[] = [
           { label: 'Meditação', to: '/meditacao' },
           { label: 'Dormir', to: '/sono' },
           { label: 'Diário estoico', to: '/estoicismo' },
-          { label: 'Disciplina', to: '/#pilares' },
+          { label: 'Disciplina · 5 anéis', to: '/disciplina' },
           { label: 'Eco · IA companheira', to: '/eco-ia' },
+          { label: 'Dr. Joe Dispenza', to: '/dr-joe-dispenza' },
         ],
       },
       {
         heading: 'Como podemos ajudar',
         links: [
-          { label: 'Ansiedade', to: '/#categorias' },
+          { label: 'Ansiedade', to: '/ansiedade' },
           { label: 'Estresse', to: '/#categorias' },
           { label: 'Durma melhor', to: '/sono' },
           { label: 'Saúde mental', to: '/#categorias' },
@@ -54,6 +55,7 @@ const MENUS: MenuConfig[] = [
       body: 'Experimente o protocolo completo sem custo.',
       ctaLabel: 'Experimentar grátis →',
       to: '/register?plan=annual&from=mega-para-voce',
+      image: '/images/mega-cta-eco.png',
     },
   },
   {
@@ -81,6 +83,7 @@ const MENUS: MenuConfig[] = [
       body: 'Acesso completo ao app, do início ao avançado.',
       ctaLabel: 'Ver planos →',
       to: '/precos',
+      image: '/images/mega-cta-eco.png',
     },
   },
   {
@@ -110,6 +113,7 @@ const MENUS: MenuConfig[] = [
       body: 'Receba um caminho desenhado para o seu estado atual.',
       ctaLabel: 'Fazer diagnóstico →',
       to: '/#categorias',
+      image: '/images/mega-cta-eco.png',
     },
   },
   {
@@ -265,14 +269,25 @@ function MegaPanel({ menu }: { menu: MenuConfig }) {
         ))}
 
         {menu.cta && (
-          <aside className="lp-mega-cta">
-            <span className="lp-mega-cta-eyebrow">{menu.cta.eyebrow}</span>
-            <p className="lp-mega-cta-title">{menu.cta.title}</p>
-            <p className="lp-mega-cta-body">{menu.cta.body}</p>
-            <Link to={menu.cta.to} className="lp-mega-cta-link">
-              {menu.cta.ctaLabel}
+          menu.cta.image ? (
+            <Link to={menu.cta.to} className="lp-mega-cta lp-mega-cta--image">
+              <span
+                className="lp-mega-cta-img"
+                style={{ backgroundImage: `url("${menu.cta.image}")` }}
+                aria-hidden
+              />
+              <span className="lp-mega-cta-bar">{menu.cta.ctaLabel}</span>
             </Link>
-          </aside>
+          ) : (
+            <aside className="lp-mega-cta">
+              <span className="lp-mega-cta-eyebrow">{menu.cta.eyebrow}</span>
+              <p className="lp-mega-cta-title">{menu.cta.title}</p>
+              <p className="lp-mega-cta-body">{menu.cta.body}</p>
+              <Link to={menu.cta.to} className="lp-mega-cta-link">
+                {menu.cta.ctaLabel}
+              </Link>
+            </aside>
+          )
         )}
       </div>
     </div>
