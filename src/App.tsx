@@ -96,6 +96,7 @@ const DrJoeAdCreativePage = lazy(() => import("@/pages/DrJoeAdCreativePage"));
 const EcoDreamPage = lazy(() => import("@/pages/EcoDreamPage"));
 const EcoDreamGuestPage = lazy(() => import("@/pages/guest/EcoDreamGuestPage"));
 const CheckoutAnualPage = lazy(() => import("@/pages/CheckoutAnualPage"));
+const AssinarPage = lazy(() => import("@/pages/AssinarPage"));
 
 // Lightweight loading fallback (no heavy dependencies)
 // Conceito "ECO": ondas que partem do símbolo no ritmo de uma respiração lenta.
@@ -275,6 +276,7 @@ function AppRoutes() {
         <Route index element={<PublicHome />} />
         <Route path="welcome" element={renderWithSuspense(<WelcomePage />)} />
         <Route path="register" element={renderWithSuspense(<CreateProfilePage />)} />
+        <Route path="assinar" element={renderWithSuspense(<AssinarPage />)} />
         <Route path="reset-senha" element={renderWithSuspense(<ResetSenha />)} />
         <Route path="precos" element={renderWithSuspense(<EcotopiaPrecosPage />)} />
         <Route path="meditacao" element={renderWithSuspense(<EcotopiaMeditacaoPage />)} />
