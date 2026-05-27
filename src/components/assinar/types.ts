@@ -17,8 +17,8 @@ export const PLAN_COPY: Record<PlanId, {
     subPriceLine: "7 dias grátis · cancele quando quiser",
     timeline: [
       { label: "Hoje", title: "R$ 0", description: "Acesso completo à Ecotopia — Eco IA, meditações e sono." },
-      { label: "Em 7 dias", title: "Lembrete", description: "Avisamos por e-mail antes de o período gratuito acabar." },
-      { label: "Depois", title: "R$ 15,90/mês", description: "Renova automaticamente. Cancele quando quiser." },
+      { label: "Em 5 dias", title: "Lembrete", description: "Avisamos por e-mail que seu teste gratuito está terminando." },
+      { label: "Em 7 dias", title: "R$ 15,90/mês", description: "Primeira cobrança — cancele antes para não pagar nada. Renova mensalmente." },
     ],
   },
   annual: {
