@@ -1,9 +1,8 @@
 export type PlanId = "monthly" | "annual";
 
 export interface TimelineItem {
-  label: string;     // e.g. "Hoje"
-  title: string;     // e.g. "R$ 0"
-  description: string;
+  label: string;       // título do passo, em negrito — ex.: "Hoje", "Em 7 dias"
+  description: string; // frase descritiva (estilo Headspace)
 }
 
 export const PLAN_COPY: Record<PlanId, {
@@ -17,9 +16,9 @@ export const PLAN_COPY: Record<PlanId, {
     priceLine: "R$ 15,90/mês",
     subPriceLine: "7 dias grátis · cancele quando quiser",
     timeline: [
-      { label: "Hoje", title: "R$ 0", description: "Acesso completo à Ecotopia — Eco IA, meditações e sono." },
-      { label: "Em 5 dias", title: "Lembrete", description: "Avisamos por e-mail que seu teste gratuito está terminando." },
-      { label: "Em 7 dias", title: "R$ 15,90/mês", description: "Primeira cobrança — cancele antes para não pagar nada. Renova mensalmente." },
+      { label: "Hoje", description: "Desbloqueie a biblioteca completa da Ecotopia — Eco IA, meditações e sons para dormir." },
+      { label: "Em 5 dias", description: "Enviaremos um e-mail lembrando que seu teste gratuito está terminando em breve." },
+      { label: "Em 7 dias", description: "Será cobrada a mensalidade de R$ 15,90 — cancele antes para não pagar nada." },
     ],
   },
   annual: {
@@ -28,8 +27,8 @@ export const PLAN_COPY: Record<PlanId, {
     priceNote: "(R$ 11,90/mês)",
     subPriceLine: "R$ 11,90/mês · economize R$ 48",
     timeline: [
-      { label: "Hoje", title: "R$ 142,80", description: "1 ano de acesso completo — equivale a R$ 11,90/mês." },
-      { label: "Imediato", title: "12 meses", description: "Acesso liberado na hora. Sem renovação surpresa." },
+      { label: "Hoje", description: "Será cobrado R$ 142,80 (R$ 11,90/mês) por 1 ano de acesso completo." },
+      { label: "Imediato", description: "Acesso completo liberado na hora, por 12 meses. Sem renovação surpresa." },
     ],
   },
 };

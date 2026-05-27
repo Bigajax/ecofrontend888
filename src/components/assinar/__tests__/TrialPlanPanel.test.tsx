@@ -3,9 +3,9 @@ import { describe, it, expect, vi } from "vitest";
 import { TrialPlanPanel } from "../TrialPlanPanel";
 
 describe("TrialPlanPanel", () => {
-  it("shows the monthly $0-today timeline when monthly is selected", () => {
+  it("shows the monthly 7-day trial timeline when monthly is selected", () => {
     render(<TrialPlanPanel selectedPlan="monthly" onSelectPlan={vi.fn()} />);
-    expect(screen.getAllByText(/R\$ 0/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Hoje/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Em 7 dias/i).length).toBeGreaterThan(0);
   });
 

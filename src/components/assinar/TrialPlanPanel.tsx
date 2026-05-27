@@ -30,9 +30,8 @@ export function TrialPlanPanel({ selectedPlan, onSelectPlan }: TrialPlanPanelPro
               className="absolute -left-8 top-0.5 h-5 w-5 rounded-full border-[3px] bg-white"
               style={{ borderColor: i === 0 ? "#1A4FB5" : i === 1 ? "#5C7BFF" : "#B8C6FF" }}
             />
-            <span className="block text-[12px] font-bold uppercase tracking-wide" style={{ color: "#3A6FA5" }}>{item.label}</span>
-            <span className="block font-display text-[16px] font-bold" style={{ color: "#0D3461" }}>{item.title}</span>
-            <span className="eco-subtitle block text-[13.5px] leading-snug" style={{ color: "#5A8AAD" }}>{item.description}</span>
+            <span className="block font-display text-[16px] font-bold leading-tight" style={{ color: "#0D3461" }}>{item.label}</span>
+            <span className="eco-subtitle mt-1 block text-[13.5px] leading-snug" style={{ color: "#5A8AAD" }}>{item.description}</span>
           </li>
         ))}
       </ol>
