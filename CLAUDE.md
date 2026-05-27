@@ -218,8 +218,10 @@ upsertMessage({
 - `eco`: Brand colors (from light to dark shades)
 
 **Typography**:
-- Primary: Inter (sans-serif) for UI text
-- Display: Playfair Display for headings
+- Body/UI: Geist (sans-serif) — `--font-sans`, Tailwind `font-sans`
+- Title: Geist (sans-serif) — `--font-display`, Tailwind `font-display` (headings/`h1–h6`)
+- Subtitle/Content: Lora (serif) — `--font-subtitle`/`--font-serif`, utility class `.eco-subtitle` for the descriptive line under a title
+- Convention: **title in Geist, descriptive subtitle in Lora, body stays Geist** (fonts loaded in `index.html`)
 
 **Effects**:
 - `blur.glass`: 12px (standard glass effect)
