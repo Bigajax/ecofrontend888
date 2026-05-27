@@ -433,7 +433,7 @@ function ChatPage() {
           return;
         }
 
-        // Soft prompt: Aviso em 25 mensagens (dismissível)
+        // Soft prompt: Aviso em 24 mensagens (80% de 30, dismissível)
         if (freeLimits.shouldShowSoftPrompt && !hasShownSoftPrompt) {
           setLoginGateContext('chat_soft_limit');
           setLoginGateOpen(true);

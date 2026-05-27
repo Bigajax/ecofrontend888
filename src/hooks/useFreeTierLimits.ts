@@ -3,9 +3,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscriptionTier, useFeatureAccess } from '@/hooks/usePremiumContent';
 import { trackFreeTierLimitHit } from '@/lib/mixpanelConversionEvents';
 
-// Limites por tier
+// Limites por tier (alinhado ao TIER_FEATURES de usePremiumContent)
 const TIER_LIMITS = {
-  free: 10, // 10 mensagens/dia (5 turnos)
+  free: 30, // 30 mensagens/dia
   essentials: 100,
   premium: Infinity,
   vip: Infinity,
@@ -13,7 +13,7 @@ const TIER_LIMITS = {
 
 // Soft prompt thresholds (80% do limite)
 const SOFT_PROMPT_THRESHOLDS = {
-  free: 8, // 80% de 10
+  free: 24, // 80% de 30
   essentials: 80, // 80% de 100
   premium: Infinity,
   vip: Infinity,
