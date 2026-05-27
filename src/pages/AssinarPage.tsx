@@ -75,7 +75,7 @@ export default function AssinarPage() {
     <div className="min-h-screen bg-white">
       {/* Só a logo (não clicável) — sem nav/CTA, para não tirar o usuário do checkout */}
       <header className="px-5 py-6">
-        <img src="/images/ecotopia-logo-horizontal.png" alt="Ecotopia" className="h-16 w-auto" />
+        <img src="/images/ecotopia-logo-trim.png" alt="Ecotopia" className="h-10 w-auto" />
       </header>
       <div className="mx-auto w-full max-w-[420px] px-5 pb-10">
         {step === "plan" && (
