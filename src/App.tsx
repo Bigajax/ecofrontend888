@@ -95,6 +95,7 @@ const EcotopiaAnsiedadePage = lazy(() => import("@/pages/EcotopiaAnsiedadePage")
 const DrJoeAdCreativePage = lazy(() => import("@/pages/DrJoeAdCreativePage"));
 const EcoDreamPage = lazy(() => import("@/pages/EcoDreamPage"));
 const EcoDreamGuestPage = lazy(() => import("@/pages/guest/EcoDreamGuestPage"));
+const CheckoutAnualPage = lazy(() => import("@/pages/CheckoutAnualPage"));
 
 // Lightweight loading fallback (no heavy dependencies)
 // Conceito "ECO": ondas que partem do símbolo no ritmo de uma respiração lenta.
@@ -406,6 +407,16 @@ function AppRoutes() {
         }
       >
         <Route index element={renderWithSuspense(<CodigoDaAbundanciaPage />)} />
+      </Route>
+      <Route
+        path="/app/checkout-anual"
+        element={
+          <RequireAuth>
+            <AppProtectedShellNoLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={renderWithSuspense(<CheckoutAnualPage />)} />
       </Route>
       <Route
         path="/app/programas/caleidoscopio-mind-movie"

@@ -26,6 +26,7 @@
     "@capacitor/keyboard": "^8.0.3",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@mercadopago/sdk-react": "^1.0.7",
     "@react-spring/web": "^10.0.2",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",

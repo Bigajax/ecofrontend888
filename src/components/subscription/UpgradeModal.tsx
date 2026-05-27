@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { X, Loader2, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createSubscription } from '../../api/subscription';
@@ -64,6 +65,7 @@ function Radio({ selected }: { selected: boolean }) {
 
 export default function UpgradeModal({ open, onClose, source = 'generic' }: UpgradeModalProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { isTrialActive, trialDaysRemaining } = usePremiumContent();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
   const [state, setState] = useState<ModalState>('idle');
@@ -77,7 +79,7 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
       trackPremiumScreenViewed({
         plan_id: selectedPlan,
         plan_label: selectedPlan === 'annual' ? 'Premium Anual' : 'Premium Mensal',
-        price: selectedPlan === 'annual' ? 149 : 29.9,
+        price: selectedPlan === 'annual' ? 142.8 : 15.9,
         screen: 'upgrade_modal',
         placement: source,
         is_guest: !user,
@@ -93,7 +95,7 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
     trackPremiumCardClicked({
       plan_id: plan,
       plan_label: plan === 'annual' ? 'Premium Anual' : 'Premium Mensal',
-      price: plan === 'annual' ? 149 : 29.9,
+      price: plan === 'annual' ? 142.8 : 15.9,
       currency: 'BRL',
       screen: 'upgrade_modal',
       placement: source,
@@ -103,6 +105,12 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
   };
 
   const handleSubscribe = async () => {
+    // Plano Anual → checkout embutido (Pix/Cartão na própria página), sem redirect ao MP.
+    if (selectedPlan === 'annual') {
+      onClose();
+      navigate('/app/checkout-anual');
+      return;
+    }
     setState('loading');
     setErrorMessage('');
     try {
@@ -112,7 +120,7 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
         checkout_provider: 'mercadopago',
         checkout_type: response.type || 'preference',
         preference_id: response.id,
-        amount: selectedPlan === 'annual' ? 149 : 29.9,
+        amount: selectedPlan === 'annual' ? 142.8 : 15.9,
         currency: 'BRL',
         user_id: user?.id,
         is_guest: !user,
