@@ -497,10 +497,10 @@ export default function EcotopiaMeditacaoPage() {
               >
                 <span className="lp-med-offer-plan-badge">Melhor custo-benefício</span>
                 <span className="lp-med-offer-plan-meta">
-                  Anual · cobrado a R$ 197/ano
+                  Anual · cobrado a R$ 142,80/ano
                 </span>
                 <strong className="lp-med-offer-plan-headline">7 dias grátis</strong>
-                <span className="lp-med-offer-plan-price">R$ 16,40 por mês</span>
+                <span className="lp-med-offer-plan-price">R$ 11,90 por mês</span>
                 <span className="lp-med-offer-plan-radio" aria-hidden>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />
@@ -514,7 +514,7 @@ export default function EcotopiaMeditacaoPage() {
               >
                 <span className="lp-med-offer-plan-meta">Mensal</span>
                 <strong className="lp-med-offer-plan-headline">7 dias grátis</strong>
-                <span className="lp-med-offer-plan-price">R$ 27/mês</span>
+                <span className="lp-med-offer-plan-price">R$ 15,90/mês</span>
                 <span className="lp-med-offer-plan-radio is-empty" aria-hidden />
               </Link>
             </div>

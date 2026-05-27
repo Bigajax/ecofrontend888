@@ -14,7 +14,7 @@ export default function SubscriptionTestPage() {
   const monthlyPlan: PricingPlan = {
     id: 'premium_monthly',
     name: 'Mensal',
-    price: 29.9,
+    price: 15.9,
     currency: 'BRL',
     interval: 'month',
     trialDays: 7,
@@ -31,7 +31,7 @@ export default function SubscriptionTestPage() {
   const annualPlan: PricingPlan = {
     id: 'premium_annual',
     name: 'Anual',
-    price: 299,
+    price: 142.8,
     currency: 'BRL',
     interval: 'year',
     trialDays: 7,
@@ -41,12 +41,12 @@ export default function SubscriptionTestPage() {
       'Análise emocional profunda',
       'Histórico completo de conversas',
       'Prioridade no suporte',
-      '2 meses grátis (economia de R$59,80)',
+      'Economize R$48 no ano (25% off)',
     ],
     isPopular: true,
     discount: {
-      percentage: 17,
-      label: '2 meses grátis',
+      percentage: 25,
+      label: '25% off',
     },
   };
 

@@ -443,10 +443,10 @@ export default function EcotopiaSonoPage() {
               >
                 <span className="lp-sono-offer-plan-badge">Melhor custo-benefício</span>
                 <span className="lp-sono-offer-plan-meta">
-                  Anual · cobrado a R$ 197/ano
+                  Anual · cobrado a R$ 142,80/ano
                 </span>
                 <strong className="lp-sono-offer-plan-headline">7 dias grátis</strong>
-                <span className="lp-sono-offer-plan-price">R$ 16,40 por mês</span>
+                <span className="lp-sono-offer-plan-price">R$ 11,90 por mês</span>
                 <span className="lp-sono-offer-plan-radio" aria-hidden>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />
@@ -459,7 +459,7 @@ export default function EcotopiaSonoPage() {
                 className="lp-sono-offer-plan"
               >
                 <span className="lp-sono-offer-plan-meta">Plano Mensal</span>
-                <strong className="lp-sono-offer-plan-headline">R$ 27/mês</strong>
+                <strong className="lp-sono-offer-plan-headline">R$ 15,90/mês</strong>
                 <span className="lp-sono-offer-plan-price">Cobrado mensalmente</span>
                 <span className="lp-sono-offer-plan-radio is-empty" aria-hidden />
               </Link>

@@ -444,8 +444,9 @@ const MemoryPage: React.FC = () => {
                 )}
               </>
             )}
-          </>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </PhoneFrame>
   );

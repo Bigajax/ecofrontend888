@@ -63,23 +63,20 @@ export function SleepProtocolOfferCard({
 
         {/* Price block */}
         <div className="flex items-center justify-center gap-2.5 mb-1">
-          <span className="text-[14px] font-medium line-through" style={{ color: 'rgba(255,255,255,0.30)' }}>
-            R$ 400
-          </span>
           <span className="font-display text-[44px] font-bold text-white leading-none tracking-tight">
-            R$ 147
+            7 dias grátis
           </span>
         </div>
         <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.32)' }}>
-          Hoje · Pagamento único · 7 noites completas
+          Depois R$ 15,90/mês · cancele quando quiser
         </p>
 
-        {/* Urgency line — matches landing */}
+        {/* Benefício */}
         <p
           className="text-[12px] italic mb-6"
           style={{ color: 'rgba(251,191,36,0.65)' }}
         >
-          Preço de lançamento. Depois passa para R$ 247.
+          Inclui o Ecotopia completo: Eco IA, meditações e mais.
         </p>
 
         <button
@@ -111,7 +108,7 @@ export function SleepProtocolOfferCard({
               Abrindo...
             </>
           ) : (
-            'Liberar protocolo completo · R$ 147'
+            'Começar 7 dias grátis'
           )}
         </button>
 

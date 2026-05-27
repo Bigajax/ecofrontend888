@@ -13,3 +13,4 @@ stats.html
 /public/videos/*.webm
 /public/videos/*.avi
 .vercel
+.superpowers/

@@ -29,10 +29,10 @@ const ANSWERS: SonoMicroAnswer[] = ['Sim, relaxei', 'Um pouco', 'Ainda estou agi
 
 const BENEFITS = [
   '7 noites guiadas',
-  'Pagamento único',
+  'Acesso completo',
   'Acesso imediato',
-  'Sem mensalidade',
-  'Garantia de 7 dias',
+  'Cancele quando quiser',
+  '7 dias grátis',
 ];
 
 const MAIN_OFFER_COPY = {
@@ -42,10 +42,10 @@ const MAIN_OFFER_COPY = {
     'Esta primeira noite foi criada para tirar seu sistema nervoso do modo alerta. Mas o sono profundo raramente muda em uma única tentativa. Ele é treinado por repetição, segurança e continuidade.',
   body: '',
   offerTitle: 'Protocolo Sono Profundo — 7 noites',
-  price: 'R$147',
-  supportingText: 'Pagamento único • Sem mensalidade',
-  cta: 'Liberar protocolo completo por R$147',
-  microcopy: 'Acesso imediato após o pagamento. Você continua exatamente de onde parou.',
+  price: '7 dias grátis',
+  supportingText: 'Depois R$ 15,90/mês • cancele quando quiser',
+  cta: 'Começar 7 dias grátis',
+  microcopy: 'Acesso imediato. Você continua exatamente de onde parou.',
 };
 
 const NIGHT_BREAKDOWN = [

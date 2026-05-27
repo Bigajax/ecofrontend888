@@ -123,7 +123,12 @@ const CreateProfilePage: React.FC = () => {
   const planFromQuery = searchParams.get('plan'); // 'monthly' | 'annual' | null
   const fromQuery = searchParams.get('from'); // 'hero' | 'pricing' | 'pricing_page' | 'fechamento' | null
   const isLandingFlow = Boolean(
-    fromQuery && ['hero', 'pricing', 'pricing_page', 'fechamento', 'footer'].includes(fromQuery),
+    fromQuery &&
+      [
+        'hero', 'pricing', 'pricing_page', 'fechamento', 'footer',
+        'sonhos_guest', 'eco_ia_dream',
+        'sono_trial', 'abundancia_trial', 'drjoe_trial', 'drjoe_guest',
+      ].includes(fromQuery),
   );
 
   const handleGeneratePassword = () => {

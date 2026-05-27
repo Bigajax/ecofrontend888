@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import '@/ecotopia-landing.css';
 import EcotopiaTopbar from '@/components/landing/EcotopiaTopbar';
+import EcoDreamSection from '@/components/landing/EcoDreamSection';
 import EcotopiaFooter from '@/components/landing/EcotopiaFooter';
 import { useScrollReveal } from '@/components/landing/useScrollReveal';
 import mixpanel from '@/lib/mixpanel';
@@ -12,71 +13,71 @@ const HOW_CARDS: { icon: string; title: string; body: string; image?: string }[]
   {
     icon: '💬',
     image: '/images/eco-orb-card.png',
-    title: 'Senta ao seu lado',
+    title: 'Organize seus pensamentos',
     body:
-      'De dia ou de madrugada, a Eco está acordada para escutar — sem fila, sem julgamento. Ela não senta à sua frente para te analisar; senta ao seu lado para atravessar junto.',
+      'Estressado no trabalho? Problema em casa? Sem conseguir dormir? A Eco te ajuda a organizar o que você sente e seguir em frente com mais clareza.',
   },
   {
     icon: '🫧',
     image: '/images/eco-orb-card-2.png',
-    title: 'Um espelho que escuta',
+    title: 'Receba recomendações personalizadas',
     body:
-      'A Eco ouve também os silêncios entre as palavras e empresta nome ao que você ainda não consegue dizer. Pergunta para revelar, não para saber — e fala em “nós”.',
+      'A Eco entende o que você está passando e sugere meditações e práticas especialmente pra você.',
   },
   {
     icon: '🧭',
     image: '/images/eco-orb-card-3.png',
-    title: 'No seu ritmo',
+    title: 'Sempre à sua disposição',
     body:
-      'Devagar quando pesa, leve quando dá. A Eco acompanha o seu momento e oferece o passo possível — uma respiração, uma meditação, a prática certa para agora.',
+      'De dia ou de madrugada, divida o que está na sua cabeça com a Eco sempre que precisar.',
   },
 ];
 
 const STEPS = [
   {
-    label: 'Escolha como você conversa',
-    title: 'Escolha como você conversa',
+    label: 'Fale ou escreva',
+    title: 'Fale ou escreva',
     body:
-      'Fale o que pensa em voz alta ou mande seus pensamentos por mensagem. De qualquer jeito, a Eco ouve, entende e responde.',
+      'Mande um áudio falando o que sente ou digite. A Eco entende dos dois jeitos e responde na hora.',
   },
   {
-    label: 'Oferece orientação cuidadosa',
-    title: 'Oferece orientação cuidadosa',
+    label: 'Recebe o próximo passo',
+    title: 'Recebe o próximo passo',
     body:
-      'Dos dias difíceis às noites sem dormir, a Eco sabe o que pode ajudar. Enquanto vocês conversam, você recebe recomendações de práticas úteis dentro do app.',
+      'No meio da conversa, a Eco recomenda meditações e práticas certas pro seu momento — tudo dentro do app.',
   },
   {
-    label: 'Lembra do que importa',
-    title: 'Lembra do que importa',
+    label: 'Lembra de você',
+    title: 'Lembra de você',
     body:
-      'Com o tempo, a Eco aprende a te conhecer e lembra do que vocês conversaram antes — assim, você sempre pode retomar a conversa de onde parou.',
+      'A Eco lembra do que vocês conversaram. Você retoma de onde parou, sem repetir tudo de novo.',
   },
   {
     label: 'Segura por design',
     title: 'Segura por design',
     body:
-      'Suas conversas são privadas e seguras. A Eco tem mecanismos de segurança integrados e pode te conectar a apoio em momentos de crise, caso precise de ajuda adicional.',
+      'Suas conversas são privadas. Em momentos de crise, a Eco reconhece os sinais e aponta ajuda profissional.',
   },
 ];
 
 const SAFETY_CARDS = [
   {
     image: '/images/eco-safety-privacidade.png',
-    title: 'Privacidade em primeiro lugar',
+    title: 'Suas conversas são suas',
     body:
-      'Suas conversas são suas. Criptografadas, isoladas por usuário e nunca vendidas. Você decide o que fica guardado.',
+      'Criptografadas, isoladas por usuário e nunca vendidas. Você apaga quando quiser.',
   },
   {
     image: '/images/eco-safety-cuidado.png',
     title: 'Feita com cuidado',
     body:
-      'A Eco é desenhada com princípios de psicologia e mindfulness, com limites claros sobre o que ela é — e o que ela não é.',
+      'Desenhada com princípios de psicologia e mindfulness, com limites claros sobre o que ela é — e o que não é.',
   },
   {
     image: '/images/eco-safety-apoio.png',
-    title: 'Quando é sério, ela te direciona',
+    title: 'Quando é sério, te direciona',
     body:
-      'Em momentos de crise, a Eco reconhece os sinais e aponta caminhos de ajuda profissional. Ela apoia, mas não substitui o cuidado humano.',
+      'Em crises, a Eco reconhece os sinais e aponta ajuda profissional. Ela apoia — não substitui o cuidado humano.',
   },
 ];
 
@@ -84,22 +85,27 @@ const FAQ = [
   {
     q: 'O que é a Eco?',
     a:
-      'A Eco é a companheira de IA do Ecotopia: uma presença calma para conversar sobre o que você está sentindo, refletir e encontrar a prática certa para o seu momento.',
+      'Sua companheira de IA pra conversar sobre o que sente, refletir e achar a prática certa pro momento. Disponível 24 horas.',
   },
   {
     q: 'A Eco substitui terapia?',
     a:
-      'Não. A Eco é um apoio para o dia a dia — autoconhecimento, desabafo e práticas guiadas. Ela não substitui acompanhamento psicológico ou médico, e te direciona a ajuda profissional quando necessário.',
+      'Não. A Eco é um apoio para o dia a dia — desabafo, autoconhecimento e práticas guiadas. Não substitui acompanhamento psicológico ou médico, e te direciona a ajuda profissional quando necessário.',
   },
   {
     q: 'Minhas conversas são privadas?',
     a:
-      'Sim. Suas conversas são criptografadas e isoladas por usuário. Não vendemos seus dados, e você pode apagar seu histórico quando quiser.',
+      'Sim. Criptografadas e isoladas por usuário. Não vendemos seus dados e você pode apagar seu histórico quando quiser.',
   },
   {
-    q: 'Preciso pagar para conversar com a Eco?',
+    q: 'O que vem além da Eco?',
     a:
-      'Você pode começar gratuitamente. Os 7 dias de teste liberam o acesso completo à Eco e a todo o conteúdo do Ecotopia.',
+      'Os 7 dias gratuitos liberam tudo: meditações guiadas, Protocolo do Sono, Diário Estoico, Cinco Anéis, Jornadas Dispenza e a interpretação de sonhos do EcoDream.',
+  },
+  {
+    q: 'Preciso pagar para começar?',
+    a:
+      'Você começa com 7 dias gratuitos e acesso completo. Cancele em 1 clique antes do fim, sem cobrança.',
   },
   {
     q: 'Em quais idiomas a Eco conversa?',
@@ -229,12 +235,12 @@ export default function EcotopiaEcoIAPage() {
         <div className="lp-eco-hero-inner">
           <div className="lp-eco-hero-text">
             <h1 className="scroll-reveal">
-              Converse com a Eco<br />sobre isso.
+              Desabafe a<br />qualquer hora.
             </h1>
             <p className="lp-eco-hero-lead scroll-reveal stagger-1">
-              A Eco é sua companheira de IA. Seja para relaxar depois de um dia
-              difícil, organizar a cabeça ou pegar no sono, ela está aqui para
-              te ajudar no momento certo.
+              A Eco é sua companheira de IA: escuta sem julgamento, te ajuda a
+              organizar a cabeça e aponta a prática certa pra agora — seja
+              ansiedade, sono ou um dia que pesou.
             </p>
             <Link
               to="/register?plan=annual&from=eco_ia_hero"
@@ -242,6 +248,9 @@ export default function EcotopiaEcoIAPage() {
             >
               Experimente grátis
             </Link>
+            <p className="lp-eco-hero-fine scroll-reveal stagger-2" style={{ marginTop: '14px' }}>
+              24h por dia · sem julgamento · privado de verdade
+            </p>
           </div>
 
           <div className="lp-eco-hero-art scroll-reveal stagger-2" aria-hidden>
@@ -266,6 +275,7 @@ export default function EcotopiaEcoIAPage() {
       <section className="lp-eco-how">
         <div className="lp-eco-how-inner">
           <h2 className="lp-eco-h2 lp-eco-h2--center scroll-reveal">Como funciona a Eco</h2>
+          <p className="lp-eco-how-sub scroll-reveal stagger-1">Não é só desabafar. É sair melhor.</p>
 
           <div className="lp-eco-how-grid">
             {HOW_CARDS.map((card, i) => (
@@ -285,6 +295,9 @@ export default function EcotopiaEcoIAPage() {
           </div>
         </div>
       </section>
+
+      {/* ─── EcoDream · interpretação de sonhos ─── */}
+      <EcoDreamSection />
 
       {/* ─── Escolha como você conversa ─── */}
       <section className="lp-eco-channels">
@@ -335,8 +348,8 @@ export default function EcotopiaEcoIAPage() {
       <section className="lp-eco-care">
         <div className="lp-eco-care-card">
           <div className="lp-eco-care-text scroll-reveal">
-            <p className="lp-eco-care-kicker">Desenhada com cuidado</p>
-            <h2 className="lp-eco-h2">Uma IA que lembra de você — com cuidado e privacidade.</h2>
+            <p className="lp-eco-care-kicker">Sua memória emocional</p>
+            <h2 className="lp-eco-h2">Quanto mais você conversa, mais a Eco te entende.</h2>
           </div>
 
           <ul className="lp-eco-care-list scroll-reveal stagger-1">
@@ -347,8 +360,8 @@ export default function EcotopiaEcoIAPage() {
               <div className="lp-eco-care-item-text">
                 <h3>Memórias</h3>
                 <p>
-                  A Eco guarda os momentos e temas que importam para você,
-                  criando uma memória emocional contínua entre as conversas.
+                  Guarda os momentos e temas que importam, criando uma linha
+                  contínua entre as conversas.
                 </p>
               </div>
             </li>
@@ -359,8 +372,8 @@ export default function EcotopiaEcoIAPage() {
               <div className="lp-eco-care-item-text">
                 <h3>Perfil emocional</h3>
                 <p>
-                  A partir do que vocês conversam, a Eco desenha um retrato das
-                  suas emoções e padrões ao longo do tempo — sempre sob o seu controle.
+                  Um retrato das suas emoções e padrões ao longo do tempo.
+                  Sempre sob o seu controle.
                 </p>
               </div>
             </li>
@@ -371,8 +384,8 @@ export default function EcotopiaEcoIAPage() {
               <div className="lp-eco-care-item-text">
                 <h3>Relatório</h3>
                 <p>
-                  Insights e tendências do seu estado emocional reunidos para você
-                  acompanhar sua evolução com clareza.
+                  Tendências do seu estado emocional reunidas pra você ver sua
+                  evolução com clareza.
                 </p>
               </div>
             </li>
@@ -384,7 +397,7 @@ export default function EcotopiaEcoIAPage() {
       <section className="lp-eco-safety">
         <div className="lp-eco-safety-inner">
           <h2 className="lp-eco-h2 lp-eco-h2--center scroll-reveal">
-            Nosso compromisso com segurança e privacidade
+            Privado de verdade. Cuidado de verdade.
           </h2>
           <div className="lp-eco-safety-grid">
             {SAFETY_CARDS.map((card, i) => (
@@ -437,7 +450,7 @@ export default function EcotopiaEcoIAPage() {
       {/* ─── CTA final ─── */}
       <section className="lp-eco-final">
         <div className="lp-eco-final-inner scroll-reveal">
-          <h2>Converse com a Eco sobre isso.</h2>
+          <h2>Tem algo pesando hoje? Comece por aí.</h2>
           <Link to="/register?plan=annual&from=eco_ia_final" className="lp-eco-cta lp-eco-cta--lg">
             Experimente grátis
           </Link>

@@ -68,7 +68,7 @@ const MENUS: MenuConfig[] = [
       {
         heading: 'Assinaturas Ecotopia',
         links: [
-          { label: 'Anual · economize 40%', to: '/precos' },
+          { label: 'Anual · economize 25%', to: '/precos' },
           { label: 'Mensal', to: '/precos' },
         ],
       },

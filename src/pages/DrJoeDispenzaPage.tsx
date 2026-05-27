@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import DrJoeDispenzaSkeleton from '@/components/DrJoeDispenzaSkeleton';
 import { usePremiumContent } from '@/hooks/usePremiumContent';
 import { useDrJoeEntitlement } from '@/hooks/useDrJoeEntitlement';
-import DrJoeOfferModal from '@/components/drjoe/DrJoeOfferModal';
+import UpgradeModal from '@/components/subscription/UpgradeModal';
 import {
   trackMeditationEvent,
   parseDurationToSeconds,
@@ -464,9 +464,8 @@ export default function DrJoeDispenzaPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { checkAccess } = usePremiumContent();
+  const { checkAccess, requestUpgrade, showUpgradeModal, closeUpgradeModal } = usePremiumContent();
   const { hasAccess: hasDrJoeEntitlement } = useDrJoeEntitlement();
-  const [offerOpen, setOfferOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sessionJustCompleted, setSessionJustCompleted] = useState<number | null>(null);
   const [showMore, setShowMore] = useState(false);
@@ -530,7 +529,7 @@ export default function DrJoeDispenzaPage() {
       };
       trackMeditationEvent('Front-end: Premium Content Blocked', payload);
 
-      setOfferOpen(true);
+      requestUpgrade('dr_joe_dispenza_locked');
       return;
     }
 
@@ -1398,7 +1397,7 @@ export default function DrJoeDispenzaPage() {
         )}
       </AnimatePresence>
 
-      <DrJoeOfferModal open={offerOpen} onClose={() => setOfferOpen(false)} origin="dr_joe_dispenza_locked" />
+      <UpgradeModal open={showUpgradeModal} onClose={closeUpgradeModal} source="dr_joe_dispenza_locked" />
     </div>
   );
 }

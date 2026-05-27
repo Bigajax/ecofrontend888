@@ -275,7 +275,7 @@ export function ProtocolScreen({ leadCaptured, capturedEmail, onOpenPurchase, on
           >
             <p className="mb-1 font-semibold text-gray-800">{lockedModal}</p>
             <p className="mb-4 text-sm text-gray-500">
-              Essa noite faz parte do protocolo completo. Desbloqueie todas as 7 noites por R$147.
+              Essa noite faz parte do protocolo completo. Desbloqueie todas as 7 noites com a assinatura Ecotopia.
             </p>
             <button
               onClick={() => { setLockedModal(null); onOpenPurchase(); }}

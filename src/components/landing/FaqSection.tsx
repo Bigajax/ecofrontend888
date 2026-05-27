@@ -13,7 +13,7 @@ const FAQ = [
   },
   {
     q: 'Quanto custa?',
-    a: 'R$ 27 por mês no plano mensal, ou R$ 16,40/mês no plano anual (R$ 197 cobrado anualmente — economia de R$ 127).',
+    a: 'R$ 15,90 por mês no plano mensal, ou R$ 11,90/mês no plano anual (R$ 142,80 cobrado anualmente — economia de R$ 48).',
   },
   {
     q: 'Tem Android e iOS?',

@@ -152,8 +152,8 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
 
   const disclaimer =
     selectedPlan === 'annual'
-      ? 'Valor de R$ 197/ano. Você pode cancelar quando quiser.'
-      : 'Renovação mensal automática por R$ 27,00. Você pode cancelar quando quiser.';
+      ? 'Valor de R$ 142,80/ano. Você pode cancelar quando quiser.'
+      : 'Renovação mensal automática por R$ 15,90. Você pode cancelar quando quiser.';
 
   return createPortal(
     <AnimatePresence>
@@ -230,17 +230,17 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
                           </p>
                           <p className="text-xs mt-0.5 flex items-center gap-1">
                             <span className={`line-through ${selectedPlan === 'annual' ? 'text-gray-400' : 'text-white/35'}`}>
-                              R$ 324,00
+                              R$ 190,80
                             </span>
                             <span className={`font-medium ${selectedPlan === 'annual' ? 'text-gray-600' : 'text-white/60'}`}>
-                              R$ 197 / ano
+                              R$ 142,80 / ano
                             </span>
                           </p>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className={`text-[19px] font-bold leading-none ${selectedPlan === 'annual' ? 'text-gray-900' : 'text-white'}`}>
-                          R$ 16,40
+                          R$ 11,90
                         </p>
                         <p className={`text-xs mt-0.5 ${selectedPlan === 'annual' ? 'text-gray-400' : 'text-white/40'}`}>
                           / mês
@@ -268,7 +268,7 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className={`text-[19px] font-bold leading-none ${selectedPlan === 'monthly' ? 'text-gray-900' : 'text-white'}`}>
-                          R$ 27,00
+                          R$ 15,90
                         </p>
                         <p className={`text-xs mt-0.5 ${selectedPlan === 'monthly' ? 'text-gray-400' : 'text-white/40'}`}>
                           / mês

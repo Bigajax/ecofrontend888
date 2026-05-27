@@ -398,10 +398,10 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                     </span>
                   </div>
                   <div className="flex items-baseline justify-center gap-2.5 mb-1">
-                    <span className="font-display text-[38px] font-bold text-white leading-none">R$ 147</span>
+                    <span className="font-display text-[38px] font-bold text-white leading-none">7 dias grátis</span>
                   </div>
                   <p className="text-[12px] mb-4" style={{ color: 'rgba(255,255,255,0.32)' }}>
-                    Pagamento único · Sem mensalidade · Só para quem concluiu a Noite 1
+                    Depois R$ 15,90/mês · cancele quando quiser
                   </p>
                   {timeLeft > 0 && (
                     <div className="flex items-center justify-center gap-1.5 mb-3">
@@ -433,7 +433,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                       Abrindo pagamento…
                     </span>
                   ) : (
-                    'Garantir meu protocolo por R$ 147'
+                    'Começar 7 dias grátis'
                   )}
                 </button>
 

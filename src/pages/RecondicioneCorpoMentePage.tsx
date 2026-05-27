@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { usePremiumContent } from '@/hooks/usePremiumContent';
 import { useDrJoeEntitlement } from '@/hooks/useDrJoeEntitlement';
-import DrJoeOfferModal from '@/components/drjoe/DrJoeOfferModal';
+import UpgradeModal from '@/components/subscription/UpgradeModal';
 
 const NOW_OPTIONS = ['Tensão', 'Ansiedade', 'Cansaço', 'Agitação', 'Neutro'] as const;
 const INSTALL_OPTIONS = ['Calma', 'Leveza', 'Confiança', 'Presença', 'Clareza'] as const;
@@ -65,9 +65,8 @@ function OptionPill({
 
 export default function RecondicioneCorpoMentePage() {
   const navigate = useNavigate();
-  const { checkAccess } = usePremiumContent();
+  const { checkAccess, requestUpgrade, showUpgradeModal, closeUpgradeModal } = usePremiumContent();
   const { hasAccess: hasDrJoeEntitlement } = useDrJoeEntitlement();
-  const [offerOpen, setOfferOpen] = useState(false);
 
   const [nowFeeling, setNowFeeling] = useState<(typeof NOW_OPTIONS)[number] | null>(null);
   const [installState, setInstallState] = useState<(typeof INSTALL_OPTIONS)[number] | null>(null);
@@ -85,7 +84,7 @@ export default function RecondicioneCorpoMentePage() {
     const { hasAccess } = checkAccess(true);
     const hasPremiumAccess = hasAccess || hasDrJoeEntitlement;
     if (!hasPremiumAccess) {
-      setOfferOpen(true);
+      requestUpgrade('dr_joe_recondicione_locked');
       return;
     }
 
@@ -243,7 +242,7 @@ export default function RecondicioneCorpoMentePage() {
         </div>
       </div>
 
-      <DrJoeOfferModal open={offerOpen} onClose={() => setOfferOpen(false)} origin="dr_joe_recondicione_locked" />
+      <UpgradeModal open={showUpgradeModal} onClose={closeUpgradeModal} source="dr_joe_recondicione_locked" />
     </div>
   );
 }

@@ -52,7 +52,7 @@ export default function PrecoSection({
         <article className="lp-pricing-card scroll-reveal stagger-1">
           <h3>Plano Mensal</h3>
           <div className="lp-pricing-value">
-            R$ 27<sub>/mês</sub>
+            R$ 15,90<sub>/mês</sub>
           </div>
           <p className="lp-pricing-note">Renovação mensal · cancele quando quiser</p>
           <ul>
@@ -77,10 +77,10 @@ export default function PrecoSection({
           <span className="lp-pricing-badge">Mais escolhido</span>
           <h3>Plano Anual</h3>
           <div className="lp-pricing-value">
-            R$ 16,40<sub>/mês</sub>
+            R$ 11,90<sub>/mês</sub>
           </div>
           <p className="lp-pricing-note">
-            R$ 197 cobrado anualmente · economize R$ 127
+            R$ 142,80 cobrado anualmente · economize R$ 48
           </p>
           <ul>
             {FEATURES_FULL.map((f) => (

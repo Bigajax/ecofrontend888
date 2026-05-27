@@ -7389,6 +7389,9 @@ body.eco-no-scroll {
   --eco-ia-ink-soft: rgba(22, 32, 58, 0.72);
   --eco-ia-blue: #2E6FB7;
   --eco-ia-blue-soft: #DCEBFB;
+  /* Títulos em Geist (display da marca, estilo Apercu/Headspace) — o
+     Playfair do fallback antigo nem é carregado, então caía em Georgia. */
+  --lp-display: var(--lp-sans);
   background: var(--eco-ia-cream);
 }
 
@@ -7455,7 +7458,7 @@ body.eco-no-scroll {
 }
 
 .ecotopia-lp .lp-eco-hero-lead {
-  font-family: var(--lp-sans);
+  font-family: var(--lp-serif);
   font-size: 18px;
   line-height: 1.6;
   color: rgba(22, 32, 58, 0.82);
@@ -7583,10 +7586,233 @@ body.eco-no-scroll {
   border-bottom-right-radius: 6px;
 }
 
+/* ─── EcoDream · faixa noturna (interpretação de sonhos) ─── */
+.ecotopia-lp .lp-eco-dream {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 96px 32px 100px;
+  background:
+    linear-gradient(160deg, #070917 0%, #0C1228 55%, #08091C 100%);
+  color: #EDE5D0;
+}
+
+.ecotopia-lp .lp-eco-dream-nebula {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 45% at 18% 10%, rgba(100, 140, 220, 0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 55% at 84% 92%, rgba(201, 165, 90, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 42% 38% at 55% 48%, rgba(85, 55, 155, 0.05) 0%, transparent 65%);
+}
+
+.ecotopia-lp .lp-eco-dream-stars {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ecotopia-lp .lp-eco-dream-stars span {
+  position: absolute;
+  border-radius: 9999px;
+  background: #FFFFFF;
+  opacity: 0.12;
+  animation-name: ecoDreamTwinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes ecoDreamTwinkle {
+  0%, 100% { opacity: 0.1; transform: scale(1); }
+  50%      { opacity: 0.75; transform: scale(1.6); }
+}
+
+.ecotopia-lp .lp-eco-dream-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.ecotopia-lp .lp-eco-dream-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ecotopia-lp .lp-eco-dream-moon {
+  display: inline-flex;
+  margin-bottom: 18px;
+  filter: drop-shadow(0 0 18px rgba(201, 165, 90, 0.4));
+  animation: ecoDreamMoonBreathe 6s ease-in-out infinite;
+}
+
+@keyframes ecoDreamMoonBreathe {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-6px) rotate(3deg); }
+}
+
+.ecotopia-lp .lp-eco-dream-kicker {
+  font-family: var(--lp-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(201, 165, 90, 0.7);
+  margin: 0 0 16px;
+}
+
+.ecotopia-lp .lp-eco-dream-title {
+  font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #EDE5D0;
+  -webkit-text-fill-color: #EDE5D0;
+  margin: 0 0 16px;
+  max-width: 18ch;
+}
+
+.ecotopia-lp .lp-eco-dream-title em {
+  color: #C9A55A;
+  -webkit-text-fill-color: #C9A55A;
+  font-style: italic;
+}
+
+.ecotopia-lp .lp-eco-dream-lead {
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(237, 229, 208, 0.62);
+  -webkit-text-fill-color: rgba(237, 229, 208, 0.62);
+  max-width: 42ch;
+  margin: 0 0 40px;
+}
+
+.ecotopia-lp .lp-eco-dream-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  text-align: left;
+  margin-bottom: 36px;
+}
+
+.ecotopia-lp .lp-eco-dream-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  padding: 22px 24px;
+}
+
+.ecotopia-lp .lp-eco-dream-card--interp {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.ecotopia-lp .lp-eco-dream-card--interp::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201, 165, 90, 0.5), transparent);
+}
+
+.ecotopia-lp .lp-eco-dream-card-label {
+  font-family: var(--lp-sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(201, 165, 90, 0.55);
+  margin: 0 0 10px;
+}
+
+.ecotopia-lp .lp-eco-dream-card-dream {
+  font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.6;
+  color: rgba(237, 229, 208, 0.72);
+  margin: 0;
+}
+
+.ecotopia-lp .lp-eco-dream-card-interp {
+  font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  font-size: 17px;
+  line-height: 1.7;
+  color: rgba(237, 229, 208, 0.9);
+  margin: 0;
+}
+
+.ecotopia-lp .lp-eco-dream-card-interp strong {
+  color: #EDE5D0;
+  font-weight: 600;
+}
+
+.ecotopia-lp .lp-eco-dream-cta {
+  display: inline-block;
+  padding: 15px 34px;
+  background: linear-gradient(135deg, #C9A55A 0%, #A07530 100%);
+  color: #07091A !important;
+  -webkit-text-fill-color: #07091A;
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  border-radius: 999px;
+  text-decoration: none !important;
+  box-shadow: 0 10px 30px rgba(201, 165, 90, 0.28);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
+}
+
+.ecotopia-lp .lp-eco-dream-cta:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  box-shadow: 0 16px 38px rgba(201, 165, 90, 0.36);
+}
+
+@media (max-width: 768px) {
+  .ecotopia-lp .lp-eco-dream {
+    padding: 72px 22px 80px;
+  }
+  .ecotopia-lp .lp-eco-dream-cards {
+    grid-template-columns: 1fr;
+  }
+  .ecotopia-lp .lp-eco-dream-lead {
+    margin-bottom: 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ecotopia-lp .lp-eco-dream-stars span,
+  .ecotopia-lp .lp-eco-dream-moon {
+    animation: none;
+  }
+}
+
 /* ─── Como funciona ─── */
 .ecotopia-lp .lp-eco-how {
   padding: 104px 48px;
   background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-eco-how-sub {
+  font-family: var(--lp-serif);
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--eco-ia-ink-soft);
+  text-align: center;
+  max-width: 32ch;
+  margin: -12px auto 0;
 }
 
 .ecotopia-lp .lp-eco-how-inner {
@@ -8483,6 +8709,25 @@ body.eco-no-scroll {
 }
 
 @media (max-width: 600px) {
+  /* Hero /eco-ia · estilo Headspace: texto em cima, ilustração como bloco
+     full-bleed embaixo (não atrás do texto). */
+  .ecotopia-lp .lp-eco-hero {
+    padding: 84px 24px 0;
+  }
+  .ecotopia-lp .lp-eco-hero-inner {
+    gap: 24px;
+  }
+  .ecotopia-lp .lp-eco-hero-art {
+    min-height: 300px;
+    margin: 4px -24px 0;
+    background-image: url('/images/eco-login-mobile-bg.png');
+    background-size: cover;
+    background-position: center;
+    border-radius: 28px 28px 0 0;
+  }
+  /* O orb/bolhas saem — a ilustração já traz o mascote */
+  .ecotopia-lp .lp-eco-hero-orb,
+  .ecotopia-lp .lp-eco-hero-orb-glow,
   .ecotopia-lp .lp-eco-hero-bubble {
     display: none;
   }
@@ -8492,6 +8737,32 @@ body.eco-no-scroll {
   }
   .ecotopia-lp .lp-eco-cta {
     text-align: center;
+  }
+}
+
+/* "Como funciona a Eco" · carrossel horizontal no mobile/tablet (estilo Headspace).
+   Vem depois da regra ≤1023 padrão para vencer por ordem de cascata. */
+@media (max-width: 1023px) {
+  .ecotopia-lp .lp-eco-how-grid {
+    display: flex;
+    max-width: none;
+    margin: 0 -28px;
+    padding: 130px 28px 12px;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 28px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .ecotopia-lp .lp-eco-how-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .ecotopia-lp .lp-eco-how-card {
+    flex: 0 0 80%;
+    max-width: 340px;
+    margin: 0;
+    scroll-snap-align: start;
   }
 }
 

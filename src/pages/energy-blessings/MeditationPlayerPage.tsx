@@ -10,7 +10,6 @@ import { type Sound, getAllSounds } from '@/data/sounds';
 import { useMeditationAnalytics } from '@/hooks/useMeditationAnalytics';
 import { parseDurationToSeconds, getCategoryFromPath, trackMeditationEvent } from '@/analytics/meditation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSonoCheckout } from '@/hooks/useSonoCheckout';
 import { useGuestExperience } from '@/contexts/GuestExperienceContext';
 import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestConversionTriggers';
 import MeditationGuestGate from '@/components/meditation/MeditationGuestGate';
@@ -54,7 +53,10 @@ export default function MeditationPlayerPage() {
   const { user, isGuestMode, isVipUser } = useAuth();
   const { trackInteraction } = useGuestExperience();
   const { checkTrigger } = useGuestConversionTriggers();
-  const { loading: sonoCheckoutLoading, openCheckout: openSonoCheckout } = useSonoCheckout();
+  // Protocolo Sono agora é premium (assinatura). CTA → trial, não mais compra avulsa.
+  const sonoCheckoutLoading = false;
+  const openSonoCheckout = (_opts?: { origin?: string }) =>
+    navigate('/register?plan=annual&from=sono_trial');
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const gainRef = useRef<GainNode | null>(null);

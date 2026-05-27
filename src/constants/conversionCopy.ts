@@ -335,7 +335,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Desbloqueie meditações de 15-25 minutos, programas completos de transformação e novos conteúdos exclusivos.',
     primaryCta: 'Desbloquear Biblioteca Premium',
     secondaryCta: 'Voltar',
-    subtitle: '7 dias grátis • R$ 27/mês depois',
+    subtitle: '7 dias grátis • R$ 15,90/mês depois',
   },
 
   generic: {

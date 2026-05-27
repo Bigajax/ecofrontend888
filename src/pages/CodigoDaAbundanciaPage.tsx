@@ -7,7 +7,6 @@ import {
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAbundanciaEntitlement } from '@/hooks/useAbundanciaEntitlement';
-import { useAbundanciaCheckout } from '@/hooks/useAbundanciaCheckout';
 import { PROTOCOL_SESSIONS, type ProtocolSession } from '@/data/protocolAbundancia';
 
 // Gold palette
@@ -81,10 +80,12 @@ function MandalaSvg() {
 export default function CodigoDaAbundanciaPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isVipUser } = useAuth();
+  const { user, isVipUser, isPremiumUser, isTrialActive } = useAuth();
   const { hasAccess: hasAbundanciaEntitlement } = useAbundanciaEntitlement();
-  const { loading: checkoutLoading, openCheckout } = useAbundanciaCheckout();
-  const isPaid = isVipUser || hasAbundanciaEntitlement;
+  // Abundância agora é premium. CTA → trial; entitlement legado mantém acesso (grandfather).
+  const checkoutLoading = false;
+  const openCheckout = () => navigate('/register?plan=annual&from=abundancia_trial');
+  const isPaid = isVipUser || isPremiumUser || isTrialActive || hasAbundanciaEntitlement;
   const uid = user?.id || 'guest';
 
   const [completedSessions, setCompletedSessions] = useState<Set<number>>(() => {
@@ -139,7 +140,7 @@ export default function CodigoDaAbundanciaPage() {
       : completedCount === 7
       ? 'Protocolo Concluído 🎉'
       : !isPaid
-      ? 'Iniciar meu Código da Abundância — R$ 67'
+      ? 'Começar — 7 dias grátis'
       : `Continuar Dia ${nextSession}`;
 
   const handleSessionClick = (session: ProtocolSession) => {
@@ -375,7 +376,7 @@ export default function CodigoDaAbundanciaPage() {
               style={{ background: GOLD_SOFT, border: `1px solid ${GOLD_BORDER}` }}
             >
               <p className="text-sm font-medium text-[var(--eco-text)] sm:text-base leading-snug">
-                Acesso completo às 7 sessões. Pagamento único. Sem mensalidade.
+                Acesso completo às 7 sessões com a assinatura Ecotopia.
               </p>
               <button
                 onClick={openCheckout}
@@ -384,7 +385,7 @@ export default function CodigoDaAbundanciaPage() {
                 style={{ background: GOLD, color: '#09090F', boxShadow: `0 4px 16px rgba(255,185,50,0.3)` }}
               >
                 {checkoutLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {checkoutLoading ? 'Abrindo pagamento…' : 'Desbloquear agora — R$ 67'}
+                {checkoutLoading ? 'Abrindo…' : 'Começar 7 dias grátis'}
               </button>
             </div>
           )}
@@ -548,7 +549,7 @@ export default function CodigoDaAbundanciaPage() {
               style={{ background: '#09090F' }}
             >
               <p className="text-sm sm:text-base font-medium mb-4" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                Acesso completo às 7 sessões. Pagamento único. Sem mensalidade.
+                Acesso completo às 7 sessões com a assinatura Ecotopia.
               </p>
               <button
                 onClick={openCheckout}
@@ -557,7 +558,7 @@ export default function CodigoDaAbundanciaPage() {
                 style={{ background: GOLD, color: '#09090F', boxShadow: `0 4px 24px rgba(255,185,50,0.35)` }}
               >
                 {checkoutLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {checkoutLoading ? 'Abrindo pagamento…' : 'Desbloquear agora — R$ 67'}
+                {checkoutLoading ? 'Abrindo…' : 'Começar 7 dias grátis'}
               </button>
             </div>
           </section>
@@ -574,8 +575,8 @@ export default function CodigoDaAbundanciaPage() {
             </h3>
             <ul className="space-y-2 mb-6">
               {[
-                'Pagamento único — sem renovação automática',
-                'Acesso imediato e vitalício a todas as 7 sessões',
+                'Acesso completo com a assinatura Ecotopia',
+                'Todas as 7 sessões + biblioteca completa',
                 'Inclui áudio SOS: Ansiedade Financeira Aguda',
               ].map((item) => (
                 <li key={item} className="flex items-center gap-2 text-sm text-[var(--eco-text)] sm:text-base">
@@ -591,7 +592,7 @@ export default function CodigoDaAbundanciaPage() {
                 className="w-full rounded-full py-3.5 text-sm font-semibold transition-all hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 sm:text-base"
                 style={{ background: GOLD, color: '#09090F', boxShadow: `0 4px 20px rgba(255,185,50,0.3)` }}
               >
-                {checkoutLoading ? 'Abrindo pagamento…' : 'Retomar minha jornada — R$ 67'}
+                {checkoutLoading ? 'Abrindo…' : 'Retomar minha jornada'}
               </button>
             )}
           </div>

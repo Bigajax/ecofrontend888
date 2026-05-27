@@ -12,7 +12,7 @@
  * - Eco AI: 10 mensagens/dia
  * - Diário Estoico: Jan + Fev
  *
- * PREMIUM TIER (R$ 27/mês):
+ * PREMIUM TIER (R$ 15,90/mês):
  * - Todas as features sem limites
  * - Dr. Joe Dispenza completo
  * - Todos os programas e meditações
@@ -162,7 +162,7 @@ export function getUpgradeMessage(
       return 'Desbloqueie com o plano Essentials (R$ 14,90/mês)';
     }
     if (meditationTier === 'premium') {
-      return 'Desbloqueie com o plano Premium (R$ 27/mês)';
+      return 'Desbloqueie com o plano Premium (R$ 15,90/mês)';
     }
   }
 

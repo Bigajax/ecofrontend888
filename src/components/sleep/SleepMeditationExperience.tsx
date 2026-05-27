@@ -8,7 +8,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
-import { useSonoCheckout } from '@/hooks/useSonoCheckout';
 import { PROTOCOL_NIGHTS, type ProtocolNight } from '@/data/protocolNights';
 import mixpanel from '@/lib/mixpanel';
 import {
@@ -83,10 +82,13 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { user, isVipUser } = useAuth();
+  const { user, isVipUser, isPremiumUser, isTrialActive } = useAuth();
   const { hasAccess: hasSonoEntitlement } = useSonoEntitlement();
-  const { loading: checkoutLoading, openCheckout } = useSonoCheckout();
-  const isPaid = isVipUser || hasSonoEntitlement;
+  // Protocolo Sono agora é premium. CTA → trial; entitlement legado mantém acesso (grandfather).
+  const checkoutLoading = false;
+  const openCheckout = (_opts?: { origin?: string }) =>
+    navigate('/register?plan=annual&from=sono_trial');
+  const isPaid = isVipUser || isPremiumUser || isTrialActive || hasSonoEntitlement;
   const uid = user?.id || 'guest';
 
   // ── Mode: explicit via prop ──────────────────────────────────
@@ -868,10 +870,9 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                 Protocolo Completo — 7 Noites
               </p>
               <div className="flex items-baseline justify-center gap-2.5 mb-1">
-                <span className="text-[14px] font-medium line-through" style={{ color: 'rgba(255,255,255,0.30)' }}>R$ 400</span>
-                <span className="font-display text-[44px] font-bold text-white leading-none tracking-tight">R$ 147</span>
+                <span className="font-display text-[44px] font-bold text-white leading-none tracking-tight">7 dias grátis</span>
               </div>
-              <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.32)' }}>Hoje · Pagamento único · 7 noites completas</p>
+              <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.32)' }}>Depois R$ 15,90/mês · cancele quando quiser</p>
 
               {isGuestSono ? (
                 <div className="flex items-center justify-center gap-1.5 mb-6">
@@ -886,7 +887,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                   className="text-[12px] italic mb-6"
                   style={{ color: 'rgba(251,191,36,0.65)' }}
                 >
-                  Preço de lançamento. Depois passa para R$ 247.
+                  Inclui o Ecotopia completo: Eco IA, meditações e mais.
                 </p>
               )}
 

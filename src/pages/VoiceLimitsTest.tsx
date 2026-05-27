@@ -93,7 +93,7 @@ export default function VoiceLimitsTest() {
                 </div>
                 <div>
                   <p className="font-semibold text-purple-800">Premium</p>
-                  <p className="text-sm text-purple-600">R$ 27/mês</p>
+                  <p className="text-sm text-purple-600">R$ 15,90/mês</p>
                 </div>
               </div>
               <div className="text-right">

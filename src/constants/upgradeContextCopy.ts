@@ -83,8 +83,8 @@ export const UPGRADE_CONTEXT_COPY: Record<UpgradeSource, UpgradeContextContent> 
   },
 
   generic: {
-    title: 'O seu desconto de 50% está pronto',
-    subtitle: 'Você já iniciou sua jornada na Ecotopia. Garanta agora o acesso completo com condição especial.',
+    title: 'Seu acesso completo está a um passo',
+    subtitle: 'Você já iniciou sua jornada na Ecotopia. Desbloqueie tudo com 7 dias grátis — cancele quando quiser.',
     bullets: [
       'Conversas ilimitadas com ECO',
       'Todas as meditações premium',
@@ -93,7 +93,7 @@ export const UPGRADE_CONTEXT_COPY: Record<UpgradeSource, UpgradeContextContent> 
       'Relatório emocional',
       'Cancelamento em 1 clique',
     ],
-    cta: 'GARANTIR 50% AGORA',
+    cta: 'GARANTIR ACESSO AGORA',
   },
 };
 

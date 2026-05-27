@@ -50,7 +50,7 @@ export default function PricingCard({
   // Determinar descrição
   const planDescription =
     subtitle ||
-    (billingPeriod === 'month' ? 'Renovação mensal' : 'Pagamento único anual');
+    (billingPeriod === 'month' ? 'Renovação mensal' : 'Cobrado anualmente');
 
   return (
     <motion.button

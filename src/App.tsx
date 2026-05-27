@@ -83,8 +83,6 @@ const FluxoAssinaturaDemo = lazy(() => import("@/pages/FluxoAssinaturaDemo"));
 const GuestMeditationPage = lazy(() => import("@/pages/GuestMeditationPage"));
 const MemoryPageGuestTeaser = lazy(() => import("@/pages/memory/MemoryPageGuestTeaser"));
 const UpgradeModalTest = lazy(() => import("@/pages/UpgradeModalTest"));
-const SonoObrigadoPage = lazy(() => import("@/pages/SonoObrigadoPage"));
-const SonoErroPage = lazy(() => import("@/pages/SonoErroPage"));
 const EcotopiaLandingPage = lazy(() => import("@/pages/EcotopiaLandingPage"));
 const EcotopiaPrecosPage = lazy(() => import("@/pages/EcotopiaPrecosPage"));
 const EcotopiaMeditacaoPage = lazy(() => import("@/pages/EcotopiaMeditacaoPage"));
@@ -94,12 +92,9 @@ const EcotopiaDiarioPage = lazy(() => import("@/pages/EcotopiaDiarioPage"));
 const EcotopiaAneisPage = lazy(() => import("@/pages/EcotopiaAneisPage"));
 const EcotopiaDispenzaPage = lazy(() => import("@/pages/EcotopiaDispenzaPage"));
 const EcotopiaAnsiedadePage = lazy(() => import("@/pages/EcotopiaAnsiedadePage"));
-const AbundanciaObrigadoPage = lazy(() => import("@/pages/AbundanciaObrigadoPage"));
-const AbundanciaErroPage = lazy(() => import("@/pages/AbundanciaErroPage"));
-const DrJoeObrigadoPage = lazy(() => import("@/pages/DrJoeObrigadoPage"));
-const DrJoeErroPage = lazy(() => import("@/pages/DrJoeErroPage"));
 const DrJoeAdCreativePage = lazy(() => import("@/pages/DrJoeAdCreativePage"));
 const EcoDreamPage = lazy(() => import("@/pages/EcoDreamPage"));
+const EcoDreamGuestPage = lazy(() => import("@/pages/guest/EcoDreamGuestPage"));
 
 // Lightweight loading fallback (no heavy dependencies)
 // Conceito "ECO": ondas que partem do símbolo no ritmo de uma respiração lenta.
@@ -296,12 +291,6 @@ function AppRoutes() {
         <Route path="guest/meditation-player" element={renderWithBoundary(<MeditationPlayerPage />)} />
         <Route path="memory-preview" element={renderWithSuspense(<MemoryPageGuestTeaser />)} />
         <Route path="test-upgrade-modal" element={renderWithSuspense(<UpgradeModalTest />)} />
-        <Route path="sono/obrigado" element={renderWithSuspense(<SonoObrigadoPage />)} />
-        <Route path="sono/erro" element={renderWithSuspense(<SonoErroPage />)} />
-        <Route path="abundancia/obrigado" element={renderWithSuspense(<AbundanciaObrigadoPage />)} />
-        <Route path="abundancia/erro" element={renderWithSuspense(<AbundanciaErroPage />)} />
-        <Route path="dr-joe/obrigado" element={renderWithSuspense(<DrJoeObrigadoPage />)} />
-        <Route path="dr-joe/erro" element={renderWithSuspense(<DrJoeErroPage />)} />
         <Route path="dr-joe/criativo" element={renderWithSuspense(<DrJoeAdCreativePage />)} />
       </Route>
       {/* ── Rotas guest (sem autenticação) — devem vir ANTES do /app/* para não
@@ -309,6 +298,11 @@ function AppRoutes() {
       {/* ── /sono/experiencia — public guest funnel (official) ── */}
       <Route path="/sono/experiencia" element={<SonoGuestShell />}>
         <Route index element={renderWithSuspense(<SleepGuestExperiencePage />)} />
+      </Route>
+
+      {/* ── /sonhos — funil guest de interpretação de sonhos (tráfego pago) ── */}
+      <Route path="/sonhos" element={<GuestFunnelShell />}>
+        <Route index element={renderWithSuspense(<EcoDreamGuestPage />)} />
       </Route>
 
       {/* ── /app/meditacoes/sono — legacy redirect (preserva ?source=&utm_*) ── */}
