@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import "@/ecotopia-landing.css";
+import EcotopiaTopbar from "@/components/landing/EcotopiaTopbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiUrl } from "@/config/apiBase";
 import { supabase } from "@/lib/supabaseClient";
@@ -20,15 +22,6 @@ async function authHeaders(): Promise<Record<string, string>> {
 
 function parsePlan(value: string | null): PlanId {
   return value === "annual" ? "annual" : "monthly";
-}
-
-function Logo() {
-  return (
-    <div className="mb-5 flex items-center gap-2">
-      <span className="h-7 w-7 rounded-full" style={{ background: "radial-gradient(circle at 32% 30%, #9BD8FF, #36A8E8)" }} />
-      <span className="font-display text-[20px] font-bold" style={{ color: "#0D3461" }}>ecotopia</span>
-    </div>
-  );
 }
 
 export default function AssinarPage() {
@@ -81,10 +74,9 @@ export default function AssinarPage() {
   const googleReturnTo = `/assinar?plan=${plan}&step=card`;
 
   return (
-    <div className="flex min-h-screen justify-center bg-white px-5 py-8">
-      <div className="w-full max-w-[420px]">
-        <Logo />
-
+    <div className="ecotopia-lp min-h-screen bg-white">
+      <EcotopiaTopbar />
+      <div className="mx-auto w-full max-w-[420px] px-5 py-8">
         {step === "plan" && (
           <PlanStep selectedPlan={plan} onSelectPlan={selectPlan} onContinue={continueFromPlan} />
         )}
