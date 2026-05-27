@@ -17,7 +17,7 @@ export function PlanStep({ selectedPlan, onSelectPlan, onContinue }: PlanStepPro
 
       <h1 className="text-center font-display text-[24px] font-bold leading-tight" style={{ color: "#0D3461" }}>
         {isMonthly ? (
-          <>Tenha a Ecotopia completa<br />por <span style={{ color: "#1A8A4A" }}>R$ 0 hoje</span></>
+          <>Viva a experiência completa<br />da Ecotopia por <span style={{ color: "#1A8A4A" }}>R$ 0 hoje</span></>
         ) : (
           <>1 ano de Ecotopia completa</>
         )}
