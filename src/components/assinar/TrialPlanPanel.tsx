@@ -65,7 +65,7 @@ export function TrialPlanPanel({ selectedPlan, onSelectPlan }: TrialPlanPanelPro
               <span className="block pr-6 text-[13px]" style={{ color: active ? "rgba(255,255,255,0.75)" : "rgba(0,0,0,0.55)" }}>
                 {plan === "annual" ? "Anual" : "Mensal"}
               </span>
-              <span className="mt-1 block font-display text-[16px] font-bold leading-tight">
+              <span className="mt-1 block font-display text-[16px] font-bold leading-tight" style={{ color: active ? "#FFFFFF" : "#1A1A1A" }}>
                 {c.priceLine}
                 {c.priceNote && (
                   <span className="ml-1 text-[12px] font-normal" style={{ color: active ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.5)" }}>
