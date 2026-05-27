@@ -15,6 +15,7 @@ export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [aceito, setAceito] = useState(false);
+  const [novidades, setNovidades] = useState<"sim" | "nao" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
@@ -54,7 +55,11 @@ export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-      <h2 className="font-display text-[22px] font-bold" style={{ color: "#0D3461" }}>Criar conta</h2>
+      <h2 className="text-center font-display text-[24px] font-bold" style={{ color: "#0D3461" }}>Criar conta</h2>
+      <p className="-mt-2 mb-1 text-center text-[14px]" style={{ color: "#5A8AAD" }}>
+        Já tem conta?{" "}
+        <a href="/login?returnTo=/assinar" className="font-semibold underline" style={{ color: "#1A4FB5" }}>Entrar</a>
+      </p>
 
       <label className="flex flex-col gap-1 text-[13px] font-medium" style={{ color: "#3A6FA5" }}>
         Nome*
@@ -73,7 +78,22 @@ export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
         <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} className="rounded-xl border px-4 py-3 text-[15px] text-[#0D3461]" style={{ borderColor: "rgba(13,52,97,0.18)" }} />
       </label>
 
-      <label className="flex items-start gap-2 text-[13px]" style={{ color: "#5A8AAD" }}>
+      <div>
+        <h3 className="font-display text-[16px] font-bold" style={{ color: "#0D3461" }}>Quer receber novidades?</h3>
+        <p className="eco-subtitle mb-2 text-[13px]" style={{ color: "#5A8AAD" }}>Ofertas e dicas — você pode sair quando quiser.</p>
+        <div className="flex gap-8">
+          <label className="flex items-center gap-2 text-[15px]" style={{ color: "#0D3461" }}>
+            <input type="radio" name="novidades" checked={novidades === "sim"} onChange={() => setNovidades("sim")} style={{ accentColor: "#1A4FB5" }} />
+            Sim
+          </label>
+          <label className="flex items-center gap-2 text-[15px]" style={{ color: "#0D3461" }}>
+            <input type="radio" name="novidades" checked={novidades === "nao"} onChange={() => setNovidades("nao")} style={{ accentColor: "#1A4FB5" }} />
+            Não
+          </label>
+        </div>
+      </div>
+
+      <label className="flex items-start gap-2 border-t pt-4 text-[13px]" style={{ color: "#333", borderColor: "rgba(13,52,97,0.1)" }}>
         <input type="checkbox" checked={aceito} onChange={(e) => setAceito(e.target.checked)} className="mt-0.5" />
         <span>Concordo com os Termos de Uso e a Política de Privacidade.</span>
       </label>

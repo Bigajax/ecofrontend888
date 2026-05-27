@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi } from "vitest";
 
@@ -25,14 +25,21 @@ function renderAt(path: string) {
 }
 
 describe("AssinarPage", () => {
-  it("defaults to monthly and shows the $0-today timeline + signup step when logged out", () => {
+  it("starts on the plan step (monthly) with the $0-today timeline and trial CTA", () => {
     renderAt("/assinar");
     expect(screen.getAllByText(/R\$ 0/).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /criar conta/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /começar 7 dias grátis/i })).toBeInTheDocument();
   });
 
-  it("reads ?plan=annual and shows the annual timeline", () => {
+  it("reads ?plan=annual and shows the annual timeline + annual CTA", () => {
     renderAt("/assinar?plan=annual");
     expect(screen.getAllByText(/R\$ 142,80/).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /assinar anual/i })).toBeInTheDocument();
+  });
+
+  it("advances to the signup step when the trial CTA is clicked (logged out)", () => {
+    renderAt("/assinar");
+    fireEvent.click(screen.getByRole("button", { name: /começar 7 dias grátis/i }));
+    expect(screen.getByRole("button", { name: /criar conta/i })).toBeInTheDocument();
   });
 });
