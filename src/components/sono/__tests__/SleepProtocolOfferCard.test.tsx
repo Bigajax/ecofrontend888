@@ -10,8 +10,8 @@ describe('SleepProtocolOfferCard', () => {
         onCheckout={vi.fn()}
       />
     );
-    expect(screen.getByText(/Experimente a primeira noite/i)).toBeInTheDocument();
-    expect(screen.getByText(/R\$ 147/)).toBeInTheDocument();
+    expect(screen.getByText(/A Noite 1 abre a porta/i)).toBeInTheDocument();
+    expect(screen.getByText(/R\$ 15,90/)).toBeInTheDocument();
   });
 
   it('calls onStart when primary CTA is clicked', () => {
@@ -22,7 +22,7 @@ describe('SleepProtocolOfferCard', () => {
         onCheckout={vi.fn()}
       />
     );
-    fireEvent.click(screen.getByText(/Começar experiência gratuita/i));
+    fireEvent.click(screen.getByText(/Ouvir a Noite 1/i));
     expect(onStart).toHaveBeenCalledOnce();
   });
 
@@ -34,7 +34,7 @@ describe('SleepProtocolOfferCard', () => {
         onCheckout={onCheckout}
       />
     );
-    fireEvent.click(screen.getByText(/Liberar protocolo completo/i));
+    fireEvent.click(screen.getByText(/Começar 7 dias grátis/i));
     expect(onCheckout).toHaveBeenCalledOnce();
   });
 
