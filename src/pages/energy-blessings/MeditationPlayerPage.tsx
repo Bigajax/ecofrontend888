@@ -17,6 +17,9 @@ import { useMediaSession } from '@/hooks/useMediaSession';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import MeditationAmbientScreen from '@/components/meditation/MeditationAmbientScreen';
 import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
+import UpgradeModal from '@/components/subscription/UpgradeModal';
+import { useSubscriptionTier, usePremiumContent } from '@/hooks/usePremiumContent';
+import { getRequiredTier } from '@/constants/meditationTiers';
 
 interface MeditationData {
   id?: string;
@@ -55,8 +58,10 @@ export default function MeditationPlayerPage() {
   const { checkTrigger } = useGuestConversionTriggers();
   // Protocolo Sono agora é premium (assinatura). CTA → trial, não mais compra avulsa.
   const sonoCheckoutLoading = false;
-  const openSonoCheckout = (_opts?: { origin?: string }) =>
+  const openSonoCheckout = (opts?: { origin?: string }) => {
+    void opts;
     navigate('/register?plan=annual&from=sono_trial');
+  };
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const gainRef = useRef<GainNode | null>(null);
@@ -167,6 +172,21 @@ export default function MeditationPlayerPage() {
   // NOVO: Guest mode state (VIP users bypass all gates)
   const isGuest = isGuestMode && !user && !isVipUser;
   const GUEST_TIME_LIMIT_SECONDS = 120; // 2 minutos
+
+  // ─── Freemium gate: usuário logado free tentando meditação PREMIUM ───
+  // Só bloqueia meditações explicitamente premium (getRequiredTier === 'premium').
+  // Guests têm seu próprio gate (MeditationGuestGate / sonoGuestMode).
+  const subscriptionTier = useSubscriptionTier();
+  const { showUpgradeModal, requestUpgrade, closeUpgradeModal } = usePremiumContent();
+  const meditationLocked =
+    !!user && !isGuestMode && !sonoGuestMode &&
+    getRequiredTier(meditationData.id || '') === 'premium' &&
+    subscriptionTier !== 'premium' && subscriptionTier !== 'vip';
+
+  useEffect(() => {
+    if (meditationLocked) requestUpgrade(`meditation_${meditationData.id}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meditationLocked]);
   const [showGuestGate, setShowGuestGate] = useState(false);
   const [isAudioFading, setIsAudioFading] = useState(false);
   const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -1842,6 +1862,15 @@ export default function MeditationPlayerPage() {
           currentTime={currentTime}
           totalDuration={duration}
           onClose={handleBack}
+        />
+      )}
+
+      {/* Freemium gate: meditação premium bloqueada para usuário free logado */}
+      {meditationLocked && (
+        <UpgradeModal
+          open={showUpgradeModal}
+          onClose={() => { closeUpgradeModal(); navigate(returnTo); }}
+          source="meditation_premium_locked"
         />
       )}
     </div>

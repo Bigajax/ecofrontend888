@@ -158,10 +158,7 @@ export function getUpgradeMessage(
   userTier: 'free' | 'essentials' | 'premium' | 'vip'
 ): string {
   if (userTier === 'free') {
-    if (meditationTier === 'essentials') {
-      return 'Desbloqueie com o plano Essentials (R$ 14,90/mês)';
-    }
-    if (meditationTier === 'premium') {
+    if (meditationTier === 'essentials' || meditationTier === 'premium') {
       return 'Desbloqueie com o plano Premium (R$ 15,90/mês)';
     }
   }
@@ -221,11 +218,11 @@ export const MEDITATION_CONVERSION_COPY = {
     subtitle: '7 dias grátis • Cancele quando quiser',
   },
   meditation_essentials_upgrade: {
-    title: 'Meditações Intermediárias',
+    title: 'Meditações Premium',
     message:
-      'Comece com o Essentials e tenha acesso a meditações de até 15 minutos.',
-    primaryCta: 'Começar por R$ 14,90',
+      'Desbloqueie todas as meditações e programas completos com o Premium.',
+    primaryCta: 'Começar 7 dias grátis',
     secondaryCta: 'Voltar',
-    subtitle: '7 dias grátis',
+    subtitle: '7 dias grátis • depois R$ 15,90/mês',
   },
 };

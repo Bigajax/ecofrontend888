@@ -86,8 +86,10 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   const { hasAccess: hasSonoEntitlement } = useSonoEntitlement();
   // Protocolo Sono agora é premium. CTA → trial; entitlement legado mantém acesso (grandfather).
   const checkoutLoading = false;
-  const openCheckout = (_opts?: { origin?: string }) =>
+  const openCheckout = (opts?: { origin?: string }) => {
+    void opts;
     navigate('/register?plan=annual&from=sono_trial');
+  };
   const isPaid = isVipUser || isPremiumUser || isTrialActive || hasSonoEntitlement;
   const uid = user?.id || 'guest';
 
