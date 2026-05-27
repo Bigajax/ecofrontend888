@@ -25,14 +25,19 @@ export default function AssinarPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [plan, setPlan] = useState<PlanId>(parsePlan(params.get("plan")));
-  const [step, setStep] = useState<"signup" | "card">(user ? "card" : "signup");
+  const [step, setStep] = useState<"signup" | "card">(
+    user || params.get("step") === "card" ? "card" : "signup"
+  );
   const [erro, setErro] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  // Logged-in users (incl. returning from Google OAuth) skip to the card step.
+  // Logged-in users (incl. returning from Google OAuth with ?step=card) skip to
+  // the card step. Consume the returnTo marker stored before the OAuth redirect.
   useEffect(() => {
-    if (user) setStep("card");
-  }, [user]);
+    const stored = sessionStorage.getItem("eco.assinar.returnTo");
+    if (stored) sessionStorage.removeItem("eco.assinar.returnTo");
+    if (user || params.get("step") === "card") setStep("card");
+  }, [user, params]);
 
   const selectPlan = (next: PlanId) => {
     setPlan(next);
