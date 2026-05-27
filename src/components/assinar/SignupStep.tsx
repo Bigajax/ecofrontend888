@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface SignupStepProps {
@@ -7,6 +8,9 @@ interface SignupStepProps {
 }
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const fieldCls =
+  "w-full rounded-lg border px-4 py-4 text-[15px] text-[#0D3461] outline-none placeholder:text-[#8a93a3] focus:border-[#1554F0]";
+const fieldStyle = { borderColor: "rgba(13,52,97,0.18)" } as const;
 
 export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
   const { register, signInWithGoogle } = useAuth();
@@ -14,6 +18,7 @@ export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
   const [sobrenome, setSobrenome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [showSenha, setShowSenha] = useState(false);
   const [aceito, setAceito] = useState(false);
   const [novidades, setNovidades] = useState<"sim" | "nao" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -55,57 +60,103 @@ export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-      <h2 className="text-center font-display text-[24px] font-bold" style={{ color: "#0D3461" }}>Criar conta</h2>
-      <p className="-mt-2 mb-1 text-center text-[14px]" style={{ color: "#5A8AAD" }}>
-        Já tem conta?{" "}
-        <a href="/login?returnTo=/assinar" className="font-semibold underline" style={{ color: "#1A4FB5" }}>Entrar</a>
+      <h2 className="text-center font-display text-[26px] font-bold" style={{ color: "#0D3461" }}>Inscrever-se</h2>
+      <p className="-mt-2 text-center text-[15px] leading-snug" style={{ color: "#5A8AAD" }}>
+        Já tem uma conta?
+        <br />
+        <a href="/login?returnTo=/assinar" className="font-semibold underline" style={{ color: "#1554F0" }}>Conecte-se</a>
       </p>
 
-      <label className="flex flex-col gap-1 text-[13px] font-medium" style={{ color: "#3A6FA5" }}>
-        Nome*
-        <input value={nome} onChange={(e) => setNome(e.target.value)} className="rounded-xl border px-4 py-3 text-[15px] text-[#0D3461]" style={{ borderColor: "rgba(13,52,97,0.18)" }} />
-      </label>
-      <label className="flex flex-col gap-1 text-[13px] font-medium" style={{ color: "#3A6FA5" }}>
-        Sobrenome
-        <input value={sobrenome} onChange={(e) => setSobrenome(e.target.value)} className="rounded-xl border px-4 py-3 text-[15px] text-[#0D3461]" style={{ borderColor: "rgba(13,52,97,0.18)" }} />
-      </label>
-      <label className="flex flex-col gap-1 text-[13px] font-medium" style={{ color: "#3A6FA5" }}>
-        E-mail*
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="rounded-xl border px-4 py-3 text-[15px] text-[#0D3461]" style={{ borderColor: "rgba(13,52,97,0.18)" }} />
-      </label>
-      <label className="flex flex-col gap-1 text-[13px] font-medium" style={{ color: "#3A6FA5" }}>
-        Senha (8+ caracteres)*
-        <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} className="rounded-xl border px-4 py-3 text-[15px] text-[#0D3461]" style={{ borderColor: "rgba(13,52,97,0.18)" }} />
-      </label>
+      <input
+        aria-label="Primeiro nome"
+        placeholder="Primeiro nome *"
+        value={nome}
+        onChange={(e) => setNome(e.target.value)}
+        className={fieldCls}
+        style={fieldStyle}
+      />
+      <input
+        aria-label="Sobrenome"
+        placeholder="Sobrenome *"
+        value={sobrenome}
+        onChange={(e) => setSobrenome(e.target.value)}
+        className={fieldCls}
+        style={fieldStyle}
+      />
+      <input
+        aria-label="Endereço de email"
+        type="email"
+        placeholder="Endereço de email *"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className={fieldCls}
+        style={fieldStyle}
+      />
+      <div className="relative">
+        <input
+          aria-label="Senha (8+ caracteres)"
+          type={showSenha ? "text" : "password"}
+          placeholder="Senha (8+ caracteres) *"
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
+          className={`${fieldCls} pr-12`}
+          style={fieldStyle}
+        />
+        <button
+          type="button"
+          aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
+          onClick={() => setShowSenha((v) => !v)}
+          className="absolute right-4 top-1/2 -translate-y-1/2"
+          style={{ color: "#5A8AAD" }}
+        >
+          {showSenha ? <EyeOff size={20} /> : <Eye size={20} />}
+        </button>
+      </div>
 
-      <div>
-        <h3 className="font-display text-[16px] font-bold" style={{ color: "#0D3461" }}>Quer receber novidades?</h3>
-        <p className="eco-subtitle mb-2 text-[13px]" style={{ color: "#5A8AAD" }}>Ofertas e dicas — você pode sair quando quiser.</p>
+      <div className="mt-1">
+        <h3 className="font-display text-[17px] font-bold leading-snug" style={{ color: "#0D3461" }}>
+          Quer ficar por dentro das últimas novidades?
+        </h3>
+        <p className="eco-subtitle mb-3 mt-1 text-[14px] leading-snug" style={{ color: "#5A8AAD" }}>
+          Inscreva-se na nossa lista de e-mails e seja o primeiro a saber sobre ofertas especiais.
+        </p>
         <div className="flex gap-8">
           <label className="flex items-center gap-2 text-[15px]" style={{ color: "#0D3461" }}>
-            <input type="radio" name="novidades" checked={novidades === "sim"} onChange={() => setNovidades("sim")} style={{ accentColor: "#1A4FB5" }} />
+            <input type="radio" name="novidades" checked={novidades === "sim"} onChange={() => setNovidades("sim")} className="h-5 w-5" style={{ accentColor: "#1554F0" }} />
             Sim
           </label>
           <label className="flex items-center gap-2 text-[15px]" style={{ color: "#0D3461" }}>
-            <input type="radio" name="novidades" checked={novidades === "nao"} onChange={() => setNovidades("nao")} style={{ accentColor: "#1A4FB5" }} />
+            <input type="radio" name="novidades" checked={novidades === "nao"} onChange={() => setNovidades("nao")} className="h-5 w-5" style={{ accentColor: "#1554F0" }} />
             Não
           </label>
         </div>
       </div>
 
-      <label className="flex items-start gap-2 border-t pt-4 text-[13px]" style={{ color: "#333", borderColor: "rgba(13,52,97,0.1)" }}>
-        <input type="checkbox" checked={aceito} onChange={(e) => setAceito(e.target.checked)} className="mt-0.5" />
-        <span>Concordo com os Termos de Uso e a Política de Privacidade.</span>
+      <label className="flex items-start gap-2.5 border-t pt-4 text-[14px] leading-relaxed" style={{ color: "#333", borderColor: "rgba(13,52,97,0.1)" }}>
+        <input type="checkbox" checked={aceito} onChange={(e) => setAceito(e.target.checked)} className="mt-1 h-4 w-4" style={{ accentColor: "#1554F0" }} />
+        <span>
+          Concordo com a Ecotopia. <a href="#" className="underline" style={{ color: "#1554F0" }}>Termos e Condições</a> e reconheço a{" "}
+          <a href="#" className="underline" style={{ color: "#1554F0" }}>Política de Privacidade</a>.
+        </span>
       </label>
 
       {erro && <p role="alert" className="text-[13px]" style={{ color: "#B43C3C" }}>{erro}</p>}
       {info && <p className="text-[13px]" style={{ color: "#1A4FB5" }}>{info}</p>}
 
-      <button type="submit" disabled={loading} className="rounded-full py-3.5 text-[15px] font-bold text-white disabled:opacity-70" style={{ background: "linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)" }}>
-        {loading ? "Criando…" : "Criar conta"}
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full rounded-full bg-[#1554F0] py-4 text-[16px] font-bold text-white transition-all hover:-translate-y-[1px] hover:bg-[#1148D6] disabled:opacity-70"
+      >
+        {loading ? "Criando…" : "Criar uma conta"}
       </button>
 
-      <button type="button" onClick={google} className="rounded-full border py-3 text-[14px] font-semibold" style={{ borderColor: "rgba(13,52,97,0.2)", color: "#0D3461" }}>
+      <button
+        type="button"
+        onClick={google}
+        className="w-full rounded-full border py-3 text-[14px] font-semibold"
+        style={{ borderColor: "rgba(13,52,97,0.2)", color: "#0D3461" }}
+      >
         Continuar com Google
       </button>
     </form>

@@ -40,6 +40,6 @@ describe("AssinarPage", () => {
   it("advances to the signup step when the trial CTA is clicked (logged out)", () => {
     renderAt("/assinar");
     fireEvent.click(screen.getByRole("button", { name: /comece seu teste gratuito/i }));
-    expect(screen.getByRole("button", { name: /criar conta/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /criar uma conta/i })).toBeInTheDocument();
   });
 });
