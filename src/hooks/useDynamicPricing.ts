@@ -75,7 +75,7 @@ const OFFER_CONFIG = {
     type: 'discount' as OfferType,
     amount: 0.3, // 30% off
     message: 'Welcome back! 30% de desconto no plano anual',
-    subtitle: 'Economia de R$ 107,64 no primeiro ano',
+    subtitle: 'Economia de R$ 57,24 no primeiro ano',
     expirationHours: 72,
     recommendedPlan: 'annual' as const,
   },

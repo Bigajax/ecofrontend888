@@ -50,7 +50,7 @@ export default function SubscriptionCallbackPage() {
             trackSubscriptionPaid({
               plan_id: (subscription.planType || 'annual') as 'monthly' | 'annual',
               mp_status: subscription.status,
-              transaction_amount: subscription.planType === 'monthly' ? 29.9 : 299.0,
+              transaction_amount: subscription.planType === 'monthly' ? 15.9 : 142.8,
               provider: 'mercadopago',
               user_id: user?.id,
               source: 'frontend_callback',
