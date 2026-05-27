@@ -9,6 +9,7 @@ export interface TimelineItem {
 export const PLAN_COPY: Record<PlanId, {
   badge?: string;
   priceLine: string;       // shown in the plan selector
+  priceNote?: string;      // small note next to the price (e.g. per-month)
   subPriceLine: string;
   timeline: TimelineItem[];
 }> = {
@@ -24,6 +25,7 @@ export const PLAN_COPY: Record<PlanId, {
   annual: {
     badge: "Melhor valor",
     priceLine: "R$ 142,80/ano",
+    priceNote: "(R$ 11,90/mês)",
     subPriceLine: "R$ 11,90/mês · economize R$ 48",
     timeline: [
       { label: "Hoje", title: "R$ 142,80", description: "1 ano de acesso completo — equivale a R$ 11,90/mês." },

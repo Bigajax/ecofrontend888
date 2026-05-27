@@ -37,8 +37,8 @@ export function TrialPlanPanel({ selectedPlan, onSelectPlan }: TrialPlanPanelPro
         ))}
       </ol>
 
-      {/* Plan selector — 2 colunas */}
-      <div className="flex gap-2.5 rounded-2xl border p-3" style={{ borderColor: "rgba(13,52,97,0.12)" }} role="group" aria-label="Escolha o plano">
+      {/* Plan selector — 2 colunas (estilo Headspace) */}
+      <div className="flex gap-2.5 rounded-2xl border p-3" style={{ borderColor: "rgba(0,0,0,0.08)" }} role="group" aria-label="Escolha o plano">
         {PLANS.map((plan) => {
           const c = PLAN_COPY[plan];
           const active = plan === selectedPlan;
@@ -50,28 +50,35 @@ export function TrialPlanPanel({ selectedPlan, onSelectPlan }: TrialPlanPanelPro
               onClick={() => onSelectPlan(plan)}
               className="relative flex-1 rounded-xl px-3 py-4 text-left transition-all"
               style={{
-                background: active ? "#0D3461" : "#EEF4FA",
-                color: active ? "#FFFFFF" : "#0D3461",
+                background: active ? "#2B2B2B" : "#F0E6DC",
+                color: active ? "#FFFFFF" : "#1A1A1A",
               }}
             >
               {c.badge && (
                 <span
                   className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded px-2.5 py-[3px] text-[11px] font-bold text-white"
-                  style={{ background: "#1A4FB5" }}
+                  style={{ background: "#1EA455" }}
                 >
                   {c.badge}
                 </span>
               )}
-              <span className="block text-[13px]" style={{ color: active ? "rgba(255,255,255,0.8)" : "#5A8AAD" }}>
+              <span className="block pr-6 text-[13px]" style={{ color: active ? "rgba(255,255,255,0.75)" : "rgba(0,0,0,0.55)" }}>
                 {plan === "annual" ? "Anual" : "Mensal"}
               </span>
-              <span className="mt-1 block font-display text-[16px] font-bold leading-tight">{c.priceLine}</span>
+              <span className="mt-1 block font-display text-[16px] font-bold leading-tight">
+                {c.priceLine}
+                {c.priceNote && (
+                  <span className="ml-1 text-[12px] font-normal" style={{ color: active ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.5)" }}>
+                    {c.priceNote}
+                  </span>
+                )}
+              </span>
               <span
                 className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full text-[12px] font-bold"
                 style={{
-                  background: active ? "#FFFFFF" : "#FFFFFF",
-                  color: "#0D3461",
-                  border: active ? "none" : "1px solid #CBD6E2",
+                  background: "#FFFFFF",
+                  color: "#2B2B2B",
+                  border: active ? "none" : "1px solid #CFC4B6",
                 }}
               >
                 {active ? "✓" : ""}
