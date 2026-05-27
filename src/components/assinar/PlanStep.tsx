@@ -31,7 +31,7 @@ export function PlanStep({ selectedPlan, onSelectPlan, onContinue }: PlanStepPro
         className="w-full rounded-full bg-[#1554F0] py-4 text-[17px] font-bold text-white transition-all hover:-translate-y-[1px] hover:bg-[#1148D6]"
         style={{ boxShadow: "0 6px 20px rgba(21,84,240,0.30)" }}
       >
-        {isMonthly ? "Comece seu teste gratuito" : "Assinar anual"}
+        Comece seu teste gratuito
       </button>
 
       <p className="text-center text-[12px]" style={{ color: "#5A8AAD" }}>

@@ -34,7 +34,7 @@ describe("AssinarPage", () => {
   it("reads ?plan=annual and shows the annual timeline + annual CTA", () => {
     renderAt("/assinar?plan=annual");
     expect(screen.getAllByText(/R\$ 142,80/).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /assinar anual/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /comece seu teste gratuito/i })).toBeInTheDocument();
   });
 
   it("advances to the signup step when the trial CTA is clicked (logged out)", () => {
