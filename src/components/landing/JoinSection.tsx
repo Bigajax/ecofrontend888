@@ -23,7 +23,7 @@ export default function JoinSection() {
         </p>
 
         <Link
-          to="/register?plan=annual&from=join_section"
+          to="/assinar?plan=monthly&from=join_section"
           className="lp-join-cta scroll-reveal"
           onClick={() =>
             trackLandingCta({

@@ -98,7 +98,7 @@ export default function EcotopiaHero() {
         <div className="lp-hero-card reveal-soft animation-delay-100">
           <h2>Autoconhecimento prático em um único app.</h2>
           <Link
-            to="/register?plan=annual&from=hero_card1"
+            to="/assinar?plan=monthly&from=hero_card1"
             className="cta-dark"
             onClick={() =>
               trackLandingCta({
@@ -124,7 +124,7 @@ export default function EcotopiaHero() {
         <div className="lp-hero-card reveal-soft animation-delay-200">
           <h2>Uma conversa quando você precisar.</h2>
           <Link
-            to="/register?plan=annual&from=hero_card2"
+            to="/assinar?plan=monthly&from=hero_card2"
             className="cta-dark"
             onClick={() =>
               trackLandingCta({

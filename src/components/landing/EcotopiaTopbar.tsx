@@ -56,7 +56,7 @@ const MENUS: MenuConfig[] = [
       title: 'Sete dias para sentir a diferença',
       body: 'Experimente o protocolo completo sem custo.',
       ctaLabel: 'Experimentar grátis →',
-      to: '/register?plan=annual&from=mega-para-voce',
+      to: '/assinar?plan=monthly&from=mega-para-voce',
       image: '/images/mega-cta-eco.png',
     },
   },
@@ -291,7 +291,7 @@ export default function EcotopiaTopbar() {
           <Link to="/login" className="lp-nav-link-text">
             Entrar
           </Link>
-          <Link to="/register?plan=annual&from=topbar" className="cta-primary">
+          <Link to="/assinar?plan=monthly&from=topbar" className="cta-primary">
             Experimente grátis
           </Link>
 
@@ -400,7 +400,7 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
   const footCtaPrimary = (
     <div className="lp-drawer-foot">
       <Link
-        to="/register?plan=annual&from=mobile-drawer"
+        to="/assinar?plan=monthly&from=mobile-drawer"
         onClick={onClose}
         className="cta-primary lp-drawer-cta"
       >
@@ -412,7 +412,7 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
   const footCtaBlue = (
     <div className="lp-drawer-foot">
       <Link
-        to="/register?plan=annual&from=mobile-drawer-sub"
+        to="/assinar?plan=monthly&from=mobile-drawer-sub"
         onClick={onClose}
         className="cta-primary lp-drawer-cta lp-drawer-cta--blue"
       >

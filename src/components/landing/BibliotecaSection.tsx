@@ -48,7 +48,7 @@ const PROGRAM_ANEIS: LibraryCard = {
   title: '5 Anéis da Disciplina',
   subtitle: 'Construa hábitos que duram',
   kind: 'programa',
-  to: '/register?plan=annual&from=library_aneis',
+  to: '/assinar?plan=monthly&from=library_aneis',
   from: 'library_aneis',
 };
 
@@ -60,7 +60,7 @@ const PROGRAM_RIQUEZA: LibraryCard = {
   title: 'Quem Pensa Enriquece',
   subtitle: 'Reprograme sua mente financeira',
   kind: 'programa',
-  to: '/register?plan=annual&from=library_riqueza',
+  to: '/assinar?plan=monthly&from=library_riqueza',
   from: 'library_riqueza',
 };
 
@@ -72,7 +72,7 @@ const PROGRAM_ESTOICO: LibraryCard = {
   title: 'Diário Estoico',
   subtitle: '366 lições para a vida boa',
   kind: 'programa',
-  to: '/register?plan=annual&from=library_estoico',
+  to: '/assinar?plan=monthly&from=library_estoico',
   from: 'library_estoico',
 };
 
@@ -84,7 +84,7 @@ const PROGRAM_ABUNDANCIA: LibraryCard = {
   title: 'Código da Abundância',
   subtitle: '7 sessões para destravar a prosperidade',
   kind: 'programa',
-  to: '/register?plan=annual&from=library_abundancia',
+  to: '/assinar?plan=monthly&from=library_abundancia',
   from: 'library_abundancia',
 };
 
@@ -96,7 +96,7 @@ const PROGRAM_CALEIDOSCOPIO: LibraryCard = {
   title: 'Caleidoscópio & Mind Movie',
   subtitle: 'Visualize e crie novas realidades internas',
   kind: 'programa',
-  to: '/register?plan=annual&from=library_caleidoscopio',
+  to: '/assinar?plan=monthly&from=library_caleidoscopio',
   from: 'library_caleidoscopio',
 };
 
@@ -133,7 +133,7 @@ const MED_INTRODUCAO: LibraryCard = {
   title: 'Introdução à Meditação',
   subtitle: '8 min · Seus primeiros passos na prática',
   kind: 'meditacao',
-  to: '/register?plan=annual&from=library_introducao',
+  to: '/assinar?plan=monthly&from=library_introducao',
   from: 'library_introducao',
 };
 
@@ -145,7 +145,7 @@ const MED_ACOLHENDO: LibraryCard = {
   title: 'Acolhendo sua respiração',
   subtitle: '7 min · Presença e calma pela respiração',
   kind: 'meditacao',
-  to: '/register?plan=annual&from=library_acolhendo',
+  to: '/assinar?plan=monthly&from=library_acolhendo',
   from: 'library_acolhendo',
 };
 
@@ -157,7 +157,7 @@ const MED_ESTRESSE: LibraryCard = {
   title: 'Liberando o Estresse',
   subtitle: '5 min · Solte as tensões do dia',
   kind: 'meditacao',
-  to: '/register?plan=annual&from=library_estresse',
+  to: '/assinar?plan=monthly&from=library_estresse',
   from: 'library_estresse',
 };
 
@@ -169,7 +169,7 @@ const MED_SONO: LibraryCard = {
   title: 'Meditação do Sono',
   subtitle: '15 min · Relaxe e durma profundamente',
   kind: 'meditacao',
-  to: '/register?plan=annual&from=library_meditacao_sono',
+  to: '/assinar?plan=monthly&from=library_meditacao_sono',
   from: 'library_meditacao_sono',
 };
 
@@ -184,7 +184,7 @@ function fromDrJoe(m: DrJoeMeditation, tag?: string): LibraryCard {
     subtitle: `${m.duration} · Dr. Joe Dispenza`,
     kind: 'meditacao',
     tag,
-    to: `/register?plan=annual&from=library_${m.id}`,
+    to: `/assinar?plan=monthly&from=library_${m.id}`,
     from: `library_${m.id}`,
   };
 }
@@ -199,7 +199,7 @@ function fromNight(n: ProtocolNight, tag?: string): LibraryCard {
     subtitle: `${n.duration} · Protocolo do Sono`,
     kind: 'sono',
     tag,
-    to: `/register?plan=annual&from=library_${n.id}`,
+    to: `/assinar?plan=monthly&from=library_${n.id}`,
     from: `library_${n.id}`,
   };
 }
