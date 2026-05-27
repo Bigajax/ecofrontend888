@@ -9,10 +9,10 @@ describe("TrialPlanPanel", () => {
     expect(screen.getAllByText(/Em 7 dias/i).length).toBeGreaterThan(0);
   });
 
-  it("shows the annual immediate-charge timeline when annual is selected", () => {
+  it("shows the annual trial timeline (charges R$142,80, not the monthly price)", () => {
     render(<TrialPlanPanel selectedPlan="annual" onSelectPlan={vi.fn()} />);
     expect(screen.getAllByText(/R\$ 142,80/).length).toBeGreaterThan(0);
-    expect(screen.queryAllByText(/Em 7 dias/i).length).toBe(0);
+    expect(screen.getAllByText(/pelo primeiro ano/i).length).toBeGreaterThan(0);
   });
 
   it("calls onSelectPlan when a plan option is clicked", () => {

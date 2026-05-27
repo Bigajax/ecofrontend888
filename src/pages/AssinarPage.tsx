@@ -51,11 +51,11 @@ export default function AssinarPage() {
     setErro(null);
     setProcessing(true);
     try {
-      const endpoint = plan === "monthly" ? "/api/subscription/create-with-card" : "/api/payments/annual/card";
-      const res = await fetch(apiUrl(endpoint), {
+      // Ambos os planos são assinatura recorrente com 7 dias de trial (R$0 hoje).
+      const res = await fetch(apiUrl("/api/subscription/create-with-card"), {
         method: "POST",
         headers: await authHeaders(),
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, plan }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -89,16 +89,16 @@ export default function AssinarPage() {
         {step === "card" && (
           <div className="flex flex-col gap-4">
             <h2 className="text-center font-display text-[22px] font-bold" style={{ color: "#0D3461" }}>
-              {plan === "monthly" ? "Comece seu trial de 7 dias" : "Finalize sua assinatura anual"}
+              Comece seu trial de 7 dias
             </h2>
             <p className="eco-subtitle text-center text-[14px]" style={{ color: "#5A8AAD" }}>
               {plan === "monthly"
                 ? "R$ 0 hoje. Cobramos R$ 15,90/mês só após 7 dias — cancele quando quiser."
-                : "R$ 142,80 hoje, 1 ano de acesso completo."}
+                : "R$ 0 hoje. Cobramos R$ 142,80/ano só após 7 dias — cancele quando quiser."}
             </p>
             <MpCardForm
               amount={plan === "monthly" ? 15.9 : 142.8}
-              maxInstallments={plan === "monthly" ? 1 : 12}
+              maxInstallments={1}
               onToken={handleToken}
               onError={setErro}
             />

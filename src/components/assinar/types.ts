@@ -27,8 +27,9 @@ export const PLAN_COPY: Record<PlanId, {
     priceNote: "(R$ 11,90/mês)",
     subPriceLine: "R$ 11,90/mês · economize R$ 48",
     timeline: [
-      { label: "Hoje", description: "Será cobrado R$ 142,80 (R$ 11,90/mês) por 1 ano de acesso completo." },
-      { label: "Imediato", description: "Acesso completo liberado na hora, por 12 meses. Sem renovação surpresa." },
+      { label: "Hoje", description: "Desbloqueie a biblioteca completa da Ecotopia — Eco IA, meditações e sons para dormir." },
+      { label: "Em 5 dias", description: "Enviaremos um e-mail lembrando que seu teste gratuito está terminando em breve." },
+      { label: "Em 7 dias", description: "Será cobrado R$ 142,80 pelo primeiro ano — cancele antes para não pagar nada." },
     ],
   },
 };
