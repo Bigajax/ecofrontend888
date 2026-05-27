@@ -28,7 +28,7 @@ describe("AssinarPage", () => {
   it("starts on the plan step (monthly) with the $0-today timeline and trial CTA", () => {
     renderAt("/assinar");
     expect(screen.getAllByText(/R\$ 0/).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /começar 7 dias grátis/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /comece seu teste gratuito/i })).toBeInTheDocument();
   });
 
   it("reads ?plan=annual and shows the annual timeline + annual CTA", () => {
@@ -39,7 +39,7 @@ describe("AssinarPage", () => {
 
   it("advances to the signup step when the trial CTA is clicked (logged out)", () => {
     renderAt("/assinar");
-    fireEvent.click(screen.getByRole("button", { name: /começar 7 dias grátis/i }));
+    fireEvent.click(screen.getByRole("button", { name: /comece seu teste gratuito/i }));
     expect(screen.getByRole("button", { name: /criar conta/i })).toBeInTheDocument();
   });
 });

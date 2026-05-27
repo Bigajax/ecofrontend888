@@ -28,10 +28,10 @@ export function PlanStep({ selectedPlan, onSelectPlan, onContinue }: PlanStepPro
       <button
         type="button"
         onClick={onContinue}
-        className="w-full rounded-full py-4 text-[17px] font-bold text-white transition-all hover:-translate-y-[1px]"
-        style={{ background: "linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)", boxShadow: "0 6px 20px rgba(13,52,97,0.28)" }}
+        className="w-full rounded-full bg-[#1554F0] py-4 text-[17px] font-bold text-white transition-all hover:-translate-y-[1px] hover:bg-[#1148D6]"
+        style={{ boxShadow: "0 6px 20px rgba(21,84,240,0.30)" }}
       >
-        {isMonthly ? "Começar 7 dias grátis" : "Assinar anual"}
+        {isMonthly ? "Comece seu teste gratuito" : "Assinar anual"}
       </button>
 
       <p className="text-center text-[12px]" style={{ color: "#5A8AAD" }}>
