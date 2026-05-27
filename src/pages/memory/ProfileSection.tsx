@@ -60,7 +60,7 @@ const Card: FC<PropsWithChildren<{ title: string; subtitle?: string; id?: string
       </h3>
       {subtitle && (
         <p
-          className="text-[13px] mt-0.5"
+          className="eco-subtitle text-[13px] mt-0.5"
           style={{ color: 'var(--eco-muted, #9C938A)' }}
         >
           {subtitle}

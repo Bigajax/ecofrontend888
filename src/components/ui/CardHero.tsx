@@ -46,8 +46,8 @@ export function CardHero({ image, title, subtitle, duration, tag, onClick, locke
             {tag}
           </span>
         )}
-        <p className="text-white font-serif text-lg leading-tight">{title}</p>
-        {subtitle && <p className="text-white/70 text-sm mt-1">{subtitle}</p>}
+        <p className="text-white font-display text-lg leading-tight">{title}</p>
+        {subtitle && <p className="eco-subtitle text-white/70 text-sm mt-1">{subtitle}</p>}
       </div>
     </button>
   );

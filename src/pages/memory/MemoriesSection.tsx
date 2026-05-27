@@ -118,7 +118,7 @@ const MemoriesSection: React.FC = () => {
             >
               Memórias
             </h1>
-            <p className="mt-3 text-[13px] md:text-[14px] leading-[1.7] font-medium max-w-2xl" style={{ color: 'var(--eco-muted,#9C938A)' }}>
+            <p className="eco-subtitle mt-3 text-[13px] md:text-[14px] leading-[1.7] max-w-2xl" style={{ color: 'var(--eco-muted,#9C938A)' }}>
               Padrões, insights e reflexões organizados pela Eco.
             </p>
           </header>

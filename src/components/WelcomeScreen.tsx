@@ -64,7 +64,7 @@ export default function WelcomeScreen({ preservedData, onContinue }: WelcomeScre
             <h1 className="font-display text-3xl font-normal text-[var(--eco-text)]">
               Bem-vindo, {userName}!
             </h1>
-            <p className="text-base text-[var(--eco-muted)]">
+            <p className="eco-subtitle text-base text-[var(--eco-muted)]">
               {hasPreservedData
                 ? 'Sua jornada continua exatamente de onde parou.'
                 : 'Sua jornada no ECOTOPIA começa agora.'}

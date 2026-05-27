@@ -60,11 +60,14 @@ export default {
         'fluid-xl': [fluidType.xl, { lineHeight: '1.35' }],
         'fluid-2xl': [fluidType['2xl'], { lineHeight: '1.25' }],
       },
-      /* Tipografia — Geist (UI) + Lora (Content/Display) */
+      /* Tipografia — Título em Geist (sans) · Subtítulo em Lora (serif) */
       fontFamily: {
         sans: ['Geist', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'system-ui', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
         serif: ['Lora', 'Georgia', 'serif'],
-        display: ['Lora', 'Georgia', 'serif'],
+        // display = fonte de TÍTULO → Geist (antes era Lora)
+        display: ['Geist', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'system-ui', 'sans-serif'],
+        // subtitle = linha descritiva sob o título → Lora
+        subtitle: ['Lora', 'Georgia', 'serif'],
       },
 
       fontWeight: {

@@ -557,7 +557,7 @@ export default function HomePage() {
                 {displayName}
               </h1>
               <div className="mt-4 h-[1px] w-12 relative" style={{ background: 'linear-gradient(90deg, #0A6BBF, transparent)' }} />
-              <p className="mt-4 text-[17px] font-semibold relative leading-snug" style={{ color: '#1A3A5C' }}>
+              <p className="eco-subtitle mt-4 text-[19px] relative leading-snug" style={{ color: '#1A3A5C' }}>
                 O que está pesando no seu coração hoje?
               </p>
               <p className="mt-2 text-[14px] relative" style={{ color: '#5A8AAD' }}>

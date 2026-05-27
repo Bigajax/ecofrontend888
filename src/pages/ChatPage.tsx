@@ -964,7 +964,7 @@ function ChatPage() {
                         <h1 className="font-display text-[28px] sm:text-[34px] font-bold leading-tight" style={{ color: '#0D3461' }}>
                           {saudacao}, {displayName || rawUserName}
                         </h1>
-                        <p className="text-[15px] max-w-xs mx-auto leading-relaxed" style={{ color: 'var(--text-muted)' }} data-testid="chat-hero-subtitle">
+                        <p className="eco-subtitle text-[15px] max-w-xs mx-auto leading-relaxed" style={{ color: 'var(--text-muted)' }} data-testid="chat-hero-subtitle">
                           {heroSubtitle || OPENING_VARIATIONS[0] || ''}
                         </p>
                       </motion.div>

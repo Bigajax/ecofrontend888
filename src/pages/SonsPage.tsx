@@ -130,7 +130,7 @@ export default function SonsPage() {
           >
             Sons
           </h1>
-          <p className="text-[15px]" style={{ color: 'rgba(56,50,42,0.55)' }}>
+          <p className="eco-subtitle text-[15px]" style={{ color: 'rgba(56,50,42,0.55)' }}>
             Música ambiente e sons para qualquer momento.
           </p>
         </motion.div>

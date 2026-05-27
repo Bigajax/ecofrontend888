@@ -14,7 +14,7 @@ export function SectionHeader({ title, subtitle, action }: SectionHeaderProps) {
           {title}
         </h2>
         {subtitle && (
-          <p className="text-[13px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>
+          <p className="eco-subtitle text-[13px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>
         )}
       </div>
       {action && (

@@ -309,7 +309,7 @@ export default function ProgramasPage() {
           <h1 className="font-display text-[38px] sm:text-[48px] font-bold leading-tight" style={{ color: '#0D3461' }}>
             Explorar
           </h1>
-          <p className="mt-2 text-[16px]" style={{ color: 'var(--text-muted)' }}>
+          <p className="eco-subtitle mt-2 text-[16px]" style={{ color: 'var(--text-muted)' }}>
             Escolha sua jornada de hoje.
           </p>
         </motion.div>

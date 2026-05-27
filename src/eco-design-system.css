@@ -35,9 +35,10 @@
   --eco-line: rgba(110, 200, 255, 0.25);
   --eco-accent: #1E2A44;
 
-  /* Tipografia */
-  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: 'Playfair Display', Georgia, serif;
+  /* Tipografia — Título em Geist (sans) · Subtítulo/Display em Lora (serif) */
+  --font-primary: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-subtitle: 'Lora', Georgia, 'Times New Roman', serif;
 
   /* Sombras mínimas */
   --shadow-minimal: 0 4px 24px rgba(30, 42, 68, 0.07);
@@ -86,6 +87,14 @@ p, span, div {
 .text-display {
   font-family: var(--font-display);
   font-weight: 400;
+}
+
+/* Subtítulo — a linha descritiva logo abaixo do título (Lora, serifada) */
+.eco-subtitle {
+  font-family: var(--font-subtitle);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0;
 }
 
 .text-muted {

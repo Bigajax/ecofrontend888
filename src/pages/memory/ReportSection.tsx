@@ -27,7 +27,7 @@ const SectionHeader: React.FC<{ title: string; subtitle?: string }> = ({ title, 
     </div>
     {subtitle && (
       <p
-        className="text-[13px] mt-1 transition-colors duration-300"
+        className="eco-subtitle text-[13px] mt-1 transition-colors duration-300"
         style={{ color: 'var(--eco-muted, #9C938A)' }}
       >
         {subtitle}

@@ -200,10 +200,12 @@ body::before {
   --motion-calm: 300ms;
   --motion-standard: cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Fonts (theme-independent) */
+  /* Fonts (theme-independent) — Título em Geist · Subtítulo em Lora */
   --font-sans:          'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-serif:         'Lora', Georgia, 'Times New Roman', serif;
   --font-serif-display: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-display:       var(--font-sans);   /* fonte de título → Geist */
+  --font-subtitle:      var(--font-serif);  /* subtítulo descritivo → Lora */
 
   /* Border radius */
   --radius-pill: 999px;
