@@ -11,7 +11,6 @@ vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ user: null, register: vi.fn(), signInWithGoogle: vi.fn() }),
 }));
 vi.mock("@mercadopago/sdk-react", () => ({ initMercadoPago: vi.fn(), CardPayment: () => <div>brick</div> }));
-vi.mock("@/components/landing/EcotopiaTopbar", () => ({ default: () => <nav>topbar</nav> }));
 vi.mock("@/lib/supabaseClient", () => ({ supabase: { auth: { getSession: vi.fn() } } }));
 vi.mock("@/config/apiBase", () => ({ apiUrl: (p: string) => p }));
 
