@@ -24,17 +24,17 @@ export function ValidationStep({ onContinue, onBack }: Props) {
         {VALIDATION_CARDS.map((card) => (
           <li
             key={card.id}
-            className="flex items-center justify-between gap-3 rounded-3xl px-4 py-4"
-            style={{ background: "rgba(13,52,97,0.55)" }}
+            className="flex items-center justify-between gap-3 rounded-2xl px-5 py-5"
+            style={{ background: "#0A2754" }}
           >
-            <p className="flex-1 text-[15px] font-medium leading-snug" style={{ color: "#FFFFFF" }}>
+            <p className="flex-1 text-[15px] font-medium leading-[1.35]" style={{ color: "#FFFFFF" }}>
               {card.text}
             </p>
             <img
               src={card.icon}
               alt=""
               aria-hidden
-              className="h-28 w-28 flex-none object-contain"
+              className="h-20 w-20 flex-none object-contain"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
               }}
