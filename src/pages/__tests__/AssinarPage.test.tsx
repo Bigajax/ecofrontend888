@@ -100,4 +100,23 @@ describe("AssinarPage onboarding flow", () => {
     renderAt("/assinar?plan=monthly");
     expect(screen.getByText(/© 2026 Ecotopia Inc\./i)).toBeInTheDocument();
   });
+
+  test("Continuar avança para validation sem esperar o POST resolver", async () => {
+    const { saveObjetivos } = await import("@/api/onboardingObjetivos");
+    let resolveSave: (value: { id: string } | null) => void = () => {};
+    const deferred = new Promise<{ id: string } | null>((resolve) => { resolveSave = resolve; });
+    (saveObjetivos as ReturnType<typeof vi.fn>).mockReturnValueOnce(deferred);
+
+    renderAt("/assinar?plan=monthly");
+    fireEvent.click(screen.getByRole("button", { name: /Durma bem/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Continuar/i }));
+
+    // Step deve ter avançado para validation imediatamente, sem aguardar o POST
+    await waitFor(() => {
+      expect(screen.getByText(/Você está no lugar certo/i)).toBeInTheDocument();
+    });
+
+    // Só agora resolvemos o POST (background)
+    resolveSave({ id: "uuid-late" });
+  });
 });

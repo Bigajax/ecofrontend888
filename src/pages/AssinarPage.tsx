@@ -83,9 +83,9 @@ export default function AssinarPage() {
 
   const submitObjetivos = async (answers: GoalId[], skipped: boolean) => {
     setStoredObjetivos({ answers, skipped });
+    setStep("validation");
     const result = await saveObjetivos({ answers, skipped });
     if (result?.id) setStoredResponseId(result.id);
-    setStep("validation");
   };
 
   const handleGoalsContinue = (answers: GoalId[]) => { void submitObjetivos(answers, false); };
