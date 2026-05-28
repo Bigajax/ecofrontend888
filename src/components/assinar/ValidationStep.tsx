@@ -27,7 +27,7 @@ export function ValidationStep({ onContinue }: Props) {
             style={{ background: "rgba(13,52,97,0.55)" }}
           >
             <img src={card.icon} alt="" aria-hidden className="h-12 w-12 flex-none" />
-            <p className="text-[14px] leading-snug">{card.text}</p>
+            <p className="text-[14px] leading-snug" style={{ color: "#FFFFFF" }}>{card.text}</p>
           </li>
         ))}
       </ul>
@@ -37,7 +37,7 @@ export function ValidationStep({ onContinue }: Props) {
           type="button"
           onClick={onContinue}
           className="w-full rounded-full py-4 text-[16px] font-bold"
-          style={{ background: "#0D3461", color: "#FFFFFF" }}
+          style={{ background: "#000000", color: "#FFFFFF" }}
         >
           Continuar
         </button>
