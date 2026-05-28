@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiUrl } from "@/config/apiBase";
 import { supabase } from "@/lib/supabaseClient";
@@ -73,9 +73,11 @@ export default function AssinarPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Só a logo (não clicável) — sem nav/CTA, para não tirar o usuário do checkout */}
+      {/* Só a logo (sem nav/CTA) — clicável, leva à home da landing */}
       <header className="px-5 py-6">
-        <img src="/images/ecotopia-logo-trim.png" alt="Ecotopia" className="h-7 w-auto" />
+        <Link to="/" aria-label="Ecotopia — início" className="inline-block">
+          <img src="/images/ecotopia-logo-trim.png" alt="Ecotopia" className="h-7 w-auto" />
+        </Link>
       </header>
       <div className="mx-auto w-full max-w-[420px] px-5 pb-10">
         {step === "plan" && (
