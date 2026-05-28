@@ -155,12 +155,10 @@ export default function EcotopiaSonoPage() {
       <section className="lp-sono-hero lp-sono-hero--v2">
         <div className="lp-sono-hero-inner">
           <div className="lp-sono-hero-text">
-            <h1 className="scroll-reveal">
-              Seja gentil com<br />sua mente.
-            </h1>
+            <h1 className="scroll-reveal">Seja gentil com sua mente.</h1>
 
             <p className="lp-sono-hero-lead scroll-reveal stagger-1">
-              Com a Ecotopia, você se estressa menos, se concentra mais e se sente mais feliz.
+              Com a Ecotopia, você se estressa menos,<br />se concentra mais e se sente mais feliz.
             </p>
 
             <div
@@ -212,6 +210,13 @@ export default function EcotopiaSonoPage() {
             >
               Experimente grátis
             </Link>
+
+            <img
+              src="/images/sono-hero-meditacao-mockup.png"
+              alt="ECO no celular — meditação acolhendo a respiração"
+              className="lp-sono-hero-mockup scroll-reveal stagger-4"
+              loading="lazy"
+            />
           </div>
         </div>
       </section>

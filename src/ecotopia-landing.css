@@ -6354,15 +6354,15 @@ body.eco-no-scroll {
   text-shadow: 0 4px 28px rgba(0, 0, 0, 0.45);
 }
 
-/* v2 — Headspace ECO (fundo creme · "Seja gentil com / sua mente." em 2 linhas) */
+/* v2 — Headspace ECO (Work Sans Bold + tracking -3% · UMA LINHA) */
 .ecotopia-lp .lp-sono-hero--v2 h1 {
-  white-space: normal;
+  white-space: nowrap;
   font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 700;
-  color: #0D1B2A; /* var(--lp-text) — mesmo preto-navy do hero principal */
-  font-size: clamp(46px, 5.4vw, 68px);
+  font-weight: 700; /* Bold */
+  color: #0D1B2A;
+  font-size: clamp(22px, 5.6vw, 64px); /* escala junto com o viewport pra caber em 1 linha */
   line-height: 1.02;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em; /* -3%, fechado/moderno tipo Headspace */
   text-shadow: none;
   margin: 0 0 22px;
 }
@@ -6494,7 +6494,7 @@ body.eco-no-scroll {
    ═══════════════════════════════════════════════════════════════════════ */
 
 .ecotopia-lp .lp-sono-hero--v2 {
-  padding-top: 28px;
+  padding-top: 64px;
   padding-bottom: 80px;
   background: #FAF6F3; /* bege/off-white claro estilo Headspace SVG */
   background-image: none;
@@ -6541,7 +6541,7 @@ body.eco-no-scroll {
   font-weight: 400;
   line-height: 1.55;
   color: #4A5B72;
-  max-width: 460px; /* força quebra em 2 linhas */
+  max-width: 580px; /* força exatamente 2 linhas */
   margin: 0 0 36px;
 }
 
@@ -6645,9 +6645,9 @@ body.eco-no-scroll {
 }
 
 .ecotopia-lp .lp-sono-hero-plan.is-active .lp-sono-hero-plan-check {
-  background: #1EA455;
-  border-color: #1EA455;
-  color: #FFFFFF;
+  background: #FFFFFF;
+  border-color: #FFFFFF;
+  color: #1EA455; /* check verde dentro do quadrado branco */
 }
 
 .ecotopia-lp .lp-sono-hero-plan:focus-visible {
@@ -6680,6 +6680,30 @@ body.eco-no-scroll {
   box-shadow: 0 12px 28px rgba(21, 84, 240, 0.42);
 }
 
+/* ── Mockup do celular abaixo do CTA (apenas mobile/tablet estreito) ── */
+.ecotopia-lp .lp-sono-hero-mockup {
+  display: none; /* desktop esconde */
+}
+
+@media (max-width: 1023px) {
+  .ecotopia-lp .lp-sono-hero-mockup {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    margin: 32px auto 0;
+    object-fit: contain;
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .ecotopia-lp .lp-sono-hero-mockup {
+    max-width: 280px;
+    margin-top: 28px;
+  }
+}
+
 @media (max-width: 1023px) {
   .ecotopia-lp .lp-sono-hero--v2 {
     padding-top: 18px;
@@ -6693,14 +6717,9 @@ body.eco-no-scroll {
 }
 
 @media (max-width: 540px) {
-  .ecotopia-lp .lp-sono-hero--v2 h1 {
-    white-space: normal;
-    font-size: clamp(34px, 8vw, 46px);
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-  }
   .ecotopia-lp .lp-sono-hero--v2 .lp-sono-hero-lead {
-    font-size: 16px;
+    font-size: 15px;
+    line-height: 1.5;
     max-width: 100%;
   }
   .ecotopia-lp .lp-sono-hero-plan-headline {
@@ -7619,7 +7638,7 @@ body.eco-no-scroll {
 /* ─── Hero V2 · overrides finais (precisam vir DEPOIS do base mobile) ─── */
 @media (max-width: 1023px) {
   .ecotopia-lp .lp-sono-hero--v2 {
-    padding: 18px 28px 64px;
+    padding: 52px 28px 64px;
     min-height: auto;
     align-items: flex-start;
   }
@@ -7627,12 +7646,7 @@ body.eco-no-scroll {
 
 @media (max-width: 600px) {
   .ecotopia-lp .lp-sono-hero--v2 {
-    padding-top: 14px;
-  }
-  .ecotopia-lp .lp-sono-hero--v2 h1 {
-    font-size: clamp(34px, 8vw, 46px);
-    line-height: 1.05;
-    letter-spacing: -0.03em;
+    padding-top: 44px;
   }
 }
 
