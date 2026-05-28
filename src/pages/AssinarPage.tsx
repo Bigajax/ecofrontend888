@@ -124,7 +124,7 @@ export default function AssinarPage() {
         </Link>
       </header>
 
-      <main className="mx-auto w-full max-w-[420px] flex-1 px-5 pb-10">
+      <main className="mx-auto w-full flex-1 pb-10 sm:max-w-[420px]">
         {step === "goals" && (
           <GoalsStep onContinue={handleGoalsContinue} onSkip={handleGoalsSkip} />
         )}
@@ -134,15 +134,19 @@ export default function AssinarPage() {
         )}
 
         {step === "plan" && (
-          <PlanStep selectedPlan={plan} onSelectPlan={selectPlan} onContinue={continueFromPlan} />
+          <div className="px-5">
+            <PlanStep selectedPlan={plan} onSelectPlan={selectPlan} onContinue={continueFromPlan} />
+          </div>
         )}
 
         {step === "signup" && (
-          <SignupStep onCreated={() => setStep("card")} googleReturnTo={googleReturnTo} />
+          <div className="px-5">
+            <SignupStep onCreated={() => setStep("card")} googleReturnTo={googleReturnTo} />
+          </div>
         )}
 
         {step === "card" && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 px-5">
             <h2 className="text-center font-display text-[22px] font-bold" style={{ color: "#0D3461" }}>
               Comece seu trial de 7 dias
             </h2>

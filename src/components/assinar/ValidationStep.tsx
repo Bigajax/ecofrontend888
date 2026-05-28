@@ -9,7 +9,7 @@ interface Props {
 export function ValidationStep({ onContinue }: Props) {
   return (
     <div
-      className="flex min-h-[calc(100vh-120px)] flex-col gap-6 rounded-3xl px-5 py-8 sm:px-6"
+      className="flex min-h-[calc(100vh-120px)] flex-col gap-6 px-5 py-8 sm:rounded-3xl sm:px-6"
       style={{ background: "#1554F0", color: "#FFFFFF" }}
     >
       <h1 className="text-center font-display text-[26px] font-bold leading-[1.15]" style={{ color: "#FFFFFF" }}>
