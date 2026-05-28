@@ -17,10 +17,24 @@ describe("ValidationStep", () => {
     expect(screen.getByText(/Esteja mais presente/i)).toBeInTheDocument();
   });
 
-  test("Continuar chama onContinue", () => {
+  test("CTA primário chama onContinue", () => {
     const onContinue = vi.fn();
     render(<ValidationStep onContinue={onContinue} />);
-    fireEvent.click(screen.getByRole("button", { name: /Continuar/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Experimente por \$0/i }));
     expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  test("Voltar só aparece se onBack for passado", () => {
+    const { rerender } = render(<ValidationStep onContinue={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: /^Voltar$/i })).toBeNull();
+    rerender(<ValidationStep onContinue={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /^Voltar$/i })).toBeInTheDocument();
+  });
+
+  test("Voltar chama onBack", () => {
+    const onBack = vi.fn();
+    render(<ValidationStep onContinue={vi.fn()} onBack={onBack} />);
+    fireEvent.click(screen.getByRole("button", { name: /^Voltar$/i }));
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 });

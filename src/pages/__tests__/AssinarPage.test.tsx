@@ -88,11 +88,19 @@ describe("AssinarPage onboarding flow", () => {
     });
   });
 
-  test("validation.Continuar → plan", async () => {
+  test("validation.Experimente → plan", async () => {
     renderAt("/assinar?plan=monthly&step=validation");
-    fireEvent.click(screen.getByRole("button", { name: /Continuar/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Experimente por \$0/i }));
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /Comece seu teste gratuito/i })).toBeInTheDocument();
+    });
+  });
+
+  test("validation.Voltar → goals", async () => {
+    renderAt("/assinar?plan=monthly&step=validation");
+    fireEvent.click(screen.getByRole("button", { name: /^Voltar$/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Quais são os objetivos/i)).toBeInTheDocument();
     });
   });
 

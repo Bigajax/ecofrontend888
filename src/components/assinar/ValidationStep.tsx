@@ -4,9 +4,10 @@ import { VALIDATION_CARDS } from "./goalsData";
 
 interface Props {
   onContinue: () => void;
+  onBack?: () => void;
 }
 
-export function ValidationStep({ onContinue }: Props) {
+export function ValidationStep({ onContinue, onBack }: Props) {
   return (
     <div
       className="flex min-h-[calc(100vh-120px)] flex-col gap-6 px-5 py-8 sm:rounded-3xl sm:px-6"
@@ -49,8 +50,18 @@ export function ValidationStep({ onContinue }: Props) {
           className="w-full rounded-full py-[18px] text-[16px] font-bold transition-transform active:scale-[0.98]"
           style={{ background: "#000000", color: "#FFFFFF" }}
         >
-          Continuar
+          Experimente por $0
         </button>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="w-full rounded-full py-4 text-[15px] font-semibold transition-transform active:scale-[0.98]"
+            style={{ background: "#FFFFFF", color: "#0D3461" }}
+          >
+            Voltar
+          </button>
+        )}
       </div>
     </div>
   );

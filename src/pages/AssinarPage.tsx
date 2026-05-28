@@ -130,7 +130,7 @@ export default function AssinarPage() {
         )}
 
         {step === "validation" && (
-          <ValidationStep onContinue={() => setStep("plan")} />
+          <ValidationStep onContinue={() => setStep("plan")} onBack={() => setStep("goals")} />
         )}
 
         {step === "plan" && (
