@@ -80,11 +80,11 @@ describe("AssinarPage onboarding flow", () => {
     });
   });
 
-  test("goals.Pular → validation", async () => {
+  test("goals.Pular → plan (pula a tela de validação)", async () => {
     renderAt("/assinar?plan=monthly");
     fireEvent.click(screen.getByRole("button", { name: /^Pular$/i }));
     await waitFor(() => {
-      expect(screen.getByText(/Você está no lugar certo/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Comece seu teste gratuito/i })).toBeInTheDocument();
     });
   });
 

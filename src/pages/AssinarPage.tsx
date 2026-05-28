@@ -81,15 +81,15 @@ export default function AssinarPage() {
     setParams(p, { replace: true });
   };
 
-  const submitObjetivos = async (answers: GoalId[], skipped: boolean) => {
+  const submitObjetivos = async (answers: GoalId[], skipped: boolean, nextStep: Step) => {
     setStoredObjetivos({ answers, skipped });
-    setStep("validation");
+    setStep(nextStep);
     const result = await saveObjetivos({ answers, skipped });
     if (result?.id) setStoredResponseId(result.id);
   };
 
-  const handleGoalsContinue = (answers: GoalId[]) => { void submitObjetivos(answers, false); };
-  const handleGoalsSkip = () => { void submitObjetivos([], true); };
+  const handleGoalsContinue = (answers: GoalId[]) => { void submitObjetivos(answers, false, "validation"); };
+  const handleGoalsSkip = () => { void submitObjetivos([], true, "plan"); };
 
   const continueFromPlan = () => setStep(user ? "card" : "signup");
 
@@ -124,7 +124,7 @@ export default function AssinarPage() {
         </Link>
       </header>
 
-      <main className="mx-auto w-full flex-1 pb-10 sm:max-w-[420px]">
+      <main className="mx-auto w-full flex-1 sm:max-w-[420px]">
         {step === "goals" && (
           <GoalsStep onContinue={handleGoalsContinue} onSkip={handleGoalsSkip} />
         )}

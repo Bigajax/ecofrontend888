@@ -4,7 +4,7 @@ import { LEGAL_LINKS } from "./goalsData";
 
 export function LegalFooter() {
   return (
-    <footer className="mt-12 w-full" style={{ background: "#1A2330", color: "#FFFFFF" }}>
+    <footer className="w-full" style={{ background: "#1A2330", color: "#FFFFFF" }}>
       {/* Faixa colorida estilo Headspace */}
       <div
         aria-hidden
