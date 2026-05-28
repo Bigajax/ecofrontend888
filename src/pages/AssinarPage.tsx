@@ -6,9 +6,26 @@ import { supabase } from "@/lib/supabaseClient";
 import { PlanStep } from "@/components/assinar/PlanStep";
 import { SignupStep } from "@/components/assinar/SignupStep";
 import { MpCardForm } from "@/components/assinar/MpCardForm";
+import { GoalsStep } from "@/components/assinar/GoalsStep";
+import { ValidationStep } from "@/components/assinar/ValidationStep";
+import { LegalFooter } from "@/components/assinar/LegalFooter";
 import type { PlanId } from "@/components/assinar/types";
+import type { GoalId } from "@/components/assinar/goalsData";
+import { saveObjetivos, linkUserToObjetivos } from "@/api/onboardingObjetivos";
+import {
+  setStoredObjetivos,
+  setStoredResponseId,
+  getStoredResponseId,
+  clearStoredResponseId,
+} from "@/utils/onboardingObjetivosStorage";
 
-type Step = "plan" | "signup" | "card";
+type Step = "goals" | "validation" | "plan" | "signup" | "card";
+
+const STEP_VALUES: readonly Step[] = ["goals", "validation", "plan", "signup", "card"] as const;
+
+function parseStep(value: string | null): Step {
+  return (STEP_VALUES as readonly string[]).includes(value ?? "") ? (value as Step) : "goals";
+}
 
 async function authHeaders(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
@@ -27,16 +44,35 @@ export default function AssinarPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [plan, setPlan] = useState<PlanId>(parsePlan(params.get("plan")));
-  const [step, setStep] = useState<Step>(params.get("step") === "card" ? "card" : "plan");
+  const [step, setStep] = useState<Step>(parseStep(params.get("step")));
   const [erro, setErro] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  // Returning from Google OAuth lands here with ?step=card and an active session.
+  // Sincroniza step na URL (?step=…) sempre que muda
   useEffect(() => {
-    const stored = sessionStorage.getItem("eco.assinar.returnTo");
-    if (stored) sessionStorage.removeItem("eco.assinar.returnTo");
-    if (params.get("step") === "card") setStep("card");
-  }, [params]);
+    const current = params.get("step");
+    if (current !== step) {
+      const p = new URLSearchParams(params);
+      p.set("step", step);
+      setParams(p, { replace: true });
+    }
+  }, [step, params, setParams]);
+
+  // Vincula response a user assim que entramos no step "card" e há sessão + responseId
+  useEffect(() => {
+    if (step !== "card") return;
+    const responseId = getStoredResponseId();
+    if (!responseId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) return;
+      const ok = await linkUserToObjetivos(responseId, token);
+      if (!cancelled && ok) clearStoredResponseId();
+    })();
+    return () => { cancelled = true; };
+  }, [step, user]);
 
   const selectPlan = (next: PlanId) => {
     setPlan(next);
@@ -45,13 +81,22 @@ export default function AssinarPage() {
     setParams(p, { replace: true });
   };
 
+  const submitObjetivos = async (answers: GoalId[], skipped: boolean) => {
+    setStoredObjetivos({ answers, skipped });
+    const result = await saveObjetivos({ answers, skipped });
+    if (result?.id) setStoredResponseId(result.id);
+    setStep("validation");
+  };
+
+  const handleGoalsContinue = (answers: GoalId[]) => { void submitObjetivos(answers, false); };
+  const handleGoalsSkip = () => { void submitObjetivos([], true); };
+
   const continueFromPlan = () => setStep(user ? "card" : "signup");
 
   const handleToken = async (formData: Record<string, unknown>) => {
     setErro(null);
     setProcessing(true);
     try {
-      // Ambos os planos são assinatura recorrente com 7 dias de trial (R$0 hoje).
       const res = await fetch(apiUrl("/api/subscription/create-with-card"), {
         method: "POST",
         headers: await authHeaders(),
@@ -72,14 +117,22 @@ export default function AssinarPage() {
   const googleReturnTo = `/assinar?plan=${plan}&step=card`;
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Só a logo (sem nav/CTA) — clicável, leva à home da landing */}
+    <div className="flex min-h-screen flex-col bg-white">
       <header className="px-5 py-6">
         <Link to="/" aria-label="Ecotopia — início" className="inline-block">
           <img src="/images/ecotopia-logo-trim.png" alt="Ecotopia" className="h-7 w-auto" />
         </Link>
       </header>
-      <div className="mx-auto w-full max-w-[420px] px-5 pb-10">
+
+      <main className="mx-auto w-full max-w-[420px] flex-1 px-5 pb-10">
+        {step === "goals" && (
+          <GoalsStep onContinue={handleGoalsContinue} onSkip={handleGoalsSkip} />
+        )}
+
+        {step === "validation" && (
+          <ValidationStep onContinue={() => setStep("plan")} />
+        )}
+
         {step === "plan" && (
           <PlanStep selectedPlan={plan} onSelectPlan={selectPlan} onContinue={continueFromPlan} />
         )}
@@ -110,7 +163,9 @@ export default function AssinarPage() {
             {erro && <p role="alert" className="text-[13px]" style={{ color: "#B43C3C" }}>{erro}</p>}
           </div>
         )}
-      </div>
+      </main>
+
+      <LegalFooter />
     </div>
   );
 }

@@ -1,6 +1,6 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, test, expect, vi, beforeEach } from "vitest";
 
 const navigate = vi.fn();
 vi.mock("react-router-dom", async (orig) => ({
@@ -11,8 +11,14 @@ vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ user: null, register: vi.fn(), signInWithGoogle: vi.fn() }),
 }));
 vi.mock("@mercadopago/sdk-react", () => ({ initMercadoPago: vi.fn(), CardPayment: () => <div>brick</div> }));
-vi.mock("@/lib/supabaseClient", () => ({ supabase: { auth: { getSession: vi.fn() } } }));
+vi.mock("@/lib/supabaseClient", () => ({
+  supabase: { auth: { getSession: async () => ({ data: { session: null } }) } },
+}));
 vi.mock("@/config/apiBase", () => ({ apiUrl: (p: string) => p }));
+vi.mock("@/api/onboardingObjetivos", () => ({
+  saveObjetivos: vi.fn().mockResolvedValue({ id: "uuid-1" }),
+  linkUserToObjetivos: vi.fn().mockResolvedValue(true),
+}));
 
 import AssinarPage from "../AssinarPage";
 
@@ -20,26 +26,78 @@ function renderAt(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <AssinarPage />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
+beforeEach(() => {
+  sessionStorage.clear();
+});
+
+// ── Existing tests (updated to use ?step=plan explicitly, intent unchanged) ──
+
 describe("AssinarPage", () => {
   it("starts on the plan step (monthly) with the $0-today timeline and trial CTA", () => {
-    renderAt("/assinar");
+    renderAt("/assinar?step=plan");
     expect(screen.getAllByText(/R\$ 0/).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /comece seu teste gratuito/i })).toBeInTheDocument();
   });
 
   it("reads ?plan=annual and shows the annual timeline + annual CTA", () => {
-    renderAt("/assinar?plan=annual");
+    renderAt("/assinar?plan=annual&step=plan");
     expect(screen.getAllByText(/R\$ 142,80/).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /comece seu teste gratuito/i })).toBeInTheDocument();
   });
 
   it("advances to the signup step when the trial CTA is clicked (logged out)", () => {
-    renderAt("/assinar");
+    renderAt("/assinar?step=plan");
     fireEvent.click(screen.getByRole("button", { name: /comece seu teste gratuito/i }));
     expect(screen.getByRole("button", { name: /criar uma conta/i })).toBeInTheDocument();
+  });
+});
+
+// ── New tests: goals/validation/footer integration ──
+
+describe("AssinarPage onboarding flow", () => {
+  test("default abre em 'goals' (sem ?step na URL)", () => {
+    renderAt("/assinar?plan=monthly");
+    expect(screen.getByText(/Quais são os objetivos/i)).toBeInTheDocument();
+  });
+
+  test("?step=card mantém shortcut do OAuth return", async () => {
+    renderAt("/assinar?plan=monthly&step=card");
+    await waitFor(() => {
+      expect(screen.getByText(/Comece seu trial de 7 dias/i)).toBeInTheDocument();
+    });
+  });
+
+  test("goals.Continuar → validation", async () => {
+    renderAt("/assinar?plan=monthly");
+    fireEvent.click(screen.getByRole("button", { name: /Durma bem/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Continuar/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Você está no lugar certo/i)).toBeInTheDocument();
+    });
+  });
+
+  test("goals.Pular → validation", async () => {
+    renderAt("/assinar?plan=monthly");
+    fireEvent.click(screen.getByRole("button", { name: /^Pular$/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Você está no lugar certo/i)).toBeInTheDocument();
+    });
+  });
+
+  test("validation.Continuar → plan", async () => {
+    renderAt("/assinar?plan=monthly&step=validation");
+    fireEvent.click(screen.getByRole("button", { name: /Continuar/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Comece seu teste gratuito/i })).toBeInTheDocument();
+    });
+  });
+
+  test("LegalFooter aparece em todas as etapas", () => {
+    renderAt("/assinar?plan=monthly");
+    expect(screen.getByText(/© 2026 Ecotopia Inc\./i)).toBeInTheDocument();
   });
 });
