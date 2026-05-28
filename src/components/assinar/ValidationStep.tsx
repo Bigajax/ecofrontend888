@@ -34,7 +34,7 @@ export function ValidationStep({ onContinue, onBack }: Props) {
               src={card.icon}
               alt=""
               aria-hidden
-              className="h-16 w-16 flex-none object-contain"
+              className="h-24 w-24 flex-none object-contain"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
               }}
