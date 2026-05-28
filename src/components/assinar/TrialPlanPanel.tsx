@@ -21,19 +21,31 @@ export function TrialPlanPanel({ selectedPlan, onSelectPlan }: TrialPlanPanelPro
         <span
           aria-hidden
           className="absolute left-[9px] top-2 bottom-2 w-[2px]"
-          style={{ background: "linear-gradient(to bottom, #1A4FB5, #B8C6FF)" }}
+          style={{ background: "linear-gradient(to bottom, #1554F0, #BCCBFF)" }}
         />
-        {copy.timeline.map((item, i) => (
-          <li key={i} className="relative">
-            <span
-              aria-hidden
-              className="absolute -left-8 top-0.5 h-5 w-5 rounded-full border-[3px] bg-white"
-              style={{ borderColor: i === 0 ? "#1A4FB5" : i === 1 ? "#5C7BFF" : "#B8C6FF" }}
-            />
-            <span className="block font-display text-[16px] font-bold leading-tight" style={{ color: "#0D3461" }}>{item.label}</span>
-            <span className="eco-subtitle mt-1 block text-[13.5px] leading-snug" style={{ color: "#5A8AAD" }}>{item.description}</span>
-          </li>
-        ))}
+        {copy.timeline.map((item, i) => {
+          const fill = i === 0 ? "#1554F0" : i === 1 ? "#6B8DFF" : "#BCCBFF";
+          return (
+            <li key={i} className="relative">
+              <span
+                aria-hidden
+                className="absolute -left-8 top-0.5 flex h-5 w-5 items-center justify-center rounded-full"
+                style={{
+                  background: i === 0 ? "rgba(21, 84, 240, 0.22)" : fill,
+                }}
+              >
+                {i === 0 && (
+                  <span
+                    className="block h-2.5 w-2.5 rounded-full"
+                    style={{ background: fill }}
+                  />
+                )}
+              </span>
+              <span className="block font-display text-[16px] font-bold leading-tight" style={{ color: "#0D3461" }}>{item.label}</span>
+              <span className="eco-subtitle mt-1 block text-[13.5px] leading-snug" style={{ color: "#5A8AAD" }}>{item.description}</span>
+            </li>
+          );
+        })}
       </ol>
 
       {/* Plan selector — 2 colunas (estilo Headspace) */}

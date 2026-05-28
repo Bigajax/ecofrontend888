@@ -12,21 +12,21 @@ import mixpanel from '@/lib/mixpanel';
 const VALUE_COLUMNS = [
   {
     icon: '/images/sono-icon-solucoes.png',
-    title: 'Soluções de sono para todos',
+    title: 'Adormeça em minutos',
     body:
-      'Encontre a rotina perfeita para a hora de dormir com horas de música relaxante, paisagens sonoras, sessões guiadas e cursos selecionados sobre saúde do sono.',
+      'Música relaxante, paisagens sonoras, respirações e sessões guiadas — escolha o que sua noite pede e desligue a mente sem esforço.',
   },
   {
     icon: '/images/sono-icon-ciencia.png',
     title: 'Sono com base científica',
     body:
-      'O Protocolo do Sono da Ecotopia é desenvolvido a partir de princípios da neurociência do sono — meditações, respiração e técnicas para um descanso reparador.',
+      'O Protocolo do Sono da Ecotopia é desenhado a partir da neurociência do sono. Sete noites para reprogramar seu descanso de forma natural.',
   },
   {
     icon: '/images/sono-icon-dia-noite.png',
     title: 'Do dia para a noite',
     body:
-      'Sinta-se bem do amanhecer ao anoitecer. Centenas de práticas para reduzir o estresse, focar, respirar e desacelerar a mente quando ela não quer parar.',
+      'Centenas de práticas para reduzir o estresse, respirar fundo e desacelerar a mente — do amanhecer até a hora de dormir.',
   },
 ];
 
@@ -145,63 +145,70 @@ export default function EcotopiaSonoPage() {
   const [activeTab, setActiveTab] = useState<string>(TABS[0].id);
   const activeTabData = TABS.find((t) => t.id === activeTab) ?? TABS[0];
 
+  const [selectedHeroPlan, setSelectedHeroPlan] = useState<'annual' | 'monthly'>('annual');
+
   return (
     <div className="ecotopia-lp lp-sono">
       <EcotopiaTopbar />
 
-      {/* ─── Hero · cosmic ─── */}
-      <section
-        className="lp-sono-hero"
-        style={{ backgroundImage: 'url("/images/sono-hero-cosmico.png")' }}
-      >
-        <span className="lp-sono-hero-veil" aria-hidden />
-
+      {/* ─── Hero · oferta primeiro (layout Headspace, fundo creme) ─── */}
+      <section className="lp-sono-hero lp-sono-hero--v2">
         <div className="lp-sono-hero-inner">
           <div className="lp-sono-hero-text">
-            <h1 className="scroll-reveal">Deixe sua mente dormir.</h1>
+            <h1 className="scroll-reveal">
+              Seja gentil com<br />sua mente.
+            </h1>
 
             <p className="lp-sono-hero-lead scroll-reveal stagger-1">
-              Adormeça com meditações para dormir, música para dormir e muito mais.
-            </p>
-
-            <p className="lp-sono-hero-body scroll-reveal stagger-2">
-              O Protocolo do Sono da Ecotopia foi desenvolvido para facilitar sua
-              rotina de dormir. Considere-o um aplicativo de sono dentro do nosso
-              app principal, oferecendo meditações guiadas, técnicas de relaxamento,
-              música para dormir, paisagens sonoras e respirações que conversam com
-              o sistema nervoso.
+              Com a Ecotopia, você se estressa menos, se concentra mais e se sente mais feliz.
             </p>
 
             <div
-              className="lp-sono-hero-player scroll-reveal stagger-3"
-              role="group"
-              aria-label="Amostra de sono"
+              className="lp-sono-hero-plans scroll-reveal stagger-2"
+              role="radiogroup"
+              aria-label="Escolha seu plano"
             >
               <button
                 type="button"
-                className="lp-sono-hero-play"
-                aria-label="Pré-escutar amostra"
+                role="radio"
+                aria-checked={selectedHeroPlan === 'annual'}
+                className={`lp-sono-hero-plan ${selectedHeroPlan === 'annual' ? 'is-active' : ''}`}
+                onClick={() => setSelectedHeroPlan('annual')}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                  <path d="M7 5.5v13a1 1 0 0 0 1.55.83l10-6.5a1 1 0 0 0 0-1.66l-10-6.5A1 1 0 0 0 7 5.5z" />
-                </svg>
+                <span className="lp-sono-hero-plan-badge">Melhor custo-benefício</span>
+                <span className="lp-sono-hero-plan-meta">
+                  Anual — cobrado a R$ 142,80/ano
+                </span>
+                <strong className="lp-sono-hero-plan-headline">7 dias grátis</strong>
+                <span className="lp-sono-hero-plan-price">R$ 11,90 por mês</span>
+                <span className="lp-sono-hero-plan-check" aria-hidden>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
               </button>
-              <div className="lp-sono-hero-player-body">
-                <p className="lp-sono-hero-player-title">Campos de Lavanda · 7 min</p>
-                <div className="lp-sono-hero-player-bar" aria-hidden>
-                  <span className="lp-sono-hero-player-progress" />
-                  <span className="lp-sono-hero-player-dot" />
-                </div>
-                <div className="lp-sono-hero-player-time">
-                  <span>0:00</span>
-                  <span>7:00</span>
-                </div>
-              </div>
+
+              <button
+                type="button"
+                role="radio"
+                aria-checked={selectedHeroPlan === 'monthly'}
+                className={`lp-sono-hero-plan ${selectedHeroPlan === 'monthly' ? 'is-active' : ''}`}
+                onClick={() => setSelectedHeroPlan('monthly')}
+              >
+                <span className="lp-sono-hero-plan-meta">Mensal</span>
+                <strong className="lp-sono-hero-plan-headline">7 dias grátis</strong>
+                <span className="lp-sono-hero-plan-price">R$ 15,90/mês</span>
+                <span className="lp-sono-hero-plan-check" aria-hidden>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
+              </button>
             </div>
 
             <Link
-              to="/register?plan=annual&from=sono_hero"
-              className="lp-sono-hero-cta scroll-reveal stagger-4"
+              to={`/register?plan=${selectedHeroPlan}&from=sono_hero`}
+              className="lp-sono-hero-cta-primary scroll-reveal stagger-3"
             >
               Experimente grátis
             </Link>
@@ -252,10 +259,10 @@ export default function EcotopiaSonoPage() {
       <section className="lp-sono-cta-mid">
         <div className="scroll-reveal">
           <h2>
-            Experimente nosso áudio envolvente <em>gratuitamente.</em>
+            Ouça uma amostra <em>grátis.</em>
           </h2>
-          <Link to="/register?plan=annual&from=sono_cta_mid" className="cta-primary">
-            Descubra mais hoje
+          <Link to="/register?plan=monthly&from=sono_cta_mid" className="cta-primary">
+            Começar 7 dias grátis
           </Link>
         </div>
       </section>
