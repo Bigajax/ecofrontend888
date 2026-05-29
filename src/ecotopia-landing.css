@@ -6524,30 +6524,6 @@ body.eco-no-scroll {
   align-items: flex-start; /* sobrescreve o center do .lp-sono-hero base */
 }
 
-/* ── Dark mode: navy + texto claro, planos mantêm contraste ── */
-:root[data-theme="dark"] .ecotopia-lp .lp-sono-hero--v2 {
-  background: #0A0F1E;
-  color: #F4F1EC;
-}
-
-:root[data-theme="dark"] .ecotopia-lp .lp-sono-hero--v2 h1 {
-  color: #FFFFFF;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
-}
-
-:root[data-theme="dark"] .ecotopia-lp .lp-sono-hero--v2 .lp-sono-hero-lead {
-  color: rgba(244, 241, 236, 0.78);
-}
-
-:root[data-theme="dark"] .ecotopia-lp .lp-sono-hero-plan {
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
-  border-color: rgba(255, 255, 255, 0.06);
-}
-
-:root[data-theme="dark"] .ecotopia-lp .lp-sono-hero-plan:hover {
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
-}
-
 .ecotopia-lp .lp-sono-hero--v2 .lp-sono-hero-inner {
   max-width: 720px;
 }

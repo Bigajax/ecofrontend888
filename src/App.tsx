@@ -552,18 +552,6 @@ function AppChrome() {
       ? DEFAULT_API_BASE
       : "mesmo host (/)";
 
-  // Detect and apply dark/light theme from system preference
-  useEffect(() => {
-    const applyTheme = (dark: boolean) => {
-      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-    };
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    applyTheme(mq.matches);
-    const handler = (e: MediaQueryListEvent) => applyTheme(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
   // Guest Experience Modal - Verificar periodicamente se deve mostrar
   useEffect(() => {
     if (user) return; // Só para guests
