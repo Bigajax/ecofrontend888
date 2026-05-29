@@ -20,6 +20,7 @@ import {
 import { RootProviders } from "@/providers/RootProviders";
 import RequireAuth from "@/components/RequireAuth";
 import RootErrorBoundary from "@/components/RootErrorBoundary";
+import ScrollToTop from "@/components/ScrollToTop";
 import PageErrorBoundary from "@/components/PageErrorBoundary";
 import HealthBanner from "@/components/HealthBanner";
 import ApiBaseWarningCard from "@/components/ApiBaseWarningCard";
@@ -79,6 +80,7 @@ const SonsPage = lazy(() => import("@/pages/SonsPage"));
 const SoundPlayerPage = lazy(() => import("@/pages/SoundPlayerPage"));
 const ConfiguracoesPage = lazy(() => import("@/pages/ConfiguracoesPage"));
 const SubscriptionCallbackPage = lazy(() => import("@/pages/SubscriptionCallbackPage"));
+const CancelarAssinaturaPage = lazy(() => import("@/pages/CancelarAssinaturaPage"));
 const FluxoAssinaturaDemo = lazy(() => import("@/pages/FluxoAssinaturaDemo"));
 const GuestMeditationPage = lazy(() => import("@/pages/GuestMeditationPage"));
 const MemoryPageGuestTeaser = lazy(() => import("@/pages/memory/MemoryPageGuestTeaser"));
@@ -277,6 +279,7 @@ function AppRoutes() {
         <Route path="welcome" element={renderWithSuspense(<WelcomePage />)} />
         <Route path="register" element={renderWithSuspense(<CreateProfilePage />)} />
         <Route path="assinar" element={renderWithSuspense(<AssinarPage />)} />
+        <Route path="cancelar-assinatura" element={renderWithSuspense(<CancelarAssinaturaPage />)} />
         <Route path="reset-senha" element={renderWithSuspense(<ResetSenha />)} />
         <Route path="precos" element={renderWithSuspense(<EcotopiaPrecosPage />)} />
         <Route path="meditacao" element={renderWithSuspense(<EcotopiaMeditacaoPage />)} />
@@ -825,6 +828,7 @@ export default function App(): JSX.Element {
   return (
     <RootProviders>
       <BrowserRouter basename="/">
+        <ScrollToTop />
         <PixelRouteListener />
         <MixpanelRouteListener />
         <GuestExperienceTracker />

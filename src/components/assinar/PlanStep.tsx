@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { HeroIllustration } from "./HeroIllustration";
 import { TrialPlanPanel } from "./TrialPlanPanel";
 import type { PlanId } from "./types";
@@ -38,13 +39,13 @@ export function PlanStep({ selectedPlan, onSelectPlan, onContinue }: PlanStepPro
         {isMonthly
           ? "7 dias grátis, depois R$ 15,90/mês. "
           : "7 dias grátis, depois R$ 142,80/ano. "}
-        <a
-          href="#cancelar"
+        <Link
+          to="/cancelar-assinatura"
           className="underline underline-offset-2 transition-colors hover:opacity-80"
           style={{ color: "#1554F0" }}
         >
           Cancele quando quiser.
-        </a>
+        </Link>
       </p>
     </div>
   );

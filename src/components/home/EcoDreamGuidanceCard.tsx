@@ -1,32 +1,8 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
-interface EcoAIGuidanceCardProps {
-  userName: string;
-  totalSessions?: number;
-  onStartChat: () => void;
-}
-
-function getContextualMessage(firstName: string): string {
-  const now = new Date();
-  const brasiliaTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
-  const hour = brasiliaTime.getHours();
-
-  let greeting: string;
-  if (hour >= 5 && hour < 12) greeting = 'Bom dia';
-  else if (hour >= 12 && hour < 18) greeting = 'Boa tarde';
-  else greeting = 'Boa noite';
-
-  return `${greeting}, ${firstName}! Se precisar fazer uma pausa, estou aqui para conversar.`;
-}
-
-export default function EcoAIGuidanceCard({
-  userName,
-  totalSessions = 0,
-  onStartChat,
-}: EcoAIGuidanceCardProps) {
-  const firstName = userName.split(' ')[0];
-  const message = getContextualMessage(firstName);
-  void totalSessions;
+export default function EcoDreamGuidanceCard() {
+  const navigate = useNavigate();
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
@@ -38,16 +14,16 @@ export default function EcoAIGuidanceCard({
         />
         <div>
           <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
-            Receber orientação individual
+            Interpretar seus sonhos
           </h2>
           <p className="mt-0.5 text-[14px] text-[var(--eco-muted)]">
-            Sua companheira ECO para conversar a qualquer hora
+            Descubra o que sua mente está dizendo enquanto você dorme
           </p>
         </div>
       </div>
 
       <motion.button
-        onClick={onStartChat}
+        onClick={() => navigate('/app/dream')}
         className="group relative h-[230px] w-full max-w-sm overflow-hidden rounded-2xl p-5 text-left"
         initial={{ opacity: 0, y: 28 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -62,10 +38,10 @@ export default function EcoAIGuidanceCard({
           border: '1px solid rgba(110, 200, 255, 0.15)',
         }}
       >
-        {/* Mascote ancorado no canto superior esquerdo */}
+        {/* Mascote ancorado no canto superior esquerdo — estilo sticker */}
         <img
-          src="/images/eco-ai-icon.webp"
-          alt="Eco IA"
+          src="/images/eco-dream-icon.webp"
+          alt="Eco Dream"
           className="absolute h-[120px] w-[120px] object-contain transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105"
           style={{
             top: '-6px',
@@ -88,7 +64,7 @@ export default function EcoAIGuidanceCard({
                 letterSpacing: '-0.005em',
               }}
             >
-              Eco IA
+              Eco Dream
             </p>
             <p
               className="mt-1"
@@ -99,17 +75,16 @@ export default function EcoAIGuidanceCard({
                 margin: 0,
               }}
             >
-              {message}
+              Conte um sonho. Receba uma interpretação inspirada em Freud e Jung.
             </p>
           </div>
 
-          {/* Botão seta */}
           <div
             className="flex flex-shrink-0 items-center justify-center self-end rounded-full transition-all duration-200 group-hover:bg-white/70"
             style={{
               width: '38px',
               height: '38px',
-              background: 'rgba(255, 255, 255, 0.45)',
+              background: 'rgba(110, 200, 255, 0.18)',
               color: '#002548',
               backdropFilter: 'blur(10px)',
               WebkitBackdropFilter: 'blur(10px)',

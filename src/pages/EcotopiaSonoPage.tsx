@@ -643,7 +643,7 @@ export default function EcotopiaSonoPage() {
             <div className="lp-sono-offer-fine scroll-reveal stagger-3">
               <Link to="/termos">Termos e Condições</Link>
               <span aria-hidden>·</span>
-              <span>Cancele a qualquer momento</span>
+              <Link to="/cancelar-assinatura">Cancele a qualquer momento</Link>
             </div>
 
             <Link

@@ -12108,3 +12108,139 @@ body.eco-no-scroll {
 .ecotopia-lp [class*="Title"] * {
   font-family: var(--lp-sans) !important;
 }
+
+/* ─── Help page (Cancelar assinatura) ─── */
+.ecotopia-lp.lp-help {
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-help-main {
+  padding: 96px 24px 80px;
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-help-inner {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-help-eyebrow {
+  font-family: var(--lp-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #5A8AAD;
+  margin: 0 0 12px;
+}
+
+.ecotopia-lp .lp-help-title {
+  font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+  font-weight: 700;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #0D1B2A;
+  margin: 0 0 24px;
+  text-wrap: balance;
+}
+
+.ecotopia-lp .lp-help-lead {
+  font-family: var(--lp-sans);
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: #2D2C2B;
+  margin: 0 0 32px;
+}
+
+.ecotopia-lp .lp-help-divider {
+  border: none;
+  border-top: 1px solid rgba(13, 27, 51, 0.1);
+  margin: 32px 0;
+}
+
+.ecotopia-lp .lp-help-section {
+  margin: 0 0 36px;
+}
+
+.ecotopia-lp .lp-help-section h2 {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 19px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: #0D1B2A;
+  margin: 0 0 16px;
+}
+
+.ecotopia-lp .lp-help-section ol {
+  margin: 0 0 16px;
+  padding-left: 22px;
+  color: #2D2C2B;
+}
+
+.ecotopia-lp .lp-help-section ol li {
+  font-family: var(--lp-sans);
+  font-size: 15.5px;
+  line-height: 1.65;
+  margin-bottom: 10px;
+}
+
+.ecotopia-lp .lp-help-section ol li::marker {
+  color: #5A8AAD;
+  font-weight: 600;
+}
+
+.ecotopia-lp .lp-help-section p {
+  font-family: var(--lp-sans);
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: #2D2C2B;
+  margin: 0 0 12px;
+}
+
+.ecotopia-lp .lp-help-note {
+  font-size: 14px !important;
+  color: #5A6573 !important;
+  background: #F9F4F2;
+  border-left: 3px solid #6EC8FF;
+  padding: 12px 14px;
+  border-radius: 0 8px 8px 0;
+  margin: 14px 0 0 !important;
+}
+
+.ecotopia-lp .lp-help-link {
+  color: #1554F0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 500;
+}
+
+.ecotopia-lp .lp-help-link:hover {
+  color: #1148D6;
+}
+
+.ecotopia-lp .lp-help-section code {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 14px;
+  background: #F3F4F6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #0D1B2A;
+}
+
+@media (max-width: 600px) {
+  .ecotopia-lp .lp-help-main {
+    padding: 56px 20px 64px;
+  }
+  .ecotopia-lp .lp-help-lead {
+    font-size: 15.5px;
+  }
+  .ecotopia-lp .lp-help-section h2 {
+    font-size: 17px;
+  }
+  .ecotopia-lp .lp-help-section ol li,
+  .ecotopia-lp .lp-help-section p {
+    font-size: 15px;
+  }
+}

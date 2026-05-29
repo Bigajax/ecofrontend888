@@ -2,10 +2,11 @@
 // Gerenciamento de assinatura na página de Configurações
 
 import { useState } from 'react';
-import { ExternalLink, Crown, Calendar, AlertCircle, Check, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ExternalLink, Crown, Calendar, AlertCircle, Check, Loader2, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
-import { cancelSubscription } from '../../api/subscription';
+import { cancelSubscription, reactivateSubscription } from '../../api/subscription';
 import mixpanel from '../../lib/mixpanel';
 
 export default function SubscriptionManagement() {
@@ -14,6 +15,8 @@ export default function SubscriptionManagement() {
   const [cancelReason, setCancelReason] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState('');
+  const [isReactivating, setIsReactivating] = useState(false);
+  const [reactivateError, setReactivateError] = useState('');
 
   const getPlanDisplayName = () => {
     switch (subscription.plan) {
@@ -57,6 +60,25 @@ export default function SubscriptionManagement() {
     setShowCancelModal(true);
     setCancelError('');
     setCancelReason('');
+  };
+
+  const handleReactivate = async () => {
+    setIsReactivating(true);
+    setReactivateError('');
+    try {
+      await reactivateSubscription();
+      await refreshSubscription();
+      mixpanel.track('Subscription Reactivated', {
+        plan: subscription.plan,
+        user_id: user?.id,
+      });
+    } catch (error) {
+      setReactivateError(
+        error instanceof Error ? error.message : 'Não foi possível reativar a assinatura'
+      );
+    } finally {
+      setIsReactivating(false);
+    }
   };
 
   const handleCancelConfirm = async () => {
@@ -154,7 +176,7 @@ export default function SubscriptionManagement() {
         )}
 
         {/* Premium Info */}
-        {isPremiumUser && !isTrialActive && subscription.currentPeriodEnd && (
+        {isPremiumUser && !isTrialActive && subscription.status === 'active' && subscription.currentPeriodEnd && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
             <div className="flex items-start gap-2">
               <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
@@ -166,6 +188,24 @@ export default function SubscriptionManagement() {
                   {subscription.planType === 'monthly'
                     ? `Próxima renovação: ${formatDate(subscription.currentPeriodEnd)}`
                     : `Válida até: ${formatDate(subscription.currentPeriodEnd)}`}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cancelled but still has access */}
+        {subscription.status === 'cancelled' && subscription.accessUntil && (
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-amber-900">
+                  Assinatura cancelada
+                </p>
+                <p className="text-xs text-amber-700 mt-1">
+                  Renovação automática desativada. Você mantém acesso premium até{' '}
+                  <strong>{formatDate(subscription.accessUntil)}</strong>.
                 </p>
               </div>
             </div>
@@ -191,6 +231,16 @@ export default function SubscriptionManagement() {
 
         {/* Actions */}
         <div className="space-y-3">
+          {/* Upgrade CTA for free users */}
+          {subscription.plan === 'free' && (
+            <Link
+              to="/assinar?step=plan&plan=annual&from=settings"
+              className="block w-full text-center px-4 py-3 bg-[#1554F0] rounded-xl text-white font-medium hover:bg-[#1148D6] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
+            >
+              Assinar Premium
+            </Link>
+          )}
+
           {/* Mercado Pago Button */}
           {(isPremiumUser || isTrialActive) && (
             <button
@@ -202,6 +252,32 @@ export default function SubscriptionManagement() {
             </button>
           )}
 
+          {/* Reactivate Button */}
+          {subscription.status === 'cancelled' && subscription.accessUntil && (
+            <>
+              <button
+                onClick={handleReactivate}
+                disabled={isReactivating}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#1554F0] rounded-xl text-white font-medium hover:bg-[#1148D6] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isReactivating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Reativando…</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Reativar Assinatura</span>
+                  </>
+                )}
+              </button>
+              {reactivateError && (
+                <p className="text-sm text-red-600">{reactivateError}</p>
+              )}
+            </>
+          )}
+
           {/* Cancel Button */}
           {(isPremiumUser || isTrialActive) && subscription.status === 'active' && (
             <button
@@ -211,6 +287,13 @@ export default function SubscriptionManagement() {
               Cancelar Assinatura
             </button>
           )}
+
+          {/* Help link — sempre visível */}
+          <p className="text-center text-xs text-[var(--eco-muted)] pt-1">
+            <Link to="/cancelar-assinatura" className="underline hover:text-[var(--eco-text)]">
+              Como funciona o cancelamento?
+            </Link>
+          </p>
         </div>
       </div>
 

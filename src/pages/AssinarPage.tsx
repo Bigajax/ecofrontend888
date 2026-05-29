@@ -111,6 +111,8 @@ export default function AssinarPage() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.message || "Não foi possível concluir a assinatura.");
       }
+      // Premium status é ativado pelo webhook MercadoPago no backend.
+      // Frontend não escreve em usuarios.tipo_plano direto pra evitar race conditions.
       navigate("/app/subscription/callback");
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Erro inesperado.");
@@ -151,25 +153,94 @@ export default function AssinarPage() {
         )}
 
         {step === "card" && (
-          <div className="flex flex-col gap-4 px-5">
-            <h2 className="text-center font-display text-[22px] font-bold" style={{ color: "#0D3461" }}>
-              Comece seu trial de 7 dias
+          <div className="flex flex-col gap-5 px-5 pb-8">
+            <h2 className="text-center font-display text-[24px] font-bold leading-tight" style={{ color: "#0D3461" }}>
+              Selecione o método de pagamento
             </h2>
-            <p className="eco-subtitle text-center text-[14px]" style={{ color: "#5A8AAD" }}>
-              {plan === "monthly"
-                ? "R$ 0 hoje. Cobramos R$ 15,90/mês só após 7 dias — cancele quando quiser."
-                : "R$ 0 hoje. Cobramos R$ 142,80/ano só após 7 dias — cancele quando quiser."}
-            </p>
+
+            {/* Plan summary */}
+            <div
+              className="flex items-center justify-between rounded-2xl px-4 py-4"
+              style={{ background: "#F3F4F6" }}
+            >
+              <div>
+                <p className="font-display text-[17px] font-bold" style={{ color: "#0D3461" }}>
+                  {plan === "monthly" ? "Mensal" : "Anual"}
+                </p>
+                <p className="text-[13px]" style={{ color: "#5A8AAD" }}>
+                  {plan === "monthly" ? "R$ 15,90/mês" : "R$ 142,80/ano"}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="font-display text-[20px] font-bold" style={{ color: "#1A8A4A" }}>
+                  R$ 0,00
+                </p>
+                <p className="text-[13px] font-semibold" style={{ color: "#1A8A4A" }}>
+                  por 7 dias
+                </p>
+              </div>
+            </div>
+
+            {/* Benefits */}
+            <ul className="flex flex-col gap-3">
+              {[
+                "Acesse nossa biblioteca completa de meditações, sons para dormir, Eco IA e exercícios respiratórios.",
+                "Receba uma nova meditação no seu celular todos os dias.",
+                "Conteúdo inspirador diário para começar bem o dia.",
+              ].map((text, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-[14px] leading-snug" style={{ color: "#0D3461" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A8A4A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0" aria-hidden>
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>{text}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Card section header with brand icons */}
+            <div className="flex items-center justify-between border-t pt-5" style={{ borderColor: "rgba(13,52,97,0.1)" }}>
+              <h3 className="font-display text-[16px] font-bold" style={{ color: "#0D3461" }}>
+                Cartão de crédito ou débito
+              </h3>
+              <div className="flex items-center gap-1.5" aria-label="Bandeiras aceitas">
+                <span className="rounded border border-[#E5E7EB] px-1.5 py-0.5 text-[9px] font-bold text-[#1A1F71]">VISA</span>
+                <span className="rounded border border-[#E5E7EB] px-1 py-0.5 text-[9px] font-bold text-[#EB001B]">MC</span>
+                <span className="rounded border border-[#E5E7EB] px-1 py-0.5 text-[9px] font-bold text-[#006FCF]">AMEX</span>
+                <span className="rounded border border-[#E5E7EB] px-1 py-0.5 text-[9px] font-bold text-[#FF6000]">ELO</span>
+              </div>
+            </div>
+
             <MpCardForm
               amount={plan === "monthly" ? 15.9 : 142.8}
               maxInstallments={1}
               onToken={handleToken}
               onError={setErro}
             />
+
             {processing && (
-              <p aria-live="polite" className="text-center text-[13px]" style={{ color: "#5A8AAD" }}>Processando…</p>
+              <p aria-live="polite" className="text-center text-[13px]" style={{ color: "#5A8AAD" }}>
+                Processando…
+              </p>
             )}
-            {erro && <p role="alert" className="text-[13px]" style={{ color: "#B43C3C" }}>{erro}</p>}
+            {erro && (
+              <p role="alert" className="text-center text-[13px]" style={{ color: "#B43C3C" }}>
+                {erro}
+              </p>
+            )}
+
+            {/* Fine print */}
+            <div className="text-center text-[11.5px] leading-relaxed" style={{ color: "#5A8AAD" }}>
+              <p>
+                Podem ser aplicados IVA, impostos sobre vendas ou outros impostos aplicáveis.
+              </p>
+              <Link
+                to="/cancelar-assinatura"
+                className="mt-1 inline-block underline underline-offset-2"
+                style={{ color: "#1554F0" }}
+              >
+                Cancele a qualquer momento.
+              </Link>
+            </div>
           </div>
         )}
       </main>

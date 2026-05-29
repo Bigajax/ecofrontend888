@@ -107,6 +107,7 @@ const MENUS: MenuConfig[] = [
         heading: 'Ajuda',
         links: [
           { label: 'Perguntas frequentes', to: '/#faq' },
+          { label: 'Como cancelar minha assinatura', to: '/cancelar-assinatura' },
           { label: 'Suporte', to: '/#faq' },
         ],
       },
@@ -472,7 +473,7 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
               <UserIcon />
               <span>Entrar</span>
             </Link>
-            <Link to="/#faq" onClick={onClose} className="lp-drawer-row lp-drawer-row--icon">
+            <Link to="/cancelar-assinatura" onClick={onClose} className="lp-drawer-row lp-drawer-row--icon">
               <HelpIcon />
               <span>Ajuda</span>
             </Link>

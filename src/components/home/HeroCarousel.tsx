@@ -80,7 +80,6 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
     mainTitle: dailyContent.mainTitle,
     background:
       'url("/images/diario-estoico.webp")',
-    video: getDailyReflectionVideo(),
   },
   {
     id: 2,
@@ -261,12 +260,11 @@ export default function HeroCarousel({
     const isSono = item.id === 3;
 
     return (
-      <div className="relative flex h-full flex-col justify-between p-4 sm:p-6 pb-12 sm:pb-14">
-        {/* Badge superior para cards especiais */}
+      <div className="relative flex h-full flex-col justify-between p-4 pt-20 sm:p-6 sm:pt-20 pb-12 sm:pb-14">
+        {/* Badge superior para cards especiais — sem bullet pra evitar overlap com saudação */}
         {(isDiarioEstoico || isAbundancia || isSono) && item.badge && (
-          <div className="flex justify-center pt-2">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 border border-white/30">
-              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+          <div className="flex justify-center">
+            <div className="inline-flex items-center rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 border border-white/30">
               <span className="text-[11px] sm:text-[12px] font-bold text-white tracking-wider">
                 {item.badge}
               </span>
@@ -381,6 +379,12 @@ export default function HeroCarousel({
     );
   };
 
+  const firstName = (userName || user?.user_metadata?.full_name || 'amigo').split(' ')[0];
+  const avatarUrl =
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName)}&background=6EC8FF&color=fff&bold=true&size=80`;
+
   return (
     <div
       className={`group relative h-[340px] md:h-[320px] overflow-hidden select-none ${
@@ -393,6 +397,52 @@ export default function HeroCarousel({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Saudação flutuante (mobile only) — avatar + nome + CTA de humor */}
+      <div className="absolute left-0 right-0 top-4 z-30 flex items-center gap-3 px-4 lg:hidden">
+        <img
+          src={avatarUrl}
+          alt={firstName}
+          className="h-10 w-10 flex-shrink-0 rounded-full object-cover"
+          style={{ border: '1px solid rgba(255, 255, 255, 0.55)' }}
+        />
+        <div className="flex min-w-0 flex-col">
+          <span
+            className="font-display text-[15px] font-semibold leading-tight"
+            style={{
+              color: '#FFFFFF',
+              textShadow:
+                '0 1px 3px rgba(0,0,0,0.65), 0 0 12px rgba(0,0,0,0.35)',
+            }}
+          >
+            Olá {firstName}
+          </span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/app/dream');
+            }}
+            className="mt-0.5 flex items-center gap-1 text-left text-[13px] font-medium"
+            style={{
+              color: '#FFFFFF',
+              WebkitTextFillColor: '#FFFFFF',
+              opacity: 1,
+              textShadow:
+                '0 1px 3px rgba(0,0,0,0.70), 0 0 14px rgba(0,0,0,0.35)',
+            }}
+          >
+            <span style={{ color: '#FFFFFF', WebkitTextFillColor: '#FFFFFF' }}>
+              Conte um sonho — Eco interpreta pra você
+            </span>
+            <ChevronRight
+              size={14}
+              strokeWidth={2.5}
+              style={{ color: '#FFFFFF', stroke: '#FFFFFF' }}
+            />
+          </button>
+        </div>
+      </div>
+
       {/* Background - video or animated image with smooth crossfade */}
       <AnimatePresence initial={false}>
         <motion.div

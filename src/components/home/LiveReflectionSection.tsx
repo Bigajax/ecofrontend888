@@ -4,15 +4,15 @@ import { useNavigate } from 'react-router-dom';
 // Avatar data with varied sizes, positions, images and colors - Cada avatar aparece apenas 1 vez
 // Posições responsivas: mobile (default) e desktop (md)
 const AVATARS = [
-  // Row 1 - Top
+  // Row 1 - Top (no mobile fica nos cantos, fora da área do título)
   {
     id: 1, size: 'small', image: '/images/avatars/avatar-1.webp',
-    mobile: { left: '10%', top: '10%' }, desktop: { left: '8%', top: '12%' },
+    mobile: { left: '4%', top: '6%' }, desktop: { left: '8%', top: '12%' },
     delay: 0, color: '#FF6B6B' // Vermelho coral
   },
   {
     id: 2, size: 'medium', image: '/images/avatars/avatar-2.webp',
-    mobile: { left: '22%', top: '6%' }, desktop: { left: '18%', top: '8%' },
+    mobile: { left: '18%', top: '4%' }, desktop: { left: '18%', top: '8%' },
     delay: 0.2, color: '#4ECDC4' // Turquesa
   },
   {
@@ -22,61 +22,61 @@ const AVATARS = [
   },
   {
     id: 4, size: 'large', image: '/images/avatars/avatar-4.webp',
-    mobile: { left: '58%', top: '4%' }, desktop: { left: '60%', top: '6%' },
+    mobile: { left: '60%', top: '4%' }, desktop: { left: '60%', top: '6%' },
     delay: 0.6, color: '#6BCF7F' // Verde menta
   },
   {
     id: 5, size: 'medium', image: '/images/avatars/avatar-5.webp',
-    mobile: { left: '76%', top: '6%' }, desktop: { left: '80%', top: '8%' },
+    mobile: { left: '78%', top: '4%' }, desktop: { left: '80%', top: '8%' },
     delay: 0.8, color: '#A78BFA' // Roxo lavanda
   },
   {
     id: 6, size: 'small', image: '/images/avatars/avatar-6.webp',
-    mobile: { left: '88%', top: '10%' }, desktop: { left: '90%', top: '12%' },
+    mobile: { left: '90%', top: '6%' }, desktop: { left: '90%', top: '12%' },
     delay: 1, color: '#F472B6' // Rosa pink
   },
 
-  // Row 2 - Middle-Top
+  // Row 2 - Middle-Top (escondido no mobile pra não colidir com o número)
   {
     id: 7, size: 'medium', image: '/images/avatars/avatar-7.webp',
-    mobile: { left: '30%', top: '26%' }, desktop: { left: '28%', top: '28%' },
+    mobile: null, desktop: { left: '28%', top: '28%' },
     delay: 0.3, color: '#FBBF24' // Âmbar/ouro
   },
   {
     id: 8, size: 'medium', image: '/images/avatars/avatar-8.webp',
-    mobile: { left: '68%', top: '26%' }, desktop: { left: '72%', top: '28%' },
+    mobile: null, desktop: { left: '72%', top: '28%' },
     delay: 0.9, color: '#34D399' // Verde esmeralda
   },
 
-  // Row 3 - Middle-Bottom
+  // Row 3 - Middle-Bottom (escondido no mobile)
   {
     id: 11, size: 'medium', image: '/images/avatars/avatar-11.webp',
-    mobile: { left: '18%', top: '70%' }, desktop: { left: '15%', top: '68%' },
+    mobile: null, desktop: { left: '15%', top: '68%' },
     delay: 1.1, color: '#FB923C' // Laranja vibrante
   },
   {
     id: 12, size: 'medium', image: '/images/avatars/avatar-12.webp',
-    mobile: { left: '80%', top: '70%' }, desktop: { left: '85%', top: '68%' },
+    mobile: null, desktop: { left: '85%', top: '68%' },
     delay: 1.3, color: '#0EA5E9' // Azul céu
   },
 
-  // Row 4 - Bottom
+  // Row 4 - Bottom (no mobile fica nos cantos inferiores)
   {
-    id: 9, size: 'medium', image: '/images/avatars/avatar-9.webp',
-    mobile: { left: '40%', top: '86%' }, desktop: { left: '38%', top: '82%' },
+    id: 9, size: 'small', image: '/images/avatars/avatar-9.webp',
+    mobile: { left: '6%', top: '88%' }, desktop: { left: '38%', top: '82%' },
     delay: 0.5, color: '#EC4899' // Rosa magenta
   },
   {
-    id: 10, size: 'medium', image: '/images/avatars/avatar-10.webp',
-    mobile: { left: '58%', top: '86%' }, desktop: { left: '62%', top: '82%' },
+    id: 10, size: 'small', image: '/images/avatars/avatar-10.webp',
+    mobile: { left: '88%', top: '88%' }, desktop: { left: '62%', top: '82%' },
     delay: 0.7, color: '#8B5CF6' // Roxo violeta
   }
 ];
 
 const SIZE_MAP = {
-  small: 'w-6 h-6 md:w-10 md:h-10',
-  medium: 'w-8 h-8 md:w-14 md:h-14',
-  large: 'w-10 h-10 md:w-16 md:h-16'
+  small: 'w-7 h-7 md:w-10 md:h-10',
+  medium: 'w-9 h-9 md:w-14 md:h-14',
+  large: 'w-11 h-11 md:w-16 md:h-16'
 };
 
 export default function LiveReflectionSection() {
@@ -110,13 +110,13 @@ export default function LiveReflectionSection() {
     <section className="relative mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
       {/* Compact horizontal card */}
       <div
-        className="relative overflow-hidden rounded-3xl bg-white px-6 py-8 sm:px-8 sm:py-10 md:px-12 md:py-10"
+        className="relative overflow-hidden rounded-3xl bg-white px-6 pt-20 pb-20 sm:px-8 sm:py-10 md:px-12 md:py-10"
         style={{ border: '1px solid rgba(110,200,255,0.20)', boxShadow: '0 4px 32px rgba(110,200,255,0.10)' }}
       >
-        {/* Floating Avatars — visible only on larger screens, fewer avatars on mobile */}
+        {/* Floating Avatars — distribuídos nos cantos no mobile, espalhados no desktop */}
         <div className="pointer-events-none absolute inset-0">
-          {AVATARS.slice(0, isMobile ? 6 : AVATARS.length).map((avatar) => {
-            const position = isMobile ? avatar.mobile : avatar.desktop;
+          {AVATARS.filter((a) => (isMobile ? a.mobile : a.desktop)).map((avatar) => {
+            const position = isMobile ? avatar.mobile! : avatar.desktop;
             return (
               <div
                 key={avatar.id}
@@ -135,7 +135,7 @@ export default function LiveReflectionSection() {
                   src={avatar.image}
                   alt={`Avatar ${avatar.id}`}
                   loading="lazy"
-                  className={`${SIZE_MAP[avatar.size as keyof typeof SIZE_MAP]} rounded-full object-cover opacity-50 sm:opacity-70 md:opacity-85 shadow-md transition-all duration-300`}
+                  className={`${SIZE_MAP[avatar.size as keyof typeof SIZE_MAP]} rounded-full object-cover opacity-60 sm:opacity-75 md:opacity-85 shadow-md transition-all duration-300`}
                   style={{
                     boxShadow: `0 0 0 2px ${avatar.color}, 0 4px 16px rgba(0,0,0,0.08)`,
                     border: `2px solid ${avatar.color}`
@@ -147,7 +147,7 @@ export default function LiveReflectionSection() {
         </div>
 
         {/* Central Content — compact horizontal layout */}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center gap-3">
+        <div className="relative z-20 flex flex-col items-center justify-center text-center gap-3">
           <p className="text-[15px] font-medium text-gray-500 max-w-xs">
             Você não está sozinho(a) nessa jornada.
           </p>

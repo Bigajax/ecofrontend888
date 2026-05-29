@@ -3,18 +3,18 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram } from '@/contexts/ProgramContext';
-import { ChevronLeft, ChevronRight, MoreHorizontal, Moon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import DailyRecommendationsSection from '@/components/home/DailyRecommendationsSection';
 import EnergyBlessingsSection from '@/components/home/EnergyBlessingsSection';
 import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
+import EcoDreamGuidanceCard from '@/components/home/EcoDreamGuidanceCard';
 import LearnExploreSection from '@/components/home/LearnExploreSection';
 import HeroCarousel from '@/components/home/HeroCarousel';
 import LiveReflectionSection from '@/components/home/LiveReflectionSection';
 import SelfAssessmentSection from '@/components/home/SelfAssessmentSection';
 import PromoSection from '@/components/home/PromoSection';
 import PromoStickyBanner from '@/components/home/PromoStickyBanner';
-import EcoAIRecommendationCard from '@/components/home/EcoAIRecommendationCard';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
 import EcoAIModal from '@/components/EcoAIModal';
@@ -520,7 +520,7 @@ export default function HomePage() {
         </div>
 
         {/* Hero Section */}
-        <div className="mx-auto max-w-6xl md:px-8 md:py-8" style={{ paddingTop: 'calc(12px + env(safe-area-inset-top))' }}>
+        <div className="mx-auto max-w-6xl md:px-8 md:py-8">
           {/* Desktop: Grid 2 colunas com mesma altura */}
           <div className="hidden gap-6 md:grid md:grid-cols-2">
             {/* Left Card - Greeting */}
@@ -603,65 +603,6 @@ export default function HomePage() {
           </motion.div>
         </div>
 
-        {/* ECO AI Recommendation Card */}
-        <AnimatedSection animation="slide-up-fade">
-          <EcoAIRecommendationCard onStartChat={handleStartChat} />
-        </AnimatedSection>
-
-        {/* Eco Dream Banner */}
-        <AnimatedSection animation="slide-up-fade">
-          <div className="mx-auto max-w-6xl px-4 pb-1 md:px-8">
-            <motion.button
-              onClick={() => navigate('/app/dream')}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full overflow-hidden rounded-2xl text-left cursor-pointer"
-              style={{
-                background: 'linear-gradient(120deg, #0f0a24 0%, #1e1145 45%, #2a1a6e 100%)',
-                border: '1px solid rgba(167,132,255,0.15)',
-                boxShadow: '0 4px 20px rgba(15,10,36,0.25)',
-              }}
-            >
-              <div className="relative flex items-center gap-4 px-5 py-4">
-                {/* Glow orb */}
-                <div style={{
-                  position: 'absolute', right: -30, top: -40,
-                  width: 160, height: 160, borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(140,100,255,0.18) 0%, transparent 65%)',
-                  pointerEvents: 'none',
-                }} />
-
-                {/* Icon */}
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                  style={{ background: 'rgba(167,132,255,0.12)', border: '1px solid rgba(167,132,255,0.2)' }}>
-                  <Moon size={22} color="#c4aaff" strokeWidth={1.5} />
-                </div>
-
-                {/* Text */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest mb-0.5"
-                    style={{ color: 'rgba(196,170,255,0.6)' }}>
-                    Novo
-                  </p>
-                  <p className="text-[16px] font-semibold leading-snug" style={{ color: '#e8dcff' }}>
-                    O que seus sonhos estão tentando te dizer?
-                  </p>
-                  <p className="mt-0.5 text-[13px] leading-snug" style={{ color: 'rgba(196,170,255,0.55)' }}>
-                    Eco interpreta com Freud e Jung — pessoal e profundo.
-                  </p>
-                </div>
-
-                {/* Arrow */}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                  stroke="rgba(196,170,255,0.5)" strokeWidth="2.5"
-                  strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </div>
-            </motion.button>
-          </div>
-        </AnimatedSection>
-
         {/* Daily Recommendations Section */}
         <AnimatedSection animation="slide-up-fade" id="daily-recommendations-section">
           <DailyRecommendationsSection
@@ -722,6 +663,11 @@ export default function HomePage() {
             totalSessions={programProgressList.reduce((acc, p) => acc + p.completedSessions, 0)}
             onStartChat={handleStartChat}
           />
+        </AnimatedSection>
+
+        {/* Eco Dream Guidance Card Section */}
+        <AnimatedSection animation="slide-up-fade" id="eco-dream-guidance">
+          <EcoDreamGuidanceCard />
         </AnimatedSection>
 
         {/* Learn & Explore Section */}
