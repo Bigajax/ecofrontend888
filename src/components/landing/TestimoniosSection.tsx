@@ -79,16 +79,16 @@ export default function TestimoniosSection() {
     <section ref={ref} id="depoimentos" className="lp-testimonios">
       <div className="lp-testimonios-hero">
         <span className="lp-testimonios-orb lp-testimonios-orb--blue" aria-hidden="true">
-          <Orb src="/images/testimonio-orb-blue.png" />
+          <Orb src="/images/testimonio-orb-blue.webp" />
         </span>
         <span className="lp-testimonios-orb lp-testimonios-orb--green" aria-hidden="true">
-          <Orb src="/images/testimonio-orb-green.png" />
+          <Orb src="/images/testimonio-orb-green.webp" />
         </span>
         <span className="lp-testimonios-orb lp-testimonios-orb--orange" aria-hidden="true">
-          <Orb src="/images/testimonio-orb-yellow.png" />
+          <Orb src="/images/testimonio-orb-yellow.webp" />
         </span>
         <span className="lp-testimonios-orb lp-testimonios-orb--pink" aria-hidden="true">
-          <Orb src="/images/testimonio-orb-pink.png" />
+          <Orb src="/images/testimonio-orb-pink.webp" />
         </span>
 
         <span className="lp-testimonios-sparkle lp-testimonios-sparkle--yellow" aria-hidden="true">

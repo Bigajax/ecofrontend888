@@ -140,7 +140,7 @@ export default function EcotopiaMeditacaoPage() {
       <section
         className="lp-med-hero"
         style={{
-          backgroundImage: 'url("/images/meditacao-hero-sphere.png")',
+          backgroundImage: 'url("/images/meditacao-hero-sphere.webp")',
         }}
       >
         <span className="lp-med-hero-veil" aria-hidden />
@@ -204,7 +204,7 @@ export default function EcotopiaMeditacaoPage() {
           <article className="lp-med-bite scroll-reveal">
             <div className="lp-med-bite-icon lp-med-bite-icon--doses">
               <img
-                src="/images/meditacao-bite-doses.png"
+                src="/images/meditacao-bite-doses.webp"
                 alt=""
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
@@ -227,7 +227,7 @@ export default function EcotopiaMeditacaoPage() {
           <article className="lp-med-bite scroll-reveal stagger-1">
             <div className="lp-med-bite-icon lp-med-bite-icon--iniciantes">
               <img
-                src="/images/meditacao-bite-iniciantes.png"
+                src="/images/meditacao-bite-iniciantes.webp"
                 alt=""
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
@@ -252,7 +252,7 @@ export default function EcotopiaMeditacaoPage() {
           <article className="lp-med-bite scroll-reveal stagger-2">
             <div className="lp-med-bite-icon lp-med-bite-icon--ciencia">
               <img
-                src="/images/meditacao-bite-ciencia.png"
+                src="/images/meditacao-bite-ciencia.webp"
                 alt=""
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
@@ -275,7 +275,7 @@ export default function EcotopiaMeditacaoPage() {
           <article className="lp-med-bite scroll-reveal stagger-3">
             <div className="lp-med-bite-icon lp-med-bite-icon--mindfulness">
               <img
-                src="/images/meditacao-bite-mindfulness.png"
+                src="/images/meditacao-bite-mindfulness.webp"
                 alt=""
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
@@ -299,7 +299,7 @@ export default function EcotopiaMeditacaoPage() {
           <article className="lp-med-bite scroll-reveal stagger-4">
             <div className="lp-med-bite-icon lp-med-bite-icon--tecnicas">
               <img
-                src="/images/meditacao-bite-tecnicas.png"
+                src="/images/meditacao-bite-tecnicas.webp"
                 alt=""
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
@@ -323,7 +323,7 @@ export default function EcotopiaMeditacaoPage() {
           <article className="lp-med-bite scroll-reveal">
             <div className="lp-med-bite-icon lp-med-bite-icon--passo">
               <img
-                src="/images/meditacao-bite-passo.png"
+                src="/images/meditacao-bite-passo.webp"
                 alt=""
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
@@ -452,7 +452,7 @@ export default function EcotopiaMeditacaoPage() {
       {/* ─── Oferta · aquarela amarela ─── */}
       <section
         className="lp-med-offer"
-        style={{ backgroundImage: 'url("/images/meditacao-oferta-bg.png")' }}
+        style={{ backgroundImage: 'url("/images/meditacao-oferta-bg.webp")' }}
       >
         <div className="lp-med-offer-inner">
           <div className="lp-med-offer-content">

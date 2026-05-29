@@ -55,33 +55,33 @@ export const NEEDS: NeedModalData[] = [
     key: 'stress',
     color: '#F5A623',
     textTone: 'dark',
-    background: '/images/need-stress-bg.png',
-    illustration: '/images/need-stress.png',
+    background: '/images/need-stress-bg.webp',
+    illustration: '/images/need-stress.webp',
     title: 'Solte o peso do dia',
     subtitle:
       'Pequenos momentos de pausa para desacelerar a mente e recuperar energia.',
     benefits: [
       {
         Icon: Flower2,
-        image: '/images/need-stress-meditacoes.png',
+        image: '/images/need-stress-meditacoes.webp',
         title: 'Meditações guiadas',
         desc: 'Práticas rápidas para aliviar tensão',
       },
       {
         Icon: Wind,
-        image: '/images/need-stress-respiracao.png',
+        image: '/images/need-stress-respiracao.webp',
         title: 'Respiração consciente',
         desc: 'Volte para o presente em minutos',
       },
       {
         Icon: Music2,
-        image: '/images/need-stress-sons.png',
+        image: '/images/need-stress-sons.webp',
         title: 'Sons relaxantes',
         desc: 'Crie um ambiente mais leve',
       },
       {
         Icon: Scale,
-        image: '/images/benefit-equilibrio.png',
+        image: '/images/benefit-equilibrio.webp',
         title: 'Programas de equilíbrio',
         desc: 'Desenvolva mais calma no dia a dia',
       },
@@ -92,7 +92,7 @@ export const NEEDS: NeedModalData[] = [
     key: 'sleep',
     color: '#6D4BD2',
     textTone: 'light',
-    illustration: '/images/need-sleep.png',
+    illustration: '/images/need-sleep.webp',
     title: 'Prepare sua mente para descansar',
     subtitle:
       'Práticas, sons e meditações para ajudar seu corpo a desligar naturalmente.',
@@ -108,7 +108,7 @@ export const NEEDS: NeedModalData[] = [
     key: 'anxiety',
     color: '#2E7BF7',
     textTone: 'light',
-    illustration: '/images/need-anxiety.png',
+    illustration: '/images/need-anxiety.webp',
     title: 'Encontre mais espaço dentro de você',
     subtitle:
       'Aprenda a lidar com pensamentos acelerados com mais clareza e gentileza.',
@@ -124,7 +124,7 @@ export const NEEDS: NeedModalData[] = [
     key: 'thoughts',
     color: '#C7A7FF',
     textTone: 'dark',
-    illustration: '/images/need-thoughts.png',
+    illustration: '/images/need-thoughts.webp',
     title: 'Transforme ruído em clareza',
     subtitle:
       'Organize pensamentos, emoções e prioridades com mais tranquilidade.',
@@ -140,7 +140,7 @@ export const NEEDS: NeedModalData[] = [
     key: 'meditation',
     color: '#16A34A',
     textTone: 'light',
-    illustration: '/images/need-meditation.png',
+    illustration: '/images/need-meditation.webp',
     title: 'Volte para o momento presente',
     subtitle: 'Cultive presença, foco e equilíbrio através da prática diária.',
     benefits: [
@@ -155,7 +155,7 @@ export const NEEDS: NeedModalData[] = [
     key: 'eco',
     color: '#6EC8FF',
     textTone: 'dark',
-    illustration: '/images/need-eco.png',
+    illustration: '/images/need-eco.webp',
     title: 'Converse com a Eco',
     subtitle:
       'Um espaço seguro para refletir, organizar pensamentos e compreender emoções.',

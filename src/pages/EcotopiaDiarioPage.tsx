@@ -10,22 +10,22 @@ import mixpanel from '@/lib/mixpanel';
 
 const BENEFITS = [
   {
-    image: '/images/diario-benefit-serenidade.png',
+    image: '/images/diario-benefit-serenidade.webp',
     title: 'Serenidade no que não controlo',
     body: 'A dicotomia do controle: separar o que depende de você do que não depende — e soltar o resto.',
   },
   {
-    image: '/images/diario-benefit-clareza.png',
+    image: '/images/diario-benefit-clareza.webp',
     title: 'Clareza diante do caos',
     body: 'Ver as coisas como elas realmente são, sem o véu das opiniões e do julgamento apressado.',
   },
   {
-    image: '/images/diario-benefit-resiliencia.png',
+    image: '/images/diario-benefit-resiliencia.webp',
     title: 'Resiliência que se constrói',
     body: 'Uma fortaleza interior, um dia de cada vez. O obstáculo deixa de ser inimigo e vira caminho.',
   },
   {
-    image: '/images/diario-benefit-proposito.png',
+    image: '/images/diario-benefit-proposito.webp',
     title: 'Propósito todos os dias',
     body: 'Um ritual matinal que ancora você no que importa antes que o mundo peça a sua atenção.',
   },
@@ -94,7 +94,7 @@ export default function EcotopiaDiarioPage() {
       {/* ─── Hero ─── */}
       <section
         className="lp-diario-hero"
-        style={{ backgroundImage: 'url("/images/diario-estoico-bg.png")' }}
+        style={{ backgroundImage: 'url("/images/diario-estoico-bg.webp")' }}
       >
         <span className="lp-diario-hero-veil" aria-hidden />
 

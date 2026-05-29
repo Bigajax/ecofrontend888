@@ -11,38 +11,19 @@ import mixpanel from '@/lib/mixpanel';
 
 const VALUE_COLUMNS = [
   {
-    icon: '/images/sono-icon-solucoes.png',
-    title: 'Adormeça em minutos',
-    body:
-      'Música relaxante, paisagens sonoras, respirações e sessões guiadas — escolha o que sua noite pede e desligue a mente sem esforço.',
+    icon: '/images/sono-icon-meditacao.webp',
+    title: 'Meditação simplificada',
+    body: 'Aprenda a estar mais presente em tudo o que você faz.',
   },
   {
-    icon: '/images/sono-icon-ciencia.png',
-    title: 'Sono com base científica',
-    body:
-      'O Protocolo do Sono da Ecotopia é desenhado a partir da neurociência do sono. Sete noites para reprogramar seu descanso de forma natural.',
+    icon: '/images/sono-icon-deite-mente.webp',
+    title: 'Deite a sua mente para dormir.',
+    body: 'Adormeça com meditações para dormir, música para dormir e muito mais.',
   },
   {
-    icon: '/images/sono-icon-dia-noite.png',
-    title: 'Do dia para a noite',
-    body:
-      'Centenas de práticas para reduzir o estresse, respirar fundo e desacelerar a mente — do amanhecer até a hora de dormir.',
-  },
-];
-
-// Artigos reais publicados no app (src/pages/articles/*).
-const ARTICLES = [
-  {
-    id: 'ciencia-sono',
-    image: '/images/sleep-stages-intro.webp',
-    title: 'A ciência do sono: pressão, estágios e por que importa',
-    to: '/articles/sleep',
-  },
-  {
-    id: 'boa-noite',
-    image: '/images/good-night-sleep.webp',
-    title: 'Como ter uma boa noite de sono',
-    to: '/articles/good-night-sleep',
+    icon: '/images/sono-icon-estresse.webp',
+    title: 'Reduza o estresse em minutos',
+    body: '30 dias de uso da Ecotopia resultaram em uma redução de 32% no estresse.',
   },
 ];
 
@@ -52,21 +33,36 @@ const TABS = [
     label: 'Antes de dormir',
     body:
       'Acalme a mente, acalmando-a com meditações relaxantes e exercícios de respiração tranquilizantes para preparar o corpo para o descanso.',
-    sample: '"Boa noite" Relaxar · 6 min',
+    sample: {
+      image: '/images/desligando-estado-alerta.webp',
+      title: 'Desligando o estado de alerta',
+      duration: '8 min',
+      night: 1,
+    },
   },
   {
     id: 'adormecer',
     label: 'Adormecer',
     body:
       'Sons da natureza, paisagens sonoras e histórias contadas em voz baixa para o seu cérebro desligar gradualmente, sem esforço.',
-    sample: 'Campos de Lavanda · 7 min',
+    sample: {
+      image: '/images/esvaziando-pensamentos.webp',
+      title: 'Desligamento profundo do corpo',
+      duration: '6 min',
+      night: 3,
+    },
   },
   {
     id: 'permanecer',
     label: 'Permanecer dormindo',
     body:
       'Trilhas longas que sustentam o sono profundo durante a noite — para acordar revigorado, sem aquele despertar das 3 da manhã.',
-    sample: 'Noite Inteira · 8 horas',
+    sample: {
+      image: '/images/inducao-sono-profundo.webp',
+      title: 'Quando o sono começa sozinho',
+      duration: '5 min',
+      night: 6,
+    },
   },
 ];
 
@@ -109,6 +105,24 @@ const TIPS_COLUMNS = [
   },
 ];
 
+const TESTIMONIALS = [
+  {
+    id: 't1',
+    quote: 'Sinto que tenho o controle da minha própria jornada em relação à saúde mental.',
+    name: 'Mariana',
+  },
+  {
+    id: 't2',
+    quote: 'Tem sido revolucionário para mim, porque antes eu dormia de 2 a 3 horas por noite, e agora estou dormindo de 6 a 7 horas por noite.',
+    name: 'Beatriz',
+  },
+  {
+    id: 't3',
+    quote: 'Consegui redescobrir quem sou e retomei essa sensação de identidade, propósito, calma e presença que a atenção plena proporciona.',
+    name: 'Camila',
+  },
+];
+
 // 7 noites do protocolo divididas em páginas de 4 (4 + 3) para o carrossel.
 const PROTOCOL_PAGES = [PROTOCOL_NIGHTS.slice(0, 4), PROTOCOL_NIGHTS.slice(4)];
 
@@ -134,6 +148,23 @@ export default function EcotopiaSonoPage() {
     setProtocolPage(Math.round(track.scrollLeft / track.clientWidth));
   };
 
+  const tipsTrackRef = useRef<HTMLDivElement>(null);
+  const [tipsPage, setTipsPage] = useState(0);
+
+  const goToTipsPage = (page: number) => {
+    const track = tipsTrackRef.current;
+    if (!track) return;
+    const clamped = Math.max(0, Math.min(TIPS_COLUMNS.length - 1, page));
+    track.scrollTo({ left: track.clientWidth * clamped, behavior: 'smooth' });
+    setTipsPage(clamped);
+  };
+
+  const handleTipsScroll = () => {
+    const track = tipsTrackRef.current;
+    if (!track || track.clientWidth === 0) return;
+    setTipsPage(Math.round(track.scrollLeft / track.clientWidth));
+  };
+
   useEffect(() => {
     try {
       mixpanel.track('Sono Page Viewed', { page: 'sono_root' });
@@ -146,6 +177,7 @@ export default function EcotopiaSonoPage() {
   const activeTabData = TABS.find((t) => t.id === activeTab) ?? TABS[0];
 
   const [selectedHeroPlan, setSelectedHeroPlan] = useState<'annual' | 'monthly'>('annual');
+  const [selectedOfferPlan, setSelectedOfferPlan] = useState<'annual' | 'monthly'>('annual');
 
   return (
     <div className="ecotopia-lp lp-sono">
@@ -205,14 +237,14 @@ export default function EcotopiaSonoPage() {
             </div>
 
             <Link
-              to={`/register?plan=${selectedHeroPlan}&from=sono_hero`}
+              to={`/assinar?step=plan&plan=${selectedHeroPlan}&from=sono_hero`}
               className="lp-sono-hero-cta-primary scroll-reveal stagger-3"
             >
               Experimente grátis
             </Link>
 
             <img
-              src="/images/sono-hero-meditacao-mockup.png"
+              src="/images/sono-hero-meditacao-mockup.webp"
               alt="ECO no celular — meditação acolhendo a respiração"
               className="lp-sono-hero-mockup scroll-reveal stagger-4"
               loading="lazy"
@@ -221,42 +253,21 @@ export default function EcotopiaSonoPage() {
         </div>
       </section>
 
-      {/* ─── 3 colunas de valor ─── */}
-      <section className="lp-sono-value">
+      {/* ─── 3 cards de valor (estilo Headspace) ─── */}
+      <section className="lp-sono-value lp-sono-value--cards">
         <div className="lp-sono-value-grid">
           {VALUE_COLUMNS.map((col, i) => (
-            <div key={col.title} className={`lp-sono-value-col scroll-reveal stagger-${i + 1}`}>
-              <div className="lp-sono-value-head">
-                <div className="lp-sono-value-icon">
-                  <img src={col.icon} alt="" loading="lazy" />
-                </div>
-                <h3>{col.title}</h3>
-              </div>
-              <p>{col.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── Artigos recentes sobre sono ─── */}
-      <section className="lp-sono-articles">
-        <div className="lp-sono-articles-inner">
-          <h2 className="lp-sono-h2 scroll-reveal">Artigos recentes sobre sono</h2>
-
-          <div className="lp-sono-articles-grid">
-          {ARTICLES.map((a, i) => (
-            <Link
-              key={a.id}
-              to={a.to}
-              className={`lp-sono-article scroll-reveal stagger-${i + 1}`}
+            <article
+              key={col.title}
+              className={`lp-sono-value-card scroll-reveal stagger-${i + 1}`}
             >
-              <span className="lp-sono-article-thumb">
-                <img src={a.image} alt="" loading="lazy" />
-              </span>
-              <p className="lp-sono-article-title">{a.title}</p>
-            </Link>
+              <div className="lp-sono-value-card-icon">
+                <img src={col.icon} alt="" loading="lazy" />
+              </div>
+              <h3 className="lp-sono-value-card-title">{col.title}</h3>
+              <p className="lp-sono-value-card-body">{col.body}</p>
+            </article>
           ))}
-          </div>
         </div>
       </section>
 
@@ -264,10 +275,10 @@ export default function EcotopiaSonoPage() {
       <section className="lp-sono-cta-mid">
         <div className="scroll-reveal">
           <h2>
-            Ouça uma amostra <em>grátis.</em>
+            Experimente gratuitamente nosso áudio <em>envolvente.</em>
           </h2>
-          <Link to="/register?plan=monthly&from=sono_cta_mid" className="cta-primary">
-            Começar 7 dias grátis
+          <Link to="/assinar?step=plan&plan=monthly&from=sono_cta_mid" className="cta-primary">
+            Descanse melhor hoje.
           </Link>
         </div>
       </section>
@@ -295,38 +306,125 @@ export default function EcotopiaSonoPage() {
           </p>
 
           <div
-            className="lp-sono-tabs-player scroll-reveal stagger-2"
+            className="lp-sono-mini-player scroll-reveal stagger-2"
             role="group"
-            aria-label="Amostra"
+            aria-label="Prévia da meditação"
           >
-            <button
-              type="button"
-              className="lp-sono-tabs-play"
-              aria-label="Pré-escutar amostra"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M7 5.5v13a1 1 0 0 0 1.55.83l10-6.5a1 1 0 0 0 0-1.66l-10-6.5A1 1 0 0 0 7 5.5z" />
-              </svg>
-            </button>
-            <div className="lp-sono-tabs-player-body">
-              <p className="lp-sono-tabs-player-title">{activeTabData.sample}</p>
-              <div className="lp-sono-tabs-player-bar" aria-hidden>
-                <span className="lp-sono-tabs-player-progress" />
-                <span className="lp-sono-tabs-player-dot" />
-              </div>
-              <div className="lp-sono-tabs-player-time">
-                <span>0:00</span>
-                <span>0:00</span>
-              </div>
+            <p className="lp-sono-mini-player-eyebrow">
+              Noite {activeTabData.sample.night} de 7
+            </p>
+
+            <div className="lp-sono-mini-player-art">
+              <img
+                src={activeTabData.sample.image}
+                alt=""
+                loading="lazy"
+              />
             </div>
+
+            <div className="lp-sono-mini-player-meta">
+              <p className="lp-sono-mini-player-title">{activeTabData.sample.title}</p>
+              <p className="lp-sono-mini-player-duration">{activeTabData.sample.duration}</p>
+            </div>
+
+            <div className="lp-sono-mini-player-dots" aria-hidden>
+              {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                <span
+                  key={n}
+                  className={`lp-sono-mini-player-dot ${n === activeTabData.sample.night ? 'is-current' : ''}`}
+                />
+              ))}
+            </div>
+
+            <div className="lp-sono-mini-player-controls">
+              <button
+                type="button"
+                className="lp-sono-mini-player-skip"
+                aria-label="Retroceder 15 segundos"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <polyline points="11 17 6 12 11 7" />
+                  <path d="M18 18a6 6 0 0 0-6-6H6" />
+                </svg>
+                <span>15</span>
+              </button>
+
+              <button
+                type="button"
+                className="lp-sono-mini-player-play"
+                aria-label="Pré-escutar"
+              >
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M7 5.5v13a1 1 0 0 0 1.55.83l10-6.5a1 1 0 0 0 0-1.66l-10-6.5A1 1 0 0 0 7 5.5z" />
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                className="lp-sono-mini-player-skip"
+                aria-label="Avançar 15 segundos"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <polyline points="13 17 18 12 13 7" />
+                  <path d="M6 18a6 6 0 0 1 6-6h6" />
+                </svg>
+                <span>15</span>
+              </button>
+            </div>
+
+            <div className="lp-sono-mini-player-progress" aria-hidden>
+              <span className="lp-sono-mini-player-time">0:00</span>
+              <div className="lp-sono-mini-player-bar">
+                <span className="lp-sono-mini-player-fill" />
+                <span className="lp-sono-mini-player-thumb" />
+              </div>
+              <span className="lp-sono-mini-player-time is-end">{activeTabData.sample.duration}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Depoimentos de membros ─── */}
+      <section className="lp-sono-testimonials">
+        <div className="lp-sono-testimonials-inner">
+          <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal lp-sono-testimonials-h2">
+            Esses membros expressaram isso da melhor forma.
+          </h2>
+
+          <div className="lp-sono-testimonials-grid">
+            {TESTIMONIALS.map((t, i) => (
+              <article
+                key={t.id}
+                className={`lp-sono-testimonial scroll-reveal stagger-${i + 1}`}
+              >
+                <svg
+                  className="lp-sono-testimonial-quote"
+                  width="1em"
+                  height="1em"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  data-testid="story-quote"
+                  aria-hidden
+                >
+                  <path
+                    fill="currentColor"
+                    fillRule="evenodd"
+                    d="M4.49 7.529a5.3 5.3 0 011.174-.131c3.128 0 5.663 2.716 5.663 6.065 0 3.35-2.535 6.066-5.663 6.066S0 16.814 0 13.463c0-.098.002-.197.007-.295H0C0 8.113 3.84 4 8.56 4v2.036c-1.531 0-2.943.558-4.07 1.493zM17.164 7.529c.378-.086.77-.131 1.172-.131 3.128 0 5.664 2.716 5.664 6.065 0 3.35-2.536 6.066-5.664 6.066-3.128 0-5.663-2.715-5.663-6.066 0-.098.002-.197.007-.295H12.674C12.674 8.113 16.514 4 21.234 4v2.036c-1.531 0-2.943.558-4.07 1.493z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <p className="lp-sono-testimonial-text">{t.quote}</p>
+                <p className="lp-sono-testimonial-author">{t.name}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ─── Protocolo do Sono · 7 noites (carrossel) ─── */}
       <section className="lp-sono-grid-section lp-sono-protocol">
-        <h2 className="lp-sono-h2 scroll-reveal">
-          O Protocolo do Sono — 7 noites para reprogramar seu descanso.
+        <h2 className="lp-sono-h2 scroll-reveal lp-sono-protocol-h2">
+          O Protocolo do Sono: 7 noites para reprogramar seu descanso.
         </h2>
 
         <div
@@ -397,7 +495,11 @@ export default function EcotopiaSonoPage() {
           Explore dicas, ferramentas e informações sobre sono.
         </h2>
 
-        <div className="lp-sono-tips-grid">
+        <div
+          className="lp-sono-tips-track"
+          ref={tipsTrackRef}
+          onScroll={handleTipsScroll}
+        >
           {TIPS_COLUMNS.map((col, i) => (
             <article key={col.key} className={`lp-sono-tips-col scroll-reveal stagger-${i + 1}`}>
               <h3>{col.title}</h3>
@@ -413,6 +515,43 @@ export default function EcotopiaSonoPage() {
               </ul>
             </article>
           ))}
+        </div>
+
+        <div className="lp-sono-tips-nav" role="group" aria-label="Navegar pelas dicas">
+          <button
+            type="button"
+            className="lp-sono-tips-arrow"
+            aria-label="Dica anterior"
+            onClick={() => goToTipsPage(tipsPage - 1)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+
+          {TIPS_COLUMNS.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`lp-sono-tips-dot ${tipsPage === i ? 'is-active' : ''}`}
+              aria-label={`Dica ${i + 1}`}
+              aria-current={tipsPage === i}
+              onClick={() => goToTipsPage(i)}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            className="lp-sono-tips-arrow"
+            aria-label="Próxima dica"
+            onClick={() => goToTipsPage(tipsPage + 1)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
         </div>
       </section>
 
@@ -448,10 +587,17 @@ export default function EcotopiaSonoPage() {
               </li>
             </ul>
 
-            <div className="lp-sono-offer-plans scroll-reveal stagger-2">
-              <Link
-                to="/register?plan=annual&from=sono_oferta_anual"
-                className="lp-sono-offer-plan is-featured"
+            <div
+              className="lp-sono-offer-plans scroll-reveal stagger-2"
+              role="radiogroup"
+              aria-label="Escolha seu plano"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={selectedOfferPlan === 'annual'}
+                onClick={() => setSelectedOfferPlan('annual')}
+                className={`lp-sono-offer-plan ${selectedOfferPlan === 'annual' ? 'is-featured' : ''}`}
               >
                 <span className="lp-sono-offer-plan-badge">Melhor custo-benefício</span>
                 <span className="lp-sono-offer-plan-meta">
@@ -459,22 +605,39 @@ export default function EcotopiaSonoPage() {
                 </span>
                 <strong className="lp-sono-offer-plan-headline">7 dias grátis</strong>
                 <span className="lp-sono-offer-plan-price">R$ 11,90 por mês</span>
-                <span className="lp-sono-offer-plan-radio" aria-hidden>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+                <span
+                  className={`lp-sono-offer-plan-radio ${selectedOfferPlan === 'annual' ? '' : 'is-empty'}`}
+                  aria-hidden
+                >
+                  {selectedOfferPlan === 'annual' && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
                 </span>
-              </Link>
+              </button>
 
-              <Link
-                to="/register?plan=monthly&from=sono_oferta_mensal"
-                className="lp-sono-offer-plan"
+              <button
+                type="button"
+                role="radio"
+                aria-checked={selectedOfferPlan === 'monthly'}
+                onClick={() => setSelectedOfferPlan('monthly')}
+                className={`lp-sono-offer-plan ${selectedOfferPlan === 'monthly' ? 'is-featured' : ''}`}
               >
                 <span className="lp-sono-offer-plan-meta">Plano Mensal</span>
                 <strong className="lp-sono-offer-plan-headline">R$ 15,90/mês</strong>
                 <span className="lp-sono-offer-plan-price">Cobrado mensalmente</span>
-                <span className="lp-sono-offer-plan-radio is-empty" aria-hidden />
-              </Link>
+                <span
+                  className={`lp-sono-offer-plan-radio ${selectedOfferPlan === 'monthly' ? '' : 'is-empty'}`}
+                  aria-hidden
+                >
+                  {selectedOfferPlan === 'monthly' && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </span>
+              </button>
             </div>
 
             <div className="lp-sono-offer-fine scroll-reveal stagger-3">
@@ -484,7 +647,7 @@ export default function EcotopiaSonoPage() {
             </div>
 
             <Link
-              to="/register?plan=annual&from=sono_oferta_cta"
+              to={`/assinar?step=plan&plan=${selectedOfferPlan}&from=sono_oferta_cta`}
               className="lp-sono-offer-cta scroll-reveal stagger-4"
             >
               Comece seu teste gratuito

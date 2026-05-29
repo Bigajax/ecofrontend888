@@ -14,19 +14,19 @@ const METODO = [
     num: '01',
     title: 'Saia do piloto automático',
     body: 'A maior parte do dia roda em padrões antigos. A prática começa interrompendo esse ciclo familiar.',
-    img: '/images/dispenza-metodo-01.png',
+    img: '/images/dispenza-metodo-01.webp',
   },
   {
     num: '02',
     title: 'Da emoção ao estado',
     body: 'Quando pensamento e emoção entram em coerência, o corpo começa a aprender um novo estado de ser.',
-    img: '/images/dispenza-metodo-02.png',
+    img: '/images/dispenza-metodo-02.webp',
   },
   {
     num: '03',
     title: 'Repetir até se tornar',
     body: 'Não é sobre entender com a cabeça. É sobre repetir, dia após dia, até virar quem você é.',
-    img: '/images/dispenza-metodo-03.png',
+    img: '/images/dispenza-metodo-03.webp',
   },
 ];
 

@@ -15,22 +15,22 @@ export const VALIDATION_CARDS = [
   {
     id: "estresse",
     text: "Reduza o estresse com o apoio diário do ECO, seu companheiro de IA empático.",
-    icon: "/images/onboarding/icon-estresse.png",
+    icon: "/images/onboarding/icon-estresse.webp",
   },
   {
     id: "ansiedade",
     text: "Controle a ansiedade com meditações guiadas e exercícios de respiração.",
-    icon: "/images/onboarding/icon-ansiedade.png",
+    icon: "/images/onboarding/icon-ansiedade.webp",
   },
   {
     id: "sono",
     text: "Durma melhor com podcasts relaxantes e técnicas de relaxamento desenvolvidas com a Ecotopia.",
-    icon: "/images/onboarding/icon-sono.png",
+    icon: "/images/onboarding/icon-sono.webp",
   },
   {
     id: "presenca",
     text: "Esteja mais presente com pausas curtas para redefinir o foco ao longo do dia.",
-    icon: "/images/onboarding/icon-presenca.png",
+    icon: "/images/onboarding/icon-presenca.webp",
   },
 ] as const;
 

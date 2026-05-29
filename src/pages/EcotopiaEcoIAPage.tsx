@@ -12,21 +12,21 @@ import mixpanel from '@/lib/mixpanel';
 const HOW_CARDS: { icon: string; title: string; body: string; image?: string }[] = [
   {
     icon: '💬',
-    image: '/images/eco-orb-card.png',
+    image: '/images/eco-orb-card.webp',
     title: 'Organize seus pensamentos',
     body:
       'Estressado no trabalho? Problema em casa? Sem conseguir dormir? A Eco te ajuda a organizar o que você sente e seguir em frente com mais clareza.',
   },
   {
     icon: '🫧',
-    image: '/images/eco-orb-card-2.png',
+    image: '/images/eco-orb-card-2.webp',
     title: 'Receba recomendações personalizadas',
     body:
       'A Eco entende o que você está passando e sugere meditações e práticas especialmente pra você.',
   },
   {
     icon: '🧭',
-    image: '/images/eco-orb-card-3.png',
+    image: '/images/eco-orb-card-3.webp',
     title: 'Sempre à sua disposição',
     body:
       'De dia ou de madrugada, divida o que está na sua cabeça com a Eco sempre que precisar.',
@@ -62,19 +62,19 @@ const STEPS = [
 
 const SAFETY_CARDS = [
   {
-    image: '/images/eco-safety-privacidade.png',
+    image: '/images/eco-safety-privacidade.webp',
     title: 'Suas conversas são suas',
     body:
       'Criptografadas, isoladas por usuário e nunca vendidas. Você apaga quando quiser.',
   },
   {
-    image: '/images/eco-safety-cuidado.png',
+    image: '/images/eco-safety-cuidado.webp',
     title: 'Feita com cuidado',
     body:
       'Desenhada com princípios de psicologia e mindfulness, com limites claros sobre o que ela é — e o que não é.',
   },
   {
-    image: '/images/eco-safety-apoio.png',
+    image: '/images/eco-safety-apoio.webp',
     title: 'Quando é sério, te direciona',
     body:
       'Em crises, a Eco reconhece os sinais e aponta ajuda profissional. Ela apoia — não substitui o cuidado humano.',
@@ -149,7 +149,7 @@ export default function EcotopiaEcoIAPage() {
   const phoneHead = (
     <div className="lp-eco-phone-head">
       <span className="lp-eco-phone-dots3" aria-hidden>•••</span>
-      <img src="/images/eco-mascote.png" alt="" className="lp-eco-phone-head-orb" />
+      <img src="/images/eco-mascote.webp" alt="" className="lp-eco-phone-head-orb" />
       <span className="lp-eco-phone-x" aria-hidden>×</span>
     </div>
   );
@@ -220,7 +220,7 @@ export default function EcotopiaEcoIAPage() {
     // activeStep === 0 (voz / texto)
     return (
       <div className="lp-eco-phone-screen lp-eco-screen--voice">
-        <img src="/images/eco-mascote.png" alt="" className="lp-eco-phone-orb" />
+        <img src="/images/eco-mascote.webp" alt="" className="lp-eco-phone-orb" />
         {phoneInput}
       </div>
     );
@@ -256,7 +256,7 @@ export default function EcotopiaEcoIAPage() {
           <div className="lp-eco-hero-art scroll-reveal stagger-2" aria-hidden>
             <div className="lp-eco-hero-orb-glow" />
             <img
-              src="/images/eco-mascote.png"
+              src="/images/eco-mascote.webp"
               alt=""
               className="lp-eco-hero-orb"
               loading="eager"

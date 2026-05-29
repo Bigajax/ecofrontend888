@@ -708,7 +708,7 @@ export default function DrJoeDispenzaPage() {
             <div
               className="absolute inset-0 bg-cover"
               style={{
-                backgroundImage: 'url("/images/capa-dr-joe-dispenza.png")',
+                backgroundImage: 'url("/images/capa-dr-joe-dispenza.webp")',
                 backgroundPosition: 'center 40%',
                 transform: 'scale(1.03)',
                 filter: 'saturate(1.05) brightness(0.82) contrast(1.05)',
@@ -1035,7 +1035,7 @@ export default function DrJoeDispenzaPage() {
                   label="ETAPA 1"
                   title="Criando seu potencial"
                   description={<p>Defina a experiência que você quer criar e conecte-se com a frequência desse futuro antes de meditar.</p>}
-                  backgroundImage={'url("/images/capa-dr-joe-dispenza.png")'}
+                  backgroundImage={'url("/images/capa-dr-joe-dispenza.webp")'}
                   backgroundPosition="center 40%"
                   completed={false}
                 >
@@ -1053,7 +1053,7 @@ export default function DrJoeDispenzaPage() {
                       <div
                         className="relative flex-shrink-0 w-[90px] sm:w-[108px]"
                         style={{
-                          backgroundImage: 'url("/images/capa-dr-joe-dispenza.png")',
+                          backgroundImage: 'url("/images/capa-dr-joe-dispenza.webp")',
                           backgroundSize: 'cover',
                           backgroundPosition: 'center 40%',
                         }}

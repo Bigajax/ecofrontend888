@@ -114,7 +114,7 @@ export default function EcotopiaHero() {
           <div
             className="lp-hero-placeholder"
             style={{
-              backgroundImage: 'url(/images/autoconhecimento-card.png)',
+              backgroundImage: 'url(/images/autoconhecimento-card.webp)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
@@ -140,7 +140,7 @@ export default function EcotopiaHero() {
           <div
             className="lp-hero-placeholder"
             style={{
-              backgroundImage: 'url(/images/eco-ai-card.png)',
+              backgroundImage: 'url(/images/eco-ai-card.webp)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}

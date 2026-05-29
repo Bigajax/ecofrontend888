@@ -37,27 +37,27 @@ const PILARES = [
 ];
 
 const BENEFITS: { label: string; orb: string; tone: string }[] = [
-  { label: 'Gerenciar a eco-ansiedade', orb: '/images/anxiety-orb.png', tone: 'anxiety' },
-  { label: 'Menos consumo, mais propósito', orb: '/images/thoughts-orb.png', tone: 'thoughts' },
-  { label: 'Durma bem, viva leve', orb: '/images/sleep-orb.png', tone: 'sleep' },
-  { label: 'Aliviar a ansiedade do dia a dia', orb: '/images/stress-orb.png', tone: 'stress' },
-  { label: 'Praticar conexão com a natureza', orb: '/images/meditation-orb.png', tone: 'meditation' },
-  { label: 'Repensar seus hábitos', orb: '/images/talk-orb.png', tone: 'talk' },
+  { label: 'Gerenciar a eco-ansiedade', orb: '/images/anxiety-orb.webp', tone: 'anxiety' },
+  { label: 'Menos consumo, mais propósito', orb: '/images/thoughts-orb.webp', tone: 'thoughts' },
+  { label: 'Durma bem, viva leve', orb: '/images/sleep-orb.webp', tone: 'sleep' },
+  { label: 'Aliviar a ansiedade do dia a dia', orb: '/images/stress-orb.webp', tone: 'stress' },
+  { label: 'Praticar conexão com a natureza', orb: '/images/meditation-orb.webp', tone: 'meditation' },
+  { label: 'Repensar seus hábitos', orb: '/images/talk-orb.webp', tone: 'talk' },
 ];
 
 const RESULTADOS = [
   {
-    img: '/images/ansiedade-result-5.png',
+    img: '/images/ansiedade-result-5.webp',
     unit: 'minutos por dia',
     body: 'Apenas 5 minutos por dia já ajudam a acalmar a mente e sair do piloto automático.',
   },
   {
-    img: '/images/ansiedade-result-2.png',
+    img: '/images/ansiedade-result-2.webp',
     unit: 'semanas',
     body: 'Em duas semanas de prática, você começa a se sentir mais conectado e equilibrado.',
   },
   {
-    img: '/images/ansiedade-result-10.png',
+    img: '/images/ansiedade-result-10.webp',
     unit: 'dias',
     body: 'Dez dias seguidos bastam para a prática virar um hábito que sustenta o dia a dia.',
   },
@@ -217,7 +217,7 @@ export default function EcotopiaAnsiedadePage() {
   const phoneHead = (
     <div className="lp-eco-phone-head">
       <span className="lp-eco-phone-dots3" aria-hidden>•••</span>
-      <img src="/images/eco-mascote.png" alt="" className="lp-eco-phone-head-orb" />
+      <img src="/images/eco-mascote.webp" alt="" className="lp-eco-phone-head-orb" />
       <span className="lp-eco-phone-x" aria-hidden>×</span>
     </div>
   );
@@ -288,7 +288,7 @@ export default function EcotopiaAnsiedadePage() {
     // activeStep === 0 (voz / texto)
     return (
       <div className="lp-eco-phone-screen lp-eco-screen--voice">
-        <img src="/images/eco-mascote.png" alt="" className="lp-eco-phone-orb" />
+        <img src="/images/eco-mascote.webp" alt="" className="lp-eco-phone-orb" />
         {phoneInput}
       </div>
     );
@@ -301,7 +301,7 @@ export default function EcotopiaAnsiedadePage() {
       {/* ─── Hero ─── */}
       <section
         className="lp-anx-hero"
-        style={{ backgroundImage: 'url("/images/ansiedade-hero-bg.png")' }}
+        style={{ backgroundImage: 'url("/images/ansiedade-hero-bg.webp")' }}
       >
         <span className="lp-anx-hero-veil" aria-hidden />
         <div className="lp-anx-hero-inner">
@@ -467,7 +467,7 @@ export default function EcotopiaAnsiedadePage() {
       <section className="lp-anx-community">
         <div
           className="lp-anx-community-card scroll-reveal"
-          style={{ backgroundImage: 'url("/images/join-clouds-bg.png")' }}
+          style={{ backgroundImage: 'url("/images/join-clouds-bg.webp")' }}
         >
           <span className="lp-anx-community-veil" aria-hidden />
           <div className="lp-anx-community-content">

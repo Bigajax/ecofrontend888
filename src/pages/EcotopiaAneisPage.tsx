@@ -20,11 +20,11 @@ const RING_ACCENT: Record<string, string> = {
 
 // Imagens de capa específicas da landing (não alteram os visuais do app /app/rings).
 const RING_IMAGE: Record<string, string> = {
-  earth: '/images/aneis-card-earth.png',
-  water: '/images/aneis-card-water.png',
-  fire: '/images/aneis-card-fire.png',
-  wind: '/images/aneis-card-wind.png',
-  void: '/images/aneis-card-void.png',
+  earth: '/images/aneis-card-earth.webp',
+  water: '/images/aneis-card-water.webp',
+  fire: '/images/aneis-card-fire.webp',
+  wind: '/images/aneis-card-wind.webp',
+  void: '/images/aneis-card-void.webp',
 };
 
 const STEPS = [
@@ -47,17 +47,17 @@ const STEPS = [
 
 const BENEFITS = [
   {
-    image: '/images/aneis-benefit-foco.png',
+    image: '/images/aneis-benefit-foco.webp',
     title: 'Foco sem força',
     body: 'Você para de lutar contra a distração e começa a enxergar de onde ela vem.',
   },
   {
-    image: '/images/aneis-benefit-constancia.png',
+    image: '/images/aneis-benefit-constancia.webp',
     title: 'Constância real',
     body: 'Cinco minutos por dia constroem mais do que maratonas de motivação que não duram.',
   },
   {
-    image: '/images/aneis-benefit-identidade.png',
+    image: '/images/aneis-benefit-identidade.webp',
     title: 'Identidade que firma',
     body: 'A disciplina deixa de ser algo que você faz e vira alguém que você é.',
   },

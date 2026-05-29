@@ -31,7 +31,7 @@ export const HOMEPAGE_TOUR_STEPS: TourStep[] = [
     category: 'MEDITAÇÃO',
     title: 'Recondicione seu corpo em 7 minutos',
     description: 'Meditações guiadas do Dr. Joe Dispenza que ensinam seu sistema nervoso a sentir um estado novo — antes que ele aconteça.',
-    image: '/images/capa-dr-joe-dispenza.png',
+    image: '/images/capa-dr-joe-dispenza.webp',
     imagePosition: 'center top',
     position: 'center',
     showOverlay: true,

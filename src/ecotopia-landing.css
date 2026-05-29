@@ -3145,7 +3145,7 @@ body.eco-no-scroll {
   padding: 80px 40px 60px;
   text-align: center;
   color: #FFFFFF;
-  background-image: url('/images/join-sky-bg.png');
+  background-image: url('/images/join-sky-bg.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -3719,7 +3719,7 @@ body.eco-no-scroll {
   align-items: center;
   gap: 32px;
   background:
-    url("/images/empresas-bg.png") center/cover no-repeat,
+    url("/images/empresas-bg.webp") center/cover no-repeat,
     linear-gradient(135deg, #1F61F5 0%, #1A4FB5 100%);
   border-radius: 28px;
   padding: 64px 56px;
@@ -3958,7 +3958,7 @@ body.eco-no-scroll {
   width: 100%;
   min-height: 680px;
   background:
-    url("/images/fechamento-bg.png") center/cover no-repeat,
+    url("/images/fechamento-bg.webp") center/cover no-repeat,
     #FFCD29;
   overflow: hidden;
 }
@@ -6650,6 +6650,18 @@ body.eco-no-scroll {
   color: #1EA455; /* check verde dentro do quadrado branco */
 }
 
+/* card ativo (azul bebê) no hero: texto branco */
+.ecotopia-lp .lp-sono-hero-plan.is-active .lp-sono-hero-plan-meta,
+.ecotopia-lp .lp-sono-hero-plan.is-active .lp-sono-hero-plan-headline,
+.ecotopia-lp .lp-sono-hero-plan.is-active .lp-sono-hero-plan-price {
+  color: #FFFFFF;
+  -webkit-text-fill-color: #FFFFFF;
+}
+
+.ecotopia-lp .lp-sono-hero-plan.is-active .lp-sono-hero-plan-badge {
+  /* badge "Melhor custo-benefício" mantém o azul royal pra destacar */
+}
+
 .ecotopia-lp .lp-sono-hero-plan:focus-visible {
   outline: 2px solid #1554F0;
   outline-offset: 3px;
@@ -6748,6 +6760,116 @@ body.eco-no-scroll {
   align-items: start;
 }
 
+/* ── Variant cards (specs exatos Headspace: 312×232, ícone 100px, gap 80px) ── */
+.ecotopia-lp .lp-sono-value--cards {
+  position: relative;
+  padding: 48px 24px 80px;
+  background: #FFFFFF;
+}
+
+/* Divisor diagonal entre hero (cream) e value-cards (branco) — sutil, só pra quebrar o padrão */
+.ecotopia-lp .lp-sono-value--cards::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 38px;
+  background: #FAF6F3; /* mesmo off-white do hero */
+  clip-path: polygon(0 0, 100% 0, 100% 55%, 0 100%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.ecotopia-lp .lp-sono-value--cards > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ecotopia-lp .lp-sono-value--cards .lp-sono-value-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 125px;
+  padding-top: 24px;
+  max-width: 100%;
+}
+
+.ecotopia-lp .lp-sono-value-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: rgb(249, 244, 242); /* spec exato */
+  border-radius: 8px; /* spec: 8px (não 22) */
+  padding: 24px; /* spec exato */
+  width: 312px; /* spec exato */
+  min-height: 232px; /* spec: height 232 — uso min-height pra não cortar copy maior */
+  box-shadow: rgba(65, 61, 69, 0.20) 0px 2px 0px 0px; /* spec exato */
+  border: none;
+  overflow: visible;
+}
+
+.ecotopia-lp .lp-sono-value-card-icon {
+  position: absolute;
+  top: -140px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.ecotopia-lp .lp-sono-value-card-icon img {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  display: block;
+  filter: none;
+}
+
+.ecotopia-lp .lp-sono-value-card-title {
+  font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 700;
+  font-size: 17.76px; /* spec exato */
+  line-height: 21.312px;
+  letter-spacing: -0.5328px;
+  color: rgb(45, 44, 43); /* spec exato */
+  margin: 24px 0 12px; /* 24px topo pra dar respiro do ícone overflow */
+  text-align: center;
+}
+
+.ecotopia-lp .lp-sono-value-card-body {
+  font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 400;
+  font-size: 14.24px; /* spec exato */
+  line-height: 21.36px;
+  color: rgb(45, 44, 43); /* spec exato — mesma cor do título */
+  margin: 0;
+  text-align: center;
+}
+
+@media (max-width: 1023px) {
+  .ecotopia-lp .lp-sono-value--cards {
+    padding: 40px 24px 64px;
+  }
+  .ecotopia-lp .lp-sono-value--cards .lp-sono-value-grid {
+    padding-top: 16px;
+    gap: 125px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ecotopia-lp .lp-sono-value-card {
+    width: 100%;
+    max-width: 312px;
+  }
+}
+
 .ecotopia-lp .lp-sono-value-col {
   display: flex;
   flex-direction: column;
@@ -6809,6 +6931,18 @@ body.eco-no-scroll {
   letter-spacing: -0.018em;
   color: var(--lp-text, #0F1B33);
   margin: 0 0 32px;
+}
+
+.ecotopia-lp .lp-sono-protocol-h2 {
+  text-wrap: balance;
+}
+
+@media (max-width: 600px) {
+  .ecotopia-lp .lp-sono-protocol-h2 {
+    font-size: 18px;
+    line-height: 1.25;
+    max-width: 320px;
+  }
 }
 
 .ecotopia-lp .lp-sono-h2--center {
@@ -6882,7 +7016,7 @@ body.eco-no-scroll {
 
 /* ─── CTA central ─── */
 .ecotopia-lp .lp-sono-cta-mid {
-  padding: 80px 32px;
+  padding: 0 32px;
   text-align: center;
   background: #FFFFFF;
 }
@@ -6890,17 +7024,35 @@ body.eco-no-scroll {
 .ecotopia-lp .lp-sono-cta-mid h2 {
   font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
   font-weight: 700;
-  font-size: clamp(32px, 4vw, 48px);
+  font-size: clamp(24px, 3.6vw, 48px);
   line-height: 1.1;
   letter-spacing: -0.022em;
   color: var(--lp-text, #0F1B33);
   margin: 0 auto 36px;
-  max-width: 720px;
+  max-width: 820px;
+  text-wrap: balance;
 }
 
 .ecotopia-lp .lp-sono-cta-mid h2 em {
   font-style: italic;
   font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
+}
+
+.ecotopia-lp .lp-sono-cta-mid .cta-primary {
+  padding: 18px 36px;
+  font-size: 16px;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 600px) {
+  .ecotopia-lp .lp-sono-cta-mid h2 {
+    font-size: 22px;
+    max-width: 320px;
+  }
+  .ecotopia-lp .lp-sono-cta-mid .cta-primary {
+    padding: 16px 30px;
+    font-size: 15px;
+  }
 }
 
 /* ─── Tabs section ─── */
@@ -6934,7 +7086,7 @@ body.eco-no-scroll {
   background-image:
     radial-gradient(ellipse 56% 50% at 50% 44%, rgba(150, 116, 230, 0.30) 0%, rgba(150, 116, 230, 0.10) 46%, transparent 74%),
     radial-gradient(ellipse 92% 92% at 50% 48%, transparent 0%, transparent 52%, rgba(9, 7, 26, 0.4) 84%, rgba(7, 6, 22, 0.7) 100%),
-    url('/images/sono-tabs-bg.png');
+    url('/images/sono-tabs-bg.webp');
   background-repeat: no-repeat;
   background-position: center, center, center;
   background-size: cover, cover, cover;
@@ -7006,76 +7158,312 @@ body.eco-no-scroll {
   max-width: 400px;
 }
 
-.ecotopia-lp .lp-sono-tabs-player {
+/* ─── Mini Player (fiel ao MeditationPlayerPage do sono) ─── */
+.ecotopia-lp .lp-sono-mini-player {
+  --sono-light: #C4B5FD;
+  --sono-mid: #A78BFA;
+  --sono-dark: #7C3AED;
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 14px;
-  padding: 12px 18px 12px 12px;
-  background: rgba(255, 255, 255, 0.96);
-  border-radius: 999px;
-  max-width: 380px;
+  max-width: 340px;
   margin: 0 auto;
-  color: #0F0B2E;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.32);
+  padding: 18px 18px 20px;
+  color: #FFFFFF;
 }
 
-.ecotopia-lp .lp-sono-tabs-play {
+.ecotopia-lp .lp-sono-mini-player-eyebrow {
+  font-family: var(--lp-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sono-light);
+  margin: 0;
+}
+
+.ecotopia-lp .lp-sono-mini-player-art {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow:
+    0 20px 60px rgba(124, 58, 237, 0.45),
+    0 8px 24px rgba(6, 9, 26, 0.55);
   flex-shrink: 0;
-  width: 38px;
-  height: 38px;
-  border-radius: 999px;
-  background: #0F0B2E;
+}
+
+.ecotopia-lp .lp-sono-mini-player-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+  display: block;
+}
+
+.ecotopia-lp .lp-sono-mini-player-meta {
+  text-align: center;
+  margin-top: 2px;
+}
+
+.ecotopia-lp .lp-sono-mini-player-title {
+  font-family: var(--lp-sans);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
   color: #FFFFFF;
+  margin: 0;
+  text-shadow: 0 2px 16px rgba(124, 58, 237, 0.45);
+  letter-spacing: -0.01em;
+}
+
+.ecotopia-lp .lp-sono-mini-player-duration {
+  font-family: var(--lp-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(196, 181, 253, 0.55);
+  margin: 4px 0 0;
+}
+
+.ecotopia-lp .lp-sono-mini-player-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.ecotopia-lp .lp-sono-mini-player-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  transition: all 0.3s ease;
+}
+
+.ecotopia-lp .lp-sono-mini-player-dot.is-current {
+  width: 18px;
+  background: var(--sono-mid);
+}
+
+.ecotopia-lp .lp-sono-mini-player-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 6px;
+}
+
+.ecotopia-lp .lp-sono-mini-player-skip {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: rgba(196, 181, 253, 0.12);
+  border: 1px solid rgba(196, 181, 253, 0.28);
+  color: var(--sono-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.ecotopia-lp .lp-sono-mini-player-skip:hover {
+  background: rgba(196, 181, 253, 0.18);
+}
+
+.ecotopia-lp .lp-sono-mini-player-skip:active {
+  transform: scale(0.96);
+}
+
+.ecotopia-lp .lp-sono-mini-player-skip span {
+  font-family: var(--lp-sans);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: rgba(196, 181, 253, 0.55);
+  line-height: 1;
+}
+
+.ecotopia-lp .lp-sono-mini-player-play {
+  width: 60px;
+  height: 60px;
+  border-radius: 999px;
   border: none;
+  background: linear-gradient(135deg, var(--sono-light) 0%, var(--sono-dark) 100%);
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  box-shadow:
+    0 8px 32px rgba(124, 58, 237, 0.55),
+    0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
-.ecotopia-lp .lp-sono-tabs-player-body {
-  flex: 1;
-  text-align: left;
+.ecotopia-lp .lp-sono-mini-player-play svg {
+  margin-left: 2px;
 }
 
-.ecotopia-lp .lp-sono-tabs-player-title {
-  font-size: 13px;
+.ecotopia-lp .lp-sono-mini-player-play:hover {
+  box-shadow:
+    0 10px 36px rgba(124, 58, 237, 0.65),
+    0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.ecotopia-lp .lp-sono-mini-player-play:active {
+  transform: scale(0.96);
+}
+
+.ecotopia-lp .lp-sono-mini-player-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 280px;
+  margin-top: 4px;
+}
+
+.ecotopia-lp .lp-sono-mini-player-time {
+  font-family: var(--lp-sans);
+  font-size: 10px;
   font-weight: 600;
-  margin: 0 0 4px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(196, 181, 253, 0.70);
+  flex-shrink: 0;
 }
 
-.ecotopia-lp .lp-sono-tabs-player-bar {
+.ecotopia-lp .lp-sono-mini-player-time.is-end {
+  color: rgba(196, 181, 253, 0.40);
+}
+
+.ecotopia-lp .lp-sono-mini-player-bar {
   position: relative;
+  flex: 1;
   height: 3px;
-  background: rgba(15, 11, 46, 0.15);
+  background: rgba(196, 181, 253, 0.18);
   border-radius: 999px;
 }
 
-.ecotopia-lp .lp-sono-tabs-player-progress {
+.ecotopia-lp .lp-sono-mini-player-fill {
   display: block;
-  width: 30%;
+  width: 22%;
   height: 100%;
-  background: #0F0B2E;
   border-radius: 999px;
+  background: linear-gradient(to right, var(--sono-dark), var(--sono-light));
 }
 
-.ecotopia-lp .lp-sono-tabs-player-dot {
+.ecotopia-lp .lp-sono-mini-player-thumb {
   position: absolute;
   top: 50%;
-  left: 30%;
-  width: 9px;
-  height: 9px;
+  left: 22%;
+  width: 10px;
+  height: 10px;
   border-radius: 999px;
-  background: #0F0B2E;
+  background: var(--sono-light);
   transform: translate(-50%, -50%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
-.ecotopia-lp .lp-sono-tabs-player-time {
+/* ─── Depoimentos · 3 cards estilo Headspace ─── */
+.ecotopia-lp .lp-sono-testimonials {
+  padding: 96px 32px;
+  background: #FFFFFF;
+}
+
+.ecotopia-lp .lp-sono-testimonials-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-sono-testimonials-h2 {
+  text-wrap: balance;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 48px;
+}
+
+.ecotopia-lp .lp-sono-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.ecotopia-lp .lp-sono-testimonial {
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  margin-top: 3px;
-  font-size: 10px;
-  color: rgba(15, 11, 46, 0.62);
+  flex-direction: column;
+  background: #F9F4F2;
+  border-radius: 18px;
+  padding: 28px 28px 22px;
+  min-height: 260px;
+  box-shadow: 0 1px 0 rgba(65, 61, 69, 0.08);
+}
+
+.ecotopia-lp .lp-sono-testimonial-quote {
+  box-sizing: content-box;
+  font-size: 3.5rem; /* controla tamanho do SVG (width/height: 1em) */
+  padding-bottom: 1.5rem;
+  color: #6EC8FF; /* eco-baby — mesmo azul da barra superior e do card ativo */
+  display: block;
+}
+
+.ecotopia-lp .lp-sono-testimonial-text {
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgb(45, 44, 43);
+  margin: 0 0 auto;
+  letter-spacing: -0.005em;
+}
+
+.ecotopia-lp .lp-sono-testimonial-author {
+  font-family: var(--lp-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(45, 44, 43, 0.65);
+  margin: 28px 0 0;
+}
+
+@media (max-width: 1023px) {
+  .ecotopia-lp .lp-sono-testimonials {
+    padding: 64px 24px;
+  }
+  .ecotopia-lp .lp-sono-testimonials-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .ecotopia-lp .lp-sono-testimonial {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .ecotopia-lp .lp-sono-testimonials {
+    padding: 48px 20px;
+  }
+  .ecotopia-lp .lp-sono-testimonials-h2 {
+    font-size: 22px;
+    line-height: 1.2;
+    max-width: 320px;
+    margin-bottom: 28px;
+  }
+  .ecotopia-lp .lp-sono-testimonial {
+    padding: 24px 22px 20px;
+  }
+  .ecotopia-lp .lp-sono-testimonial-quote {
+    font-size: 2.75rem;
+    padding-bottom: 1.25rem;
+  }
+  .ecotopia-lp .lp-sono-testimonial-text {
+    font-size: 15px;
+  }
 }
 
 /* ─── Sleepcasts / Conteúdo grid ─── */
@@ -7274,6 +7662,80 @@ body.eco-no-scroll {
   gap: 20px;
 }
 
+/* Carrossel mobile (track scrollável + nav abaixo) */
+.ecotopia-lp .lp-sono-tips-track {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.ecotopia-lp .lp-sono-tips-nav {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .ecotopia-lp .lp-sono-tips-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0;
+    margin: 0 -24px;
+    padding: 0 24px;
+  }
+  .ecotopia-lp .lp-sono-tips-track::-webkit-scrollbar {
+    display: none;
+  }
+  .ecotopia-lp .lp-sono-tips-track > .lp-sono-tips-col {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+    margin-right: 16px;
+  }
+  .ecotopia-lp .lp-sono-tips-track > .lp-sono-tips-col:last-child {
+    margin-right: 0;
+  }
+  .ecotopia-lp .lp-sono-tips-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 28px;
+  }
+  .ecotopia-lp .lp-sono-tips-arrow,
+  .ecotopia-lp .lp-sono-tips-dot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: var(--lp-text, #0F1B33);
+    font-family: var(--lp-sans);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
+  }
+  .ecotopia-lp .lp-sono-tips-arrow:hover {
+    background: rgba(15, 27, 51, 0.06);
+  }
+  .ecotopia-lp .lp-sono-tips-dot {
+    background: #F1EEFA;
+    color: rgba(15, 27, 51, 0.55);
+  }
+  .ecotopia-lp .lp-sono-tips-dot:hover {
+    color: var(--lp-text, #0F1B33);
+  }
+  .ecotopia-lp .lp-sono-tips-dot.is-active {
+    background: #1A1435;
+    color: #FFFFFF;
+  }
+}
+
 .ecotopia-lp .lp-sono-tips-col {
   background: #F7F5F1;
   border-radius: 14px;
@@ -7336,7 +7798,7 @@ body.eco-no-scroll {
   background-image:
     linear-gradient(100deg, rgba(8, 6, 28, 0.5) 0%, rgba(8, 6, 28, 0.28) 45%, rgba(8, 6, 28, 0.1) 100%),
     linear-gradient(180deg, rgba(8, 6, 28, 0.08) 0%, rgba(8, 6, 28, 0.32) 100%),
-    url('/images/sono-offer-bg.png');
+    url('/images/sono-offer-bg.webp');
   background-repeat: no-repeat;
   background-position: center, center, center;
   background-size: cover, cover, cover;
@@ -7356,11 +7818,23 @@ body.eco-no-scroll {
 .ecotopia-lp .lp-sono-offer h2 {
   font-family: var(--lp-display, 'Playfair Display', Georgia, serif);
   font-weight: 700;
-  font-size: clamp(34px, 4.2vw, 50px);
+  font-size: clamp(28px, 4.2vw, 50px);
   line-height: 1.05;
   letter-spacing: -0.024em;
   color: #FFFFFF;
   margin: 0 0 28px;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .ecotopia-lp .lp-sono-offer {
+    padding-top: 48px;
+    padding-bottom: 64px;
+  }
+  .ecotopia-lp .lp-sono-offer h2 {
+    font-size: 28px;
+    margin-bottom: 22px;
+  }
 }
 
 .ecotopia-lp .lp-sono-offer-bullets {
@@ -7416,7 +7890,13 @@ body.eco-no-scroll {
   text-decoration: none !important;
   border: 1px solid #FFFFFF;
   box-shadow: rgba(26, 25, 25, 0.2) 0px 2px 0px 0px;
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease, border-color 0.22s ease;
+  font-family: var(--lp-sans);
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .ecotopia-lp .lp-sono-offer-plan:hover {
@@ -7424,9 +7904,11 @@ body.eco-no-scroll {
 }
 
 .ecotopia-lp .lp-sono-offer-plan.is-featured {
-  background: #5431A5;
-  border-color: #5431A5;
-  color: #FFFFFF;
+  background: #6EC8FF; /* eco-baby — mesmo azul do hero plan ativo */
+  border-color: #6EC8FF;
+  color: #0D1B2A;
+  box-shadow: 0 12px 30px rgba(110, 200, 255, 0.42),
+              rgba(26, 25, 25, 0.2) 0px 2px 0px 0px;
 }
 
 .ecotopia-lp .lp-sono-offer-plan-badge {
@@ -7469,12 +7951,12 @@ body.eco-no-scroll {
   opacity: 0.82;
 }
 
-/* card Anual (roxo): texto sempre branco e legível */
+/* card Anual (azul bebê): texto branco */
 .ecotopia-lp .lp-sono-offer-plan.is-featured .lp-sono-offer-plan-meta,
 .ecotopia-lp .lp-sono-offer-plan.is-featured .lp-sono-offer-plan-price {
   color: #FFFFFF;
   -webkit-text-fill-color: #FFFFFF;
-  opacity: 0.92;
+  opacity: 0.95;
 }
 
 .ecotopia-lp .lp-sono-offer-plan.is-featured .lp-sono-offer-plan-headline {
@@ -7495,7 +7977,7 @@ body.eco-no-scroll {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #5431A5;
+  color: #0D1B2A;
 }
 
 .ecotopia-lp .lp-sono-offer-plan-radio.is-empty {
@@ -7505,13 +7987,20 @@ body.eco-no-scroll {
 }
 
 .ecotopia-lp .lp-sono-offer-fine {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: block;
+  text-align: center;
   font-family: var(--lp-sans);
   font-size: 12.5px;
   color: rgba(255, 255, 255, 0.62);
   margin: 0 0 32px;
+}
+
+.ecotopia-lp .lp-sono-offer-fine > * {
+  display: inline;
+}
+
+.ecotopia-lp .lp-sono-offer-fine > * + * {
+  margin-left: 6px;
 }
 
 .ecotopia-lp .lp-sono-offer-fine a {
@@ -7594,10 +8083,58 @@ body.eco-no-scroll {
 
 @media (max-width: 600px) {
   .ecotopia-lp .lp-sono-tabs {
-    min-height: 620px;
+    min-height: 720px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
   .ecotopia-lp .lp-sono-tabs-bg {
-    width: min(500px, 92vw);
+    width: min(500px, 94vw);
+    aspect-ratio: auto;
+    height: auto;
+    min-height: 640px;
+    border-radius: 28px;
+  }
+  .ecotopia-lp .lp-sono-tabs-inner {
+    max-width: 100%;
+    padding: 0 10px;
+  }
+  .ecotopia-lp .lp-sono-tabs-pills {
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+  .ecotopia-lp .lp-sono-tab-pill {
+    font-size: 12px;
+    padding: 7px 12px;
+  }
+  .ecotopia-lp .lp-sono-tabs-body {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 18px;
+    max-width: 100%;
+  }
+  .ecotopia-lp .lp-sono-mini-player {
+    gap: 12px;
+    padding: 8px 8px 12px;
+  }
+  .ecotopia-lp .lp-sono-mini-player-art {
+    width: 148px;
+    height: 148px;
+    border-radius: 24px;
+  }
+  .ecotopia-lp .lp-sono-mini-player-title {
+    font-size: 15px;
+  }
+  .ecotopia-lp .lp-sono-mini-player-play {
+    width: 56px;
+    height: 56px;
+  }
+  .ecotopia-lp .lp-sono-mini-player-skip {
+    width: 40px;
+    height: 40px;
+  }
+  .ecotopia-lp .lp-sono-mini-player-controls {
+    gap: 16px;
   }
   .ecotopia-lp .lp-sono-hero h1 {
     font-size: clamp(26px, 7vw, 42px);
@@ -7631,7 +8168,8 @@ body.eco-no-scroll {
     font-size: 16px;
   }
   .ecotopia-lp .lp-sono-offer-fine {
-    flex-wrap: wrap;
+    font-size: 11.5px;
+    line-height: 1.5;
   }
 }
 
@@ -7688,7 +8226,7 @@ body.eco-no-scroll {
   position: relative;
   padding: 132px 48px 96px;
   background-color: #BFE0F5;
-  background-image: url('/images/eco-ia-hero-bg-blue.png');
+  background-image: url('/images/eco-ia-hero-bg-blue.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -8882,7 +9420,7 @@ body.eco-no-scroll {
   position: relative;
   padding: 150px 48px 160px;
   background-color: #BFE0F5;
-  background-image: url('/images/eco-ia-hero-bg-blue.png');
+  background-image: url('/images/eco-ia-hero-bg-blue.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -8992,7 +9530,7 @@ body.eco-no-scroll {
   .ecotopia-lp .lp-eco-hero-art {
     min-height: 300px;
     margin: 4px -24px 0;
-    background-image: url('/images/eco-login-mobile-bg.png');
+    background-image: url('/images/eco-login-mobile-bg.webp');
     background-size: cover;
     background-position: center;
     border-radius: 28px 28px 0 0;
@@ -9512,7 +10050,7 @@ body.eco-no-scroll {
   background-color: #BFE0F5;
   background-image:
     linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.22) 100%),
-    url('/images/eco-ia-hero-bg-blue.png');
+    url('/images/eco-ia-hero-bg-blue.webp');
   background-size: cover, cover;
   background-position: center, center;
   background-repeat: no-repeat;
@@ -9734,7 +10272,7 @@ body.eco-no-scroll {
   background-color: #1B1733;
   background-image:
     linear-gradient(90deg, rgba(20, 16, 44, 0.78) 0%, rgba(20, 16, 44, 0.42) 42%, rgba(20, 16, 44, 0.12) 72%, rgba(20, 16, 44, 0.05) 100%),
-    url('/images/aneis-hero-bg.png');
+    url('/images/aneis-hero-bg.webp');
   background-size: cover, cover;
   background-position: center, center;
   background-repeat: no-repeat;
@@ -9990,7 +10528,7 @@ body.eco-no-scroll {
   background-color: #2A1E45;
   background-image:
     linear-gradient(180deg, rgba(26, 17, 48, 0.35) 0%, rgba(26, 17, 48, 0.55) 100%),
-    url('/images/aneis-quote-bg.png');
+    url('/images/aneis-quote-bg.webp');
   background-size: cover, cover;
   background-position: center, center;
   background-repeat: no-repeat;
@@ -10177,7 +10715,7 @@ body.eco-no-scroll {
     align-items: flex-end;
     background-image:
       linear-gradient(180deg, rgba(20, 16, 44, 0.3) 0%, rgba(20, 16, 44, 0.6) 55%, rgba(20, 16, 44, 0.92) 100%),
-      url('/images/aneis-hero-bg.png');
+      url('/images/aneis-hero-bg.webp');
     background-position: center, center;
   }
   .ecotopia-lp .lp-aneis-hero-text {
@@ -10322,7 +10860,7 @@ body.eco-no-scroll {
   background-color: #0B0D22;
   background-image:
     linear-gradient(90deg, rgba(8, 9, 26, 0.9) 0%, rgba(8, 9, 26, 0.62) 42%, rgba(8, 9, 26, 0.22) 72%, rgba(8, 9, 26, 0.08) 100%),
-    url('/images/dispenza-hero-bg.png');
+    url('/images/dispenza-hero-bg.webp');
   background-size: cover, cover;
   background-position: center, center;
   background-repeat: no-repeat;
@@ -10578,7 +11116,7 @@ body.eco-no-scroll {
   /* véu claro no centro garante o contraste do texto sobre a imagem cósmica */
   background:
     radial-gradient(120% 120% at 50% 45%, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.32) 42%, rgba(255, 255, 255, 0) 78%),
-    url('/images/dispenza-impact-bg.png');
+    url('/images/dispenza-impact-bg.webp');
   background-size: cover;
   background-position: center;
   border: 1px solid rgba(124, 92, 196, 0.22);
@@ -10664,7 +11202,7 @@ body.eco-no-scroll {
 /* ── CTA final ── */
 .ecotopia-lp .lp-djd-final {
   padding: 96px 56px 116px;
-  background-image: url('/images/dispenza-final-bg.png');
+  background-image: url('/images/dispenza-final-bg.webp');
   background-size: cover;
   background-position: center;
 }
@@ -10702,7 +11240,7 @@ body.eco-no-scroll {
     align-items: flex-end;
     background-image:
       linear-gradient(180deg, rgba(8, 9, 26, 0.4) 0%, rgba(8, 9, 26, 0.66) 55%, rgba(8, 9, 26, 0.94) 100%),
-      url('/images/dispenza-hero-bg.png');
+      url('/images/dispenza-hero-bg.webp');
   }
   .ecotopia-lp .lp-djd-metodo,
   .ecotopia-lp .lp-djd-meds,

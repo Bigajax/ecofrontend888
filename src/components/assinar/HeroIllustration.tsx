@@ -6,7 +6,7 @@ export function HeroIllustration() {
   return (
     <div className="w-full overflow-hidden rounded-2xl">
       <img
-        src="/images/assinar-hero.png"
+        src="/images/assinar-hero.webp"
         alt=""
         aria-hidden
         className="block h-auto w-full"

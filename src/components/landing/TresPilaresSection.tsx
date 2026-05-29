@@ -138,7 +138,7 @@ const VisualEstoico = () => (
     <div className="lp-feat-estoico-card">
       <div
         className="lp-feat-estoico-bg"
-        style={{ backgroundImage: 'url("/images/diario-marco-aurelio.png")' }}
+        style={{ backgroundImage: 'url("/images/diario-marco-aurelio.webp")' }}
         aria-hidden="true"
       />
       <div className="lp-feat-estoico-content">
@@ -188,7 +188,7 @@ const TABS: TabConfig[] = [
     cta: 'Conversar com a Eco',
     ctaTo: '/assinar?plan=monthly&from=feature_ecoai',
     from: 'feature_ecoai',
-    bg: 'url("/images/eco-ai-bg.png") center/cover no-repeat, #FFCE00',
+    bg: 'url("/images/eco-ai-bg.webp") center/cover no-repeat, #FFCE00',
     textColor: '#1A1A1A',
     Visual: VisualEcoAI,
   },
@@ -203,7 +203,7 @@ const TABS: TabConfig[] = [
     cta: 'Saber mais',
     ctaTo: '/assinar?plan=monthly&from=feature_meditacoes',
     from: 'feature_meditacoes',
-    bg: 'url("/images/meditacoes-bg.png") center/cover no-repeat, #FFA1CC',
+    bg: 'url("/images/meditacoes-bg.webp") center/cover no-repeat, #FFA1CC',
     textColor: '#1A1A1A',
     Visual: VisualMeditacoes,
   },
@@ -218,7 +218,7 @@ const TABS: TabConfig[] = [
     cta: 'Explorar recursos de sono',
     ctaTo: '/assinar?plan=monthly&from=feature_sono',
     from: 'feature_sono',
-    bg: 'url("/images/sono-bg.png") center/cover no-repeat, #3B197F',
+    bg: 'url("/images/sono-bg.webp") center/cover no-repeat, #3B197F',
     textColor: '#FFFFFF',
     Visual: VisualSono,
   },
@@ -233,7 +233,7 @@ const TABS: TabConfig[] = [
     cta: 'Conhecer os anéis',
     ctaTo: '/assinar?plan=monthly&from=feature_aneis',
     from: 'feature_aneis',
-    bg: 'url("/images/aneis-bg.png") center/cover no-repeat, #02873E',
+    bg: 'url("/images/aneis-bg.webp") center/cover no-repeat, #02873E',
     textColor: '#FFFFFF',
     Visual: VisualAneis,
   },
@@ -248,7 +248,7 @@ const TABS: TabConfig[] = [
     cta: 'Começar diário',
     ctaTo: '/assinar?plan=monthly&from=feature_estoico',
     from: 'feature_estoico',
-    bg: 'url("/images/estoico-bg.png") center/cover no-repeat, #0061EF',
+    bg: 'url("/images/estoico-bg.webp") center/cover no-repeat, #0061EF',
     textColor: '#FFFFFF',
     Visual: VisualEstoico,
   },

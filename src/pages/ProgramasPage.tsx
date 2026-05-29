@@ -168,7 +168,7 @@ export default function ProgramasPage() {
       description: 'Solte as tensões do dia e restaure sua paz interior',
       duration: '5 min',
       audioUrl: '/audio/liberando-estresse.mp3',
-      image: 'url("/images/liberando-estresse.png")',
+      image: 'url("/images/liberando-estresse.webp")',
       imagePosition: 'center center',
       gradient: 'linear-gradient(to bottom, #C4A0E8 0%, #A877D6 20%, #8855C4 40%, #6B40A8 60%, #4F2B8C 80%, #341870 100%)',
       isPremium: false,

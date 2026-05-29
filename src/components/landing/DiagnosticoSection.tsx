@@ -22,14 +22,14 @@ const OrbIcon = ({ src, tone }: { src: string; tone: OrbTone }) => (
   />
 );
 
-const StresseIcon = () => <OrbIcon src="/images/stress-orb.png" tone="stress" />;
-const MoonIcon = () => <OrbIcon src="/images/sleep-orb.png" tone="sleep" />;
-const SpiralIcon = () => <OrbIcon src="/images/anxiety-orb.png" tone="anxiety" />;
+const StresseIcon = () => <OrbIcon src="/images/stress-orb.webp" tone="stress" />;
+const MoonIcon = () => <OrbIcon src="/images/sleep-orb.webp" tone="sleep" />;
+const SpiralIcon = () => <OrbIcon src="/images/anxiety-orb.webp" tone="anxiety" />;
 
-const BlobThoughtIcon = () => <OrbIcon src="/images/thoughts-orb.png" tone="thoughts" />;
-const SunIcon = () => <OrbIcon src="/images/meditation-orb.png" tone="meditation" />;
+const BlobThoughtIcon = () => <OrbIcon src="/images/thoughts-orb.webp" tone="thoughts" />;
+const SunIcon = () => <OrbIcon src="/images/meditation-orb.webp" tone="meditation" />;
 
-const ChatThumbIcon = () => <OrbIcon src="/images/talk-orb.png" tone="talk" />;
+const ChatThumbIcon = () => <OrbIcon src="/images/talk-orb.webp" tone="talk" />;
 
 // ──────────────────────────────────────────────────────────────────────
 

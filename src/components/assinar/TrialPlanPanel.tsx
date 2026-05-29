@@ -61,8 +61,9 @@ export function TrialPlanPanel({ selectedPlan, onSelectPlan }: TrialPlanPanelPro
               onClick={() => onSelectPlan(plan)}
               className="relative flex-1 rounded-xl px-3 py-4 text-left transition-all"
               style={{
-                background: active ? "#2B2B2B" : "#F0E6DC",
+                background: active ? "#2B2B2B" : "#FFFFFF",
                 color: active ? "#FFFFFF" : "#1A1A1A",
+                border: active ? "none" : "1px solid rgba(0,0,0,0.08)",
               }}
             >
               {c.badge && (

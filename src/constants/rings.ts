@@ -16,7 +16,7 @@ export const RINGS: Record<string, Ring> = {
     icon: 'earth',
     color: 'amber',
     order: 1,
-    backgroundImage: '/images/rings/earth.png',
+    backgroundImage: '/images/rings/earth.webp',
   },
   water: {
     id: 'water',
@@ -29,7 +29,7 @@ export const RINGS: Record<string, Ring> = {
     icon: 'water',
     color: 'blue',
     order: 2,
-    backgroundImage: '/images/rings/water.png',
+    backgroundImage: '/images/rings/water.webp',
   },
   fire: {
     id: 'fire',
@@ -42,7 +42,7 @@ export const RINGS: Record<string, Ring> = {
     icon: 'fire',
     color: 'red',
     order: 3,
-    backgroundImage: '/images/rings/fire.png',
+    backgroundImage: '/images/rings/fire.webp',
   },
   wind: {
     id: 'wind',
@@ -55,7 +55,7 @@ export const RINGS: Record<string, Ring> = {
     icon: 'wind',
     color: 'sky',
     order: 4,
-    backgroundImage: '/images/rings/wind.png',
+    backgroundImage: '/images/rings/wind.webp',
   },
   void: {
     id: 'void',
@@ -68,7 +68,7 @@ export const RINGS: Record<string, Ring> = {
     icon: 'void',
     color: 'purple',
     order: 5,
-    backgroundImage: '/images/rings/void.png',
+    backgroundImage: '/images/rings/void.webp',
   },
 };
 

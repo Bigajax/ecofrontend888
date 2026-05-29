@@ -13,7 +13,7 @@ interface NeedModalProps {
 }
 
 // Fundo cósmico compartilhado por todos os modais.
-const ORBS_BG = '/images/modal-orbs-bg.png';
+const ORBS_BG = '/images/modal-orbs-bg.webp';
 
 // #RRGGBB → rgba(r,g,b,a)
 function hexToRgba(hex: string, a: number) {

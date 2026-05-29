@@ -140,7 +140,7 @@ export default function BackgroundSoundsModal({
                   >
                     {/* Background image */}
                     <img
-                      src="/images/sounds/meditacao-profunda.png"
+                      src="/images/sounds/meditacao-profunda.webp"
                       alt=""
                       className="absolute inset-0 w-full h-full object-cover"
                       style={{ filter: isFeaturedSelected ? 'brightness(0.65)' : 'brightness(0.45) saturate(0.8)' }}

@@ -57,7 +57,7 @@ const MENUS: MenuConfig[] = [
       body: 'Experimente o protocolo completo sem custo.',
       ctaLabel: 'Experimentar grátis →',
       to: '/assinar?plan=monthly&from=mega-para-voce',
-      image: '/images/mega-cta-eco.png',
+      image: '/images/mega-cta-eco.webp',
     },
   },
   {
@@ -86,7 +86,7 @@ const MENUS: MenuConfig[] = [
       body: 'Acesso completo ao app, do início ao avançado.',
       ctaLabel: 'Ver planos →',
       to: '/precos',
-      image: '/images/mega-cta-eco.png',
+      image: '/images/mega-cta-eco.webp',
     },
   },
   {
@@ -117,7 +117,7 @@ const MENUS: MenuConfig[] = [
       body: 'Receba um caminho desenhado para o seu estado atual.',
       ctaLabel: 'Fazer diagnóstico →',
       to: '/#categorias',
-      image: '/images/mega-cta-eco.png',
+      image: '/images/mega-cta-eco.webp',
     },
   },
   {
@@ -253,14 +253,14 @@ export default function EcotopiaTopbar() {
             }}
           >
             <img
-              src="/images/ecotopia-logo-horizontal.png"
+              src="/images/ecotopia-logo-horizontal.webp"
               alt="Ecotopia"
               width={180}
               height={44}
               className="lp-nav-brand-img lp-nav-brand-img--full"
             />
             <img
-              src="/images/ecotopia-logo-mark.png"
+              src="/images/ecotopia-logo-mark.webp"
               alt="Ecotopia"
               width={44}
               height={44}

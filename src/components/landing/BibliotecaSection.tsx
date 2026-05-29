@@ -151,7 +151,7 @@ const MED_ACOLHENDO: LibraryCard = {
 
 const MED_ESTRESSE: LibraryCard = {
   key: 'lib-med-estresse',
-  image: 'url("/images/liberando-estresse.png")',
+  image: 'url("/images/liberando-estresse.webp")',
   imagePosition: 'center center',
   gradient: 'linear-gradient(to bottom, #C4A0E8 0%, #341870 100%)',
   title: 'Liberando o Estresse',

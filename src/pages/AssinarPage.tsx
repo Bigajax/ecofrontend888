@@ -48,6 +48,11 @@ export default function AssinarPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
+  // Scroll para o topo ao entrar na página
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
+
   // Sincroniza step na URL (?step=…) sempre que muda
   useEffect(() => {
     const current = params.get("step");
@@ -120,7 +125,7 @@ export default function AssinarPage() {
     <div className="flex min-h-screen flex-col bg-white">
       <header className="px-5 py-6">
         <Link to="/" aria-label="Ecotopia — início" className="inline-block">
-          <img src="/images/ecotopia-logo-trim.png" alt="Ecotopia" className="h-7 w-auto" />
+          <img src="/images/ecotopia-logo-trim.webp" alt="Ecotopia" className="h-7 w-auto" />
         </Link>
       </header>
 

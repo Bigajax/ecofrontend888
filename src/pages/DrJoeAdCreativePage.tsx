@@ -21,7 +21,7 @@ export default function DrJoeAdCreativePage() {
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage: 'url("/images/capa-dr-joe-dispenza.png")',
+          backgroundImage: 'url("/images/capa-dr-joe-dispenza.webp")',
           backgroundSize: 'cover',
           backgroundPosition: 'center 30%',
           animation: 'drjoe-kenburns 14s ease-in-out infinite alternate',

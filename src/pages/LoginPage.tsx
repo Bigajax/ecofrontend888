@@ -242,7 +242,7 @@ const LoginPage: React.FC = () => {
           }}
         >
           <motion.img
-            src="/images/eco-welcome-hero.png"
+            src="/images/eco-welcome-hero.webp"
             alt="Ilustração ECO"
             initial={{ scale: 1.05, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

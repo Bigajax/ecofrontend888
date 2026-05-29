@@ -155,7 +155,7 @@ function LoadingFallback() {
           ))}
           {/* Símbolo respirando */}
           <img
-            src="/images/ecotopia-logo-mark.png"
+            src="/images/ecotopia-logo-mark.webp"
             alt="Ecotopia"
             width={74}
             height={74}
