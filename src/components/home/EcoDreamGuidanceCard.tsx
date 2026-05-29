@@ -42,6 +42,10 @@ export default function EcoDreamGuidanceCard() {
         <img
           src="/images/eco-dream-icon.webp"
           alt="Eco Dream"
+          width="120"
+          height="120"
+          decoding="async"
+          loading="lazy"
           className="absolute h-[120px] w-[120px] object-contain transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105"
           style={{
             top: '-6px',

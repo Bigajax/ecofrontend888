@@ -62,6 +62,10 @@ export default function HomeHeader() {
             <img
               src="/images/ECOTOPIA.webp"
               alt="Ecotopia"
+              width="80"
+              height="80"
+              decoding="async"
+              fetchPriority="high"
               className="h-20 w-20 object-contain"
             />
           </button>
@@ -227,6 +231,10 @@ export default function HomeHeader() {
             <img
               src="/images/ECOTOPIA.webp"
               alt="Ecotopia"
+              width="56"
+              height="56"
+              decoding="async"
+              fetchPriority="high"
               className="h-14 w-14 object-contain"
             />
           </button>

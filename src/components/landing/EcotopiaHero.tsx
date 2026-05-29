@@ -111,14 +111,17 @@ export default function EcotopiaHero() {
           >
             Começar 7 dias grátis
           </Link>
-          <div
-            className="lp-hero-placeholder"
-            style={{
-              backgroundImage: 'url(/images/autoconhecimento-card.webp)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          />
+          <div className="lp-hero-placeholder">
+            <img
+              src="/images/autoconhecimento-card.webp"
+              alt=""
+              width="800"
+              height="500"
+              fetchPriority="high"
+              decoding="async"
+              className="lp-hero-placeholder-img"
+            />
+          </div>
         </div>
 
         <div className="lp-hero-card reveal-soft animation-delay-200">
@@ -137,14 +140,17 @@ export default function EcotopiaHero() {
           >
             Conhecer a Eco
           </Link>
-          <div
-            className="lp-hero-placeholder"
-            style={{
-              backgroundImage: 'url(/images/eco-ai-card.webp)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          />
+          <div className="lp-hero-placeholder">
+            <img
+              src="/images/eco-ai-card.webp"
+              alt=""
+              width="600"
+              height="500"
+              fetchPriority="high"
+              decoding="async"
+              className="lp-hero-placeholder-img"
+            />
+          </div>
         </div>
       </div>
     </section>
