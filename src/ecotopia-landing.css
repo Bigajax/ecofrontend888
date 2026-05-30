@@ -176,20 +176,27 @@
 
 /* â”€â”€â”€ Banner topo Â· azul bebÃª â”€â”€â”€ */
 .ecotopia-lp .top-banner {
+  position: relative;
+  z-index: 60;
   background: #6EC8FF;
   color: var(--lp-accent-navy);
   text-align: center;
-  padding: 16px 20px;
   font-size: 16px;
   font-weight: 600;
   border-bottom: none;
 }
 
 .ecotopia-lp .top-banner a {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  padding: 16px 20px;
   color: var(--lp-accent-navy) !important;
   -webkit-text-fill-color: var(--lp-accent-navy);
   text-decoration: underline;
   text-underline-offset: 4px;
+  cursor: pointer;
 }
 
 /* â”€â”€â”€ Nav â”€â”€â”€ */
