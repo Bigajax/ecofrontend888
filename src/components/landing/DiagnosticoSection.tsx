@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import NeedModal from './NeedModal';
 import { NEEDS } from './needsModalData';
@@ -44,6 +45,7 @@ const CATEGORIAS = [
 ];
 
 export default function DiagnosticoSection() {
+  const navigate = useNavigate();
   const [openKey, setOpenKey] = useState<string | null>(null);
   const activeNeed = NEEDS.find((n) => n.key === openKey) ?? null;
 
@@ -75,6 +77,10 @@ export default function DiagnosticoSection() {
         open={openKey !== null}
         data={activeNeed}
         onClose={() => setOpenKey(null)}
+        onCta={(data) => {
+          setOpenKey(null);
+          navigate(`/assinar?from=${encodeURIComponent(data.key)}`);
+        }}
       />
     </section>
   );

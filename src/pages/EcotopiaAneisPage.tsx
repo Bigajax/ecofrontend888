@@ -112,7 +112,10 @@ export default function EcotopiaAneisPage() {
               da Eco transforma disciplina em identidade — um anel de cada vez.
             </p>
             <div className="lp-aneis-hero-actions scroll-reveal stagger-3">
-              <Link to="/register?plan=annual&from=aneis_hero" className="lp-aneis-cta">
+              <Link
+                to="/assinar?step=plan&plan=annual&from=aneis_hero"
+                className="lp-aneis-cta"
+              >
                 Comece sua prática
               </Link>
               <a href="#os-aneis" className="lp-aneis-cta-ghost">
@@ -237,7 +240,10 @@ export default function EcotopiaAneisPage() {
       <section className="lp-aneis-final">
         <div className="lp-aneis-final-card scroll-reveal">
           <h2>Comece hoje. O primeiro anel é uma pergunta.</h2>
-          <Link to="/register?plan=annual&from=aneis_final" className="lp-aneis-cta">
+          <Link
+            to="/assinar?step=plan&plan=annual&from=aneis_final"
+            className="lp-aneis-cta"
+          >
             Comece sua prática
           </Link>
         </div>

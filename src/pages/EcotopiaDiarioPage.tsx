@@ -109,7 +109,7 @@ export default function EcotopiaDiarioPage() {
               para começar a manhã com clareza e atravessar o dia com serenidade.
             </p>
             <Link
-              to="/register?plan=annual&from=diario_hero"
+              to="/assinar?step=plan&plan=annual&from=diario_hero"
               className="lp-diario-cta scroll-reveal stagger-3"
             >
               Comece sua jornada
@@ -192,10 +192,10 @@ export default function EcotopiaDiarioPage() {
 
           <div className="lp-diario-months-track" ref={monthsTrackRef}>
             {MONTHS.map((m) => (
-              <Link
+              <div
                 key={m.id}
-                to="/register?plan=annual&from=diario_mes"
                 className="lp-diario-month-card"
+                style={{ cursor: 'default' }}
               >
                 <span className="lp-diario-month-thumb">
                   <img src={m.image} alt="" loading="lazy" />
@@ -203,7 +203,7 @@ export default function EcotopiaDiarioPage() {
                 </span>
                 <span className="lp-diario-month-name">{m.name}</span>
                 <span className="lp-diario-month-theme">{m.theme}</span>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
@@ -223,7 +223,10 @@ export default function EcotopiaDiarioPage() {
       <section className="lp-diario-final">
         <div className="lp-diario-final-inner scroll-reveal">
           <h2>Comece hoje. O primeiro passo é uma página.</h2>
-          <Link to="/register?plan=annual&from=diario_final" className="lp-diario-cta">
+          <Link
+            to="/assinar?step=plan&plan=annual&from=diario_final"
+            className="lp-diario-cta"
+          >
             Experimente grátis
           </Link>
         </div>

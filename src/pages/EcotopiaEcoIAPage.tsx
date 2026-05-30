@@ -243,7 +243,7 @@ export default function EcotopiaEcoIAPage() {
               ansiedade, sono ou um dia que pesou.
             </p>
             <Link
-              to="/register?plan=annual&from=eco_ia_hero"
+              to="/assinar?step=plan&plan=annual&from=eco_ia_hero"
               className="lp-eco-cta scroll-reveal stagger-2"
             >
               Experimente grátis
@@ -325,7 +325,7 @@ export default function EcotopiaEcoIAPage() {
           <div className="lp-eco-channels-content scroll-reveal stagger-2">
             <h2 className="lp-eco-h2">{STEPS[activeStep].title}</h2>
             <p>{STEPS[activeStep].body}</p>
-            <Link to="/register?plan=annual&from=eco_ia_channels" className="lp-eco-cta">
+            <Link to="/assinar?step=plan&plan=annual&from=eco_ia_channels" className="lp-eco-cta">
               Falar com a Eco
             </Link>
           </div>
@@ -451,7 +451,7 @@ export default function EcotopiaEcoIAPage() {
       <section className="lp-eco-final">
         <div className="lp-eco-final-inner scroll-reveal">
           <h2>Tem algo pesando hoje? Comece por aí.</h2>
-          <Link to="/register?plan=annual&from=eco_ia_final" className="lp-eco-cta lp-eco-cta--lg">
+          <Link to="/assinar?step=plan&plan=annual&from=eco_ia_final" className="lp-eco-cta lp-eco-cta--lg">
             Experimente grátis
           </Link>
         </div>

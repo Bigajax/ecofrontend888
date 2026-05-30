@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useHeadlineVariant } from '@/hooks/useHeadlineVariant';
-import { trackLandingCta } from './trackLandingCta';
 import { DR_JOE_MEDITATIONS, type DrJoeMeditation } from '@/data/drJoeMeditations';
 import { PROTOCOL_NIGHTS, type ProtocolNight } from '@/data/protocolNights';
 
@@ -205,7 +202,6 @@ function fromNight(n: ProtocolNight, tag?: string): LibraryCard {
 }
 
 export default function BibliotecaSection() {
-  const { variant } = useHeadlineVariant();
   const [activeTab, setActiveTab] = useState<TabId>('destaques');
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(true);
@@ -333,22 +329,14 @@ export default function BibliotecaSection() {
       <div className="lp-library-carousel">
         <div className="lp-library-cards" ref={railRef}>
           {cards.map((c) => (
-            <Link
+            <div
               key={c.key}
-              to={c.to}
-              className="lp-library-card"
+              className="lp-library-card lp-library-card--static"
+              aria-hidden="true"
               style={{
                 backgroundImage: c.image || c.gradient,
                 backgroundPosition: c.imagePosition || 'center',
               }}
-              onClick={() =>
-                trackLandingCta({
-                  section: 'library',
-                  plan: 'annual',
-                  from: c.from,
-                  headline_variant: variant,
-                })
-              }
             >
               {c.tag && <span className="lp-library-card-tag">{c.tag}</span>}
               <span className={`lp-library-card-kind lp-kind-${c.kind}`}>
@@ -358,7 +346,7 @@ export default function BibliotecaSection() {
                 <h3>{c.title}</h3>
                 <p>{c.subtitle}</p>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
 

@@ -82,6 +82,8 @@ const EXPLORE_COLUMNS = [
 export default function EcotopiaMeditacaoPage() {
   useScrollReveal('.ecotopia-lp');
 
+  const [selectedOfferPlan, setSelectedOfferPlan] = useState<'annual' | 'monthly'>('annual');
+
   useEffect(() => {
     try {
       mixpanel.track('Meditation Page Viewed', { page: 'meditacao_root' });
@@ -190,7 +192,7 @@ export default function EcotopiaMeditacaoPage() {
           </div>
 
           <Link
-            to="/register?plan=annual&from=meditacao_hero"
+            to="/assinar?from=meditacao_hero"
             className="cta-primary lp-med-hero-cta scroll-reveal stagger-4"
           >
             Experimente grátis
@@ -371,7 +373,7 @@ export default function EcotopiaMeditacaoPage() {
 
         <div className="lp-med-bites-cta-wrap">
           <Link
-            to="/register?plan=annual&from=meditacao_bites_cta"
+            to="/assinar?from=meditacao_bites_cta"
             className="cta-primary lp-med-bites-cta"
           >
             Experimente grátis
@@ -420,14 +422,14 @@ export default function EcotopiaMeditacaoPage() {
 
         <div className="lp-med-library-grid">
           {PRIMEIRO_PASSO_MEDITATIONS.map((m, i) => (
-            <Link
+            <div
               key={m.id}
-              to={`/register?plan=annual&from=meditacao_library_${m.id}`}
               className={`lp-med-library-card scroll-reveal stagger-${(i % 4) + 1}`}
               style={{
                 backgroundImage: m.image,
                 backgroundPosition: m.imagePosition,
                 backgroundSize: 'cover',
+                cursor: 'default',
               }}
             >
               <div className="lp-med-library-body">
@@ -435,7 +437,7 @@ export default function EcotopiaMeditacaoPage() {
                 <h3>{m.title}</h3>
                 <p>{m.description}</p>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
 
@@ -449,40 +451,31 @@ export default function EcotopiaMeditacaoPage() {
         </div>
       </section>
 
-      {/* ─── Oferta · aquarela amarela ─── */}
-      <section
-        className="lp-med-offer"
-        style={{ backgroundImage: 'url("/images/meditacao-oferta-bg.webp")' }}
-      >
-        <div className="lp-med-offer-inner">
-          <div className="lp-med-offer-content">
-            <h2 className="lp-med-offer-title scroll-reveal">
-              Cuide da sua mente todos os dias.
-            </h2>
+      {/* ─── Oferta · estilo navy (copiado do /sono) ─── */}
+      <section className="lp-sono-offer">
+        <div className="lp-sono-offer-bg" aria-hidden />
 
-            <ul className="lp-med-offer-bullets scroll-reveal stagger-1">
+        <div className="lp-sono-offer-inner">
+          <div className="lp-sono-offer-content">
+            <h2 className="scroll-reveal">Cuide da sua mente todos os dias.</h2>
+
+            <ul className="lp-sono-offer-bullets scroll-reveal stagger-1">
               <li>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+                <OfferCheck />
                 <span>
                   Acesse o método completo: Eco AI ilimitada, Cinco Anéis, Diário
                   Estoico com 366 lições e as Jornadas Dispenza em português.
                 </span>
               </li>
               <li>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+                <OfferCheck />
                 <span>
                   Prepare sua mente para dormir com o Protocolo do Sono de 7 noites
                   e o Eco Dream — interpretação de sonhos por IA.
                 </span>
               </li>
               <li>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+                <OfferCheck />
                 <span>
                   Incorpore a atenção plena à sua rotina com o ritual diário de 5
                   minutos, sessões curtas de respiração e práticas de mindfulness.
@@ -490,46 +483,70 @@ export default function EcotopiaMeditacaoPage() {
               </li>
             </ul>
 
-            <div className="lp-med-offer-plans scroll-reveal stagger-2">
-              <Link
-                to="/register?plan=annual&from=meditacao_oferta_anual"
-                className="lp-med-offer-plan is-featured"
+            <div
+              className="lp-sono-offer-plans scroll-reveal stagger-2"
+              role="radiogroup"
+              aria-label="Escolha seu plano"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={selectedOfferPlan === 'annual'}
+                onClick={() => setSelectedOfferPlan('annual')}
+                className={`lp-sono-offer-plan ${selectedOfferPlan === 'annual' ? 'is-featured' : ''}`}
               >
-                <span className="lp-med-offer-plan-badge">Melhor custo-benefício</span>
-                <span className="lp-med-offer-plan-meta">
+                <span className="lp-sono-offer-plan-badge">Melhor custo-benefício</span>
+                <span className="lp-sono-offer-plan-meta">
                   Anual · cobrado a R$ 142,80/ano
                 </span>
-                <strong className="lp-med-offer-plan-headline">7 dias grátis</strong>
-                <span className="lp-med-offer-plan-price">R$ 11,90 por mês</span>
-                <span className="lp-med-offer-plan-radio" aria-hidden>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+                <strong className="lp-sono-offer-plan-headline">7 dias grátis</strong>
+                <span className="lp-sono-offer-plan-price">R$ 11,90 por mês</span>
+                <span
+                  className={`lp-sono-offer-plan-radio ${selectedOfferPlan === 'annual' ? '' : 'is-empty'}`}
+                  aria-hidden
+                >
+                  {selectedOfferPlan === 'annual' && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
                 </span>
-              </Link>
+              </button>
 
-              <Link
-                to="/register?plan=monthly&from=meditacao_oferta_mensal"
-                className="lp-med-offer-plan"
+              <button
+                type="button"
+                role="radio"
+                aria-checked={selectedOfferPlan === 'monthly'}
+                onClick={() => setSelectedOfferPlan('monthly')}
+                className={`lp-sono-offer-plan ${selectedOfferPlan === 'monthly' ? 'is-featured' : ''}`}
               >
-                <span className="lp-med-offer-plan-meta">Mensal</span>
-                <strong className="lp-med-offer-plan-headline">7 dias grátis</strong>
-                <span className="lp-med-offer-plan-price">R$ 15,90/mês</span>
-                <span className="lp-med-offer-plan-radio is-empty" aria-hidden />
-              </Link>
+                <span className="lp-sono-offer-plan-meta">Plano Mensal</span>
+                <strong className="lp-sono-offer-plan-headline">R$ 15,90/mês</strong>
+                <span className="lp-sono-offer-plan-price">Cobrado mensalmente</span>
+                <span
+                  className={`lp-sono-offer-plan-radio ${selectedOfferPlan === 'monthly' ? '' : 'is-empty'}`}
+                  aria-hidden
+                >
+                  {selectedOfferPlan === 'monthly' && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </span>
+              </button>
             </div>
 
-            <div className="lp-med-offer-fine scroll-reveal stagger-3">
+            <div className="lp-sono-offer-fine scroll-reveal stagger-3">
               <Link to="/termos">Termos e Condições</Link>
               <span aria-hidden>·</span>
               <Link to="/cancelar-assinatura">Cancele a qualquer momento</Link>
             </div>
 
             <Link
-              to="/register?plan=annual&from=meditacao_oferta_cta"
-              className="cta-primary lp-med-offer-cta scroll-reveal stagger-4"
+              to={`/assinar?step=plan&plan=${selectedOfferPlan}&from=meditacao_oferta_cta`}
+              className="lp-sono-offer-cta scroll-reveal stagger-4"
             >
-              Aproveite esta oferta!
+              Comece seu teste gratuito
             </Link>
           </div>
         </div>
@@ -537,5 +554,23 @@ export default function EcotopiaMeditacaoPage() {
 
       <EcotopiaFooter />
     </div>
+  );
+}
+
+function OfferCheck() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
   );
 }

@@ -111,7 +111,7 @@ const LIBRARY: {
     duration: '5 min',
     cat: 'respiros',
     image: '/images/meditacao-caminhando.webp',
-    to: '/register?plan=annual&from=ansiedade_biblioteca',
+    to: '/assinar?step=plan&plan=annual&from=ansiedade_biblioteca',
   },
   {
     title: 'Chuva suave',
@@ -119,7 +119,7 @@ const LIBRARY: {
     duration: '60 min',
     cat: 'sono',
     image: '/images/sounds/chuva-suave.webp',
-    to: '/register?plan=annual&from=ansiedade_biblioteca',
+    to: '/assinar?step=plan&plan=annual&from=ansiedade_biblioteca',
   },
   {
     title: 'Taças tibetanas',
@@ -127,7 +127,7 @@ const LIBRARY: {
     duration: '45 min',
     cat: 'sono',
     image: '/images/sounds/tibetan-bowl.webp',
-    to: '/register?plan=annual&from=ansiedade_biblioteca',
+    to: '/assinar?step=plan&plan=annual&from=ansiedade_biblioteca',
   },
   {
     title: 'Sintonize novos potenciais',
@@ -314,7 +314,7 @@ export default function EcotopiaAnsiedadePage() {
               estresse e a ansiedade.
             </p>
             <Link
-              to="/register?plan=annual&from=ansiedade_hero"
+              to="/assinar?step=plan&plan=annual&from=ansiedade_hero"
               className="lp-anx-cta scroll-reveal stagger-3"
             >
               Experimente grátis
@@ -349,7 +349,7 @@ export default function EcotopiaAnsiedadePage() {
           <div className="lp-eco-channels-content scroll-reveal stagger-2">
             <h2 className="lp-eco-h2">{PILARES[activeStep].title}</h2>
             <p>{PILARES[activeStep].body}</p>
-            <Link to="/register?plan=annual&from=ansiedade_channels" className="lp-eco-cta">
+            <Link to="/assinar?step=plan&plan=annual&from=ansiedade_channels" className="lp-eco-cta">
               Experimente grátis
             </Link>
           </div>
@@ -378,7 +378,7 @@ export default function EcotopiaAnsiedadePage() {
             {BENEFITS.map((b) => (
               <Link
                 key={b.label}
-                to="/register?plan=annual&from=ansiedade_benefit"
+                to="/assinar?step=plan&plan=annual&from=ansiedade_benefit"
                 className="lp-cat"
               >
                 <span className="lp-cat-label">{b.label}</span>
@@ -480,7 +480,7 @@ export default function EcotopiaAnsiedadePage() {
                 </div>
               ))}
             </div>
-            <Link to="/register?plan=annual&from=ansiedade_comunidade" className="lp-anx-cta lp-anx-cta--light">
+            <Link to="/assinar?step=plan&plan=annual&from=ansiedade_comunidade" className="lp-anx-cta lp-anx-cta--light">
               Experimente grátis
             </Link>
           </div>
@@ -531,7 +531,7 @@ export default function EcotopiaAnsiedadePage() {
       <section className="lp-anx-final">
         <div className="lp-anx-final-inner scroll-reveal">
           <h2>Dê um tempo para a sua mente — e para o planeta.</h2>
-          <Link to="/register?plan=annual&from=ansiedade_final" className="lp-anx-cta">
+          <Link to="/assinar?step=plan&plan=annual&from=ansiedade_final" className="lp-anx-cta">
             Experimente grátis
           </Link>
         </div>

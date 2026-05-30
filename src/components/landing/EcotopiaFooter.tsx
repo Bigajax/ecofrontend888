@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Minus, Globe, ChevronDown, Instagram } from 'lucide-react';
+import { subscribeNewsletter } from '@/api/newsletterApi';
 
 type FooterLink = { label: string; to?: string; href?: string; strong?: boolean; muted?: boolean };
 type FooterGroup = { id: string; title: string; items: FooterLink[] };
@@ -10,28 +11,28 @@ const GROUPS: FooterGroup[] = [
     id: 'conta',
     title: 'Conta',
     items: [
-      { label: 'Criar conta', to: '/register' },
-      { label: 'Planos', to: '/precos' },
+      { label: 'Criar conta', to: '/assinar?from=footer_criar_conta' },
+      { label: 'Planos', to: '/assinar?from=footer_planos' },
     ],
   },
   {
     id: 'biblioteca',
     title: 'Biblioteca',
     items: [
-      { label: 'Eco AI', href: '#biblioteca' },
-      { label: 'Diário Estoico', href: '#biblioteca' },
-      { label: 'Protocolo do Sono', href: '#biblioteca' },
-      { label: 'Cinco Anéis', href: '#biblioteca' },
-      { label: 'Jornadas Dispenza', href: '#biblioteca' },
+      { label: 'Eco AI', to: '/eco-ia' },
+      { label: 'Diário Estoico', to: '/estoicismo' },
+      { label: 'Protocolo do Sono', to: '/sono' },
+      { label: 'Cinco Anéis', to: '/disciplina' },
+      { label: 'Jornadas Dispenza', to: '/dr-joe-dispenza' },
     ],
   },
   {
     id: 'sobre',
     title: 'Sobre',
     items: [
-      { label: 'O método', href: '#categorias' },
-      { label: 'Perguntas frequentes', href: '#faq' },
-      { label: 'Preços', to: '/precos' },
+      { label: 'O método' },
+      { label: 'Perguntas frequentes', to: '/cancelar-assinatura' },
+      { label: 'Preços', to: '/assinar?from=footer_precos' },
     ],
   },
   {
@@ -82,8 +83,43 @@ function FooterGroupItem({ group }: { group: FooterGroup }) {
   );
 }
 
+type NewsletterStatus = 'idle' | 'loading' | 'success' | 'error';
+
 export default function EcotopiaFooter() {
   const year = new Date().getFullYear();
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<NewsletterStatus>('idle');
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const handleSubscribe = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (status === 'loading') return;
+
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setStatus('error');
+      setFeedback('Digite seu e-mail para se inscrever.');
+      return;
+    }
+
+    setStatus('loading');
+    setFeedback(null);
+
+    const result = await subscribeNewsletter({ email: trimmed });
+
+    if (result.ok) {
+      setStatus('success');
+      setFeedback(
+        result.already
+          ? 'Você já está inscrito. Fique de olho na caixa de entrada!'
+          : 'Inscrição confirmada. Em breve novidades chegam ao seu e-mail.',
+      );
+      setEmail('');
+    } else {
+      setStatus('error');
+      setFeedback(result.message);
+    }
+  };
 
   return (
     <footer className="lp-footer">
@@ -101,15 +137,40 @@ export default function EcotopiaFooter() {
             <Link to="/privacidade">Política de Privacidade</Link>.
           </p>
 
-          <form
-            className="lp-footer-form"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <input type="email" placeholder="Seu e-mail" aria-label="Seu e-mail" />
-            <button type="submit" className="lp-footer-subscribe">
-              Inscrever-se
+          <form className="lp-footer-form" onSubmit={handleSubscribe} noValidate>
+            <input
+              type="email"
+              placeholder="Seu e-mail"
+              aria-label="Seu e-mail"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (status === 'error' || status === 'success') {
+                  setStatus('idle');
+                  setFeedback(null);
+                }
+              }}
+              disabled={status === 'loading'}
+              required
+            />
+            <button
+              type="submit"
+              className="lp-footer-subscribe"
+              disabled={status === 'loading'}
+            >
+              {status === 'loading' ? 'Enviando…' : 'Inscrever-se'}
             </button>
           </form>
+
+          {feedback && (
+            <p
+              className={`lp-footer-news-feedback is-${status}`}
+              role={status === 'error' ? 'alert' : 'status'}
+              aria-live="polite"
+            >
+              {feedback}
+            </p>
+          )}
         </section>
 
         <hr className="lp-footer-divider" />

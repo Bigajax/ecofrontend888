@@ -48,10 +48,10 @@ export default function AssinarPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  // Scroll para o topo ao entrar na página
+  // Scroll para o topo a cada troca de step (e no mount)
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-  }, []);
+  }, [step]);
 
   // Sincroniza step na URL (?step=…) sempre que muda
   useEffect(() => {
@@ -123,15 +123,40 @@ export default function AssinarPage() {
 
   const googleReturnTo = `/assinar?plan=${plan}&step=card`;
 
+  // Larguras alvo por step no desktop. Validação ganha mais espaço pro grid 2-col.
+  const stepMaxWidthMd =
+    step === "validation" ? "md:max-w-[760px]"
+    : step === "goals" ? "md:max-w-[460px]"
+    : "md:max-w-[460px]";
+
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      <header className="px-5 py-6">
+    <div className="relative flex min-h-screen flex-col bg-white md:bg-[#1554F0]">
+      {/* Camada decorativa do fundo — só no desktop. Blobs suaves + sparkles. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 hidden overflow-hidden md:block"
+      >
+        {/* Glow rosado direita */}
+        <div className="absolute -right-40 top-1/3 h-[560px] w-[560px] rounded-full bg-[#FFB8C8] opacity-30 blur-3xl" />
+        {/* Glow branco esquerda */}
+        <div className="absolute -left-32 bottom-20 h-[440px] w-[440px] rounded-full bg-white opacity-15 blur-3xl" />
+        {/* Glow azul claro topo */}
+        <div className="absolute -top-32 left-1/3 h-[400px] w-[400px] rounded-full bg-[#9EC9FF] opacity-25 blur-3xl" />
+        {/* Sparkles */}
+        <div className="absolute right-[14%] top-[12%] h-1.5 w-1.5 rounded-full bg-white/80 shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+        <div className="absolute left-[9%] top-[28%] h-1 w-1 rounded-full bg-white/60" />
+        <div className="absolute right-[22%] bottom-[24%] h-1.5 w-1.5 rounded-full bg-white/70 shadow-[0_0_6px_rgba(255,255,255,0.6)]" />
+        <div className="absolute left-[16%] bottom-[14%] h-1 w-1 rounded-full bg-white/50" />
+        <div className="absolute right-[8%] top-[55%] h-1 w-1 rounded-full bg-white/60" />
+      </div>
+
+      <header className="relative z-10 bg-white px-5 py-6">
         <Link to="/" aria-label="Ecotopia — início" className="inline-block">
           <img src="/images/ecotopia-logo-trim.webp" alt="Ecotopia" className="h-7 w-auto" />
         </Link>
       </header>
 
-      <main className="mx-auto w-full flex-1 sm:max-w-[420px]">
+      <main className={`relative z-10 mx-auto w-full flex-1 ${stepMaxWidthMd} md:py-8`}>
         {step === "goals" && (
           <GoalsStep onContinue={handleGoalsContinue} onSkip={handleGoalsSkip} />
         )}
@@ -141,19 +166,19 @@ export default function AssinarPage() {
         )}
 
         {step === "plan" && (
-          <div className="px-5">
+          <div className="px-5 md:rounded-3xl md:bg-white md:px-8 md:py-10 md:shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
             <PlanStep selectedPlan={plan} onSelectPlan={selectPlan} onContinue={continueFromPlan} />
           </div>
         )}
 
         {step === "signup" && (
-          <div className="px-5">
+          <div className="px-5 md:rounded-3xl md:bg-white md:px-8 md:py-10 md:shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
             <SignupStep onCreated={() => setStep("card")} googleReturnTo={googleReturnTo} />
           </div>
         )}
 
         {step === "card" && (
-          <div className="flex flex-col gap-5 px-5 pb-8">
+          <div className="flex flex-col gap-5 px-5 pb-8 md:rounded-3xl md:bg-white md:px-8 md:pb-10 md:pt-10 md:shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
             <h2 className="text-center font-display text-[24px] font-bold leading-tight" style={{ color: "#0D3461" }}>
               Selecione o método de pagamento
             </h2>

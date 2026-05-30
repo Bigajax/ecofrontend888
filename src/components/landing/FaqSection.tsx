@@ -16,10 +16,6 @@ const FAQ = [
     a: 'R$ 15,90 por mês no plano mensal, ou R$ 11,90/mês no plano anual (R$ 142,80 cobrado anualmente — economia de R$ 48).',
   },
   {
-    q: 'Tem Android e iOS?',
-    a: 'Sim. E versão web. Sua conta sincroniza entre os três.',
-  },
-  {
     q: 'É baseado em quê?',
     a: 'Carl Jung (sombra, individuação), Sigmund Freud (sonhos, inconsciente), estoicismo romano (Marco Aurélio, Sêneca, Epicteto), Miyamoto Musashi (Cinco Anéis), Joe Dispenza (meditação ativa) e neurociência contemporânea (Andrew Huberman, Lisa Feldman Barrett).',
   },

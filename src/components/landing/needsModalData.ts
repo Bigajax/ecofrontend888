@@ -54,8 +54,7 @@ export const NEEDS: NeedModalData[] = [
   {
     key: 'stress',
     color: '#F5A623',
-    textTone: 'dark',
-    background: '/images/need-stress-bg.webp',
+    textTone: 'light',
     illustration: '/images/need-stress.webp',
     title: 'Solte o peso do dia',
     subtitle:
@@ -63,30 +62,26 @@ export const NEEDS: NeedModalData[] = [
     benefits: [
       {
         Icon: Flower2,
-        image: '/images/need-stress-meditacoes.webp',
         title: 'Meditações guiadas',
         desc: 'Práticas rápidas para aliviar tensão',
       },
       {
         Icon: Wind,
-        image: '/images/need-stress-respiracao.webp',
         title: 'Respiração consciente',
         desc: 'Volte para o presente em minutos',
       },
       {
         Icon: Music2,
-        image: '/images/need-stress-sons.webp',
         title: 'Sons relaxantes',
         desc: 'Crie um ambiente mais leve',
       },
       {
         Icon: Scale,
-        image: '/images/benefit-equilibrio.webp',
         title: 'Programas de equilíbrio',
         desc: 'Desenvolva mais calma no dia a dia',
       },
     ],
-    ctaLabel: 'Começar agora',
+    ctaLabel: 'Experimente grátis',
   },
   {
     key: 'sleep',
@@ -102,7 +97,7 @@ export const NEEDS: NeedModalData[] = [
       { Icon: Waves, title: 'Sons para o sono' },
       { Icon: Bed, title: 'Protocolos noturnos' },
     ],
-    ctaLabel: 'Entrar no modo descanso',
+    ctaLabel: 'Experimente grátis',
   },
   {
     key: 'anxiety',
@@ -118,7 +113,7 @@ export const NEEDS: NeedModalData[] = [
       { Icon: Wind, title: 'Respiração guiada' },
       { Icon: GraduationCap, title: 'Programas especializados' },
     ],
-    ctaLabel: 'Quero me sentir melhor',
+    ctaLabel: 'Experimente grátis',
   },
   {
     key: 'thoughts',
@@ -134,7 +129,7 @@ export const NEEDS: NeedModalData[] = [
       { Icon: Compass, title: 'Mapa emocional' },
       { Icon: LineChart, title: 'Insights pessoais' },
     ],
-    ctaLabel: 'Ganhar clareza',
+    ctaLabel: 'Experimente grátis',
   },
   {
     key: 'meditation',
@@ -149,7 +144,7 @@ export const NEEDS: NeedModalData[] = [
       { Icon: Leaf, title: 'Mindfulness' },
       { Icon: Target, title: 'Programas de atenção plena' },
     ],
-    ctaLabel: 'Começar a meditar',
+    ctaLabel: 'Experimente grátis',
   },
   {
     key: 'eco',
@@ -165,6 +160,6 @@ export const NEEDS: NeedModalData[] = [
       { Icon: UserCircle, title: 'Perfil emocional' },
       { Icon: MessagesSquare, title: 'Conversas profundas' },
     ],
-    ctaLabel: 'Abrir a Eco',
+    ctaLabel: 'Experimente grátis',
   },
 ];

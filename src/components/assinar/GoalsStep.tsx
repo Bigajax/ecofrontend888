@@ -19,8 +19,7 @@ export function GoalsStep({ onContinue, onSkip }: Props) {
 
   return (
     <div
-      className="flex min-h-[calc(100vh-120px)] flex-col gap-6 px-5 py-8 sm:rounded-3xl sm:px-6"
-      style={{ background: "#1554F0", color: "#FFFFFF" }}
+      className="flex min-h-[calc(100vh-120px)] flex-col gap-6 bg-[#1554F0] px-5 py-8 text-white md:min-h-0 md:bg-transparent md:px-2 md:py-4"
     >
       <h1 className="text-center font-display text-[26px] font-bold leading-[1.15]" style={{ color: "#FFFFFF" }}>
         Quais são os objetivos<br />que devemos perseguir<br />juntos?

@@ -36,18 +36,13 @@ const MENUS: MenuConfig[] = [
         heading: 'Como podemos ajudar',
         links: [
           { label: 'Ansiedade', to: '/ansiedade' },
-          { label: 'Estresse', to: '/#categorias' },
           { label: 'Durma melhor', to: '/sono' },
-          { label: 'Saúde mental', to: '/#categorias' },
         ],
       },
       {
         heading: 'Explore nossa biblioteca',
         links: [
           { label: 'Meditação · primeiros passos', to: '/meditacao' },
-          { label: 'Música para dormir', to: '/sono' },
-          { label: 'Sessões guiadas', to: '/#biblioteca' },
-          { label: 'Programas estoicos', to: '/app/diario-estoico' },
         ],
       },
     ],
@@ -68,8 +63,8 @@ const MENUS: MenuConfig[] = [
       {
         heading: 'Assinaturas Ecotopia',
         links: [
-          { label: 'Anual · economize 25%', to: '/precos' },
-          { label: 'Mensal', to: '/precos' },
+          { label: 'Anual · economize 25%', to: '/assinar?plan=annual&from=mega_assinaturas_anual' },
+          { label: 'Mensal', to: '/assinar?plan=monthly&from=mega_assinaturas_mensal' },
         ],
       },
       {
@@ -95,20 +90,9 @@ const MENUS: MenuConfig[] = [
     lead: { label: 'Ver todos os recursos' },
     columns: [
       {
-        heading: 'Artigos',
-        links: [
-          { label: 'Sono profundo · ciência por trás', to: '/#faq' },
-          { label: 'Como dormir melhor', to: '/sono' },
-          { label: 'Estoicismo prático no dia a dia', to: '/app/diario-estoico' },
-          { label: 'Meditar quando a mente não para', to: '/#biblioteca' },
-        ],
-      },
-      {
         heading: 'Ajuda',
         links: [
-          { label: 'Perguntas frequentes', to: '/#faq' },
           { label: 'Como cancelar minha assinatura', to: '/cancelar-assinatura' },
-          { label: 'Suporte', to: '/#faq' },
         ],
       },
     ],

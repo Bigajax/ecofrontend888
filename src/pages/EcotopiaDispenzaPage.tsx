@@ -80,7 +80,7 @@ export default function EcotopiaDispenzaPage() {
               e mente a um novo padrão.
             </p>
             <div className="lp-djd-hero-actions scroll-reveal stagger-3">
-              <Link to="/register?plan=annual&from=dispenza_hero" className="lp-djd-cta">
+              <Link to="/assinar?step=plan&plan=annual&from=dispenza_hero" className="lp-djd-cta">
                 Começar a praticar
               </Link>
               <a href="#meditacoes" className="lp-djd-cta-ghost">
@@ -184,7 +184,7 @@ export default function EcotopiaDispenzaPage() {
       <section className="lp-djd-final">
         <div className="lp-djd-final-card scroll-reveal">
           <h2>Comece hoje. Seu corpo aprende pela repetição.</h2>
-          <Link to="/register?plan=annual&from=dispenza_final" className="lp-djd-cta">
+          <Link to="/assinar?step=plan&plan=annual&from=dispenza_final" className="lp-djd-cta">
             Começar a praticar
           </Link>
         </div>

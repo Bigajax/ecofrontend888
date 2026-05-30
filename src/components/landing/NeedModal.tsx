@@ -33,12 +33,13 @@ function tokensFor(tone: 'light' | 'dark') {
       subtitle: 'rgba(30,42,68,0.72)',
       benefitTitle: '#1E2A44',
       benefitDesc: 'rgba(30,42,68,0.66)',
-      chipBg: 'rgba(255,255,255,0.6)',
-      chipIcon: '#1E2A44',
+      orbBg:
+        'radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 48%, rgba(255,255,255,0.32) 100%)',
+      orbShadow:
+        '0 8px 22px rgba(30,42,68,0.18), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -10px 16px rgba(30,42,68,0.08)',
+      orbIcon: '#1E2A44',
       closeBg: 'rgba(30,42,68,0.12)',
       closeIcon: '#1E2A44',
-      ctaBg: '#1E2A44',
-      ctaText: '#FFFFFF',
     };
   }
   // Fundo escuro → texto claro.
@@ -47,12 +48,13 @@ function tokensFor(tone: 'light' | 'dark') {
     subtitle: 'rgba(255,255,255,0.82)',
     benefitTitle: '#FFFFFF',
     benefitDesc: 'rgba(255,255,255,0.78)',
-    chipBg: 'rgba(255,255,255,0.15)',
-    chipIcon: '#FFFFFF',
+    orbBg:
+      'radial-gradient(circle at 32% 28%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.22) 48%, rgba(255,255,255,0.08) 100%)',
+    orbShadow:
+      '0 10px 26px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.18) inset, inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -10px 18px rgba(0,0,0,0.22)',
+    orbIcon: '#FFFFFF',
     closeBg: 'rgba(255,255,255,0.18)',
     closeIcon: '#FFFFFF',
-    ctaBg: '#FFFFFF',
-    ctaText: '#1E2A44',
   };
 }
 
@@ -213,10 +215,30 @@ export default function NeedModal({ open, data, onClose, onCta }: NeedModalProps
                     />
                   ) : (
                     <span
-                      className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
-                      style={{ backgroundColor: t.chipBg, color: t.chipIcon }}
+                      className="relative mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full"
+                      style={{
+                        background: t.orbBg,
+                        boxShadow: t.orbShadow,
+                        backdropFilter: 'blur(10px)',
+                        WebkitBackdropFilter: 'blur(10px)',
+                      }}
                     >
-                      <Icon size={22} strokeWidth={1.75} />
+                      {/* highlight especular (reflexo de luz) */}
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-[18%] top-[14%] h-3 w-4 rounded-full opacity-80"
+                        style={{
+                          background:
+                            'radial-gradient(ellipse at center, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 70%)',
+                          filter: 'blur(1px)',
+                        }}
+                      />
+                      <Icon
+                        size={20}
+                        strokeWidth={1.6}
+                        color={t.orbIcon}
+                        className="relative z-10"
+                      />
                     </span>
                   )}
                   <span className="flex flex-col">
@@ -239,16 +261,14 @@ export default function NeedModal({ open, data, onClose, onCta }: NeedModalProps
               ))}
             </ul>
 
-            {/* CTA */}
+            {/* CTA — pill branco unificado, leva ao quiz (/assinar) → pagamento */}
             <button
               type="button"
               onClick={() => {
-                // TODO: navegação do CTA (cadastro vs deep-link a definir).
                 if (onCta) onCta(data);
                 else onClose();
               }}
-              className="mt-10 rounded-full px-8 py-3.5 text-[15px] font-semibold transition-transform hover:scale-[1.03] active:scale-100 md:text-base"
-              style={{ backgroundColor: t.ctaBg, color: t.ctaText }}
+              className="mt-10 rounded-full bg-white px-10 py-4 text-[15px] font-semibold text-[#1E2A44] shadow-[0_10px_28px_rgba(0,0,0,0.22)] transition-transform hover:scale-[1.03] active:scale-100 md:text-base"
             >
               {data.ctaLabel}
             </button>

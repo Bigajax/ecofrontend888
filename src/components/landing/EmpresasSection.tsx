@@ -1,7 +1,5 @@
-import { Link } from 'react-router-dom';
 import { useHeadlineVariant } from '@/hooks/useHeadlineVariant';
 import { useSectionInView } from './useSectionInView';
-import { trackLandingCta } from './trackLandingCta';
 
 export default function EmpresasSection() {
   const { variant } = useHeadlineVariant();
@@ -19,34 +17,18 @@ export default function EmpresasSection() {
             meditações e práticas guiadas em uma única plataforma.
           </p>
           <div className="lp-empresas-actions">
-            <Link
-              to="/contato?from=empresas_demo"
-              className="lp-empresas-cta lp-empresas-cta--primary"
-              onClick={() =>
-                trackLandingCta({
-                  section: 'empresas',
-                  plan: 'b2b',
-                  from: 'empresas_demo',
-                  headline_variant: variant,
-                })
-              }
+            <span
+              className="lp-empresas-cta lp-empresas-cta--primary lp-empresas-cta--static"
+              aria-hidden="true"
             >
               Solicitar demonstração
-            </Link>
-            <Link
-              to="/empresas?from=empresas_saber_mais"
-              className="lp-empresas-cta lp-empresas-cta--ghost"
-              onClick={() =>
-                trackLandingCta({
-                  section: 'empresas',
-                  plan: 'b2b',
-                  from: 'empresas_saber_mais',
-                  headline_variant: variant,
-                })
-              }
+            </span>
+            <span
+              className="lp-empresas-cta lp-empresas-cta--ghost lp-empresas-cta--static"
+              aria-hidden="true"
             >
               Saber mais
-            </Link>
+            </span>
           </div>
         </div>
       </div>
