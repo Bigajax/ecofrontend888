@@ -16,6 +16,8 @@ import { Play, ArrowRight, Sparkles } from "lucide-react";
 import type { Message } from "../../contexts/ChatContext";
 import { track } from "../../analytics/track";
 import { useHapticFeedback } from "../../hooks/useHapticFeedback";
+import { useSubscriptionTier, usePremiumContent } from "../../hooks/usePremiumContent";
+import { canAccessMeditation } from "../../constants/meditationTiers";
 
 /** Azul-bebê da marca — mesma cor do feedback do nav (`--accent`/eco-baby). Abre a recomendação. */
 const ECO_BABY = "#6EC8FF";
@@ -25,83 +27,62 @@ const GRAIN =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
 
 export type TipoAcao = "meditacao" | "sono" | "diario" | "estoicismo" | "relatorio";
+export type AcaoKind = "programa" | "meditacao";
 
 export interface AcaoRecomendada {
-  tipo: TipoAcao;
+  /** Opcional para tolerar payloads legados que só enviavam `tipo`. */
+  id?: string;
+  kind?: AcaoKind;
   titulo: string;
   descricao: string;
   cta: string;
   prioridade?: number;
+  /** Alias legado (payloads antigos enviavam só `tipo`). */
+  tipo?: TipoAcao;
 }
 
-interface AcaoConfig {
+interface CatalogEntry {
+  kind: AcaoKind;
   rota: string;
   /** Capa real do programa (em /public/images). */
   cover: string;
-  /** Verbo-identidade exibido como eyebrow (ex.: "RESPIRAR"). */
   kicker: string;
-  /** Cor de acento (borda-fio, eyebrow, glow do play). */
   accent: string;
-  /** Glyph do botão sobre a capa: práticas tocam (play); relatório abre (seta). */
   glyph: "play" | "open";
+  /** Id para checagem de acesso premium (kind === "meditacao"). */
+  premiumId?: string;
+  /** State de navegação para o player (kind === "meditacao"). */
+  meditationState?: {
+    title: string; duration: string; audioUrl: string; imageUrl: string; gradient: string;
+  };
 }
 
-// Mapa tipo → rota + capa real + identidade. Rotas já existem em App.tsx.
-export const ACTION_REGISTRY: Record<TipoAcao, AcaoConfig> = {
-  meditacao: {
-    rota: "/app/introducao-meditacao",
-    cover: "/images/introducao-meditacao-hero.webp",
-    kicker: "RESPIRAR",
-    accent: "#36A8E8",
-    glyph: "play",
-  },
-  sono: {
-    rota: "/app/meditacoes-sono",
-    cover: "/images/meditacoes-sono-hero.webp",
-    kicker: "DESCANSAR",
-    accent: "#6E63B0",
-    glyph: "play",
-  },
-  estoicismo: {
-    rota: "/app/diario-estoico",
-    cover: "/images/diario-marco-aurelio.webp",
-    kicker: "REFLETIR",
-    accent: "#B5895E",
-    glyph: "play",
-  },
-  diario: {
-    rota: "/app/diario-estoico",
-    cover: "/images/diario-estoico.webp",
-    kicker: "ESCREVER",
-    accent: "#5C9A78",
-    glyph: "play",
-  },
-  relatorio: {
-    rota: "/app/memory/report",
-    cover: "/images/relatorio-emocional-ilustracao.webp",
-    kicker: "OBSERVAR",
-    accent: "#2E6FB0",
-    glyph: "open",
+export const CATALOG: Record<string, CatalogEntry> = {
+  meditacao: { kind: "programa", rota: "/app/introducao-meditacao", cover: "/images/introducao-meditacao-hero.webp", kicker: "RESPIRAR", accent: "#36A8E8", glyph: "play" },
+  sono: { kind: "programa", rota: "/app/meditacoes-sono", cover: "/images/meditacoes-sono-hero.webp", kicker: "DESCANSAR", accent: "#6E63B0", glyph: "play" },
+  estoicismo: { kind: "programa", rota: "/app/diario-estoico", cover: "/images/diario-marco-aurelio.webp", kicker: "REFLETIR", accent: "#B5895E", glyph: "play" },
+  diario: { kind: "programa", rota: "/app/diario-estoico", cover: "/images/diario-estoico.webp", kicker: "ESCREVER", accent: "#5C9A78", glyph: "play" },
+  relatorio: { kind: "programa", rota: "/app/memory/report", cover: "/images/relatorio-emocional-ilustracao.webp", kicker: "OBSERVAR", accent: "#2E6FB0", glyph: "open" },
+  aneis: { kind: "programa", rota: "/app/rings", cover: "/images/5-aneis-hero.webp", kicker: "PERSISTIR", accent: "#B07C3F", glyph: "open" },
+  riqueza_mental: { kind: "programa", rota: "/app/riqueza-mental", cover: "/images/quem-pensa-enriquece.webp", kicker: "PROSPERAR", accent: "#3B6BA5", glyph: "open" },
+  energy_blessings: { kind: "programa", rota: "/app/energy-blessings", cover: "/images/meditacao-bencao-energia.webp", kicker: "ENERGIZAR", accent: "#E67E3C", glyph: "open" },
+  liberar_estresse: {
+    kind: "meditacao", rota: "/app/meditation-player",
+    cover: "/images/liberando-estresse.webp", kicker: "LIBERAR", accent: "#8855C4", glyph: "play",
+    premiumId: "blessing_11",
+    meditationState: {
+      title: "Liberando o Estresse", duration: "5 min",
+      audioUrl: "/audio/liberando-estresse.mp3", imageUrl: "/images/liberando-estresse.webp",
+      gradient: "linear-gradient(to bottom, #C4A0E8 0%, #A877D6 20%, #8855C4 40%, #6B40A8 60%, #4F2B8C 80%, #341870 100%)",
+    },
   },
 };
-
-const TIPOS_VALIDOS = new Set<TipoAcao>([
-  "meditacao",
-  "sono",
-  "diario",
-  "estoicismo",
-  "relatorio",
-]);
 
 function isAcaoRecomendada(value: unknown): value is AcaoRecomendada {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
-  return (
-    typeof v.tipo === "string" &&
-    TIPOS_VALIDOS.has(v.tipo as TipoAcao) &&
-    typeof v.titulo === "string" &&
-    typeof v.cta === "string"
-  );
+  const id = (typeof v.id === "string" && v.id) || (typeof v.tipo === "string" ? v.tipo : "");
+  return typeof id === "string" && id in CATALOG && typeof v.titulo === "string" && typeof v.cta === "string";
 }
 
 /**
@@ -151,20 +132,31 @@ export default function AcaoRecomendadaCard({ acao, messageId }: AcaoRecomendada
   const navigate = useNavigate();
   const reduce = useReducedMotion();
   const haptic = useHapticFeedback();
-  const config = ACTION_REGISTRY[acao.tipo];
+  const tier = useSubscriptionTier();
+  const { requestUpgrade } = usePremiumContent();
+  const id = acao.id || acao.tipo || "";
+  const entry = CATALOG[id];
   const [imgOk, setImgOk] = useState(true);
 
   useEffect(() => {
-    track("Eco Action Shown", { action_type: acao.tipo, message_id: messageId });
+    track("Eco Action Shown", { action_type: id, message_id: messageId });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [acao.tipo, messageId]);
+  }, [id, messageId]);
 
-  if (!config) return null;
-  const { rota, cover: coverSrc, kicker, accent, glyph } = config;
+  if (!entry) return null;
+  const { rota, cover: coverSrc, kicker, accent, glyph } = entry;
 
   const go = () => {
     haptic.selection();
-    track("Eco Action Clicked", { action_type: acao.tipo, message_id: messageId, rota });
+    track("Eco Action Clicked", { action_type: id, message_id: messageId, rota });
+    if (entry.kind === "meditacao") {
+      if (entry.premiumId && !canAccessMeditation(entry.premiumId, tier)) {
+        requestUpgrade("acao_" + id);
+        return;
+      }
+      navigate(rota, { state: { meditation: entry.meditationState } });
+      return;
+    }
     navigate(rota);
   };
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
