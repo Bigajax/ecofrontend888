@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Eco · Card de Próximo Passo — prévia (capas reais)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --sans: 'Inter', system-ui, sans-serif; --serif: 'Lora', Georgia, serif; --baby: #6EC8FF; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; font-family: var(--sans);
+    background: linear-gradient(180deg, #FFFFFF 0%, #EBF6FF 100%);
+    color: #0D1B2A; display: flex; flex-direction: column; align-items: center;
+    padding: 44px 20px 80px;
+  }
+  .head { text-align: center; margin-bottom: 30px; }
+  .head h1 { font-weight: 600; font-size: 20px; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .head p { font-family: var(--serif); font-style: italic; color: #6B8099; margin: 0; font-size: 14px; }
+
+  .thread { width: min(33rem, 92vw); margin-bottom: 26px; }
+  .eco-row { display: flex; gap: 12px; align-items: flex-start; }
+  .eco-avatar { width: 34px; height: 34px; border-radius: 50%; flex: none; margin-top: 2px;
+    background: radial-gradient(circle at 35% 30%, #fff, #6EC8FF); box-shadow: 0 0 14px rgba(110,200,255,0.45); }
+  .eco-bubble { background: #EBF6FF; color: #0D1B2A; border-radius: 4px 16px 16px 16px;
+    padding: 12px 16px; font-size: 14.5px; line-height: 1.55; max-width: 30rem; box-shadow: 0 2px 12px rgba(30,42,68,0.05); }
+
+  /* ── Card ── */
+  .card-wrap { margin-top: 10px; margin-left: 46px; }
+
+  /* Abertura: display da marca em azul-bebê (mesma cor do feedback do nav) */
+  .lead { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding-left: 2px; }
+  .lead svg { width: 13px; height: 13px; animation: shimmer 3.2s ease-in-out infinite; }
+  .lead-label { font-weight: 600; font-size: 12px; letter-spacing: -.01em; color: var(--baby); }
+  .lead-rule { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(110,200,255,.35), transparent); }
+  @keyframes shimmer { 0%,100% { opacity:.55; transform: scale(1) } 50% { opacity:1; transform: scale(1.12) } }
+
+  .stage { position: relative; }
+  .glow { position: absolute; inset: -12px; border-radius: 30px; z-index: -1; filter: blur(28px); opacity: .5;
+    transition: opacity .5s ease; }
+  .stage:hover .glow { opacity: .9; }
+  .border-fio { position: relative; border-radius: 22px; padding: 1px; cursor: pointer; transition: transform .35s cubic-bezier(.22,1,.36,1); }
+  .border-fio:hover { transform: translateY(-3px); }
+  .border-fio:active { transform: scale(.985); }
+  .glass { position: relative; overflow: hidden; display: flex; align-items: stretch; gap: 12px; border-radius: 21px; padding: 10px;
+    background: linear-gradient(180deg, rgba(255,255,255,.9) 0%, rgba(255,255,255,.74) 100%);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+  .grain { position: absolute; inset: 0; z-index: 0; opacity: .04; mix-blend-mode: overlay; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 180px 180px; }
+  .glass > .cover, .glass > .body { position: relative; z-index: 1; }
+
+  .cover { position: relative; width: 92px; height: 92px; flex: none; border-radius: 16px; overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+  .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+  .border-fio:hover .cover img { transform: scale(1.06); }
+  .veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,16,28,.05), rgba(8,16,28,.28)); }
+  .playwrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .ring { position: absolute; width: 48px; height: 48px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.6);
+    animation: pulse 2.4s ease-out infinite; }
+  @keyframes pulse { 0% { transform: scale(1); opacity:.55 } 100% { transform: scale(1.45); opacity:0 } }
+  .play { position: relative; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.26); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,.55); transition: transform .3s; }
+  .border-fio:hover .play { transform: scale(1.1); }
+  .play svg { width: 17px; height: 17px; }
+  @media (prefers-reduced-motion: reduce) { .ring { display:none } .cover img, .play, .border-fio { transition:none } }
+
+  .body { display: flex; flex-direction: column; justify-content: center; min-width: 0; flex: 1; padding: 2px 0; }
+  .eyebrow { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .kicker { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .16em; filter: brightness(.8); }
+  .title { font-size: 15px; font-weight: 500; line-height: 1.3; color: #16263A; margin: 0; }
+  .desc { font-family: var(--serif); font-style: italic; font-size: 13px; line-height: 1.55; color: #5B6B7E; margin: 4px 0 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ctalink { margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 500; }
+  .ctalink svg { width: 13px; height: 13px; transition: transform .3s; }
+  .border-fio:hover .ctalink svg { transform: translateX(2px); }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>Próximo passo · com a arte real de cada programa</h1>
+    <p>a capa carrega a personalidade — a cor entra só como acento e no play</p>
+  </div>
+  <div id="grid"></div>
+
+<script>
+const PLAY = '<svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>';
+const ARROW_W = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+const SPARK = '<svg viewBox="0 0 24 24" fill="none" stroke="#6EC8FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/></svg>';
+
+const CARDS = [
+  { tipo:'meditacao', kicker:'RESPIRAR', accent:'#36A8E8', glyph:'play', cover:'public/images/introducao-meditacao-hero.webp',
+    contexto:'estou muito ansioso, não paro de pensar', titulo:'Uma pausa para desacelerar',
+    desc:'Tem bastante coisa ativada aí agora. Às vezes o corpo precisa desacelerar antes da cabeça entender — 5 minutos de respiração ajudam.', cta:'Respirar por 5 minutos' },
+  { tipo:'sono', kicker:'DESCANSAR', accent:'#6E63B0', glyph:'play', cover:'public/images/meditacoes-sono-hero.webp',
+    contexto:'não consigo dormir há dias', titulo:'Preparar para a noite',
+    desc:'O que você descreve soa mais como mente que não desliga do que cansaço. Tenho uma prática pra ajudar o corpo a entrar no modo noite.', cta:'Abrir práticas de sono' },
+  { tipo:'estoicismo', kicker:'REFLETIR', accent:'#B5895E', glyph:'play', cover:'public/images/diario-marco-aurelio.webp',
+    contexto:'eu me cobro demais o tempo todo', titulo:'Uma reflexão sobre a autocobrança',
+    desc:'Tem uma distância aí entre o que você exige de si e o que de fato cabe a você. Os estoicos escreveram bastante sobre isso.', cta:'Ler uma reflexão' },
+  { tipo:'diario', kicker:'ESCREVER', accent:'#5C9A78', glyph:'play', cover:'public/images/diario-estoico.webp',
+    contexto:'não sei o que fazer da minha vida', titulo:'Colocar no papel',
+    desc:'Quando a cabeça embola assim, escrever costuma clarear mais do que continuar remoendo. Topa um exercício rápido?', cta:'Abrir o diário' },
+  { tipo:'relatorio', kicker:'OBSERVAR', accent:'#2E6FB0', glyph:'open', cover:'public/images/relatorio-emocional-ilustracao.webp',
+    contexto:'(tema "autocobrança" recorrente nos últimos 30 dias)', titulo:'Ver seus padrões',
+    desc:'Tenho notado que "autocobrança" aparece com frequência nas suas conversas. Talvez valha acompanhar como isso evolui ao longo do tempo.', cta:'Ver meu relatório' },
+];
+
+const grid = document.getElementById('grid');
+for (const c of CARDS) {
+  const glyphSvg = c.glyph === 'play' ? PLAY : ARROW_W;
+  const el = document.createElement('div');
+  el.className = 'thread';
+  el.innerHTML = `
+    <div class="eco-row">
+      <div class="eco-avatar"></div>
+      <div class="eco-bubble">${c.contexto}</div>
+    </div>
+    <div class="card-wrap">
+      <div class="lead">
+        ${SPARK}
+        <span class="lead-label">Próximo passo</span>
+        <span class="lead-rule"></span>
+      </div>
+      <div class="stage">
+      <div class="glow" style="background:radial-gradient(60% 65% at 28% 38%, ${c.accent}40, transparent 72%);"></div>
+      <div class="border-fio" style="background:linear-gradient(150deg, ${c.accent}66, rgba(255,255,255,.4) 46%, ${c.accent}1f);
+           box-shadow:0 14px 34px -16px ${c.accent}66, 0 2px 10px rgba(30,42,68,.06);">
+        <div class="glass">
+          <div class="grain"></div>
+          <div class="cover" style="background:linear-gradient(150deg, ${c.accent}, ${c.accent}99);">
+            <img src="${c.cover}" alt="" onerror="this.style.display='none'">
+            <div class="veil"></div>
+            <div class="playwrap">
+              <div class="ring"></div>
+              <div class="play" style="box-shadow:0 6px 16px -6px ${c.accent}, inset 0 1px 1px rgba(255,255,255,.4);">${glyphSvg}</div>
+            </div>
+          </div>
+          <div class="body">
+            <div class="eyebrow">
+              <span class="dot" style="background:${c.accent};box-shadow:0 0 6px ${c.accent};"></span>
+              <span class="kicker" style="color:${c.accent};">${c.kicker}</span>
+            </div>
+            <p class="title">${c.titulo}</p>
+            <p class="desc">${c.desc}</p>
+            <span class="ctalink" style="color:${c.accent};">${c.cta}${ARROW}</span>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>`;
+  grid.appendChild(el);
+}
+</script>
+</body>
+</html>
