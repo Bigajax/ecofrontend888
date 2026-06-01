@@ -6,7 +6,7 @@ import React, {
   forwardRef,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Mic } from "lucide-react";
+import { ArrowUp, Mic, Loader2 } from "lucide-react";
 import clsx from "clsx";
 
 import { toast } from "../utils/toast";
@@ -46,7 +46,6 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
   ) => {
     const [inputMessage, setInputMessage] = useState(value ?? "");
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const sendButtonRef = useRef<HTMLButtonElement>(null);
     const wrapperRef = useRef<HTMLFormElement>(null);
     const haptic = useHapticFeedback({ enabled: true });
 
@@ -57,6 +56,13 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
     const sanitize = (t: string) => t.replace(/\s+/g, " ").trim();
 
     const hasText = sanitize(inputMessage).length >= MIN_NON_WS;
+
+    // estado do botão de ação único (transforma conforme contexto)
+    const action: "sending" | "send" | "mic" = isSending
+      ? "sending"
+      : hasText
+      ? "send"
+      : "mic";
 
     useImperativeHandle(ref, () => ({
       focus: () => {
@@ -114,8 +120,6 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
         onTextChange?.("");
         mixpanel?.track?.("ui_input_cleared");
 
-        sendButtonRef.current?.classList.add("scale-90");
-        setTimeout(() => sendButtonRef.current?.classList.remove("scale-90"), 120);
         requestAnimationFrame(() => textareaRef.current?.focus());
       } catch (err) {
         console.error("Erro ao enviar mensagem:", err);
@@ -132,6 +136,12 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
       await trySendMessage();
     };
 
+    const handleMicPress = () => {
+      if (isBusy || isMicActive) return;
+      haptic.medium();
+      onMicPress?.();
+    };
+
     return (
       <motion.form
         ref={wrapperRef}
@@ -145,100 +155,116 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
         style={{ overflowAnchor: "none" }}
         onSubmit={handleSubmit}
       >
-        <div className="flex w-full items-center gap-2 sm:gap-3">
-          <div className="flex min-w-0 flex-1">
-            <div
-              className={clsx(
-                "group flex w-full min-w-0 items-center gap-3 rounded-2xl border border-eco-line/60 bg-white/70 backdrop-blur-md px-5 py-2.5 transition-all duration-200 shadow-ecoSm",
-                "focus-within:border-eco-baby focus-within:ring-2 focus-within:ring-eco-baby/30",
-                "hover:border-eco-line",
-                isBusy ? "opacity-80 cursor-not-allowed" : "",
-              )}
-            >
-              <textarea
-                ref={textareaRef}
-                value={inputMessage}
-                data-chat-input-textarea
-                onChange={(e) => {
-                  const next = e.target.value;
-                  setInputMessage(next);
-                  onTextChange?.(next);
-                }}
-                onFocus={() => haptic.light()}
-                placeholder={placeholder}
-                rows={1}
-                inputMode="text"
-                enterKeyHint="send"
-                maxLength={4000}
-                disabled={isBusy}
-                aria-disabled={isBusy}
-                aria-label="Mensagem para a Eco"
-                className="w-full min-w-0 max-h-[9.5rem] min-h-[2.9rem] resize-none border-0 bg-transparent text-[15px] leading-[1.6] text-slate-800 placeholder:text-slate-400/80 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-[rgba(71,85,105,0.55)] sm:text-[16px]"
-                onKeyDown={(event) => {
-                  if (
-                    event.key === "Enter" &&
-                    !event.shiftKey &&
-                    !(event.nativeEvent as unknown as { isComposing?: boolean })
-                      .isComposing
-                  ) {
-                    event.preventDefault();
-                    event.currentTarget.form?.requestSubmit();
+        <div
+          className={clsx(
+            "flex w-full flex-col gap-1.5 rounded-[28px] border border-eco-line/60 bg-white/70 px-4 py-3 backdrop-blur-md transition-all duration-200 shadow-ecoSm",
+            "focus-within:border-eco-baby focus-within:ring-2 focus-within:ring-eco-baby/30",
+            "hover:border-eco-line",
+            isBusy ? "opacity-90" : "",
+          )}
+        >
+          <textarea
+            ref={textareaRef}
+            value={inputMessage}
+            data-chat-input-textarea
+            onChange={(e) => {
+              const next = e.target.value;
+              setInputMessage(next);
+              onTextChange?.(next);
+            }}
+            onFocus={() => haptic.light()}
+            placeholder={placeholder}
+            rows={1}
+            inputMode="text"
+            enterKeyHint="send"
+            maxLength={4000}
+            disabled={isBusy}
+            aria-disabled={isBusy}
+            aria-label="Mensagem para a Eco"
+            className="w-full min-w-0 max-h-[9.5rem] min-h-[2.75rem] resize-none border-0 bg-transparent px-1 text-[15px] leading-[1.6] text-slate-800 placeholder:text-slate-400/80 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-[rgba(71,85,105,0.55)] sm:text-[16px]"
+            onKeyDown={(event) => {
+              if (
+                event.key === "Enter" &&
+                !event.shiftKey &&
+                !(event.nativeEvent as unknown as { isComposing?: boolean })
+                  .isComposing
+              ) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+          />
+
+          {/* linha de ação — botão único que se transforma */}
+          <div className="flex items-center justify-end">
+            <AnimatePresence mode="popLayout" initial={false}>
+              {action === "send" ? (
+                <motion.button
+                  key="send"
+                  type="submit"
+                  disabled={isBusy}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.16 }}
+                  whileTap={{ scale: 0.92 }}
+                  className={clsx(
+                    "inline-flex h-9 w-9 items-center justify-center rounded-full text-white transition-shadow duration-200 shadow-md",
+                    "bg-gradient-to-br from-eco-baby to-eco-babyDark",
+                    "hover:shadow-lg",
+                    "focus-visible:ring-2 focus-visible:ring-eco-baby/50 focus-visible:outline-none",
+                    isBusy ? "cursor-not-allowed opacity-70 hover:shadow-md" : null,
+                  )}
+                  aria-label="Enviar mensagem"
+                  title={isBusy ? "Aguarde a resposta da Eco" : "Enviar mensagem"}
+                >
+                  <ArrowUp size={18} strokeWidth={2} />
+                </motion.button>
+              ) : action === "sending" ? (
+                <motion.div
+                  key="sending"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.16 }}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-eco-baby/30 bg-eco-babySoft text-eco-baby"
+                  role="status"
+                  aria-label="Eco está respondendo"
+                  title="Eco está respondendo"
+                >
+                  <Loader2 size={18} strokeWidth={2} className="animate-spin" />
+                </motion.div>
+              ) : (
+                <motion.button
+                  key="mic"
+                  type="button"
+                  onClick={handleMicPress}
+                  disabled={isBusy || isMicActive}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.16 }}
+                  whileTap={{ scale: 0.92 }}
+                  className={clsx(
+                    "inline-flex h-9 w-9 items-center justify-center rounded-full border border-eco-baby/30 bg-eco-babySoft text-eco-baby transition-all duration-200 shadow-ecoSm",
+                    "hover:bg-eco-baby/15",
+                    "focus-visible:ring-2 focus-visible:ring-eco-baby/40 focus-visible:outline-none",
+                    isBusy
+                      ? "cursor-not-allowed opacity-60"
+                      : isMicActive
+                      ? "cursor-wait opacity-80"
+                      : "",
+                  )}
+                  aria-label={
+                    isMicActive ? "Gravação em andamento" : "Abrir painel de voz"
                   }
-                }}
-              />
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (isBusy || isMicActive) return;
-                  haptic.medium();
-                  onMicPress?.();
-                }}
-                disabled={isBusy || isMicActive}
-                className={clsx(
-                  "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-eco-baby/30 bg-eco-babySoft text-eco-baby transition-all duration-200 shadow-ecoSm",
-                  "hover:bg-eco-baby/15",
-                  "focus-visible:ring-2 focus-visible:ring-eco-baby/40 focus-visible:outline-none",
-                  isBusy
-                    ? "cursor-not-allowed opacity-60"
-                    : isMicActive
-                    ? "cursor-wait opacity-80"
-                    : "",
-                )}
-                aria-label={
-                  isMicActive ? "Gravação em andamento" : "Abrir painel de voz"
-                }
-              >
-                <Mic size={18} strokeWidth={1.7} />
-              </button>
-            </div>
+                  title={isMicActive ? "Gravação em andamento" : "Falar com a Eco"}
+                >
+                  <Mic size={18} strokeWidth={1.8} />
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
-
-          <AnimatePresence initial={false}>
-            {hasText && (
-              <motion.button
-                key="send"
-                ref={sendButtonRef}
-                type="submit"
-                disabled={isBusy}
-                initial={{ opacity: 0, scale: 0.9, x: 8 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.9, x: 8 }}
-                transition={{ duration: 0.18 }}
-                className={clsx(
-                  "inline-flex h-10 w-10 items-center justify-center rounded-full text-white transition-all duration-200 shadow-md",
-                  "bg-gradient-to-br from-eco-baby to-eco-babyDark",
-                  "hover:shadow-lg hover:scale-110 active:scale-95",
-                  "focus-visible:ring-2 focus-visible:ring-eco-baby/50 focus-visible:outline-none",
-                  isBusy ? "cursor-not-allowed opacity-70 hover:scale-100 hover:shadow-md" : null,
-                )}
-                aria-label="Enviar mensagem"
-                title={isBusy ? "Aguarde a resposta da Eco" : "Enviar mensagem"}
-              >
-                <Send size={16} strokeWidth={1.6} />
-              </motion.button>
-            )}
-          </AnimatePresence>
         </div>
       </motion.form>
     );

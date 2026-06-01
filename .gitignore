@@ -14,3 +14,6 @@ stats.html
 /public/videos/*.avi
 .vercel
 .superpowers/
+
+# TypeScript incremental build info
+*.tsbuildinfo

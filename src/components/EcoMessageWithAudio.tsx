@@ -1,6 +1,6 @@
 // src/components/EcoMessageWithAudio.tsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ClipboardCopy, ThumbsDown, ThumbsUp, Volume2, Loader2 } from "lucide-react";
+import { ClipboardCopy, RefreshCcw, Share, ThumbsDown, ThumbsUp, Volume2, Loader2 } from "lucide-react";
 
 import AudioPlayerOverlay from "./AudioPlayerOverlay";
 import ChatMessage from "./ChatMessage";
@@ -21,6 +21,7 @@ import { FeedbackReasonPopover } from "./FeedbackReasonPopover";
 import { DEFAULT_FEEDBACK_PILLAR } from "../constants/feedback";
 import { extractModuleUsageCandidates, resolveLastActivatedModuleKey } from "../utils/moduleUsage";
 import { isUserMessage } from "../utils/chat/messages";
+import AcaoRecomendadaCard, { extractAcaoRecomendada } from "./chat/AcaoRecomendadaCard";
 
 type Vote = "up" | "down";
 
@@ -35,6 +36,8 @@ type EcoMessageWithAudioProps = {
   message: Message;
   onActivityTTS?: (active: boolean) => void;
   onRetry?: () => void;
+  /** Permite exibir o card de ação recomendada (controlado pelo MessageList: só na última msg). */
+  showRecommendedAction?: boolean;
 };
 
 const BTN_SIZE = "w-7 h-7 sm:w-8 sm:h-8";
@@ -67,7 +70,7 @@ const GhostBtn = React.forwardRef<
 ));
 GhostBtn.displayName = "GhostBtn";
 
-const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onActivityTTS, onRetry }) => {
+const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onActivityTTS, onRetry, showRecommendedAction }) => {
   const [copied, setCopied] = useState(false);
   const [audioOverlay, setAudioOverlay] = useState<AudioOverlayState | null>(null);
   const [loadingAudio, setLoadingAudio] = useState(false);
@@ -101,6 +104,13 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
   }, [isStreaming, message.content, message.text]);
   const hasVisibleText = displayText.length > 0;
   const canSpeak = !isUser && hasVisibleText;
+
+  // Ação recomendada (Action Engine): só na última msg da Eco, fora de streaming.
+  const acaoRecomendada = useMemo(
+    () => extractAcaoRecomendada(message),
+    [message.metadata, message.donePayload],
+  );
+  const showAcao = Boolean(showRecommendedAction) && !isUser && !isStreaming && acaoRecomendada;
   const { user, session } = useAuth();
   const { sendFeedback: send } = useSendFeedback();
 
@@ -134,6 +144,8 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
 
   const ICON_CLASS = `${ICON_SIZE} ${ICON_BASE}`;
   const canDisplayFeedback = !isUser;
+  const canShare = !isUser && hasVisibleText && !isStreaming;
+  const canRetry = !isUser && hasVisibleText && !isStreaming && typeof onRetry === "function";
   const feedbackButtonsDisabled = sendingFeedback || !hasInteractionId || isStreaming;
   const reasonPopoverStatus = sendingFeedback && pendingVote === "down" ? "sending" : "selecting";
 
@@ -410,6 +422,33 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
     }
   };
 
+  const compartilharTexto = async () => {
+    const text = (displayText || "").trim();
+    if (!text) return;
+
+    // Web Share API (mobile / navegadores compatíveis)
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: "ECO", text });
+        return;
+      } catch (error) {
+        // usuário cancelou o sheet de compartilhamento → não faz fallback
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        // demais erros → cai no fallback de cópia abaixo
+      }
+    }
+
+    // Fallback: copia o texto para a área de transferência
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast.success("Mensagem copiada para compartilhar");
+      } catch (error) {
+        console.warn("Falha ao compartilhar", error);
+      }
+    }
+  };
+
   const reproduzirAudio = async () => {
     if (!canSpeak || loadingAudio) return;
     setLoadingAudio(true);
@@ -658,9 +697,21 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
               .filter(Boolean)
               .join(" ")}
           >
+            {canRetry && (
+              <GhostBtn onClick={onRetry} aria-label="Gerar outra resposta" title="Tentar de novo">
+                <RefreshCcw className={ICON_CLASS} strokeWidth={1.5} />
+              </GhostBtn>
+            )}
+
             <GhostBtn onClick={copiarTexto} aria-label="Copiar mensagem" title="Copiar">
               <ClipboardCopy className={ICON_CLASS} strokeWidth={1.5} />
             </GhostBtn>
+
+            {canShare && (
+              <GhostBtn onClick={compartilharTexto} aria-label="Compartilhar resposta" title="Compartilhar">
+                <Share className={ICON_CLASS} strokeWidth={1.5} />
+              </GhostBtn>
+            )}
 
             {canDisplayFeedback && (
               <>
@@ -757,6 +808,10 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
             >
               {feedbackError}
             </p>
+          )}
+
+          {showAcao && acaoRecomendada && (
+            <AcaoRecomendadaCard acao={acaoRecomendada} messageId={messageId} />
           )}
         </div>
       </div>

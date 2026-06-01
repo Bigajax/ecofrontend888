@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MessageCircle, BookOpen, Brain, BarChart3, Settings, X, LogOut } from 'lucide-react';
+import { motion } from 'framer-motion';
 import clsx from 'clsx';
 
 interface SidebarProps {
@@ -132,9 +133,12 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
       }
     };
 
+    const itemClass =
+      'relative flex flex-col items-center justify-center gap-0.5 px-2.5 py-1.5 rounded-2xl min-w-[56px] transition-colors duration-200';
+
     return (
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-black/10 lg:hidden">
-        <div className="flex items-center justify-around h-14 px-2 pt-safe">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-black/[0.06] shadow-[0_2px_20px_rgba(13,52,97,0.06)] lg:hidden">
+        <div className="flex items-center justify-around h-14 px-1.5 pt-safe">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path ||
@@ -144,21 +148,29 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.path)}
-                className={clsx(
-                  'flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg transition-all duration-200 min-w-[60px]',
-                  isActive
-                    ? 'text-eco-deep'
-                    : 'text-gray-600 hover:text-gray-900'
-                )}
+                aria-current={isActive ? 'page' : undefined}
+                className={itemClass}
               >
+                {isActive && (
+                  <motion.span
+                    layoutId="mem-bottom-active"
+                    aria-hidden
+                    className="absolute inset-0 rounded-2xl"
+                    style={{
+                      background: '#6EC8FF',
+                      boxShadow: '0 4px 14px rgba(110,200,255,0.40)',
+                    }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                  />
+                )}
                 <Icon
-                  size={20}
-                  strokeWidth={isActive ? 2.5 : 1.5}
-                  className="transition-all duration-200"
+                  size={19}
+                  strokeWidth={isActive ? 2.4 : 1.6}
+                  className={clsx('relative z-10 transition-colors duration-200', isActive ? 'text-[#0D2E4F]' : 'text-gray-500')}
                 />
                 <span className={clsx(
-                  'text-[10px] transition-all duration-200 text-center',
-                  isActive ? 'font-semibold' : 'font-normal'
+                  'relative z-10 text-[10px] leading-none text-center transition-colors duration-200',
+                  isActive ? 'font-semibold text-[#0D2E4F]' : 'font-medium text-gray-500'
                 )}>
                   {item.label}
                 </span>
@@ -169,14 +181,10 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
           {/* Botão Sair - leva para homepage */}
           <button
             onClick={handleExitToHome}
-            className="flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg transition-all duration-200 min-w-[60px] text-gray-600 hover:text-gray-900"
+            className={clsx(itemClass, 'text-gray-500 hover:text-gray-700')}
           >
-            <LogOut
-              size={20}
-              strokeWidth={1.5}
-              className="transition-all duration-200"
-            />
-            <span className="text-[10px] transition-all duration-200 text-center font-normal">
+            <LogOut size={19} strokeWidth={1.6} className="relative z-10 transition-colors duration-200" />
+            <span className="relative z-10 text-[10px] leading-none text-center font-medium">
               Sair
             </span>
           </button>

@@ -1,60 +1,83 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
 
 type Props = {
-  size?: number;       // px (default 64)
+  size?: number;       // px (default 120) — diâmetro do anel externo
   className?: string;  // classes extras
-  text?: string;       // texto opcional abaixo da bolha
-  breathingSec?: number; // duração de um ciclo (default 2s)
+  text?: string;       // texto opcional abaixo do loader
+  breathingSec?: number; // duração de um ciclo de respiração (default 3.4s)
 };
 
+/**
+ * EcoBubbleLoading — loader na identidade do ECO.
+ * Anel grande e sutil + olho ECO (pequeno) no centro + texto em serifa itálica degradê.
+ * Respeita prefers-reduced-motion.
+ */
 const EcoBubbleLoading: React.FC<Props> = ({
-  size = 64,
+  size = 120,
   className,
-  text = "Carregando...",
-  breathingSec = 2,
+  text = "carregando...",
+  breathingSec = 3.4,
 }) => {
-  const haloSize = size * 1.35;
+  const reduce = useReducedMotion();
+  const halo = size * 1.3;
+  const eye = Math.max(16, Math.round(size * 0.32));
 
   return (
     <div className={`flex flex-col items-center justify-center ${className || ""}`}>
       <div
         className="relative flex items-center justify-center"
-        style={{ width: haloSize, height: haloSize }}
+        style={{ width: halo, height: halo }}
       >
+        {/* halo atmosférico (luz vindo do topo-esquerda) */}
+        <div
+          aria-hidden
+          className="absolute rounded-full blur-3xl"
+          style={{
+            width: halo,
+            height: halo,
+            background:
+              "radial-gradient(60% 60% at 38% 35%, rgba(110,200,255,0.22) 0%, rgba(26,79,181,0) 70%)",
+          }}
+        />
+
+        {/* anel externo fino, respirando suavemente */}
         <motion.div
           aria-hidden
-          className="absolute rounded-full blur-xl"
+          className="absolute rounded-full"
           style={{
-            width: haloSize,
-            height: haloSize,
-            background:
-              "radial-gradient(65% 65% at 50% 50%, rgba(171, 197, 255, 0.32), rgba(92, 132, 227, 0.08))",
-            boxShadow: "0 24px 42px rgba(40, 60, 120, 0.18)",
+            width: size,
+            height: size,
+            border: "1px solid rgba(110,200,255,0.45)",
+            boxShadow: "inset 0 0 24px rgba(110,200,255,0.10)",
           }}
-          animate={{ scale: [1, 1.04, 1] }}
+          animate={reduce ? undefined : { scale: [1, 1.04, 1], opacity: [0.7, 1, 0.7] }}
           transition={{ duration: breathingSec, repeat: Infinity, ease: "easeInOut" }}
         />
 
-        <motion.div
-          aria-hidden
-          className="absolute inset-0 rounded-full"
-          style={{
-            border: "1px solid rgba(200, 220, 255, 0.25)",
-            background:
-              "radial-gradient(55% 55% at 30% 30%, rgba(255,255,255,0.48), rgba(216,228,255,0.15))",
-          }}
-          animate={{ opacity: [0.65, 0.9, 0.65] }}
-          transition={{ duration: breathingSec * 1.1, repeat: Infinity, ease: "easeInOut" }}
-        />
-
-        <EcoBubbleOneEye state="thinking" size={size} />
+        {/* olho ECO no centro */}
+        <EcoBubbleOneEye state="thinking" size={eye} />
       </div>
 
       {text && (
-        <span className="mt-4 text-sm text-gray-500 select-none">{text}</span>
+        <span
+          className="mt-5 italic select-none"
+          style={{
+            fontFamily:
+              "var(--font-subtitle, var(--font-serif, 'Lora', Georgia, serif))",
+            fontSize: "15px",
+            backgroundImage: "linear-gradient(90deg, #4F7FC4 0%, #9B8BD6 100%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
+          }}
+          role="status"
+          aria-live="polite"
+        >
+          {text}
+        </span>
       )}
     </div>
   );

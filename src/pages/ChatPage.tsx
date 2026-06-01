@@ -13,7 +13,6 @@ import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
 import TypingDots from '../components/TypingDots';
 import SuggestionChips from '../components/SuggestionChips';
 import MessageList from '../components/MessageList';
-import TopBar from '../components/TopBar';
 import Sidebar from '../components/Sidebar';
 
 // 🚀 PERFORMANCE: Lazy load heavy components (Quick Win #4)
@@ -99,7 +98,6 @@ function ChatPage() {
   const location = useLocation();
 
   const [sessaoId] = useState(() => ensureSessionId());
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   useAdminCommands(user, sessaoId);
   // Use explicit guest mode flag instead of implicit !user check
   // VIP users bypass all guest gates
@@ -919,11 +917,6 @@ function ChatPage() {
 
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 min-w-0">
-        {/* Top Bar - APENAS DESKTOP */}
-        <div className="hidden lg:block">
-          <TopBar onMenuClick={() => setSidebarOpen(true)} showMenuButton={false} />
-        </div>
-
         {/* Chat Area */}
         <main
           ref={scrollerRef}

@@ -228,6 +228,138 @@ const SegmentedControl: FC<{ value: Period; onChange: (p: Period)=>void }> = ({ 
   );
 };
 
+/* ---------- Retrato emocional (narrativa da IA) ---------- */
+const fmtPortraitDate = (iso?: string | null) => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+};
+
+const PORTRAIT_STYLE = `
+@keyframes ecoPortraitReveal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ecoPortraitAura { 0%,100% { transform: translate3d(0,0,0) scale(1); opacity: .6; } 50% { transform: translate3d(0,-10px,0) scale(1.08); opacity: .95; } }
+.eco-portrait { animation: ecoPortraitReveal .7s cubic-bezier(.22,1,.36,1) both; }
+.eco-portrait__aura { animation: ecoPortraitAura 16s ease-in-out infinite; will-change: transform, opacity; }
+.eco-portrait__aura--2 { animation-duration: 22s; animation-direction: reverse; }
+@media (prefers-reduced-motion: reduce) {
+  .eco-portrait, .eco-portrait__aura { animation: none; }
+}
+`;
+
+const NarrativePortrait: FC<{ text?: string | null; loading?: boolean; updatedAt?: string | null }> = ({
+  text,
+  loading,
+  updatedAt,
+}) => {
+  const dateLabel = fmtPortraitDate(updatedAt);
+  const hasText = typeof text === 'string' && text.trim().length > 0;
+
+  return (
+    <section
+      className="eco-portrait relative overflow-hidden rounded-[26px] px-7 py-8 md:px-10 md:py-11"
+      role="region"
+      aria-label="Retrato emocional"
+      style={{
+        background: 'linear-gradient(135deg, #FBFDFF 0%, #F4F8FE 55%, #EEF4FD 100%)',
+        border: '1px solid rgba(110,200,255,0.28)',
+        boxShadow: '0 10px 40px rgba(13,52,97,0.10), inset 0 1px 0 rgba(255,255,255,0.6)',
+      }}
+    >
+      <style>{PORTRAIT_STYLE}</style>
+
+      {/* aurora atmosférica */}
+      <div
+        aria-hidden
+        className="eco-portrait__aura pointer-events-none absolute -top-16 -right-10 h-56 w-56 rounded-full blur-3xl"
+        style={{ background: 'radial-gradient(circle, rgba(26,79,181,0.20) 0%, rgba(26,79,181,0) 70%)' }}
+      />
+      <div
+        aria-hidden
+        className="eco-portrait__aura eco-portrait__aura--2 pointer-events-none absolute -bottom-20 -left-12 h-64 w-64 rounded-full blur-3xl"
+        style={{ background: 'radial-gradient(circle, rgba(110,200,255,0.22) 0%, rgba(110,200,255,0) 70%)' }}
+      />
+
+      {/* glifo de aspas decorativo */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-3 left-5 select-none"
+        style={{
+          fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+          fontSize: '120px',
+          lineHeight: 1,
+          color: 'rgba(26,79,181,0.10)',
+        }}
+      >
+        &ldquo;
+      </span>
+
+      <div className="relative">
+        {/* kicker */}
+        <div className="mb-4 flex items-center gap-3">
+          <span
+            className="h-px w-7"
+            style={{ background: 'linear-gradient(90deg, #1A4FB5, rgba(26,79,181,0))' }}
+          />
+          <span
+            className="text-[11px] font-semibold uppercase"
+            style={{ letterSpacing: '0.22em', color: '#1A4FB5' }}
+          >
+            Retrato emocional
+          </span>
+        </div>
+
+        {loading && !hasText ? (
+          <div className="space-y-3" aria-hidden>
+            {['92%', '100%', '76%'].map((w, i) => (
+              <div
+                key={i}
+                className="h-4 rounded-full animate-pulse"
+                style={{ width: w, background: 'rgba(13,52,97,0.08)' }}
+              />
+            ))}
+          </div>
+        ) : hasText ? (
+          <p
+            className="max-w-[60ch] text-[19px] md:text-[24px]"
+            style={{
+              fontFamily: 'var(--font-display, "Playfair Display", Georgia, serif)',
+              lineHeight: 1.62,
+              color: 'var(--eco-text, #0D1B2A)',
+            }}
+          >
+            {text}
+          </p>
+        ) : (
+          <p
+            className="max-w-[52ch] text-[15px] md:text-[16px]"
+            style={{ lineHeight: 1.7, color: 'var(--eco-muted, #6B8099)' }}
+          >
+            Seu retrato aparece aqui quando você registra momentos significativos. Continue
+            conversando com a Eco — aos poucos, um retrato sensível do seu momento vai se formando.
+          </p>
+        )}
+
+        {/* assinatura */}
+        {hasText && (
+          <div
+            className="mt-6 flex items-center gap-2 text-[12px]"
+            style={{ color: 'var(--eco-muted, #6B8099)' }}
+          >
+            <span aria-hidden style={{ color: '#1A4FB5' }}>
+              ✦
+            </span>
+            <span>
+              Escrito pela Eco a partir das suas memórias
+              {dateLabel ? ` · ${dateLabel}` : ''}
+            </span>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
 /* ---------- componente ---------- */
 const ProfileSection: FC = () => {
   const { userId } = useAuth();
@@ -379,6 +511,13 @@ const ProfileSection: FC = () => {
             </div>
           );
         })()}
+
+        {/* CARD 0 — Retrato emocional (narrativa da IA) */}
+        <NarrativePortrait
+          text={perfil?.resumo_geral_ia}
+          loading={perfilLoading}
+          updatedAt={perfil?.updated_at}
+        />
 
         {/* CARD 1 — Resumo */}
         <Card title="Resumo" id="resumo">

@@ -8,6 +8,7 @@ import TypingDots from "./TypingDots"; // garante o componente
 
 import type { Message } from "../contexts/ChatContext";
 import { isEcoMessage, resolveMessageSender } from "../utils/chat/messages";
+import { extractAcaoRecomendada } from "./chat/AcaoRecomendadaCard";
 
 const extractClientMessageId = (message: Message | undefined): string | undefined => {
   if (!message) return undefined;
@@ -108,6 +109,24 @@ const MessageList: React.FC<MessageListProps> = ({
 
   const showGlobalTyping = Boolean(isEcoTyping) && !lastEcoIsTypingInsideBubble(uniqueMessages);
 
+  // Action Engine (gating conservador): o card de ação só aparece na ÚLTIMA mensagem da Eco,
+  // e não aparece se a mensagem da Eco imediatamente anterior já trouxe uma ação (evita
+  // mostrar cards em turnos consecutivos).
+  const actionTargetIndex = useMemo(() => {
+    let lastEcoIdx = -1;
+    let prevEcoIdx = -1;
+    for (let i = 0; i < uniqueMessages.length; i += 1) {
+      if (isEcoMessage(uniqueMessages[i])) {
+        prevEcoIdx = lastEcoIdx;
+        lastEcoIdx = i;
+      }
+    }
+    if (lastEcoIdx === -1) return -1;
+    if (!extractAcaoRecomendada(uniqueMessages[lastEcoIdx])) return -1;
+    if (prevEcoIdx !== -1 && extractAcaoRecomendada(uniqueMessages[prevEcoIdx])) return -1;
+    return lastEcoIdx;
+  }, [uniqueMessages]);
+
   try {
     console.debug(
       "[DIAG] render:list",
@@ -147,6 +166,7 @@ const MessageList: React.FC<MessageListProps> = ({
                 message={message as any}
                 onActivityTTS={handleTTS}
                 onRetry={onRetryMessage ? () => onRetryMessage(message.id) : undefined}
+                showRecommendedAction={index === actionTargetIndex}
               />
             ) : (
               // Passa isEcoTyping para o ChatMessage para que ele controle os três pontinhos na bolha
