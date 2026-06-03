@@ -266,9 +266,9 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
       const barW = w / BARS - gap;
 
       const grad = ctx2d.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, "rgba(125,211,252,0.95)"); // sky-300
-      grad.addColorStop(0.5, "rgba(56,189,248,1)"); // sky-400
-      grad.addColorStop(1, "rgba(14,165,233,0.95)"); // sky-500
+      grad.addColorStop(0, "rgba(186,230,253,0.9)"); // sky-200
+      grad.addColorStop(0.5, "rgba(125,211,252,0.95)"); // sky-300
+      grad.addColorStop(1, "rgba(56,189,248,0.9)"); // sky-400
       ctx2d.fillStyle = grad;
 
       for (let i = 0; i < BARS; i++) {
@@ -460,7 +460,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="group relative inline-flex h-9 items-center gap-1 rounded-full px-2.5 text-sky-600/80 transition-all duration-300 ease-out hover:bg-white/60 hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-300/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+      className="group relative inline-flex h-9 items-center gap-1 rounded-full px-2.5 text-slate-400 transition-all duration-300 ease-out hover:bg-sky-50 hover:text-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
     >
       <SkipIcon dir={dir} />
       <span className="text-[10px] font-semibold tabular-nums">15</span>
@@ -477,29 +477,18 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
         aria-label="Reprodutor de voz da Eco"
         className={[
           "pointer-events-auto relative w-full max-w-[min(440px,94vw)] overflow-hidden",
-          "rounded-[26px] border border-white/70",
-          "bg-[linear-gradient(160deg,rgba(240,249,255,0.92),rgba(224,242,254,0.86)_55%,rgba(207,235,254,0.9))]",
-          "backdrop-blur-xl",
-          "shadow-[0_18px_50px_-12px_rgba(56,189,248,0.45),0_4px_14px_-6px_rgba(2,132,199,0.25)]",
+          "rounded-3xl border border-sky-100",
+          "bg-white/95 backdrop-blur-xl",
+          "shadow-[0_10px_30px_-14px_rgba(56,189,248,0.3),0_2px_8px_-4px_rgba(15,23,42,0.07)]",
           "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-          shown ? "translate-y-0 scale-100 opacity-100" : "-translate-y-2 scale-[0.97] opacity-0",
+          shown ? "translate-y-0 scale-100 opacity-100" : "-translate-y-2 scale-[0.98] opacity-0",
           "focus:outline-none",
         ].join(" ")}
       >
-        {/* brilho que respira no topo */}
-        <div
-          aria-hidden
-          className={[
-            "pointer-events-none absolute -top-16 left-1/2 h-32 w-64 -translate-x-1/2 rounded-full",
-            "bg-sky-300/40 blur-3xl transition-opacity duration-700",
-            isPlaying ? "opacity-90 animate-pulse" : "opacity-50",
-          ].join(" ")}
-        />
-
         <button
           type="button"
           onClick={handleClose}
-          className="group absolute right-3 top-3 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full text-sky-500/70 transition-all duration-300 ease-out hover:bg-white/70 hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-300/50"
+          className="group absolute right-3 top-3 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition-all duration-300 ease-out hover:bg-sky-50 hover:text-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-200"
           aria-label="Fechar"
         >
           <X className="h-4 w-4" strokeWidth={2} />
@@ -513,19 +502,12 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
               type="button"
               onClick={manualStartNeeded ? handleManualStart : togglePlay}
               aria-label={manualStartNeeded ? "Tocar" : isPlaying ? "Pausar" : "Tocar"}
-              className="relative inline-flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_30%_20%,#7dd3fc,#0ea5e9)] text-white shadow-[0_8px_20px_-4px_rgba(14,165,233,0.6)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_26px_-4px_rgba(14,165,233,0.7)] focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-50 active:translate-y-0 active:scale-95"
+              className="relative inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-sky-500 text-white shadow-[0_4px_12px_-4px_rgba(14,165,233,0.5)] transition-all duration-300 ease-out hover:bg-sky-600 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-white active:translate-y-0 active:scale-95"
             >
-              {/* halo */}
               {showSpinner && (
                 <span
                   aria-hidden
                   className="absolute inset-0 rounded-full border-2 border-white/50 border-t-white animate-spin"
-                />
-              )}
-              {isPlaying && !showSpinner && (
-                <span
-                  aria-hidden
-                  className="absolute -inset-1 rounded-full bg-sky-400/30 blur-md animate-pulse"
                 />
               )}
               <span className="relative translate-x-[1px]">
@@ -541,7 +523,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
               />
               <div className="flex items-center gap-2.5">
                 <div
-                  className="group relative h-1.5 flex-1 cursor-pointer rounded-full bg-sky-200/80 transition-all duration-200 ease-out hover:h-2"
+                  className="group relative h-1.5 flex-1 cursor-pointer rounded-full bg-sky-100 transition-all duration-200 ease-out hover:h-2"
                   onClick={onProgressClick}
                   role="slider"
                   aria-valuemin={0}
@@ -550,17 +532,17 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
                   aria-label="Posição do áudio"
                 >
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-[linear-gradient(90deg,#7dd3fc,#0ea5e9)] transition-[width] duration-100"
+                    className="absolute inset-y-0 left-0 rounded-full bg-sky-400 transition-[width] duration-100"
                     style={{ width: `${progress}%` }}
                   />
                   {duration > 0 && (
                     <span
-                      className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_0_3px_rgba(14,165,233,0.5)] opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                      className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_0_2px_rgba(56,189,248,0.7)] opacity-0 transition-opacity duration-200 group-hover:opacity-100"
                       style={{ left: `${progress}%` }}
                     />
                   )}
                 </div>
-                <span className="min-w-[78px] text-right text-[11px] font-medium tabular-nums text-sky-700/70">
+                <span className="min-w-[78px] text-right text-[11px] font-medium tabular-nums text-slate-400">
                   {showSpinner && !duration
                     ? "preparando…"
                     : `${formatTime(currentTime)} / ${formatTime(duration)}`}
@@ -577,7 +559,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
               label="Voltar 15 segundos"
               disabled={manualStartNeeded || (!duration && !isPlaying)}
             />
-            <span className="h-3.5 w-px bg-sky-300/50" aria-hidden />
+            <span className="h-3.5 w-px bg-slate-200" aria-hidden />
             <SkipBtn
               dir="fwd"
               onClick={() => seek(15)}
