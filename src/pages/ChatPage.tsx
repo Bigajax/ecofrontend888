@@ -2,9 +2,10 @@
 /*  ChatPage.tsx — Modern minimalist layout (Claude/Ecotopia inspired)       */
 /* -------------------------------------------------------------------------- */
 
-import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, lazy, Suspense, type CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
 
 import ChatInput, { ChatInputHandle } from '../components/ChatInput';
@@ -18,7 +19,6 @@ import Sidebar from '../components/Sidebar';
 // 🚀 PERFORMANCE: Lazy load heavy components (Quick Win #4)
 const EcoLoopHud = lazy(() => import('../components/EcoLoopHud'));
 const QuickSuggestions = lazy(() => import('../components/QuickSuggestions').then(m => ({ default: m.default })));
-const VoiceRecorderPanel = lazy(() => import('../components/VoiceRecorderPanel'));
 const TrialOnboarding = lazy(() => import('../components/trial/TrialOnboarding'));
 
 // Import types separately (não afeta bundle)
@@ -91,6 +91,16 @@ type BehaviorHintMetrics = {
 
 function ChatPage() {
   const { messages, upsertMessage, setMessages, clearMessages } = useChat();
+
+  // Renovar conversa: toda entrada no chat começa do zero (limpa antes do paint
+  // para não piscar mensagens antigas). A memória emocional (backend) é preservada.
+  const clearedOnMountRef = useRef(false);
+  useLayoutEffect(() => {
+    if (clearedOnMountRef.current) return;
+    clearedOnMountRef.current = true;
+    clearMessages();
+  }, [clearMessages]);
+
   const auth = useAuth();
   const { userId, userName: rawUserName = 'Usuário', user, isGuestMode, guestId, isVipUser } = auth;
   const { trackInteraction } = useGuestExperience();
@@ -255,7 +265,7 @@ function ChatPage() {
   const [heroSubtitle, setHeroSubtitle] = useState<string>(() => pickHeroSubtitle());
 
   const chatRef = useRef<HTMLElement | null>(null);
-  const { scrollerRef, endRef, isAtBottom, showScrollBtn, scrollToBottom } =
+  const { scrollerRef, endRef, isAtBottom, isFarFromBottom, scrollToBottom } =
     useAutoScroll<HTMLElement>({
       items: [messages],
       externalRef: chatRef,
@@ -271,7 +281,6 @@ function ChatPage() {
   const baseScrollPadding = 112;
   const scrollInset = Math.max(baseScrollPadding, contentInset + safeAreaBottom + 24);
   const computedInputHeight = inputHeight || 96;
-  const voicePanelBottomOffset = Math.max(120, keyboardHeight + computedInputHeight + 24);
 
   const { showQuick, hideQuickSuggestions, handleTextChange } =
     useQuickSuggestionsVisibility(messages);
@@ -605,17 +614,6 @@ function ChatPage() {
     requestAnimationFrame(() => chatInputRef.current?.focus());
   }, []);
 
-  const handleVoiceConfirm = useCallback(
-    (payload: { audioBlob: Blob | null; transcript: string }) => {
-      const nextText = (payload.transcript ?? '').trim();
-      if (nextText !== composerValue) {
-        handleComposerTextChange(nextText);
-      }
-      handleVoicePanelClose();
-    },
-    [composerValue, handleComposerTextChange, handleVoicePanelClose],
-  );
-
   const lastMessage = messages[messages.length - 1];
   const lastEcoMessageContent =
     typeof lastMessage?.content === 'string'
@@ -723,7 +721,7 @@ function ChatPage() {
     setHasPendingMessages(false);
     scrollToBottom(true);
   }, [scrollToBottom]);
-  const showNewMessagesChip = hasPendingMessages && showScrollBtn;
+  const showNewMessagesChip = hasPendingMessages && isFarFromBottom;
   const isEmptyState = messages.length === 0 && !erroApi;
   const heroSubtitleResetRef = useRef(isEmptyState);
   useEffect(() => {
@@ -1016,11 +1014,10 @@ function ChatPage() {
               <button
                 type="button"
                 onClick={handleJumpToBottom}
-                className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-105 focus:outline-none active:scale-95 pointer-events-auto"
-                style={{ background: 'linear-gradient(135deg, #1A4FB5, #0D3461)' }}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-eco-line/60 bg-white/80 text-eco-baby shadow-lg backdrop-blur-md transition-all hover:bg-white hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-eco-baby/40 active:scale-95 pointer-events-auto"
                 aria-label="Rolar para novas mensagens"
               >
-                Novas mensagens
+                <ChevronDown size={20} strokeWidth={2.4} />
               </button>
             </div>
           )}
@@ -1109,6 +1106,8 @@ function ChatPage() {
               isSending={composerPending}
               onMicPress={handleOpenVoicePanel}
               isMicActive={voicePanelOpen}
+              onVoiceConfirm={handleVoicePanelClose}
+              onVoiceCancel={handleVoicePanelClose}
             />
 
             <LoginGateModal
@@ -1132,16 +1131,6 @@ function ChatPage() {
           </div>
         </footer>
       </div>
-
-      <Suspense fallback={null}>
-        <VoiceRecorderPanel
-          open={voicePanelOpen}
-          bottomOffset={voicePanelBottomOffset}
-          onCancel={handleVoicePanelClose}
-          onConfirm={handleVoiceConfirm}
-          onError={(error) => console.error('Painel de voz', error)}
-        />
-      </Suspense>
 
       <Suspense fallback={null}>
         <EcoLoopHud />

@@ -12,6 +12,7 @@ import clsx from "clsx";
 import { toast } from "../utils/toast";
 import mixpanel from "../lib/mixpanel";
 import { useHapticFeedback } from "../hooks/useHapticFeedback";
+import VoiceInputInline from "./voice/VoiceInputInline";
 
 type Props = {
   onSendMessage: (t: string) => void | Promise<void>;
@@ -22,6 +23,10 @@ type Props = {
   value?: string;
   onMicPress?: () => void;
   isMicActive?: boolean;
+  /** Fecha o modo de voz mantendo o texto transcrito no campo. */
+  onVoiceConfirm?: () => void;
+  /** Fecha o modo de voz descartando a transcrição. */
+  onVoiceCancel?: () => void;
 };
 
 export type ChatInputHandle = {
@@ -41,6 +46,8 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
       value,
       onMicPress,
       isMicActive = false,
+      onVoiceConfirm,
+      onVoiceCancel,
     },
     ref,
   ) => {
@@ -48,6 +55,8 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const wrapperRef = useRef<HTMLFormElement>(null);
     const haptic = useHapticFeedback({ enabled: true });
+    // Texto digitado antes de iniciar a gravação (para preservar/restaurar).
+    const preRecordingValueRef = useRef("");
 
     const isBusy = disabled || isSending;
 
@@ -75,6 +84,38 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
       if (value === inputMessage) return;
       setInputMessage(value);
     }, [value, inputMessage]);
+
+    // Ao entrar no modo de voz, guarda o texto atual para mesclar/restaurar.
+    useEffect(() => {
+      if (isMicActive) {
+        preRecordingValueRef.current = sanitize(inputMessage);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isMicActive]);
+
+    const mergeWithPreRecording = (live: string) => {
+      const base = preRecordingValueRef.current;
+      const trimmed = live.trim();
+      return [base, trimmed].filter(Boolean).join(" ").replace(/\s+/g, " ");
+    };
+
+    const handleVoiceTranscript = (live: string) => {
+      const next = mergeWithPreRecording(live);
+      setInputMessage(next);
+      onTextChange?.(next);
+    };
+
+    const handleVoiceConfirm = () => {
+      onVoiceConfirm?.();
+      requestAnimationFrame(() => textareaRef.current?.focus());
+    };
+
+    const handleVoiceCancel = () => {
+      const restored = preRecordingValueRef.current;
+      setInputMessage(restored);
+      onTextChange?.(restored);
+      onVoiceCancel?.();
+    };
 
     useEffect(() => {
       const textarea = textareaRef.current;
@@ -195,8 +236,19 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
             }}
           />
 
-          {/* linha de ação — botão único que se transforma */}
+          {/* linha de ação — botão único que se transforma, ou gravação de voz inline */}
           <div className="flex items-center justify-end">
+            {isMicActive ? (
+              <VoiceInputInline
+                onTranscriptChange={handleVoiceTranscript}
+                onConfirm={handleVoiceConfirm}
+                onCancel={handleVoiceCancel}
+                onError={(err) => {
+                  console.error("Gravação de voz", err);
+                  handleVoiceCancel();
+                }}
+              />
+            ) : (
             <AnimatePresence mode="popLayout" initial={false}>
               {action === "send" ? (
                 <motion.button
@@ -264,6 +316,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
                 </motion.button>
               )}
             </AnimatePresence>
+            )}
           </div>
         </div>
       </motion.form>

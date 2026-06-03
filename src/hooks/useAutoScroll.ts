@@ -19,6 +19,12 @@ export interface UseAutoScrollOptions<T extends HTMLElement = HTMLElement> {
    */
   bottomThreshold?: number;
   /**
+   * Distance in pixels beyond which the user is considered "far" from the bottom.
+   * Used to gate the "new messages" affordance so it only appears when there is
+   * meaningful content below the viewport. Defaults to `bottomThreshold * 3`.
+   */
+  farThreshold?: number;
+  /**
    * Optional external ref that should be used instead of creating an internal one.
    * Enables consumers to run custom effects on the same DOM node.
    */
@@ -32,7 +38,13 @@ export interface UseAutoScrollOptions<T extends HTMLElement = HTMLElement> {
 export const useAutoScroll = <T extends HTMLElement>(
   options: UseAutoScrollOptions<T> = {},
 ) => {
-  const { items = [], bottomThreshold = 80, externalRef = null, detectKeyboard = true } = options;
+  const {
+    items = [],
+    bottomThreshold = 80,
+    farThreshold = bottomThreshold * 3,
+    externalRef = null,
+    detectKeyboard = true,
+  } = options;
   const fallbackRef = useRef<T | null>(null);
   const scrollerRef = externalRef ?? fallbackRef;
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -40,6 +52,7 @@ export const useAutoScroll = <T extends HTMLElement>(
 
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [isFarFromBottom, setIsFarFromBottom] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const getDistanceFromBottom = useCallback((el: HTMLElement) => {
@@ -53,7 +66,8 @@ export const useAutoScroll = <T extends HTMLElement>(
     const nearBottom = distance <= bottomThreshold;
     setIsAtBottom(nearBottom);
     setShowScrollBtn(!nearBottom && el.scrollHeight > el.clientHeight + 32);
-  }, [bottomThreshold, getDistanceFromBottom]);
+    setIsFarFromBottom(distance > farThreshold && el.scrollHeight > el.clientHeight + 32);
+  }, [bottomThreshold, farThreshold, getDistanceFromBottom]);
 
   const scrollToBottom = useCallback(
     (smooth = true) => {
@@ -224,6 +238,7 @@ export const useAutoScroll = <T extends HTMLElement>(
     endRef,
     isAtBottom,
     showScrollBtn,
+    isFarFromBottom,
     scrollToBottom,
     keyboardHeight,
   } as const;
