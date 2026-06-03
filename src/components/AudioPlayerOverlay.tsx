@@ -177,9 +177,9 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
       // Onda auto-animada (sem WebAudio, pra não interferir na reprodução do áudio):
       // viva quando tocando, calma quando preparando/pausado.
       const targets: number[] = [];
-      const speed = isPlaying ? 0.16 : buffering ? 0.09 : 0.022;
-      const baseAmp = isPlaying ? 0.3 : buffering ? 0.2 : 0.08;
-      const swing = isPlaying ? 0.5 : buffering ? 0.3 : 0.05;
+      const speed = isPlaying ? 0.09 : buffering ? 0.055 : 0.015; // mais calmo
+      const baseAmp = isPlaying ? 0.16 : buffering ? 0.12 : 0.06; // mais baixo/discreto
+      const swing = isPlaying ? 0.28 : buffering ? 0.18 : 0.04;
       t += speed;
       for (let i = 0; i < BARS; i++) {
         // envelope central (pontas mais baixas) + duas senoides defasadas = movimento orgânico
@@ -193,16 +193,16 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
       const barW = w / BARS - gap;
 
       const grad = ctx2d.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, "rgba(186,230,253,0.9)"); // sky-200
-      grad.addColorStop(0.5, "rgba(125,211,252,0.95)"); // sky-300
-      grad.addColorStop(1, "rgba(56,189,248,0.9)"); // sky-400
+      grad.addColorStop(0, "rgba(224,242,254,0.85)"); // sky-100 (mais claro/baby)
+      grad.addColorStop(0.5, "rgba(186,230,253,0.95)"); // sky-200
+      grad.addColorStop(1, "rgba(125,211,252,0.95)"); // sky-300
       ctx2d.fillStyle = grad;
 
       for (let i = 0; i < BARS; i++) {
         // suavização temporal
         smooth[i] += (targets[i] - smooth[i]) * 0.35;
         const amp = Math.max(0.04, Math.min(1, smooth[i]));
-        const barH = amp * (h * 0.92);
+        const barH = amp * (h * 0.72); // teto mais baixo (onda discreta)
         const x = i * (w / BARS) + gap / 2;
         const y = mid - barH / 2;
         const r = Math.min(barW / 2, barH / 2, 6 * dpr);
@@ -401,10 +401,10 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
         aria-modal="true"
         aria-label="Reprodutor de voz da Eco"
         className={[
-          "pointer-events-auto relative w-full max-w-[min(440px,94vw)] overflow-hidden",
-          "rounded-3xl border border-sky-100",
+          "pointer-events-auto relative w-full max-w-[min(360px,92vw)] overflow-hidden",
+          "rounded-[20px] border border-sky-100",
           "bg-white/95 backdrop-blur-xl",
-          "shadow-[0_10px_30px_-14px_rgba(56,189,248,0.3),0_2px_8px_-4px_rgba(15,23,42,0.07)]",
+          "shadow-[0_8px_24px_-14px_rgba(56,189,248,0.28),0_2px_6px_-4px_rgba(15,23,42,0.06)]",
           "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
           shown ? "translate-y-0 scale-100 opacity-100" : "-translate-y-2 scale-[0.98] opacity-0",
           "focus:outline-none",
@@ -420,14 +420,14 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
           <span className="sr-only">Fechar</span>
         </button>
 
-        <div className="relative flex flex-col gap-3 px-4 py-4 sm:px-5">
+        <div className="relative flex flex-col gap-2.5 px-3.5 py-3 sm:px-4">
           {/* linha principal: play + waveform */}
-          <div className="flex items-center gap-3.5">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={manualStartNeeded ? handleManualStart : togglePlay}
               aria-label={manualStartNeeded ? "Tocar" : isPlaying ? "Pausar" : "Tocar"}
-              className="relative inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-sky-500 text-white shadow-[0_4px_12px_-4px_rgba(14,165,233,0.5)] transition-all duration-300 ease-out hover:bg-sky-600 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-white active:translate-y-0 active:scale-95"
+              className="relative inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-sky-400 text-white shadow-[0_4px_12px_-5px_rgba(56,189,248,0.5)] transition-all duration-300 ease-out hover:bg-sky-500 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-200 focus:ring-offset-2 focus:ring-offset-white active:translate-y-0 active:scale-95"
             >
               {showSpinner && (
                 <span
@@ -440,10 +440,10 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
               </span>
             </button>
 
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <canvas
                 ref={canvasRef}
-                className="h-11 w-full"
+                className="h-8 w-full"
                 aria-hidden
               />
               <div className="flex items-center gap-2.5">
@@ -457,17 +457,17 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
                   aria-label="Posição do áudio"
                 >
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-sky-400 transition-[width] duration-100"
+                    className="absolute inset-y-0 left-0 rounded-full bg-sky-300 transition-[width] duration-100"
                     style={{ width: `${progress}%` }}
                   />
                   {duration > 0 && (
                     <span
-                      className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_0_2px_rgba(56,189,248,0.7)] opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                      className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_0_2px_rgba(125,211,252,0.85)] opacity-0 transition-opacity duration-200 group-hover:opacity-100"
                       style={{ left: `${progress}%` }}
                     />
                   )}
                 </div>
-                <span className="min-w-[78px] text-right text-[11px] font-medium tabular-nums text-slate-400">
+                <span className="min-w-[72px] text-right text-[10px] font-medium tabular-nums text-slate-400">
                   {showSpinner && !duration
                     ? "preparando…"
                     : `${formatTime(currentTime)} / ${formatTime(duration)}`}
