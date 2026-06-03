@@ -8,6 +8,11 @@ interface AudioPlayerOverlayProps {
   requiresManualStart?: boolean;
 }
 
+/**
+ * Player de voz da Eco — estética "céu calmo que respira".
+ * Card de vidro azul-bebê flutuante, waveform espelhada animada (AnalyserNode + canvas),
+ * play com halo suave, estados preparando → tocando → pausado.
+ */
 const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
   audio,
   onClose,
@@ -34,10 +39,17 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
   const [buffering, setBuffering] = useState(
     () => !requiresManualStart && audio.paused && (audio.currentTime || 0) === 0,
   );
+  // entrada suave do card
+  const [shown, setShown] = useState(false);
 
   useEffect(() => {
     progressRef.current = onProgress;
   }, [onProgress]);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   useEffect(() => {
     audioRef.current = audio;
@@ -73,7 +85,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
         gain.gain.value = 1.35;
 
         const analyser = ctx.createAnalyser();
-        analyser.fftSize = 128;
+        analyser.fftSize = 256;
         analyser.smoothingTimeConstant = 0.82;
 
         // áudio: src → gain → destino; análise: gain → analyser (sem ir ao destino).
@@ -200,53 +212,77 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
     };
   }, [audio, duration]);
 
-  // Onda de áudio animada (baby-blue). Lê o AnalyserNode quando tocando; pulso suave quando
-  // bufferizando/pausado.
+  // Waveform espelhada e "respirando" (baby-blue). Reage ao AnalyserNode quando tocando;
+  // onda senoidal suave quando preparando/pausado.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx2d = canvas.getContext("2d");
     if (!ctx2d) return;
 
-    const bars = 28;
-    const gap = 3;
-    let phase = 0;
+    // resolução interna nítida (DPR)
+    const dpr = Math.min(2, (typeof window !== "undefined" && window.devicePixelRatio) || 1);
+    const cssW = canvas.clientWidth || 320;
+    const cssH = canvas.clientHeight || 44;
+    if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
+      canvas.width = Math.round(cssW * dpr);
+      canvas.height = Math.round(cssH * dpr);
+    }
+
+    const BARS = 40;
+    let t = 0;
+    const smooth: number[] = new Array(BARS).fill(0.08);
 
     const draw = () => {
       const w = canvas.width;
       const h = canvas.height;
+      const mid = h / 2;
       ctx2d.clearRect(0, 0, w, h);
 
       const analyser = analyserRef.current;
-      const amplitudes: number[] = [];
+      const targets: number[] = [];
 
       if (analyser && isPlaying) {
         const bins = analyser.frequencyBinCount;
         const data = new Uint8Array(bins);
         analyser.getByteFrequencyData(data);
-        for (let i = 0; i < bars; i++) {
-          const idx = Math.floor((i / bars) * bins);
-          amplitudes.push(data[idx] / 255);
+        for (let i = 0; i < BARS; i++) {
+          // usa a metade grave/média do espectro (mais expressiva pra voz)
+          const idx = Math.floor((i / BARS) * (bins * 0.7));
+          targets.push((data[idx] / 255) * 1.05);
         }
       } else {
-        phase += buffering ? 0.14 : 0.05;
-        for (let i = 0; i < bars; i++) {
-          const base = buffering ? 0.3 : 0.1;
-          const swing = buffering ? 0.42 : 0.1;
-          amplitudes.push(base + Math.abs(Math.sin(phase + i * 0.45)) * swing);
+        t += buffering ? 0.09 : 0.035;
+        for (let i = 0; i < BARS; i++) {
+          const base = buffering ? 0.22 : 0.09;
+          const swing = buffering ? 0.3 : 0.07;
+          // envelope nas pontas pra parecer uma "respiração" central
+          const env = Math.sin((i / (BARS - 1)) * Math.PI);
+          targets.push(base + Math.abs(Math.sin(t + i * 0.5)) * swing * (0.5 + 0.5 * env));
         }
       }
 
-      const barW = Math.max(2, (w - gap * (bars - 1)) / bars);
-      ctx2d.fillStyle = isPlaying ? "#38bdf8" : "rgba(56,189,248,0.5)"; // sky-400 / soft
-      for (let i = 0; i < bars; i++) {
-        const amp = Math.max(0.06, amplitudes[i]);
-        const barH = amp * h;
-        const x = i * (barW + gap);
-        const y = (h - barH) / 2;
-        const r = Math.min(barW / 2, 3);
+      const gap = (w / BARS) * 0.42;
+      const barW = w / BARS - gap;
+
+      const grad = ctx2d.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, "rgba(125,211,252,0.95)"); // sky-300
+      grad.addColorStop(0.5, "rgba(56,189,248,1)"); // sky-400
+      grad.addColorStop(1, "rgba(14,165,233,0.95)"); // sky-500
+      ctx2d.fillStyle = grad;
+
+      for (let i = 0; i < BARS; i++) {
+        // suavização temporal
+        smooth[i] += (targets[i] - smooth[i]) * 0.35;
+        const amp = Math.max(0.04, Math.min(1, smooth[i]));
+        const barH = amp * (h * 0.92);
+        const x = i * (w / BARS) + gap / 2;
+        const y = mid - barH / 2;
+        const r = Math.min(barW / 2, barH / 2, 6 * dpr);
         ctx2d.beginPath();
-        const anyCtx = ctx2d as unknown as { roundRect?: (x: number, y: number, w: number, h: number, r: number) => void };
+        const anyCtx = ctx2d as unknown as {
+          roundRect?: (x: number, y: number, w: number, h: number, r: number) => void;
+        };
         if (typeof anyCtx.roundRect === "function") {
           anyCtx.roundRect(x, y, barW, barH, r);
         } else {
@@ -374,123 +410,138 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
     onClose();
   }, [audio, onClose]);
 
-  const IconBtn = ({
+  const progress = duration ? Math.min(100, (currentTime / duration) * 100) : 0;
+  const showSpinner = buffering && !manualStartNeeded;
+
+  const PauseIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <rect x="6.5" y="5" width="3.4" height="14" rx="1.5" />
+      <rect x="14.1" y="5" width="3.4" height="14" rx="1.5" />
+    </svg>
+  );
+
+  const PlayIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M8 5.2v13.6a1 1 0 0 0 1.52.85l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 8 5.2z" />
+    </svg>
+  );
+
+  const SkipIcon = ({ dir }: { dir: "back" | "fwd" }) => (
+    <svg
+      width="19"
+      height="19"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      style={dir === "fwd" ? { transform: "scaleX(-1)" } : undefined}
+    >
+      <path d="M11 4 4 9l7 5V4z" fill="currentColor" stroke="none" />
+      <path d="M4 9a8 8 0 1 1-1.5 6" />
+    </svg>
+  );
+
+  const SkipBtn = ({
     onClick,
     label,
-    children,
-    disabled = false,
+    dir,
+    disabled,
   }: {
     onClick: () => void;
     label: string;
-    children: React.ReactNode;
+    dir: "back" | "fwd";
     disabled?: boolean;
   }) => (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="group inline-flex h-9 w-9 items-center justify-center rounded-full text-sky-600/80 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:text-sky-700 hover:bg-white/50 focus:outline-none focus:ring-2 focus:ring-sky-300/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
       aria-label={label}
+      className="group relative inline-flex h-9 items-center gap-1 rounded-full px-2.5 text-sky-600/80 transition-all duration-300 ease-out hover:bg-white/60 hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-300/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
     >
-      {children}
+      <SkipIcon dir={dir} />
+      <span className="text-[10px] font-semibold tabular-nums">15</span>
     </button>
   );
 
-  const PauseIcon = () => (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      aria-hidden
-    >
-      <rect x="6" y="4" width="3" height="16" rx="1.4" />
-      <rect x="15" y="4" width="3" height="16" rx="1.4" />
-    </svg>
-  );
-
-  const PlayIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M8 5v14l11-7z" />
-    </svg>
-  );
-
-  const ArrowCircle = ({ direction }: { direction: "left" | "right" }) => (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <circle cx="12" cy="12" r="10" />
-      {direction === "left" ? <path d="M13 8l-4 4 4 4" /> : <path d="M11 8l4 4-4 4" />}
-    </svg>
-  );
-
-  const progress = duration ? Math.min(100, (currentTime / duration) * 100) : 0;
-
   return (
-    <div className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+72px)] z-[80] flex justify-center px-3 sm:px-4">
+    <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+72px)] z-[80] flex justify-center px-3 sm:px-4">
       <div
         ref={cardRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label="Reprodutor de áudio"
-        className="pointer-events-auto relative flex w-full max-w-[min(460px,94vw)] flex-col gap-3 rounded-2xl border border-sky-200/70 bg-gradient-to-b from-sky-50/95 to-sky-100/85 px-3 py-3 sm:px-4 sm:py-4 sm:backdrop-blur-md text-slate-700 shadow-xl shadow-sky-300/30 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-sky-300/60"
+        aria-label="Reprodutor de voz da Eco"
+        className={[
+          "pointer-events-auto relative w-full max-w-[min(440px,94vw)] overflow-hidden",
+          "rounded-[26px] border border-white/70",
+          "bg-[linear-gradient(160deg,rgba(240,249,255,0.92),rgba(224,242,254,0.86)_55%,rgba(207,235,254,0.9))]",
+          "backdrop-blur-xl",
+          "shadow-[0_18px_50px_-12px_rgba(56,189,248,0.45),0_4px_14px_-6px_rgba(2,132,199,0.25)]",
+          "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          shown ? "translate-y-0 scale-100 opacity-100" : "-translate-y-2 scale-[0.97] opacity-0",
+          "focus:outline-none",
+        ].join(" ")}
       >
+        {/* brilho que respira no topo */}
+        <div
+          aria-hidden
+          className={[
+            "pointer-events-none absolute -top-16 left-1/2 h-32 w-64 -translate-x-1/2 rounded-full",
+            "bg-sky-300/40 blur-3xl transition-opacity duration-700",
+            isPlaying ? "opacity-90 animate-pulse" : "opacity-50",
+          ].join(" ")}
+        />
+
         <button
           type="button"
           onClick={handleClose}
-          className="group absolute right-2.5 top-2.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-sky-500/80 transition-all duration-300 ease-out hover:text-sky-700 hover:bg-white/50 focus:outline-none focus:ring-2 focus:ring-sky-300/50"
+          className="group absolute right-3 top-3 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full text-sky-500/70 transition-all duration-300 ease-out hover:bg-white/70 hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-300/50"
           aria-label="Fechar"
         >
-          <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={1.8} />
+          <X className="h-4 w-4" strokeWidth={2} />
           <span className="sr-only">Fechar</span>
         </button>
 
-        <div className="flex flex-col gap-3 sm:gap-2.5">
-          {/* Play grande + onda + progresso */}
-          <div className="flex items-center gap-3">
+        <div className="relative flex flex-col gap-3 px-4 py-4 sm:px-5">
+          {/* linha principal: play + waveform */}
+          <div className="flex items-center gap-3.5">
             <button
               type="button"
               onClick={manualStartNeeded ? handleManualStart : togglePlay}
               aria-label={manualStartNeeded ? "Tocar" : isPlaying ? "Pausar" : "Tocar"}
-              className="relative inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-sky-400 text-white shadow-md shadow-sky-400/40 transition-all duration-300 ease-out hover:bg-sky-500 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-300 active:translate-y-0"
+              className="relative inline-flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_30%_20%,#7dd3fc,#0ea5e9)] text-white shadow-[0_8px_20px_-4px_rgba(14,165,233,0.6)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_26px_-4px_rgba(14,165,233,0.7)] focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-50 active:translate-y-0 active:scale-95"
             >
-              {buffering && !manualStartNeeded && (
-                <span className="absolute inset-0 rounded-full bg-sky-300/50 animate-ping" aria-hidden />
+              {/* halo */}
+              {showSpinner && (
+                <span
+                  aria-hidden
+                  className="absolute inset-0 rounded-full border-2 border-white/50 border-t-white animate-spin"
+                />
               )}
-              <span className="relative">
-                {buffering && !manualStartNeeded ? (
-                  <span className="block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                ) : isPlaying ? (
-                  <PauseIcon />
-                ) : (
-                  <PlayIcon />
-                )}
+              {isPlaying && !showSpinner && (
+                <span
+                  aria-hidden
+                  className="absolute -inset-1 rounded-full bg-sky-400/30 blur-md animate-pulse"
+                />
+              )}
+              <span className="relative translate-x-[1px]">
+                {isPlaying ? <PauseIcon /> : <PlayIcon />}
               </span>
             </button>
 
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
               <canvas
                 ref={canvasRef}
-                width={240}
-                height={32}
-                className="h-8 w-full"
+                className="h-11 w-full"
                 aria-hidden
               />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <div
-                  className="group relative h-1.5 flex-1 min-w-[60px] cursor-pointer rounded-full bg-sky-200/70 transition-all duration-300 ease-out hover:h-2"
+                  className="group relative h-1.5 flex-1 cursor-pointer rounded-full bg-sky-200/80 transition-all duration-200 ease-out hover:h-2"
                   onClick={onProgressClick}
                   role="slider"
                   aria-valuemin={0}
@@ -499,35 +550,40 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
                   aria-label="Posição do áudio"
                 >
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-sky-500 transition-all duration-100"
+                    className="absolute inset-y-0 left-0 rounded-full bg-[linear-gradient(90deg,#7dd3fc,#0ea5e9)] transition-[width] duration-100"
                     style={{ width: `${progress}%` }}
                   />
+                  {duration > 0 && (
+                    <span
+                      className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_0_3px_rgba(14,165,233,0.5)] opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                      style={{ left: `${progress}%` }}
+                    />
+                  )}
                 </div>
-                <span className="text-[9px] sm:text-xs font-mono text-sky-700/70 whitespace-nowrap flex-shrink-0">
-                  {buffering && !duration
-                    ? "Preparando…"
-                    : `${formatTime(currentTime)}/${formatTime(duration)}`}
+                <span className="min-w-[78px] text-right text-[11px] font-medium tabular-nums text-sky-700/70">
+                  {showSpinner && !duration
+                    ? "preparando…"
+                    : `${formatTime(currentTime)} / ${formatTime(duration)}`}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Navegação ±15s */}
-          <div className="flex items-center justify-center gap-1.5">
-            <IconBtn
+          {/* navegação ±15s */}
+          <div className="flex items-center justify-center gap-2">
+            <SkipBtn
+              dir="back"
               onClick={() => seek(-15)}
               label="Voltar 15 segundos"
               disabled={manualStartNeeded || (!duration && !isPlaying)}
-            >
-              <ArrowCircle direction="left" />
-            </IconBtn>
-            <IconBtn
+            />
+            <span className="h-3.5 w-px bg-sky-300/50" aria-hidden />
+            <SkipBtn
+              dir="fwd"
               onClick={() => seek(15)}
               label="Avançar 15 segundos"
               disabled={manualStartNeeded || (!duration && !isPlaying)}
-            >
-              <ArrowCircle direction="right" />
-            </IconBtn>
+            />
           </div>
         </div>
       </div>
