@@ -7,7 +7,7 @@ import ChatMessage from "./ChatMessage";
 import { FeedbackRequestError } from "../api/feedback";
 import { ENABLE_PASSIVE_SIGNALS, PassiveSignalName, sendPassiveSignal } from "../api/passiveSignals";
 import { ENABLE_MODULE_USAGE, sendModuleUsage } from "../api/moduleUsage";
-import { gerarAudioDaMensagem } from "../api/voiceApi";
+import { gerarAudioDaMensagem, prepareAudioStreamUrl } from "../api/voiceApi";
 import { Message } from "../contexts/ChatContext";
 import { trackFeedbackEvent } from "../analytics/track";
 import type { FeedbackTrackingPayload } from "../analytics/track";
@@ -458,9 +458,23 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
 
     try {
       onActivityTTS?.(true);
-      const dataUrl = await gerarAudioDaMensagem(displayText);
+
+      // Streaming: começa a tocar assim que os primeiros bytes chegam (sem esperar tudo).
+      // Cai para o caminho buffered (data URL) se o prepare/stream falhar.
+      let mediaUrl: string;
+      try {
+        mediaUrl = await prepareAudioStreamUrl(displayText);
+      } catch (prepErr) {
+        console.warn("[TTS] prepare/stream indisponível, usando fallback buffered:", prepErr);
+        mediaUrl = await gerarAudioDaMensagem(displayText);
+      }
+
       const audioEl = new Audio();
-      audioEl.src = dataUrl;
+      // CORS é obrigatório para o WebAudio (visualizer) quando a origem do áudio é cross-site.
+      if (!mediaUrl.startsWith("data:")) {
+        audioEl.crossOrigin = "anonymous";
+      }
+      audioEl.src = mediaUrl;
       audioEl.preload = "auto";
       audioEl.autoplay = false;
       audioEl.playsInline = true;
@@ -501,7 +515,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
 
       setAudioOverlay({
         id: Date.now(),
-        url: dataUrl,
+        url: mediaUrl,
         audio: audioEl,
         needsManualStart,
       });

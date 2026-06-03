@@ -20,6 +20,9 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(() => !audio.paused && !audio.ended);
   const [currentTime, setCurrentTime] = useState(() => audio.currentTime || 0);
@@ -27,6 +30,10 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
     Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0,
   );
   const [manualStartNeeded, setManualStartNeeded] = useState(requiresManualStart);
+  // "preparando": stream conectando / bufferizando antes do primeiro som.
+  const [buffering, setBuffering] = useState(
+    () => !requiresManualStart && audio.paused && (audio.currentTime || 0) === 0,
+  );
 
   useEffect(() => {
     progressRef.current = onProgress;
@@ -65,11 +72,18 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
         const gain = ctx.createGain();
         gain.gain.value = 1.35;
 
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 128;
+        analyser.smoothingTimeConstant = 0.82;
+
+        // áudio: src → gain → destino; análise: gain → analyser (sem ir ao destino).
         src.connect(gain).connect(ctx.destination);
+        gain.connect(analyser);
 
         audioCtxRef.current = ctx;
         sourceRef.current = src;
         gainRef.current = gain;
+        analyserRef.current = analyser;
 
         if (ctx.state === "suspended") {
           ctx.resume().catch(() => {});
@@ -87,10 +101,14 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
         gainRef.current?.disconnect();
       } catch {}
       try {
+        analyserRef.current?.disconnect();
+      } catch {}
+      try {
         audioCtxRef.current?.close();
       } catch {}
       sourceRef.current = null;
       gainRef.current = null;
+      analyserRef.current = null;
       audioCtxRef.current = null;
     };
   }, [audio]);
@@ -127,23 +145,41 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
       setManualStartNeeded(false);
     };
 
+    const handlePlaying = () => {
+      setIsPlaying(true);
+      setBuffering(false);
+    };
+
+    const handleCanPlay = () => {
+      setBuffering(false);
+    };
+
+    const handleWaiting = () => {
+      setBuffering(true);
+    };
+
     const handlePause = () => {
       setIsPlaying(false);
     };
 
     const handleEnded = () => {
       setIsPlaying(false);
+      setBuffering(false);
     };
 
     const handleError = () => {
       setManualStartNeeded(true);
       setIsPlaying(false);
+      setBuffering(false);
     };
 
     el.addEventListener("timeupdate", handleTimeUpdate);
     el.addEventListener("loadedmetadata", handleLoadedMetadata);
     el.addEventListener("durationchange", handleDurationChange);
     el.addEventListener("play", handlePlay);
+    el.addEventListener("playing", handlePlaying);
+    el.addEventListener("canplay", handleCanPlay);
+    el.addEventListener("waiting", handleWaiting);
     el.addEventListener("pause", handlePause);
     el.addEventListener("ended", handleEnded);
     el.addEventListener("error", handleError);
@@ -155,11 +191,81 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
       el.removeEventListener("loadedmetadata", handleLoadedMetadata);
       el.removeEventListener("durationchange", handleDurationChange);
       el.removeEventListener("play", handlePlay);
+      el.removeEventListener("playing", handlePlaying);
+      el.removeEventListener("canplay", handleCanPlay);
+      el.removeEventListener("waiting", handleWaiting);
       el.removeEventListener("pause", handlePause);
       el.removeEventListener("ended", handleEnded);
       el.removeEventListener("error", handleError);
     };
   }, [audio, duration]);
+
+  // Onda de áudio animada (baby-blue). Lê o AnalyserNode quando tocando; pulso suave quando
+  // bufferizando/pausado.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx2d = canvas.getContext("2d");
+    if (!ctx2d) return;
+
+    const bars = 28;
+    const gap = 3;
+    let phase = 0;
+
+    const draw = () => {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx2d.clearRect(0, 0, w, h);
+
+      const analyser = analyserRef.current;
+      const amplitudes: number[] = [];
+
+      if (analyser && isPlaying) {
+        const bins = analyser.frequencyBinCount;
+        const data = new Uint8Array(bins);
+        analyser.getByteFrequencyData(data);
+        for (let i = 0; i < bars; i++) {
+          const idx = Math.floor((i / bars) * bins);
+          amplitudes.push(data[idx] / 255);
+        }
+      } else {
+        phase += buffering ? 0.14 : 0.05;
+        for (let i = 0; i < bars; i++) {
+          const base = buffering ? 0.3 : 0.1;
+          const swing = buffering ? 0.42 : 0.1;
+          amplitudes.push(base + Math.abs(Math.sin(phase + i * 0.45)) * swing);
+        }
+      }
+
+      const barW = Math.max(2, (w - gap * (bars - 1)) / bars);
+      ctx2d.fillStyle = isPlaying ? "#38bdf8" : "rgba(56,189,248,0.5)"; // sky-400 / soft
+      for (let i = 0; i < bars; i++) {
+        const amp = Math.max(0.06, amplitudes[i]);
+        const barH = amp * h;
+        const x = i * (barW + gap);
+        const y = (h - barH) / 2;
+        const r = Math.min(barW / 2, 3);
+        ctx2d.beginPath();
+        const anyCtx = ctx2d as unknown as { roundRect?: (x: number, y: number, w: number, h: number, r: number) => void };
+        if (typeof anyCtx.roundRect === "function") {
+          anyCtx.roundRect(x, y, barW, barH, r);
+        } else {
+          ctx2d.rect(x, y, barW, barH);
+        }
+        ctx2d.fill();
+      }
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+
+    rafRef.current = requestAnimationFrame(draw);
+    return () => {
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [isPlaying, buffering]);
 
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
@@ -283,7 +389,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="group inline-flex h-9 w-9 items-center justify-center rounded-full text-eco-muted transition-all duration-300 ease-out hover:-translate-y-0.5 hover:text-eco-user hover:shadow-subtle focus:outline-none focus:ring-2 focus:ring-eco-accent/40 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+      className="group inline-flex h-9 w-9 items-center justify-center rounded-full text-sky-600/80 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:text-sky-700 hover:bg-white/50 focus:outline-none focus:ring-2 focus:ring-sky-300/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
       aria-label={label}
     >
       {children}
@@ -339,38 +445,52 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label="Reprodutor de áudio"
-        className="pointer-events-auto relative flex w-full max-w-[min(460px,94vw)] flex-col gap-3 rounded-xl border border-eco-line bg-eco-bubble/95 px-3 py-3 sm:px-4 sm:py-4 sm:bg-eco-bubble/60 sm:backdrop-blur-glass text-eco-text shadow-minimal transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-eco-accent/50"
+        className="pointer-events-auto relative flex w-full max-w-[min(460px,94vw)] flex-col gap-3 rounded-2xl border border-sky-200/70 bg-gradient-to-b from-sky-50/95 to-sky-100/85 px-3 py-3 sm:px-4 sm:py-4 sm:backdrop-blur-md text-slate-700 shadow-xl shadow-sky-300/30 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-sky-300/60"
       >
         <button
           type="button"
           onClick={handleClose}
-          className="group absolute right-2.5 top-2.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-eco-muted transition-all duration-300 ease-out hover:text-eco-user hover:bg-white/40 focus:outline-none focus:ring-2 focus:ring-eco-accent/40"
+          className="group absolute right-2.5 top-2.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-sky-500/80 transition-all duration-300 ease-out hover:text-sky-700 hover:bg-white/50 focus:outline-none focus:ring-2 focus:ring-sky-300/50"
           aria-label="Fechar"
         >
           <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={1.8} />
           <span className="sr-only">Fechar</span>
         </button>
 
-        <div className="flex flex-col gap-3 sm:gap-2">
-          {/* Play button + Progress bar */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <IconBtn onClick={togglePlay} label={isPlaying ? "Pausar" : "Tocar"}>
-              {isPlaying ? <PauseIcon /> : <PlayIcon />}
-            </IconBtn>
+        <div className="flex flex-col gap-3 sm:gap-2.5">
+          {/* Play grande + onda + progresso */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={manualStartNeeded ? handleManualStart : togglePlay}
+              aria-label={manualStartNeeded ? "Tocar" : isPlaying ? "Pausar" : "Tocar"}
+              className="relative inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-sky-400 text-white shadow-md shadow-sky-400/40 transition-all duration-300 ease-out hover:bg-sky-500 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-sky-300 active:translate-y-0"
+            >
+              {buffering && !manualStartNeeded && (
+                <span className="absolute inset-0 rounded-full bg-sky-300/50 animate-ping" aria-hidden />
+              )}
+              <span className="relative">
+                {buffering && !manualStartNeeded ? (
+                  <span className="block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                ) : isPlaying ? (
+                  <PauseIcon />
+                ) : (
+                  <PlayIcon />
+                )}
+              </span>
+            </button>
 
-            {manualStartNeeded ? (
-              <button
-                type="button"
-                onClick={handleManualStart}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-eco-user px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-subtle focus:outline-none focus:ring-2 focus:ring-eco-accent/50 active:translate-y-0"
-              >
-                <PlayIcon />
-                <span>Tocar</span>
-              </button>
-            ) : (
-              <div className="flex flex-1 items-center gap-2 sm:gap-2.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <canvas
+                ref={canvasRef}
+                width={240}
+                height={32}
+                className="h-8 w-full"
+                aria-hidden
+              />
+              <div className="flex items-center gap-2">
                 <div
-                  className="group relative h-1.5 flex-1 min-w-[60px] cursor-pointer rounded-full bg-eco-line/40 transition-all duration-300 ease-out hover:h-2 hover:bg-eco-line/60"
+                  className="group relative h-1.5 flex-1 min-w-[60px] cursor-pointer rounded-full bg-sky-200/70 transition-all duration-300 ease-out hover:h-2"
                   onClick={onProgressClick}
                   role="slider"
                   aria-valuemin={0}
@@ -379,18 +499,20 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
                   aria-label="Posição do áudio"
                 >
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-eco-user transition-all duration-100"
+                    className="absolute inset-y-0 left-0 rounded-full bg-sky-500 transition-all duration-100"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-[9px] sm:text-xs font-mono text-eco-muted whitespace-nowrap flex-shrink-0">
-                  {formatTime(currentTime)}/{formatTime(duration)}
+                <span className="text-[9px] sm:text-xs font-mono text-sky-700/70 whitespace-nowrap flex-shrink-0">
+                  {buffering && !duration
+                    ? "Preparando…"
+                    : `${formatTime(currentTime)}/${formatTime(duration)}`}
                 </span>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Navigation buttons */}
+          {/* Navegação ±15s */}
           <div className="flex items-center justify-center gap-1.5">
             <IconBtn
               onClick={() => seek(-15)}

@@ -5,9 +5,48 @@ import { buildIdentityHeaders, updateBiasHint } from "../lib/guestId";
 import { computeBiasHintFromMessages, computeBiasHintFromText } from "../utils/biasHint";
 
 const VOICE_TTS_ENDPOINT = "/api/voice/tts";
+const VOICE_TTS_PREPARE_ENDPOINT = "/api/voice/tts/prepare";
 const VOICE_TRANSCRIBE_ENDPOINT = "/api/voice/transcribe-and-respond";
 
 const buildVoiceUrl = (path: string) => buildApiUrl(path);
+
+/**
+ * Streaming TTS: prepara o texto no backend e retorna a URL (GET) que streama o MP3.
+ * Usada como `audio.src` para começar a tocar assim que os primeiros bytes chegam
+ * (sem esperar a síntese inteira, sem base64). Cai para `gerarAudioDaMensagem` em caso de erro.
+ */
+export async function prepareAudioStreamUrl(text: string): Promise<string> {
+  const clean = String(text ?? "").trim();
+  if (!clean) throw new Error("Texto vazio para TTS.");
+
+  const biasHint = computeBiasHintFromText(clean);
+  updateBiasHint(biasHint ?? null);
+
+  const url = buildVoiceUrl(VOICE_TTS_PREPARE_ENDPOINT);
+  const resp = await fetchWithTimeout(
+    url,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...buildIdentityHeaders({ biasHint }),
+      },
+      body: JSON.stringify({ text: clean }),
+    },
+    15000,
+  );
+
+  if (!resp.ok) await readError(resp);
+
+  const data = await resp.json().catch(() => null);
+  const id = data?.id;
+  if (!id || typeof id !== "string") {
+    throw new Error("Backend não retornou id de áudio (TTS prepare).");
+  }
+
+  return buildVoiceUrl(`${VOICE_TTS_ENDPOINT}/stream/${encodeURIComponent(id)}`);
+}
 
 function base64ToDataURL(b64: string, mime = "audio/mpeg") {
   return `data:${mime};base64,${b64}`;
