@@ -470,10 +470,6 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
       }
 
       const audioEl = new Audio();
-      // CORS é obrigatório para o WebAudio (visualizer) quando a origem do áudio é cross-site.
-      if (!mediaUrl.startsWith("data:")) {
-        audioEl.crossOrigin = "anonymous";
-      }
       audioEl.src = mediaUrl;
       audioEl.preload = "auto";
       audioEl.autoplay = false;

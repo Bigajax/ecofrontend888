@@ -22,10 +22,6 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
   const cardRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement>(audio);
   const progressRef = useRef<AudioPlayerOverlayProps["onProgress"]>(onProgress);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const gainRef = useRef<GainNode | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -63,67 +59,6 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
   useEffect(() => {
     setManualStartNeeded(requiresManualStart);
   }, [requiresManualStart]);
-
-  const ensureContext = useCallback(() => {
-    const ctx = audioCtxRef.current;
-    if (ctx && ctx.state === "suspended") {
-      ctx.resume().catch(() => {});
-    }
-  }, []);
-
-  useEffect(() => {
-    const el = audio;
-    if (!el) return;
-
-    try {
-      // @ts-ignore - suporte webkit
-      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-      if (Ctx) {
-        const ctx: AudioContext = new Ctx();
-        const src = ctx.createMediaElementSource(el);
-        const gain = ctx.createGain();
-        gain.gain.value = 1.35;
-
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.82;
-
-        // áudio: src → gain → destino; análise: gain → analyser (sem ir ao destino).
-        src.connect(gain).connect(ctx.destination);
-        gain.connect(analyser);
-
-        audioCtxRef.current = ctx;
-        sourceRef.current = src;
-        gainRef.current = gain;
-        analyserRef.current = analyser;
-
-        if (ctx.state === "suspended") {
-          ctx.resume().catch(() => {});
-        }
-      }
-    } catch {
-      /* noop */
-    }
-
-    return () => {
-      try {
-        sourceRef.current?.disconnect();
-      } catch {}
-      try {
-        gainRef.current?.disconnect();
-      } catch {}
-      try {
-        analyserRef.current?.disconnect();
-      } catch {}
-      try {
-        audioCtxRef.current?.close();
-      } catch {}
-      sourceRef.current = null;
-      gainRef.current = null;
-      analyserRef.current = null;
-      audioCtxRef.current = null;
-    };
-  }, [audio]);
 
   useEffect(() => {
     const el = audio;
@@ -239,27 +174,19 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
       const mid = h / 2;
       ctx2d.clearRect(0, 0, w, h);
 
-      const analyser = analyserRef.current;
+      // Onda auto-animada (sem WebAudio, pra não interferir na reprodução do áudio):
+      // viva quando tocando, calma quando preparando/pausado.
       const targets: number[] = [];
-
-      if (analyser && isPlaying) {
-        const bins = analyser.frequencyBinCount;
-        const data = new Uint8Array(bins);
-        analyser.getByteFrequencyData(data);
-        for (let i = 0; i < BARS; i++) {
-          // usa a metade grave/média do espectro (mais expressiva pra voz)
-          const idx = Math.floor((i / BARS) * (bins * 0.7));
-          targets.push((data[idx] / 255) * 1.05);
-        }
-      } else {
-        t += buffering ? 0.09 : 0.035;
-        for (let i = 0; i < BARS; i++) {
-          const base = buffering ? 0.22 : 0.09;
-          const swing = buffering ? 0.3 : 0.07;
-          // envelope nas pontas pra parecer uma "respiração" central
-          const env = Math.sin((i / (BARS - 1)) * Math.PI);
-          targets.push(base + Math.abs(Math.sin(t + i * 0.5)) * swing * (0.5 + 0.5 * env));
-        }
+      const speed = isPlaying ? 0.16 : buffering ? 0.09 : 0.022;
+      const baseAmp = isPlaying ? 0.3 : buffering ? 0.2 : 0.08;
+      const swing = isPlaying ? 0.5 : buffering ? 0.3 : 0.05;
+      t += speed;
+      for (let i = 0; i < BARS; i++) {
+        // envelope central (pontas mais baixas) + duas senoides defasadas = movimento orgânico
+        const env = Math.sin((i / (BARS - 1)) * Math.PI);
+        const wave =
+          Math.abs(Math.sin(t + i * 0.5)) * 0.7 + Math.abs(Math.sin(t * 1.3 + i * 0.23)) * 0.3;
+        targets.push(baseAmp + wave * swing * (0.45 + 0.55 * env));
       }
 
       const gap = (w / BARS) * 0.42;
@@ -326,7 +253,6 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
     if (!el) return;
 
     if (!isPlaying) {
-      ensureContext();
       el
         .play()
         .then(() => {
@@ -339,12 +265,11 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
     } else {
       el.pause();
     }
-  }, [ensureContext, isPlaying]);
+  }, [isPlaying]);
 
   const handleManualStart = useCallback(() => {
     const el = audioRef.current;
     if (!el) return;
-    ensureContext();
     el
       .play()
       .then(() => {
@@ -354,7 +279,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
       .catch(() => {
         setManualStartNeeded(true);
       });
-  }, [ensureContext]);
+  }, []);
 
   const seek = useCallback(
     (seconds: number) => {
