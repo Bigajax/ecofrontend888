@@ -23,19 +23,34 @@ export async function prepareAudioStreamUrl(text: string): Promise<string> {
   updateBiasHint(biasHint ?? null);
 
   const url = buildVoiceUrl(VOICE_TTS_PREPARE_ENDPOINT);
-  const resp = await fetchWithTimeout(
-    url,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...buildIdentityHeaders({ biasHint }),
-      },
-      body: JSON.stringify({ text: clean }),
+  const init: RequestInit = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...buildIdentityHeaders({ biasHint }),
     },
-    15000,
-  );
+    body: JSON.stringify({ text: clean }),
+  };
+
+  // O backend roda no Render (free): após inatividade ele hiberna e a 1ª request
+  // durante o cold-start/recycle pode falhar com "Failed to fetch". Timeout maior
+  // (sobrevive ao cold-start) + 1 retry com pausa (cobre a janela curta de recycle).
+  const isNetworkish = (e: unknown) =>
+    /failed to fetch|networkerror|load failed|aborted/i.test(String((e as any)?.message || e));
+
+  let resp: Response | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      resp = await fetchWithTimeout(url, init, 30000);
+      break;
+    } catch (e) {
+      if (attempt === 1 || !isNetworkish(e)) throw e;
+      console.warn("[TTS] prepare falhou (rede), tentando de novo apos cold-start do Render…");
+      await new Promise((r) => setTimeout(r, 2500));
+    }
+  }
+  if (!resp) throw new Error("Falha ao preparar audio (TTS).");
 
   if (!resp.ok) await readError(resp);
 
