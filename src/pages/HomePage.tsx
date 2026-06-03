@@ -565,10 +565,9 @@ export default function HomePage() {
               </p>
               <button
                 onClick={handleStartChat}
-                className="mt-7 inline-flex items-center gap-2.5 justify-center self-start rounded-full px-7 py-3.5 text-[15px] font-bold text-white transition-all duration-300 hover:scale-105 active:scale-95 relative min-h-[48px]"
+                className="mt-7 inline-flex items-center gap-2.5 justify-center self-start rounded-full bg-eco-baby px-7 py-3.5 text-[15px] font-bold text-white transition-all duration-300 hover:bg-eco-baby/90 hover:scale-105 active:scale-95 relative min-h-[48px]"
                 style={{
-                  background: 'linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)',
-                  boxShadow: '0 6px 24px rgba(13,52,97,0.30), 0 2px 8px rgba(13,52,97,0.15)',
+                  boxShadow: '0 6px 24px rgba(110,200,255,0.35), 0 2px 8px rgba(110,200,255,0.20)',
                 }}
               >
                 Conversar com a Eco
