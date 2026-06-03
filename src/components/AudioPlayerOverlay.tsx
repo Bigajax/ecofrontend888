@@ -177,9 +177,9 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
       // Onda auto-animada (sem WebAudio, pra não interferir na reprodução do áudio):
       // viva quando tocando, calma quando preparando/pausado.
       const targets: number[] = [];
-      const speed = isPlaying ? 0.09 : buffering ? 0.055 : 0.015; // mais calmo
-      const baseAmp = isPlaying ? 0.16 : buffering ? 0.12 : 0.06; // mais baixo/discreto
-      const swing = isPlaying ? 0.28 : buffering ? 0.18 : 0.04;
+      const speed = isPlaying ? 0.1 : buffering ? 0.055 : 0.015; // calmo
+      const baseAmp = isPlaying ? 0.34 : buffering ? 0.22 : 0.08; // ondas maiores
+      const swing = isPlaying ? 0.58 : buffering ? 0.3 : 0.05;
       t += speed;
       for (let i = 0; i < BARS; i++) {
         // envelope central (pontas mais baixas) + duas senoides defasadas = movimento orgânico
@@ -202,7 +202,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
         // suavização temporal
         smooth[i] += (targets[i] - smooth[i]) * 0.35;
         const amp = Math.max(0.04, Math.min(1, smooth[i]));
-        const barH = amp * (h * 0.72); // teto mais baixo (onda discreta)
+        const barH = amp * (h * 0.96); // ondas maiores
         const x = i * (w / BARS) + gap / 2;
         const y = mid - barH / 2;
         const r = Math.min(barW / 2, barH / 2, 6 * dpr);
@@ -393,7 +393,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
   );
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+72px)] z-[80] flex justify-center px-3 sm:px-4">
+    <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+12px)] z-[80] flex justify-center px-3 sm:px-4">
       <div
         ref={cardRef}
         tabIndex={-1}
@@ -443,7 +443,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <canvas
                 ref={canvasRef}
-                className="h-8 w-full"
+                className="h-11 w-full"
                 aria-hidden
               />
               <div className="flex items-center gap-2.5">
