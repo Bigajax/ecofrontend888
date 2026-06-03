@@ -1163,8 +1163,8 @@ const createFallbackOrchestration = (): FallbackOrchestration => {
             }
             try {
               console.log("[SSE-DEBUG] preflight", {
-                method: "GET",
-                hasBody: false,
+                method: "POST",
+                hasBody: true,
               });
             } catch {
               /* noop */
@@ -1203,53 +1203,57 @@ const createFallbackOrchestration = (): FallbackOrchestration => {
               );
             }
 
-            // ✅ CONTRATO: SSE usa GET com query parameters (Seção 2)
+            // SSE via POST: o payload (histórico + mensagem) vai no CORPO em JSON.
+            // O GET antigo serializava o payload inteiro na query string; conversas
+            // longas estouravam o limite de URL do edge (Cloudflare/Render) → HTTP 431
+            // SEM headers CORS → o navegador reportava "Failed to fetch" e o app
+            // rotulava como cors_preflight_failed. O backend aceita POST no mesmo
+            // endpoint e faz streaming quando recebe Accept: text/event-stream.
             const sseUrl = new URL(requestUrl);
-            // Read guest ID without creating it (may be empty if not in guest mode)
-            sseUrl.searchParams.set('guest_id', readGuestId() || '');
-            sseUrl.searchParams.set('session_id', getOrCreateSessionId() || '');
 
-            // ⚠️ OBRIGATÓRIO: incluir mensagem (contrato linha 26)
+            // Read guest/session without creating them (may be empty if not in guest mode)
+            const guestIdForRequest = readGuestId() || '';
+            const sessionIdForRequest = getOrCreateSessionId() || '';
             const lastUserMessage = requestBody?.texto || requestBody?.message || '';
-            if (lastUserMessage) {
-              sseUrl.searchParams.set('message', String(lastUserMessage).trim());
-            }
 
+            const postBody: Record<string, unknown> = { ...(requestBody ?? {}) };
+            if (guestIdForRequest) postBody.guest_id = guestIdForRequest;
+            if (sessionIdForRequest) postBody.session_id = sessionIdForRequest;
             if (clientMessageId && clientMessageId.trim()) {
-              sseUrl.searchParams.set('client_message_id', clientMessageId);
+              postBody.client_message_id = clientMessageId;
             }
+            if (!('stream' in postBody)) postBody.stream = 'true';
 
-            // ✅ Opcional: enviar messages e payload completo se disponível
-            if (requestBody?.mensagens && Array.isArray(requestBody.mensagens)) {
-              sseUrl.searchParams.set('messages', JSON.stringify(requestBody.mensagens));
-            }
-            if (requestBody) {
-              sseUrl.searchParams.set('payload', JSON.stringify(requestBody));
-            }
-
-            const requestHeaders = {
+            const requestHeaders: Record<string, string> = {
               'Accept': acceptHeader, // text/event-stream
+              'Content-Type': 'application/json', // backend exige JSON no POST (senão 415)
             };
+            if (guestIdForRequest) requestHeaders['X-Eco-Guest-Id'] = guestIdForRequest;
+            if (sessionIdForRequest) requestHeaders['X-Eco-Session-Id'] = sessionIdForRequest;
+            if (clientMessageId && clientMessageId.trim()) {
+              requestHeaders['X-Eco-Client-Message-Id'] = clientMessageId;
+            }
 
             const fetchInit: RequestInit = {
-              method: 'GET', // ✅ CONTRATO: GET para SSE
+              method: 'POST', // payload no corpo, evita URL gigante (HTTP 431)
               mode: "cors",
               credentials: "omit",
               headers: requestHeaders,
+              body: JSON.stringify(postBody),
               signal: controller.signal,
               cache: "no-store",
             };
 
-            console.log('[SSE-DEBUG] Enviando GET com query params (contrato seção 2)', {
-              method: 'GET',
+            console.log('[SSE-DEBUG] Enviando POST com payload no corpo (evita HTTP 431)', {
+              method: 'POST',
               url: sseUrl.toString(),
-              params: {
-                guest_id: '***',
-                session_id: '***',
+              body: {
+                guest_id: guestIdForRequest ? '***' : undefined,
+                session_id: sessionIdForRequest ? '***' : undefined,
                 message: lastUserMessage ? `${String(lastUserMessage).slice(0, 50)}...` : undefined,
                 client_message_id: clientMessageId || undefined,
                 has_messages: requestBody?.mensagens ? 'sim' : 'não',
-                has_payload: requestBody ? 'sim' : 'não',
+                payload_bytes: JSON.stringify(postBody).length,
               },
             });
 

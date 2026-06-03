@@ -625,7 +625,9 @@ export class StreamSession {
     const diagForceJson =
       typeof window !== "undefined" &&
       Boolean((window as { __ecoDiag?: { forceJson?: boolean } }).__ecoDiag?.forceJson);
-    const requestMethod: "GET" | "POST" = "GET";
+    // SSE agora usa POST (payload no corpo) — ver streamRunner.ts. O GET antigo
+    // serializava o payload na query e estourava o limite de URL do edge (HTTP 431).
+    const requestMethod: "GET" | "POST" = "POST";
     const acceptHeader = "text/event-stream";
     const fallbackEnabled = diagForceJson;
 
