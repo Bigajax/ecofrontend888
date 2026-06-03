@@ -70,6 +70,22 @@ const GhostBtn = React.forwardRef<
 ));
 GhostBtn.displayName = "GhostBtn";
 
+// Coordenação global: só um player de voz aberto por vez. Abrir um novo fecha o anterior
+// (cada mensagem tem seu próprio overlay; isto evita players empilhados tocando juntos).
+let activeAudioCloser: (() => void) | null = null;
+function openExclusiveAudio(closer: () => void) {
+  const prev = activeAudioCloser;
+  activeAudioCloser = closer; // troca antes, pra o close do anterior não zerar o novo
+  if (prev && prev !== closer) {
+    try {
+      prev();
+    } catch {}
+  }
+}
+function releaseExclusiveAudio(closer: () => void) {
+  if (activeAudioCloser === closer) activeAudioCloser = null;
+}
+
 const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onActivityTTS, onRetry, showRecommendedAction }) => {
   const [copied, setCopied] = useState(false);
   const [audioOverlay, setAudioOverlay] = useState<AudioOverlayState | null>(null);
@@ -509,6 +525,8 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
         } catch {}
       }
 
+      // fecha qualquer outro player aberto antes de mostrar este
+      openExclusiveAudio(clearAudioOverlay);
       setAudioOverlay({
         id: Date.now(),
         url: mediaUrl,
@@ -531,6 +549,7 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
 
   const handleCloseAudioOverlay = useCallback(() => {
     clearAudioOverlay();
+    releaseExclusiveAudio(clearAudioOverlay);
     if (typeof window !== "undefined") {
       window.requestAnimationFrame(() => {
         focusComposer();
@@ -539,6 +558,11 @@ const EcoMessageWithAudio: React.FC<EcoMessageWithAudioProps> = ({ message, onAc
       focusComposer();
     }
   }, [clearAudioOverlay, focusComposer]);
+
+  // libera o registro global quando este componente sai de cena
+  useEffect(() => {
+    return () => releaseExclusiveAudio(clearAudioOverlay);
+  }, [clearAudioOverlay]);
 
   useEffect(() => {
     return () => {
