@@ -1,6 +1,8 @@
 // src/constants/meditationTiers.ts
 // Configuração de tiers para biblioteca de meditações
 
+import { OFFER } from './offerCopy';
+
 /**
  * Estrutura de Tiers:
  *
@@ -159,7 +161,7 @@ export function getUpgradeMessage(
 ): string {
   if (userTier === 'free') {
     if (meditationTier === 'essentials' || meditationTier === 'premium') {
-      return 'Desbloqueie com o plano Premium (R$ 15,90/mês)';
+      return `Desbloqueie com o plano Premium (${OFFER.priceMonthly})`;
     }
   }
 
@@ -215,14 +217,14 @@ export const MEDITATION_CONVERSION_COPY = {
       'Desbloqueie meditações longas e programas completos para aprofundar sua prática.',
     primaryCta: 'Ver Planos',
     secondaryCta: 'Voltar',
-    subtitle: '7 dias grátis • Cancele quando quiser',
+    subtitle: OFFER.trialCancel,
   },
   meditation_essentials_upgrade: {
     title: 'Meditações Premium',
     message:
       'Desbloqueie todas as meditações e programas completos com o Premium.',
-    primaryCta: 'Começar 7 dias grátis',
+    primaryCta: OFFER.ctaStartTrial,
     secondaryCta: 'Voltar',
-    subtitle: '7 dias grátis • depois R$ 15,90/mês',
+    subtitle: OFFER.trialAfterPrice,
   },
 };

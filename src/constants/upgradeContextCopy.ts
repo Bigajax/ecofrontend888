@@ -84,7 +84,7 @@ export const UPGRADE_CONTEXT_COPY: Record<UpgradeSource, UpgradeContextContent> 
 
   generic: {
     title: 'Seu acesso completo está a um passo',
-    subtitle: 'Você já iniciou sua jornada na Ecotopia. Desbloqueie tudo com 7 dias grátis — cancele quando quiser.',
+    subtitle: 'Você já iniciou sua jornada na Ecotopia. Desbloqueie tudo com 7 dias gratuitos — cancele quando quiser.',
     bullets: [
       'Conversas ilimitadas com ECO',
       'Todas as meditações premium',

@@ -34,7 +34,7 @@ describe('SleepProtocolOfferCard', () => {
         onCheckout={onCheckout}
       />
     );
-    fireEvent.click(screen.getByText(/Começar 7 dias grátis/i));
+    fireEvent.click(screen.getByText(/Começar 7 dias gratuitos/i));
     expect(onCheckout).toHaveBeenCalledOnce();
   });
 

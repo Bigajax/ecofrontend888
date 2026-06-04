@@ -58,7 +58,7 @@ export default function EcotopiaPrecosPage() {
         >
           Comece pelos 7 dias gratuitos. Decida depois.
         </h2>
-        <Link to="/register?plan=annual&from=pricing_page" className="cta-primary">
+        <Link to="/assinar?step=plan&plan=annual&from=pricing_page" className="cta-primary">
           Começar 7 dias gratuitos
         </Link>
       </section>

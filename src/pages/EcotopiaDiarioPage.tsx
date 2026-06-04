@@ -115,7 +115,7 @@ export default function EcotopiaDiarioPage() {
               Comece sua jornada
             </Link>
             <p className="lp-diario-hero-fine scroll-reveal stagger-4">
-              Janeiro e fevereiro abertos · 7 dias grátis no plano completo
+              Janeiro e fevereiro abertos · 7 dias gratuitos no plano completo
             </p>
           </div>
         </div>

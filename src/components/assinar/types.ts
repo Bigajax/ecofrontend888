@@ -1,3 +1,5 @@
+import { OFFER } from "@/constants/offerCopy";
+
 export type PlanId = "monthly" | "annual";
 
 export interface TimelineItem {
@@ -13,8 +15,8 @@ export const PLAN_COPY: Record<PlanId, {
   timeline: TimelineItem[];
 }> = {
   monthly: {
-    priceLine: "R$ 15,90/mês",
-    subPriceLine: "7 dias grátis · cancele quando quiser",
+    priceLine: OFFER.priceMonthly,
+    subPriceLine: OFFER.trialCancel,
     timeline: [
       { label: "Hoje", description: "Desbloqueie a biblioteca completa da Ecotopia — Eco IA, meditações e sons para dormir." },
       { label: "Em 5 dias", description: "Enviaremos um e-mail lembrando que seu teste gratuito está terminando em breve." },

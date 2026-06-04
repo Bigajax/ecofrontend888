@@ -23,7 +23,7 @@ export default function SubscriptionManagement() {
       case 'free':
         return 'Gratuito';
       case 'trial':
-        return 'Trial Premium (7 dias grátis)';
+        return 'Trial Premium (7 dias gratuitos)';
       case 'premium_monthly':
         return 'Premium Mensal';
       case 'premium_annual':

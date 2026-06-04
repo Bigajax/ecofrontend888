@@ -209,7 +209,7 @@ export default function EcotopiaSonoPage() {
                 <span className="lp-sono-hero-plan-meta">
                   Anual — cobrado a R$ 142,80/ano
                 </span>
-                <strong className="lp-sono-hero-plan-headline">7 dias grátis</strong>
+                <strong className="lp-sono-hero-plan-headline">7 dias gratuitos</strong>
                 <span className="lp-sono-hero-plan-price">R$ 11,90 por mês</span>
                 <span className="lp-sono-hero-plan-check" aria-hidden>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -226,7 +226,7 @@ export default function EcotopiaSonoPage() {
                 onClick={() => setSelectedHeroPlan('monthly')}
               >
                 <span className="lp-sono-hero-plan-meta">Mensal</span>
-                <strong className="lp-sono-hero-plan-headline">7 dias grátis</strong>
+                <strong className="lp-sono-hero-plan-headline">7 dias gratuitos</strong>
                 <span className="lp-sono-hero-plan-price">R$ 15,90/mês</span>
                 <span className="lp-sono-hero-plan-check" aria-hidden>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -437,7 +437,7 @@ export default function EcotopiaSonoPage() {
               {page.map((n) => (
                 <Link
                   key={n.id}
-                  to={`/register?plan=annual&from=sono_protocolo_${n.id}`}
+                  to={`/assinar?step=plan&plan=annual&from=sono_protocolo_${n.id}`}
                   className="lp-sono-protocol-card"
                 >
                   <span className="lp-sono-protocol-thumb" style={{ background: n.gradient }}>
@@ -507,7 +507,7 @@ export default function EcotopiaSonoPage() {
               <ul>
                 {col.links.map((label) => (
                   <li key={label}>
-                    <Link to={`/register?plan=annual&from=sono_tip_${col.key}`}>
+                    <Link to={`/assinar?step=plan&plan=annual&from=sono_tip_${col.key}`}>
                       {label}
                     </Link>
                   </li>
@@ -603,7 +603,7 @@ export default function EcotopiaSonoPage() {
                 <span className="lp-sono-offer-plan-meta">
                   Anual · cobrado a R$ 142,80/ano
                 </span>
-                <strong className="lp-sono-offer-plan-headline">7 dias grátis</strong>
+                <strong className="lp-sono-offer-plan-headline">7 dias gratuitos</strong>
                 <span className="lp-sono-offer-plan-price">R$ 11,90 por mês</span>
                 <span
                   className={`lp-sono-offer-plan-radio ${selectedOfferPlan === 'annual' ? '' : 'is-empty'}`}

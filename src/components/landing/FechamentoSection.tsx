@@ -21,7 +21,7 @@ export default function FechamentoSection() {
     <section ref={ref} className="lp-fechamento" aria-labelledby="fechamento-cta">
       <div className="lp-fechamento-inner">
         <Link
-          to="/assinar?plan=monthly&from=fechamento_rainbow"
+          to="/assinar?step=plan&plan=monthly&from=fechamento_rainbow"
           id="fechamento-cta"
           className="lp-fechamento-cta"
           onClick={() =>

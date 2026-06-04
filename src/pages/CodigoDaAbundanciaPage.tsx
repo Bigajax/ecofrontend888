@@ -84,7 +84,7 @@ export default function CodigoDaAbundanciaPage() {
   const { hasAccess: hasAbundanciaEntitlement } = useAbundanciaEntitlement();
   // Abundância agora é premium. CTA → trial; entitlement legado mantém acesso (grandfather).
   const checkoutLoading = false;
-  const openCheckout = () => navigate('/register?plan=annual&from=abundancia_trial');
+  const openCheckout = () => navigate('/assinar?step=plan&plan=annual&from=abundancia_trial');
   const isPaid = isVipUser || isPremiumUser || isTrialActive || hasAbundanciaEntitlement;
   const uid = user?.id || 'guest';
 
@@ -140,7 +140,7 @@ export default function CodigoDaAbundanciaPage() {
       : completedCount === 7
       ? 'Protocolo Concluído 🎉'
       : !isPaid
-      ? 'Começar — 7 dias grátis'
+      ? 'Começar — 7 dias gratuitos'
       : `Continuar Dia ${nextSession}`;
 
   const handleSessionClick = (session: ProtocolSession) => {
@@ -385,7 +385,7 @@ export default function CodigoDaAbundanciaPage() {
                 style={{ background: GOLD, color: '#09090F', boxShadow: `0 4px 16px rgba(255,185,50,0.3)` }}
               >
                 {checkoutLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {checkoutLoading ? 'Abrindo…' : 'Começar 7 dias grátis'}
+                {checkoutLoading ? 'Abrindo…' : 'Começar 7 dias gratuitos'}
               </button>
             </div>
           )}
@@ -558,7 +558,7 @@ export default function CodigoDaAbundanciaPage() {
                 style={{ background: GOLD, color: '#09090F', boxShadow: `0 4px 24px rgba(255,185,50,0.35)` }}
               >
                 {checkoutLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {checkoutLoading ? 'Abrindo…' : 'Começar 7 dias grátis'}
+                {checkoutLoading ? 'Abrindo…' : 'Começar 7 dias gratuitos'}
               </button>
             </div>
           </section>

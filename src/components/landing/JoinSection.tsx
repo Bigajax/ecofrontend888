@@ -23,7 +23,7 @@ export default function JoinSection() {
         </p>
 
         <Link
-          to="/assinar?plan=monthly&from=join_section"
+          to="/assinar?step=plan&plan=monthly&from=join_section"
           className="lp-join-cta scroll-reveal"
           onClick={() =>
             trackLandingCta({
@@ -54,7 +54,7 @@ export default function JoinSection() {
             <span className="lp-join-stat-icon">
               <Gift size={22} strokeWidth={2} />
             </span>
-            <div className="lp-join-stat-big">7 dias grátis</div>
+            <div className="lp-join-stat-big">7 dias gratuitos</div>
           </div>
         </div>
       </div>

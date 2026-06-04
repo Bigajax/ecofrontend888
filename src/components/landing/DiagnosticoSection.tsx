@@ -79,7 +79,7 @@ export default function DiagnosticoSection() {
         onClose={() => setOpenKey(null)}
         onCta={(data) => {
           setOpenKey(null);
-          navigate(`/assinar?from=${encodeURIComponent(data.key)}`);
+          navigate(`/assinar?step=plan&from=${encodeURIComponent(data.key)}`);
         }}
       />
     </section>

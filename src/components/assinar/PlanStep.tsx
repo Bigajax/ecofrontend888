@@ -37,8 +37,8 @@ export function PlanStep({ selectedPlan, onSelectPlan, onContinue }: PlanStepPro
 
       <p className="text-center text-[12px]" style={{ color: "#5A8AAD" }}>
         {isMonthly
-          ? "7 dias grátis, depois R$ 15,90/mês. "
-          : "7 dias grátis, depois R$ 142,80/ano. "}
+          ? "7 dias gratuitos, depois R$ 15,90/mês. "
+          : "7 dias gratuitos, depois R$ 142,80/ano. "}
         <Link
           to="/cancelar-assinatura"
           className="underline underline-offset-2 transition-colors hover:opacity-80"

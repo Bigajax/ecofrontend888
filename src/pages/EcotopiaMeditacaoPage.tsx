@@ -192,7 +192,7 @@ export default function EcotopiaMeditacaoPage() {
           </div>
 
           <Link
-            to="/assinar?from=meditacao_hero"
+            to="/assinar?step=plan&from=meditacao_hero"
             className="cta-primary lp-med-hero-cta scroll-reveal stagger-4"
           >
             Experimente grátis
@@ -215,7 +215,7 @@ export default function EcotopiaMeditacaoPage() {
               />
             </div>
             <h3 className="lp-med-bite-title">
-              <Link to="/register?plan=annual&from=meditacao_bite_doses">
+              <Link to="/assinar?step=plan&plan=annual&from=meditacao_bite_doses">
                 Meditações em pequenas doses
               </Link>
             </h3>
@@ -238,7 +238,7 @@ export default function EcotopiaMeditacaoPage() {
               />
             </div>
             <h3 className="lp-med-bite-title">
-              <Link to="/register?plan=annual&from=meditacao_bite_iniciantes">
+              <Link to="/assinar?step=plan&plan=annual&from=meditacao_bite_iniciantes">
                 Meditação para iniciantes: cursos e vídeos para começar sua jornada
               </Link>
             </h3>
@@ -263,7 +263,7 @@ export default function EcotopiaMeditacaoPage() {
               />
             </div>
             <h3 className="lp-med-bite-title">
-              <Link to="/register?plan=annual&from=meditacao_bite_ciencia">
+              <Link to="/assinar?step=plan&plan=annual&from=meditacao_bite_ciencia">
                 Benefícios comprovados cientificamente
               </Link>
             </h3>
@@ -286,7 +286,7 @@ export default function EcotopiaMeditacaoPage() {
               />
             </div>
             <h3 className="lp-med-bite-title">
-              <Link to="/register?plan=annual&from=meditacao_bite_mindfulness">
+              <Link to="/assinar?step=plan&plan=annual&from=meditacao_bite_mindfulness">
                 Pratique meditação mindfulness
               </Link>
             </h3>
@@ -310,7 +310,7 @@ export default function EcotopiaMeditacaoPage() {
               />
             </div>
             <h3 className="lp-med-bite-title">
-              <Link to="/register?plan=annual&from=meditacao_bite_tecnicas">
+              <Link to="/assinar?step=plan&plan=annual&from=meditacao_bite_tecnicas">
                 Técnicas de meditação
               </Link>
             </h3>
@@ -334,7 +334,7 @@ export default function EcotopiaMeditacaoPage() {
               />
             </div>
             <h3 className="lp-med-bite-title">
-              <Link to="/register?plan=annual&from=meditacao_bite_passo">
+              <Link to="/assinar?step=plan&plan=annual&from=meditacao_bite_passo">
                 O que é meditação: passo a passo
               </Link>
             </h3>
@@ -373,7 +373,7 @@ export default function EcotopiaMeditacaoPage() {
 
         <div className="lp-med-bites-cta-wrap">
           <Link
-            to="/assinar?from=meditacao_bites_cta"
+            to="/assinar?step=plan&from=meditacao_bites_cta"
             className="cta-primary lp-med-bites-cta"
           >
             Experimente grátis
@@ -394,7 +394,7 @@ export default function EcotopiaMeditacaoPage() {
               className={`lp-med-explore-col scroll-reveal stagger-${i + 1}`}
             >
               <h3 className="lp-med-explore-heading">
-                <Link to={`/register?plan=annual&from=meditacao_explore_${col.key}`}>
+                <Link to={`/assinar?step=plan&plan=annual&from=meditacao_explore_${col.key}`}>
                   {col.title}
                 </Link>
               </h3>
@@ -402,7 +402,7 @@ export default function EcotopiaMeditacaoPage() {
               <ul className="lp-med-explore-links">
                 {col.links.map((link) => (
                   <li key={link.label}>
-                    <Link to={`/register?plan=annual&from=meditacao_explore_${link.from}`}>
+                    <Link to={`/assinar?step=plan&plan=annual&from=meditacao_explore_${link.from}`}>
                       {link.label}
                     </Link>
                   </li>
@@ -443,7 +443,7 @@ export default function EcotopiaMeditacaoPage() {
 
         <div className="lp-med-library-foot scroll-reveal">
           <Link
-            to="/register?plan=annual&from=meditacao_library_all"
+            to="/assinar?step=plan&plan=annual&from=meditacao_library_all"
             className="lp-med-library-all"
           >
             Ver biblioteca completa →
@@ -499,7 +499,7 @@ export default function EcotopiaMeditacaoPage() {
                 <span className="lp-sono-offer-plan-meta">
                   Anual · cobrado a R$ 142,80/ano
                 </span>
-                <strong className="lp-sono-offer-plan-headline">7 dias grátis</strong>
+                <strong className="lp-sono-offer-plan-headline">7 dias gratuitos</strong>
                 <span className="lp-sono-offer-plan-price">R$ 11,90 por mês</span>
                 <span
                   className={`lp-sono-offer-plan-radio ${selectedOfferPlan === 'annual' ? '' : 'is-empty'}`}

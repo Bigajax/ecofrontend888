@@ -398,7 +398,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                     </span>
                   </div>
                   <div className="flex items-baseline justify-center gap-2.5 mb-1">
-                    <span className="font-display text-[38px] font-bold text-white leading-none">7 dias grátis</span>
+                    <span className="font-display text-[38px] font-bold text-white leading-none">7 dias gratuitos</span>
                   </div>
                   <p className="text-[12px] mb-4" style={{ color: 'rgba(255,255,255,0.32)' }}>
                     Depois R$ 15,90/mês · cancele quando quiser
@@ -433,7 +433,7 @@ export function SonoGuestPostFlow({ onCheckout, checkoutLoading, onDismiss }: So
                       Abrindo pagamento…
                     </span>
                   ) : (
-                    'Começar 7 dias grátis'
+                    'Começar 7 dias gratuitos'
                   )}
                 </button>
 

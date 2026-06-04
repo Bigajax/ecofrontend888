@@ -164,7 +164,7 @@ export default function SubscriptionCallbackPage() {
             </p>
             {subscription.plan === 'trial' && (
               <p className="text-sm text-[#6EC8FF] font-medium">
-                Aproveite seus 7 dias grátis!
+                Aproveite seus 7 dias gratuitos!
               </p>
             )}
             <p className="text-sm text-[var(--eco-muted)] mt-6">

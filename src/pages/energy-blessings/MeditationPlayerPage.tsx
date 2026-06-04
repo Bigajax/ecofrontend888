@@ -60,7 +60,7 @@ export default function MeditationPlayerPage() {
   const sonoCheckoutLoading = false;
   const openSonoCheckout = (opts?: { origin?: string }) => {
     void opts;
-    navigate('/register?plan=annual&from=sono_trial');
+    navigate('/assinar?step=plan&plan=annual&from=sono_trial');
   };
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);

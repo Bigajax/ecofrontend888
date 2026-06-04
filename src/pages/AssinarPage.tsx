@@ -12,6 +12,7 @@ import { LegalFooter } from "@/components/assinar/LegalFooter";
 import type { PlanId } from "@/components/assinar/types";
 import type { GoalId } from "@/components/assinar/goalsData";
 import { saveObjetivos, linkUserToObjetivos } from "@/api/onboardingObjetivos";
+import { scrollToTop } from "@/utils/scrollToTop";
 import {
   setStoredObjetivos,
   setStoredResponseId,
@@ -48,9 +49,10 @@ export default function AssinarPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  // Scroll para o topo a cada troca de step (e no mount)
+  // Scroll para o topo a cada troca de step (e no mount).
+  // Usa scrollToTop() (não só window) porque no mobile o scroller é o #root.
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    scrollToTop();
   }, [step]);
 
   // Sincroniza step na URL (?step=…) sempre que muda

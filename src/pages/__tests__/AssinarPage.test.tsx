@@ -67,7 +67,7 @@ describe("AssinarPage onboarding flow", () => {
   test("?step=card mantém shortcut do OAuth return", async () => {
     renderAt("/assinar?plan=monthly&step=card");
     await waitFor(() => {
-      expect(screen.getByText(/Comece seu trial de 7 dias/i)).toBeInTheDocument();
+      expect(screen.getByText(/Selecione o método de pagamento/i)).toBeInTheDocument();
     });
   });
 

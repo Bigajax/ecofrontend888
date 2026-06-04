@@ -64,7 +64,7 @@ export function SleepProtocolOfferCard({
         {/* Price block */}
         <div className="flex items-center justify-center gap-2.5 mb-1">
           <span className="font-display text-[44px] font-bold text-white leading-none tracking-tight">
-            7 dias grátis
+            7 dias gratuitos
           </span>
         </div>
         <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.32)' }}>
@@ -108,7 +108,7 @@ export function SleepProtocolOfferCard({
               Abrindo...
             </>
           ) : (
-            'Começar 7 dias grátis'
+            'Começar 7 dias gratuitos'
           )}
         </button>
 

@@ -32,7 +32,7 @@ const BENEFITS = [
   'Acesso completo',
   'Acesso imediato',
   'Cancele quando quiser',
-  '7 dias grátis',
+  '7 dias gratuitos',
 ];
 
 const MAIN_OFFER_COPY = {
@@ -42,9 +42,9 @@ const MAIN_OFFER_COPY = {
     'Esta primeira noite foi criada para tirar seu sistema nervoso do modo alerta. Mas o sono profundo raramente muda em uma única tentativa. Ele é treinado por repetição, segurança e continuidade.',
   body: '',
   offerTitle: 'Protocolo Sono Profundo — 7 noites',
-  price: '7 dias grátis',
-  supportingText: 'Depois R$ 15,90/mês • cancele quando quiser',
-  cta: 'Começar 7 dias grátis',
+  price: '7 dias gratuitos',
+  supportingText: 'Depois R$ 15,90/mês · cancele quando quiser',
+  cta: 'Começar 7 dias gratuitos',
   microcopy: 'Acesso imediato. Você continua exatamente de onde parou.',
 };
 

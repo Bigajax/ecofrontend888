@@ -9,6 +9,8 @@
  * - ✅ "Continue esta conversa amanhã"
  */
 
+import { OFFER } from './offerCopy';
+
 /**
  * Contextos de conversão disponíveis
  */
@@ -218,7 +220,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Você teve 5 conversas profundas hoje. Amanhã, mais 5 te aguardam — ou desbloqueie conversas ilimitadas agora.',
     primaryCta: 'Desbloquear conversas ilimitadas',
     secondaryCta: 'Voltar amanhã',
-    subtitle: '7 dias grátis • Cancele quando quiser',
+    subtitle: OFFER.trialCancel,
   },
 
   chat_soft_limit: {
@@ -226,7 +228,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Restam 2 mensagens hoje. Continue amanhã ou faça upgrade para conversas ilimitadas.',
     primaryCta: 'Upgrade agora',
     secondaryCta: 'Continuar (2 restantes)',
-    subtitle: '7 dias grátis',
+    subtitle: OFFER.trial,
   },
 
   reflection_archive_locked: {
@@ -234,7 +236,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Acesse todas as 61 reflexões estoicas (Janeiro, Fevereiro, Dezembro) organizadas por temas.',
     primaryCta: 'Desbloquear arquivo completo',
     secondaryCta: 'Continuar com CLAREZA',
-    subtitle: '7 dias grátis • Sempre pode cancelar',
+    subtitle: OFFER.trialCancel,
   },
 
   reflection_month_fevereiro: {
@@ -242,7 +244,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: '"As paixões são tiranas. Aprenda a dominá-las." — Marco Aurélio. 28 reflexões que vão transformar sua relação com as emoções.',
     primaryCta: 'Desbloquear Fevereiro (28 reflexões)',
     secondaryCta: 'Continuar com Janeiro',
-    subtitle: '7 dias grátis • Cancele quando quiser',
+    subtitle: OFFER.trialCancel,
     badges: [
       { icon: '🔥', label: 'Paixões e Emoções' },
       { icon: '📖', label: '28 reflexões' },
@@ -255,7 +257,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: '"Você pode deixar a vida agora. Que isso determine o que você faz, diz e pensa." — Marco Aurélio. 20 reflexões profundas sobre finitude, propósito e legado.',
     primaryCta: 'Desbloquear Dezembro (20 reflexões)',
     secondaryCta: 'Continuar com Janeiro',
-    subtitle: '7 dias grátis • Cancele quando quiser',
+    subtitle: OFFER.trialCancel,
     badges: [
       { icon: '💀', label: 'Memento Mori' },
       { icon: '📖', label: '20 reflexões' },
@@ -268,7 +270,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Você completou seu ritual desta semana. Premium desbloqueia prática diária — 30 dias de transformação ininterrupta.',
     primaryCta: 'Desbloquear prática diária',
     secondaryCta: 'Voltar',
-    subtitle: '7 dias grátis para experimentar',
+    subtitle: `${OFFER.trial} para experimentar`,
   },
 
   memory_advanced: {
@@ -276,7 +278,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Veja padrões emocionais ao longo do tempo, correlações entre eventos e insights personalizados.',
     primaryCta: 'Desbloquear análises',
     secondaryCta: 'Voltar',
-    subtitle: '7 dias grátis',
+    subtitle: OFFER.trial,
   },
 
   memory_unlimited: {
@@ -284,7 +286,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Acesse todas as suas memórias, sem limites de tempo ou quantidade. Sua história emocional completa.',
     primaryCta: 'Desbloquear histórico completo',
     secondaryCta: 'Continuar com últimos 30 dias',
-    subtitle: '7 dias grátis',
+    subtitle: OFFER.trial,
   },
 
   voice_daily_limit: {
@@ -292,7 +294,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Você usou suas 5 mensagens de voz hoje. Premium desbloqueia mensagens de voz ilimitadas.',
     primaryCta: 'Desbloquear voz ilimitada',
     secondaryCta: 'Voltar ao chat',
-    subtitle: '7 dias grátis',
+    subtitle: OFFER.trial,
   },
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -319,7 +321,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Esta meditação é exclusiva do plano Premium. Upgrade para acessar todas as práticas de 15+ minutos e conteúdos avançados.',
     primaryCta: 'Upgrade para Premium',
     secondaryCta: 'Voltar à biblioteca',
-    subtitle: '7 dias grátis • Todas as meditações',
+    subtitle: `${OFFER.trial} · todas as meditações`,
   },
 
   meditation_library_banner: {
@@ -327,7 +329,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Acesse meditações longas, programas completos e novos conteúdos toda semana. Aprofunde sua prática sem limites.',
     primaryCta: 'Ver Planos',
     secondaryCta: 'Continuar explorando',
-    subtitle: '7 dias grátis • Cancele quando quiser',
+    subtitle: OFFER.trialCancel,
   },
 
   meditation_library_footer: {
@@ -335,7 +337,7 @@ export const CONVERSION_COPY: Record<ConversionContext, ConversionCopyContent> =
     message: 'Desbloqueie meditações de 15-25 minutos, programas completos de transformação e novos conteúdos exclusivos.',
     primaryCta: 'Desbloquear Biblioteca Premium',
     secondaryCta: 'Voltar',
-    subtitle: '7 dias grátis • R$ 15,90/mês depois',
+    subtitle: OFFER.trialAfterPrice,
   },
 
   generic: {

@@ -564,7 +564,7 @@ export default function DrJoePreviewPage() {
                   Eco IA, meditações, sono, diário estoico e mais
                 </p>
                 <div className="mt-3 flex items-baseline gap-2.5">
-                  <span className="font-display text-3xl font-bold text-white">7 dias grátis</span>
+                  <span className="font-display text-3xl font-bold text-white">7 dias gratuitos</span>
                 </div>
                 <p className="mt-1 text-xs text-white/35">depois R$&nbsp;15,90/mês · cancele quando quiser</p>
               </div>

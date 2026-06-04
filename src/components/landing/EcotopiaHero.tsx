@@ -17,7 +17,7 @@ const HERO_ROTATING_LINES = [
 const HERO_BULLETS = [
   'Eco IA disponível 24 horas por dia.',
   'Meditações, sono, estoicismo e práticas guiadas.',
-  '7 dias grátis para experimentar tudo.',
+  '7 dias gratuitos para experimentar tudo.',
 ] as const;
 
 const ROTATION_INTERVAL_MS = 2400;
@@ -98,7 +98,7 @@ export default function EcotopiaHero() {
         <div className="lp-hero-card reveal-soft animation-delay-100">
           <h2>Autoconhecimento prático em um único app.</h2>
           <Link
-            to="/assinar?plan=monthly&from=hero_card1"
+            to="/assinar?step=plan&plan=monthly&from=hero_card1"
             className="cta-dark"
             onClick={() =>
               trackLandingCta({
@@ -109,7 +109,7 @@ export default function EcotopiaHero() {
               })
             }
           >
-            Começar 7 dias grátis
+            Começar 7 dias gratuitos
           </Link>
           <div className="lp-hero-placeholder">
             <img
@@ -127,7 +127,7 @@ export default function EcotopiaHero() {
         <div className="lp-hero-card reveal-soft animation-delay-200">
           <h2>Uma conversa quando você precisar.</h2>
           <Link
-            to="/assinar?plan=monthly&from=hero_card2"
+            to="/assinar?step=plan&plan=monthly&from=hero_card2"
             className="cta-dark"
             onClick={() =>
               trackLandingCta({

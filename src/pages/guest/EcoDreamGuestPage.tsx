@@ -226,7 +226,7 @@ export default function EcoDreamGuestPage() {
       guestId: guestUser?.id ?? null,
       timestamp: new Date().toISOString(),
     });
-    navigate('/register?plan=annual&from=sonhos_guest&returnTo=' + encodeURIComponent('/app/dream'));
+    navigate('/assinar?step=plan&plan=annual&from=sonhos_guest&returnTo=' + encodeURIComponent('/app/dream'));
   };
 
   return (

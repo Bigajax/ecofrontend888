@@ -11,8 +11,8 @@ const GROUPS: FooterGroup[] = [
     id: 'conta',
     title: 'Conta',
     items: [
-      { label: 'Criar conta', to: '/assinar?from=footer_criar_conta' },
-      { label: 'Planos', to: '/assinar?from=footer_planos' },
+      { label: 'Criar conta', to: '/assinar?step=plan&from=footer_criar_conta' },
+      { label: 'Planos', to: '/assinar?step=plan&from=footer_planos' },
     ],
   },
   {
@@ -32,7 +32,7 @@ const GROUPS: FooterGroup[] = [
     items: [
       { label: 'O método' },
       { label: 'Perguntas frequentes', to: '/cancelar-assinatura' },
-      { label: 'Preços', to: '/assinar?from=footer_precos' },
+      { label: 'Preços', to: '/assinar?step=plan&from=footer_precos' },
     ],
   },
   {

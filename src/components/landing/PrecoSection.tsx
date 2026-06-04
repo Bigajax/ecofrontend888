@@ -64,7 +64,7 @@ export default function PrecoSection({
             ))}
           </ul>
           <Link
-            to="/assinar?plan=monthly&from=pricing"
+            to="/assinar?step=plan&plan=monthly&from=pricing"
             className="cta-dark"
             onClick={() => cta('monthly')}
             style={{ width: '100%' }}
@@ -91,7 +91,7 @@ export default function PrecoSection({
             ))}
           </ul>
           <Link
-            to="/assinar?plan=annual&from=pricing"
+            to="/assinar?step=plan&plan=annual&from=pricing"
             className="cta-primary"
             onClick={() => cta('annual')}
             style={{ width: '100%' }}

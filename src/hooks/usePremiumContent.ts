@@ -2,6 +2,7 @@
 // Hook para validar acesso a conteúdo premium e gerenciar modal de upgrade
 
 import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import mixpanel from '../lib/mixpanel';
 import type { AccessValidation } from '../types/subscription';
@@ -41,6 +42,7 @@ const VIP_EMAILS = [
  */
 export function usePremiumContent() {
   const auth = useAuth();
+  const navigate = useNavigate();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Extrair dados de subscription do AuthContext
@@ -113,18 +115,22 @@ export function usePremiumContent() {
    */
   const requestUpgrade = useCallback(
     (source?: string) => {
-      setShowUpgradeModal(true);
+      const from = source || 'premium_gate';
 
       // Registrar evento no Mixpanel
-      mixpanel.track('Upgrade Modal Shown', {
-        source: source || 'premium_gate',
+      mixpanel.track('Upgrade CTA Clicked', {
+        source: from,
         user_id: user?.id,
         current_plan: subscription?.plan || 'free',
         is_trial_active: isTrialActive,
         trial_days_remaining: trialDaysRemaining,
       });
+
+      // Unificado: paywall in-app vai direto para /assinar (passo de plano),
+      // mesmo fluxo dos CTAs de funil. Logado pula cadastro; guest cadastra e paga.
+      navigate(`/assinar?step=plan&plan=annual&from=${from}`);
     },
-    [user, subscription, isTrialActive, trialDaysRemaining]
+    [user, subscription, isTrialActive, trialDaysRemaining, navigate]
   );
 
   /**

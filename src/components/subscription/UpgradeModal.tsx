@@ -6,12 +6,11 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { X, Loader2, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createSubscription } from '../../api/subscription';
+import { OFFER } from '../../constants/offerCopy';
 import mixpanel from '../../lib/mixpanel';
 import {
   trackPremiumScreenViewed,
   trackPremiumCardClicked,
-  trackCheckoutStarted,
 } from '../../lib/mixpanelConversionEvents';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePremiumContent } from '../../hooks/usePremiumContent';
@@ -68,8 +67,9 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
   const navigate = useNavigate();
   const { isTrialActive, trialDaysRemaining } = usePremiumContent();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
-  const [state, setState] = useState<ModalState>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
+  // Checkout agora acontece no /assinar; estado mantido só para compat. de UI (sempre idle).
+  const [state] = useState<ModalState>('idle');
+  const [errorMessage] = useState('');
 
   // Conteúdo contextual baseado em source
   const content = UPGRADE_CONTEXT_COPY[resolveUpgradeSource(source)];
@@ -104,42 +104,17 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
     });
   };
 
-  const handleSubscribe = async () => {
-    // Plano Anual → checkout embutido (Pix/Cartão na própria página), sem redirect ao MP.
-    if (selectedPlan === 'annual') {
-      onClose();
-      navigate('/app/checkout-anual');
-      return;
-    }
-    setState('loading');
-    setErrorMessage('');
-    try {
-      const response = await createSubscription(selectedPlan);
-      trackCheckoutStarted({
-        plan_id: selectedPlan,
-        checkout_provider: 'mercadopago',
-        checkout_type: response.type || 'preference',
-        preference_id: response.id,
-        amount: selectedPlan === 'annual' ? 142.8 : 15.9,
-        currency: 'BRL',
-        user_id: user?.id,
-        is_guest: !user,
-      });
-      window.location.href = response.initPoint;
-    } catch (error) {
-      setState('error');
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível iniciar o checkout. Tente novamente.'
-      );
-      mixpanel.track('Checkout Failed', {
-        plan: selectedPlan,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        source,
-        user_id: user?.id,
-      });
-    }
+  const handleSubscribe = () => {
+    // Unificado: todo CTA de assinatura vai para /assinar (passo de plano).
+    // Logado → pagamento sem cadastro; guest → cadastro → pagamento.
+    mixpanel.track('Upgrade Modal CTA Clicked', {
+      plan: selectedPlan,
+      source,
+      user_id: user?.id,
+      is_guest: !user,
+    });
+    onClose();
+    navigate(`/assinar?step=plan&plan=${selectedPlan}&from=upgrade_modal`);
   };
 
   const handleClose = () => {
@@ -160,8 +135,8 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
 
   const disclaimer =
     selectedPlan === 'annual'
-      ? 'Valor de R$ 142,80/ano. Você pode cancelar quando quiser.'
-      : 'Renovação mensal automática por R$ 15,90. Você pode cancelar quando quiser.';
+      ? 'Renovação anual · cancele quando quiser'
+      : OFFER.renewNote;
 
   return createPortal(
     <AnimatePresence>
