@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from 'react';
-import { Lock, ChevronLeft, ChevronRight, Headphones } from 'lucide-react';
+import { Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface Blessing {
@@ -181,8 +181,8 @@ interface BlessingCardProps {
 
 function BlessingCard({ blessing, mobile, onClick }: BlessingCardProps) {
   const isStacked = (blessing.stackCount ?? 1) > 1;
-  const cardW = mobile ? 'w-[165px]' : 'w-[200px]';
-  const cardH = mobile ? '260px' : '295px';
+  const cardW = mobile ? 'w-[188px]' : 'w-[220px]';
+  const cardH = mobile ? '300px' : '340px';
 
   const innerContent = (
     <>
@@ -193,13 +193,12 @@ function BlessingCard({ blessing, mobile, onClick }: BlessingCardProps) {
       <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/20 transition-all duration-300" />
 
       {/* Content */}
-      <div className="relative flex h-full flex-col justify-between p-4">
+      <div className="relative flex h-full flex-col justify-between p-3.5">
         {/* Top row: category badge + lock */}
         <div className="flex items-start justify-between gap-1">
           {blessing.category ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1 backdrop-blur-md">
-              <Headphones size={10} className="text-white/95 flex-shrink-0" />
-              <span className="text-[10px] font-bold uppercase tracking-wide text-white leading-none">
+            <span className="inline-flex items-center rounded-full bg-black/40 px-2.5 py-1 backdrop-blur-md">
+              <span className="whitespace-nowrap text-[10px] font-bold uppercase tracking-wide text-white leading-none">
                 {blessing.category}
               </span>
             </span>
@@ -207,25 +206,29 @@ function BlessingCard({ blessing, mobile, onClick }: BlessingCardProps) {
             <span />
           )}
           {blessing.isPremium && (
-            <div className="flex items-center justify-center rounded-lg bg-black/50 p-1.5 backdrop-blur-md">
-              <Lock size={12} className="text-white" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 backdrop-blur-md">
+              <Lock size={13} className="text-white" />
             </div>
           )}
         </div>
 
         {/* Bottom: duration + title */}
         <div className="text-left">
-          <p className="mb-1.5 text-[12px] font-semibold text-white/80 drop-shadow">
-            {blessing.duration}
-          </p>
-          <h3 className="font-display text-[16px] font-bold leading-snug text-white drop-shadow-lg line-clamp-3">
+          <div className="mb-2">
+            <span className="inline-flex items-center rounded-full bg-black/55 px-2.5 py-1 backdrop-blur-md">
+              <span className="text-[11px] font-semibold leading-none text-white">
+                {blessing.duration}
+              </span>
+            </span>
+          </div>
+          <h3 className="font-display text-[17px] font-bold leading-snug text-white drop-shadow-lg line-clamp-3">
             {blessing.title}
           </h3>
         </div>
 
         {/* Progress bar */}
         {(blessing.progress ?? 0) > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 rounded-b-2xl overflow-hidden">
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 rounded-b-[22px] overflow-hidden">
             <div
               className="h-full bg-eco-baby"
               style={{ width: `${blessing.progress}%` }}
@@ -238,7 +241,7 @@ function BlessingCard({ blessing, mobile, onClick }: BlessingCardProps) {
 
   if (isStacked) {
     // Wrapper mais alto para acomodar os cards que aparecem embaixo
-    const wrapperH = mobile ? 'calc(248px + 18px)' : 'calc(285px + 18px)';
+    const wrapperH = `calc(${cardH} + 18px)`;
 
     return (
       <div
@@ -247,7 +250,7 @@ function BlessingCard({ blessing, mobile, onClick }: BlessingCardProps) {
       >
         {/* Card fantasma — mais atrás: deslocado 14px para baixo, mais estreito, rotação */}
         <div
-          className="absolute rounded-2xl overflow-hidden"
+          className="absolute rounded-[22px] overflow-hidden"
           style={{
             top: 14,
             left: 8,
@@ -261,12 +264,12 @@ function BlessingCard({ blessing, mobile, onClick }: BlessingCardProps) {
             zIndex: 1,
           }}
         >
-          <div className="absolute inset-0 bg-black/55 rounded-2xl" />
+          <div className="absolute inset-0 bg-black/55 rounded-[22px]" />
         </div>
 
         {/* Card fantasma — meio: deslocado 7px para baixo, levemente estreito, rotação oposta */}
         <div
-          className="absolute rounded-2xl overflow-hidden"
+          className="absolute rounded-[22px] overflow-hidden"
           style={{
             top: 7,
             left: 4,
@@ -280,13 +283,13 @@ function BlessingCard({ blessing, mobile, onClick }: BlessingCardProps) {
             zIndex: 2,
           }}
         >
-          <div className="absolute inset-0 bg-black/30 rounded-2xl" />
+          <div className="absolute inset-0 bg-black/30 rounded-[22px]" />
         </div>
 
         {/* Card principal — ocupa o topo, cobre os fantasmas deixando apenas o fundo visível */}
         <button
           onClick={onClick}
-          className="group absolute overflow-hidden rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.14)] transition-all duration-300 md:hover:scale-[0.97] md:hover:shadow-[0_2px_12px_rgba(0,0,0,0.10)] active:scale-95 cursor-pointer touch-manipulation"
+          className="group absolute overflow-hidden rounded-[22px] shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition-all duration-300 md:hover:scale-[0.97] md:hover:shadow-[0_4px_16px_rgba(0,0,0,0.14)] active:scale-95 cursor-pointer touch-manipulation"
           style={{
             top: 0,
             left: 0,
@@ -307,12 +310,12 @@ function BlessingCard({ blessing, mobile, onClick }: BlessingCardProps) {
   return (
     <button
       onClick={onClick}
-      className={`group relative flex-shrink-0 overflow-hidden rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.14)] transition-all duration-300 md:hover:scale-[0.97] md:hover:shadow-[0_2px_12px_rgba(0,0,0,0.10)] active:scale-95 cursor-pointer touch-manipulation ${cardW}`}
+      className={`group relative flex-shrink-0 overflow-hidden rounded-[22px] shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition-all duration-300 md:hover:scale-[0.97] md:hover:shadow-[0_4px_16px_rgba(0,0,0,0.14)] active:scale-95 cursor-pointer touch-manipulation ${cardW}`}
       style={{
         backgroundImage: blessing.image,
         backgroundSize: 'cover',
         backgroundPosition: blessing.imagePosition || 'center',
-        minHeight: cardH,
+        height: cardH,
       }}
     >
       {innerContent}

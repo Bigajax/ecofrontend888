@@ -81,7 +81,7 @@ const SIZE_MAP = {
 
 export default function LiveReflectionSection() {
   const navigate = useNavigate();
-  const [count, setCount] = useState(4182);
+  const [count, setCount] = useState(247);
   const [isMobile, setIsMobile] = useState(false);
 
   // Detect screen size
@@ -96,12 +96,15 @@ export default function LiveReflectionSection() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Update counter every 10 seconds
+  // Update counter every ~8s — oscila para cima e para baixo, como gente realmente online agora
   useEffect(() => {
     const interval = setInterval(() => {
-      const increment = Math.random() < 0.33 ? 0 : Math.random() < 0.5 ? 1 : 2;
-      setCount(prev => prev + increment);
-    }, 10000);
+      setCount(prev => {
+        const delta = Math.floor(Math.random() * 7) - 3; // -3..+3
+        const next = prev + delta;
+        return Math.min(291, Math.max(212, next)); // mantém na faixa ~210–290
+      });
+    }, 8000);
 
     return () => clearInterval(interval);
   }, []);

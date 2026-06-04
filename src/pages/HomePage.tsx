@@ -6,6 +6,7 @@ import { useProgram } from '@/contexts/ProgramContext';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import HomeHeader from '@/components/home/HomeHeader';
 import DailyRecommendationsSection from '@/components/home/DailyRecommendationsSection';
+import ContinueProgramSection from '@/components/home/ContinueProgramSection';
 import EnergyBlessingsSection from '@/components/home/EnergyBlessingsSection';
 import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
 import EcoDreamGuidanceCard from '@/components/home/EcoDreamGuidanceCard';
@@ -14,14 +15,13 @@ import HeroCarousel from '@/components/home/HeroCarousel';
 import LiveReflectionSection from '@/components/home/LiveReflectionSection';
 import SelfAssessmentSection from '@/components/home/SelfAssessmentSection';
 import PromoSection from '@/components/home/PromoSection';
-import PromoStickyBanner from '@/components/home/PromoStickyBanner';
 import AnimatedSection from '@/components/AnimatedSection';
 import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
 import EcoAIModal from '@/components/EcoAIModal';
 import HomePageTour from '@/components/HomePageTour';
 import TrialOnboarding from '@/components/trial/TrialOnboarding';
 import { useHomePageTour } from '@/hooks/useHomePageTour';
-import { useProgramProgress } from '@/hooks/useProgramProgress';
+import { useProgramProgress, type ProgramProgressData } from '@/hooks/useProgramProgress';
 import { usePremiumContent } from '@/hooks/usePremiumContent';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
 import { trackDiarioEnteredFromExplore } from '@/lib/mixpanelDiarioEvents';
@@ -164,8 +164,8 @@ export default function HomePage() {
     () => [
       {
         id: 'rec_1',
-        title: 'Plante o hábito que muda tudo',
-        description: 'Crie sua rotina matinal em 8 minutos',
+        title: 'Rotina matinal',
+        description: 'Comece bem o seu dia',
         duration: '8 min',
         image: 'url("/images/introducao-meditacao-hero.webp")',
         imagePosition: 'center center',
@@ -175,8 +175,8 @@ export default function HomePage() {
       },
       {
         id: 'rec_2',
-        title: 'Solte o peso antes do dia começar',
-        description: '7 min · Deixe a ansiedade ir embora',
+        title: 'Solte a ansiedade',
+        description: 'Meditação do dia',
         duration: '7 min',
         image: 'url("/images/acolhendo-respiracao.webp")',
         imagePosition: 'center center',
@@ -186,7 +186,7 @@ export default function HomePage() {
       {
         id: 'rec_3',
         title: 'Protocolo do Sono',
-        description: '7 min · Noite 1 gratuita',
+        description: 'Noite 1 · gratuita',
         duration: '7 min',
         image: 'url("/images/meditacoes-sono-hero.webp")',
         imagePosition: 'center 12%',
@@ -421,6 +421,27 @@ export default function HomePage() {
     }
   };
 
+  const handleContinueProgram = (programId: ProgramProgressData['programId']) => {
+    sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
+    switch (programId) {
+      case 'intro':
+        navigate('/app/introducao-meditacao');
+        break;
+      case 'caleidoscopio':
+        navigate('/app/programas/caleidoscopio-mind-movie');
+        break;
+      case 'riqueza':
+        navigate('/app/riqueza-mental');
+        break;
+      case 'sono_protocol':
+        navigate('/app/meditacoes-sono');
+        break;
+      case 'drjoe':
+        navigate('/app/dr-joe-dispenza');
+        break;
+    }
+  };
+
   const handleEnergyBlessingClick = (blessingId: string) => {
     // Salvar posição do scroll antes de navegar
     sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
@@ -602,6 +623,16 @@ export default function HomePage() {
           </motion.div>
         </div>
 
+        {/* Continue o seu programa — só aparece se houver programa em andamento */}
+        {programProgressList.some((p) => p.status === 'in_progress') && (
+          <AnimatedSection animation="slide-up-fade" id="continue-program-section">
+            <ContinueProgramSection
+              programs={programProgressList}
+              onContinue={handleContinueProgram}
+            />
+          </AnimatedSection>
+        )}
+
         {/* Daily Recommendations Section */}
         <AnimatedSection animation="slide-up-fade" id="daily-recommendations-section">
           <DailyRecommendationsSection
@@ -720,9 +751,6 @@ export default function HomePage() {
           onStartChat={handleStartChat}
         />
       )}
-
-      {/* Sticky promo banner — mobile only */}
-      <PromoStickyBanner onUpgradeClick={() => requestUpgrade('home_sticky_banner_50off')} />
 
       {/* Upgrade Modal */}
       <UpgradeModal

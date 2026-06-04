@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { ChevronRight, Lock, Volume2, Music } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -40,7 +41,7 @@ export default function DailyRecommendationsSection({
         <div className="mt-1 w-1 h-6 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(180deg, #6EC8FF, #4BAEE8)' }} />
         <div>
           <h2 className="font-display text-xl font-bold text-[var(--eco-text)]">
-            Para você, hoje
+            Recomendações diárias
           </h2>
           <p className="mt-0.5 text-[14px] text-[var(--eco-muted)]">{dateLabel}</p>
         </div>
@@ -49,25 +50,23 @@ export default function DailyRecommendationsSection({
       {/* List card */}
       <motion.div
         className="rounded-2xl bg-white overflow-hidden"
-        style={{ border: '1px solid rgba(110,200,255,0.16)', boxShadow: '0 4px 28px rgba(110,200,255,0.10)' }}
+        style={{ border: '1px solid rgba(13,27,42,0.07)', boxShadow: '0 4px 18px rgba(13,27,42,0.05)' }}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-60px' }}
         variants={{ visible: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } } }}
       >
         {recommendations.map((rec, index) => (
+          <Fragment key={rec.id}>
           <motion.button
-            key={rec.id}
             variants={rowVariants}
             whileHover={{ x: 3 }}
             whileTap={{ scale: 0.99 }}
             onClick={() => onRecommendationClick?.(rec.id)}
-            className={`w-full flex items-center gap-4 px-5 py-5 text-left transition-colors duration-150 active:bg-gray-50 md:hover:bg-gray-50 min-h-[88px] ${
-              index < recommendations.length - 1 ? 'border-b border-gray-100' : ''
-            }`}
+            className="w-full flex items-center gap-4 px-5 py-5 text-left transition-colors duration-150 active:bg-gray-50 md:hover:bg-gray-50 min-h-[88px]"
           >
             {/* Thumbnail */}
-            <div className="relative flex-shrink-0 w-[88px] h-[88px] rounded-2xl overflow-hidden shadow-sm">
+            <div className="relative flex-shrink-0 w-[88px] h-[88px] rounded-xl overflow-hidden shadow-sm">
               <div
                 className="absolute inset-0 bg-cover bg-center"
                 style={{
@@ -89,7 +88,7 @@ export default function DailyRecommendationsSection({
               )}
               {/* Progress bar */}
               {(rec.progress ?? 0) > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/25 rounded-b-2xl overflow-hidden">
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/25 rounded-b-xl overflow-hidden">
                   <div
                     className="h-full bg-eco-baby"
                     style={{ width: `${rec.progress}%` }}
@@ -100,10 +99,10 @@ export default function DailyRecommendationsSection({
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-[17px] text-[var(--eco-text)] leading-snug">
+              <p className="truncate font-bold text-[17px] text-[var(--eco-text)] leading-snug">
                 {rec.title}
               </p>
-              <p className="mt-1 text-[14px] text-[var(--eco-muted)] leading-snug line-clamp-2">
+              <p className="mt-1 truncate text-[14px] text-[var(--eco-muted)] leading-snug">
                 {rec.description}
               </p>
               {/* Category badge */}
@@ -117,6 +116,10 @@ export default function DailyRecommendationsSection({
             {/* Chevron */}
             <ChevronRight size={20} className="flex-shrink-0 text-gray-300" />
           </motion.button>
+          {index < recommendations.length - 1 && (
+            <div className="mx-5 border-t border-gray-100" />
+          )}
+          </Fragment>
         ))}
       </motion.div>
     </section>
