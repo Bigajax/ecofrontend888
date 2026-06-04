@@ -1034,8 +1034,11 @@ function ChatPage() {
             </div>
           )}
 
-          {/* Slot do player de áudio da Eco — renderizado acima do input via portal */}
-          <div id="eco-chat-audio-slot" className="mx-auto w-full max-w-3xl empty:hidden" />
+          {/* Slot do player de áudio da Eco — renderizado acima do input via portal.
+              SEM `empty:hidden`: o WebKit/iOS não reavalia `:empty` quando o portal injeta
+              filhos via JS, e o slot ficava display:none (player não aparecia). Vazio, o div
+              tem altura 0 de qualquer forma — não precisa esconder. */}
+          <div id="eco-chat-audio-slot" className="mx-auto w-full max-w-3xl" />
 
           <div className="mx-auto w-full max-w-3xl space-y-2">
             <Suspense fallback={null}>
