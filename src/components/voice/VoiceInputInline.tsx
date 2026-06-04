@@ -124,12 +124,12 @@ const VoiceInputInline: React.FC<VoiceInputInlineProps> = ({
       role="group"
       aria-label="Gravação de voz"
       className={clsx(
-        'flex w-full items-center gap-3 rounded-full border border-eco-line/60 bg-eco-babySoft/70 px-3 py-1.5 backdrop-blur-md',
+        'flex w-full min-w-0 max-w-full items-center gap-2 rounded-full border border-eco-line/60 bg-eco-babySoft/70 px-3 py-1.5 backdrop-blur-md',
         className,
       )}
     >
       {/* Indicador de estado */}
-      <span className="flex items-center gap-2 pl-1">
+      <span className="flex shrink-0 items-center gap-2 pl-1">
         <span className="relative flex h-2.5 w-2.5">
           {isRecording && (
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-eco-baby/60" />
@@ -141,13 +141,13 @@ const VoiceInputInline: React.FC<VoiceInputInlineProps> = ({
             )}
           />
         </span>
-        <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-eco-babyDark/80">
+        <span className="hidden text-[11px] font-medium uppercase tracking-[0.16em] text-eco-babyDark/80 sm:inline">
           {statusLabel}
         </span>
       </span>
 
       {/* Onda de frequência */}
-      <div className="flex flex-1 items-center justify-center gap-[3px]" aria-hidden>
+      <div className="flex min-w-0 flex-1 items-center justify-center gap-[3px] overflow-hidden" aria-hidden>
         {Array.from({ length: BAR_COUNT }).map((_, i) => (
           <motion.span
             key={i}
@@ -168,12 +168,12 @@ const VoiceInputInline: React.FC<VoiceInputInlineProps> = ({
       </div>
 
       {/* Timer */}
-      <span className="min-w-[44px] text-center text-[13px] font-medium tabular-nums text-eco-babyDark">
+      <span className="min-w-[44px] shrink-0 text-center text-[13px] font-medium tabular-nums text-eco-babyDark">
         {formattedTime}
       </span>
 
       {/* Ações */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-1.5">
         <button
           type="button"
           onClick={togglePause}

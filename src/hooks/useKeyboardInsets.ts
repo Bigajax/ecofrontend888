@@ -71,10 +71,13 @@ export function useKeyboardInsets(options: UseKeyboardInsetsOptions = {}): Keybo
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    const root = document.documentElement;
     const vv = window.visualViewport;
     if (!vv) {
       setKeyboardHeight(0);
       setIsKeyboardOpen(false);
+      // Fallback: shell usa innerHeight quando não há visualViewport.
+      root.style.setProperty('--chat-vh', `${window.innerHeight}px`);
       return;
     }
 
@@ -87,6 +90,8 @@ export function useKeyboardInsets(options: UseKeyboardInsetsOptions = {}): Keybo
       const adjustedInset = Math.max(0, rawInset - safeAreaBottom);
       setKeyboardHeight(adjustedInset);
       setIsKeyboardOpen(adjustedInset > SAFARI_KEYBOARD_THRESHOLD);
+      // Altura real visível (encolhe quando o teclado abre) → shell flex-column do Chat.
+      root.style.setProperty('--chat-vh', `${Math.round(vv.height)}px`);
     };
 
     const schedule = () => {
@@ -102,32 +107,19 @@ export function useKeyboardInsets(options: UseKeyboardInsetsOptions = {}): Keybo
       vv.removeEventListener('resize', schedule);
       vv.removeEventListener('scroll', schedule);
       if (raf) cancelAnimationFrame(raf);
+      root.style.removeProperty('--chat-vh');
     };
   }, [safeAreaBottom]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
+    // Mantém a classe para CSS condicional; o layout não depende mais dela
+    // (o shell flex-column + --chat-vh resolvem o teclado sem position:fixed).
     document.body.classList.toggle('keyboard-open', isKeyboardOpen);
-
-    // Scroll para o input quando teclado abre (melhoria mobile)
-    if (isKeyboardOpen && inputRef?.current) {
-      requestAnimationFrame(() => {
-        const element = inputRef.current;
-        if (!element) return;
-
-        // Scroll suave para garantir que o input está visível
-        element.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'nearest'
-        });
-      });
-    }
-
     return () => {
       document.body.classList.remove('keyboard-open');
     };
-  }, [isKeyboardOpen, inputRef]);
+  }, [isKeyboardOpen]);
 
   const contentInset = useMemo(() => {
     return inputHeight + keyboardHeight;

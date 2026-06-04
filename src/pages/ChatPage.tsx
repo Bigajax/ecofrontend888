@@ -275,12 +275,11 @@ function ChatPage() {
 
   const chatInputWrapperRef = useRef<HTMLDivElement | null>(null);
   const chatInputRef = useRef<ChatInputHandle | null>(null);
-  const { contentInset, isKeyboardOpen, safeAreaBottom, inputHeight, keyboardHeight } =
+  const { contentInset, safeAreaBottom } =
     useKeyboardInsets({ inputRef: chatInputWrapperRef });
 
   const baseScrollPadding = 112;
   const scrollInset = Math.max(baseScrollPadding, contentInset + safeAreaBottom + 24);
-  const computedInputHeight = inputHeight || 96;
 
   const { showQuick, hideQuickSuggestions, handleTextChange } =
     useQuickSuggestionsVisibility(messages);
@@ -873,8 +872,17 @@ function ChatPage() {
 
 
   const footerStyle: CSSProperties = {
-    paddingBottom: safeAreaBottom + 16,
+    paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
   } as CSSProperties;
+
+  // Trava o scroll do documento enquanto o Chat está montado: o shell flex-column
+  // (altura = --chat-vh) é o único container rolável; assim o teclado não empurra a página.
+  useEffect(() => {
+    document.body.classList.add('eco-chat-lock');
+    return () => {
+      document.body.classList.remove('eco-chat-lock');
+    };
+  }, []);
 
   // ---------------------------------------------------------------------------
   // ÚNICO indicador global de "digitando" (evita duplicidade)
@@ -904,8 +912,8 @@ function ChatPage() {
 
   return (
     <div
-      className="flex h-[100dvh] overflow-hidden"
-      style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+      className="flex overflow-hidden"
+      style={{ height: 'var(--chat-vh, 100dvh)', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
     >
       {/* Desktop Sidebar */}
       <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleBackToHome} />
@@ -918,11 +926,10 @@ function ChatPage() {
         {/* Chat Area */}
         <main
           ref={scrollerRef}
-          className="flex-1 overflow-y-auto bg-transparent pt-14 lg:pt-0 pb-20 lg:pb-0"
+          className="flex-1 min-h-0 overflow-y-auto bg-transparent pt-14 lg:pt-0 pb-4"
           style={{
             WebkitOverflowScrolling: 'touch',
             overscrollBehaviorY: 'contain',
-            paddingBottom: Math.max(120, keyboardHeight + computedInputHeight + 80), // Padding para input
           }}
         >
           <div role="feed" aria-busy={isWaitingForEco || isSendingToEco} className="flex-1">
@@ -1002,38 +1009,34 @@ function ChatPage() {
             </div>
           </div>
 
+        </main>
+
+        {/* Footer Input */}
+        <footer
+          ref={chatInputWrapperRef}
+          className="relative z-40 w-full border-t px-4 pt-3 sm:px-6 lg:px-8"
+          style={{
+            ...footerStyle,
+            backgroundColor: 'var(--bg-primary)',
+            borderColor: 'var(--neutral-border)',
+          }}
+        >
           {showNewMessagesChip && (
-            <div
-              className="fixed z-30 flex justify-center px-4 sm:px-6 lg:px-8 pointer-events-none left-0 right-0"
-              style={{
-                bottom: safeAreaBottom + computedInputHeight + 24,
-                // Garantir que fica acima do conteúdo sem sobrepor
-                marginBottom: '8px'
-              }}
-            >
+            <div className="pointer-events-none absolute -top-14 left-0 right-0 z-30 flex justify-center px-4">
               <button
                 type="button"
                 onClick={handleJumpToBottom}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-eco-line/60 bg-white/80 text-eco-baby shadow-lg backdrop-blur-md transition-all hover:bg-white hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-eco-baby/40 active:scale-95 pointer-events-auto"
+                className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-eco-line/60 bg-white/80 text-eco-baby shadow-lg backdrop-blur-md transition-all hover:bg-white hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-eco-baby/40 active:scale-95"
                 aria-label="Rolar para novas mensagens"
               >
                 <ChevronDown size={20} strokeWidth={2.4} />
               </button>
             </div>
           )}
-        </main>
 
-        {/* Footer Input */}
-        <footer
-          ref={chatInputWrapperRef}
-          className="fixed lg:sticky z-40 w-full border-t backdrop-blur-xl max-lg:[backdrop-filter:none] max-lg:[-webkit-backdrop-filter:none] px-4 pt-3 pb-3 sm:px-6 lg:px-8 bottom-0 left-0 right-0"
-          style={{
-            ...footerStyle,
-            paddingBottom: `calc(${safeAreaBottom + 12}px + env(safe-area-inset-bottom))`,
-            backgroundColor: 'var(--bg-primary)',
-            borderColor: 'var(--neutral-border)',
-          }}
-        >
+          {/* Slot do player de áudio da Eco — renderizado acima do input via portal */}
+          <div id="eco-chat-audio-slot" className="mx-auto w-full max-w-3xl empty:hidden" />
+
           <div className="mx-auto w-full max-w-3xl space-y-2">
             <Suspense fallback={null}>
               <QuickSuggestions

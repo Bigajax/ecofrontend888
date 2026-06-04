@@ -1019,6 +1019,14 @@ body.keyboard-open {
   overscroll-behavior-y: contain;
 }
 
+/* Chat (ChatPage montado): trava o scroll do documento — o shell flex-column com
+   altura = var(--chat-vh) é o único container rolável. Mantém o ChatInput sempre
+   visível no rodapé e impede a página de "rolar atrás" quando o teclado abre. */
+body.eco-chat-lock,
+body.eco-chat-lock #root {
+  overflow: hidden;
+}
+
 /* Mobile: garantir que o input fique visível */
 @media (max-width: 768px) {
   /* Smooth scroll para mobile */
@@ -1039,14 +1047,6 @@ body.keyboard-open {
     height: 100dvh; /* Dynamic viewport height - ajusta com teclado */
   }
 
-  /* Input ancorado ao fundo do viewport (acima do teclado) */
-  body.keyboard-open footer {
-    position: fixed !important;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 50;
-  }
 }
 
 /* Diário Estoico - Fundo branco */

@@ -237,7 +237,7 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
           />
 
           {/* linha de ação — botão único que se transforma, ou gravação de voz inline */}
-          <div className="flex items-center justify-end">
+          <div className="flex w-full min-w-0 items-center justify-end">
             {isMicActive ? (
               <VoiceInputInline
                 onTranscriptChange={handleVoiceTranscript}

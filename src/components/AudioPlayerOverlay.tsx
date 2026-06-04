@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 interface AudioPlayerOverlayProps {
@@ -38,6 +39,12 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
   // entrada suave do card
   const [shown, setShown] = useState(false);
 
+  // Slot no rodapé do Chat (acima do ChatInput). Se existir, o player renderiza lá via
+  // portal, em vez de flutuar fixo no topo sobrepondo as mensagens.
+  const [audioSlot, setAudioSlot] = useState<HTMLElement | null>(
+    () => (typeof document !== 'undefined' ? document.getElementById('eco-chat-audio-slot') : null),
+  );
+
   useEffect(() => {
     progressRef.current = onProgress;
   }, [onProgress]);
@@ -45,6 +52,10 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
   useEffect(() => {
     const id = requestAnimationFrame(() => setShown(true));
     return () => cancelAnimationFrame(id);
+  }, []);
+
+  useEffect(() => {
+    setAudioSlot(document.getElementById('eco-chat-audio-slot'));
   }, []);
 
   useEffect(() => {
@@ -392,8 +403,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
     </button>
   );
 
-  return (
-    <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+12px)] z-[80] flex justify-center px-3 sm:px-4">
+  const card = (
       <div
         ref={cardRef}
         tabIndex={-1}
@@ -401,12 +411,12 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
         aria-modal="true"
         aria-label="Reprodutor de voz da Eco"
         className={[
-          "pointer-events-auto relative w-full max-w-[min(360px,92vw)] overflow-hidden",
+          "pointer-events-auto relative w-full overflow-hidden",
           "rounded-[20px] border border-sky-100",
           "bg-white/95 backdrop-blur-xl",
           "shadow-[0_8px_24px_-14px_rgba(56,189,248,0.28),0_2px_6px_-4px_rgba(15,23,42,0.06)]",
           "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-          shown ? "translate-y-0 scale-100 opacity-100" : "-translate-y-2 scale-[0.98] opacity-0",
+          shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.98] opacity-0",
           "focus:outline-none",
         ].join(" ")}
       >
@@ -468,7 +478,7 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
                   )}
                 </div>
                 <span className="min-w-[72px] text-right text-[10px] font-medium tabular-nums text-slate-400">
-                  {showSpinner && !duration
+                  {!duration || !Number.isFinite(duration)
                     ? "preparando…"
                     : `${formatTime(currentTime)} / ${formatTime(duration)}`}
                 </span>
@@ -494,6 +504,14 @@ const AudioPlayerOverlay: React.FC<AudioPlayerOverlayProps> = ({
           </div>
         </div>
       </div>
+  );
+
+  if (audioSlot) return createPortal(<div className="pb-2">{card}</div>, audioSlot);
+
+  // Fallback: sem o slot do Chat (outro contexto), mantém o card flutuante no topo.
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+12px)] z-[80] flex justify-center px-3 sm:px-4">
+      {card}
     </div>
   );
 };
