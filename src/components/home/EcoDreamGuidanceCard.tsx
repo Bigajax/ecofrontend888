@@ -40,7 +40,7 @@ export default function EcoDreamGuidanceCard() {
       >
         {/* Mascote */}
         <img
-          src="/images/eco-dream-icon.webp"
+          src="/images/eco-mascote.png"
           alt="Eco Dream"
           width="72"
           height="72"

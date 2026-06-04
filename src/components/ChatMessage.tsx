@@ -206,7 +206,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping
           <EcoBubbleOneEye
             className="mt-0.5 shrink-0"
             variant="message"
-            size={24}
+            size={32}
             data-eco-active={isEcoActive ? "true" : undefined}
             data-testid="eco-avatar"
           />
