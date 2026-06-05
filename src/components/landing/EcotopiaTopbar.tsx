@@ -219,7 +219,7 @@ export default function EcotopiaTopbar() {
   return (
     <>
       <div className="top-banner">
-        <Link to="/assinar?step=plan&plan=annual&from=top_banner">7 dias gratuitos · Autoconhecimento prático</Link>
+        <Link to="/assinar?step=plan&plan=annual&from=top_banner">7 dias gratuitos · cancele quando quiser</Link>
       </div>
 
       <nav className={`lp-nav ${isScrolled ? 'is-scrolled' : ''}`} aria-label="Navegação principal">

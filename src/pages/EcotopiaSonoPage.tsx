@@ -13,8 +13,8 @@ import mixpanel from '@/lib/mixpanel';
 const VALUE_COLUMNS = [
   {
     icon: '/images/sono-icon-meditacao.webp',
-    title: 'Meditação simplificada',
-    body: 'Aprenda a estar mais presente em tudo o que você faz.',
+    title: 'Desacelere em minutos',
+    body: 'Respirações guiadas e curtas que baixam o ritmo do corpo antes de você deitar.',
   },
   {
     icon: '/images/sono-icon-deite-mente.webp',
@@ -24,7 +24,7 @@ const VALUE_COLUMNS = [
   },
   {
     icon: '/images/sono-icon-estresse.webp',
-    title: 'Reduza o estresse em minutos',
+    title: 'Menos estresse, noites mais leves',
     body: '30 dias de uso da Ecotopia resultaram em uma redução de 32% no estresse.',
   },
 ];
@@ -110,19 +110,19 @@ const TIPS_COLUMNS = [
 const TESTIMONIALS: { id: string; quote: string; name: string; photo?: string }[] = [
   {
     id: 't1',
-    quote: 'Sinto que tenho o controle da minha própria jornada em relação à saúde mental.',
+    quote: 'Eu demorava mais de uma hora para dormir. Depois de alguns dias usando o protocolo comecei a pegar no sono muito mais rápido.',
     name: 'Mariana',
     photo: '/images/testimonial-mariana.webp',
   },
   {
     id: 't2',
-    quote: 'Antes eu dormia 2 ou 3 horas por noite. Hoje durmo de 6 a 7 horas — e acordo descansada.',
+    quote: 'Minha mente ficava acelerada quando eu deitava. As práticas me ajudaram a encerrar o dia com mais tranquilidade.',
     name: 'Beatriz',
     photo: '/images/testimonial-beatriz.webp',
   },
   {
     id: 't3',
-    quote: 'Consegui redescobrir quem sou e retomei essa sensação de identidade, propósito, calma e presença que a atenção plena proporciona.',
+    quote: 'Passei a criar uma rotina noturna que realmente consigo seguir.',
     name: 'Camila',
     photo: '/images/testimonial-camila.webp',
   },
@@ -197,11 +197,15 @@ export default function EcotopiaSonoPage() {
       <section className="lp-sono-hero lp-sono-hero--v2">
         <div className="lp-sono-hero-inner">
           <div className="lp-sono-hero-text">
-            <h1 className="scroll-reveal">Durma mais rápido.<br />Acorde descansado.</h1>
+            <h1 className="scroll-reveal">
+              Sua mente não desliga<br className="lp-br-desktop" />{' '}
+              quando você deita?
+            </h1>
 
             <p className="lp-sono-hero-lead scroll-reveal stagger-1">
-              Meditações, sons e o Protocolo do Sono que desligam o estado de alerta
-              e levam você ao sono profundo, noite após noite.
+              O <span className="lp-sono-mark">Protocolo do Sono</span> reúne meditações
+              guiadas, exercícios de respiração e práticas desenvolvidas para ajudar
+              você a desacelerar antes de dormir.
             </p>
 
             <Link
@@ -212,7 +216,7 @@ export default function EcotopiaSonoPage() {
             </Link>
 
             <p className="lp-sono-hero-microcopy scroll-reveal stagger-3">
-              7 dias grátis ·{' '}
+              Sem cobrança hoje ·{' '}
               <Link to="/cancelar-assinatura" className="lp-sono-hero-microcopy-link">
                 cancele quando quiser
               </Link>
@@ -242,8 +246,15 @@ export default function EcotopiaSonoPage() {
       {/* ─── Como funciona · Protocolo do Sono: 7 noites (carrossel) ─── */}
       <section className="lp-sono-grid-section lp-sono-protocol">
         <h2 className="lp-sono-h2 scroll-reveal lp-sono-protocol-h2">
-          O Protocolo do Sono: 7 noites para reprogramar seu descanso.
+          O <span className="lp-sono-mark">Protocolo do Sono</span>:<br className="lp-br-desktop" />{' '}
+          7&nbsp;noites para desacelerar a mente.
         </h2>
+
+        <p className="lp-sono-protocol-sub scroll-reveal stagger-1">
+          Cada noite foi criada para ajudar você a reduzir o estado de alerta,
+          interromper ciclos de pensamentos acelerados e preparar corpo e mente
+          para um descanso mais profundo.
+        </p>
 
         <div
           className="lp-sono-protocol-track"
@@ -401,9 +412,21 @@ export default function EcotopiaSonoPage() {
 
       {/* ─── Demonstração · Tabs Antes / Adormecer / Permanecer ─── */}
       <section className="lp-sono-tabs">
-        <div className="lp-sono-tabs-bg" aria-hidden />
+        <div className="lp-sono-tabs-head">
+          <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal lp-sono-tabs-h2">
+            Nos 7&nbsp;dias grátis, as 7&nbsp;noites do{' '}
+            <span className="lp-sono-mark">Protocolo do Sono</span> são suas.
+          </h2>
+          <p className="lp-sono-tabs-sub scroll-reveal stagger-1">
+            Comece por qualquer fase da noite —<br className="lp-br-desktop" />{' '}
+            do modo&nbsp;alerta ao descanso profundo.
+          </p>
+        </div>
 
-        <div className="lp-sono-tabs-inner">
+        <div className="lp-sono-tabs-stage">
+          <div className="lp-sono-tabs-bg" aria-hidden />
+
+          <div className="lp-sono-tabs-inner">
           <div className="lp-sono-tabs-pills scroll-reveal">
             {TABS.map((tab) => (
               <button
@@ -498,14 +521,20 @@ export default function EcotopiaSonoPage() {
             </div>
           </div>
         </div>
+        </div>
       </section>
 
       {/* ─── CTA central repetido (label unificado) ─── */}
       <section className="lp-sono-cta-mid">
         <div className="scroll-reveal">
           <h2>
-            Experimente gratuitamente nosso áudio <em>envolvente.</em>
+            Comece hoje suas 7&nbsp;noites<br className="lp-br-desktop" />{' '}
+            de <em>transformação do sono.</em>
           </h2>
+          <p className="lp-sono-cta-mid-sub">
+            Menos tempo tentando dormir.<br className="lp-br-desktop" />{' '}
+            Mais tempo realmente descansando.
+          </p>
           <Link to="/assinar?step=plan&plan=annual&from=sono_cta_mid" className="cta-primary">
             {CTA_LABEL}
           </Link>
@@ -594,25 +623,36 @@ export default function EcotopiaSonoPage() {
               <li>
                 <Check />
                 <span>
-                  Encontre a rotina perfeita para a hora de dormir com horas de
-                  música relaxante, sons e histórias de sua escolha.
+                  Adormeça mais rápido com práticas guiadas para desacelerar a mente.
                 </span>
               </li>
               <li>
                 <Check />
                 <span>
-                  Durma melhor com o Protocolo do Sono: 7 noites guiadas e exercícios
-                  desenvolvidos com a ciência do sono.
+                  Siga um protocolo estruturado de 7 noites criado para melhorar
+                  sua rotina de sono.
                 </span>
               </li>
               <li>
                 <Check />
                 <span>
-                  Sinta-se bem ao amanhecer com acesso a centenas de meditações
-                  para aliviar o estresse, mindfulness e mais.
+                  Tenha acesso a meditações, sons relaxantes e exercícios para
+                  reduzir o estresse antes de dormir.
                 </span>
               </li>
             </ul>
+
+            <div className="lp-sono-offer-reassure scroll-reveal stagger-2">
+              <p className="lp-sono-offer-reassure-lead">
+                Comece hoje.{' '}
+                <span className="lp-sono-mark">Explore todo o aplicativo</span>{' '}
+                por 7 dias gratuitamente.
+              </p>
+              <p className="lp-sono-offer-reassure-fine">
+                Sem cobrança durante o período de teste. Cancele antes do término
+                se não quiser continuar.
+              </p>
+            </div>
 
             <div
               className="lp-sono-offer-plans scroll-reveal stagger-2"
