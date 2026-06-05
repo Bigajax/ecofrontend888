@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import '@/ecotopia-landing.css';
 import EcotopiaTopbar from '@/components/landing/EcotopiaTopbar';
 import EcotopiaFooter from '@/components/landing/EcotopiaFooter';
+import MethodMarquee from '@/components/landing/MethodMarquee';
 import { useScrollReveal } from '@/components/landing/useScrollReveal';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import mixpanel from '@/lib/mixpanel';
@@ -17,8 +18,9 @@ const VALUE_COLUMNS = [
   },
   {
     icon: '/images/sono-icon-deite-mente.webp',
-    title: 'Deite a sua mente para dormir.',
-    body: 'Adormeça com meditações para dormir, música para dormir e muito mais.',
+    // A/B: versão poética (atual) vs. direta → "Desligue a cabeça e durma."
+    title: 'Acalme a mente antes de fechar os olhos.',
+    body: 'Adormeça com meditações guiadas, sons e músicas feitas para o sono.',
   },
   {
     icon: '/images/sono-icon-estresse.webp',
@@ -105,23 +107,32 @@ const TIPS_COLUMNS = [
   },
 ];
 
-const TESTIMONIALS = [
+const TESTIMONIALS: { id: string; quote: string; name: string; photo?: string }[] = [
   {
     id: 't1',
     quote: 'Sinto que tenho o controle da minha própria jornada em relação à saúde mental.',
     name: 'Mariana',
+    photo: '/images/testimonial-mariana.webp',
   },
   {
     id: 't2',
-    quote: 'Tem sido revolucionário para mim, porque antes eu dormia de 2 a 3 horas por noite, e agora estou dormindo de 6 a 7 horas por noite.',
+    quote: 'Antes eu dormia 2 ou 3 horas por noite. Hoje durmo de 6 a 7 horas — e acordo descansada.',
     name: 'Beatriz',
+    photo: '/images/testimonial-beatriz.webp',
   },
   {
     id: 't3',
     quote: 'Consegui redescobrir quem sou e retomei essa sensação de identidade, propósito, calma e presença que a atenção plena proporciona.',
     name: 'Camila',
+    photo: '/images/testimonial-camila.webp',
   },
 ];
+
+// Cores dos avatares de depoimento (paleta eco), rotacionadas por índice.
+const AVATAR_COLORS = ['#1554F0', '#2F8F6B', '#C97B2B'];
+
+// CTA único e idêntico em todos os pontos de conversão da página.
+const CTA_LABEL = 'Começar meus 7 dias grátis';
 
 // 7 noites do protocolo divididas em páginas de 4 (4 + 3) para o carrossel.
 const PROTOCOL_PAGES = [PROTOCOL_NIGHTS.slice(0, 4), PROTOCOL_NIGHTS.slice(4)];
@@ -176,84 +187,201 @@ export default function EcotopiaSonoPage() {
   const [activeTab, setActiveTab] = useState<string>(TABS[0].id);
   const activeTabData = TABS.find((t) => t.id === activeTab) ?? TABS[0];
 
-  const [selectedHeroPlan, setSelectedHeroPlan] = useState<'annual' | 'monthly'>('annual');
   const [selectedOfferPlan, setSelectedOfferPlan] = useState<'annual' | 'monthly'>('annual');
 
   return (
     <div className="ecotopia-lp lp-sono">
       <EcotopiaTopbar />
 
-      {/* ─── Hero · oferta primeiro (layout Headspace, fundo creme) ─── */}
+      {/* ─── Hero · promessa de sono (sem preço — só promessa + CTA) ─── */}
       <section className="lp-sono-hero lp-sono-hero--v2">
         <div className="lp-sono-hero-inner">
           <div className="lp-sono-hero-text">
-            <h1 className="scroll-reveal">Seja gentil com sua mente.</h1>
+            <h1 className="scroll-reveal">Durma mais rápido.<br />Acorde descansado.</h1>
 
             <p className="lp-sono-hero-lead scroll-reveal stagger-1">
-              Com a Ecotopia, você se estressa menos,<br />se concentra mais e se sente mais feliz.
+              Meditações, sons e o Protocolo do Sono que desligam o estado de alerta
+              e levam você ao sono profundo, noite após noite.
             </p>
 
-            <div
-              className="lp-sono-hero-plans scroll-reveal stagger-2"
-              role="radiogroup"
-              aria-label="Escolha seu plano"
-            >
-              <button
-                type="button"
-                role="radio"
-                aria-checked={selectedHeroPlan === 'annual'}
-                className={`lp-sono-hero-plan ${selectedHeroPlan === 'annual' ? 'is-active' : ''}`}
-                onClick={() => setSelectedHeroPlan('annual')}
-              >
-                <span className="lp-sono-hero-plan-badge">Melhor custo-benefício</span>
-                <span className="lp-sono-hero-plan-meta">
-                  Anual — cobrado a R$ 142,80/ano
-                </span>
-                <strong className="lp-sono-hero-plan-headline">7 dias gratuitos</strong>
-                <span className="lp-sono-hero-plan-price">R$ 11,90 por mês</span>
-                <span className="lp-sono-hero-plan-check" aria-hidden>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                role="radio"
-                aria-checked={selectedHeroPlan === 'monthly'}
-                className={`lp-sono-hero-plan ${selectedHeroPlan === 'monthly' ? 'is-active' : ''}`}
-                onClick={() => setSelectedHeroPlan('monthly')}
-              >
-                <span className="lp-sono-hero-plan-meta">Mensal</span>
-                <strong className="lp-sono-hero-plan-headline">7 dias gratuitos</strong>
-                <span className="lp-sono-hero-plan-price">R$ 15,90/mês</span>
-                <span className="lp-sono-hero-plan-check" aria-hidden>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </span>
-              </button>
-            </div>
-
             <Link
-              to={`/assinar?step=plan&plan=${selectedHeroPlan}&from=sono_hero`}
-              className="lp-sono-hero-cta-primary scroll-reveal stagger-3"
+              to="/assinar?step=plan&plan=annual&from=sono_hero"
+              className="lp-sono-hero-cta-primary scroll-reveal stagger-2"
             >
-              Experimente grátis
+              {CTA_LABEL}
             </Link>
 
-            <img
-              src="/images/sono-hero-meditacao-mockup.webp"
-              alt="ECO no celular — meditação acolhendo a respiração"
-              className="lp-sono-hero-mockup scroll-reveal stagger-4"
-              loading="lazy"
-            />
+            <p className="lp-sono-hero-microcopy scroll-reveal stagger-3">
+              7 dias grátis ·{' '}
+              <Link to="/cancelar-assinatura" className="lp-sono-hero-microcopy-link">
+                cancele quando quiser
+              </Link>
+            </p>
           </div>
         </div>
       </section>
 
-      {/* ─── 3 cards de valor (estilo Headspace) ─── */}
+      {/* ─── Faixa · céu estrelado com os dados de prova (só no /sono) ─── */}
+      <MethodMarquee
+        ariaLabel="Resultados da Ecotopia"
+        className="lp-method-marquee--starry"
+        repeat={4}
+        terms={['32% menos estresse', '4,8★ na App Store', '+2 mil dormindo melhor']}
+      />
+
+      {/* Mockup do iPhone — no mobile aparece DEPOIS do marquee (entre faixa e hero) */}
+      <div className="lp-sono-hero-mockup-wrap">
+        <img
+          src="/images/sono-hero-meditacao-mockup.webp"
+          alt="ECO no celular — meditação acolhendo a respiração"
+          className="lp-sono-hero-mockup"
+          loading="lazy"
+        />
+      </div>
+
+      {/* ─── Como funciona · Protocolo do Sono: 7 noites (carrossel) ─── */}
+      <section className="lp-sono-grid-section lp-sono-protocol">
+        <h2 className="lp-sono-h2 scroll-reveal lp-sono-protocol-h2">
+          O Protocolo do Sono: 7 noites para reprogramar seu descanso.
+        </h2>
+
+        <div
+          className="lp-sono-protocol-track"
+          ref={protocolTrackRef}
+          onScroll={handleProtocolScroll}
+        >
+          {PROTOCOL_PAGES.map((page, pi) => (
+            <div className="lp-sono-protocol-page" key={pi}>
+              {page.map((n) => (
+                <Link
+                  key={n.id}
+                  to={`/assinar?step=plan&plan=annual&from=sono_protocolo_${n.id}`}
+                  className="lp-sono-protocol-card"
+                >
+                  <span className="lp-sono-protocol-thumb" style={{ background: n.gradient }}>
+                    {n.imageUrl && <img src={n.imageUrl} alt="" loading="lazy" />}
+                    <span className="lp-sono-protocol-night">Noite {n.night}</span>
+                  </span>
+                  <p className="lp-sono-protocol-title">{n.title}</p>
+                </Link>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <div className="lp-sono-protocol-nav" role="group" aria-label="Navegar pelas noites">
+          <button
+            type="button"
+            className="lp-sono-protocol-arrow"
+            aria-label="Página anterior"
+            onClick={() => goToProtocolPage(protocolPage - 1)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+
+          {PROTOCOL_PAGES.map((_, pi) => (
+            <button
+              key={pi}
+              type="button"
+              className={`lp-sono-protocol-dot ${protocolPage === pi ? 'is-active' : ''}`}
+              aria-label={`Página ${pi + 1}`}
+              aria-current={protocolPage === pi}
+              onClick={() => goToProtocolPage(pi)}
+            >
+              {pi + 1}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            className="lp-sono-protocol-arrow"
+            aria-label="Próxima página"
+            onClick={() => goToProtocolPage(protocolPage + 1)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </div>
+      </section>
+
+      {/* ─── Prova / resultado · 32% expandido + depoimentos com rosto ─── */}
+      <section className="lp-sono-testimonials">
+        <div className="lp-sono-testimonials-inner">
+          <div className="lp-sono-deco-hero">
+            {/* orbes/planetas (paleta fria, noturna) */}
+            <span className="lp-sono-deco-orb lp-sono-deco-orb--blue" aria-hidden="true">
+              <img src="/images/testimonio-orb-blue.webp" alt="" width={200} height={200} loading="lazy" decoding="async" />
+            </span>
+            <span className="lp-sono-deco-orb lp-sono-deco-orb--green" aria-hidden="true">
+              <img src="/images/testimonio-orb-green.webp" alt="" width={200} height={200} loading="lazy" decoding="async" />
+            </span>
+            <span className="lp-sono-deco-orb lp-sono-deco-orb--pink" aria-hidden="true">
+              <img src="/images/testimonio-orb-pink.webp" alt="" width={200} height={200} loading="lazy" decoding="async" />
+            </span>
+
+            {/* lua crescente — reforça o tema noite/dormir */}
+            <span className="lp-sono-deco-moon" aria-hidden="true">
+              <Moon />
+            </span>
+
+            {/* estrelas (tons prateado/azulado, como céu noturno) */}
+            <span className="lp-sono-deco-star lp-sono-deco-star--a" aria-hidden="true"><Sparkle color="#FFFFFF" size={26} /></span>
+            <span className="lp-sono-deco-star lp-sono-deco-star--b" aria-hidden="true"><Sparkle color="#AFCBFF" size={20} /></span>
+            <span className="lp-sono-deco-star lp-sono-deco-star--c" aria-hidden="true"><Sparkle color="#C9C2F0" size={16} /></span>
+            <span className="lp-sono-deco-star lp-sono-deco-star--d" aria-hidden="true"><Sparkle color="#DCE6F5" size={14} /></span>
+
+            <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal lp-sono-testimonials-h2">
+              Histórias de quem já sente a diferença.
+            </h2>
+          </div>
+
+          <div className="lp-sono-testimonials-grid">
+            {TESTIMONIALS.map((t, i) => (
+              <article
+                key={t.id}
+                className={`lp-sono-testimonial scroll-reveal stagger-${i + 1}`}
+              >
+                <svg
+                  className="lp-sono-testimonial-quote"
+                  width="1em"
+                  height="1em"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  data-testid="story-quote"
+                  aria-hidden
+                >
+                  <path
+                    fill="currentColor"
+                    fillRule="evenodd"
+                    d="M4.49 7.529a5.3 5.3 0 011.174-.131c3.128 0 5.663 2.716 5.663 6.065 0 3.35-2.535 6.066-5.663 6.066S0 16.814 0 13.463c0-.098.002-.197.007-.295H0C0 8.113 3.84 4 8.56 4v2.036c-1.531 0-2.943.558-4.07 1.493zM17.164 7.529c.378-.086.77-.131 1.172-.131 3.128 0 5.664 2.716 5.664 6.065 0 3.35-2.536 6.066-5.664 6.066-3.128 0-5.663-2.715-5.663-6.066 0-.098.002-.197.007-.295H12.674C12.674 8.113 16.514 4 21.234 4v2.036c-1.531 0-2.943.558-4.07 1.493z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <p className="lp-sono-testimonial-text">{t.quote}</p>
+                <div className="lp-sono-testimonial-author">
+                  <span
+                    className="lp-sono-testimonial-avatar"
+                    style={t.photo ? undefined : { background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                    aria-hidden
+                  >
+                    {t.photo ? (
+                      <img src={t.photo} alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      t.name.charAt(0)
+                    )}
+                  </span>
+                  <span className="lp-sono-testimonial-name">{t.name}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Benefícios · 3 cards de valor ─── */}
       <section className="lp-sono-value lp-sono-value--cards">
         <div className="lp-sono-value-grid">
           {VALUE_COLUMNS.map((col, i) => (
@@ -271,19 +399,7 @@ export default function EcotopiaSonoPage() {
         </div>
       </section>
 
-      {/* ─── CTA central · "Experimente nosso áudio envolvente" ─── */}
-      <section className="lp-sono-cta-mid">
-        <div className="scroll-reveal">
-          <h2>
-            Experimente gratuitamente nosso áudio <em>envolvente.</em>
-          </h2>
-          <Link to="/assinar?step=plan&plan=monthly&from=sono_cta_mid" className="cta-primary">
-            Descanse melhor hoje.
-          </Link>
-        </div>
-      </section>
-
-      {/* ─── Tabs · Antes / Adormecer / Permanecer ─── */}
+      {/* ─── Demonstração · Tabs Antes / Adormecer / Permanecer ─── */}
       <section className="lp-sono-tabs">
         <div className="lp-sono-tabs-bg" aria-hidden />
 
@@ -384,116 +500,27 @@ export default function EcotopiaSonoPage() {
         </div>
       </section>
 
-      {/* ─── Depoimentos de membros ─── */}
-      <section className="lp-sono-testimonials">
-        <div className="lp-sono-testimonials-inner">
-          <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal lp-sono-testimonials-h2">
-            Esses membros expressaram isso da melhor forma.
+      {/* ─── CTA central repetido (label unificado) ─── */}
+      <section className="lp-sono-cta-mid">
+        <div className="scroll-reveal">
+          <h2>
+            Experimente gratuitamente nosso áudio <em>envolvente.</em>
           </h2>
-
-          <div className="lp-sono-testimonials-grid">
-            {TESTIMONIALS.map((t, i) => (
-              <article
-                key={t.id}
-                className={`lp-sono-testimonial scroll-reveal stagger-${i + 1}`}
-              >
-                <svg
-                  className="lp-sono-testimonial-quote"
-                  width="1em"
-                  height="1em"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  data-testid="story-quote"
-                  aria-hidden
-                >
-                  <path
-                    fill="currentColor"
-                    fillRule="evenodd"
-                    d="M4.49 7.529a5.3 5.3 0 011.174-.131c3.128 0 5.663 2.716 5.663 6.065 0 3.35-2.535 6.066-5.663 6.066S0 16.814 0 13.463c0-.098.002-.197.007-.295H0C0 8.113 3.84 4 8.56 4v2.036c-1.531 0-2.943.558-4.07 1.493zM17.164 7.529c.378-.086.77-.131 1.172-.131 3.128 0 5.664 2.716 5.664 6.065 0 3.35-2.536 6.066-5.664 6.066-3.128 0-5.663-2.715-5.663-6.066 0-.098.002-.197.007-.295H12.674C12.674 8.113 16.514 4 21.234 4v2.036c-1.531 0-2.943.558-4.07 1.493z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <p className="lp-sono-testimonial-text">{t.quote}</p>
-                <p className="lp-sono-testimonial-author">{t.name}</p>
-              </article>
-            ))}
-          </div>
+          <Link to="/assinar?step=plan&plan=annual&from=sono_cta_mid" className="cta-primary">
+            {CTA_LABEL}
+          </Link>
         </div>
       </section>
 
-      {/* ─── Protocolo do Sono · 7 noites (carrossel) ─── */}
-      <section className="lp-sono-grid-section lp-sono-protocol">
-        <h2 className="lp-sono-h2 scroll-reveal lp-sono-protocol-h2">
-          O Protocolo do Sono: 7 noites para reprogramar seu descanso.
-        </h2>
-
-        <div
-          className="lp-sono-protocol-track"
-          ref={protocolTrackRef}
-          onScroll={handleProtocolScroll}
-        >
-          {PROTOCOL_PAGES.map((page, pi) => (
-            <div className="lp-sono-protocol-page" key={pi}>
-              {page.map((n) => (
-                <Link
-                  key={n.id}
-                  to={`/assinar?step=plan&plan=annual&from=sono_protocolo_${n.id}`}
-                  className="lp-sono-protocol-card"
-                >
-                  <span className="lp-sono-protocol-thumb" style={{ background: n.gradient }}>
-                    {n.imageUrl && <img src={n.imageUrl} alt="" loading="lazy" />}
-                    <span className="lp-sono-protocol-night">Noite {n.night}</span>
-                  </span>
-                  <p className="lp-sono-protocol-title">{n.title}</p>
-                </Link>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        <div className="lp-sono-protocol-nav" role="group" aria-label="Navegar pelas noites">
-          <button
-            type="button"
-            className="lp-sono-protocol-arrow"
-            aria-label="Página anterior"
-            onClick={() => goToProtocolPage(protocolPage - 1)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-
-          {PROTOCOL_PAGES.map((_, pi) => (
-            <button
-              key={pi}
-              type="button"
-              className={`lp-sono-protocol-dot ${protocolPage === pi ? 'is-active' : ''}`}
-              aria-label={`Página ${pi + 1}`}
-              aria-current={protocolPage === pi}
-              onClick={() => goToProtocolPage(pi)}
-            >
-              {pi + 1}
-            </button>
-          ))}
-
-          <button
-            type="button"
-            className="lp-sono-protocol-arrow"
-            aria-label="Próxima página"
-            onClick={() => goToProtocolPage(protocolPage + 1)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-        </div>
-      </section>
-
-      {/* ─── 3 colunas de dicas ─── */}
+      {/* ─── 3 colunas de dicas (conteúdo guiado do app) ─── */}
       <section className="lp-sono-tips">
         <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal">
-          Explore dicas, ferramentas e informações sobre sono.
+          Um guia de sono completo, dentro do app.
         </h2>
+        <p className="lp-sono-tips-sub scroll-reveal stagger-1">
+          Programas e práticas guiadas para cada etapa da noite — tudo incluído na sua
+          assinatura. Comece com 7 dias grátis.
+        </p>
 
         <div
           className="lp-sono-tips-track"
@@ -650,7 +677,7 @@ export default function EcotopiaSonoPage() {
               to={`/assinar?step=plan&plan=${selectedOfferPlan}&from=sono_oferta_cta`}
               className="lp-sono-offer-cta scroll-reveal stagger-4"
             >
-              Comece seu teste gratuito
+              {CTA_LABEL}
             </Link>
           </div>
         </div>
@@ -675,6 +702,30 @@ function Check() {
       aria-hidden
     >
       <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+// Estrela de 4 pontas (mesmo desenho do depoimento da home).
+function Sparkle({ color, size = 22 }: { color: string; size?: number }) {
+  return (
+    <svg viewBox="0 0 20 20" width={size} height={size} aria-hidden>
+      <path d="M10 0 L12 8 L20 10 L12 12 L10 20 L8 12 L0 10 L8 8 Z" fill={color} />
+    </svg>
+  );
+}
+
+// Lua crescente — cue de noite/sono.
+function Moon() {
+  return (
+    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"
+        fill="#E6ECFA"
+        stroke="#C2CFEA"
+        strokeWidth="1"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

@@ -51,7 +51,7 @@ const MENUS: MenuConfig[] = [
       title: 'Sete dias para sentir a diferença',
       body: 'Experimente o protocolo completo sem custo.',
       ctaLabel: 'Experimentar grátis →',
-      to: '/assinar?step=plan&plan=monthly&from=mega-para-voce',
+      to: '/assinar?step=plan&plan=annual&from=mega-para-voce',
       image: '/images/mega-cta-eco.webp',
     },
   },
@@ -219,7 +219,7 @@ export default function EcotopiaTopbar() {
   return (
     <>
       <div className="top-banner">
-        <Link to="/assinar?step=plan&from=top_banner">7 dias gratuitos · Autoconhecimento prático</Link>
+        <Link to="/assinar?step=plan&plan=annual&from=top_banner">7 dias gratuitos · Autoconhecimento prático</Link>
       </div>
 
       <nav className={`lp-nav ${isScrolled ? 'is-scrolled' : ''}`} aria-label="Navegação principal">
@@ -276,7 +276,7 @@ export default function EcotopiaTopbar() {
           <Link to="/login" className="lp-nav-link-text">
             Entrar
           </Link>
-          <Link to="/assinar?step=plan&plan=monthly&from=topbar" className="cta-primary">
+          <Link to="/assinar?step=plan&plan=annual&from=topbar" className="cta-primary">
             Experimente grátis
           </Link>
 
@@ -385,7 +385,7 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
   const footCtaPrimary = (
     <div className="lp-drawer-foot">
       <Link
-        to="/assinar?step=plan&plan=monthly&from=mobile-drawer"
+        to="/assinar?step=plan&plan=annual&from=mobile-drawer"
         onClick={onClose}
         className="cta-primary lp-drawer-cta"
       >
@@ -397,7 +397,7 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
   const footCtaBlue = (
     <div className="lp-drawer-foot">
       <Link
-        to="/assinar?step=plan&plan=monthly&from=mobile-drawer-sub"
+        to="/assinar?step=plan&plan=annual&from=mobile-drawer-sub"
         onClick={onClose}
         className="cta-primary lp-drawer-cta lp-drawer-cta--blue"
       >
