@@ -10,6 +10,8 @@ import DiarioExitModal from '@/components/DiarioExitModal';
 import ReadingModeModal from '@/components/diario-estoico/ReadingModeModal';
 import ShareReflectionModal from '@/components/diario-estoico/ShareReflectionModal';
 import TodayReflectionHero from '@/components/diario-estoico/TodayReflectionHero';
+import GuestModeBanner from '@/components/GuestModeBanner';
+import { DIARIO_GUEST } from '@/constants/diarioGuestCopy';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
 import mixpanel from '@/lib/mixpanel';
 import {
@@ -294,26 +296,29 @@ export default function DiarioEstoicoPage() {
                 style={{ background: 'linear-gradient(to top, rgba(223,187,85,0.96) 0%, rgba(223,187,85,0) 100%)' }}
               />
             </div>
-            <div className="mt-3 flex flex-col gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: reflectionId, action: 'login' });
-                  navigate('/login?returnTo=/app/diario-estoico');
-                }}
-                className="w-full bg-eco-baby text-white px-4 py-2.5 rounded-lg font-primary font-semibold text-sm hover:bg-eco-baby/90 active:scale-95 transition-all duration-200"
-              >
-                Entrar para ler →
-              </button>
+            <div className="mt-3 flex flex-col items-center gap-2.5">
+              <p className="text-center font-primary text-[12px] text-eco-muted">
+                {DIARIO_GUEST.benefit}
+              </p>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: reflectionId, action: 'register' });
-                  navigate('/register?returnTo=/app/diario-estoico');
+                  navigate(`/register?returnTo=${encodeURIComponent(DIARIO_GUEST.returnTo)}`);
                 }}
-                className="w-full border border-eco-baby text-eco-baby px-4 py-2 rounded-lg font-primary font-medium text-sm hover:bg-eco-baby/5 active:scale-95 transition-all duration-200"
+                className="w-full bg-eco-baby text-white px-4 py-2.5 rounded-lg font-primary font-semibold text-sm hover:bg-eco-baby/90 active:scale-95 transition-all duration-200 shadow-sm"
               >
-                Criar conta grátis
+                {DIARIO_GUEST.primaryCta}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: reflectionId, action: 'login' });
+                  navigate(`/login?returnTo=${encodeURIComponent(DIARIO_GUEST.returnTo)}`);
+                }}
+                className="font-primary text-[13px] text-eco-muted hover:text-eco-text underline underline-offset-2 transition-colors duration-200"
+              >
+                {DIARIO_GUEST.loginLink}
               </button>
             </div>
           </div>
@@ -766,7 +771,8 @@ export default function DiarioEstoicoPage() {
         {/* Header - apenas se usuário logado */}
         {user && <HomeHeader onLogout={handleLogout} />}
 
-        {/* FREE TIER: Banner removido — todos os meses agora acessíveis, conteúdo gateado via teaser */}
+        {/* Banner de conversão — guest na rota pública (PublicShell não usa MainLayout) */}
+        {!user && <GuestModeBanner returnTo={DIARIO_GUEST.returnTo} />}
 
         {/* Navegação */}
         <div className="w-full px-4 pt-6 md:px-8" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -781,17 +787,7 @@ export default function DiarioEstoicoPage() {
             >
               <ChevronLeft size={20} />
             </button>
-
-            {!user && (
-              <button
-                onClick={() => navigate('/register')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold
-                           text-white bg-eco-baby rounded-full hover:bg-eco-baby/90
-                           hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm"
-              >
-                Criar conta grátis
-              </button>
-            )}
+            {/* CTA de cadastro do guest vive no GuestModeBanner (topo), evitando duplicidade. */}
           </div>
         </div>
 
@@ -1282,27 +1278,29 @@ export default function DiarioEstoicoPage() {
                                   />
                                 </div>
                                 <div className="mt-7 flex flex-col items-center gap-3">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: `${maxim.month}-${maxim.dayNumber}`, action: 'login' });
-                                      navigate('/login?returnTo=/app/diario-estoico');
-                                    }}
-                                    className="inline-flex items-center gap-2 px-8 py-3 font-primary font-semibold text-sm text-white rounded-full active:scale-95 transition-all duration-200"
-                                    style={{ background: 'linear-gradient(135deg, #6EC8FF, #36B3FF)', boxShadow: '0 4px 18px rgba(110,200,255,0.38)' }}
-                                  >
-                                    Entrar para ler →
-                                  </button>
+                                  <p className="text-center font-primary text-[13px] text-eco-muted max-w-xs">
+                                    {DIARIO_GUEST.benefit}
+                                  </p>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: `${maxim.month}-${maxim.dayNumber}`, action: 'register' });
-                                      navigate('/register?returnTo=/app/diario-estoico');
+                                      navigate(`/register?returnTo=${encodeURIComponent(DIARIO_GUEST.returnTo)}`);
                                     }}
-                                    className="inline-flex items-center gap-2 px-6 py-2 font-primary font-medium text-sm rounded-full active:scale-95 transition-all duration-200"
-                                    style={{ border: '1px solid rgba(110,200,255,0.5)', color: '#36B3FF' }}
+                                    className="inline-flex items-center gap-2 px-8 py-3 font-primary font-semibold text-sm text-white rounded-full active:scale-95 transition-all duration-200"
+                                    style={{ background: 'linear-gradient(135deg, #6EC8FF, #36B3FF)', boxShadow: '0 4px 18px rgba(110,200,255,0.38)' }}
                                   >
-                                    Criar conta grátis
+                                    {DIARIO_GUEST.primaryCta}
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: `${maxim.month}-${maxim.dayNumber}`, action: 'login' });
+                                      navigate(`/login?returnTo=${encodeURIComponent(DIARIO_GUEST.returnTo)}`);
+                                    }}
+                                    className="font-primary text-[13px] text-eco-muted hover:text-eco-text underline underline-offset-2 transition-colors duration-200"
+                                  >
+                                    {DIARIO_GUEST.loginLink}
                                   </button>
                                 </div>
                               </>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Volume2, Loader2, BookOpen, Pause } from 'lucide-react';
 import { useReflectionAudio } from '@/hooks/useReflectionAudio';
+import { DIARIO_GUEST } from '@/constants/diarioGuestCopy';
 import type { DailyMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
 
 interface TodayReflectionHeroProps {
@@ -122,7 +123,7 @@ const TodayReflectionHero: React.FC<TodayReflectionHeroProps> = ({
                            hover:bg-white/15 active:scale-95 transition-all duration-200"
               >
                 <BookOpen size={15} strokeWidth={1.8} />
-                {canRead ? 'Ler completa' : 'Criar conta para ler'}
+                {canRead ? 'Ler completa' : DIARIO_GUEST.primaryCta}
               </button>
             </div>
           </div>
