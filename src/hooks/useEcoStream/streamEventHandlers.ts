@@ -580,26 +580,41 @@ export const handleControl = (event: EcoStreamControlEvent, context: StreamShare
       // Action Engine: o backend envia a recomendação ("próximo passo") como meta.acao_recomendada.
       // Anexamos à metadata da mensagem assistente ativa para o card renderizar (AcaoRecomendadaCard
       // lê de message.metadata.acao_recomendada). Funciona mesmo se o meta chegar depois do done.
-      const acao = (meta as Record<string, unknown>).acao_recomendada;
-      if (acao && typeof acao === "object" && !Array.isArray(acao)) {
+      // Busca tolerante a diferentes aninhamentos do evento (meta | payload.meta | event | payload).
+      const pickAcao = (rec: unknown): Record<string, unknown> | undefined => {
+        const r = toRecordSafe(rec);
+        const value = r?.acao_recomendada;
+        return value && typeof value === "object" && !Array.isArray(value)
+          ? (value as Record<string, unknown>)
+          : undefined;
+      };
+      const acao =
+        pickAcao(meta) ??
+        pickAcao(payloadRecord) ??
+        pickAcao((payloadRecord as { meta?: unknown } | undefined)?.meta) ??
+        pickAcao(eventRecord) ??
+        pickAcao((eventRecord as { meta?: unknown } | undefined)?.meta);
+      if (acao) {
         // Guarda em campo dedicado (lastMeta pode ser sobrescrito por outros eventos meta).
-        context.streamStats.acaoRecomendada = acao as Record<string, unknown>;
-        const targetId = context.activeAssistantIdRef.current;
-        if (targetId) {
-          context.setMessages((prev) =>
-            prev.map((message) =>
-              message.id === targetId
-                ? {
-                    ...message,
-                    metadata: {
-                      ...((message.metadata as Record<string, unknown> | undefined) ?? {}),
-                      acao_recomendada: acao,
-                    },
-                  }
-                : message,
-            ),
+        context.streamStats.acaoRecomendada = acao;
+        context.setMessages((prev) => {
+          const targetId =
+            context.activeAssistantIdRef.current ??
+            [...prev].reverse().find((m) => (m as { sender?: string }).sender === "eco")?.id ??
+            null;
+          if (!targetId) return prev;
+          return prev.map((message) =>
+            message.id === targetId
+              ? {
+                  ...message,
+                  metadata: {
+                    ...((message.metadata as Record<string, unknown> | undefined) ?? {}),
+                    acao_recomendada: acao,
+                  },
+                }
+              : message,
           );
-        }
+        });
       }
     }
   }
