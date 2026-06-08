@@ -291,7 +291,10 @@ function AppRoutes() {
         <Route path="ansiedade" element={renderWithSuspense(<EcotopiaAnsiedadePage />)} />
         <Route path="login" element={renderWithSuspense(<LoginPage />)} />
         <Route path="login/tour" element={<Navigate to="/login?tour=1" replace />} />
-        <Route path="diario-estoico" element={renderWithBoundary(<DiarioEstoicoPage />)} />
+        {/* Modo guest do Diário Estoico — URL canônica /guest/diario-estoico.
+            Mantém /diario-estoico como redirect para não quebrar links já divulgados. */}
+        <Route path="guest/diario-estoico" element={renderWithBoundary(<DiarioEstoicoPage />)} />
+        <Route path="diario-estoico" element={<Navigate to="/guest/diario-estoico" replace />} />
         <Route path="meditacao-primeiros-passos" element={renderWithSuspense(<IntroducaoMeditacaoPage />)} />
         <Route path="meditacao/sintonize-novos-potenciais" element={renderWithSuspense(<GuestMeditationPage />)} />
         <Route path="guest/meditation-player" element={renderWithBoundary(<MeditationPlayerPage />)} />
