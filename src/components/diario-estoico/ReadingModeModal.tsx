@@ -6,8 +6,9 @@
  */
 
 import React, { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Volume2, Loader2, Pause } from 'lucide-react';
 import type { DailyMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
+import { useReflectionAudio } from '@/hooks/useReflectionAudio';
 
 interface ReadingModeModalProps {
   maxim: DailyMaxim | null;
@@ -41,6 +42,8 @@ export default function ReadingModeModal({
       document.body.style.overflow = '';
     };
   }, [open]);
+
+  const { toggle, isPlaying, loading, overlayNode } = useReflectionAudio('reading_modal');
 
   if (!open || !maxim) return null;
 
@@ -113,9 +116,34 @@ export default function ReadingModeModal({
             <blockquote className="font-display text-[1.2rem] md:text-xl leading-[1.7] text-gray-800 italic">
               "{maxim.text}"
             </blockquote>
-            <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] text-gray-400 font-primary">
-              <span>⏱</span> Tempo de leitura: 1 minuto
-            </p>
+
+            {/* Ouvir + tempo de leitura */}
+            <div className="mt-5 flex items-center gap-3 flex-wrap">
+              <button
+                onClick={() => toggle(maxim)}
+                disabled={loading}
+                aria-label={loading ? 'Gerando áudio…' : isPlaying ? 'Parar áudio' : 'Ouvir a reflexão'}
+                className="group inline-flex items-center gap-2.5 rounded-full pl-3 pr-5 py-2.5
+                           bg-eco-text text-white text-sm font-semibold
+                           shadow-[0_4px_16px_rgba(0,0,0,0.18)]
+                           hover:scale-[1.03] active:scale-95 transition-transform duration-200
+                           disabled:opacity-70 disabled:pointer-events-none"
+              >
+                <span className="flex items-center justify-center h-7 w-7 rounded-full bg-white/20">
+                  {loading ? (
+                    <Loader2 size={15} className="animate-spin" strokeWidth={2.2} />
+                  ) : isPlaying ? (
+                    <Pause size={14} strokeWidth={2.4} fill="currentColor" />
+                  ) : (
+                    <Volume2 size={15} strokeWidth={2.2} />
+                  )}
+                </span>
+                {loading ? 'Preparando…' : isPlaying ? 'Ouvindo' : 'Ouvir reflexão'}
+              </button>
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-400 font-primary">
+                <span>⏱</span> 1 minuto de leitura
+              </span>
+            </div>
           </div>
 
           {/* Comentário */}
@@ -141,6 +169,12 @@ export default function ReadingModeModal({
           <div className="h-8" />
         </div>
       </div>
+
+      {/* Player de áudio — dentro do modal para ficar acima do backdrop;
+          stopPropagation evita que cliques no player fechem o modal. */}
+      {overlayNode && (
+        <div onClick={(e) => e.stopPropagation()}>{overlayNode}</div>
+      )}
     </div>
   );
 }

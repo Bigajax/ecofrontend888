@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { ChevronLeft, BookOpen, Share2 } from 'lucide-react';
+import { ChevronLeft, BookOpen, Share2, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import AnimatedSection from '@/components/AnimatedSection';
@@ -9,6 +9,7 @@ import { useIsPremium, useSubscriptionTier } from '@/hooks/usePremiumContent';
 import DiarioExitModal from '@/components/DiarioExitModal';
 import ReadingModeModal from '@/components/diario-estoico/ReadingModeModal';
 import ShareReflectionModal from '@/components/diario-estoico/ShareReflectionModal';
+import TodayReflectionHero from '@/components/diario-estoico/TodayReflectionHero';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
 import mixpanel from '@/lib/mixpanel';
 import {
@@ -233,15 +234,20 @@ export default function DiarioEstoicoPage() {
   const [showExitModal, setShowExitModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  // Accordion: which month is open (default = current calendar month)
-  const [openMonth, setOpenMonth] = useState<string | null>(() => {
+  // Accordion: which month's reflection list is open.
+  // Começa fechado: a reflexão de hoje já aparece no hero, então não auto-abrimos o mês
+  // (evita duplicar a reflexão do dia e mantém a página curta). Abrir é opt-in pelo card do mês.
+  const [openMonth, setOpenMonth] = useState<string | null>(null);
+
+  // Accordion das Partes: só a Parte do mês atual abre por padrão.
+  const [openPart, setOpenPart] = useState<string | null>(() => {
     const monthMap: Record<number, string> = {
       0: 'janeiro', 1: 'fevereiro', 2: 'marco', 3: 'abril',
       4: 'maio', 5: 'junho', 6: 'julho', 7: 'agosto',
       8: 'setembro', 9: 'outubro', 10: 'novembro', 11: 'dezembro',
     };
     const todayMonthId = monthMap[new Date().getMonth()];
-    return MONTH_THEMES.some(m => m.id === todayMonthId) ? todayMonthId : MONTH_THEMES[0].id;
+    return PARTS.find(p => p.monthIds.includes(todayMonthId))?.number ?? PARTS[0].number;
   });
 
   const [readDays, setReadDays] = useState<Set<number>>(new Set());
@@ -350,6 +356,24 @@ export default function DiarioEstoicoPage() {
     const dayNum = new Date().getDate();
     return availableMaxims.find(m => m.month === monthName && m.dayNumber === dayNum) ?? null;
   })();
+
+  // Reflexão em destaque no hero: a de hoje ou, se ainda não houver,
+  // a mais recente já disponível no mês atual (dayNumber ≤ hoje). Evita o hero sumir.
+  const featuredMaxim = useMemo(() => {
+    if (todayMaxim) return todayMaxim;
+    const monthMap: Record<number, string> = {
+      0: 'janeiro', 1: 'fevereiro', 2: 'marco', 3: 'abril',
+      4: 'maio', 5: 'junho', 6: 'julho', 7: 'agosto',
+      8: 'setembro', 9: 'outubro', 10: 'novembro', 11: 'dezembro',
+    };
+    const monthName = monthMap[new Date().getMonth()];
+    const dayNum = new Date().getDate();
+    if (!monthName) return null;
+    const candidates = availableMaxims
+      .filter(m => m.month === monthName && m.dayNumber <= dayNum)
+      .sort((a, b) => b.dayNumber - a.dayNumber);
+    return candidates[0] ?? null;
+  }, [todayMaxim, availableMaxims]);
 
   // Load read days from localStorage
   useEffect(() => {
@@ -714,15 +738,8 @@ export default function DiarioEstoicoPage() {
     return () => observer.disconnect();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-scroll até a reflexão de hoje após render
-  useEffect(() => {
-    if (!todayMaxim) return;
-    const timer = setTimeout(() => {
-      const el = cardRefs.current.get(todayMaxim.dayNumber);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 600); // Aguarda animações de entrada
-    return () => clearTimeout(timer);
-  }, [todayMaxim]);
+  // (Removido) auto-scroll até a reflexão de hoje: ela agora vive no hero do topo,
+  // então rolar a página para baixo no load afastaria o usuário do destaque.
 
   // Apply ECO background to document
   useEffect(() => {
@@ -829,19 +846,44 @@ export default function DiarioEstoicoPage() {
           </div>
         </div>
 
+        {/* Reflexão em destaque (hoje) — com player de áudio */}
+        {featuredMaxim && (
+          <TodayReflectionHero
+            maxim={featuredMaxim}
+            isToday={!!todayMaxim}
+            canRead={!!user}
+            onReadFull={() => {
+              setReadingModeMaxim(featuredMaxim);
+              mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: featuredMaxim.dayNumber, is_guest: !user, source: 'today_hero' });
+            }}
+            onRegister={() => navigate('/register?returnTo=' + encodeURIComponent('/app/diario-estoico'))}
+          />
+        )}
+
         {/* Partes — seleção de mês */}
         <div className="w-full px-4 pt-8 md:px-8 pb-4 space-y-10">
           <div className="mx-auto max-w-3xl space-y-10">
             {PARTS.map((part, partIndex) => {
               const partMonths = MONTH_THEMES.filter(m => part.monthIds.includes(m.id));
 
+              const isPartOpen = openPart === part.number;
+
               return (
                 <div key={part.number}>
-                  {/* Header da parte — editorial */}
-                  <div className="mb-5 flex items-center gap-4">
+                  {/* Header da parte — editorial, clicável (acordeão) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenPart(isPartOpen ? null : part.number);
+                      mixpanel.track('Diario Part Toggle', { part: part.number, action: isPartOpen ? 'close' : 'open', user_id: user?.id });
+                    }}
+                    aria-expanded={isPartOpen}
+                    className="w-full mb-5 flex items-center gap-4 text-left rounded-2xl transition-colors duration-200
+                               hover:bg-eco-line/10 active:scale-[0.995] px-1 py-1.5 -mx-1"
+                  >
                     <div className="flex-shrink-0 flex flex-col items-center">
                       <span className="font-display text-[28px] font-bold leading-none"
-                        style={{ color: 'rgba(198,169,149,0.45)' }}>
+                        style={{ color: isPartOpen ? '#C6A995' : 'rgba(198,169,149,0.45)' }}>
                         {part.number}
                       </span>
                     </div>
@@ -854,11 +896,16 @@ export default function DiarioEstoicoPage() {
                         {part.title}
                       </p>
                     </div>
-                    <div className="flex-shrink-0 h-px w-8 sm:w-16" style={{ background: 'rgba(198,169,149,0.3)' }} />
-                  </div>
+                    <ChevronDown
+                      size={20}
+                      className="flex-shrink-0 text-eco-accent transition-transform duration-300 motion-reduce:transition-none"
+                      style={{ transform: isPartOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    />
+                  </button>
 
-                  {/* Grid 2x2 dos meses */}
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {/* Grid 2x2 dos meses — só quando a Parte está aberta */}
+                  {isPartOpen && (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 animate-slide-up-fade motion-reduce:animate-none">
                     {partMonths.map((month) => {
                       const isActive = openMonth === month.id;
                       const isUnlocked = true;
@@ -952,6 +999,7 @@ export default function DiarioEstoicoPage() {
                       );
                     })}
                   </div>
+                  )}
                 </div>
               );
             })}
@@ -962,7 +1010,11 @@ export default function DiarioEstoicoPage() {
         {openMonth && (() => {
           const month = MONTH_THEMES.find(m => m.id === openMonth);
           if (!month) return null;
-          const monthMaxims = availableMaxims.filter(m => m.month === month.monthName);
+          // Não repetir aqui a reflexão que já está em destaque no hero do topo.
+          const monthMaxims = availableMaxims.filter(
+            m => m.month === month.monthName &&
+                 !(featuredMaxim && m.month === featuredMaxim.month && m.dayNumber === featuredMaxim.dayNumber)
+          );
 
           return (
             <div className="w-full px-4 pt-2 pb-16 md:px-8" style={{ animation: 'slideUpFade 0.35s ease-out' }}>
@@ -990,7 +1042,9 @@ export default function DiarioEstoicoPage() {
                 >
                     {monthMaxims.length === 0 && (
                       <p className="text-center text-sm text-eco-muted py-8 w-full">
-                        Nenhuma reflexão disponível ainda.
+                        {featuredMaxim && featuredMaxim.month === month.monthName
+                          ? 'A reflexão de hoje está em destaque acima ☝️ — novas reflexões deste mês chegam em breve.'
+                          : 'Nenhuma reflexão disponível ainda.'}
                       </p>
                     )}
                     {monthMaxims.map((maxim) => {

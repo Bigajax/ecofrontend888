@@ -1123,12 +1123,27 @@ export const MAIO_REFLECTIONS: DailyMaxim[] = [
   },
 ];
 
+export const JUNHO_REFLECTIONS: DailyMaxim[] = [
+  {
+    date: '8 de junho',
+    month: 'junho',
+    dayNumber: 8,
+    title: 'TIJOLO POR TIJOLO',
+    text: '"Deves construir tua vida ação por ação, e ficar satisfeito se cada uma alcançar seu objetivo tanto quanto possível; e ninguém pode poupar-te disso. Mas haverá alguns obstáculos externos! Talvez, mas nenhum obstáculo a agir com justiça, autocontrole e sabedoria. Mas e se alguma outra área de minha ação for frustrada? Bem, aceita de bom grado o obstáculo pelo que ele é e transfere tua atenção para o que é dado, e uma outra ação irá imediatamente ocorrer, uma ação que se adapta melhor à vida que estás construindo."',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 8.32',
+    comment: 'Atletas, sejam os de alto nível em esportes universitários, sejam os profissionais, seguem cada vez mais uma filosofia conhecida como "O processo". É uma filosofia criada pelo técnico Nick Saban, da Universidade do Alabama, que ensinou seus jogadores a ignorar o quadro geral — jogos importantes, vencer campeonatos, a enorme vantagem do adversário — e concentrar-se em fazer bem as coisas infinitamente menores — treinar com pleno esforço, terminar uma jogada específica, converter numa única posse. Uma temporada dura meses, um jogo dura horas, a recuperação pode estar a quatro touchdowns de distância, mas uma única jogada dura apenas alguns segundos. E jogos e temporadas são constituídos por segundos.\n\nSe times seguem "O processo", eles tendem a ganhar. Superam obstáculos e finalmente chegam ao topo sem sequer ter se concentrado diretamente nos obstáculos. Se seguir "O processo" em sua vida — reunindo as ações corretas na ordem correta, uma depois da outra —, você também se sairá bem. Não só isso, estará mais bem equipado para transpor rapidamente os obstáculos ao longo do caminho. Estará ocupado demais pondo um pé diante do outro para poder perceber que os obstáculos estavam ali.',
+    background: getBackgroundForDay(8),
+  },
+];
+
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
   ...JANUARY_REFLECTIONS,
   ...FEBRUARY_REFLECTIONS,
   ...MARCH_REFLECTIONS,
   ...APRIL_REFLECTIONS,
   ...MAIO_REFLECTIONS,
+  ...JUNHO_REFLECTIONS,
   ...DECEMBER_REFLECTIONS,
 ];
 
@@ -1168,6 +1183,10 @@ export function getTodayMaxim(): DailyMaxim | null {
     monthName = 'maio';
     startDay = 1;
     endDay = 31;
+  } else if (currentMonth === 5) { // Junho
+    monthName = 'junho';
+    startDay = 1;
+    endDay = 30;
   } else if (currentMonth === 11) { // Dezembro
     monthName = 'dezembro';
     startDay = 8;
