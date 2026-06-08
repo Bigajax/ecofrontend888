@@ -17,6 +17,8 @@ interface CAPIBody {
   currency?: string;
   contentIds?: string[];
   contentType?: string;
+  contentName?: string;
+  contentCategory?: string;
   userAgent?: string;
 }
 
@@ -40,6 +42,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     currency,
     contentIds,
     contentType,
+    contentName,
+    contentCategory,
     userAgent,
   } = req.body as CAPIBody;
 
@@ -77,13 +81,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       serverEvent.setEventSourceUrl(eventSourceUrl);
     }
 
-    if (value !== undefined && currency) {
-      const customData = new CustomData().setValue(value).setCurrency(currency);
+    const hasCustomData =
+      (value !== undefined && currency) ||
+      contentIds?.length ||
+      contentName ||
+      contentCategory;
 
+    if (hasCustomData) {
+      const customData = new CustomData();
+
+      if (value !== undefined && currency) {
+        customData.setValue(value).setCurrency(currency);
+      }
       if (contentIds?.length) {
         customData.setContentIds(contentIds);
         customData.setContentType(contentType || 'product');
       }
+      if (contentName) customData.setContentName(contentName);
+      if (contentCategory) customData.setContentCategory(contentCategory);
 
       serverEvent.setCustomData(customData);
     }

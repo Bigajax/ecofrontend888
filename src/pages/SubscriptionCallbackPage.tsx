@@ -10,6 +10,8 @@ import confetti from 'canvas-confetti';
 import { useAuth } from '../contexts/AuthContext';
 import mixpanel from '../lib/mixpanel';
 import { trackSubscriptionPaid, trackPaymentFailed } from '../lib/mixpanelConversionEvents';
+import { trackWithCAPI } from '../lib/fbpixel';
+import { PRICE, planValue } from '../constants/offerCopy';
 
 type CallbackStatus = 'loading' | 'success' | 'error' | 'pending';
 
@@ -54,6 +56,18 @@ export default function SubscriptionCallbackPage() {
               provider: 'mercadopago',
               user_id: user?.id,
               source: 'frontend_callback',
+            });
+
+            // Meta Pixel + CAPI: assinatura confirmada (trial ativo) → Subscribe,
+            // evento padrão do Meta para início de assinatura recorrente. O
+            // Purchase do 1º ciclo efetivamente cobrado deve ser disparado
+            // server-side pelo webhook do backend (não há cobrança hoje, no trial).
+            void trackWithCAPI('Subscribe', {
+              value: planValue(subscription.planType),
+              currency: PRICE.currency,
+              contentName: 'ECO Premium',
+              contentCategory: 'subscription',
+              pixelExtra: { plan: subscription.planType ?? 'annual' },
             });
 
             // Confetti celebration

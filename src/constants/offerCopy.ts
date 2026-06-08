@@ -34,3 +34,27 @@ export const OFFER = {
   /** Cancelamento genérico (fragmento). */
   cancelAnytime: 'cancele quando quiser',
 } as const;
+
+/**
+ * Valores numéricos (BRL) da oferta — fonte única para eventos de conversão
+ * (Meta Pixel, Mixpanel) e qualquer cálculo de checkout. Mantém os números
+ * alinhados com a copy acima.
+ */
+export const PRICE = {
+  /** Recorrência mensal. */
+  monthly: 15.9,
+  /** Total cobrado no plano anual. */
+  annualTotal: 142.8,
+  /** Equivalente mensal do plano anual. */
+  annualMonthly: 11.9,
+  currency: 'BRL',
+} as const;
+
+/**
+ * Valor numérico de um plano para eventos de conversão. Plano anual usa o
+ * total cobrado; o padrão (plano ausente/desconhecido) também é o anual,
+ * que é o CTA primário das landings.
+ */
+export function planValue(plan?: string | null): number {
+  return plan === 'monthly' ? PRICE.monthly : PRICE.annualTotal;
+}

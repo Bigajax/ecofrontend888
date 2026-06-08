@@ -86,7 +86,6 @@ import './eco-design-system.css';
 
 import { getOrCreateSessionId } from './utils/identity';
 
-import { initFacebookPixel } from './lib/fbpixel';
 import { syncEcoStorageDomain } from './utils/ecoStorage';
 
 // Sync storage domain (for cookies/localStorage compatibility)
@@ -101,8 +100,7 @@ console.info('[IDENTITY] Session initialized', { sessionId });
 // by clicking "Criar minha nova realidade" button in HomePageTour.tsx
 // This ensures guest mode is intentional, not automatic.
 
-// inicia o Pixel uma única vez
-initFacebookPixel();
+// O Meta Pixel é inicializado no index.html (snippet base + init + PageView).
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

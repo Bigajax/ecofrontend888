@@ -6,7 +6,8 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useAuth, type PreservedData } from '../contexts/AuthContext';
 import PhoneFrame from '../components/PhoneFrame';
 import WelcomeScreen from '../components/WelcomeScreen';
-import { fbq } from '../lib/fbpixel';
+import { fbq, trackWithCAPI } from '../lib/fbpixel';
+import { PRICE, planValue } from '../constants/offerCopy';
 import mixpanel from '../lib/mixpanel';
 import { supabase as supabaseClient } from '../lib/supabaseClient';
 
@@ -164,6 +165,12 @@ const CreateProfilePage: React.FC = () => {
       if (data.user) {
         mixpanel.track('Front-end: Google One Tap Concluído', { userId: data.user.id });
         fbq('CompleteRegistration', { value: 1, currency: 'BRL' });
+        // Meta Pixel + CAPI: todo cadastro inicia o trial de 7 dias → StartTrial
+        // (evento padrão do Meta para otimização). Valor = preço do plano.
+        void trackWithCAPI('StartTrial', {
+          value: planValue(planFromQuery),
+          currency: PRICE.currency,
+        });
 
         // Migrar dados guest
         const migrated = await migrateGuestData(data.user.id);
@@ -277,6 +284,12 @@ const CreateProfilePage: React.FC = () => {
       if (newUser) {
         mixpanel.track('Front-end: Cadastro Concluído', { userId: newUser.id });
         fbq('CompleteRegistration', { value: 1, currency: 'BRL' });
+        // Meta Pixel + CAPI: todo cadastro inicia o trial de 7 dias → StartTrial
+        // (evento padrão do Meta para otimização). Valor = preço do plano.
+        void trackWithCAPI('StartTrial', {
+          value: planValue(planFromQuery),
+          currency: PRICE.currency,
+        });
 
         const migrated = await migrateGuestData(newUser.id);
 

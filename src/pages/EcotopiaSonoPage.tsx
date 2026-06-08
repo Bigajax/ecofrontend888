@@ -7,6 +7,8 @@ import MethodMarquee from '@/components/landing/MethodMarquee';
 import { useScrollReveal } from '@/components/landing/useScrollReveal';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import mixpanel from '@/lib/mixpanel';
+import { fbq, trackWithCAPI } from '@/lib/fbpixel';
+import { PRICE, planValue } from '@/constants/offerCopy';
 
 // ─── Dados das seções ────────────────────────────────────────────────
 
@@ -182,7 +184,25 @@ export default function EcotopiaSonoPage() {
     } catch {
       // noop
     }
+    // Meta Pixel: visitante viu a landing do Protocolo do Sono.
+    fbq('ViewContent', {
+      content_name: 'Protocolo do Sono',
+      content_category: 'sono',
+    });
   }, []);
+
+  // Meta Pixel + CAPI: clique em qualquer CTA "7 dias grátis" = intenção de
+  // iniciar o trial. Dispara antes da navegação (SPA) do <Link> para /assinar,
+  // então o fetch do CAPI não é cancelado por unload.
+  const trackTrialCta = (plan: 'annual' | 'monthly', from: string) => {
+    void trackWithCAPI('InitiateCheckout', {
+      value: planValue(plan),
+      currency: PRICE.currency,
+      contentName: 'Protocolo do Sono',
+      contentCategory: 'sono',
+      pixelExtra: { plan, source: from },
+    });
+  };
 
   const [activeTab, setActiveTab] = useState<string>(TABS[0].id);
   const activeTabData = TABS.find((t) => t.id === activeTab) ?? TABS[0];
@@ -211,6 +231,7 @@ export default function EcotopiaSonoPage() {
             <Link
               to="/assinar?step=plan&plan=annual&from=sono_hero"
               className="lp-sono-hero-cta-primary scroll-reveal stagger-2"
+              onClick={() => trackTrialCta('annual', 'sono_hero')}
             >
               {CTA_LABEL}
             </Link>
@@ -268,6 +289,7 @@ export default function EcotopiaSonoPage() {
                   key={n.id}
                   to={`/assinar?step=plan&plan=annual&from=sono_protocolo_${n.id}`}
                   className="lp-sono-protocol-card"
+                  onClick={() => trackTrialCta('annual', `sono_protocolo_${n.id}`)}
                 >
                   <span className="lp-sono-protocol-thumb" style={{ background: n.gradient }}>
                     {n.imageUrl && <img src={n.imageUrl} alt="" loading="lazy" />}
@@ -535,7 +557,11 @@ export default function EcotopiaSonoPage() {
             Menos tempo tentando dormir.<br className="lp-br-desktop" />{' '}
             Mais tempo realmente descansando.
           </p>
-          <Link to="/assinar?step=plan&plan=annual&from=sono_cta_mid" className="cta-primary">
+          <Link
+            to="/assinar?step=plan&plan=annual&from=sono_cta_mid"
+            className="cta-primary"
+            onClick={() => trackTrialCta('annual', 'sono_cta_mid')}
+          >
             {CTA_LABEL}
           </Link>
         </div>
@@ -563,7 +589,10 @@ export default function EcotopiaSonoPage() {
               <ul>
                 {col.links.map((label) => (
                   <li key={label}>
-                    <Link to={`/assinar?step=plan&plan=annual&from=sono_tip_${col.key}`}>
+                    <Link
+                      to={`/assinar?step=plan&plan=annual&from=sono_tip_${col.key}`}
+                      onClick={() => trackTrialCta('annual', `sono_tip_${col.key}`)}
+                    >
                       {label}
                     </Link>
                   </li>
@@ -716,6 +745,7 @@ export default function EcotopiaSonoPage() {
             <Link
               to={`/assinar?step=plan&plan=${selectedOfferPlan}&from=sono_oferta_cta`}
               className="lp-sono-offer-cta scroll-reveal stagger-4"
+              onClick={() => trackTrialCta(selectedOfferPlan, 'sono_oferta_cta')}
             >
               {CTA_LABEL}
             </Link>

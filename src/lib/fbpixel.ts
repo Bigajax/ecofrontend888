@@ -1,34 +1,8 @@
 // src/lib/fbpixel.ts
-export const FB_PIXEL_ID = import.meta.env.VITE_FB_PIXEL_ID as string;
-
-export function initFacebookPixel() {
-  if (!FB_PIXEL_ID) {
-    console.warn('VITE_FB_PIXEL_ID não definido');
-    return;
-  }
-  if (typeof window === 'undefined') return;
-  if ((window as any).fbq) return;
-
-  (function (f: any, b: any, e: any, v: any, n?: any, t?: any, s?: any) {
-    if (f.fbq) return;
-    n = f.fbq = function () {
-      n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-    };
-    if (!f._fbq) f._fbq = n;
-    n.push = n;
-    n.loaded = !0;
-    n.version = '2.0';
-    n.queue = [];
-    t = b.createElement(e);
-    t.async = !0;
-    t.src = v;
-    s = b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t, s);
-  })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
-
-  (window as any).fbq('init', FB_PIXEL_ID);
-  (window as any).fbq('track', 'PageView');
-}
+//
+// O Pixel é inicializado uma única vez no `index.html` (snippet base + init +
+// PageView), que carrega antes do bundle JS para não perder o PageView inicial.
+// Este módulo só expõe helpers para disparar eventos a partir do app.
 
 /**
  * Dispara um evento no Meta Pixel.
@@ -80,6 +54,14 @@ export interface CAPITrackParams {
   currency?: string;
   contentIds?: string[];
   contentType?: string;
+  contentName?: string;
+  contentCategory?: string;
+  /**
+   * Parâmetros extras enviados APENAS ao Pixel do browser (não ao CAPI).
+   * Útil para dimensões de segmentação interna (ex.: plan, source) que não
+   * fazem parte do schema de CustomData do servidor.
+   */
+  pixelExtra?: Record<string, unknown>;
 }
 
 /**
@@ -95,9 +77,11 @@ export async function trackWithCAPI(
 ): Promise<void> {
   const eventId = crypto.randomUUID();
 
-  const pixelParams: Record<string, unknown> = {};
+  const pixelParams: Record<string, unknown> = { ...(params.pixelExtra ?? {}) };
   if (params.value !== undefined) pixelParams.value = params.value;
   if (params.currency) pixelParams.currency = params.currency;
+  if (params.contentName) pixelParams.content_name = params.contentName;
+  if (params.contentCategory) pixelParams.content_category = params.contentCategory;
   if (params.contentIds?.length) {
     pixelParams.content_ids = params.contentIds;
     pixelParams.content_type = params.contentType ?? 'product';
@@ -118,7 +102,12 @@ export async function trackWithCAPI(
         userAgent: navigator.userAgent,
         fbp: getCookie('_fbp'),
         fbc: resolveFbc(),
-        ...params,
+        value: params.value,
+        currency: params.currency,
+        contentIds: params.contentIds,
+        contentType: params.contentType,
+        contentName: params.contentName,
+        contentCategory: params.contentCategory,
       }),
     });
   } catch {
