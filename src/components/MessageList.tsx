@@ -41,12 +41,21 @@ const isStreaming = (m: Message | undefined): boolean => {
 };
 
 // Se a última mensagem for da Eco, estiver streamando e ainda sem texto,
-// o ChatMessage já mostra os três pontinhos dentro da bolha.
-// Então evitamos repetir o indicador global "Eco refletindo..." no rodapé.
+// o ChatMessage já mostra o indicador "Eco refletindo..." dentro da bolha.
+// Então evitamos repetir o indicador global no rodapé.
 const lastEcoIsTypingInsideBubble = (list: Message[]): boolean => {
   if (!Array.isArray(list) || list.length === 0) return false;
   const last = list[list.length - 1];
   return isEcoMessage(last) && isStreaming(last) && !hasVisibleText(last);
+};
+
+// Assim que a última mensagem da Eco já tem texto visível (streamando ou pronta),
+// a própria bolha mostra a resposta — o indicador global "Eco refletindo..." no
+// rodapé vira duplicata e deve ser suprimido.
+const lastEcoHasVisibleText = (list: Message[]): boolean => {
+  if (!Array.isArray(list) || list.length === 0) return false;
+  const last = list[list.length - 1];
+  return isEcoMessage(last) && hasVisibleText(last);
 };
 
 export type MessageListProps = {
@@ -107,7 +116,10 @@ const MessageList: React.FC<MessageListProps> = ({
     });
   }, [messages]);
 
-  const showGlobalTyping = Boolean(isEcoTyping) && !lastEcoIsTypingInsideBubble(uniqueMessages);
+  const showGlobalTyping =
+    Boolean(isEcoTyping) &&
+    !lastEcoIsTypingInsideBubble(uniqueMessages) &&
+    !lastEcoHasVisibleText(uniqueMessages);
 
   // Action Engine (gating conservador): o card de ação só aparece na ÚLTIMA mensagem da Eco,
   // e não aparece se a mensagem da Eco imediatamente anterior já trouxe uma ação (evita
