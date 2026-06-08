@@ -11,7 +11,7 @@ import clsx from 'clsx';
 import ChatInput, { ChatInputHandle } from '../components/ChatInput';
 import LoginGateModal from '../components/LoginGateModal';
 import EcoBubbleOneEye from '../components/EcoBubbleOneEye';
-import TypingDots from '../components/TypingDots';
+import EcoThinkingIndicator from '../components/EcoThinkingIndicator';
 import SuggestionChips from '../components/SuggestionChips';
 import MessageList from '../components/MessageList';
 import Sidebar from '../components/Sidebar';
@@ -891,13 +891,7 @@ function ChatPage() {
     if (!(shouldShowGlobalTyping || isEcoStreamTyping)) return null;
     return (
       <div className="mt-1" role="status" aria-live="polite">
-        <TypingDots
-          variant="bubble"
-          size="md"
-          tone="auto"
-          withLabel={true}
-          elapsedTime={ecoTypingElapsed}
-        />
+        <EcoThinkingIndicator elapsedTime={ecoTypingElapsed} />
       </div>
     );
   }, [shouldShowGlobalTyping, isEcoStreamTyping, ecoTypingElapsed]);

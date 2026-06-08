@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import clsx from "clsx";
 
 import EcoBubbleOneEye from "./EcoBubbleOneEye";
-import TypingDots from "./TypingDots";
+import EcoThinkingIndicator from "./EcoThinkingIndicator";
 import LazyMarkdownRenderer from "./LazyMarkdownRenderer";
 import CollapsibleMessage from "./CollapsibleMessage";
 import type { Message } from "../contexts/ChatContext";
@@ -229,7 +229,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping
             <div className={bubbleClass} data-sender={sender}>
               {showTypingDots ? (
                 <span aria-live="polite" className="inline-flex items-center gap-2 text-gray-600">
-                  <TypingDots />
+                  <EcoThinkingIndicator compact />
                 </span>
               ) : (
                 <div className="chat-message-text">

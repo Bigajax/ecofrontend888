@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 import ChatMessage from "./ChatMessage";
 import EcoMessageWithAudio from "./EcoMessageWithAudio";
-import TypingDots from "./TypingDots"; // garante o componente
+import EcoThinkingIndicator from "./EcoThinkingIndicator";
 
 import type { Message } from "../contexts/ChatContext";
 import { isEcoMessage, resolveMessageSender } from "../utils/chat/messages";
@@ -183,9 +183,8 @@ const MessageList: React.FC<MessageListProps> = ({
       {feedbackPrompt}
 
       {showGlobalTyping && (
-        <div className="mt-fluid-2xs flex items-center gap-fluid-xs" role="status" aria-live="polite">
-          <TypingDots variant="bubble" size="md" tone="auto" />
-          <span className="text-fluid-sm italic text-gray-500">Eco refletindo...</span>
+        <div className="mt-fluid-2xs" role="status" aria-live="polite">
+          <EcoThinkingIndicator />
         </div>
       )}
 
