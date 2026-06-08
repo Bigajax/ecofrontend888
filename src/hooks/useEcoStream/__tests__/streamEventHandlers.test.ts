@@ -210,4 +210,44 @@ describe("streamEventHandlers", () => {
     expect(spy).toHaveBeenCalledWith(context.streamStats, { finishReason: "stop" });
     spy.mockRestore();
   });
+
+  it("anexa acao_recomendada do evento meta à mensagem da Eco (renderiza o card)", () => {
+    const { context, messagesRef } = createBaseContext();
+    const acao = { id: "liberar_estresse", titulo: "Soltar a tensão do dia", cta: "Liberar o estresse (5 min)" };
+
+    handleControl(
+      {
+        name: "meta",
+        payload: { meta: { acao_recomendada: acao } },
+      } as any,
+      context,
+    );
+
+    // Guarda em campo dedicado para sobreviver à finalização (done)
+    expect((context.streamStats as any).acaoRecomendada).toEqual(acao);
+    // E grava na metadata da mensagem ativa para o card aparecer já durante o stream
+    const [message] = messagesRef();
+    expect((message.metadata as any)?.acao_recomendada).toEqual(acao);
+  });
+
+  it("preserva acao_recomendada na finalização (done sem a recomendação)", async () => {
+    const { context } = createBaseContext();
+    const acao = { id: "sono", titulo: "Preparar para a noite", cta: "Abrir práticas de sono" };
+    context.streamStats = { aggregatedLength: 3, gotAnyChunk: true, acaoRecomendada: acao };
+
+    const doneContext: DoneContext = {
+      ...context,
+      event: { payload: { metadata: { source: "unit-test" } } } as any,
+      setErroApi: vi.fn(),
+      removeEcoEntry: vi.fn(),
+      assistantId,
+    };
+
+    handleDone(doneContext);
+    await Promise.resolve();
+
+    expect(context.upsertMessage).toHaveBeenCalledTimes(1);
+    const [patch] = (context.upsertMessage as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect((patch.metadata as any)?.acao_recomendada).toEqual(acao);
+  });
 });

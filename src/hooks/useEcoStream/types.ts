@@ -29,6 +29,8 @@ export interface StreamRunStats {
   gotAnyChunk: boolean;
   lastMeta?: Record<string, unknown>;
   finishReasonFromMeta?: string;
+  /** Recomendação ("próximo passo") do Action Engine, capturada do evento meta. */
+  acaoRecomendada?: Record<string, unknown>;
   status?: "no_content" | "error" | "aborted" | "benign_no_output" | "final_text_only" | "completed";
   timing?: { startedAt?: number; firstChunkAt?: number; totalMs?: number };
   responseHeaders?: Record<string, string>;

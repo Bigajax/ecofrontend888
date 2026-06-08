@@ -16,7 +16,7 @@ import {
 } from "./chunkProcessor";
 import { isDevelopmentEnv } from "./orchestratorConfig";
 import { applyMetaToStreamStats } from "./requestBuilder";
-import type { StreamSharedContext, RemoveEcoEntryFn } from "./types";
+import type { StreamSharedContext, RemoveEcoEntryFn, StreamRunStats } from "./types";
 import {
   pickNumberFromRecords,
   pickStringArrayFromRecords,
@@ -31,6 +31,22 @@ export interface DoneContext extends StreamSharedContext {
   removeEcoEntry: RemoveEcoEntryFn;
   assistantId: string;
 }
+
+/**
+ * Preserva a recomendação do Action Engine (capturada do evento meta em `streamStats.acaoRecomendada`)
+ * na metadata final da mensagem, caso o `done` não a traga. Garante que o card de "próximo passo"
+ * sobreviva à finalização independentemente da ordem dos eventos meta/done.
+ */
+const preserveAcaoRecomendada = (metadata: unknown, streamStats: StreamRunStats): unknown => {
+  const acao = streamStats?.acaoRecomendada;
+  if (!acao || typeof acao !== "object") return metadata;
+  const base = toRecordSafe(metadata);
+  if (base && typeof base === "object") {
+    if (base.acao_recomendada) return metadata;
+    return { ...base, acao_recomendada: acao };
+  }
+  return { acao_recomendada: acao };
+};
 
 export type PromptReadyHandlerContext = StreamSharedContext;
 export type ChunkHandlerContext = StreamSharedContext;
@@ -338,6 +354,7 @@ export const handleDone = (doneContext: DoneContext) => {
     };
 
     patch.metadata = annotateWithFinishReason(patch.metadata);
+    patch.metadata = preserveAcaoRecomendada(patch.metadata, doneContext.streamStats);
     if (donePayload !== undefined) patch.donePayload = donePayload;
     if (resolvedInteractionId) {
       patch.interaction_id = resolvedInteractionId;
@@ -403,6 +420,7 @@ export const handleDone = (doneContext: DoneContext) => {
             };
             next.metadata = mergeReplyMetadata(metadataBase, normalizedClientId);
             next.metadata = annotateWithFinishReason(next.metadata);
+            next.metadata = preserveAcaoRecomendada(next.metadata, doneContext.streamStats);
             if (donePayload !== undefined) next.donePayload = donePayload;
             if (resolvedInteractionId) {
               next.interaction_id = resolvedInteractionId;
@@ -558,6 +576,31 @@ export const handleControl = (event: EcoStreamControlEvent, context: StreamShare
     }
     if (meta) {
       applyMetaToStreamStats(context.streamStats, meta);
+
+      // Action Engine: o backend envia a recomendação ("próximo passo") como meta.acao_recomendada.
+      // Anexamos à metadata da mensagem assistente ativa para o card renderizar (AcaoRecomendadaCard
+      // lê de message.metadata.acao_recomendada). Funciona mesmo se o meta chegar depois do done.
+      const acao = (meta as Record<string, unknown>).acao_recomendada;
+      if (acao && typeof acao === "object" && !Array.isArray(acao)) {
+        // Guarda em campo dedicado (lastMeta pode ser sobrescrito por outros eventos meta).
+        context.streamStats.acaoRecomendada = acao as Record<string, unknown>;
+        const targetId = context.activeAssistantIdRef.current;
+        if (targetId) {
+          context.setMessages((prev) =>
+            prev.map((message) =>
+              message.id === targetId
+                ? {
+                    ...message,
+                    metadata: {
+                      ...((message.metadata as Record<string, unknown> | undefined) ?? {}),
+                      acao_recomendada: acao,
+                    },
+                  }
+                : message,
+            ),
+          );
+        }
+      }
     }
   }
 
