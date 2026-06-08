@@ -1,5 +1,5 @@
-import React from 'react';
-import { Volume2, Loader2, BookOpen, Pause } from 'lucide-react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
+import { Volume2, Loader2, BookOpen, Pause, ChevronDown } from 'lucide-react';
 import { useReflectionAudio } from '@/hooks/useReflectionAudio';
 import { DIARIO_GUEST } from '@/constants/diarioGuestCopy';
 import type { DailyMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
@@ -33,6 +33,22 @@ const TodayReflectionHero: React.FC<TodayReflectionHeroProps> = ({
   const { toggle, isPlaying, loading, overlayNode } = useReflectionAudio('today_hero');
 
   const label = isToday ? 'Reflexão de hoje' : 'Última reflexão';
+
+  // Expandir a citação inline (tira o corte de 3 linhas). O toggle só aparece
+  // quando o texto realmente passa do limite recortado.
+  const [expanded, setExpanded] = useState(false);
+  const [isClamped, setIsClamped] = useState(false);
+  const quoteRef = useRef<HTMLQuoteElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (expanded) return; // mantém o estado medido no modo recortado
+    const el = quoteRef.current;
+    if (!el) return;
+    const measure = () => setIsClamped(el.scrollHeight - el.clientHeight > 2);
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [maxim.text, expanded]);
 
   return (
     <div className="w-full px-4 pt-6 md:px-8">
@@ -70,19 +86,41 @@ const TodayReflectionHero: React.FC<TodayReflectionHeroProps> = ({
               {maxim.title}
             </h2>
 
-            {/* Citação (serif, recortada) */}
+            {/* Citação (serif) — recortada em 3 linhas até expandir */}
             <blockquote
+              ref={quoteRef}
               className="mt-4 font-subtitle italic text-white/90 text-[15px] md:text-[17px] leading-[1.7]"
               style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
                 textShadow: '0 1px 12px rgba(0,0,0,0.5)',
+                ...(expanded
+                  ? {}
+                  : {
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }),
               }}
             >
               “{stripQuotes(maxim.text)}”
             </blockquote>
+
+            {/* Ver mais / menos — só quando a citação passa do recorte */}
+            {(isClamped || expanded) && (
+              <button
+                onClick={() => setExpanded((v) => !v)}
+                aria-expanded={expanded}
+                className="mt-2 self-start inline-flex items-center gap-1 text-[12px] font-semibold
+                           text-[#E8C9A0] hover:text-white transition-colors duration-200"
+              >
+                {expanded ? 'Ver menos' : 'Ver mais'}
+                <ChevronDown
+                  size={14}
+                  className="transition-transform duration-300 motion-reduce:transition-none"
+                  style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                />
+              </button>
+            )}
 
             {/* Autor / fonte */}
             <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/65">
