@@ -11,6 +11,21 @@ const VOICE_TRANSCRIBE_ENDPOINT = "/api/voice/transcribe-and-respond";
 const buildVoiceUrl = (path: string) => buildApiUrl(path);
 
 /**
+ * Acorda o backend (Render free hiberna após inatividade). Best-effort, não bloqueia.
+ * Chamar ao montar telas que terão TTS (ex.: hero do Diário) para reduzir a chance
+ * de o 1º clique em "Ouvir" cair no cold-start.
+ */
+let lastWarmAt = 0;
+export function warmupVoiceBackend(): void {
+  const now = Date.now();
+  if (now - lastWarmAt < 60_000) return; // evita pings repetidos
+  lastWarmAt = now;
+  try {
+    void fetch(buildApiUrl("/health"), { method: "GET", cache: "no-store" }).catch(() => {});
+  } catch {}
+}
+
+/**
  * Streaming TTS: prepara o texto no backend e retorna a URL (GET) que streama o MP3.
  * Usada como `audio.src` para começar a tocar assim que os primeiros bytes chegam
  * (sem esperar a síntese inteira, sem base64). Cai para `gerarAudioDaMensagem` em caso de erro.
@@ -39,15 +54,18 @@ export async function prepareAudioStreamUrl(text: string): Promise<string> {
   const isNetworkish = (e: unknown) =>
     /failed to fetch|networkerror|load failed|aborted/i.test(String((e as any)?.message || e));
 
+  // Cold-start do Render pode levar ~30–60s. Várias tentativas com backoff crescente
+  // cobrem essa janela em vez de falhar no primeiro "Failed to fetch".
+  const backoffMs = [2500, 6000, 12000];
   let resp: Response | null = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt <= backoffMs.length; attempt++) {
     try {
       resp = await fetchWithTimeout(url, init, 30000);
       break;
     } catch (e) {
-      if (attempt === 1 || !isNetworkish(e)) throw e;
-      console.warn("[TTS] prepare falhou (rede), tentando de novo apos cold-start do Render…");
-      await new Promise((r) => setTimeout(r, 2500));
+      if (attempt === backoffMs.length || !isNetworkish(e)) throw e;
+      console.warn(`[TTS] prepare falhou (rede), retry ${attempt + 1} após cold-start do Render…`);
+      await new Promise((r) => setTimeout(r, backoffMs[attempt]));
     }
   }
   if (!resp) throw new Error("Falha ao preparar audio (TTS).");

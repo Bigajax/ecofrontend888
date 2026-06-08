@@ -97,12 +97,37 @@ export default function ReadingModeModal({
                 {maxim.date}
               </span>
             </span>
-            <h2
-              className="font-display text-white text-xl md:text-2xl leading-snug tracking-wide"
-              style={{ textShadow: '0 2px 16px rgba(0,0,0,0.9)' }}
-            >
-              {maxim.title}
-            </h2>
+            <div className="flex items-end justify-between gap-3">
+              <h2
+                className="flex-1 font-display text-white text-xl md:text-2xl leading-snug tracking-wide"
+                style={{ textShadow: '0 2px 16px rgba(0,0,0,0.9)' }}
+              >
+                {maxim.title}
+              </h2>
+
+              {/* Ouvir — botão branco ao lado do título */}
+              <button
+                onClick={() => toggle(maxim)}
+                disabled={loading}
+                aria-label={loading ? 'Gerando áudio…' : isPlaying ? 'Parar áudio' : 'Ouvir a reflexão'}
+                className="flex-shrink-0 group inline-flex items-center gap-2 rounded-full pl-2 pr-4 py-2
+                           bg-white text-eco-text text-[13px] font-semibold
+                           shadow-[0_6px_20px_rgba(0,0,0,0.3)]
+                           hover:scale-[1.04] active:scale-95 transition-transform duration-200
+                           disabled:opacity-70 disabled:pointer-events-none"
+              >
+                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-eco-text/10">
+                  {loading ? (
+                    <Loader2 size={14} className="animate-spin" strokeWidth={2.2} />
+                  ) : isPlaying ? (
+                    <Pause size={13} strokeWidth={2.4} fill="currentColor" />
+                  ) : (
+                    <Volume2 size={14} strokeWidth={2.2} />
+                  )}
+                </span>
+                {loading ? 'Preparando' : isPlaying ? 'Ouvindo' : 'Ouvir'}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -117,33 +142,9 @@ export default function ReadingModeModal({
               "{maxim.text}"
             </blockquote>
 
-            {/* Ouvir + tempo de leitura */}
-            <div className="mt-5 flex items-center gap-3 flex-wrap">
-              <button
-                onClick={() => toggle(maxim)}
-                disabled={loading}
-                aria-label={loading ? 'Gerando áudio…' : isPlaying ? 'Parar áudio' : 'Ouvir a reflexão'}
-                className="group inline-flex items-center gap-2.5 rounded-full pl-3 pr-5 py-2.5
-                           bg-eco-text text-white text-sm font-semibold
-                           shadow-[0_4px_16px_rgba(0,0,0,0.18)]
-                           hover:scale-[1.03] active:scale-95 transition-transform duration-200
-                           disabled:opacity-70 disabled:pointer-events-none"
-              >
-                <span className="flex items-center justify-center h-7 w-7 rounded-full bg-white/20">
-                  {loading ? (
-                    <Loader2 size={15} className="animate-spin" strokeWidth={2.2} />
-                  ) : isPlaying ? (
-                    <Pause size={14} strokeWidth={2.4} fill="currentColor" />
-                  ) : (
-                    <Volume2 size={15} strokeWidth={2.2} />
-                  )}
-                </span>
-                {loading ? 'Preparando…' : isPlaying ? 'Ouvindo' : 'Ouvir reflexão'}
-              </button>
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-400 font-primary">
-                <span>⏱</span> 1 minuto de leitura
-              </span>
-            </div>
+            <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] text-gray-400 font-primary">
+              <span>⏱</span> 1 minuto de leitura
+            </p>
           </div>
 
           {/* Comentário */}

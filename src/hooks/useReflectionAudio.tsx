@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import AudioPlayerOverlay from '@/components/AudioPlayerOverlay';
-import { prepareAudioStreamUrl, gerarAudioDaMensagem } from '@/api/voiceApi';
+import { prepareAudioStreamUrl, gerarAudioDaMensagem, warmupVoiceBackend } from '@/api/voiceApi';
 import type { DailyMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
 import mixpanel from '@/lib/mixpanel';
 
@@ -60,6 +61,10 @@ export function useReflectionAudio(source = 'diario') {
   // limpa o áudio ao desmontar
   useEffect(() => () => disposeAudioSession(audioOverlay), [audioOverlay, disposeAudioSession]);
 
+  // Acorda o backend (Render free hiberna) assim que a tela com TTS aparece,
+  // para o 1º clique em "Ouvir" não cair no cold-start.
+  useEffect(() => { warmupVoiceBackend(); }, []);
+
   const play = useCallback(async (maxim: DailyMaxim, meta?: Record<string, unknown>) => {
     if (loading) return;
     setLoading(true);
@@ -114,6 +119,16 @@ export function useReflectionAudio(source = 'diario') {
       setAudioOverlay({ id: Date.now(), url: mediaUrl, audio: audioEl, needsManualStart });
     } catch (error) {
       console.error('Erro ao gerar áudio da reflexão:', error);
+      const msg = String((error as any)?.message || error);
+      const isNetwork = /failed to fetch|networkerror|load failed|aborted|timeout/i.test(msg);
+      // Acorda o backend para a próxima tentativa já encontrá-lo de pé.
+      warmupVoiceBackend();
+      toast.error(
+        isNetwork
+          ? 'O servidor de voz está acordando. Tente de novo em alguns segundos.'
+          : 'Não consegui gerar o áudio agora. Tente novamente.',
+        { duration: 4000 },
+      );
     } finally {
       setLoading(false);
     }
