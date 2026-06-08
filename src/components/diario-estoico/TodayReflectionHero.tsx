@@ -8,7 +8,7 @@ interface TodayReflectionHeroProps {
   maxim: DailyMaxim;
   /** true → reflexão é exatamente a de hoje; false → última disponível (fallback). */
   isToday: boolean;
-  /** Logado/premium → "Ler completa"; guest → CTA de cadastro. */
+  /** Logado → conteúdo completo; guest → prévia de 40% + gate de cadastro. */
   canRead: boolean;
   onReadFull: () => void;
   onRegister: () => void;
@@ -18,10 +18,23 @@ interface TodayReflectionHeroProps {
 const stripQuotes = (s: string) =>
   s.replace(/^[\s"“”'']+/, '').replace(/[\s"“”'']+$/, '').trim();
 
+/** Corta um texto em ~n caracteres, recuando até o fim da última palavra. */
+const cutAtWord = (s: string, n: number): string => {
+  if (n <= 0) return '';
+  if (s.length <= n) return s;
+  const slice = s.slice(0, n);
+  const i = slice.lastIndexOf(' ');
+  return (i > 40 ? slice.slice(0, i) : slice).trim();
+};
+
+/** Fração da reflexão (citação + comentário) liberada para o guest. */
+const GUEST_PREVIEW_RATIO = 0.4;
+
 /**
  * Card-hero da reflexão do dia no Diário Estoico.
- * Estética editorial (imagem de fundo + vidro), com play de áudio (TTS — mesma voz da ECO
- * usada no chat) lendo título + citação + autor + comentário.
+ * - Logado: citação (com "Ver mais") + Ouvir (lê tudo) + Ler completa (modal).
+ * - Guest: prévia de 40% da reflexão (citação + comentário) com fade + gate de cadastro;
+ *   o Ouvir lê apenas essa prévia (cortado).
  */
 const TodayReflectionHero: React.FC<TodayReflectionHeroProps> = ({
   maxim,
@@ -33,22 +46,40 @@ const TodayReflectionHero: React.FC<TodayReflectionHeroProps> = ({
   const { toggle, isPlaying, loading, overlayNode } = useReflectionAudio('today_hero');
 
   const label = isToday ? 'Reflexão de hoje' : 'Última reflexão';
+  const quote = stripQuotes(maxim.text);
+  const comment = (maxim.comment ?? '').trim();
 
-  // Expandir a citação inline (tira o corte de 3 linhas). O toggle só aparece
-  // quando o texto realmente passa do limite recortado.
+  // ── Prévia do guest: 40% da reflexão inteira (citação + comentário) ──────────
+  const fullLen = quote.length + comment.length;
+  const budget = Math.floor(fullLen * GUEST_PREVIEW_RATIO);
+  const quoteShown = budget >= quote.length ? quote : cutAtWord(quote, budget);
+  const commentBudget = Math.max(0, budget - quote.length);
+  const commentPreview = commentBudget > 0 ? cutAtWord(comment, commentBudget) : '';
+  const hasMoreForGuest = quoteShown.length < quote.length || commentPreview.length < comment.length;
+  // Texto que o áudio lê no modo guest (apenas a prévia).
+  const guestAudioText = [
+    stripQuotes(maxim.title),
+    quoteShown,
+    maxim.author + (maxim.source ? `, ${maxim.source}` : ''),
+    commentPreview,
+  ]
+    .filter(Boolean)
+    .join('. ');
+
+  // ── Expandir citação (apenas logado) ────────────────────────────────────────
   const [expanded, setExpanded] = useState(false);
   const [isClamped, setIsClamped] = useState(false);
   const quoteRef = useRef<HTMLQuoteElement | null>(null);
 
   useLayoutEffect(() => {
-    if (expanded) return; // mantém o estado medido no modo recortado
+    if (!canRead || expanded) return;
     const el = quoteRef.current;
     if (!el) return;
     const measure = () => setIsClamped(el.scrollHeight - el.clientHeight > 2);
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [maxim.text, expanded]);
+  }, [maxim.text, expanded, canRead]);
 
   return (
     <div className="w-full px-4 pt-6 md:px-8">
@@ -86,54 +117,85 @@ const TodayReflectionHero: React.FC<TodayReflectionHeroProps> = ({
               {maxim.title}
             </h2>
 
-            {/* Citação (serif) — recortada em 3 linhas até expandir */}
-            <blockquote
-              ref={quoteRef}
-              className="mt-4 font-subtitle italic text-white/90 text-[15px] md:text-[17px] leading-[1.7]"
-              style={{
-                textShadow: '0 1px 12px rgba(0,0,0,0.5)',
-                ...(expanded
-                  ? {}
-                  : {
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }),
-              }}
-            >
-              “{stripQuotes(maxim.text)}”
-            </blockquote>
+            {canRead ? (
+              /* ───────── Logado: citação com "Ver mais" ───────── */
+              <>
+                <blockquote
+                  ref={quoteRef}
+                  className="mt-4 font-subtitle italic text-white/90 text-[15px] md:text-[17px] leading-[1.7]"
+                  style={{
+                    textShadow: '0 1px 12px rgba(0,0,0,0.5)',
+                    ...(expanded
+                      ? {}
+                      : { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }),
+                  }}
+                >
+                  “{quote}”
+                </blockquote>
 
-            {/* Ver mais / menos — só quando a citação passa do recorte */}
-            {(isClamped || expanded) && (
-              <button
-                onClick={() => setExpanded((v) => !v)}
-                aria-expanded={expanded}
-                className="mt-2 self-start inline-flex items-center gap-1 text-[12px] font-semibold
-                           text-[#E8C9A0] hover:text-white transition-colors duration-200"
-              >
-                {expanded ? 'Ver menos' : 'Ver mais'}
-                <ChevronDown
-                  size={14}
-                  className="transition-transform duration-300 motion-reduce:transition-none"
-                  style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                />
-              </button>
+                {(isClamped || expanded) && (
+                  <button
+                    onClick={() => setExpanded((v) => !v)}
+                    aria-expanded={expanded}
+                    className="mt-2 self-start inline-flex items-center gap-1 text-[12px] font-semibold
+                               text-[#E8C9A0] hover:text-white transition-colors duration-200"
+                  >
+                    {expanded ? 'Ver menos' : 'Ver mais'}
+                    <ChevronDown
+                      size={14}
+                      className="transition-transform duration-300 motion-reduce:transition-none"
+                      style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    />
+                  </button>
+                )}
+
+                <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/65">
+                  {maxim.author}{maxim.source && <span className="text-white/45"> · {maxim.source}</span>}
+                </p>
+              </>
+            ) : (
+              /* ───────── Guest: prévia de 40% + gate ───────── */
+              <>
+                <div
+                  className="mt-4"
+                  style={hasMoreForGuest
+                    ? { WebkitMaskImage: 'linear-gradient(to bottom, black 62%, transparent)', maskImage: 'linear-gradient(to bottom, black 62%, transparent)' }
+                    : undefined}
+                >
+                  <blockquote
+                    className="font-subtitle italic text-white/90 text-[15px] md:text-[17px] leading-[1.7]"
+                    style={{ textShadow: '0 1px 12px rgba(0,0,0,0.5)' }}
+                  >
+                    “{quoteShown}{quoteShown.length < quote.length ? '…' : ''}”
+                  </blockquote>
+
+                  <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/65">
+                    {maxim.author}{maxim.source && <span className="text-white/45"> · {maxim.source}</span>}
+                  </p>
+
+                  {commentPreview && (
+                    <p className="mt-4 font-primary text-white/80 text-[14px] md:text-[15px] leading-[1.8] whitespace-pre-line"
+                      style={{ textShadow: '0 1px 10px rgba(0,0,0,0.45)' }}>
+                      {commentPreview}…
+                    </p>
+                  )}
+                </div>
+
+                {hasMoreForGuest && (
+                  <p className="mt-3 text-[12px] font-medium text-[#E8C9A0]">
+                    Crie sua conta grátis para ler a reflexão completa.
+                  </p>
+                )}
+              </>
             )}
-
-            {/* Autor / fonte */}
-            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/65">
-              {maxim.author}{maxim.source && <span className="text-white/45"> · {maxim.source}</span>}
-            </p>
 
             {/* Ações */}
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <button
-                onClick={() => toggle(maxim, { is_today: isToday })}
+                onClick={() => toggle(maxim, { is_today: isToday, guest: !canRead }, canRead ? undefined : guestAudioText)}
                 disabled={loading}
                 aria-label={
-                  loading ? 'Gerando áudio…' : isPlaying ? 'Parar áudio' : 'Ouvir a reflexão'
+                  loading ? 'Gerando áudio…' : isPlaying ? 'Parar áudio' : canRead ? 'Ouvir a reflexão' : 'Ouvir a prévia'
                 }
                 className="group inline-flex items-center gap-2.5 rounded-full pl-3.5 pr-5 py-2.5
                            bg-white text-[#2E261E] text-sm font-semibold
@@ -150,7 +212,7 @@ const TodayReflectionHero: React.FC<TodayReflectionHeroProps> = ({
                     <Volume2 size={16} className="text-[#2E261E]" strokeWidth={2.2} />
                   )}
                 </span>
-                {loading ? 'Preparando…' : isPlaying ? 'Ouvindo' : 'Ouvir'}
+                {loading ? 'Preparando…' : isPlaying ? 'Ouvindo' : canRead ? 'Ouvir' : 'Ouvir prévia'}
               </button>
 
               <button

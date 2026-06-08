@@ -65,7 +65,7 @@ export function useReflectionAudio(source = 'diario') {
   // para o 1º clique em "Ouvir" não cair no cold-start.
   useEffect(() => { warmupVoiceBackend(); }, []);
 
-  const play = useCallback(async (maxim: DailyMaxim, meta?: Record<string, unknown>) => {
+  const play = useCallback(async (maxim: DailyMaxim, meta?: Record<string, unknown>, textOverride?: string) => {
     if (loading) return;
     setLoading(true);
     stop();
@@ -80,7 +80,8 @@ export function useReflectionAudio(source = 'diario') {
     } catch {}
 
     try {
-      const texto = buildReflectionText(maxim);
+      // textOverride: usado para ler só uma prévia (ex.: 40% no modo guest).
+      const texto = textOverride && textOverride.trim() ? textOverride.trim() : buildReflectionText(maxim);
 
       // Streaming progressivo; cai para o buffered (data URL) se o prepare/stream falhar.
       let mediaUrl: string;
@@ -134,11 +135,11 @@ export function useReflectionAudio(source = 'diario') {
     }
   }, [loading, stop, source]);
 
-  /** Alterna: se já está tocando, para; senão toca. */
-  const toggle = useCallback((maxim: DailyMaxim, meta?: Record<string, unknown>) => {
+  /** Alterna: se já está tocando, para; senão toca. textOverride lê só uma prévia. */
+  const toggle = useCallback((maxim: DailyMaxim, meta?: Record<string, unknown>, textOverride?: string) => {
     if (loading) return;
     if (isPlaying) { stop(); return; }
-    void play(maxim, meta);
+    void play(maxim, meta, textOverride);
   }, [loading, isPlaying, stop, play]);
 
   const overlayNode = audioOverlay ? (
