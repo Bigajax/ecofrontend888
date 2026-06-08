@@ -9,10 +9,21 @@ import { useAuth } from '../../contexts/AuthContext';
 import { cancelSubscription, reactivateSubscription } from '../../api/subscription';
 import mixpanel from '../../lib/mixpanel';
 
+type CancelReason = 'expensive' | 'not_using' | 'lack_content' | 'other';
+
+const CANCEL_REASONS: { id: CancelReason; emoji: string; label: string }[] = [
+  { id: 'expensive', emoji: '💸', label: 'Está muito caro' },
+  { id: 'not_using', emoji: '🌱', label: 'Não estou usando' },
+  { id: 'lack_content', emoji: '📭', label: 'Falta conteúdo que me interessa' },
+  { id: 'other', emoji: '🤔', label: 'Outro motivo' },
+];
+
 export default function SubscriptionManagement() {
   const { subscription, isPremiumUser, isTrialActive, trialDaysRemaining, user, refreshSubscription } = useAuth();
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancelReason, setCancelReason] = useState('');
+  const [cancelStep, setCancelStep] = useState<'reason' | 'retention'>('reason');
+  const [selectedReason, setSelectedReason] = useState<CancelReason | null>(null);
+  const [otherReason, setOtherReason] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState('');
   const [isReactivating, setIsReactivating] = useState(false);
@@ -58,8 +69,81 @@ export default function SubscriptionManagement() {
 
   const handleCancelClick = () => {
     setShowCancelModal(true);
+    setCancelStep('reason');
+    setSelectedReason(null);
+    setOtherReason('');
     setCancelError('');
-    setCancelReason('');
+
+    mixpanel.track('Cancel Flow Started', {
+      plan: subscription.plan,
+      user_id: user?.id,
+    });
+  };
+
+  // Texto enviado ao backend e à telemetria
+  const resolvedReason = (() => {
+    if (selectedReason === 'other') {
+      return otherReason.trim() || 'Outro motivo';
+    }
+    return CANCEL_REASONS.find((r) => r.id === selectedReason)?.label || 'Não informado';
+  })();
+
+  const accessUntilLabel = formatDate(
+    subscription.accessUntil || subscription.currentPeriodEnd
+  );
+
+  // Copy de retenção sob medida por motivo
+  const getRetentionContent = (): { title: string; body: string } => {
+    switch (selectedReason) {
+      case 'expensive':
+        return {
+          title: 'Menos de R$ 0,53 por dia',
+          body: `Sua assinatura sai por R$ 15,90/mês — menos que um café. E mesmo cancelando agora, você mantém o acesso premium${accessUntilLabel ? ` até ${accessUntilLabel}` : ' até o fim do período já pago'}.`,
+        };
+      case 'not_using':
+        return {
+          title: 'Seu progresso fica salvo enquanto você é premium',
+          body: 'Que tal voltar com 5 minutos hoje? Seu histórico de humor, favoritos e o caminho que você já trilhou continuam aqui — mas só enquanto a assinatura está ativa.',
+        };
+      case 'lack_content':
+        return {
+          title: 'Tem novidade chegando',
+          body: 'Publicamos conteúdos novos toda semana e os próximos já estão a caminho. Cancelando agora você perde o acesso às meditações, aos programas completos e ao Diário Estoico.',
+        };
+      default:
+        return {
+          title: 'Antes de ir, lembre o que você perde',
+          body: `Ao cancelar você perde o acesso ilimitado às meditações, aos programas completos, ao Diário Estoico e às conversas com a ECO. Você mantém o premium${accessUntilLabel ? ` até ${accessUntilLabel}` : ' até o fim do período já pago'}.`,
+        };
+    }
+  };
+
+  const handleContinueToRetention = () => {
+    if (!selectedReason) return;
+
+    mixpanel.track('Cancel Reason Selected', {
+      plan: subscription.plan,
+      reason: resolvedReason,
+      reason_id: selectedReason,
+      user_id: user?.id,
+    });
+    mixpanel.track('Cancel Retention Shown', {
+      plan: subscription.plan,
+      reason_id: selectedReason,
+      user_id: user?.id,
+    });
+
+    setCancelStep('retention');
+  };
+
+  const handleKeepSubscription = () => {
+    mixpanel.track('Subscription Retained', {
+      plan: subscription.plan,
+      reason: resolvedReason,
+      reason_id: selectedReason,
+      user_id: user?.id,
+    });
+    setShowCancelModal(false);
   };
 
   const handleReactivate = async () => {
@@ -86,7 +170,7 @@ export default function SubscriptionManagement() {
     setCancelError('');
 
     try {
-      await cancelSubscription(cancelReason || 'Não informado');
+      await cancelSubscription(resolvedReason);
 
       // Refresh subscription status
       await refreshSubscription();
@@ -94,7 +178,8 @@ export default function SubscriptionManagement() {
       // Analytics
       mixpanel.track('Subscription Cancelled', {
         plan: subscription.plan,
-        reason: cancelReason || 'Não informado',
+        reason: resolvedReason,
+        reason_id: selectedReason,
         user_id: user?.id,
       });
 
@@ -333,59 +418,113 @@ export default function SubscriptionManagement() {
               onClick={(e) => e.stopPropagation()}
               className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
             >
-              <h3 className="text-xl font-display font-normal text-[var(--eco-text)] mb-3">
-                Cancelar Assinatura
-              </h3>
-              <p className="text-sm text-[var(--eco-muted)] mb-4">
-                Sentiremos sua falta! Você manterá acesso aos recursos premium até o fim do período pago.
-              </p>
+              {/* Passo 1 — Motivo */}
+              {cancelStep === 'reason' && (
+                <>
+                  <h3 className="text-xl font-display font-normal text-[var(--eco-text)] mb-3">
+                    Cancelar Assinatura
+                  </h3>
+                  <p className="text-sm text-[var(--eco-muted)] mb-4">
+                    Antes de você ir, conta pra gente o que motivou a decisão?
+                  </p>
 
-              {/* Reason Input */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-[var(--eco-text)] mb-2">
-                  Motivo do cancelamento (opcional)
-                </label>
-                <textarea
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="Ex: Muito caro, não uso mais..."
-                  className="w-full px-4 py-3 border border-[var(--eco-line)] rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent"
-                  rows={3}
-                  disabled={isCancelling}
-                />
-              </div>
+                  {/* Reason buttons */}
+                  <div className="space-y-2 mb-4">
+                    {CANCEL_REASONS.map((reason) => {
+                      const active = selectedReason === reason.id;
+                      return (
+                        <button
+                          key={reason.id}
+                          type="button"
+                          onClick={() => setSelectedReason(reason.id)}
+                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left text-sm font-medium transition-all duration-200 ${
+                            active
+                              ? 'border-[#6EC8FF] bg-[#6EC8FF]/10 text-[var(--eco-text)]'
+                              : 'border-[var(--eco-line)] text-[var(--eco-text)] hover:bg-gray-50'
+                          }`}
+                        >
+                          <span aria-hidden className="text-lg leading-none">{reason.emoji}</span>
+                          <span>{reason.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-              {/* Error Message */}
-              {cancelError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-                  <p className="text-sm text-red-600">{cancelError}</p>
-                </div>
+                  {/* Other reason textarea */}
+                  {selectedReason === 'other' && (
+                    <div className="mb-4">
+                      <textarea
+                        value={otherReason}
+                        onChange={(e) => setOtherReason(e.target.value)}
+                        placeholder="Conta um pouco mais (opcional)…"
+                        className="w-full px-4 py-3 border border-[var(--eco-line)] rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent"
+                        rows={3}
+                      />
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowCancelModal(false)}
+                      className="flex-1 px-4 py-3 border border-[var(--eco-line)] rounded-xl text-[var(--eco-text)] font-medium hover:bg-gray-50 transition-colors"
+                    >
+                      Voltar
+                    </button>
+                    <button
+                      onClick={handleContinueToRetention}
+                      disabled={!selectedReason}
+                      className="flex-1 px-4 py-3 bg-[#1554F0] rounded-xl text-white font-medium hover:bg-[#1148D6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Continuar
+                    </button>
+                  </div>
+                </>
               )}
 
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowCancelModal(false)}
-                  disabled={isCancelling}
-                  className="flex-1 px-4 py-3 border border-[var(--eco-line)] rounded-xl text-[var(--eco-text)] font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Manter Assinatura
-                </button>
-                <button
-                  onClick={handleCancelConfirm}
-                  disabled={isCancelling}
-                  className="flex-1 px-4 py-3 bg-red-600 rounded-xl text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isCancelling ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Cancelando...</span>
-                    </>
-                  ) : (
-                    <span>Confirmar Cancelamento</span>
+              {/* Passo 2 — Retenção */}
+              {cancelStep === 'retention' && (
+                <>
+                  <h3 className="text-xl font-display font-normal text-[var(--eco-text)] mb-3">
+                    {getRetentionContent().title}
+                  </h3>
+                  <p className="text-sm text-[var(--eco-muted)] mb-5">
+                    {getRetentionContent().body}
+                  </p>
+
+                  {/* Error Message */}
+                  {cancelError && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                      <p className="text-sm text-red-600">{cancelError}</p>
+                    </div>
                   )}
-                </button>
-              </div>
+
+                  {/* Actions */}
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleKeepSubscription}
+                      disabled={isCancelling}
+                      className="w-full px-4 py-3 bg-[#1554F0] rounded-xl text-white font-medium hover:bg-[#1148D6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Manter assinatura
+                    </button>
+                    <button
+                      onClick={handleCancelConfirm}
+                      disabled={isCancelling}
+                      className="w-full px-4 py-3 text-red-600 font-medium hover:bg-red-50 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isCancelling ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Cancelando…</span>
+                        </>
+                      ) : (
+                        <span>Cancelar mesmo assim</span>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
             </motion.div>
           </div>
         )}
