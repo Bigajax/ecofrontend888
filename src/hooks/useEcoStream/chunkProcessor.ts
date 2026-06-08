@@ -53,6 +53,7 @@ export interface ProcessSseHandlers {
   onStart?: (event: Record<string, unknown>) => void;
   onEmpty?: (event: Record<string, unknown>) => void;
   onMemorySaved?: (event: Record<string, unknown>) => void;
+  onMeta?: (event: Record<string, unknown>) => void;
 }
 
 export interface ProcessSseLineOptions {
@@ -235,6 +236,14 @@ export const processSseLine = (
   // Tratar evento 'memory_saved'
   if (normalizedEventKey === "memory_saved" || type === "memory_saved") {
     handlers.onMemorySaved?.(event);
+    return;
+  }
+
+  // Tratar evento 'meta' (carrega a recomendação do Action Engine: acao_recomendada).
+  // O backend envia como `event: meta` — NÃO é classificado como control, então precisa
+  // de rota própria; sem isto o evento era descartado e o card nunca renderizava.
+  if (type === "meta" || normalizedEventKey === "meta") {
+    handlers.onMeta?.(event);
     return;
   }
 

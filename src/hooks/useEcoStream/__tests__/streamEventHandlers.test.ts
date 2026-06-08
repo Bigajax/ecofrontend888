@@ -18,6 +18,7 @@ import {
   handleDone,
   handleError,
   handleControl,
+  handleMeta,
   type DoneContext,
 } from "../streamEventHandlers";
 import type { StreamSharedContext } from "../types";
@@ -226,6 +227,26 @@ describe("streamEventHandlers", () => {
     // Guarda em campo dedicado para sobreviver à finalização (done)
     expect((context.streamStats as any).acaoRecomendada).toEqual(acao);
     // E grava na metadata da mensagem ativa para o card aparecer já durante o stream
+    const [message] = messagesRef();
+    expect((message.metadata as any)?.acao_recomendada).toEqual(acao);
+  });
+
+  it("handleMeta extrai acao_recomendada do envelope { data } do evento SSE meta", () => {
+    const { context, messagesRef } = createBaseContext();
+    const acao = { id: "meditacao", titulo: "Uma pausa para desacelerar", cta: "Respirar por 5 minutos" };
+
+    // Shape real do evento após processSseLine: o JSON do `event: meta` vira o próprio event,
+    // com `data` na raiz (sendMeta → { type, streamId, data: {...} }), sem wrapper `payload`.
+    handleMeta(
+      {
+        type: "meta",
+        streamId: "s1",
+        data: { acao_recomendada: acao },
+      } as any,
+      context,
+    );
+
+    expect((context.streamStats as any).acaoRecomendada).toEqual(acao);
     const [message] = messagesRef();
     expect((message.metadata as any)?.acao_recomendada).toEqual(acao);
   });

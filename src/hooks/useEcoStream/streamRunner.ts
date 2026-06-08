@@ -40,6 +40,7 @@ import {
   handleDone,
   handleError,
   handleControl,
+  handleMeta,
   handleMemorySaved,
 } from "./streamEventHandlers";
 import type { DoneContext } from "./streamEventHandlers";
@@ -1713,6 +1714,7 @@ const createFallbackOrchestration = (): FallbackOrchestration => {
           onStart: (event) => handleStartEvent(event),
           onEmpty: (event) => handleEmptyEvent(event),
           onMemorySaved: (event) => handleMemorySavedEvent(event),
+          onMeta: (event) => handleMeta(event, sharedContext),
         };
 
         const findEventDelimiter = (input: string): { index: number; length: number } | null => {

@@ -33,6 +33,72 @@ export interface DoneContext extends StreamSharedContext {
 }
 
 /**
+ * Procura `acao_recomendada` em qualquer aninhamento do payload do evento meta. O backend
+ * (sseEvents.sendMeta) serializa como `{ type, streamId, data: { acao_recomendada } }`, mas
+ * toleramos também meta/metadata/raiz para resiliência a variações do contrato.
+ */
+const findAcaoRecomendada = (...sources: unknown[]): Record<string, unknown> | undefined => {
+  const seen = new Set<unknown>();
+  const visit = (value: unknown, depth: number): Record<string, unknown> | undefined => {
+    if (!value || typeof value !== "object" || depth > 4 || seen.has(value)) return undefined;
+    seen.add(value);
+    const rec = value as Record<string, unknown>;
+    const direct = rec.acao_recomendada;
+    if (direct && typeof direct === "object" && !Array.isArray(direct)) {
+      return direct as Record<string, unknown>;
+    }
+    for (const key of ["data", "meta", "metadata", "payload", "response"]) {
+      const nested = visit(rec[key], depth + 1);
+      if (nested) return nested;
+    }
+    return undefined;
+  };
+  for (const source of sources) {
+    const found = visit(source, 0);
+    if (found) return found;
+  }
+  return undefined;
+};
+
+/**
+ * Anexa a recomendação do Action Engine à mensagem assistente ativa (ou à última da Eco) para
+ * o card renderizar, e guarda em `streamStats.acaoRecomendada` para sobreviver à finalização.
+ */
+const attachAcaoRecomendada = (context: StreamSharedContext, acao: Record<string, unknown>): void => {
+  context.streamStats.acaoRecomendada = acao;
+  context.setMessages((prev) => {
+    const targetId =
+      context.activeAssistantIdRef.current ??
+      [...prev].reverse().find((m) => (m as { sender?: string }).sender === "eco")?.id ??
+      null;
+    if (!targetId) return prev;
+    return prev.map((message) =>
+      message.id === targetId
+        ? {
+            ...message,
+            metadata: {
+              ...((message.metadata as Record<string, unknown> | undefined) ?? {}),
+              acao_recomendada: acao,
+            },
+          }
+        : message,
+    );
+  });
+};
+
+/**
+ * Handler do evento SSE `meta` (rota dedicada). O backend envia a recomendação do Action Engine
+ * aqui (`event: meta` → payload.data.acao_recomendada); o chunkProcessor NÃO roteia isso como
+ * `control`, então precisamos de um handler próprio para o card aparecer.
+ */
+export const handleMeta = (event: Record<string, unknown> | undefined, context: StreamSharedContext) => {
+  if (!event) return;
+  const payload = toRecordSafe(event.payload);
+  const acao = findAcaoRecomendada(payload, event);
+  if (acao) attachAcaoRecomendada(context, acao);
+};
+
+/**
  * Preserva a recomendação do Action Engine (capturada do evento meta em `streamStats.acaoRecomendada`)
  * na metadata final da mensagem, caso o `done` não a traga. Garante que o card de "próximo passo"
  * sobreviva à finalização independentemente da ordem dos eventos meta/done.
@@ -576,47 +642,11 @@ export const handleControl = (event: EcoStreamControlEvent, context: StreamShare
     }
     if (meta) {
       applyMetaToStreamStats(context.streamStats, meta);
-
-      // Action Engine: o backend envia a recomendação ("próximo passo") como meta.acao_recomendada.
-      // Anexamos à metadata da mensagem assistente ativa para o card renderizar (AcaoRecomendadaCard
-      // lê de message.metadata.acao_recomendada). Funciona mesmo se o meta chegar depois do done.
-      // Busca tolerante a diferentes aninhamentos do evento (meta | payload.meta | event | payload).
-      const pickAcao = (rec: unknown): Record<string, unknown> | undefined => {
-        const r = toRecordSafe(rec);
-        const value = r?.acao_recomendada;
-        return value && typeof value === "object" && !Array.isArray(value)
-          ? (value as Record<string, unknown>)
-          : undefined;
-      };
-      const acao =
-        pickAcao(meta) ??
-        pickAcao(payloadRecord) ??
-        pickAcao((payloadRecord as { meta?: unknown } | undefined)?.meta) ??
-        pickAcao(eventRecord) ??
-        pickAcao((eventRecord as { meta?: unknown } | undefined)?.meta);
-      if (acao) {
-        // Guarda em campo dedicado (lastMeta pode ser sobrescrito por outros eventos meta).
-        context.streamStats.acaoRecomendada = acao;
-        context.setMessages((prev) => {
-          const targetId =
-            context.activeAssistantIdRef.current ??
-            [...prev].reverse().find((m) => (m as { sender?: string }).sender === "eco")?.id ??
-            null;
-          if (!targetId) return prev;
-          return prev.map((message) =>
-            message.id === targetId
-              ? {
-                  ...message,
-                  metadata: {
-                    ...((message.metadata as Record<string, unknown> | undefined) ?? {}),
-                    acao_recomendada: acao,
-                  },
-                }
-              : message,
-          );
-        });
-      }
     }
+    // Defensivo: se algum contrato enviar a recomendação por um evento de controle (em vez do
+    // evento `meta` dedicado), ainda capturamos. O caminho normal é handleMeta.
+    const acao = findAcaoRecomendada(meta, payloadRecord, eventRecord);
+    if (acao) attachAcaoRecomendada(context, acao);
   }
 
   if (resolvedName === "done") {
