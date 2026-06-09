@@ -7,8 +7,11 @@ vi.mock("react-router-dom", async (orig) => ({
   ...(await orig<typeof import("react-router-dom")>()),
   useNavigate: () => navigate,
 }));
+const { authState } = vi.hoisted(() => ({
+  authState: { user: null as null | { id: string } },
+}));
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: null, register: vi.fn(), signInWithGoogle: vi.fn() }),
+  useAuth: () => ({ user: authState.user, register: vi.fn(), signInWithGoogle: vi.fn() }),
 }));
 vi.mock("@mercadopago/sdk-react", () => ({ initMercadoPago: vi.fn(), CardPayment: () => <div>brick</div> }));
 vi.mock("@/lib/supabaseClient", () => ({
@@ -32,6 +35,7 @@ function renderAt(path: string) {
 
 beforeEach(() => {
   sessionStorage.clear();
+  authState.user = null;
 });
 
 // ── Existing tests (updated to use ?step=plan explicitly, intent unchanged) ──
@@ -53,6 +57,17 @@ describe("AssinarPage", () => {
     renderAt("/assinar?step=plan");
     fireEvent.click(screen.getByRole("button", { name: /comece seu teste gratuito/i }));
     expect(screen.getByRole("button", { name: /criar uma conta/i })).toBeInTheDocument();
+  });
+
+  // Regressão: ao concluir o signup o userId muda e o RootProviders remonta a árvore,
+  // resetando o step pra ?step=signup. Se o usuário já está autenticado, a página deve
+  // pular o formulário e ir direto pro cartão (e não voltar pro form vazio).
+  it("skips the signup form straight to the card step when already authenticated", async () => {
+    authState.user = { id: "user-123" };
+    renderAt("/assinar?step=signup");
+    await waitFor(() => {
+      expect(screen.getByText(/Selecione o método de pagamento/i)).toBeInTheDocument();
+    });
   });
 });
 

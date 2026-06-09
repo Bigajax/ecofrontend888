@@ -81,6 +81,14 @@ export default function AssinarPage() {
     return () => { cancelled = true; };
   }, [step, user]);
 
+  // Após o signup criar a sessão, o userId muda e o RootProviders remonta a árvore
+  // (ChatProvider/RingsProvider são chaveados por userId), resetando o step pra URL
+  // (?step=signup) e atropelando o setStep("card") do onCreated. Aqui recuperamos:
+  // se o usuário já está autenticado mas o step ficou em "signup", avança pro cartão.
+  useEffect(() => {
+    if (user && step === "signup") setStep("card");
+  }, [user, step]);
+
   const selectPlan = (next: PlanId) => {
     setPlan(next);
     const p = new URLSearchParams(params);
