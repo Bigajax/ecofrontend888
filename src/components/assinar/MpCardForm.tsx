@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { initMercadoPago, CardPayment } from "@mercadopago/sdk-react";
 
 const MP_PUBLIC_KEY = import.meta.env.VITE_MP_PUBLIC_KEY as string | undefined;
@@ -17,7 +17,7 @@ interface MpCardFormProps {
   onError?: (message: string) => void;
 }
 
-export function MpCardForm({ amount, maxInstallments, onToken, onError }: MpCardFormProps) {
+function MpCardFormImpl({ amount, maxInstallments, onToken, onError }: MpCardFormProps) {
   ensureMpInit();
   const initialization = useMemo(() => ({ amount, payer: { email: "" } }), [amount]);
   const customization = useMemo(
@@ -41,3 +41,10 @@ export function MpCardForm({ amount, maxInstallments, onToken, onError }: MpCard
     />
   );
 }
+
+// React.memo: o brick do MP não tolera ser recriado. A AssinarPage re-renderiza
+// a cada notificação de auth do Supabase (refresh/recover de token); sem o memo,
+// o CardPayment reinicializa em loop e os Secure Fields falham
+// (fields_setup_failed_after_3_tries). Com props estáveis (ver useCallback em
+// AssinarPage), o memo garante que ele monte uma única vez.
+export const MpCardForm = memo(MpCardFormImpl);

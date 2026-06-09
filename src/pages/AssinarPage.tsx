@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiUrl } from "@/config/apiBase";
@@ -108,7 +108,9 @@ export default function AssinarPage() {
 
   const continueFromPlan = () => setStep(user ? "card" : "signup");
 
-  const handleToken = async (formData: Record<string, unknown>) => {
+  // useCallback com identidade estável (só muda com o plano): evita que o brick do
+  // MercadoPago seja recriado a cada re-render da página (ver React.memo em MpCardForm).
+  const handleToken = useCallback(async (formData: Record<string, unknown>) => {
     setErro(null);
     setProcessing(true);
     try {
@@ -129,7 +131,7 @@ export default function AssinarPage() {
     } finally {
       setProcessing(false);
     }
-  };
+  }, [plan, navigate]);
 
   const googleReturnTo = `/assinar?plan=${plan}&step=card`;
 
