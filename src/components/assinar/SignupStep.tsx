@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  trackSignupViewed,
+  trackSignupSubmitted,
+  trackSignupCompleted,
+  trackSignupFailed,
+} from "@/lib/mixpanelAssinarFunnel";
 
 interface SignupStepProps {
   onCreated: () => void;           // session is ready (no email confirmation needed)
@@ -25,6 +31,10 @@ export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
   const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
 
+  useEffect(() => {
+    trackSignupViewed();
+  }, []);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
@@ -34,27 +44,34 @@ export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
     if (!aceito) return setErro("É preciso aceitar os Termos para continuar.");
 
     setLoading(true);
+    trackSignupSubmitted({ method: "email", opted_newsletter: novidades === "sim" });
     try {
       const fullName = [nome.trim(), sobrenome.trim()].filter(Boolean).join(" ");
       const { needsConfirmation } = await register(email.trim(), senha, fullName, "");
+      trackSignupCompleted({ method: "email", needs_confirmation: needsConfirmation });
       if (needsConfirmation) {
         setInfo("Enviamos um e-mail de confirmação. Confirme para continuar a assinatura.");
         return;
       }
       onCreated();
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Não foi possível criar a conta.");
+      const message = err instanceof Error ? err.message : "Não foi possível criar a conta.";
+      trackSignupFailed({ method: "email", error_message: message });
+      setErro(message);
     } finally {
       setLoading(false);
     }
   };
 
   const google = async () => {
+    trackSignupSubmitted({ method: "google" });
     try {
       sessionStorage.setItem("eco.assinar.returnTo", googleReturnTo);
       await signInWithGoogle();
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Falha ao entrar com Google.");
+      const message = err instanceof Error ? err.message : "Falha ao entrar com Google.";
+      trackSignupFailed({ method: "google", error_message: message });
+      setErro(message);
     }
   };
 

@@ -195,6 +195,7 @@ export default function EcotopiaSonoPage() {
   // iniciar o trial. Dispara antes da navegação (SPA) do <Link> para /assinar,
   // então o fetch do CAPI não é cancelado por unload.
   const trackTrialCta = (plan: 'annual' | 'monthly', from: string) => {
+    mixpanel.track('Sono CTA Clicked', { plan, placement: from });
     void trackWithCAPI('InitiateCheckout', {
       value: planValue(plan),
       currency: PRICE.currency,

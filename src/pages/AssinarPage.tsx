@@ -19,6 +19,24 @@ import {
   getStoredResponseId,
   clearStoredResponseId,
 } from "@/utils/onboardingObjetivosStorage";
+import { PRICE } from "@/constants/offerCopy";
+import {
+  registerAssinarFunnel,
+  trackAssinarFunnelStarted,
+  trackAssinarStepViewed,
+  trackAssinarGoalsSubmitted,
+  trackAssinarPlanConfirmed,
+  trackCheckoutCardViewed,
+  trackCheckoutCardSubmitted,
+  trackCheckoutCardFailed,
+} from "@/lib/mixpanelAssinarFunnel";
+import {
+  trackPremiumScreenViewed,
+  trackPremiumCardClicked,
+} from "@/lib/mixpanelConversionEvents";
+
+const PLAN_LABEL: Record<PlanId, string> = { monthly: "Mensal", annual: "Anual" };
+const planAmount = (plan: PlanId): number => (plan === "monthly" ? PRICE.monthly : PRICE.annualTotal);
 
 type Step = "goals" | "validation" | "plan" | "signup" | "card";
 
@@ -53,6 +71,43 @@ export default function AssinarPage() {
   // Usa scrollToTop() (não só window) porque no mobile o scroller é o #root.
   useEffect(() => {
     scrollToTop();
+  }, [step]);
+
+  // Mount: registra a origem do funil (?from= do CTA da landing) como super
+  // property, então todo evento subsequente — inclusive Subscription Paid no
+  // callback — herda `funnel_source`. sessionStorage é backstop caso o
+  // RootProviders remonte e a URL perca o param.
+  useEffect(() => {
+    const from = params.get("from") || sessionStorage.getItem("eco.assinar.from") || "direct";
+    sessionStorage.setItem("eco.assinar.from", from);
+    registerAssinarFunnel(from);
+    trackAssinarFunnelStarted({ entry_step: step, plan });
+    // Só no mount — entrada no funil é evento único.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Funnel: view de cada step (centralizado aqui, não nos componentes filhos).
+  // Depende só de `step` — view é emitido uma vez por entrada no step, não a
+  // cada toggle de plano. No step "plan", também reusa Premium Screen Viewed
+  // (intenção de topo); o toggle mensal/anual é capturado em selectPlan.
+  useEffect(() => {
+    trackAssinarStepViewed(step);
+    if (step === "plan") {
+      trackPremiumScreenViewed({
+        plan_id: plan,
+        plan_label: PLAN_LABEL[plan],
+        price: planAmount(plan),
+        screen: "assinar_plan",
+        placement: "assinar",
+        is_guest: !user,
+        user_id: user?.id,
+      });
+    }
+    if (step === "card") {
+      trackCheckoutCardViewed({ plan_id: plan, amount: planAmount(plan) });
+    }
+    // plan/user lidos no momento do fire; view não deve re-disparar com eles.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
   // Sincroniza step na URL (?step=…) sempre que muda
@@ -94,9 +149,20 @@ export default function AssinarPage() {
     const p = new URLSearchParams(params);
     p.set("plan", next);
     setParams(p, { replace: true });
+    trackPremiumCardClicked({
+      plan_id: next,
+      plan_label: PLAN_LABEL[next],
+      price: planAmount(next),
+      currency: "BRL",
+      screen: "assinar_plan",
+      placement: "assinar",
+      is_guest: !user,
+      user_id: user?.id,
+    });
   };
 
   const submitObjetivos = async (answers: GoalId[], skipped: boolean, nextStep: Step) => {
+    trackAssinarGoalsSubmitted({ answers_count: answers.length, skipped });
     setStoredObjetivos({ answers, skipped });
     setStep(nextStep);
     const result = await saveObjetivos({ answers, skipped });
@@ -106,13 +172,17 @@ export default function AssinarPage() {
   const handleGoalsContinue = (answers: GoalId[]) => { void submitObjetivos(answers, false, "validation"); };
   const handleGoalsSkip = () => { void submitObjetivos([], true, "plan"); };
 
-  const continueFromPlan = () => setStep(user ? "card" : "signup");
+  const continueFromPlan = () => {
+    trackAssinarPlanConfirmed({ plan_id: plan, is_authenticated: !!user });
+    setStep(user ? "card" : "signup");
+  };
 
   // useCallback com identidade estável (só muda com o plano): evita que o brick do
   // MercadoPago seja recriado a cada re-render da página (ver React.memo em MpCardForm).
   const handleToken = useCallback(async (formData: Record<string, unknown>) => {
     setErro(null);
     setProcessing(true);
+    trackCheckoutCardSubmitted({ plan_id: plan, amount: planAmount(plan) });
     try {
       const res = await fetch(apiUrl("/api/subscription/create-with-card"), {
         method: "POST",
@@ -127,7 +197,9 @@ export default function AssinarPage() {
       // Frontend não escreve em usuarios.tipo_plano direto pra evitar race conditions.
       navigate("/app/subscription/callback");
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Erro inesperado.");
+      const message = err instanceof Error ? err.message : "Erro inesperado.";
+      trackCheckoutCardFailed({ plan_id: plan, error_message: message });
+      setErro(message);
     } finally {
       setProcessing(false);
     }
