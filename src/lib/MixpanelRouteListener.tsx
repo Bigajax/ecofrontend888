@@ -10,7 +10,7 @@ export default function MixpanelRouteListener() {
     const { pathname, search } = location;
 
     mixpanel.register({ last_page: pathname });
-    mixpanel.track('Front-end: Page View', {
+    mixpanel.track('App · Page view', {
       path: pathname,
       search
     });

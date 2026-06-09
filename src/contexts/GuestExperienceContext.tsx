@@ -209,7 +209,7 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
 
       // Enviar para Mixpanel
       if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
-        mixpanel.track('Guest Page View', {
+        mixpanel.track('Convidado · Page view', {
           page: path,
           guest_id: guestId,
           total_time_ms: state.totalTimeMs,
@@ -234,7 +234,7 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
 
       // Enviar para Mixpanel
       if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
-        mixpanel.track('Guest Interaction', {
+        mixpanel.track('Convidado · Interação', {
           type,
           ...metadata,
           guest_id: guestId,
@@ -268,7 +268,7 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
       }));
 
       if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
-        mixpanel.track('Guest Long Message', {
+        mixpanel.track('Convidado · Mensagem longa', {
           message_length: length,
           long_messages_count: state.longMessagesCount + 1,
           guest_id: guestId,
@@ -290,7 +290,7 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
       }));
 
       if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
-        mixpanel.track('Guest Deep Scroll', {
+        mixpanel.track('Convidado · Scroll profundo', {
           scroll_depth: depth,
           deep_scroll_count: state.deepScrollCount + 1,
           guest_id: guestId,
@@ -309,7 +309,7 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
     }));
 
     if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
-      mixpanel.track('Guest Favorite Attempt', {
+      mixpanel.track('Convidado · Tentou favoritar', {
         favorite_attempts: state.favoriteAttempts + 1,
         guest_id: guestId,
       });
@@ -325,7 +325,7 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
     }));
 
     if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
-      mixpanel.track('Guest Voice Usage', {
+      mixpanel.track('Convidado · Uso de voz', {
         voice_usage_count: state.voiceUsageCount + 1,
         guest_id: guestId,
       });
@@ -341,7 +341,7 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
     }));
 
     if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
-      mixpanel.track('Guest TTS Play', {
+      mixpanel.track('Convidado · TTS tocado', {
         tts_play_count: state.ttsPlayCount + 1,
         guest_id: guestId,
       });
@@ -357,7 +357,7 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
     }));
 
     if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
-      mixpanel.track('Guest Profile Click', {
+      mixpanel.track('Convidado · Perfil clicado', {
         profile_click_count: state.profileClickCount + 1,
         guest_id: guestId,
       });
@@ -393,7 +393,7 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
     }));
 
     if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
-      mixpanel.track('Guest Signup Modal Shown', {
+      mixpanel.track('Convidado · Modal cadastro exibido', {
         trigger: state.totalTimeMs >= state.timeLimitMs ? 'time' : 'interactions',
         time_spent_ms: state.totalTimeMs,
         time_spent_minutes: Math.floor(state.totalTimeMs / 60000),
@@ -420,7 +420,7 @@ export function GuestExperienceProvider({ children }: { children: React.ReactNod
     }));
 
     if (GUEST_EXPERIENCE_FEATURES.SEND_TO_MIXPANEL) {
-      mixpanel.track('Guest Signup Modal - Continued', {
+      mixpanel.track('Convidado · Modal cadastro continuou', {
         time_spent_ms: state.totalTimeMs,
         time_spent_minutes: Math.floor(state.totalTimeMs / 60000),
         interaction_count: state.interactionCount,

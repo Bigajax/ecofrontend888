@@ -129,7 +129,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     sessionStorage.setItem('eco.sono.source', source || 'sono_paid_traffic');
     const resolvedSource = source || 'sono_paid_traffic';
     const track = () => {
-      mixpanel.track('Sleep Guest Page Viewed', { source: resolvedSource, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
+      mixpanel.track('Funil Protocolo · Experiência vista', { source: resolvedSource, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
       trackSonoGuestPageViewed({ source: resolvedSource, guestId });
     };
     if ('requestIdleCallback' in window) requestIdleCallback(track);
@@ -176,7 +176,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
           if (!localStorage.getItem(offerKey)) {
             setShowPostFlow(true);
             localStorage.setItem(offerKey, 'true');
-            mixpanel.track('Sleep Free Experience Completed', { night_id: 'night_1', source, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
+            mixpanel.track('Funil Protocolo · Experiência concluída', { night_id: 'night_1', source, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
             trackSonoGuestNight1Completed({ source: source || 'sono_paid_traffic', guestId });
           }
         }
@@ -221,7 +221,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     sessionStorage.setItem('eco.sono.guest_id', guestId);
     sessionStorage.setItem('eco.sono.source', source || 'sono_paid_traffic');
     trackSonoGuestNight1Started({ source: source || 'sono_paid_traffic', guestId });
-    mixpanel.track('Sleep Free Experience Started', {
+    mixpanel.track('Funil Protocolo · Experiência iniciada', {
       night_id: 'night_1',
       source: source || 'sono_paid_traffic',
       guest_id: guestId,
@@ -239,7 +239,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     setShowPostFlow(true);
     localStorage.setItem(`eco.sono.offer_modal_shown.${guestId}`, 'true');
     trackSonoGuestNight1Completed({ source: source || 'sono_paid_traffic', guestId });
-    mixpanel.track('Sleep Free Experience Completed', {
+    mixpanel.track('Funil Protocolo · Experiência concluída', {
       night_id: 'night_1',
       source: source || 'sono_paid_traffic',
       guest_id: guestId,

@@ -71,7 +71,7 @@ const MemoryPage: React.FC = () => {
   }, [tab]);
 
   const goTab = (target: TabKey) => {
-    mixpanel.track('Front-end: Memory Tab', { target, previous: activeTab });
+    mixpanel.track('Memória · Aba', { target, previous: activeTab });
     if (target === 'report') {
       startReportTiming();
     }
@@ -102,7 +102,7 @@ const MemoryPage: React.FC = () => {
 
   const handleEmoFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
-    mixpanel.track('Front-end: UI Interação', {
+    mixpanel.track('Memória · UI interação', {
       control: 'emotion-filter',
       value,
       activeTab,
@@ -113,7 +113,7 @@ const MemoryPage: React.FC = () => {
 
   const handleQueryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
-    mixpanel.track('Front-end: UI Interação', {
+    mixpanel.track('Memória · UI interação', {
       control: 'memory-search',
       value,
       activeTab,
@@ -124,7 +124,7 @@ const MemoryPage: React.FC = () => {
 
   const handleIntensityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(event.target.value);
-    mixpanel.track('Front-end: UI Interação', {
+    mixpanel.track('Memória · UI interação', {
       control: 'intensity-filter',
       value,
       activeTab,
@@ -134,7 +134,7 @@ const MemoryPage: React.FC = () => {
   };
 
   const handleResetFilters = () => {
-    mixpanel.track('Front-end: UI Interação', {
+    mixpanel.track('Memória · UI interação', {
       control: 'reset-filters',
       activeTab,
       filteredCount: filteredMemories.length,
@@ -147,12 +147,12 @@ const MemoryPage: React.FC = () => {
       startReportTiming();
 
       if (!loading && !hasTrackedReportOpenRef.current) {
-        mixpanel.track('Front-end: Relatório Aberto', { hasData: Boolean(relatorio) });
+        mixpanel.track('Memória · Relatório aberto', { hasData: Boolean(relatorio) });
         hasTrackedReportOpenRef.current = true;
       }
 
       if (!loading && reportTimingActiveRef.current) {
-        mixpanel.track('Front-end: Relatório Carregado', { hasData: Boolean(relatorio) });
+        mixpanel.track('Memória · Relatório carregado', { hasData: Boolean(relatorio) });
         reportTimingActiveRef.current = false;
       }
     } else {

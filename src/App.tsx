@@ -269,7 +269,7 @@ function SonoGuestShell() {
 
 function AppRoutes() {
   useEffect(() => {
-    mixpanel.track("App iniciado", { origem: "App.tsx", data: new Date().toISOString() });
+    mixpanel.track("App · Iniciado", { origem: "App.tsx", data: new Date().toISOString() });
   }, []);
 
   return (
@@ -566,7 +566,7 @@ function AppChrome() {
         markModalShown();
 
         // Analytics
-        mixpanel.track('Guest Signup Modal Shown', {
+        mixpanel.track('Convidado · Modal cadastro exibido', {
           trigger: state.totalTimeMs >= state.timeLimitMs ? 'time' : 'interactions',
           time_spent_ms: state.totalTimeMs,
           time_spent_minutes: Math.floor(state.totalTimeMs / 60000),
@@ -592,7 +592,7 @@ function AppChrome() {
 
   // Handlers do modal
   const handleGuestSignup = () => {
-    mixpanel.track('Guest Signup Modal - Signup Clicked', {
+    mixpanel.track('Convidado · Modal cadastro signup', {
       time_spent_ms: state.totalTimeMs,
       time_spent_minutes: Math.floor(state.totalTimeMs / 60000),
       interaction_count: state.interactionCount,
@@ -605,7 +605,7 @@ function AppChrome() {
   };
 
   const handleGuestContinue = () => {
-    mixpanel.track('Guest Signup Modal - Continued', {
+    mixpanel.track('Convidado · Modal cadastro continuou', {
       time_spent_ms: state.totalTimeMs,
       time_spent_minutes: Math.floor(state.totalTimeMs / 60000),
       interaction_count: state.interactionCount,

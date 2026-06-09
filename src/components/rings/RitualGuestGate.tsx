@@ -29,7 +29,7 @@ export default function RitualGuestGate({
 
   const handleCreateAccount = () => {
     // Track click
-    mixpanel.track('Guest Rings Gate: Continue Clicked', {
+    mixpanel.track('Convidado · Gate anéis continuar', {
       current_day: currentDay,
       completed_rings: completedRings,
       blocked_at: 'fire_ring',
@@ -41,7 +41,7 @@ export default function RitualGuestGate({
 
   const handleBack = () => {
     // Track dismiss
-    mixpanel.track('Guest Rings Gate: Back Clicked', {
+    mixpanel.track('Convidado · Gate anéis voltar', {
       current_day: currentDay,
       completed_rings: completedRings,
     });

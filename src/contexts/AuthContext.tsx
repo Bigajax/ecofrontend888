@@ -274,7 +274,7 @@ export async function migrateGuestData(newUserId: string): Promise<PreservedData
     }
 
     // 6. Track sucesso migração
-    mixpanel.track('Guest Data Migrated', {
+    mixpanel.track('Convidado · Dados migrados', {
       guestId,
       newUserId,
       chat_messages: preservedData.chatMessages || 0,
@@ -887,7 +887,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Track analytics
       mixpanel.identify(`guest_${newGuestId}`);
-      mixpanel.track('Guest Mode Activated', {
+      mixpanel.track('Convidado · Modo ativado', {
         guestId: newGuestId,
         timestamp: new Date().toISOString(),
       });

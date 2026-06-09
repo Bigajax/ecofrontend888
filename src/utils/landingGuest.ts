@@ -45,7 +45,7 @@ export function createGuestSession(source = 'landing'): GuestUser {
   } catch {}
 
   try {
-    mixpanel.track('Guest Session Started', {
+    mixpanel.track('Convidado · Sessão iniciada', {
       source,
       guestId: guest.id,
       timestamp: guest.createdAt,

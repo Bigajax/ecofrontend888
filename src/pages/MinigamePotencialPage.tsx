@@ -392,7 +392,7 @@ export default function MinigamePotencialPage() {
 
               <button
                 onClick={() => {
-                  mixpanel.track('Guest Minigame Completed', {
+                  mixpanel.track('Funil Potencial · Minigame concluído', {
                     source: 'minigame_potencial',
                     guestId: guestUser?.id ?? null,
                     timestamp: new Date().toISOString(),

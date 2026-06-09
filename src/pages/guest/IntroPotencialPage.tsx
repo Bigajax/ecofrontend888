@@ -24,7 +24,7 @@ export default function IntroPotencialPage() {
   const { guestUser, initGuestSession } = useGuest();
 
   useEffect(() => {
-    mixpanel.track('Guest Intro Viewed', {
+    mixpanel.track('Funil Potencial · Intro vista', {
       source: 'landing',
       guestId: guestUser?.id ?? null,
       timestamp: new Date().toISOString(),
@@ -37,7 +37,7 @@ export default function IntroPotencialPage() {
 
   function handleStart() {
     initGuestSession('intro_potencial');
-    mixpanel.track('Guest Intro Continued', {
+    mixpanel.track('Funil Potencial · Intro continuou', {
       source: 'intro_potencial',
       guestId: guestUser?.id ?? null,
       timestamp: new Date().toISOString(),

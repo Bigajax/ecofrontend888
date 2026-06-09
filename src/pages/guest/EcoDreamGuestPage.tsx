@@ -122,7 +122,7 @@ export default function EcoDreamGuestPage() {
       'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap';
     document.head.appendChild(link);
 
-    mixpanel.track('Dream Guest Viewed', {
+    mixpanel.track('Funil Sonho · Visto', {
       guestId: guestUser?.id ?? null,
       timestamp: new Date().toISOString(),
     });
@@ -159,7 +159,7 @@ export default function EcoDreamGuestPage() {
   useEffect(() => {
     if (showCapture && !captureTrackedRef.current) {
       captureTrackedRef.current = true;
-      mixpanel.track('Dream Capture Shown', {
+      mixpanel.track('Funil Sonho · Captura exibida', {
         guestId: guestUser?.id ?? null,
         timestamp: new Date().toISOString(),
       });
@@ -168,7 +168,7 @@ export default function EcoDreamGuestPage() {
   }, [showCapture, guestUser?.id]);
 
   const handleInterpret = () => {
-    mixpanel.track('Dream Submitted', {
+    mixpanel.track('Funil Sonho · Enviado', {
       guestId: guestUser?.id ?? null,
       length: dreamText.trim().length,
       timestamp: new Date().toISOString(),
@@ -178,7 +178,7 @@ export default function EcoDreamGuestPage() {
 
   useEffect(() => {
     if (isDone && hasInterpretation) {
-      mixpanel.track('Dream Interpreted', {
+      mixpanel.track('Funil Sonho · Interpretado', {
         guestId: guestUser?.id ?? null,
         timestamp: new Date().toISOString(),
       });
@@ -195,7 +195,7 @@ export default function EcoDreamGuestPage() {
       return;
     }
     setIsSubmitting(true);
-    mixpanel.track('Dream Signup Started', {
+    mixpanel.track('Funil Sonho · Cadastro iniciado', {
       guestId: guestUser?.id ?? null,
       from: 'sonhos_guest',
       timestamp: new Date().toISOString(),
@@ -203,7 +203,7 @@ export default function EcoDreamGuestPage() {
     try {
       const nome = email.split('@')[0];
       const { needsConfirmation } = await register(email.trim(), password, nome, '');
-      mixpanel.track('Dream Signup Completed', {
+      mixpanel.track('Funil Sonho · Cadastro concluído', {
         guestId: guestUser?.id ?? null,
         needs_confirmation: needsConfirmation,
         from: 'sonhos_guest',
@@ -222,7 +222,7 @@ export default function EcoDreamGuestPage() {
   };
 
   const handleGoogle = () => {
-    mixpanel.track('Dream Signup Google Clicked', {
+    mixpanel.track('Funil Sonho · Cadastro Google', {
       guestId: guestUser?.id ?? null,
       timestamp: new Date().toISOString(),
     });

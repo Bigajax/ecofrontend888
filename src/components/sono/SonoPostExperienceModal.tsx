@@ -105,7 +105,7 @@ export function SonoPostExperienceModal({
 
   useEffect(() => {
     if (!open) return;
-    mixpanel.track('Sleep Offer Viewed', {
+    mixpanel.track('Funil Protocolo · Modal oferta vista', {
       guest_id: guestId,
       source,
       product_key: PRODUCT_KEY,
@@ -131,7 +131,7 @@ export function SonoPostExperienceModal({
   const handleAnswer = (selectedAnswer: SonoMicroAnswer) => {
     setAnswer(selectedAnswer);
     localStorage.setItem(`eco.sono.guest.micro_answer.${guestId}`, selectedAnswer);
-    mixpanel.track('Sleep Micro Quiz Answered', {
+    mixpanel.track('Funil Protocolo · Quiz respondido', {
       guest_id: guestId,
       answer: selectedAnswer,
       source: 'quiz_sono_guest',
@@ -141,7 +141,7 @@ export function SonoPostExperienceModal({
   };
 
   const handleCheckout = () => {
-    mixpanel.track('Sleep Offer CTA Clicked', {
+    mixpanel.track('Funil Protocolo · Modal oferta CTA', {
       guest_id: guestId,
       source,
       product_key: PRODUCT_KEY,
@@ -156,7 +156,7 @@ export function SonoPostExperienceModal({
   };
 
   const handleClose = () => {
-    mixpanel.track('Sleep Offer Dismissed', {
+    mixpanel.track('Funil Protocolo · Modal oferta dispensada', {
       guest_id: guestId,
       source,
       product_key: PRODUCT_KEY,

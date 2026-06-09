@@ -83,7 +83,7 @@ export default function DrJoePreviewPage() {
 
   // ── Tracking: page view ───────────────────────────────────────────────────
   useEffect(() => {
-    mixpanel.track('Guest Dr Joe Preview Viewed', {
+    mixpanel.track('Funil Dr Joe · Preview visto', {
       source:    'minigame_completion',
       guestId:   guestUser?.id ?? null,
       timestamp: new Date().toISOString(),
@@ -114,7 +114,7 @@ export default function DrJoePreviewPage() {
         audio.pause();
         window.clearInterval(intervalRef.current!);
 
-        mixpanel.track('Guest Practice Cut', {
+        mixpanel.track('Funil Dr Joe · Prática cortada', {
           source:          'dr_joe_preview',
           guestId:         guestUser?.id ?? null,
           elapsed_seconds: Math.round(t),
@@ -137,7 +137,7 @@ export default function DrJoePreviewPage() {
   useEffect(() => {
     if (stage !== 'impact') return;
 
-    mixpanel.track('Guest Impact Screen Viewed', {
+    mixpanel.track('Funil Dr Joe · Tela impacto vista', {
       guestId:     guestUser?.id ?? null,
       origem:      'minigame',
       etapa_funil: 'after_preview_cut',
@@ -162,7 +162,7 @@ export default function DrJoePreviewPage() {
   // ─── Handlers ──────────────────────────────────────────────────────────────
 
   function handleStartPractice() {
-    mixpanel.track('Guest Practice CTA Clicked', {
+    mixpanel.track('Funil Dr Joe · Prática CTA clicado', {
       source: 'dr_joe_preview', guestId: guestUser?.id ?? null, timestamp: new Date().toISOString(),
     });
 
@@ -174,7 +174,7 @@ export default function DrJoePreviewPage() {
 
     audio.play()
       .then(() => {
-        mixpanel.track('Guest Practice Started', {
+        mixpanel.track('Funil Dr Joe · Prática iniciada', {
           source: 'dr_joe_preview', guestId: guestUser?.id ?? null, timestamp: new Date().toISOString(),
         });
       })
@@ -193,7 +193,7 @@ export default function DrJoePreviewPage() {
     }
 
     setIsSubmitting(true);
-    mixpanel.track('Guest Signup Started', {
+    mixpanel.track('Funil Dr Joe · Cadastro iniciado', {
       guestId: guestUser?.id ?? null, origem: 'minigame', timestamp: new Date().toISOString(),
     });
 
@@ -201,7 +201,7 @@ export default function DrJoePreviewPage() {
       const nome = email.split('@')[0];
       const { needsConfirmation } = await register(email, password, nome, '');
 
-      mixpanel.track('User Signed Up From Guest Funnel', {
+      mixpanel.track('Funil Dr Joe · Cadastro concluído', {
         guestId: guestUser?.id ?? null, needs_confirmation: needsConfirmation, timestamp: new Date().toISOString(),
       });
 
@@ -588,7 +588,7 @@ export default function DrJoePreviewPage() {
               {/* CTA secundário */}
               <button
                 onClick={() => {
-                  mixpanel.track('Guest Signup Modal Viewed', {
+                  mixpanel.track('Funil Dr Joe · Modal cadastro visto', {
                     guestId: guestUser?.id ?? null, origem: 'offer', etapa_funil: 'offer', timestamp: new Date().toISOString(),
                   });
                   setStage('signup');
@@ -662,7 +662,7 @@ export default function DrJoePreviewPage() {
               </button>
               <button
                 onClick={() => {
-                  mixpanel.track('Guest Signup Modal Viewed', {
+                  mixpanel.track('Funil Dr Joe · Modal cadastro visto', {
                     guestId: guestUser?.id ?? null, origem: 'locked', etapa_funil: 'locked', timestamp: new Date().toISOString(),
                   });
                   setStage('signup');

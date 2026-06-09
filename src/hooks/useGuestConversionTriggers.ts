@@ -195,7 +195,7 @@ export function useGuestConversionTriggers() {
           ...signal,
         });
 
-        mixpanel.track('Guest Conversion Trigger', {
+        mixpanel.track('Convidado · Gatilho conversão', {
           trigger: signal.type,
           context,
           guest_id: guestId,
@@ -231,7 +231,7 @@ export function useGuestConversionTriggers() {
       signal: modalContext.signal,
     });
 
-    mixpanel.track('Guest Conversion Trigger Dismissed', {
+    mixpanel.track('Convidado · Gatilho dispensado', {
       context: modalContext.context,
       signal: modalContext.signal,
       guest_id: guestId,
@@ -256,7 +256,7 @@ export function useGuestConversionTriggers() {
       signal: modalContext.signal,
     });
 
-    mixpanel.track('Guest Conversion Trigger Accepted', {
+    mixpanel.track('Convidado · Gatilho aceito', {
       context: modalContext.context,
       signal: modalContext.signal,
       guest_id: guestId,

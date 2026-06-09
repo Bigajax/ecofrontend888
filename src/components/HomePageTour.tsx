@@ -71,7 +71,7 @@ export default function HomePageTour({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      mixpanel.track('Front-end: Tour Aberto', { entry: window.location.href, reason });
+      mixpanel.track('Tour · Aberto', { entry: window.location.href, reason });
     }
     if (forceStart) resetTour();
     startTour();
@@ -80,7 +80,7 @@ export default function HomePageTour({
 
   useEffect(() => {
     if (isActive) {
-      mixpanel.track('Front-end: Tour Slide', {
+      mixpanel.track('Tour · Slide', {
         index: currentStep,
         id: step?.id,
         title: step?.title,
@@ -89,13 +89,13 @@ export default function HomePageTour({
   }, [currentStep, step?.id, step?.title, isActive]);
 
   const skipTour = useCallback(() => {
-    mixpanel.track('Front-end: Tour Fechado', { step: step?.id });
+    mixpanel.track('Tour · Fechado', { step: step?.id });
     skipTourInternal();
     onClose();
   }, [skipTourInternal, onClose, step?.id]);
 
   const handleComplete = useCallback(async () => {
-    mixpanel.track('Front-end: Tour Concluído');
+    mixpanel.track('Tour · Concluído');
     completeTourInternal();
     try {
       await loginAsGuest();

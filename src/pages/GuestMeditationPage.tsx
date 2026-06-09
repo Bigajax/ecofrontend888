@@ -28,7 +28,7 @@ export default function GuestMeditationPage() {
 
   useEffect(() => {
     // Track guest meditation access
-    mixpanel.track('Guest Meditation Accessed', {
+    mixpanel.track('Convidado · Meditação acessada', {
       meditation_id: MEDITATION_DATA.id,
       meditation_title: MEDITATION_DATA.title,
       source: 'guest_link',

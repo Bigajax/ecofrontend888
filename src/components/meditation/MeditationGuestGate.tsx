@@ -40,7 +40,7 @@ export default function MeditationGuestGate({
 
   const handleContinueMeditating = () => {
     // Track click
-    mixpanel.track('Guest Meditation Gate: Continue Clicked', {
+    mixpanel.track('Convidado · Gate meditação continuar', {
       meditation_id: meditationId,
       meditation_title: meditationTitle,
       time_listened_seconds: currentTime,
@@ -53,7 +53,7 @@ export default function MeditationGuestGate({
 
   const handleBack = () => {
     // Track dismiss
-    mixpanel.track('Guest Meditation Gate: Back Clicked', {
+    mixpanel.track('Convidado · Gate meditação voltar', {
       meditation_id: meditationId,
       time_listened_seconds: currentTime,
     });

@@ -87,7 +87,7 @@ export function useVoiceInteractionLimits() {
 
       // Track quando bater limite
       if (next >= limit) {
-        mixpanel.track('Voice Limit Hit', {
+        mixpanel.track('Voz · Limite atingido', {
           tier,
           limit,
           count: next,
@@ -98,7 +98,7 @@ export function useVoiceInteractionLimits() {
 
       // Track soft prompt (1 antes do limite)
       if (next === limit - 1) {
-        mixpanel.track('Voice Limit Almost Hit', {
+        mixpanel.track('Voz · Limite quase atingido', {
           tier,
           limit,
           count: next,

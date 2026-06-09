@@ -21,81 +21,81 @@ function trackSonoGuestEvent(eventName: string, props: SonoGuestEventProps = {})
 }
 
 export function trackSonoGuestPageViewed(props?: SonoGuestEventProps): void {
-  trackSonoGuestEvent('sono_guest_page_viewed', props);
+  trackSonoGuestEvent('Funil Protocolo · Página vista', props);
 }
 
 export function trackSonoGuestNight1Started(props?: SonoGuestEventProps): void {
-  trackSonoGuestEvent('sono_guest_night1_started', { ...props, nightId: props?.nightId || 'night_1' });
+  trackSonoGuestEvent('Funil Protocolo · Noite 1 iniciada', { ...props, nightId: props?.nightId || 'night_1' });
 }
 
 export function trackSonoGuestNight1Completed(props?: SonoGuestEventProps): void {
-  trackSonoGuestEvent('sono_guest_night1_completed', { ...props, nightId: props?.nightId || 'night_1' });
+  trackSonoGuestEvent('Funil Protocolo · Noite 1 concluída', { ...props, nightId: props?.nightId || 'night_1' });
 }
 
 export function trackSonoGuestOfferViewed(props?: SonoGuestEventProps): void {
-  trackSonoGuestEvent('sono_guest_offer_viewed', props);
+  trackSonoGuestEvent('Funil Protocolo · Oferta vista', props);
 }
 
 export function trackSonoGuestCheckoutClicked(props?: SonoGuestEventProps): void {
-  trackSonoGuestEvent('sono_guest_checkout_clicked', props);
+  trackSonoGuestEvent('Funil Protocolo · Checkout clicado', props);
 }
 
 export function trackSonoGuestOfferDismissed(props?: SonoGuestEventProps): void {
-  trackSonoGuestEvent('sono_guest_offer_dismissed', props);
+  trackSonoGuestEvent('Funil Protocolo · Oferta dispensada', props);
 }
 
 export function trackGuestPlayerOpened(): void {
-  mixpanel.track('guest_player_opened', { source: SRC });
+  mixpanel.track('Funil Protocolo · Player aberto', { source: SRC });
 }
 
 export function trackGuestPlayStarted(sound: string): void {
-  mixpanel.track('guest_play_started', { source: SRC, sound });
+  mixpanel.track('Funil Protocolo · Play iniciado', { source: SRC, sound });
 }
 
 export function trackGuestAudio25(): void {
-  mixpanel.track('guest_audio_25percent', { source: SRC });
+  mixpanel.track('Funil Protocolo · Áudio 25%', { source: SRC });
 }
 
 export function trackGuestAudio50(): void {
-  mixpanel.track('guest_audio_50percent', { source: SRC });
+  mixpanel.track('Funil Protocolo · Áudio 50%', { source: SRC });
 }
 
 export function trackGuestAudio75(): void {
-  mixpanel.track('guest_audio_75percent', { source: SRC });
+  mixpanel.track('Funil Protocolo · Áudio 75%', { source: SRC });
 }
 
 export function trackGuestAudioCompleted(): void {
-  mixpanel.track('guest_audio_completed', { source: SRC });
+  mixpanel.track('Funil Protocolo · Áudio concluído', { source: SRC });
 }
 
 export function trackGuestCaptureShown(): void {
-  mixpanel.track('guest_capture_shown', { source: SRC });
+  mixpanel.track('Funil Protocolo · Captura exibida', { source: SRC });
 }
 
 export function trackGuestCaptureWhatsapp(): void {
-  mixpanel.track('guest_capture_whatsapp', { source: SRC });
+  mixpanel.track('Funil Protocolo · Captura WhatsApp', { source: SRC });
 }
 
 export function trackGuestCaptureEmail(): void {
-  mixpanel.track('guest_capture_email', { source: SRC });
+  mixpanel.track('Funil Protocolo · Captura email', { source: SRC });
 }
 
 export function trackGuestCaptureSkipped(): void {
-  mixpanel.track('guest_capture_skipped', { source: SRC });
+  mixpanel.track('Funil Protocolo · Captura pulada', { source: SRC });
 }
 
 export function trackGuestProtocolViewed(): void {
-  mixpanel.track('guest_protocol_viewed', { source: SRC });
+  mixpanel.track('Funil Protocolo · Protocolo visto', { source: SRC });
 }
 
 export function trackGuestUnlockClicked(nightId: string): void {
-  mixpanel.track('guest_unlock_clicked', { source: SRC, night_id: nightId });
+  mixpanel.track('Funil Protocolo · Desbloquear clicado', { source: SRC, night_id: nightId });
 }
 
 export function trackGuestPurchaseStarted(): void {
-  mixpanel.track('guest_purchase_started', { source: SRC });
+  mixpanel.track('Funil Protocolo · Compra iniciada', { source: SRC });
 }
 
 export function trackGuestNotificationOpted(): void {
-  mixpanel.track('guest_notification_opted', { source: SRC });
+  mixpanel.track('Funil Protocolo · Notificação aceita', { source: SRC });
 }
