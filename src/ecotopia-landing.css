@@ -7807,66 +7807,37 @@ body.eco-no-scroll {
   z-index: 3;
 }
 
-.ecotopia-lp .lp-sono-deco-orb {
-  position: absolute;
-  z-index: 1;
-  display: inline-flex;
-  pointer-events: none;
-  filter: saturate(1.05) drop-shadow(0 8px 18px rgba(13, 27, 62, 0.12));
-}
-
-.ecotopia-lp .lp-sono-deco-orb img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
-
-.ecotopia-lp .lp-sono-deco-orb--blue {
-  top: -6px;
-  left: 3%;
-  width: 128px;
-  height: 128px;
-  animation: lpOrbFloat 13s ease-in-out infinite;
-  animation-delay: -2s;
-}
-
-.ecotopia-lp .lp-sono-deco-orb--green {
-  top: -20px;
-  right: 4%;
-  width: 112px;
-  height: 112px;
-  animation: lpOrbFloatAlt 16s ease-in-out infinite;
-  animation-delay: -5s;
-}
-
-.ecotopia-lp .lp-sono-deco-orb--pink {
-  bottom: -34px;
-  right: 13%;
-  width: 116px;
-  height: 116px;
-  animation: lpOrbFloat 15s ease-in-out infinite;
-  animation-delay: -9s;
-}
-
 .ecotopia-lp .lp-sono-deco-moon {
   position: absolute;
   z-index: 2;
   top: 10px;
   left: 24%;
   pointer-events: none;
-  filter: drop-shadow(0 4px 10px rgba(120, 140, 200, 0.35));
-  animation: lpOrbFloatAlt 12s ease-in-out infinite;
-  animation-delay: -3s;
+  filter: drop-shadow(0 3px 8px rgba(13, 27, 62, 0.22));
+  animation: lpOrbFloatAlt 12s ease-in-out infinite -3s,
+             lpSonoMoonBreath 5s ease-in-out infinite;
+}
+
+/* respiro suave de brilho/escala da lua */
+@keyframes lpSonoMoonBreath {
+  0%, 100% { opacity: 0.9; }
+  50%      { opacity: 1; }
 }
 
 .ecotopia-lp .lp-sono-deco-star {
   position: absolute;
   z-index: 2;
   pointer-events: none;
-  opacity: 0.92;
-  animation: lpSparkleFloat 9s ease-in-out infinite;
-  filter: drop-shadow(0 0 6px rgba(175, 203, 255, 0.55));
+  opacity: 0.9;
+  transform-origin: center;
+  animation: lpSonoStarTwinkle 4.2s ease-in-out infinite;
+  filter: drop-shadow(0 1px 3px rgba(13, 27, 62, 0.22));
+}
+
+/* cintilar dedicado do /sono — pulsa de tamanho/brilho e flutua de leve */
+@keyframes lpSonoStarTwinkle {
+  0%, 100% { transform: translateY(0) scale(0.82) rotate(0deg); opacity: 0.4; }
+  50%      { transform: translateY(-5px) scale(1.18) rotate(10deg); opacity: 1; }
 }
 
 .ecotopia-lp .lp-sono-deco-star--a {
@@ -7894,8 +7865,32 @@ body.eco-no-scroll {
   animation-delay: -2.5s;
 }
 
+/* estrelas extras — ocupam os cantos onde ficavam as esferas */
+.ecotopia-lp .lp-sono-deco-star--e {
+  top: -2px;
+  left: 6%;
+  animation-delay: -3.5s;
+}
+
+.ecotopia-lp .lp-sono-deco-star--f {
+  top: 8px;
+  right: 7%;
+  animation-delay: -7s;
+}
+
+.ecotopia-lp .lp-sono-deco-star--g {
+  bottom: -8px;
+  right: 14%;
+  animation-delay: -5.5s;
+}
+
+.ecotopia-lp .lp-sono-deco-star--h {
+  bottom: 14px;
+  right: 38%;
+  animation-delay: -8.5s;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ecotopia-lp .lp-sono-deco-orb,
   .ecotopia-lp .lp-sono-deco-moon,
   .ecotopia-lp .lp-sono-deco-star {
     animation: none;
@@ -7903,48 +7898,43 @@ body.eco-no-scroll {
 }
 
 @media (max-width: 768px) {
-  /* padding menor: orbes maiores e mais perto da frase */
   .ecotopia-lp .lp-sono-deco-hero {
     padding: 46px 0 42px;
   }
-  /* 4 cantos distintos: azul (TL) · verde (TR) · lua (BL) · rosa (BR) — maiores e mais próximos */
-  .ecotopia-lp .lp-sono-deco-orb--blue {
-    width: 80px;
-    height: 80px;
-    top: 2px;
-    left: -10px;
-  }
-  .ecotopia-lp .lp-sono-deco-orb--green {
-    width: 76px;
-    height: 76px;
-    top: -8px;
-    right: -10px;
-  }
-  .ecotopia-lp .lp-sono-deco-orb--pink {
-    width: 74px;
-    height: 74px;
-    bottom: 0;
-    right: 0;
-  }
+  /* lua no canto inferior-esquerdo */
   .ecotopia-lp .lp-sono-deco-moon {
     top: auto;
     bottom: 4px;
     left: 0;
   }
   .ecotopia-lp .lp-sono-deco-moon svg {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
   }
-  /* estrelas: só 2 (topo-centro e base-centro) para não poluir */
+  /* estrelas distribuídas pelos 4 cantos + topo, sem poluir */
   .ecotopia-lp .lp-sono-deco-star--a {
     top: 12px;
   }
+  .ecotopia-lp .lp-sono-deco-star--e {
+    top: 0;
+    left: 2%;
+  }
+  .ecotopia-lp .lp-sono-deco-star--f {
+    top: 6px;
+    right: 2%;
+  }
   .ecotopia-lp .lp-sono-deco-star--c {
     bottom: 18px;
-    left: 46%;
+    left: 44%;
   }
+  .ecotopia-lp .lp-sono-deco-star--g {
+    bottom: 4px;
+    right: 4%;
+  }
+  /* esconde as menores para não embolar na largura estreita */
   .ecotopia-lp .lp-sono-deco-star--b,
-  .ecotopia-lp .lp-sono-deco-star--d {
+  .ecotopia-lp .lp-sono-deco-star--d,
+  .ecotopia-lp .lp-sono-deco-star--h {
     display: none;
   }
 }

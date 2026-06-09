@@ -114,24 +114,18 @@ const TESTIMONIALS: { id: string; quote: string; name: string; photo?: string }[
     id: 't1',
     quote: 'Eu demorava mais de uma hora para dormir. Depois de alguns dias usando o protocolo comecei a pegar no sono muito mais rápido.',
     name: 'Mariana',
-    photo: '/images/testimonial-mariana.webp',
   },
   {
     id: 't2',
     quote: 'Minha mente ficava acelerada quando eu deitava. As práticas me ajudaram a encerrar o dia com mais tranquilidade.',
     name: 'Beatriz',
-    photo: '/images/testimonial-beatriz.webp',
   },
   {
     id: 't3',
     quote: 'Passei a criar uma rotina noturna que realmente consigo seguir.',
     name: 'Camila',
-    photo: '/images/testimonial-camila.webp',
   },
 ];
-
-// Cores dos avatares de depoimento (paleta eco), rotacionadas por índice.
-const AVATAR_COLORS = ['#1554F0', '#2F8F6B', '#C97B2B'];
 
 // CTA único e idêntico em todos os pontos de conversão da página.
 const CTA_LABEL = 'Começar meus 7 dias grátis';
@@ -224,8 +218,7 @@ export default function EcotopiaSonoPage() {
             </h1>
 
             <p className="lp-sono-hero-lead scroll-reveal stagger-1">
-              Seu cérebro não precisa continuar ligado até de madrugada.
-              Um protocolo guiado para desacelerar a mente antes de dormir.
+              Criado para quem está cansado, mas não consegue desligar a mente.
             </p>
 
             <Link
@@ -251,7 +244,7 @@ export default function EcotopiaSonoPage() {
         ariaLabel="Resultados da Ecotopia"
         className="lp-method-marquee--starry"
         repeat={4}
-        terms={['32% menos estresse', '4,8★ na App Store', '+2 mil dormindo melhor']}
+        terms={['4,8★ na App Store', 'Mais de 2 mil usuários', 'Sessões de 5 a 10 min', 'Feito para desacelerar a mente']}
       />
 
       {/* ─── Como funciona · Protocolo do Sono: 7 noites (carrossel) ─── */}
@@ -334,27 +327,20 @@ export default function EcotopiaSonoPage() {
       <section className="lp-sono-testimonials">
         <div className="lp-sono-testimonials-inner">
           <div className="lp-sono-deco-hero">
-            {/* orbes/planetas (paleta fria, noturna) */}
-            <span className="lp-sono-deco-orb lp-sono-deco-orb--blue" aria-hidden="true">
-              <img src="/images/testimonio-orb-blue.webp" alt="" width={200} height={200} loading="lazy" decoding="async" />
-            </span>
-            <span className="lp-sono-deco-orb lp-sono-deco-orb--green" aria-hidden="true">
-              <img src="/images/testimonio-orb-green.webp" alt="" width={200} height={200} loading="lazy" decoding="async" />
-            </span>
-            <span className="lp-sono-deco-orb lp-sono-deco-orb--pink" aria-hidden="true">
-              <img src="/images/testimonio-orb-pink.webp" alt="" width={200} height={200} loading="lazy" decoding="async" />
-            </span>
-
             {/* lua crescente — reforça o tema noite/dormir */}
             <span className="lp-sono-deco-moon" aria-hidden="true">
               <Moon />
             </span>
 
-            {/* estrelas (tons prateado/azulado, como céu noturno) */}
-            <span className="lp-sono-deco-star lp-sono-deco-star--a" aria-hidden="true"><Sparkle color="#FFFFFF" size={26} /></span>
-            <span className="lp-sono-deco-star lp-sono-deco-star--b" aria-hidden="true"><Sparkle color="#AFCBFF" size={20} /></span>
-            <span className="lp-sono-deco-star lp-sono-deco-star--c" aria-hidden="true"><Sparkle color="#C9C2F0" size={16} /></span>
-            <span className="lp-sono-deco-star lp-sono-deco-star--d" aria-hidden="true"><Sparkle color="#DCE6F5" size={14} /></span>
+            {/* estrelas — mesma cor do céu estrelado (navy), espalhadas pelos cantos */}
+            <span className="lp-sono-deco-star lp-sono-deco-star--a" aria-hidden="true"><Sparkle color="#0E1730" size={26} /></span>
+            <span className="lp-sono-deco-star lp-sono-deco-star--b" aria-hidden="true"><Sparkle color="#0E1730" size={20} /></span>
+            <span className="lp-sono-deco-star lp-sono-deco-star--c" aria-hidden="true"><Sparkle color="#0E1730" size={16} /></span>
+            <span className="lp-sono-deco-star lp-sono-deco-star--d" aria-hidden="true"><Sparkle color="#0E1730" size={14} /></span>
+            <span className="lp-sono-deco-star lp-sono-deco-star--e" aria-hidden="true"><Sparkle color="#0E1730" size={22} /></span>
+            <span className="lp-sono-deco-star lp-sono-deco-star--f" aria-hidden="true"><Sparkle color="#0E1730" size={13} /></span>
+            <span className="lp-sono-deco-star lp-sono-deco-star--g" aria-hidden="true"><Sparkle color="#0E1730" size={18} /></span>
+            <span className="lp-sono-deco-star lp-sono-deco-star--h" aria-hidden="true"><Sparkle color="#0E1730" size={12} /></span>
 
             <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal lp-sono-testimonials-h2">
               Histórias de quem já sente a diferença.
@@ -385,17 +371,6 @@ export default function EcotopiaSonoPage() {
                 </svg>
                 <p className="lp-sono-testimonial-text">{t.quote}</p>
                 <div className="lp-sono-testimonial-author">
-                  <span
-                    className="lp-sono-testimonial-avatar"
-                    style={t.photo ? undefined : { background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
-                    aria-hidden
-                  >
-                    {t.photo ? (
-                      <img src={t.photo} alt="" loading="lazy" decoding="async" />
-                    ) : (
-                      t.name.charAt(0)
-                    )}
-                  </span>
                   <span className="lp-sono-testimonial-name">{t.name}</span>
                 </div>
               </article>
@@ -781,8 +756,8 @@ function Moon() {
     <svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"
-        fill="#E6ECFA"
-        stroke="#C2CFEA"
+        fill="#0E1730"
+        stroke="#0A0F1E"
         strokeWidth="1"
         strokeLinejoin="round"
       />
