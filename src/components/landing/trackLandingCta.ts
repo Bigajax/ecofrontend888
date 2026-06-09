@@ -9,7 +9,7 @@ type CtaPayload = {
 
 export function trackLandingCta(payload: CtaPayload) {
   try {
-    mixpanel.track('Landing CTA Clicked', payload);
+    mixpanel.track('Landing · CTA clicado', payload);
   } catch {
     // tracking nunca pode quebrar UX
   }
@@ -17,7 +17,7 @@ export function trackLandingCta(payload: CtaPayload) {
 
 export function trackLandingSectionViewed(section: string, headline_variant?: '1' | '2') {
   try {
-    mixpanel.track('Landing Section Viewed', { section, headline_variant });
+    mixpanel.track('Landing · Seção vista', { section, headline_variant });
   } catch {
     // noop
   }

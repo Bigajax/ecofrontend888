@@ -13,7 +13,7 @@ interface DiarioPageViewProperties {
 }
 
 export function trackDiarioPageViewed(props: DiarioPageViewProperties) {
-  mixpanel.track('Diario Estoico Viewed', {
+  mixpanel.track('Diário · Visto', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -30,7 +30,7 @@ interface DiarioPageExitProperties {
 }
 
 export function trackDiarioPageExited(props: DiarioPageExitProperties) {
-  mixpanel.track('Diario Estoico Exited', {
+  mixpanel.track('Diário · Saiu', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -51,7 +51,7 @@ interface DiarioCardViewedProperties {
 }
 
 export function trackDiarioCardViewed(props: DiarioCardViewedProperties) {
-  mixpanel.track('Diario Card Viewed', {
+  mixpanel.track('Diário · Card visto', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -71,7 +71,7 @@ interface DiarioCardExpandedProperties {
 }
 
 export function trackDiarioCardExpanded(props: DiarioCardExpandedProperties) {
-  mixpanel.track('Diario Card Expanded', {
+  mixpanel.track('Diário · Card expandido', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -87,7 +87,7 @@ interface DiarioCardCollapsedProperties {
 }
 
 export function trackDiarioCardCollapsed(props: DiarioCardCollapsedProperties) {
-  mixpanel.track('Diario Card Collapsed', {
+  mixpanel.track('Diário · Card recolhido', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -101,7 +101,7 @@ export function trackDiarioEnteredFromCarousel(props: {
   is_guest: boolean;
   user_id?: string;
 }) {
-  mixpanel.track('Diario Entered from Carousel', {
+  mixpanel.track('Diário · Entrou via carrossel', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -112,7 +112,7 @@ export function trackDiarioEnteredFromExplore(props: {
   is_guest: boolean;
   user_id?: string;
 }) {
-  mixpanel.track('Diario Entered from Explore', {
+  mixpanel.track('Diário · Entrou via explorar', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -125,7 +125,7 @@ export function trackDiarioViewedPostMeditation(props: {
   author: string;
   user_id: string;
 }) {
-  mixpanel.track('Diario Viewed Post Meditation', {
+  mixpanel.track('Diário · Visto pós-meditação', {
     ...props,
     timestamp: new Date().toISOString(),
   });

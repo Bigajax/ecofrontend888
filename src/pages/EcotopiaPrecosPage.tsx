@@ -13,7 +13,7 @@ export default function EcotopiaPrecosPage() {
 
   useEffect(() => {
     try {
-      mixpanel.track('Pricing Page Viewed', { page: 'ecotopia_precos' });
+      mixpanel.track('Landing · Vista', { pagina: 'precos' });
     } catch {
       // noop
     }

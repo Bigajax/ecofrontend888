@@ -303,7 +303,7 @@ export default function DiarioEstoicoPage() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: reflectionId, action: 'register' });
+                  mixpanel.track('Diário · Teaser CTA clicado', { reflection_id: reflectionId, action: 'register' });
                   navigate(`/register?returnTo=${encodeURIComponent(DIARIO_GUEST.returnTo)}`);
                 }}
                 className="w-full bg-eco-baby text-white px-4 py-2.5 rounded-lg font-primary font-semibold text-sm hover:bg-eco-baby/90 active:scale-95 transition-all duration-200 shadow-sm"
@@ -313,7 +313,7 @@ export default function DiarioEstoicoPage() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: reflectionId, action: 'login' });
+                  mixpanel.track('Diário · Teaser CTA clicado', { reflection_id: reflectionId, action: 'login' });
                   navigate(`/login?returnTo=${encodeURIComponent(DIARIO_GUEST.returnTo)}`);
                 }}
                 className="font-primary text-[13px] text-eco-muted hover:text-eco-text underline underline-offset-2 transition-colors duration-200"
@@ -455,7 +455,7 @@ export default function DiarioEstoicoPage() {
           },
         });
 
-        mixpanel.track('Diario Estoico: Progress Milestone', {
+        mixpanel.track('Diário · Marco de progresso', {
           percentage: Math.round(percentage),
           days_read: newSize,
           total_days: total,
@@ -488,7 +488,7 @@ export default function DiarioEstoicoPage() {
         sessionStorage.setItem(EXIT_MODAL_SHOWN_KEY, 'true');
         setShowExitModal(true);
 
-        mixpanel.track('Diario Estoico: Exit Modal Shown', {
+        mixpanel.track('Diário · Exit modal exibido', {
           timestamp: new Date().toISOString(),
         });
         return; // Não navega ainda
@@ -501,18 +501,18 @@ export default function DiarioEstoicoPage() {
 
   // Handlers do modal
   const handleModalSignup = () => {
-    mixpanel.track('Diario Estoico: Exit Modal - Signup Clicked');
+    mixpanel.track('Diário · Exit modal signup');
     setShowExitModal(false);
     navigate('/register?returnTo=' + encodeURIComponent('/app/diario-estoico'));
   };
 
   const handleModalStay = () => {
-    mixpanel.track('Diario Estoico: Exit Modal - Stayed');
+    mixpanel.track('Diário · Exit modal ficou');
     setShowExitModal(false);
   };
 
   const handleModalLeave = () => {
-    mixpanel.track('Diario Estoico: Exit Modal - Left Anyway');
+    mixpanel.track('Diário · Exit modal saiu');
     setShowExitModal(false);
     navigate('/');
   };
@@ -850,7 +850,7 @@ export default function DiarioEstoicoPage() {
             canRead={!!user}
             onReadFull={() => {
               setReadingModeMaxim(featuredMaxim);
-              mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: featuredMaxim.dayNumber, is_guest: !user, source: 'today_hero' });
+              mixpanel.track('Diário · Modo leitura aberto', { day_number: featuredMaxim.dayNumber, is_guest: !user, source: 'today_hero' });
             }}
             onRegister={() => navigate('/register?returnTo=' + encodeURIComponent('/app/diario-estoico'))}
           />
@@ -871,7 +871,7 @@ export default function DiarioEstoicoPage() {
                     type="button"
                     onClick={() => {
                       setOpenPart(isPartOpen ? null : part.number);
-                      mixpanel.track('Diario Part Toggle', { part: part.number, action: isPartOpen ? 'close' : 'open', user_id: user?.id });
+                      mixpanel.track('Diário · Parte alternada', { part: part.number, action: isPartOpen ? 'close' : 'open', user_id: user?.id });
                     }}
                     aria-expanded={isPartOpen}
                     className="w-full mb-5 flex items-center gap-4 text-left rounded-2xl transition-colors duration-200
@@ -913,12 +913,12 @@ export default function DiarioEstoicoPage() {
                           key={month.id}
                           onClick={() => {
                             if (!isUnlocked) {
-                              mixpanel.track('Diario Month Locked Click', { month: month.id, theme: month.theme, user_tier: tier, user_id: user?.id });
+                              mixpanel.track('Diário · Mês bloqueado clicado', { month: month.id, theme: month.theme, user_tier: tier, user_id: user?.id });
                               setShowUpgradeModal(true);
                               return;
                             }
                             setOpenMonth(isActive ? null : month.id);
-                            mixpanel.track('Diario Month Tab Click', { month: month.id, action: isActive ? 'close' : 'open', user_tier: tier, is_guest: !user, user_id: user?.id });
+                            mixpanel.track('Diário · Aba mês clicada', { month: month.id, action: isActive ? 'close' : 'open', user_tier: tier, is_guest: !user, user_id: user?.id });
                           }}
                           className={`relative flex flex-col rounded-2xl overflow-hidden text-left transition-all duration-300 active:scale-[0.97]
                             ${isActive
@@ -1164,7 +1164,7 @@ export default function DiarioEstoicoPage() {
                                 {!isGuest && user && (
                                   <div className="mt-5 flex justify-center">
                                     <button
-                                      onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
+                                      onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diário · Modo leitura aberto', { day_number: maxim.dayNumber, is_guest: !user }); }}
                                       className="inline-flex items-center gap-2 px-6 py-2.5 text-[12px] font-semibold text-white rounded-full active:scale-95 transition-all duration-200"
                                       style={{ background: 'linear-gradient(135deg, #6EC8FF, #36B3FF)', boxShadow: '0 4px 16px rgba(110,200,255,0.35)' }}
                                     >
@@ -1191,7 +1191,7 @@ export default function DiarioEstoicoPage() {
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         markDayAsRead(maxim.dayNumber);
-                                        mixpanel.track('Diario Estoico: Marked As Read', { day_number: maxim.dayNumber, is_guest: !user, method: 'button' });
+                                        mixpanel.track('Diário · Marcado como lido', { day_number: maxim.dayNumber, is_guest: !user, method: 'button' });
                                       }}
                                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-semibold text-white rounded-full active:scale-95 transition-all duration-200"
                                       style={{ background: 'linear-gradient(135deg, #6EC8FF, #36B3FF)' }}
@@ -1207,7 +1207,7 @@ export default function DiarioEstoicoPage() {
                                     </div>
                                   )}
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
+                                    onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diário · Compartilhar aberto', { day_number: maxim.dayNumber, is_guest: !user }); }}
                                     className="flex items-center gap-1.5 px-4 py-2.5 text-[12px] font-medium rounded-full transition-all duration-200 text-eco-muted"
                                     style={{ backgroundColor: 'rgba(198,169,149,0.08)', border: '1px solid rgba(198,169,149,0.25)' }}
                                   >
@@ -1284,7 +1284,7 @@ export default function DiarioEstoicoPage() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: `${maxim.month}-${maxim.dayNumber}`, action: 'register' });
+                                      mixpanel.track('Diário · Teaser CTA clicado', { reflection_id: `${maxim.month}-${maxim.dayNumber}`, action: 'register' });
                                       navigate(`/register?returnTo=${encodeURIComponent(DIARIO_GUEST.returnTo)}`);
                                     }}
                                     className="inline-flex items-center gap-2 px-8 py-3 font-primary font-semibold text-sm text-white rounded-full active:scale-95 transition-all duration-200"
@@ -1295,7 +1295,7 @@ export default function DiarioEstoicoPage() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      mixpanel.track('Guest Reflection Teaser CTA Clicked', { reflection_id: `${maxim.month}-${maxim.dayNumber}`, action: 'login' });
+                                      mixpanel.track('Diário · Teaser CTA clicado', { reflection_id: `${maxim.month}-${maxim.dayNumber}`, action: 'login' });
                                       navigate(`/login?returnTo=${encodeURIComponent(DIARIO_GUEST.returnTo)}`);
                                     }}
                                     className="font-primary text-[13px] text-eco-muted hover:text-eco-text underline underline-offset-2 transition-colors duration-200"
@@ -1324,7 +1324,7 @@ export default function DiarioEstoicoPage() {
                             {!isGuest && user && (
                               <div className="mt-9 flex justify-center">
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diario Estoico: Reading Mode Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
+                                  onClick={(e) => { e.stopPropagation(); setReadingModeMaxim(maxim); mixpanel.track('Diário · Modo leitura aberto', { day_number: maxim.dayNumber, is_guest: !user }); }}
                                   className="inline-flex items-center gap-2 px-8 py-3 text-sm font-semibold text-white rounded-full active:scale-95 transition-all duration-200"
                                   style={{ background: 'linear-gradient(135deg, #6EC8FF, #36B3FF)', boxShadow: '0 4px 18px rgba(110,200,255,0.35)' }}
                                 >
@@ -1345,7 +1345,7 @@ export default function DiarioEstoicoPage() {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   markDayAsRead(maxim.dayNumber);
-                                  mixpanel.track('Diario Estoico: Marked As Read', { day_number: maxim.dayNumber, is_guest: !user, method: 'button' });
+                                  mixpanel.track('Diário · Marcado como lido', { day_number: maxim.dayNumber, is_guest: !user, method: 'button' });
                                 }}
                                 className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-full active:scale-95 transition-all duration-200"
                                 style={{ background: 'linear-gradient(135deg, #6EC8FF, #36B3FF)' }}
@@ -1361,7 +1361,7 @@ export default function DiarioEstoicoPage() {
                               </div>
                             )}
                             <button
-                              onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diario Estoico: Share Opened', { day_number: maxim.dayNumber, is_guest: !user }); }}
+                              onClick={(e) => { e.stopPropagation(); setShareModalMaxim(maxim); mixpanel.track('Diário · Compartilhar aberto', { day_number: maxim.dayNumber, is_guest: !user }); }}
                               className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-full transition-all duration-200 text-eco-muted"
                               style={{ backgroundColor: 'rgba(198,169,149,0.08)', border: '1px solid rgba(198,169,149,0.25)' }}
                             >

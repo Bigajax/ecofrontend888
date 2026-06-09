@@ -101,7 +101,7 @@ export default function SubscriptionCallbackPage() {
             // ⚠️ Pendente após 5 tentativas
             setStatus('pending');
 
-            mixpanel.track('Payment Pending', {
+            mixpanel.track('Assinatura · Pagamento pendente', {
               retries: maxRetries,
               user_id: user?.id,
             });

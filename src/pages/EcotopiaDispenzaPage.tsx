@@ -56,7 +56,7 @@ export default function EcotopiaDispenzaPage() {
 
   useEffect(() => {
     try {
-      mixpanel.track('Dr Joe Dispenza Landing Viewed', { page: 'dispenza_root' });
+      mixpanel.track('Landing · Vista', { pagina: 'dispenza' });
     } catch {
       // noop
     }

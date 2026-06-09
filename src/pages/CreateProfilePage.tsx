@@ -152,7 +152,7 @@ const CreateProfilePage: React.FC = () => {
   // Handler para Google One Tap
   const handleGoogleOneTap = async (response: any) => {
     try {
-      mixpanel.track('Front-end: Google One Tap Iniciado');
+      mixpanel.track('Cadastro · One Tap iniciado');
 
       // O token JWT vem em response.credential
       const { data, error: authError } = await supabaseClient.auth.signInWithIdToken({
@@ -163,7 +163,7 @@ const CreateProfilePage: React.FC = () => {
       if (authError) throw authError;
 
       if (data.user) {
-        mixpanel.track('Front-end: Google One Tap Concluído', { userId: data.user.id });
+        mixpanel.track('Cadastro · One Tap concluído', { userId: data.user.id });
         fbq('CompleteRegistration', { value: 1, currency: 'BRL' });
         // Meta Pixel + CAPI: todo cadastro inicia o trial de 7 dias → StartTrial
         // (evento padrão do Meta para otimização). Valor = preço do plano.
@@ -192,7 +192,7 @@ const CreateProfilePage: React.FC = () => {
       }
     } catch (err: any) {
       const translatedError = translateRegisterError(err);
-      mixpanel.track('Front-end: Google One Tap Falhou', { reason: translatedError });
+      mixpanel.track('Cadastro · One Tap falhou', { reason: translatedError });
       setError(translatedError);
     }
   };
@@ -256,7 +256,7 @@ const CreateProfilePage: React.FC = () => {
     setError('');
     setLoading(true);
     try {
-      mixpanel.track('Front-end: Cadastro Iniciado', {
+      mixpanel.track('Cadastro · Iniciado', {
         email: email.trim(),
         plan: planFromQuery,
         from: fromQuery,
@@ -274,7 +274,7 @@ const CreateProfilePage: React.FC = () => {
       if (needsConfirmation) {
         setConfirmedEmail(email.trim());
         setShowEmailConfirmation(true);
-        mixpanel.track('Front-end: Cadastro Pendente Confirmação', { email: email.trim() });
+        mixpanel.track('Cadastro · Pendente confirmação', { email: email.trim() });
         return;
       }
 
@@ -282,7 +282,7 @@ const CreateProfilePage: React.FC = () => {
       const { data: { user: newUser } } = await supabaseClient.auth.getUser();
 
       if (newUser) {
-        mixpanel.track('Front-end: Cadastro Concluído', { userId: newUser.id });
+        mixpanel.track('Cadastro · Concluído', { userId: newUser.id });
         fbq('CompleteRegistration', { value: 1, currency: 'BRL' });
         // Meta Pixel + CAPI: todo cadastro inicia o trial de 7 dias → StartTrial
         // (evento padrão do Meta para otimização). Valor = preço do plano.
@@ -309,7 +309,7 @@ const CreateProfilePage: React.FC = () => {
       }
     } catch (err: any) {
       const translatedError = translateRegisterError(err);
-      mixpanel.track('Front-end: Cadastro Falhou', { reason: translatedError });
+      mixpanel.track('Cadastro · Falhou', { reason: translatedError });
       setError(translatedError);
     } finally {
       setLoading(false);
@@ -319,7 +319,7 @@ const CreateProfilePage: React.FC = () => {
   const handleGoogleSignUp = async () => {
     setError('');
     try {
-      mixpanel.track('Front-end: Google Sign-up Iniciado');
+      mixpanel.track('Cadastro · Google iniciado');
       const { error: authError } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -330,14 +330,14 @@ const CreateProfilePage: React.FC = () => {
         },
       });
       if (authError) throw authError;
-      mixpanel.track('Front-end: Google Sign-up Iniciado com Sucesso');
+      mixpanel.track('Cadastro · Google sucesso');
       fbq('CompleteRegistration', { value: 1, currency: 'BRL' });
 
       // Nota: A migração será feita no callback OAuth via AuthContext
       // quando o usuário retornar após autorização
     } catch (err: any) {
       const translatedError = translateRegisterError(err);
-      mixpanel.track('Front-end: Google Sign-up Falhou', { reason: translatedError });
+      mixpanel.track('Cadastro · Google falhou', { reason: translatedError });
       setError(translatedError);
     }
   };

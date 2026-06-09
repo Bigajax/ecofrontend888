@@ -65,7 +65,7 @@ export default function ReflectionTeaserWrapper({
 
   const handleContinueReading = () => {
     // Track click
-    mixpanel.track('Guest Reflection Teaser CTA Clicked', {
+    mixpanel.track('Diário · Teaser CTA clicado', {
       reflection_id: reflectionId,
     });
 

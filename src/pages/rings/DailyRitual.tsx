@@ -48,7 +48,7 @@ export default function DailyRitual() {
   // FREE TIER: show upgrade gate immediately on mount
   useEffect(() => {
     if (isFreeBlocked) {
-      mixpanel.track('Free Tier Limit Blocked', {
+      mixpanel.track('Assinatura · Limite free bloqueado', {
         limit_type: 'rings_premium',
         user_id: user?.id,
         tier,

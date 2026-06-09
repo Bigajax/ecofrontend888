@@ -86,7 +86,7 @@ export default function EcotopiaMeditacaoPage() {
 
   useEffect(() => {
     try {
-      mixpanel.track('Meditation Page Viewed', { page: 'meditacao_root' });
+      mixpanel.track('Landing · Vista', { pagina: 'meditacao' });
     } catch {
       // noop
     }

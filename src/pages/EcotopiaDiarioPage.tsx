@@ -81,7 +81,7 @@ export default function EcotopiaDiarioPage() {
 
   useEffect(() => {
     try {
-      mixpanel.track('Diario Estoico Landing Viewed', { page: 'estoicismo_root' });
+      mixpanel.track('Landing · Vista', { pagina: 'estoicismo' });
     } catch {
       // noop
     }

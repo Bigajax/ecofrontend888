@@ -52,7 +52,7 @@ export default function EcoDreamSection() {
 
   const handleCtaClick = () => {
     try {
-      mixpanel.track('Eco IA Dream CTA Clicked', {
+      mixpanel.track('Landing · Dream CTA clicado', {
         section: 'eco_ia_dream',
         from: 'eco_ia_dream',
         plan: 'annual',

@@ -61,7 +61,7 @@ export default function SubscriptionManagement() {
     // Abrir painel do Mercado Pago
     window.open('https://www.mercadopago.com.br/subscriptions/my-subscriptions', '_blank');
 
-    mixpanel.track('Manage MP Subscription Clicked', {
+    mixpanel.track('Assinatura · Gerenciar MP clicado', {
       plan: subscription.plan,
       user_id: user?.id,
     });
@@ -74,7 +74,7 @@ export default function SubscriptionManagement() {
     setOtherReason('');
     setCancelError('');
 
-    mixpanel.track('Cancel Flow Started', {
+    mixpanel.track('Assinatura · Cancelamento iniciado', {
       plan: subscription.plan,
       user_id: user?.id,
     });
@@ -121,13 +121,13 @@ export default function SubscriptionManagement() {
   const handleContinueToRetention = () => {
     if (!selectedReason) return;
 
-    mixpanel.track('Cancel Reason Selected', {
+    mixpanel.track('Assinatura · Motivo cancelamento', {
       plan: subscription.plan,
       reason: resolvedReason,
       reason_id: selectedReason,
       user_id: user?.id,
     });
-    mixpanel.track('Cancel Retention Shown', {
+    mixpanel.track('Assinatura · Retenção exibida', {
       plan: subscription.plan,
       reason_id: selectedReason,
       user_id: user?.id,
@@ -137,7 +137,7 @@ export default function SubscriptionManagement() {
   };
 
   const handleKeepSubscription = () => {
-    mixpanel.track('Subscription Retained', {
+    mixpanel.track('Assinatura · Retida', {
       plan: subscription.plan,
       reason: resolvedReason,
       reason_id: selectedReason,
@@ -152,7 +152,7 @@ export default function SubscriptionManagement() {
     try {
       await reactivateSubscription();
       await refreshSubscription();
-      mixpanel.track('Subscription Reactivated', {
+      mixpanel.track('Assinatura · Reativada', {
         plan: subscription.plan,
         user_id: user?.id,
       });
@@ -176,7 +176,7 @@ export default function SubscriptionManagement() {
       await refreshSubscription();
 
       // Analytics
-      mixpanel.track('Subscription Cancelled', {
+      mixpanel.track('Assinatura · Cancelada', {
         plan: subscription.plan,
         reason: resolvedReason,
         reason_id: selectedReason,
@@ -193,7 +193,7 @@ export default function SubscriptionManagement() {
           : 'Não foi possível cancelar a assinatura'
       );
 
-      mixpanel.track('Subscription Cancel Failed', {
+      mixpanel.track('Assinatura · Cancelamento falhou', {
         error: error instanceof Error ? error.message : 'Unknown error',
         user_id: user?.id,
       });

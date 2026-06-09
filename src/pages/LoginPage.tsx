@@ -97,13 +97,13 @@ const LoginPage: React.FC = () => {
       setError('');
       setLoading(true);
       try {
-        mixpanel.track('Front-end: Login Iniciado', { method: 'google_one_tap' });
+        mixpanel.track('Login · Iniciado', { method: 'google_one_tap' });
         await signInWithGoogleIdToken(idToken);
-        mixpanel.track('Front-end: Login Concluído', { method: 'google_one_tap' });
+        mixpanel.track('Login · Concluído', { method: 'google_one_tap' });
       } catch (err: any) {
         setLoading(false);
         setError(translateAuthError(err));
-        mixpanel.track('Front-end: Login Falhou', { method: 'google_one_tap', reason: translateAuthError(err) });
+        mixpanel.track('Login · Falhou', { method: 'google_one_tap', reason: translateAuthError(err) });
       }
     },
     onError: (error) => {
@@ -162,7 +162,7 @@ const LoginPage: React.FC = () => {
     setError('');
     setLoading(true);
     try {
-      mixpanel.track('Front-end: Login Iniciado', { method: 'password', email: email.trim() });
+      mixpanel.track('Login · Iniciado', { method: 'password', email: email.trim() });
       await signIn(email.trim(), password);
 
       // Salvar email no localStorage para próximo acesso
@@ -172,10 +172,10 @@ const LoginPage: React.FC = () => {
         console.error('Erro ao salvar email:', storageError);
       }
 
-      mixpanel.track('Front-end: Login Concluído', { method: 'password' });
+      mixpanel.track('Login · Concluído', { method: 'password' });
     } catch (err: any) {
       setError(translateAuthError(err));
-      mixpanel.track('Front-end: Login Falhou', { method: 'password', reason: translateAuthError(err) });
+      mixpanel.track('Login · Falhou', { method: 'password', reason: translateAuthError(err) });
     } finally {
       setLoading(false);
     }
@@ -185,13 +185,13 @@ const LoginPage: React.FC = () => {
     setError('');
     setLoading(true);
     try {
-      mixpanel.track('Front-end: Login Iniciado', { method: 'google' });
+      mixpanel.track('Login · Iniciado', { method: 'google' });
       await signInWithGoogle();
-      mixpanel.track('Front-end: Login Concluído', { method: 'google' });
+      mixpanel.track('Login · Concluído', { method: 'google' });
     } catch (err: any) {
       setLoading(false);
       setError(translateAuthError(err));
-      mixpanel.track('Front-end: Login Falhou', { method: 'google', reason: translateAuthError(err) });
+      mixpanel.track('Login · Falhou', { method: 'google', reason: translateAuthError(err) });
     }
   };
 

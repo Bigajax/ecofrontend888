@@ -230,7 +230,7 @@ function ChatPage() {
 
   useEffect(() => {
     if (!user) return;
-    mixpanel.track('Eco: Entrou no Chat', {
+    mixpanel.track('Chat · Entrou', {
       userId,
       userName: rawUserName,
       timestamp: new Date().toISOString(),
@@ -430,7 +430,7 @@ function ChatPage() {
         if (freeLimits.reachedLimit) {
           setLoginGateContext('chat_daily_limit');
           setLoginGateOpen(true);
-          mixpanel.track('Free Tier Limit Blocked', {
+          mixpanel.track('Assinatura · Limite free bloqueado', {
             limit_type: 'daily_messages',
             count: freeLimits.count,
             limit: freeLimits.limit,
@@ -444,7 +444,7 @@ function ChatPage() {
           setLoginGateContext('chat_soft_limit');
           setLoginGateOpen(true);
           setHasShownSoftPrompt(true);
-          mixpanel.track('Free Tier Soft Prompt Shown', {
+          mixpanel.track('Assinatura · Soft prompt free', {
             count: freeLimits.count,
             remaining: freeLimits.remaining,
             user_id: user.id,
@@ -537,7 +537,7 @@ function ChatPage() {
       return;
     }
     hideQuickSuggestions();
-    mixpanel.track('Front-end: Quick Suggestion', {
+    mixpanel.track('Chat · Sugestão rápida', {
       id: s.id,
       label: s.label,
       source: meta?.source,
@@ -1115,7 +1115,7 @@ function ChatPage() {
               onClose={() => setLoginGateOpen(false)}
               onSignup={() => {
                 if (guestGate.guestId) {
-                  mixpanel.track('signup_clicked', {
+                  mixpanel.track('Cadastro · CTA clicado', {
                     guestId: guestGate.guestId,
                     context: loginGateContext,
                   });

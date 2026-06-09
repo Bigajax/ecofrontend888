@@ -86,7 +86,7 @@ interface SubscriptionCancelledProperties {
  * Tracking quando usuário visualiza a tela/modal Premium
  */
 export function trackPremiumScreenViewed(props: Partial<PremiumScreenProperties>) {
-  mixpanel.track('Premium Screen Viewed', {
+  mixpanel.track('Assinatura · Tela premium vista', {
     ...props,
     currency: 'BRL',
     timestamp: new Date().toISOString(),
@@ -98,7 +98,7 @@ export function trackPremiumScreenViewed(props: Partial<PremiumScreenProperties>
  * Tracking quando usuário clica em um plano específico
  */
 export function trackPremiumCardClicked(props: PremiumCardProperties) {
-  mixpanel.track('Premium Card Clicked', {
+  mixpanel.track('Assinatura · Plano clicado', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -109,7 +109,7 @@ export function trackPremiumCardClicked(props: PremiumCardProperties) {
  * Tracking quando usuário inicia o checkout (cria preferência MP e redireciona)
  */
 export function trackCheckoutStarted(props: CheckoutStartedProperties) {
-  mixpanel.track('Checkout Started', {
+  mixpanel.track('Assinatura · Checkout iniciado', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -120,7 +120,7 @@ export function trackCheckoutStarted(props: CheckoutStartedProperties) {
  * Tracking quando pagamento é aprovado (callback page)
  */
 export function trackSubscriptionPaid(props: SubscriptionPaidProperties) {
-  mixpanel.track('Subscription Paid', {
+  mixpanel.track('Assinatura · Paga', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -131,7 +131,7 @@ export function trackSubscriptionPaid(props: SubscriptionPaidProperties) {
  * Tracking quando pagamento falha (callback page)
  */
 export function trackPaymentFailed(props: PaymentFailedProperties) {
-  mixpanel.track('Payment Failed', {
+  mixpanel.track('Assinatura · Pagamento falhou', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -142,7 +142,7 @@ export function trackPaymentFailed(props: PaymentFailedProperties) {
  * Tracking quando usuário atinge limite de free tier
  */
 export function trackFreeTierLimitHit(props: FreeTierLimitHitProperties) {
-  mixpanel.track('Free Tier Limit Hit', {
+  mixpanel.track('Assinatura · Limite free atingido', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -153,7 +153,7 @@ export function trackFreeTierLimitHit(props: FreeTierLimitHitProperties) {
  * Tracking quando usuário tenta acessar feature premium sem ser premium
  */
 export function trackPremiumFeatureAttempted(props: PremiumFeatureAttemptedProperties) {
-  mixpanel.track('Premium Feature Attempted', {
+  mixpanel.track('Assinatura · Recurso premium tentado', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -164,7 +164,7 @@ export function trackPremiumFeatureAttempted(props: PremiumFeatureAttemptedPrope
  * Tracking quando trial inicia
  */
 export function trackTrialStarted(props: TrialEventProperties) {
-  mixpanel.track('Trial Started', {
+  mixpanel.track('Assinatura · Trial iniciado', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -175,7 +175,7 @@ export function trackTrialStarted(props: TrialEventProperties) {
  * Tracking check-in diário durante trial
  */
 export function trackTrialDay(props: TrialEventProperties) {
-  mixpanel.track('Trial Day Check-in', {
+  mixpanel.track('Assinatura · Trial check-in', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -186,7 +186,7 @@ export function trackTrialDay(props: TrialEventProperties) {
  * Tracking quando trial está perto de acabar
  */
 export function trackTrialEndingSoon(props: TrialEventProperties) {
-  mixpanel.track('Trial Ending Soon', {
+  mixpanel.track('Assinatura · Trial acabando', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -197,7 +197,7 @@ export function trackTrialEndingSoon(props: TrialEventProperties) {
  * Tracking quando usuário cancela assinatura
  */
 export function trackSubscriptionCancelled(props: SubscriptionCancelledProperties) {
-  mixpanel.track('Subscription Cancelled', {
+  mixpanel.track('Assinatura · Cancelada', {
     ...props,
     timestamp: new Date().toISOString(),
   });
@@ -208,7 +208,7 @@ export function trackSubscriptionCancelled(props: SubscriptionCancelledPropertie
  * Tracking quando usuário faz downgrade de plano
  */
 export function trackDowngradedToFree(props: { user_id: string; previous_plan: string; reason?: string }) {
-  mixpanel.track('Downgraded to Free', {
+  mixpanel.track('Assinatura · Downgrade pra free', {
     ...props,
     timestamp: new Date().toISOString(),
   });

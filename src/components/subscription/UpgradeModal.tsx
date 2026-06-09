@@ -107,7 +107,7 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
   const handleSubscribe = () => {
     // Unificado: todo CTA de assinatura vai para /assinar (passo de plano).
     // Logado → pagamento sem cadastro; guest → cadastro → pagamento.
-    mixpanel.track('Upgrade Modal CTA Clicked', {
+    mixpanel.track('Assinatura · Upgrade modal CTA', {
       plan: selectedPlan,
       source,
       user_id: user?.id,
@@ -120,7 +120,7 @@ export default function UpgradeModal({ open, onClose, source = 'generic' }: Upgr
   const handleClose = () => {
     if (state === 'loading') return;
     onClose();
-    mixpanel.track('Upgrade Modal Closed', {
+    mixpanel.track('Assinatura · Upgrade modal fechado', {
       plan: selectedPlan,
       state,
       source,

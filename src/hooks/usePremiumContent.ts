@@ -118,7 +118,7 @@ export function usePremiumContent() {
       const from = source || 'premium_gate';
 
       // Registrar evento no Mixpanel
-      mixpanel.track('Upgrade CTA Clicked', {
+      mixpanel.track('Assinatura · Upgrade CTA clicado', {
         source: from,
         user_id: user?.id,
         current_plan: subscription?.plan || 'free',
@@ -140,7 +140,7 @@ export function usePremiumContent() {
     setShowUpgradeModal(false);
 
     // Registrar fechamento no Mixpanel
-    mixpanel.track('Upgrade Modal Closed', {
+    mixpanel.track('Assinatura · Upgrade modal fechado', {
       user_id: user?.id,
     });
   }, [user]);

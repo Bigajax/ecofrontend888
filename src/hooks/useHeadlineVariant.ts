@@ -31,7 +31,7 @@ export function useHeadlineVariant() {
 
   useEffect(() => {
     try {
-      mixpanel.track('Landing Headline Shown', { variant });
+      mixpanel.track('Landing · Headline exibida', { variant });
     } catch {
       // tracking nunca pode quebrar a página
     }

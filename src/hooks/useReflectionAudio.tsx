@@ -71,7 +71,7 @@ export function useReflectionAudio(source = 'diario') {
     stop();
 
     try {
-      mixpanel.track('Diario Estoico: Audio Played', {
+      mixpanel.track('Diário · Áudio tocado', {
         day_number: maxim.dayNumber,
         month: maxim.month,
         source,

@@ -123,7 +123,7 @@ export default function EcotopiaEcoIAPage() {
 
   useEffect(() => {
     try {
-      mixpanel.track('Eco IA Page Viewed', { page: 'eco_ia_root' });
+      mixpanel.track('Landing · Vista', { pagina: 'eco_ia' });
     } catch {
       // noop
     }

@@ -20,7 +20,7 @@ export default function EcotopiaLandingPage() {
 
   useEffect(() => {
     try {
-      mixpanel.track('Landing Page Viewed', { page: 'ecotopia_root' });
+      mixpanel.track('Landing · Vista', { pagina: 'principal' });
     } catch {
       // noop
     }

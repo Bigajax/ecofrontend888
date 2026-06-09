@@ -191,7 +191,7 @@ export default function EcotopiaAnsiedadePage() {
 
   useEffect(() => {
     try {
-      mixpanel.track('Ansiedade Landing Viewed', { page: 'ansiedade_root' });
+      mixpanel.track('Landing · Vista', { pagina: 'ansiedade' });
     } catch {
       // noop
     }

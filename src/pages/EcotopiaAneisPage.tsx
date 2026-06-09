@@ -89,7 +89,7 @@ export default function EcotopiaAneisPage() {
 
   useEffect(() => {
     try {
-      mixpanel.track('Cinco Aneis Landing Viewed', { page: 'disciplina_root' });
+      mixpanel.track('Landing · Vista', { pagina: 'aneis' });
     } catch {
       // noop
     }

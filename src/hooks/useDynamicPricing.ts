@@ -200,7 +200,7 @@ export function useDynamicPricing() {
         setOffer(newOffer);
         localStorage.setItem(storageKey, JSON.stringify(newOffer));
 
-        mixpanel.track('Dynamic Offer Created', {
+        mixpanel.track('Assinatura · Oferta dinâmica criada', {
           offer_type: newOffer.type,
           offer_reason: newOffer.reason,
           offer_amount: newOffer.amount,
@@ -227,7 +227,7 @@ export function useDynamicPricing() {
         setOffer(newOffer);
         localStorage.setItem(storageKey, JSON.stringify(newOffer));
 
-        mixpanel.track('Dynamic Offer Created', {
+        mixpanel.track('Assinatura · Oferta dinâmica criada', {
           offer_type: newOffer.type,
           offer_reason: newOffer.reason,
           offer_amount: newOffer.amount,
@@ -254,7 +254,7 @@ export function useDynamicPricing() {
         setOffer(newOffer);
         localStorage.setItem(storageKey, JSON.stringify(newOffer));
 
-        mixpanel.track('Dynamic Offer Created', {
+        mixpanel.track('Assinatura · Oferta dinâmica criada', {
           offer_type: newOffer.type,
           offer_reason: newOffer.reason,
           offer_amount: newOffer.amount,
@@ -282,7 +282,7 @@ export function useDynamicPricing() {
     localStorage.removeItem(storageKey);
     setOffer(null);
 
-    mixpanel.track('Dynamic Offer Dismissed', {
+    mixpanel.track('Assinatura · Oferta dinâmica dispensada', {
       offer_type: offer.type,
       offer_reason: offer.reason,
       user_id: user.id,
@@ -295,7 +295,7 @@ export function useDynamicPricing() {
   const acceptOffer = useCallback(() => {
     if (!user?.id || !offer) return;
 
-    mixpanel.track('Dynamic Offer Accepted', {
+    mixpanel.track('Assinatura · Oferta dinâmica aceita', {
       offer_type: offer.type,
       offer_reason: offer.reason,
       offer_amount: offer.amount,

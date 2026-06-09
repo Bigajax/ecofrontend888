@@ -223,7 +223,7 @@ export default function ProgramasPage() {
         is_premium_user: false,
         user_id: user?.id,
       });
-      mixpanel.track('Meditation Premium Clicked', {
+      mixpanel.track('Meditação · Premium clicada', {
         meditation_id: meditationId,
         meditation_title: meditation?.title,
         duration_minutes: meditation?.durationMinutes,
@@ -236,7 +236,7 @@ export default function ProgramasPage() {
       return;
     }
 
-    mixpanel.track('Meditation Started', {
+    mixpanel.track('Meditação · Iniciada', {
       meditation_id: meditationId,
       meditation_title: meditation?.title,
       duration_minutes: meditation?.durationMinutes,
@@ -344,7 +344,7 @@ export default function ProgramasPage() {
               </div>
               <button
                 onClick={() => {
-                  mixpanel.track('Meditation Library Upgrade Banner Click', { user_tier: tier, user_id: user?.id });
+                  mixpanel.track('Meditação · Banner upgrade clicado', { user_tier: tier, user_id: user?.id });
                   requestUpgrade('meditation_library_banner');
                 }}
                 className="flex-shrink-0 inline-flex items-center gap-2 rounded-full px-5 py-3 text-[14px] font-bold transition-all duration-200 hover:scale-105 active:scale-95"
@@ -541,7 +541,7 @@ export default function ProgramasPage() {
 
               <button
                 onClick={() => {
-                  mixpanel.track('Meditation Footer Upgrade Click', { user_tier: tier, user_id: user?.id });
+                  mixpanel.track('Meditação · Footer upgrade clicado', { user_tier: tier, user_id: user?.id });
                   requestUpgrade('meditation_library_footer');
                 }}
                 className="inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 text-[15px] font-bold text-[#07192E] transition-all duration-200 hover:scale-105 active:scale-95 mt-1"
