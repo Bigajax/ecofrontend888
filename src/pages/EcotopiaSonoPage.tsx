@@ -219,14 +219,13 @@ export default function EcotopiaSonoPage() {
         <div className="lp-sono-hero-inner">
           <div className="lp-sono-hero-text">
             <h1 className="scroll-reveal">
-              Sua mente não desliga<br className="lp-br-desktop" />{' '}
-              quando você deita?
+              Durma mais rápido em{' '}
+              <span className="lp-sono-mark-starry">apenas 7 noites</span>
             </h1>
 
             <p className="lp-sono-hero-lead scroll-reveal stagger-1">
-              O <span className="lp-sono-mark">Protocolo do Sono</span> reúne meditações
-              guiadas, exercícios de respiração e práticas desenvolvidas para ajudar
-              você a desacelerar antes de dormir.
+              Seu cérebro não precisa continuar ligado até de madrugada.
+              Um protocolo guiado para desacelerar a mente antes de dormir.
             </p>
 
             <Link
@@ -255,20 +254,10 @@ export default function EcotopiaSonoPage() {
         terms={['32% menos estresse', '4,8★ na App Store', '+2 mil dormindo melhor']}
       />
 
-      {/* Mockup do iPhone — no mobile aparece DEPOIS do marquee (entre faixa e hero) */}
-      <div className="lp-sono-hero-mockup-wrap">
-        <img
-          src="/images/sono-hero-meditacao-mockup.webp"
-          alt="ECO no celular — meditação acolhendo a respiração"
-          className="lp-sono-hero-mockup"
-          loading="lazy"
-        />
-      </div>
-
       {/* ─── Como funciona · Protocolo do Sono: 7 noites (carrossel) ─── */}
       <section className="lp-sono-grid-section lp-sono-protocol">
         <h2 className="lp-sono-h2 scroll-reveal lp-sono-protocol-h2">
-          O <span className="lp-sono-mark">Protocolo do Sono</span>:<br className="lp-br-desktop" />{' '}
+          O Protocolo do Sono:<br className="lp-br-desktop" />{' '}
           7&nbsp;noites para desacelerar a mente.
         </h2>
 
@@ -438,7 +427,7 @@ export default function EcotopiaSonoPage() {
         <div className="lp-sono-tabs-head">
           <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal lp-sono-tabs-h2">
             Nos 7&nbsp;dias grátis, as 7&nbsp;noites do{' '}
-            <span className="lp-sono-mark">Protocolo do Sono</span> são suas.
+            Protocolo do Sono são suas.
           </h2>
           <p className="lp-sono-tabs-sub scroll-reveal stagger-1">
             Comece por qualquer fase da noite —<br className="lp-br-desktop" />{' '}
@@ -675,7 +664,7 @@ export default function EcotopiaSonoPage() {
             <div className="lp-sono-offer-reassure scroll-reveal stagger-2">
               <p className="lp-sono-offer-reassure-lead">
                 Comece hoje.{' '}
-                <span className="lp-sono-mark">Explore todo o aplicativo</span>{' '}
+                Explore todo o aplicativo{' '}
                 por 7 dias gratuitamente.
               </p>
               <p className="lp-sono-offer-reassure-fine">
