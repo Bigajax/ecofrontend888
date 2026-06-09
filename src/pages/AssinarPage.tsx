@@ -55,6 +55,15 @@ function parsePlan(value: string | null): PlanId {
   return value === "annual" ? "annual" : "monthly";
 }
 
+/**
+ * Landing de origem para o "voltar" da logo. Tráfego pago do /sono deve voltar
+ * pro /sono (mantém a oferta e o contexto do funil) em vez de cair na home
+ * genérica "/". A origem vem do `?from=` do CTA (ex.: "sono_hero").
+ */
+function originLanding(from: string | null | undefined): string {
+  return from?.startsWith("sono") ? "/sono" : "/";
+}
+
 export default function AssinarPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -197,6 +206,9 @@ export default function AssinarPage() {
 
   const googleReturnTo = `/assinar?plan=${plan}&step=card`;
 
+  // Logo "voltar" preserva a landing de origem (tráfego do /sono volta pro /sono).
+  const backTo = originLanding(params.get("from") || sessionStorage.getItem("eco.assinar.from"));
+
   // Larguras alvo por step no desktop. Validação ganha mais espaço pro grid 2-col.
   const stepMaxWidthMd =
     step === "validation" ? "md:max-w-[760px]"
@@ -225,7 +237,7 @@ export default function AssinarPage() {
       </div>
 
       <header className="relative z-10 bg-white px-5 py-6">
-        <Link to="/" aria-label="Ecotopia — início" className="inline-block">
+        <Link to={backTo} aria-label="Ecotopia — início" className="inline-block">
           <img src="/images/ecotopia-logo-trim.webp" alt="Ecotopia" className="h-7 w-auto" />
         </Link>
       </header>
