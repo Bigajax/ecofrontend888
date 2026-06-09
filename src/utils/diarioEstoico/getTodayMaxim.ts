@@ -1135,6 +1135,17 @@ export const JUNHO_REFLECTIONS: DailyMaxim[] = [
     comment: 'Atletas, sejam os de alto nível em esportes universitários, sejam os profissionais, seguem cada vez mais uma filosofia conhecida como "O processo". É uma filosofia criada pelo técnico Nick Saban, da Universidade do Alabama, que ensinou seus jogadores a ignorar o quadro geral — jogos importantes, vencer campeonatos, a enorme vantagem do adversário — e concentrar-se em fazer bem as coisas infinitamente menores — treinar com pleno esforço, terminar uma jogada específica, converter numa única posse. Uma temporada dura meses, um jogo dura horas, a recuperação pode estar a quatro touchdowns de distância, mas uma única jogada dura apenas alguns segundos. E jogos e temporadas são constituídos por segundos.\n\nSe times seguem "O processo", eles tendem a ganhar. Superam obstáculos e finalmente chegam ao topo sem sequer ter se concentrado diretamente nos obstáculos. Se seguir "O processo" em sua vida — reunindo as ações corretas na ordem correta, uma depois da outra —, você também se sairá bem. Não só isso, estará mais bem equipado para transpor rapidamente os obstáculos ao longo do caminho. Estará ocupado demais pondo um pé diante do outro para poder perceber que os obstáculos estavam ali.',
     background: getBackgroundForDay(8),
   },
+  {
+    date: '9 de junho',
+    month: 'junho',
+    dayNumber: 9,
+    title: 'PEGUE OS PROBLEMAS ENQUANTO SÃO PEQUENOS',
+    text: '"Não há nenhum vício que não tenha uma defesa, nenhum que no início não seja modesto e facilmente contido — mas depois o problema se espalha amplamente. Se tu lhe permitires que comece, não serás capaz de controlar até onde ele vai. Toda emoção no início é fraca. Mais tarde ela se inflama e ganha força à medida que avança — é mais fácil desacelerá-la que suplantá-la."',
+    author: 'Sêneca',
+    source: 'Cartas Morais, 106.2B-3A',
+    comment: '"É mais fácil", lembra-nos Públio Siro, "atravessar um rio em sua fonte". É o que Sêneca também quer dizer. As águas tumultuosas e as correntes mortais dos maus hábitos, da indisciplina, do caos e da disfunção: elas começam em algum lugar como apenas um pequeno fio d’água. Em algum lugar elas são um plácido lago ou tanque, até uma borbulhante fonte subterrânea.\n\nO que você preferiria fazer — quase se afogar numa perigosa travessia dentro de algumas semanas ou atravessar agora enquanto ainda é fácil? A escolha é sua.',
+    background: getBackgroundForDay(9),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
