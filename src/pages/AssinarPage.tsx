@@ -204,10 +204,18 @@ export default function AssinarPage() {
     }
   }, [plan, navigate]);
 
-  const googleReturnTo = `/assinar?plan=${plan}&step=card`;
+  // Origem do funil (do ?from= do CTA, com backstop em sessionStorage).
+  const from = params.get("from") || sessionStorage.getItem("eco.assinar.from") || "";
 
   // Logo "voltar" preserva a landing de origem (tráfego do /sono volta pro /sono).
-  const backTo = originLanding(params.get("from") || sessionStorage.getItem("eco.assinar.from"));
+  const backTo = originLanding(from);
+
+  // Retornos que preservam o funil (plano, step do cartão e origem) após
+  // login/cadastro externo — evita cair de volta no início do /assinar e
+  // mantém a atribuição (funnel_source).
+  const funnelReturnTo = `/assinar?plan=${plan}&step=card${from ? `&from=${encodeURIComponent(from)}` : ""}`;
+  const googleReturnTo = funnelReturnTo;
+  const loginReturnTo = `/login?returnTo=${encodeURIComponent(funnelReturnTo)}`;
 
   // Larguras alvo por step no desktop. Validação ganha mais espaço pro grid 2-col.
   const stepMaxWidthMd =
@@ -259,7 +267,7 @@ export default function AssinarPage() {
 
         {step === "signup" && (
           <div className="px-5 md:rounded-3xl md:bg-white md:px-8 md:py-10 md:shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
-            <SignupStep onCreated={() => setStep("card")} googleReturnTo={googleReturnTo} />
+            <SignupStep onCreated={() => setStep("card")} googleReturnTo={googleReturnTo} loginReturnTo={loginReturnTo} />
           </div>
         )}
 
@@ -346,6 +354,8 @@ export default function AssinarPage() {
               </p>
               <Link
                 to="/cancelar-assinatura"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="mt-1 inline-block underline underline-offset-2"
                 style={{ color: "#1554F0" }}
               >

@@ -41,6 +41,8 @@ export function PlanStep({ selectedPlan, onSelectPlan, onContinue }: PlanStepPro
           : "7 dias gratuitos, depois R$ 142,80/ano. "}
         <Link
           to="/cancelar-assinatura"
+          target="_blank"
+          rel="noopener noreferrer"
           className="underline underline-offset-2 transition-colors hover:opacity-80"
           style={{ color: "#1554F0" }}
         >

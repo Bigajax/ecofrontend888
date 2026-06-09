@@ -11,6 +11,7 @@ import {
 interface SignupStepProps {
   onCreated: () => void;           // session is ready (no email confirmation needed)
   googleReturnTo: string;          // where to come back after Google OAuth
+  loginReturnTo: string;           // /login que retorna pro funil (preserva step/plan/origem)
 }
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -18,7 +19,7 @@ const fieldCls =
   "w-full rounded-lg border px-4 py-4 text-[15px] text-[#0D3461] outline-none placeholder:text-[#8a93a3] focus:border-[#1554F0]";
 const fieldStyle = { borderColor: "rgba(13,52,97,0.18)" } as const;
 
-export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
+export function SignupStep({ onCreated, googleReturnTo, loginReturnTo }: SignupStepProps) {
   const { register, signInWithGoogle } = useAuth();
   const [nome, setNome] = useState("");
   const [sobrenome, setSobrenome] = useState("");
@@ -81,7 +82,7 @@ export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
       <p className="-mt-2 text-center text-[15px] leading-snug" style={{ color: "#5A8AAD" }}>
         Já tem uma conta?
         <br />
-        <a href="/login?returnTo=/assinar" className="font-semibold underline" style={{ color: "#1554F0" }}>Conecte-se</a>
+        <a href={loginReturnTo} className="font-semibold underline" style={{ color: "#1554F0" }}>Conecte-se</a>
       </p>
 
       <input
