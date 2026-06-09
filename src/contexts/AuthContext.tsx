@@ -462,9 +462,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.info('[Auth] URL:', window.location.href);
         console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-        setSession(session ?? null);
-        setUser(session?.user ?? null);
-        persistAuthToken(session?.access_token ?? null);
+        // Evita re-render storm: o Supabase dispara onAuthStateChange a cada
+        // refresh/recover de token. Se o usuário (id) e o token não mudaram,
+        // mantemos as MESMAS referências de state → React faz bailout e não
+        // re-renderiza a árvore (crítico p/ componentes sensíveis a recriação,
+        // ex.: brick do MercadoPago em /assinar, que quebra se recriado).
+        const nextSession = session ?? null;
+        const nextAccessToken = session?.access_token ?? null;
+        setUser((prev) => (prev?.id === nextSession?.user?.id ? prev : (nextSession?.user ?? null)));
+        setSession((prev) => (prev?.access_token === nextAccessToken ? prev : nextSession));
+        persistAuthToken(nextAccessToken);
 
         // 🛡️ PROTEÇÃO: Detecta SIGNED_OUT e tenta recuperar sessão COM LIMITE
         if (event === 'SIGNED_OUT') {
