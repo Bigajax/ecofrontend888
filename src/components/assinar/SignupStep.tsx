@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  trackSignupViewed,
-  trackSignupSubmitted,
-  trackSignupCompleted,
-  trackSignupFailed,
+  trackCadastroVisto,
+  trackCadastroEnviado,
+  trackCadastroConcluido,
+  trackCadastroFalhou,
 } from "@/lib/mixpanelAssinarFunnel";
 
 interface SignupStepProps {
@@ -32,7 +32,7 @@ export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
   const [info, setInfo] = useState<string | null>(null);
 
   useEffect(() => {
-    trackSignupViewed();
+    trackCadastroVisto();
   }, []);
 
   const submit = async (e: React.FormEvent) => {
@@ -44,11 +44,11 @@ export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
     if (!aceito) return setErro("É preciso aceitar os Termos para continuar.");
 
     setLoading(true);
-    trackSignupSubmitted({ method: "email", opted_newsletter: novidades === "sim" });
+    trackCadastroEnviado({ method: "email", opted_newsletter: novidades === "sim" });
     try {
       const fullName = [nome.trim(), sobrenome.trim()].filter(Boolean).join(" ");
       const { needsConfirmation } = await register(email.trim(), senha, fullName, "");
-      trackSignupCompleted({ method: "email", needs_confirmation: needsConfirmation });
+      trackCadastroConcluido({ method: "email", needs_confirmation: needsConfirmation });
       if (needsConfirmation) {
         setInfo("Enviamos um e-mail de confirmação. Confirme para continuar a assinatura.");
         return;
@@ -56,7 +56,7 @@ export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
       onCreated();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível criar a conta.";
-      trackSignupFailed({ method: "email", error_message: message });
+      trackCadastroFalhou({ method: "email", error_message: message });
       setErro(message);
     } finally {
       setLoading(false);
@@ -64,13 +64,13 @@ export function SignupStep({ onCreated, googleReturnTo }: SignupStepProps) {
   };
 
   const google = async () => {
-    trackSignupSubmitted({ method: "google" });
+    trackCadastroEnviado({ method: "google" });
     try {
       sessionStorage.setItem("eco.assinar.returnTo", googleReturnTo);
       await signInWithGoogle();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Falha ao entrar com Google.";
-      trackSignupFailed({ method: "google", error_message: message });
+      trackCadastroFalhou({ method: "google", error_message: message });
       setErro(message);
     }
   };

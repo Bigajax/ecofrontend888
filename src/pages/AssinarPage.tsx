@@ -21,21 +21,18 @@ import {
 } from "@/utils/onboardingObjetivosStorage";
 import { PRICE } from "@/constants/offerCopy";
 import {
-  registerAssinarFunnel,
-  trackAssinarFunnelStarted,
-  trackAssinarStepViewed,
-  trackAssinarGoalsSubmitted,
-  trackAssinarPlanConfirmed,
-  trackCheckoutCardViewed,
-  trackCheckoutCardSubmitted,
-  trackCheckoutCardFailed,
+  registerFunilSono,
+  trackAssinaturaIniciada,
+  trackEtapaVista,
+  trackObjetivosEnviados,
+  trackPlanoVisto,
+  trackPlanoSelecionado,
+  trackPlanoConfirmado,
+  trackCartaoVisto,
+  trackCartaoEnviado,
+  trackCartaoRecusado,
 } from "@/lib/mixpanelAssinarFunnel";
-import {
-  trackPremiumScreenViewed,
-  trackPremiumCardClicked,
-} from "@/lib/mixpanelConversionEvents";
 
-const PLAN_LABEL: Record<PlanId, string> = { monthly: "Mensal", annual: "Anual" };
 const planAmount = (plan: PlanId): number => (plan === "monthly" ? PRICE.monthly : PRICE.annualTotal);
 
 type Step = "goals" | "validation" | "plan" | "signup" | "card";
@@ -80,8 +77,8 @@ export default function AssinarPage() {
   useEffect(() => {
     const from = params.get("from") || sessionStorage.getItem("eco.assinar.from") || "direct";
     sessionStorage.setItem("eco.assinar.from", from);
-    registerAssinarFunnel(from);
-    trackAssinarFunnelStarted({ entry_step: step, plan });
+    registerFunilSono(from);
+    trackAssinaturaIniciada({ entry_step: step, plan });
     // Só no mount — entrada no funil é evento único.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -91,20 +88,17 @@ export default function AssinarPage() {
   // cada toggle de plano. No step "plan", também reusa Premium Screen Viewed
   // (intenção de topo); o toggle mensal/anual é capturado em selectPlan.
   useEffect(() => {
-    trackAssinarStepViewed(step);
+    trackEtapaVista(step);
     if (step === "plan") {
-      trackPremiumScreenViewed({
+      trackPlanoVisto({
         plan_id: plan,
-        plan_label: PLAN_LABEL[plan],
         price: planAmount(plan),
-        screen: "assinar_plan",
-        placement: "assinar",
         is_guest: !user,
         user_id: user?.id,
       });
     }
     if (step === "card") {
-      trackCheckoutCardViewed({ plan_id: plan, amount: planAmount(plan) });
+      trackCartaoVisto({ plan_id: plan, amount: planAmount(plan) });
     }
     // plan/user lidos no momento do fire; view não deve re-disparar com eles.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -149,20 +143,16 @@ export default function AssinarPage() {
     const p = new URLSearchParams(params);
     p.set("plan", next);
     setParams(p, { replace: true });
-    trackPremiumCardClicked({
+    trackPlanoSelecionado({
       plan_id: next,
-      plan_label: PLAN_LABEL[next],
       price: planAmount(next),
-      currency: "BRL",
-      screen: "assinar_plan",
-      placement: "assinar",
       is_guest: !user,
       user_id: user?.id,
     });
   };
 
   const submitObjetivos = async (answers: GoalId[], skipped: boolean, nextStep: Step) => {
-    trackAssinarGoalsSubmitted({ answers_count: answers.length, skipped });
+    trackObjetivosEnviados({ answers_count: answers.length, skipped });
     setStoredObjetivos({ answers, skipped });
     setStep(nextStep);
     const result = await saveObjetivos({ answers, skipped });
@@ -173,7 +163,7 @@ export default function AssinarPage() {
   const handleGoalsSkip = () => { void submitObjetivos([], true, "plan"); };
 
   const continueFromPlan = () => {
-    trackAssinarPlanConfirmed({ plan_id: plan, is_authenticated: !!user });
+    trackPlanoConfirmado({ plan_id: plan, is_authenticated: !!user });
     setStep(user ? "card" : "signup");
   };
 
@@ -182,7 +172,7 @@ export default function AssinarPage() {
   const handleToken = useCallback(async (formData: Record<string, unknown>) => {
     setErro(null);
     setProcessing(true);
-    trackCheckoutCardSubmitted({ plan_id: plan, amount: planAmount(plan) });
+    trackCartaoEnviado({ plan_id: plan, amount: planAmount(plan) });
     try {
       const res = await fetch(apiUrl("/api/subscription/create-with-card"), {
         method: "POST",
@@ -198,7 +188,7 @@ export default function AssinarPage() {
       navigate("/app/subscription/callback");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro inesperado.";
-      trackCheckoutCardFailed({ plan_id: plan, error_message: message });
+      trackCartaoRecusado({ plan_id: plan, error_message: message });
       setErro(message);
     } finally {
       setProcessing(false);

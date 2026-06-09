@@ -6,7 +6,7 @@ import EcotopiaFooter from '@/components/landing/EcotopiaFooter';
 import MethodMarquee from '@/components/landing/MethodMarquee';
 import { useScrollReveal } from '@/components/landing/useScrollReveal';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
-import mixpanel from '@/lib/mixpanel';
+import { trackLandingVista, trackCtaClicado } from '@/lib/mixpanelAssinarFunnel';
 import { fbq, trackWithCAPI } from '@/lib/fbpixel';
 import { PRICE, planValue } from '@/constants/offerCopy';
 
@@ -180,7 +180,7 @@ export default function EcotopiaSonoPage() {
 
   useEffect(() => {
     try {
-      mixpanel.track('Sono Page Viewed', { page: 'sono_root' });
+      trackLandingVista();
     } catch {
       // noop
     }
@@ -195,7 +195,7 @@ export default function EcotopiaSonoPage() {
   // iniciar o trial. Dispara antes da navegação (SPA) do <Link> para /assinar,
   // então o fetch do CAPI não é cancelado por unload.
   const trackTrialCta = (plan: 'annual' | 'monthly', from: string) => {
-    mixpanel.track('Sono CTA Clicked', { plan, placement: from });
+    trackCtaClicado({ plan, placement: from });
     void trackWithCAPI('InitiateCheckout', {
       value: planValue(plan),
       currency: PRICE.currency,

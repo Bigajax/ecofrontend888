@@ -10,6 +10,7 @@ import confetti from 'canvas-confetti';
 import { useAuth } from '../contexts/AuthContext';
 import mixpanel from '../lib/mixpanel';
 import { trackSubscriptionPaid, trackPaymentFailed } from '../lib/mixpanelConversionEvents';
+import { trackAssinaturaPaga } from '../lib/mixpanelAssinarFunnel';
 import { trackWithCAPI } from '../lib/fbpixel';
 import { PRICE, planValue } from '../constants/offerCopy';
 
@@ -48,15 +49,22 @@ export default function SubscriptionCallbackPage() {
             // ✅ Sucesso! Trial ou premium ativo
             setStatus('success');
 
-            // Track Subscription Paid (Camada 3 - Frontend)
+            const planId = (subscription.planType || 'annual') as 'monthly' | 'annual';
+            const amount = planId === 'monthly' ? 15.9 : 142.8;
+
+            // Track Subscription Paid (Camada 3 - Frontend, evento global/histórico)
             trackSubscriptionPaid({
-              plan_id: (subscription.planType || 'annual') as 'monthly' | 'annual',
+              plan_id: planId,
               mp_status: subscription.status,
-              transaction_amount: subscription.planType === 'monthly' ? 15.9 : 142.8,
+              transaction_amount: amount,
               provider: 'mercadopago',
               user_id: user?.id,
               source: 'frontend_callback',
             });
+
+            // Evento do funil em português (herda funnel_source via super property
+            // registrada no /assinar) — fecha o "Funil Sono" de forma consistente.
+            trackAssinaturaPaga({ plan_id: planId, amount });
 
             // Meta Pixel + CAPI: assinatura confirmada (trial ativo) → Subscribe,
             // evento padrão do Meta para início de assinatura recorrente. O
