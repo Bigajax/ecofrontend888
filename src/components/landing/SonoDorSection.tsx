@@ -39,30 +39,33 @@ const RECOGNITION = [
   { text: 'Durmo, mas acordo como se não tivesse descansado.', Icon: PillSnooze },
 ];
 
-function DecoMoonStars() {
+// Lua preenchida com estrelinhas — a noite que começa.
+function DecoMoonFilled() {
   return (
-    <svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 6a9.5 9.5 0 1 0 8 14.5A11 11 0 0 1 20 6z" />
-      <path d="M7 8.5v4M5 10.5h4" />
-      <circle cx="28.5" cy="7.5" r="0.9" fill="currentColor" stroke="none" />
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M15 3a9 9 0 1 0 6.4 15.4A10.5 10.5 0 0 1 15 3z" />
+      <circle cx="19" cy="4.6" r="1" />
+      <circle cx="22" cy="9" r="0.7" />
     </svg>
   );
 }
 
-function DecoBell() {
+// Relógio marcando 1h — "você olha o relógio".
+function DecoClock() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
     </svg>
   );
 }
 
-function DecoSnooze() {
+// zZ tipográfico — o sono que não vem.
+function DecoZzz() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12.5 5a7 7 0 1 0 6 10A8.5 8.5 0 0 1 12.5 5z" />
-      <path d="M15.5 4h3.5l-3.5 3.5H19" />
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13.5 5h6l-6 7h6" />
+      <path d="M4.5 13h5l-5 6h5" />
     </svg>
   );
 }
@@ -116,13 +119,13 @@ export default function SonoDorSection() {
           <div className="lp-sono-dor-media scroll-reveal">
             <div className="lp-sono-dor-photo-wrap">
               <span className="lp-sono-dor-deco lp-sono-dor-deco--moon" aria-hidden>
-                <DecoMoonStars />
+                <DecoMoonFilled />
               </span>
               <span className="lp-sono-dor-deco lp-sono-dor-deco--bell" aria-hidden>
-                <DecoBell />
+                <DecoClock />
               </span>
               <span className="lp-sono-dor-deco lp-sono-dor-deco--snooze" aria-hidden>
-                <DecoSnooze />
+                <DecoZzz />
               </span>
 
               <div className="lp-sono-dor-photo">

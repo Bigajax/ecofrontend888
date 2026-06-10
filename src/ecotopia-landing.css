@@ -13209,20 +13209,22 @@ body.eco-no-scroll {
   color: var(--lp-accent-navy);
 }
 
+/* lua dourada · relógio navy · zZ dourado — três formas distintas */
 .ecotopia-lp .lp-sono-dor-deco--moon {
   top: -10px;
   left: -8px;
+  color: #C9A35C;
 }
 
 .ecotopia-lp .lp-sono-dor-deco--bell {
   top: 34%;
   right: -14px;
-  color: #C9A35C;
 }
 
 .ecotopia-lp .lp-sono-dor-deco--snooze {
   bottom: -6px;
   left: 4%;
+  color: #C9A35C;
 }
 
 /* nuvem e estrelinhas ao redor do título: traço solto, sem selo branco
