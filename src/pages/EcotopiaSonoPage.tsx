@@ -236,6 +236,21 @@ export default function EcotopiaSonoPage() {
             </Link>
 
             <p className="lp-sono-hero-microcopy scroll-reveal stagger-3">
+              <svg
+                className="lp-sono-hero-microcopy-shield"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6l7-3z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
               Sem cobrança hoje ·{' '}
               <Link to="/cancelar-assinatura" className="lp-sono-hero-microcopy-link">
                 cancele quando quiser
