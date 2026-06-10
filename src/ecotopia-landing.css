@@ -13015,20 +13015,8 @@ body.eco-no-scroll {
 .ecotopia-lp .lp-sono-dor {
   position: relative;
   overflow: hidden;
-  /* degradê creme → pêssego (mockup jun/2026): a seção esquenta pro fim */
-  background: linear-gradient(180deg, #FDFBF7 0%, #F7F3EB 52%, #F8E9D8 100%);
+  background: #FFFFFF; /* fundo branco limpo, letra preta */
   padding: 72px 24px;
-}
-/* glow morno (amanhecer) embaixo, atrás da frase de virada */
-.ecotopia-lp .lp-sono-dor::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 46%;
-  pointer-events: none;
-  background: radial-gradient(72% 100% at 50% 100%, rgba(232, 182, 90, 0.1), transparent 72%);
 }
 
 .ecotopia-lp .lp-sono-dor-inner {
@@ -13043,7 +13031,7 @@ body.eco-no-scroll {
   font-family: var(--lp-serif);
   font-weight: 500; /* "Você conhece" calmo — a ênfase vive em "essa cena." */
   text-align: center; /* heading centralizado */
-  color: var(--lp-accent-navy);
+  color: #0A0A0A;
   font-size: clamp(25px, 6.2vw, 34px);
   line-height: 1.16;
   letter-spacing: -0.01em;
@@ -13058,7 +13046,7 @@ body.eco-no-scroll {
   font-family: var(--lp-serif);
   font-size: 16px;
   line-height: 1.72;
-  color: var(--lp-text-muted);
+  color: #0A0A0A;
   margin: 0 0 16px;
 }
 
@@ -13139,7 +13127,7 @@ body.eco-no-scroll {
   font-family: var(--lp-serif);
   font-size: 15.5px;
   line-height: 1.4;
-  color: var(--lp-accent-navy);
+  color: #0A0A0A;
 }
 
 /* ── Foto da cena + grid 2 colunas no desktop (mockup jun/2026) ── */
@@ -13235,12 +13223,12 @@ body.eco-no-scroll {
   font-family: var(--lp-serif);
   font-size: 16px;
   line-height: 1.55;
-  color: var(--lp-text-muted);
+  color: #0A0A0A;
 }
 
 .ecotopia-lp .lp-sono-dor-turn-text strong {
   font-weight: 700;
-  color: var(--lp-accent-navy);
+  color: #0A0A0A;
 }
 
 /* título duplicado: mobile centrado acima da foto, desktop dentro da coluna */
