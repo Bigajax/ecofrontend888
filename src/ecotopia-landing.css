@@ -7187,21 +7187,6 @@ body.eco-no-scroll {
   margin: 0 0 32px;
 }
 
-.ecotopia-lp .lp-sono-protocol-h2 {
-  text-align: center;
-  text-wrap: balance;
-}
-
-@media (max-width: 600px) {
-  .ecotopia-lp .lp-sono-protocol-h2 {
-    font-size: 18px;
-    line-height: 1.25;
-    max-width: 320px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-}
-
 .ecotopia-lp .lp-sono-protocol-sub {
   font-family: var(--lp-serif);
   font-size: 17px;
@@ -8142,133 +8127,246 @@ body.eco-no-scroll {
 /* ─── Protocolo do Sono · carrossel de 7 noites ─── */
 /* Trilho com scroll-snap: arrasta com o dedo no touch e paginado pelos
    números/setas no desktop. Cada página ocupa 100% da largura. */
-.ecotopia-lp .lp-sono-protocol-track {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+/* ── Protocolo: noites em sequência (layout da landing Protocolo-Sono-v2) ──
+   Noite 1 em destaque (card grande) + demais noites em lista compacta no
+   mobile e grade de 3 colunas no desktop, com cadeado nas bloqueadas. */
+.ecotopia-lp .lp-sono-nights-inner {
+  max-width: 760px;
 }
 
-.ecotopia-lp .lp-sono-protocol-track::-webkit-scrollbar {
-  display: none;
+.ecotopia-lp .lp-sono-nights-h2 {
+  text-align: left;
 }
 
-.ecotopia-lp .lp-sono-protocol-page {
-  flex: 0 0 100%;
-  scroll-snap-align: start;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 22px;
-  align-content: start;
+.ecotopia-lp .lp-sono-nights-h2-soft {
+  color: #5A6B82;
 }
 
-.ecotopia-lp .lp-sono-protocol-card {
+.ecotopia-lp .lp-sono-nights-lead {
+  font-family: var(--lp-serif);
+  font-size: 17px;
+  line-height: 1.6;
+  color: #5A6B82;
+  max-width: 560px;
+  margin: 18px 0 44px;
+}
+
+.ecotopia-lp .lp-sono-nights-kicker {
   display: block;
+  font-family: var(--lp-sans);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8A97AB;
+}
+
+/* destaque da Noite 1 */
+.ecotopia-lp .lp-sono-nights-featured {
+  display: block;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(15, 27, 51, 0.08);
+  background: #FFFFFF;
+  box-shadow: 0 10px 36px rgba(15, 27, 51, 0.08);
   text-decoration: none !important;
   color: var(--lp-text, #0F1B33);
   transition: transform 0.22s ease;
 }
 
-.ecotopia-lp .lp-sono-protocol-card:hover {
+.ecotopia-lp .lp-sono-nights-featured:hover {
   transform: translateY(-4px);
 }
 
-.ecotopia-lp .lp-sono-protocol-card:hover .lp-sono-protocol-thumb img {
-  transform: scale(1.06);
-}
-
-.ecotopia-lp .lp-sono-protocol-thumb {
+.ecotopia-lp .lp-sono-nights-featured-media {
   position: relative;
   display: block;
-  aspect-ratio: 4 / 3;
-  border-radius: 16px;
-  overflow: hidden;
-  margin-bottom: 12px;
-  box-shadow: 0 4px 18px rgba(15, 27, 51, 0.16);
 }
 
-.ecotopia-lp .lp-sono-protocol-thumb img {
+.ecotopia-lp .lp-sono-nights-featured-media img {
+  display: block;
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+}
+
+.ecotopia-lp .lp-sono-nights-badge {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--lp-accent-navy, #0D3461);
+  color: #FFFFFF;
+  font-family: var(--lp-sans);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ecotopia-lp .lp-sono-nights-featured-body {
+  display: block;
+  padding: 26px 28px 28px;
+}
+
+.ecotopia-lp .lp-sono-nights-featured-title {
+  display: block;
+  margin-top: 10px;
+  font-family: var(--lp-sans);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--lp-text, #0F1B33);
+}
+
+.ecotopia-lp .lp-sono-nights-featured-desc {
+  display: block;
+  margin-top: 10px;
+  max-width: 460px;
+  font-family: var(--lp-serif);
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: #5A6B82;
+}
+
+/* demais noites — lista compacta (mobile) */
+.ecotopia-lp .lp-sono-nights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.ecotopia-lp .lp-sono-nights-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 27, 51, 0.08);
+  background: #FFFFFF;
+  text-decoration: none !important;
+  color: var(--lp-text, #0F1B33);
+}
+
+.ecotopia-lp .lp-sono-nights-row-thumb {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.ecotopia-lp .lp-sono-nights-row-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ecotopia-lp .lp-sono-nights-row-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ecotopia-lp .lp-sono-nights-row-title {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--lp-sans);
+  font-size: 15.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--lp-text, #0F1B33);
+}
+
+.ecotopia-lp .lp-sono-nights-lock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: rgba(15, 27, 51, 0.06);
+  color: #8A97AB;
+}
+
+/* demais noites — grade (md+) */
+.ecotopia-lp .lp-sono-nights-grid {
+  display: none;
+}
+
+.ecotopia-lp .lp-sono-nights-card {
+  display: block;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 27, 51, 0.08);
+  background: #FFFFFF;
+  text-decoration: none !important;
+  color: var(--lp-text, #0F1B33);
+  transition: transform 0.22s ease;
+}
+
+.ecotopia-lp .lp-sono-nights-card:hover {
+  transform: translateY(-4px);
+}
+
+.ecotopia-lp .lp-sono-nights-card-media {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.ecotopia-lp .lp-sono-nights-card-media img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.4s ease;
 }
 
-.ecotopia-lp .lp-sono-protocol-night {
+.ecotopia-lp .lp-sono-nights-lock--overlay {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 1;
-  font-family: var(--lp-sans);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #FFFFFF;
-  background: rgba(255, 255, 255, 0.16);
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 999px;
-  padding: 5px 11px;
+  color: var(--lp-text, #0F1B33);
 }
 
-.ecotopia-lp .lp-sono-protocol-title {
+.ecotopia-lp .lp-sono-nights-card-body {
+  display: block;
+  padding: 16px 18px 18px;
+}
+
+.ecotopia-lp .lp-sono-nights-card-title {
+  display: block;
+  margin-top: 8px;
   font-family: var(--lp-sans);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.35;
-  color: var(--lp-text, #0F1B33);
-  margin: 0;
-}
-
-/* navegação: setas + números (1, 2) */
-.ecotopia-lp .lp-sono-protocol-nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 36px;
-}
-
-.ecotopia-lp .lp-sono-protocol-arrow,
-.ecotopia-lp .lp-sono-protocol-dot {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 999px;
-  border: none;
-  background: transparent;
-  color: var(--lp-text, #0F1B33);
-  font-family: var(--lp-sans);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-}
-
-.ecotopia-lp .lp-sono-protocol-arrow:hover {
-  background: rgba(15, 27, 51, 0.06);
-}
-
-.ecotopia-lp .lp-sono-protocol-dot {
-  background: #F1EEFA;
-  color: rgba(15, 27, 51, 0.55);
-}
-
-.ecotopia-lp .lp-sono-protocol-dot:hover {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
   color: var(--lp-text, #0F1B33);
 }
 
-.ecotopia-lp .lp-sono-protocol-dot.is-active {
-  background: #1A1435;
-  color: #FFFFFF;
+@media (min-width: 640px) {
+  .ecotopia-lp .lp-sono-nights-featured-media img {
+    height: 360px;
+  }
+  .ecotopia-lp .lp-sono-nights-list {
+    display: none;
+  }
+  .ecotopia-lp .lp-sono-nights-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
 }
 
 /* ─── 3 colunas de dicas ─── */
@@ -8730,10 +8828,6 @@ body.eco-no-scroll {
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
   }
-  .ecotopia-lp .lp-sono-protocol-page {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-  }
   .ecotopia-lp .lp-sono-tips-grid {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -8823,9 +8917,6 @@ body.eco-no-scroll {
   .ecotopia-lp .lp-sono-grid,
   .ecotopia-lp .lp-sono-articles-grid {
     grid-template-columns: 1fr;
-  }
-  .ecotopia-lp .lp-sono-protocol-page {
-    grid-template-columns: repeat(2, 1fr);
   }
   .ecotopia-lp .lp-sono-value-icon {
     width: 160px;

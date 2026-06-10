@@ -134,30 +134,15 @@ const TESTIMONIALS: { id: string; quote: string; name: string; photo?: string }[
 // CTA único e idêntico em todos os pontos de conversão da página.
 const CTA_LABEL = 'Começar meus 7 dias grátis';
 
-// 7 noites do protocolo divididas em páginas de 4 (4 + 3) para o carrossel.
-const PROTOCOL_PAGES = [PROTOCOL_NIGHTS.slice(0, 4), PROTOCOL_NIGHTS.slice(4)];
+// Noite 1 em destaque + demais noites (layout editorial da landing
+// Protocolo-Sono-v2: featured card + lista/grade com cadeado).
+const NIGHT_ONE = PROTOCOL_NIGHTS[0];
+const REST_NIGHTS = PROTOCOL_NIGHTS.slice(1);
 
 // ─── Componente ──────────────────────────────────────────────────────
 
 export default function EcotopiaSonoPage() {
   useScrollReveal('.ecotopia-lp');
-
-  const protocolTrackRef = useRef<HTMLDivElement>(null);
-  const [protocolPage, setProtocolPage] = useState(0);
-
-  const goToProtocolPage = (page: number) => {
-    const track = protocolTrackRef.current;
-    if (!track) return;
-    const clamped = Math.max(0, Math.min(PROTOCOL_PAGES.length - 1, page));
-    track.scrollTo({ left: track.clientWidth * clamped, behavior: 'smooth' });
-    setProtocolPage(clamped);
-  };
-
-  const handleProtocolScroll = () => {
-    const track = protocolTrackRef.current;
-    if (!track || track.clientWidth === 0) return;
-    setProtocolPage(Math.round(track.scrollLeft / track.clientWidth));
-  };
 
   const tipsTrackRef = useRef<HTMLDivElement>(null);
   const [tipsPage, setTipsPage] = useState(0);
@@ -386,80 +371,89 @@ export default function EcotopiaSonoPage() {
       {/* ─── Dor · espelha a cena noturna (reconhecimento) ─── */}
       <SonoDorSection />
 
-      {/* ─── Como funciona · Protocolo do Sono: 7 noites (carrossel) ─── */}
+      {/* ─── Como funciona · Protocolo do Sono: 7 noites em sequência ───
+          Layout editorial trazido da landing Protocolo-Sono-v2: Noite 1 em
+          destaque + demais noites em lista compacta (mobile) / grade (md+). */}
       <section className="lp-sono-grid-section lp-sono-protocol">
-        <div className="lp-sono-section-inner">
-        <h2 className="lp-sono-h2 scroll-reveal lp-sono-protocol-h2">
-          7&nbsp;noites para ensinar<br className="lp-br-desktop" />{' '}
-          seu corpo a desligar.
-        </h2>
+        <div className="lp-sono-section-inner lp-sono-nights-inner">
+          <h2 className="lp-sono-h2 scroll-reveal lp-sono-nights-h2">
+            Sete noites. Em sequência.
+            <br />
+            <span className="lp-sono-nights-h2-soft">Cada uma prepara a próxima.</span>
+          </h2>
 
-        <p className="lp-sono-protocol-sub scroll-reveal stagger-1">
-          Cada noite desativa uma camada do estado de alerta: da tensão no corpo
-          aos pensamentos que não param.
-        </p>
+          <p className="lp-sono-nights-lead scroll-reveal stagger-1">
+            Você abre o app, escolhe o ambiente sonoro da noite e aperta play.
+            Minutos depois, o corpo já está em outro lugar.
+          </p>
 
-        <div
-          className="lp-sono-protocol-track"
-          ref={protocolTrackRef}
-          onScroll={handleProtocolScroll}
-        >
-          {PROTOCOL_PAGES.map((page, pi) => (
-            <div className="lp-sono-protocol-page" key={pi}>
-              {page.map((n) => (
-                <Link
-                  key={n.id}
-                  to={`/assinar?step=plan&plan=monthly&from=sono_protocolo_${n.id}`}
-                  className="lp-sono-protocol-card"
-                  onClick={() => trackTrialCta('monthly', `sono_protocolo_${n.id}`)}
-                >
-                  <span className="lp-sono-protocol-thumb" style={{ background: n.gradient }}>
-                    {n.imageUrl && <img src={n.imageUrl} alt="" loading="lazy" />}
-                    <span className="lp-sono-protocol-night">Noite {n.night}</span>
+          <Link
+            to={`/assinar?step=plan&plan=monthly&from=sono_protocolo_${NIGHT_ONE.id}`}
+            className="lp-sono-nights-featured scroll-reveal"
+            onClick={() => trackTrialCta('monthly', `sono_protocolo_${NIGHT_ONE.id}`)}
+          >
+            <span className="lp-sono-nights-featured-media">
+              <img src={NIGHT_ONE.imageUrl} alt="" loading="lazy" decoding="async" />
+              <span className="lp-sono-nights-badge">A primeira</span>
+            </span>
+            <span className="lp-sono-nights-featured-body">
+              <span className="lp-sono-nights-kicker">
+                Noite {NIGHT_ONE.night} · {NIGHT_ONE.duration}
+              </span>
+              <span className="lp-sono-nights-featured-title">{NIGHT_ONE.title}</span>
+              <span className="lp-sono-nights-featured-desc">{NIGHT_ONE.description}</span>
+            </span>
+          </Link>
+
+          {/* demais noites — lista compacta (mobile) */}
+          <div className="lp-sono-nights-list">
+            {REST_NIGHTS.map((n, i) => (
+              <Link
+                key={n.id}
+                to={`/assinar?step=plan&plan=monthly&from=sono_protocolo_${n.id}`}
+                className={`lp-sono-nights-row scroll-reveal stagger-${(i % 5) + 1}`}
+                onClick={() => trackTrialCta('monthly', `sono_protocolo_${n.id}`)}
+              >
+                <span className="lp-sono-nights-row-thumb">
+                  <img src={n.imageUrl} alt="" loading="lazy" decoding="async" />
+                </span>
+                <span className="lp-sono-nights-row-body">
+                  <span className="lp-sono-nights-kicker">
+                    Noite {n.night} · {n.duration}
                   </span>
-                  <p className="lp-sono-protocol-title">{n.title}</p>
-                </Link>
-              ))}
-            </div>
-          ))}
-        </div>
+                  <span className="lp-sono-nights-row-title">{n.title}</span>
+                </span>
+                <span className="lp-sono-nights-lock" aria-hidden>
+                  <LockGlyph />
+                </span>
+              </Link>
+            ))}
+          </div>
 
-        <div className="lp-sono-protocol-nav" role="group" aria-label="Navegar pelas noites">
-          <button
-            type="button"
-            className="lp-sono-protocol-arrow"
-            aria-label="Página anterior"
-            onClick={() => goToProtocolPage(protocolPage - 1)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-
-          {PROTOCOL_PAGES.map((_, pi) => (
-            <button
-              key={pi}
-              type="button"
-              className={`lp-sono-protocol-dot ${protocolPage === pi ? 'is-active' : ''}`}
-              aria-label={`Página ${pi + 1}`}
-              aria-current={protocolPage === pi}
-              onClick={() => goToProtocolPage(pi)}
-            >
-              {pi + 1}
-            </button>
-          ))}
-
-          <button
-            type="button"
-            className="lp-sono-protocol-arrow"
-            aria-label="Próxima página"
-            onClick={() => goToProtocolPage(protocolPage + 1)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-        </div>
+          {/* demais noites — grade (md+) */}
+          <div className="lp-sono-nights-grid">
+            {REST_NIGHTS.map((n, i) => (
+              <Link
+                key={n.id}
+                to={`/assinar?step=plan&plan=monthly&from=sono_protocolo_${n.id}`}
+                className={`lp-sono-nights-card scroll-reveal stagger-${(i % 5) + 1}`}
+                onClick={() => trackTrialCta('monthly', `sono_protocolo_${n.id}`)}
+              >
+                <span className="lp-sono-nights-card-media">
+                  <img src={n.imageUrl} alt="" loading="lazy" decoding="async" />
+                  <span className="lp-sono-nights-lock lp-sono-nights-lock--overlay" aria-hidden>
+                    <LockGlyph />
+                  </span>
+                </span>
+                <span className="lp-sono-nights-card-body">
+                  <span className="lp-sono-nights-kicker">
+                    Noite {n.night} · {n.duration}
+                  </span>
+                  <span className="lp-sono-nights-card-title">{n.title}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -885,6 +879,25 @@ function Check() {
       aria-hidden
     >
       <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+// Cadeado das noites bloqueadas (seção do protocolo).
+function LockGlyph() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   );
 }
