@@ -12,8 +12,20 @@ const FAQ = [
     a: 'Não. A cobrança só começa no 8º dia, e só se você não cancelar antes.',
   },
   {
-    q: 'E se não funcionar pra mim?',
-    a: 'Cancele em 1 toque, a qualquer momento, direto no app.',
+    q: 'E se eu não conseguir dormir já na primeira noite?',
+    a: 'O objetivo da Noite 1 não é te fazer dormir. É fazer seu corpo perceber que pode baixar a guarda. O sono vem como consequência: às vezes na 1ª noite, às vezes na 3ª. Por isso são 7 noites — e você tem 7 dias gratuitos pra testar sem pagar nada.',
+  },
+  {
+    q: 'Quanto tempo leva pra funcionar?',
+    a: 'A maioria sente diferença na respiração e na tensão do peito ainda na primeira noite. O sono mais consistente costuma aparecer entre a 3ª e a 5ª noite.',
+  },
+  {
+    q: 'Preciso saber meditar pra funcionar?',
+    a: 'Não. O protocolo é áudio guiado. A voz conduz, o som ancora. Você só precisa estar deitado. Se a mente fugir, ela volta sozinha quando ouve a voz.',
+  },
+  {
+    q: 'Funciona se eu já tomo remédio pra dormir?',
+    a: 'Sim. O protocolo trabalha o sistema nervoso, não substitui medicação. Muitas pessoas usam junto e relatam que o efeito do remédio fica mais limpo.',
   },
   {
     q: 'Quanto tempo preciso por noite?',
@@ -22,6 +34,10 @@ const FAQ = [
   {
     q: 'Já tentei de tudo. É diferente?',
     a: 'Não é um som de chuva aleatório. É uma sequência de 7 noites que trabalha o estado de alerta em camadas: do corpo tenso aos pensamentos que não param.',
+  },
+  {
+    q: 'E se não funcionar pra mim?',
+    a: 'Cancele em 1 toque, a qualquer momento, direto no app.',
   },
 ];
 
