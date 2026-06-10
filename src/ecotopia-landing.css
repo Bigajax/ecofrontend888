@@ -13362,32 +13362,56 @@ body.eco-no-scroll {
   padding: 64px 24px;
 }
 
-.ecotopia-lp .lp-sono-faq-inner {
-  max-width: 30rem; /* ~max-w-md */
+/* card único: cabeçalho bege + lista branca (referência Protocolo-Sono-v2) */
+.ecotopia-lp .lp-sono-faq-card {
+  max-width: 58rem;
   margin: 0 auto;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(10, 10, 10, 0.05);
+}
+
+.ecotopia-lp .lp-sono-faq-head {
+  background: #E8DFD1;
+  padding: 36px 24px;
+}
+
+.ecotopia-lp .lp-sono-faq-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.55);
+  font-family: var(--lp-sans);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6B6B6B;
 }
 
 .ecotopia-lp .lp-sono-faq-title {
-  font-family: var(--lp-serif);
+  font-family: var(--lp-display, var(--lp-sans));
   font-weight: 700;
-  text-align: center;
-  color: var(--lp-accent-navy);
-  font-size: clamp(24px, 6vw, 32px);
-  line-height: 1.15;
-  margin: 0 0 28px;
+  text-align: left;
+  color: #0A0A0A;
+  font-size: clamp(26px, 5vw, 44px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 18px 0 0;
 }
 
 .ecotopia-lp .lp-sono-faq-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  background: #FFFFFF;
+  padding: 4px 20px;
 }
 
 .ecotopia-lp .lp-sono-faq-item {
-  background: #F7F5F1; /* creme */
-  border: 1px solid rgba(13, 52, 97, 0.1); /* hairline navy/10 */
-  border-radius: 16px;
-  overflow: hidden;
+  border-bottom: 1px solid #ECECEA;
+}
+
+.ecotopia-lp .lp-sono-faq-item:last-child {
+  border-bottom: none;
 }
 
 .ecotopia-lp .lp-sono-faq-q {
@@ -13395,26 +13419,43 @@ body.eco-no-scroll {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 18px 20px;
+  gap: 16px;
+  padding: 18px 0;
   background: transparent;
   border: none;
   cursor: pointer;
   text-align: left;
   font-family: var(--lp-sans);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 15.5px;
   line-height: 1.35;
-  color: var(--lp-accent-navy);
+  color: #0A0A0A;
+  transition: opacity 0.2s ease;
 }
 
-.ecotopia-lp .lp-sono-faq-chevron {
-  flex-shrink: 0;
-  color: var(--lp-accent-strong);
-  transition: transform 0.2s ease;
+.ecotopia-lp .lp-sono-faq-q:hover {
+  opacity: 0.75;
 }
-.ecotopia-lp .lp-sono-faq-item.is-open .lp-sono-faq-chevron {
-  transform: rotate(180deg);
+
+/* seta circular: gira 90° e preenche de preto ao abrir */
+.ecotopia-lp .lp-sono-faq-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid #CFCFCA;
+  color: #0A0A0A;
+  transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.ecotopia-lp .lp-sono-faq-item.is-open .lp-sono-faq-arrow {
+  transform: rotate(90deg);
+  background: #0A0A0A;
+  border-color: #0A0A0A;
+  color: #FFFFFF;
 }
 
 /* transição de altura suave via grid-template-rows 0fr → 1fr */
@@ -13430,18 +13471,26 @@ body.eco-no-scroll {
   overflow: hidden;
 }
 .ecotopia-lp .lp-sono-faq-a-inner p {
-  margin: 0 20px;
-  padding: 14px 0 18px;
-  border-top: 1px solid rgba(13, 52, 97, 0.1); /* divisória hairline navy/10 */
+  margin: 0;
+  padding: 0 56px 20px 0;
   font-family: var(--lp-serif);
   font-size: 15px;
-  line-height: 1.6;
-  color: var(--lp-text-muted);
+  line-height: 1.65;
+  color: #6B6B6B;
+}
+
+@media (min-width: 640px) {
+  .ecotopia-lp .lp-sono-faq-head {
+    padding: 48px;
+  }
+  .ecotopia-lp .lp-sono-faq-list {
+    padding: 8px 48px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ecotopia-lp .lp-sono-faq-a,
-  .ecotopia-lp .lp-sono-faq-chevron {
+  .ecotopia-lp .lp-sono-faq-arrow {
     transition: none;
   }
 }
@@ -13698,10 +13747,7 @@ body.eco-no-scroll {
   background: #FFFFFF; /* guia de sono */
 }
 .ecotopia-lp .lp-sono-faq {
-  background: #F7F3EB; /* FAQ: creme */
-}
-.ecotopia-lp .lp-sono-faq-item {
-  background: #FFFFFF; /* card salta do creme */
+  background: #F7F3EB; /* FAQ: creme — o card branco/bege salta do fundo */
 }
 /* demo interativa + CTA "Comece hoje" = um único bloco escuro */
 .ecotopia-lp .lp-sono-tabs {

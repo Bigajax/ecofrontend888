@@ -6,37 +6,42 @@
 // manuscrita sob a foto. Marcadores com ícone em círculo colorido vazado e a
 // frase de virada num card azul-claro com lua e estrelas.
 
-function PillMoon() {
+// Olho aberto — deitado, mas a mente não desliga.
+function PillEye() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 4a8 8 0 1 0 6.5 11.5A9.5 9.5 0 0 1 14 4z" />
-      <path d="M5 5.5v3M3.5 7h3" />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2.5 12S6 6.5 12 6.5 21.5 12 21.5 12 18 17.5 12 17.5 2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="2.6" />
     </svg>
   );
 }
 
-function PillPhone() {
+// Despertador — acordar no meio da noite.
+function PillAlarm() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="7" y="3" width="10" height="18" rx="2.5" />
-      <path d="M11 17.5h2" />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="13.5" r="7" />
+      <path d="M12 10.5v3l2 1.5" />
+      <path d="M5.5 3 3 5.5M18.5 3 21 5.5" />
     </svg>
   );
 }
 
-function PillSnooze() {
+// Bateria fraca — acordar sem ter descansado.
+function PillBattery() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12.5 5a7 7 0 1 0 6 10A8.5 8.5 0 0 1 12.5 5z" />
-      <path d="M16 4h4l-4 4h4" />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2.5" y="8" width="16" height="8" rx="2" />
+      <path d="M21.5 11v2" />
+      <rect x="5" y="10.3" width="3.4" height="3.4" rx="0.8" fill="currentColor" stroke="none" />
     </svg>
   );
 }
 
 const RECOGNITION = [
-  { text: 'Deito cansado, mas a mente não desliga.', Icon: PillMoon },
-  { text: 'Acordo no meio da noite e não volto a dormir.', Icon: PillPhone },
-  { text: 'Durmo, mas acordo como se não tivesse descansado.', Icon: PillSnooze },
+  { text: 'Deito cansado, mas a mente não desliga.', Icon: PillEye },
+  { text: 'Acordo no meio da noite e não volto a dormir.', Icon: PillAlarm },
+  { text: 'Durmo, mas acordo como se não tivesse descansado.', Icon: PillBattery },
 ];
 
 // Lua preenchida com estrelinhas — a noite que começa.
