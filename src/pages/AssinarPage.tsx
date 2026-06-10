@@ -67,7 +67,7 @@ function originLanding(from: string | null | undefined): string {
 export default function AssinarPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [plan, setPlan] = useState<PlanId>(parsePlan(params.get("plan")));
   const [step, setStep] = useState<Step>(parseStep(params.get("step")));
   const [erro, setErro] = useState<string | null>(null);
@@ -274,8 +274,11 @@ export default function AssinarPage() {
         {step === "card" && (
           <div className="flex flex-col gap-5 px-5 pb-8 md:rounded-3xl md:bg-white md:px-8 md:pb-10 md:pt-10 md:shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
             <h2 className="text-center font-display text-[24px] font-bold leading-tight" style={{ color: "#0D3461" }}>
-              Selecione o método de pagamento
+              Confirme seu teste gratuito
             </h2>
+            <p className="eco-subtitle -mt-3 text-center text-[15px] leading-snug" style={{ color: "#5A8AAD" }}>
+              R$ 0 hoje · primeira cobrança só em 7 dias.
+            </p>
 
             {/* Plan summary */}
             <div
@@ -303,9 +306,9 @@ export default function AssinarPage() {
             {/* Benefits */}
             <ul className="flex flex-col gap-3">
               {[
-                "Acesse nossa biblioteca completa de meditações, sons para dormir, Eco IA e exercícios respiratórios.",
-                "Receba uma nova meditação no seu celular todos os dias.",
-                "Conteúdo inspirador diário para começar bem o dia.",
+                "As 7 noites do Protocolo do Sono, liberadas hoje.",
+                "Meditações, sons e respirações para adormecer mais rápido.",
+                "Lembrete por e-mail 2 dias antes de qualquer cobrança.",
               ].map((text, i) => (
                 <li key={i} className="flex items-start gap-2.5 text-[14px] leading-snug" style={{ color: "#0D3461" }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A8A4A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0" aria-hidden>
@@ -329,12 +332,22 @@ export default function AssinarPage() {
               </div>
             </div>
 
-            <MpCardForm
-              amount={plan === "monthly" ? 15.9 : 142.8}
-              maxInstallments={1}
-              onToken={handleToken}
-              onError={setErro}
-            />
+            {/* Espera a sessão resolver antes de montar o brick: a initialization
+                (payer.email) precisa estar estável no mount — o brick do MP não
+                tolera ser recriado (ver React.memo em MpCardForm). */}
+            {authLoading ? (
+              <p className="py-6 text-center text-[13px]" style={{ color: "#5A8AAD" }}>
+                Carregando…
+              </p>
+            ) : (
+              <MpCardForm
+                amount={plan === "monthly" ? 15.9 : 142.8}
+                maxInstallments={1}
+                payerEmail={user?.email ?? ""}
+                onToken={handleToken}
+                onError={setErro}
+              />
+            )}
 
             {processing && (
               <p aria-live="polite" className="text-center text-[13px]" style={{ color: "#5A8AAD" }}>
@@ -349,9 +362,6 @@ export default function AssinarPage() {
 
             {/* Fine print */}
             <div className="text-center text-[11.5px] leading-relaxed" style={{ color: "#5A8AAD" }}>
-              <p>
-                Podem ser aplicados IVA, impostos sobre vendas ou outros impostos aplicáveis.
-              </p>
               <Link
                 to="/cancelar-assinatura"
                 target="_blank"

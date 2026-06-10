@@ -18,18 +18,19 @@ export const PLAN_COPY: Record<PlanId, {
     priceLine: OFFER.priceMonthly,
     subPriceLine: OFFER.trialCancel,
     timeline: [
-      { label: "Hoje", description: "Desbloqueie a biblioteca completa da Ecotopia — Eco IA, meditações e sons para dormir." },
+      { label: "Hoje", description: "Desbloqueie o Protocolo do Sono completo + meditações, sons para dormir e Eco IA." },
       { label: "Em 5 dias", description: "Enviaremos um e-mail lembrando que seu teste gratuito está terminando em breve." },
-      { label: "Em 7 dias", description: "Será cobrada a mensalidade de R$ 15,90 — cancele antes para não pagar nada." },
+      { label: "Em 7 dias", description: "Será cobrada a mensalidade de R$ 15,90 — cancele antes e não pague nada." },
     ],
   },
   annual: {
-    badge: "Melhor valor",
-    priceLine: "R$ 142,80/ano",
-    priceNote: "(R$ 11,90/mês)",
+    badge: "Economize 25%",
+    // O total (R$ 142,80) só aparece depois que o anual é selecionado —
+    // na timeline e no microcopy do CTA. No card, a âncora é o per-mês.
+    priceLine: OFFER.priceAnnualMonthly,
     subPriceLine: "R$ 11,90/mês · economize R$ 48",
     timeline: [
-      { label: "Hoje", description: "Desbloqueie a biblioteca completa da Ecotopia — Eco IA, meditações e sons para dormir." },
+      { label: "Hoje", description: "Desbloqueie o Protocolo do Sono completo + meditações, sons para dormir e Eco IA." },
       { label: "Em 5 dias", description: "Enviaremos um e-mail lembrando que seu teste gratuito está terminando em breve." },
       { label: "Em 7 dias", description: "Será cobrado R$ 142,80 pelo primeiro ano — cancele antes para não pagar nada." },
     ],

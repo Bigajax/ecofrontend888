@@ -11,7 +11,7 @@ const { authState } = vi.hoisted(() => ({
   authState: { user: null as null | { id: string } },
 }));
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: authState.user, register: vi.fn(), signInWithGoogle: vi.fn() }),
+  useAuth: () => ({ user: authState.user, loading: false, register: vi.fn(), signInWithGoogle: vi.fn() }),
 }));
 vi.mock("@mercadopago/sdk-react", () => ({ initMercadoPago: vi.fn(), CardPayment: () => <div>brick</div> }));
 vi.mock("@/lib/supabaseClient", () => ({
@@ -56,7 +56,8 @@ describe("AssinarPage", () => {
   it("advances to the signup step when the trial CTA is clicked (logged out)", () => {
     renderAt("/assinar?step=plan");
     fireEvent.click(screen.getByRole("button", { name: /comece seu teste gratuito/i }));
-    expect(screen.getByRole("button", { name: /criar uma conta/i })).toBeInTheDocument();
+    expect(screen.getByText(/Falta pouco pra sua primeira noite/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /continuar com google/i })).toBeInTheDocument();
   });
 
   // Regressão: ao concluir o signup o userId muda e o RootProviders remonta a árvore,
@@ -66,7 +67,7 @@ describe("AssinarPage", () => {
     authState.user = { id: "user-123" };
     renderAt("/assinar?step=signup");
     await waitFor(() => {
-      expect(screen.getByText(/Selecione o método de pagamento/i)).toBeInTheDocument();
+      expect(screen.getByText(/Confirme seu teste gratuito/i)).toBeInTheDocument();
     });
   });
 });
@@ -82,7 +83,7 @@ describe("AssinarPage onboarding flow", () => {
   test("?step=card mantém shortcut do OAuth return", async () => {
     renderAt("/assinar?plan=monthly&step=card");
     await waitFor(() => {
-      expect(screen.getByText(/Selecione o método de pagamento/i)).toBeInTheDocument();
+      expect(screen.getByText(/Confirme seu teste gratuito/i)).toBeInTheDocument();
     });
   });
 

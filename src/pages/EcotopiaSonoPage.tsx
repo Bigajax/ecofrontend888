@@ -176,7 +176,12 @@ export default function EcotopiaSonoPage() {
     setTipsPage(Math.round(track.scrollLeft / track.clientWidth));
   };
 
+  // Guarda contra o double-mount do StrictMode: "Landing vista" e o
+  // ViewContent do Pixel devem disparar uma vez por pageview.
+  const landingTracked = useRef(false);
   useEffect(() => {
+    if (landingTracked.current) return;
+    landingTracked.current = true;
     try {
       trackLandingVista();
     } catch {
@@ -206,7 +211,7 @@ export default function EcotopiaSonoPage() {
   const [activeTab, setActiveTab] = useState<string>(TABS[0].id);
   const activeTabData = TABS.find((t) => t.id === activeTab) ?? TABS[0];
 
-  const [selectedOfferPlan, setSelectedOfferPlan] = useState<'annual' | 'monthly'>('annual');
+  const [selectedOfferPlan, setSelectedOfferPlan] = useState<'annual' | 'monthly'>('monthly');
 
   return (
     <div className="ecotopia-lp lp-sono">
@@ -226,9 +231,9 @@ export default function EcotopiaSonoPage() {
             </p>
 
             <Link
-              to="/assinar?step=plan&plan=annual&from=sono_hero"
+              to="/assinar?step=plan&plan=monthly&from=sono_hero"
               className="lp-sono-hero-cta-primary scroll-reveal stagger-2"
-              onClick={() => trackTrialCta('annual', 'sono_hero')}
+              onClick={() => trackTrialCta('monthly', 'sono_hero')}
             >
               {CTA_LABEL}
             </Link>
@@ -341,9 +346,9 @@ export default function EcotopiaSonoPage() {
               {page.map((n) => (
                 <Link
                   key={n.id}
-                  to={`/assinar?step=plan&plan=annual&from=sono_protocolo_${n.id}`}
+                  to={`/assinar?step=plan&plan=monthly&from=sono_protocolo_${n.id}`}
                   className="lp-sono-protocol-card"
-                  onClick={() => trackTrialCta('annual', `sono_protocolo_${n.id}`)}
+                  onClick={() => trackTrialCta('monthly', `sono_protocolo_${n.id}`)}
                 >
                   <span className="lp-sono-protocol-thumb" style={{ background: n.gradient }}>
                     {n.imageUrl && <img src={n.imageUrl} alt="" loading="lazy" />}
@@ -598,9 +603,9 @@ export default function EcotopiaSonoPage() {
             Mais tempo realmente descansando.
           </p>
           <Link
-            to="/assinar?step=plan&plan=annual&from=sono_cta_mid"
+            to="/assinar?step=plan&plan=monthly&from=sono_cta_mid"
             className="cta-primary"
-            onClick={() => trackTrialCta('annual', 'sono_cta_mid')}
+            onClick={() => trackTrialCta('monthly', 'sono_cta_mid')}
           >
             {CTA_LABEL}
           </Link>
@@ -631,8 +636,8 @@ export default function EcotopiaSonoPage() {
                 {col.links.map((label) => (
                   <li key={label}>
                     <Link
-                      to={`/assinar?step=plan&plan=annual&from=sono_tip_${col.key}`}
-                      onClick={() => trackTrialCta('annual', `sono_tip_${col.key}`)}
+                      to={`/assinar?step=plan&plan=monthly&from=sono_tip_${col.key}`}
+                      onClick={() => trackTrialCta('monthly', `sono_tip_${col.key}`)}
                     >
                       {label}
                     </Link>

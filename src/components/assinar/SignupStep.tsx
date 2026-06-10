@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { LEGAL_LINKS } from "./goalsData";
 import {
   trackCadastroVisto,
   trackCadastroEnviado,
@@ -21,13 +22,10 @@ const fieldStyle = { borderColor: "rgba(13,52,97,0.18)" } as const;
 
 export function SignupStep({ onCreated, googleReturnTo, loginReturnTo }: SignupStepProps) {
   const { register, signInWithGoogle } = useAuth();
-  const [nome, setNome] = useState("");
-  const [sobrenome, setSobrenome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [showSenha, setShowSenha] = useState(false);
-  const [aceito, setAceito] = useState(false);
-  const [novidades, setNovidades] = useState<"sim" | "nao" | null>(null);
+  const [dicas, setDicas] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
@@ -39,15 +37,15 @@ export function SignupStep({ onCreated, googleReturnTo, loginReturnTo }: SignupS
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
-    if (!nome.trim()) return setErro("Informe seu nome.");
     if (!EMAIL_RE.test(email)) return setErro("E-mail inválido.");
     if (senha.length < 8) return setErro("A senha precisa ter ao menos 8 caracteres.");
-    if (!aceito) return setErro("É preciso aceitar os Termos para continuar.");
 
     setLoading(true);
-    trackCadastroEnviado({ method: "email", opted_newsletter: novidades === "sim" });
+    trackCadastroEnviado({ method: "email", opted_newsletter: dicas });
     try {
-      const fullName = [nome.trim(), sobrenome.trim()].filter(Boolean).join(" ");
+      // Nome não é mais pedido no funil (fricção); o backend exige um nome,
+      // então derivamos do e-mail e coletamos o nome real depois, no app.
+      const fullName = email.trim().split("@")[0];
       const { needsConfirmation } = await register(email.trim(), senha, fullName, "");
       trackCadastroConcluido({ method: "email", needs_confirmation: needsConfirmation });
       if (needsConfirmation) {
@@ -78,29 +76,27 @@ export function SignupStep({ onCreated, googleReturnTo, loginReturnTo }: SignupS
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-      <h2 className="text-center font-display text-[26px] font-bold" style={{ color: "#0D3461" }}>Inscrever-se</h2>
-      <p className="-mt-2 text-center text-[15px] leading-snug" style={{ color: "#5A8AAD" }}>
-        Já tem uma conta?
-        <br />
-        <a href={loginReturnTo} className="font-semibold underline" style={{ color: "#1554F0" }}>Conecte-se</a>
+      <h2 className="text-center font-display text-[26px] font-bold leading-tight" style={{ color: "#0D3461" }}>
+        Falta pouco pra sua primeira noite
+      </h2>
+      <p className="eco-subtitle -mt-2 text-center text-[15px] leading-snug" style={{ color: "#5A8AAD" }}>
+        Crie sua conta para liberar os 7 dias grátis.
       </p>
 
-      <input
-        aria-label="Primeiro nome"
-        placeholder="Primeiro nome *"
-        value={nome}
-        onChange={(e) => setNome(e.target.value)}
-        className={fieldCls}
-        style={fieldStyle}
-      />
-      <input
-        aria-label="Sobrenome"
-        placeholder="Sobrenome *"
-        value={sobrenome}
-        onChange={(e) => setSobrenome(e.target.value)}
-        className={fieldCls}
-        style={fieldStyle}
-      />
+      <button
+        type="button"
+        onClick={google}
+        className="w-full rounded-full bg-[#1554F0] py-4 text-[16px] font-bold text-white transition-all hover:-translate-y-[1px] hover:bg-[#1148D6]"
+      >
+        Continuar com Google
+      </button>
+
+      <div className="flex items-center gap-3" aria-hidden>
+        <span className="h-px flex-1" style={{ background: "rgba(13,52,97,0.12)" }} />
+        <span className="text-[13px]" style={{ color: "#5A8AAD" }}>ou cadastre-se com e-mail</span>
+        <span className="h-px flex-1" style={{ background: "rgba(13,52,97,0.12)" }} />
+      </div>
+
       <input
         aria-label="Endereço de email"
         type="email"
@@ -131,31 +127,15 @@ export function SignupStep({ onCreated, googleReturnTo, loginReturnTo }: SignupS
         </button>
       </div>
 
-      <div className="mt-1">
-        <h3 className="font-display text-[17px] font-bold leading-snug" style={{ color: "#0D3461" }}>
-          Quer ficar por dentro das últimas novidades?
-        </h3>
-        <p className="eco-subtitle mb-3 mt-1 text-[14px] leading-snug" style={{ color: "#5A8AAD" }}>
-          Inscreva-se na nossa lista de e-mails e seja o primeiro a saber sobre ofertas especiais.
-        </p>
-        <div className="flex gap-8">
-          <label className="flex items-center gap-2 text-[15px]" style={{ color: "#0D3461" }}>
-            <input type="radio" name="novidades" checked={novidades === "sim"} onChange={() => setNovidades("sim")} className="h-5 w-5" style={{ accentColor: "#1554F0" }} />
-            Sim
-          </label>
-          <label className="flex items-center gap-2 text-[15px]" style={{ color: "#0D3461" }}>
-            <input type="radio" name="novidades" checked={novidades === "nao"} onChange={() => setNovidades("nao")} className="h-5 w-5" style={{ accentColor: "#1554F0" }} />
-            Não
-          </label>
-        </div>
-      </div>
-
-      <label className="flex items-start gap-2.5 border-t pt-4 text-[14px] leading-relaxed" style={{ color: "#333", borderColor: "rgba(13,52,97,0.1)" }}>
-        <input type="checkbox" checked={aceito} onChange={(e) => setAceito(e.target.checked)} className="mt-1 h-4 w-4" style={{ accentColor: "#1554F0" }} />
-        <span>
-          Concordo com a Ecotopia. <a href="#" className="underline" style={{ color: "#1554F0" }}>Termos e Condições</a> e reconheço a{" "}
-          <a href="#" className="underline" style={{ color: "#1554F0" }}>Política de Privacidade</a>.
-        </span>
+      <label className="flex items-center gap-2.5 text-[13px]" style={{ color: "#5A8AAD" }}>
+        <input
+          type="checkbox"
+          checked={dicas}
+          onChange={(e) => setDicas(e.target.checked)}
+          className="h-4 w-4"
+          style={{ accentColor: "#1554F0" }}
+        />
+        Quero receber dicas de sono por e-mail
       </label>
 
       {erro && <p role="alert" className="text-[13px]" style={{ color: "#B43C3C" }}>{erro}</p>}
@@ -166,17 +146,19 @@ export function SignupStep({ onCreated, googleReturnTo, loginReturnTo }: SignupS
         disabled={loading}
         className="w-full rounded-full bg-[#1554F0] py-4 text-[16px] font-bold text-white transition-all hover:-translate-y-[1px] hover:bg-[#1148D6] disabled:opacity-70"
       >
-        {loading ? "Criando…" : "Criar uma conta"}
+        {loading ? "Criando…" : "Continuar"}
       </button>
 
-      <button
-        type="button"
-        onClick={google}
-        className="w-full rounded-full border py-3 text-[14px] font-semibold"
-        style={{ borderColor: "rgba(13,52,97,0.2)", color: "#0D3461" }}
-      >
-        Continuar com Google
-      </button>
+      <p className="text-center text-[12px] leading-relaxed" style={{ color: "#5A8AAD" }}>
+        Ao continuar, você concorda com os{" "}
+        <a href={LEGAL_LINKS.termos} className="underline" style={{ color: "#1554F0" }}>Termos</a> e a{" "}
+        <a href={LEGAL_LINKS.privacidade} className="underline" style={{ color: "#1554F0" }}>Política de Privacidade</a>.
+      </p>
+
+      <p className="text-center text-[14px] leading-snug" style={{ color: "#5A8AAD" }}>
+        Já tem uma conta?{" "}
+        <a href={loginReturnTo} className="font-semibold underline" style={{ color: "#1554F0" }}>Conecte-se</a>
+      </p>
     </form>
   );
 }

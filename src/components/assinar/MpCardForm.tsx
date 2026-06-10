@@ -13,15 +13,23 @@ function ensureMpInit() {
 interface MpCardFormProps {
   amount: number;
   maxInstallments: number;
+  /** E-mail da conta recém-criada — pré-preenche o campo do brick. */
+  payerEmail?: string;
   onToken: (formData: Record<string, unknown>) => Promise<void> | void;
   onError?: (message: string) => void;
 }
 
-function MpCardFormImpl({ amount, maxInstallments, onToken, onError }: MpCardFormProps) {
+function MpCardFormImpl({ amount, maxInstallments, payerEmail, onToken, onError }: MpCardFormProps) {
   ensureMpInit();
-  const initialization = useMemo(() => ({ amount, payer: { email: "" } }), [amount]);
+  const initialization = useMemo(
+    () => ({ amount, payer: { email: payerEmail ?? "" } }),
+    [amount, payerEmail]
+  );
   const customization = useMemo(
-    () => ({ paymentMethods: { minInstallments: 1, maxInstallments } }),
+    () => ({
+      paymentMethods: { minInstallments: 1, maxInstallments },
+      visual: { texts: { formSubmit: "Começar meus 7 dias grátis" } },
+    }),
     [maxInstallments]
   );
 

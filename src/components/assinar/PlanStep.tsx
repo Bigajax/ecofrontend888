@@ -17,12 +17,14 @@ export function PlanStep({ selectedPlan, onSelectPlan, onContinue }: PlanStepPro
       <HeroIllustration />
 
       <h1 className="text-center font-display text-[24px] font-bold leading-tight" style={{ color: "#0D3461" }}>
-        {isMonthly ? (
-          <>Viva a experiência completa<br />da Ecotopia por <span style={{ color: "#1A8A4A" }}>R$ 0 hoje</span></>
-        ) : (
-          <>Viva a experiência completa<br />da Ecotopia por <span style={{ color: "#1A8A4A" }}>1 ano</span></>
-        )}
+        Comece seus 7 dias grátis
+        <br />
+        <span className="text-[28px]" style={{ color: "#1A8A4A" }}>R$ 0 hoje</span>
       </h1>
+
+      <p className="eco-subtitle -mt-2 text-center text-[15px] leading-snug" style={{ color: "#5A8AAD" }}>
+        Suas 7 noites do Protocolo do Sono começam hoje.
+      </p>
 
       <TrialPlanPanel selectedPlan={selectedPlan} onSelectPlan={onSelectPlan} />
 

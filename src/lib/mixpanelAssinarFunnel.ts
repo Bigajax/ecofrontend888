@@ -33,8 +33,14 @@ const ETAPA_LABEL: Record<AssinarStep, string> = {
   card: 'cartão',
 };
 
-function track(evento: string, props: Record<string, unknown> = {}): void {
-  mixpanel.track(PREFIX + evento, { ...props, timestamp: new Date().toISOString() });
+/** Options de transporte do mixpanel-browser (track aceita um 3º argumento). */
+interface TrackOptions {
+  transport?: 'xhr' | 'sendBeacon';
+  send_immediately?: boolean;
+}
+
+function track(evento: string, props: Record<string, unknown> = {}, options?: TrackOptions): void {
+  mixpanel.track(PREFIX + evento, { ...props, timestamp: new Date().toISOString() }, options);
 }
 
 /**
@@ -51,7 +57,10 @@ export function trackLandingVista(): void {
 }
 
 export function trackCtaClicado(p: { plan: PlanId; placement: string }): void {
-  track('CTA clicado', p);
+  // O clique é seguido de navegação imediata; o batching padrão (flush a cada
+  // 5s) perdia parte dos eventos. sendBeacon + send_immediately garantem o
+  // envio mesmo com a página saindo.
+  track('CTA clicado', p, { transport: 'sendBeacon', send_immediately: true });
 }
 
 // ── /assinar ───────────────────────────────────────────────────────────────

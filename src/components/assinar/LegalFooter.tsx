@@ -1,5 +1,7 @@
 // src/components/assinar/LegalFooter.tsx
 
+import { Link } from "react-router-dom";
+
 import { LEGAL_LINKS } from "./goalsData";
 
 export function LegalFooter() {
@@ -20,9 +22,7 @@ export function LegalFooter() {
           <a href={LEGAL_LINKS.termos} className="underline-offset-2 hover:underline" style={{ color: "#FFFFFF" }}>Termos e condições</a>
           <a href={LEGAL_LINKS.privacidade} className="underline-offset-2 hover:underline" style={{ color: "#FFFFFF" }}>Política de Privacidade</a>
           <a href={LEGAL_LINKS.cookies} className="underline-offset-2 hover:underline" style={{ color: "#FFFFFF" }}>Política de cookies</a>
-          <a href={LEGAL_LINKS.opcoesPrivacidade} className="underline-offset-2 hover:underline" style={{ color: "#FFFFFF" }}>Suas opções de privacidade</a>
-          <a href={LEGAL_LINKS.avisoCalifornia} className="underline-offset-2 hover:underline" style={{ color: "#FFFFFF" }}>Aviso de Privacidade da Califórnia</a>
-          <a href={LEGAL_LINKS.dadosSaude} className="underline-offset-2 hover:underline" style={{ color: "#FFFFFF" }}>Dados de saúde do consumidor</a>
+          <Link to="/cancelar-assinatura" className="underline-offset-2 hover:underline" style={{ color: "#FFFFFF" }}>Cancele a qualquer momento</Link>
         </div>
       </div>
     </footer>

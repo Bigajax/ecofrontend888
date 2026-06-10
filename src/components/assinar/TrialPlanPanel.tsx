@@ -5,7 +5,7 @@ interface TrialPlanPanelProps {
   onSelectPlan: (plan: PlanId) => void;
 }
 
-const PLANS: PlanId[] = ["annual", "monthly"];
+const PLANS: PlanId[] = ["monthly", "annual"];
 
 /**
  * Timeline do trial + seletor de planos (2 colunas), estilo Headspace
@@ -47,6 +47,10 @@ export function TrialPlanPanel({ selectedPlan, onSelectPlan }: TrialPlanPanelPro
           );
         })}
       </ol>
+
+      <p className="eco-subtitle text-center text-[13px] leading-snug" style={{ color: "#5A8AAD" }}>
+        Junte-se a quem já aprendeu a desligar a mente antes de dormir.
+      </p>
 
       {/* Plan selector — 2 colunas (estilo Headspace) */}
       <div className="flex gap-2.5 rounded-2xl border p-3" style={{ borderColor: "rgba(0,0,0,0.08)" }} role="group" aria-label="Escolha o plano">
