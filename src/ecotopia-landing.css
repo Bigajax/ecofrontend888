@@ -13555,6 +13555,84 @@ body.eco-no-scroll {
   }
 }
 
+/* ── 2a · Cena ao redor do iPhone: lua roxa, nuvens e flor (referência) ── */
+.ecotopia-lp .lp-sono-iphone-scene {
+  position: relative;
+}
+
+.ecotopia-lp .lp-sono-iphone-scene .lp-sono-iphone {
+  position: relative;
+  z-index: 1; /* nuvem esquerda fica atrás; lua e nuvem direita na frente */
+}
+
+.ecotopia-lp .lp-sono-scene-moon,
+.ecotopia-lp .lp-sono-scene-cloud,
+.ecotopia-lp .lp-sono-scene-flower {
+  position: absolute;
+  pointer-events: none;
+}
+
+.ecotopia-lp .lp-sono-scene-moon {
+  top: -52px;
+  right: -58px;
+  width: 132px;
+  z-index: 2;
+  filter: drop-shadow(0 10px 24px rgba(76, 51, 143, 0.35));
+}
+
+/* nuvens com sombra fria — sem ela, branco some no fundo branco do hero */
+.ecotopia-lp .lp-sono-scene-cloud {
+  filter: drop-shadow(0 12px 22px rgba(13, 52, 97, 0.18));
+}
+
+.ecotopia-lp .lp-sono-scene-cloud--left {
+  top: 16%;
+  left: -88px;
+  width: 152px;
+  z-index: 0;
+}
+
+/* flor pousada no lóbulo esquerdo da nuvem (acompanha a posição dela) */
+.ecotopia-lp .lp-sono-scene-flower {
+  top: calc(16% - 14px);
+  left: -64px;
+  width: 44px;
+  z-index: 2;
+  filter: drop-shadow(0 4px 8px rgba(13, 52, 97, 0.2));
+}
+
+.ecotopia-lp .lp-sono-scene-cloud--right {
+  bottom: 4%;
+  right: -64px;
+  width: 150px;
+  z-index: 2;
+}
+
+@media (max-width: 640px) {
+  .ecotopia-lp .lp-sono-scene-moon {
+    top: -34px;
+    right: -22px;
+    width: 96px;
+  }
+  /* pouco espaço lateral: nuvens vêm pra FRENTE, cavalgando a borda do phone */
+  .ecotopia-lp .lp-sono-scene-cloud--left {
+    top: 13%;
+    left: -38px;
+    width: 118px;
+    z-index: 2;
+  }
+  .ecotopia-lp .lp-sono-scene-flower {
+    top: calc(13% - 11px);
+    left: -22px;
+    width: 34px;
+  }
+  .ecotopia-lp .lp-sono-scene-cloud--right {
+    bottom: 3%;
+    right: -28px;
+    width: 128px;
+  }
+}
+
 /* ── 2b · Mockup de iPhone do hero (CSS puro, sem imagem) ── */
 .ecotopia-lp .lp-sono-iphone {
   position: relative;

@@ -261,6 +261,35 @@ export default function EcotopiaSonoPage() {
           {/* Mock visual estático do player (md+) — reaproveita o widget da demo
               dentro de um frame de iPhone em CSS puro; coluna direita do hero. */}
           <div className="lp-sono-hero-mock scroll-reveal stagger-2" aria-hidden>
+            <div className="lp-sono-iphone-scene">
+              <img
+                className="lp-sono-scene-moon"
+                src="/images/sono-deco-lua-roxa.png"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+              <img
+                className="lp-sono-scene-cloud lp-sono-scene-cloud--left"
+                src="/images/sono-deco-nuvem-branca.png"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+              <img
+                className="lp-sono-scene-flower"
+                src="/images/sono-deco-flor.png"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+              <img
+                className="lp-sono-scene-cloud lp-sono-scene-cloud--right"
+                src="/images/sono-deco-nuvem-branca.png"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
             <div className="lp-sono-iphone">
               <span className="lp-sono-iphone-btn lp-sono-iphone-btn--silent" />
               <span className="lp-sono-iphone-btn lp-sono-iphone-btn--volup" />
@@ -370,6 +399,7 @@ export default function EcotopiaSonoPage() {
 
                 <span className="lp-sono-iphone-homebar" />
               </div>
+            </div>
             </div>
           </div>
         </div>
