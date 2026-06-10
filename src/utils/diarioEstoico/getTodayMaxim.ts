@@ -1146,6 +1146,17 @@ export const JUNHO_REFLECTIONS: DailyMaxim[] = [
     comment: '"É mais fácil", lembra-nos Públio Siro, "atravessar um rio em sua fonte". É o que Sêneca também quer dizer. As águas tumultuosas e as correntes mortais dos maus hábitos, da indisciplina, do caos e da disfunção: elas começam em algum lugar como apenas um pequeno fio d’água. Em algum lugar elas são um plácido lago ou tanque, até uma borbulhante fonte subterrânea.\n\nO que você preferiria fazer — quase se afogar numa perigosa travessia dentro de algumas semanas ou atravessar agora enquanto ainda é fácil? A escolha é sua.',
     background: getBackgroundForDay(9),
   },
+  {
+    date: '10 de junho',
+    month: 'junho',
+    dayNumber: 10,
+    title: 'VOCÊ PODE FAZER ISSO',
+    text: '"Se achas que realizar alguma coisa por ti mesmo é muito difícil, não imaginas que é impossível — pois qualquer coisa possível e adequada para outra pessoa pode ser levada a cabo por ti com igual facilidade."',
+    author: 'Marco Aurélio',
+    source: 'Meditações, 6.19',
+    comment: 'Há dois tipos de pessoa neste mundo. As do primeiro tipo olham para as que realizaram coisas e pensam: Por que elas? Por que não eu? As outras olham para as mesmas pessoas e pensam: Se elas podem fazer isso, por que não eu?\n\nUm tipo é soma zero e invejoso (se você ganhar, eu perco). O outro é não soma zero (há bastante para todos) e vê o sucesso dos outros como uma inspiração. Qual atitude impelirá você para a frente e para cima? Qual o impulsionará para a amargura e o desespero?\n\nQuem você será?',
+    background: getBackgroundForDay(10),
+  },
 ];
 
 export const ALL_DAILY_MAXIMS: DailyMaxim[] = [
