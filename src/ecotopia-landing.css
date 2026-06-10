@@ -8295,6 +8295,23 @@ body.eco-no-scroll {
   color: #8A97AB;
 }
 
+/* chip de play nas linhas (mobile): convida ao toque em vez de "bloquear" */
+.ecotopia-lp .lp-sono-nights-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: rgba(110, 200, 255, 0.18);
+  color: var(--lp-accent-navy, #0D3461);
+}
+
+.ecotopia-lp .lp-sono-nights-play svg {
+  margin-left: 2px; /* compensa o peso ótico do triângulo */
+}
+
 /* demais noites — grade (md+) */
 .ecotopia-lp .lp-sono-nights-grid {
   display: none;
@@ -8861,22 +8878,29 @@ body.eco-no-scroll {
   }
   .ecotopia-lp .lp-sono-tabs-inner {
     max-width: 100%;
-    padding: 0 10px;
+    padding: 26px 14px;
   }
+  /* pílulas em bloco intencional: 2 em cima + a longa em largura total */
   .ecotopia-lp .lp-sono-tabs-pills {
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
   }
   .ecotopia-lp .lp-sono-tab-pill {
-    font-size: 12px;
-    padding: 7px 12px;
+    font-size: 12.5px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .ecotopia-lp .lp-sono-tab-pill:nth-child(3) {
+    grid-column: 1 / -1;
   }
   .ecotopia-lp .lp-sono-tabs-body {
-    font-size: 14px;
-    line-height: 1.5;
-    margin-bottom: 18px;
+    font-size: 14.5px;
+    line-height: 1.6;
+    margin-bottom: 22px;
     max-width: 100%;
+    color: rgba(255, 255, 255, 0.92);
   }
   .ecotopia-lp .lp-sono-mini-player {
     gap: 12px;
@@ -13231,29 +13255,42 @@ body.eco-no-scroll {
 /* frase de virada — card azul-claro com lua e estrelas desenhadas */
 .ecotopia-lp .lp-sono-dor-turn {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 14px;
   margin: 38px 0 0;
-  padding: 18px 20px;
+  padding: 20px;
   background: #EAF1FB;
   border: 1px solid rgba(13, 52, 97, 0.1);
-  border-radius: 18px;
+  border-radius: 16px;
 }
 
+/* ícone ancorado em selo branco — mesma linguagem dos selos da foto */
 .ecotopia-lp .lp-sono-dor-turn-icon {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: #5A6B82;
+  width: 46px;
+  height: 46px;
+  margin-top: 2px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(13, 52, 97, 0.1);
+  color: var(--lp-accent-navy);
+}
+
+.ecotopia-lp .lp-sono-dor-turn-icon svg {
+  width: 26px;
+  height: 26px;
 }
 
 .ecotopia-lp .lp-sono-dor-turn-text {
   margin: 0;
   font-family: var(--lp-serif);
-  font-size: 16px;
-  line-height: 1.55;
-  color: #0A0A0A;
+  font-size: 15.5px;
+  line-height: 1.6;
+  text-align: left;
+  color: #3D4C63; /* primeira frase mais suave — o peso fica no negrito */
 }
 
 .ecotopia-lp .lp-sono-dor-turn-text strong {

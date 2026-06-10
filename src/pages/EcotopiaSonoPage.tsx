@@ -423,8 +423,10 @@ export default function EcotopiaSonoPage() {
                   </span>
                   <span className="lp-sono-nights-row-title">{n.title}</span>
                 </span>
-                <span className="lp-sono-nights-lock" aria-hidden>
-                  <LockGlyph />
+                <span className="lp-sono-nights-play" aria-hidden>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 5.5v13a1 1 0 0 0 1.55.83l10-6.5a1 1 0 0 0 0-1.66l-10-6.5A1 1 0 0 0 7 5.5z" />
+                  </svg>
                 </span>
               </Link>
             ))}
