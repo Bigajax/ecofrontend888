@@ -213,6 +213,18 @@ export default function EcotopiaSonoPage() {
 
   const [selectedOfferPlan, setSelectedOfferPlan] = useState<'annual' | 'monthly'>('monthly');
 
+  // iPhone do hero rotaciona pelas 7 noites (mesma config do AppIcon da
+  // landing Protocolo-Sono-v2): troca a cada 2,8s com crossfade de 700ms
+  // na arte e flip do rótulo/título.
+  const [heroNightIndex, setHeroNightIndex] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeroNightIndex((prev) => (prev + 1) % PROTOCOL_NIGHTS.length);
+    }, 2800);
+    return () => clearInterval(interval);
+  }, []);
+  const heroNight = PROTOCOL_NIGHTS[heroNightIndex];
+
   return (
     <div className="ecotopia-lp lp-sono">
       <EcotopiaTopbar />
@@ -246,31 +258,78 @@ export default function EcotopiaSonoPage() {
             </p>
           </div>
 
-          {/* Mock visual estático do player (md+) — reaproveita o widget da demo,
-              levemente menor; preenche a coluna direita do hero no desktop. */}
+          {/* Mock visual estático do player (md+) — reaproveita o widget da demo
+              dentro de um frame de iPhone em CSS puro; coluna direita do hero. */}
           <div className="lp-sono-hero-mock scroll-reveal stagger-2" aria-hidden>
-            <div className="lp-sono-mini-player">
-              <p className="lp-sono-mini-player-eyebrow">Noite 1 de 7</p>
+            <div className="lp-sono-iphone">
+              <span className="lp-sono-iphone-btn lp-sono-iphone-btn--silent" />
+              <span className="lp-sono-iphone-btn lp-sono-iphone-btn--volup" />
+              <span className="lp-sono-iphone-btn lp-sono-iphone-btn--voldown" />
+              <span className="lp-sono-iphone-btn lp-sono-iphone-btn--power" />
+
+              <div className="lp-sono-iphone-screen">
+                <div className="lp-sono-iphone-statusbar">
+                  <span className="lp-sono-iphone-time">23:47</span>
+                  <span className="lp-sono-iphone-island" />
+                  <span className="lp-sono-iphone-status-icons">
+                    <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor">
+                      <rect x="0" y="7" width="3" height="4" rx="0.8" />
+                      <rect x="4.3" y="5" width="3" height="6" rx="0.8" />
+                      <rect x="8.6" y="2.5" width="3" height="8.5" rx="0.8" />
+                      <rect x="12.9" y="0" width="3" height="11" rx="0.8" />
+                    </svg>
+                    <svg width="15" height="11" viewBox="0 0 15 11" fill="currentColor">
+                      <path d="M7.5 9.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8zM4.6 7.4l1.5 1.5a2 2 0 0 1 2.8 0l1.5-1.5a4.2 4.2 0 0 0-5.8 0zM2 4.8l1.5 1.5a6 6 0 0 1 8 0L13 4.8a8.2 8.2 0 0 0-11 0z" transform="translate(0,-1.2)" />
+                    </svg>
+                    <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
+                      <rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" strokeOpacity="0.45" />
+                      <rect x="2" y="2" width="13" height="8" rx="1.6" fill="currentColor" />
+                      <path d="M23.5 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" fillOpacity="0.45" />
+                    </svg>
+                  </span>
+                </div>
+
+                <div className="lp-sono-mini-player">
+              <p
+                key={`eyebrow-${heroNightIndex}`}
+                className="lp-sono-mini-player-eyebrow lp-sono-label-flip"
+              >
+                Noite {heroNight.night} de 7
+              </p>
 
               <div className="lp-sono-mini-player-art">
-                <img
-                  src="/images/desligando-estado-alerta.webp"
-                  alt=""
-                  loading="eager"
-                  decoding="async"
-                />
+                {PROTOCOL_NIGHTS.map((night, i) => (
+                  <img
+                    key={night.id}
+                    src={night.imageUrl}
+                    alt=""
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    style={{ opacity: i === heroNightIndex ? 1 : 0 }}
+                  />
+                ))}
               </div>
 
               <div className="lp-sono-mini-player-meta">
-                <p className="lp-sono-mini-player-title">Desligando o estado de alerta</p>
-                <p className="lp-sono-mini-player-duration">8 min</p>
+                <p
+                  key={`title-${heroNightIndex}`}
+                  className="lp-sono-mini-player-title lp-sono-label-flip"
+                >
+                  {heroNight.title}
+                </p>
+                <p
+                  key={`duration-${heroNightIndex}`}
+                  className="lp-sono-mini-player-duration lp-sono-label-flip"
+                >
+                  {heroNight.duration}
+                </p>
               </div>
 
               <div className="lp-sono-mini-player-dots">
                 {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                   <span
                     key={n}
-                    className={`lp-sono-mini-player-dot ${n === 1 ? 'is-current' : ''}`}
+                    className={`lp-sono-mini-player-dot ${n === heroNight.night ? 'is-current' : ''}`}
                   />
                 ))}
               </div>
@@ -305,7 +364,11 @@ export default function EcotopiaSonoPage() {
                   <span className="lp-sono-mini-player-fill" />
                   <span className="lp-sono-mini-player-thumb" />
                 </div>
-                <span className="lp-sono-mini-player-time is-end">8 min</span>
+                  <span key={`end-${heroNightIndex}`} className="lp-sono-mini-player-time is-end lp-sono-label-flip">{heroNight.duration}</span>
+                  </div>
+                </div>
+
+                <span className="lp-sono-iphone-homebar" />
               </div>
             </div>
           </div>
