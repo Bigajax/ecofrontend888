@@ -44,37 +44,6 @@ const RECOGNITION = [
   { text: 'Durmo, mas acordo como se não tivesse descansado.', Icon: PillBattery },
 ];
 
-// Lua preenchida com estrelinhas — a noite que começa.
-function DecoMoonFilled() {
-  return (
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M15 3a9 9 0 1 0 6.4 15.4A10.5 10.5 0 0 1 15 3z" />
-      <circle cx="19" cy="4.6" r="1" />
-      <circle cx="22" cy="9" r="0.7" />
-    </svg>
-  );
-}
-
-// Relógio marcando 1h — "você olha o relógio".
-function DecoClock() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </svg>
-  );
-}
-
-// zZ tipográfico — o sono que não vem.
-function DecoZzz() {
-  return (
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M13.5 5h6l-6 7h6" />
-      <path d="M4.5 13h5l-5 6h5" />
-    </svg>
-  );
-}
-
 function DecoCloud() {
   return (
     <svg width="30" height="20" viewBox="0 0 30 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -123,14 +92,14 @@ export default function SonoDorSection() {
         <div className="lp-sono-dor-grid">
           <div className="lp-sono-dor-media scroll-reveal">
             <div className="lp-sono-dor-photo-wrap">
-              <span className="lp-sono-dor-deco lp-sono-dor-deco--moon" aria-hidden>
-                <DecoMoonFilled />
+              <span className="lp-sono-dor-deco lp-sono-dor-deco--img lp-sono-dor-deco--moon" aria-hidden>
+                <img src="/images/sono-sticker-pillow.png" alt="" loading="lazy" decoding="async" />
               </span>
-              <span className="lp-sono-dor-deco lp-sono-dor-deco--bell" aria-hidden>
-                <DecoClock />
+              <span className="lp-sono-dor-deco lp-sono-dor-deco--img lp-sono-dor-deco--bell" aria-hidden>
+                <img src="/images/sono-sticker-relogio.png" alt="" loading="lazy" decoding="async" />
               </span>
-              <span className="lp-sono-dor-deco lp-sono-dor-deco--snooze" aria-hidden>
-                <DecoZzz />
+              <span className="lp-sono-dor-deco lp-sono-dor-deco--img lp-sono-dor-deco--snooze" aria-hidden>
+                <img src="/images/sono-sticker-zzz.png" alt="" loading="lazy" decoding="async" />
               </span>
 
               <div className="lp-sono-dor-photo">

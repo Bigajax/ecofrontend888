@@ -13235,11 +13235,25 @@ body.eco-no-scroll {
   color: var(--lp-accent-navy);
 }
 
-/* lua dourada · relógio navy · zZ dourado — três formas distintas */
+/* stickers ilustrados (travesseiro e ZZZ) — círculo próprio, sem selo branco */
+.ecotopia-lp .lp-sono-dor-deco--img {
+  width: 58px;
+  height: 58px;
+  background: none;
+  box-shadow: none;
+}
+
+.ecotopia-lp .lp-sono-dor-deco--img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(13, 52, 97, 0.2));
+}
+
+/* travesseiro · relógio navy · ZZZ — três formas distintas */
 .ecotopia-lp .lp-sono-dor-deco--moon {
-  top: -10px;
-  left: -8px;
-  color: #C9A35C;
+  top: -14px;
+  left: -10px;
 }
 
 .ecotopia-lp .lp-sono-dor-deco--bell {
