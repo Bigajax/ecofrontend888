@@ -13136,12 +13136,29 @@ body.eco-no-scroll {
   margin: 0 0 30px;
 }
 
+/* wrapper da foto: referência dos selos e do contorno dourado */
+.ecotopia-lp .lp-sono-dor-photo-wrap {
+  position: relative;
+}
+
+/* contorno dourado fino, deslocado e levemente girado (traço à mão) */
+.ecotopia-lp .lp-sono-dor-photo-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  pointer-events: none;
+  border: 1.5px solid rgba(201, 163, 92, 0.6);
+  border-radius: 55% 45% 48% 52% / 46% 54% 50% 50%;
+  transform: rotate(-6deg);
+  z-index: 1;
+}
+
 .ecotopia-lp .lp-sono-dor-photo {
-  /* recorte orgânico: topo quase reto, base em curvas amplas (mockup) */
-  border-radius: 28px 28px 46% 54% / 28px 28px 24% 28%;
+  /* blob orgânico assimétrico (não círculo) */
+  border-radius: 38% 62% 54% 46% / 44% 38% 62% 56%;
   overflow: hidden;
   box-shadow:
-    0 0 0 8px rgba(255, 255, 255, 0.75),
+    0 0 0 8px rgba(255, 255, 255, 0.85),
     0 18px 44px rgba(13, 52, 97, 0.12);
 }
 
@@ -13153,36 +13170,49 @@ body.eco-no-scroll {
   object-fit: cover;
 }
 
-/* ícones noturnos desenhados ao redor da foto */
+/* selos brancos circulares com ícones noturnos ao redor da foto */
 .ecotopia-lp .lp-sono-dor-deco {
   position: absolute;
-  z-index: 1;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  box-shadow: 0 6px 18px rgba(13, 52, 97, 0.14);
+  color: var(--lp-accent-navy);
+}
+
+.ecotopia-lp .lp-sono-dor-deco--moon {
+  top: -10px;
+  left: -8px;
+}
+
+.ecotopia-lp .lp-sono-dor-deco--bell {
+  top: 34%;
+  right: -14px;
+  color: #C9A35C;
+}
+
+.ecotopia-lp .lp-sono-dor-deco--snooze {
+  bottom: -6px;
+  left: 4%;
+}
+
+/* nuvem e estrelinhas ao redor do título: traço solto, sem selo branco
+   (só mobile — no desktop o título muda de coluna e perderiam a referência) */
+.ecotopia-lp .lp-sono-dor-deco--titlecloud,
+.ecotopia-lp .lp-sono-dor-deco--titlestars {
+  width: auto;
+  height: auto;
+  background: none;
+  box-shadow: none;
   color: #C9A35C;
   opacity: 0.85;
 }
 
-.ecotopia-lp .lp-sono-dor-deco--moon {
-  top: -20px;
-  left: -6px;
-}
-
-/* sino em selo branco encostado na borda direita da foto */
-.ecotopia-lp .lp-sono-dor-deco--bell {
-  top: 36%;
-  right: -10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  background: #FFFFFF;
-  box-shadow: 0 4px 14px rgba(13, 52, 97, 0.12);
-  transform: rotate(8deg);
-}
-
-/* nuvem e estrelinhas ao redor do título (só mobile — no desktop o título
-   muda de coluna e as decorações perderiam a referência) */
 .ecotopia-lp .lp-sono-dor-deco--titlecloud {
   top: -12px;
   right: 4%;
@@ -13257,19 +13287,9 @@ body.eco-no-scroll {
   .ecotopia-lp .lp-sono-dor-media {
     margin: 0;
   }
-  /* moldura orgânica (blob) na foto, como no mockup desktop */
-  .ecotopia-lp .lp-sono-dor-photo {
-    border-radius: 54% 46% 52% 48% / 52% 48% 54% 46%;
-  }
+  /* no desktop a foto fica mais quadrada — o blob vem da regra base */
   .ecotopia-lp .lp-sono-dor-photo img {
     aspect-ratio: 1 / 1;
-  }
-  .ecotopia-lp .lp-sono-dor-deco--moon {
-    top: -8px;
-    left: 2px;
-  }
-  .ecotopia-lp .lp-sono-dor-deco--bell {
-    right: -4px;
   }
   .ecotopia-lp .lp-sono-dor-deco--titlecloud,
   .ecotopia-lp .lp-sono-dor-deco--titlestars {

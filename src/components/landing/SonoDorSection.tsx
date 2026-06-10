@@ -58,6 +58,15 @@ function DecoBell() {
   );
 }
 
+function DecoSnooze() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12.5 5a7 7 0 1 0 6 10A8.5 8.5 0 0 1 12.5 5z" />
+      <path d="M15.5 4h3.5l-3.5 3.5H19" />
+    </svg>
+  );
+}
+
 function DecoCloud() {
   return (
     <svg width="30" height="20" viewBox="0 0 30 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -105,20 +114,25 @@ export default function SonoDorSection() {
 
         <div className="lp-sono-dor-grid">
           <div className="lp-sono-dor-media scroll-reveal">
-            <span className="lp-sono-dor-deco lp-sono-dor-deco--moon" aria-hidden>
-              <DecoMoonStars />
-            </span>
-            <span className="lp-sono-dor-deco lp-sono-dor-deco--bell" aria-hidden>
-              <DecoBell />
-            </span>
+            <div className="lp-sono-dor-photo-wrap">
+              <span className="lp-sono-dor-deco lp-sono-dor-deco--moon" aria-hidden>
+                <DecoMoonStars />
+              </span>
+              <span className="lp-sono-dor-deco lp-sono-dor-deco--bell" aria-hidden>
+                <DecoBell />
+              </span>
+              <span className="lp-sono-dor-deco lp-sono-dor-deco--snooze" aria-hidden>
+                <DecoSnooze />
+              </span>
 
-            <div className="lp-sono-dor-photo">
-              <img
-                src="/images/sono-dor-cena.jpg"
-                alt="Mulher sentada na cama à noite, cansada, com a mão no rosto"
-                loading="lazy"
-                decoding="async"
-              />
+              <div className="lp-sono-dor-photo">
+                <img
+                  src="/images/sono-dor-cena.jpg"
+                  alt="Mulher sentada na cama à noite, cansada, com a mão no rosto"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
             </div>
 
             <p className="lp-sono-dor-caption">
