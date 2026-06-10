@@ -13251,11 +13251,8 @@ body.eco-no-scroll {
   border-radius: 52px;
   /* moldura "titânio": gradiente diagonal com brilho na borda superior */
   background: linear-gradient(160deg, #585862 0%, #1d1d24 26%, #2e2e37 62%, #101015 100%);
-  /* sombra neutra: sem glow roxo pra manter o fundo branco limpo ao redor */
-  box-shadow:
-    inset 0 0 0 1.5px rgba(255, 255, 255, 0.10),
-    0 32px 80px rgba(15, 17, 38, 0.16),
-    0 16px 40px rgba(15, 17, 38, 0.14);
+  /* sem sombra externa: fundo branco totalmente limpo ao redor do iPhone */
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.10);
 }
 
 /* botões laterais (silencioso + volume à esquerda, power à direita) */
