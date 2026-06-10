@@ -6754,6 +6754,20 @@ body.eco-no-scroll {
   max-width: 720px;
 }
 
+/* título maior e mais premium (a tarja estrelada vira o ponto focal) */
+.ecotopia-lp .lp-sono-hero--v2 h1 {
+  font-size: clamp(44px, 5.2vw, 68px);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+}
+
+@media (max-width: 640px) {
+  .ecotopia-lp .lp-sono-hero--v2 h1 {
+    font-size: clamp(31px, 8.4vw, 44px);
+    line-height: 1.08;
+  }
+}
+
 .ecotopia-lp .lp-sono-hero--v2 .lp-sono-hero-text {
   max-width: 620px;
 }
@@ -7225,15 +7239,16 @@ body.eco-no-scroll {
 .ecotopia-lp .lp-sono-mark-starry {
   position: relative;
   z-index: 0;
-  color: #EAF2FF;
-  -webkit-text-fill-color: #EAF2FF;
-  text-shadow: 0 1px 12px rgba(110, 200, 255, 0.35);
-  padding: 0.04em 0.32em;
-  border-radius: 7px;
+  color: #F4F1FF;
+  -webkit-text-fill-color: #F4F1FF;
+  text-shadow: 0 1px 14px rgba(155, 127, 235, 0.45);
+  padding: 0.06em 0.36em;
+  border-radius: 0.26em;
   white-space: nowrap;
 }
 
-/* camada do céu navy + brilho radial (parada, atrás do texto) */
+/* tarja premium: céu em gradiente navy → violeta, brilho radial no topo,
+   friso interno claro e glow violeta suave (parada, atrás do texto) */
 .ecotopia-lp .lp-sono-mark-starry::before {
   content: '';
   position: absolute;
@@ -7241,8 +7256,12 @@ body.eco-no-scroll {
   z-index: -1;
   border-radius: inherit;
   background:
-    radial-gradient(120% 180% at 20% -40%, #233356 0%, rgba(35, 51, 86, 0) 55%),
-    linear-gradient(180deg, #0E1730 0%, #0A0F1E 100%);
+    radial-gradient(130% 190% at 22% -50%, rgba(110, 200, 255, 0.3) 0%, rgba(110, 200, 255, 0) 52%),
+    linear-gradient(135deg, #33307E 0%, #5B3FA8 52%, #8B5CF6 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 8px 28px rgba(124, 92, 210, 0.4);
 }
 
 /* camada de estrelas — pisca (twinkle) e deriva suavemente (drift) */
