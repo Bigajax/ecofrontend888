@@ -8439,7 +8439,7 @@ body.eco-no-scroll {
   letter-spacing: -0.024em;
   color: #FFFFFF;
   margin: 0 0 28px;
-  white-space: nowrap;
+  text-wrap: balance; /* headline mais longa quebra equilibrada (era nowrap) */
 }
 
 @media (max-width: 600px) {
@@ -12886,4 +12886,386 @@ body.eco-no-scroll {
   .ecotopia-lp .lp-help-section p {
     font-size: 15px;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Seção de Dor (sleep) — reconhecimento "isso sou eu" (cards-bilhete)
+   Conceito editorial "noite → amanhecer": atmosfera fria no topo que aquece
+   na frase de virada (o insight). Tokens da página; sem sombras pesadas.
+   ═══════════════════════════════════════════════════════════════════════ */
+.ecotopia-lp .lp-sono-dor {
+  position: relative;
+  overflow: hidden;
+  background: #F7F3EB; /* creme quente da identidade */
+  padding: 72px 24px;
+}
+/* glow morno (amanhecer) embaixo, atrás da frase de virada */
+.ecotopia-lp .lp-sono-dor::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46%;
+  pointer-events: none;
+  background: radial-gradient(72% 100% at 50% 100%, rgba(232, 182, 90, 0.1), transparent 72%);
+}
+
+.ecotopia-lp .lp-sono-dor-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 30rem; /* ~max-w-md */
+  margin: 0 auto;
+  text-align: left; /* corpo à esquerda — um eixo só */
+}
+
+.ecotopia-lp .lp-sono-dor-title {
+  font-family: var(--lp-serif);
+  font-weight: 500; /* "Você conhece" calmo — a ênfase vive em "essa cena." */
+  text-align: center; /* heading centralizado */
+  color: var(--lp-accent-navy);
+  font-size: clamp(25px, 6.2vw, 34px);
+  line-height: 1.16;
+  letter-spacing: -0.01em;
+  margin: 0 0 26px;
+}
+/* "essa cena." carrega o destaque sozinha: bold + rabisco (ScribbleUnderline) */
+.ecotopia-lp .lp-sono-dor-accent {
+  font-weight: 700;
+}
+
+.ecotopia-lp .lp-sono-dor-scene {
+  font-family: var(--lp-serif);
+  font-size: 16px;
+  line-height: 1.72;
+  color: var(--lp-text-muted);
+  margin: 0 0 16px;
+}
+
+.ecotopia-lp .lp-sono-dor-list {
+  list-style: none;
+  margin: 34px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ecotopia-lp .lp-sono-dor-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: #FFFFFF; /* branco — salta do creme */
+  border: 1px solid rgba(13, 52, 97, 0.1); /* hairline navy/10 */
+  border-radius: 16px;
+  padding: 12px 18px; /* mais apertado verticalmente */
+  box-shadow: 0 4px 14px rgba(13, 52, 97, 0.06); /* separação, sem peso */
+  transition:
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s ease;
+}
+
+/* leve rotação alternada — ar de bilhete fixado à mão, levemente imperfeito */
+.ecotopia-lp .lp-sono-dor-card:nth-child(1) { transform: rotate(-1.5deg); }
+.ecotopia-lp .lp-sono-dor-card:nth-child(2) { transform: rotate(1.5deg); }
+.ecotopia-lp .lp-sono-dor-card:nth-child(3) { transform: rotate(-1deg); }
+
+/* ao tocar/passar, o bilhete se endireita e levanta de leve */
+.ecotopia-lp .lp-sono-dor-card:hover {
+  transform: rotate(0deg) translateY(-3px);
+  box-shadow: 0 12px 28px rgba(13, 52, 97, 0.11);
+}
+
+/* bolinhas com contorno levemente irregular — caráter desenhado à mão */
+.ecotopia-lp .lp-sono-dor-dot {
+  flex-shrink: 0;
+  width: 11px;
+  height: 11px;
+  border-radius: 48% 52% 51% 49% / 53% 47% 53% 47%;
+  background: #6EC8FF; /* baby blue */
+  box-shadow: 0 0 0 4px rgba(110, 200, 255, 0.16); /* halo suave */
+}
+.ecotopia-lp .lp-sono-dor-card:nth-child(2) .lp-sono-dor-dot {
+  border-radius: 52% 48% 49% 51% / 47% 54% 46% 53%;
+  background: #F2C94C; /* amarelo */
+  box-shadow: 0 0 0 4px rgba(242, 201, 76, 0.16);
+}
+.ecotopia-lp .lp-sono-dor-card:nth-child(3) .lp-sono-dor-dot {
+  border-radius: 50% 50% 53% 47% / 49% 51% 48% 52%;
+  background: #F2A0C0; /* rosa */
+  box-shadow: 0 0 0 4px rgba(242, 160, 192, 0.16);
+}
+
+.ecotopia-lp .lp-sono-dor-card-text {
+  font-family: var(--lp-serif);
+  font-size: 15.5px;
+  line-height: 1.4;
+  color: var(--lp-accent-navy);
+}
+
+/* frase de virada — tese da seção: pesa mais que os parágrafos de cena */
+.ecotopia-lp .lp-sono-dor-turn {
+  position: relative;
+  margin: 38px 0 0;
+  font-family: var(--lp-serif);
+  font-weight: 600;
+  font-size: clamp(18px, 4.6vw, 21px);
+  line-height: 1.45;
+  color: var(--lp-accent-navy);
+  padding: 6px 0 6px 20px;
+  border-left: 4px solid var(--lp-accent-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ecotopia-lp .lp-sono-dor-card,
+  .ecotopia-lp .lp-sono-dor-card:hover {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Seção FAQ (sleep) — objeções · acordeão controlado (1 aberto por vez)
+   ═══════════════════════════════════════════════════════════════════════ */
+.ecotopia-lp .lp-sono-faq {
+  background: var(--lp-bg);
+  padding: 64px 24px;
+}
+
+.ecotopia-lp .lp-sono-faq-inner {
+  max-width: 30rem; /* ~max-w-md */
+  margin: 0 auto;
+}
+
+.ecotopia-lp .lp-sono-faq-title {
+  font-family: var(--lp-serif);
+  font-weight: 700;
+  text-align: center;
+  color: var(--lp-accent-navy);
+  font-size: clamp(24px, 6vw, 32px);
+  line-height: 1.15;
+  margin: 0 0 28px;
+}
+
+.ecotopia-lp .lp-sono-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ecotopia-lp .lp-sono-faq-item {
+  background: #F7F5F1; /* creme */
+  border: 1px solid rgba(13, 52, 97, 0.1); /* hairline navy/10 */
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.ecotopia-lp .lp-sono-faq-q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 15.5px;
+  line-height: 1.35;
+  color: var(--lp-accent-navy);
+}
+
+.ecotopia-lp .lp-sono-faq-chevron {
+  flex-shrink: 0;
+  color: var(--lp-accent-strong);
+  transition: transform 0.2s ease;
+}
+.ecotopia-lp .lp-sono-faq-item.is-open .lp-sono-faq-chevron {
+  transform: rotate(180deg);
+}
+
+/* transição de altura suave via grid-template-rows 0fr → 1fr */
+.ecotopia-lp .lp-sono-faq-a {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.2s ease;
+}
+.ecotopia-lp .lp-sono-faq-a[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+.ecotopia-lp .lp-sono-faq-a-inner {
+  overflow: hidden;
+}
+.ecotopia-lp .lp-sono-faq-a-inner p {
+  margin: 0 20px;
+  padding: 14px 0 18px;
+  border-top: 1px solid rgba(13, 52, 97, 0.1); /* divisória hairline navy/10 */
+  font-family: var(--lp-serif);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--lp-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ecotopia-lp .lp-sono-faq-a,
+  .ecotopia-lp .lp-sono-faq-chevron {
+    transition: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Refactor de continuidade visual — /sono
+   Container único, hero 2 colunas, features em grid, ritmo de fundos,
+   sistema único de títulos (rabisco) e acentos da paleta.
+   Fica no FIM do arquivo de propósito: vence empates de especificidade.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · Container único: padding constante em TODAS as seções ── */
+.ecotopia-lp .lp-sono-hero--v2,
+.ecotopia-lp .lp-sono-dor,
+.ecotopia-lp .lp-sono-grid-section,
+.ecotopia-lp .lp-sono-testimonials,
+.ecotopia-lp .lp-sono-value--cards,
+.ecotopia-lp .lp-sono-tabs,
+.ecotopia-lp .lp-sono-cta-mid,
+.ecotopia-lp .lp-sono-tips,
+.ecotopia-lp .lp-sono-faq,
+.ecotopia-lp .lp-sono-offer {
+  padding: 64px 24px; /* py-16 px-6 */
+}
+
+@media (min-width: 768px) {
+  .ecotopia-lp .lp-sono-hero--v2,
+  .ecotopia-lp .lp-sono-dor,
+  .ecotopia-lp .lp-sono-grid-section,
+  .ecotopia-lp .lp-sono-testimonials,
+  .ecotopia-lp .lp-sono-value--cards,
+  .ecotopia-lp .lp-sono-tabs,
+  .ecotopia-lp .lp-sono-cta-mid,
+  .ecotopia-lp .lp-sono-tips,
+  .ecotopia-lp .lp-sono-faq,
+  .ecotopia-lp .lp-sono-offer {
+    padding: 96px 32px; /* py-24 px-8 */
+  }
+}
+
+/* BG full-width: seções que tinham max-width nelas mesmas viram full-width,
+   e o conteúdo entra no wrapper interno padrão (max-w-6xl). */
+.ecotopia-lp .lp-sono-section-inner {
+  width: 100%;
+  max-width: 72rem; /* max-w-6xl */
+  margin: 0 auto;
+}
+.ecotopia-lp .lp-sono-grid-section {
+  max-width: none;
+}
+.ecotopia-lp .lp-sono-tips {
+  max-width: none;
+}
+.ecotopia-lp .lp-sono-testimonials-inner,
+.ecotopia-lp .lp-sono-offer-inner {
+  max-width: 72rem;
+}
+
+/* ── 2 · Hero: 2 colunas no desktop (texto + mock do player) ── */
+.ecotopia-lp .lp-sono-hero--v2 .lp-sono-hero-inner {
+  max-width: 72rem;
+}
+.ecotopia-lp .lp-sono-hero-mock {
+  display: none; /* mobile mantém o hero como está */
+}
+@media (min-width: 768px) {
+  .ecotopia-lp .lp-sono-hero--v2 .lp-sono-hero-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .ecotopia-lp .lp-sono-hero-mock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    border-radius: 24px; /* rounded-3xl */
+    pointer-events: none; /* mock estático — sem interação */
+    /* mesmo fundo roxo escuro do palco da demo (reuso, não gradiente novo) */
+    background-color: #07061A;
+    background-image:
+      radial-gradient(ellipse 56% 50% at 50% 44%, rgba(150, 116, 230, 0.30) 0%, rgba(150, 116, 230, 0.10) 46%, transparent 74%);
+  }
+  /* levemente menor que o player da seção demo */
+  .ecotopia-lp .lp-sono-hero-mock .lp-sono-mini-player {
+    padding: 8px 8px 12px;
+    gap: 12px;
+  }
+  .ecotopia-lp .lp-sono-hero-mock .lp-sono-mini-player-art {
+    width: 140px;
+    height: 140px;
+    border-radius: 22px;
+  }
+  .ecotopia-lp .lp-sono-hero-mock .lp-sono-mini-player-title {
+    font-size: 15.5px;
+  }
+}
+
+/* ── 4 · Ritmo de fundos (branco → escuro → creme, em sistema) ── */
+/* creme = #F7F3EB (mesmo da seção de dor) */
+.ecotopia-lp .lp-sono-grid-section {
+  background: #FFFFFF; /* protocolo */
+}
+.ecotopia-lp .lp-sono-testimonials {
+  background: #F7F3EB; /* depoimentos: creme */
+}
+.ecotopia-lp .lp-sono-testimonial {
+  background: #FFFFFF; /* card salta do creme */
+}
+.ecotopia-lp .lp-sono-tips {
+  background: #FFFFFF; /* guia de sono */
+}
+.ecotopia-lp .lp-sono-faq {
+  background: #F7F3EB; /* FAQ: creme */
+}
+.ecotopia-lp .lp-sono-faq-item {
+  background: #FFFFFF; /* card salta do creme */
+}
+/* demo interativa + CTA "Comece hoje" = um único bloco escuro */
+.ecotopia-lp .lp-sono-tabs {
+  background: #0A0F1E;
+}
+.ecotopia-lp .lp-sono-tabs .lp-sono-h2 {
+  color: #FFFFFF;
+}
+.ecotopia-lp .lp-sono-tabs-sub {
+  color: rgba(255, 255, 255, 0.72);
+}
+.ecotopia-lp .lp-sono-cta-mid {
+  background: #0A0F1E;
+}
+.ecotopia-lp .lp-sono-cta-mid h2 {
+  color: #FFFFFF;
+}
+.ecotopia-lp .lp-sono-cta-mid-sub {
+  color: rgba(255, 255, 255, 0.72);
+}
+.ecotopia-lp .lp-sono-offer {
+  background-color: #0A0F1E; /* alinha o navy ao token das demais faixas escuras */
+}
+
+/* Lead da seção de features: os ícones flutuam 140px acima de cada card
+   (position:absolute; top:-140px), então o lead precisa abrir esse espaço
+   pra não ficar embaixo da ilustração do 1º card. */
+.ecotopia-lp .lp-sono-value--cards .lp-sono-protocol-sub {
+  margin: 0 auto 140px;
+}
+
+/* ── 6 · Acentos da paleta nas aspas dos depoimentos ── */
+/* card 1 = baby blue (já é a cor base de .lp-sono-testimonial-quote) */
+.ecotopia-lp .lp-sono-testimonial:nth-child(2) .lp-sono-testimonial-quote {
+  color: #F2C94C; /* amarelo */
+}
+.ecotopia-lp .lp-sono-testimonial:nth-child(3) .lp-sono-testimonial-quote {
+  color: #F2A0C0; /* rosa */
 }

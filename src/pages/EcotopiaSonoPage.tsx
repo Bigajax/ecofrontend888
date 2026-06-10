@@ -4,6 +4,8 @@ import '@/ecotopia-landing.css';
 import EcotopiaTopbar from '@/components/landing/EcotopiaTopbar';
 import EcotopiaFooter from '@/components/landing/EcotopiaFooter';
 import MethodMarquee from '@/components/landing/MethodMarquee';
+import SonoDorSection from '@/components/landing/SonoDorSection';
+import SonoFaqSection from '@/components/landing/SonoFaqSection';
 import { useScrollReveal } from '@/components/landing/useScrollReveal';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { trackLandingVista, trackCtaClicado } from '@/lib/mixpanelAssinarFunnel';
@@ -60,7 +62,7 @@ const TABS = [
     id: 'permanecer',
     label: 'Permanecer dormindo',
     body:
-      'Trilhas longas que sustentam o sono profundo durante a noite — para acordar revigorado, sem aquele despertar das 3 da manhã.',
+      'Trilhas longas que sustentam o sono profundo durante a noite, para acordar revigorado, sem aquele despertar das 3 da manhã.',
     sample: {
       image: '/images/inducao-sono-profundo.webp',
       title: 'Quando o sono começa sozinho',
@@ -99,7 +101,7 @@ const TIPS_COLUMNS = [
     key: 'acordando',
     title: 'Acordando',
     body:
-      'Comece suas manhãs da maneira certa — aprenda a acordar se sentindo alerta, revigorado e pronto para o dia.',
+      'Comece suas manhãs da maneira certa: aprenda a acordar se sentindo alerta, revigorado e pronto para o dia.',
     links: [
       'Por que eu acordo cansado?',
       'Como acordar mais facilmente',
@@ -109,12 +111,9 @@ const TIPS_COLUMNS = [
   },
 ];
 
+// Ordem espelha os 3 marcadores da seção de dor:
+// mente não desliga · acordar no meio da noite · demorar pra dormir/descansar.
 const TESTIMONIALS: { id: string; quote: string; name: string; photo?: string }[] = [
-  {
-    id: 't1',
-    quote: 'Eu demorava mais de uma hora para dormir. Depois de alguns dias usando o protocolo comecei a pegar no sono muito mais rápido.',
-    name: 'Mariana',
-  },
   {
     id: 't2',
     quote: 'Minha mente ficava acelerada quando eu deitava. As práticas me ajudaram a encerrar o dia com mais tranquilidade.',
@@ -122,8 +121,13 @@ const TESTIMONIALS: { id: string; quote: string; name: string; photo?: string }[
   },
   {
     id: 't3',
-    quote: 'Passei a criar uma rotina noturna que realmente consigo seguir.',
+    quote: 'Eu acordava às 3h e ficava horas olhando o teto. Agora, quando acordo, consigo voltar a dormir.',
     name: 'Camila',
+  },
+  {
+    id: 't1',
+    quote: 'Eu demorava mais de uma hora para dormir. Depois de alguns dias usando o protocolo comecei a pegar no sono muito mais rápido.',
+    name: 'Mariana',
   },
 ];
 
@@ -236,6 +240,70 @@ export default function EcotopiaSonoPage() {
               </Link>
             </p>
           </div>
+
+          {/* Mock visual estático do player (md+) — reaproveita o widget da demo,
+              levemente menor; preenche a coluna direita do hero no desktop. */}
+          <div className="lp-sono-hero-mock scroll-reveal stagger-2" aria-hidden>
+            <div className="lp-sono-mini-player">
+              <p className="lp-sono-mini-player-eyebrow">Noite 1 de 7</p>
+
+              <div className="lp-sono-mini-player-art">
+                <img
+                  src="/images/desligando-estado-alerta.webp"
+                  alt=""
+                  loading="eager"
+                  decoding="async"
+                />
+              </div>
+
+              <div className="lp-sono-mini-player-meta">
+                <p className="lp-sono-mini-player-title">Desligando o estado de alerta</p>
+                <p className="lp-sono-mini-player-duration">8 min</p>
+              </div>
+
+              <div className="lp-sono-mini-player-dots">
+                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                  <span
+                    key={n}
+                    className={`lp-sono-mini-player-dot ${n === 1 ? 'is-current' : ''}`}
+                  />
+                ))}
+              </div>
+
+              <div className="lp-sono-mini-player-controls">
+                <span className="lp-sono-mini-player-skip">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="11 17 6 12 11 7" />
+                    <path d="M18 18a6 6 0 0 0-6-6H6" />
+                  </svg>
+                  <span>15</span>
+                </span>
+
+                <span className="lp-sono-mini-player-play">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 5.5v13a1 1 0 0 0 1.55.83l10-6.5a1 1 0 0 0 0-1.66l-10-6.5A1 1 0 0 0 7 5.5z" />
+                  </svg>
+                </span>
+
+                <span className="lp-sono-mini-player-skip">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="13 17 18 12 13 7" />
+                    <path d="M6 18a6 6 0 0 1 6-6h6" />
+                  </svg>
+                  <span>15</span>
+                </span>
+              </div>
+
+              <div className="lp-sono-mini-player-progress">
+                <span className="lp-sono-mini-player-time">0:00</span>
+                <div className="lp-sono-mini-player-bar">
+                  <span className="lp-sono-mini-player-fill" />
+                  <span className="lp-sono-mini-player-thumb" />
+                </div>
+                <span className="lp-sono-mini-player-time is-end">8 min</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -247,17 +315,20 @@ export default function EcotopiaSonoPage() {
         terms={['4,8★ na App Store', 'Mais de 2 mil usuários', 'Sessões de 5 a 10 min', 'Feito para desacelerar a mente']}
       />
 
+      {/* ─── Dor · espelha a cena noturna (reconhecimento) ─── */}
+      <SonoDorSection />
+
       {/* ─── Como funciona · Protocolo do Sono: 7 noites (carrossel) ─── */}
       <section className="lp-sono-grid-section lp-sono-protocol">
+        <div className="lp-sono-section-inner">
         <h2 className="lp-sono-h2 scroll-reveal lp-sono-protocol-h2">
-          O Protocolo do Sono:<br className="lp-br-desktop" />{' '}
-          7&nbsp;noites para desacelerar a mente.
+          7&nbsp;noites para ensinar<br className="lp-br-desktop" />{' '}
+          seu corpo a desligar.
         </h2>
 
         <p className="lp-sono-protocol-sub scroll-reveal stagger-1">
-          Cada noite foi criada para ajudar você a reduzir o estado de alerta,
-          interromper ciclos de pensamentos acelerados e preparar corpo e mente
-          para um descanso mais profundo.
+          Cada noite desativa uma camada do estado de alerta: da tensão no corpo
+          aos pensamentos que não param.
         </p>
 
         <div
@@ -321,6 +392,7 @@ export default function EcotopiaSonoPage() {
             </svg>
           </button>
         </div>
+        </div>
       </section>
 
       {/* ─── Prova / resultado · 32% expandido + depoimentos com rosto ─── */}
@@ -343,7 +415,7 @@ export default function EcotopiaSonoPage() {
             <span className="lp-sono-deco-star lp-sono-deco-star--h" aria-hidden="true"><Sparkle color="#0E1730" size={12} /></span>
 
             <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal lp-sono-testimonials-h2">
-              Histórias de quem já sente a diferença.
+              Quem já aprendeu a desligar.
             </h2>
           </div>
 
@@ -381,6 +453,10 @@ export default function EcotopiaSonoPage() {
 
       {/* ─── Benefícios · 3 cards de valor ─── */}
       <section className="lp-sono-value lp-sono-value--cards">
+        <p className="lp-sono-protocol-sub scroll-reveal">
+          Dentro do app, cada etapa da noite tem uma prática pra desligar uma
+          parte do alerta.
+        </p>
         <div className="lp-sono-value-grid">
           {VALUE_COLUMNS.map((col, i) => (
             <article
@@ -399,13 +475,14 @@ export default function EcotopiaSonoPage() {
 
       {/* ─── Demonstração · Tabs Antes / Adormecer / Permanecer ─── */}
       <section className="lp-sono-tabs">
+        <div className="lp-sono-section-inner">
         <div className="lp-sono-tabs-head">
           <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal lp-sono-tabs-h2">
             Nos 7&nbsp;dias grátis, as 7&nbsp;noites do{' '}
             Protocolo do Sono são suas.
           </h2>
           <p className="lp-sono-tabs-sub scroll-reveal stagger-1">
-            Comece por qualquer fase da noite —<br className="lp-br-desktop" />{' '}
+            Comece por qualquer fase da noite,<br className="lp-br-desktop" />{' '}
             do modo&nbsp;alerta ao descanso profundo.
           </p>
         </div>
@@ -509,15 +586,13 @@ export default function EcotopiaSonoPage() {
           </div>
         </div>
         </div>
+        </div>
       </section>
 
       {/* ─── CTA central repetido (label unificado) ─── */}
       <section className="lp-sono-cta-mid">
-        <div className="scroll-reveal">
-          <h2>
-            Comece hoje suas 7&nbsp;noites<br className="lp-br-desktop" />{' '}
-            de <em>transformação do sono.</em>
-          </h2>
+        <div className="lp-sono-section-inner scroll-reveal">
+          <h2>Sua primeira noite pode ser hoje.</h2>
           <p className="lp-sono-cta-mid-sub">
             Menos tempo tentando dormir.<br className="lp-br-desktop" />{' '}
             Mais tempo realmente descansando.
@@ -534,11 +609,12 @@ export default function EcotopiaSonoPage() {
 
       {/* ─── 3 colunas de dicas (conteúdo guiado do app) ─── */}
       <section className="lp-sono-tips">
+        <div className="lp-sono-section-inner">
         <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal">
           Um guia de sono completo, dentro do app.
         </h2>
         <p className="lp-sono-tips-sub scroll-reveal stagger-1">
-          Programas e práticas guiadas para cada etapa da noite — tudo incluído na sua
+          Programas e práticas guiadas para cada etapa da noite. Tudo incluído na sua
           assinatura. Comece com 7 dias grátis.
         </p>
 
@@ -603,7 +679,11 @@ export default function EcotopiaSonoPage() {
             </svg>
           </button>
         </div>
+        </div>
       </section>
+
+      {/* ─── FAQ · derruba objeções antes da oferta ─── */}
+      <SonoFaqSection />
 
       {/* ─── Oferta · navy ─── */}
       <section className="lp-sono-offer">
@@ -611,13 +691,13 @@ export default function EcotopiaSonoPage() {
 
         <div className="lp-sono-offer-inner">
           <div className="lp-sono-offer-content">
-            <h2 className="scroll-reveal">Dormir ficou mais fácil.</h2>
+            <h2 className="scroll-reveal">Esta noite pode ser diferente.</h2>
 
             <ul className="lp-sono-offer-bullets scroll-reveal stagger-1">
               <li>
                 <Check />
                 <span>
-                  Adormeça mais rápido com práticas guiadas para desacelerar a mente.
+                  Práticas guiadas que desligam o estado de alerta antes de deitar.
                 </span>
               </li>
               <li>
