@@ -13134,14 +13134,14 @@ body.eco-no-scroll {
   box-shadow: 0 12px 28px rgba(13, 52, 97, 0.11);
 }
 
-/* sticker ilustrado (círculo roxo próprio) + anel colorido à direita */
+/* sticker ilustrado (círculo roxo próprio) à esquerda de cada dor */
 .ecotopia-lp .lp-sono-dor-pill-icon {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 58px;
+  height: 58px;
 }
 
 .ecotopia-lp .lp-sono-dor-pill-icon img {
@@ -13149,23 +13149,6 @@ body.eco-no-scroll {
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 3px 8px rgba(13, 52, 97, 0.16));
-}
-
-.ecotopia-lp .lp-sono-dor-ring {
-  flex-shrink: 0;
-  margin-left: auto;
-  width: 15px;
-  height: 15px;
-  border-radius: 999px;
-  border: 1.5px solid rgba(110, 200, 255, 0.7);
-}
-
-.ecotopia-lp .lp-sono-dor-card:nth-child(2) .lp-sono-dor-ring {
-  border-color: rgba(242, 201, 76, 0.75);
-}
-
-.ecotopia-lp .lp-sono-dor-card:nth-child(3) .lp-sono-dor-ring {
-  border-color: rgba(242, 160, 192, 0.75);
 }
 
 .ecotopia-lp .lp-sono-dor-card-text {
@@ -13230,21 +13213,6 @@ body.eco-no-scroll {
   color: var(--lp-accent-navy);
 }
 
-/* stickers ilustrados (travesseiro e ZZZ) — círculo próprio, sem selo branco */
-.ecotopia-lp .lp-sono-dor-deco--img {
-  width: 58px;
-  height: 58px;
-  background: none;
-  box-shadow: none;
-}
-
-.ecotopia-lp .lp-sono-dor-deco--img img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 6px 14px rgba(13, 52, 97, 0.2));
-}
-
 /* decorações ao redor do título (só mobile — no desktop o título muda de
    coluna e perderiam a referência): nuvem sticker + estrelinhas de traço */
 .ecotopia-lp .lp-sono-dor-deco--titlestars {
@@ -13256,12 +13224,6 @@ body.eco-no-scroll {
   opacity: 0.85;
 }
 
-.ecotopia-lp .lp-sono-dor-deco--titlecloud {
-  top: -18px;
-  right: 3%;
-  width: 48px;
-  height: 48px;
-}
 
 .ecotopia-lp .lp-sono-dor-deco--titlestars {
   top: 30px;
@@ -13283,24 +13245,6 @@ body.eco-no-scroll {
   background: #EAF1FB;
   border: 1px solid rgba(13, 52, 97, 0.1);
   border-radius: 16px;
-}
-
-/* sticker do travesseiro — círculo roxo próprio, sem selo branco */
-.ecotopia-lp .lp-sono-dor-turn-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 52px;
-  height: 52px;
-  margin-top: 2px;
-}
-
-.ecotopia-lp .lp-sono-dor-turn-icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(13, 52, 97, 0.18));
 }
 
 .ecotopia-lp .lp-sono-dor-turn-text {
@@ -13347,7 +13291,6 @@ body.eco-no-scroll {
   .ecotopia-lp .lp-sono-dor-photo img {
     aspect-ratio: 1 / 1;
   }
-  .ecotopia-lp .lp-sono-dor-deco--titlecloud,
   .ecotopia-lp .lp-sono-dor-deco--titlestars {
     display: none;
   }

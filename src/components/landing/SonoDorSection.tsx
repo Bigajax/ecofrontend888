@@ -27,9 +27,6 @@ export default function SonoDorSection() {
   return (
     <section className="lp-sono-dor">
       <div className="lp-sono-dor-inner">
-        <span className="lp-sono-dor-deco lp-sono-dor-deco--img lp-sono-dor-deco--titlecloud" aria-hidden>
-          <img src="/images/sono-sticker-nuvem.png" alt="" loading="lazy" decoding="async" />
-        </span>
         <span className="lp-sono-dor-deco lp-sono-dor-deco--titlestars" aria-hidden>
           <DecoStars />
         </span>
@@ -78,15 +75,11 @@ export default function SonoDorSection() {
                     <img src={sticker} alt="" loading="lazy" decoding="async" />
                   </span>
                   <span className="lp-sono-dor-card-text">{text}</span>
-                  <span className="lp-sono-dor-ring" aria-hidden />
                 </li>
               ))}
             </ul>
 
             <div className="lp-sono-dor-turn scroll-reveal stagger-3">
-              <span className="lp-sono-dor-turn-icon" aria-hidden>
-                <img src="/images/sono-sticker-pillow.png" alt="" loading="lazy" decoding="async" />
-              </span>
               <p className="lp-sono-dor-turn-text">
                 O problema não é o seu cansaço.{' '}
                 <strong>É o estado de alerta que o seu corpo nunca aprendeu a desligar.</strong>
