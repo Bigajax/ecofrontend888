@@ -10,7 +10,7 @@ import { useScrollReveal } from '@/components/landing/useScrollReveal';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { trackLandingVista, trackCtaClicado } from '@/lib/mixpanelAssinarFunnel';
 import { fbq, trackWithCAPI } from '@/lib/fbpixel';
-import { PRICE, planValue } from '@/constants/offerCopy';
+import { OFFER, PRICE, planValue } from '@/constants/offerCopy';
 
 // ─── Dados das seções ────────────────────────────────────────────────
 
@@ -804,12 +804,10 @@ export default function EcotopiaSonoPage() {
                 onClick={() => setSelectedOfferPlan('annual')}
                 className={`lp-sono-offer-plan ${selectedOfferPlan === 'annual' ? 'is-featured' : ''}`}
               >
-                <span className="lp-sono-offer-plan-badge">Melhor custo-benefício</span>
-                <span className="lp-sono-offer-plan-meta">
-                  Anual · cobrado a R$ 142,80/ano
-                </span>
-                <strong className="lp-sono-offer-plan-headline">7 dias gratuitos</strong>
-                <span className="lp-sono-offer-plan-price">R$ 11,90 por mês</span>
+                <span className="lp-sono-offer-plan-badge">Economize 25%</span>
+                <span className="lp-sono-offer-plan-meta">Anual</span>
+                <strong className="lp-sono-offer-plan-headline">{OFFER.priceAnnualMonthly}</strong>
+                <span className="lp-sono-offer-plan-price">{OFFER.priceAnnualTotal}</span>
                 <span
                   className={`lp-sono-offer-plan-radio ${selectedOfferPlan === 'annual' ? '' : 'is-empty'}`}
                   aria-hidden
@@ -829,8 +827,8 @@ export default function EcotopiaSonoPage() {
                 onClick={() => setSelectedOfferPlan('monthly')}
                 className={`lp-sono-offer-plan ${selectedOfferPlan === 'monthly' ? 'is-featured' : ''}`}
               >
-                <span className="lp-sono-offer-plan-meta">Plano Mensal</span>
-                <strong className="lp-sono-offer-plan-headline">R$ 15,90/mês</strong>
+                <span className="lp-sono-offer-plan-meta">Mensal</span>
+                <strong className="lp-sono-offer-plan-headline">{OFFER.priceMonthly}</strong>
                 <span className="lp-sono-offer-plan-price">Cobrado mensalmente</span>
                 <span
                   className={`lp-sono-offer-plan-radio ${selectedOfferPlan === 'monthly' ? '' : 'is-empty'}`}
