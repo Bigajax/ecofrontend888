@@ -44,15 +44,6 @@ const RECOGNITION = [
   { text: 'Durmo, mas acordo como se não tivesse descansado.', Icon: PillBattery },
 ];
 
-function DecoCloud() {
-  return (
-    <svg width="30" height="20" viewBox="0 0 30 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 15h16a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.8A3.6 3.6 0 0 0 6 15z" />
-      <circle cx="27.5" cy="5" r="0.8" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
 function DecoStars() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -78,8 +69,8 @@ export default function SonoDorSection() {
   return (
     <section className="lp-sono-dor">
       <div className="lp-sono-dor-inner">
-        <span className="lp-sono-dor-deco lp-sono-dor-deco--titlecloud" aria-hidden>
-          <DecoCloud />
+        <span className="lp-sono-dor-deco lp-sono-dor-deco--img lp-sono-dor-deco--titlecloud" aria-hidden>
+          <img src="/images/sono-sticker-nuvem.png" alt="" loading="lazy" decoding="async" />
         </span>
         <span className="lp-sono-dor-deco lp-sono-dor-deco--titlestars" aria-hidden>
           <DecoStars />

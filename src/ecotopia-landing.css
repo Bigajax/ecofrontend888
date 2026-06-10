@@ -13250,26 +13250,32 @@ body.eco-no-scroll {
   filter: drop-shadow(0 6px 14px rgba(13, 52, 97, 0.2));
 }
 
-/* travesseiro · relógio navy · ZZZ — três formas distintas */
+/* travesseiro · despertador · ZZZ — montados SOBRE a borda do blob
+   (metade dentro da foto), com rotações leves de adesivo colado */
 .ecotopia-lp .lp-sono-dor-deco--moon {
-  top: -14px;
-  left: -10px;
+  top: -4px;
+  left: 7%;
+  width: 54px;
+  height: 54px;
+  transform: rotate(-10deg);
 }
 
 .ecotopia-lp .lp-sono-dor-deco--bell {
-  top: 34%;
-  right: -14px;
+  top: 26%;
+  right: -16px;
+  width: 64px;
+  height: 64px;
+  transform: rotate(8deg);
 }
 
 .ecotopia-lp .lp-sono-dor-deco--snooze {
-  bottom: -6px;
-  left: 4%;
-  color: #C9A35C;
+  bottom: -2px;
+  left: 8%;
+  transform: rotate(-7deg);
 }
 
-/* nuvem e estrelinhas ao redor do título: traço solto, sem selo branco
-   (só mobile — no desktop o título muda de coluna e perderiam a referência) */
-.ecotopia-lp .lp-sono-dor-deco--titlecloud,
+/* decorações ao redor do título (só mobile — no desktop o título muda de
+   coluna e perderiam a referência): nuvem sticker + estrelinhas de traço */
 .ecotopia-lp .lp-sono-dor-deco--titlestars {
   width: auto;
   height: auto;
@@ -13280,8 +13286,10 @@ body.eco-no-scroll {
 }
 
 .ecotopia-lp .lp-sono-dor-deco--titlecloud {
-  top: -12px;
-  right: 4%;
+  top: -18px;
+  right: 3%;
+  width: 48px;
+  height: 48px;
 }
 
 .ecotopia-lp .lp-sono-dor-deco--titlestars {
