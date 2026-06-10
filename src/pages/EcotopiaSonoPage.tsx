@@ -232,7 +232,7 @@ export default function EcotopiaSonoPage() {
               className="lp-sono-hero-cta-primary scroll-reveal stagger-2"
               onClick={() => trackTrialCta('monthly', 'sono_hero')}
             >
-              {CTA_LABEL}
+              Experimente grátis
             </Link>
 
             <p className="lp-sono-hero-microcopy scroll-reveal stagger-3">
@@ -681,7 +681,7 @@ export default function EcotopiaSonoPage() {
             className="cta-primary"
             onClick={() => trackTrialCta('monthly', 'sono_cta_mid')}
           >
-            {CTA_LABEL}
+            Descanse melhor hoje
           </Link>
         </div>
       </section>
