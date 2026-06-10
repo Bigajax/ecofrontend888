@@ -13140,8 +13140,8 @@ body.eco-no-scroll {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 58px;
-  height: 58px;
+  width: 76px;
+  height: 76px;
 }
 
 .ecotopia-lp .lp-sono-dor-pill-icon img {
@@ -13149,6 +13149,12 @@ body.eco-no-scroll {
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 3px 8px rgba(13, 52, 97, 0.16));
+}
+
+/* o desenho do despertador ocupa menos área no canva do sticker —
+   compensa com scale pra igualar o tamanho ótico aos vizinhos */
+.ecotopia-lp .lp-sono-dor-card:nth-child(2) .lp-sono-dor-pill-icon img {
+  transform: scale(1.22);
 }
 
 .ecotopia-lp .lp-sono-dor-card-text {
