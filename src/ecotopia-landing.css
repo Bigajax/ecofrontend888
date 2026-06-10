@@ -13574,9 +13574,9 @@ body.eco-no-scroll {
 
 .ecotopia-lp .lp-sono-scene-moon {
   top: -52px;
-  right: -58px;
+  right: -104px;
   width: 132px;
-  z-index: 2;
+  z-index: 2; /* na frente do mockup, cavalgando o canto */
   filter: drop-shadow(0 10px 24px rgba(76, 51, 143, 0.35));
 }
 
@@ -13594,9 +13594,9 @@ body.eco-no-scroll {
 
 /* flor pousada no lóbulo esquerdo da nuvem (acompanha a posição dela) */
 .ecotopia-lp .lp-sono-scene-flower {
-  top: calc(16% - 14px);
-  left: -64px;
-  width: 44px;
+  top: calc(16% - 22px);
+  left: -70px;
+  width: 62px;
   z-index: 2;
   filter: drop-shadow(0 4px 8px rgba(13, 52, 97, 0.2));
 }
@@ -13610,9 +13610,9 @@ body.eco-no-scroll {
 
 @media (max-width: 640px) {
   .ecotopia-lp .lp-sono-scene-moon {
-    top: -34px;
-    right: -22px;
-    width: 96px;
+    top: -42px;
+    right: -36px;
+    width: 84px;
   }
   /* pouco espaço lateral: nuvens vêm pra FRENTE, cavalgando a borda do phone */
   .ecotopia-lp .lp-sono-scene-cloud--left {
@@ -13622,9 +13622,9 @@ body.eco-no-scroll {
     z-index: 2;
   }
   .ecotopia-lp .lp-sono-scene-flower {
-    top: calc(13% - 11px);
-    left: -22px;
-    width: 34px;
+    top: calc(13% - 16px);
+    left: -26px;
+    width: 48px;
   }
   .ecotopia-lp .lp-sono-scene-cloud--right {
     bottom: 3%;
