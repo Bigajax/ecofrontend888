@@ -3,12 +3,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const register = vi.fn();
 const signInWithGoogle = vi.fn();
-vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ register, signInWithGoogle }) }));
+const signInWithGoogleIdToken = vi.fn();
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ register, signInWithGoogle, signInWithGoogleIdToken }),
+}));
 
 import { SignupStep } from "../SignupStep";
 
 const defaultProps = {
-  googleReturnTo: "/assinar?plan=monthly&step=card",
+  funnelReturnTo: "/assinar?plan=monthly&step=card",
   loginReturnTo: "/login?returnTo=%2Fassinar%3Fplan%3Dmonthly%26step%3Dcard",
 };
 
@@ -52,12 +55,22 @@ describe("SignupStep", () => {
     fireEvent.change(screen.getByLabelText(/senha \(8/i), { target: { value: "12345678" } });
     fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
     await waitFor(() => expect(onCreated).toHaveBeenCalled());
-    expect(register).toHaveBeenCalledWith("ana@x.com", "12345678", "ana", "");
+    // 5º arg: emailRedirectTo de volta pro funil (se a confirmação de e-mail
+    // estiver ligada no Supabase, o link devolve direto ao step do cartão).
+    expect(register).toHaveBeenCalledWith(
+      "ana@x.com",
+      "12345678",
+      "ana",
+      "",
+      expect.stringContaining("/assinar?plan=monthly&step=card"),
+    );
   });
 
-  it("starts Google sign-in on button click", () => {
+  // Sem GSI (jsdom não tem window.google), o botão é o fallback por redirect —
+  // que precisa voltar pro funil, não pro /app (senão o bug original volta no iOS).
+  it("starts Google sign-in on button click, returning to the funnel", () => {
     render(<SignupStep onCreated={vi.fn()} {...defaultProps} />);
     fireEvent.click(screen.getByRole("button", { name: /google/i }));
-    expect(signInWithGoogle).toHaveBeenCalled();
+    expect(signInWithGoogle).toHaveBeenCalledWith("/assinar?plan=monthly&step=card");
   });
 });

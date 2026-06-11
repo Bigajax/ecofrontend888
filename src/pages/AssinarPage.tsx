@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiUrl } from "@/config/apiBase";
@@ -20,6 +20,7 @@ import {
   clearStoredResponseId,
 } from "@/utils/onboardingObjetivosStorage";
 import { PRICE } from "@/constants/offerCopy";
+import { getSubscriptionStatus } from "@/api/subscription";
 import {
   registerFunilSono,
   trackAssinaturaIniciada,
@@ -29,8 +30,11 @@ import {
   trackPlanoSelecionado,
   trackPlanoConfirmado,
   trackCartaoVisto,
+  trackCartaoPronto,
   trackCartaoEnviado,
   trackCartaoRecusado,
+  trackCartaoErro,
+  trackFunilAbandonado,
 } from "@/lib/mixpanelAssinarFunnel";
 
 const planAmount = (plan: PlanId): number => (plan === "monthly" ? PRICE.monthly : PRICE.annualTotal);
@@ -64,6 +68,12 @@ function originLanding(from: string | null | undefined): string {
   return from?.startsWith("sono") ? "/sono" : "/";
 }
 
+// Dedupe do "Assinatura iniciada" em escopo de módulo: o remount por userId do
+// RootProviders (pós-signup) remonta a página em ~1s e re-dispararia a entrada
+// no funil; re-entradas genuínas (> 5s) continuam contando. Módulo, não useRef,
+// porque o ref morre junto no remount.
+let lastAssinaturaIniciadaAt = 0;
+
 export default function AssinarPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -72,6 +82,16 @@ export default function AssinarPage() {
   const [step, setStep] = useState<Step>(parseStep(params.get("step")));
   const [erro, setErro] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+
+  // Já autenticado caindo no step de cadastro (remount pós-signup ou retorno
+  // do OAuth): o 1º render já mostra "Verificando sua conta…" em vez de piscar
+  // o formulário — sem isso o SignupStep monta e dispara "Cadastro visto" espúrio.
+  const [verificandoConta, setVerificandoConta] = useState(
+    () => Boolean(user) && parseStep(params.get("step")) === "signup",
+  );
+
+  // Quando o step "card" passou a ser exibido — base do elapsed_ms do "Cartão pronto".
+  const cardShownAtRef = useRef<number | null>(null);
 
   // Scroll para o topo a cada troca de step (e no mount).
   // Usa scrollToTop() (não só window) porque no mobile o scroller é o #root.
@@ -87,7 +107,11 @@ export default function AssinarPage() {
     const from = params.get("from") || sessionStorage.getItem("eco.assinar.from") || "direct";
     sessionStorage.setItem("eco.assinar.from", from);
     registerFunilSono(from);
-    trackAssinaturaIniciada({ entry_step: step, plan });
+    const now = Date.now();
+    if (now - lastAssinaturaIniciadaAt > 5_000) {
+      lastAssinaturaIniciadaAt = now;
+      trackAssinaturaIniciada({ entry_step: step, plan });
+    }
     // Só no mount — entrada no funil é evento único.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -97,6 +121,10 @@ export default function AssinarPage() {
   // cada toggle de plano. No step "plan", também reusa Premium Screen Viewed
   // (intenção de topo); o toggle mensal/anual é capturado em selectPlan.
   useEffect(() => {
+    // Remount pós-signup chega com ?step=signup mas já autenticado e a caminho
+    // do cartão ("Verificando sua conta…"): o cadastro não é exibido, então a
+    // view de "cadastro" aqui seria artefato.
+    if (step === "signup" && verificandoConta) return;
     trackEtapaVista(step);
     if (step === "plan") {
       trackPlanoVisto({
@@ -107,6 +135,7 @@ export default function AssinarPage() {
       });
     }
     if (step === "card") {
+      cardShownAtRef.current = Date.now();
       trackCartaoVisto({ plan_id: plan, amount: planAmount(plan) });
     }
     // plan/user lidos no momento do fire; view não deve re-disparar com eles.
@@ -141,11 +170,36 @@ export default function AssinarPage() {
 
   // Após o signup criar a sessão, o userId muda e o RootProviders remonta a árvore
   // (ChatProvider/RingsProvider são chaveados por userId), resetando o step pra URL
-  // (?step=signup) e atropelando o setStep("card") do onCreated. Aqui recuperamos:
-  // se o usuário já está autenticado mas o step ficou em "signup", avança pro cartão.
+  // (?step=signup) e atropelando o setStep("card") do onCreated. Aqui recuperamos,
+  // decidindo com o status real de assinatura (o isPremiumUser do contexto é
+  // refresh assíncrono, não confiável no instante pós-login): quem já é premium
+  // não deve recolocar cartão → /app; os demais seguem pro cartão. Erro na
+  // consulta → fail-open pro cartão (nunca travar o funil).
+  const postSignupRoutedRef = useRef(false);
   useEffect(() => {
-    if (user && step === "signup") setStep("card");
-  }, [user, step]);
+    if (!user || step !== "signup" || postSignupRoutedRef.current) return;
+    postSignupRoutedRef.current = true;
+    let cancelled = false;
+    setVerificandoConta(true);
+    (async () => {
+      let premium = false;
+      try {
+        premium = (await getSubscriptionStatus()).isPremium;
+      } catch {
+        // fail-open: segue pro cartão
+      }
+      if (cancelled) return;
+      setVerificandoConta(false);
+      if (premium) {
+        navigate("/app", { replace: true });
+      } else {
+        setStep("card");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, step, navigate]);
 
   const selectPlan = (next: PlanId) => {
     setPlan(next);
@@ -204,6 +258,26 @@ export default function AssinarPage() {
     }
   }, [plan, navigate]);
 
+  // Erro do brick MP (carregamento/validação): além de exibir, instrumenta —
+  // distingue "brick quebrado" de recusa de pagamento na leitura do funil.
+  // useCallback: o brick é React.memo e não tolera prop recriada a cada render.
+  const handleBrickError = useCallback(
+    (message: string) => {
+      setErro(message);
+      trackCartaoErro({ plan_id: plan, error_message: message });
+    },
+    [plan],
+  );
+
+  // Brick carregou: quanto tempo o usuário esperou olhando o step do cartão.
+  const handleBrickReady = useCallback(() => {
+    const shownAt = cardShownAtRef.current;
+    trackCartaoPronto({
+      plan_id: plan,
+      elapsed_ms: shownAt ? Date.now() - shownAt : -1,
+    });
+  }, [plan]);
+
   // Origem do funil (do ?from= do CTA, com backstop em sessionStorage).
   const from = params.get("from") || sessionStorage.getItem("eco.assinar.from") || "";
 
@@ -214,7 +288,6 @@ export default function AssinarPage() {
   // login/cadastro externo — evita cair de volta no início do /assinar e
   // mantém a atribuição (funnel_source).
   const funnelReturnTo = `/assinar?plan=${plan}&step=card${from ? `&from=${encodeURIComponent(from)}` : ""}`;
-  const googleReturnTo = funnelReturnTo;
   const loginReturnTo = `/login?returnTo=${encodeURIComponent(funnelReturnTo)}`;
 
   // Larguras alvo por step no desktop. Validação ganha mais espaço pro grid 2-col.
@@ -245,7 +318,12 @@ export default function AssinarPage() {
       </div>
 
       <header className="relative z-10 bg-white px-5 py-6">
-        <Link to={backTo} aria-label="Ecotopia — início" className="inline-block">
+        <Link
+          to={backTo}
+          aria-label="Ecotopia — início"
+          className="inline-block"
+          onClick={() => trackFunilAbandonado({ step, destino: backTo })}
+        >
           <img src="/images/ecotopia-logo-trim.webp" alt="Ecotopia" className="h-7 w-auto" />
         </Link>
       </header>
@@ -267,7 +345,13 @@ export default function AssinarPage() {
 
         {step === "signup" && (
           <div className="px-5 md:rounded-3xl md:bg-white md:px-8 md:py-10 md:shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
-            <SignupStep onCreated={() => setStep("card")} googleReturnTo={googleReturnTo} loginReturnTo={loginReturnTo} />
+            {verificandoConta ? (
+              <p aria-live="polite" className="py-10 text-center text-[15px]" style={{ color: "#5A8AAD" }}>
+                Verificando sua conta…
+              </p>
+            ) : (
+              <SignupStep onCreated={() => setStep("card")} funnelReturnTo={funnelReturnTo} loginReturnTo={loginReturnTo} />
+            )}
           </div>
         )}
 
@@ -345,7 +429,8 @@ export default function AssinarPage() {
                 maxInstallments={1}
                 payerEmail={user?.email ?? ""}
                 onToken={handleToken}
-                onError={setErro}
+                onReady={handleBrickReady}
+                onError={handleBrickError}
               />
             )}
 

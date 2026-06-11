@@ -30,7 +30,7 @@ interface AuthContextType {
   guestId: string | null;
   isVipUser: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (redirectTo?: string) => Promise<void>;
   signInWithGoogleIdToken: (idToken: string) => Promise<void>;
   signOut: () => Promise<void>;
   register: (email: string, password: string, nome: string, telefone: string, emailRedirectTo?: string) => Promise<{ needsConfirmation: boolean }>;
@@ -702,7 +702,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithGoogle = async () => {
+  // `redirectTo`: path de retorno pós-OAuth (default /app). Fluxos com estado
+  // próprio (ex.: funil /assinar) passam o caminho de volta pro próprio fluxo —
+  // senão o redirect derruba o usuário no app e o funil se perde.
+  const signInWithGoogle = async (redirectTo: string = '/app') => {
     setLoading(true);
     try {
       const envAppUrl = import.meta.env.VITE_APP_URL;
@@ -716,7 +719,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${baseUrl}/app` },
+        options: { redirectTo: `${baseUrl}${redirectTo}` },
       });
 
       if (error) throw error;

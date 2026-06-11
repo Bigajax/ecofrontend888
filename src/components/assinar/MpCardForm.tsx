@@ -16,10 +16,12 @@ interface MpCardFormProps {
   /** E-mail da conta recém-criada — pré-preenche o campo do brick. */
   payerEmail?: string;
   onToken: (formData: Record<string, unknown>) => Promise<void> | void;
+  /** Brick carregou (Secure Fields prontos) — distingue "visto" de "utilizável". */
+  onReady?: () => void;
   onError?: (message: string) => void;
 }
 
-function MpCardFormImpl({ amount, maxInstallments, payerEmail, onToken, onError }: MpCardFormProps) {
+function MpCardFormImpl({ amount, maxInstallments, payerEmail, onToken, onReady, onError }: MpCardFormProps) {
   ensureMpInit();
   const initialization = useMemo(
     () => ({ amount, payer: { email: payerEmail ?? "" } }),
@@ -42,6 +44,7 @@ function MpCardFormImpl({ amount, maxInstallments, payerEmail, onToken, onError 
           (data as { formData?: Record<string, unknown> })?.formData ?? (data as Record<string, unknown>);
         await onToken(formData);
       }}
+      onReady={onReady}
       onError={(err) => {
         console.error("mp_brick_error", err);
         onError?.("Erro no formulário de cartão. Recarregue a página e tente de novo.");

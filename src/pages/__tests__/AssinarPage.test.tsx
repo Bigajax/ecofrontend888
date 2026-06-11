@@ -11,7 +11,19 @@ const { authState } = vi.hoisted(() => ({
   authState: { user: null as null | { id: string } },
 }));
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: authState.user, loading: false, register: vi.fn(), signInWithGoogle: vi.fn() }),
+  useAuth: () => ({
+    user: authState.user,
+    loading: false,
+    register: vi.fn(),
+    signInWithGoogle: vi.fn(),
+    signInWithGoogleIdToken: vi.fn(),
+  }),
+}));
+const { subscriptionState } = vi.hoisted(() => ({
+  subscriptionState: { isPremium: false },
+}));
+vi.mock("@/api/subscription", () => ({
+  getSubscriptionStatus: vi.fn(async () => ({ isPremium: subscriptionState.isPremium })),
 }));
 vi.mock("@mercadopago/sdk-react", () => ({ initMercadoPago: vi.fn(), CardPayment: () => <div>brick</div> }));
 vi.mock("@/lib/supabaseClient", () => ({
@@ -36,6 +48,8 @@ function renderAt(path: string) {
 beforeEach(() => {
   sessionStorage.clear();
   authState.user = null;
+  subscriptionState.isPremium = false;
+  navigate.mockClear();
 });
 
 // ── Existing tests (updated to use ?step=plan explicitly, intent unchanged) ──
@@ -69,6 +83,18 @@ describe("AssinarPage", () => {
     await waitFor(() => {
       expect(screen.getByText(/Confirme seu teste gratuito/i)).toBeInTheDocument();
     });
+  });
+
+  // Quem já é assinante não deve recolocar cartão: pós-login no step de cadastro,
+  // o status real de assinatura decide — premium vai pro app.
+  it("routes premium accounts to /app instead of the card step", async () => {
+    authState.user = { id: "user-premium" };
+    subscriptionState.isPremium = true;
+    renderAt("/assinar?step=signup");
+    await waitFor(() => {
+      expect(navigate).toHaveBeenCalledWith("/app", { replace: true });
+    });
+    expect(screen.queryByText(/Confirme seu teste gratuito/i)).not.toBeInTheDocument();
   });
 });
 

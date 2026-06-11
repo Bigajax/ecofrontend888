@@ -1,5 +1,5 @@
 // src/hooks/useGoogleOneTap.ts
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 declare global {
   interface Window {
@@ -8,12 +8,25 @@ declare global {
         id: {
           initialize: (config: GoogleOneTapConfig) => void;
           prompt: (callback?: (notification: PromptMomentNotification) => void) => void;
+          renderButton: (parent: HTMLElement, options: GsiButtonOptions) => void;
           cancel: () => void;
           disableAutoSelect: () => void;
         };
       };
     };
   }
+}
+
+interface GsiButtonOptions {
+  type?: 'standard' | 'icon';
+  theme?: 'outline' | 'filled_blue' | 'filled_black';
+  size?: 'large' | 'medium' | 'small';
+  text?: 'signin_with' | 'signup_with' | 'continue_with' | 'signin';
+  shape?: 'rectangular' | 'pill' | 'circle' | 'square';
+  logo_alignment?: 'left' | 'center';
+  width?: number;
+  locale?: string;
+  click_listener?: () => void;
 }
 
 interface GoogleOneTapConfig {
@@ -233,4 +246,154 @@ export function useGoogleOneTap({
       }
     };
   }, [clientId, enabled, onSuccess, onError, autoSelect, cancelOnTapOutside]);
+}
+
+interface UseGoogleSignInButtonOptions {
+  /** Google OAuth Client ID. Vazio/ausente → `ready` fica false (use o fallback). */
+  clientId: string;
+
+  /** Recebe o JWT ID token quando o usuário escolhe uma conta no popup. */
+  onSuccess: (idToken: string) => void | Promise<void>;
+
+  /** Erro ao processar a credencial (ex.: falha no signInWithIdToken). */
+  onError?: (error: Error) => void;
+
+  /** Clique no botão (antes do popup abrir) — útil pra analytics/watchdog. */
+  onClick?: () => void;
+
+  /** Largura do botão em px (GIS aceita no máx. 400). Default: largura do container. */
+  width?: number;
+}
+
+/**
+ * Renderiza o botão oficial do Google (GIS) que abre o seletor de contas em
+ * popup — sem redirect, a página atual permanece viva e a sessão chega via
+ * `onSuccess(idToken)`. Complementa o One Tap acima reaproveitando o mesmo
+ * script GSI (index.html) e a mesma `initialize`.
+ *
+ * Retorna `{ containerRef, ready }`. O <div> do `containerRef` precisa estar
+ * SEMPRE montado (escondido enquanto `ready` é false) — o GIS renderiza dentro
+ * dele. Enquanto `ready` é false (script carregando, clientId ausente ou GSI
+ * bloqueado), exiba o fallback (ex.: botão com OAuth por redirect).
+ *
+ * @example
+ * ```tsx
+ * const { containerRef, ready } = useGoogleSignInButton({
+ *   clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+ *   onSuccess: (idToken) => signInWithGoogleIdToken(idToken),
+ * });
+ * return (
+ *   <>
+ *     <div ref={containerRef} className={ready ? '' : 'hidden'} />
+ *     {!ready && <FallbackButton />}
+ *   </>
+ * );
+ * ```
+ */
+export function useGoogleSignInButton({
+  clientId,
+  onSuccess,
+  onError,
+  onClick,
+  width,
+}: UseGoogleSignInButtonOptions): {
+  containerRef: React.RefObject<HTMLDivElement>;
+  ready: boolean;
+} {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+
+  // Callbacks via refs: handlers sempre atuais sem re-inicializar o GIS
+  // (mesmo padrão do useMediaSession).
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  const onClickRef = useRef(onClick);
+  onSuccessRef.current = onSuccess;
+  onErrorRef.current = onError;
+  onClickRef.current = onClick;
+
+  const isProcessingRef = useRef(false);
+
+  useEffect(() => {
+    if (!clientId) {
+      console.warn('[GoogleSignInButton] Client ID não configurado. Configure VITE_GOOGLE_CLIENT_ID no .env');
+      return;
+    }
+
+    let cancelled = false;
+
+    const renderInto = () => {
+      const gsi = window.google?.accounts?.id;
+      const container = containerRef.current;
+      if (cancelled || !gsi || !container) return;
+
+      try {
+        gsi.initialize({
+          client_id: clientId,
+          callback: async (response) => {
+            if (isProcessingRef.current) return;
+            isProcessingRef.current = true;
+            try {
+              await onSuccessRef.current(response.credential);
+            } catch (error) {
+              onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+            } finally {
+              isProcessingRef.current = false;
+            }
+          },
+          itp_support: true,
+        });
+
+        gsi.renderButton(container, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'continue_with',
+          shape: 'pill',
+          logo_alignment: 'center',
+          locale: 'pt-BR',
+          // offsetWidth pode ser 0 se o container estiver display:none — prefira
+          // escondê-lo com h-0/overflow-hidden pra manter a largura mensurável.
+          width: Math.min(400, width ?? (container.offsetWidth || 400)),
+          click_listener: () => onClickRef.current?.(),
+        });
+
+        setReady(true);
+      } catch (error) {
+        console.error('[GoogleSignInButton] Erro ao renderizar botão:', error);
+        onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+      }
+    };
+
+    // Script GSI é async/defer no index.html — normalmente já carregou quando o
+    // usuário chega aqui. Se ainda não, espera até ~2s; depois disso o chamador
+    // segue com o fallback (ready=false).
+    if (window.google?.accounts?.id) {
+      renderInto();
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const checkInterval = setInterval(() => {
+      if (window.google?.accounts?.id) {
+        clearInterval(checkInterval);
+        renderInto();
+      }
+    }, 100);
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval);
+      if (!window.google?.accounts?.id) {
+        console.warn('[GoogleSignInButton] Script do Google não carregou em 2s — usando fallback');
+      }
+    }, 2000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+    };
+  }, [clientId, width]);
+
+  return { containerRef, ready };
 }
