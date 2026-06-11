@@ -1,5 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 
+import mixpanel from '@/lib/mixpanel';
+
 type RootErrorBoundaryProps = {
   children: ReactNode;
 };
@@ -54,6 +56,24 @@ export default class RootErrorBoundary extends Component<
     console.error('User Agent:', navigator.userAgent);
     console.error('URL:', window.location.href);
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    // Instrumenta o crash: sem isso o Mixpanel fica cego exatamente onde o
+    // usuário vê "Algo deu errado" e recarrega — jornadas com reload silencioso
+    // no meio de fluxos (ex.: cadastro do /assinar) ficam sem explicação.
+    // sendBeacon + send_immediately porque um reload pode vir logo em seguida.
+    try {
+      mixpanel.track(
+        'App · Erro fatal',
+        {
+          error_message: error.message,
+          path: window.location.pathname,
+          error_count: newErrorCount,
+        },
+        { transport: 'sendBeacon', send_immediately: true },
+      );
+    } catch {
+      // tracking nunca pode quebrar a UI de erro
+    }
 
     this.setState({
       errorInfo,
