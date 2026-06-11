@@ -1,5 +1,6 @@
 import { useMemo, useEffect } from 'react';
 import mixpanel from '@/lib/mixpanel';
+import { paginaFromPath } from '@/components/landing/trackLandingCta';
 
 export const HEADLINES = {
   '1': {
@@ -31,7 +32,7 @@ export function useHeadlineVariant() {
 
   useEffect(() => {
     try {
-      mixpanel.track('Landing · Headline exibida', { variant });
+      mixpanel.track('Landing · Headline exibida', { pagina: paginaFromPath(), variant });
     } catch {
       // tracking nunca pode quebrar a página
     }
