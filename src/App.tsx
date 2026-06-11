@@ -267,8 +267,16 @@ function SonoGuestShell() {
   return <Outlet />;
 }
 
+// "App · Iniciado" deve significar page load real. AppRoutes remonta quando o
+// userId muda (ChatProvider/RingsProvider têm key por usuário no RootProviders),
+// então sem este guard o evento re-dispara em todo login/signup e polui a
+// leitura dos funis (parecia reload no meio do cadastro do /assinar).
+let appStartTracked = false;
+
 function AppRoutes() {
   useEffect(() => {
+    if (appStartTracked) return;
+    appStartTracked = true;
     mixpanel.track("App · Iniciado", { origem: "App.tsx", data: new Date().toISOString() });
   }, []);
 

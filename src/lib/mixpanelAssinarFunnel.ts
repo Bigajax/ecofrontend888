@@ -94,7 +94,19 @@ export function trackCadastroVisto(): void {
 }
 
 export function trackCadastroEnviado(p: { method: SignupMethod; opted_newsletter?: boolean }): void {
-  track('Cadastro enviado', p);
+  // O caminho Google (fallback por redirect) navega pra fora da página logo em
+  // seguida; sendBeacon + send_immediately evitam perder o evento no batch.
+  track('Cadastro enviado', p, { transport: 'sendBeacon', send_immediately: true });
+}
+
+/**
+ * Watchdog do cadastro: disparado quando "Cadastro enviado" não vira
+ * "concluído" nem "falhou" dentro da janela. Com o popup do Google, também
+ * dispara quando o usuário fecha o popup sem escolher conta — é hesitação,
+ * não bug; ler junto com `method` e `elapsed_ms`.
+ */
+export function trackCadastroSemResposta(p: { method: SignupMethod; elapsed_ms: number }): void {
+  track('Cadastro sem resposta', p);
 }
 
 export function trackCadastroConcluido(p: { method: SignupMethod; needs_confirmation: boolean }): void {
@@ -105,9 +117,35 @@ export function trackCadastroFalhou(p: { method: SignupMethod; error_message: st
   track('Cadastro falhou', p);
 }
 
+/**
+ * Saída do funil pelo logo "voltar" do header. `destino` é a landing de origem
+ * (/sono ou /); `step` diz em que etapa o usuário desistiu — chave pra saber se
+ * o pós-cartão→landing é abandono voluntário ou fuga de algo quebrado.
+ */
+export function trackFunilAbandonado(p: { step: AssinarStep; destino: string }): void {
+  track('Funil abandonado', p, { transport: 'sendBeacon', send_immediately: true });
+}
+
 // ── Checkout (cartão) ──────────────────────────────────────────────────────
 export function trackCartaoVisto(p: { plan_id: PlanId; amount: number }): void {
   track('Cartão visto', p);
+}
+
+/**
+ * Brick do MercadoPago carregou (Secure Fields utilizáveis). `elapsed_ms` conta
+ * desde que o step do cartão foi exibido. Leitura: "Cartão visto" sem "pronto"
+ * = brick não carregou; "pronto" sem "enviado" = hesitação/abandono real.
+ */
+export function trackCartaoPronto(p: { plan_id: PlanId; elapsed_ms: number }): void {
+  track('Cartão pronto', p);
+}
+
+/**
+ * Erro do brick do MercadoPago (falha de carregamento/validação do formulário),
+ * distinto de "Cartão recusado" (recusa no submit do pagamento).
+ */
+export function trackCartaoErro(p: { plan_id: PlanId; error_message: string }): void {
+  track('Cartão erro', p);
 }
 
 export function trackCartaoEnviado(p: { plan_id: PlanId; amount: number }): void {
