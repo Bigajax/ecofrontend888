@@ -7,6 +7,8 @@ import MethodMarquee from '@/components/landing/MethodMarquee';
 import SonoDorSection from '@/components/landing/SonoDorSection';
 import SonoFaqSection from '@/components/landing/SonoFaqSection';
 import { useScrollReveal } from '@/components/landing/useScrollReveal';
+import { useSonoHeroVariant } from '@/hooks/useSonoHeroVariant';
+import { useSonoSectionInView } from '@/hooks/useSonoSectionInView';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { trackLandingVista, trackCtaClicado } from '@/lib/mixpanelAssinarFunnel';
 import { fbq, trackWithCAPI } from '@/lib/fbpixel';
@@ -14,22 +16,24 @@ import { OFFER, PRICE, planValue } from '@/constants/offerCopy';
 
 // ─── Dados das seções ────────────────────────────────────────────────
 
-const VALUE_COLUMNS = [
-  {
-    icon: '/images/sono-icon-meditacao.webp',
-    title: 'Desacelere em minutos',
-    body: 'Respirações guiadas e curtas que baixam o ritmo do corpo antes de você deitar.',
-  },
+// Seção de diferencial: posiciona o produto como caminho guiado (não biblioteca
+// de áudios). Reusa os ícones ilustrados da landing (mesmos .webp das antigas
+// colunas de valor).
+const DIFERENCIAL_CARDS: { icon: string; title: string; body: string }[] = [
   {
     icon: '/images/sono-icon-deite-mente.webp',
-    // A/B: versão poética (atual) vs. direta → "Desligue a cabeça e durma."
-    title: 'Acalme a mente antes de fechar os olhos.',
-    body: 'Adormeça com meditações guiadas, sons e músicas feitas para o sono.',
+    title: 'Você não escolhe o que fazer',
+    body: 'A prática da noite já está pronta. É deitar, apertar play e seguir a voz.',
+  },
+  {
+    icon: '/images/sono-icon-meditacao.webp',
+    title: 'Cada noite prepara a próxima',
+    body: 'A sequência começa tirando o corpo do modo alerta e avança para pensamentos, tensão e sono profundo.',
   },
   {
     icon: '/images/sono-icon-estresse.webp',
-    title: 'Menos estresse, noites mais leves',
-    body: '30 dias de uso da Ecotopia resultaram em uma redução de 32% no estresse.',
+    title: 'Não depende de força de vontade',
+    body: 'O ritual foi criado pro momento em que você está cansado demais pra pensar em técnica.',
   },
 ];
 
@@ -144,6 +148,11 @@ const REST_NIGHTS = PROTOCOL_NIGHTS.slice(1);
 export default function EcotopiaSonoPage() {
   useScrollReveal('.ecotopia-lp');
 
+  // Hero por variante (utm_term dos anúncios); default = promessa atual.
+  const hero = useSonoHeroVariant();
+  // Dispara "Funil Sono · Seção vista {secao: diferencial}" ao rolar até a seção.
+  const diferencialRef = useSonoSectionInView<HTMLElement>('diferencial');
+
   const tipsTrackRef = useRef<HTMLDivElement>(null);
   const [tipsPage, setTipsPage] = useState(0);
 
@@ -219,12 +228,19 @@ export default function EcotopiaSonoPage() {
         <div className="lp-sono-hero-inner">
           <div className="lp-sono-hero-text">
             <h1 className="scroll-reveal">
-              Durma mais rápido em{' '}
-              <span className="lp-sono-mark-starry">apenas 7 noites</span>
+              {hero.h1Line1 && (
+                <>
+                  {hero.h1Line1}
+                  <br />
+                </>
+              )}
+              {hero.h1Pre}
+              <span className="lp-sono-mark-starry">{hero.h1Mark}</span>
+              {hero.h1Pos}
             </h1>
 
             <p className="lp-sono-hero-lead scroll-reveal stagger-1">
-              Criado para quem está cansado, mas não consegue desligar a mente.
+              {hero.lead}
             </p>
 
             <Link
@@ -232,7 +248,7 @@ export default function EcotopiaSonoPage() {
               className="lp-sono-hero-cta-primary scroll-reveal stagger-2"
               onClick={() => trackTrialCta('monthly', 'sono_hero')}
             >
-              Experimente grátis
+              {hero.cta}
             </Link>
 
             <p className="lp-sono-hero-microcopy scroll-reveal stagger-3">
@@ -251,7 +267,7 @@ export default function EcotopiaSonoPage() {
                 <path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6l7-3z" />
                 <path d="M9 12l2 2 4-4" />
               </svg>
-              Sem cobrança hoje ·{' '}
+              {hero.microcopyPrefix}
               <Link to="/cancelar-assinatura" className="lp-sono-hero-microcopy-link">
                 cancele quando quiser
               </Link>
@@ -410,7 +426,7 @@ export default function EcotopiaSonoPage() {
         ariaLabel="Resultados da Ecotopia"
         className="lp-method-marquee--starry"
         repeat={4}
-        terms={['4,8★ na App Store', 'Mais de 2 mil usuários', 'Sessões de 5 a 10 min', 'Feito para desacelerar a mente']}
+        terms={['4,8★ na App Store', '+1.800 pessoas dormem com o protocolo', 'Sessões de 5 a 10 min', 'Feito para desacelerar a mente']}
       />
 
       {/* ─── Dor · espelha a cena noturna (reconhecimento) ─── */}
@@ -422,14 +438,14 @@ export default function EcotopiaSonoPage() {
       <section className="lp-sono-grid-section lp-sono-protocol">
         <div className="lp-sono-section-inner lp-sono-nights-inner">
           <h2 className="lp-sono-h2 scroll-reveal lp-sono-nights-h2">
-            Sete noites. Em sequência.
+            Sete noites.
             <br />
-            <span className="lp-sono-nights-h2-soft">Cada uma prepara a próxima.</span>
+            <span className="lp-sono-nights-h2-soft">Uma sequência para ensinar seu corpo a desligar.</span>
           </h2>
 
           <p className="lp-sono-nights-lead scroll-reveal stagger-1">
-            Você abre o app, escolhe o ambiente sonoro da noite e aperta play.
-            Minutos depois, o corpo já está em outro lugar.
+            Cada noite trabalha uma parte do estado de alerta: respiração,
+            controle mental, tensão corporal, pensamentos repetitivos e segurança interna.
           </p>
 
           <Link
@@ -439,7 +455,7 @@ export default function EcotopiaSonoPage() {
           >
             <span className="lp-sono-nights-featured-media">
               <img src={NIGHT_ONE.imageUrl} alt="" loading="lazy" decoding="async" />
-              <span className="lp-sono-nights-badge">A primeira</span>
+              <span className="lp-sono-nights-badge">A primeira · grátis</span>
             </span>
             <span className="lp-sono-nights-featured-body">
               <span className="lp-sono-nights-kicker">
@@ -501,6 +517,11 @@ export default function EcotopiaSonoPage() {
               </Link>
             ))}
           </div>
+
+          <p className="lp-sono-nights-highlight scroll-reveal">
+            Na primeira noite, você já começa com um áudio guiado de 8 minutos
+            pra sair do modo alerta antes de dormir.
+          </p>
         </div>
       </section>
 
@@ -560,26 +581,37 @@ export default function EcotopiaSonoPage() {
         </div>
       </section>
 
-      {/* ─── Benefícios · 3 cards de valor ─── */}
-      <section className="lp-sono-value lp-sono-value--cards">
-        <p className="lp-sono-protocol-sub scroll-reveal">
-          Dentro do app, cada etapa da noite tem uma prática pra desligar uma
-          parte do alerta.
+      {/* ─── Diferencial · caminho guiado (não biblioteca de áudios) ─── */}
+      <section
+        ref={diferencialRef}
+        className="lp-sono-value lp-sono-diferencial"
+      >
+        <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal lp-sono-diferencial-h2">
+          Não é uma biblioteca de meditações.
+          <br />
+          <span className="lp-sono-diferencial-h2-soft">É um caminho de 7 noites.</span>
+        </h2>
+        <p className="lp-sono-diferencial-sub scroll-reveal stagger-1">
+          Quando você está exausto, a última coisa que precisa é escolher entre
+          centenas de áudios. Aqui, a noite de hoje já está pronta.
         </p>
         <div className="lp-sono-value-grid">
-          {VALUE_COLUMNS.map((col, i) => (
+          {DIFERENCIAL_CARDS.map((col, i) => (
             <article
               key={col.title}
               className={`lp-sono-value-card scroll-reveal stagger-${i + 1}`}
             >
-              <div className="lp-sono-value-card-icon">
-                <img src={col.icon} alt="" loading="lazy" />
+              <div className="lp-sono-value-card-icon lp-sono-diferencial-icon">
+                <img src={col.icon} alt="" loading="lazy" decoding="async" />
               </div>
               <h3 className="lp-sono-value-card-title">{col.title}</h3>
               <p className="lp-sono-value-card-body">{col.body}</p>
             </article>
           ))}
         </div>
+        <p className="lp-sono-diferencial-stat scroll-reveal stagger-2">
+          Em 30 dias de uso, usuários relataram 32% menos estresse.
+        </p>
       </section>
 
       {/* ─── Demonstração · Tabs Antes / Adormecer / Permanecer ─── */}
@@ -701,93 +733,21 @@ export default function EcotopiaSonoPage() {
       {/* ─── CTA central repetido (label unificado) ─── */}
       <section className="lp-sono-cta-mid">
         <div className="lp-sono-section-inner scroll-reveal">
-          <h2>Sua primeira noite pode ser hoje.</h2>
+          <h2>Sua primeira noite pode começar agora.</h2>
           <p className="lp-sono-cta-mid-sub">
-            Menos tempo tentando dormir.<br className="lp-br-desktop" />{' '}
-            Mais tempo realmente descansando.
+            Um áudio guiado de 8 minutos pra desacelerar o corpo<br className="lp-br-desktop" />{' '}
+            e tirar a mente do modo alerta antes de dormir.
           </p>
           <Link
             to="/assinar?step=plan&plan=monthly&from=sono_cta_mid"
             className="cta-primary"
             onClick={() => trackTrialCta('monthly', 'sono_cta_mid')}
           >
-            Descanse melhor hoje
+            Iniciar a noite 1 · grátis
           </Link>
-        </div>
-      </section>
-
-      {/* ─── 3 colunas de dicas (conteúdo guiado do app) ─── */}
-      <section className="lp-sono-tips">
-        <div className="lp-sono-section-inner">
-        <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal">
-          Um guia de sono completo, dentro do app.
-        </h2>
-        <p className="lp-sono-tips-sub scroll-reveal stagger-1">
-          Programas e práticas guiadas para cada etapa da noite. Tudo incluído na sua
-          assinatura. Comece com 7 dias grátis.
-        </p>
-
-        <div
-          className="lp-sono-tips-track"
-          ref={tipsTrackRef}
-          onScroll={handleTipsScroll}
-        >
-          {TIPS_COLUMNS.map((col, i) => (
-            <article key={col.key} className={`lp-sono-tips-col scroll-reveal stagger-${i + 1}`}>
-              <h3>{col.title}</h3>
-              <p>{col.body}</p>
-              <ul>
-                {col.links.map((label) => (
-                  <li key={label}>
-                    <Link
-                      to={`/assinar?step=plan&plan=monthly&from=sono_tip_${col.key}`}
-                      onClick={() => trackTrialCta('monthly', `sono_tip_${col.key}`)}
-                    >
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
-
-        <div className="lp-sono-tips-nav" role="group" aria-label="Navegar pelas dicas">
-          <button
-            type="button"
-            className="lp-sono-tips-arrow"
-            aria-label="Dica anterior"
-            onClick={() => goToTipsPage(tipsPage - 1)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-
-          {TIPS_COLUMNS.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              className={`lp-sono-tips-dot ${tipsPage === i ? 'is-active' : ''}`}
-              aria-label={`Dica ${i + 1}`}
-              aria-current={tipsPage === i}
-              onClick={() => goToTipsPage(i)}
-            >
-              {i + 1}
-            </button>
-          ))}
-
-          <button
-            type="button"
-            className="lp-sono-tips-arrow"
-            aria-label="Próxima dica"
-            onClick={() => goToTipsPage(tipsPage + 1)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-        </div>
+          <p className="lp-sono-cta-mid-micro">
+            Sem cobrança hoje. Cancele antes dos 7 dias se não fizer sentido.
+          </p>
         </div>
       </section>
 
@@ -800,40 +760,39 @@ export default function EcotopiaSonoPage() {
 
         <div className="lp-sono-offer-inner">
           <div className="lp-sono-offer-content">
-            <h2 className="scroll-reveal">Esta noite pode ser diferente.</h2>
+            <h2 className="scroll-reveal">Teste por 7 dias sem pagar hoje.</h2>
+
+            <p className="lp-sono-offer-sub scroll-reveal stagger-1">
+              As 7 noites do Protocolo do Sono, meditações, sons relaxantes e
+              Eco IA. Se não fizer sentido, cancele antes da cobrança.
+            </p>
 
             <ul className="lp-sono-offer-bullets scroll-reveal stagger-1">
               <li>
                 <Check />
-                <span>
-                  Práticas guiadas que desligam o estado de alerta antes de deitar.
-                </span>
+                <span>R$ 0 hoje</span>
               </li>
               <li>
                 <Check />
-                <span>
-                  Siga um protocolo estruturado de 7 noites criado para melhorar
-                  sua rotina de sono.
-                </span>
+                <span>Aviso por e-mail antes da cobrança</span>
               </li>
               <li>
                 <Check />
-                <span>
-                  Tenha acesso a meditações, sons relaxantes e exercícios para
-                  reduzir o estresse antes de dormir.
-                </span>
+                <span>Cancele quando quiser</span>
+              </li>
+              <li>
+                <Check />
+                <span>Acesso imediato à noite 1</span>
+              </li>
+              <li>
+                <Check />
+                <span>Depois, {OFFER.priceMonthly}</span>
               </li>
             </ul>
 
             <div className="lp-sono-offer-reassure scroll-reveal stagger-2">
-              <p className="lp-sono-offer-reassure-lead">
-                Comece hoje.{' '}
-                Explore todo o aplicativo{' '}
-                por 7 dias gratuitamente.
-              </p>
               <p className="lp-sono-offer-reassure-fine">
-                Sem cobrança durante o período de teste. Cancele antes do término
-                se não quiser continuar.
+                Você será avisado antes da cobrança. Sem compromisso.
               </p>
             </div>
 
@@ -902,6 +861,83 @@ export default function EcotopiaSonoPage() {
               {CTA_LABEL}
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* ─── 3 colunas de dicas (conteúdo guiado do app) ───
+          Rebaixada pra depois da oferta: tem valor de conteúdo (links), mas não
+          deve ficar no caminho da conversão. */}
+      <section className="lp-sono-tips">
+        <div className="lp-sono-section-inner">
+        <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal">
+          Além das 7 noites, apoio pra dormir melhor.
+        </h2>
+        <p className="lp-sono-tips-sub scroll-reveal stagger-1">
+          Programas e práticas guiadas para cada etapa da noite. Tudo incluído na sua
+          assinatura. Comece com 7 dias grátis.
+        </p>
+
+        <div
+          className="lp-sono-tips-track"
+          ref={tipsTrackRef}
+          onScroll={handleTipsScroll}
+        >
+          {TIPS_COLUMNS.map((col, i) => (
+            <article key={col.key} className={`lp-sono-tips-col scroll-reveal stagger-${i + 1}`}>
+              <h3>{col.title}</h3>
+              <p>{col.body}</p>
+              <ul>
+                {col.links.map((label) => (
+                  <li key={label}>
+                    <Link
+                      to={`/assinar?step=plan&plan=monthly&from=sono_tip_${col.key}`}
+                      onClick={() => trackTrialCta('monthly', `sono_tip_${col.key}`)}
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+
+        <div className="lp-sono-tips-nav" role="group" aria-label="Navegar pelas dicas">
+          <button
+            type="button"
+            className="lp-sono-tips-arrow"
+            aria-label="Dica anterior"
+            onClick={() => goToTipsPage(tipsPage - 1)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+
+          {TIPS_COLUMNS.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`lp-sono-tips-dot ${tipsPage === i ? 'is-active' : ''}`}
+              aria-label={`Dica ${i + 1}`}
+              aria-current={tipsPage === i}
+              onClick={() => goToTipsPage(i)}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            className="lp-sono-tips-arrow"
+            aria-label="Próxima dica"
+            onClick={() => goToTipsPage(tipsPage + 1)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </div>
         </div>
       </section>
 

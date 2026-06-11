@@ -63,6 +63,20 @@ export function trackCtaClicado(p: { plan: PlanId; placement: string }): void {
   track('CTA clicado', p, { transport: 'sendBeacon', send_immediately: true });
 }
 
+/**
+ * Variante do hero exibida na /sono (roteada por utm_term dos anúncios). Mantém
+ * a taxonomia do funil (regra das duas taxonomias: /sono usa "Funil Sono · ").
+ * `variant` = 'default' | 'mente_nao_desliga' | ...
+ */
+export function trackHeadlineExibida(p: { variant: string }): void {
+  track('Headline exibida', p);
+}
+
+/** Seção da landing /sono vista no scroll (ex.: `secao: "diferencial"`). */
+export function trackSecaoVista(p: { secao: string }): void {
+  track('Seção vista', p);
+}
+
 // ── /assinar ───────────────────────────────────────────────────────────────
 export function trackAssinaturaIniciada(p: { entry_step: AssinarStep; plan: PlanId }): void {
   track('Assinatura iniciada', p);
