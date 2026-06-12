@@ -49,7 +49,10 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
     setErro(null);
     // Validações locais também contam como falha — sem isso ficam invisíveis
     // no Mixpanel ("enviado" ainda não disparou, então o funil não é afetado).
-    if (!EMAIL_RE.test(email)) {
+    // trim antes de validar: autofill/teclado mobile costuma injetar espaço,
+    // e a validação crua rejeitava leads pagos que digitaram o e-mail certo.
+    const emailLimpo = email.trim();
+    if (!EMAIL_RE.test(emailLimpo)) {
       trackCadastroFalhou({ method: "email", error_message: "validacao: email" });
       return setErro("E-mail inválido.");
     }
@@ -64,12 +67,12 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
     try {
       // Nome não é mais pedido no funil (fricção); o backend exige um nome,
       // então derivamos do e-mail e coletamos o nome real depois, no app.
-      const fullName = email.trim().split("@")[0];
+      const fullName = emailLimpo.split("@")[0];
       // emailRedirectTo: se a confirmação de e-mail estiver ligada no Supabase,
       // o link do e-mail devolve o usuário direto pro step do cartão — sem isso
       // ele cai na homepage e o funil se perde.
       const { needsConfirmation } = await register(
-        email.trim(),
+        emailLimpo,
         senha,
         fullName,
         "",
