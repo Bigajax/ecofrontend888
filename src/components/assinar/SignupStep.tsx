@@ -96,9 +96,10 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
   };
 
   // Caminho preferido: popup do GIS (a página não navega; a sessão chega aqui e
-  // o AssinarPage decide o próximo step). `ready=false` (script bloqueado/lento,
-  // comum no iOS) → botão fallback com OAuth por redirect que VOLTA PRO FUNIL.
-  const { containerRef: googleBtnRef, ready: googleBtnReady } = useGoogleSignInButton({
+  // o AssinarPage decide o próximo step). Enquanto o GIS carrega → placeholder
+  // (status 'loading'); só quando ele realmente não sobe (status 'failed':
+  // script bloqueado, clientId ausente) → botão de redirect que VOLTA PRO FUNIL.
+  const { containerRef: googleBtnRef, status: googleBtnStatus } = useGoogleSignInButton({
     clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
     onClick: () => {
       setErro(null);
@@ -146,13 +147,23 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
 
       {/* Botão oficial do Google (popup, sem redirect). O container precisa
           ficar sempre montado e mensurável (h-0, não display:none) pro GIS
-          renderizar nele; enquanto não está pronto, mostra o fallback. */}
+          renderizar nele. 'loading' → placeholder neutro (nunca o redirect, que
+          navegaria pra fora por puro timing). 'failed' → fallback de redirect. */}
       <div
         ref={googleBtnRef}
-        className={googleBtnReady ? "flex justify-center" : "h-0 overflow-hidden"}
-        aria-hidden={!googleBtnReady}
+        className={googleBtnStatus === "ready" ? "flex justify-center" : "h-0 overflow-hidden"}
+        aria-hidden={googleBtnStatus !== "ready"}
       />
-      {!googleBtnReady && (
+      {googleBtnStatus === "loading" && (
+        <div
+          aria-hidden
+          className="flex w-full items-center justify-center rounded-full py-4 text-[15px] font-medium"
+          style={{ border: "1px solid rgba(13,52,97,0.12)", color: "#5A8AAD" }}
+        >
+          Carregando…
+        </div>
+      )}
+      {googleBtnStatus === "failed" && (
         <button
           type="button"
           onClick={googleFallback}

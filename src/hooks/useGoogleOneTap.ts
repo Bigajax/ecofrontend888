@@ -265,27 +265,37 @@ interface UseGoogleSignInButtonOptions {
   width?: number;
 }
 
+/** Estado do botão oficial do Google.
+ * - `loading`: script GSI ainda carregando (mostre um placeholder neutro, NUNCA
+ *   o fallback de redirect — senão a gente navega pra fora por puro timing).
+ * - `ready`: botão renderizado, popup disponível (caminho feliz, sem redirect).
+ * - `failed`: GSI não carregou no prazo / clientId ausente — só aqui faz sentido
+ *   cair no fallback (ex.: OAuth por redirect), como último recurso. */
+export type GoogleSignInButtonStatus = 'loading' | 'ready' | 'failed';
+
 /**
  * Renderiza o botão oficial do Google (GIS) que abre o seletor de contas em
  * popup — sem redirect, a página atual permanece viva e a sessão chega via
  * `onSuccess(idToken)`. Complementa o One Tap acima reaproveitando o mesmo
  * script GSI (index.html) e a mesma `initialize`.
  *
- * Retorna `{ containerRef, ready }`. O <div> do `containerRef` precisa estar
- * SEMPRE montado (escondido enquanto `ready` é false) — o GIS renderiza dentro
- * dele. Enquanto `ready` é false (script carregando, clientId ausente ou GSI
- * bloqueado), exiba o fallback (ex.: botão com OAuth por redirect).
+ * Retorna `{ containerRef, status, ready }`. O <div> do `containerRef` precisa
+ * estar SEMPRE montado (escondido enquanto não está `ready`) — o GIS renderiza
+ * dentro dele. Use `status` pra distinguir "ainda carregando" (placeholder) de
+ * "desistiu" (fallback de redirect). `ready` é mantido como atalho de
+ * `status === 'ready'` pra compatibilidade.
  *
  * @example
  * ```tsx
- * const { containerRef, ready } = useGoogleSignInButton({
+ * const { containerRef, status } = useGoogleSignInButton({
  *   clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
  *   onSuccess: (idToken) => signInWithGoogleIdToken(idToken),
  * });
  * return (
  *   <>
- *     <div ref={containerRef} className={ready ? '' : 'hidden'} />
- *     {!ready && <FallbackButton />}
+ *     <div ref={containerRef} className={status === 'ready' ? '' : 'hidden'} />
+ *     {status === 'loading' && <Placeholder />}
+ *     {status === 'failed' && <FallbackButton />}
  *   </>
  * );
  * ```
@@ -298,10 +308,11 @@ export function useGoogleSignInButton({
   width,
 }: UseGoogleSignInButtonOptions): {
   containerRef: React.RefObject<HTMLDivElement>;
+  status: GoogleSignInButtonStatus;
   ready: boolean;
 } {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [ready, setReady] = useState(false);
+  const [status, setStatus] = useState<GoogleSignInButtonStatus>('loading');
 
   // Callbacks via refs: handlers sempre atuais sem re-inicializar o GIS
   // (mesmo padrão do useMediaSession).
@@ -317,10 +328,12 @@ export function useGoogleSignInButton({
   useEffect(() => {
     if (!clientId) {
       console.warn('[GoogleSignInButton] Client ID não configurado. Configure VITE_GOOGLE_CLIENT_ID no .env');
+      setStatus('failed');
       return;
     }
 
     let cancelled = false;
+    setStatus('loading');
 
     const renderInto = () => {
       const gsi = window.google?.accounts?.id;
@@ -358,16 +371,18 @@ export function useGoogleSignInButton({
           click_listener: () => onClickRef.current?.(),
         });
 
-        setReady(true);
+        setStatus('ready');
       } catch (error) {
         console.error('[GoogleSignInButton] Erro ao renderizar botão:', error);
+        setStatus('failed');
         onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
       }
     };
 
     // Script GSI é async/defer no index.html — normalmente já carregou quando o
-    // usuário chega aqui. Se ainda não, espera até ~2s; depois disso o chamador
-    // segue com o fallback (ready=false).
+    // usuário chega aqui. Se ainda não, espera até ~8s antes de declarar `failed`
+    // (rede móvel lenta precisa de folga). Enquanto espera, o status fica
+    // `loading` pra UI mostrar um placeholder — nunca o redirect prematuro.
     if (window.google?.accounts?.id) {
       renderInto();
       return () => {
@@ -383,10 +398,11 @@ export function useGoogleSignInButton({
     }, 100);
     const timeout = setTimeout(() => {
       clearInterval(checkInterval);
-      if (!window.google?.accounts?.id) {
-        console.warn('[GoogleSignInButton] Script do Google não carregou em 2s — usando fallback');
+      if (!window.google?.accounts?.id && !cancelled) {
+        console.warn('[GoogleSignInButton] Script do Google não carregou em 8s — usando fallback');
+        setStatus('failed');
       }
-    }, 2000);
+    }, 8000);
 
     return () => {
       cancelled = true;
@@ -395,5 +411,5 @@ export function useGoogleSignInButton({
     };
   }, [clientId, width]);
 
-  return { containerRef, ready };
+  return { containerRef, status, ready: status === 'ready' };
 }

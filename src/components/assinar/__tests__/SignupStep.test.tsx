@@ -1,11 +1,24 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createRef } from "react";
+import type { GoogleSignInButtonStatus } from "@/hooks/useGoogleOneTap";
 
 const register = vi.fn();
 const signInWithGoogle = vi.fn();
 const signInWithGoogleIdToken = vi.fn();
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ register, signInWithGoogle, signInWithGoogleIdToken }),
+}));
+
+// Controla o status do botão oficial do Google sem depender do script GSI
+// (ausente no jsdom). Default 'failed' = fallback por redirect renderizado.
+let googleBtnStatus: GoogleSignInButtonStatus = "failed";
+vi.mock("@/hooks/useGoogleOneTap", () => ({
+  useGoogleSignInButton: () => ({
+    containerRef: createRef<HTMLDivElement>(),
+    status: googleBtnStatus,
+    ready: googleBtnStatus === "ready",
+  }),
 }));
 
 import { SignupStep } from "../SignupStep";
@@ -18,6 +31,7 @@ const defaultProps = {
 beforeEach(() => {
   register.mockReset().mockResolvedValue({ needsConfirmation: false });
   signInWithGoogle.mockReset().mockResolvedValue(undefined);
+  googleBtnStatus = "failed";
 });
 
 describe("SignupStep", () => {
@@ -48,6 +62,22 @@ describe("SignupStep", () => {
     expect(register).not.toHaveBeenCalled();
   });
 
+  it("trims whitespace before validating the email (mobile autofill)", async () => {
+    const onCreated = vi.fn();
+    render(<SignupStep onCreated={onCreated} {...defaultProps} />);
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "  ana@x.com  " } });
+    fireEvent.change(screen.getByLabelText(/senha \(8/i), { target: { value: "12345678" } });
+    fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
+    await waitFor(() => expect(onCreated).toHaveBeenCalled());
+    expect(register).toHaveBeenCalledWith(
+      "ana@x.com",
+      "12345678",
+      "ana",
+      "",
+      expect.stringContaining("/assinar?plan=monthly&step=card"),
+    );
+  });
+
   it("registers without terms checkbox, deriving the name from the email", async () => {
     const onCreated = vi.fn();
     render(<SignupStep onCreated={onCreated} {...defaultProps} />);
@@ -66,11 +96,28 @@ describe("SignupStep", () => {
     );
   });
 
-  // Sem GSI (jsdom não tem window.google), o botão é o fallback por redirect —
+  // status 'failed' (GSI bloqueado/ausente): o botão é o fallback por redirect —
   // que precisa voltar pro funil, não pro /app (senão o bug original volta no iOS).
-  it("starts Google sign-in on button click, returning to the funnel", () => {
+  it("on Google failure, the redirect fallback returns to the funnel", () => {
+    googleBtnStatus = "failed";
     render(<SignupStep onCreated={vi.fn()} {...defaultProps} />);
     fireEvent.click(screen.getByRole("button", { name: /google/i }));
     expect(signInWithGoogle).toHaveBeenCalledWith("/assinar?plan=monthly&step=card");
+  });
+
+  // status 'loading' (GSI ainda carregando): mostra placeholder, NUNCA o redirect
+  // — senão a página navegaria pra fora por puro timing.
+  it("while Google is loading, shows a placeholder and no redirect button", () => {
+    googleBtnStatus = "loading";
+    render(<SignupStep onCreated={vi.fn()} {...defaultProps} />);
+    expect(screen.queryByRole("button", { name: /google/i })).not.toBeInTheDocument();
+    expect(signInWithGoogle).not.toHaveBeenCalled();
+  });
+
+  // status 'ready': popup oficial do GIS disponível, sem botão de redirect.
+  it("when Google is ready, does not render the redirect fallback", () => {
+    googleBtnStatus = "ready";
+    render(<SignupStep onCreated={vi.fn()} {...defaultProps} />);
+    expect(screen.queryByRole("button", { name: /google/i })).not.toBeInTheDocument();
   });
 });
