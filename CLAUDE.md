@@ -519,8 +519,17 @@ Configure in `.env` file (see `.env.example`):
 | `VITE_ELEVENLABS_VOICE_ID` | TTS voice identifier | (optional) |
 | `VITE_MIXPANEL_TOKEN` | Analytics token | (optional) |
 | `VITE_FB_PIXEL_ID` | Facebook Pixel ID | (optional) |
+| `VITE_GOOGLE_CLIENT_ID` | Google OAuth Web Client ID (frontend GIS popup/One Tap; público, não secreto) | `...apps.googleusercontent.com` |
 
 **Dev Note**: Vite injects these as `import.meta.env.VITE_*` at build time.
+
+**Google sign-in (popup)**: o botão oficial do Google no cadastro (`/assinar`) e o One Tap
+exigem `VITE_GOOGLE_CLIENT_ID` — sem ele, `useGoogleSignInButton` cai em `status: 'failed'` e
+mostra o fallback por redirect (página inteira, domínio cru do Supabase). É o **mesmo** Client ID
+do provider Google no Supabase. Configure em **dois lugares**: `.env` local **e** Environment
+Variables da Vercel (+ redeploy, pois o Vite injeta em build time). As **Origens JavaScript
+autorizadas** no Google Cloud Console precisam incluir `http://localhost:5173` e o domínio de
+produção — senão o GIS recusa renderizar o botão mesmo com o ID correto.
 
 ## Project Statistics
 
