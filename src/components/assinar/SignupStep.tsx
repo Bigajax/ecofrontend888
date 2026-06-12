@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGoogleSignInButton } from "@/hooks/useGoogleOneTap";
@@ -8,8 +8,9 @@ import {
   trackCadastroEnviado,
   trackCadastroConcluido,
   trackCadastroFalhou,
-  trackCadastroSemResposta,
-  type SignupMethod,
+  markCadastroPendente,
+  clearCadastroPendente,
+  marcarSaidaIntencionalDoFunil,
 } from "@/lib/mixpanelAssinarFunnel";
 
 interface SignupStepProps {
@@ -17,9 +18,6 @@ interface SignupStepProps {
   funnelReturnTo: string;          // path de volta pro funil (/assinar?plan=…&step=card&from=…) — usado no fallback OAuth e no link de confirmação de email
   loginReturnTo: string;           // /login que retorna pro funil (preserva step/plan/origem)
 }
-
-/** Janela do watchdog: "enviado" sem "concluído"/"falhou" nesse tempo → "Cadastro sem resposta". */
-const WATCHDOG_MS = 15_000;
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const fieldCls =
@@ -40,25 +38,11 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
     trackCadastroVisto();
   }, []);
 
-  // Watchdog da falha silenciosa: "enviado" que não vira "concluído" nem
-  // "falhou" em WATCHDOG_MS dispara "Cadastro sem resposta" — senão ficamos
-  // cegos exatamente no ponto mais quente do funil.
-  const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const clearWatchdog = () => {
-    if (watchdogRef.current) {
-      clearTimeout(watchdogRef.current);
-      watchdogRef.current = null;
-    }
-  };
-  const startWatchdog = (method: SignupMethod) => {
-    clearWatchdog();
-    const startedAt = Date.now();
-    watchdogRef.current = setTimeout(() => {
-      watchdogRef.current = null;
-      trackCadastroSemResposta({ method, elapsed_ms: Date.now() - startedAt });
-    }, WATCHDOG_MS);
-  };
-  useEffect(() => clearWatchdog, []);
+  // Watchdog da falha silenciosa ("enviado" que não vira "concluído"/"falhou")
+  // vive em escopo de módulo (markCadastroPendente), não aqui: o remount por
+  // userId pós-SIGNED_IN desmonta este componente antes de register() concluir,
+  // e um timer local seria zerado no cleanup — cegando justamente o ponto mais
+  // quente do funil. Ver mixpanelAssinarFunnel.ts.
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +60,7 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
 
     setLoading(true);
     trackCadastroEnviado({ method: "email", opted_newsletter: dicas });
-    startWatchdog("email");
+    markCadastroPendente("email");
     try {
       // Nome não é mais pedido no funil (fricção); o backend exige um nome,
       // então derivamos do e-mail e coletamos o nome real depois, no app.
@@ -91,7 +75,7 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
         "",
         window.location.origin + funnelReturnTo,
       );
-      clearWatchdog();
+      clearCadastroPendente();
       trackCadastroConcluido({ method: "email", needs_confirmation: needsConfirmation });
       if (needsConfirmation) {
         setInfo("Enviamos um e-mail de confirmação. Confirme para continuar a assinatura.");
@@ -99,7 +83,7 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
       }
       onCreated();
     } catch (err) {
-      clearWatchdog();
+      clearCadastroPendente();
       const message = err instanceof Error ? err.message : "Não foi possível criar a conta.";
       trackCadastroFalhou({ method: "email", error_message: message });
       setErro(message);
@@ -116,17 +100,17 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
     onClick: () => {
       setErro(null);
       trackCadastroEnviado({ method: "google" });
-      startWatchdog("google");
+      markCadastroPendente("google");
     },
     onSuccess: async (idToken) => {
       await signInWithGoogleIdToken(idToken);
-      clearWatchdog();
+      clearCadastroPendente();
       trackCadastroConcluido({ method: "google", needs_confirmation: false });
       // Sem navegação aqui: o effect pós-login do AssinarPage roteia
       // (não-premium → cartão; premium → /app).
     },
     onError: (error) => {
-      clearWatchdog();
+      clearCadastroPendente();
       const message = error.message || "Falha ao entrar com Google.";
       trackCadastroFalhou({ method: "google", error_message: message });
       setErro("Não foi possível entrar com Google. Tente novamente.");
@@ -135,9 +119,11 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
 
   const googleFallback = async () => {
     trackCadastroEnviado({ method: "google" });
+    // Redirect de página inteira (morre o JS) — sem watchdog. Marca saída
+    // intencional pro pagehide do redirect não emitir "Funil abandonado" falso.
+    marcarSaidaIntencionalDoFunil();
     try {
-      // Redirect de página inteira (morre o JS) — sem watchdog. O retorno cai
-      // direto no step do cartão com plano/origem preservados.
+      // O retorno cai direto no step do cartão com plano/origem preservados.
       await signInWithGoogle(funnelReturnTo);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Falha ao entrar com Google.";

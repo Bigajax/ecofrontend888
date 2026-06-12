@@ -43,12 +43,44 @@ function track(evento: string, props: Record<string, unknown> = {}, options?: Tr
   mixpanel.track(PREFIX + evento, { ...props, timestamp: new Date().toISOString() }, options);
 }
 
+// ── Estado em escopo de módulo (sobrevive ao remount por userId) ─────────────
+// O RootProviders remonta a árvore quando o userId muda (pós-SIGNED_IN), o que
+// desmonta o SignupStep/AssinarPage. Um watchdog/flag preso ao componente é
+// zerado nesse remount — perdíamos justamente a falha silenciosa do cadastro.
+// Em escopo de módulo o estado persiste através do remount (mesmo truque do
+// `lastAssinaturaIniciadaAt` no AssinarPage).
+
+/** Janela do watchdog: "enviado" sem "concluído"/"falhou" nesse tempo → "sem resposta". */
+const CADASTRO_WATCHDOG_MS = 15_000;
+let cadastroPending: { method: SignupMethod; startedAt: number; timer: ReturnType<typeof setTimeout> } | null = null;
+
+let saidaIntencional = false;      // logo "voltar" ou redirect OAuth — não é abandono passivo
+let abandonoOnHideEmitido = false; // dedupe entre visibilitychange/pagehide
+
+function fireCadastroSemResposta(reason: 'timeout' | 'page_hidden', options?: TrackOptions): void {
+  if (!cadastroPending) return;
+  const { method, startedAt } = cadastroPending;
+  track('Cadastro sem resposta', { method, elapsed_ms: Date.now() - startedAt, reason }, options);
+  clearTimeout(cadastroPending.timer);
+  cadastroPending = null;
+}
+
 /**
  * Registra a origem do funil como super properties. Chamar uma vez no mount
  * do AssinarPage. `from` vem do `?from=` do CTA da landing (ex.: "sono_hero").
  */
 export function registerFunilSono(from: string): void {
   mixpanel.register({ funnel: 'assinatura', funnel_source: from });
+}
+
+/**
+ * Super property da variante do hero /sono — assim todo evento subsequente do
+ * funil (Plano visto, Cadastro enviado…) fica quebrável por variante. Nome
+ * distinto de `headline_variant` (prop de evento '1'|'2' das landings genéricas
+ * em trackLandingCta.ts) pra não colidir/contaminar as duas taxonomias.
+ */
+export function registerSonoHeroVariant(variant: string): void {
+  mixpanel.register({ sono_hero_variant: variant });
 }
 
 // ── Landing /sono ──────────────────────────────────────────────────────────
@@ -79,6 +111,11 @@ export function trackSecaoVista(p: { secao: string }): void {
 
 // ── /assinar ───────────────────────────────────────────────────────────────
 export function trackAssinaturaIniciada(p: { entry_step: AssinarStep; plan: PlanId }): void {
+  // Nova entrada no funil reseta as flags de módulo: sem isso, depois de uma
+  // saída intencional (logo/OAuth) ou de um abandono já emitido, uma re-entrada
+  // pela landing ficaria cega pro próximo abandono real.
+  saidaIntencional = false;
+  abandonoOnHideEmitido = false;
   track('Assinatura iniciada', p);
 }
 
@@ -114,13 +151,47 @@ export function trackCadastroEnviado(p: { method: SignupMethod; opted_newsletter
 }
 
 /**
- * Watchdog do cadastro: disparado quando "Cadastro enviado" não vira
- * "concluído" nem "falhou" dentro da janela. Com o popup do Google, também
- * dispara quando o usuário fecha o popup sem escolher conta — é hesitação,
- * não bug; ler junto com `method` e `elapsed_ms`.
+ * Arma o watchdog do cadastro (escopo de módulo) ao disparar "Cadastro enviado".
+ * Se não virar "concluído"/"falhou" dentro da janela, emite "Cadastro sem
+ * resposta" — inclusive quando o remount por userId já desmontou o SignupStep
+ * (o timer vive aqui, não no componente). Limpo só por concluído/falhou.
  */
-export function trackCadastroSemResposta(p: { method: SignupMethod; elapsed_ms: number }): void {
-  track('Cadastro sem resposta', p);
+export function markCadastroPendente(method: SignupMethod): void {
+  clearCadastroPendente(); // dedupe re-submit
+  cadastroPending = {
+    method,
+    startedAt: Date.now(),
+    timer: setTimeout(() => fireCadastroSemResposta('timeout'), CADASTRO_WATCHDOG_MS),
+  };
+}
+
+/** Desarma o watchdog sem emitir — chamado em "Cadastro concluído"/"Cadastro falhou". */
+export function clearCadastroPendente(): void {
+  if (cadastroPending) {
+    clearTimeout(cadastroPending.timer);
+    cadastroPending = null;
+  }
+}
+
+/**
+ * Página sumindo com cadastro pendente = "sem resposta" por abandono durante o
+ * hang (beacon, pois a aba pode estar fechando). `source` evita falso positivo
+ * do popup do Google: o GIS deixa a página principal `hidden` enquanto o usuário
+ * escolhe a conta. No method "google" só tratamos como abandono no `pagehide`
+ * (saída real) ou após a janela do watchdog — senão o flush por visibilidade
+ * dispararia "sem resposta" E limparia o pending, cegando o timer pro resto do
+ * fluxo. E-mail sempre faz flush (não abre popup).
+ */
+export function flushCadastroPendenteOnHide(source: 'visibility' | 'pagehide'): void {
+  if (!cadastroPending) return;
+  if (
+    source === 'visibility' &&
+    cadastroPending.method === 'google' &&
+    Date.now() - cadastroPending.startedAt < CADASTRO_WATCHDOG_MS
+  ) {
+    return;
+  }
+  fireCadastroSemResposta('page_hidden', { transport: 'sendBeacon', send_immediately: true });
 }
 
 export function trackCadastroConcluido(p: { method: SignupMethod; needs_confirmation: boolean }): void {
@@ -138,6 +209,26 @@ export function trackCadastroFalhou(p: { method: SignupMethod; error_message: st
  */
 export function trackFunilAbandonado(p: { step: AssinarStep; destino: string }): void {
   track('Funil abandonado', p, { transport: 'sendBeacon', send_immediately: true });
+}
+
+/**
+ * Marca saída deliberada do funil (clique no logo "voltar" ou redirect do
+ * fallback OAuth), para o `pagehide` subsequente não emitir um "Funil abandonado"
+ * falso. Resetada em `trackAssinaturaIniciada` (nova entrada).
+ */
+export function marcarSaidaIntencionalDoFunil(): void {
+  saidaIntencional = true;
+}
+
+/**
+ * `pagehide`: emite "Funil abandonado" se o usuário deixou o funil sem converter
+ * e sem saída intencional. Deduplicado (visibilitychange + pagehide podem
+ * disparar na mesma descarga).
+ */
+export function flushFunilAbandonadoOnHide(step: AssinarStep, converted: boolean): void {
+  if (converted || saidaIntencional || abandonoOnHideEmitido) return;
+  abandonoOnHideEmitido = true;
+  trackFunilAbandonado({ step, destino: 'page_hidden' });
 }
 
 // ── Checkout (cartão) ──────────────────────────────────────────────────────

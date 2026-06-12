@@ -35,6 +35,9 @@ import {
   trackCartaoRecusado,
   trackCartaoErro,
   trackFunilAbandonado,
+  flushCadastroPendenteOnHide,
+  flushFunilAbandonadoOnHide,
+  marcarSaidaIntencionalDoFunil,
 } from "@/lib/mixpanelAssinarFunnel";
 
 const planAmount = (plan: PlanId): number => (plan === "monthly" ? PRICE.monthly : PRICE.annualTotal);
@@ -92,6 +95,33 @@ export default function AssinarPage() {
 
   // Quando o step "card" passou a ser exibido — base do elapsed_ms do "Cartão pronto".
   const cardShownAtRef = useRef<number | null>(null);
+
+  // Espelhos em ref para o handler de page-hide (mount-only) ler o valor atual
+  // sem re-anexar o listener a cada troca de step. `converted` suprime o
+  // "Funil abandonado" quando já estamos navegando pra conversão/app.
+  const stepRef = useRef<Step>(step);
+  stepRef.current = step;
+  const convertedRef = useRef(false);
+
+  // Captura de saída por descarga da página: setTimeout não sobrevive ao fechar
+  // aba / back do navegador — o caso quente do funil. Cadastro pendente vira
+  // "sem resposta" (visibilidade + pagehide, com proteção do popup Google no
+  // módulo); abandono do funil só no pagehide (troca de aba não é abandono).
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flushCadastroPendenteOnHide("visibility");
+    };
+    const onPageHide = () => {
+      flushCadastroPendenteOnHide("pagehide");
+      flushFunilAbandonadoOnHide(stepRef.current, convertedRef.current);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, []);
 
   // Scroll para o topo a cada troca de step (e no mount).
   // Usa scrollToTop() (não só window) porque no mobile o scroller é o #root.
@@ -191,6 +221,7 @@ export default function AssinarPage() {
       if (cancelled) return;
       setVerificandoConta(false);
       if (premium) {
+        convertedRef.current = true; // já é premium — saída do funil não é abandono
         navigate("/app", { replace: true });
       } else {
         setStep("card");
@@ -248,6 +279,7 @@ export default function AssinarPage() {
       }
       // Premium status é ativado pelo webhook MercadoPago no backend.
       // Frontend não escreve em usuarios.tipo_plano direto pra evitar race conditions.
+      convertedRef.current = true; // não contar como "Funil abandonado" no unload
       navigate("/app/subscription/callback");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro inesperado.";
@@ -322,7 +354,10 @@ export default function AssinarPage() {
           to={backTo}
           aria-label="Ecotopia — início"
           className="inline-block"
-          onClick={() => trackFunilAbandonado({ step, destino: backTo })}
+          onClick={() => {
+            trackFunilAbandonado({ step, destino: backTo });
+            marcarSaidaIntencionalDoFunil(); // SPA nav não dispara pagehide, mas evita duplo
+          }}
         >
           <img src="/images/ecotopia-logo-trim.webp" alt="Ecotopia" className="h-7 w-auto" />
         </Link>

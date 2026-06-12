@@ -1,14 +1,16 @@
 import { useEffect, useMemo } from 'react';
-import { trackHeadlineExibida } from '@/lib/mixpanelAssinarFunnel';
+import { trackHeadlineExibida, registerSonoHeroVariant } from '@/lib/mixpanelAssinarFunnel';
 
 /**
  * Variante do hero da landing /sono, roteada por `utm_term`.
  *
- * Motivo: os anúncios em vídeo do Meta abrem com o diagnóstico "você não tem
- * insônia. tem uma mente que não desliga." — agora o DEFAULT da /sono ecoa essa
- * frase pra todo o tráfego (continuidade na chegada). A promessa antiga "Durma
- * mais rápido em 7 noites" continua acessível via `?utm_term=durma_rapido` (não
- * vira código morto; segue testável em A/B).
+ * Motivo: o DEFAULT volta a ser a promessa "Durma mais rápido em apenas 7
+ * noites" pra todo o tráfego direto/orgânico. O diagnóstico "você não tem
+ * insônia. tem uma mente que não desliga." (que os anúncios em vídeo abrem) vira
+ * variante recebida só via `?utm_term=mente_nao_desliga` — continuidade da
+ * narrativa do vídeo, sem contaminar o tráfego frio. A disputa é decidida pelo
+ * `Funil Sono · Headline exibida` (breakdown por `variant` / super property
+ * `sono_hero_variant`).
  *
  * O h1 é montado como: [h1Line1 em bloco] + [h1Pre <pílula>h1Mark</pílula> h1Pos].
  */
@@ -32,15 +34,11 @@ export interface SonoHeroCopy {
 export type SonoHeroVariant = 'durma_rapido' | 'mente_nao_desliga';
 
 // Hero exibido pra tráfego direto/orgânico e qualquer utm_term não mapeado.
-const DEFAULT_VARIANT: SonoHeroVariant = 'mente_nao_desliga';
-
-// Regra de CTA da página: botão de topo/meio é sempre "Iniciar a noite 1 ·
-// grátis"; o microcopy imediato menciona "7 dias grátis" pra não parecer que só
-// a noite 1 é gratuita. Compartilhado por todas as variantes.
-const SHARED_CTA = 'Iniciar a noite 1 · grátis';
-const SHARED_MICROCOPY = '7 dias grátis · R$ 0 hoje · ';
+const DEFAULT_VARIANT: SonoHeroVariant = 'durma_rapido';
 
 const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
+  // Variante dos vídeos: abre com o diagnóstico e usa o CTA "noite 1" + microcopy
+  // que reforça os 7 dias grátis (pra não parecer que só a noite 1 é gratuita).
   mente_nao_desliga: {
     variant: 'mente_nao_desliga',
     h1Line1: 'Você não tem insônia.',
@@ -48,16 +46,17 @@ const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
     h1Mark: 'não desliga',
     h1Pos: '.',
     lead: 'O Protocolo do Sono guia você por 7 noites pra tirar o corpo do modo alerta. 5 minutos por noite, nada mais.',
-    cta: SHARED_CTA,
-    microcopyPrefix: SHARED_MICROCOPY,
+    cta: 'Iniciar a noite 1 · grátis',
+    microcopyPrefix: '7 dias grátis · R$ 0 hoje · ',
   },
+  // Default (promessa): CTA/microcopy próprios, distintos da variante.
   durma_rapido: {
     variant: 'durma_rapido',
     h1Pre: 'Durma mais rápido em ',
     h1Mark: 'apenas 7 noites',
     lead: 'Criado para quem está cansado, mas não consegue desligar a mente.',
-    cta: SHARED_CTA,
-    microcopyPrefix: SHARED_MICROCOPY,
+    cta: 'Começar meus 7 dias grátis',
+    microcopyPrefix: 'Sem cobrança hoje · ',
   },
 };
 
@@ -90,6 +89,10 @@ export function useSonoHeroVariant(): SonoHeroCopy {
   const copy = useMemo(() => VARIANTS[resolveVariant()], []);
 
   useEffect(() => {
+    // Super property idempotente: roda a cada mount pra todo evento do funil
+    // sair quebrável por variante, mesmo quando o "Headline exibida" já foi
+    // disparado (guard de módulo) num mount anterior.
+    registerSonoHeroVariant(copy.variant);
     if (headlineTracked) return;
     headlineTracked = true;
     try {
