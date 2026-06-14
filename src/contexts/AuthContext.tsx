@@ -47,7 +47,7 @@ interface AuthContextType {
   isPremiumUser: boolean;
   isTrialActive: boolean;
   trialDaysRemaining: number;
-  refreshSubscription: () => Promise<void>;
+  refreshSubscription: () => Promise<SubscriptionState | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -620,10 +620,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Refresh subscription from backend
-  const refreshSubscription = async () => {
+  const refreshSubscription = async (): Promise<SubscriptionState | null> => {
     if (!user) {
       // Reset to free if no user
-      setSubscription({
+      const freeState: SubscriptionState = {
         plan: 'free',
         status: 'active',
         trialStartDate: null,
@@ -636,14 +636,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         currentPeriodEnd: null,
         accessUntil: null,
         nextBillingDate: null,
-      });
-      return;
+      };
+      setSubscription(freeState);
+      return freeState;
     }
 
     try {
       const status = await getSubscriptionStatus();
 
-      setSubscription({
+      const nextState: SubscriptionState = {
         plan: status.plan,
         status: status.status,
         trialStartDate: status.trialStartDate,
@@ -656,7 +657,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         currentPeriodEnd: status.currentPeriodEnd,
         accessUntil: status.accessUntil,
         nextBillingDate: null,
-      });
+      };
+      setSubscription(nextState);
+      return nextState;
     } catch (error) {
       // Tratar erro de forma não-invasiva
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -673,6 +676,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Manter estado atual em caso de erro (não reseta para free)
       // Isso previne perder acesso premium por erro temporário de rede
+      return null;
     }
   };
 

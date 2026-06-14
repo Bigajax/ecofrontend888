@@ -34,28 +34,30 @@ export default function SubscriptionCallbackPage() {
 
       const checkStatus = async () => {
         try {
-          // Refresh subscription from backend
-          await refreshSubscription();
+          // Refresh subscription from backend.
+          // IMPORTANTE: usar o estado RETORNADO, não o `subscription` do contexto.
+          // O `subscription` capturado no closure deste efeito fica congelado no
+          // valor do primeiro render (free/sem acesso) e nunca reflete o
+          // setSubscription disparado por refreshSubscription — o que fazia o
+          // callback sempre cair em "pending" mesmo com pagamento aprovado.
+          const current = await refreshSubscription();
 
-          // Aguardar state update
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          // Validar acesso pelo snapshot fresco vindo do backend
+          const hasAccess = !!current?.accessUntil && new Date(current.accessUntil) > new Date();
+          const isActive = current?.status === 'active';
+          const notFree = !!current && current.plan !== 'free';
 
-          // Validar acesso
-          const hasAccess = subscription.accessUntil && new Date(subscription.accessUntil) > new Date();
-          const isActive = subscription.status === 'active';
-          const notFree = subscription.plan !== 'free';
-
-          if (hasAccess && isActive && notFree) {
+          if (current && hasAccess && isActive && notFree) {
             // ✅ Sucesso! Trial ou premium ativo
             setStatus('success');
 
-            const planId = (subscription.planType || 'annual') as 'monthly' | 'annual';
+            const planId = (current.planType || 'annual') as 'monthly' | 'annual';
             const amount = planId === 'monthly' ? 15.9 : 142.8;
 
             // Track Subscription Paid (Camada 3 - Frontend, evento global/histórico)
             trackSubscriptionPaid({
               plan_id: planId,
-              mp_status: subscription.status,
+              mp_status: current.status,
               transaction_amount: amount,
               provider: 'mercadopago',
               user_id: user?.id,
@@ -71,11 +73,11 @@ export default function SubscriptionCallbackPage() {
             // Purchase do 1º ciclo efetivamente cobrado deve ser disparado
             // server-side pelo webhook do backend (não há cobrança hoje, no trial).
             void trackWithCAPI('Subscribe', {
-              value: planValue(subscription.planType),
+              value: planValue(current.planType),
               currency: PRICE.currency,
               contentName: 'ECO Premium',
               contentCategory: 'subscription',
-              pixelExtra: { plan: subscription.planType ?? 'annual' },
+              pixelExtra: { plan: current.planType ?? 'annual' },
             });
 
             // Confetti celebration
