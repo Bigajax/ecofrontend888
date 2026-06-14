@@ -72,8 +72,12 @@ export function TrialPlanPanel({ selectedPlan, onSelectPlan }: TrialPlanPanelPro
             >
               {c.badge && (
                 <span
-                  className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded px-2.5 py-[3px] text-[11px] font-bold text-white"
-                  style={{ background: "#1EA455" }}
+                  className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded px-2.5 py-[3px] text-[11px] font-bold"
+                  style={
+                    active
+                      ? { background: "#1EA455", color: "#FFFFFF" }
+                      : { background: "#E7F4EC", color: "#1A8A4A" }
+                  }
                 >
                   {c.badge}
                 </span>
@@ -81,14 +85,32 @@ export function TrialPlanPanel({ selectedPlan, onSelectPlan }: TrialPlanPanelPro
               <span className="block pr-6 text-[13px]" style={{ color: active ? "rgba(255,255,255,0.75)" : "rgba(0,0,0,0.55)" }}>
                 {plan === "annual" ? "Anual" : "Mensal"}
               </span>
-              <span className="mt-1 block font-display text-[16px] font-bold leading-tight" style={{ color: active ? "#FFFFFF" : "#1A1A1A" }}>
-                {c.priceLine}
-                {c.priceNote && (
-                  <span className="ml-1 text-[12px] font-normal" style={{ color: active ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.5)" }}>
-                    {c.priceNote}
+              {active ? (
+                // Card selecionado: o "R$ 0" vence visualmente; o preço cheio
+                // vira nota secundária ("depois …"), em harmonia com o "R$ 0 hoje"
+                // do título — o reforço do grátis não some no momento da decisão.
+                <span className="mt-1 block">
+                  <span className="font-display text-[20px] font-bold leading-none text-white">
+                    R$ 0
                   </span>
-                )}
-              </span>
+                  <span className="ml-1 text-[12px] font-normal" style={{ color: "rgba(255,255,255,0.7)" }}>
+                    por 7 dias
+                  </span>
+                  <span className="mt-0.5 block text-[11.5px] font-normal" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    depois {c.priceLine}
+                  </span>
+                </span>
+              ) : (
+                // Card não selecionado: mantém o per-mês como âncora de comparação
+                <span className="mt-1 block font-display text-[16px] font-bold leading-tight" style={{ color: "#1A1A1A" }}>
+                  {c.priceLine}
+                  {c.priceNote && (
+                    <span className="ml-1 text-[12px] font-normal" style={{ color: "rgba(0,0,0,0.5)" }}>
+                      {c.priceNote}
+                    </span>
+                  )}
+                </span>
+              )}
               <span
                 className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full text-[12px] font-bold"
                 style={{
