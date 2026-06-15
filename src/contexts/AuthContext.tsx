@@ -360,9 +360,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // VIP users have full access
     if (isVipUser) return true;
     if (!subscription.accessUntil) return false;
+    // Fonte da verdade = access_until (igual ao backend `hasAccess`).
+    // NÃO exigir status === 'active': quem cancelou a renovação mas ainda
+    // está dentro do período pago (status 'cancelled', acesso válido) continua premium.
     const now = new Date();
     const accessUntil = new Date(subscription.accessUntil);
-    return now <= accessUntil && subscription.status === 'active';
+    return now <= accessUntil;
   })();
 
   const isTrialActive = (() => {
