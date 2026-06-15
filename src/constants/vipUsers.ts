@@ -12,7 +12,7 @@ export const VIP_EMAILS = [
   'eriveltonery@hotmail.com',
   'marcelorazeira@gmail.com',
   'mernomarcelo@gmail.com',
-  // 'rafaelrazeira@hotmail.com', // temporariamente removido para teste de checkout
+  'rafaelrazeira@hotmail.com',
 ];
 
 /**
