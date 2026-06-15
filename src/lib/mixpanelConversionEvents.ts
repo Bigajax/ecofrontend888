@@ -39,7 +39,7 @@ interface SubscriptionPaidProperties {
   transaction_amount: number;
   provider: 'mercadopago';
   user_id?: string;
-  source: 'frontend_callback';
+  source: 'frontend_callback' | 'sono_inline_checkout';
 }
 
 interface PaymentFailedProperties {

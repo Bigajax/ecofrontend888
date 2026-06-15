@@ -20,7 +20,8 @@ import { GuestSonoPlayer } from '@/components/sono-guest/GuestSonoPlayer';
 import { LS_KEYS } from '@/components/sono-guest/types';
 import type { SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal';
 import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
-import { SonoGuestPostFlow } from '@/components/sono/SonoGuestPostFlow';
+import { SonoInlineCheckout } from '@/components/sono/SonoInlineCheckout';
+import type { SonoCheckoutStep } from '@/components/sono/useSonoCheckoutState';
 import { SleepProtocolOfferCard } from '@/components/sono/SleepProtocolOfferCard';
 
 // ── Design tokens — sleep palette ─────────────────────────────────────────────
@@ -86,11 +87,24 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   const { hasAccess: hasSonoEntitlement } = useSonoEntitlement();
   // Protocolo Sono agora é premium. CTA → trial; entitlement legado mantém acesso (grandfather).
   const checkoutLoading = false;
-  const openCheckout = (opts?: { origin?: string }) => {
+
+  // Checkout inline do funil guest (modelo C): em vez de pular pro /assinar azul,
+  // abrimos a oferta + cadastro + cartão dentro do tema escuro do sono. `null` =
+  // fechado; um passo = abrir nele. Fora do guest (/app/meditacoes-sono) mantém o
+  // /assinar. `justSubscribed` destrava as noites na hora (unlock otimista), antes
+  // do webhook refletir no entitlement.
+  const [checkoutEntry, setCheckoutEntry] = useState<SonoCheckoutStep | null>(null);
+  const [justSubscribed, setJustSubscribed] = useState(false);
+  const openCheckout = useCallback((opts?: { origin?: string }) => {
     void opts;
-    navigate('/assinar?step=plan&plan=annual&from=sono_trial');
-  };
-  const isPaid = isVipUser || isPremiumUser || isTrialActive || hasSonoEntitlement;
+    if (mode === 'guest') {
+      setCheckoutEntry('offer');
+      return;
+    }
+    navigate('/assinar?step=plan&plan=monthly&from=sono_trial');
+  }, [mode, navigate]);
+  const isPaid =
+    isVipUser || isPremiumUser || isTrialActive || hasSonoEntitlement || justSubscribed;
   const uid = user?.id || 'guest';
 
   // ── Mode: explicit via prop ──────────────────────────────────
@@ -148,7 +162,6 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
 
   const [showCompletion, setShowCompletion] = useState(false);
   const [showOfferModal, setShowOfferModal] = useState(false);
-  const [showPostFlow, setShowPostFlow] = useState(false);
   const [showStartNightPrompt, setShowStartNightPrompt] = useState(false);
   const [offerVariant, setOfferVariant] = useState<SonoOfferVariant>('locked_night');
   const [guestPlayback, setGuestPlayback] = useState<{ startTime: number } | null>(null);
@@ -174,7 +187,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
         if (isGuestSono && nightNum === 1) {
           const offerKey = `eco.sono.offer_modal_shown.${guestId}`;
           if (!localStorage.getItem(offerKey)) {
-            setShowPostFlow(true);
+            setCheckoutEntry('reflection');
             localStorage.setItem(offerKey, 'true');
             mixpanel.track('Funil Protocolo · Experiência concluída', { night_id: 'night_1', source, guest_id: guestId, product_key: 'protocolo_sono_7_noites' });
             trackSonoGuestNight1Completed({ source: source || 'sono_paid_traffic', guestId });
@@ -236,7 +249,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     markGuestNight1Completed();
     setCompletedNights(prev => new Set([...prev, 1]));
     setGuestPlayback(null);
-    setShowPostFlow(true);
+    setCheckoutEntry('reflection');
     localStorage.setItem(`eco.sono.offer_modal_shown.${guestId}`, 'true');
     trackSonoGuestNight1Completed({ source: source || 'sono_paid_traffic', guestId });
     mixpanel.track('Funil Protocolo · Experiência concluída', {
@@ -1015,21 +1028,27 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
         guestId={guestId}
         source={source || 'sono_paid_traffic'}
         onClose={() => setShowOfferModal(false)}
-        onCheckout={() => openCheckout({ origin: 'sono_guest_locked_night' })}
+        onCheckout={() => {
+          setShowOfferModal(false);
+          openCheckout({ origin: 'sono_guest_locked_night' });
+        }}
         checkoutLoading={checkoutLoading}
         startWithQuiz={false}
       />
 
-      {/* Full-screen post-experience flow after completing Night 1 */}
-      <AnimatePresence>
-        {showPostFlow && (
-          <SonoGuestPostFlow
-            onCheckout={() => openCheckout({ origin: 'sono_guest_final_offer' })}
-            checkoutLoading={checkoutLoading}
-            onDismiss={() => setShowPostFlow(false)}
-          />
-        )}
-      </AnimatePresence>
+      {/* Checkout inline do funil guest (modelo C): oferta suave + cadastro +
+          cartão no tema do sono. Sempre montado no guest para que o estado
+          persistido (?checkout=) sobreviva ao remount pós-cadastro. */}
+      {isGuestSono && (
+        <SonoInlineCheckout
+          openAt={checkoutEntry}
+          onUnlocked={() => {
+            setJustSubscribed(true);
+            setCheckoutEntry(null);
+          }}
+          onDismiss={() => setCheckoutEntry(null)}
+        />
+      )}
     </MotionConfig>
   );
 }
