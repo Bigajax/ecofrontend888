@@ -4,7 +4,7 @@ import {
   Play, Check, Lock, ArrowLeft,
   Moon, Wind, TrendingUp, Loader2,
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import HomeHeader from '@/components/home/HomeHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
@@ -319,6 +319,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   // ── Completion Screen ──────────────────────────────────────────
   if (showCompletion) {
     return (
+      <MotionConfig reducedMotion="user">
       <div
         className="font-primary flex flex-col items-center justify-center px-6 text-center"
         style={{
@@ -369,12 +370,13 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
           </button>
         </motion.div>
       </div>
+      </MotionConfig>
     );
   }
 
   // ── Main Page ──────────────────────────────────────────────────
   return (
-    <>
+    <MotionConfig reducedMotion="user">
       {guestPlayback ? (
         <GuestSonoPlayer
           startTime={guestPlayback.startTime}
@@ -414,10 +416,13 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
             </div>
           )}
 
-          {/* Background image */}
-          <div
+          {/* Background image — slow breathing drift */}
+          <motion.div
             className="absolute inset-0 bg-cover"
-            style={{ backgroundImage: 'url("/images/meditacoes-sono-hero.webp")', backgroundPosition: 'center 30%', transform: 'scale(1.06)' }}
+            style={{ backgroundImage: 'url("/images/meditacoes-sono-hero.webp")', backgroundPosition: 'center 30%' }}
+            initial={{ scale: 1.06 }}
+            animate={{ scale: [1.06, 1.12, 1.06] }}
+            transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
           />
           {/* Vignette — deeper at bottom, lighter at top so image breathes */}
           <div
@@ -488,8 +493,10 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               transition={{ duration: 0.55, delay: 0.3 }}
               className="mt-5 flex items-center gap-2.5"
             >
-              <span style={{ color: '#FBBF24', fontSize: '14px', letterSpacing: '2px' }}>★★★★★</span>
-              <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.34)' }}>12.400+ pessoas dormindo melhor</span>
+              <span style={{ color: T.amberLight, fontSize: '14px', letterSpacing: '2px' }}>★★★★★</span>
+              <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                <strong style={{ color: 'rgba(255,255,255,0.82)', fontWeight: 700 }}>4,9</strong> · 846 pessoas dormindo melhor
+              </span>
             </motion.div>
 
             {/* Progress badge — paid users with progress */}
@@ -543,18 +550,6 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               Conhecer as próximas noites
             </motion.button>
 
-            {/* Subtext */}
-            {!isPaid && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-                className="mt-3 text-[11px]"
-                style={{ color: 'rgba(255,255,255,0.24)' }}
-              >
-                Sem cadastro · Sem cartão · Acesso imediato
-              </motion.p>
-            )}
           </div>
         </section>
 
@@ -685,11 +680,15 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               { icon: Moon,        text: 'Sua respiração desacelera — sem você tentar. Seu peito afrouxa. Os pensamentos perdem força.', color: T.steelSolid },
               { icon: Wind,        text: 'Você para de calcular quantas horas de sono ainda dá pra pegar. Sua mente solta.',             color: T.steelSolid },
               { icon: TrendingUp,  text: 'Cada noite aprofunda mais. No 7º dia, seu corpo já sabe o que fazer — sem o áudio.',          color: '#34D399' },
-            ].map(({ icon: Icon, text, color }, i) => (
+            ].map(({ icon: Icon, text, color }, i) => {
+              const isPayoff = color === '#34D399';
+              return (
               <motion.div
                 key={i}
                 className="flex items-start gap-4 rounded-2xl px-4 py-4"
-                style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.06)' }}
+                style={isPayoff
+                  ? { background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.24)', boxShadow: '0 6px 28px rgba(52,211,153,0.10)' }
+                  : { background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.06)' }}
                 initial={{ opacity: 0, x: -10 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: '-20px' }}
@@ -701,9 +700,10 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                 >
                   <Icon className="h-4 w-4" style={{ color }} />
                 </div>
-                <p className="text-[13px] leading-relaxed pt-0.5" style={{ color: 'rgba(255,255,255,0.46)' }}>{text}</p>
+                <p className="text-[13px] leading-relaxed pt-0.5" style={{ color: isPayoff ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.46)' }}>{text}</p>
               </motion.div>
-            ))}
+              );
+            })}
           </motion.div>
         </section>
 
@@ -769,7 +769,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                         loading="lazy"
                         decoding="async"
                         className="absolute inset-0 w-full h-full object-cover"
-                        style={isPaid ? undefined : { filter: 'brightness(0.25) saturate(0.40)' }}
+                        style={isPaid ? undefined : { filter: 'brightness(0.52) saturate(0.7) blur(2px)', transform: 'scale(1.06)' }}
                       />
                     ) : (
                       <div className="absolute inset-0" style={{ background: night.gradient, opacity: isPaid ? 1 : 0.30 }} />
@@ -868,7 +868,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                 }}
               />
 
-              <p className="text-[11px] uppercase tracking-[0.2em] font-bold mb-4" style={{ color: 'rgba(251,191,36,0.75)' }}>
+              <p className="text-[11px] uppercase tracking-[0.2em] font-bold mb-4" style={{ color: 'rgba(212,168,71,0.75)' }}>
                 Protocolo Completo — 7 Noites
               </p>
               <div className="flex items-baseline justify-center gap-2.5 mb-1">
@@ -878,8 +878,8 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
 
               {isGuestSono ? (
                 <div className="flex items-center justify-center gap-1.5 mb-6">
-                  <span style={{ color: '#FBBF24', fontSize: '12px' }}>⏱</span>
-                  <span className="text-[12px]" style={{ color: 'rgba(251,191,36,0.65)' }}>
+                  <span style={{ color: T.amberLight, fontSize: '12px' }}>⏱</span>
+                  <span className="text-[12px]" style={{ color: 'rgba(212,168,71,0.65)' }}>
                     Condição disponível por{' '}
                     <span className="font-mono font-bold">{formatCountdown(timeLeft)}</span>
                   </span>
@@ -887,7 +887,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               ) : (
                 <p
                   className="text-[12px] italic mb-6"
-                  style={{ color: 'rgba(251,191,36,0.65)' }}
+                  style={{ color: 'rgba(212,168,71,0.65)' }}
                 >
                   Inclui o Ecotopia completo: Eco IA, meditações e mais.
                 </p>
@@ -1030,6 +1030,6 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
           />
         )}
       </AnimatePresence>
-    </>
+    </MotionConfig>
   );
 }
