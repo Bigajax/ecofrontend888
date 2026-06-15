@@ -59,6 +59,32 @@ describe("useSonoHeroVariant", () => {
     expect(result.current.variant).toBe("durma_rapido");
   });
 
+  it("?hero=mente_nao_desliga → variante + persiste no sessionStorage", async () => {
+    window.history.replaceState({}, "", "/sono?hero=mente_nao_desliga");
+    const useSonoHeroVariant = await loadHook();
+    const { result } = renderHook(() => useSonoHeroVariant());
+
+    expect(result.current.variant).toBe("mente_nao_desliga");
+    expect(sessionStorage.getItem(STORAGE_KEY)).toBe("mente_nao_desliga");
+    expect(registerSonoHeroVariant).toHaveBeenCalledWith("mente_nao_desliga");
+  });
+
+  it("utm_term numérico do FB (ID do adset) → default, mas ?hero= sobrepõe", async () => {
+    // Reproduz o bug real: o template de UTM do FB põe o ID do adset no utm_term.
+    window.history.replaceState({}, "", "/sono?utm_term=120242534788860358");
+    let useSonoHeroVariant = await loadHook();
+    let { result } = renderHook(() => useSonoHeroVariant());
+    expect(result.current.variant).toBe("durma_rapido");
+
+    // Com o param dedicado, a variante entra mesmo com o utm_term numérico junto.
+    vi.resetModules();
+    sessionStorage.clear();
+    window.history.replaceState({}, "", "/sono?utm_term=120242534788860358&hero=mente_nao_desliga");
+    useSonoHeroVariant = await loadHook();
+    ({ result } = renderHook(() => useSonoHeroVariant()));
+    expect(result.current.variant).toBe("mente_nao_desliga");
+  });
+
   it("storage da chegada mantém a variante quando a URL não tem utm", async () => {
     sessionStorage.setItem(STORAGE_KEY, "mente_nao_desliga");
     const useSonoHeroVariant = await loadHook();

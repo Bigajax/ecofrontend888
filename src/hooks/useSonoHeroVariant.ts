@@ -2,15 +2,21 @@ import { useEffect, useMemo } from 'react';
 import { trackHeadlineExibida, registerSonoHeroVariant } from '@/lib/mixpanelAssinarFunnel';
 
 /**
- * Variante do hero da landing /sono, roteada por `utm_term`.
+ * Variante do hero da landing /sono, roteada por `?hero=`.
  *
  * Motivo: o DEFAULT volta a ser a promessa "Durma mais rápido em apenas 7
  * noites" pra todo o tráfego direto/orgânico. O diagnóstico "você não tem
  * insônia. tem uma mente que não desliga." (que os anúncios em vídeo abrem) vira
- * variante recebida só via `?utm_term=mente_nao_desliga` — continuidade da
- * narrativa do vídeo, sem contaminar o tráfego frio. A disputa é decidida pelo
+ * variante recebida via `?hero=mente_nao_desliga` — continuidade da narrativa do
+ * vídeo, sem contaminar o tráfego frio. A disputa é decidida pelo
  * `Funil Sono · Headline exibida` (breakdown por `variant` / super property
  * `sono_hero_variant`).
+ *
+ * Por que NÃO `utm_term`: o template de UTM dos anúncios do FB preenche
+ * `utm_term` com o ID numérico do adset (ex.: `120242534788860358`), que nunca
+ * casa com a chave da variante — então tudo caía no default `durma_rapido`. O
+ * `?hero=` é um param dedicado, fora da taxonomia UTM, que o FB não sobrescreve.
+ * `utm_term` continua aceito como fallback pra qualquer link antigo.
  *
  * O h1 é montado como: [h1Line1 em bloco] + [h1Pre <pílula>h1Mark</pílula> h1Pos].
  */
@@ -70,12 +76,15 @@ let headlineTracked = false;
 
 function resolveVariant(): SonoHeroVariant {
   try {
-    const fromUrl = new URLSearchParams(window.location.search).get('utm_term');
+    const params = new URLSearchParams(window.location.search);
+    // `?hero=` tem prioridade (param dedicado). `utm_term` é fallback legado —
+    // nos anúncios novos ele vem como ID numérico do adset e nunca casa aqui.
+    const fromUrl = params.get('hero') || params.get('utm_term');
     if (fromUrl && fromUrl in VARIANTS) {
       sessionStorage.setItem(STORAGE_KEY, fromUrl);
       return fromUrl as SonoHeroVariant;
     }
-    // Backstop: o utm_term pode se perder numa navegação interna; mantém a
+    // Backstop: o param pode se perder numa navegação interna; mantém a
     // variante da chegada durante a sessão (mesmo padrão do eco.assinar.from).
     const stored = sessionStorage.getItem(STORAGE_KEY);
     if (stored && stored in VARIANTS) return stored as SonoHeroVariant;
