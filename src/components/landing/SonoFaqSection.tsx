@@ -24,8 +24,8 @@ const FAQ = [
     a: 'Não. O protocolo é áudio guiado. A voz conduz, o som ancora. Você só precisa estar deitado. Se a mente fugir, ela volta sozinha quando ouve a voz.',
   },
   {
-    q: 'Funciona se eu já tomo remédio pra dormir?',
-    a: 'Sim. O protocolo trabalha o sistema nervoso, não substitui medicação. Muitas pessoas usam junto e relatam que o efeito do remédio fica mais limpo.',
+    q: 'É sem remédio mesmo? E se eu já tomo algo pra dormir?',
+    a: 'É um caminho sem remédio: a prática não usa nenhum fármaco, só trabalha o sistema nervoso pra sair do estado de alerta. Se você já toma medicação, não pare nada por conta própria. Converse com seu médico. Muita gente procura o protocolo justamente pra dormir sem depender de pílula.',
   },
   {
     q: 'Quanto tempo preciso por noite?',

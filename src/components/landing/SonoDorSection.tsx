@@ -67,6 +67,10 @@ export default function SonoDorSection() {
               Você olha o relógio. Já é 1h. Pega o celular “só um minuto”. Quando
               percebe, está mais alerta do que antes. E o sono, mais longe.
             </p>
+            <p className="lp-sono-dor-scene scroll-reveal stagger-1">
+              Talvez você já tenha tentado o comprimido, a melatonina, o chá.
+              Resolve uma noite, mas você não quer depender disso pra dormir.
+            </p>
 
             <ul className="lp-sono-dor-list scroll-reveal stagger-2">
               {RECOGNITION.map(({ text, sticker }) => (

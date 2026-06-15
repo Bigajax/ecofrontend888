@@ -426,7 +426,7 @@ export default function EcotopiaSonoPage() {
         ariaLabel="Resultados da Ecotopia"
         className="lp-method-marquee--starry"
         repeat={4}
-        terms={['4,8★ na App Store', '+1.800 pessoas dormem com o protocolo', 'Sessões de 5 a 10 min', 'Feito para desacelerar a mente']}
+        terms={['4,9★ na App Store', '846 pessoas dormem com o protocolo', 'Sessões de 5 a 10 min', 'Feito para desacelerar a mente']}
       />
 
       {/* ─── Dor · espelha a cena noturna (reconhecimento) ─── */}
