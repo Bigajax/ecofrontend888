@@ -29,15 +29,16 @@ beforeEach(() => {
 });
 
 describe("useSonoHeroVariant", () => {
-  it("sem utm e storage vazio → durma_rapido (default) + tracking", async () => {
+  it("sem param e storage vazio → sem_remedio (default) + tracking", async () => {
     const useSonoHeroVariant = await loadHook();
     const { result } = renderHook(() => useSonoHeroVariant());
 
-    expect(result.current.variant).toBe("durma_rapido");
+    expect(result.current.variant).toBe("sem_remedio");
+    expect(result.current.h1Mark).toBe("sem remédio");
     expect(result.current.cta).toBe("Começar meus 7 dias grátis");
     expect(result.current.microcopyPrefix).toBe("Sem cobrança hoje · ");
-    expect(registerSonoHeroVariant).toHaveBeenCalledWith("durma_rapido");
-    expect(trackHeadlineExibida).toHaveBeenCalledWith({ variant: "durma_rapido" });
+    expect(registerSonoHeroVariant).toHaveBeenCalledWith("sem_remedio");
+    expect(trackHeadlineExibida).toHaveBeenCalledWith({ variant: "sem_remedio" });
   });
 
   it("?utm_term=mente_nao_desliga → variante + persiste no sessionStorage", async () => {
@@ -56,7 +57,7 @@ describe("useSonoHeroVariant", () => {
     const useSonoHeroVariant = await loadHook();
     const { result } = renderHook(() => useSonoHeroVariant());
 
-    expect(result.current.variant).toBe("durma_rapido");
+    expect(result.current.variant).toBe("sem_remedio");
   });
 
   it("?hero=mente_nao_desliga → variante + persiste no sessionStorage", async () => {
@@ -69,14 +70,14 @@ describe("useSonoHeroVariant", () => {
     expect(registerSonoHeroVariant).toHaveBeenCalledWith("mente_nao_desliga");
   });
 
-  it("?hero=acorda_cansado → variante 'descansa' + CTA próprio", async () => {
+  it("?hero=acorda_cansado → H1 pergunta + CTA próprio", async () => {
     window.history.replaceState({}, "", "/sono?hero=acorda_cansado");
     const useSonoHeroVariant = await loadHook();
     const { result } = renderHook(() => useSonoHeroVariant());
 
     expect(result.current.variant).toBe("acorda_cansado");
-    expect(result.current.h1Line1).toBe("Você dorme.");
-    expect(result.current.h1Mark).toBe("descansa");
+    expect(result.current.h1Line1).toBe("Dormiu a noite toda.");
+    expect(result.current.h1Mark).toBe("destruído");
     expect(result.current.cta).toBe("Quero acordar descansado");
     expect(registerSonoHeroVariant).toHaveBeenCalledWith("acorda_cansado");
   });
@@ -86,7 +87,7 @@ describe("useSonoHeroVariant", () => {
     window.history.replaceState({}, "", "/sono?utm_term=120242534788860358");
     let useSonoHeroVariant = await loadHook();
     let { result } = renderHook(() => useSonoHeroVariant());
-    expect(result.current.variant).toBe("durma_rapido");
+    expect(result.current.variant).toBe("sem_remedio");
 
     // Com o param dedicado, a variante entra mesmo com o utm_term numérico junto.
     vi.resetModules();
@@ -106,7 +107,7 @@ describe("useSonoHeroVariant", () => {
   });
 
   it("utm explícito sobrescreve o storage existente", async () => {
-    sessionStorage.setItem(STORAGE_KEY, "durma_rapido");
+    sessionStorage.setItem(STORAGE_KEY, "sem_remedio");
     window.history.replaceState({}, "", "/sono?utm_term=mente_nao_desliga");
     const useSonoHeroVariant = await loadHook();
     const { result } = renderHook(() => useSonoHeroVariant());

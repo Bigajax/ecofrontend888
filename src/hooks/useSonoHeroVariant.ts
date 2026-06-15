@@ -4,17 +4,17 @@ import { trackHeadlineExibida, registerSonoHeroVariant } from '@/lib/mixpanelAss
 /**
  * Variante do hero da landing /sono, roteada por `?hero=`.
  *
- * Motivo: o DEFAULT volta a ser a promessa "Durma mais rápido em apenas 7
- * noites" pra todo o tráfego direto/orgânico. O diagnóstico "você não tem
- * insônia. tem uma mente que não desliga." (que os anúncios em vídeo abrem) vira
- * variante recebida via `?hero=mente_nao_desliga` — continuidade da narrativa do
- * vídeo, sem contaminar o tráfego frio. A disputa é decidida pelo
- * `Funil Sono · Headline exibida` (breakdown por `variant` / super property
+ * Motivo: o DEFAULT é "Dormir bem sem remédio" (`sem_remedio`) pra todo o
+ * tráfego direto/orgânico. As variantes de anúncio chegam via `?hero=<chave>`:
+ * `mente_nao_desliga` ("você não tem insônia, tem uma mente que não desliga") e
+ * `acorda_cansado` ("dormiu a noite toda e acordou destruído?") — continuidade
+ * da narrativa do criativo, sem contaminar o tráfego frio. A disputa é decidida
+ * pelo `Funil Sono · Headline exibida` (breakdown por `variant` / super property
  * `sono_hero_variant`).
  *
  * Por que NÃO `utm_term`: o template de UTM dos anúncios do FB preenche
  * `utm_term` com o ID numérico do adset (ex.: `120242534788860358`), que nunca
- * casa com a chave da variante — então tudo caía no default `durma_rapido`. O
+ * casa com a chave da variante, então tudo caía no default. O
  * `?hero=` é um param dedicado, fora da taxonomia UTM, que o FB não sobrescreve.
  * `utm_term` continua aceito como fallback pra qualquer link antigo.
  *
@@ -37,10 +37,10 @@ export interface SonoHeroCopy {
   microcopyPrefix: string;
 }
 
-export type SonoHeroVariant = 'durma_rapido' | 'mente_nao_desliga' | 'acorda_cansado';
+export type SonoHeroVariant = 'sem_remedio' | 'mente_nao_desliga' | 'acorda_cansado';
 
-// Hero exibido pra tráfego direto/orgânico e qualquer utm_term não mapeado.
-const DEFAULT_VARIANT: SonoHeroVariant = 'durma_rapido';
+// Hero exibido pra tráfego direto/orgânico e qualquer ?hero=/utm_term não mapeado.
+const DEFAULT_VARIANT: SonoHeroVariant = 'sem_remedio';
 
 const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
   // Variante dos vídeos: abre com o diagnóstico e usa o CTA "noite 1" + microcopy
@@ -51,7 +51,7 @@ const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
     h1Pre: 'Tem uma mente que ',
     h1Mark: 'não desliga',
     h1Pos: '.',
-    lead: 'O Protocolo do Sono guia você por 7 noites pra tirar o corpo do modo alerta. 5 minutos por noite, nada mais.',
+    lead: 'Como 846 pessoas já fizeram: 7 noites, 5 minutos cada, pra tirar o corpo do modo alerta.',
     cta: 'Iniciar a noite 1 · grátis',
     microcopyPrefix: '7 dias grátis · R$ 0 hoje · ',
   },
@@ -60,20 +60,24 @@ const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
   // trial da variante de vídeo (tráfego pago).
   acorda_cansado: {
     variant: 'acorda_cansado',
-    h1Line1: 'Você dorme.',
-    h1Pre: 'Mas não ',
-    h1Mark: 'descansa',
-    h1Pos: '.',
-    lead: '8 horas na cama e você acorda como se não tivesse dormido. O Protocolo do Sono tira o corpo do modo alerta pra noite virar descanso de verdade. 5 minutos por noite.',
+    h1Line1: 'Dormiu a noite toda.',
+    h1Pre: 'E acordou ',
+    h1Mark: 'destruído',
+    h1Pos: '?',
+    lead: '8 horas na cama e você acorda como se não tivesse dormido. 846 pessoas reaprenderam a descansar de verdade: 7 noites, 5 minutos cada.',
     cta: 'Quero acordar descansado',
     microcopyPrefix: '7 dias grátis · R$ 0 hoje · ',
   },
-  // Default (promessa): CTA/microcopy próprios, distintos da variante.
-  durma_rapido: {
-    variant: 'durma_rapido',
-    h1Pre: 'Durma mais rápido em ',
-    h1Mark: 'apenas 7 noites',
-    lead: 'Criado para quem está cansado, mas não consegue desligar a mente.',
+  // Default (tráfego frio): mata a objeção nº 1 do público (remédio/dependência).
+  // Era 'durma_rapido' ("Durma mais rápido em apenas 7 noites") — renomeado p/
+  // `sem_remedio` pra o Mixpanel rotular a headline nova certa (histórico
+  // 'durma_rapido' fica separado, que é o correto).
+  sem_remedio: {
+    variant: 'sem_remedio',
+    h1Pre: 'Dormir bem ',
+    h1Mark: 'sem remédio',
+    h1Pos: '.',
+    lead: '846 pessoas reensinaram o corpo a desligar sozinho. 7 noites, 5 minutos cada, sem tarja preta nem dependência.',
     cta: 'Começar meus 7 dias grátis',
     microcopyPrefix: 'Sem cobrança hoje · ',
   },
