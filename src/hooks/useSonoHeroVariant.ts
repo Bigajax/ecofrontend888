@@ -37,7 +37,7 @@ export interface SonoHeroCopy {
   microcopyPrefix: string;
 }
 
-export type SonoHeroVariant = 'durma_rapido' | 'mente_nao_desliga';
+export type SonoHeroVariant = 'durma_rapido' | 'mente_nao_desliga' | 'acorda_cansado';
 
 // Hero exibido pra tráfego direto/orgânico e qualquer utm_term não mapeado.
 const DEFAULT_VARIANT: SonoHeroVariant = 'durma_rapido';
@@ -53,6 +53,19 @@ const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
     h1Pos: '.',
     lead: 'O Protocolo do Sono guia você por 7 noites pra tirar o corpo do modo alerta. 5 minutos por noite, nada mais.',
     cta: 'Iniciar a noite 1 · grátis',
+    microcopyPrefix: '7 dias grátis · R$ 0 hoje · ',
+  },
+  // Variante "acorda cansado": ataca a QUALIDADE do sono (dorme mas não
+  // descansa), dor distinta das outras duas. Mesmo padrão de CTA/microcopy de
+  // trial da variante de vídeo (tráfego pago).
+  acorda_cansado: {
+    variant: 'acorda_cansado',
+    h1Line1: 'Você dorme.',
+    h1Pre: 'Mas não ',
+    h1Mark: 'descansa',
+    h1Pos: '.',
+    lead: '8 horas na cama e você acorda como se não tivesse dormido. O Protocolo do Sono tira o corpo do modo alerta pra noite virar descanso de verdade. 5 minutos por noite.',
+    cta: 'Quero acordar descansado',
     microcopyPrefix: '7 dias grátis · R$ 0 hoje · ',
   },
   // Default (promessa): CTA/microcopy próprios, distintos da variante.

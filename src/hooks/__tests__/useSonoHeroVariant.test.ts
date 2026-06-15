@@ -69,6 +69,18 @@ describe("useSonoHeroVariant", () => {
     expect(registerSonoHeroVariant).toHaveBeenCalledWith("mente_nao_desliga");
   });
 
+  it("?hero=acorda_cansado → variante 'descansa' + CTA próprio", async () => {
+    window.history.replaceState({}, "", "/sono?hero=acorda_cansado");
+    const useSonoHeroVariant = await loadHook();
+    const { result } = renderHook(() => useSonoHeroVariant());
+
+    expect(result.current.variant).toBe("acorda_cansado");
+    expect(result.current.h1Line1).toBe("Você dorme.");
+    expect(result.current.h1Mark).toBe("descansa");
+    expect(result.current.cta).toBe("Quero acordar descansado");
+    expect(registerSonoHeroVariant).toHaveBeenCalledWith("acorda_cansado");
+  });
+
   it("utm_term numérico do FB (ID do adset) → default, mas ?hero= sobrepõe", async () => {
     // Reproduz o bug real: o template de UTM do FB põe o ID do adset no utm_term.
     window.history.replaceState({}, "", "/sono?utm_term=120242534788860358");
