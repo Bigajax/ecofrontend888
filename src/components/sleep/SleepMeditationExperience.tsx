@@ -21,6 +21,7 @@ import { LS_KEYS } from '@/components/sono-guest/types';
 import type { SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal';
 import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
 import { SonoInlineCheckout } from '@/components/sono/SonoInlineCheckout';
+import { SonoExperienceHero } from '@/components/sono/SonoExperienceHero';
 import type { SonoCheckoutStep } from '@/components/sono/useSonoCheckoutState';
 import { SleepProtocolOfferCard } from '@/components/sono/SleepProtocolOfferCard';
 
@@ -410,8 +411,12 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
         <main className={isGuestSono ? 'pb-24' : 'page-with-nav pb-24'}>
 
         {/* ══════════════════════════════════════════════════════════
-            HERO
+            HERO — guest (/sono/experiencia) usa o "convite" puro;
+            logado (/app/meditacoes-sono) mantém o hero de protocolo.
             ══════════════════════════════════════════════════════════ */}
+        {isGuestSono ? (
+          <SonoExperienceHero onListen={handleHeroButtonClick} onBack={() => navigate(-1)} />
+        ) : (
         <section
           className="relative flex min-h-[720px] flex-col overflow-hidden sm:min-h-[800px]"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
@@ -565,6 +570,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
 
           </div>
         </section>
+        )}
 
         {/* ══════════════════════════════════════════════════════════
             NIGHT 1 — cinematic full-bleed card

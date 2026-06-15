@@ -37,7 +37,7 @@ export interface SonoHeroCopy {
   microcopyPrefix: string;
 }
 
-export type SonoHeroVariant = 'sem_remedio' | 'mente_nao_desliga' | 'acorda_cansado';
+export type SonoHeroVariant = 'sem_remedio' | 'mente_nao_desliga' | 'acorda_cansado' | 'deite_se';
 
 // Hero exibido pra tráfego direto/orgânico e qualquer ?hero=/utm_term não mapeado.
 const DEFAULT_VARIANT: SonoHeroVariant = 'sem_remedio';
@@ -66,6 +66,20 @@ const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
     h1Pos: '?',
     lead: '8 horas na cama e você acorda como se não tivesse dormido. 846 pessoas reaprenderam a descansar de verdade: 7 noites, 5 a 10 minutos cada.',
     cta: 'Quero acordar descansado',
+    microcopyPrefix: '7 dias grátis · R$ 0 hoje · ',
+  },
+  // Variante "convite/conduz": espelha o hero da experiência (/sono/experiencia)
+  // e o criativo — "Deite-se. O resto a gente conduz." Message match puro do
+  // anúncio até a landing. Tom de entrega (parar de forçar o sono), mas com o
+  // CTA/microcopy de trial que a landing precisa pra converter.
+  deite_se: {
+    variant: 'deite_se',
+    h1Line1: 'Deite-se.',
+    h1Pre: 'O resto a gente ',
+    h1Mark: 'conduz',
+    h1Pos: '.',
+    lead: 'Coloque os fones, apague a luz e aperte play. Em 7 noites de 5 a 10 minutos, seu corpo reaprende a desligar sozinho, sem esforço e sem remédio.',
+    cta: 'Iniciar a noite 1 · grátis',
     microcopyPrefix: '7 dias grátis · R$ 0 hoje · ',
   },
   // Default (tráfego frio): mata a objeção nº 1 do público (remédio/dependência).

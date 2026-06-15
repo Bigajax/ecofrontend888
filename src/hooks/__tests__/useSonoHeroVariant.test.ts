@@ -70,6 +70,20 @@ describe("useSonoHeroVariant", () => {
     expect(registerSonoHeroVariant).toHaveBeenCalledWith("mente_nao_desliga");
   });
 
+  it("?hero=deite_se → convite que espelha a experiência/criativo", async () => {
+    window.history.replaceState({}, "", "/sono?hero=deite_se");
+    const useSonoHeroVariant = await loadHook();
+    const { result } = renderHook(() => useSonoHeroVariant());
+
+    expect(result.current.variant).toBe("deite_se");
+    expect(result.current.h1Line1).toBe("Deite-se.");
+    expect(result.current.h1Mark).toBe("conduz");
+    expect(result.current.cta).toBe("Iniciar a noite 1 · grátis");
+    expect(result.current.microcopyPrefix).toBe("7 dias grátis · R$ 0 hoje · ");
+    expect(sessionStorage.getItem(STORAGE_KEY)).toBe("deite_se");
+    expect(registerSonoHeroVariant).toHaveBeenCalledWith("deite_se");
+  });
+
   it("?hero=acorda_cansado → H1 pergunta + CTA próprio", async () => {
     window.history.replaceState({}, "", "/sono?hero=acorda_cansado");
     const useSonoHeroVariant = await loadHook();
