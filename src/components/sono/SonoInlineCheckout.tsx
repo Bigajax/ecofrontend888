@@ -6,7 +6,12 @@ import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { OFFER, PRICE } from '@/constants/offerCopy';
 import { trackSubscriptionPaid } from '@/lib/mixpanelConversionEvents';
-import { trackAssinaturaPaga } from '@/lib/mixpanelAssinarFunnel';
+import { trackAssinaturaPaga, registerFunilSono } from '@/lib/mixpanelAssinarFunnel';
+import {
+  trackSonoGuestOfferViewed,
+  trackSonoGuestCheckoutClicked,
+  trackSonoGuestOfferDismissed,
+} from '@/lib/mixpanelSonoGuestEvents';
 import { trackWithCAPI } from '@/lib/fbpixel';
 import {
   useSonoCheckoutState,
@@ -98,6 +103,26 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   const [pending, setPending] = useState(false);
   const confirmStartedRef = useRef(false);
   const convertedTrackedRef = useRef(false);
+  const funnelSourceRef = useRef(false);
+  const offerViewedRef = useRef(false);
+
+  // Ao abrir o checkout, registra funnel_source='sono_experiencia' (super
+  // property): os eventos Cadastro/Cartão de mixpanelAssinarFunnel herdam a
+  // atribuição do funil da experiência (no /assinar isso vem do registerFunilSono
+  // de lá; aqui ele não roda).
+  useEffect(() => {
+    if (step === null || funnelSourceRef.current) return;
+    funnelSourceRef.current = true;
+    registerFunilSono('sono_experiencia');
+  }, [step]);
+
+  // "Oferta vista" — dispara quando o passo offer aparece, por qualquer caminho
+  // (reflexão→oferta ou abertura direta via openAt='offer' vinda da landing).
+  useEffect(() => {
+    if (step !== 'offer' || offerViewedRef.current) return;
+    offerViewedRef.current = true;
+    trackSonoGuestOfferViewed();
+  }, [step]);
 
   // Abre no passo solicitado pelo pai quando ainda não há estado restaurado da
   // URL/sessionStorage. Após aberto, a navegação interna assume.
@@ -168,10 +193,12 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
 
   const startCheckout = () => {
     void upsertEvent({ cta_clicked: true });
+    trackSonoGuestCheckoutClicked();
     goTo(user ? 'card' : 'signup');
   };
 
   const handleDismiss = () => {
+    trackSonoGuestOfferDismissed();
     close();
     onDismiss();
   };

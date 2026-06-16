@@ -20,6 +20,14 @@ function trackSonoGuestEvent(eventName: string, props: SonoGuestEventProps = {})
   });
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// Funil ATIVO da experiência (anúncio → desbloqueio). Ver FUNIL_SONO_EXPERIENCIA.md.
+// Caminho: landing convite → /sono/experiencia → GuestSonoPlayer (Noite 1) →
+// SonoInlineCheckout. Os eventos abaixo (Página vista, Noite 1 iniciada/concluída,
+// Áudio NN%, Oferta vista, Checkout clicado, Oferta dispensada, Desbloquear
+// clicado) estão no caminho ativo.
+// ────────────────────────────────────────────────────────────────────────────
+
 export function trackSonoGuestPageViewed(props?: SonoGuestEventProps): void {
   trackSonoGuestEvent('Funil Protocolo · Página vista', props);
 }
@@ -44,10 +52,20 @@ export function trackSonoGuestOfferDismissed(props?: SonoGuestEventProps): void 
   trackSonoGuestEvent('Funil Protocolo · Oferta dispensada', props);
 }
 
+// As funções marcadas @deprecated abaixo pertencem ao fluxo antigo de guest
+// (ProtocolScreen / PlaybackScreen / PostMeditationScreen em
+// src/components/sono-guest/), que NÃO está no caminho ativo da experiência (o
+// player ativo é o GuestSonoPlayer; o pós-Noite 1 é o SonoInlineCheckout). Estão
+// intercaladas com eventos VIVOS (Áudio NN%, Desbloquear clicado), por isso a
+// marcação é por função. Confirmar que as telas estão fora de uso antes de
+// remover. NÃO usar em código novo. Ver FUNIL_SONO_EXPERIENCIA.md.
+
+/** @deprecated fluxo guest antigo (sono-guest screens) — fora do caminho ativo. */
 export function trackGuestPlayerOpened(): void {
   mixpanel.track('Funil Protocolo · Player aberto', { source: SRC });
 }
 
+/** @deprecated fluxo guest antigo (sono-guest screens) — fora do caminho ativo. */
 export function trackGuestPlayStarted(sound: string): void {
   mixpanel.track('Funil Protocolo · Play iniciado', { source: SRC, sound });
 }
@@ -68,22 +86,27 @@ export function trackGuestAudioCompleted(): void {
   mixpanel.track('Funil Protocolo · Áudio concluído', { source: SRC });
 }
 
+/** @deprecated fluxo guest antigo (sono-guest screens) — fora do caminho ativo. */
 export function trackGuestCaptureShown(): void {
   mixpanel.track('Funil Protocolo · Captura exibida', { source: SRC });
 }
 
+/** @deprecated fluxo guest antigo (sono-guest screens) — fora do caminho ativo. */
 export function trackGuestCaptureWhatsapp(): void {
   mixpanel.track('Funil Protocolo · Captura WhatsApp', { source: SRC });
 }
 
+/** @deprecated fluxo guest antigo (sono-guest screens) — fora do caminho ativo. */
 export function trackGuestCaptureEmail(): void {
   mixpanel.track('Funil Protocolo · Captura email', { source: SRC });
 }
 
+/** @deprecated fluxo guest antigo (sono-guest screens) — fora do caminho ativo. */
 export function trackGuestCaptureSkipped(): void {
   mixpanel.track('Funil Protocolo · Captura pulada', { source: SRC });
 }
 
+/** @deprecated fluxo guest antigo (sono-guest screens) — fora do caminho ativo. */
 export function trackGuestProtocolViewed(): void {
   mixpanel.track('Funil Protocolo · Protocolo visto', { source: SRC });
 }
@@ -92,10 +115,12 @@ export function trackGuestUnlockClicked(nightId: string): void {
   mixpanel.track('Funil Protocolo · Desbloquear clicado', { source: SRC, night_id: nightId });
 }
 
+/** @deprecated fluxo guest antigo (sono-guest screens) — fora do caminho ativo. */
 export function trackGuestPurchaseStarted(): void {
   mixpanel.track('Funil Protocolo · Compra iniciada', { source: SRC });
 }
 
+/** @deprecated fluxo guest antigo (sono-guest screens) — fora do caminho ativo. */
 export function trackGuestNotificationOpted(): void {
   mixpanel.track('Funil Protocolo · Notificação aceita', { source: SRC });
 }
