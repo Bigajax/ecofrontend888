@@ -126,14 +126,14 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   useEffect(() => {
     if (step !== 'offer' || offerViewedRef.current) return;
     offerViewedRef.current = true;
-    trackSonoGuestOfferViewed();
+    trackSonoGuestOfferViewed({ source: getSource(), guestId: getGuestId() });
   }, [step]);
 
   // "Convite app exibido" — ponte pro app quando o free autenticado desiste.
   useEffect(() => {
     if (step !== 'app_invite' || appInviteShownRef.current) return;
     appInviteShownRef.current = true;
-    trackSonoGuestAppInviteShown();
+    trackSonoGuestAppInviteShown({ source: getSource(), guestId: getGuestId() });
   }, [step]);
 
   // Abre no passo solicitado pelo pai quando ainda não há estado restaurado da
@@ -211,12 +211,12 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
 
   const startCheckout = () => {
     void upsertEvent({ cta_clicked: true });
-    trackSonoGuestCheckoutClicked();
+    trackSonoGuestCheckoutClicked({ source: getSource(), guestId: getGuestId() });
     goTo(user ? 'card' : 'signup');
   };
 
   const handleDismiss = () => {
-    trackSonoGuestOfferDismissed();
+    trackSonoGuestOfferDismissed({ source: getSource(), guestId: getGuestId() });
     // Free autenticado (criou conta mas não pagou) → ponte leve pro app em vez de
     // só fechar. Guest sem conta → fecha (comportamento original).
     if (user) {
@@ -236,7 +236,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   // "Explorar o app" — leva o free pro app completo; a 2ª conversão acontece lá
   // pelos gates/UpgradeModal existentes.
   const handleExploreApp = () => {
-    trackSonoGuestAppInviteClicked();
+    trackSonoGuestAppInviteClicked({ source: getSource(), guestId: getGuestId() });
     navigate('/app');
   };
 

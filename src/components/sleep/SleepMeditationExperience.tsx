@@ -410,7 +410,11 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
             onExploreApp={
               user && !isPaid
                 ? () => {
-                    trackSonoGuestAppInviteClicked({ context: 'experiencia_atalho' });
+                    trackSonoGuestAppInviteClicked({
+                      source: source || 'sono_paid_traffic',
+                      guestId,
+                      context: 'experiencia_atalho',
+                    });
                     navigate('/app');
                   }
                 : undefined
