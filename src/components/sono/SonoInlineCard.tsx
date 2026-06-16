@@ -127,19 +127,24 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
         </div>
       </div>
 
-      {/* Brick do MP num cartão claro contido (Secure Fields têm visual próprio). */}
-      <div className="min-h-[180px] rounded-2xl bg-white p-4 shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
+      {/* Brick do MP em tema escuro (appearance="dark"), num vidro que integra ao
+          clima do sono em vez do bloco branco. */}
+      <div
+        className="min-h-[180px] rounded-2xl px-3 py-2"
+        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.10)' }}
+      >
         {brickReady ? (
           <MpCardForm
             amount={PRICE.monthly}
             maxInstallments={1}
             payerEmail={payerEmail}
+            appearance="dark"
             onToken={handleToken}
             onReady={handleBrickReady}
             onError={handleBrickError}
           />
         ) : (
-          <div className="flex min-h-[148px] items-center justify-center gap-2 text-[13px] text-[#5A8AAD]">
+          <div className="flex min-h-[148px] items-center justify-center gap-2 text-[13px] text-white/45">
             <Loader2 className="h-4 w-4 animate-spin" />
             Carregando pagamento seguro…
           </div>
