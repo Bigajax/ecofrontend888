@@ -138,9 +138,11 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
           'Meditações, sons e respirações pra adormecer mais rápido.',
           'Lembrete por e-mail 2 dias antes de qualquer cobrança.',
         ].map((text, i) => (
-          <li key={i} className="flex items-start gap-2.5 text-[13.5px] leading-snug text-white/90">
+          <li key={i} className="flex items-start gap-2.5 text-[13.5px] leading-snug">
             <Check className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: '#86EFAC' }} />
-            <span>{text}</span>
+            {/* Cor por style inline (não classe): regra de CSS global engole a cor
+                via className aqui, deixando o texto invisível. Lilás, legível. */}
+            <span style={{ color: '#C4B5FD', WebkitTextFillColor: '#C4B5FD' }}>{text}</span>
           </li>
         ))}
       </ul>
