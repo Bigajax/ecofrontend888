@@ -127,14 +127,18 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
         </div>
       </div>
 
-      {/* O que entra — reforça o valor e a confiança no momento do cartão. */}
-      <ul className="flex flex-col gap-2.5">
+      {/* O que entra — reforça o valor e a confiança no momento do cartão.
+          Num vidro pra destacar do fundo e ficar legível. */}
+      <ul
+        className="flex flex-col gap-3 rounded-2xl px-4 py-4"
+        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)' }}
+      >
         {[
           'As 7 noites do Protocolo do Sono, liberadas agora.',
           'Meditações, sons e respirações pra adormecer mais rápido.',
           'Lembrete por e-mail 2 dias antes de qualquer cobrança.',
         ].map((text, i) => (
-          <li key={i} className="flex items-start gap-2.5 text-[13.5px] leading-snug text-white/75">
+          <li key={i} className="flex items-start gap-2.5 text-[13.5px] leading-snug text-white/90">
             <Check className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: '#86EFAC' }} />
             <span>{text}</span>
           </li>

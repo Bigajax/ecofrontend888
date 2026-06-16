@@ -248,8 +248,10 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   // Overlay fechado — nada a renderizar.
   if (step === null) return null;
 
-  // Fechar disponível só nos passos "frios" — não no meio da confirmação/sucesso.
-  const canClose = step === 'reflection' || step === 'offer' || step === 'signup';
+  // Fechar disponível nos passos "frios" (inclui card: o usuário precisa poder
+  // sair sem ser obrigado a digitar o cartão) — exceto confirmação/sucesso.
+  const canClose =
+    step === 'reflection' || step === 'offer' || step === 'signup' || step === 'card';
   const validation = answer ? VALIDATION[answer] : null;
 
   return (
@@ -520,6 +522,13 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                 className="flex w-full flex-col"
               >
                 <SonoInlineCard payerEmail={user?.email ?? ''} onPaid={handleCardPaid} />
+                <button
+                  onClick={handleDismiss}
+                  className="mx-auto mt-4 text-[12px] transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                >
+                  Agora não
+                </button>
               </motion.div>
             )}
 
