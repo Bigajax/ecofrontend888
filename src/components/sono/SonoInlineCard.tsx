@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { Loader2, ShieldCheck } from 'lucide-react';
 import { MpCardForm } from '@/components/assinar/MpCardForm';
 import { apiUrl } from '@/config/apiBase';
 import { supabase } from '@/lib/supabaseClient';
@@ -42,9 +42,16 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
   const [processing, setProcessing] = useState(false);
   const shownAtRef = useRef<number | null>(null);
 
+  // Monta o brick só depois da animação de entrada do overlay assentar (~400ms).
+  // O brick do MP não tolera ser montado num container que está transformando
+  // (translateY do motion.div) — Secure Fields falham. Placeholder no intervalo.
+  const [brickReady, setBrickReady] = useState(false);
+
   useEffect(() => {
     shownAtRef.current = Date.now();
     trackCartaoVisto({ plan_id: PLAN, amount: PRICE.monthly });
+    const t = setTimeout(() => setBrickReady(true), 480);
+    return () => clearTimeout(t);
   }, []);
 
   // useCallback com identidade estável: o brick do MP (React.memo) não tolera ser
@@ -121,15 +128,22 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
       </div>
 
       {/* Brick do MP num cartão claro contido (Secure Fields têm visual próprio). */}
-      <div className="rounded-2xl bg-white p-4 shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
-        <MpCardForm
-          amount={PRICE.monthly}
-          maxInstallments={1}
-          payerEmail={payerEmail}
-          onToken={handleToken}
-          onReady={handleBrickReady}
-          onError={handleBrickError}
-        />
+      <div className="min-h-[180px] rounded-2xl bg-white p-4 shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
+        {brickReady ? (
+          <MpCardForm
+            amount={PRICE.monthly}
+            maxInstallments={1}
+            payerEmail={payerEmail}
+            onToken={handleToken}
+            onReady={handleBrickReady}
+            onError={handleBrickError}
+          />
+        ) : (
+          <div className="flex min-h-[148px] items-center justify-center gap-2 text-[13px] text-[#5A8AAD]">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Carregando pagamento seguro…
+          </div>
+        )}
       </div>
 
       {processing && (

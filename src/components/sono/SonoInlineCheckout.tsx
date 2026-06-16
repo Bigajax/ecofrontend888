@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Lock, Moon, X } from 'lucide-react';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
@@ -180,6 +180,12 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
       pixelExtra: { plan: 'monthly' },
     });
   }, [step, user?.id]);
+
+  // Identidade ESTÁVEL: passado pro SonoInlineCard → handleToken (useCallback).
+  // Sem isso, um arrow inline aqui muda a cada render, desestabiliza o handleToken
+  // e o MpCardForm (React.memo) recria o brick do MP — Secure Fields falham e o
+  // cartão renderiza em branco. Ver mp-brick-nao-tolera-rerender.
+  const handleCardPaid = useCallback(() => goTo('confirming'), [goTo]);
 
   const selectAnswer = (a: ReflectionAnswer) => {
     setAnswer(a);
@@ -481,7 +487,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="flex w-full flex-col"
               >
-                <SonoInlineCard payerEmail={user?.email ?? ''} onPaid={() => goTo('confirming')} />
+                <SonoInlineCard payerEmail={user?.email ?? ''} onPaid={handleCardPaid} />
               </motion.div>
             )}
 
