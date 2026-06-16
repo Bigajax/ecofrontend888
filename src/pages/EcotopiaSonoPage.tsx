@@ -219,6 +219,20 @@ export default function EcotopiaSonoPage() {
   }, []);
   const heroNight = PROTOCOL_NIGHTS[heroNightIndex];
 
+  // Variante "convite" (deite_se): TODOS os CTAs da landing levam pra experiência
+  // guest (ouvir a Noite 1) em vez do /assinar — a página inteira funila pra
+  // experimentar primeiro, e a venda acontece no checkout inline da experiência.
+  // Nas outras 3 variantes (venda), nada muda: seguem pro /assinar com trial.
+  const isConviteHero = hero.variant === 'deite_se';
+  const sonoCtaTo = (from: string, plan: 'monthly' | 'annual' = 'monthly') =>
+    isConviteHero
+      ? `/sono/experiencia?source=${from}`
+      : `/assinar?step=plan&plan=${plan}&from=${from}`;
+  const sonoCtaClick = (from: string, plan: 'monthly' | 'annual' = 'monthly') => () =>
+    isConviteHero
+      ? trackCtaClicado({ plan, placement: `${from}_experiencia` })
+      : trackTrialCta(plan, from);
+
   return (
     <div className="ecotopia-lp lp-sono">
       <EcotopiaTopbar />
@@ -244,9 +258,9 @@ export default function EcotopiaSonoPage() {
             </p>
 
             <Link
-              to="/assinar?step=plan&plan=monthly&from=sono_hero"
+              to={sonoCtaTo('sono_hero')}
               className="lp-sono-hero-cta-primary scroll-reveal stagger-2"
-              onClick={() => trackTrialCta('monthly', 'sono_hero')}
+              onClick={sonoCtaClick('sono_hero')}
             >
               {hero.cta}
             </Link>
@@ -267,10 +281,16 @@ export default function EcotopiaSonoPage() {
                 <path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6l7-3z" />
                 <path d="M9 12l2 2 4-4" />
               </svg>
-              {hero.microcopyPrefix}
-              <Link to="/cancelar-assinatura" className="lp-sono-hero-microcopy-link">
-                cancele quando quiser
-              </Link>
+              {isConviteHero ? (
+                'Sua primeira noite é grátis · sem cadastro'
+              ) : (
+                <>
+                  {hero.microcopyPrefix}
+                  <Link to="/cancelar-assinatura" className="lp-sono-hero-microcopy-link">
+                    cancele quando quiser
+                  </Link>
+                </>
+              )}
             </p>
           </div>
 
@@ -449,9 +469,9 @@ export default function EcotopiaSonoPage() {
           </p>
 
           <Link
-            to={`/assinar?step=plan&plan=monthly&from=sono_protocolo_${NIGHT_ONE.id}`}
+            to={sonoCtaTo(`sono_protocolo_${NIGHT_ONE.id}`)}
             className="lp-sono-nights-featured scroll-reveal"
-            onClick={() => trackTrialCta('monthly', `sono_protocolo_${NIGHT_ONE.id}`)}
+            onClick={sonoCtaClick(`sono_protocolo_${NIGHT_ONE.id}`)}
           >
             <span className="lp-sono-nights-featured-media">
               <img src={NIGHT_ONE.imageUrl} alt="" loading="lazy" decoding="async" />
@@ -471,9 +491,9 @@ export default function EcotopiaSonoPage() {
             {REST_NIGHTS.map((n, i) => (
               <Link
                 key={n.id}
-                to={`/assinar?step=plan&plan=monthly&from=sono_protocolo_${n.id}`}
+                to={sonoCtaTo(`sono_protocolo_${n.id}`)}
                 className={`lp-sono-nights-row scroll-reveal stagger-${(i % 5) + 1}`}
-                onClick={() => trackTrialCta('monthly', `sono_protocolo_${n.id}`)}
+                onClick={sonoCtaClick(`sono_protocolo_${n.id}`)}
               >
                 <span className="lp-sono-nights-row-thumb">
                   <img src={n.imageUrl} alt="" loading="lazy" decoding="async" />
@@ -498,9 +518,9 @@ export default function EcotopiaSonoPage() {
             {REST_NIGHTS.map((n, i) => (
               <Link
                 key={n.id}
-                to={`/assinar?step=plan&plan=monthly&from=sono_protocolo_${n.id}`}
+                to={sonoCtaTo(`sono_protocolo_${n.id}`)}
                 className={`lp-sono-nights-card scroll-reveal stagger-${(i % 5) + 1}`}
-                onClick={() => trackTrialCta('monthly', `sono_protocolo_${n.id}`)}
+                onClick={sonoCtaClick(`sono_protocolo_${n.id}`)}
               >
                 <span className="lp-sono-nights-card-media">
                   <img src={n.imageUrl} alt="" loading="lazy" decoding="async" />
@@ -739,9 +759,9 @@ export default function EcotopiaSonoPage() {
             e tirar a mente do modo alerta antes de dormir.
           </p>
           <Link
-            to="/assinar?step=plan&plan=monthly&from=sono_cta_mid"
+            to={sonoCtaTo('sono_cta_mid')}
             className="cta-primary"
-            onClick={() => trackTrialCta('monthly', 'sono_cta_mid')}
+            onClick={sonoCtaClick('sono_cta_mid')}
           >
             Iniciar a noite 1 · grátis
           </Link>
@@ -854,9 +874,9 @@ export default function EcotopiaSonoPage() {
             </div>
 
             <Link
-              to={`/assinar?step=plan&plan=${selectedOfferPlan}&from=sono_oferta_cta`}
+              to={sonoCtaTo('sono_oferta_cta', selectedOfferPlan)}
               className="lp-sono-offer-cta scroll-reveal stagger-4"
-              onClick={() => trackTrialCta(selectedOfferPlan, 'sono_oferta_cta')}
+              onClick={sonoCtaClick('sono_oferta_cta', selectedOfferPlan)}
             >
               {CTA_LABEL}
             </Link>
@@ -890,8 +910,8 @@ export default function EcotopiaSonoPage() {
                 {col.links.map((label) => (
                   <li key={label}>
                     <Link
-                      to={`/assinar?step=plan&plan=monthly&from=sono_tip_${col.key}`}
-                      onClick={() => trackTrialCta('monthly', `sono_tip_${col.key}`)}
+                      to={sonoCtaTo(`sono_tip_${col.key}`)}
+                      onClick={sonoCtaClick(`sono_tip_${col.key}`)}
                     >
                       {label}
                     </Link>
