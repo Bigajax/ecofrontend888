@@ -11,6 +11,12 @@ import {
   trackCartaoRecusado,
   trackCartaoErro,
 } from '@/lib/mixpanelAssinarFunnel';
+import {
+  trackWithCAPI,
+  ensureStartTrialEventId,
+  getFbp,
+  resolveFbc,
+} from '@/lib/fbpixel';
 
 /**
  * Passo do cartão inline do funil do sono. Envolve o brick do Mercado Pago numa
@@ -61,11 +67,31 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
       setErro(null);
       setProcessing(true);
       trackCartaoEnviado({ plan_id: PLAN, amount: PRICE.monthly });
+      // Meta Pixel + CAPI: clique em pagar = início do checkout.
+      void trackWithCAPI('InitiateCheckout', {
+        value: PRICE.monthly,
+        currency: PRICE.currency,
+        contentName: 'ECO Premium',
+        contentCategory: 'subscription',
+        pixelExtra: { plan: PLAN },
+      });
+      // event_id do StartTrial: o mesmo é enviado ao backend (abaixo) e reusado
+      // no passo `unlocked` do Pixel, para deduplicar com o StartTrial que o
+      // webhook do Mercado Pago emite quando o trial é autorizado.
+      const startTrialEventId = ensureStartTrialEventId();
       try {
         const res = await fetch(apiUrl('/api/subscription/create-with-card'), {
           method: 'POST',
           headers: await authHeaders(),
-          body: JSON.stringify({ ...formData, plan: PLAN }),
+          body: JSON.stringify({
+            ...formData,
+            plan: PLAN,
+            // Atribuição Meta para o CAPI server-side (webhook).
+            metaEventId: startTrialEventId,
+            fbp: getFbp(),
+            fbc: resolveFbc(),
+            eventSourceUrl: window.location.href,
+          }),
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));

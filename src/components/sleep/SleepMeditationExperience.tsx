@@ -16,6 +16,7 @@ import {
   trackSonoGuestPageViewed,
   trackSonoGuestAppInviteClicked,
 } from '@/lib/mixpanelSonoGuestEvents';
+import { fbqCustom } from '@/lib/fbpixel';
 import { GuestSonoPlayer } from '@/components/sono-guest/GuestSonoPlayer';
 import { LS_KEYS } from '@/components/sono-guest/types';
 import type { SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal';
@@ -74,6 +75,22 @@ function getSavedGuestNight1Progress(): number | null {
 function markGuestNight1Completed(): void {
   localStorage.setItem(LS_KEYS.completed, 'true');
   localStorage.removeItem(LS_KEYS.progress);
+}
+
+/**
+ * Meta Pixel (custom) "ExperienciaCompleta" — disparo único por convidado. A
+ * Noite 1 pode concluir por dois caminhos (player inline ou retorno do
+ * meditation-player), então guardamos uma flag para não duplicar o evento.
+ */
+function trackExperienciaCompletaOnce(guestId: string, source: string): void {
+  const key = `eco.sono.experiencia_completa_tracked.${guestId}`;
+  try {
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, 'true');
+  } catch {
+    // localStorage indisponível — dispara mesmo assim (melhor que perder o sinal)
+  }
+  fbqCustom('ExperienciaCompleta', { content_name: 'Protocolo do Sono', source });
 }
 
 interface SleepMeditationExperienceProps {
@@ -148,6 +165,8 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
       // (helper padronizado). O 'Experiência vista' inline foi removido (duplicava
       // este passo no funil).
       trackSonoGuestPageViewed({ source: resolvedSource, guestId });
+      // Meta Pixel (custom): convidado entrou na experiência do sono.
+      fbqCustom('IniciouExperiencia', { content_name: 'Protocolo do Sono', source: resolvedSource });
     };
     if ('requestIdleCallback' in window) requestIdleCallback(track);
     else setTimeout(track, 300);
@@ -193,6 +212,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
             setCheckoutEntry('reflection');
             localStorage.setItem(offerKey, 'true');
             trackSonoGuestNight1Completed({ source: source || 'sono_paid_traffic', guestId });
+            trackExperienciaCompletaOnce(guestId, source || 'sono_paid_traffic');
           }
         }
       }
@@ -248,6 +268,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     setCheckoutEntry('reflection');
     localStorage.setItem(`eco.sono.offer_modal_shown.${guestId}`, 'true');
     trackSonoGuestNight1Completed({ source: source || 'sono_paid_traffic', guestId });
+    trackExperienciaCompletaOnce(guestId, source || 'sono_paid_traffic');
   }, [guestId, source]);
 
   const handleNightClick = (night: ProtocolNight) => {

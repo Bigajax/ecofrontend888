@@ -4,24 +4,50 @@
 // PageView), que carrega antes do bundle JS para não perder o PageView inicial.
 // Este módulo só expõe helpers para disparar eventos a partir do app.
 
+type PixelParams = Record<string, unknown>;
+type FbqFn = (
+  method: string,
+  event: string,
+  params?: PixelParams,
+  opts?: { eventID: string },
+) => void;
+
+/** Acessa o `fbq` global de forma tipada (sem `any`). */
+function getFbqGlobal(): FbqFn | null {
+  if (typeof window === 'undefined') return null;
+  return (window as unknown as { fbq?: FbqFn }).fbq ?? null;
+}
+
+/** Dispara via `fbq(method, ...)` com deduplicação opcional por eventID. */
+function dispatch(
+  method: 'track' | 'trackCustom',
+  event: string,
+  params?: PixelParams,
+  eventId?: string,
+) {
+  const fbqGlobal = getFbqGlobal();
+  if (!fbqGlobal) return;
+  // 4º argumento { eventID } é o mecanismo de deduplicação do Pixel
+  if (eventId) fbqGlobal(method, event, params ?? {}, { eventID: eventId });
+  else fbqGlobal(method, event, params ?? {});
+}
+
 /**
- * Dispara um evento no Meta Pixel.
+ * Dispara um evento padrão no Meta Pixel (`track`).
  * @param eventId UUID opcional para deduplicação com a CAPI.
  *                Sempre passe quando houver uma chamada CAPI correspondente.
  */
-export function fbq(
-  event: string,
-  params?: Record<string, any>,
-  eventId?: string,
-) {
-  if (typeof window === 'undefined' || !(window as any).fbq) return;
+export function fbq(event: string, params?: PixelParams, eventId?: string) {
+  dispatch('track', event, params, eventId);
+}
 
-  if (eventId) {
-    // 4º argumento { eventID } é o mecanismo de deduplicação do Pixel
-    (window as any).fbq('track', event, params ?? {}, { eventID: eventId });
-  } else {
-    (window as any).fbq('track', event, params ?? {});
-  }
+/**
+ * Dispara um evento *custom* no Meta Pixel (`trackCustom`). Use para eventos que
+ * não fazem parte do catálogo padrão da Meta (ex.: IniciouExperiencia,
+ * ExperienciaCompleta) — eles viram eventos de otimização próprios no Ads.
+ */
+export function fbqCustom(event: string, params?: PixelParams, eventId?: string) {
+  dispatch('trackCustom', event, params, eventId);
 }
 
 // ─── Helpers de cookie ────────────────────────────────────────────────────────
@@ -33,11 +59,17 @@ function getCookie(name: string): string {
   return match ? decodeURIComponent(match[1]) : '';
 }
 
+/** Retorna o cookie _fbp (browser id do Pixel) ou '' se ausente. */
+export function getFbp(): string {
+  if (typeof document === 'undefined') return '';
+  return getCookie('_fbp');
+}
+
 /**
  * Retorna _fbc do cookie ou constrói a partir de fbclid na URL.
  * Formato: fb.<subdomain_index>.<creation_time>.<fbclid>
  */
-function resolveFbc(): string {
+export function resolveFbc(): string {
   const fromCookie = getCookie('_fbc');
   if (fromCookie) return fromCookie;
   const fbclid = new URLSearchParams(window.location.search).get('fbclid');
@@ -74,8 +106,13 @@ export interface CAPITrackParams {
 export async function trackWithCAPI(
   eventName: string,
   params: CAPITrackParams = {},
+  /**
+   * `event_id` externo, quando a dedup precisa cruzar com um evento server-side
+   * disparado em outro momento (ex.: StartTrial do webhook do Mercado Pago). Se
+   * omitido, gera um UUID novo (caso comum, deduplicado com a CAPI da Vercel).
+   */
+  eventId: string = crypto.randomUUID(),
 ): Promise<void> {
-  const eventId = crypto.randomUUID();
 
   const pixelParams: Record<string, unknown> = { ...(params.pixelExtra ?? {}) };
   if (params.value !== undefined) pixelParams.value = params.value;
@@ -88,7 +125,7 @@ export async function trackWithCAPI(
   }
 
   // Pixel browser (com eventID para deduplicação)
-  fbq(eventName, pixelParams as Record<string, any>, eventId);
+  fbq(eventName, pixelParams, eventId);
 
   // CAPI server-side — não-fatal se falhar
   try {
@@ -112,5 +149,40 @@ export async function trackWithCAPI(
     });
   } catch {
     // CAPI é não-fatal — o Pixel já foi disparado
+  }
+}
+
+// ─── Correlação do StartTrial (client ↔ webhook do Mercado Pago) ───────────────
+
+const START_TRIAL_EVENT_ID_KEY = 'eco.sono.capi.start_trial_event_id';
+
+/**
+ * Gera (ou recupera) o `event_id` do StartTrial e o persiste no sessionStorage.
+ * É enviado ao backend no `create-with-card` (para o webhook reusar o mesmo id)
+ * e reutilizado no passo `unlocked` ao disparar o Pixel — assim o sinal do
+ * browser e o sinal server-side do StartTrial são deduplicados pela Meta.
+ */
+export function ensureStartTrialEventId(): string {
+  try {
+    const existing = sessionStorage.getItem(START_TRIAL_EVENT_ID_KEY);
+    if (existing) return existing;
+  } catch {
+    // sessionStorage indisponível — segue com id efêmero
+  }
+  const id = crypto.randomUUID();
+  try {
+    sessionStorage.setItem(START_TRIAL_EVENT_ID_KEY, id);
+  } catch {
+    // noop
+  }
+  return id;
+}
+
+/** Lê o `event_id` do StartTrial guardado (ou gera um novo se não houver). */
+export function getStartTrialEventId(): string {
+  try {
+    return sessionStorage.getItem(START_TRIAL_EVENT_ID_KEY) || ensureStartTrialEventId();
+  } catch {
+    return ensureStartTrialEventId();
   }
 }

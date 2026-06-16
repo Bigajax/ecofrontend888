@@ -15,7 +15,7 @@ import {
   trackSonoGuestAppInviteShown,
   trackSonoGuestAppInviteClicked,
 } from '@/lib/mixpanelSonoGuestEvents';
-import { trackWithCAPI } from '@/lib/fbpixel';
+import { trackWithCAPI, getStartTrialEventId } from '@/lib/fbpixel';
 import {
   useSonoCheckoutState,
   pollSonoSubscriptionActive,
@@ -127,6 +127,11 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
     if (step !== 'offer' || offerViewedRef.current) return;
     offerViewedRef.current = true;
     trackSonoGuestOfferViewed({ source: getSource(), guestId: getGuestId() });
+    // Meta Pixel + CAPI: oferta das 7 noites exibida.
+    void trackWithCAPI('ViewContent', {
+      contentName: 'Oferta 7 Noites',
+      contentCategory: 'sono',
+    });
   }, [step]);
 
   // "Convite app exibido" — ponte pro app quando o free autenticado desiste.
@@ -184,13 +189,22 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
       source: 'sono_inline_checkout',
     });
     trackAssinaturaPaga({ plan_id: 'monthly', amount: PRICE.monthly });
-    void trackWithCAPI('Subscribe', {
-      value: PRICE.monthly,
-      currency: PRICE.currency,
-      contentName: 'ECO Premium',
-      contentCategory: 'subscription',
-      pixelExtra: { plan: 'monthly' },
-    });
+    // Modelo trial→cobrança: este momento é o INÍCIO do trial (cartão aprovado),
+    // não a cobrança. Disparamos StartTrial com o MESMO event_id enviado ao
+    // backend no create-with-card, para deduplicar com o StartTrial server-side
+    // que o webhook do Mercado Pago emite. O Subscribe (cobrança real) sai só do
+    // webhook, na 1ª renovação.
+    void trackWithCAPI(
+      'StartTrial',
+      {
+        value: PRICE.monthly,
+        currency: PRICE.currency,
+        contentName: 'ECO Premium',
+        contentCategory: 'subscription',
+        pixelExtra: { plan: 'monthly' },
+      },
+      getStartTrialEventId(),
+    );
   }, [step, user?.id]);
 
   // Identidade ESTÁVEL: passado pro SonoInlineCard → handleToken (useCallback).

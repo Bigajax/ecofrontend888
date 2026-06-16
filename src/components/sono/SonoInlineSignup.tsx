@@ -12,6 +12,7 @@ import {
   clearCadastroPendente,
   marcarSaidaIntencionalDoFunil,
 } from '@/lib/mixpanelAssinarFunnel';
+import { trackWithCAPI } from '@/lib/fbpixel';
 
 /**
  * Cadastro inline do funil do sono — mesma lógica do SignupStep (register +
@@ -81,6 +82,12 @@ export function SonoInlineSignup({ onCreated, returnTo }: SonoInlineSignupProps)
       );
       clearCadastroPendente();
       trackCadastroConcluido({ method: 'email', needs_confirmation: needsConfirmation });
+      // Meta Pixel + CAPI: cadastro do funil do sono concluído (dedup automática
+      // via event_id na função serverless da Vercel).
+      void trackWithCAPI('CompleteRegistration', {
+        contentName: 'cadastro_sono',
+        pixelExtra: { status: !needsConfirmation, method: 'email' },
+      });
       if (needsConfirmation) {
         setInfo('Enviamos um e-mail de confirmação. Confirme para liberar as suas noites.');
         return;
@@ -109,6 +116,11 @@ export function SonoInlineSignup({ onCreated, returnTo }: SonoInlineSignupProps)
       await signInWithGoogleIdToken(idToken);
       clearCadastroPendente();
       trackCadastroConcluido({ method: 'google', needs_confirmation: false });
+      // Meta Pixel + CAPI: cadastro concluído via Google.
+      void trackWithCAPI('CompleteRegistration', {
+        contentName: 'cadastro_sono',
+        pixelExtra: { status: true, method: 'google' },
+      });
       // Sem navegação: o orquestrador avança ao detectar a sessão (user + signup).
     },
     onError: (error) => {
