@@ -37,9 +37,9 @@ interface RelatedMeditation {
 
 const RELATED_BY_CATEGORY: Record<string, RelatedMeditation[]> = {
   sono: [
-    { id: 'night_1', title: 'Desligando o Estado de Alerta', duration: '5 min', imageUrl: '/images/desligando-estado-alerta.webp', audioUrl: '/audio/desligando-estado-alerta.mp3', gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #14172E 100%)', isPremium: false, category: 'sono', returnTo: '/app/meditacoes-sono' },
-    { id: 'night_2', title: 'Respiração que Induz o Sono', duration: '5 min', imageUrl: '/images/respiracao-induz-sono.webp', audioUrl: '/audio/respiracao-induz-sono.mp3', gradient: 'linear-gradient(to bottom, #6B5B95 0%, #251A45 100%)', isPremium: false, category: 'sono', returnTo: '/app/meditacoes-sono' },
-    { id: 'night_3', title: 'Esvaziando Pensamentos Repetitivos', duration: '5 min', imageUrl: '/images/esvaziando-pensamentos.webp', audioUrl: '/audio/esvaziando-pensamentos.mp3', gradient: 'linear-gradient(to bottom, #5B6B95 0%, #1A2545 100%)', isPremium: false, category: 'sono', returnTo: '/app/meditacoes-sono' },
+    { id: 'night_1', title: 'Desligando o Estado de Alerta', duration: '5 min', imageUrl: '/images/desligando-estado-alerta.webp', audioUrl: '/audio/desligando-estado-alerta-calmo.mp3', gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #14172E 100%)', isPremium: false, category: 'sono', returnTo: '/app/meditacoes-sono' },
+    { id: 'night_2', title: 'Respiração que Induz o Sono', duration: '5 min', imageUrl: '/images/respiracao-induz-sono.webp', audioUrl: '/audio/respiracao-induz-sono-calmo.mp3', gradient: 'linear-gradient(to bottom, #6B5B95 0%, #251A45 100%)', isPremium: false, category: 'sono', returnTo: '/app/meditacoes-sono' },
+    { id: 'night_3', title: 'Esvaziando Pensamentos Repetitivos', duration: '5 min', imageUrl: '/images/esvaziando-pensamentos.webp', audioUrl: '/audio/esvaziando-pensamentos-calmo.mp3', gradient: 'linear-gradient(to bottom, #5B6B95 0%, #1A2545 100%)', isPremium: false, category: 'sono', returnTo: '/app/meditacoes-sono' },
     { id: 'blessing_8', title: 'Meditação do Sono', duration: '15 min', imageUrl: '/images/meditacoes-sono-hero.webp', audioUrl: '/audio/meditacao-sono.mp3', gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #14172E 100%)', isPremium: true, category: 'sono', returnTo: '/app/programas' },
   ],
   dr_joe_dispenza: [
