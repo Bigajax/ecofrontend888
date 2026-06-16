@@ -8,6 +8,10 @@ import type { SubscriptionState } from '@/types/subscription';
  * sem pular pro /assinar.
  *
  *   reflection → offer → signup → card → confirming → unlocked
+ *
+ * `app_invite` é um ramo terminal: quando um usuário JÁ autenticado (criou conta
+ * mas não pagou) dispensa o checkout, em vez de só fechar oferecemos uma ponte
+ * leve pro app completo (a 2ª conversão acontece pelos gates/UpgradeModal do /app).
  */
 export type SonoCheckoutStep =
   | 'reflection'
@@ -15,7 +19,8 @@ export type SonoCheckoutStep =
   | 'signup'
   | 'card'
   | 'confirming'
-  | 'unlocked';
+  | 'unlocked'
+  | 'app_invite';
 
 /** `null` = overlay fechado. Qualquer step = overlay aberto naquele passo. */
 export type SonoCheckoutState = SonoCheckoutStep | null;
@@ -30,6 +35,7 @@ const STEPS: readonly SonoCheckoutStep[] = [
   'card',
   'confirming',
   'unlocked',
+  'app_invite',
 ];
 
 function parseStep(value: string | null): SonoCheckoutState {

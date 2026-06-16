@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Play } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Play } from 'lucide-react';
 import { trackHeadlineExibida } from '@/lib/mixpanelAssinarFunnel';
 
 /**
@@ -19,6 +19,12 @@ interface SonoExperienceHeroProps {
   onListen: () => void;
   /** Voltar (navigate(-1)). */
   onBack: () => void;
+  /**
+   * Atalho pro app completo — só pro free autenticado (criou conta mas não
+   * pagou): aparece um link discreto abaixo do CTA. `undefined` = não mostra
+   * (guest sem conta ou usuário pago).
+   */
+  onExploreApp?: () => void;
 }
 
 // Tokens locais — candlelight quente sobre noite profunda (não roxo de app).
@@ -31,7 +37,7 @@ const IVORY = '#F0E3C0';
 // (RootProviders chaveado por userId), e useRef morreria junto — re-disparando.
 let conviteHeadlineTracked = false;
 
-export function SonoExperienceHero({ onListen, onBack }: SonoExperienceHeroProps) {
+export function SonoExperienceHero({ onListen, onBack, onExploreApp }: SonoExperienceHeroProps) {
   useEffect(() => {
     if (conviteHeadlineTracked) return;
     conviteHeadlineTracked = true;
@@ -179,6 +185,21 @@ export function SonoExperienceHero({ onListen, onBack }: SonoExperienceHeroProps
           >
             Sua primeira noite, por conta da casa.
           </motion.p>
+
+          {/* Atalho pro app — só pro free autenticado (criou conta, não pagou) */}
+          {onExploreApp && (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.56 }}
+              onClick={onExploreApp}
+              className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-semibold transition-colors hover:text-white"
+              style={{ color: 'rgba(196,181,253,0.75)' }}
+            >
+              Explorar o app completo
+              <ArrowRight className="h-3.5 w-3.5" />
+            </motion.button>
+          )}
         </div>
       </div>
     </section>

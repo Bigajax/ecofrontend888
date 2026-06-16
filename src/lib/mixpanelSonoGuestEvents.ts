@@ -52,6 +52,16 @@ export function trackSonoGuestOfferDismissed(props?: SonoGuestEventProps): void 
   trackSonoGuestEvent('Funil Protocolo · Oferta dispensada', props);
 }
 
+/** Ponte pro app: free autenticado dispensou o checkout e viu o convite pro /app. */
+export function trackSonoGuestAppInviteShown(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Convite app exibido', props);
+}
+
+/** Free autenticado clicou em "Explorar o app" — vai pro /app (2ª conversão via gates). */
+export function trackSonoGuestAppInviteClicked(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Convite app clicado', props);
+}
+
 // As funções marcadas @deprecated abaixo pertencem ao fluxo antigo de guest
 // (ProtocolScreen / PlaybackScreen / PostMeditationScreen em
 // src/components/sono-guest/), que NÃO está no caminho ativo da experiência (o

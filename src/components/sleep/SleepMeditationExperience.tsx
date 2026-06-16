@@ -14,6 +14,7 @@ import {
   trackSonoGuestNight1Completed,
   trackSonoGuestNight1Started,
   trackSonoGuestPageViewed,
+  trackSonoGuestAppInviteClicked,
 } from '@/lib/mixpanelSonoGuestEvents';
 import { GuestSonoPlayer } from '@/components/sono-guest/GuestSonoPlayer';
 import { LS_KEYS } from '@/components/sono-guest/types';
@@ -403,7 +404,18 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
             logado (/app/meditacoes-sono) mantém o hero de protocolo.
             ══════════════════════════════════════════════════════════ */}
         {isGuestSono ? (
-          <SonoExperienceHero onListen={handleHeroButtonClick} onBack={() => navigate(-1)} />
+          <SonoExperienceHero
+            onListen={handleHeroButtonClick}
+            onBack={() => navigate(-1)}
+            onExploreApp={
+              user && !isPaid
+                ? () => {
+                    trackSonoGuestAppInviteClicked({ context: 'experiencia_atalho' });
+                    navigate('/app');
+                  }
+                : undefined
+            }
+          />
         ) : (
         <section
           className="relative flex min-h-[720px] flex-col overflow-hidden sm:min-h-[800px]"

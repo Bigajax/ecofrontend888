@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Lock, Moon, X } from 'lucide-react';
+import { ArrowRight, Loader2, Lock, Moon, Sparkles, X } from 'lucide-react';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +12,8 @@ import {
   trackSonoGuestOfferViewed,
   trackSonoGuestCheckoutClicked,
   trackSonoGuestOfferDismissed,
+  trackSonoGuestAppInviteShown,
+  trackSonoGuestAppInviteClicked,
 } from '@/lib/mixpanelSonoGuestEvents';
 import { trackWithCAPI } from '@/lib/fbpixel';
 import {
@@ -97,6 +100,7 @@ async function upsertEvent(patch: Record<string, unknown>) {
 
 export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInlineCheckoutProps) {
   const { user, refreshSubscription } = useAuth();
+  const navigate = useNavigate();
   const { step, open, goTo, close } = useSonoCheckoutState();
 
   const [answer, setAnswer] = useState<ReflectionAnswer | null>(null);
@@ -104,6 +108,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   const confirmStartedRef = useRef(false);
   const convertedTrackedRef = useRef(false);
   const funnelSourceRef = useRef(false);
+  const appInviteShownRef = useRef(false);
   const offerViewedRef = useRef(false);
 
   // Ao abrir o checkout, registra funnel_source='sono_experiencia' (super
@@ -122,6 +127,13 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
     if (step !== 'offer' || offerViewedRef.current) return;
     offerViewedRef.current = true;
     trackSonoGuestOfferViewed();
+  }, [step]);
+
+  // "Convite app exibido" — ponte pro app quando o free autenticado desiste.
+  useEffect(() => {
+    if (step !== 'app_invite' || appInviteShownRef.current) return;
+    appInviteShownRef.current = true;
+    trackSonoGuestAppInviteShown();
   }, [step]);
 
   // Abre no passo solicitado pelo pai quando ainda não há estado restaurado da
@@ -205,8 +217,27 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
 
   const handleDismiss = () => {
     trackSonoGuestOfferDismissed();
+    // Free autenticado (criou conta mas não pagou) → ponte leve pro app em vez de
+    // só fechar. Guest sem conta → fecha (comportamento original).
+    if (user) {
+      goTo('app_invite');
+      return;
+    }
     close();
     onDismiss();
+  };
+
+  // "Ficar no sono" — fecha o overlay e mantém a /sono/experiencia (Noite 1).
+  const handleStayInSono = () => {
+    close();
+    onDismiss();
+  };
+
+  // "Explorar o app" — leva o free pro app completo; a 2ª conversão acontece lá
+  // pelos gates/UpgradeModal existentes.
+  const handleExploreApp = () => {
+    trackSonoGuestAppInviteClicked();
+    navigate('/app');
   };
 
   const handleUnlocked = () => {
@@ -257,9 +288,10 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
         )}
       </div>
 
-      {/* Conteúdo */}
+      {/* Conteúdo. `my-auto` (não justify-center no pai) centraliza quando cabe e
+          permite rolar quando o passo transborda — sem isso o cartão trava o scroll. */}
       <div className="relative z-10 flex flex-1 flex-col items-center overflow-y-auto px-6 pb-12">
-        <div className="flex min-h-full w-full max-w-[340px] flex-col justify-center py-4">
+        <div className="my-auto flex w-full max-w-[340px] flex-col py-4">
           <AnimatePresence mode="wait">
 
             {/* ── reflection (pergunta + validação numa só batida) ── */}
@@ -573,6 +605,58 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                   }}
                 >
                   Boa noite
+                </button>
+              </motion.div>
+            )}
+
+            {/* ── app_invite (ponte leve pro app — free que não pagou) ── */}
+            {step === 'app_invite' && (
+              <motion.div
+                key="app_invite"
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                className="flex flex-col items-center text-center"
+              >
+                <motion.div
+                  initial={{ scale: 0.7, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 80, damping: 16 }}
+                  className="mb-6"
+                >
+                  <Sparkles className="h-11 w-11" style={{ color: '#C4B5FD' }} />
+                </motion.div>
+                <h2
+                  className="font-display text-[23px] font-bold leading-snug text-white"
+                  style={{ textShadow: '0 2px 20px rgba(0,0,0,0.6)' }}
+                >
+                  Sua conta está pronta.
+                  <br />
+                  <span style={{ color: '#C4B5FD' }}>Tem muito mais te esperando.</span>
+                </h2>
+                <p className="mb-8 mt-3 text-[15px] leading-relaxed text-white/50">
+                  Você começou pelo sono. No app tem programas, meditações, respirações
+                  e a Eco — tudo num lugar só.
+                </p>
+                <button
+                  onClick={handleExploreApp}
+                  className="mb-3 flex w-full items-center justify-center gap-2 rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
+                    boxShadow: '0 10px 36px rgba(124,58,237,0.5)',
+                  }}
+                >
+                  Explorar o app
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={handleStayInSono}
+                  className="text-[12px] transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                >
+                  Ficar no sono
                 </button>
               </motion.div>
             )}
