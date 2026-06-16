@@ -128,7 +128,8 @@ export function usePremiumContent() {
 
       // Unificado: paywall in-app vai direto para /assinar (passo de plano),
       // mesmo fluxo dos CTAs de funil. Logado pula cadastro; guest cadastra e paga.
-      navigate(`/assinar?step=plan&plan=annual&from=${from}`);
+      // Plano mensal (R$ 15,90) — alinha com a oferta canônica e com o funil do sono.
+      navigate(`/assinar?step=plan&plan=monthly&from=${from}`);
     },
     [user, subscription, isTrialActive, trialDaysRemaining, navigate]
   );

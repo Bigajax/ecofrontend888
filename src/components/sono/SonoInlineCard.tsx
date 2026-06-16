@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Loader2, ShieldCheck } from 'lucide-react';
+import { Check, Loader2, ShieldCheck } from 'lucide-react';
 import { MpCardForm } from '@/components/assinar/MpCardForm';
 import { apiUrl } from '@/config/apiBase';
 import { supabase } from '@/lib/supabaseClient';
@@ -126,6 +126,20 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
           </p>
         </div>
       </div>
+
+      {/* O que entra — reforça o valor e a confiança no momento do cartão. */}
+      <ul className="flex flex-col gap-2.5">
+        {[
+          'As 7 noites do Protocolo do Sono, liberadas agora.',
+          'Meditações, sons e respirações pra adormecer mais rápido.',
+          'Lembrete por e-mail 2 dias antes de qualquer cobrança.',
+        ].map((text, i) => (
+          <li key={i} className="flex items-start gap-2.5 text-[13.5px] leading-snug text-white/75">
+            <Check className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: '#86EFAC' }} />
+            <span>{text}</span>
+          </li>
+        ))}
+      </ul>
 
       {/* Brick do MP em tema escuro (appearance="dark"), num vidro que integra ao
           clima do sono em vez do bloco branco. */}
