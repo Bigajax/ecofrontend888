@@ -50,6 +50,11 @@ function formatTime(seconds: number): string {
 export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const bgAudioRef = useRef<HTMLAudioElement>(null);
+  // Web Audio: amplifica a voz 2x e controla o volume do fundo via GainNode
+  // (funciona no iOS, ao contrário de audio.volume). Espelha MeditationPlayerPage.
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
+  const bgGainRef = useRef<GainNode | null>(null);
   const completedRef = useRef(false);
   const analyticsRef = useRef({ fired25: false, fired50: false, fired75: false });
   const hasPlayedOnce = useRef(false);
@@ -70,6 +75,9 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
     return allSounds.find(s => s.id === 'med_profunda') || null;
   });
   const [backgroundVolume, setBackgroundVolume] = useState(50);
+  // Volume da voz (meditação). audio.volume aplica mesmo roteado pelo Web Audio (desktop);
+  // no iOS (sem Web Audio) é ignorado — paridade com MeditationPlayerPage.
+  const [meditationVolume, setMeditationVolume] = useState(60);
 
   const scheduleLockTip = () => {
     lockTipTimerRef.current = setTimeout(() => {
@@ -78,9 +86,56 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
     }, 3000);
   };
 
+  // Amplifica a voz 2x e roteia o som de fundo pelo mesmo AudioContext para
+  // controle de volume real. Espelha MeditationPlayerPage.initAudioGain.
+  // Retorna Promise pra garantir o ctx running antes do play.
+  const initAudioGain = async (): Promise<void> => {
+    const el = audioRef.current;
+    const bgEl = bgAudioRef.current;
+    if (!el || audioCtxRef.current) return;
+
+    // iOS Safari suspende o AudioContext ao bloquear a tela, parando todo áudio
+    // roteado via createMediaElementSource. No iOS o <audio> nativo continua
+    // tocando em background sem AudioContext — priorizamos isso sobre o ganho 2×.
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) return;
+
+    try {
+      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Ctx) return;
+      const ctx: AudioContext = new Ctx();
+
+      // Voz da meditação: amplificada 2x
+      const src = ctx.createMediaElementSource(el);
+      const gain = ctx.createGain();
+      gain.gain.value = 2.0;
+      src.connect(gain).connect(ctx.destination);
+
+      // Som de fundo: GainNode com volume suave — funciona no iOS ao contrário de audio.volume
+      if (bgEl) {
+        try {
+          const bgSrc = ctx.createMediaElementSource(bgEl);
+          const bgGain = ctx.createGain();
+          bgGain.gain.value = (backgroundVolume / 100) * 1.2;
+          bgSrc.connect(bgGain).connect(ctx.destination);
+          bgGainRef.current = bgGain;
+        } catch {
+          // bgEl pode não estar pronto — fallback: sem controle de gain para fundo
+        }
+      }
+
+      audioCtxRef.current = ctx;
+      gainRef.current = gain;
+      if (ctx.state === 'suspended') await ctx.resume();
+    } catch {
+      // fallback: sem amplificação
+    }
+  };
+
   const handlePlayPause = useCallback(async () => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    await initAudioGain();
 
     if (isPlaying) {
       audio.pause();
@@ -116,7 +171,8 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
 
     audio.currentTime = startTime;
 
-    const tryPlay = () => {
+    const tryPlay = async () => {
+      await initAudioGain();
       audio.play()
         .then(() => {
           if (!hasPlayedOnce.current) {
@@ -152,6 +208,11 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
       if (lockTipTimerRef.current) clearTimeout(lockTipTimerRef.current);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('beforeunload', onBeforeUnload);
+      // Cleanup Web Audio
+      audioCtxRef.current?.close();
+      audioCtxRef.current = null;
+      gainRef.current = null;
+      bgGainRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -223,12 +284,20 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
     bgAudioRef.current?.load();
   }, [selectedBackground?.id]);
 
-  // Background volume
+  // Background volume — via GainNode (funciona no iOS) ou audio.volume como fallback
   useEffect(() => {
-    if (bgAudioRef.current) {
-      bgAudioRef.current.volume = Math.min(1, (backgroundVolume / 100) * 1.2);
+    const softVolume = (backgroundVolume / 100) * 1.2;
+    if (bgGainRef.current) {
+      bgGainRef.current.gain.value = softVolume;
+    } else if (bgAudioRef.current) {
+      bgAudioRef.current.volume = Math.min(1, softVolume);
     }
   }, [backgroundVolume]);
+
+  // Voice (meditation) volume
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = meditationVolume / 100;
+  }, [meditationVolume]);
 
   // Restore audio on screen unlock
   useEffect(() => {
@@ -270,7 +339,13 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
     const pct = Math.max(0, Math.min(100, ((rect.height - (clientY - rect.top)) / rect.height) * 100));
     const rounded = Math.round(pct);
     setBackgroundVolume(rounded);
-    if (bgAudioRef.current) bgAudioRef.current.volume = Math.min(1, (rounded / 100) * 1.2);
+    // Sync imediato: GainNode (iOS compatível) ou audio.volume como fallback
+    const softVol = (rounded / 100) * 1.2;
+    if (bgGainRef.current) {
+      bgGainRef.current.gain.value = softVol;
+    } else if (bgAudioRef.current) {
+      bgAudioRef.current.volume = Math.max(0, Math.min(1, softVol));
+    }
   };
 
   const handleVolumeSliderStart = (e: React.TouchEvent | React.MouseEvent) => {
@@ -486,11 +561,11 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
           initial="hidden"
           animate="visible"
           transition={{ delay: 0.4 }}
-          className="w-full flex-shrink-0 px-5"
+          className="w-full flex-shrink-0 px-5 md:px-8 md:max-w-4xl md:mx-auto"
           style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
         >
-          {/* Progress bar with time */}
-          <div className="mb-4">
+          {/* Progress bar with time — mobile */}
+          <div className="md:hidden mb-4">
             <div className="flex items-center gap-3">
               <span
                 className="text-[11px] font-semibold tabular-nums flex-shrink-0 w-10 text-center"
@@ -537,8 +612,8 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
             </div>
           </div>
 
-          {/* Secondary controls: background sounds + volume */}
-          <div className="flex items-center justify-between gap-3" ref={volumePopoverRef}>
+          {/* Secondary controls — mobile: background sounds + background volume */}
+          <div className="md:hidden flex items-center justify-between gap-3" ref={volumePopoverRef}>
             <button
               onClick={() => setShowBackgroundModal(true)}
               aria-label={`Sons de fundo: ${selectedBackground?.title ?? 'Nenhum'}`}
@@ -632,6 +707,70 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* ── Desktop controls row — espelha MeditationPlayerPage (voz + fundo) ── */}
+          <div
+            className="hidden md:flex items-center justify-between gap-3 sm:gap-4 backdrop-blur-md rounded-full px-4 sm:px-6 py-3 sm:py-4 shadow-lg"
+            style={{ background: 'rgba(6,9,26,0.90)', border: '1px solid rgba(196,181,253,0.20)' }}
+          >
+            <button
+              onClick={() => setShowBackgroundModal(true)}
+              className="flex items-center gap-2 min-w-0 flex-shrink-0 hover:opacity-80 transition-opacity"
+            >
+              <Music size={18} style={{ color: SONO_MID, flexShrink: 0 }} />
+              <div className="flex flex-col items-start min-w-0">
+                <span className="text-[10px] font-medium uppercase leading-tight" style={{ color: 'rgba(196,181,253,0.55)' }}>Sons de Fundo</span>
+                <span className="text-xs font-semibold leading-tight truncate max-w-[100px]" style={{ color: SONO_LIGHT }}>
+                  {selectedBackground?.title || 'Nenhum'}
+                </span>
+              </div>
+            </button>
+            <span className="text-xs sm:text-sm font-medium flex-shrink-0" style={{ color: 'rgba(196,181,253,0.75)' }}>
+              {formatTime(currentTime)}
+            </span>
+            <input
+              type="range"
+              min="0"
+              max={duration || 0}
+              value={currentTime}
+              onChange={handleProgressChange}
+              aria-label="Progresso da meditação"
+              aria-valuetext={`${formatTime(currentTime)} de ${displayDuration}`}
+              className="flex-1 cursor-pointer meditation-range-slider"
+              style={{
+                height: '4px',
+                WebkitAppearance: 'none',
+                appearance: 'none',
+                background: `linear-gradient(to right, ${SONO_DARK} 0%, ${SONO_LIGHT} ${(currentTime / (duration || 1)) * 100}%, rgba(196,181,253,0.18) ${(currentTime / (duration || 1)) * 100}%, rgba(196,181,253,0.18) 100%)`,
+                borderRadius: '999px',
+                touchAction: 'none',
+              }}
+            />
+            <span className="text-xs sm:text-sm font-medium flex-shrink-0" style={{ color: 'rgba(196,181,253,0.45)' }}>
+              {displayDuration}
+            </span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Volume2 size={16} style={{ color: SONO_MID }} aria-hidden="true" />
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={meditationVolume}
+                onChange={(e) => setMeditationVolume(parseFloat(e.target.value))}
+                aria-label="Volume da voz"
+                aria-valuetext={`${meditationVolume}%`}
+                className="w-20 sm:w-24 cursor-pointer meditation-range-slider"
+                style={{
+                  height: '4px',
+                  WebkitAppearance: 'none',
+                  appearance: 'none',
+                  background: `linear-gradient(to right, ${SONO_DARK} 0%, ${SONO_LIGHT} ${meditationVolume}%, rgba(196,181,253,0.18) ${meditationVolume}%, rgba(196,181,253,0.18) 100%)`,
+                  borderRadius: '999px',
+                  touchAction: 'none',
+                }}
+              />
             </div>
           </div>
         </motion.div>
