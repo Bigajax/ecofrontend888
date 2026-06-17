@@ -123,16 +123,16 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   // o RootProviders dispara ao trocar guest→userId real. Ver plano do funil.
   const [registerGateOpen, setRegisterGateOpen] = useState(false);
   const night1ResumeHandledRef = useRef(false);
+  const isPaid =
+    isVipUser || isPremiumUser || isTrialActive || hasSonoEntitlement || justSubscribed;
   const openCheckout = useCallback((opts?: { origin?: string }) => {
     void opts;
     if (mode === 'guest') {
-      setCheckoutEntry('offer');
+      if (!isPaid) setCheckoutEntry('offer'); // premium não vê oferta
       return;
     }
     navigate('/assinar?step=plan&plan=monthly&from=sono_trial');
-  }, [mode, navigate]);
-  const isPaid =
-    isVipUser || isPremiumUser || isTrialActive || hasSonoEntitlement || justSubscribed;
+  }, [mode, navigate, isPaid]);
   const uid = user?.id || 'guest';
 
   // ── Mode: explicit via prop ──────────────────────────────────
@@ -216,7 +216,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
           if (next.size === 7) setShowCompletion(true);
           return next;
         });
-        if (isGuestSono && nightNum === 1) {
+        if (isGuestSono && nightNum === 1 && !isPaid) {
           const offerKey = `eco.sono.offer_modal_shown.${guestId}`;
           if (!localStorage.getItem(offerKey)) {
             setCheckoutEntry('reflection');
@@ -228,6 +228,23 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
       }
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Safety-net: premium não deve ver oferta. Se um passo de oferta ficou persistido
+  // (?checkout= / sessionStorage) de uma sessão abandonada, limpa no mount — SEM
+  // tocar nos passos pós-pagamento (confirming/unlocked), pra não interromper um
+  // checkout ao vivo (isPaid vira true durante 'confirming'). Chave = SS_KEY de
+  // useSonoCheckoutState ('eco.sono.checkout.step').
+  useEffect(() => {
+    if (!isGuestSono || !isPaid) return;
+    const persisted = sessionStorage.getItem('eco.sono.checkout.step');
+    const OFFER_STEPS = ['reflection', 'offer', 'signup', 'card'];
+    if (persisted && OFFER_STEPS.includes(persisted)) {
+      sessionStorage.removeItem('eco.sono.checkout.step');
+      setCheckoutEntry(null);
+      const p = new URLSearchParams(searchParams);
+      if (p.has('checkout')) { p.delete('checkout'); setSearchParams(p, { replace: true }); }
+    }
+  }, [isGuestSono, isPaid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
@@ -323,6 +340,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   const handleGuestNight1EarlyExit = (progressPct: number) => {
     trackSonoGuestEarlyExit({ source: source || 'sono_paid_traffic', guestId, progressPct });
     setGuestPlayback(null);
+    if (isPaid) return; // premium já pagou — sem oferta
     setCheckoutEntry('offer');
   };
 
@@ -330,11 +348,12 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     markGuestNight1Completed();
     setCompletedNights(prev => new Set([...prev, 1]));
     setGuestPlayback(null);
+    if (isPaid) return; // premium já pagou — sem quiz/oferta
     setCheckoutEntry('reflection');
     localStorage.setItem(`eco.sono.offer_modal_shown.${guestId}`, 'true');
     trackSonoGuestNight1Completed({ source: source || 'sono_paid_traffic', guestId });
     trackExperienciaCompletaOnce(guestId, source || 'sono_paid_traffic');
-  }, [guestId, source]);
+  }, [guestId, source, isPaid]);
 
   const handleNightClick = (night: ProtocolNight) => {
     const accessible = isNightAccessible(night, isPaid, isVipUser);

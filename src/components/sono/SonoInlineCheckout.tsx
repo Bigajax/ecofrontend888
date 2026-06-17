@@ -106,6 +106,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   const [answer, setAnswer] = useState<ReflectionAnswer | null>(null);
   const [pending, setPending] = useState(false);
   const confirmStartedRef = useRef(false);
+  const startTrialFiredRef = useRef(false);
   const convertedTrackedRef = useRef(false);
   const funnelSourceRef = useRef(false);
   const appInviteShownRef = useRef(false);
@@ -154,14 +155,43 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
     if (user && step === 'signup') goTo('card');
   }, [user, step, goTo]);
 
+  // `refreshSubscription` NÃO é memoizado no AuthContext: sua identidade muda a
+  // cada render do AuthProvider (e ele re-renderiza quando o próprio poll atualiza
+  // a assinatura). Guardamos a última referência num ref para que o efeito de
+  // confirmação NÃO dependa dela — senão a mudança de identidade dispara o cleanup
+  // (cancelled=true) no meio do poll, o re-run é barrado pelo confirmStartedRef e a
+  // tela trava pra sempre em "Preparando suas noites…".
+  const refreshSubscriptionRef = useRef(refreshSubscription);
+  refreshSubscriptionRef.current = refreshSubscription;
+
   // Confirmação assíncrona do webhook ao entrar em 'confirming'.
   useEffect(() => {
     if (step !== 'confirming' || confirmStartedRef.current) return;
     confirmStartedRef.current = true;
     setPending(false);
+    // Meta Pixel + CAPI: StartTrial = cartão aceito pelo backend (entrada em
+    // "Preparando suas noites…"). Disparamos aqui, e NÃO no passo `unlocked`, pois
+    // este último depende do polling do webhook confirmar dentro da sessão — se o
+    // polling estoura ("Quase lá"), o StartTrial nunca sairia. Usa o MESMO event_id
+    // enviado ao backend no create-with-card, deduplicando com o StartTrial
+    // server-side que o webhook do Mercado Pago emite no trial_started.
+    if (!startTrialFiredRef.current) {
+      startTrialFiredRef.current = true;
+      void trackWithCAPI(
+        'StartTrial',
+        {
+          value: PRICE.monthly,
+          currency: PRICE.currency,
+          contentName: 'ECO Premium',
+          contentCategory: 'subscription',
+          pixelExtra: { plan: 'monthly' },
+        },
+        getStartTrialEventId(),
+      );
+    }
     let cancelled = false;
     (async () => {
-      const ok = await pollSonoSubscriptionActive(refreshSubscription);
+      const ok = await pollSonoSubscriptionActive(() => refreshSubscriptionRef.current());
       if (cancelled) return;
       if (ok) {
         void upsertEvent({ unlocked: true });
@@ -173,7 +203,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
     return () => {
       cancelled = true;
     };
-  }, [step, refreshSubscription, goTo]);
+  }, [step, goTo]);
 
   // Conversão (uma vez) ao destravar — espelha o que o SubscriptionCallbackPage
   // dispara, para o funil fechar mesmo sem passar pela tela azul de callback.
@@ -189,22 +219,9 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
       source: 'sono_inline_checkout',
     });
     trackAssinaturaPaga({ plan_id: 'monthly', amount: PRICE.monthly });
-    // Modelo trial→cobrança: este momento é o INÍCIO do trial (cartão aprovado),
-    // não a cobrança. Disparamos StartTrial com o MESMO event_id enviado ao
-    // backend no create-with-card, para deduplicar com o StartTrial server-side
-    // que o webhook do Mercado Pago emite. O Subscribe (cobrança real) sai só do
-    // webhook, na 1ª renovação.
-    void trackWithCAPI(
-      'StartTrial',
-      {
-        value: PRICE.monthly,
-        currency: PRICE.currency,
-        contentName: 'ECO Premium',
-        contentCategory: 'subscription',
-        pixelExtra: { plan: 'monthly' },
-      },
-      getStartTrialEventId(),
-    );
+    // O StartTrial (Meta) é disparado ao entrar em `confirming` (cartão aceito),
+    // não aqui — ver o efeito acima. A cobrança real (Purchase) sai só do webhook
+    // do Mercado Pago, na 1ª cobrança pós-trial e nas renovações.
   }, [step, user?.id]);
 
   // Identidade ESTÁVEL: passado pro SonoInlineCard → handleToken (useCallback).

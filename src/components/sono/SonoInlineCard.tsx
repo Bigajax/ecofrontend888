@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Loader2, ShieldCheck } from 'lucide-react';
 import { MpCardForm } from '@/components/assinar/MpCardForm';
+import { CancelInfoModal } from '@/components/sono/CancelInfoModal';
+import mixpanel from '@/lib/mixpanel';
 import { apiUrl } from '@/config/apiBase';
 import { supabase } from '@/lib/supabaseClient';
 import { PRICE } from '@/constants/offerCopy';
@@ -46,7 +48,9 @@ async function authHeaders(): Promise<Record<string, string>> {
 export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
   const [erro, setErro] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [cancelInfoOpen, setCancelInfoOpen] = useState(false);
   const shownAtRef = useRef<number | null>(null);
+  const initiateCheckoutFiredRef = useRef(false);
 
   // Monta o brick só depois da animação de entrada do overlay assentar (~400ms).
   // O brick do MP não tolera ser montado num container que está transformando
@@ -56,6 +60,20 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
   useEffect(() => {
     shownAtRef.current = Date.now();
     trackCartaoVisto({ plan_id: PLAN, amount: PRICE.monthly });
+    // Meta Pixel + CAPI: InitiateCheckout = a pessoa CHEGOU na etapa de pagamento
+    // ("Confirme suas 7 noites"), não o clique em pagar. trackWithCAPI gera o
+    // event_id e o repassa ao Pixel e à CAPI (dedup). Ref guard evita refirar no
+    // double-invoke do StrictMode em dev.
+    if (!initiateCheckoutFiredRef.current) {
+      initiateCheckoutFiredRef.current = true;
+      void trackWithCAPI('InitiateCheckout', {
+        value: PRICE.monthly,
+        currency: PRICE.currency,
+        contentName: 'ECO Premium',
+        contentCategory: 'subscription',
+        pixelExtra: { plan: PLAN },
+      });
+    }
     const t = setTimeout(() => setBrickReady(true), 480);
     return () => clearTimeout(t);
   }, []);
@@ -67,14 +85,6 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
       setErro(null);
       setProcessing(true);
       trackCartaoEnviado({ plan_id: PLAN, amount: PRICE.monthly });
-      // Meta Pixel + CAPI: clique em pagar = início do checkout.
-      void trackWithCAPI('InitiateCheckout', {
-        value: PRICE.monthly,
-        currency: PRICE.currency,
-        contentName: 'ECO Premium',
-        contentCategory: 'subscription',
-        pixelExtra: { plan: PLAN },
-      });
       // event_id do StartTrial: o mesmo é enviado ao backend (abaixo) e reusado
       // no passo `unlocked` do Pixel, para deduplicar com o StartTrial que o
       // webhook do Mercado Pago emite quando o trial é autorizado.
@@ -120,7 +130,13 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
     trackCartaoErro({ plan_id: PLAN, error_message: message });
   }, []);
 
+  const handleOpenCancelInfo = useCallback(() => {
+    setCancelInfoOpen(true);
+    mixpanel.track('Cartão · Cancelamento explicado', { plan_id: PLAN });
+  }, []);
+
   return (
+    <>
     <div className="flex w-full flex-col gap-5">
       <div className="text-center">
         <h2
@@ -210,8 +226,20 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
 
       <p className="flex items-center justify-center gap-1.5 text-center text-[11.5px] leading-relaxed text-white/35">
         <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'rgba(196,181,253,0.6)' }} />
-        Pagamento seguro · cancele quando quiser.
+        Pagamento seguro ·{' '}
+        <button
+          type="button"
+          onClick={handleOpenCancelInfo}
+          aria-haspopup="dialog"
+          className="rounded text-white/55 underline decoration-dotted underline-offset-2 transition-colors hover:text-white/80"
+        >
+          cancele quando quiser
+        </button>
+        .
       </p>
     </div>
+
+    <CancelInfoModal open={cancelInfoOpen} onClose={() => setCancelInfoOpen(false)} />
+    </>
   );
 }

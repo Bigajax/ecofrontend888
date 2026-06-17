@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { ensureProfile } from '../lib/ensureProfile';
 import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
@@ -622,8 +622,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Refresh subscription from backend
-  const refreshSubscription = async (): Promise<SubscriptionState | null> => {
+  // Refresh subscription from backend.
+  // Memoizado por `user`: identidade estável entre renders evita que consumidores
+  // que dependem dela em useEffect (ex.: polling de confirmação do checkout inline
+  // do sono, SubscriptionCallbackPage) sofram cancelamento/re-run a cada render do
+  // provider — o que travava a tela "Preparando suas noites…" após o pagamento.
+  const refreshSubscription = useCallback(async (): Promise<SubscriptionState | null> => {
     if (!user) {
       // Reset to free if no user
       const freeState: SubscriptionState = {
@@ -681,14 +685,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Isso previne perder acesso premium por erro temporário de rede
       return null;
     }
-  };
+    // Dep em `user?.id` (não no objeto `user`): a função só usa `user` para checar
+    // existência; assim a identidade só muda no login/logout, evitando recriações
+    // por churn do objeto (ex.: TOKEN_REFRESHED) que disparariam refetch à toa.
+  }, [user?.id]);
 
   // Refresh subscription when user changes
   useEffect(() => {
     if (user) {
       refreshSubscription();
     }
-  }, [user?.id]);
+  }, [user?.id, refreshSubscription]);
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
