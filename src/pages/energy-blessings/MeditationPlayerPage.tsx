@@ -20,6 +20,7 @@ import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceMod
 import UpgradeModal from '@/components/subscription/UpgradeModal';
 import { useSubscriptionTier, usePremiumContent } from '@/hooks/usePremiumContent';
 import { getRequiredTier } from '@/constants/meditationTiers';
+import { useSonoEntitlement } from '@/hooks/useSonoEntitlement';
 
 interface MeditationData {
   id?: string;
@@ -53,7 +54,7 @@ const fadeSlideUp = {
 export default function MeditationPlayerPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isGuestMode, isVipUser } = useAuth();
+  const { user, isGuestMode, isVipUser, isPremiumUser, isTrialActive } = useAuth();
   const { trackInteraction } = useGuestExperience();
   const { checkTrigger } = useGuestConversionTriggers();
   // Protocolo Sono agora é premium (assinatura). CTA → trial, não mais compra avulsa.
@@ -178,14 +179,36 @@ export default function MeditationPlayerPage() {
   // Guests têm seu próprio gate (MeditationGuestGate / sonoGuestMode).
   const subscriptionTier = useSubscriptionTier();
   const { showUpgradeModal, requestUpgrade, closeUpgradeModal } = usePremiumContent();
+
+  // Acesso pago ao Protocolo Sono (mesmos flags do `isPaid` em
+  // SleepMeditationExperience). As noites usam id `night_N`, que NÃO está no mapa
+  // de tiers (getRequiredTier → 'free'), então o gate premium genérico não as
+  // cobre — blindamos aqui para qualquer rota até o player (CTA da conclusão,
+  // favoritos, deep link).
+  const { hasAccess: hasSonoEntitlement } = useSonoEntitlement();
+  const isPaidSono = isVipUser || isPremiumUser || isTrialActive || hasSonoEntitlement;
+  const sonoNightLocked =
+    !!user && !sonoGuestMode && isSono &&
+    nightNumber !== null && nightNumber >= 2 && !isPaidSono;
+
   const meditationLocked =
-    !!user && !isGuestMode && !sonoGuestMode &&
-    getRequiredTier(meditationData.id || '') === 'premium' &&
-    subscriptionTier !== 'premium' && subscriptionTier !== 'vip';
+    (!!user && !isGuestMode && !sonoGuestMode &&
+      getRequiredTier(meditationData.id || '') === 'premium' &&
+      subscriptionTier !== 'premium' && subscriptionTier !== 'vip')
+    || sonoNightLocked;
 
   useEffect(() => {
     if (meditationLocked) requestUpgrade(`meditation_${meditationData.id}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meditationLocked]);
+
+  // Segurança: se o acesso resolver como bloqueado depois que o áudio já começou,
+  // pausa voz + fundo (cobre a corrida entre autoplay e carregamento de acesso).
+  useEffect(() => {
+    if (!meditationLocked) return;
+    audioRef.current?.pause();
+    backgroundAudioRef.current?.pause();
+    setIsPlaying(false);
   }, [meditationLocked]);
   const [showGuestGate, setShowGuestGate] = useState(false);
   const [isAudioFading, setIsAudioFading] = useState(false);
@@ -699,6 +722,7 @@ export default function MeditationPlayerPage() {
 
     const tryAutoPlay = async () => {
       if (hasPlayedOnce.current) return;
+      if (meditationLocked) return; // conteúdo bloqueado: não toca atrás do modal
       await initAudioGain();
       audio.volume = 0;
       audio.play()
@@ -883,6 +907,7 @@ export default function MeditationPlayerPage() {
   ]);
 
   const handlePlayPause = async () => {
+    if (meditationLocked) return; // conteúdo bloqueado: não permitir play manual
     await initAudioGain();
     if (audioRef.current) {
       if (isPlaying) {
@@ -1808,8 +1833,11 @@ export default function MeditationPlayerPage() {
             if (isNaN(currentNum) || currentNum >= 7) return undefined;
             const next = PROTOCOL_NIGHTS.find(n => n.night === currentNum + 1);
             if (!next || !next.hasAudio) return undefined;
-            // Guests see all next nights as locked (offer modal will open on return)
-            const isLocked = sonoGuestMode || (next.night > 2 && !isVipUser);
+            // Todas as próximas noites (sempre ≥ 2) são premium → bloqueadas a
+            // menos que o usuário tenha acesso pago. Guests sempre bloqueados (a
+            // oferta abre no retorno). Antes usava `next.night > 2 && !isVipUser`,
+            // o que deixava a Noite 2 livre para free autenticado (bug).
+            const isLocked = sonoGuestMode || !isPaidSono;
             return {
               nightNumber: next.night,
               title: next.title,
