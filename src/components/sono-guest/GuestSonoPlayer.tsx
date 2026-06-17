@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronLeft, Play, Pause, SkipBack, SkipForward, Music, Volume2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import BackgroundSoundsModal from '@/components/BackgroundSoundsModal';
+import MeditationAmbientScreen from '@/components/meditation/MeditationAmbientScreen';
 import { type Sound, getAllSounds } from '@/data/sounds';
 import { useMediaSession } from '@/hooks/useMediaSession';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
@@ -31,6 +32,9 @@ const fadeSlideUp = {
 
 /** Abaixo deste tempo ouvido, a saída é direta (sem assediar quem abriu sem querer). */
 const EARLY_EXIT_MIN_SECONDS = 45;
+
+/** Inatividade até a tela de descanso (ambient) aparecer durante o play. */
+const AMBIENT_INACTIVITY_MS = 15 * 1000;
 
 interface GuestSonoPlayerProps {
   startTime: number;
@@ -65,6 +69,7 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
   const analyticsRef = useRef({ fired25: false, fired50: false, fired75: false });
   const hasPlayedOnce = useRef(false);
   const lockTipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ambientTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const volumePopoverRef = useRef<HTMLDivElement>(null);
   const volumeSliderRef = useRef<HTMLDivElement>(null);
@@ -74,6 +79,7 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
   const [duration, setDuration] = useState(0);
   const [showLockTip, setShowLockTip] = useState(false);
   const [showExitSheet, setShowExitSheet] = useState(false);
+  const [showAmbient, setShowAmbient] = useState(false);
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
   const [showVolumePopover, setShowVolumePopover] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -85,6 +91,30 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
   // Volume da voz (meditação). audio.volume aplica mesmo roteado pelo Web Audio (desktop);
   // no iOS (sem Web Audio) é ignorado — paridade com MeditationPlayerPage.
   const [meditationVolume, setMeditationVolume] = useState(60);
+
+  // Tela de descanso (ambient): some o controle e mostra só o cronômetro após
+  // inatividade durante o play. Espelha MeditationPlayerPage. Reset a cada
+  // interação (toque/mouse/clique no container).
+  const resetAmbientTimer = () => {
+    if (ambientTimerRef.current) clearTimeout(ambientTimerRef.current);
+    setShowAmbient(false);
+    ambientTimerRef.current = setTimeout(() => setShowAmbient(true), AMBIENT_INACTIVITY_MS);
+  };
+  const clearAmbientTimer = () => {
+    if (ambientTimerRef.current) clearTimeout(ambientTimerRef.current);
+    ambientTimerRef.current = null;
+  };
+
+  // Liga/desliga o timer da tela de descanso conforme o play.
+  useEffect(() => {
+    if (isPlaying) {
+      resetAmbientTimer();
+    } else {
+      clearAmbientTimer();
+      setShowAmbient(false);
+    }
+    return () => clearAmbientTimer();
+  }, [isPlaying]);
 
   const scheduleLockTip = () => {
     lockTipTimerRef.current = setTimeout(() => {
@@ -438,6 +468,9 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
     <div
       className="relative font-primary overflow-hidden flex flex-col"
       style={{ height: '100dvh', touchAction: 'pan-y', backgroundColor: 'var(--bg-primary)' }}
+      onTouchStart={resetAmbientTimer}
+      onMouseMove={resetAmbientTimer}
+      onClick={resetAmbientTimer}
     >
       {/* ── Background blurred image ── */}
       <div
@@ -829,6 +862,15 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
         onSelectSound={(sound) => setSelectedBackground(sound)}
         backgroundVolume={backgroundVolume}
         onVolumeChange={setBackgroundVolume}
+      />
+
+      {/* Tela de descanso (ambient) — só durante o play e fora do sheet de saída */}
+      <MeditationAmbientScreen
+        visible={showAmbient && isPlaying && !showExitSheet}
+        elapsedSeconds={Math.floor(currentTime)}
+        meditationTitle={night1.title}
+        category="sono"
+        onDismiss={resetAmbientTimer}
       />
 
       {/* Exit-intent sheet — saída antecipada da Noite 1 */}
