@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SonoGuestPostFlow } from '@/components/sono/SonoGuestPostFlow';
+import SonoNightsJourney, { type SonoNightsJourneyProps } from '@/components/meditation/SonoNightsJourney';
 import { ChevronLeft, Moon, Play, Lock, BookOpen, Loader2 } from 'lucide-react';
 import { getTodayMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
 import { useMeditationStreak } from '@/hooks/useMeditationStreak';
@@ -82,6 +83,9 @@ interface MeditationCompletionProps {
   isSonoGuestMode?: boolean;
   onCheckout?: () => void;
   sonoCheckoutLoading?: boolean;
+  // Jornada das 7 noites (sono autenticado) — substitui o card "Próxima
+  // meditação" + grid "Continue sua jornada".
+  sonoJourney?: SonoNightsJourneyProps;
 }
 
 export default function MeditationCompletion({
@@ -95,6 +99,7 @@ export default function MeditationCompletion({
   isSonoGuestMode = false,
   onCheckout,
   sonoCheckoutLoading = false,
+  sonoJourney,
 }: MeditationCompletionProps) {
   const navigate = useNavigate();
   const { currentStreak, updateStreak, isLoading: streakLoading } = useMeditationStreak();
@@ -103,6 +108,10 @@ export default function MeditationCompletion({
 
   // Sono guest locked = maximum conversion moment — apenas na Noite 1
   const isSonoGuestLocked = isSonoGuestMode && nextNight?.isLocked === true && meditationId === 'night_1';
+
+  // Jornada das 7 noites (sono autenticado): substitui o card "Próxima meditação"
+  // e o grid "Continue sua jornada" pela linha do tempo do protocolo.
+  const showSonoJourney = !isSonoGuestLocked && meditationCategory === 'sono' && !!sonoJourney;
 
   // Post-flow overlay for sono guest (6-step sequence)
   const [showPostFlow, setShowPostFlow] = useState(false);
@@ -337,21 +346,34 @@ export default function MeditationCompletion({
             </motion.div>
           )}
 
-          {/* ── Streak ── */}
+          {/* ── Streak — chip "ember" sólido, alto contraste ── */}
           {!streakLoading && currentStreak > 0 && (
             <motion.div className="flex justify-center" variants={itemVariants}>
               <div
-                className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-base font-semibold"
-                style={{ background: 'rgba(148,136,196,0.20)', border: '1px solid rgba(148,136,196,0.45)', color: '#FFFFFF', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(148,136,196,0.20)' }}
+                className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-base font-bold"
+                style={{
+                  background: 'linear-gradient(135deg, #FBBF24 0%, #F97316 55%, #B45309 100%)',
+                  color: '#1A0F02',
+                  boxShadow: '0 8px 28px rgba(249,115,22,0.45), inset 0 1px 0 rgba(255,255,255,0.35)',
+                }}
               >
-                <span>{currentStreak} {currentStreak === 1 ? 'dia seguido!' : 'dias seguidos!'}</span>
-                <span>🔥</span>
+                <span className="text-lg leading-none" aria-hidden>🔥</span>
+                <span className="tracking-tight">
+                  {currentStreak} {currentStreak === 1 ? 'dia seguido' : 'dias seguidos'}
+                </span>
               </div>
             </motion.div>
           )}
 
+          {/* ── Jornada das 7 noites (sono autenticado) ── */}
+          {showSonoJourney && sonoJourney && (
+            <motion.div variants={itemVariants}>
+              <SonoNightsJourney {...sonoJourney} />
+            </motion.div>
+          )}
+
           {/* ── Próxima noite (sono autenticado / não-guest) ── */}
-          {!isSonoGuestLocked && nextNight && (
+          {!isSonoGuestLocked && !showSonoJourney && nextNight && (
             <motion.div variants={itemVariants}>
               <div
                 className="rounded-2xl px-5 py-5 sm:px-6"
@@ -389,8 +411,8 @@ export default function MeditationCompletion({
             </motion.div>
           )}
 
-          {/* ── Continue sua jornada (apenas standard) ── */}
-          {!isSonoGuestLocked && relatedMeditations.length > 0 && (
+          {/* ── Continue sua jornada (apenas standard; sono usa a timeline) ── */}
+          {!isSonoGuestLocked && !showSonoJourney && relatedMeditations.length > 0 && (
             <motion.div variants={itemVariants}>
               <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ color: 'rgba(255,255,255,0.80)' }}>
                 Continue sua jornada

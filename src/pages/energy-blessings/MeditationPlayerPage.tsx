@@ -210,6 +210,34 @@ export default function MeditationPlayerPage() {
     backgroundAudioRef.current?.pause();
     setIsPlaying(false);
   }, [meditationLocked]);
+
+  // Toca uma noite do protocolo (gate centralizado): noite 1 (free) ou pago →
+  // player; senão → oferta. Usado pela timeline da tela de conclusão.
+  const playSonoNight = (n: number) => {
+    const night = PROTOCOL_NIGHTS.find((x) => x.night === n);
+    if (!night || !night.hasAudio || !night.audioUrl) return;
+    if (!night.isFree && !isPaidSono) {
+      navigate('/app/subscription/demo');
+      return;
+    }
+    navigate('/app/meditation-player', {
+      state: {
+        meditation: {
+          id: night.id,
+          title: night.title,
+          duration: night.duration,
+          audioUrl: night.audioUrl,
+          imageUrl: night.imageUrl ?? '/images/meditacoes-sono-hero.webp',
+          backgroundMusic: 'Sono',
+          gradient: night.gradient,
+          category: 'sono',
+          isPremium: false,
+        },
+        returnTo: '/app/meditacoes-sono',
+      },
+    });
+  };
+
   const [showGuestGate, setShowGuestGate] = useState(false);
   const [isAudioFading, setIsAudioFading] = useState(false);
   const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -1871,6 +1899,21 @@ export default function MeditationPlayerPage() {
                   },
                 });
               },
+            };
+          })()}
+          sonoJourney={(() => {
+            // Só fluxo sono autenticado (guest usa o fluxo de conversão da Noite 1).
+            if (category !== 'sono' || sonoGuestMode || !meditationData.id?.startsWith('night_')) {
+              return undefined;
+            }
+            const currentNum = parseInt(meditationData.id.replace('night_', ''), 10);
+            if (isNaN(currentNum)) return undefined;
+            return {
+              currentNight: currentNum,
+              completedNights: Array.from(sonoCompletedNights),
+              isPaid: isPaidSono,
+              onPlayNight: playSonoNight,
+              onExploreApp: () => navigate('/app'),
             };
           })()}
           sessionMetrics={{
