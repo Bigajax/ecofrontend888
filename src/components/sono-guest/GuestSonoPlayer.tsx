@@ -29,10 +29,16 @@ const fadeSlideUp = {
   },
 };
 
+/** Abaixo deste tempo ouvido, a saída é direta (sem assediar quem abriu sem querer). */
+const EARLY_EXIT_MIN_SECONDS = 45;
+
 interface GuestSonoPlayerProps {
   startTime: number;
   onComplete: () => void;
   onBack: () => void;
+  /** Saída antecipada (Voltar após ouvir um trecho relevante, antes dos 95%):
+   *  o pai abre a oferta das próximas noites em vez de só devolver à listagem. */
+  onEarlyExit?: (progressPct: number) => void;
 }
 
 function saveProgress(time: number): void {
@@ -47,7 +53,7 @@ function formatTime(seconds: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlayerProps) {
+export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: GuestSonoPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const bgAudioRef = useRef<HTMLAudioElement>(null);
   // Web Audio: amplifica a voz 2x e controla o volume do fundo via GainNode
@@ -67,6 +73,7 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
   const [currentTime, setCurrentTime] = useState(startTime);
   const [duration, setDuration] = useState(0);
   const [showLockTip, setShowLockTip] = useState(false);
+  const [showExitSheet, setShowExitSheet] = useState(false);
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
   const [showVolumePopover, setShowVolumePopover] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -163,6 +170,35 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
     if (!audio) return;
     audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + seconds));
   }, []);
+
+  // Exit-intent: ao tentar voltar com um trecho relevante já ouvido (e antes dos
+  // 95%), pausa e abre o sheet de saída em vez de devolver à listagem em silêncio.
+  // Trecho curto / já concluído / sem handler → saída direta.
+  const handleBackPress = () => {
+    if (!onEarlyExit || completedRef.current || currentTime < EARLY_EXIT_MIN_SECONDS) {
+      onBack();
+      return;
+    }
+    const audio = audioRef.current;
+    if (audio && !audio.paused) {
+      audio.pause();
+      bgAudioRef.current?.pause();
+      if (audio.currentTime > 0) saveProgress(audio.currentTime);
+      setIsPlaying(false);
+    }
+    setShowExitSheet(true);
+  };
+
+  const handleResumeFromSheet = () => {
+    setShowExitSheet(false);
+    void handlePlayPause(); // estava pausado → retoma
+  };
+
+  const handleSeeOtherNights = () => {
+    const pct = duration > 0 ? Math.round((currentTime / duration) * 100) : 0;
+    setShowExitSheet(false);
+    onEarlyExit?.(pct);
+  };
 
   // Auto-play on mount
   useEffect(() => {
@@ -436,7 +472,7 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
           style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
         >
           <button
-            onClick={onBack}
+            onClick={handleBackPress}
             aria-label="Voltar"
             className="flex h-11 w-11 items-center justify-center rounded-full touch-manipulation active:scale-95 transition-transform"
             style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.18)' }}
@@ -794,6 +830,67 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack }: GuestSonoPlay
         backgroundVolume={backgroundVolume}
         onVolumeChange={setBackgroundVolume}
       />
+
+      {/* Exit-intent sheet — saída antecipada da Noite 1 */}
+      {showExitSheet && (
+        <div className="fixed inset-0 z-[110] flex items-end justify-center sm:items-center">
+          <div
+            className="absolute inset-0"
+            style={{ background: 'rgba(4,6,15,0.72)', backdropFilter: 'blur(4px)' }}
+            onClick={handleResumeFromSheet}
+            aria-hidden
+          />
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 90, damping: 18 }}
+            role="dialog"
+            aria-label="Sair da Noite 1"
+            className="relative z-10 w-full max-w-sm rounded-t-3xl sm:rounded-3xl px-6 pb-8 pt-7 text-center"
+            style={{
+              background: 'linear-gradient(180deg, #0B0F22 0%, #070A18 100%)',
+              border: '1px solid rgba(196,181,253,0.18)',
+              boxShadow: '0 -8px 48px rgba(0,0,0,0.5)',
+              paddingBottom: 'max(2rem, env(safe-area-inset-bottom))',
+            }}
+          >
+            <h2
+              className="font-display text-[22px] font-bold leading-snug text-white"
+              style={{ textShadow: '0 2px 18px rgba(0,0,0,0.6)' }}
+            >
+              Quer mesmo sair?
+            </h2>
+            <p className="mb-7 mt-2 text-[14px] leading-snug text-white/50">
+              Você está no meio da Noite 1. Tem mais 6 noites te esperando — cada
+              uma solta uma camada diferente do sono.
+            </p>
+            <button
+              onClick={handleSeeOtherNights}
+              className="mb-3 w-full rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                background: `linear-gradient(135deg, ${SONO_LIGHT} 0%, ${SONO_DARK} 100%)`,
+                boxShadow: '0 10px 36px rgba(124,58,237,0.5)',
+              }}
+            >
+              Ver minhas próximas noites
+            </button>
+            <button
+              onClick={handleResumeFromSheet}
+              className="w-full rounded-full py-3.5 text-[14px] font-semibold text-white/80 transition-all hover:scale-[1.01] active:scale-[0.98]"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.14)' }}
+            >
+              Continuar ouvindo
+            </button>
+            <button
+              onClick={onBack}
+              className="mx-auto mt-4 block text-[12px] transition-colors"
+              style={{ color: 'rgba(255,255,255,0.3)' }}
+            >
+              Sair mesmo assim
+            </button>
+          </motion.div>
+        </div>
+      )}
 
       {/* Lock tip toast */}
       {showLockTip && (

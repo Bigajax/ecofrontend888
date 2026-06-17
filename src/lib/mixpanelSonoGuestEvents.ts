@@ -32,6 +32,26 @@ export function trackSonoGuestPageViewed(props?: SonoGuestEventProps): void {
   trackSonoGuestEvent('Funil Protocolo · Página vista', props);
 }
 
+/** Gate de cadastro exibido na entrada (ao clicar "Ouvir a Noite 1" deslogado),
+ *  antes da Noite 1. Marca a nova etapa de captura de lead do funil. */
+export function trackSonoGuestRegisterGateShown(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Cadastro gate exibido', props);
+}
+
+/** Saída antecipada da Noite 1 (botão Voltar antes dos 95%) que abre a oferta —
+ *  mede quanto essa porta de exit-intent alimenta a conversão. */
+export function trackSonoGuestEarlyExit(
+  props: SonoGuestEventProps & { progressPct?: number } = {},
+): void {
+  mixpanel.track('Funil Protocolo · Saída antecipada', {
+    source: props.source || SRC,
+    guest_id: props.guestId || sessionStorage.getItem('eco.sono.guest_id') || localStorage.getItem('eco_guest_id') || 'guest',
+    product_key: PRODUCT_KEY,
+    night_id: props.nightId || 'night_1',
+    ...(typeof props.progressPct === 'number' ? { progress_pct: props.progressPct } : {}),
+  });
+}
+
 export function trackSonoGuestNight1Started(props?: SonoGuestEventProps): void {
   trackSonoGuestEvent('Funil Protocolo · Noite 1 iniciada', { ...props, nightId: props?.nightId || 'night_1' });
 }

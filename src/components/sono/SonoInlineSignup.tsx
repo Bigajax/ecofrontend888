@@ -27,7 +27,23 @@ import { trackWithCAPI } from '@/lib/fbpixel';
 interface SonoInlineSignupProps {
   onCreated: () => void;
   returnTo: string;
+  /** Copy do cabeçalho — usada para reaproveitar o form no gate de entrada
+   *  (antes da Noite 1) com a mensagem de "desbloquear/salvar". Default = copy
+   *  do checkout pós-oferta. */
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  submitLabel?: string;
 }
+
+const DEFAULT_TITLE = (
+  <>
+    Crie sua conta
+    <br />
+    <span style={{ color: '#C4B5FD' }}>e garanta suas 7 noites</span>
+  </>
+);
+const DEFAULT_SUBTITLE =
+  'Leva 10 segundos. É nela que ficam guardadas suas noites e os 7 dias grátis.';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -39,7 +55,13 @@ const fieldStyle = {
   borderColor: 'rgba(255,255,255,0.12)',
 } as const;
 
-export function SonoInlineSignup({ onCreated, returnTo }: SonoInlineSignupProps) {
+export function SonoInlineSignup({
+  onCreated,
+  returnTo,
+  title,
+  subtitle,
+  submitLabel,
+}: SonoInlineSignupProps) {
   const { register, signInWithGoogle, signInWithGoogleIdToken } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -149,12 +171,10 @@ export function SonoInlineSignup({ onCreated, returnTo }: SonoInlineSignupProps)
           className="font-display text-[24px] font-bold leading-snug text-white"
           style={{ textShadow: '0 2px 20px rgba(0,0,0,0.6)' }}
         >
-          Crie sua conta
-          <br />
-          <span style={{ color: '#C4B5FD' }}>e garanta suas 7 noites</span>
+          {title ?? DEFAULT_TITLE}
         </h2>
         <p className="mt-2 text-[14px] leading-snug text-white/45">
-          Leva 10 segundos. É nela que ficam guardadas suas noites e os 7 dias grátis.
+          {subtitle ?? DEFAULT_SUBTITLE}
         </p>
       </div>
 
@@ -234,7 +254,7 @@ export function SonoInlineSignup({ onCreated, returnTo }: SonoInlineSignupProps)
           boxShadow: '0 10px 32px rgba(107,79,187,0.45)',
         }}
       >
-        {loading ? 'Criando sua conta…' : 'Criar conta e continuar'}
+        {loading ? 'Criando sua conta…' : (submitLabel ?? 'Criar conta e continuar')}
       </button>
 
       <p className="text-center text-[11.5px] leading-relaxed text-white/35">
