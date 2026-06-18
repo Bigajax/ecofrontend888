@@ -192,15 +192,26 @@ type EcotopiaTopbarProps = {
   ctaLabel?: string;
   /** Disparado no clique do CTA primário (ex.: tracking). */
   onCtaClick?: () => void;
+  /**
+   * Sobrescreve o destino do "Começar agora" do drawer mobile (nível 1).
+   * Default: /assinar. Na landing /sono variante "deite-se", aponta pra
+   * /sono/experiencia (igual aos demais CTAs daquela variante).
+   */
+  drawerPrimaryHref?: string;
+  /** Disparado no clique do "Começar agora" do drawer (ex.: tracking). */
+  onDrawerPrimaryClick?: () => void;
 };
 
 const DEFAULT_CTA_HREF = '/assinar?step=plan&plan=annual&from=topbar';
 const DEFAULT_CTA_LABEL = 'Experimente grátis';
+const DEFAULT_DRAWER_PRIMARY_HREF = '/assinar?step=plan&plan=annual&from=mobile-drawer';
 
 export default function EcotopiaTopbar({
   ctaHref = DEFAULT_CTA_HREF,
   ctaLabel = DEFAULT_CTA_LABEL,
   onCtaClick,
+  drawerPrimaryHref = DEFAULT_DRAWER_PRIMARY_HREF,
+  onDrawerPrimaryClick,
 }: EcotopiaTopbarProps = {}) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -319,6 +330,8 @@ export default function EcotopiaTopbar({
         ctaHref={ctaHref}
         ctaLabel={ctaLabel}
         onCtaClick={onCtaClick}
+        drawerPrimaryHref={drawerPrimaryHref}
+        onDrawerPrimaryClick={onDrawerPrimaryClick}
       />
     </>
   );
@@ -388,12 +401,16 @@ function MobileDrawer({
   ctaHref = DEFAULT_CTA_HREF,
   ctaLabel = DEFAULT_CTA_LABEL,
   onCtaClick,
+  drawerPrimaryHref = DEFAULT_DRAWER_PRIMARY_HREF,
+  onDrawerPrimaryClick,
 }: {
   open: boolean;
   onClose: () => void;
   ctaHref?: string;
   ctaLabel?: string;
   onCtaClick?: () => void;
+  drawerPrimaryHref?: string;
+  onDrawerPrimaryClick?: () => void;
 }) {
   const [drill, setDrill] = useState<MenuKey | null>(null);
   const [openSection, setOpenSection] = useState<string | null>(null);
@@ -419,8 +436,11 @@ function MobileDrawer({
   const footCtaPrimary = (
     <div className="lp-drawer-foot">
       <Link
-        to="/assinar?step=plan&plan=annual&from=mobile-drawer"
-        onClick={onClose}
+        to={drawerPrimaryHref}
+        onClick={() => {
+          onDrawerPrimaryClick?.();
+          onClose();
+        }}
         className="cta-primary lp-drawer-cta"
       >
         Começar agora

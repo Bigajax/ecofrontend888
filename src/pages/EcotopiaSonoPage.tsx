@@ -238,6 +238,10 @@ export default function EcotopiaSonoPage() {
       <EcotopiaTopbar
         ctaHref={sonoCtaTo('sono_topbar')}
         onCtaClick={sonoCtaClick('sono_topbar')}
+        // Só na variante "convite" (deite_se) o "Começar agora" do drawer mobile
+        // segue pra experiência; nas outras mantém o default (/assinar).
+        drawerPrimaryHref={isConviteHero ? sonoCtaTo('sono_mobile_drawer') : undefined}
+        onDrawerPrimaryClick={isConviteHero ? sonoCtaClick('sono_mobile_drawer') : undefined}
       />
 
       {/* ─── Hero · promessa de sono (sem preço — só promessa + CTA) ─── */}
