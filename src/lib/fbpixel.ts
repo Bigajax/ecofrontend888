@@ -186,3 +186,39 @@ export function getStartTrialEventId(): string {
     return ensureStartTrialEventId();
   }
 }
+
+// ─── Correlação do Purchase (client ↔ webhook do Mercado Pago) ─────────────────
+
+const PURCHASE_EVENT_ID_KEY = 'eco.sono.capi.purchase_event_id';
+
+/**
+ * Gera (ou recupera) o `event_id` do Purchase e o persiste no sessionStorage.
+ * É enviado ao backend no `create-with-card` (para o webhook reusar o mesmo id ao
+ * disparar o Purchase no início do trial) e reutilizado ao disparar o Pixel —
+ * assim o sinal do browser e o sinal server-side do Purchase são deduplicados
+ * pela Meta. Espelha `ensureStartTrialEventId`.
+ */
+export function ensurePurchaseEventId(): string {
+  try {
+    const existing = sessionStorage.getItem(PURCHASE_EVENT_ID_KEY);
+    if (existing) return existing;
+  } catch {
+    // sessionStorage indisponível — segue com id efêmero
+  }
+  const id = crypto.randomUUID();
+  try {
+    sessionStorage.setItem(PURCHASE_EVENT_ID_KEY, id);
+  } catch {
+    // noop
+  }
+  return id;
+}
+
+/** Lê o `event_id` do Purchase guardado (ou gera um novo se não houver). */
+export function getPurchaseEventId(): string {
+  try {
+    return sessionStorage.getItem(PURCHASE_EVENT_ID_KEY) || ensurePurchaseEventId();
+  } catch {
+    return ensurePurchaseEventId();
+  }
+}

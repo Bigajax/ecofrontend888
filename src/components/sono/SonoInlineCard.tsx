@@ -16,6 +16,7 @@ import {
 import {
   trackWithCAPI,
   ensureStartTrialEventId,
+  ensurePurchaseEventId,
   getFbp,
   resolveFbc,
 } from '@/lib/fbpixel';
@@ -89,6 +90,10 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
       // no passo `unlocked` do Pixel, para deduplicar com o StartTrial que o
       // webhook do Mercado Pago emite quando o trial é autorizado.
       const startTrialEventId = ensureStartTrialEventId();
+      // event_id do Purchase: enviado ao backend e reusado no Pixel (passo
+      // `confirming` do SonoInlineCheckout), deduplicando com o Purchase que o
+      // webhook do Mercado Pago emite no início do trial.
+      const purchaseEventId = ensurePurchaseEventId();
       try {
         const res = await fetch(apiUrl('/api/subscription/create-with-card'), {
           method: 'POST',
@@ -98,6 +103,7 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
             plan: PLAN,
             // Atribuição Meta para o CAPI server-side (webhook).
             metaEventId: startTrialEventId,
+            purchaseEventId,
             fbp: getFbp(),
             fbc: resolveFbc(),
             eventSourceUrl: window.location.href,

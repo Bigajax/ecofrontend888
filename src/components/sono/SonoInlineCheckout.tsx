@@ -15,7 +15,7 @@ import {
   trackSonoGuestAppInviteShown,
   trackSonoGuestAppInviteClicked,
 } from '@/lib/mixpanelSonoGuestEvents';
-import { trackWithCAPI, getStartTrialEventId } from '@/lib/fbpixel';
+import { trackWithCAPI, getStartTrialEventId, getPurchaseEventId } from '@/lib/fbpixel';
 import {
   useSonoCheckoutState,
   pollSonoSubscriptionActive,
@@ -107,6 +107,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   const [pending, setPending] = useState(false);
   const confirmStartedRef = useRef(false);
   const startTrialFiredRef = useRef(false);
+  const purchaseFiredRef = useRef(false);
   const convertedTrackedRef = useRef(false);
   const funnelSourceRef = useRef(false);
   const appInviteShownRef = useRef(false);
@@ -177,8 +178,25 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
     // server-side que o webhook do Mercado Pago emite no trial_started.
     if (!startTrialFiredRef.current) {
       startTrialFiredRef.current = true;
+      // StartTrial SEM value: o valor monetário do início do trial sai só no
+      // Purchase (abaixo), para não contar R$15,90 duas vezes entre os eventos.
       void trackWithCAPI(
         'StartTrial',
+        {
+          contentName: 'ECO Premium',
+          contentCategory: 'subscription',
+          pixelExtra: { plan: 'monthly' },
+        },
+        getStartTrialEventId(),
+      );
+    }
+    // Purchase no início do trial (cold-start de otimização). Usa o MESMO event_id
+    // enviado ao backend no create-with-card, deduplicando com o Purchase que o
+    // webhook do Mercado Pago emite no trial autorizado.
+    if (!purchaseFiredRef.current) {
+      purchaseFiredRef.current = true;
+      void trackWithCAPI(
+        'Purchase',
         {
           value: PRICE.monthly,
           currency: PRICE.currency,
@@ -186,7 +204,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
           contentCategory: 'subscription',
           pixelExtra: { plan: 'monthly' },
         },
-        getStartTrialEventId(),
+        getPurchaseEventId(),
       );
     }
     let cancelled = false;
@@ -219,9 +237,9 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
       source: 'sono_inline_checkout',
     });
     trackAssinaturaPaga({ plan_id: 'monthly', amount: PRICE.monthly });
-    // O StartTrial (Meta) é disparado ao entrar em `confirming` (cartão aceito),
-    // não aqui — ver o efeito acima. A cobrança real (Purchase) sai só do webhook
-    // do Mercado Pago, na 1ª cobrança pós-trial e nas renovações.
+    // StartTrial + Purchase (Meta) são disparados ao entrar em `confirming`
+    // (cartão aceito), não aqui — ver o efeito acima. O webhook do Mercado Pago
+    // emite os mesmos eventos server-side (deduplicados) no trial autorizado.
   }, [step, user?.id]);
 
   // Identidade ESTÁVEL: passado pro SonoInlineCard → handleToken (useCallback).
