@@ -1,5 +1,4 @@
 import {
-  lazy,
   Suspense,
   useEffect,
   useMemo,
@@ -17,6 +16,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 
+import { lazyWithReload } from "@/utils/lazyWithReload";
 import { RootProviders } from "@/providers/RootProviders";
 import RequireAuth from "@/components/RequireAuth";
 import RootErrorBoundary from "@/components/RootErrorBoundary";
@@ -38,67 +38,67 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGuestExperience } from "@/contexts/GuestExperienceContext";
 import { GUEST_EXPERIENCE_CONFIG } from "@/constants/guestExperience";
 
-const LoginPage = lazy(() => import("@/pages/LoginPage"));
-const ResetSenha = lazy(() => import("@/pages/ResetSenha"));
-const HomePage = lazy(() => import("@/pages/HomePage"));
-const ChatPage = lazy(() => import("@/pages/ChatPage"));
-const CreateProfilePage = lazy(() => import("@/pages/CreateProfilePage"));
-const WelcomePage = lazy(() => import("@/pages/WelcomePage"));
-const VoicePage = lazy(() => import("@/pages/VoicePage"));
-const MemoryLayout = lazy(() => import("@/pages/memory/MemoryLayout"));
-const MemoriesSection = lazy(() => import("@/pages/memory/MemoriesSection"));
-const ProfileSection = lazy(() => import("@/pages/memory/ProfileSection"));
-const ReportSection = lazy(() => import("@/pages/memory/ReportSection"));
-const ConversionDashboard = lazy(() => import("@/pages/admin/ConversionDashboard"));
+const LoginPage = lazyWithReload(() => import("@/pages/LoginPage"));
+const ResetSenha = lazyWithReload(() => import("@/pages/ResetSenha"));
+const HomePage = lazyWithReload(() => import("@/pages/HomePage"));
+const ChatPage = lazyWithReload(() => import("@/pages/ChatPage"));
+const CreateProfilePage = lazyWithReload(() => import("@/pages/CreateProfilePage"));
+const WelcomePage = lazyWithReload(() => import("@/pages/WelcomePage"));
+const VoicePage = lazyWithReload(() => import("@/pages/VoicePage"));
+const MemoryLayout = lazyWithReload(() => import("@/pages/memory/MemoryLayout"));
+const MemoriesSection = lazyWithReload(() => import("@/pages/memory/MemoriesSection"));
+const ProfileSection = lazyWithReload(() => import("@/pages/memory/ProfileSection"));
+const ReportSection = lazyWithReload(() => import("@/pages/memory/ReportSection"));
+const ConversionDashboard = lazyWithReload(() => import("@/pages/admin/ConversionDashboard"));
 
-const FiveRingsHub = lazy(() => import("@/pages/rings/FiveRingsHub"));
-const DailyRitual = lazy(() => import("@/pages/rings/DailyRitual"));
-const Timeline = lazy(() => import("@/pages/rings/Timeline"));
-const Progress = lazy(() => import("@/pages/rings/Progress"));
-const RingDetail = lazy(() => import("@/pages/rings/RingDetail"));
-const RiquezaMentalProgram = lazy(() => import("@/pages/programs/RiquezaMentalProgram"));
-const SleepArticle = lazy(() => import("@/pages/articles/SleepArticle"));
-const GoodNightSleepArticle = lazy(() => import("@/pages/articles/GoodNightSleepArticle"));
-const DiarioEstoicoPage = lazy(() => import("@/pages/diario-estoico/DiarioEstoicoPage"));
-const EnergyBlessingsPage = lazy(() => import("@/pages/energy-blessings/EnergyBlessingsPage"));
-const MeditationPlayerPage = lazy(() => import("@/pages/energy-blessings/MeditationPlayerPage"));
-const DrJoeDispenzaPage = lazy(() => import("@/pages/DrJoeDispenzaPage"));
-const MinigamePotencialPage = lazy(() => import("@/pages/MinigamePotencialPage"));
-const RecondicioneCorpoMentePage = lazy(() => import("@/pages/RecondicioneCorpoMentePage"));
-const IntroPotencialPage = lazy(() => import("@/pages/guest/IntroPotencialPage"));
-const DrJoePreviewPage = lazy(() => import("@/pages/guest/DrJoePreviewPage"));
-const RecondicioneAntesDeComecarPage = lazy(() => import("@/pages/RecondicioneAntesDeComecarPage"));
-const IntroducaoMeditacaoPage = lazy(() => import("@/pages/IntroducaoMeditacaoPage"));
-const SleepMeditationsPage = lazy(() => import("@/pages/sleep/SleepMeditationsPage"));
-const SleepGuestExperiencePage = lazy(() => import("@/pages/sleep/SleepGuestExperiencePage"));
-const CodigoDaAbundanciaPage = lazy(() => import("@/pages/CodigoDaAbundanciaPage"));
-const ProgramasPage = lazy(() => import("@/pages/ProgramasPage"));
-const CaleidoscopioMindMovieProgramPage = lazy(() => import("@/pages/CaleidoscopioMindMovieProgramPage"));
-const ManifestacaoSaudePage = lazy(() => import("@/pages/ManifestacaoSaudePage"));
-const ManifestacaoDinheiroPage = lazy(() => import("@/pages/ManifestacaoDinheiroPage"));
-const SonsPage = lazy(() => import("@/pages/SonsPage"));
-const SoundPlayerPage = lazy(() => import("@/pages/SoundPlayerPage"));
-const ConfiguracoesPage = lazy(() => import("@/pages/ConfiguracoesPage"));
-const SubscriptionCallbackPage = lazy(() => import("@/pages/SubscriptionCallbackPage"));
-const CancelarAssinaturaPage = lazy(() => import("@/pages/CancelarAssinaturaPage"));
-const FluxoAssinaturaDemo = lazy(() => import("@/pages/FluxoAssinaturaDemo"));
-const GuestMeditationPage = lazy(() => import("@/pages/GuestMeditationPage"));
-const MemoryPageGuestTeaser = lazy(() => import("@/pages/memory/MemoryPageGuestTeaser"));
-const UpgradeModalTest = lazy(() => import("@/pages/UpgradeModalTest"));
-const EcotopiaLandingPage = lazy(() => import("@/pages/EcotopiaLandingPage"));
-const EcotopiaPrecosPage = lazy(() => import("@/pages/EcotopiaPrecosPage"));
-const EcotopiaMeditacaoPage = lazy(() => import("@/pages/EcotopiaMeditacaoPage"));
-const EcotopiaSonoPage = lazy(() => import("@/pages/EcotopiaSonoPage"));
-const EcotopiaEcoIAPage = lazy(() => import("@/pages/EcotopiaEcoIAPage"));
-const EcotopiaDiarioPage = lazy(() => import("@/pages/EcotopiaDiarioPage"));
-const EcotopiaAneisPage = lazy(() => import("@/pages/EcotopiaAneisPage"));
-const EcotopiaDispenzaPage = lazy(() => import("@/pages/EcotopiaDispenzaPage"));
-const EcotopiaAnsiedadePage = lazy(() => import("@/pages/EcotopiaAnsiedadePage"));
-const DrJoeAdCreativePage = lazy(() => import("@/pages/DrJoeAdCreativePage"));
-const EcoDreamPage = lazy(() => import("@/pages/EcoDreamPage"));
-const EcoDreamGuestPage = lazy(() => import("@/pages/guest/EcoDreamGuestPage"));
-const CheckoutAnualPage = lazy(() => import("@/pages/CheckoutAnualPage"));
-const AssinarPage = lazy(() => import("@/pages/AssinarPage"));
+const FiveRingsHub = lazyWithReload(() => import("@/pages/rings/FiveRingsHub"));
+const DailyRitual = lazyWithReload(() => import("@/pages/rings/DailyRitual"));
+const Timeline = lazyWithReload(() => import("@/pages/rings/Timeline"));
+const Progress = lazyWithReload(() => import("@/pages/rings/Progress"));
+const RingDetail = lazyWithReload(() => import("@/pages/rings/RingDetail"));
+const RiquezaMentalProgram = lazyWithReload(() => import("@/pages/programs/RiquezaMentalProgram"));
+const SleepArticle = lazyWithReload(() => import("@/pages/articles/SleepArticle"));
+const GoodNightSleepArticle = lazyWithReload(() => import("@/pages/articles/GoodNightSleepArticle"));
+const DiarioEstoicoPage = lazyWithReload(() => import("@/pages/diario-estoico/DiarioEstoicoPage"));
+const EnergyBlessingsPage = lazyWithReload(() => import("@/pages/energy-blessings/EnergyBlessingsPage"));
+const MeditationPlayerPage = lazyWithReload(() => import("@/pages/energy-blessings/MeditationPlayerPage"));
+const DrJoeDispenzaPage = lazyWithReload(() => import("@/pages/DrJoeDispenzaPage"));
+const MinigamePotencialPage = lazyWithReload(() => import("@/pages/MinigamePotencialPage"));
+const RecondicioneCorpoMentePage = lazyWithReload(() => import("@/pages/RecondicioneCorpoMentePage"));
+const IntroPotencialPage = lazyWithReload(() => import("@/pages/guest/IntroPotencialPage"));
+const DrJoePreviewPage = lazyWithReload(() => import("@/pages/guest/DrJoePreviewPage"));
+const RecondicioneAntesDeComecarPage = lazyWithReload(() => import("@/pages/RecondicioneAntesDeComecarPage"));
+const IntroducaoMeditacaoPage = lazyWithReload(() => import("@/pages/IntroducaoMeditacaoPage"));
+const SleepMeditationsPage = lazyWithReload(() => import("@/pages/sleep/SleepMeditationsPage"));
+const SleepGuestExperiencePage = lazyWithReload(() => import("@/pages/sleep/SleepGuestExperiencePage"));
+const CodigoDaAbundanciaPage = lazyWithReload(() => import("@/pages/CodigoDaAbundanciaPage"));
+const ProgramasPage = lazyWithReload(() => import("@/pages/ProgramasPage"));
+const CaleidoscopioMindMovieProgramPage = lazyWithReload(() => import("@/pages/CaleidoscopioMindMovieProgramPage"));
+const ManifestacaoSaudePage = lazyWithReload(() => import("@/pages/ManifestacaoSaudePage"));
+const ManifestacaoDinheiroPage = lazyWithReload(() => import("@/pages/ManifestacaoDinheiroPage"));
+const SonsPage = lazyWithReload(() => import("@/pages/SonsPage"));
+const SoundPlayerPage = lazyWithReload(() => import("@/pages/SoundPlayerPage"));
+const ConfiguracoesPage = lazyWithReload(() => import("@/pages/ConfiguracoesPage"));
+const SubscriptionCallbackPage = lazyWithReload(() => import("@/pages/SubscriptionCallbackPage"));
+const CancelarAssinaturaPage = lazyWithReload(() => import("@/pages/CancelarAssinaturaPage"));
+const FluxoAssinaturaDemo = lazyWithReload(() => import("@/pages/FluxoAssinaturaDemo"));
+const GuestMeditationPage = lazyWithReload(() => import("@/pages/GuestMeditationPage"));
+const MemoryPageGuestTeaser = lazyWithReload(() => import("@/pages/memory/MemoryPageGuestTeaser"));
+const UpgradeModalTest = lazyWithReload(() => import("@/pages/UpgradeModalTest"));
+const EcotopiaLandingPage = lazyWithReload(() => import("@/pages/EcotopiaLandingPage"));
+const EcotopiaPrecosPage = lazyWithReload(() => import("@/pages/EcotopiaPrecosPage"));
+const EcotopiaMeditacaoPage = lazyWithReload(() => import("@/pages/EcotopiaMeditacaoPage"));
+const EcotopiaSonoPage = lazyWithReload(() => import("@/pages/EcotopiaSonoPage"));
+const EcotopiaEcoIAPage = lazyWithReload(() => import("@/pages/EcotopiaEcoIAPage"));
+const EcotopiaDiarioPage = lazyWithReload(() => import("@/pages/EcotopiaDiarioPage"));
+const EcotopiaAneisPage = lazyWithReload(() => import("@/pages/EcotopiaAneisPage"));
+const EcotopiaDispenzaPage = lazyWithReload(() => import("@/pages/EcotopiaDispenzaPage"));
+const EcotopiaAnsiedadePage = lazyWithReload(() => import("@/pages/EcotopiaAnsiedadePage"));
+const DrJoeAdCreativePage = lazyWithReload(() => import("@/pages/DrJoeAdCreativePage"));
+const EcoDreamPage = lazyWithReload(() => import("@/pages/EcoDreamPage"));
+const EcoDreamGuestPage = lazyWithReload(() => import("@/pages/guest/EcoDreamGuestPage"));
+const CheckoutAnualPage = lazyWithReload(() => import("@/pages/CheckoutAnualPage"));
+const AssinarPage = lazyWithReload(() => import("@/pages/AssinarPage"));
 
 // Lightweight loading fallback (no heavy dependencies)
 // Conceito "ECO": ondas que partem do símbolo no ritmo de uma respiração lenta.
