@@ -185,7 +185,23 @@ function animateScrollToTop(fromEl: HTMLElement | null, duration = 1400) {
   requestAnimationFrame(step);
 }
 
-export default function EcotopiaTopbar() {
+type EcotopiaTopbarProps = {
+  /** Sobrescreve o destino do CTA "Experimente grátis" (default: /assinar). */
+  ctaHref?: string;
+  /** Rótulo do CTA primário (default: "Experimente grátis"). */
+  ctaLabel?: string;
+  /** Disparado no clique do CTA primário (ex.: tracking). */
+  onCtaClick?: () => void;
+};
+
+const DEFAULT_CTA_HREF = '/assinar?step=plan&plan=annual&from=topbar';
+const DEFAULT_CTA_LABEL = 'Experimente grátis';
+
+export default function EcotopiaTopbar({
+  ctaHref = DEFAULT_CTA_HREF,
+  ctaLabel = DEFAULT_CTA_LABEL,
+  onCtaClick,
+}: EcotopiaTopbarProps = {}) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
@@ -276,8 +292,8 @@ export default function EcotopiaTopbar() {
           <Link to="/login" className="lp-nav-link-text">
             Entrar
           </Link>
-          <Link to="/assinar?step=plan&plan=annual&from=topbar" className="cta-primary">
-            Experimente grátis
+          <Link to={ctaHref} className="cta-primary" onClick={onCtaClick}>
+            {ctaLabel}
           </Link>
 
           <button
@@ -297,7 +313,13 @@ export default function EcotopiaTopbar() {
         </div>
       </nav>
 
-      <MobileDrawer open={drawerOpen} onClose={closeDrawer} />
+      <MobileDrawer
+        open={drawerOpen}
+        onClose={closeDrawer}
+        ctaHref={ctaHref}
+        ctaLabel={ctaLabel}
+        onCtaClick={onCtaClick}
+      />
     </>
   );
 }
@@ -360,7 +382,19 @@ function MegaLinkRender({ link }: { link: MegaLink }) {
   );
 }
 
-function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MobileDrawer({
+  open,
+  onClose,
+  ctaHref = DEFAULT_CTA_HREF,
+  ctaLabel = DEFAULT_CTA_LABEL,
+  onCtaClick,
+}: {
+  open: boolean;
+  onClose: () => void;
+  ctaHref?: string;
+  ctaLabel?: string;
+  onCtaClick?: () => void;
+}) {
   const [drill, setDrill] = useState<MenuKey | null>(null);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -397,11 +431,14 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
   const footCtaBlue = (
     <div className="lp-drawer-foot">
       <Link
-        to="/assinar?step=plan&plan=annual&from=mobile-drawer-sub"
-        onClick={onClose}
+        to={ctaHref}
+        onClick={() => {
+          onCtaClick?.();
+          onClose();
+        }}
         className="cta-primary lp-drawer-cta lp-drawer-cta--blue"
       >
-        Experimente grátis
+        {ctaLabel}
       </Link>
     </div>
   );

@@ -235,7 +235,10 @@ export default function EcotopiaSonoPage() {
 
   return (
     <div className="ecotopia-lp lp-sono">
-      <EcotopiaTopbar />
+      <EcotopiaTopbar
+        ctaHref={sonoCtaTo('sono_topbar')}
+        onCtaClick={sonoCtaClick('sono_topbar')}
+      />
 
       {/* ─── Hero · promessa de sono (sem preço — só promessa + CTA) ─── */}
       <section className="lp-sono-hero lp-sono-hero--v2">
@@ -873,10 +876,12 @@ export default function EcotopiaSonoPage() {
               <Link to="/cancelar-assinatura">Cancele a qualquer momento</Link>
             </div>
 
+            {/* Único CTA da landing que sempre vai pro /assinar (checkout/trial),
+                mesmo na variante convite — o resto da página funila pra experiência. */}
             <Link
-              to={sonoCtaTo('sono_oferta_cta', selectedOfferPlan)}
+              to={`/assinar?step=plan&plan=${selectedOfferPlan}&from=sono_oferta_cta`}
               className="lp-sono-offer-cta scroll-reveal stagger-4"
-              onClick={sonoCtaClick('sono_oferta_cta', selectedOfferPlan)}
+              onClick={() => trackTrialCta(selectedOfferPlan, 'sono_oferta_cta')}
             >
               {CTA_LABEL}
             </Link>
