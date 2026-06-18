@@ -242,6 +242,12 @@ export default function EcotopiaSonoPage() {
         // segue pra experiência; nas outras mantém o default (/assinar).
         drawerPrimaryHref={isConviteHero ? sonoCtaTo('sono_mobile_drawer') : undefined}
         onDrawerPrimaryClick={isConviteHero ? sonoCtaClick('sono_mobile_drawer') : undefined}
+        // Na deite-se o banner do topo vira "céu estrelado" e convida pra
+        // experiência (em vez da faixa azul de trial pro /assinar).
+        bannerStarry={isConviteHero}
+        bannerLabel={isConviteHero ? 'Sua primeira noite é grátis · ouça agora' : undefined}
+        bannerHref={isConviteHero ? sonoCtaTo('sono_top_banner') : undefined}
+        onBannerClick={isConviteHero ? sonoCtaClick('sono_top_banner') : undefined}
       />
 
       {/* ─── Hero · promessa de sono (sem preço — só promessa + CTA) ─── */}

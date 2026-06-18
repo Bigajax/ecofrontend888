@@ -200,11 +200,25 @@ type EcotopiaTopbarProps = {
   drawerPrimaryHref?: string;
   /** Disparado no clique do "Começar agora" do drawer (ex.: tracking). */
   onDrawerPrimaryClick?: () => void;
+  /** Copy do banner superior (default: trial "7 dias gratuitos…"). */
+  bannerLabel?: string;
+  /** Destino do banner superior (default: /assinar). */
+  bannerHref?: string;
+  /** Disparado no clique do banner superior (ex.: tracking). */
+  onBannerClick?: () => void;
+  /**
+   * Aplica o tema "céu estrelado" no banner (mesma assinatura da pílula "conduz"
+   * e da faixa rotativa). Usado na landing /sono variante "deite-se", onde o
+   * banner convida pra experiência em vez de vender o trial.
+   */
+  bannerStarry?: boolean;
 };
 
 const DEFAULT_CTA_HREF = '/assinar?step=plan&plan=annual&from=topbar';
 const DEFAULT_CTA_LABEL = 'Experimente grátis';
 const DEFAULT_DRAWER_PRIMARY_HREF = '/assinar?step=plan&plan=annual&from=mobile-drawer';
+const DEFAULT_BANNER_LABEL = '7 dias gratuitos · cancele quando quiser';
+const DEFAULT_BANNER_HREF = '/assinar?step=plan&plan=annual&from=top_banner';
 
 export default function EcotopiaTopbar({
   ctaHref = DEFAULT_CTA_HREF,
@@ -212,6 +226,10 @@ export default function EcotopiaTopbar({
   onCtaClick,
   drawerPrimaryHref = DEFAULT_DRAWER_PRIMARY_HREF,
   onDrawerPrimaryClick,
+  bannerLabel = DEFAULT_BANNER_LABEL,
+  bannerHref = DEFAULT_BANNER_HREF,
+  onBannerClick,
+  bannerStarry = false,
 }: EcotopiaTopbarProps = {}) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -245,8 +263,11 @@ export default function EcotopiaTopbar({
 
   return (
     <>
-      <div className="top-banner">
-        <Link to="/assinar?step=plan&plan=annual&from=top_banner">7 dias gratuitos · cancele quando quiser</Link>
+      <div className={`top-banner${bannerStarry ? ' top-banner--starry' : ''}`}>
+        <Link to={bannerHref} onClick={onBannerClick}>
+          {bannerLabel}
+          {bannerStarry && <span className="top-banner-arrow" aria-hidden>→</span>}
+        </Link>
       </div>
 
       <nav className={`lp-nav ${isScrolled ? 'is-scrolled' : ''}`} aria-label="Navegação principal">

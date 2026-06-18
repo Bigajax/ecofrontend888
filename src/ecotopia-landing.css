@@ -216,6 +216,66 @@
   cursor: pointer;
 }
 
+/* ── Variante céu estrelado do banner topo (só /sono deite-se) ──
+   Mesma assinatura da pílula "conduz" (.lp-sono-mark-starry) e da faixa
+   rotativa (.lp-method-marquee--starry): céu navy + estrelas piscando atrás
+   de um texto claro com glow azul. Convida pra experiência, não vende trial. */
+.ecotopia-lp .top-banner--starry {
+  overflow: hidden; /* contém as estrelas */
+  background:
+    radial-gradient(120% 180% at 20% -40%, #233356 0%, rgba(35, 51, 86, 0) 55%),
+    linear-gradient(180deg, #0E1730 0%, #0A0F1E 100%);
+  box-shadow: inset 0 -1px 0 rgba(110, 200, 255, 0.22);
+}
+
+/* estrelas paradas atrás do texto — piscam (twinkle) e derivam de leve (drift) */
+.ecotopia-lp .top-banner--starry::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.4px 1.4px at 12% 42%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 33% 70%, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1.1px 1.1px at 55% 26%, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(1.4px 1.4px at 77% 62%, #fff, transparent),
+    radial-gradient(1px 1px at 92% 44%, rgba(255, 255, 255, 0.7), transparent);
+  animation:
+    lpStarTwinkle 3.4s ease-in-out infinite alternate,
+    lpStarDrift 9s ease-in-out infinite alternate;
+}
+
+/* compound selector (.top-banner.top-banner--starry) > sobrepõe o base sem
+   depender de ordem de fonte */
+.ecotopia-lp .top-banner.top-banner--starry a {
+  color: #EAF2FF !important;
+  -webkit-text-fill-color: #EAF2FF;
+  text-shadow: 0 1px 12px rgba(110, 200, 255, 0.35);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ecotopia-lp .top-banner--starry .top-banner-arrow {
+  display: inline-block;
+  margin-left: 7px;
+  transition: transform 0.3s ease;
+}
+
+.ecotopia-lp .top-banner--starry a:hover .top-banner-arrow {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ecotopia-lp .top-banner--starry::before {
+    animation: none;
+    opacity: 0.85;
+  }
+  .ecotopia-lp .top-banner--starry a:hover .top-banner-arrow {
+    transform: none;
+  }
+}
+
 /* â”€â”€â”€ Nav â”€â”€â”€ */
 .ecotopia-lp .lp-nav {
   display: flex;
