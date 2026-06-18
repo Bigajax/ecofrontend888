@@ -14,7 +14,9 @@ import {
   trackSonoGuestOfferDismissed,
   trackSonoGuestAppInviteShown,
   trackSonoGuestAppInviteClicked,
+  trackSonoGuestPostNight1Response,
 } from '@/lib/mixpanelSonoGuestEvents';
+import mixpanel from '@/lib/mixpanel';
 import { trackWithCAPI, getStartTrialEventId, getPurchaseEventId } from '@/lib/fbpixel';
 import {
   useSonoCheckoutState,
@@ -51,18 +53,26 @@ const RETURN_TO = '/sono/experiencia?checkout=card';
 
 const NIGHTS_2_7 = PROTOCOL_NIGHTS.slice(1);
 
+/** Mapa das chaves internas (estáveis, gravadas em sono_guest_flow_events) para o
+ *  valor legível enviado ao Mixpanel na "Resposta pós-noite 1". */
+const RESPONSE_KEY: Record<ReflectionAnswer, 'mais_leve' | 'um_pouco_mais_calmo' | 'ainda_acelerado'> = {
+  yes: 'mais_leve',
+  little: 'um_pouco_mais_calmo',
+  no: 'ainda_acelerado',
+};
+
 const VALIDATION: Record<ReflectionAnswer, { lead: string; body: string }> = {
   yes: {
-    lead: 'Que bom.',
-    body: 'Seu corpo já respondeu ao primeiro estímulo. Com continuidade, ele aprende a desacelerar sozinho.',
+    lead: 'Ótimo.',
+    body: 'Esse é o primeiro sinal de que seu corpo respondeu ao estímulo. Agora a sequência continua para tornar esse estado mais fácil de acessar na hora de dormir.',
   },
   little: {
-    lead: 'Já é um começo.',
-    body: 'Primeiro o corpo reduz a resistência. Com repetição, ele desliga com mais facilidade.',
+    lead: 'Perfeito.',
+    body: 'No começo, pequenas mudanças já importam. Seu corpo começou a sair do estado de alerta. As próximas noites repetem esse caminho em camadas.',
   },
   no: {
     lead: 'Tudo bem.',
-    body: 'Na primeira noite o corpo ainda está saindo do padrão antigo. É exatamente assim que começa.',
+    body: 'Quando a mente está muito ativa, o corpo não precisa de força. Precisa de repetição. As próximas noites foram criadas exatamente para conduzir esse desacelerar passo a passo.',
   },
 };
 
@@ -121,6 +131,14 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
     if (step === null || funnelSourceRef.current) return;
     funnelSourceRef.current = true;
     registerFunilSono('sono_experiencia');
+    // Versão das telas/copy como super properties: todos os eventos do funil
+    // passam a carregar a versão, permitindo comparar variações sem tocar em cada
+    // track. Bumpar estes valores ao iterar a copy.
+    mixpanel.register({
+      post_meditation_version: 'v2_continuidade',
+      offer_version: 'v2_camadas',
+      checkout_version: 'trial_r0_copy_v2',
+    });
   }, [step]);
 
   // "Oferta vista" — dispara quando o passo offer aparece, por qualquer caminho
@@ -253,6 +271,10 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
     // max_step_reached é INT (1-6) na tabela sono_guest_flow_events — mandar
     // string ('reflection') fazia o upsert inteiro falhar e a resposta não salvar.
     void upsertEvent({ reflection_answer: a, max_step_reached: 2 });
+    trackSonoGuestPostNight1Response(RESPONSE_KEY[a], {
+      source: getSource(),
+      guestId: getGuestId(),
+    });
   };
 
   const goToOffer = () => {
@@ -371,9 +393,9 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                       className="mb-9 font-display text-[25px] font-bold leading-snug text-white"
                       style={{ textShadow: '0 2px 20px rgba(0,0,0,0.6)' }}
                     >
-                      Você sentiu
+                      Como seu corpo
                       <br />
-                      <em style={{ color: '#C4B5FD', fontStyle: 'italic' }}>alguma diferença?</em>
+                      <em style={{ color: '#C4B5FD', fontStyle: 'italic' }}>está agora?</em>
                     </h2>
                     <div className="flex w-full flex-col gap-3">
                       <button
@@ -384,20 +406,20 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                           boxShadow: '0 8px 28px rgba(107,79,187,0.4)',
                         }}
                       >
-                        Sim, relaxei
+                        Mais leve
                       </button>
                       <button
                         onClick={() => selectAnswer('little')}
                         className="w-full rounded-full py-3.5 text-[14px] font-semibold text-white/80 transition-all duration-200 hover:scale-[1.02] active:scale-[0.97]"
                         style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)' }}
                       >
-                        Um pouco
+                        Um pouco mais calmo
                       </button>
                       <button
                         onClick={() => selectAnswer('no')}
                         className="w-full py-3 text-[13px] text-white/45 transition-colors hover:text-white/65"
                       >
-                        Ainda estou agitado
+                        Ainda acelerado
                       </button>
                     </div>
                   </>
@@ -428,7 +450,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                       className="w-full rounded-full py-3.5 text-[14px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
                       style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}
                     >
-                      Ver minhas próximas noites →
+                      Continuar para a Noite 2 →
                     </motion.button>
                   </>
                 )}
@@ -450,12 +472,13 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                   className="mb-2 font-display text-[24px] font-bold leading-snug text-white"
                   style={{ textShadow: '0 2px 18px rgba(0,0,0,0.6)' }}
                 >
-                  Tem mais 6 noites
+                  Seu sono é
                   <br />
-                  <span style={{ color: '#C4B5FD' }}>te esperando.</span>
+                  <span style={{ color: '#C4B5FD' }}>treinado em camadas.</span>
                 </h2>
                 <p className="mb-6 text-[14px] leading-snug text-white/45">
-                  Cada uma solta uma camada diferente do sono.
+                  A Noite 1 foi o início. Agora você continua uma sequência de 7 noites para
+                  desacelerar mente, corpo e pensamentos antes de dormir.
                 </p>
 
                 {/* Preview calmo das próximas noites — com miniatura de cada noite.
@@ -516,8 +539,8 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                   })}
                 </div>
 
-                {/* Oferta — copy canônica, sem urgência */}
-                <p className="font-display text-[19px] font-bold text-white">{OFFER.trial}</p>
+                {/* Oferta — R$0 hoje em destaque, preço recorrente + cancelamento logo abaixo */}
+                <p className="font-display text-[19px] font-bold text-white">Comece por R$0 hoje</p>
                 <p className="mb-3 text-[13px] text-white/40">
                   Depois {OFFER.priceMonthly} · {OFFER.cancelAnytime}
                 </p>
@@ -534,7 +557,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                     boxShadow: '0 10px 36px rgba(124,58,237,0.5)',
                   }}
                 >
-                  Continuar minhas noites
+                  Liberar minhas 7 noites por R$0
                 </button>
                 <button
                   onClick={handleDismiss}

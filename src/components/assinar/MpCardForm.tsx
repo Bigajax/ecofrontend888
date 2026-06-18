@@ -21,6 +21,8 @@ interface MpCardFormProps {
    * checkout inline do sono (fundo navy/violeta).
    */
   appearance?: "light" | "dark";
+  /** Texto do botão de submit do brick. Default = padrão do /assinar. */
+  submitLabel?: string;
   onToken: (formData: Record<string, unknown>) => Promise<void> | void;
   /** Brick carregou (Secure Fields prontos) — distingue "visto" de "utilizável". */
   onReady?: () => void;
@@ -47,7 +49,7 @@ const DARK_VISUAL = {
   },
 };
 
-function MpCardFormImpl({ amount, maxInstallments, payerEmail, appearance = "light", onToken, onReady, onError }: MpCardFormProps) {
+function MpCardFormImpl({ amount, maxInstallments, payerEmail, appearance = "light", submitLabel = "Começar meus 7 dias grátis", onToken, onReady, onError }: MpCardFormProps) {
   ensureMpInit();
   const initialization = useMemo(
     () => ({ amount, payer: { email: payerEmail ?? "" } }),
@@ -57,11 +59,11 @@ function MpCardFormImpl({ amount, maxInstallments, payerEmail, appearance = "lig
     () => ({
       paymentMethods: { minInstallments: 1, maxInstallments },
       visual: {
-        texts: { formSubmit: "Começar meus 7 dias grátis" },
+        texts: { formSubmit: submitLabel },
         ...(appearance === "dark" ? { style: DARK_VISUAL } : {}),
       },
     }),
-    [maxInstallments, appearance]
+    [maxInstallments, appearance, submitLabel]
   );
 
   return (

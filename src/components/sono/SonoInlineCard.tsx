@@ -149,10 +149,11 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
           className="font-display text-[24px] font-bold leading-snug text-white"
           style={{ textShadow: '0 2px 20px rgba(0,0,0,0.6)' }}
         >
-          Confirme suas <span style={{ color: '#C4B5FD' }}>7 noites</span>
+          Libere suas <span style={{ color: '#C4B5FD' }}>7 noites por R$0</span>
         </h2>
         <p className="mt-2 text-[14px] leading-snug text-white/45">
-          R$ 0 hoje · primeira cobrança só em 7 dias.
+          Você não paga nada hoje. Sua primeira cobrança só acontece depois de 7 dias — e nós
+          te avisamos por e-mail antes.
         </p>
       </div>
 
@@ -162,7 +163,7 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)' }}
       >
         <div>
-          <p className="font-display text-[16px] font-bold text-white">Mensal</p>
+          <p className="font-display text-[16px] font-bold text-white">Teste gratuito</p>
           <p className="text-[13px] text-white/45">Depois R$ 15,90/mês</p>
         </div>
         <div className="text-right">
@@ -195,6 +196,12 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
         ))}
       </ul>
 
+      {/* Reforço de segurança bem antes do cartão — reduz o medo no momento de
+          digitar (o cartão só confirma o teste; nada é cobrado hoje). */}
+      <p className="-mb-1 text-center text-[12.5px] leading-snug text-white/55">
+        Seu cartão confirma o teste gratuito. Nada será cobrado hoje.
+      </p>
+
       {/* Brick do MP em tema escuro (appearance="dark"), num vidro que integra ao
           clima do sono em vez do bloco branco. */}
       <div
@@ -207,6 +214,7 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
             maxInstallments={1}
             payerEmail={payerEmail}
             appearance="dark"
+            submitLabel="Começar 7 dias grátis por R$0"
             onToken={handleToken}
             onReady={handleBrickReady}
             onError={handleBrickError}
@@ -232,7 +240,7 @@ export function SonoInlineCard({ payerEmail, onPaid }: SonoInlineCardProps) {
 
       <p className="flex items-center justify-center gap-1.5 text-center text-[11.5px] leading-relaxed text-white/35">
         <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'rgba(196,181,253,0.6)' }} />
-        Pagamento seguro ·{' '}
+        Pagamento seguro · R$0 hoje ·{' '}
         <button
           type="button"
           onClick={handleOpenCancelInfo}

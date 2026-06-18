@@ -60,6 +60,28 @@ export function trackSonoGuestNight1Completed(props?: SonoGuestEventProps): void
   trackSonoGuestEvent('Funil Protocolo · Noite 1 concluída', { ...props, nightId: props?.nightId || 'night_1' });
 }
 
+/** Resposta da pessoa à pergunta pós-Noite 1 ("Como seu corpo está agora?").
+ *  Qualquer resposta conduz à continuidade — aqui medimos a distribuição e
+ *  cruzamos com a conversão. Hoje a resposta também é gravada em
+ *  sono_guest_flow_events; este evento fecha o gap no Mixpanel. */
+export function trackSonoGuestPostNight1Response(
+  response: 'mais_leve' | 'um_pouco_mais_calmo' | 'ainda_acelerado',
+  props?: SonoGuestEventProps,
+): void {
+  mixpanel.track('Funil Protocolo · Resposta pós-noite 1', {
+    source: props?.source || SRC,
+    guest_id:
+      props?.guestId ||
+      sessionStorage.getItem('eco.sono.guest_id') ||
+      localStorage.getItem('eco_guest_id') ||
+      'guest',
+    product_key: PRODUCT_KEY,
+    night_id: props?.nightId || 'night_1',
+    night_number: 1,
+    response,
+  });
+}
+
 export function trackSonoGuestOfferViewed(props?: SonoGuestEventProps): void {
   trackSonoGuestEvent('Funil Protocolo · Oferta vista', props);
 }
