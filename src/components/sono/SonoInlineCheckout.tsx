@@ -250,12 +250,14 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
 
   const selectAnswer = (a: ReflectionAnswer) => {
     setAnswer(a);
-    void upsertEvent({ reflection_answer: a, max_step_reached: 'reflection' });
+    // max_step_reached é INT (1-6) na tabela sono_guest_flow_events — mandar
+    // string ('reflection') fazia o upsert inteiro falhar e a resposta não salvar.
+    void upsertEvent({ reflection_answer: a, max_step_reached: 2 });
   };
 
   const goToOffer = () => {
     goTo('offer');
-    void upsertEvent({ reached_offer: true, max_step_reached: 'offer' });
+    void upsertEvent({ reached_offer: true, max_step_reached: 6 });
   };
 
   const startCheckout = () => {
