@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGoogleSignInButton } from "@/hooks/useGoogleOneTap";
+import { translateAuthError } from "@/utils/authErrorMessage";
 import { LEGAL_LINKS } from "./goalsData";
 import {
   trackCadastroVisto,
@@ -33,6 +34,12 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
   const [erro, setErro] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
+  // Fonte de verdade no submit é o DOM, não o state: em webview do FB/IG o
+  // autofill/gerenciador de senha preenche o <input> SEM disparar o onChange do
+  // React, deixando o state vazio e fazendo a validação rejeitar um e-mail
+  // visível e válido ("validacao: email"). Ler o ref cobre esse caso.
+  const emailRef = useRef<HTMLInputElement>(null);
+  const senhaRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     trackCadastroVisto();
@@ -49,14 +56,15 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
     setErro(null);
     // Validações locais também contam como falha — sem isso ficam invisíveis
     // no Mixpanel ("enviado" ainda não disparou, então o funil não é afetado).
-    // trim antes de validar: autofill/teclado mobile costuma injetar espaço,
-    // e a validação crua rejeitava leads pagos que digitaram o e-mail certo.
-    const emailLimpo = email.trim();
+    // Lê do DOM (autofill que não dispara onChange), com o state como fallback;
+    // trim + lowercase porque teclado mobile injeta espaço e capitaliza.
+    const emailLimpo = (emailRef.current?.value ?? email).trim().toLowerCase();
+    const senhaValor = senhaRef.current?.value ?? senha;
     if (!EMAIL_RE.test(emailLimpo)) {
       trackCadastroFalhou({ method: "email", error_message: "validacao: email" });
       return setErro("E-mail inválido.");
     }
-    if (senha.length < 8) {
+    if (senhaValor.length < 8) {
       trackCadastroFalhou({ method: "email", error_message: "validacao: senha_curta" });
       return setErro("A senha precisa ter ao menos 8 caracteres.");
     }
@@ -73,7 +81,7 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
       // ele cai na homepage e o funil se perde.
       const { needsConfirmation } = await register(
         emailLimpo,
-        senha,
+        senhaValor,
         fullName,
         "",
         window.location.origin + funnelReturnTo,
@@ -87,9 +95,10 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
       onCreated();
     } catch (err) {
       clearCadastroPendente();
-      const message = err instanceof Error ? err.message : "Não foi possível criar a conta.";
-      trackCadastroFalhou({ method: "email", error_message: message });
-      setErro(message);
+      // Mixpanel guarda o motivo cru (diagnóstico); o usuário vê PT-BR.
+      const raw = err instanceof Error ? err.message : "erro_desconhecido";
+      trackCadastroFalhou({ method: "email", error_message: raw });
+      setErro(translateAuthError(err, "signup"));
     } finally {
       setLoading(false);
     }
@@ -130,9 +139,9 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
       // O retorno cai direto no step do cartão com plano/origem preservados.
       await signInWithGoogle(funnelReturnTo);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Falha ao entrar com Google.";
-      trackCadastroFalhou({ method: "google", error_message: message });
-      setErro(message);
+      const raw = err instanceof Error ? err.message : "erro_desconhecido";
+      trackCadastroFalhou({ method: "google", error_message: raw });
+      setErro(translateAuthError(err, "signup"));
     }
   };
 
@@ -180,9 +189,16 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
       </div>
 
       <input
+        ref={emailRef}
         aria-label="Endereço de email"
         type="email"
+        name="email"
         placeholder="Endereço de email *"
+        autoComplete="email"
+        inputMode="email"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         className={fieldCls}
@@ -190,9 +206,12 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
       />
       <div className="relative">
         <input
+          ref={senhaRef}
           aria-label="Senha (8+ caracteres)"
           type={showSenha ? "text" : "password"}
+          name="password"
           placeholder="Senha (8+ caracteres) *"
+          autoComplete="new-password"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
           className={`${fieldCls} pr-12`}

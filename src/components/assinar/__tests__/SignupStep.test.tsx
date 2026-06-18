@@ -78,6 +78,29 @@ describe("SignupStep", () => {
     );
   });
 
+  // Webview do FB/IG (tráfego pago): autofill/gerenciador de senha preenche o
+  // DOM SEM disparar o onChange do React → o state controlado fica vazio e a
+  // validação rejeitava um e-mail visível e válido ("validacao: email"). O
+  // submit precisa ler o valor real do <input>, não só o state.
+  it("registers when the browser autofills inputs without firing onChange", async () => {
+    const onCreated = vi.fn();
+    render(<SignupStep onCreated={onCreated} {...defaultProps} />);
+    const emailInput = screen.getByLabelText(/email/i) as HTMLInputElement;
+    const senhaInput = screen.getByLabelText(/senha \(8/i) as HTMLInputElement;
+    // Autofill nativo: muda o value do DOM sem evento React.
+    emailInput.value = "ana@x.com";
+    senhaInput.value = "12345678";
+    fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
+    await waitFor(() => expect(register).toHaveBeenCalled());
+    expect(register).toHaveBeenCalledWith(
+      "ana@x.com",
+      "12345678",
+      "ana",
+      "",
+      expect.stringContaining("/assinar?plan=monthly&step=card"),
+    );
+  });
+
   it("registers without terms checkbox, deriving the name from the email", async () => {
     const onCreated = vi.fn();
     render(<SignupStep onCreated={onCreated} {...defaultProps} />);

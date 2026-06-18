@@ -10,6 +10,7 @@ import mixpanel from '../lib/mixpanel';
 import { supabase } from '@/lib/supabaseClient';
 import { useGoogleOneTap } from '../hooks/useGoogleOneTap';
 import { ButtonEco } from '@/components/ui/ButtonEco';
+import { translateAuthError } from '@/utils/authErrorMessage';
 
 /* Divisor com traço mais marcado */
 const Divider: React.FC<{ label?: string }> = ({ label = 'ou' }) => (
@@ -31,40 +32,6 @@ const GoogleIcon: React.FC<{ size?: number }> = ({ size = 18 }) => (
     <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1 2.9-3.8 5-7.3 5-3 0-5.6-1.9-6.5-4.6l-6.6 5C17 37 20.3 39 24 39c9 0 15.5-6.1 15.5-15.5 0-1.2-.1-2.4-.3-3.5z"/>
   </svg>
 );
-
-/* ---- Tradução das mensagens de erro ---- */
-function translateAuthError(err: any): string {
-  const raw = [
-    err?.code,
-    err?.error?.message,
-    err?.error_description,
-    err?.data?.message,
-    err?.message,
-  ]
-    .filter(Boolean)
-    .join(' | ')
-    .toLowerCase();
-
-  if (
-    /invalid\s*login\s*credentials/.test(raw) ||
-    /invalid[-_\s]*credential/.test(raw) ||
-    /invalid[-_\s]*credentials/.test(raw) ||
-    /wrong[-_\s]*password/.test(raw) ||
-    /invalid\s*password/.test(raw)
-  )
-    return 'Email ou senha incorretos.';
-
-  if (/invalid[-_\s]*email/.test(raw)) return 'Email inválido.';
-  if (/user.*not.*found|no\s*user/.test(raw)) return 'Não encontramos uma conta com este email.';
-  if (/too.*many.*request|rate.*limit/.test(raw))
-    return 'Muitas tentativas. Tente novamente em alguns minutos.';
-  if (/network|failed\s*to\s*fetch|timeout|net::/i.test(raw))
-    return 'Falha de rede. Verifique sua conexão.';
-  if (/user.*disabled|account.*disabled/.test(raw)) return 'Esta conta foi desativada.';
-  if (/least.*6|minimum.*6|password.*short/.test(raw))
-    return 'A senha deve ter pelo menos 6 caracteres.';
-  return 'Não foi possível entrar. Tente novamente.';
-}
 
 const LoginPage: React.FC = () => {
   const { signIn, signInWithGoogle, signInWithGoogleIdToken, user } = useAuth();
