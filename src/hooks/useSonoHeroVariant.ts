@@ -78,7 +78,7 @@ const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
     h1Pre: 'O resto a gente ',
     h1Mark: 'conduz',
     h1Pos: '.',
-    lead: 'Coloque os fones, apague a luz e aperte play. Em 7 noites de 5 a 10 minutos, seu corpo reaprende a desligar sozinho, sem esforço e sem remédio.',
+    lead: 'Coloque os fones, apague a luz e aperte play. Em poucas noites, seu corpo reaprende a desligar sozinho, sem remédio.',
     cta: 'Iniciar a noite 1 · grátis',
     microcopyPrefix: '7 dias grátis · R$ 0 hoje · ',
   },
