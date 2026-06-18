@@ -14,7 +14,7 @@ import {
   marcarSaidaIntencionalDoFunil,
 } from '@/lib/mixpanelAssinarFunnel';
 import { trackWithCAPI } from '@/lib/fbpixel';
-import { translateAuthError, isAlreadyRegisteredError } from '@/utils/authErrorMessage';
+import { translateAuthError, isAlreadyRegisteredError, authErrorStatus } from '@/utils/authErrorMessage';
 
 /**
  * Cadastro inline do funil do sono — mesma lógica do SignupStep (register +
@@ -103,6 +103,7 @@ export function SonoInlineSignup({
     }
 
     setLoading(true);
+    const submitStartedAt = Date.now();
     trackCadastroEnviado({ method: 'email' });
     markCadastroPendente('email');
     try {
@@ -129,8 +130,13 @@ export function SonoInlineSignup({
       }
       onCreated();
     } catch (err) {
-      // Mixpanel guarda o motivo cru (diagnóstico); o usuário vê PT-BR.
+      // Mixpanel guarda o motivo cru + status_http + foi_timeout (diagnóstico);
+      // o usuário vê PT-BR.
       const raw = err instanceof Error ? err.message : 'erro_desconhecido';
+      const status_http = authErrorStatus(err);
+      const foi_timeout =
+        (err as { isTimeout?: boolean })?.isTimeout === true ||
+        Date.now() - submitStartedAt > 8000;
 
       // Já tem conta? Tenta logar com as credenciais digitadas — caso comum de
       // quem volta pelo anúncio e reusou a senha. Se entrar, segue o fluxo
@@ -142,9 +148,14 @@ export function SonoInlineSignup({
           trackCadastroConcluido({ method: 'email', needs_confirmation: false });
           onCreated();
           return;
-        } catch {
+        } catch (loginErr) {
           clearCadastroPendente();
-          trackCadastroFalhou({ method: 'email', error_message: raw });
+          trackCadastroFalhou({
+            method: 'email',
+            error_message: raw,
+            status_http: authErrorStatus(loginErr) ?? status_http,
+            foi_timeout,
+          });
           setContaExistente(true);
           setErro('Este e-mail já tem uma conta. Confira a senha ou entre na sua conta.');
           return;
@@ -152,7 +163,7 @@ export function SonoInlineSignup({
       }
 
       clearCadastroPendente();
-      trackCadastroFalhou({ method: 'email', error_message: raw });
+      trackCadastroFalhou({ method: 'email', error_message: raw, status_http, foi_timeout });
       setErro(translateAuthError(err, 'signup'));
     } finally {
       setLoading(false);
@@ -181,7 +192,12 @@ export function SonoInlineSignup({
     },
     onError: (error) => {
       clearCadastroPendente();
-      trackCadastroFalhou({ method: 'google', error_message: error.message || 'google' });
+      trackCadastroFalhou({
+        method: 'google',
+        error_message: error.message || 'google',
+        status_http: authErrorStatus(error),
+        foi_timeout: false,
+      });
       setErro('Não foi possível entrar com Google. Tente novamente.');
     },
   });
@@ -193,7 +209,12 @@ export function SonoInlineSignup({
       await signInWithGoogle(returnTo);
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'erro_desconhecido';
-      trackCadastroFalhou({ method: 'google', error_message: raw });
+      trackCadastroFalhou({
+        method: 'google',
+        error_message: raw,
+        status_http: authErrorStatus(err),
+        foi_timeout: false,
+      });
       setErro(translateAuthError(err, 'signup'));
     }
   };

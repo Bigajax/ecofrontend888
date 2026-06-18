@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGoogleSignInButton } from "@/hooks/useGoogleOneTap";
-import { translateAuthError } from "@/utils/authErrorMessage";
+import { translateAuthError, authErrorStatus } from "@/utils/authErrorMessage";
 import { LEGAL_LINKS } from "./goalsData";
 import {
   trackCadastroVisto,
@@ -70,6 +70,7 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
     }
 
     setLoading(true);
+    const submitStartedAt = Date.now();
     trackCadastroEnviado({ method: "email", opted_newsletter: dicas });
     markCadastroPendente("email");
     try {
@@ -95,9 +96,17 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
       onCreated();
     } catch (err) {
       clearCadastroPendente();
-      // Mixpanel guarda o motivo cru (diagnóstico); o usuário vê PT-BR.
+      // Mixpanel guarda o motivo cru + status_http + foi_timeout (diagnóstico);
+      // o usuário vê PT-BR.
       const raw = err instanceof Error ? err.message : "erro_desconhecido";
-      trackCadastroFalhou({ method: "email", error_message: raw });
+      trackCadastroFalhou({
+        method: "email",
+        error_message: raw,
+        status_http: authErrorStatus(err),
+        foi_timeout:
+          (err as { isTimeout?: boolean })?.isTimeout === true ||
+          Date.now() - submitStartedAt > 8000,
+      });
       setErro(translateAuthError(err, "signup"));
     } finally {
       setLoading(false);
@@ -125,7 +134,12 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
     onError: (error) => {
       clearCadastroPendente();
       const message = error.message || "Falha ao entrar com Google.";
-      trackCadastroFalhou({ method: "google", error_message: message });
+      trackCadastroFalhou({
+        method: "google",
+        error_message: message,
+        status_http: authErrorStatus(error),
+        foi_timeout: false,
+      });
       setErro("Não foi possível entrar com Google. Tente novamente.");
     },
   });
@@ -140,7 +154,12 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
       await signInWithGoogle(funnelReturnTo);
     } catch (err) {
       const raw = err instanceof Error ? err.message : "erro_desconhecido";
-      trackCadastroFalhou({ method: "google", error_message: raw });
+      trackCadastroFalhou({
+        method: "google",
+        error_message: raw,
+        status_http: authErrorStatus(err),
+        foi_timeout: false,
+      });
       setErro(translateAuthError(err, "signup"));
     }
   };

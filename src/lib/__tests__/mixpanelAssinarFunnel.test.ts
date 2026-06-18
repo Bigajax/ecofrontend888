@@ -11,6 +11,7 @@ import {
   flushFunilAbandonadoOnHide,
   marcarSaidaIntencionalDoFunil,
   trackAssinaturaIniciada,
+  trackCadastroFalhou,
 } from "../mixpanelAssinarFunnel";
 
 const PREFIX = "Funil Sono · ";
@@ -31,13 +32,13 @@ afterEach(() => {
 });
 
 describe("watchdog do cadastro (escopo de módulo)", () => {
-  it('markCadastroPendente emite "Cadastro sem resposta" (timeout) após 15s', () => {
+  it('markCadastroPendente emite "Cadastro sem resposta" (timeout, foi_timeout) após 15s', () => {
     markCadastroPendente("email");
     expect(track).not.toHaveBeenCalled();
     vi.advanceTimersByTime(15_000);
     expect(track).toHaveBeenCalledWith(
       PREFIX + "Cadastro sem resposta",
-      expect.objectContaining({ method: "email", reason: "timeout" }),
+      expect.objectContaining({ method: "email", reason: "timeout", foi_timeout: true }),
       undefined,
     );
   });
@@ -108,6 +109,36 @@ describe("flushCadastroPendenteOnHide", () => {
   it("sem pending: flush é no-op", () => {
     flushCadastroPendenteOnHide("pagehide");
     expect(track).not.toHaveBeenCalled();
+  });
+});
+
+describe("trackCadastroFalhou", () => {
+  it("encaminha status_http, error_message e foi_timeout pro evento", () => {
+    trackCadastroFalhou({
+      method: "email",
+      error_message: "Database error saving new user",
+      status_http: 500,
+      foi_timeout: false,
+    });
+    expect(track).toHaveBeenCalledWith(
+      PREFIX + "Cadastro falhou",
+      expect.objectContaining({
+        method: "email",
+        error_message: "Database error saving new user",
+        status_http: 500,
+        foi_timeout: false,
+      }),
+      undefined,
+    );
+  });
+
+  it("marca foi_timeout quando a falha foi por tempo esgotado", () => {
+    trackCadastroFalhou({ method: "email", error_message: "Tempo esgotado", foi_timeout: true });
+    expect(track).toHaveBeenCalledWith(
+      PREFIX + "Cadastro falhou",
+      expect.objectContaining({ foi_timeout: true }),
+      undefined,
+    );
   });
 });
 

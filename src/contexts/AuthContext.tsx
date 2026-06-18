@@ -918,8 +918,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string, nome: string, telefone: string, emailRedirectTo?: string): Promise<{ needsConfirmation: boolean }> => {
-    const { data, error } = await supabase.auth.signUp({
+  const register = async (email: string, password: string, nome: string, _telefone: string, emailRedirectTo?: string): Promise<{ needsConfirmation: boolean }> => {
+    // Timeout de 8s: a chamada do Supabase pode pendurar em rede instável
+    // (webview FB/IG) e travar o funil até o watchdog de 15s. Falhar rápido com
+    // erro marcado (isTimeout) dá feedback claro e classifica a telemetria.
+    const signUpPromise = supabase.auth.signUp({
       email,
       password,
       options: {
@@ -927,32 +930,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...(emailRedirectTo ? { emailRedirectTo } : {}),
       },
     });
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(Object.assign(new Error('Tempo esgotado ao criar a conta.'), { isTimeout: true })),
+        8000,
+      ),
+    );
+    const { data, error } = await Promise.race([signUpPromise, timeoutPromise]);
     if (error) throw error;
 
-    // When Supabase requires email confirmation, session is null but no error is thrown.
-    // In that case we skip the DB insert — ensureProfile will handle it after SIGNED_IN.
+    // A linha em public.usuarios (estado de assinatura) é criada pelo trigger
+    // handle_new_user (SECURITY DEFINER) e/ou pelo webhook do MP (service_role).
+    // NÃO inserimos daqui: o schema atual de `usuarios` não tem nome/email/
+    // tipo_plano/ativo e o RLS não permite INSERT por `authenticated` — o insert
+    // antigo falhava silenciosamente e só adicionava latência.
     const needsConfirmation = !data.session;
-
-    const newUserId = data.user?.id;
-    if (newUserId && !needsConfirmation) {
-      const { error: insertError } = await supabase.from('usuarios').insert([
-        {
-          id: newUserId,
-          nome,
-          email,
-          telefone,
-          data_criacao: new Date().toISOString(),
-          tipo_plano: 'free',
-          ativo: true,
-        },
-      ]);
-      // 23505 = unique_violation (ensureProfile may have already inserted)
-      if (insertError && insertError.code !== '23505') {
-        console.error('[Auth] Failed to create user profile:', insertError);
-        // Don't throw — user exists in Auth; ensureProfile will retry on SIGNED_IN
-      }
-    }
-
     return { needsConfirmation };
   };
 

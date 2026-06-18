@@ -60,7 +60,13 @@ let abandonoOnHideEmitido = false; // dedupe entre visibilitychange/pagehide
 function fireCadastroSemResposta(reason: 'timeout' | 'page_hidden', options?: TrackOptions): void {
   if (!cadastroPending) return;
   const { method, startedAt } = cadastroPending;
-  track('Cadastro sem resposta', { method, elapsed_ms: Date.now() - startedAt, reason }, options);
+  // "sem resposta" é, por definição, o cadastro que estourou a janela sem
+  // retorno → foi_timeout: true (alinha com a telemetria de "Cadastro falhou").
+  track(
+    'Cadastro sem resposta',
+    { method, elapsed_ms: Date.now() - startedAt, reason, foi_timeout: true },
+    options,
+  );
   clearTimeout(cadastroPending.timer);
   cadastroPending = null;
 }
@@ -198,7 +204,14 @@ export function trackCadastroConcluido(p: { method: SignupMethod; needs_confirma
   track('Cadastro concluído', p);
 }
 
-export function trackCadastroFalhou(p: { method: SignupMethod; error_message: string }): void {
+export function trackCadastroFalhou(p: {
+  method: SignupMethod;
+  error_message: string;
+  /** Status HTTP da resposta do Supabase (undefined em timeout/erro de rede). */
+  status_http?: number;
+  /** True quando a falha foi por estouro de tempo (> 8s). */
+  foi_timeout?: boolean;
+}): void {
   track('Cadastro falhou', p);
 }
 

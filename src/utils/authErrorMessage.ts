@@ -27,6 +27,16 @@ export function isAlreadyRegisteredError(err: unknown): boolean {
   return ALREADY_REGISTERED_RE.test(rawAuthError(err));
 }
 
+/**
+ * Status HTTP do erro do Supabase (`AuthError.status`), pra telemetria de
+ * cadastro. Retorna undefined quando não há status (ex.: timeout/erro de rede).
+ */
+export function authErrorStatus(err: unknown): number | undefined {
+  const e = err as { status?: unknown; originalError?: { status?: unknown } } | null | undefined;
+  const s = e?.status ?? e?.originalError?.status;
+  return typeof s === 'number' && Number.isFinite(s) ? s : undefined;
+}
+
 export function translateAuthError(err: unknown, context: 'login' | 'signup' = 'login'): string {
   const raw = rawAuthError(err);
 
