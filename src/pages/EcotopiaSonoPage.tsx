@@ -135,8 +135,9 @@ const TESTIMONIALS: { id: string; quote: string; name: string; photo?: string }[
   },
 ];
 
-// CTA único e idêntico em todos os pontos de conversão da página.
-const CTA_LABEL = 'Começar meus 7 dias grátis';
+// CTA da oferta navy — orientado ao desejo (o sinal de "grátis/R$ 0" fica nos
+// bullets e na linha de garantia logo acima do botão).
+const CTA_LABEL = 'Quero dormir sem remédio';
 
 // Noite 1 em destaque + demais noites (layout editorial da landing
 // Protocolo-Sono-v2: featured card + lista/grade com cadeado).
@@ -793,39 +794,47 @@ export default function EcotopiaSonoPage() {
 
         <div className="lp-sono-offer-inner">
           <div className="lp-sono-offer-content">
-            <h2 className="scroll-reveal">Teste por 7 dias sem pagar hoje.</h2>
+            <h2 className="scroll-reveal">Em 7 noites, dormir deixa de ser esforço.</h2>
 
             <p className="lp-sono-offer-sub scroll-reveal stagger-1">
-              As 7 noites do Protocolo do Sono, meditações, sons relaxantes e
-              Eco IA. Se não fizer sentido, cancele antes da cobrança.
+              Comece hoje sem pagar nada. As 7 noites do Protocolo do Sono,
+              meditações, sons e a Eco IA. Cancele antes da cobrança se não
+              fizer sentido.
             </p>
 
             <ul className="lp-sono-offer-bullets scroll-reveal stagger-1">
               <li>
                 <Check />
-                <span>R$ 0 hoje</span>
+                <span>As 7 noites do Protocolo do Sono, em sequência</span>
               </li>
               <li>
                 <Check />
-                <span>Aviso por e-mail antes da cobrança</span>
+                <span>Meditações e sons pra adormecer e permanecer dormindo</span>
               </li>
               <li>
                 <Check />
-                <span>Cancele quando quiser</span>
+                <span>Eco IA pra as noites difíceis</span>
               </li>
               <li>
                 <Check />
-                <span>Acesso imediato à noite 1</span>
+                <span>Acesso imediato à Noite 1, com seu progresso salvo</span>
               </li>
               <li>
                 <Check />
-                <span>Depois, {OFFER.priceMonthly}</span>
+                <span>R$ 0 hoje · aviso antes da cobrança · cancele quando quiser</span>
               </li>
             </ul>
 
             <div className="lp-sono-offer-reassure scroll-reveal stagger-2">
+              {/* Âncora: R$ 11,90/mês (anual) ÷ 30 ≈ R$ 0,40/noite. Se o preço
+                  mudar em offerCopy.ts, atualizar este valor. */}
               <p className="lp-sono-offer-reassure-fine">
-                Você será avisado antes da cobrança. Sem compromisso.
+                Cerca de R$ 0,40 por noite no plano anual. Menos que a melatonina
+                que resolve só uma.
+              </p>
+              <p className="lp-sono-offer-reassure-fine">
+                Faça as 7 noites. Se não sentir diferença, cancele antes da
+                cobrança e não paga nada.
               </p>
             </div>
 
@@ -885,6 +894,11 @@ export default function EcotopiaSonoPage() {
               <span aria-hidden>·</span>
               <Link to="/cancelar-assinatura">Cancele a qualquer momento</Link>
             </div>
+
+            {/* Prova social ao lado do botão (mesmos fatos da faixa rotativa). */}
+            <p className="lp-sono-offer-reassure-fine scroll-reveal stagger-3">
+              4,9★ · 846 pessoas dormem com o protocolo
+            </p>
 
             {/* Único CTA da landing que sempre vai pro /assinar (checkout/trial),
                 mesmo na variante convite — o resto da página funila pra experiência. */}
