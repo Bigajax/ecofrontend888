@@ -1,14 +1,19 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createRef } from "react";
+import { createRef, type ReactElement } from "react";
+import { MemoryRouter } from "react-router-dom";
 import type { GoogleSignInButtonStatus } from "@/hooks/useGoogleOneTap";
 
 const register = vi.fn();
+const signIn = vi.fn();
 const signInWithGoogle = vi.fn();
 const signInWithGoogleIdToken = vi.fn();
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ register, signInWithGoogle, signInWithGoogleIdToken }),
+  useAuth: () => ({ register, signIn, signInWithGoogle, signInWithGoogleIdToken }),
 }));
+
+// O componente usa <Link>, então todo render precisa de um Router.
+const renderInRouter = (ui: ReactElement) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
 // Sem script GSI no jsdom — controla o status do botão oficial do Google.
 let googleBtnStatus: GoogleSignInButtonStatus = "failed";
@@ -31,6 +36,7 @@ const defaultProps = {
 
 beforeEach(() => {
   register.mockReset().mockResolvedValue({ needsConfirmation: false });
+  signIn.mockReset().mockResolvedValue(undefined);
   signInWithGoogle.mockReset().mockResolvedValue(undefined);
   signInWithGoogleIdToken.mockReset().mockResolvedValue(undefined);
   googleBtnStatus = "failed";
@@ -43,7 +49,7 @@ const submitBtn = () =>
 
 describe("SonoInlineSignup", () => {
   it("blocks submit with invalid email or short password", () => {
-    render(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
+    renderInRouter(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
     fireEvent.change(emailField(), { target: { value: "nope" } });
     fireEvent.change(senhaField(), { target: { value: "12345678" } });
     fireEvent.click(submitBtn());
@@ -57,7 +63,7 @@ describe("SonoInlineSignup", () => {
 
   it("trims whitespace before validating the email (mobile autofill)", async () => {
     const onCreated = vi.fn();
-    render(<SonoInlineSignup onCreated={onCreated} {...defaultProps} />);
+    renderInRouter(<SonoInlineSignup onCreated={onCreated} {...defaultProps} />);
     fireEvent.change(emailField(), { target: { value: "  ana@x.com  " } });
     fireEvent.change(senhaField(), { target: { value: "12345678" } });
     fireEvent.click(submitBtn());
@@ -76,7 +82,7 @@ describe("SonoInlineSignup", () => {
   // email"). O submit precisa ler o value real do <input>.
   it("registers when the browser autofills inputs without firing onChange", async () => {
     const onCreated = vi.fn();
-    render(<SonoInlineSignup onCreated={onCreated} {...defaultProps} />);
+    renderInRouter(<SonoInlineSignup onCreated={onCreated} {...defaultProps} />);
     emailField().value = "ana@x.com";
     senhaField().value = "12345678";
     fireEvent.click(submitBtn());
@@ -88,5 +94,32 @@ describe("SonoInlineSignup", () => {
       "",
       expect.stringContaining("/sono/experiencia?play=night1"),
     );
+  });
+
+  // Usuario que ja tem conta e volta pelo anuncio: o cadastro falha com "ja
+  // registrado" e tentamos logar com as credenciais digitadas. Se a senha
+  // confere, segue o fluxo sem o usuario perceber.
+  it("loga automaticamente quando o e-mail ja tem conta e a senha confere", async () => {
+    register.mockRejectedValueOnce(new Error("User already registered"));
+    signIn.mockResolvedValueOnce(undefined);
+    const onCreated = vi.fn();
+    renderInRouter(<SonoInlineSignup onCreated={onCreated} {...defaultProps} />);
+    fireEvent.change(emailField(), { target: { value: "ana@x.com" } });
+    fireEvent.change(senhaField(), { target: { value: "12345678" } });
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(onCreated).toHaveBeenCalled());
+    expect(signIn).toHaveBeenCalledWith("ana@x.com", "12345678");
+  });
+
+  // Se a senha nao confere, oferecemos o link "Entrar" preservando o returnTo.
+  it('oferece "Entrar na minha conta" quando o e-mail ja tem conta mas a senha nao confere', async () => {
+    register.mockRejectedValueOnce(new Error("User already registered"));
+    signIn.mockRejectedValueOnce(new Error("Invalid login credentials"));
+    renderInRouter(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
+    fireEvent.change(emailField(), { target: { value: "ana@x.com" } });
+    fireEvent.change(senhaField(), { target: { value: "senhaerrada" } });
+    fireEvent.click(submitBtn());
+    const link = await screen.findByRole("link", { name: /entrar na minha conta/i });
+    expect(link.getAttribute("href")).toContain("/login?returnTo=");
   });
 });

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleSignInButton } from '@/hooks/useGoogleOneTap';
@@ -13,7 +14,7 @@ import {
   marcarSaidaIntencionalDoFunil,
 } from '@/lib/mixpanelAssinarFunnel';
 import { trackWithCAPI } from '@/lib/fbpixel';
-import { translateAuthError } from '@/utils/authErrorMessage';
+import { translateAuthError, isAlreadyRegisteredError } from '@/utils/authErrorMessage';
 
 /**
  * Cadastro inline do funil do sono — mesma lógica do SignupStep (register +
@@ -63,9 +64,11 @@ export function SonoInlineSignup({
   subtitle,
   submitLabel,
 }: SonoInlineSignupProps) {
-  const { register, signInWithGoogle, signInWithGoogleIdToken } = useAuth();
+  const { register, signIn, signInWithGoogle, signInWithGoogleIdToken } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  // Quando o e-mail já tem conta e o auto-login falha, oferecemos o link "Entrar".
+  const [contaExistente, setContaExistente] = useState(false);
   // Fonte de verdade no submit é o DOM, não o state: em webview do FB/IG o
   // autofill/gerenciador de senha preenche o <input> SEM disparar o onChange do
   // React, deixando o state vazio e fazendo a validação rejeitar um e-mail
@@ -86,6 +89,7 @@ export function SonoInlineSignup({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
+    setContaExistente(false);
     // Lê do DOM (autofill que não dispara onChange), com o state como fallback.
     const emailLimpo = (emailRef.current?.value ?? email).trim().toLowerCase();
     const senhaValor = senhaRef.current?.value ?? senha;
@@ -125,9 +129,29 @@ export function SonoInlineSignup({
       }
       onCreated();
     } catch (err) {
-      clearCadastroPendente();
       // Mixpanel guarda o motivo cru (diagnóstico); o usuário vê PT-BR.
       const raw = err instanceof Error ? err.message : 'erro_desconhecido';
+
+      // Já tem conta? Tenta logar com as credenciais digitadas — caso comum de
+      // quem volta pelo anúncio e reusou a senha. Se entrar, segue o fluxo
+      // (desbloqueia a noite); se a senha não bater, oferece o link "Entrar".
+      if (isAlreadyRegisteredError(err)) {
+        try {
+          await signIn(emailLimpo, senhaValor);
+          clearCadastroPendente();
+          trackCadastroConcluido({ method: 'email', needs_confirmation: false });
+          onCreated();
+          return;
+        } catch {
+          clearCadastroPendente();
+          trackCadastroFalhou({ method: 'email', error_message: raw });
+          setContaExistente(true);
+          setErro('Este e-mail já tem uma conta. Confira a senha ou entre na sua conta.');
+          return;
+        }
+      }
+
+      clearCadastroPendente();
       trackCadastroFalhou({ method: 'email', error_message: raw });
       setErro(translateAuthError(err, 'signup'));
     } finally {
@@ -261,6 +285,16 @@ export function SonoInlineSignup({
       </div>
 
       {erro && <p role="alert" className="text-[13px]" style={{ color: '#F8B4B4' }}>{erro}</p>}
+      {contaExistente && (
+        <Link
+          to={`/login?returnTo=${encodeURIComponent(returnTo)}`}
+          onClick={() => marcarSaidaIntencionalDoFunil()}
+          className="text-center text-[14px] font-semibold underline"
+          style={{ color: '#C4B5FD' }}
+        >
+          Entrar na minha conta
+        </Link>
+      )}
       {info && <p className="text-[13px]" style={{ color: '#C4B5FD' }}>{info}</p>}
 
       <button

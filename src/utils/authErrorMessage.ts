@@ -7,24 +7,31 @@
  * Mantém o texto cru para telemetria à parte — aqui só produz o que aparece na
  * tela. `context` muda apenas o fallback genérico (entrar vs. criar conta).
  */
-export function translateAuthError(err: unknown, context: 'login' | 'signup' = 'login'): string {
+/** Junta os campos de mensagem que o Supabase/GIS espalham, em minúsculas. */
+function rawAuthError(err: unknown): string {
   const e = err as
     | { code?: string; message?: string; error?: { message?: string }; error_description?: string; data?: { message?: string } }
     | null
     | undefined;
-  const raw = [
-    e?.code,
-    e?.error?.message,
-    e?.error_description,
-    e?.data?.message,
-    e?.message,
-  ]
+  return [e?.code, e?.error?.message, e?.error_description, e?.data?.message, e?.message]
     .filter(Boolean)
     .join(' | ')
     .toLowerCase();
+}
+
+const ALREADY_REGISTERED_RE =
+  /already\s*registered|user.*already.*exist|email.*already.*(in[-_\s]*use|registered|exist)|user_already_exists/;
+
+/** True quando o erro de cadastro é "e-mail já tem conta" (qualquer provider). */
+export function isAlreadyRegisteredError(err: unknown): boolean {
+  return ALREADY_REGISTERED_RE.test(rawAuthError(err));
+}
+
+export function translateAuthError(err: unknown, context: 'login' | 'signup' = 'login'): string {
+  const raw = rawAuthError(err);
 
   // Cadastro: e-mail já tem conta — vem antes do bloco de credenciais.
-  if (/already\s*registered|user.*already.*exist|email.*already.*(in[-_\s]*use|registered|exist)|user_already_exists/.test(raw))
+  if (ALREADY_REGISTERED_RE.test(raw))
     return 'Este e-mail já tem uma conta. Tente entrar.';
 
   if (

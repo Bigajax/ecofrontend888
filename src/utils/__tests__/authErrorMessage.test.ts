@@ -1,5 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { translateAuthError } from "../authErrorMessage";
+import { translateAuthError, isAlreadyRegisteredError } from "../authErrorMessage";
+
+describe("isAlreadyRegisteredError", () => {
+  it("detecta e-mail ja registrado em varios formatos", () => {
+    expect(isAlreadyRegisteredError(new Error("User already registered"))).toBe(true);
+    expect(isAlreadyRegisteredError({ code: "user_already_exists" })).toBe(true);
+    expect(isAlreadyRegisteredError(new Error("Invalid login credentials"))).toBe(false);
+    expect(isAlreadyRegisteredError(null)).toBe(false);
+  });
+});
 
 describe("translateAuthError", () => {
   it("traduz e-mail já registrado (cadastro)", () => {
