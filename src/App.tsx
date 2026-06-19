@@ -17,6 +17,7 @@ import {
 } from "react-router-dom";
 
 import { lazyWithReload } from "@/utils/lazyWithReload";
+import { replayPendingLeads } from "@/api/leadCapture";
 import { RootProviders } from "@/providers/RootProviders";
 import RequireAuth from "@/components/RequireAuth";
 import RootErrorBoundary from "@/components/RootErrorBoundary";
@@ -278,6 +279,8 @@ function AppRoutes() {
     if (appStartTracked) return;
     appStartTracked = true;
     mixpanel.track("App · Iniciado", { origem: "App.tsx", data: new Date().toISOString() });
+    // Reenvia leads do gate que ficaram pendentes (rede caiu no 1º envio).
+    void replayPendingLeads();
   }, []);
 
   return (

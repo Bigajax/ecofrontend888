@@ -15,20 +15,35 @@ vi.mock("@/contexts/AuthContext", () => ({
 // O componente usa <Link>, então todo render precisa de um Router.
 const renderInRouter = (ui: ReactElement) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
-// Sem script GSI no jsdom — controla o status do botão oficial do Google.
+// Sem script GSI no jsdom — controla o status do botão oficial do Google e
+// captura as opções (onSuccess/onClick) para simular o popup.
 let googleBtnStatus: GoogleSignInButtonStatus = "failed";
+let googleOptions: any = null;
 vi.mock("@/hooks/useGoogleOneTap", () => ({
-  useGoogleSignInButton: () => ({
-    containerRef: createRef<HTMLDivElement>(),
-    status: googleBtnStatus,
-    ready: googleBtnStatus === "ready",
-  }),
+  useGoogleSignInButton: (opts: any) => {
+    googleOptions = opts;
+    return {
+      containerRef: createRef<HTMLDivElement>(),
+      status: googleBtnStatus,
+      ready: googleBtnStatus === "ready",
+    };
+  },
 }));
 
 // CAPI/Pixel não tem efeito em teste.
 vi.mock("@/lib/fbpixel", () => ({ trackWithCAPI: vi.fn() }));
 
+// Captura de lead (backend) e detecção de webview — mockadas para asserção.
+vi.mock("@/api/leadCapture", () => ({
+  captureLead: vi.fn().mockResolvedValue(undefined),
+  replayPendingLeads: vi.fn(),
+}));
+vi.mock("@/utils/isInAppBrowser", () => ({ isInAppBrowser: vi.fn(() => false) }));
+
 import { SonoInlineSignup } from "../SonoInlineSignup";
+import { captureLead } from "@/api/leadCapture";
+import { trackWithCAPI } from "@/lib/fbpixel";
+import { isInAppBrowser } from "@/utils/isInAppBrowser";
 
 const defaultProps = {
   returnTo: "/sono/experiencia?play=night1",
@@ -40,6 +55,10 @@ beforeEach(() => {
   signInWithGoogle.mockReset().mockResolvedValue(undefined);
   signInWithGoogleIdToken.mockReset().mockResolvedValue(undefined);
   googleBtnStatus = "failed";
+  googleOptions = null;
+  vi.mocked(captureLead).mockReset().mockResolvedValue(undefined);
+  vi.mocked(trackWithCAPI).mockReset();
+  vi.mocked(isInAppBrowser).mockReset().mockReturnValue(false);
 });
 
 const emailField = () => screen.getByLabelText(/endereço de email/i) as HTMLInputElement;
@@ -121,5 +140,69 @@ describe("SonoInlineSignup", () => {
     fireEvent.click(submitBtn());
     const link = await screen.findByRole("link", { name: /entrar na minha conta/i });
     expect(link.getAttribute("href")).toContain("/login?returnTo=");
+  });
+});
+
+describe("SonoInlineSignup · lead + resiliência", () => {
+  it("salva o lead e dispara Pixel Lead no submit por e-mail, ANTES do register", async () => {
+    renderInRouter(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
+    fireEvent.change(emailField(), { target: { value: "ana@x.com" } });
+    fireEvent.change(senhaField(), { target: { value: "12345678" } });
+    fireEvent.click(submitBtn());
+
+    await waitFor(() => expect(vi.mocked(captureLead)).toHaveBeenCalled());
+    expect(vi.mocked(captureLead)).toHaveBeenCalledWith(
+      expect.objectContaining({ email: "ana@x.com", source: "sono_signup_gate", provider: "email" }),
+    );
+    expect(vi.mocked(trackWithCAPI)).toHaveBeenCalledWith("Lead", expect.anything());
+    // lead salvo antes de provisionar a conta
+    expect(vi.mocked(captureLead).mock.invocationCallOrder[0]).toBeLessThan(
+      register.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("salva o lead mesmo quando o cadastro falha", async () => {
+    register.mockRejectedValueOnce(new Error("boom"));
+    renderInRouter(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
+    fireEvent.change(emailField(), { target: { value: "ana@x.com" } });
+    fireEvent.change(senhaField(), { target: { value: "12345678" } });
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(vi.mocked(captureLead)).toHaveBeenCalled());
+  });
+
+  it("mostra o botão 'Tentar de novo' quando o cadastro estoura por timeout", async () => {
+    register.mockRejectedValueOnce(
+      Object.assign(new Error("Tempo esgotado ao criar a conta."), { isTimeout: true }),
+    );
+    renderInRouter(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
+    fireEvent.change(emailField(), { target: { value: "ana@x.com" } });
+    fireEvent.change(senhaField(), { target: { value: "12345678" } });
+    fireEvent.click(submitBtn());
+    const retry = await screen.findByRole("button", { name: /tentar de novo/i });
+    expect(retry).toBeTruthy();
+  });
+
+  it("em webview (FB/IG) não oferece o botão do Google", () => {
+    vi.mocked(isInAppBrowser).mockReturnValue(true);
+    googleBtnStatus = "failed";
+    renderInRouter(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
+    expect(screen.queryByRole("button", { name: /continuar com google/i })).toBeNull();
+  });
+
+  it("salva o lead e dispara Pixel Lead no sucesso do Google (popup)", async () => {
+    googleBtnStatus = "ready";
+    renderInRouter(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
+    // JWT fake com e-mail no payload.
+    const b64url = (o: Record<string, unknown>) =>
+      btoa(JSON.stringify(o)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const idToken = `h.${b64url({ email: "ana@gmail.com" })}.s`;
+
+    await googleOptions.onSuccess(idToken);
+
+    expect(vi.mocked(captureLead)).toHaveBeenCalledWith(
+      expect.objectContaining({ email: "ana@gmail.com", provider: "google" }),
+    );
+    expect(vi.mocked(trackWithCAPI)).toHaveBeenCalledWith("Lead", expect.anything());
+    expect(signInWithGoogleIdToken).toHaveBeenCalledWith(idToken);
   });
 });

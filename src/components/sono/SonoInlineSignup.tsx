@@ -14,6 +14,9 @@ import {
   marcarSaidaIntencionalDoFunil,
 } from '@/lib/mixpanelAssinarFunnel';
 import { trackWithCAPI } from '@/lib/fbpixel';
+import { captureLead } from '@/api/leadCapture';
+import { isInAppBrowser } from '@/utils/isInAppBrowser';
+import { emailFromIdToken } from '@/utils/emailFromIdToken';
 import { translateAuthError, isAlreadyRegisteredError, authErrorStatus } from '@/utils/authErrorMessage';
 
 /**
@@ -79,6 +82,14 @@ export function SonoInlineSignup({
   const [erro, setErro] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Timeout do register() (8s) vira estado explícito com retry, em vez de um
+  // erro "morto" — o lead já foi salvo, então re-tentar é seguro.
+  const [timedOut, setTimedOut] = useState(false);
+  // Pixel "Lead" 1× por sessão do form (não duplica em retry/re-render).
+  const leadFiredRef = useRef(false);
+  // Navegador embarcado do FB/IG: o Google bloqueia OAuth (popup falha). Lidera
+  // com e-mail e esconde o Google para não criar um beco sem saída no pago.
+  const inApp = isInAppBrowser();
 
   // View do cadastro: reusa o evento do funil para não perder a leitura.
   // (uma vez — o overlay só renderiza este passo quando ativo.)
@@ -86,10 +97,23 @@ export function SonoInlineSignup({
     trackCadastroVisto();
   }, []);
 
+  // Salva o lead (backend) + dispara o Pixel "Lead" ANTES de provisionar a
+  // conta, para o e-mail não se perder se o cadastro falhar. Fire-and-forget.
+  const fireLead = async (emailLimpo: string, provider: 'email' | 'google') => {
+    await captureLead({ email: emailLimpo, source: 'sono_signup_gate', provider });
+    if (leadFiredRef.current) return;
+    leadFiredRef.current = true;
+    void trackWithCAPI('Lead', {
+      contentName: 'sono_signup_gate',
+      pixelExtra: { provider },
+    });
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
     setContaExistente(false);
+    setTimedOut(false);
     // Lê do DOM (autofill que não dispara onChange), com o state como fallback.
     const emailLimpo = (emailRef.current?.value ?? email).trim().toLowerCase();
     const senhaValor = senhaRef.current?.value ?? senha;
@@ -101,6 +125,9 @@ export function SonoInlineSignup({
       trackCadastroFalhou({ method: 'email', error_message: 'validacao: senha_curta' });
       return setErro('A senha precisa ter ao menos 8 caracteres.');
     }
+
+    // Salva o lead ANTES de provisionar a conta (não se perde se o register falhar).
+    await fireLead(emailLimpo, 'email');
 
     setLoading(true);
     const submitStartedAt = Date.now();
@@ -137,6 +164,8 @@ export function SonoInlineSignup({
       const foi_timeout =
         (err as { isTimeout?: boolean })?.isTimeout === true ||
         Date.now() - submitStartedAt > 8000;
+      // Motivo concreto no console (diagnóstico do ~70% de falha no pago).
+      console.error('[cadastro] falhou', { provider: 'email', status_http, foi_timeout, raw, err });
 
       // Já tem conta? Tenta logar com as credenciais digitadas — caso comum de
       // quem volta pelo anúncio e reusou a senha. Se entrar, segue o fluxo
@@ -164,7 +193,8 @@ export function SonoInlineSignup({
 
       clearCadastroPendente();
       trackCadastroFalhou({ method: 'email', error_message: raw, status_http, foi_timeout });
-      setErro(translateAuthError(err, 'signup'));
+      if (foi_timeout) setTimedOut(true);
+      else setErro(translateAuthError(err, 'signup'));
     } finally {
       setLoading(false);
     }
@@ -180,6 +210,9 @@ export function SonoInlineSignup({
       markCadastroPendente('google');
     },
     onSuccess: async (idToken) => {
+      // Salva o lead ANTES de logar (e-mail vem do payload do id_token).
+      const googleEmail = emailFromIdToken(idToken);
+      if (googleEmail) await fireLead(googleEmail, 'google');
       await signInWithGoogleIdToken(idToken);
       clearCadastroPendente();
       trackCadastroConcluido({ method: 'google', needs_confirmation: false });
@@ -192,6 +225,7 @@ export function SonoInlineSignup({
     },
     onError: (error) => {
       clearCadastroPendente();
+      console.error('[cadastro] falhou', { provider: 'google', status_http: authErrorStatus(error), error });
       trackCadastroFalhou({
         method: 'google',
         error_message: error.message || 'google',
@@ -233,38 +267,44 @@ export function SonoInlineSignup({
         </p>
       </div>
 
-      {/* Botão oficial do Google (popup). Container sempre montado e mensurável
-          (h-0, não display:none) para o GIS renderizar. */}
-      <div
-        ref={googleBtnRef}
-        className={googleBtnStatus === 'ready' ? 'flex justify-center' : 'h-0 overflow-hidden'}
-        aria-hidden={googleBtnStatus !== 'ready'}
-      />
-      {googleBtnStatus === 'loading' && (
-        <div
-          aria-hidden
-          className="flex w-full items-center justify-center rounded-full py-3.5 text-[15px] font-medium text-white/45"
-          style={{ border: '1px solid rgba(255,255,255,0.12)' }}
-        >
-          Carregando…
-        </div>
-      )}
-      {googleBtnStatus === 'failed' && (
-        <button
-          type="button"
-          onClick={googleFallback}
-          className="w-full rounded-full py-3.5 text-[15px] font-semibold text-white transition-all hover:scale-[1.01] active:scale-[0.98]"
-          style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}
-        >
-          Continuar com Google
-        </button>
-      )}
+      {/* Em webview do FB/IG o Google bloqueia OAuth — escondemos o bloco do
+          Google e lideramos com e-mail (que funciona no embarcado). */}
+      {!inApp && (
+        <>
+          {/* Botão oficial do Google (popup). Container sempre montado e mensurável
+              (h-0, não display:none) para o GIS renderizar. */}
+          <div
+            ref={googleBtnRef}
+            className={googleBtnStatus === 'ready' ? 'flex justify-center' : 'h-0 overflow-hidden'}
+            aria-hidden={googleBtnStatus !== 'ready'}
+          />
+          {googleBtnStatus === 'loading' && (
+            <div
+              aria-hidden
+              className="flex w-full items-center justify-center rounded-full py-3.5 text-[15px] font-medium text-white/45"
+              style={{ border: '1px solid rgba(255,255,255,0.12)' }}
+            >
+              Carregando…
+            </div>
+          )}
+          {googleBtnStatus === 'failed' && (
+            <button
+              type="button"
+              onClick={googleFallback}
+              className="w-full rounded-full py-3.5 text-[15px] font-semibold text-white transition-all hover:scale-[1.01] active:scale-[0.98]"
+              style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}
+            >
+              Continuar com Google
+            </button>
+          )}
 
-      <div className="flex items-center gap-3" aria-hidden>
-        <span className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.10)' }} />
-        <span className="text-[12px] text-white/35">ou cadastre-se com e-mail</span>
-        <span className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.10)' }} />
-      </div>
+          <div className="flex items-center gap-3" aria-hidden>
+            <span className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.10)' }} />
+            <span className="text-[12px] text-white/35">ou cadastre-se com e-mail</span>
+            <span className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.10)' }} />
+          </div>
+        </>
+      )}
 
       <input
         ref={emailRef}
@@ -317,6 +357,22 @@ export function SonoInlineSignup({
         </Link>
       )}
       {info && <p className="text-[13px]" style={{ color: '#C4B5FD' }}>{info}</p>}
+
+      {timedOut && (
+        <div
+          className="rounded-2xl px-4 py-3 text-[13px] text-white/80"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
+        >
+          A conexão demorou — seu e-mail já foi salvo. Pode tentar de novo.
+          <button
+            type="submit"
+            className="mt-2 w-full rounded-full py-3 text-[14px] font-semibold text-white transition-all active:scale-[0.98]"
+            style={{ background: 'rgba(196,181,253,0.20)', border: '1px solid rgba(196,181,253,0.45)' }}
+          >
+            Tentar de novo
+          </button>
+        </div>
+      )}
 
       <button
         type="submit"
