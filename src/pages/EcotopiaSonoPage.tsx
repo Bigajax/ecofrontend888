@@ -296,7 +296,7 @@ export default function EcotopiaSonoPage() {
                 <path d="M9 12l2 2 4-4" />
               </svg>
               {isConviteHero ? (
-                'Sua primeira noite é grátis · sem cadastro'
+                'Sua primeira noite é grátis'
               ) : (
                 <>
                   {hero.microcopyPrefix}
