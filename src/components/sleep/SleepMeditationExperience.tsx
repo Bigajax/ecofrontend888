@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Play, Check, Lock, ArrowLeft,
@@ -15,17 +15,14 @@ import {
   trackSonoGuestNight1Started,
   trackSonoGuestPageViewed,
   trackSonoGuestAppInviteClicked,
-  trackSonoGuestRegisterGateShown,
   trackSonoGuestEarlyExit,
 } from '@/lib/mixpanelSonoGuestEvents';
-import { registerFunilSono } from '@/lib/mixpanelAssinarFunnel';
 import { fbqCustom } from '@/lib/fbpixel';
 import { GuestSonoPlayer } from '@/components/sono-guest/GuestSonoPlayer';
 import { LS_KEYS } from '@/components/sono-guest/types';
 import type { SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal';
 import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
 import { SonoInlineCheckout } from '@/components/sono/SonoInlineCheckout';
-import { SonoInlineSignup } from '@/components/sono/SonoInlineSignup';
 import { SonoExperienceHero } from '@/components/sono/SonoExperienceHero';
 import type { SonoCheckoutStep } from '@/components/sono/useSonoCheckoutState';
 import { SleepProtocolOfferCard } from '@/components/sono/SleepProtocolOfferCard';
@@ -117,12 +114,6 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   // do webhook refletir no entitlement.
   const [checkoutEntry, setCheckoutEntry] = useState<SonoCheckoutStep | null>(null);
   const [justSubscribed, setJustSubscribed] = useState(false);
-  // Gate de cadastro na entrada (modelo porta-de-entrada): guest deslogado tem que
-  // criar conta ao clicar "Ouvir a Noite 1" — captura o lead antes do conteúdo. O
-  // `?play=night1` na URL persiste a intenção de retomar a Noite 1 pelo remount que
-  // o RootProviders dispara ao trocar guest→userId real. Ver plano do funil.
-  const [registerGateOpen, setRegisterGateOpen] = useState(false);
-  const night1ResumeHandledRef = useRef(false);
   const isPaid =
     isVipUser || isPremiumUser || isTrialActive || hasSonoEntitlement || justSubscribed;
   const openCheckout = useCallback((opts?: { origin?: string }) => {
@@ -288,53 +279,6 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     });
   };
 
-  // Abre o gate de cadastro (porta de entrada). Registra o funnel_source ANTES dos
-  // eventos de cadastro (que rodam dentro do SonoInlineSignup) para que eles herdem
-  // a atribuição, e marca ?play=night1 para retomar a Noite 1 após o remount.
-  const openRegisterGate = () => {
-    registerFunilSono('sono_experiencia');
-    trackSonoGuestRegisterGateShown({ source: source || 'sono_paid_traffic', guestId });
-    const p = new URLSearchParams(searchParams);
-    p.set('play', 'night1');
-    setSearchParams(p, { replace: true });
-    setRegisterGateOpen(true);
-  };
-
-  const closeRegisterGate = () => {
-    setRegisterGateOpen(false);
-    const p = new URLSearchParams(searchParams);
-    p.delete('play');
-    setSearchParams(p, { replace: true });
-  };
-
-  // Sucesso do cadastro sem redirect: só fecha o gate. A Noite 1 é iniciada pelo
-  // efeito de resume abaixo (keyed em `user`), que cobre tanto o remount do
-  // RootProviders quanto a atualização in-place do user — e preserva o ?play=night1
-  // até ser consumido lá (limpá-lo aqui correria o risco de o remount descartar a
-  // reprodução antes de retomá-la).
-  const resumeNight1FromGate = () => {
-    setRegisterGateOpen(false);
-  };
-
-  // Resume da Noite 1 quando a sessão chega (remount do RootProviders guest→userId
-  // OU atualização in-place do user): se estamos autenticados com ?play=night1 e a
-  // Noite 1 ainda não foi concluída, toca direto e consome o param.
-  useEffect(() => {
-    if (!isGuestSono) return;
-    if (searchParams.get('play') !== 'night1') return;
-    if (!user) return; // só retoma autenticado (guest ainda no gate)
-    if (night1ResumeHandledRef.current) return;
-
-    const p = new URLSearchParams(searchParams);
-    p.delete('play');
-    setSearchParams(p, { replace: true });
-
-    if (night1IsCompleted) return; // já concluiu — não força replay
-    night1ResumeHandledRef.current = true;
-    startGuestNight1Playback();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isGuestSono, night1IsCompleted, searchParams]);
-
   // Saída antecipada da Noite 1 (sheet do player → "ver outras noites"): abre a
   // oferta direto, sem a reflexão (que afirmaria "Noite 1 concluída").
   const handleGuestNight1EarlyExit = (progressPct: number) => {
@@ -370,8 +314,9 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     if (!night.hasAudio || !night.audioUrl) return;
 
     if (isGuestSono && night.night === 1) {
-      // Porta de entrada: guest deslogado precisa criar conta antes da Noite 1.
-      if (!user) { openRegisterGate(); return; }
+      // Experiência antes do cadastro: a Noite 1 toca para guest deslogado, sem
+      // muro. A conta só é pedida na oferta (pós-Noite 1), depois de sentir o
+      // valor — o GuestSonoPlayer roda sem auth (estado em sessionStorage).
       startGuestNight1Playback();
       return;
     }
@@ -1168,56 +1113,6 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
         />
       )}
 
-      {/* Gate de cadastro na entrada — só guest deslogado. Reusa o SonoInlineSignup
-          (com sua instrumentação de Cadastro + CompleteRegistration), com a copy de
-          desbloquear/salvar. Pós-cadastro, a Noite 1 retoma via ?play=night1. */}
-      {isGuestSono && registerGateOpen && !user && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
-          className="fixed inset-0 z-[9998] flex flex-col"
-          style={{ background: 'linear-gradient(180deg, #04060F 0%, #080C1E 100%)' }}
-        >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-[12%] -translate-x-1/2"
-            style={{
-              width: '320px', height: '220px', borderRadius: '50%',
-              background: 'radial-gradient(ellipse, rgba(124,58,237,0.18) 0%, transparent 70%)',
-              filter: 'blur(60px)',
-            }}
-          />
-          <div className="relative z-10 flex flex-shrink-0 items-center justify-end px-6 pt-10 pb-2">
-            <button
-              onClick={closeRegisterGate}
-              className="flex h-8 w-8 items-center justify-center rounded-full transition-colors"
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.10)' }}
-              aria-label="Fechar"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" style={{ color: 'rgba(255,255,255,0.40)' }} />
-            </button>
-          </div>
-          <div className="relative z-10 flex flex-1 flex-col items-center overflow-y-auto px-6 pb-12">
-            <div className="my-auto flex w-full max-w-[340px] flex-col py-4">
-              <SonoInlineSignup
-                onCreated={resumeNight1FromGate}
-                returnTo="/sono/experiencia?play=night1"
-                title={
-                  <>
-                    Desbloqueie sua
-                    <br />
-                    <span style={{ color: '#C4B5FD' }}>primeira noite</span>
-                  </>
-                }
-                subtitle="Leva 10 segundos. Criamos sua conta pra guardar sua Noite 1 e seu progresso."
-                submitLabel="Desbloquear e continuar"
-              />
-            </div>
-          </div>
-        </motion.div>
-      )}
     </MotionConfig>
   );
 }

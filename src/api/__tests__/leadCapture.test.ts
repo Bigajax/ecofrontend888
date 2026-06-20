@@ -76,4 +76,36 @@ describe('leadCapture', () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('passa um AbortSignal no fetch (timeout do lead)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse());
+    vi.stubGlobal('fetch', fetchMock);
+
+    await captureLead({ email: 'a@b.com', source: 'sono_signup_gate', provider: 'email' });
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('aborta o fetch pendurado após 5s e enfileira sem lançar (webview FB/IG)', async () => {
+    vi.useFakeTimers();
+    // Simula um request que nunca responde até o signal abortar.
+    const fetchMock = vi.fn(
+      (_url: string, init: { signal: AbortSignal }) =>
+        new Promise((_res, rej) => {
+          init.signal.addEventListener('abort', () =>
+            rej(new DOMException('Aborted', 'AbortError')),
+          );
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const p = captureLead({ email: 'a@b.com', source: 'sono_signup_gate', provider: 'email' });
+    await vi.advanceTimersByTimeAsync(5000);
+    await expect(p).resolves.toBeUndefined();
+
+    const queue = JSON.parse(localStorage.getItem(PENDING_LEADS_KEY) || '[]');
+    expect(queue).toHaveLength(1);
+    vi.useRealTimers();
+  });
 });

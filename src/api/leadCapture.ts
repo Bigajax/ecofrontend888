@@ -52,13 +52,25 @@ function enqueue(input: LeadInput): void {
   writeQueue(queue);
 }
 
+// Timeout do fetch: em webview do FB/IG (origem do tráfego do /sono) o request
+// pode pendurar e travar o submit do cadastro. Aborta em 5s — o `catch` do
+// captureLead enfileira pra replay no próximo boot, então abortar é seguro.
+const LEAD_TIMEOUT_MS = 5000;
+
 async function postLead(input: LeadInput): Promise<boolean> {
-  const res = await fetch(apiUrl(ENDPOINT), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...input, guestId: resolveGuestId() }),
-  });
-  return res.ok;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), LEAD_TIMEOUT_MS);
+  try {
+    const res = await fetch(apiUrl(ENDPOINT), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...input, guestId: resolveGuestId() }),
+      signal: controller.signal,
+    });
+    return res.ok;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**

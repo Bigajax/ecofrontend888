@@ -89,6 +89,11 @@ export function SonoInlineSignup({
   const [timedOut, setTimedOut] = useState(false);
   // Pixel "Lead" 1× por sessão do form (não duplica em retry/re-render).
   const leadFiredRef = useRef(false);
+  // Guard anti-rajada: em webview do FB/IG o `fireLead` (fetch) pode pendurar
+  // antes do botão desabilitar; sem isto, o usuário martela o botão e dispara
+  // N× `register()` → "already registered"/rate-limit do Supabase → falhas em
+  // série (era a causa real do ~70% de "Cadastro falhou" no tráfego pago).
+  const submitInProgressRef = useRef(false);
   // Distingue erro do botão Google ANTES do clique (falha de render/init do GIS
   // = infra) de erro DEPOIS do clique (tentativa real que falhou). Sem isso, o
   // onError de render inflava "Cadastro falhou" sem o usuário ter tentado nada.
@@ -102,6 +107,11 @@ export function SonoInlineSignup({
   useEffect(() => {
     trackCadastroVisto();
   }, []);
+
+  // Desarma o watchdog de "Cadastro sem resposta" se o form desmontar com um
+  // cadastro pendente (ex.: usuário sai do gate) — senão o timer vaza e dispara
+  // um falso "sem resposta" no próximo cadastro.
+  useEffect(() => () => clearCadastroPendente(), []);
 
   // Salva o lead (backend) + dispara o Pixel "Lead" ANTES de provisionar a
   // conta, para o e-mail não se perder se o cadastro falhar. Fire-and-forget.
@@ -117,6 +127,10 @@ export function SonoInlineSignup({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Ignora cliques enquanto um submit já está em andamento (anti-rajada). O
+    // guard via ref pega o caso em que o `fireLead` pendura ANTES do botão
+    // desabilitar pelo `loading` — o usuário martela e enfileira vários submits.
+    if (submitInProgressRef.current) return;
     setErro(null);
     setContaExistente(false);
     setTimedOut(false);
@@ -132,11 +146,15 @@ export function SonoInlineSignup({
       return setErro('A senha precisa ter ao menos 8 caracteres.');
     }
 
+    // Trava o botão JÁ (ref + loading) antes de qualquer await, para que o
+    // `fireLead` lento não deixe o usuário martelar o botão.
+    submitInProgressRef.current = true;
+    setLoading(true);
+    const submitStartedAt = Date.now();
+
     // Salva o lead ANTES de provisionar a conta (não se perde se o register falhar).
     await fireLead(emailLimpo, 'email');
 
-    setLoading(true);
-    const submitStartedAt = Date.now();
     trackCadastroEnviado({ method: 'email' });
     markCadastroPendente('email');
     try {
@@ -203,6 +221,7 @@ export function SonoInlineSignup({
       else setErro(translateAuthError(err, 'signup'));
     } finally {
       setLoading(false);
+      submitInProgressRef.current = false;
     }
   };
 

@@ -281,3 +281,50 @@ describe("SonoInlineSignup · lead + resiliência", () => {
     expect(signInWithGoogleIdToken).toHaveBeenCalledWith(idToken);
   });
 });
+
+// Anti-rajada: a causa real do ~70% de "Cadastro falhou" no tráfego pago era o
+// `fireLead` (fetch sem timeout) pendurar ANTES do botão desabilitar, deixando o
+// usuário martelar o botão → N× register → "already registered"/rate-limit.
+describe("SonoInlineSignup · anti-rajada (double-submit)", () => {
+  it("trava o botão no 1º clique, ANTES de aguardar o lead", async () => {
+    let resolveLead!: () => void;
+    vi.mocked(captureLead).mockImplementationOnce(
+      () => new Promise<void>((res) => { resolveLead = () => res(); }),
+    );
+    renderInRouter(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
+    fireEvent.change(emailField(), { target: { value: "ana@x.com" } });
+    fireEvent.change(senhaField(), { target: { value: "12345678" } });
+    fireEvent.click(submitBtn());
+
+    // setLoading(true) roda antes do await fireLead → botão já desabilitado e o
+    // register ainda não foi chamado (preso na captura do lead).
+    const btn = screen.getByRole("button", { name: /criando sua conta/i }) as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+    expect(register).not.toHaveBeenCalled();
+
+    resolveLead();
+    await waitFor(() => expect(register).toHaveBeenCalledTimes(1));
+  });
+
+  it("ignora marteladas enquanto o cadastro está em andamento (1 só register)", async () => {
+    let resolveRegister!: (v: { needsConfirmation: boolean }) => void;
+    register.mockReset().mockImplementation(
+      () => new Promise((res) => { resolveRegister = res; }),
+    );
+    const onCreated = vi.fn();
+    renderInRouter(<SonoInlineSignup onCreated={onCreated} {...defaultProps} />);
+    fireEvent.change(emailField(), { target: { value: "ana@x.com" } });
+    fireEvent.change(senhaField(), { target: { value: "12345678" } });
+
+    const btn = submitBtn();
+    fireEvent.click(btn);
+    await waitFor(() => expect(register).toHaveBeenCalledTimes(1));
+    // marteladas extras enquanto pendura no register não disparam novo cadastro
+    fireEvent.click(btn);
+    fireEvent.click(btn);
+    expect(register).toHaveBeenCalledTimes(1);
+
+    resolveRegister({ needsConfirmation: false });
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
+  });
+});
