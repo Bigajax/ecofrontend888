@@ -12,6 +12,8 @@ import {
   marcarSaidaIntencionalDoFunil,
   trackAssinaturaIniciada,
   trackCadastroFalhou,
+  trackCadastroValidacao,
+  trackGoogleIndisponivel,
 } from "../mixpanelAssinarFunnel";
 
 const PREFIX = "Funil Sono · ";
@@ -138,6 +140,47 @@ describe("trackCadastroFalhou", () => {
       PREFIX + "Cadastro falhou",
       expect.objectContaining({ foi_timeout: true }),
       undefined,
+    );
+  });
+});
+
+describe("trackCadastroValidacao", () => {
+  it('emite "Cadastro validação rejeitada" (e NÃO "Cadastro falhou") com method e motivo', () => {
+    trackCadastroValidacao({ method: "email", motivo: "email" });
+    expect(track).toHaveBeenCalledWith(
+      PREFIX + "Cadastro validação rejeitada",
+      expect.objectContaining({ method: "email", motivo: "email" }),
+      undefined,
+    );
+    expect(track).not.toHaveBeenCalledWith(
+      PREFIX + "Cadastro falhou",
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it("encaminha o motivo senha_curta", () => {
+    trackCadastroValidacao({ method: "email", motivo: "senha_curta" });
+    expect(track).toHaveBeenCalledWith(
+      PREFIX + "Cadastro validação rejeitada",
+      expect.objectContaining({ motivo: "senha_curta" }),
+      undefined,
+    );
+  });
+});
+
+describe("trackGoogleIndisponivel", () => {
+  it('emite "Google indisponível" (e NÃO "Cadastro falhou") com error_message', () => {
+    trackGoogleIndisponivel({ error_message: "render failed" });
+    expect(track).toHaveBeenCalledWith(
+      PREFIX + "Google indisponível",
+      expect.objectContaining({ error_message: "render failed" }),
+      undefined,
+    );
+    expect(track).not.toHaveBeenCalledWith(
+      PREFIX + "Cadastro falhou",
+      expect.anything(),
+      expect.anything(),
     );
   });
 });

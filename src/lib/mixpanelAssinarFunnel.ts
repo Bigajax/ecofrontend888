@@ -216,6 +216,26 @@ export function trackCadastroFalhou(p: {
 }
 
 /**
+ * Rejeição da validação local do formulário (e-mail mal formado / senha curta).
+ * NÃO é "Cadastro falhou": o `register()` nem chegou a ser chamado e o backend
+ * nunca foi tocado. Evento separado para não inflar a métrica de falha do funil
+ * (era a causa das "falhas fantasma" — falha no Mixpanel sem falha real).
+ */
+export function trackCadastroValidacao(p: { method: SignupMethod; motivo: 'email' | 'senha_curta' }): void {
+  track('Cadastro validação rejeitada', p);
+}
+
+/**
+ * Botão oficial do Google (GIS) falhou ao inicializar/renderizar, ANTES de
+ * qualquer clique do usuário — indisponibilidade de infra/config (script não
+ * carregou, origem não autorizada…), não uma tentativa de cadastro que falhou.
+ * Mantém a observabilidade sem contaminar "Cadastro falhou".
+ */
+export function trackGoogleIndisponivel(p: { error_message: string }): void {
+  track('Google indisponível', p);
+}
+
+/**
  * Saída do funil pelo logo "voltar" do header. `destino` é a landing de origem
  * (/sono ou /); `step` diz em que etapa o usuário desistiu — chave pra saber se
  * o pós-cartão→landing é abandono voluntário ou fuga de algo quebrado.

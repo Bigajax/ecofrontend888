@@ -12,16 +12,39 @@ vi.mock("@/contexts/AuthContext", () => ({
 
 // Controla o status do botão oficial do Google sem depender do script GSI
 // (ausente no jsdom). Default 'failed' = fallback por redirect renderizado.
+// Captura as opções (onClick/onError) para simular render-error vs pós-clique.
 let googleBtnStatus: GoogleSignInButtonStatus = "failed";
+let googleOptions: any = null;
 vi.mock("@/hooks/useGoogleOneTap", () => ({
-  useGoogleSignInButton: () => ({
-    containerRef: createRef<HTMLDivElement>(),
-    status: googleBtnStatus,
-    ready: googleBtnStatus === "ready",
-  }),
+  useGoogleSignInButton: (opts: any) => {
+    googleOptions = opts;
+    return {
+      containerRef: createRef<HTMLDivElement>(),
+      status: googleBtnStatus,
+      ready: googleBtnStatus === "ready",
+    };
+  },
+}));
+
+// Telemetria do funil espionada: assevera QUAL evento o componente dispara.
+vi.mock("@/lib/mixpanelAssinarFunnel", () => ({
+  trackCadastroVisto: vi.fn(),
+  trackCadastroEnviado: vi.fn(),
+  trackCadastroConcluido: vi.fn(),
+  trackCadastroFalhou: vi.fn(),
+  trackCadastroValidacao: vi.fn(),
+  trackGoogleIndisponivel: vi.fn(),
+  markCadastroPendente: vi.fn(),
+  clearCadastroPendente: vi.fn(),
+  marcarSaidaIntencionalDoFunil: vi.fn(),
 }));
 
 import { SignupStep } from "../SignupStep";
+import {
+  trackCadastroFalhou,
+  trackCadastroValidacao,
+  trackGoogleIndisponivel,
+} from "@/lib/mixpanelAssinarFunnel";
 
 const defaultProps = {
   funnelReturnTo: "/assinar?plan=monthly&step=card",
@@ -32,6 +55,10 @@ beforeEach(() => {
   register.mockReset().mockResolvedValue({ needsConfirmation: false });
   signInWithGoogle.mockReset().mockResolvedValue(undefined);
   googleBtnStatus = "failed";
+  googleOptions = null;
+  vi.mocked(trackCadastroFalhou).mockReset();
+  vi.mocked(trackCadastroValidacao).mockReset();
+  vi.mocked(trackGoogleIndisponivel).mockReset();
 });
 
 describe("SignupStep", () => {
@@ -142,5 +169,56 @@ describe("SignupStep", () => {
     googleBtnStatus = "ready";
     render(<SignupStep onCreated={vi.fn()} {...defaultProps} />);
     expect(screen.queryByRole("button", { name: /google/i })).not.toBeInTheDocument();
+  });
+});
+
+// "Cadastro falhou" só pode contar tentativa real (register / Google após
+// clique). Validação de campo e render-error do GIS não são falha de cadastro.
+describe("SignupStep · telemetria de falha não mente", () => {
+  it("e-mail inválido emite 'validação rejeitada', NÃO 'Cadastro falhou'", () => {
+    render(<SignupStep onCreated={vi.fn()} {...defaultProps} />);
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "nope" } });
+    fireEvent.change(screen.getByLabelText(/senha \(8/i), { target: { value: "12345678" } });
+    fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
+
+    expect(vi.mocked(trackCadastroValidacao)).toHaveBeenCalledWith(
+      expect.objectContaining({ method: "email", motivo: "email" }),
+    );
+    expect(vi.mocked(trackCadastroFalhou)).not.toHaveBeenCalled();
+  });
+
+  it("senha curta emite 'validação rejeitada' (senha_curta), NÃO 'Cadastro falhou'", () => {
+    render(<SignupStep onCreated={vi.fn()} {...defaultProps} />);
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "ana@x.com" } });
+    fireEvent.change(screen.getByLabelText(/senha \(8/i), { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
+
+    expect(vi.mocked(trackCadastroValidacao)).toHaveBeenCalledWith(
+      expect.objectContaining({ method: "email", motivo: "senha_curta" }),
+    );
+    expect(vi.mocked(trackCadastroFalhou)).not.toHaveBeenCalled();
+  });
+
+  it("erro do Google SEM clique emite 'Google indisponível', NÃO 'Cadastro falhou'", () => {
+    googleBtnStatus = "ready";
+    render(<SignupStep onCreated={vi.fn()} {...defaultProps} />);
+    googleOptions.onError(new Error("render failed"));
+
+    expect(vi.mocked(trackGoogleIndisponivel)).toHaveBeenCalledWith(
+      expect.objectContaining({ error_message: "render failed" }),
+    );
+    expect(vi.mocked(trackCadastroFalhou)).not.toHaveBeenCalled();
+  });
+
+  it("erro do Google APÓS o clique conta como 'Cadastro falhou'", () => {
+    googleBtnStatus = "ready";
+    render(<SignupStep onCreated={vi.fn()} {...defaultProps} />);
+    googleOptions.onClick();
+    googleOptions.onError(new Error("token rejected"));
+
+    expect(vi.mocked(trackCadastroFalhou)).toHaveBeenCalledWith(
+      expect.objectContaining({ method: "google", error_message: "token rejected" }),
+    );
+    expect(vi.mocked(trackGoogleIndisponivel)).not.toHaveBeenCalled();
   });
 });

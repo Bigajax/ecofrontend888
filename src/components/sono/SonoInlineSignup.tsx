@@ -9,6 +9,8 @@ import {
   trackCadastroEnviado,
   trackCadastroConcluido,
   trackCadastroFalhou,
+  trackCadastroValidacao,
+  trackGoogleIndisponivel,
   markCadastroPendente,
   clearCadastroPendente,
   marcarSaidaIntencionalDoFunil,
@@ -87,6 +89,10 @@ export function SonoInlineSignup({
   const [timedOut, setTimedOut] = useState(false);
   // Pixel "Lead" 1× por sessão do form (não duplica em retry/re-render).
   const leadFiredRef = useRef(false);
+  // Distingue erro do botão Google ANTES do clique (falha de render/init do GIS
+  // = infra) de erro DEPOIS do clique (tentativa real que falhou). Sem isso, o
+  // onError de render inflava "Cadastro falhou" sem o usuário ter tentado nada.
+  const googleClickedRef = useRef(false);
   // Navegador embarcado do FB/IG: o Google bloqueia OAuth (popup falha). Lidera
   // com e-mail e esconde o Google para não criar um beco sem saída no pago.
   const inApp = isInAppBrowser();
@@ -118,11 +124,11 @@ export function SonoInlineSignup({
     const emailLimpo = (emailRef.current?.value ?? email).trim().toLowerCase();
     const senhaValor = senhaRef.current?.value ?? senha;
     if (!EMAIL_RE.test(emailLimpo)) {
-      trackCadastroFalhou({ method: 'email', error_message: 'validacao: email' });
+      trackCadastroValidacao({ method: 'email', motivo: 'email' });
       return setErro('E-mail inválido.');
     }
     if (senhaValor.length < 8) {
-      trackCadastroFalhou({ method: 'email', error_message: 'validacao: senha_curta' });
+      trackCadastroValidacao({ method: 'email', motivo: 'senha_curta' });
       return setErro('A senha precisa ter ao menos 8 caracteres.');
     }
 
@@ -205,6 +211,7 @@ export function SonoInlineSignup({
   const { containerRef: googleBtnRef, status: googleBtnStatus } = useGoogleSignInButton({
     clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
     onClick: () => {
+      googleClickedRef.current = true;
       setErro(null);
       trackCadastroEnviado({ method: 'google' });
       markCadastroPendente('google');
@@ -225,11 +232,20 @@ export function SonoInlineSignup({
     },
     onError: (error) => {
       clearCadastroPendente();
-      console.error('[cadastro] falhou', { provider: 'google', status_http: authErrorStatus(error), error });
+      const status_http = authErrorStatus(error);
+      // Sem clique = erro de render/init do GIS (infra), não tentativa que
+      // falhou. Não conta como "Cadastro falhou"; o fallback (status 'failed')
+      // já oferece o botão de redirect, então também não mostramos erro.
+      if (!googleClickedRef.current) {
+        console.warn('[cadastro] google indisponível (render/init)', { status_http, error });
+        trackGoogleIndisponivel({ error_message: error.message || 'google' });
+        return;
+      }
+      console.error('[cadastro] falhou', { provider: 'google', status_http, error });
       trackCadastroFalhou({
         method: 'google',
         error_message: error.message || 'google',
-        status_http: authErrorStatus(error),
+        status_http,
         foi_timeout: false,
       });
       setErro('Não foi possível entrar com Google. Tente novamente.');

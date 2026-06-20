@@ -33,6 +33,20 @@ vi.mock("@/hooks/useGoogleOneTap", () => ({
 // CAPI/Pixel não tem efeito em teste.
 vi.mock("@/lib/fbpixel", () => ({ trackWithCAPI: vi.fn() }));
 
+// Telemetria do funil — espionada para asseverar QUAL evento o componente
+// dispara (validação vs falha real). Todos os exports usados viram vi.fn().
+vi.mock("@/lib/mixpanelAssinarFunnel", () => ({
+  trackCadastroVisto: vi.fn(),
+  trackCadastroEnviado: vi.fn(),
+  trackCadastroConcluido: vi.fn(),
+  trackCadastroFalhou: vi.fn(),
+  trackCadastroValidacao: vi.fn(),
+  trackGoogleIndisponivel: vi.fn(),
+  markCadastroPendente: vi.fn(),
+  clearCadastroPendente: vi.fn(),
+  marcarSaidaIntencionalDoFunil: vi.fn(),
+}));
+
 // Captura de lead (backend) e detecção de webview — mockadas para asserção.
 vi.mock("@/api/leadCapture", () => ({
   captureLead: vi.fn().mockResolvedValue(undefined),
@@ -44,6 +58,11 @@ import { SonoInlineSignup } from "../SonoInlineSignup";
 import { captureLead } from "@/api/leadCapture";
 import { trackWithCAPI } from "@/lib/fbpixel";
 import { isInAppBrowser } from "@/utils/isInAppBrowser";
+import {
+  trackCadastroFalhou,
+  trackCadastroValidacao,
+  trackGoogleIndisponivel,
+} from "@/lib/mixpanelAssinarFunnel";
 
 const defaultProps = {
   returnTo: "/sono/experiencia?play=night1",
@@ -59,6 +78,9 @@ beforeEach(() => {
   vi.mocked(captureLead).mockReset().mockResolvedValue(undefined);
   vi.mocked(trackWithCAPI).mockReset();
   vi.mocked(isInAppBrowser).mockReset().mockReturnValue(false);
+  vi.mocked(trackCadastroFalhou).mockReset();
+  vi.mocked(trackCadastroValidacao).mockReset();
+  vi.mocked(trackGoogleIndisponivel).mockReset();
 });
 
 const emailField = () => screen.getByLabelText(/endereço de email/i) as HTMLInputElement;
@@ -140,6 +162,59 @@ describe("SonoInlineSignup", () => {
     fireEvent.click(submitBtn());
     const link = await screen.findByRole("link", { name: /entrar na minha conta/i });
     expect(link.getAttribute("href")).toContain("/login?returnTo=");
+  });
+});
+
+// A métrica "Cadastro falhou" só pode contar tentativa REAL de cadastro
+// (register, ou Google após clique). Validação de campo e erro de render do
+// botão Google inflavam o número sem nunca ter chamado o backend.
+describe("SonoInlineSignup · telemetria de falha não mente", () => {
+  it("e-mail inválido emite 'validação rejeitada', NÃO 'Cadastro falhou'", () => {
+    renderInRouter(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
+    fireEvent.change(emailField(), { target: { value: "nope" } });
+    fireEvent.change(senhaField(), { target: { value: "12345678" } });
+    fireEvent.click(submitBtn());
+
+    expect(vi.mocked(trackCadastroValidacao)).toHaveBeenCalledWith(
+      expect.objectContaining({ method: "email", motivo: "email" }),
+    );
+    expect(vi.mocked(trackCadastroFalhou)).not.toHaveBeenCalled();
+  });
+
+  it("senha curta emite 'validação rejeitada' (motivo senha_curta), NÃO 'Cadastro falhou'", () => {
+    renderInRouter(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
+    fireEvent.change(emailField(), { target: { value: "ana@x.com" } });
+    fireEvent.change(senhaField(), { target: { value: "123" } });
+    fireEvent.click(submitBtn());
+
+    expect(vi.mocked(trackCadastroValidacao)).toHaveBeenCalledWith(
+      expect.objectContaining({ method: "email", motivo: "senha_curta" }),
+    );
+    expect(vi.mocked(trackCadastroFalhou)).not.toHaveBeenCalled();
+  });
+
+  it("erro do botão Google SEM clique emite 'Google indisponível', NÃO 'Cadastro falhou'", () => {
+    googleBtnStatus = "ready";
+    renderInRouter(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
+    // GIS dispara onError na render/init, sem o usuário ter clicado.
+    googleOptions.onError(new Error("render failed"));
+
+    expect(vi.mocked(trackGoogleIndisponivel)).toHaveBeenCalledWith(
+      expect.objectContaining({ error_message: "render failed" }),
+    );
+    expect(vi.mocked(trackCadastroFalhou)).not.toHaveBeenCalled();
+  });
+
+  it("erro do Google APÓS o clique conta como 'Cadastro falhou' (tentativa real)", () => {
+    googleBtnStatus = "ready";
+    renderInRouter(<SonoInlineSignup onCreated={vi.fn()} {...defaultProps} />);
+    googleOptions.onClick(); // usuário clicou e escolheu a conta
+    googleOptions.onError(new Error("token rejected"));
+
+    expect(vi.mocked(trackCadastroFalhou)).toHaveBeenCalledWith(
+      expect.objectContaining({ method: "google", error_message: "token rejected" }),
+    );
+    expect(vi.mocked(trackGoogleIndisponivel)).not.toHaveBeenCalled();
   });
 });
 

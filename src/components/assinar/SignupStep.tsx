@@ -9,6 +9,8 @@ import {
   trackCadastroEnviado,
   trackCadastroConcluido,
   trackCadastroFalhou,
+  trackCadastroValidacao,
+  trackGoogleIndisponivel,
   markCadastroPendente,
   clearCadastroPendente,
   marcarSaidaIntencionalDoFunil,
@@ -40,6 +42,10 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
   // visível e válido ("validacao: email"). Ler o ref cobre esse caso.
   const emailRef = useRef<HTMLInputElement>(null);
   const senhaRef = useRef<HTMLInputElement>(null);
+  // Distingue erro do botão Google ANTES do clique (render/init do GIS = infra)
+  // de erro DEPOIS do clique (tentativa real). Sem isso, o onError de render
+  // inflava "Cadastro falhou" sem o usuário ter tentado nada.
+  const googleClickedRef = useRef(false);
 
   useEffect(() => {
     trackCadastroVisto();
@@ -54,18 +60,18 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
-    // Validações locais também contam como falha — sem isso ficam invisíveis
-    // no Mixpanel ("enviado" ainda não disparou, então o funil não é afetado).
+    // Validação local NÃO é "Cadastro falhou": o register() nem foi chamado.
+    // Evento próprio ("validação rejeitada") pra não inflar a métrica de falha.
     // Lê do DOM (autofill que não dispara onChange), com o state como fallback;
     // trim + lowercase porque teclado mobile injeta espaço e capitaliza.
     const emailLimpo = (emailRef.current?.value ?? email).trim().toLowerCase();
     const senhaValor = senhaRef.current?.value ?? senha;
     if (!EMAIL_RE.test(emailLimpo)) {
-      trackCadastroFalhou({ method: "email", error_message: "validacao: email" });
+      trackCadastroValidacao({ method: "email", motivo: "email" });
       return setErro("E-mail inválido.");
     }
     if (senhaValor.length < 8) {
-      trackCadastroFalhou({ method: "email", error_message: "validacao: senha_curta" });
+      trackCadastroValidacao({ method: "email", motivo: "senha_curta" });
       return setErro("A senha precisa ter ao menos 8 caracteres.");
     }
 
@@ -120,6 +126,7 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
   const { containerRef: googleBtnRef, status: googleBtnStatus } = useGoogleSignInButton({
     clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
     onClick: () => {
+      googleClickedRef.current = true;
       setErro(null);
       trackCadastroEnviado({ method: "google" });
       markCadastroPendente("google");
@@ -134,6 +141,13 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
     onError: (error) => {
       clearCadastroPendente();
       const message = error.message || "Falha ao entrar com Google.";
+      // Sem clique = erro de render/init do GIS (infra), não tentativa que
+      // falhou. O fallback (status 'failed') já oferece o redirect; não conta
+      // como "Cadastro falhou" e não mostra erro.
+      if (!googleClickedRef.current) {
+        trackGoogleIndisponivel({ error_message: message });
+        return;
+      }
       trackCadastroFalhou({
         method: "google",
         error_message: message,
