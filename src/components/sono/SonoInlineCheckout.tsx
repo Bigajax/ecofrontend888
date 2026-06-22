@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Loader2, Lock, Moon, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Lock, Moon, Sparkles, X } from 'lucide-react';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
-import { OFFER, PRICE } from '@/constants/offerCopy';
-import { trackSubscriptionPaid } from '@/lib/mixpanelConversionEvents';
-import { trackAssinaturaPaga, registerFunilSono } from '@/lib/mixpanelAssinarFunnel';
+import { apiUrl } from '@/config/apiBase';
+import { registerFunilSono } from '@/lib/mixpanelAssinarFunnel';
 import {
   trackSonoGuestOfferViewed,
   trackSonoGuestCheckoutClicked,
@@ -17,14 +16,12 @@ import {
   trackSonoGuestPostNight1Response,
 } from '@/lib/mixpanelSonoGuestEvents';
 import mixpanel from '@/lib/mixpanel';
-import { trackWithCAPI, getStartTrialEventId, getPurchaseEventId } from '@/lib/fbpixel';
-import {
-  useSonoCheckoutState,
-  pollSonoSubscriptionActive,
-  type SonoCheckoutStep,
-} from './useSonoCheckoutState';
+import { trackWithCAPI } from '@/lib/fbpixel';
+import { getSonoGuestId } from '@/lib/sonoGuestId';
+import { useSonoCheckoutState, type SonoCheckoutStep } from './useSonoCheckoutState';
 import { SonoInlineSignup } from './SonoInlineSignup';
-import { SonoInlineCard } from './SonoInlineCard';
+import { SonoInlinePix } from './SonoInlinePix';
+import { readSonoLifetime } from './sonoLifetime';
 
 /**
  * Orquestrador do checkout inline do funil do sono (modelo C). Substitui o
@@ -49,7 +46,14 @@ interface SonoInlineCheckoutProps {
 
 type ReflectionAnswer = 'yes' | 'little' | 'no';
 
-const RETURN_TO = '/sono/experiencia?checkout=card';
+const RETURN_TO = '/sono/experiencia?checkout=save_account';
+
+/** Preço de fallback (exibição) caso o /config do backend não responda. */
+const FALLBACK_SONO_PRICE = 37;
+
+function priceLabel(price: number): string {
+  return Number.isInteger(price) ? `R$${price}` : `R$${price.toFixed(2).replace('.', ',')}`;
+}
 
 const NIGHTS_2_7 = PROTOCOL_NIGHTS.slice(1);
 
@@ -83,11 +87,8 @@ const stepVariants = {
 };
 
 function getGuestId(): string {
-  return (
-    sessionStorage.getItem('eco.sono.guest_id') ||
-    localStorage.getItem('eco_guest_id') ||
-    `anon_${Math.random().toString(36).slice(2)}`
-  );
+  // Fonte ÚNICA — o mesmo id atravessa eventos → pagamento → entitlement → /check.
+  return getSonoGuestId();
 }
 
 function getSource(): string {
@@ -109,19 +110,34 @@ async function upsertEvent(patch: Record<string, unknown>) {
 }
 
 export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInlineCheckoutProps) {
-  const { user, refreshSubscription } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { step, open, goTo, close } = useSonoCheckoutState();
 
   const [answer, setAnswer] = useState<ReflectionAnswer | null>(null);
-  const [pending, setPending] = useState(false);
-  const confirmStartedRef = useRef(false);
-  const startTrialFiredRef = useRef(false);
-  const purchaseFiredRef = useRef(false);
+  const [price, setPrice] = useState<number>(FALLBACK_SONO_PRICE);
   const convertedTrackedRef = useRef(false);
   const funnelSourceRef = useRef(false);
   const appInviteShownRef = useRef(false);
   const offerViewedRef = useRef(false);
+
+  // Preço do Pix vem do backend (env), pra mudar sem rebuild do front. Buscado uma
+  // vez quando o overlay abre; cai no fallback se o /config falhar.
+  useEffect(() => {
+    if (step === null) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(apiUrl('/api/payments/sono-pix/config'));
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && typeof data?.price === 'number') setPrice(data.price);
+      } catch {
+        /* mantém fallback */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [step]);
 
   // Ao abrir o checkout, registra funnel_source='sono_experiencia' (super
   // property): os eventos Cadastro/Cartão de mixpanelAssinarFunnel herdam a
@@ -167,104 +183,64 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
     if (openAt && step === null) open(openAt);
   }, [openAt, step, open]);
 
-  // Remount pós-cadastro: se a sessão chegou enquanto estávamos no signup, avança
-  // pro cartão (o overlay é restaurado via ?checkout=, mas a corrida do SIGNED_IN
-  // pode nos deixar em 'signup' com user já presente).
-  useEffect(() => {
-    if (user && step === 'signup') goTo('card');
-  }, [user, step, goTo]);
-
-  // `refreshSubscription` NÃO é memoizado no AuthContext: sua identidade muda a
-  // cada render do AuthProvider (e ele re-renderiza quando o próprio poll atualiza
-  // a assinatura). Guardamos a última referência num ref para que o efeito de
-  // confirmação NÃO dependa dela — senão a mudança de identidade dispara o cleanup
-  // (cancelled=true) no meio do poll, o re-run é barrado pelo confirmStartedRef e a
-  // tela trava pra sempre em "Preparando suas noites…".
-  const refreshSubscriptionRef = useRef(refreshSubscription);
-  refreshSubscriptionRef.current = refreshSubscription;
-
-  // Confirmação assíncrona do webhook ao entrar em 'confirming'.
-  useEffect(() => {
-    if (step !== 'confirming' || confirmStartedRef.current) return;
-    confirmStartedRef.current = true;
-    setPending(false);
-    // Meta Pixel + CAPI: StartTrial = cartão aceito pelo backend (entrada em
-    // "Preparando suas noites…"). Disparamos aqui, e NÃO no passo `unlocked`, pois
-    // este último depende do polling do webhook confirmar dentro da sessão — se o
-    // polling estoura ("Quase lá"), o StartTrial nunca sairia. Usa o MESMO event_id
-    // enviado ao backend no create-with-card, deduplicando com o StartTrial
-    // server-side que o webhook do Mercado Pago emite no trial_started.
-    if (!startTrialFiredRef.current) {
-      startTrialFiredRef.current = true;
-      // StartTrial SEM value: o valor monetário do início do trial sai só no
-      // Purchase (abaixo), para não contar R$15,90 duas vezes entre os eventos.
-      void trackWithCAPI(
-        'StartTrial',
-        {
-          contentName: 'ECO Premium',
-          contentCategory: 'subscription',
-          pixelExtra: { plan: 'monthly' },
-        },
-        getStartTrialEventId(),
-      );
-    }
-    // Purchase no início do trial (cold-start de otimização). Usa o MESMO event_id
-    // enviado ao backend no create-with-card, deduplicando com o Purchase que o
-    // webhook do Mercado Pago emite no trial autorizado.
-    if (!purchaseFiredRef.current) {
-      purchaseFiredRef.current = true;
-      void trackWithCAPI(
-        'Purchase',
-        {
-          value: PRICE.monthly,
-          currency: PRICE.currency,
-          contentName: 'ECO Premium',
-          contentCategory: 'subscription',
-          pixelExtra: { plan: 'monthly' },
-        },
-        getPurchaseEventId(),
-      );
-    }
-    let cancelled = false;
-    (async () => {
-      const ok = await pollSonoSubscriptionActive(() => refreshSubscriptionRef.current());
-      if (cancelled) return;
-      if (ok) {
-        void upsertEvent({ unlocked: true });
-        goTo('unlocked');
-      } else {
-        setPending(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [step, goTo]);
-
-  // Conversão (uma vez) ao destravar — espelha o que o SubscriptionCallbackPage
-  // dispara, para o funil fechar mesmo sem passar pela tela azul de callback.
+  // Conversão (uma vez) ao destravar — fecha o funil no Mixpanel. Pagamento ÚNICO
+  // (não-assinatura), por isso evento dedicado em vez dos helpers de subscription.
+  // O Purchase do Meta sai no SonoInlinePix (client) + no webhook (server, principal).
   useEffect(() => {
     if (step !== 'unlocked' || convertedTrackedRef.current) return;
     convertedTrackedRef.current = true;
-    trackSubscriptionPaid({
-      plan_id: 'monthly',
-      mp_status: 'active',
-      transaction_amount: PRICE.monthly,
+    mixpanel.track('Funil Sono · Pix aprovado', {
+      product: 'protocolo_sono_7_noites',
+      amount: price,
       provider: 'mercadopago',
+      payment_type: 'pix_lifetime',
       user_id: user?.id,
-      source: 'sono_inline_checkout',
+      guest_id: getGuestId(),
+      source: getSource(),
     });
-    trackAssinaturaPaga({ plan_id: 'monthly', amount: PRICE.monthly });
-    // StartTrial + Purchase (Meta) são disparados ao entrar em `confirming`
-    // (cartão aceito), não aqui — ver o efeito acima. O webhook do Mercado Pago
-    // emite os mesmos eventos server-side (deduplicados) no trial autorizado.
-  }, [step, user?.id]);
+  }, [step, user?.id, price]);
 
-  // Identidade ESTÁVEL: passado pro SonoInlineCard → handleToken (useCallback).
-  // Sem isso, um arrow inline aqui muda a cada render, desestabiliza o handleToken
-  // e o MpCardForm (React.memo) recria o brick do MP — Secure Fields falham e o
-  // cartão renderiza em branco. Ver mp-brick-nao-tolera-rerender.
-  const handleCardPaid = useCallback(() => goTo('confirming'), [goTo]);
+  // Pix aprovado: destrava as noites atrás do overlay (justSubscribed no pai) e vai
+  // pra tela de sucesso. A fonte da verdade é o webhook (entitlement por guest_id);
+  // o SonoInlinePix já gravou o cache local + disparou o Purchase do client.
+  const handlePixPaid = useCallback(() => {
+    onUnlocked();
+    void upsertEvent({ unlocked: true });
+    goTo('unlocked');
+  }, [onUnlocked, goTo]);
+
+  // Vincula o entitlement (criado por guest_id) à conta recém-salva, pra valer em
+  // qualquer aparelho. Non-fatal.
+  const claimLifetime = useCallback(async () => {
+    try {
+      const cache = readSonoLifetime();
+      if (!cache?.externalReference) return;
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) return;
+      await fetch(apiUrl('/api/entitlements/claim'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ external_reference: cache.externalReference }),
+      });
+    } catch {
+      /* non-fatal — o acesso por guest_id + cache local já vale */
+    }
+  }, []);
+
+  // Botão da tela de sucesso. Logado → reivindica e vai pro app. Sem conta → oferece
+  // salvar o acesso (save_account).
+  const handleAfterUnlock = useCallback(() => {
+    if (user) {
+      void claimLifetime().then(() => navigate('/app/meditacoes-sono'));
+    } else {
+      goTo('save_account');
+    }
+  }, [user, claimLifetime, navigate, goTo]);
+
+  const handleAccountSaved = useCallback(() => {
+    void claimLifetime().then(() => navigate('/app/meditacoes-sono'));
+  }, [claimLifetime, navigate]);
 
   const selectAnswer = (a: ReflectionAnswer) => {
     setAnswer(a);
@@ -285,7 +261,8 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   const startCheckout = () => {
     void upsertEvent({ cta_clicked: true });
     trackSonoGuestCheckoutClicked({ source: getSource(), guestId: getGuestId() });
-    goTo(user ? 'card' : 'signup');
+    // Pagamento PRIMEIRO (Pix), conta depois — sem cadastro antes de pagar.
+    goTo('pix');
   };
 
   const handleDismiss = () => {
@@ -313,18 +290,12 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
     navigate('/app');
   };
 
-  const handleUnlocked = () => {
-    close();
-    onUnlocked();
-  };
-
   // Overlay fechado — nada a renderizar.
   if (step === null) return null;
 
-  // Fechar disponível nos passos "frios" (inclui card: o usuário precisa poder
-  // sair sem ser obrigado a digitar o cartão) — exceto confirmação/sucesso.
-  const canClose =
-    step === 'reflection' || step === 'offer' || step === 'signup' || step === 'card';
+  // Fechar disponível nos passos "frios" (inclui pix: o usuário pode desistir antes
+  // de pagar) — exceto sucesso/salvar conta.
+  const canClose = step === 'reflection' || step === 'offer' || step === 'pix';
   const validation = answer ? VALIDATION[answer] : null;
 
   return (
@@ -468,17 +439,23 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="flex flex-col items-center text-center"
               >
+                <p
+                  className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em]"
+                  style={{ color: 'rgba(196,181,253,0.5)' }}
+                >
+                  Protocolo do Sono · 7 noites
+                </p>
                 <h2
                   className="mb-2 font-display text-[24px] font-bold leading-snug text-white"
                   style={{ textShadow: '0 2px 18px rgba(0,0,0,0.6)' }}
                 >
-                  Seu sono é
+                  Você sentiu a Noite 1.
                   <br />
-                  <span style={{ color: '#C4B5FD' }}>treinado em camadas.</span>
+                  <span style={{ color: '#C4B5FD' }}>As outras seis fixam isso.</span>
                 </h2>
                 <p className="mb-6 text-[14px] leading-snug text-white/45">
-                  A Noite 1 foi o início. Agora você continua uma sequência de 7 noites para
-                  desacelerar mente, corpo e pensamentos antes de dormir.
+                  Libere as 7 noites pra treinar seu corpo a desligar sozinho — uma vez, suas
+                  pra sempre.
                 </p>
 
                 {/* Preview calmo das próximas noites — com miniatura de cada noite.
@@ -539,10 +516,13 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                   })}
                 </div>
 
-                {/* Oferta — R$0 hoje em destaque, preço recorrente + cancelamento logo abaixo */}
-                <p className="font-display text-[19px] font-bold text-white">Comece por R$0 hoje</p>
-                <p className="mb-3 text-[13px] text-white/40">
-                  Depois {OFFER.priceMonthly} · {OFFER.cancelAnytime}
+                {/* Oferta — pagamento único via Pix, vitalício. Preço do backend. */}
+                <p className="font-display text-[19px] font-bold text-white">
+                  {priceLabel(price)} no Pix · pagamento único
+                </p>
+                <p className="mb-3 text-[13px] leading-snug text-white/40">
+                  Sem assinatura, sem cobrança mensal. Você paga uma vez e as 7 noites ficam
+                  liberadas pra sempre — menos que uma caixa de melatonina, e não acaba.
                 </p>
                 <div className="mb-7 flex items-center justify-center gap-2">
                   <span style={{ color: '#FBBF24', fontSize: '11px', letterSpacing: '1px' }}>★★★★★</span>
@@ -557,7 +537,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                     boxShadow: '0 10px 36px rgba(124,58,237,0.5)',
                   }}
                 >
-                  Liberar minhas 7 noites por R$0
+                  Liberar minhas 7 noites · {priceLabel(price)} no Pix
                 </button>
                 <button
                   onClick={handleDismiss}
@@ -569,10 +549,10 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
               </motion.div>
             )}
 
-            {/* ── signup (inline, tema escuro) ── */}
-            {step === 'signup' && (
+            {/* ── pix (inline — substitui o cartão) ── */}
+            {step === 'pix' && (
               <motion.div
-                key="signup"
+                key="pix"
                 variants={stepVariants}
                 initial="enter"
                 animate="center"
@@ -580,22 +560,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="flex w-full flex-col"
               >
-                <SonoInlineSignup onCreated={() => goTo('card')} returnTo={RETURN_TO} />
-              </motion.div>
-            )}
-
-            {/* ── card (inline) ── */}
-            {step === 'card' && (
-              <motion.div
-                key="card"
-                variants={stepVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                className="flex w-full flex-col"
-              >
-                <SonoInlineCard payerEmail={user?.email ?? ''} onPaid={handleCardPaid} />
+                <SonoInlinePix price={price} guestId={getGuestId()} onPaid={handlePixPaid} />
                 <button
                   onClick={handleDismiss}
                   className="mx-auto mt-4 text-[12px] transition-colors"
@@ -606,46 +571,35 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
               </motion.div>
             )}
 
-            {/* ── confirming / pending ── */}
-            {step === 'confirming' && (
+            {/* ── save_account (opcional, pós-pagamento) ── */}
+            {step === 'save_account' && (
               <motion.div
-                key="confirming"
+                key="save_account"
                 variants={stepVariants}
                 initial="enter"
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                className="flex flex-col items-center text-center"
+                className="flex w-full flex-col"
               >
-                {!pending ? (
-                  <>
-                    <Loader2 className="mb-6 h-9 w-9 animate-spin" style={{ color: '#C4B5FD' }} />
-                    <h2 className="font-display text-[22px] font-bold text-white">
-                      Preparando suas noites…
-                    </h2>
-                    <p className="mt-2 text-[14px] leading-snug text-white/45">
-                      Um instante enquanto confirmamos seu acesso.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <Moon className="mb-6 h-9 w-9" style={{ color: 'rgba(196,181,253,0.7)' }} />
-                    <h2 className="font-display text-[22px] font-bold text-white">
-                      Quase lá.
-                    </h2>
-                    <p className="mt-2 mb-7 text-[14px] leading-relaxed text-white/45">
-                      Estamos confirmando seu pagamento — pode levar alguns minutos. Avisamos
-                      por e-mail assim que liberar.
-                    </p>
-                    <button
-                      onClick={handleUnlocked}
-                      className="w-full rounded-full py-3.5 text-[14px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
-                      style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}
-                    >
-                      Continuar
-                    </button>
-                  </>
-                )}
+                <SonoInlineSignup
+                  onCreated={handleAccountSaved}
+                  returnTo={RETURN_TO}
+                  title={
+                    <>
+                      Suas 7 noites são suas <span style={{ color: '#C4B5FD' }}>pra sempre.</span>
+                    </>
+                  }
+                  subtitle="Salve seu acesso pra entrar de qualquer aparelho."
+                  submitLabel="Salvar meu acesso"
+                />
+                <button
+                  onClick={handleStayInSono}
+                  className="mx-auto mt-4 text-[12px] transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                >
+                  Pular
+                </button>
               </motion.div>
             )}
 
@@ -680,14 +634,14 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                   Descanse. Elas estarão aqui sempre que você precisar.
                 </p>
                 <button
-                  onClick={handleUnlocked}
+                  onClick={handleAfterUnlock}
                   className="w-full rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
                   style={{
                     background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
                     boxShadow: '0 10px 36px rgba(124,58,237,0.5)',
                   }}
                 >
-                  Boa noite
+                  {user ? 'Continuar' : 'Salvar e continuar'}
                 </button>
               </motion.div>
             )}

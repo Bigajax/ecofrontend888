@@ -292,6 +292,66 @@ export async function migrateGuestData(newUserId: string): Promise<PreservedData
   return preservedData;
 }
 
+/**
+ * Mescla o progresso do Protocolo do Sono feito como guest (chave
+ * `eco.sono.protocol.v1.guest`) para a chave do usuário autenticado. União das
+ * noites concluídas — não sobrescreve progresso pré-existente da conta. Roda no
+ * SIGNED_IN, antes de clearGuestStorage (que não toca nessa chave). Remove a chave
+ * guest pra não revazar entre logins no mesmo browser.
+ */
+function mergeSonoGuestProgress(newUserId: string): void {
+  if (typeof window === 'undefined' || !newUserId) return;
+  try {
+    const guestRaw = localStorage.getItem('eco.sono.protocol.v1.guest');
+    if (!guestRaw) return;
+    const guest = JSON.parse(guestRaw);
+    const guestNights: number[] = Array.isArray(guest?.completedNights) ? guest.completedNights : [];
+
+    const userKey = `eco.sono.protocol.v1.${newUserId}`;
+    const userRaw = localStorage.getItem(userKey);
+    const userData = userRaw ? JSON.parse(userRaw) : { completedNights: [] };
+    const userNights: number[] = Array.isArray(userData?.completedNights) ? userData.completedNights : [];
+
+    const merged = Array.from(new Set<number>([...userNights, ...guestNights]));
+    localStorage.setItem(
+      userKey,
+      JSON.stringify({
+        completedNights: merged,
+        lastActive: guest?.lastActive || new Date().toISOString(),
+      }),
+    );
+    localStorage.removeItem('eco.sono.protocol.v1.guest');
+    console.info('[Auth] Sono guest progress merged', { nights: merged.length });
+  } catch (err) {
+    console.error('[Auth] Failed to merge sono guest progress:', err);
+  }
+}
+
+/**
+ * Vincula o entitlement vitalício do Sono (comprado via Pix por guest_id, antes da
+ * conta) ao usuário recém-autenticado. Roda no SIGNED_IN — cobre o caso do save
+ * account e também quando a conta é confirmada/logada depois (sem isso, o /check por
+ * user_id não acharia o entitlement e o /app travaria as noites). Idempotente no
+ * backend. Non-fatal.
+ */
+async function claimSonoLifetime(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem('eco.sono.lifetime.v1');
+    if (!raw) return;
+    const cache = JSON.parse(raw);
+    const externalReference = cache?.externalReference;
+    if (!externalReference) return;
+    await apiFetch('/api/entitlements/claim', {
+      method: 'POST',
+      json: { external_reference: externalReference },
+    });
+    console.info('[Auth] Sono lifetime entitlement claimed');
+  } catch (err) {
+    console.warn('[Auth] Failed to claim sono lifetime entitlement:', err);
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -587,6 +647,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+          // Mescla o progresso do Protocolo do Sono feito como guest (Noite 1
+          // anônima) ANTES de limpar o storage de guest — senão o
+          // /app/meditacoes-sono aparece zerado após salvar a conta.
+          mergeSonoGuestProgress(session.user.id);
+          // Vincula o acesso vitalício do Sono (Pix por guest_id) à conta.
+          void claimSonoLifetime();
           clearGuestStorage(); // <— ao logar, limpa storage de guest
           syncMixpanelIdentity(session.user);
         }

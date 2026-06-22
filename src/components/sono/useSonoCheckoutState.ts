@@ -7,7 +7,11 @@ import type { SubscriptionState } from '@/types/subscription';
  * cadastro/cartão acontecem dentro da própria /sono/experiencia, no tema escuro,
  * sem pular pro /assinar.
  *
- *   reflection → offer → signup → card → confirming → unlocked
+ *   reflection → offer → pix → unlocked → save_account
+ *
+ * Pagamento PRIMEIRO (Pix único, vitalício), conta DEPOIS (`save_account`,
+ * opcional). Os passos `signup`/`card`/`confirming` do antigo fluxo de cartão+trial
+ * foram aposentados deste funil (cartão segue só no /assinar e plano anual).
  *
  * `app_invite` é um ramo terminal: quando um usuário JÁ autenticado (criou conta
  * mas não pagou) dispensa o checkout, em vez de só fechar oferecemos uma ponte
@@ -16,10 +20,12 @@ import type { SubscriptionState } from '@/types/subscription';
 export type SonoCheckoutStep =
   | 'reflection'
   | 'offer'
+  | 'pix'
+  | 'unlocked'
+  | 'save_account'
   | 'signup'
   | 'card'
   | 'confirming'
-  | 'unlocked'
   | 'app_invite';
 
 /** `null` = overlay fechado. Qualquer step = overlay aberto naquele passo. */
@@ -31,10 +37,12 @@ const SS_KEY = 'eco.sono.checkout.step';
 const STEPS: readonly SonoCheckoutStep[] = [
   'reflection',
   'offer',
+  'pix',
+  'unlocked',
+  'save_account',
   'signup',
   'card',
   'confirming',
-  'unlocked',
   'app_invite',
 ];
 

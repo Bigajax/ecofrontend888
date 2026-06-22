@@ -228,7 +228,8 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   useEffect(() => {
     if (!isGuestSono || !isPaid) return;
     const persisted = sessionStorage.getItem('eco.sono.checkout.step');
-    const OFFER_STEPS = ['reflection', 'offer', 'signup', 'card'];
+    // Passos pré-pagamento (não inclui unlocked/save_account, pós-pagamento).
+    const OFFER_STEPS = ['reflection', 'offer', 'pix', 'signup', 'card'];
     if (persisted && OFFER_STEPS.includes(persisted)) {
       sessionStorage.removeItem('eco.sono.checkout.step');
       setCheckoutEntry(null);
