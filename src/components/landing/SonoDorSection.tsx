@@ -8,9 +8,9 @@
 
 // Stickers ilustrados (círculo roxo próprio) — um por dor, sem repetir forma.
 const RECOGNITION = [
-  { text: 'Deito cansado, mas a mente não desliga.', sticker: '/images/sono-sticker-nuvem.png' },
-  { text: 'Acordo no meio da noite e não volto a dormir.', sticker: '/images/sono-sticker-relogio.png' },
-  { text: 'Durmo, mas acordo como se não tivesse descansado.', sticker: '/images/sono-sticker-zzz.png' },
+  { text: 'Deito cansado, mas a mente não desliga.', sticker: '/images/sono-sticker-nuvem.webp' },
+  { text: 'Acordo no meio da noite e não volto a dormir.', sticker: '/images/sono-sticker-relogio.webp' },
+  { text: 'Durmo, mas acordo como se não tivesse descansado.', sticker: '/images/sono-sticker-zzz.webp' },
 ];
 
 function DecoStars() {
@@ -23,7 +23,102 @@ function DecoStars() {
   );
 }
 
-export default function SonoDorSection() {
+// Versão noturna (variante deite_se): cena da ovelha na cama + copy da referência.
+const DOR_NIGHT: { lead: string; rest: string; icon: 'moon' | 'pulse' | 'spark' | 'headphones' }[] = [
+  {
+    icon: 'moon',
+    lead: 'Você apaga a luz cansado.',
+    rest: 'Mas, em vez de relaxar, a mente começa a acelerar.',
+  },
+  {
+    icon: 'pulse',
+    lead: 'O corpo está na cama,',
+    rest: 'mas por dentro ainda parece ligado: pensando no que falou, no que vem amanhã, no que você não consegue resolver.',
+  },
+  {
+    icon: 'spark',
+    lead: 'O Ritual Boa Noite foi criado',
+    rest: 'para esse momento.',
+  },
+  {
+    icon: 'headphones',
+    lead: 'Você não precisa escolher uma meditação,',
+    rest: 'aprender uma técnica ou forçar o sono. Só deitar, colocar os fones e deixar a voz conduzir o corpo para fora do estado de alerta.',
+  },
+];
+
+function DorNightIcon({ name }: { name: 'moon' | 'pulse' | 'spark' | 'headphones' }) {
+  const common = {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.7,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  };
+  if (name === 'moon') {
+    return (
+      <svg {...common}>
+        <path d="M20 14a8 8 0 1 1-9.5-9.8A6 6 0 0 0 20 14z" />
+      </svg>
+    );
+  }
+  if (name === 'pulse') {
+    return (
+      <svg {...common}>
+        <path d="M3 12h3l2.5-6 4 13 2.5-7H21" />
+      </svg>
+    );
+  }
+  if (name === 'spark') {
+    return (
+      <svg {...common}>
+        <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <path d="M4 13v-1a8 8 0 0 1 16 0v1" />
+      <path d="M4 14a2 2 0 0 1 2-2h1v6H6a2 2 0 0 1-2-2v-2z" />
+      <path d="M20 14a2 2 0 0 0-2-2h-1v6h1a2 2 0 0 0 2-2v-2z" />
+    </svg>
+  );
+}
+
+interface SonoDorSectionProps {
+  /** Variante deite_se: versão noturna (ovelha na cama + copy do ritual). */
+  conviteMode?: boolean;
+}
+
+export default function SonoDorSection({ conviteMode = false }: SonoDorSectionProps) {
+  if (conviteMode) {
+    return (
+      <section className="lp-sono-dor lp-sono-dor--night">
+        <div className="lp-sono-dor-night-inner">
+          <div className="lp-sono-dor-night-text">
+            <h2 className="lp-sono-dor-night-title scroll-reveal">
+              Você conhece <span className="lp-sono-dor-night-accent">essa cena.</span>
+            </h2>
+            <ul className="lp-sono-dor-night-list">
+              {DOR_NIGHT.map((item, i) => (
+                <li className={`lp-sono-dor-night-item scroll-reveal stagger-${i + 1}`} key={item.lead}>
+                  <span className="lp-sono-dor-night-ico" aria-hidden>
+                    <DorNightIcon name={item.icon} />
+                  </span>
+                  <p className="lp-sono-dor-night-copy">
+                    <strong>{item.lead}</strong> {item.rest}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="lp-sono-dor">
       <div className="lp-sono-dor-inner">

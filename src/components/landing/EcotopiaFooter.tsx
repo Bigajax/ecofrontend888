@@ -85,7 +85,7 @@ function FooterGroupItem({ group }: { group: FooterGroup }) {
 
 type NewsletterStatus = 'idle' | 'loading' | 'success' | 'error';
 
-export default function EcotopiaFooter() {
+export default function EcotopiaFooter({ night = false }: { night?: boolean }) {
   const year = new Date().getFullYear();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<NewsletterStatus>('idle');
@@ -122,7 +122,7 @@ export default function EcotopiaFooter() {
   };
 
   return (
-    <footer className="lp-footer">
+    <footer className={`lp-footer${night ? ' lp-footer--night' : ''}`}>
       <div className="lp-footer-inner">
         {/* ── Newsletter ── */}
         <section className="lp-footer-news">

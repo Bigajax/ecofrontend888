@@ -64,7 +64,7 @@ export default function EcoAIGuidanceCard({
       >
         {/* Mascote */}
         <img
-          src="/images/eco-mascote.png"
+          src="/images/eco-mascote.webp"
           alt="Eco IA"
           width="72"
           height="72"

@@ -19,20 +19,38 @@ import { OFFER, PRICE, planValue } from '@/constants/offerCopy';
 // Seção de diferencial: posiciona o produto como caminho guiado (não biblioteca
 // de áudios). Reusa os ícones ilustrados da landing (mesmos .webp das antigas
 // colunas de valor).
-const DIFERENCIAL_CARDS: { icon: string; title: string; body: string }[] = [
+const DIFERENCIAL_CARDS: {
+  icon: string;
+  // deite_se: cena ao fundo do card (no lugar do ícone).
+  bg: string;
+  title: string;
+  // deite_se: título em 2 linhas (branca + lilás), espelhando a referência.
+  titleMain: string;
+  titleAccent: string;
+  body: string;
+}[] = [
   {
     icon: '/images/sono-icon-deite-mente.webp',
+    bg: '/images/sono-diff2-play-bg.webp',
     title: 'Você não escolhe o que fazer',
+    titleMain: 'Você não escolhe',
+    titleAccent: 'o que fazer',
     body: 'A prática da noite já está pronta. É deitar, apertar play e seguir a voz.',
   },
   {
     icon: '/images/sono-icon-meditacao.webp',
+    bg: '/images/sono-diff2-stones-bg.webp',
     title: 'Cada noite prepara a próxima',
+    titleMain: 'Cada noite',
+    titleAccent: 'prepara a próxima',
     body: 'A sequência começa tirando o corpo do modo alerta e avança para pensamentos, tensão e sono profundo.',
   },
   {
     icon: '/images/sono-icon-estresse.webp',
+    bg: '/images/sono-diff2-heart-bg.webp',
     title: 'Não depende de força de vontade',
+    titleMain: 'Não depende de',
+    titleAccent: 'força de vontade',
     body: 'O ritual foi criado pro momento em que você está cansado demais pra pensar em técnica.',
   },
 ];
@@ -135,6 +153,32 @@ const TESTIMONIALS: { id: string; quote: string; name: string; photo?: string }[
   },
 ];
 
+// Depoimentos da variante deite_se (tema noturno): nome · idade · cidade,
+// avatar por inicial (projeto não usa fotos em depoimentos).
+const TESTIMONIALS_NIGHT: { id: string; quote: string; name: string; age: string; city: string }[] = [
+  {
+    id: 'n1',
+    quote: 'Minha mente ficava acelerada quando eu deitava. As práticas me ajudaram a encerrar o dia com mais tranquilidade e o sono vem de forma muito mais natural.',
+    name: 'Juliana R.',
+    age: '41 anos',
+    city: 'São Paulo, SP',
+  },
+  {
+    id: 'n2',
+    quote: 'Eu não conseguia parar de pensar nas coisas do dia. Com o Ritual Boa Noite, meu corpo relaxa antes da mente e isso fez toda a diferença.',
+    name: 'Marcos T.',
+    age: '34 anos',
+    city: 'Curitiba, PR',
+  },
+  {
+    id: 'n3',
+    quote: 'Simples, direto e muito eficaz. Era como se alguém segurasse minha mão e me tirasse do estado de alerta. Virou parte da minha rotina.',
+    name: 'Camila A.',
+    age: '29 anos',
+    city: 'Belo Horizonte, MG',
+  },
+];
+
 // CTA da oferta navy — orientado ao desejo (o sinal de "grátis/R$ 0" fica nos
 // bullets e na linha de garantia logo acima do botão).
 const CTA_LABEL = 'Quero dormir sem remédio';
@@ -169,6 +213,42 @@ export default function EcotopiaSonoPage() {
     const track = tipsTrackRef.current;
     if (!track || track.clientWidth === 0) return;
     setTipsPage(Math.round(track.scrollLeft / track.clientWidth));
+  };
+
+  // Carrossel "Seu Ritual Boa Noite" (3 cards) — bolinhas só no mobile.
+  const ritualTrackRef = useRef<HTMLDivElement>(null);
+  const [ritualPage, setRitualPage] = useState(0);
+
+  const goToRitualPage = (page: number) => {
+    const track = ritualTrackRef.current;
+    if (!track) return;
+    const clamped = Math.max(0, Math.min(2, page));
+    track.scrollTo({ left: track.clientWidth * clamped, behavior: 'smooth' });
+    setRitualPage(clamped);
+  };
+
+  const handleRitualScroll = () => {
+    const track = ritualTrackRef.current;
+    if (!track || track.clientWidth === 0) return;
+    setRitualPage(Math.round(track.scrollLeft / track.clientWidth));
+  };
+
+  // Carrossel de depoimentos (3 cards) — bolinhas só no mobile.
+  const storiesTrackRef = useRef<HTMLDivElement>(null);
+  const [storiesPage, setStoriesPage] = useState(0);
+
+  const goToStoriesPage = (page: number) => {
+    const track = storiesTrackRef.current;
+    if (!track) return;
+    const clamped = Math.max(0, Math.min(2, page));
+    track.scrollTo({ left: track.clientWidth * clamped, behavior: 'smooth' });
+    setStoriesPage(clamped);
+  };
+
+  const handleStoriesScroll = () => {
+    const track = storiesTrackRef.current;
+    if (!track || track.clientWidth === 0) return;
+    setStoriesPage(Math.round(track.scrollLeft / track.clientWidth));
   };
 
   // Guarda contra o double-mount do StrictMode: "Landing vista" e o
@@ -239,6 +319,9 @@ export default function EcotopiaSonoPage() {
       <EcotopiaTopbar
         ctaHref={sonoCtaTo('sono_topbar')}
         onCtaClick={sonoCtaClick('sono_topbar')}
+        // deite_se: copy curta no CTA do nav (cabe no mobile sem quebrar);
+        // demais variantes mantêm "Experimente grátis".
+        ctaLabel={isConviteHero ? 'Ouça grátis' : undefined}
         // Só na variante "convite" (deite_se) o "Começar agora" do drawer mobile
         // segue pra experiência; nas outras mantém o default (/assinar).
         drawerPrimaryHref={isConviteHero ? sonoCtaTo('sono_mobile_drawer') : undefined}
@@ -249,22 +332,41 @@ export default function EcotopiaSonoPage() {
         bannerLabel={isConviteHero ? 'Sua primeira noite é grátis · ouça agora' : undefined}
         bannerHref={isConviteHero ? sonoCtaTo('sono_top_banner') : undefined}
         onBannerClick={isConviteHero ? sonoCtaClick('sono_top_banner') : undefined}
+        brandScrollsToTop
+        night={isConviteHero}
       />
 
       {/* ─── Hero · promessa de sono (sem preço — só promessa + CTA) ─── */}
-      <section className="lp-sono-hero lp-sono-hero--v2">
+      <section className={`lp-sono-hero lp-sono-hero--v2${isConviteHero ? ' lp-sono-hero--deite' : ''}`}>
         <div className="lp-sono-hero-inner">
           <div className="lp-sono-hero-text">
+            {isConviteHero && (
+              <span className="lp-sono-hero-ritual scroll-reveal">
+                Ritual · Boa noite Ecotopia
+              </span>
+            )}
             <h1 className="scroll-reveal">
-              {hero.h1Line1 && (
+              {isConviteHero ? (
                 <>
-                  {hero.h1Line1}
+                  Deite-se.
                   <br />
+                  Coloque os fones.
+                  <br />
+                  <span className="lp-sono-conduz">A gente conduz.</span>
+                </>
+              ) : (
+                <>
+                  {hero.h1Line1 && (
+                    <>
+                      {hero.h1Line1}
+                      <br />
+                    </>
+                  )}
+                  {hero.h1Pre}
+                  <span className="lp-sono-mark-starry">{hero.h1Mark}</span>
+                  {hero.h1Pos}
                 </>
               )}
-              {hero.h1Pre}
-              <span className="lp-sono-mark-starry">{hero.h1Mark}</span>
-              {hero.h1Pos}
             </h1>
 
             <p className="lp-sono-hero-lead scroll-reveal stagger-1">
@@ -276,36 +378,65 @@ export default function EcotopiaSonoPage() {
               className="lp-sono-hero-cta-primary scroll-reveal stagger-2"
               onClick={sonoCtaClick('sono_hero')}
             >
+              {isConviteHero && (
+                <svg className="lp-sono-cta-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              )}
               {hero.cta}
             </Link>
 
-            <p className="lp-sono-hero-microcopy scroll-reveal stagger-3">
-              <svg
-                className="lp-sono-hero-microcopy-shield"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6l7-3z" />
-                <path d="M9 12l2 2 4-4" />
-              </svg>
-              {isConviteHero ? (
-                'Sua primeira noite é grátis'
-              ) : (
-                <>
-                  {hero.microcopyPrefix}
-                  <Link to="/cancelar-assinatura" className="lp-sono-hero-microcopy-link">
-                    cancele quando quiser
-                  </Link>
-                </>
-              )}
-            </p>
+            {!isConviteHero && (
+              <p className="lp-sono-hero-microcopy scroll-reveal stagger-3">
+                <svg
+                  className="lp-sono-hero-microcopy-shield"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6l7-3z" />
+                  <path d="M9 12l2 2 4-4" />
+                </svg>
+                {hero.microcopyPrefix}
+                <Link to="/cancelar-assinatura" className="lp-sono-hero-microcopy-link">
+                  cancele quando quiser
+                </Link>
+              </p>
+            )}
+
+            {/* Linha de atributos (só deite_se) — espelha a referência, mas fala
+                "meditações", não "áudios". */}
+            {isConviteHero && (
+              <ul className="lp-sono-hero-feats scroll-reveal stagger-3" aria-label="O que é a experiência">
+                <li className="lp-sono-hero-feat">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M4 13v-1a8 8 0 0 1 16 0v1" />
+                    <path d="M4 14a2 2 0 0 1 2-2h1v6H6a2 2 0 0 1-2-2v-2z" />
+                    <path d="M20 14a2 2 0 0 0-2-2h-1v6h1a2 2 0 0 0 2-2v-2z" />
+                  </svg>
+                  Meditações de<br />5 a 10 min
+                </li>
+                <li className="lp-sono-hero-feat">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z" />
+                    <path d="M2 21c0-3 1.85-5.36 5.08-6" />
+                  </svg>
+                  Sem remédio<br />e sem técnica
+                </li>
+                <li className="lp-sono-hero-feat">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" />
+                  </svg>
+                  Feito para<br />usar dormindo
+                </li>
+              </ul>
+            )}
           </div>
 
           {/* Mock visual estático do player (md+) — reaproveita o widget da demo
@@ -314,28 +445,28 @@ export default function EcotopiaSonoPage() {
             <div className="lp-sono-iphone-scene">
               <img
                 className="lp-sono-scene-moon"
-                src="/images/sono-deco-lua-roxa.png"
+                src="/images/sono-deco-lua-roxa.webp"
                 alt=""
                 loading="lazy"
                 decoding="async"
               />
               <img
                 className="lp-sono-scene-cloud lp-sono-scene-cloud--left"
-                src="/images/sono-deco-nuvem-branca.png"
+                src="/images/sono-deco-nuvem-branca.webp"
                 alt=""
                 loading="lazy"
                 decoding="async"
               />
               <img
                 className="lp-sono-scene-flower"
-                src="/images/sono-deco-flor.png"
+                src="/images/sono-deco-flor.webp"
                 alt=""
                 loading="lazy"
                 decoding="async"
               />
               <img
                 className="lp-sono-scene-cloud lp-sono-scene-cloud--right"
-                src="/images/sono-deco-nuvem-branca.png"
+                src="/images/sono-deco-nuvem-branca.webp"
                 alt=""
                 loading="lazy"
                 decoding="async"
@@ -453,23 +584,233 @@ export default function EcotopiaSonoPage() {
             </div>
           </div>
         </div>
+
+        {/* Barra de atributos integrada no rodapé do hero (só deite_se) */}
+        {isConviteHero && (
+          <ul className="lp-sono-trust-bar" aria-label="O que você recebe">
+            <li className="lp-sono-trust-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M17.5 19a4.5 4.5 0 1 0 0-9 6 6 0 0 0-11.6-1.6A4 4 0 1 0 5 19h12.5z" />
+              </svg>
+              Primeira noite<br />grátis
+            </li>
+            <li className="lp-sono-trust-item">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M12 2.6l2.6 5.7 6.2.7-4.6 4.2 1.3 6.1L12 16.9 6.5 19.3l1.3-6.1L3.2 9l6.2-.7L12 2.6z" />
+              </svg>
+              Sequência de<br />7 noites
+            </li>
+            <li className="lp-sono-trust-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M4 12h2M9 6v12M14 3v18M19 9v6M22 12h-1M2 12h0" />
+              </svg>
+              Para desacelerar<br />mente e corpo
+            </li>
+            <li className="lp-sono-trust-item">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+              Mais sono de qualidade,<br />mais dias melhores
+            </li>
+          </ul>
+        )}
       </section>
 
-      {/* ─── Faixa · céu estrelado com os dados de prova (só no /sono) ─── */}
-      <MethodMarquee
-        ariaLabel="Resultados da Ecotopia"
-        className="lp-method-marquee--starry"
-        repeat={4}
-        terms={['4,9★ na App Store', '846 pessoas dormem com o protocolo', 'Sessões de 5 a 10 min', 'Feito para desacelerar a mente']}
-      />
+      {/* ─── Faixa de prova (marquee) — só nas variantes de venda; a deite_se
+          usa a barra de atributos integrada no rodapé do hero (acima). ─── */}
+      {!isConviteHero && (
+        <MethodMarquee
+          ariaLabel="Resultados da Ecotopia"
+          className="lp-method-marquee--starry"
+          repeat={4}
+          terms={['4,9★ na App Store', '846 pessoas dormem com o protocolo', 'Sessões de 5 a 10 min', 'Feito para desacelerar a mente']}
+        />
+      )}
+
+      {/* ─── Como usar hoje à noite · 4 passos (só deite_se) ─── */}
+      {isConviteHero && (
+        <section className="lp-sono-steps" aria-label="Como usar hoje à noite">
+          <div className="lp-sono-steps-inner">
+            <p className="lp-sono-steps-eyebrow scroll-reveal">Ritual · Boa noite Ecotopia</p>
+            <h2 className="lp-sono-steps-title scroll-reveal">
+              Como usar <span className="lp-sono-steps-accent">hoje à noite</span>
+            </h2>
+            <p className="lp-sono-steps-lead scroll-reveal stagger-1">
+              Um ritual simples, profundo e transformador.
+              <br />
+              Siga estes passos e entregue-se à experiência.
+            </p>
+
+            <div className="lp-sono-steps-grid">
+              {/* 1 · Apague a luz */}
+              <div className="lp-sono-step-card scroll-reveal stagger-1">
+                <span className="lp-sono-step-num">1</span>
+                <div className="lp-sono-step-visual">
+                  <img src="/images/sono-apagar-luz-noite.webp" alt="" loading="lazy" decoding="async" style={{ objectPosition: 'center' }} />
+                </div>
+                <h3 className="lp-sono-step-title">Apague a luz</h3>
+                <p className="lp-sono-step-desc">Deite-se como já faria normalmente.</p>
+              </div>
+
+              {/* 2 · Coloque os fones */}
+              <div className="lp-sono-step-card scroll-reveal stagger-2">
+                <span className="lp-sono-step-num">2</span>
+                <div className="lp-sono-step-visual">
+                  <img src="/images/sono-fones-noite.webp" alt="" loading="lazy" decoding="async" />
+                </div>
+                <h3 className="lp-sono-step-title">Coloque os fones</h3>
+                <p className="lp-sono-step-desc">A voz guia o corpo para sair do modo alerta.</p>
+              </div>
+
+              {/* 3 · Dê play na Noite 1 */}
+              <div className="lp-sono-step-card scroll-reveal stagger-3">
+                <span className="lp-sono-step-num">3</span>
+                <div className="lp-sono-step-visual">
+                  <img src="/images/sono-iphone-noite1.webp" alt="" loading="lazy" decoding="async" />
+                </div>
+                <h3 className="lp-sono-step-title">Dê play na Noite 1</h3>
+                <p className="lp-sono-step-desc">Você só precisa ouvir. O resto a gente conduz.</p>
+              </div>
+
+              {/* 4 · Repita por 7 noites */}
+              <div className="lp-sono-step-card scroll-reveal stagger-4">
+                <span className="lp-sono-step-num">4</span>
+                <div className="lp-sono-step-visual">
+                  <img src="/images/sono-calendario-noite.webp" alt="" loading="lazy" decoding="async" />
+                </div>
+                <h3 className="lp-sono-step-title">Repita por 7 noites</h3>
+                <p className="lp-sono-step-desc">Cada noite prepara a próxima.</p>
+              </div>
+            </div>
+
+            <p className="lp-sono-steps-foot scroll-reveal">
+              Menos esforço, mais presença. Você não aperta nada: seu corpo e sua mente encontram o caminho de volta ao descanso profundo.
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* ─── Dor · espelha a cena noturna (reconhecimento) ─── */}
-      <SonoDorSection />
+      <SonoDorSection conviteMode={isConviteHero} />
+
+      {/* ─── Seu Ritual Boa Noite · resumo em 3 passos (só deite_se) ─── */}
+      {isConviteHero && (
+        <section className="lp-sono-ritual" aria-label="Seu Ritual Boa Noite">
+          <div className="lp-sono-ritual-inner">
+            <p className="lp-sono-ritual-eyebrow scroll-reveal">Seu caminho para noites leves</p>
+            <h2 className="lp-sono-ritual-title scroll-reveal">
+              Seu Ritual <span className="lp-sono-ritual-accent">Boa Noite</span>
+            </h2>
+            <p className="lp-sono-ritual-lead scroll-reveal stagger-1">
+              Uma sequência simples para repetir
+              <br />
+              quando a mente não desliga.
+            </p>
+
+            <div
+              className="lp-sono-ritual-cards"
+              ref={ritualTrackRef}
+              onScroll={handleRitualScroll}
+            >
+              <div className="lp-sono-ritual-card scroll-reveal stagger-1">
+                <img
+                  className="lp-sono-ritual-img"
+                  src="/images/sono-ritual-play-01.webp"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+                <h3 className="lp-sono-ritual-card-title">
+                  Noite 1 <span className="lp-sono-ritual-accent">grátis</span>
+                </h3>
+                <span className="lp-sono-ritual-divider" aria-hidden />
+                <p className="lp-sono-ritual-card-desc">
+                  Comece com uma meditação guiada curta para tirar o corpo do modo alerta.
+                </p>
+              </div>
+
+              <div className="lp-sono-ritual-card scroll-reveal stagger-2">
+                <img
+                  className="lp-sono-ritual-img"
+                  src="/images/sono-ritual-calendar-02.webp"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+                <h3 className="lp-sono-ritual-card-title">7 noites em sequência</h3>
+                <span className="lp-sono-ritual-divider" aria-hidden />
+                <p className="lp-sono-ritual-card-desc">
+                  Cada noite prepara a próxima: respiração, relaxamento, pensamentos
+                  repetitivos e segurança interna.
+                </p>
+              </div>
+
+              <div className="lp-sono-ritual-card scroll-reveal stagger-3">
+                <img
+                  className="lp-sono-ritual-img"
+                  src="/images/sono-ritual-headphones-03.webp"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+                <h3 className="lp-sono-ritual-card-title">
+                  Feito para usar <span className="lp-sono-ritual-accent">deitado</span>
+                </h3>
+                <span className="lp-sono-ritual-divider" aria-hidden />
+                <p className="lp-sono-ritual-card-desc">
+                  Nada de técnica complicada. Você só coloca os fones, dá play e acompanha.
+                </p>
+              </div>
+            </div>
+
+            {/* bolinhas indicadoras do carrossel (só aparecem no mobile via CSS) */}
+            <div className="lp-sono-ritual-dots" role="tablist" aria-label="Navegar pelos passos">
+              {[0, 1, 2].map((i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`lp-sono-ritual-dot${ritualPage === i ? ' is-active' : ''}`}
+                  aria-label={`Passo ${i + 1}`}
+                  aria-selected={ritualPage === i}
+                  onClick={() => goToRitualPage(i)}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ─── Como funciona · Protocolo do Sono: 7 noites em sequência ───
-          Layout editorial trazido da landing Protocolo-Sono-v2: Noite 1 em
-          destaque + demais noites em lista compacta (mobile) / grade (md+). */}
-      <section className="lp-sono-grid-section lp-sono-protocol">
+          deite_se: grade noturna "As 7 noites" (igual à referência).
+          Demais variantes: layout editorial (Noite 1 destaque + lista/grade). */}
+      {isConviteHero ? (
+        <section className="lp-sono-n7" aria-label="As 7 noites">
+          <div className="lp-sono-n7-inner">
+            <p className="lp-sono-n7-eyebrow scroll-reveal">Ritual completo</p>
+            <h2 className="lp-sono-n7-title scroll-reveal">As <span className="lp-sono-n7-accent">7 noites</span></h2>
+            <p className="lp-sono-n7-lead scroll-reveal stagger-1">
+              Uma sequência de meditações guiadas para desacelerar a mente,
+              relaxar o corpo e preparar o sono profundo.
+            </p>
+
+            <div className="lp-sono-n7-grid">
+              {PROTOCOL_NIGHTS.map((n, i) => (
+                <div className={`lp-sono-n7-card scroll-reveal stagger-${(i % 4) + 1}`} key={n.id}>
+                  <span className="lp-sono-n7-num">{n.night}</span>
+                  <span className="lp-sono-n7-thumb">
+                    <img src={n.imageUrl} alt="" loading="lazy" decoding="async" />
+                  </span>
+                  <span className="lp-sono-n7-kicker">Noite {n.night}</span>
+                  <span className="lp-sono-n7-divider" aria-hidden />
+                  <h3 className="lp-sono-n7-card-title">{n.title}</h3>
+                  <p className="lp-sono-n7-card-desc">{n.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="lp-sono-grid-section lp-sono-protocol">
         <div className="lp-sono-section-inner lp-sono-nights-inner">
           <h2 className="lp-sono-h2 scroll-reveal lp-sono-nights-h2">
             Sete noites.
@@ -558,8 +899,75 @@ export default function EcotopiaSonoPage() {
           </p>
         </div>
       </section>
+      )}
 
-      {/* ─── Prova / resultado · 32% expandido + depoimentos com rosto ─── */}
+      {/* ─── Depoimentos ───
+          deite_se: versão noturna (igual à referência). Demais: versão atual. */}
+      {isConviteHero ? (
+        <section className="lp-sono-stories" aria-label="Depoimentos">
+          <div className="lp-sono-stories-inner">
+            <p className="lp-sono-stories-eyebrow scroll-reveal">Quem já usa, sente</p>
+            <h2 className="lp-sono-stories-title scroll-reveal">
+              Quem já aprendeu
+              <br />
+              <span className="lp-sono-stories-accent">a desligar</span>
+            </h2>
+            <p className="lp-sono-stories-lead scroll-reveal stagger-1">
+              Histórias reais de noites que mudaram.
+            </p>
+
+            <div
+              className="lp-sono-stories-grid"
+              ref={storiesTrackRef}
+              onScroll={handleStoriesScroll}
+            >
+              {TESTIMONIALS_NIGHT.map((t, i) => (
+                <article className={`lp-sono-story scroll-reveal stagger-${i + 1}`} key={t.id}>
+                  <svg className="lp-sono-story-quote" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path
+                      fillRule="evenodd"
+                      d="M4.49 7.529a5.3 5.3 0 011.174-.131c3.128 0 5.663 2.716 5.663 6.065 0 3.35-2.535 6.066-5.663 6.066S0 16.814 0 13.463c0-.098.002-.197.007-.295H0C0 8.113 3.84 4 8.56 4v2.036c-1.531 0-2.943.558-4.07 1.493zM17.164 7.529c.378-.086.77-.131 1.172-.131 3.128 0 5.664 2.716 5.664 6.065 0 3.35-2.536 6.066-5.664 6.066-3.128 0-5.663-2.715-5.663-6.066 0-.098.002-.197.007-.295H12.674C12.674 8.113 16.514 4 21.234 4v2.036c-1.531 0-2.943.558-4.07 1.493z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <p className="lp-sono-story-text">{t.quote}</p>
+                  <span className="lp-sono-story-divider" aria-hidden>✦</span>
+                  <div className="lp-sono-story-author">
+                    <span className="lp-sono-story-avatar" aria-hidden>{t.name.charAt(0)}</span>
+                    <span className="lp-sono-story-meta">
+                      <span className="lp-sono-story-name">{t.name}</span>
+                      <span className="lp-sono-story-sub">{t.age} · {t.city}</span>
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {/* bolinhas do carrossel (só no mobile via CSS) */}
+            <div className="lp-sono-ritual-dots" role="tablist" aria-label="Navegar pelos depoimentos">
+              {[0, 1, 2].map((i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`lp-sono-ritual-dot${storiesPage === i ? ' is-active' : ''}`}
+                  aria-label={`Depoimento ${i + 1}`}
+                  aria-selected={storiesPage === i}
+                  onClick={() => goToStoriesPage(i)}
+                />
+              ))}
+            </div>
+
+            <p className="lp-sono-stories-foot scroll-reveal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              Junte-se a quem já dorme melhor com o ritual.
+            </p>
+          </div>
+        </section>
+      ) : (
       <section className="lp-sono-testimonials">
         <div className="lp-sono-testimonials-inner">
           <div className="lp-sono-deco-hero">
@@ -614,8 +1022,48 @@ export default function EcotopiaSonoPage() {
           </div>
         </div>
       </section>
+      )}
 
-      {/* ─── Diferencial · caminho guiado (não biblioteca de áudios) ─── */}
+      {/* ─── Diferencial · caminho guiado (não biblioteca de áudios) ───
+          deite_se: versão noturna (cards numerados). Demais: versão atual. */}
+      {isConviteHero ? (
+        <section ref={diferencialRef} className="lp-sono-diff2" aria-label="Não é uma biblioteca de meditações">
+          <div className="lp-sono-diff2-inner">
+            <p className="lp-sono-diff2-eyebrow scroll-reveal">Feito para noites reais</p>
+            <h2 className="lp-sono-diff2-title scroll-reveal">
+              Não é uma
+              <br />
+              <span className="lp-sono-diff2-accent">biblioteca de meditações.</span>
+            </h2>
+            <p className="lp-sono-diff2-subtitle scroll-reveal stagger-1">
+              É um caminho de <span className="lp-sono-diff2-accent">7 noites</span>.
+            </p>
+            <p className="lp-sono-diff2-lead scroll-reveal stagger-2">
+              Quando você está exausto, a última coisa que precisa é escolher entre
+              centenas de áudios.{' '}
+              <span className="lp-sono-diff2-accent">Aqui, a noite de hoje já está pronta.</span>
+            </p>
+            <div className="lp-sono-diff2-cards">
+              {DIFERENCIAL_CARDS.map((col, i) => (
+                <article
+                  className={`lp-sono-diff2-card lp-sono-diff2-card--bg scroll-reveal stagger-${i + 1}`}
+                  key={col.title}
+                  style={{ ['--diff2-bg' as string]: `url('${col.bg}')` }}
+                >
+                  <span className="lp-sono-diff2-badge">{`0${i + 1}`}</span>
+                  <h3 className="lp-sono-diff2-card-title">
+                    {col.titleMain}
+                    <br />
+                    <span className="lp-sono-diff2-card-accent">{col.titleAccent}</span>
+                  </h3>
+                  <span className="lp-sono-diff2-divider" aria-hidden />
+                  <p className="lp-sono-diff2-card-desc">{col.body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : (
       <section
         ref={diferencialRef}
         className="lp-sono-value lp-sono-diferencial"
@@ -647,7 +1095,11 @@ export default function EcotopiaSonoPage() {
           Em 30 dias de uso, usuários relataram 32% menos estresse.
         </p>
       </section>
+      )}
 
+      {/* Demonstração + CTA-mid: ocultos na variante deite_se (a pedido). */}
+      {!isConviteHero && (
+        <>
       {/* ─── Demonstração · Tabs Antes / Adormecer / Permanecer ─── */}
       <section className="lp-sono-tabs">
         <div className="lp-sono-section-inner">
@@ -784,47 +1236,73 @@ export default function EcotopiaSonoPage() {
           </p>
         </div>
       </section>
+        </>
+      )}
 
       {/* ─── FAQ · derruba objeções antes da oferta ─── */}
-      <SonoFaqSection />
+      <SonoFaqSection conviteMode={isConviteHero} />
 
       {/* ─── Oferta · navy ─── */}
-      <section className="lp-sono-offer">
+      <section className={`lp-sono-offer${isConviteHero ? ' lp-sono-offer--deite' : ''}`}>
         <div className="lp-sono-offer-bg" aria-hidden />
 
         <div className="lp-sono-offer-inner">
           <div className="lp-sono-offer-content">
-            <h2 className="scroll-reveal">Em 7 noites, dormir deixa de ser esforço.</h2>
+            {isConviteHero ? (
+              <>
+                <h2 className="scroll-reveal">
+                  Continue o <span className="lp-sono-offer-accent">Ritual Boa Noite</span>
+                </h2>
+                <p className="lp-sono-offer-sub scroll-reveal stagger-1">
+                  Comece pela primeira noite. Depois, siga a sequência completa de
+                  7 noites para preparar seu corpo para descansar com mais facilidade.
+                </p>
+                <ul className="lp-sono-offer-bullets scroll-reveal stagger-1">
+                  <li><Check /><span>As 7 noites em sequência</span></li>
+                  <li><Check /><span>Meditações guiadas de 5 a 10 minutos</span></li>
+                  <li><Check /><span>Práticas para desacelerar mente e corpo</span></li>
+                  <li><Check /><span>Feito para usar deitado</span></li>
+                  <li><Check /><span>Sem remédio</span></li>
+                  <li><Check /><span>Sem precisar escolher meditações</span></li>
+                </ul>
+              </>
+            ) : (
+              <>
+                <h2 className="scroll-reveal">Em 7 noites, dormir deixa de ser esforço.</h2>
 
-            <p className="lp-sono-offer-sub scroll-reveal stagger-1">
-              Comece hoje sem pagar nada. As 7 noites do Protocolo do Sono,
-              meditações, sons e a Eco IA. Cancele antes da cobrança se não
-              fizer sentido.
-            </p>
+                <p className="lp-sono-offer-sub scroll-reveal stagger-1">
+                  Comece hoje sem pagar nada. As 7 noites do Protocolo do Sono,
+                  meditações, sons e a Eco IA. Cancele antes da cobrança se não
+                  fizer sentido.
+                </p>
 
-            <ul className="lp-sono-offer-bullets scroll-reveal stagger-1">
-              <li>
-                <Check />
-                <span>As 7 noites do Protocolo do Sono, em sequência</span>
-              </li>
-              <li>
-                <Check />
-                <span>Meditações e sons pra adormecer e permanecer dormindo</span>
-              </li>
-              <li>
-                <Check />
-                <span>Eco IA pra as noites difíceis</span>
-              </li>
-              <li>
-                <Check />
-                <span>Acesso imediato à Noite 1, com seu progresso salvo</span>
-              </li>
-              <li>
-                <Check />
-                <span>R$ 0 hoje · aviso antes da cobrança · cancele quando quiser</span>
-              </li>
-            </ul>
+                <ul className="lp-sono-offer-bullets scroll-reveal stagger-1">
+                  <li>
+                    <Check />
+                    <span>As 7 noites do Protocolo do Sono, em sequência</span>
+                  </li>
+                  <li>
+                    <Check />
+                    <span>Meditações e sons pra adormecer e permanecer dormindo</span>
+                  </li>
+                  <li>
+                    <Check />
+                    <span>Eco IA pra as noites difíceis</span>
+                  </li>
+                  <li>
+                    <Check />
+                    <span>Acesso imediato à Noite 1, com seu progresso salvo</span>
+                  </li>
+                  <li>
+                    <Check />
+                    <span>R$ 0 hoje · aviso antes da cobrança · cancele quando quiser</span>
+                  </li>
+                </ul>
+              </>
+            )}
 
+            {!isConviteHero && (
+            <>
             <div className="lp-sono-offer-reassure scroll-reveal stagger-2">
               {/* Âncora: R$ 11,90/mês (anual) ÷ 30 ≈ R$ 0,40/noite. Se o preço
                   mudar em offerCopy.ts, atualizar este valor. */}
@@ -888,17 +1366,22 @@ export default function EcotopiaSonoPage() {
                 </span>
               </button>
             </div>
+            </>
+            )}
 
-            <div className="lp-sono-offer-fine scroll-reveal stagger-3">
-              <Link to="/termos">Termos e Condições</Link>
-              <span aria-hidden>·</span>
-              <Link to="/cancelar-assinatura">Cancele a qualquer momento</Link>
-            </div>
+            {!isConviteHero && (
+              <div className="lp-sono-offer-fine scroll-reveal stagger-3">
+                <Link to="/termos">Termos e Condições</Link>
+                <span aria-hidden>·</span>
+                <Link to="/cancelar-assinatura">Cancele a qualquer momento</Link>
+              </div>
+            )}
 
-            {/* Prova social ao lado do botão (mesmos fatos da faixa rotativa). */}
-            <p className="lp-sono-offer-reassure-fine scroll-reveal stagger-3">
-              4,9★ · 846 pessoas dormem com o protocolo
-            </p>
+            {!isConviteHero && (
+              <p className="lp-sono-offer-reassure-fine scroll-reveal stagger-3">
+                4,9★ · 846 pessoas dormem com o protocolo
+              </p>
+            )}
 
             {/* Único CTA da landing que sempre vai pro /assinar (checkout/trial),
                 mesmo na variante convite — o resto da página funila pra experiência. */}
@@ -907,7 +1390,7 @@ export default function EcotopiaSonoPage() {
               className="lp-sono-offer-cta scroll-reveal stagger-4"
               onClick={() => trackTrialCta(selectedOfferPlan, 'sono_oferta_cta')}
             >
-              {CTA_LABEL}
+              {isConviteHero ? 'Começar meu ritual' : CTA_LABEL}
             </Link>
           </div>
         </div>
@@ -915,7 +1398,8 @@ export default function EcotopiaSonoPage() {
 
       {/* ─── 3 colunas de dicas (conteúdo guiado do app) ───
           Rebaixada pra depois da oferta: tem valor de conteúdo (links), mas não
-          deve ficar no caminho da conversão. */}
+          deve ficar no caminho da conversão. Oculta na variante deite_se. */}
+      {!isConviteHero && (
       <section className="lp-sono-tips">
         <div className="lp-sono-section-inner">
         <h2 className="lp-sono-h2 lp-sono-h2--center scroll-reveal">
@@ -989,8 +1473,9 @@ export default function EcotopiaSonoPage() {
         </div>
         </div>
       </section>
+      )}
 
-      <EcotopiaFooter />
+      <EcotopiaFooter night={isConviteHero} />
     </div>
   );
 }

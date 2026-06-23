@@ -72,14 +72,17 @@ const VARIANTS: Record<SonoHeroVariant, SonoHeroCopy> = {
   // e o criativo — "Deite-se. O resto a gente conduz." Message match puro do
   // anúncio até a landing. Tom de entrega (parar de forçar o sono), mas com o
   // CTA/microcopy de trial que a landing precisa pra converter.
+  // O h1 desta variante é renderizado custom no EcotopiaSonoPage (3 linhas +
+  // pílula "A gente conduz.") pra casar com o criativo — os campos h1* abaixo
+  // ficam como fallback/registro, não são usados no render do hero deite_se.
   deite_se: {
     variant: 'deite_se',
-    h1Line1: 'Deite-se.',
-    h1Pre: 'O resto a gente ',
+    h1Line1: 'Deite-se. Coloque os fones.',
+    h1Pre: 'A gente ',
     h1Mark: 'conduz',
     h1Pos: '.',
-    lead: 'Coloque os fones, apague a luz e aperte play. Em poucas noites, seu corpo reaprende a desligar sozinho, sem remédio.',
-    cta: 'Iniciar a noite 1 · grátis',
+    lead: 'Uma sequência de meditações guiadas para desacelerar a mente, relaxar o corpo e preparar sua noite sem remédio.',
+    cta: 'Comece pela Noite 1 grátis',
     microcopyPrefix: '7 dias grátis · R$ 0 hoje · ',
   },
   // Default (tráfego frio): mata a objeção nº 1 do público (remédio/dependência).

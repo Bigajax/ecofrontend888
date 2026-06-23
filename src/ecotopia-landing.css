@@ -338,7 +338,7 @@
 
 .ecotopia-lp .lp-nav-brand-img {
   width: auto;
-  height: 170px;
+  height: 64px;
   object-fit: contain;
   display: block;
 }
@@ -688,6 +688,107 @@
 
 .ecotopia-lp .lp-hamburger-bars.is-open span:nth-child(3) {
   transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Topbar/Drawer · tema noturno (variante deite /sono) — escopado por --night
+   ═══════════════════════════════════════════════════════════════════════ */
+/* nav lilás (barra). Logo permanece original (sem filtro) e lê bem no lilás. */
+.ecotopia-lp .lp-nav.lp-nav--night {
+  background: linear-gradient(180deg, #CABCF2 0%, #B3A0E6 100%);
+  box-shadow: none;
+}
+.ecotopia-lp .lp-nav.lp-nav--night.is-scrolled {
+  background: linear-gradient(180deg, #CABCF2 0%, #AD99E2 100%);
+  border-bottom: 1px solid rgba(70, 50, 130, 0.18);
+  box-shadow: 0 6px 24px rgba(70, 50, 130, 0.28);
+}
+/* logo: original (NÃO dourada) */
+.ecotopia-lp .lp-nav--night .lp-nav-brand-img {
+  filter: none;
+}
+/* textos do nav escuros (lêem sobre o dourado) */
+.ecotopia-lp .lp-nav--night a,
+.ecotopia-lp .lp-nav--night .lp-nav-link-text,
+.ecotopia-lp .lp-nav--night .lp-mega-trigger {
+  color: #2A1A06 !important;
+  -webkit-text-fill-color: #2A1A06;
+}
+/* hamburger minimalista: 2 linhas finas, escuras (sobre o dourado) */
+.ecotopia-lp .lp-nav--night .lp-hamburger { color: #2A1A06; }
+.ecotopia-lp .lp-nav--night .lp-hamburger:hover { background: rgba(255, 255, 255, 0.08); }
+.ecotopia-lp .lp-nav--night .lp-hamburger-bars { height: 11px; }
+.ecotopia-lp .lp-nav--night .lp-hamburger-bars span { height: 1.5px; }
+.ecotopia-lp .lp-nav--night .lp-hamburger-bars span:nth-child(2) { display: none; }
+.ecotopia-lp .lp-nav--night .lp-hamburger-bars.is-open span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+.ecotopia-lp .lp-nav--night .lp-hamburger-bars.is-open span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
+/* CTA em vidro — nav (sobre o dourado, texto escuro) */
+.ecotopia-lp .lp-nav--night .cta-primary {
+  background: rgba(255, 255, 255, 0.28) !important;
+  color: #2A1A06 !important;
+  -webkit-text-fill-color: #2A1A06;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+.ecotopia-lp .lp-nav--night .cta-primary:hover {
+  background: rgba(255, 255, 255, 0.42) !important;
+}
+/* CTA em vidro — drawer (sobre o navy, texto claro); inclui o CTA azul do nível 2 */
+.ecotopia-lp .lp-drawer--night .cta-primary,
+.ecotopia-lp .lp-drawer.lp-drawer--night .lp-drawer-cta--blue {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  backdrop-filter: blur(12px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+}
+.ecotopia-lp .lp-drawer--night .cta-primary:hover,
+.ecotopia-lp .lp-drawer.lp-drawer--night .lp-drawer-cta--blue:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+/* drawer navy + textos claros */
+.ecotopia-lp .lp-drawer.lp-drawer--night { background: #0D0A24 !important; }
+/* views OPACAS (navy): cada nível esconde o de baixo no slide (transparente
+   fazia os níveis 1 e 2 se sobreporem). Head/foot/nav ficam transparentes. */
+.ecotopia-lp .lp-drawer--night .lp-drawer-view,
+.ecotopia-lp .lp-drawer--night .lp-drawer-view--sub {
+  background: #0D0A24 !important;
+}
+.ecotopia-lp .lp-drawer--night .lp-drawer-head,
+.ecotopia-lp .lp-drawer--night .lp-drawer-head--sub,
+.ecotopia-lp .lp-drawer--night .lp-drawer-nav,
+.ecotopia-lp .lp-drawer--night .lp-acc-panel,
+.ecotopia-lp .lp-drawer--night .lp-drawer-foot {
+  background: transparent !important;
+}
+.ecotopia-lp .lp-drawer--night .lp-drawer-row,
+.ecotopia-lp .lp-drawer--night .lp-drawer-row > span:not(.lp-drawer-row-chev),
+.ecotopia-lp .lp-drawer--night .lp-drawer-subtitle,
+.ecotopia-lp .lp-drawer--night .lp-drawer-lead,
+.ecotopia-lp .lp-drawer--night .lp-acc-trigger,
+.ecotopia-lp .lp-drawer--night .lp-acc-link {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+/* span do título da seção (nível 2) tinha cor #1A1A1A com especificidade alta */
+.ecotopia-lp .lp-drawer.lp-drawer--night .lp-acc-trigger > span:not(.lp-acc-chev),
+.ecotopia-lp .lp-drawer.lp-drawer--night .lp-acc-link {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+.ecotopia-lp .lp-drawer--night .lp-drawer-row:hover { background: rgba(255, 255, 255, 0.06); }
+.ecotopia-lp .lp-drawer--night .lp-drawer-close,
+.ecotopia-lp .lp-drawer--night .lp-drawer-row-chev,
+.ecotopia-lp .lp-drawer--night .lp-acc-chev { color: #FFFFFF; }
+.ecotopia-lp .lp-drawer--night .lp-drawer-row--icon svg { color: #C4B5FD; }
+.ecotopia-lp .lp-drawer--night .lp-drawer-sep,
+.ecotopia-lp .lp-drawer--night .lp-acc-item,
+.ecotopia-lp .lp-drawer--night .lp-drawer-head--sub {
+  border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 /* ─── Drawer mobile ─── */
@@ -5239,6 +5340,110 @@ body.eco-no-scroll {
 
 .ecotopia-lp .lp-footer-lang-pill:hover {
   background: rgba(0, 0, 0, 0.04);
+}
+
+/* ── Footer · tema noturno (variante deite /sono) ── */
+.ecotopia-lp .lp-footer.lp-footer--night {
+  background:
+    linear-gradient(105deg, rgba(16, 12, 38, 0.9) 0%, rgba(16, 12, 38, 0.62) 52%, rgba(16, 12, 38, 0.42) 100%),
+    url('/images/sono-footer-night.webp') center / cover no-repeat,
+    #14102C;
+  color: #FFFFFF;
+}
+.ecotopia-lp .lp-footer--night .lp-footer-news-title,
+.ecotopia-lp .lp-footer--night .lp-footer-account-title {
+  color: #FFFFFF;
+  -webkit-text-fill-color: #FFFFFF;
+}
+.ecotopia-lp .lp-footer--night .lp-footer-news-sub {
+  color: rgba(255, 255, 255, 0.8);
+}
+.ecotopia-lp .lp-footer--night .lp-footer-news-fine {
+  color: rgba(255, 255, 255, 0.6);
+}
+.ecotopia-lp .lp-footer--night .lp-footer-news-fine a {
+  color: rgba(255, 255, 255, 0.85) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.85);
+}
+.ecotopia-lp .lp-footer--night .lp-footer-form input {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+}
+.ecotopia-lp .lp-footer--night .lp-footer-form input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+.ecotopia-lp .lp-footer--night .lp-footer-subscribe {
+  background: #FFFFFF;
+  color: #1A1A1A !important;
+  -webkit-text-fill-color: #1A1A1A;
+}
+.ecotopia-lp .lp-footer--night .lp-footer-subscribe:hover {
+  background: #F0ECFB;
+}
+.ecotopia-lp .lp-footer--night .lp-footer-divider {
+  border-top-color: rgba(255, 255, 255, 0.16);
+}
+.ecotopia-lp .lp-footer.lp-footer--night .lp-footer-acc-head,
+.ecotopia-lp .lp-footer.lp-footer--night .lp-footer-acc-head > span {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+.ecotopia-lp .lp-footer--night .lp-footer-acc-body li,
+.ecotopia-lp .lp-footer--night .lp-footer-acc-body a,
+.ecotopia-lp .lp-footer--night .lp-footer-acc-body span {
+  color: rgba(255, 255, 255, 0.74) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.74);
+}
+.ecotopia-lp .lp-footer--night .lp-footer-acc-body a:hover {
+  color: #C4B5FD !important;
+  -webkit-text-fill-color: #C4B5FD;
+}
+.ecotopia-lp .lp-footer--night .lp-footer-acc-body li.is-strong a,
+.ecotopia-lp .lp-footer--night .lp-footer-acc-body li.is-strong span {
+  color: #C4B5FD !important;
+  -webkit-text-fill-color: #C4B5FD;
+}
+.ecotopia-lp .lp-footer--night .lp-footer-acc-body li.is-muted span {
+  color: rgba(255, 255, 255, 0.5) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.5);
+}
+.ecotopia-lp .lp-footer--night .lp-footer-lang-pill {
+  border-color: rgba(196, 181, 253, 0.4);
+  color: #C4B5FD;
+}
+.ecotopia-lp .lp-footer--night .lp-footer-lang-pill,
+.ecotopia-lp .lp-footer--night .lp-footer-lang-pill span {
+  color: #C4B5FD !important;
+  -webkit-text-fill-color: #C4B5FD !important;
+}
+.ecotopia-lp .lp-footer--night .lp-footer-lang-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+/* trava o text-fill na cor definida (senão o text-fill escuro herdado some no navy) */
+.ecotopia-lp .lp-footer--night .lp-footer-news-title,
+.ecotopia-lp .lp-footer--night .lp-footer-news-sub,
+.ecotopia-lp .lp-footer--night .lp-footer-news-fine,
+.ecotopia-lp .lp-footer--night .lp-footer-account-title,
+.ecotopia-lp .lp-footer--night .lp-footer-acc-head,
+.ecotopia-lp .lp-footer--night .lp-footer-form input,
+.ecotopia-lp .lp-footer--night .lp-footer-lang-pill,
+.ecotopia-lp .lp-footer--night .lp-footer-lang-pill span {
+  -webkit-text-fill-color: currentColor;
+}
+/* mobile: wallpaper portrait (lua no topo + ovelha/plantas embaixo). A proporção
+   bate com o footer, então cover preenche tudo mostrando a cena inteira. Véu leve
+   pra legibilidade do texto. */
+@media (max-width: 760px) {
+  .ecotopia-lp .lp-footer.lp-footer--night {
+    background:
+      linear-gradient(180deg, rgba(20, 16, 44, 0.34) 0%, rgba(20, 16, 44, 0.46) 52%, rgba(20, 16, 44, 0.5) 100%),
+      url('/images/sono-footer-night-v2.webp') center / cover no-repeat,
+      #14102C;
+  }
+}
+.ecotopia-lp .lp-footer--night .lp-footer-dark {
+  background: rgba(8, 6, 24, 0.6);
 }
 
 /* ── Barra escura final ── */
@@ -14001,4 +14206,1667 @@ body.eco-no-scroll {
   -webkit-text-fill-color: rgba(255, 255, 255, 0.82);
   margin: 14px 0 28px;
   max-width: 520px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   /sono · hero da variante "deite_se" (?hero=deite_se) — split creme + cena
+   noturna com a ovelha. Tudo escopado em .lp-sono-hero--deite p/ NÃO mexer
+   nas outras 3 variantes (sem_remedio / mente_nao_desliga / acorda_cansado).
+   Fica no fim do arquivo de propósito: vence empates de especificidade.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* hero completo com a cena de fundo (escuro); texto à esquerda, ovelha à direita */
+.ecotopia-lp .lp-sono-hero--deite {
+  flex-direction: column; /* empilha: grid (texto+cena) em cima, barra embaixo */
+  background: #0E0A26 url('/images/sono-hero-cama.webp') right center / cover no-repeat;
+}
+
+/* ── Eyebrow glassmorphism · "Ritual · Boa noite Ecotopia" ── */
+.ecotopia-lp .lp-sono-hero-ritual {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 22px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #CBBFF2; /* lavanda sobre o fundo escuro */
+}
+
+/* ── Tipografia da headline (deite): serifa Lora, branca sobre o fundo escuro ── */
+.ecotopia-lp .lp-sono-hero--deite h1 {
+  font-family: var(--lp-serif);
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+/* "A gente conduz." — lavanda, mais fina, SEM tarja */
+.ecotopia-lp .lp-sono-conduz {
+  display: inline-block;
+  font-family: var(--lp-serif);
+  font-weight: 500;
+  color: #B7A9EC;
+  -webkit-text-fill-color: #B7A9EC;
+}
+
+/* subtítulo e atributos claros (hero escuro) */
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-lead {
+  color: rgba(255, 255, 255, 0.74);
+}
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-feat {
+  color: rgba(255, 255, 255, 0.85);
+}
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-feat svg {
+  width: 38px;
+  height: 38px;
+  padding: 9px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  color: #D6CCF5;
+  background: rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+/* CTA do hero translúcido — deixa a cena aparecer através do botão */
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-cta-primary {
+  background: rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: blur(2px) saturate(130%);
+  backdrop-filter: blur(2px) saturate(130%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF;
+  text-shadow: 0 2px 10px rgba(8, 6, 24, 0.7);
+  box-shadow: 0 10px 26px rgba(8, 6, 24, 0.3);
+}
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-cta-primary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* no desktop o título não quebra no meio (quebras só nos <br> autorais →
+   "Coloque os fones." numa linha só, como na referência) */
+@media (min-width: 768px) {
+  .ecotopia-lp .lp-sono-hero--deite h1 {
+    white-space: nowrap;
+    font-size: clamp(34px, 3.6vw, 54px);
+  }
+}
+@media (max-width: 767px) {
+  .ecotopia-lp .lp-sono-hero--deite h1 {
+    white-space: normal;
+  }
+}
+
+/* ── Linha de atributos sob o CTA (deite) ── */
+.ecotopia-lp .lp-sono-hero-feats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 32px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ecotopia-lp .lp-sono-hero-feat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #51607A;
+}
+.ecotopia-lp .lp-sono-hero-feat svg {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  color: #6E5CC4;
+}
+
+/* play no CTA da variante deite */
+.ecotopia-lp .lp-sono-cta-play {
+  width: 18px;
+  height: 18px;
+  margin-right: 9px;
+  margin-left: -4px;
+}
+
+/* ── Barra de atributos integrada no rodapé do hero (deite) ── */
+.ecotopia-lp .lp-sono-trust-bar {
+  position: relative;
+  z-index: 2; /* acima da cena noturna (::before, z0) */
+  width: 100%;
+  max-width: 72rem;
+  margin: clamp(28px, 4vh, 52px) auto 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px 18px;
+  padding: 22px 30px;
+  list-style: none;
+  border-radius: 22px;
+  /* glass transparente: deixa a cena aparecer, texto claro segue legível */
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 18px 44px rgba(8, 6, 24, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+.ecotopia-lp .lp-sono-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--lp-sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.92);
+}
+.ecotopia-lp .lp-sono-trust-item:not(:last-child) {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding-right: 10px;
+}
+/* ícones em VIDRO: o próprio ícone translúcido (vê o fundo através) + contorno
+   claro, sem círculo/badge em volta */
+.ecotopia-lp .lp-sono-trust-item svg {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  fill: rgba(255, 255, 255, 0.18);
+  stroke: rgba(255, 255, 255, 0.72);
+  stroke-width: 1.1;
+  filter: drop-shadow(0 2px 6px rgba(8, 6, 24, 0.4));
+}
+
+@media (max-width: 860px) {
+  .ecotopia-lp .lp-sono-trust-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px 14px;
+  }
+  .ecotopia-lp .lp-sono-trust-item:nth-child(2) {
+    border-right: 0;
+  }
+}
+@media (max-width: 460px) {
+  .ecotopia-lp .lp-sono-trust-bar {
+    padding: 18px 18px;
+  }
+  .ecotopia-lp .lp-sono-trust-item {
+    font-size: 12.5px;
+  }
+}
+
+/* A variante deite não usa a cena CSS antiga (lua/nuvens/flor) nem o mockup de
+   iPhone — o painel direito é a própria imagem da ovelha (cena noturna). */
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-scene-moon,
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-scene-cloud,
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-scene-flower,
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-iphone-scene {
+  display: none;
+}
+
+/* ── DESKTOP (md+): véu escurecendo a ESQUERDA pra o texto ficar legível sobre
+      a cena de fundo (a ovelha fica à direita, intocada). ── */
+@media (min-width: 768px) {
+  .ecotopia-lp .lp-sono-hero--deite::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(
+      100deg,
+      rgba(14, 10, 38, 0.9) 0%,
+      rgba(14, 10, 38, 0.66) 32%,
+      rgba(14, 10, 38, 0.18) 56%,
+      rgba(14, 10, 38, 0) 74%
+    );
+  }
+
+  /* palco vazio — só mantém a altura da coluna direita do hero */
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-mock {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    padding: 0;
+    min-height: 540px;
+    background: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+/* ── MOBILE (<768): hero com a CENA como plano de fundo (atrás do texto),
+      texto claro + véu pra leitura. ── */
+@media (max-width: 767px) {
+  /* imagem inteira como fundo, ancorada na OVELHA (que fica à direita da cena);
+     véu escuro só no topo pra o texto, transparente embaixo pra ver a ovelha. */
+  .ecotopia-lp .lp-sono-hero--deite {
+    background:
+      linear-gradient(180deg, rgba(14, 10, 38, 0.9) 0%, rgba(14, 10, 38, 0.6) 24%, rgba(14, 10, 38, 0.18) 46%, rgba(14, 10, 38, 0.05) 70%, rgba(13, 10, 36, 0.1) 100%),
+      #0E0A26 url('/images/sono-hero-cama.webp') 75% center / cover no-repeat;
+  }
+  /* sombra pra o texto continuar legível sobre a imagem */
+  .ecotopia-lp .lp-sono-hero--deite h1,
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-lead,
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-feat {
+    text-shadow: 0 2px 12px rgba(8, 6, 24, 0.65);
+  }
+  /* cena é o fundo — esconde o palco vazio */
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-mock {
+    display: none;
+  }
+  /* texto claro */
+  .ecotopia-lp .lp-sono-hero--deite h1 { color: #FFFFFF; }
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-conduz {
+    color: #B7A9EC;
+    -webkit-text-fill-color: #B7A9EC;
+  }
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-lead {
+    color: rgba(255, 255, 255, 0.72);
+  }
+  /* eyebrow glass sobre o escuro */
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-ritual {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #CBBFF2;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+  /* atributos sob o CTA em claro */
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-feat {
+    color: rgba(255, 255, 255, 0.85);
+  }
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-feat svg {
+    color: #A99BE6;
+  }
+  /* CTA no mobile: flex (não block) pra centralizar play + texto alinhados */
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-cta-primary {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 22px;
+    border-radius: 16px;
+    font-size: 16px;
+  }
+  /* 3 atributos lado a lado (sem quebrar linha) no mobile */
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-feats {
+    flex-wrap: nowrap;
+    gap: 10px;
+    justify-content: space-between;
+  }
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-feat {
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+  .ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-feat svg {
+    width: 34px;
+    height: 34px;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ecotopia-lp .lp-sono-hero-ritual {
+    font-size: 10.5px;
+    letter-spacing: 0.13em;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   /sono · seção "Você conhece essa cena" — versão NOTURNA (variante deite_se)
+   Cena da ovelha na cama como fundo + texto à esquerda sobre véu escuro.
+   ═══════════════════════════════════════════════════════════════════════ */
+.ecotopia-lp .lp-sono-dor--night {
+  position: relative;
+  overflow: hidden;
+  min-height: 520px;
+  background: #0D0A24 url('/images/sono-ovelha-cena.webp') center center / cover no-repeat;
+}
+/* véu escuro: forte à esquerda (texto legível), abrindo pra cena à direita */
+.ecotopia-lp .lp-sono-dor--night::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(13, 10, 36, 0.88) 0%,
+    rgba(13, 10, 36, 0.66) 38%,
+    rgba(13, 10, 36, 0.2) 62%,
+    rgba(13, 10, 36, 0) 100%
+  );
+}
+.ecotopia-lp .lp-sono-dor-night-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+.ecotopia-lp .lp-sono-dor-night-text {
+  max-width: 540px;
+}
+.ecotopia-lp .lp-sono-dor-night-title {
+  font-family: var(--lp-serif);
+  font-weight: 600;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #FFFFFF;
+  margin: 0 0 30px;
+}
+.ecotopia-lp .lp-sono-dor-night-accent {
+  color: #B7A9EC;
+}
+.ecotopia-lp .lp-sono-dor-night-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.ecotopia-lp .lp-sono-dor-night-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.ecotopia-lp .lp-sono-dor-night-ico {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #B7A9EC;
+}
+.ecotopia-lp .lp-sono-dor-night-ico svg {
+  width: 19px;
+  height: 19px;
+}
+.ecotopia-lp .lp-sono-dor-night-copy {
+  margin: 0;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.62);
+}
+.ecotopia-lp .lp-sono-dor-night-copy strong {
+  display: block;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 2px;
+}
+
+/* mobile: véu cobre toda a cena (texto sobre a imagem), coluna cheia */
+@media (max-width: 767px) {
+  /* fundo vertical (trilha de lanternas) só no mobile */
+  .ecotopia-lp .lp-sono-dor--night {
+    min-height: 0;
+    background: #0D0A24 url('/images/sono-dor-mobile.webp') center center / cover no-repeat;
+  }
+  /* véu mais leve: escuro atrás do texto (topo) e a cena aparecendo embaixo */
+  .ecotopia-lp .lp-sono-dor--night::before {
+    background: linear-gradient(
+      180deg,
+      rgba(13, 10, 36, 0.82) 0%,
+      rgba(13, 10, 36, 0.62) 55%,
+      rgba(13, 10, 36, 0.4) 100%
+    );
+  }
+  .ecotopia-lp .lp-sono-dor-night-text {
+    max-width: 100%;
+  }
+  /* sombra pra o texto continuar legível sobre a cena */
+  .ecotopia-lp .lp-sono-dor-night-title,
+  .ecotopia-lp .lp-sono-dor-night-copy {
+    text-shadow: 0 2px 10px rgba(8, 6, 24, 0.6);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   /sono · "Como usar hoje à noite" — 4 passos (variante deite_se)
+   Seção noturna, cards glass numerados; o 3º reusa o mockup de iPhone.
+   ═══════════════════════════════════════════════════════════════════════ */
+.ecotopia-lp .lp-sono-steps {
+  position: relative;
+  overflow: hidden;
+  padding: 72px 24px 84px;
+  /* cena creme (ovelha + fones + lua) como fundo LIMPO da seção (sem véu) */
+  background: #EFE7D6 url('/images/sono-cena-creme2.webp') center center / cover no-repeat;
+}
+/* sem véu: a imagem aparece limpa */
+.ecotopia-lp .lp-sono-steps::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: none;
+}
+.ecotopia-lp .lp-sono-steps-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 72rem;
+  margin: 0 auto;
+  text-align: center;
+}
+.ecotopia-lp .lp-sono-steps-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6E5CC4;
+  margin: 0 0 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(110, 92, 196, 0.08);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(110, 92, 196, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.ecotopia-lp .lp-sono-steps-title {
+  font-family: var(--lp-serif);
+  font-weight: 600;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #2A2350;
+  margin: 0 0 16px;
+}
+.ecotopia-lp .lp-sono-steps-accent { color: #6E5CC4; }
+.ecotopia-lp .lp-sono-steps-lead {
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(58, 50, 96, 0.78);
+  margin: 0 auto 44px;
+  max-width: 540px;
+}
+
+.ecotopia-lp .lp-sono-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  text-align: left;
+}
+.ecotopia-lp .lp-sono-step-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 18px 22px;
+  border-radius: 22px;
+  /* glassmorphism bem translúcido (o fundo pastel aparece bastante através) */
+  background: rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 12px 34px rgba(76, 51, 143, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.ecotopia-lp .lp-sono-step-num {
+  position: absolute;
+  /* centralizado no topo, 50% fora / 50% dentro (top = -altura/2) */
+  top: -19px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 16px;
+  /* glassmorphism em lilás (vidro tingido de lavanda, número e fundo lilás) */
+  color: #5A47A8;
+  background: rgba(142, 123, 230, 0.24);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(142, 123, 230, 0.45);
+  box-shadow:
+    0 10px 26px rgba(110, 92, 196, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+.ecotopia-lp .lp-sono-step-visual {
+  position: relative;
+  height: 184px;
+  margin-bottom: 18px;
+  border-radius: 16px;
+  overflow: hidden;
+  /* área de mídia em glass (some o bloco escuro sólido) */
+  background: rgba(255, 255, 255, 0.14);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.ecotopia-lp .lp-sono-step-visual > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* card 3 · iPhone reaproveitado — completo e centralizado no visual.
+   zoom (e não transform: scale) reduz a caixa de layout de verdade, então o
+   telefone inteiro cabe nos 184px sem ser cortado em cima/embaixo. */
+.ecotopia-lp .lp-sono-step-visual--phone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ecotopia-lp .lp-sono-step-visual--phone .lp-sono-iphone {
+  zoom: 0.34;
+}
+/* card 4 · "7 noites" + pontos */
+.ecotopia-lp .lp-sono-step-visual--nights {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.ecotopia-lp .lp-sono-step-nights-label {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6E5CC4;
+}
+.ecotopia-lp .lp-sono-step-nights-dots {
+  display: flex;
+  gap: 9px;
+}
+.ecotopia-lp .lp-sono-step-night-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(110, 92, 196, 0.28);
+}
+.ecotopia-lp .lp-sono-step-night-dot.is-on {
+  background: #8E7BE6;
+  box-shadow: 0 0 10px rgba(142, 123, 230, 0.8);
+}
+.ecotopia-lp .lp-sono-step-title {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 17px;
+  color: #2A2350;
+  margin: 0 0 6px;
+}
+.ecotopia-lp .lp-sono-step-desc {
+  font-family: var(--lp-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(58, 50, 96, 0.72);
+  margin: 0;
+}
+/* frase final dentro de um card de vidro lilás (mesmo padrão dos badges numéricos) */
+.ecotopia-lp .lp-sono-steps-foot {
+  display: block;
+  margin: 44px auto 0;
+  max-width: 620px;
+  padding: 18px 26px;
+  border-radius: 18px;
+  text-align: center;
+  font-family: var(--lp-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #5A47A8;
+  background: rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 10px 26px rgba(110, 92, 196, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+@media (max-width: 980px) {
+  .ecotopia-lp .lp-sono-steps-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px 20px;
+  }
+}
+/* trilha pontilhada — escondida por padrão (desktop em 4 colunas) */
+.ecotopia-lp .lp-sono-steps-path { display: none; }
+
+@media (max-width: 560px) {
+  /* menos padding lateral pra a grade respirar + fundo vertical (mobile) */
+  .ecotopia-lp .lp-sono-steps {
+    padding-left: 16px;
+    padding-right: 16px;
+    background: #EFE7D6 url('/images/sono-steps-mobile.webp') center center / cover no-repeat;
+  }
+  /* 4 passos em 2x2 (igual ao exemplo) */
+  .ecotopia-lp .lp-sono-steps-grid {
+    position: relative;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px 12px;
+    max-width: 380px;
+    margin: 0 auto;
+  }
+  /* trilha pontilhada conectando os cards, por trás deles */
+  .ecotopia-lp .lp-sono-steps-path {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    color: rgba(110, 92, 196, 0.55);
+  }
+  .ecotopia-lp .lp-sono-step-card {
+    position: relative;
+    z-index: 1;
+    min-width: 0; /* deixa o card encolher abaixo do conteúdo (sem overflow) */
+    padding: 12px 12px 16px;
+    border-radius: 18px;
+  }
+  /* mídia menor (proporcional) pra caber 2 por linha */
+  .ecotopia-lp .lp-sono-step-visual {
+    height: 104px;
+    min-width: 0;
+    margin-bottom: 12px;
+    border-radius: 13px;
+  }
+  /* iPhone do card 3 completo na caixa de 104px da coluna estreita */
+  .ecotopia-lp .lp-sono-step-visual--phone .lp-sono-iphone {
+    zoom: 0.19;
+  }
+  .ecotopia-lp .lp-sono-step-num {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .ecotopia-lp .lp-sono-step-title { font-size: 14px; margin-bottom: 4px; }
+  .ecotopia-lp .lp-sono-step-desc { font-size: 12px; line-height: 1.45; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   /sono · "As 7 noites" — grade noturna (variante deite_se)
+   7 cards glass; 4 na 1ª linha, 3 centralizados na 2ª; lua + ovelha de deco.
+   ═══════════════════════════════════════════════════════════════════════ */
+.ecotopia-lp .lp-sono-n7 {
+  position: relative;
+  overflow: hidden;
+  padding: 76px 24px 88px;
+  /* cena noturna (lua + ovelha com fones) ancorada no topo; navy preenche o resto */
+  background:
+    linear-gradient(180deg, rgba(13, 10, 36, 0.32) 0%, rgba(13, 10, 36, 0.45) 34%, rgba(11, 8, 32, 0.82) 70%, #0B0820 100%),
+    url('/images/sono-n7-bg.webp') center top / cover no-repeat,
+    #0B0820;
+}
+.ecotopia-lp .lp-sono-n7-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 72rem;
+  margin: 0 auto;
+  text-align: center;
+}
+.ecotopia-lp .lp-sono-n7-eyebrow {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #CBBFF2;
+  margin: 0 0 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.ecotopia-lp .lp-sono-n7-title {
+  position: relative;
+  z-index: 1;
+  font-family: var(--lp-serif);
+  font-weight: 600;
+  font-size: clamp(32px, 4.4vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: #FFFFFF;
+  margin: 0 0 14px;
+}
+.ecotopia-lp .lp-sono-n7-accent { color: #9D8FE0; }
+.ecotopia-lp .lp-sono-n7-lead {
+  position: relative;
+  z-index: 1;
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(201, 191, 232, 0.78);
+  margin: 0 auto 48px;
+  max-width: 560px;
+}
+.ecotopia-lp .lp-sono-n7-grid {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+}
+.ecotopia-lp .lp-sono-n7-card {
+  position: relative;
+  flex: 0 1 calc(25% - 14px);
+  min-width: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 30px 18px 22px;
+  border-radius: 20px;
+  /* fundo roxo translúcido com brilho no topo (igual à referência) */
+  background: linear-gradient(180deg, rgba(142, 123, 230, 0.16) 0%, rgba(142, 123, 230, 0.05) 48%, rgba(255, 255, 255, 0.03) 100%);
+  border: 1px solid rgba(142, 123, 230, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 36px rgba(9, 7, 26, 0.3);
+}
+/* número no canto superior esquerdo — vidro lilás (mesmo tom dos demais badges) */
+.ecotopia-lp .lp-sono-n7-num {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  font-family: var(--lp-sans);
+  font-weight: 800;
+  font-size: 13px;
+  color: #E4DCFA;
+  background: rgba(142, 123, 230, 0.24);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(142, 123, 230, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+/* imagem da noite — retângulo arredondado (fora do círculo), com brilho roxo */
+.ecotopia-lp .lp-sono-n7-thumb {
+  flex-shrink: 0;
+  width: 100%;
+  height: 104px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 26px rgba(110, 92, 196, 0.38);
+}
+.ecotopia-lp .lp-sono-n7-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* card 7: ancora a imagem mais no topo pra pegar os carneiros pulando */
+.ecotopia-lp .lp-sono-n7-grid .lp-sono-n7-card:nth-child(7) .lp-sono-n7-thumb img {
+  object-position: center 24%;
+}
+.ecotopia-lp .lp-sono-n7-kicker {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  color: #FFFFFF;
+  margin-bottom: 9px;
+}
+/* linha separando "Noite X" do título */
+.ecotopia-lp .lp-sono-n7-divider {
+  width: 28px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(169, 155, 236, 0.55);
+  margin-bottom: 10px;
+}
+.ecotopia-lp .lp-sono-n7-card-title {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.3;
+  color: #B7A9EC;
+  margin: 0 0 8px;
+}
+.ecotopia-lp .lp-sono-n7-card-desc {
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(201, 191, 232, 0.7);
+  margin: 0;
+}
+
+@media (max-width: 980px) {
+  .ecotopia-lp .lp-sono-n7-card { flex: 0 1 calc(50% - 9px); }
+}
+/* mobile: fundo portrait (lua + ovelha) */
+@media (max-width: 760px) {
+  .ecotopia-lp .lp-sono-n7 {
+    background:
+      linear-gradient(180deg, rgba(13, 10, 36, 0.22) 0%, rgba(11, 8, 32, 0.5) 42%, rgba(11, 8, 32, 0.86) 100%),
+      /* largura cheia (NÃO cover) p/ a ovelha (esq) e a lua (dir) aparecerem nos
+         cantos sem serem cortadas; o navy base preenche o resto embaixo. */
+      url('/images/sono-n7-mobile.webp') center top / 100% auto no-repeat,
+      #0B0820;
+  }
+}
+/* phones: mantém 2 colunas (não empilha) e o 7º card sozinho em largura cheia */
+@media (max-width: 540px) {
+  .ecotopia-lp .lp-sono-n7-card {
+    flex: 0 1 calc(50% - 7px);
+    min-width: 0;
+    /* compacta o card (estava muito alto) */
+    padding: 22px 12px 16px;
+  }
+  .ecotopia-lp .lp-sono-n7-grid { gap: 14px; }
+  .ecotopia-lp .lp-sono-n7-card:last-child { flex: 1 1 100%; }
+  /* banner e número menores */
+  .ecotopia-lp .lp-sono-n7-num {
+    top: 11px;
+    left: 11px;
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+  .ecotopia-lp .lp-sono-n7-thumb {
+    height: 74px;
+    margin-bottom: 10px;
+  }
+  /* tipografia mais justa */
+  .ecotopia-lp .lp-sono-n7-kicker {
+    font-size: 13.5px;
+    margin-bottom: 5px;
+  }
+  .ecotopia-lp .lp-sono-n7-divider { margin-bottom: 7px; }
+  .ecotopia-lp .lp-sono-n7-card-title {
+    font-size: 13.5px;
+    line-height: 1.25;
+    margin-bottom: 5px;
+  }
+  .ecotopia-lp .lp-sono-n7-card-desc {
+    font-size: 11.5px;
+    line-height: 1.4;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   /sono · "Seu Ritual Boa Noite" — resumo em 3 passos (variante deite_se)
+   Seção noturna: cena da ovelha centralizada + 3 cards numerados.
+   ═══════════════════════════════════════════════════════════════════════ */
+.ecotopia-lp .lp-sono-ritual {
+  position: relative;
+  overflow: hidden;
+  padding: 72px 24px 84px;
+  /* cena creme da ovelha (centralizada) como FUNDO completo da seção */
+  background: #EFE7D6 url('/images/sono-ovelha-creme.webp') center center / cover no-repeat;
+}
+/* véu claro: clareia topo (título) e base (cards), mantém o meio (ovelha) */
+.ecotopia-lp .lp-sono-ritual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(247, 243, 234, 0.66) 0%,
+    rgba(247, 243, 234, 0.2) 26%,
+    rgba(247, 243, 234, 0.12) 50%,
+    rgba(247, 243, 234, 0.55) 80%,
+    rgba(243, 238, 226, 0.8) 100%
+  );
+}
+.ecotopia-lp .lp-sono-ritual-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 64rem;
+  margin: 0 auto;
+  text-align: center;
+}
+/* gap pra cena (ovelha) aparecer entre o subtítulo e os cards */
+.ecotopia-lp .lp-sono-ritual-cards {
+  margin-top: clamp(240px, 32vw, 380px);
+}
+.ecotopia-lp .lp-sono-ritual-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6E5CC4;
+  margin: 0 0 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(110, 92, 196, 0.08);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(110, 92, 196, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.ecotopia-lp .lp-sono-ritual-title {
+  font-family: var(--lp-serif);
+  font-weight: 600;
+  font-size: clamp(32px, 4.4vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: #2A2350;
+  margin: 0 0 14px;
+}
+.ecotopia-lp .lp-sono-ritual-accent { color: #6E5CC4; }
+.ecotopia-lp .lp-sono-ritual-lead {
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(58, 50, 96, 0.78);
+  margin: 0 auto 36px;
+  max-width: 520px;
+}
+.ecotopia-lp .lp-sono-ritual-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  text-align: left;
+}
+.ecotopia-lp .lp-sono-ritual-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 26px 20px 24px;
+  border-radius: 20px;
+  /* glassmorphism claro sobre a cena creme */
+  background: rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 12px 36px rgba(76, 51, 143, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+.ecotopia-lp .lp-sono-ritual-ico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 14px;
+  border-radius: 13px;
+  color: #fff;
+  background: linear-gradient(150deg, #8E7BE6 0%, #6E5CC4 100%);
+  box-shadow: 0 8px 20px rgba(110, 92, 196, 0.45);
+}
+.ecotopia-lp .lp-sono-ritual-ico svg { width: 21px; height: 21px; }
+/* card 1: imagem play + "01" (já traz o número; some o fundo branco no card claro) */
+.ecotopia-lp .lp-sono-ritual-img {
+  width: 280px;
+  height: auto;
+  /* margens negativas recortam o espaço em branco (invisível) em cima/baixo */
+  margin: -22px auto -14px;
+  mix-blend-mode: multiply;
+}
+/* linha divisória entre título e descrição (igual ao exemplo) */
+.ecotopia-lp .lp-sono-ritual-divider {
+  width: 28px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(110, 92, 196, 0.4);
+  margin: 2px 0 12px;
+}
+.ecotopia-lp .lp-sono-ritual-step {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: #6E5CC4;
+  margin-bottom: 7px;
+}
+.ecotopia-lp .lp-sono-ritual-card-title {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.25;
+  color: #2A2350;
+  margin: 0 0 7px;
+}
+.ecotopia-lp .lp-sono-ritual-card-desc {
+  font-family: var(--lp-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(58, 50, 96, 0.72);
+  margin: 0;
+}
+/* bolinhas do carrossel — escondidas no desktop (grade), exibidas no mobile */
+.ecotopia-lp .lp-sono-ritual-dots {
+  display: none;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ecotopia-lp .lp-sono-ritual-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(110, 92, 196, 0.3);
+  cursor: pointer;
+  transition: width 0.25s ease, background 0.25s ease;
+}
+.ecotopia-lp .lp-sono-ritual-dot.is-active {
+  width: 20px;
+  background: #6E5CC4;
+}
+
+@media (max-width: 760px) {
+  /* fundo vertical (mobile): altura 118% da seção (folga vertical p/ poder
+     reposicionar) + ancoragem em 70% sobe a ovelha pro vão, acima do card.
+     Continua preenchendo a seção inteira (sem faixa). Suba o % p/ subir mais a ovelha. */
+  .ecotopia-lp .lp-sono-ritual {
+    background: #EFE7D6 url('/images/sono-ritual-mobile-v2.webp') center 70% / auto 118% no-repeat;
+  }
+  /* cards viram carrossel horizontal (swipe) no mobile — encurta a seção e
+     deixa a ovelha como protagonista; desktop mantém a grade de 3 colunas. */
+  /* fecha um pouco o padding inferior pra não sobrar faixa creme vazia
+     depois que a arte (780px) termina */
+  .ecotopia-lp .lp-sono-ritual {
+    padding-bottom: 36px;
+  }
+  .ecotopia-lp .lp-sono-ritual-cards {
+    display: flex;
+    grid-template-columns: none;
+    gap: 16px;
+    max-width: none;
+    /* sangra até as bordas (-24px) + padding (24px): dá espaço pra box-shadow dos
+       cards não ser cortada pelo overflow do scroll (corrige o bug de sombra) */
+    margin: clamp(180px, 56vw, 320px) -24px 0;
+    padding: 18px 24px 32px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .ecotopia-lp .lp-sono-ritual-cards::-webkit-scrollbar {
+    display: none;
+  }
+  /* 1 card por vez, largura cheia da área visível — sem espiada cortada */
+  .ecotopia-lp .lp-sono-ritual-card {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+  }
+  /* bolinhas indicadoras visíveis só no mobile */
+  .ecotopia-lp .lp-sono-ritual-dots {
+    display: flex;
+  }
+  /* ícone maior: a arte transborda ~10% pra cada lado (só o branco invisível do
+     multiply vaza), centralizada por margens negativas — footprint segue 100%. */
+  .ecotopia-lp .lp-sono-ritual-img {
+    width: 120%;
+    max-width: none;
+    margin: -30px -10% -20px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   /sono · Depoimentos — versão noturna (variante deite_se)
+   "Quem já aprendeu a desligar" · 3 cards glass + ovelha de canto.
+   ═══════════════════════════════════════════════════════════════════════ */
+.ecotopia-lp .lp-sono-stories {
+  position: relative;
+  overflow: hidden;
+  padding: 76px 24px 84px;
+  /* cena creme da ovelha como FUNDO limpo (sem véu) */
+  background: #EFE7D6 url('/images/sono-depo-creme.webp') center center / cover no-repeat;
+}
+/* mobile: wallpaper portrait (ovelha na lua) */
+@media (max-width: 760px) {
+  .ecotopia-lp .lp-sono-stories {
+    background: #2A2350 url('/images/sono-depo-v2.webp') center top / cover no-repeat;
+  }
+}
+.ecotopia-lp .lp-sono-stories-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 72rem;
+  margin: 0 auto;
+  text-align: center;
+}
+.ecotopia-lp .lp-sono-stories-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6E5CC4;
+  margin: 0 0 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(110, 92, 196, 0.08);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(110, 92, 196, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.ecotopia-lp .lp-sono-stories-title {
+  font-family: var(--lp-serif);
+  font-weight: 600;
+  font-size: clamp(32px, 4.4vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: #2A2350;
+  margin: 0 0 14px;
+}
+.ecotopia-lp .lp-sono-stories-accent { color: #6E5CC4; }
+.ecotopia-lp .lp-sono-stories-lead {
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(58, 50, 96, 0.78);
+  margin: 0 auto 44px;
+}
+.ecotopia-lp .lp-sono-stories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  text-align: left;
+}
+.ecotopia-lp .lp-sono-story {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 22px 22px;
+  border-radius: 20px;
+  /* glassmorphism transparente sobre a cena creme */
+  background: rgba(255, 255, 255, 0.16);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 12px 36px rgba(76, 51, 143, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.ecotopia-lp .lp-sono-story-quote {
+  width: 46px;
+  height: 46px;
+  color: #6E5CC4;
+  margin-bottom: 12px;
+}
+.ecotopia-lp .lp-sono-story-text {
+  flex: 1;
+  font-family: var(--lp-serif);
+  font-size: 15px;
+  line-height: 1.6;
+  color: #3A3260;
+  margin: 0 0 16px;
+}
+/* divisor com estrelinha (linha — ✦ — linha) dentro do card */
+.ecotopia-lp .lp-sono-story-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  font-size: 10px;
+  color: rgba(110, 92, 196, 0.55);
+}
+.ecotopia-lp .lp-sono-story-divider::before,
+.ecotopia-lp .lp-sono-story-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(110, 92, 196, 0.22);
+}
+.ecotopia-lp .lp-sono-story-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ecotopia-lp .lp-sono-story-avatar {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 17px;
+  color: #fff;
+  background: linear-gradient(150deg, #8E7BE6 0%, #6E5CC4 100%);
+}
+.ecotopia-lp .lp-sono-story-meta { display: flex; flex-direction: column; }
+.ecotopia-lp .lp-sono-story-name {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 14.5px;
+  color: #2A2350;
+}
+.ecotopia-lp .lp-sono-story-sub {
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  color: rgba(58, 50, 96, 0.6);
+}
+.ecotopia-lp .lp-sono-stories-foot {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 40px auto 0;
+  font-family: var(--lp-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(58, 50, 96, 0.82);
+}
+.ecotopia-lp .lp-sono-stories-foot svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: #6E5CC4;
+}
+
+@media (max-width: 760px) {
+  /* carrossel horizontal (igual ao "Seu Ritual"): 1 depoimento por vez, swipe */
+  .ecotopia-lp .lp-sono-stories-grid {
+    display: flex;
+    grid-template-columns: none;
+    gap: 16px;
+    max-width: none;
+    /* sangra até as bordas + padding: espaço pra sombra do card no scroll */
+    margin: 0 -24px;
+    padding: 18px 24px 26px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .ecotopia-lp .lp-sono-stories-grid::-webkit-scrollbar { display: none; }
+  .ecotopia-lp .lp-sono-story {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   /sono · FAQ — versão noturna (variante deite_se)
+   Cards com ícone (todos abertos) + lua/ovelha de canto.
+   ═══════════════════════════════════════════════════════════════════════ */
+.ecotopia-lp .lp-sono-faq2 {
+  position: relative;
+  overflow: hidden;
+  padding: 76px 24px 84px;
+  /* cena noturna (lua + ovelha) como fundo + véu pra legibilidade */
+  background:
+    linear-gradient(180deg, rgba(13, 10, 36, 0.78) 0%, rgba(13, 10, 36, 0.68) 45%, rgba(11, 8, 32, 0.9) 100%),
+    #0D0A24 url('/images/sono-ovelha-depoimentos.webp') center top / cover no-repeat;
+}
+.ecotopia-lp .lp-sono-faq2-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+}
+.ecotopia-lp .lp-sono-faq2-title {
+  font-family: var(--lp-serif);
+  font-weight: 600;
+  font-size: clamp(36px, 5vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: #E6C88E; /* dourado */
+  -webkit-text-fill-color: #E6C88E;
+  margin: 0 0 12px;
+}
+.ecotopia-lp .lp-sono-faq2-lead {
+  font-family: var(--lp-sans);
+  font-size: 15.5px;
+  line-height: 1.5;
+  color: rgba(201, 191, 232, 0.78);
+  margin: 0 0 40px;
+}
+.ecotopia-lp .lp-sono-faq2-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+.ecotopia-lp .lp-sono-faq2-item {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.ecotopia-lp .lp-sono-faq2-item.is-open {
+  background: rgba(142, 123, 230, 0.1);
+  border-color: rgba(142, 123, 230, 0.28);
+}
+/* pergunta = botão que expande */
+.ecotopia-lp .lp-sono-faq2-q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 17px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 15.5px;
+  line-height: 1.3;
+  color: #B9A9F0; /* perguntas em lilás */
+  -webkit-text-fill-color: #B9A9F0;
+}
+.ecotopia-lp .lp-sono-faq2-q-text {
+  flex: 1;
+  color: #B9A9F0;
+  -webkit-text-fill-color: #B9A9F0;
+}
+.ecotopia-lp .lp-sono-faq2-arrow {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: #C3B6F0;
+  background: rgba(142, 123, 230, 0.16);
+  border: 1px solid rgba(142, 123, 230, 0.3);
+  transition: transform 0.3s ease, background 0.2s ease;
+}
+.ecotopia-lp .lp-sono-faq2-item.is-open .lp-sono-faq2-arrow {
+  transform: rotate(90deg);
+  background: rgba(142, 123, 230, 0.28);
+}
+/* resposta colapsável (grid 0fr→1fr = expansão suave) */
+.ecotopia-lp .lp-sono-faq2-a {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+}
+.ecotopia-lp .lp-sono-faq2-a[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+.ecotopia-lp .lp-sono-faq2-a-inner {
+  overflow: hidden;
+}
+.ecotopia-lp .lp-sono-faq2-a-inner p {
+  font-family: var(--lp-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #DCC08A; /* respostas em dourado */
+  -webkit-text-fill-color: #DCC08A;
+  margin: 0;
+  padding: 0 20px 18px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   /sono · "Não é uma biblioteca de meditações" — versão noturna (deite_se)
+   3 cards numerados (01/02/03) + ovelha de canto.
+   ═══════════════════════════════════════════════════════════════════════ */
+.ecotopia-lp .lp-sono-diff2 {
+  position: relative;
+  overflow: hidden;
+  padding: 76px 24px 84px;
+  /* cena da trilha de luzes + play como fundo + véu pra legibilidade */
+  background:
+    linear-gradient(180deg, rgba(13, 10, 36, 0.72) 0%, rgba(13, 10, 36, 0.55) 38%, rgba(13, 10, 36, 0.72) 100%),
+    #0B0820 url('/images/sono-trilha-play.webp') center center / cover no-repeat;
+}
+/* mobile: cena portrait (trilha de luzes → ovelha na nuvem + lua) */
+@media (max-width: 760px) {
+  .ecotopia-lp .lp-sono-diff2 {
+    background:
+      linear-gradient(180deg, rgba(13, 10, 36, 0.5) 0%, rgba(11, 8, 32, 0.38) 44%, rgba(11, 8, 32, 0.72) 100%),
+      #0B0820 url('/images/sono-diff2-bg-v2.webp') center top / cover no-repeat;
+  }
+}
+.ecotopia-lp .lp-sono-diff2-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 72rem;
+  margin: 0 auto;
+  text-align: left;
+}
+.ecotopia-lp .lp-sono-diff2-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #CBBFF2;
+  margin: 0 0 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.ecotopia-lp .lp-sono-diff2-title {
+  font-family: var(--lp-serif);
+  font-weight: 600;
+  font-size: clamp(30px, 4.2vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #FFFFFF;
+  margin: 0 0 10px;
+}
+.ecotopia-lp .lp-sono-diff2-accent { color: #9D8FE0; }
+.ecotopia-lp .lp-sono-diff2-subtitle {
+  font-family: var(--lp-serif);
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(18px, 2.4vw, 26px);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.92);
+  margin: 0 0 18px;
+}
+.ecotopia-lp .lp-sono-diff2-lead {
+  font-family: var(--lp-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(201, 191, 232, 0.78);
+  margin: 0 0 44px;
+  max-width: 560px;
+}
+.ecotopia-lp .lp-sono-diff2-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  text-align: left;
+}
+.ecotopia-lp .lp-sono-diff2-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 30px 24px 28px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 14px 36px rgba(9, 7, 26, 0.28);
+}
+/* cena (play / pedras / coração) ocupa só a faixa de cima do card (no lugar do
+   ícone), esfumando pro navy na base — o texto fica numa zona limpa embaixo, sem
+   sobreposição. A imagem de cada card chega via --diff2-bg (inline no JSX). */
+.ecotopia-lp .lp-sono-diff2-card--bg {
+  padding-top: 188px;
+}
+.ecotopia-lp .lp-sono-diff2-card--bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 196px;
+  z-index: 0;
+  border-radius: 24px 24px 0 0;
+  background: var(--diff2-bg) center 35% / cover no-repeat;
+  -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
+}
+/* cards 2 (pedras) e 3 (coração): abaixam a cena no banner */
+.ecotopia-lp .lp-sono-diff2-cards .lp-sono-diff2-card--bg:nth-child(2)::before,
+.ecotopia-lp .lp-sono-diff2-cards .lp-sono-diff2-card--bg:nth-child(3)::before {
+  background-position: center 18%;
+}
+/* conteúdo sempre acima do banner */
+.ecotopia-lp .lp-sono-diff2-card--bg .lp-sono-diff2-badge { z-index: 2; }
+.ecotopia-lp .lp-sono-diff2-card--bg .lp-sono-diff2-card-title,
+.ecotopia-lp .lp-sono-diff2-card--bg .lp-sono-diff2-divider,
+.ecotopia-lp .lp-sono-diff2-card--bg .lp-sono-diff2-card-desc {
+  position: relative;
+  z-index: 1;
+}
+/* badge "01" — vidro roxo no canto superior esquerdo */
+.ecotopia-lp .lp-sono-diff2-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  font-family: var(--lp-sans);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: #E4DCFA;
+  background: rgba(142, 123, 230, 0.22);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(142, 123, 230, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.ecotopia-lp .lp-sono-diff2-card-title {
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.3;
+  color: #FFFFFF;
+  margin: 0 0 14px;
+}
+.ecotopia-lp .lp-sono-diff2-card-accent { color: #A99BEC; }
+.ecotopia-lp .lp-sono-diff2-divider {
+  width: 30px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(169, 155, 236, 0.5);
+  margin: 0 0 16px;
+}
+.ecotopia-lp .lp-sono-diff2-card-desc {
+  font-family: var(--lp-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(201, 191, 232, 0.72);
+  margin: 0;
+  max-width: 260px;
+}
+
+@media (max-width: 760px) {
+  .ecotopia-lp .lp-sono-diff2-cards { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   /sono · Oferta — variante deite_se: cena de fundo + checks roxos + CTA dourado
+   ═══════════════════════════════════════════════════════════════════════ */
+.ecotopia-lp .lp-sono-offer--deite {
+  background: #0B0820 url('/images/sono-podio-ovelha.webp') center center / cover no-repeat;
+  /* cantos retos: o radius do topo revelava o fundo branco da página */
+  border-radius: 0;
+}
+.ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-bg {
+  background-color: transparent;
+  background-image: linear-gradient(
+    180deg,
+    rgba(11, 8, 32, 0.8) 0%,
+    rgba(11, 8, 32, 0.6) 42%,
+    rgba(11, 8, 32, 0.88) 100%
+  );
+}
+.ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-accent {
+  color: #E6C88E; /* dourado */
+  -webkit-text-fill-color: #E6C88E;
+}
+/* bullets dentro de um card com borda arredondada (igual à referência) */
+.ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-bullets {
+  gap: 0;
+  padding: 6px 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(167, 139, 250, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-bullets li {
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(167, 139, 250, 0.14);
+}
+.ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-bullets li:last-child {
+  border-bottom: none;
+}
+/* checks em círculo lilás preenchido, com o tique branco */
+.ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-bullets li svg {
+  width: 22px;
+  height: 22px;
+  padding: 4px;
+  box-sizing: border-box;
+  margin-top: 0;
+  border: none;
+  border-radius: 999px;
+  color: #FFFFFF;
+  stroke: #FFFFFF;
+  background: linear-gradient(150deg, #A78BFA 0%, #7C5CD0 100%);
+}
+.ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-cta {
+  background: linear-gradient(135deg, #EEC079 0%, #DDA24A 100%);
+  color: #2A1A06 !important;
+  -webkit-text-fill-color: #2A1A06;
+  box-shadow: 0 14px 34px rgba(221, 162, 74, 0.42);
 }

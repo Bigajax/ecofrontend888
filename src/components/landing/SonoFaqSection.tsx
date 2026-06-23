@@ -41,8 +41,91 @@ const FAQ = [
   },
 ];
 
-export default function SonoFaqSection() {
+// Versão noturna (variante deite_se): acordeão (mesmas perguntas, sem ícone).
+const FAQ_NIGHT: { q: string; a: string }[] = [
+  {
+    q: 'Preciso saber meditar para funcionar?',
+    a: 'Não. O ritual foi feito para você apenas ouvir e acompanhar.',
+  },
+  {
+    q: 'Quanto tempo preciso por noite?',
+    a: 'Entre 5 e 10 minutos.',
+  },
+  {
+    q: 'E se eu dormir antes da meditação acabar?',
+    a: 'Tudo bem. A ideia é justamente ajudar seu corpo a relaxar.',
+  },
+  {
+    q: 'É remédio ou tratamento?',
+    a: 'Não. É uma prática guiada de relaxamento e desaceleração.',
+  },
+  {
+    q: 'Posso usar deitado?',
+    a: 'Sim. O ritual foi feito para ser usado na cama, com fones.',
+  },
+];
+
+interface SonoFaqSectionProps {
+  /** Variante deite_se: FAQ noturno em cards com ícone. */
+  conviteMode?: boolean;
+}
+
+export default function SonoFaqSection({ conviteMode = false }: SonoFaqSectionProps) {
   const [open, setOpen] = useState<number | null>(null);
+
+  if (conviteMode) {
+    return (
+      <section className="lp-sono-faq2" aria-label="Perguntas frequentes">
+        <div className="lp-sono-faq2-inner">
+          <h2 className="lp-sono-faq2-title scroll-reveal">FAQ</h2>
+          <p className="lp-sono-faq2-lead scroll-reveal stagger-1">
+            As dúvidas mais comuns antes de começar.
+          </p>
+          <div className="lp-sono-faq2-list">
+            {FAQ_NIGHT.map(({ q, a }, i) => {
+              const isOpen = open === i;
+              const panelId = `sono-faq2-panel-${i}`;
+              const buttonId = `sono-faq2-button-${i}`;
+              return (
+                <div
+                  className={`lp-sono-faq2-item ${isOpen ? 'is-open' : ''}`}
+                  key={q}
+                >
+                  <button
+                    type="button"
+                    id={buttonId}
+                    className="lp-sono-faq2-q"
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    onClick={() => setOpen(isOpen ? null : i)}
+                  >
+                    <span className="lp-sono-faq2-q-text">{q}</span>
+                    <span className="lp-sono-faq2-arrow" aria-hidden>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </button>
+                  <div
+                    id={panelId}
+                    role="region"
+                    aria-labelledby={buttonId}
+                    className="lp-sono-faq2-a"
+                    data-open={isOpen}
+                  >
+                    <div className="lp-sono-faq2-a-inner">
+                      <p>{a}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="lp-sono-faq">

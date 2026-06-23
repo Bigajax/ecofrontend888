@@ -20,7 +20,7 @@ const DEFAULT_SIZES: Record<EcoVariant, number> = {
 };
 
 // Símbolo oficial do Ecotopia (logo apenas símbolo). PNG com fundo transparente.
-const MASCOTE_SRC = '/images/eco-mascote.png';
+const MASCOTE_SRC = '/images/eco-mascote.webp';
 
 /**
  * Mascote da Eco — agora renderiza o símbolo oficial do Ecotopia.

@@ -212,6 +212,16 @@ type EcotopiaTopbarProps = {
    * banner convida pra experiência em vez de vender o trial.
    */
   bannerStarry?: boolean;
+  /**
+   * Faz o clique na logo rolar suavemente até o topo da PÁGINA ATUAL (o hero)
+   * em vez de navegar pra home. Usado nas landings com hero próprio (ex.: /sono).
+   */
+  brandScrollsToTop?: boolean;
+  /**
+   * Tema noturno (nav transparente → vidro navy, logo branca, CTA de vidro,
+   * hamburger minimalista, drawer navy). Usado na landing /sono variante deite_se.
+   */
+  night?: boolean;
 };
 
 const DEFAULT_CTA_HREF = '/assinar?step=plan&plan=annual&from=topbar';
@@ -230,11 +240,16 @@ export default function EcotopiaTopbar({
   bannerHref = DEFAULT_BANNER_HREF,
   onBannerClick,
   bannerStarry = false,
+  brandScrollsToTop = false,
+  night = false,
 }: EcotopiaTopbarProps = {}) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
   const isHome = location.pathname === '/';
+  // Clique na logo rola pro topo se estamos na home OU se a página pediu
+  // explicitamente (brandScrollsToTop), ex.: a landing /sono.
+  const brandToTop = isHome || brandScrollsToTop;
 
   // ESC + body scroll lock for the drawer
   useEffect(() => {
@@ -270,33 +285,33 @@ export default function EcotopiaTopbar({
         </Link>
       </div>
 
-      <nav className={`lp-nav ${isScrolled ? 'is-scrolled' : ''}`} aria-label="Navegação principal">
+      <nav className={`lp-nav ${isScrolled ? 'is-scrolled' : ''}${night ? ' lp-nav--night' : ''}`} aria-label="Navegação principal">
         <div className="lp-nav-left">
           <Link
             to="/"
-            aria-label={isHome ? 'Ecotopia — voltar ao topo' : 'Ecotopia — página inicial'}
+            aria-label={brandToTop ? 'Ecotopia — voltar ao topo' : 'Ecotopia — página inicial'}
             className="lp-nav-brand"
             onClick={(e) => {
-              // Na home: sobe suavemente até o topo (hero).
-              // Em outras páginas: deixa o Link navegar para a página inicial.
-              if (isHome) {
+              // Sobe suavemente até o topo (hero) na home ou quando a página
+              // pediu (brandScrollsToTop). Senão, deixa o Link ir pra home.
+              if (brandToTop) {
                 e.preventDefault();
                 animateScrollToTop(e.currentTarget as HTMLElement);
               }
             }}
           >
             <img
-              src="/images/ecotopia-logo-horizontal.webp"
+              src="/images/ecotopia-logo-v2.webp"
               alt="Ecotopia"
-              width={180}
-              height={44}
+              width={64}
+              height={64}
               className="lp-nav-brand-img lp-nav-brand-img--full"
             />
             <img
-              src="/images/ecotopia-logo-mark.webp"
+              src="/images/ecotopia-logo-v2.webp"
               alt="Ecotopia"
-              width={44}
-              height={44}
+              width={52}
+              height={52}
               className="lp-nav-brand-img lp-nav-brand-img--mark"
             />
           </Link>
@@ -353,6 +368,7 @@ export default function EcotopiaTopbar({
         onCtaClick={onCtaClick}
         drawerPrimaryHref={drawerPrimaryHref}
         onDrawerPrimaryClick={onDrawerPrimaryClick}
+        night={night}
       />
     </>
   );
@@ -424,6 +440,7 @@ function MobileDrawer({
   onCtaClick,
   drawerPrimaryHref = DEFAULT_DRAWER_PRIMARY_HREF,
   onDrawerPrimaryClick,
+  night = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -432,6 +449,7 @@ function MobileDrawer({
   onCtaClick?: () => void;
   drawerPrimaryHref?: string;
   onDrawerPrimaryClick?: () => void;
+  night?: boolean;
 }) {
   const [drill, setDrill] = useState<MenuKey | null>(null);
   const [openSection, setOpenSection] = useState<string | null>(null);
@@ -494,7 +512,7 @@ function MobileDrawer({
 
       <aside
         id="ecotopia-mobile-drawer"
-        className={`lp-drawer ${open ? 'is-open' : ''}`}
+        className={`lp-drawer ${open ? 'is-open' : ''}${night ? ' lp-drawer--night' : ''}`}
         aria-hidden={!open}
         aria-label="Menu"
       >

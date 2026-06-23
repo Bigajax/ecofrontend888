@@ -60,7 +60,7 @@ export default function EcoAIModal({
             >
               <div className="flex min-w-0 items-center gap-3">
                 <img
-                  src="/images/eco-mascote.png"
+                  src="/images/eco-mascote.webp"
                   alt="Eco IA"
                   width="56"
                   height="56"
