@@ -12,6 +12,8 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; text-rendering: o
   .eco-glass-lg {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    /* sem a fosca, um fundo escuro opaco garante contraste sobre o cósmico */
+    background-color: rgba(16, 11, 34, 0.72) !important;
   }
 }
 

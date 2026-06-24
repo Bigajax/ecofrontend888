@@ -342,13 +342,17 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
           {status === 'waiting' ? (
             <div className="flex flex-col items-center gap-2">
               <span
-                className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold"
-                style={{ background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.28)', color: '#FBBF24' }}
+                className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-semibold"
+                style={{ background: 'rgba(34,24,8,0.85)', border: '1px solid rgba(251,191,36,0.45)', color: '#FBBF24' }}
               >
                 <Clock className="h-3.5 w-3.5" />
-                Este Pix expira em <span className="font-mono font-bold">{mm}:{ss}</span> minutos
+                Este Pix expira em{' '}
+                <span className="font-mono text-[13px] font-bold tabular-nums" style={{ color: '#FDE68A' }}>
+                  {mm}:{ss}
+                </span>{' '}
+                min
               </span>
-              <p className="text-center text-[11px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.4)' }}>
+              <p className="text-center text-[11px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.62)' }}>
                 Se o pagamento não for identificado em até 15 minutos, um novo será gerado.
               </p>
             </div>
