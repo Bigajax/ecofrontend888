@@ -204,12 +204,18 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   // o scroll horizontal por scroll-snap nativo (sem JS de drag).
   const nightsScrollRef = useRef<HTMLDivElement>(null);
   const [activeNightCard, setActiveNightCard] = useState(0);
+  // Throttle por rAF: o onScroll dispara a cada frame; só recalcula o dot 1×/frame.
+  const nightsScrollRaf = useRef<number | null>(null);
   const handleNightsScroll = () => {
-    const el = nightsScrollRef.current;
-    if (!el) return;
-    const first = el.firstElementChild as HTMLElement | null;
-    const step = first ? first.offsetWidth + 10 : el.clientWidth; // largura do card + gap
-    setActiveNightCard(Math.round(el.scrollLeft / step));
+    if (nightsScrollRaf.current !== null) return;
+    nightsScrollRaf.current = requestAnimationFrame(() => {
+      nightsScrollRaf.current = null;
+      const el = nightsScrollRef.current;
+      if (!el) return;
+      const first = el.firstElementChild as HTMLElement | null;
+      const step = first ? first.offsetWidth + 10 : el.clientWidth; // largura do card + gap
+      setActiveNightCard(Math.round(el.scrollLeft / step));
+    });
   };
 
   useEffect(() => {
@@ -262,30 +268,6 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   }, [isGuestSono, isPaid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
-
-  // ── Urgency countdown — guest funnel only ──────────────────────
-  const [timeLeft, setTimeLeft] = useState<number>(() => {
-    if (!isGuestSono) return 0;
-    const stored = sessionStorage.getItem('eco.sono.offer_expires');
-    if (stored) return Math.max(0, parseInt(stored) - Date.now());
-    const expires = Date.now() + 15 * 60 * 1000;
-    sessionStorage.setItem('eco.sono.offer_expires', String(expires));
-    return 15 * 60 * 1000;
-  });
-
-  useEffect(() => {
-    if (!isGuestSono) return;
-    const id = setInterval(() => {
-      const stored = sessionStorage.getItem('eco.sono.offer_expires');
-      setTimeLeft(stored ? Math.max(0, parseInt(stored) - Date.now()) : 0);
-    }, 1000);
-    return () => clearInterval(id);
-  }, [isGuestSono]);
-
-  const formatCountdown = (ms: number) => {
-    const s = Math.floor(ms / 1000);
-    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-  };
 
   const completedCount = completedNights.size;
   const pct = Math.round((completedCount / 7) * 100);
@@ -934,22 +916,12 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               </div>
               <p className="text-[12px] mb-3" style={{ color: 'rgba(255,255,255,0.32)' }}>Depois R$ 15,90/mês · cancele quando quiser</p>
 
-              {isGuestSono ? (
-                <div className="flex items-center justify-center gap-1.5 mb-6">
-                  <span style={{ color: T.amberLight, fontSize: '12px' }}>⏱</span>
-                  <span className="text-[12px]" style={{ color: 'rgba(212,168,71,0.65)' }}>
-                    Condição disponível por{' '}
-                    <span className="font-mono font-bold">{formatCountdown(timeLeft)}</span>
-                  </span>
-                </div>
-              ) : (
-                <p
-                  className="text-[12px] italic mb-6"
-                  style={{ color: 'rgba(212,168,71,0.65)' }}
-                >
-                  Inclui o Ecotopia completo: Eco IA, meditações e mais.
-                </p>
-              )}
+              <p
+                className="text-[12px] italic mb-6"
+                style={{ color: 'rgba(212,168,71,0.65)' }}
+              >
+                Inclui o Ecotopia completo: Eco IA, meditações e mais.
+              </p>
 
               <button
                 onClick={() => {

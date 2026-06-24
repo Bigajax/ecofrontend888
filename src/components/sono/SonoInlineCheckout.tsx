@@ -419,11 +419,11 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                         <button
                           key={key}
                           onClick={() => selectAnswer(key)}
-                          className="group flex w-full items-center gap-3.5 rounded-2xl p-3.5 text-left transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
+                          className="eco-glass-lg group flex w-full items-center gap-3.5 rounded-2xl p-3.5 text-left transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
                           style={{
                             background: 'rgba(255,255,255,0.07)',
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
+                            backdropFilter: 'blur(10px)',
+                            WebkitBackdropFilter: 'blur(10px)',
                             border: '1px solid rgba(255,255,255,0.18)',
                             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 26px rgba(8,5,24,0.30)',
                           }}
@@ -498,11 +498,11 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.36, duration: 0.5 }}
-                      className="mb-7 w-full rounded-2xl p-4"
+                      className="eco-glass-lg mb-7 w-full rounded-2xl p-4"
                       style={{
                         background: 'rgba(255,255,255,0.06)',
-                        backdropFilter: 'blur(16px)',
-                        WebkitBackdropFilter: 'blur(16px)',
+                        backdropFilter: 'blur(10px)',
+                        WebkitBackdropFilter: 'blur(10px)',
                         border: '1px solid rgba(255,255,255,0.16)',
                         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
                       }}
@@ -691,11 +691,11 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
 
                 {/* Card de preço — Pix, pagamento único + bullets */}
                 <div
-                  className="mb-5 w-full rounded-2xl p-4 text-left"
+                  className="eco-glass-lg mb-5 w-full rounded-2xl p-4 text-left"
                   style={{
                     background: 'rgba(255,255,255,0.06)',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
                     border: '1px solid rgba(255,255,255,0.16)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
                   }}
@@ -804,11 +804,11 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
 
                 {/* Painel de vidro envolvendo o formulário */}
                 <div
-                  className="w-full rounded-3xl p-5"
+                  className="eco-glass-lg w-full rounded-3xl p-5"
                   style={{
                     background: 'rgba(255,255,255,0.05)',
-                    backdropFilter: 'blur(18px)',
-                    WebkitBackdropFilter: 'blur(18px)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
                     border: '1px solid rgba(255,255,255,0.12)',
                     boxShadow: '0 18px 60px rgba(8,5,24,0.5), inset 0 1px 0 rgba(255,255,255,0.10)',
                   }}

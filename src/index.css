@@ -5,6 +5,16 @@
 /* Evita "font boosting" no iOS/Android e melhora renderização */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; text-rendering: optimizeLegibility; }
 
+/* Performance mobile: backdrop-blur é caro. Em telas grandes/que rolam do funil
+   (cards, painéis), desliga a fosca no mobile — o rgba de fundo segura o visual.
+   Os badges pequenos mantêm o vidro (não recebem esta classe). */
+@media (max-width: 768px) {
+  .eco-glass-lg {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
 html, body, #root { height: 100%; }
 
 /* Trava horizontal: impede scroll lateral e fundo aparecendo nas laterais (mobile) */

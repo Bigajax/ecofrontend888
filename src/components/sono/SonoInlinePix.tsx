@@ -313,11 +313,11 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
 
           {/* Card de preço + bullets */}
           <div
-            className="w-full rounded-2xl p-4"
+            className="eco-glass-lg w-full rounded-2xl p-4"
             style={{
               background: 'rgba(255,255,255,0.06)',
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
               border: '1px solid rgba(255,255,255,0.16)',
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
             }}
