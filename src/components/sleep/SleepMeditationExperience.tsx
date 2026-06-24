@@ -467,9 +467,9 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               onClick={() => navigate('/app')}
               className="w-full rounded-full px-6 py-3.5 text-[15px] font-bold transition-all hover:scale-105 active:scale-95"
               style={{
-                background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                background: `linear-gradient(135deg, ${P.light} 0%, ${P.deep} 100%)`,
                 color: '#0D1120',
-                boxShadow: `0 6px 24px ${T.amberGlow}0.30)`,
+                boxShadow: `0 6px 24px ${P.glow}0.30)`,
               }}
             >
               Explorar outros programas
@@ -509,9 +509,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
         className="font-primary"
         style={{
           minHeight: '100dvh',
-          background: isGuestSono
-            ? `linear-gradient(180deg, ${P.night0} 0%, #0A0820 40%, #08061A 72%, #060512 100%)`
-            : `linear-gradient(180deg, ${T.bg0} 0%, ${T.bg0} 38%, ${T.bg1} 55%, #09090E 75%, ${T.bg2} 100%)`,
+          background: `linear-gradient(180deg, ${P.night0} 0%, #0A0820 40%, #08061A 72%, #060512 100%)`,
           backgroundColor: 'var(--bg-primary)',
         }}
       >
@@ -558,27 +556,27 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
             </div>
           )}
 
-          {/* Background image — slow breathing drift */}
+          {/* Background image — vale cósmico (mesmo do guest) */}
           <motion.div
             className="absolute inset-0 bg-cover"
-            style={{ backgroundImage: 'url("/images/meditacoes-sono-hero.webp")', backgroundPosition: 'center 30%' }}
+            style={{ backgroundImage: 'url("/images/sono-experiencia-bg.webp")', backgroundPosition: 'center center' }}
             initial={{ scale: 1.06 }}
             animate={{ scale: [1.06, 1.12, 1.06] }}
             transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
           />
-          {/* Vignette — deeper at bottom, lighter at top so image breathes */}
+          {/* Vinheta — funde no preto-noite roxo embaixo */}
           <div
             className="absolute inset-0"
-            style={{ background: `linear-gradient(to bottom, rgba(6,6,9,0.18) 0%, rgba(6,6,9,0.06) 22%, rgba(6,6,9,0.55) 58%, ${T.bg0} 100%)` }}
+            style={{ background: `linear-gradient(to bottom, rgba(12,9,32,0.20) 0%, rgba(12,9,32,0.08) 22%, rgba(12,9,32,0.58) 58%, ${P.night0} 100%)` }}
           />
-          {/* Subtle warm glow at bottom — candlelight, not purple */}
+          {/* Glow roxo no rodapé (eco da trilha de luzes) */}
           <div
             className="pointer-events-none absolute"
             style={{
               bottom: '8%', left: '50%', transform: 'translateX(-50%)',
-              width: '280px', height: '180px', borderRadius: '50%',
-              background: `radial-gradient(ellipse, ${T.amberGlow}0.07) 0%, transparent 70%)`,
-              filter: 'blur(50px)',
+              width: '300px', height: '190px', borderRadius: '50%',
+              background: `radial-gradient(ellipse, ${P.glow}0.16) 0%, transparent 70%)`,
+              filter: 'blur(52px)',
             }}
           />
 
@@ -600,7 +598,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
             >
               <span
                 className="h-1.5 w-1.5 rounded-full animate-pulse"
-                style={{ background: T.amberLight, boxShadow: `0 0 5px ${T.amberGlow}0.60)` }}
+                style={{ background: P.light, boxShadow: `0 0 5px ${P.glow}0.60)` }}
               />
               {pillLabel}
             </motion.div>
@@ -614,7 +612,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               style={{ fontSize: 'clamp(2.1rem, 7vw, 3.1rem)', textShadow: '0 4px 40px rgba(0,0,0,0.70), 0 1px 6px rgba(0,0,0,0.50)' }}
             >
               {ritualCopy.l1}<br />
-              <em style={{ color: T.ivory, fontStyle: 'italic' }}>{ritualCopy.l2}</em>
+              <em style={{ color: P.lilac, fontStyle: 'italic' }}>{ritualCopy.l2}</em>
             </motion.h1>
 
             {/* Subtitle */}
@@ -652,9 +650,9 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               disabled={checkoutLoading}
               className="mt-6 flex w-full items-center justify-center gap-3 rounded-full py-4 text-[15px] font-bold transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-70"
               style={{
-                background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                background: `linear-gradient(135deg, ${P.light} 0%, ${P.deep} 100%)`,
                 color: '#0D1120',
-                boxShadow: `0 10px 36px ${T.amberGlow}0.28), 0 2px 8px rgba(0,0,0,0.40)`,
+                boxShadow: `0 10px 36px ${P.glow}0.28), 0 2px 8px rgba(0,0,0,0.40)`,
               }}
             >
               {checkoutLoading
@@ -940,8 +938,8 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               className="relative overflow-hidden rounded-3xl px-6 py-7 text-center"
               style={{
                 background: 'linear-gradient(160deg, rgba(14,12,9,0.97) 0%, rgba(8,8,11,0.99) 100%)',
-                border: `1px solid ${T.amberGlow}0.18)`,
-                boxShadow: `0 8px 40px rgba(0,0,0,0.30), inset 0 1px 0 ${T.amberGlow}0.06)`,
+                border: `1px solid ${P.glow}0.18)`,
+                boxShadow: `0 8px 40px rgba(0,0,0,0.30), inset 0 1px 0 ${P.glow}0.06)`,
               }}
             >
               {/* Subtle warm glow top-right */}
@@ -950,7 +948,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                 style={{
                   top: '-50px', right: '-40px',
                   width: '180px', height: '180px', borderRadius: '50%',
-                  background: `radial-gradient(circle, ${T.amberGlow}0.08) 0%, transparent 70%)`,
+                  background: `radial-gradient(circle, ${P.glow}0.08) 0%, transparent 70%)`,
                 }}
               />
 
@@ -977,9 +975,9 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                 disabled={checkoutLoading}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-[15px] font-bold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 mb-3"
                 style={{
-                  background: `linear-gradient(135deg, ${T.amberLight} 0%, ${T.amber} 100%)`,
+                  background: `linear-gradient(135deg, ${P.light} 0%, ${P.deep} 100%)`,
                   color: '#0D1120',
-                  boxShadow: `0 10px 32px ${T.amberGlow}0.32)`,
+                  boxShadow: `0 10px 32px ${P.glow}0.32)`,
                 }}
               >
                 {checkoutLoading
@@ -1011,12 +1009,12 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                 <p className="text-[13px] font-semibold text-white/65">
                   {completedCount === 7 ? 'Programa concluído!' : `Noite ${nextNight} de 7`}
                 </p>
-                <span className="text-[13px] font-bold" style={{ color: T.amberLight }}>{pct}%</span>
+                <span className="text-[13px] font-bold" style={{ color: P.light }}>{pct}%</span>
               </div>
               <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
                 <div
                   className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${T.amberLight}, ${T.amber})` }}
+                  style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${P.light}, ${P.deep})` }}
                 />
               </div>
               <p className="mt-2 text-[12px] text-white/30">{completedCount} de 7 noites concluídas</p>

@@ -23,9 +23,9 @@ const PROGRAM_META: Record<ProgramId, { title: string; subtitle: string; image: 
     image: '/images/quem-pensa-enriquece.webp',
   },
   sono_protocol: {
-    title: 'Protocolo do Sono',
-    subtitle: 'O sono começa no cérebro',
-    image: '/images/meditacoes-sono-hero.webp',
+    title: 'Ritual Boa Noite',
+    subtitle: 'Desacelere o corpo antes de dormir',
+    image: '/images/sono-noite-01.webp',
   },
   drjoe: {
     title: 'Dr. Joe Dispenza',
