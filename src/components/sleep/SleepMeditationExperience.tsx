@@ -25,6 +25,13 @@ import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceMod
 import { SonoInlineCheckout } from '@/components/sono/SonoInlineCheckout';
 import { SonoExperienceHero } from '@/components/sono/SonoExperienceHero';
 import type { SonoCheckoutStep } from '@/components/sono/useSonoCheckoutState';
+import { markRitualNightCompleted, isRitualCompletedToday } from '@/hooks/useRitualProgress';
+import {
+  trackRitualStarted,
+  trackRitualReplayed,
+  trackRitualCompleted,
+  type RitualProgressStatus,
+} from '@/lib/mixpanelRitualEvents';
 
 // ── Design tokens — sleep palette ─────────────────────────────────────────────
 // Warm amber (candlelight) → primary CTA
@@ -158,15 +165,6 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     return newId;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const heroSubtitle: string | null = (() => {
-    if (!isGuestSono) return null;
-    const q5 = sessionStorage.getItem('eco.sono.q5_answer') || '';
-    if (q5.includes('desligar minha mente')) return '8 minutos que ensinam sua mente a soltar.';
-    if (q5.includes('energia real')) return '8 minutos. Sono profundo. Energia real amanhã.';
-    if (q5.includes('ansiedade')) return '8 minutos para dissolver a ansiedade noturna.';
-    return null;
-  })();
-
   useEffect(() => {
     if (!isGuestSono) return;
     sessionStorage.setItem('eco.sono.guest_id', guestId);
@@ -236,6 +234,17 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
           if (next.size === 7) setShowCompletion(true);
           return next;
         });
+        // Ritual Boa Noite (logado): grava marcador diário + Supabase + evento.
+        if (!isGuestSono) {
+          const newCount = markRitualNightCompleted(uid, nightNum);
+          trackRitualCompleted({
+            userId: user?.id,
+            currentStep: newCount,
+            currentNight: Math.min(newCount + 1, 7),
+            progressStatus: newCount >= 7 ? 'all_done' : 'completed_today',
+            source: 'modulo',
+          });
+        }
         if (isGuestSono && nightNum === 1 && !isPaid) {
           const offerKey = `eco.sono.offer_modal_shown.${guestId}`;
           if (!localStorage.getItem(offerKey)) {
@@ -364,18 +373,68 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     if (night) handleNightClick(night);
   };
 
-  // ── Derived labels ─────────────────────────────────────────────
-  const pillLabel = isPaid
-    ? 'Protocolo Sono Profundo • Acesso completo'
-    : 'Protocolo Sono Profundo • Noite 1 gratuita';
+  // ── Ritual Boa Noite (app logado) — estado + copy ──────────────
+  // Camada diária sobre as 7 noites. Só vale no fluxo logado (mode="app"); o
+  // guest mantém o SonoExperienceHero com a copy "Sua primeira noite…".
+  const ritualCompletedToday = !isGuestSono && isRitualCompletedToday(uid);
+  const ritualStatus: RitualProgressStatus =
+    completedCount >= 7
+      ? 'all_done'
+      : completedCount === 0
+        ? 'new'
+        : ritualCompletedToday
+          ? 'completed_today'
+          : 'in_progress';
 
-  const heroCTALabel = checkoutLoading
-    ? 'Carregando...'
-    : completedCount === 7
-      ? 'Protocolo Concluído'
-      : isPaid
-        ? completedCount === 0 ? 'Iniciar Noite 1' : `Continuar — Noite ${nextNight}`
-        : 'Ouvir a Noite 1';
+  const ritualCopy = (() => {
+    switch (ritualStatus) {
+      case 'in_progress':
+        return {
+          l1: 'Continue', l2: 'seu ritual.',
+          sub: 'Volte de onde parou e siga sua sequência de descanso.',
+          cta: `Continuar — Noite ${nextNight}`,
+        };
+      case 'completed_today':
+        return {
+          l1: 'Ritual concluído', l2: 'por hoje.',
+          sub: 'Você já deu ao seu corpo um sinal de pausa. Volte amanhã para continuar sua sequência.',
+          cta: 'Ouvir novamente',
+        };
+      case 'all_done':
+        return {
+          l1: 'Ritual', l2: 'concluído.',
+          sub: 'Seu corpo já aprendeu o caminho. Ouça novamente quando quiser.',
+          cta: 'Ouvir novamente',
+        };
+      case 'new':
+      default:
+        return {
+          l1: 'Seu ritual de hoje', l2: 'já está pronto.',
+          sub: 'Alguns minutos para desacelerar o corpo e preparar a mente para dormir.',
+          cta: 'Começar ritual',
+        };
+    }
+  })();
+
+  const pillLabel = 'Ritual Boa Noite';
+
+  // CTA do hero logado: novo/em progresso → começa a próxima noite; concluído
+  // hoje/total → "ouvir novamente" (repete a última noite concluída).
+  const handleRitualHeroClick = () => {
+    const replay = ritualStatus === 'completed_today' || ritualStatus === 'all_done';
+    const idx = replay
+      ? (isPaid ? Math.max(0, completedCount - 1) : 0)
+      : (isPaid ? nextNight - 1 : 0);
+    const targetNight = PROTOCOL_NIGHTS[idx];
+    (replay ? trackRitualReplayed : trackRitualStarted)({
+      userId: user?.id,
+      progressStatus: ritualStatus,
+      currentStep: completedCount,
+      currentNight: targetNight?.night,
+      source: 'modulo',
+    });
+    if (targetNight) handleNightClick(targetNight);
+  };
 
   // ── Completion Screen ──────────────────────────────────────────
   if (showCompletion) {
@@ -554,8 +613,8 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               className="mt-5 font-display font-bold text-white leading-[1.06]"
               style={{ fontSize: 'clamp(2.1rem, 7vw, 3.1rem)', textShadow: '0 4px 40px rgba(0,0,0,0.70), 0 1px 6px rgba(0,0,0,0.50)' }}
             >
-              Você está cansado.<br />
-              <em style={{ color: T.ivory, fontStyle: 'italic' }}>Sua mente não.</em>
+              {ritualCopy.l1}<br />
+              <em style={{ color: T.ivory, fontStyle: 'italic' }}>{ritualCopy.l2}</em>
             </motion.h1>
 
             {/* Subtitle */}
@@ -566,21 +625,8 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               className="mt-4 text-[15px] leading-relaxed font-light"
               style={{ color: 'rgba(255,255,255,0.46)' }}
             >
-              {heroSubtitle ?? <>Em sete noites,<br />a mente aprende a soltar.</>}
+              {ritualCopy.sub}
             </motion.p>
-
-            {/* Stars */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.55, delay: 0.3 }}
-              className="mt-5 flex items-center gap-2.5"
-            >
-              <span style={{ color: T.amberLight, fontSize: '14px', letterSpacing: '2px' }}>★★★★★</span>
-              <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                <strong style={{ color: 'rgba(255,255,255,0.82)', fontWeight: 700 }}>4,9</strong> · 846 pessoas dormindo melhor
-              </span>
-            </motion.div>
 
             {/* Progress badge — paid users with progress */}
             {isPaid && completedCount > 0 && (
@@ -602,7 +648,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.65, delay: 0.38, ease: 'easeOut' }}
-              onClick={handleHeroButtonClick}
+              onClick={handleRitualHeroClick}
               disabled={checkoutLoading}
               className="mt-6 flex w-full items-center justify-center gap-3 rounded-full py-4 text-[15px] font-bold transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-70"
               style={{
@@ -615,7 +661,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                 ? <Loader2 className="h-4 w-4 animate-spin" />
                 : <Play className="h-4 w-4" fill="currentColor" />
               }
-              {heroCTALabel}
+              {ritualCopy.cta}
             </motion.button>
 
             <motion.button
@@ -640,7 +686,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
         {/* ══════════════════════════════════════════════════════════
             NOITE 1 — card "featured" estilo App Store
             ══════════════════════════════════════════════════════════ */}
-        <section className="mx-auto max-w-lg px-4 pt-7 sm:px-6">
+        <section className="mx-auto max-w-lg px-4 pt-3 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -712,16 +758,16 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                 <span
                   className="flex h-[70px] w-[70px] items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110 group-active:scale-95"
                   style={{
-                    background: 'rgba(255,255,255,0.16)',
+                    background: 'rgba(167,139,250,0.26)',
                     backdropFilter: 'blur(10px)',
                     WebkitBackdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.42)',
-                    boxShadow: '0 10px 34px rgba(8,5,24,0.5), inset 0 1px 0 rgba(255,255,255,0.5)',
+                    border: '1px solid rgba(196,181,253,0.7)',
+                    boxShadow: '0 10px 34px rgba(124,58,237,0.45), inset 0 1px 0 rgba(255,255,255,0.45)',
                   }}
                 >
                   {isPaid && night1IsCompleted
-                    ? <Check className="h-7 w-7 text-white" strokeWidth={2.5} />
-                    : <Play className="h-7 w-7 translate-x-0.5 text-white" fill="currentColor" />
+                    ? <Check className="h-7 w-7" strokeWidth={2.5} style={{ color: '#E9DEFF' }} />
+                    : <Play className="h-7 w-7 translate-x-0.5" fill="currentColor" style={{ color: '#E9DEFF' }} />
                   }
                 </span>
               </div>

@@ -6,6 +6,12 @@ import EcoBubbleOneEye from '@/components/EcoBubbleOneEye';
 import { getTodayMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
 import { trackDiarioEnteredFromCarousel } from '@/lib/mixpanelDiarioEvents';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRitualProgress } from '@/hooks/useRitualProgress';
+import {
+  trackRitualCardViewed,
+  trackRitualCardClicked,
+  type RitualProgressStatus,
+} from '@/lib/mixpanelRitualEvents';
 
 interface CarouselItem {
   id: number;
@@ -91,13 +97,50 @@ const CAROUSEL_ITEMS: CarouselItem[] = [
   },
   {
     id: 3,
-    badge: 'NOITE 1 · GRATUITA',
-    mainTitle: 'ESTA NOITE, SUA MENTE DESCANSA.',
-    title: 'Protocolo Sono Profundo',
-    description: '7 minutos. Sem remédio. Sem contar ovelhas.',
-    background: 'url("/images/meditacoes-sono-hero.webp")',
+    badge: 'RITUAL BOA NOITE',
+    // mainTitle/description são dinâmicos por progresso (ver sonoCardCopy).
+    mainTitle: 'Seu ritual de hoje está pronto.',
+    title: 'Ritual Boa Noite',
+    description: 'Alguns minutos para desacelerar o corpo e entrar na noite com leveza.',
+    background: 'url("/images/sono-noite-01.webp")',
   },
 ];
+
+// Copy do card de sono na home, por estado do ritual (camada diária sobre as 7
+// noites). Linguagem calma/premium, sem "primeira noite".
+function sonoCardCopy(status: RitualProgressStatus): {
+  mainTitle: string;
+  description: string;
+  cta: string;
+} {
+  switch (status) {
+    case 'in_progress':
+      return {
+        mainTitle: 'Continue seu ritual',
+        description: 'Volte de onde parou e siga sua sequência de descanso.',
+        cta: 'Continuar ritual',
+      };
+    case 'completed_today':
+      return {
+        mainTitle: 'Ritual concluído por hoje',
+        description: 'Você já deu ao corpo um sinal de pausa. Volte amanhã para continuar.',
+        cta: 'Ouvir novamente',
+      };
+    case 'all_done':
+      return {
+        mainTitle: 'Ritual concluído',
+        description: 'Seu corpo já aprendeu o caminho. Ouça novamente quando quiser.',
+        cta: 'Ouvir novamente',
+      };
+    case 'new':
+    default:
+      return {
+        mainTitle: 'Seu ritual de hoje está pronto.',
+        description: 'Alguns minutos para desacelerar o corpo e entrar na noite com leveza.',
+        cta: 'Começar ritual',
+      };
+  }
+}
 
 export default function HeroCarousel({
   variant = 'desktop',
@@ -106,6 +149,9 @@ export default function HeroCarousel({
 }: HeroCarouselProps = {}) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const uid = user?.id || 'guest';
+  const ritual = useRitualProgress(uid);
+  const ritualViewedRef = useRef(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
   const [isDragging, setIsDragging] = useState(false);
@@ -119,6 +165,20 @@ export default function HeroCarousel({
 
   const SLIDE_DURATION = 5000; // 5 segundos por slide
   const PROGRESS_INTERVAL = 50; // Atualizar barra a cada 50ms
+
+  // "Card visto" do Ritual Boa Noite — 1× quando o slide de sono fica ativo.
+  useEffect(() => {
+    if (ritualViewedRef.current) return;
+    if (CAROUSEL_ITEMS[currentIndex]?.id !== 3) return;
+    ritualViewedRef.current = true;
+    trackRitualCardViewed({
+      userId: user?.id,
+      progressStatus: ritual.status,
+      currentNight: ritual.nextNight,
+      currentStep: ritual.completedCount,
+      source: 'home_carousel',
+    });
+  }, [currentIndex, ritual, user?.id]);
 
   // Animation variants for smooth crossfade transitions
   const slideVariants = {
@@ -259,6 +319,11 @@ export default function HeroCarousel({
     const isAbundancia = item.id === 2;
     const isSono = item.id === 3;
 
+    // Card de sono: copy dinâmica por estado do ritual.
+    const sono = isSono ? sonoCardCopy(ritual.status) : null;
+    const displayMainTitle = sono ? sono.mainTitle : item.mainTitle;
+    const displayDescription = sono ? sono.description : item.description;
+
     return (
       <div className="relative flex h-full flex-col justify-between p-4 pt-20 sm:p-6 sm:pt-20 pb-12 sm:pb-14">
         {/* Badge superior para cards especiais — sem bullet pra evitar overlap com saudação */}
@@ -276,13 +341,13 @@ export default function HeroCarousel({
 
         <div className="space-y-2 sm:space-y-3">
           {/* Título principal grande para cards especiais */}
-          {(isDiarioEstoico || isAbundancia || isSono) && item.mainTitle ? (
+          {(isDiarioEstoico || isAbundancia || isSono) && displayMainTitle ? (
             <>
               <h2 className="font-display text-[22px] sm:text-[26px] md:text-[28px] font-bold text-white drop-shadow-2xl leading-tight text-center px-2 tracking-tight">
-                {item.mainTitle}
+                {displayMainTitle}
               </h2>
               <p className="text-[11px] sm:text-[12px] leading-relaxed text-white/90 drop-shadow-lg text-center font-medium">
-                {item.description}
+                {displayDescription}
               </p>
             </>
           ) : (
@@ -354,22 +419,29 @@ export default function HeroCarousel({
             </div>
           )}
 
-          {/* CTA Button for Protocolo do Sono */}
+          {/* CTA Button for Ritual Boa Noite — label dinâmico por progresso */}
           {isSono && (
             <div className="mt-4 sm:mt-5 flex justify-center">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  trackRitualCardClicked({
+                    userId: user?.id,
+                    progressStatus: ritual.status,
+                    currentNight: ritual.nextNight,
+                    currentStep: ritual.completedCount,
+                    source: 'home_carousel',
+                  });
                   navigate('/app/meditacoes-sono');
                 }}
-                className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-stone-900 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"
+                className="group relative flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-indigo-950 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer active:scale-100 overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-amber-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <svg className="w-4 h-4 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
                 <span className="text-[13px] sm:text-[14px] font-bold relative z-10">
-                  Começar grátis — Noite 1
+                  {sono?.cta ?? 'Começar ritual'}
                 </span>
               </button>
             </div>

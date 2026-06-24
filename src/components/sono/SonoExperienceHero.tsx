@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Clock, Moon, Play, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Moon, Play } from 'lucide-react';
 import { trackHeadlineExibida } from '@/lib/mixpanelAssinarFunnel';
 
 /**
@@ -53,7 +53,7 @@ export function SonoExperienceHero({ onListen, onBack, onExploreApp }: SonoExper
 
   return (
     <section
-      className="relative flex min-h-[460px] h-[60vh] max-h-[560px] flex-col justify-end overflow-hidden"
+      className="relative flex min-h-[410px] h-[52vh] max-h-[490px] flex-col justify-end overflow-hidden"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       {/* Voltar */}
@@ -184,39 +184,6 @@ export function SonoExperienceHero({ onListen, onBack, onExploreApp }: SonoExper
               Ouvir a Noite 1
             </motion.button>
           </div>
-
-          {/* Meta chips — reasseguro estilo App Store (10 min · gratuito) */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.48 }}
-            className="mt-5 flex items-center justify-center gap-2"
-          >
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-semibold"
-              style={{
-                background: 'rgba(199,184,240,0.12)',
-                border: '1px solid rgba(199,184,240,0.24)',
-                color: LILAC,
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              <Clock className="h-3.5 w-3.5" />
-              10 min
-            </span>
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-semibold"
-              style={{
-                background: 'rgba(240,196,232,0.14)',
-                border: '1px solid rgba(240,196,232,0.28)',
-                color: ORB_WARM,
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Gratuito
-            </span>
-          </motion.div>
 
           {/* Atalho pro app — só pro free autenticado (criou conta, não pagou) */}
           {onExploreApp && (
