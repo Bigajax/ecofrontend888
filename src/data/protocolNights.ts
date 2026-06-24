@@ -17,7 +17,7 @@ export const PROTOCOL_NIGHTS: ProtocolNight[] = [
     night: 1,
     title: 'Desligando o estado de alerta',
     description: 'A maioria das pessoas deita em modo de batalha. Hoje, seu corpo aprende a sair disso.',
-    duration: '8 min',
+    duration: '10 min',
     audioUrl: '/audio/desligando-estado-alerta-calmo.mp3',
     imageUrl: '/images/sono-noite-01.webp',
     hasAudio: true,

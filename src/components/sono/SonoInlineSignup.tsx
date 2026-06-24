@@ -56,10 +56,10 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 const fieldCls =
   'w-full rounded-2xl border px-4 py-3.5 text-[15px] text-white outline-none ' +
-  'placeholder:text-white/35 transition-colors focus:border-[rgba(196,181,253,0.55)]';
+  'placeholder:text-white/40 transition-colors focus:border-[rgba(196,181,253,0.7)]';
 const fieldStyle = {
-  background: 'rgba(255,255,255,0.05)',
-  borderColor: 'rgba(255,255,255,0.12)',
+  background: 'rgba(199,184,240,0.07)',
+  borderColor: 'rgba(199,184,240,0.20)',
 } as const;
 
 export function SonoInlineSignup({

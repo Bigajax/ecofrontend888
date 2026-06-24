@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Lock, Moon, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronRight, Heart, Lock, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -55,7 +55,6 @@ function priceLabel(price: number): string {
   return Number.isInteger(price) ? `R$${price}` : `R$${price.toFixed(2).replace('.', ',')}`;
 }
 
-const NIGHTS_2_7 = PROTOCOL_NIGHTS.slice(1);
 
 /** Mapa das chaves internas (estáveis, gravadas em sono_guest_flow_events) para o
  *  valor legível enviado ao Mixpanel na "Resposta pós-noite 1". */
@@ -68,17 +67,25 @@ const RESPONSE_KEY: Record<ReflectionAnswer, 'mais_leve' | 'um_pouco_mais_calmo'
 const VALIDATION: Record<ReflectionAnswer, { lead: string; body: string }> = {
   yes: {
     lead: 'Ótimo.',
-    body: 'Esse é o primeiro sinal de que seu corpo respondeu ao estímulo. Agora a sequência continua para tornar esse estado mais fácil de acessar na hora de dormir.',
+    body: 'Seu corpo já recebeu o primeiro sinal: agora ele sabe por onde começar a desacelerar.',
   },
   little: {
     lead: 'Perfeito.',
-    body: 'No começo, pequenas mudanças já importam. Seu corpo começou a sair do estado de alerta. As próximas noites repetem esse caminho em camadas.',
+    body: 'Pequenas mudanças já contam. Seu corpo começou a sair do alerta — as próximas noites aprofundam o caminho.',
   },
   no: {
     lead: 'Tudo bem.',
-    body: 'Quando a mente está muito ativa, o corpo não precisa de força. Precisa de repetição. As próximas noites foram criadas exatamente para conduzir esse desacelerar passo a passo.',
+    body: 'A mente agitada não precisa de força, só de repetição. As próximas noites conduzem esse desacelerar, passo a passo.',
   },
 };
+
+/** Opções da reflexão pós-Noite 1 — badge (imagem) + título + microcopy. As
+ *  chaves (yes/little/no) batem com selectAnswer/VALIDATION/RESPONSE_KEY. */
+const REFLECTION_OPTIONS: { key: ReflectionAnswer; img: string; title: string; desc: string }[] = [
+  { key: 'yes',    img: '/images/sono-reflexao-icone-1.webp', title: 'Mais leve',           desc: 'Sinto meu corpo mais solto e a mente mais tranquila.' },
+  { key: 'little', img: '/images/sono-reflexao-icone-2.webp', title: 'Um pouco mais calmo', desc: 'Ainda sinto tensão, mas já estou desacelerando.' },
+  { key: 'no',     img: '/images/sono-reflexao-icone-3.webp', title: 'Ainda acelerado',     desc: 'Minha mente não para e meu corpo ainda está tenso.' },
+];
 
 const stepVariants = {
   enter: { opacity: 0, y: 24 },
@@ -305,20 +312,60 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
       className="fixed inset-0 z-[9998] flex flex-col"
-      style={{ background: 'linear-gradient(180deg, #04060F 0%, #080C1E 100%)' }}
+      style={
+        step === 'reflection'
+          ? {
+              // Fundo cósmico (lua no halo + aurora) vem da imagem; leve vinheta
+              // escura em cima/baixo só pra firmar a legibilidade do texto. A
+              // tela de RESPOSTA (validation) usa uma imagem própria.
+              backgroundImage: `linear-gradient(180deg, rgba(4,6,15,0.30) 0%, rgba(4,6,15,0) 26%, rgba(4,6,15,0.30) 100%), url("${
+                validation ? '/images/sono-reflexao-resposta-bg.webp' : '/images/sono-reflexao-bg.webp'
+              }")`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center top',
+            }
+          : step === 'offer' || step === 'pix' || step === 'unlocked' || step === 'save_account'
+            ? {
+                // Imagem (trilha + lua) cobrindo a página inteira; camada translúcida
+                // por cima pra legibilidade. No cadastro (form longo) escurece mais.
+                backgroundImage: `linear-gradient(180deg, rgba(8,5,24,${
+                  step === 'save_account' ? '0.5' : '0.34'
+                }) 0%, rgba(8,5,24,${
+                  step === 'save_account' ? '0.62' : '0.46'
+                }) 55%, rgba(8,5,24,${
+                  step === 'save_account' ? '0.7' : '0.58'
+                }) 100%), url("/images/sono-oferta-bg.webp")`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center center',
+              }
+            : { background: 'linear-gradient(180deg, #04060F 0%, #080C1E 100%)' }
+      }
     >
-      {/* Glow violeta ambiente */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[12%] -translate-x-1/2"
-        style={{
-          width: '320px',
-          height: '220px',
-          borderRadius: '50%',
-          background: 'radial-gradient(ellipse, rgba(124,58,237,0.18) 0%, transparent 70%)',
-          filter: 'blur(60px)',
-        }}
-      />
+      {/* Glow violeta ambiente — só onde não há imagem de fundo própria */}
+      {step !== 'reflection' && step !== 'offer' && step !== 'pix' && step !== 'unlocked' && step !== 'save_account' && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-[12%] -translate-x-1/2"
+          style={{
+            width: '320px',
+            height: '220px',
+            borderRadius: '50%',
+            background: 'radial-gradient(ellipse, rgba(124,58,237,0.18) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }}
+        />
+      )}
+
+      {/* Eyebrow acima da lua (a lua vem da imagem de fundo) — só na pergunta */}
+      {step === 'reflection' && !validation && (
+        <div className="pointer-events-none absolute left-1/2 top-[5.5%] z-20 flex -translate-x-1/2 items-center gap-2">
+          <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
+          <p className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(196,181,253,0.65)' }}>
+            Noite 1 · concluída
+          </p>
+          <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
+        </div>
+      )}
 
       {/* Top bar */}
       <div className="relative z-10 flex flex-shrink-0 items-center justify-end px-6 pt-10 pb-2">
@@ -337,7 +384,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
       {/* Conteúdo. `my-auto` (não justify-center no pai) centraliza quando cabe e
           permite rolar quando o passo transborda — sem isso o cartão trava o scroll. */}
       <div className="relative z-10 flex flex-1 flex-col items-center overflow-y-auto px-6 pb-12">
-        <div className="my-auto flex w-full max-w-[340px] flex-col py-4">
+        <div className={`flex w-full max-w-[340px] flex-col py-4 ${step === 'reflection' ? 'mt-[18vh]' : 'my-auto'}`}>
           <AnimatePresence mode="wait">
 
             {/* ── reflection (pergunta + validação numa só batida) ── */}
@@ -351,77 +398,156 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="flex flex-col items-center text-center"
               >
-                <p
-                  className="mb-7 text-[11px] font-bold uppercase tracking-[0.22em]"
-                  style={{ color: 'rgba(196,181,253,0.5)' }}
-                >
-                  Noite 1 · concluída
-                </p>
-
                 {!validation ? (
                   <>
+                    {/* (o eyebrow "Noite 1 · concluída" fica acima da lua — ver topo) */}
                     <h2
-                      className="mb-9 font-display text-[25px] font-bold leading-snug text-white"
+                      className="font-display text-[25px] font-bold leading-snug text-white"
                       style={{ textShadow: '0 2px 20px rgba(0,0,0,0.6)' }}
                     >
                       Como seu corpo
                       <br />
                       <em style={{ color: '#C4B5FD', fontStyle: 'italic' }}>está agora?</em>
                     </h2>
-                    <div className="flex w-full flex-col gap-3">
-                      <button
-                        onClick={() => selectAnswer('yes')}
-                        className="w-full rounded-full py-3.5 text-[14px] font-bold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.97]"
-                        style={{
-                          background: 'linear-gradient(135deg, #A78BFA 0%, #6D42C9 100%)',
-                          boxShadow: '0 8px 28px rgba(107,79,187,0.4)',
-                        }}
-                      >
-                        Mais leve
-                      </button>
-                      <button
-                        onClick={() => selectAnswer('little')}
-                        className="w-full rounded-full py-3.5 text-[14px] font-semibold text-white/80 transition-all duration-200 hover:scale-[1.02] active:scale-[0.97]"
-                        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)' }}
-                      >
-                        Um pouco mais calmo
-                      </button>
-                      <button
-                        onClick={() => selectAnswer('no')}
-                        className="w-full py-3 text-[13px] text-white/45 transition-colors hover:text-white/65"
-                      >
-                        Ainda acelerado
-                      </button>
+                    <p className="mb-7 mt-3 text-[13px] leading-relaxed" style={{ color: 'rgba(199,184,240,0.6)' }}>
+                      Escolha o que mais parece com este momento.
+                    </p>
+
+                    {/* Cards de resposta — ícone + microcopy + seta */}
+                    <div className="flex w-full flex-col gap-2.5">
+                      {REFLECTION_OPTIONS.map(({ key, img, title, desc }) => (
+                        <button
+                          key={key}
+                          onClick={() => selectAnswer(key)}
+                          className="group flex w-full items-center gap-3.5 rounded-2xl p-3.5 text-left transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
+                          style={{
+                            background: 'rgba(255,255,255,0.07)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: '1px solid rgba(255,255,255,0.18)',
+                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 26px rgba(8,5,24,0.30)',
+                          }}
+                        >
+                          <span className="-my-1 h-[58px] w-[58px] flex-shrink-0 overflow-hidden rounded-full">
+                            <img src={img} alt="" className="h-full w-full object-cover" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-[15px] font-bold text-white">{title}</span>
+                            <span className="mt-0.5 block text-[12px] leading-snug" style={{ color: 'rgba(199,184,240,0.55)' }}>
+                              {desc}
+                            </span>
+                          </span>
+                          <ChevronRight
+                            className="h-4 w-4 flex-shrink-0 transition-transform group-hover:translate-x-0.5"
+                            style={{ color: 'rgba(196,181,253,0.45)' }}
+                          />
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Rodapé tranquilizador — coração centralizado acima */}
+                    <div className="mt-7 flex flex-col items-center gap-2 px-2 text-center">
+                      <Heart className="h-4 w-4" style={{ color: 'rgba(196,181,253,0.72)' }} fill="currentColor" />
+                      <p className="text-[12.5px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.78)' }}>
+                        Não existe resposta certa.
+                        <br />
+                        Isso só ajuda a acompanhar seu ritual.
+                      </p>
                     </div>
                   </>
                 ) : (
                   <>
+                    {/* Eyebrow ✦ (abaixo da lua da imagem) */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                      className="mb-4 flex items-center justify-center gap-2"
+                    >
+                      <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
+                      <p className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(196,181,253,0.6)' }}>
+                        Noite 1 · concluída
+                      </p>
+                      <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
+                    </motion.div>
+
+                    {/* Headline (varia por resposta) */}
                     <motion.p
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.08, duration: 0.5 }}
-                      className="mb-4 font-display text-[38px] font-bold leading-none text-white"
+                      className="mb-4 font-display text-[40px] font-bold leading-none text-white"
                       style={{ textShadow: '0 2px 24px rgba(0,0,0,0.7)' }}
                     >
                       {validation.lead}
                     </motion.p>
+
+                    {/* Corpo (varia por resposta) */}
                     <motion.p
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.24, duration: 0.5 }}
-                      className="mb-12 text-[16px] leading-relaxed text-white/55"
+                      className="mb-8 text-[16px] leading-relaxed"
+                      style={{ color: 'rgba(214,203,250,0.78)' }}
                     >
                       {validation.body}
                     </motion.p>
+
+                    {/* Card de progresso — 1 de 7 noites concluídas */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.36, duration: 0.5 }}
+                      className="mb-7 w-full rounded-2xl p-4"
+                      style={{
+                        background: 'rgba(255,255,255,0.06)',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
+                        border: '1px solid rgba(255,255,255,0.16)',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
+                      }}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full"
+                          style={{ background: 'rgba(124,58,237,0.28)', border: '1px solid rgba(167,139,250,0.4)' }}
+                        >
+                          <Sparkles className="h-3.5 w-3.5" style={{ color: '#E9DEFF' }} />
+                        </span>
+                        <span className="text-[13px] font-semibold" style={{ color: 'rgba(232,226,255,0.9)' }}>
+                          1 de 7 noites concluídas
+                        </span>
+                      </div>
+                      <div className="mt-3 flex gap-1.5">
+                        {Array.from({ length: 7 }).map((_, i) => (
+                          <span
+                            key={i}
+                            className="h-1.5 flex-1 rounded-full"
+                            style={
+                              i === 0
+                                ? { background: 'linear-gradient(90deg, #C4B5FD, #7C3AED)', boxShadow: '0 0 8px rgba(167,139,250,0.55)' }
+                                : { background: 'rgba(255,255,255,0.10)' }
+                            }
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+
+                    {/* CTA roxo */}
                     <motion.button
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.44 }}
+                      transition={{ delay: 0.48 }}
                       onClick={goToOffer}
-                      className="w-full rounded-full py-3.5 text-[14px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
-                      style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}
+                      className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
+                      style={{
+                        background: 'linear-gradient(135deg, #A78BFA 0%, #6D42C9 100%)',
+                        boxShadow: '0 10px 30px rgba(107,79,187,0.42), inset 0 1px 0 rgba(255,255,255,0.22)',
+                      }}
                     >
-                      Continuar para a Noite 2 →
+                      <Sparkles className="h-4 w-4" />
+                      Continuar para a Noite 2
+                      <ArrowRight className="h-4 w-4" />
                     </motion.button>
                   </>
                 )}
@@ -439,109 +565,189 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="flex flex-col items-center text-center"
               >
-                <p
-                  className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em]"
-                  style={{ color: 'rgba(196,181,253,0.5)' }}
-                >
-                  Protocolo do Sono · 7 noites
-                </p>
+                {/* Eyebrow ✦ */}
+                <div className="mb-3 flex items-center justify-center gap-2">
+                  <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
+                  <p className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(196,181,253,0.6)' }}>
+                    Ritual Boa Noite · 7 noites
+                  </p>
+                  <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
+                </div>
+
+                {/* Headline */}
                 <h2
-                  className="mb-2 font-display text-[24px] font-bold leading-snug text-white"
+                  className="mb-3 font-display text-[27px] font-bold leading-tight text-white"
                   style={{ textShadow: '0 2px 18px rgba(0,0,0,0.6)' }}
                 >
-                  Você sentiu a Noite 1.
+                  Você começou.
                   <br />
-                  <span style={{ color: '#C4B5FD' }}>As outras seis fixam isso.</span>
+                  <span style={{ color: '#C4B5FD' }}>Agora siga a sequência.</span>
                 </h2>
-                <p className="mb-6 text-[14px] leading-snug text-white/45">
-                  Libere as 7 noites pra treinar seu corpo a desligar sozinho — uma vez, suas
-                  pra sempre.
+
+                {/* Corpo */}
+                <p className="mb-7 text-[14px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.7)' }}>
+                  A Noite 1 ajudou o corpo a sair do alerta. As próximas noites continuam esse
+                  caminho: menos controle, mais segurança e mais facilidade para dormir.
                 </p>
 
-                {/* Preview calmo das próximas noites — com miniatura de cada noite.
-                    A primeira (próxima a destravar) ganha um leve realce. */}
-                <div className="mb-7 w-full space-y-2">
-                  {NIGHTS_2_7.map((night, idx) => {
-                    const isNext = idx === 0;
+                {/* Lista das 7 noites — badges numerados, Noite 1 concluída */}
+                <div className="mb-6 w-full space-y-2">
+                  {PROTOCOL_NIGHTS.map((night) => {
+                    const isDone = night.night === 1;
                     return (
                       <div
                         key={night.id}
-                        className="flex items-center gap-3 overflow-hidden rounded-2xl pr-3"
+                        className="flex items-center gap-3.5 rounded-2xl p-3"
                         style={{
-                          background: isNext ? 'rgba(167,139,250,0.10)' : 'rgba(255,255,255,0.04)',
-                          border: isNext
-                            ? '1px solid rgba(167,139,250,0.24)'
-                            : '1px solid rgba(255,255,255,0.07)',
+                          background: isDone ? 'rgba(167,139,250,0.14)' : 'rgba(255,255,255,0.03)',
+                          border: isDone ? '1px solid rgba(167,139,250,0.40)' : '1px solid rgba(255,255,255,0.06)',
+                          boxShadow: isDone ? '0 0 22px rgba(124,58,237,0.18)' : 'none',
                         }}
                       >
-                        <div className="relative h-[46px] w-[46px] flex-shrink-0 overflow-hidden">
+                        {/* Miniatura grande — número no canto + cadeado interno quando bloqueada */}
+                        <div
+                          className="relative h-[62px] w-[62px] flex-shrink-0 overflow-hidden rounded-xl"
+                          style={{ border: isDone ? '1px solid rgba(196,181,253,0.45)' : '1px solid rgba(255,255,255,0.10)' }}
+                        >
                           {night.imageUrl ? (
                             <img
                               src={night.imageUrl}
                               alt=""
-                              className="h-full w-full object-cover"
                               loading="lazy"
-                              style={{
-                                filter: isNext
-                                  ? 'brightness(0.62) saturate(0.85)'
-                                  : 'brightness(0.42) saturate(0.6)',
-                              }}
+                              className="h-full w-full object-cover"
+                              style={isDone ? undefined : { filter: 'brightness(0.5) saturate(0.8)' }}
                             />
                           ) : (
                             <div className="h-full w-full" style={{ background: night.gradient }} />
                           )}
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Lock
-                              className="h-3 w-3"
-                              style={{ color: isNext ? 'rgba(196,181,253,0.85)' : 'rgba(255,255,255,0.45)' }}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex min-w-0 flex-1 flex-col py-2 text-left">
+                          {/* Número dentro da imagem (canto superior esquerdo) */}
                           <span
-                            className="text-[9.5px] font-bold uppercase tracking-[0.14em]"
-                            style={{ color: isNext ? 'rgba(196,181,253,0.7)' : 'rgba(196,181,253,0.45)' }}
+                            className="absolute left-1 top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full text-[10px] font-bold"
+                            style={{
+                              background: isDone ? 'linear-gradient(135deg, #C4B5FD, #7C3AED)' : 'rgba(8,5,24,0.72)',
+                              color: '#FFFFFF',
+                              border: '1px solid rgba(255,255,255,0.30)',
+                              backdropFilter: 'blur(4px)',
+                            }}
                           >
+                            {night.night}
+                          </span>
+                          {/* Cadeado amarelo no canto inferior direito (bloqueadas) */}
+                          {!isDone && (
+                            <span
+                              className="absolute bottom-1 right-1 flex h-[18px] w-[18px] items-center justify-center rounded-full"
+                              style={{ background: 'rgba(8,5,24,0.72)', border: '1px solid rgba(251,191,36,0.45)', backdropFilter: 'blur(4px)' }}
+                            >
+                              <Lock className="h-2.5 w-2.5" style={{ color: '#FBBF24' }} />
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Texto — "Noite N" maior/lilás forte + título quebrando */}
+                        <div className="flex min-w-0 flex-1 flex-col text-left">
+                          <span className="text-[15px] font-bold leading-tight" style={{ color: '#C4B5FD' }}>
                             Noite {night.night}
                           </span>
                           <span
-                            className="truncate text-[12.5px] leading-tight"
-                            style={{ color: isNext ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.6)' }}
+                            className="mt-0.5 text-[13px] font-medium leading-snug"
+                            style={{ color: isDone ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.62)' }}
                           >
                             {night.title}
                           </span>
                         </div>
+
+                        {/* Direita: check de vidro (concluída) ou cadeado (fora) */}
+                        {isDone ? (
+                          <span
+                            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full"
+                            style={{
+                              background: 'rgba(167,139,250,0.12)',
+                              backdropFilter: 'blur(8px)',
+                              WebkitBackdropFilter: 'blur(8px)',
+                              border: '1.5px solid rgba(167,139,250,0.85)',
+                              boxShadow: '0 0 12px rgba(167,139,250,0.55), inset 0 0 8px rgba(167,139,250,0.22)',
+                            }}
+                          >
+                            <Check className="h-3.5 w-3.5" strokeWidth={3} style={{ color: '#C4B5FD' }} />
+                          </span>
+                        ) : (
+                          <span
+                            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full"
+                            style={{
+                              background: 'rgba(167,139,250,0.10)',
+                              backdropFilter: 'blur(8px)',
+                              WebkitBackdropFilter: 'blur(8px)',
+                              border: '1.5px solid rgba(167,139,250,0.6)',
+                              boxShadow: '0 0 10px rgba(167,139,250,0.35), inset 0 0 8px rgba(167,139,250,0.18)',
+                            }}
+                          >
+                            <Lock className="h-3.5 w-3.5" style={{ color: '#C4B5FD' }} />
+                          </span>
+                        )}
                       </div>
                     );
                   })}
                 </div>
 
-                {/* Oferta — pagamento único via Pix, vitalício. Preço do backend. */}
-                <p className="font-display text-[19px] font-bold text-white">
-                  {priceLabel(price)} no Pix · pagamento único
-                </p>
-                <p className="mb-3 text-[13px] leading-snug text-white/40">
-                  Sem assinatura, sem cobrança mensal. Você paga uma vez e as 7 noites ficam
-                  liberadas pra sempre — menos que uma caixa de melatonina, e não acaba.
-                </p>
-                <div className="mb-7 flex items-center justify-center gap-2">
-                  <span style={{ color: '#FBBF24', fontSize: '11px', letterSpacing: '1px' }}>★★★★★</span>
-                  <span className="text-[11px] text-white/35">4,9 · 846 pessoas dormem melhor</span>
-                </div>
-
-                <button
-                  onClick={startCheckout}
-                  className="mb-3 w-full rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+                {/* Card de preço — Pix, pagamento único + bullets */}
+                <div
+                  className="mb-5 w-full rounded-2xl p-4 text-left"
                   style={{
-                    background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
-                    boxShadow: '0 10px 36px rgba(124,58,237,0.5)',
+                    background: 'rgba(255,255,255,0.06)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(255,255,255,0.16)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
                   }}
                 >
-                  Liberar minhas 7 noites · {priceLabel(price)} no Pix
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl"
+                      style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.3), rgba(124,58,237,0.3))', border: '1px solid rgba(167,139,250,0.4)' }}
+                    >
+                      <QrCode className="h-5 w-5" style={{ color: '#E9DEFF' }} />
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="font-display text-[20px] font-bold leading-none text-white">
+                        {priceLabel(price)}{' '}
+                        <span className="text-[14px] font-semibold" style={{ color: 'rgba(214,203,250,0.7)' }}>no Pix</span>
+                      </span>
+                      <span className="mt-1 text-[12px]" style={{ color: 'rgba(214,203,250,0.55)' }}>pagamento único</span>
+                    </div>
+                  </div>
+                  <div className="mt-3.5 space-y-2 border-t pt-3.5" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                    {['Sem assinatura', 'Sem cobrança mensal', 'Acesso às 7 noites para usar quando quiser'].map((b) => (
+                      <div key={b} className="flex items-center gap-2.5">
+                        <Check className="h-4 w-4 flex-shrink-0" strokeWidth={2.5} style={{ color: '#A78BFA' }} />
+                        <span className="text-[13px]" style={{ color: 'rgba(232,226,255,0.82)' }}>{b}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <button
+                  onClick={startCheckout}
+                  className="mb-3 flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
+                    boxShadow: '0 10px 36px rgba(124,58,237,0.5), inset 0 1px 0 rgba(255,255,255,0.22)',
+                  }}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Liberar as 7 noites
                 </button>
+
+                {/* Rodapé */}
+                <div className="flex items-center justify-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'rgba(196,181,253,0.4)' }} />
+                  <span className="text-[11px]" style={{ color: 'rgba(214,203,250,0.45)' }}>
+                    Pagamento via Pix · Liberação automática
+                  </span>
+                </div>
                 <button
                   onClick={handleDismiss}
-                  className="text-[12px] transition-colors"
+                  className="mt-3 text-[12px] transition-colors"
                   style={{ color: 'rgba(255,255,255,0.3)' }}
                 >
                   Agora não
@@ -563,10 +769,10 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                 <SonoInlinePix price={price} guestId={getGuestId()} onPaid={handlePixPaid} />
                 <button
                   onClick={handleDismiss}
-                  className="mx-auto mt-4 text-[12px] transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                  className="mx-auto mt-4 text-[12.5px] transition-colors hover:text-white/60"
+                  style={{ color: 'rgba(255,255,255,0.4)' }}
                 >
-                  Agora não
+                  Pagar depois
                 </button>
               </motion.div>
             )}
@@ -580,23 +786,49 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                className="flex w-full flex-col"
+                className="flex w-full flex-col items-center"
               >
-                <SonoInlineSignup
-                  onCreated={handleAccountSaved}
-                  returnTo={RETURN_TO}
-                  title={
-                    <>
-                      Suas 7 noites são suas <span style={{ color: '#C4B5FD' }}>pra sempre.</span>
-                    </>
-                  }
-                  subtitle="Salve seu acesso pra entrar de qualquer aparelho."
-                  submitLabel="Salvar meu acesso"
-                />
+                {/* Selo de vidro */}
+                <span
+                  className="mb-5 flex h-14 w-14 items-center justify-center rounded-full"
+                  style={{
+                    background: 'rgba(167,139,250,0.12)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    border: '1.5px solid rgba(167,139,250,0.7)',
+                    boxShadow: '0 0 20px rgba(167,139,250,0.45), inset 0 0 10px rgba(167,139,250,0.2)',
+                  }}
+                >
+                  <ShieldCheck className="h-6 w-6" style={{ color: '#C4B5FD' }} />
+                </span>
+
+                {/* Painel de vidro envolvendo o formulário */}
+                <div
+                  className="w-full rounded-3xl p-5"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    backdropFilter: 'blur(18px)',
+                    WebkitBackdropFilter: 'blur(18px)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    boxShadow: '0 18px 60px rgba(8,5,24,0.5), inset 0 1px 0 rgba(255,255,255,0.10)',
+                  }}
+                >
+                  <SonoInlineSignup
+                    onCreated={handleAccountSaved}
+                    returnTo={RETURN_TO}
+                    title={
+                      <>
+                        Suas 7 noites são suas <span style={{ color: '#C4B5FD' }}>pra sempre.</span>
+                      </>
+                    }
+                    subtitle="Salve seu acesso pra entrar de qualquer aparelho."
+                    submitLabel="Salvar meu acesso"
+                  />
+                </div>
                 <button
                   onClick={handleStayInSono}
-                  className="mx-auto mt-4 text-[12px] transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                  className="mx-auto mt-4 text-[12.5px] transition-colors hover:text-white/60"
+                  style={{ color: 'rgba(255,255,255,0.4)' }}
                 >
                   Pular
                 </button>
@@ -614,31 +846,55 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="flex flex-col items-center text-center"
               >
-                <motion.div
+                {/* Selo de vidro — check lilás com anel roxo */}
+                <motion.span
                   initial={{ scale: 0.7, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: 'spring', stiffness: 80, damping: 16 }}
-                  className="mb-6"
+                  className="mb-6 flex h-16 w-16 items-center justify-center rounded-full"
+                  style={{
+                    background: 'rgba(167,139,250,0.12)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    border: '1.5px solid rgba(167,139,250,0.8)',
+                    boxShadow: '0 0 26px rgba(167,139,250,0.5), inset 0 0 12px rgba(167,139,250,0.22)',
+                  }}
                 >
-                  <Moon className="h-12 w-12" style={{ color: '#C4B5FD' }} />
-                </motion.div>
+                  <Check className="h-7 w-7" strokeWidth={2.5} style={{ color: '#C4B5FD' }} />
+                </motion.span>
+
+                {/* Eyebrow */}
+                <div className="mb-3 flex items-center justify-center gap-2">
+                  <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(196,181,253,0.6)' }}>
+                    Acesso liberado
+                  </p>
+                  <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
+                </div>
+
                 <h2
-                  className="font-display text-[24px] font-bold leading-snug text-white"
+                  className="font-display text-[26px] font-bold leading-snug text-white"
                   style={{ textShadow: '0 2px 20px rgba(0,0,0,0.6)' }}
                 >
                   Suas 7 noites estão
                   <br />
                   <span style={{ color: '#C4B5FD' }}>liberadas.</span>
                 </h2>
-                <p className="mb-9 mt-3 text-[15px] leading-relaxed text-white/50">
+                <p className="mt-3 text-[15px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.62)' }}>
                   Descanse. Elas estarão aqui sempre que você precisar.
                 </p>
+
+                <p className="mb-9 mt-4 flex items-center justify-center gap-1.5 text-[12px]" style={{ color: 'rgba(214,203,250,0.45)' }}>
+                  <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'rgba(196,181,253,0.6)' }} />
+                  Pagamento confirmado · acesso vitalício
+                </p>
+
                 <button
                   onClick={handleAfterUnlock}
                   className="w-full rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
                   style={{
                     background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
-                    boxShadow: '0 10px 36px rgba(124,58,237,0.5)',
+                    boxShadow: '0 10px 36px rgba(124,58,237,0.5), inset 0 1px 0 rgba(255,255,255,0.22)',
                   }}
                 >
                   {user ? 'Continuar' : 'Salvar e continuar'}
