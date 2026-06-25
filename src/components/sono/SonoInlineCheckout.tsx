@@ -242,9 +242,26 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
     }
   }, [user, claimLifetime, navigate, goTo]);
 
-  const handleAccountSaved = useCallback(() => {
-    void claimLifetime().then(() => navigate('/app/meditacoes-sono'));
+  // Navegação única pro app completo (mode="app", com nav). Guard por ref para o
+  // efeito e o onCreated não navegarem duas vezes; o ref reseta no remount, então
+  // o caminho de recuperação (efeito) ainda dispara uma vez após remontar.
+  const navigatedToAppRef = useRef(false);
+  const goToApp = useCallback(() => {
+    if (navigatedToAppRef.current) return;
+    navigatedToAppRef.current = true;
+    void claimLifetime(); // não-fatal e em background; o entitlement também vale por guest_id
+    navigate('/app/meditacoes-sono', { replace: true });
   }, [claimLifetime, navigate]);
+
+  // Convidado virou conta no passo de cadastro → entra no app completo. Dirigido
+  // por efeito (não imperativo) para sobreviver ao remount do RootProviders por
+  // userId: após remontar, o passo é restaurado da URL (?checkout=save_account) e
+  // o user já está autenticado, então o efeito dispara e navega. Cobre os três
+  // caminhos de conclusão do cadastro: e-mail, popup do Google e fallback de OAuth
+  // por redirect (volta em /sono/experiencia?checkout=save_account já logado).
+  useEffect(() => {
+    if (step === 'save_account' && user) goToApp();
+  }, [step, user, goToApp]);
 
   const selectAnswer = (a: ReflectionAnswer) => {
     setAnswer(a);
@@ -852,7 +869,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                   }}
                 >
                   <SonoInlineSignup
-                    onCreated={handleAccountSaved}
+                    onCreated={goToApp}
                     returnTo={RETURN_TO}
                     title={
                       <>
