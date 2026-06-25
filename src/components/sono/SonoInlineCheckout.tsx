@@ -14,6 +14,8 @@ import {
   trackSonoGuestAppInviteShown,
   trackSonoGuestAppInviteClicked,
   trackSonoGuestPostNight1Response,
+  trackSonoGuestPostNight1QuestionView,
+  trackSonoGuestContinueNight2,
 } from '@/lib/mixpanelSonoGuestEvents';
 import mixpanel from '@/lib/mixpanel';
 import { trackWithCAPI } from '@/lib/fbpixel';
@@ -64,23 +66,8 @@ const RESPONSE_KEY: Record<ReflectionAnswer, 'mais_leve' | 'um_pouco_mais_calmo'
   no: 'ainda_acelerado',
 };
 
-const VALIDATION: Record<ReflectionAnswer, { lead: string; body: string }> = {
-  yes: {
-    lead: 'Ótimo.',
-    body: 'Seu corpo já recebeu o primeiro sinal: agora ele sabe por onde começar a desacelerar.',
-  },
-  little: {
-    lead: 'Perfeito.',
-    body: 'Pequenas mudanças já contam. Seu corpo começou a sair do alerta — as próximas noites aprofundam o caminho.',
-  },
-  no: {
-    lead: 'Tudo bem.',
-    body: 'A mente agitada não precisa de força, só de repetição. As próximas noites conduzem esse desacelerar, passo a passo.',
-  },
-};
-
 /** Opções da reflexão pós-Noite 1 — badge (imagem) + título + microcopy. As
- *  chaves (yes/little/no) batem com selectAnswer/VALIDATION/RESPONSE_KEY. */
+ *  chaves (yes/little/no) batem com selectAnswer/RESPONSE_KEY. */
 const REFLECTION_OPTIONS: { key: ReflectionAnswer; img: string; title: string; desc: string }[] = [
   { key: 'yes',    img: '/images/sono-reflexao-icone-1.webp', title: 'Mais leve',           desc: 'Sinto meu corpo mais solto e a mente mais tranquila.' },
   { key: 'little', img: '/images/sono-reflexao-icone-2.webp', title: 'Um pouco mais calmo', desc: 'Ainda sinto tensão, mas já estou desacelerando.' },
@@ -127,6 +114,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   const funnelSourceRef = useRef(false);
   const appInviteShownRef = useRef(false);
   const offerViewedRef = useRef(false);
+  const questionViewRef = useRef(false);
 
   // Preço do Pix vem do backend (env), pra mudar sem rebuild do front. Buscado uma
   // vez quando o overlay abre; cai no fallback se o /config falhar.
@@ -183,6 +171,15 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
     appInviteShownRef.current = true;
     trackSonoGuestAppInviteShown({ source: getSource(), guestId: getGuestId() });
   }, [step]);
+
+  // "Pergunta pós-noite 1 vista" — dispara quando a pergunta ("Como seu corpo
+  // está agora?") aparece, antes de qualquer resposta. Fecha o gap entre Noite 1
+  // concluída e a resposta no Mixpanel.
+  useEffect(() => {
+    if (step !== 'reflection' || answer !== null || questionViewRef.current) return;
+    questionViewRef.current = true;
+    trackSonoGuestPostNight1QuestionView({ source: getSource(), guestId: getGuestId() });
+  }, [step, answer]);
 
   // Abre no passo solicitado pelo pai quando ainda não há estado restaurado da
   // URL/sessionStorage. Após aberto, a navegação interna assume.
@@ -261,6 +258,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   };
 
   const goToOffer = () => {
+    trackSonoGuestContinueNight2({ source: getSource(), guestId: getGuestId() });
     goTo('offer');
     void upsertEvent({ reached_offer: true, max_step_reached: 6 });
   };
@@ -303,7 +301,8 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   // Fechar disponível nos passos "frios" (inclui pix: o usuário pode desistir antes
   // de pagar) — exceto sucesso/salvar conta.
   const canClose = step === 'reflection' || step === 'offer' || step === 'pix';
-  const validation = answer ? VALIDATION[answer] : null;
+  // Resposta selecionada = mostra a tela de continuidade (concluiu Noite 1).
+  const answered = answer !== null;
 
   return (
     <motion.div
@@ -317,9 +316,9 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
           ? {
               // Fundo cósmico (lua no halo + aurora) vem da imagem; leve vinheta
               // escura em cima/baixo só pra firmar a legibilidade do texto. A
-              // tela de RESPOSTA (validation) usa uma imagem própria.
+              // tela de RESPOSTA (pós-resposta) usa uma imagem própria.
               backgroundImage: `linear-gradient(180deg, rgba(4,6,15,0.30) 0%, rgba(4,6,15,0) 26%, rgba(4,6,15,0.30) 100%), url("${
-                validation ? '/images/sono-reflexao-resposta-bg.webp' : '/images/sono-reflexao-bg.webp'
+                answered ? '/images/sono-reflexao-resposta-bg.webp' : '/images/sono-reflexao-bg.webp'
               }")`,
               backgroundSize: 'cover',
               backgroundPosition: 'center top',
@@ -357,7 +356,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
       )}
 
       {/* Eyebrow acima da lua (a lua vem da imagem de fundo) — só na pergunta */}
-      {step === 'reflection' && !validation && (
+      {step === 'reflection' && !answered && (
         <div className="pointer-events-none absolute left-1/2 top-[5.5%] z-20 flex -translate-x-1/2 items-center gap-2">
           <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
           <p className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(196,181,253,0.65)' }}>
@@ -398,7 +397,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="flex flex-col items-center text-center"
               >
-                {!validation ? (
+                {!answered ? (
                   <>
                     {/* (o eyebrow "Noite 1 · concluída" fica acima da lua — ver topo) */}
                     <h2
@@ -471,18 +470,18 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                       <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
                     </motion.div>
 
-                    {/* Headline (varia por resposta) */}
+                    {/* Headline fixa — continuidade direta (não varia por resposta) */}
                     <motion.p
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.08, duration: 0.5 }}
-                      className="mb-4 font-display text-[40px] font-bold leading-none text-white"
+                      className="mb-4 font-display text-[28px] font-bold leading-tight text-white"
                       style={{ textShadow: '0 2px 24px rgba(0,0,0,0.7)' }}
                     >
-                      {validation.lead}
+                      Você concluiu a <span style={{ color: '#C4B5FD' }}>Noite 1.</span>
                     </motion.p>
 
-                    {/* Corpo (varia por resposta) */}
+                    {/* Corpo — aponta para a Noite 2 */}
                     <motion.p
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -490,7 +489,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                       className="mb-8 text-[16px] leading-relaxed"
                       style={{ color: 'rgba(214,203,250,0.78)' }}
                     >
-                      {validation.body}
+                      A Noite 2 continua esse processo: soltar o controle da mente.
                     </motion.p>
 
                     {/* Card de progresso — 1 de 7 noites concluídas */}
@@ -574,20 +573,19 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                   <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
                 </div>
 
-                {/* Headline */}
+                {/* Headline — foco em continuar a sequência */}
                 <h2
                   className="mb-3 font-display text-[27px] font-bold leading-tight text-white"
                   style={{ textShadow: '0 2px 18px rgba(0,0,0,0.6)' }}
                 >
-                  Você começou.
-                  <br />
-                  <span style={{ color: '#C4B5FD' }}>Agora siga a sequência.</span>
+                  Continue para a{' '}
+                  <span style={{ color: '#C4B5FD' }}>Noite 2.</span>
                 </h2>
 
                 {/* Corpo */}
                 <p className="mb-7 text-[14px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.7)' }}>
-                  A Noite 1 ajudou o corpo a sair do alerta. As próximas noites continuam esse
-                  caminho: menos controle, mais segurança e mais facilidade para dormir.
+                  Você começou o protocolo. As próximas 6 noites continuam o processo de
+                  desacelerar mente e corpo.
                 </p>
 
                 {/* Lista das 7 noites — badges numerados, Noite 1 concluída */}
@@ -716,7 +714,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                     </div>
                   </div>
                   <div className="mt-3.5 space-y-2 border-t pt-3.5" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                    {['Sem assinatura', 'Sem cobrança mensal', 'Acesso às 7 noites para usar quando quiser'].map((b) => (
+                    {['Sem assinatura', 'Sem cobrança mensal', 'Acesso às 7 noites para usar quando quiser', 'Liberação automática após o pagamento'].map((b) => (
                       <div key={b} className="flex items-center gap-2.5">
                         <Check className="h-4 w-4 flex-shrink-0" strokeWidth={2.5} style={{ color: '#A78BFA' }} />
                         <span className="text-[13px]" style={{ color: 'rgba(232,226,255,0.82)' }}>{b}</span>
@@ -735,7 +733,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                   }}
                 >
                   <Sparkles className="h-4 w-4" />
-                  Liberar as 7 noites
+                  Liberar Noite 2 e as 7 noites
                 </button>
 
                 {/* Rodapé */}

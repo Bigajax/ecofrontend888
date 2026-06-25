@@ -32,6 +32,12 @@ export function trackSonoGuestPageViewed(props?: SonoGuestEventProps): void {
   trackSonoGuestEvent('Funil Protocolo · Página vista', props);
 }
 
+/** Modal de contexto antes do áudio ("Esta é a Noite 1 de 7…") — planta a noção
+ *  de protocolo pago ANTES de ouvir, em vez de só depois. Disparo 1×/sessão. */
+export function trackSonoGuestPreAudioView(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Contexto pré-áudio visto', props);
+}
+
 /** Gate de cadastro exibido na entrada (ao clicar "Ouvir a Noite 1" deslogado),
  *  antes da Noite 1. Marca a nova etapa de captura de lead do funil. */
 export function trackSonoGuestRegisterGateShown(props?: SonoGuestEventProps): void {
@@ -80,6 +86,18 @@ export function trackSonoGuestPostNight1Response(
     night_number: 1,
     response,
   });
+}
+
+/** Pergunta pós-Noite 1 ("Como seu corpo está agora?") exibida — antes da
+ *  resposta. Fecha o gap entre "Noite 1 concluída" e "Resposta pós-noite 1". */
+export function trackSonoGuestPostNight1QuestionView(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Pergunta pós-noite 1 vista', props);
+}
+
+/** Clique em "Continuar para a Noite 2" na tela de continuidade pós-resposta —
+ *  é o passo que abre o paywall. Mede a intenção de seguir a sequência. */
+export function trackSonoGuestContinueNight2(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Continuar Noite 2 clicado', props);
 }
 
 export function trackSonoGuestOfferViewed(props?: SonoGuestEventProps): void {

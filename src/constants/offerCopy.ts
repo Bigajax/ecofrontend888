@@ -36,6 +36,15 @@ export const OFFER = {
 } as const;
 
 /**
+ * Rótulo do preço do Pix único do Protocolo do Sono (Noite 1 grátis → 7 noites
+ * vitalícias). É um PRODUTO DISTINTO da recorrência acima (R$ 15,90/mês). O valor
+ * real vem do backend (`SONO_PIX_PRICE_BRL`, default 37) e é exibido no passo de
+ * oferta; este rótulo é só para copy estática que não tem acesso ao preço dinâmico
+ * (ex.: microcopy do hero da landing). Atualizar junto com a env do backend.
+ */
+export const SONO_PIX_PRICE_LABEL = 'R$37' as const;
+
+/**
  * Valores numéricos (BRL) da oferta — fonte única para eventos de conversão
  * (Meta Pixel, Mixpanel) e qualquer cálculo de checkout. Mantém os números
  * alinhados com a copy acima.

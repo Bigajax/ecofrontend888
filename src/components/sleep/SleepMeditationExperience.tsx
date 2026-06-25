@@ -24,6 +24,7 @@ import type { SonoOfferVariant } from '@/components/sono/SonoPostExperienceModal
 import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceModal';
 import { SonoInlineCheckout } from '@/components/sono/SonoInlineCheckout';
 import { SonoExperienceHero } from '@/components/sono/SonoExperienceHero';
+import { SonoPreAudioModal } from '@/components/sono/SonoPreAudioModal';
 import type { SonoCheckoutStep } from '@/components/sono/useSonoCheckoutState';
 import { markRitualNightCompleted, isRitualCompletedToday } from '@/hooks/useRitualProgress';
 import {
@@ -197,6 +198,8 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   const [showStartNightPrompt, setShowStartNightPrompt] = useState(false);
   const [offerVariant, setOfferVariant] = useState<SonoOfferVariant>('locked_night');
   const [guestPlayback, setGuestPlayback] = useState<{ startTime: number } | null>(null);
+  // Modal de contexto pré-áudio ("Esta é a Noite 1 de 7…") — só guest não-pago.
+  const [preAudioOpen, setPreAudioOpen] = useState(false);
 
   // Carrossel das Noites 2–7 (estilo "screenshots" da App Store): dot ativo segue
   // o scroll horizontal por scroll-snap nativo (sem JS de drag).
@@ -332,7 +335,13 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
       // Experiência antes do cadastro: a Noite 1 toca para guest deslogado, sem
       // muro. A conta só é pedida na oferta (pós-Noite 1), depois de sentir o
       // valor — o GuestSonoPlayer roda sem auth (estado em sessionStorage).
-      startGuestNight1Playback();
+      // Antes do áudio, planta o contexto do protocolo (Noite 1 de 7, próximas
+      // pagas) num modal — exceto para quem já pagou (mensagem não se aplica).
+      if (isPaid) {
+        startGuestNight1Playback();
+      } else {
+        setPreAudioOpen(true);
+      }
       return;
     }
 
@@ -1107,6 +1116,20 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
             setCheckoutEntry(null);
           }}
           onDismiss={() => setCheckoutEntry(null)}
+        />
+      )}
+
+      {/* Modal de contexto pré-áudio — Noite 1 de 7 (planta a oferta antes de ouvir) */}
+      {isGuestSono && (
+        <SonoPreAudioModal
+          open={preAudioOpen}
+          guestId={guestId}
+          source={source}
+          onConfirm={() => {
+            setPreAudioOpen(false);
+            startGuestNight1Playback();
+          }}
+          onClose={() => setPreAudioOpen(false)}
         />
       )}
 

@@ -12,7 +12,7 @@ import { useSonoSectionInView } from '@/hooks/useSonoSectionInView';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { trackLandingVista, trackCtaClicado } from '@/lib/mixpanelAssinarFunnel';
 import { fbq, trackWithCAPI } from '@/lib/fbpixel';
-import { OFFER, PRICE, planValue } from '@/constants/offerCopy';
+import { OFFER, PRICE, planValue, SONO_PIX_PRICE_LABEL } from '@/constants/offerCopy';
 
 // ─── Dados das seções ────────────────────────────────────────────────
 
@@ -407,6 +407,30 @@ export default function EcotopiaSonoPage() {
                 <Link to="/cancelar-assinatura" className="lp-sono-hero-microcopy-link">
                   cancele quando quiser
                 </Link>
+              </p>
+            )}
+
+            {/* Convite (deite_se → /sono/experiencia): planta a oferta paga ANTES
+                do clique. Texto puro (sem link), cor clara p/ o hero escuro. */}
+            {isConviteHero && (
+              <p className="lp-sono-hero-microcopy lp-sono-hero-microcopy--convite scroll-reveal stagger-3">
+                <svg
+                  className="lp-sono-hero-microcopy-shield"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6l7-3z" />
+                  <path d="M9 12l2 2 4-4" />
+                </svg>
+                Noite 1 gratuita. Depois, continue o protocolo completo por{' '}
+                {SONO_PIX_PRICE_LABEL} no Pix. Pagamento único, sem assinatura.
               </p>
             )}
 

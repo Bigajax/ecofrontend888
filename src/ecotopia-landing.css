@@ -14295,6 +14295,16 @@ body.eco-no-scroll {
   border-color: rgba(255, 255, 255, 0.7);
 }
 
+/* Microcopy do convite: o hero deite_se é fundo escuro, então a cor slate
+   (#5A8AAD) do microcopy padrão fica ilegível. Texto claro lilás + sombra. */
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-microcopy--convite {
+  color: rgba(232, 226, 255, 0.72);
+  text-shadow: 0 1px 8px rgba(8, 6, 24, 0.6);
+  max-width: 30rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* no desktop o título não quebra no meio (quebras só nos <br> autorais →
    "Coloque os fones." numa linha só, como na referência) */
 @media (min-width: 768px) {
