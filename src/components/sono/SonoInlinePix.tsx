@@ -9,6 +9,7 @@ import {
   resolveFbc,
 } from '@/lib/fbpixel';
 import { LIFETIME_LS_KEY } from './sonoLifetime';
+import { trackSonoGuestPixGerado } from '@/lib/mixpanelSonoGuestEvents';
 
 /**
  * Passo do Pix inline do funil do sono (substitui o cartão). Pagamento único,
@@ -48,6 +49,7 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
 
   const createStartedRef = useRef(false);
   const initiateCheckoutFiredRef = useRef(false);
+  const pixGeradoFiredRef = useRef(false);
   const approvedRef = useRef(false);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -78,6 +80,15 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
         externalReference: data.external_reference,
       });
       setStatus('waiting');
+      // Mixpanel: passo do Pix (entre "Checkout clicado" e "Pix aprovado").
+      // 1× por sessão — regeneração por timeout/expiração não re-dispara.
+      if (!pixGeradoFiredRef.current) {
+        pixGeradoFiredRef.current = true;
+        trackSonoGuestPixGerado({
+          guestId,
+          source: sessionStorage.getItem('eco.sono.source') || undefined,
+        });
+      }
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Erro inesperado.');
       setStatus('error');

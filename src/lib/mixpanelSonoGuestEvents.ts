@@ -90,6 +90,11 @@ export function trackSonoGuestCheckoutClicked(props?: SonoGuestEventProps): void
   trackSonoGuestEvent('Funil Protocolo · Checkout clicado', props);
 }
 
+/** QR/código Pix gerado e exibido — passo entre "Checkout clicado" e "Pix aprovado". */
+export function trackSonoGuestPixGerado(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Pix gerado', props);
+}
+
 export function trackSonoGuestOfferDismissed(props?: SonoGuestEventProps): void {
   trackSonoGuestEvent('Funil Protocolo · Oferta dispensada', props);
 }
