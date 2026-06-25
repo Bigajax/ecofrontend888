@@ -304,6 +304,28 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   // Resposta selecionada = mostra a tela de continuidade (concluiu Noite 1).
   const answered = answer !== null;
 
+  // Reenquadramento da arte (retrato) para DESKTOP (paisagem). O mesmo `cover` num
+  // viewport largo-baixo zooma demais e joga o emblema/relevo pro meio, colidindo
+  // com o texto. Esta camada (só ≥md, recobre o fundo mobile) mostra o brilho
+  // ambiente da base (aurora / trilha) com um scrim que mantém a coluna legível.
+  const desktopBgStyle =
+    step === 'reflection'
+      ? {
+          backgroundImage: `linear-gradient(180deg, rgba(6,5,18,0.55) 0%, rgba(6,5,18,0.60) 46%, rgba(6,5,18,0.32) 100%), url("${
+            answered ? '/images/sono-reflexao-resposta-bg.webp' : '/images/sono-reflexao-bg.webp'
+          }")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center bottom',
+        }
+      : step === 'offer' || step === 'pix' || step === 'unlocked' || step === 'save_account'
+        ? {
+            backgroundImage:
+              'linear-gradient(180deg, rgba(8,5,24,0.50) 0%, rgba(8,5,24,0.60) 50%, rgba(8,5,24,0.42) 100%), url("/images/sono-oferta-bg.webp")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center bottom',
+          }
+        : null;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -340,6 +362,24 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
             : { background: 'linear-gradient(180deg, #04060F 0%, #080C1E 100%)' }
       }
     >
+      {/* Reenquadramento da arte no desktop (só ≥md): recobre o fundo mobile e
+          mostra o brilho ambiente na base, sem o zoom/colisão do retrato. */}
+      {desktopBgStyle && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block" style={desktopBgStyle} />
+      )}
+
+      {/* Enquadramento desktop: escurece as bordas laterais pra focar a coluna
+          central quando a arte (retrato) é exibida em paisagem. Só ≥md; o mobile
+          não renderiza este elemento, então fica idêntico ao atual. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 hidden md:block"
+        style={{
+          background:
+            'linear-gradient(90deg, rgba(6,5,18,0.62) 0%, rgba(6,5,18,0) 28%, rgba(6,5,18,0) 72%, rgba(6,5,18,0.62) 100%)',
+        }}
+      />
+
       {/* Glow violeta ambiente — só onde não há imagem de fundo própria */}
       {step !== 'reflection' && step !== 'offer' && step !== 'pix' && step !== 'unlocked' && step !== 'save_account' && (
         <div
@@ -383,7 +423,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
       {/* Conteúdo. `my-auto` (não justify-center no pai) centraliza quando cabe e
           permite rolar quando o passo transborda — sem isso o cartão trava o scroll. */}
       <div className="relative z-10 flex flex-1 flex-col items-center overflow-y-auto px-6 pb-12">
-        <div className={`flex w-full max-w-[340px] flex-col py-4 ${step === 'reflection' ? 'mt-[18vh]' : 'my-auto'}`}>
+        <div className={`flex w-full max-w-[340px] flex-col py-4 md:max-w-[480px] ${step === 'reflection' ? 'mt-[18vh]' : 'my-auto'}`}>
           <AnimatePresence mode="wait">
 
             {/* ── reflection (pergunta + validação numa só batida) ── */}

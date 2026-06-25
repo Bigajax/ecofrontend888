@@ -60,7 +60,7 @@ export function SonoPreAudioModal({ open, guestId, source, onConfirm, onClose }:
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-            className="relative w-full max-w-[340px] rounded-3xl p-6 text-center"
+            className="relative w-full max-w-[340px] rounded-3xl p-6 text-center md:max-w-[420px]"
             style={{
               background: 'rgba(255,255,255,0.06)',
               backdropFilter: 'blur(14px)',

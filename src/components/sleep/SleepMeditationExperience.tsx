@@ -815,7 +815,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                 </span>
               </div>
               {!isPaid && (
-                <span className="text-[11px] font-medium" style={{ color: 'rgba(199,184,240,0.45)' }}>
+                <span className="text-[11px] font-medium md:hidden" style={{ color: 'rgba(199,184,240,0.45)' }}>
                   Deslize →
                 </span>
               )}
@@ -825,7 +825,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
             <div
               ref={nightsScrollRef}
               onScroll={handleNightsScroll}
-              className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-1 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-1 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:snap-none md:max-w-lg md:mx-auto"
             >
               {PROTOCOL_NIGHTS.slice(1).map((night) => {
                 const nightCompleted = completedNights.has(night.night);
@@ -833,8 +833,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
                   <div
                     key={night.id}
                     onClick={() => handleNightClick(night)}
-                    className="group relative shrink-0 cursor-pointer snap-start overflow-hidden rounded-2xl"
-                    style={{ width: '58%', maxWidth: '200px', height: '162px' }}
+                    className="group relative h-[162px] w-[58%] max-w-[200px] shrink-0 cursor-pointer snap-start overflow-hidden rounded-2xl md:w-auto md:max-w-none"
                   >
                     {night.imageUrl ? (
                       <img
@@ -900,8 +899,8 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
               })}
             </div>
 
-            {/* Dots — o ativo recebe a luz quente */}
-            <div className="mt-4 flex items-center justify-center gap-1.5">
+            {/* Dots — o ativo recebe a luz quente (só no carrossel mobile) */}
+            <div className="mt-4 flex items-center justify-center gap-1.5 md:hidden">
               {PROTOCOL_NIGHTS.slice(1).map((night, i) => {
                 const active = i === activeNightCard;
                 return (

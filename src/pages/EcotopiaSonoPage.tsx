@@ -1407,12 +1407,13 @@ export default function EcotopiaSonoPage() {
               </p>
             )}
 
-            {/* Único CTA da landing que sempre vai pro /assinar (checkout/trial),
-                mesmo na variante convite — o resto da página funila pra experiência. */}
+            {/* Convite (deite_se): vai pra experiência guest (ouvir a Noite 1),
+                como o resto da landing. Nas variantes de venda, segue pro /assinar
+                (trial) — sonoCtaTo/sonoCtaClick resolvem o destino e o tracking. */}
             <Link
-              to={`/assinar?step=plan&plan=${selectedOfferPlan}&from=sono_oferta_cta`}
+              to={sonoCtaTo('sono_oferta_cta', selectedOfferPlan)}
               className="lp-sono-offer-cta scroll-reveal stagger-4"
-              onClick={() => trackTrialCta(selectedOfferPlan, 'sono_oferta_cta')}
+              onClick={sonoCtaClick('sono_oferta_cta', selectedOfferPlan)}
             >
               {isConviteHero ? 'Começar meu ritual' : CTA_LABEL}
             </Link>

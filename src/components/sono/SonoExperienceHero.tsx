@@ -53,7 +53,7 @@ export function SonoExperienceHero({ onListen, onBack, onExploreApp }: SonoExper
 
   return (
     <section
-      className="relative flex min-h-[410px] h-[52vh] max-h-[490px] flex-col justify-end overflow-hidden"
+      className="relative flex min-h-[410px] h-[52vh] max-h-[490px] flex-col justify-end overflow-hidden md:min-h-[520px] md:h-[64vh] md:max-h-[640px]"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       {/* Voltar */}
@@ -73,13 +73,27 @@ export function SonoExperienceHero({ onListen, onBack, onExploreApp }: SonoExper
       </div>
 
       {/* Fundo do vale — lua, céu estrelado, trilha de luzes guiando ao sono.
-          Leve zoom-out lento (respira); reduzido por prefers-reduced-motion. */}
+          Leve zoom-out lento (respira); reduzido por prefers-reduced-motion.
+          A arte é retrato; em paisagem (desktop) o `cover` zooma demais no pé
+          (lavanda borrada), então usamos um enquadramento próprio por viewport:
+          mobile mantém `center 82%` (trilha); desktop mostra o vale/horizonte. */}
       <motion.div
         aria-hidden
-        className="absolute inset-0 bg-cover"
+        className="absolute inset-0 bg-cover md:hidden"
         style={{
           backgroundImage: 'url("/images/sono-experiencia-bg.webp")',
           backgroundPosition: 'center 82%',
+        }}
+        initial={{ scale: 1.06 }}
+        animate={{ scale: 1.0 }}
+        transition={{ duration: 9, ease: 'easeOut' }}
+      />
+      <motion.div
+        aria-hidden
+        className="absolute inset-0 hidden bg-cover md:block"
+        style={{
+          backgroundImage: 'url("/images/sono-experiencia-bg.webp")',
+          backgroundPosition: 'center 60%',
         }}
         initial={{ scale: 1.06 }}
         animate={{ scale: 1.0 }}
