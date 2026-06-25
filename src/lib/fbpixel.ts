@@ -153,6 +153,11 @@ export async function trackWithCAPI(
 }
 
 // ─── Correlação do StartTrial (client ↔ webhook do Mercado Pago) ───────────────
+// LEGADO: usado só pelo fluxo cartão+trial arquivado em
+// `components/sono/_legacy/SonoInlineCard.tsx`. O funil ativo do sono é Pix único
+// (sem trial) e não dispara StartTrial. Mantido para religar o cartão sem
+// reconstruir a correlação de event_id. (StartTrial como EVENTO segue vivo no
+// fluxo anual via CreateProfilePage + webhook, mas aquele não usa estes helpers.)
 
 const START_TRIAL_EVENT_ID_KEY = 'eco.sono.capi.start_trial_event_id';
 
@@ -193,10 +198,10 @@ const PURCHASE_EVENT_ID_KEY = 'eco.sono.capi.purchase_event_id';
 
 /**
  * Gera (ou recupera) o `event_id` do Purchase e o persiste no sessionStorage.
- * É enviado ao backend no `create-with-card` (para o webhook reusar o mesmo id ao
- * disparar o Purchase no início do trial) e reutilizado ao disparar o Pixel —
+ * É enviado ao backend no `POST /api/payments/sono-pix` (para o webhook reusar o
+ * mesmo id ao confirmar o Pix) e reutilizado ao disparar o Pixel do browser —
  * assim o sinal do browser e o sinal server-side do Purchase são deduplicados
- * pela Meta. Espelha `ensureStartTrialEventId`.
+ * pela Meta.
  */
 export function ensurePurchaseEventId(): string {
   try {

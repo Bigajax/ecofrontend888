@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Loader2, ShieldCheck } from 'lucide-react';
 import { MpCardForm } from '@/components/assinar/MpCardForm';
-import { CancelInfoModal } from '@/components/sono/CancelInfoModal';
+import { CancelInfoModal } from './CancelInfoModal';
 import mixpanel from '@/lib/mixpanel';
 import { apiUrl } from '@/config/apiBase';
 import { supabase } from '@/lib/supabaseClient';

@@ -23,7 +23,7 @@ vi.mock('@/lib/fbpixel', () => ({
   resolveFbc: vi.fn(() => ''),
 }));
 
-import { SonoInlineCard } from '../SonoInlineCard';
+import { SonoInlineCard } from './SonoInlineCard';
 
 describe('SonoInlineCard — modal "cancele quando quiser"', () => {
   beforeEach(() => vi.clearAllMocks());
