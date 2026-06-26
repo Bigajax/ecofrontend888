@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, ChevronRight, Heart, Lock, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Heart, Lock, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,6 +44,9 @@ interface SonoInlineCheckoutProps {
   openAt: SonoCheckoutStep | null;
   onUnlocked: () => void;
   onDismiss: () => void;
+  /** Quando definido, o passo `offer` mostra um "<" pra voltar à meditação no ponto
+   *  salvo (só quando a oferta foi aberta a partir da Noite 1 em andamento). */
+  onBackToMeditation?: () => void;
 }
 
 type ReflectionAnswer = 'yes' | 'little' | 'no';
@@ -103,7 +106,7 @@ async function upsertEvent(patch: Record<string, unknown>) {
   }
 }
 
-export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInlineCheckoutProps) {
+export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMeditation }: SonoInlineCheckoutProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { step, open, goTo, close } = useSonoCheckoutState();
@@ -280,6 +283,15 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
     void upsertEvent({ reached_offer: true, max_step_reached: 6 });
   };
 
+  // Saída explícita da reflexão SEM responder: a pergunta deixa de ser beco sem
+  // saída (antes, só o botão pós-resposta levava à oferta). Vai direto pra 'offer'
+  // — "Oferta vista" dispara pelo efeito — sem o evento de continuidade (não houve
+  // resposta), pra não conflar a leitura do funil.
+  const skipToOffer = () => {
+    goTo('offer');
+    void upsertEvent({ reached_offer: true, max_step_reached: 6 });
+  };
+
   const startCheckout = () => {
     void upsertEvent({ cta_clicked: true });
     trackSonoGuestCheckoutClicked({ source: getSource(), guestId: getGuestId() });
@@ -303,6 +315,13 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
   const handleStayInSono = () => {
     close();
     onDismiss();
+  };
+
+  // "<" do passo offer: volta pra Noite 1 no ponto salvo. Fecha o overlay (limpa
+  // ?checkout=/sessionStorage) e o pai remonta o player a partir do progresso salvo.
+  const handleBackToMeditation = () => {
+    close();
+    onBackToMeditation?.();
   };
 
   // "Explorar o app" — leva o free pro app completo; a 2ª conversão acontece lá
@@ -424,8 +443,22 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
       )}
 
       {/* Top bar */}
-      <div className="relative z-10 flex flex-shrink-0 items-center justify-end px-6 pt-10 pb-2">
-        {canClose && (
+      <div className="relative z-10 flex flex-shrink-0 items-center justify-between px-6 pt-10 pb-2">
+        {/* "<" volta pra meditação no ponto salvo — só no passo offer e quando veio de lá. */}
+        {onBackToMeditation && step === 'offer' ? (
+          <button
+            onClick={handleBackToMeditation}
+            className="flex h-8 items-center gap-1.5 rounded-full pl-2 pr-3 transition-colors"
+            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.10)' }}
+            aria-label="Voltar para a meditação"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" style={{ color: 'rgba(255,255,255,0.55)' }} />
+            <span className="text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>Meditação</span>
+          </button>
+        ) : (
+          <span />
+        )}
+        {canClose ? (
           <button
             onClick={handleDismiss}
             className="flex h-8 w-8 items-center justify-center rounded-full transition-colors"
@@ -434,6 +467,8 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
           >
             <X className="h-3.5 w-3.5" style={{ color: 'rgba(255,255,255,0.40)' }} />
           </button>
+        ) : (
+          <span />
         )}
       </div>
 
@@ -510,6 +545,15 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss }: SonoInline
                         Isso só ajuda a acompanhar seu ritual.
                       </p>
                     </div>
+
+                    {/* Saída sem responder — a pergunta não é mais terminal. */}
+                    <button
+                      onClick={skipToOffer}
+                      className="mt-5 text-[13px] font-semibold underline-offset-4 transition-colors hover:underline"
+                      style={{ color: 'rgba(196,181,253,0.7)' }}
+                    >
+                      Ver as próximas noites
+                    </button>
                   </>
                 ) : (
                   <>

@@ -108,6 +108,48 @@ export function trackSonoGuestCheckoutClicked(props?: SonoGuestEventProps): void
   trackSonoGuestEvent('Funil Protocolo · Checkout clicado', props);
 }
 
+// ── Banner de oferta — acesso antecipado aos 150s da Noite 1 ─────────────────
+// Variável testada vs baseline histórico (`completion_gated` = oferta só após 95%
+// do áudio; de facto a property abaixo ausente na janela 25–26/06). Este módulo é
+// dono de banner_version E do nome da variante: o evento "Banner oferta exibido"
+// dispara no GuestSonoPlayer (onTimeUpdate), que não acessa const do componente do
+// banner — manter as versões aqui evita sair `undefined` e sujar o dado. Bumpar
+// BANNER_VERSION ao trocar a copy do banner. Ver FUNIL_SONO_EXPERIENCIA.md.
+const BANNER_VERSION = 'v1';
+const OFFER_ACCESS_VARIANT = 'banner_150s';
+
+/** Registra a super property de atribuição do funil de acesso à oferta. Chamado no
+ *  mount da experiência (antes do checkout abrir) pra que TODOS os eventos do funil
+ *  — inclusive "Banner oferta exibido", que sai aos 150s, antes do checkout — herdem
+ *  offer_access_variant. Baseline histórico = property ausente (completion_gated). */
+export function registerSonoOfferAccessVariant(): void {
+  try {
+    mixpanel.register({ offer_access_variant: OFFER_ACCESS_VARIANT });
+  } catch {
+    // analytics — silencia erros
+  }
+}
+
+/** Banner de oferta exibido (cruzou 150s da Noite 1; o áudio segue tocando). 1×/sessão. */
+export function trackSonoGuestOfferBannerShown(props?: SonoGuestEventProps): void {
+  mixpanel.track('Funil Protocolo · Banner oferta exibido', {
+    source: props?.source || SRC,
+    guest_id: props?.guestId || sessionStorage.getItem('eco.sono.guest_id') || localStorage.getItem('eco_guest_id') || 'guest',
+    product_key: PRODUCT_KEY,
+    banner_version: BANNER_VERSION,
+  });
+}
+
+/** Banner de oferta clicado → abre o checkout em 'offer'. Precede "Oferta vista". */
+export function trackSonoGuestOfferBannerClicked(props?: SonoGuestEventProps): void {
+  mixpanel.track('Funil Protocolo · Banner oferta clicado', {
+    source: props?.source || SRC,
+    guest_id: props?.guestId || sessionStorage.getItem('eco.sono.guest_id') || localStorage.getItem('eco_guest_id') || 'guest',
+    product_key: PRODUCT_KEY,
+    banner_version: BANNER_VERSION,
+  });
+}
+
 /** QR/código Pix gerado e exibido — passo entre "Checkout clicado" e "Pix aprovado". */
 export function trackSonoGuestPixGerado(props?: SonoGuestEventProps): void {
   trackSonoGuestEvent('Funil Protocolo · Pix gerado', props);

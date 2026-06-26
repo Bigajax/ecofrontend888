@@ -16,6 +16,7 @@ import {
   trackSonoGuestPageViewed,
   trackSonoGuestAppInviteClicked,
   trackSonoGuestEarlyExit,
+  registerSonoOfferAccessVariant,
 } from '@/lib/mixpanelSonoGuestEvents';
 import { fbqCustom } from '@/lib/fbpixel';
 import { GuestSonoPlayer } from '@/components/sono-guest/GuestSonoPlayer';
@@ -133,6 +134,9 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   // do webhook refletir no entitlement.
   const [checkoutEntry, setCheckoutEntry] = useState<SonoCheckoutStep | null>(null);
   const [justSubscribed, setJustSubscribed] = useState(false);
+  // Oferta foi aberta a partir da meditação em andamento (banner 150s ou saída
+  // antecipada)? Se sim, o checkout mostra "<" pra voltar à Noite 1 no ponto salvo.
+  const [offerFromMeditation, setOfferFromMeditation] = useState(false);
   const isPaid =
     isVipUser || isPremiumUser || isTrialActive || hasSonoEntitlement || justSubscribed;
   const openCheckout = useCallback((opts?: { origin?: string }) => {
@@ -170,6 +174,10 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     if (!isGuestSono) return;
     sessionStorage.setItem('eco.sono.guest_id', guestId);
     sessionStorage.setItem('eco.sono.source', source || 'sono_paid_traffic');
+    // Atribuição do funil de acesso à oferta (super property) ANTES de qualquer
+    // evento — assim todos herdam offer_access_variant, inclusive "Banner oferta
+    // exibido" que sai aos 150s, antes do checkout abrir. Baseline = property ausente.
+    registerSonoOfferAccessVariant();
     const resolvedSource = source || 'sono_paid_traffic';
     const track = () => {
       // Evento canônico do passo "experiência vista" — ver mixpanelSonoGuestEvents
@@ -303,6 +311,27 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     trackSonoGuestEarlyExit({ source: source || 'sono_paid_traffic', guestId, progressPct });
     setGuestPlayback(null);
     if (isPaid) return; // premium já pagou — sem oferta
+    setOfferFromMeditation(true); // veio da meditação → permite voltar pra ela
+    setCheckoutEntry('offer');
+  };
+
+  // Voltar do checkout pra Noite 1 no ponto onde parou ("<" do passo offer). Remonta
+  // o player com o startTime salvo (saveProgress foi chamado ao clicar no banner /
+  // sair). Fecha o checkout.
+  const handleResumeMeditation = () => {
+    setOfferFromMeditation(false);
+    setCheckoutEntry(null);
+    setGuestPlayback({ startTime: getSavedGuestNight1Progress() ?? 0 });
+  };
+
+  // Banner de oferta (150s): abre a oferta direto, sem a reflexão. Reusa a rota do
+  // early-exit (fecha o player → checkout em 'offer'), mas SEM o evento "Saída
+  // antecipada" — o banner tem o próprio par exibido/clicado. O áudio só para aqui,
+  // no clique; ao surgir aos 150s ele segue tocando (no GuestSonoPlayer).
+  const handleGuestNight1OfferBanner = () => {
+    setGuestPlayback(null);
+    if (isPaid) return; // premium não vê oferta
+    setOfferFromMeditation(true); // veio da meditação → permite voltar pra ela
     setCheckoutEntry('offer');
   };
 
@@ -311,6 +340,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     setCompletedNights(prev => new Set([...prev, 1]));
     setGuestPlayback(null);
     if (isPaid) return; // premium já pagou — sem quiz/oferta
+    setOfferFromMeditation(false); // áudio concluído → nada pra retomar
     setCheckoutEntry('reflection');
     localStorage.setItem(`eco.sono.offer_modal_shown.${guestId}`, 'true');
     trackSonoGuestNight1Completed({ source: source || 'sono_paid_traffic', guestId });
@@ -512,6 +542,8 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
           onComplete={handleGuestNight1Complete}
           onBack={() => setGuestPlayback(null)}
           onEarlyExit={handleGuestNight1EarlyExit}
+          offerBannerEnabled={!isPaid}
+          onOfferBanner={handleGuestNight1OfferBanner}
         />
       ) : (
       <div
@@ -1112,9 +1144,14 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
           openAt={checkoutEntry}
           onUnlocked={() => {
             setJustSubscribed(true);
+            setOfferFromMeditation(false);
             setCheckoutEntry(null);
           }}
-          onDismiss={() => setCheckoutEntry(null)}
+          onDismiss={() => {
+            setOfferFromMeditation(false);
+            setCheckoutEntry(null);
+          }}
+          onBackToMeditation={offerFromMeditation ? handleResumeMeditation : undefined}
         />
       )}
 

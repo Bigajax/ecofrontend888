@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronLeft, Play, Pause, SkipBack, SkipForward, Music, Volume2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import BackgroundSoundsModal from '@/components/BackgroundSoundsModal';
-import MeditationAmbientScreen from '@/components/meditation/MeditationAmbientScreen';
 import { type Sound, getAllSounds } from '@/data/sounds';
 import { useMediaSession } from '@/hooks/useMediaSession';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
@@ -11,7 +10,10 @@ import {
   trackGuestAudio50,
   trackGuestAudio75,
   trackGuestAudioCompleted,
+  trackSonoGuestOfferBannerShown,
+  trackSonoGuestOfferBannerClicked,
 } from '@/lib/mixpanelSonoGuestEvents';
+import { SonoOfferBanner } from './SonoOfferBanner';
 import { LS_KEYS } from './types';
 
 const night1 = PROTOCOL_NIGHTS[0]!;
@@ -33,8 +35,15 @@ const fadeSlideUp = {
 /** Abaixo deste tempo ouvido, a saída é direta (sem assediar quem abriu sem querer). */
 const EARLY_EXIT_MIN_SECONDS = 45;
 
-/** Inatividade até a tela de descanso (ambient) aparecer durante o play. */
-const AMBIENT_INACTIVITY_MS = 15 * 1000;
+/** Segundos de reprodução até o banner de oferta surgir (áudio ~8min → ~2,5min,
+ *  bem antes dos 95% que hoje são o único caminho natural pra oferta). Tuning fácil
+ *  aqui; rollback = passar offerBannerEnabled={false} no pai. */
+export const OFFER_BANNER_AT_SECONDS = 150;
+
+/** Marca, na sessão, que o banner já fez sua entrada (evento + chime). Ao voltar do
+ *  checkout pra meditação (botão "<") o player remonta; sem isto o banner reapareceria
+ *  expandido + tocaria o chime + duplicaria "Banner oferta exibido". */
+const BANNER_SHOWN_KEY = 'eco.sono.offer_banner_shown';
 
 interface GuestSonoPlayerProps {
   startTime: number;
@@ -43,6 +52,11 @@ interface GuestSonoPlayerProps {
   /** Saída antecipada (Voltar após ouvir um trecho relevante, antes dos 95%):
    *  o pai abre a oferta das próximas noites em vez de só devolver à listagem. */
   onEarlyExit?: (progressPct: number) => void;
+  /** Liga o banner de acesso antecipado à oferta (= guest não-pago). Default off. */
+  offerBannerEnabled?: boolean;
+  /** Clique no banner → o pai abre o checkout em 'offer' (mesma rota do onEarlyExit;
+   *  o áudio só para aqui, no clique — ao surgir aos 150s ele segue tocando). */
+  onOfferBanner?: () => void;
 }
 
 function saveProgress(time: number): void {
@@ -57,7 +71,14 @@ function formatTime(seconds: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: GuestSonoPlayerProps) {
+export function GuestSonoPlayer({
+  startTime,
+  onComplete,
+  onBack,
+  onEarlyExit,
+  offerBannerEnabled = false,
+  onOfferBanner,
+}: GuestSonoPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const bgAudioRef = useRef<HTMLAudioElement>(null);
   // Web Audio: amplifica a voz 2x e controla o volume do fundo via GainNode
@@ -66,10 +87,18 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
   const gainRef = useRef<GainNode | null>(null);
   const bgGainRef = useRef<GainNode | null>(null);
   const completedRef = useRef(false);
-  const analyticsRef = useRef({ fired25: false, fired50: false, fired75: false });
+  const analyticsRef = useRef({ fired25: false, fired50: false, fired75: false, firedBanner150: false });
   const hasPlayedOnce = useRef(false);
+  // Lido dentro do listener de timeupdate (cujo efeito não re-assina por isto):
+  // ref evita closure obsoleta se isPaid/offerBannerEnabled mudar a meio da sessão.
+  const offerBannerEnabledRef = useRef(offerBannerEnabled);
+  offerBannerEnabledRef.current = offerBannerEnabled;
+  // O banner já apareceu nesta sessão (antes deste mount)? Se sim, ao remontar (volta
+  // do checkout) ele entra já minimizado, sem chime nem novo evento.
+  const bannerShownBeforeMountRef = useRef(
+    typeof sessionStorage !== 'undefined' && sessionStorage.getItem(BANNER_SHOWN_KEY) === '1',
+  );
   const lockTipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const ambientTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const volumePopoverRef = useRef<HTMLDivElement>(null);
   const volumeSliderRef = useRef<HTMLDivElement>(null);
@@ -79,7 +108,7 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
   const [duration, setDuration] = useState(0);
   const [showLockTip, setShowLockTip] = useState(false);
   const [showExitSheet, setShowExitSheet] = useState(false);
-  const [showAmbient, setShowAmbient] = useState(false);
+  const [bannerVisible, setBannerVisible] = useState(false);
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
   const [showVolumePopover, setShowVolumePopover] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -92,29 +121,43 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
   // no iOS (sem Web Audio) é ignorado — paridade com MeditationPlayerPage.
   const [meditationVolume, setMeditationVolume] = useState(60);
 
-  // Tela de descanso (ambient): some o controle e mostra só o cronômetro após
-  // inatividade durante o play. Espelha MeditationPlayerPage. Reset a cada
-  // interação (toque/mouse/clique no container).
-  const resetAmbientTimer = () => {
-    if (ambientTimerRef.current) clearTimeout(ambientTimerRef.current);
-    setShowAmbient(false);
-    ambientTimerRef.current = setTimeout(() => setShowAmbient(true), AMBIENT_INACTIVITY_MS);
-  };
-  const clearAmbientTimer = () => {
-    if (ambientTimerRef.current) clearTimeout(ambientTimerRef.current);
-    ambientTimerRef.current = null;
-  };
+  // Chime suave ao surgir o banner de oferta (150s): a pessoa está de fone, então um
+  // "ding-dong" calmo (duas senoides em quinta justa, decay longo, volume baixo)
+  // chama a atenção sem quebrar o clima. Reusa o AudioContext do player (desktop) ou
+  // cria um curtinho (iOS pode ficar suspenso → no-op silencioso). Só enfeite.
+  const playOfferChime = useCallback(() => {
+    try {
+      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Ctx) return;
+      const owned = !audioCtxRef.current;
+      const ctx: AudioContext = audioCtxRef.current ?? new Ctx();
+      if (ctx.state === 'suspended') void ctx.resume();
 
-  // Liga/desliga o timer da tela de descanso conforme o play.
-  useEffect(() => {
-    if (isPlaying) {
-      resetAmbientTimer();
-    } else {
-      clearAmbientTimer();
-      setShowAmbient(false);
+      const now = ctx.currentTime;
+      const master = ctx.createGain();
+      master.gain.value = 0.18; // baixinho — não compete com a voz
+      master.connect(ctx.destination);
+
+      // Duas notas em leve arpejo (A5 → E6): "ding-dong" gostoso.
+      [{ freq: 880, at: 0 }, { freq: 1320, at: 0.16 }].forEach(({ freq, at }) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, now + at);
+        g.gain.exponentialRampToValueAtTime(1, now + at + 0.03);   // attack curto
+        g.gain.exponentialRampToValueAtTime(0.0001, now + at + 1.3); // decay longo
+        osc.connect(g).connect(master);
+        osc.start(now + at);
+        osc.stop(now + at + 1.4);
+      });
+
+      // Se criamos um ctx só pro chime, fecha depois (não interfere no áudio do player).
+      if (owned) window.setTimeout(() => { void ctx.close(); }, 2200);
+    } catch {
+      // som é enfeite — silencia falhas
     }
-    return () => clearAmbientTimer();
-  }, [isPlaying]);
+  }, []);
 
   const scheduleLockTip = () => {
     lockTipTimerRef.current = setTimeout(() => {
@@ -230,6 +273,15 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
     onEarlyExit?.(pct);
   };
 
+  // Clique no banner de oferta: "clicado" precede "Oferta vista". O pai abre o
+  // checkout em 'offer' (mesma rota do onEarlyExit) — é lá que o áudio para. Salva o
+  // ponto atual ANTES de desmontar pra o "<" do checkout retomar de onde parou.
+  const handleOfferBannerClick = () => {
+    if (audioRef.current && audioRef.current.currentTime > 0) saveProgress(audioRef.current.currentTime);
+    trackSonoGuestOfferBannerClicked();
+    onOfferBanner?.();
+  };
+
   // Auto-play on mount
   useEffect(() => {
     const audio = audioRef.current;
@@ -302,6 +354,23 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
       if (!analyticsRef.current.fired50 && pct >= 50) { analyticsRef.current.fired50 = true; trackGuestAudio50(); }
       if (!analyticsRef.current.fired75 && pct >= 75) { analyticsRef.current.fired75 = true; trackGuestAudio75(); }
 
+      // Banner de oferta aos 150s (segundos absolutos de reprodução, não %): surge
+      // com o áudio seguindo — só lê currentTime, não pausa/reinicia. 1×/sessão.
+      if (
+        offerBannerEnabledRef.current &&
+        !analyticsRef.current.firedBanner150 &&
+        t >= OFFER_BANNER_AT_SECONDS
+      ) {
+        analyticsRef.current.firedBanner150 = true;
+        setBannerVisible(true);
+        // Evento + chime só na 1ª aparição da sessão (não ao remontar voltando do checkout).
+        if (sessionStorage.getItem(BANNER_SHOWN_KEY) !== '1') {
+          sessionStorage.setItem(BANNER_SHOWN_KEY, '1');
+          playOfferChime();
+          trackSonoGuestOfferBannerShown();
+        }
+      }
+
       if (!completedRef.current && d > 0 && (t / d) >= 0.95) {
         completedRef.current = true;
         saveProgress(0);
@@ -332,7 +401,7 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
       audio.removeEventListener('ended', onEnded);
       audio.removeEventListener('pause', onPause);
     };
-  }, [onComplete]);
+  }, [onComplete, playOfferChime]);
 
   // Background audio sync with play state
   useEffect(() => {
@@ -468,9 +537,6 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
     <div
       className="relative font-primary overflow-hidden flex flex-col"
       style={{ height: '100dvh', touchAction: 'pan-y', backgroundColor: 'var(--bg-primary)' }}
-      onTouchStart={resetAmbientTimer}
-      onMouseMove={resetAmbientTimer}
-      onClick={resetAmbientTimer}
     >
       {/* ── Background blurred image ── */}
       <div
@@ -623,6 +689,14 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
             </button>
           </motion.div>
         </div>
+
+        {/* Banner de oferta (150s) — NO FLUXO, acima dos controles: nunca cobre
+            play/pause nem a barra de progresso. Só guest não-pago (offerBannerEnabled). */}
+        {offerBannerEnabled && bannerVisible && (
+          <div className="w-full flex-shrink-0">
+            <SonoOfferBanner onClick={handleOfferBannerClick} startMinimized={bannerShownBeforeMountRef.current} />
+          </div>
+        )}
 
         {/* ── Bottom controls ── */}
         <motion.div
@@ -862,15 +936,6 @@ export function GuestSonoPlayer({ startTime, onComplete, onBack, onEarlyExit }: 
         onSelectSound={(sound) => setSelectedBackground(sound)}
         backgroundVolume={backgroundVolume}
         onVolumeChange={setBackgroundVolume}
-      />
-
-      {/* Tela de descanso (ambient) — só durante o play e fora do sheet de saída */}
-      <MeditationAmbientScreen
-        visible={showAmbient && isPlaying && !showExitSheet}
-        elapsedSeconds={Math.floor(currentTime)}
-        meditationTitle={night1.title}
-        category="sono"
-        onDismiss={resetAmbientTimer}
       />
 
       {/* Exit-intent sheet — saída antecipada da Noite 1 */}
