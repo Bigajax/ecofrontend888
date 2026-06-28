@@ -1,14 +1,34 @@
 import mixpanel from './mixpanel';
+import { isPaywallFoco } from './paywallFoco';
+import { isEntradaSemModal } from './entradaSemModal';
+import { isOfertaBonus } from './ofertaBonus';
 
 const SRC = 'sono_noite_1';
 const PRODUCT_KEY = 'protocolo_sono_7_noites';
+
+/** Gatilho que abriu a oferta (KISS #4). Separa a conversão do banner (baseline)
+ *  da do paywall focado nos eventos Oferta vista / Checkout clicado / Pix gerado. */
+export type OfferOrigem = 'banner' | 'noite_bloqueada' | 'continuar_n2';
 
 type SonoGuestEventProps = {
   guestId?: string;
   source?: string;
   nightId?: string;
   context?: string;
+  origem?: OfferOrigem;
 };
+
+/** Lê o gatilho da oferta gravado em sessionStorage no momento da abertura
+ *  (sobrevive ao remount do RootProviders, como o guest_id/source). */
+function getOfferOrigem(): OfferOrigem | undefined {
+  try {
+    const o = sessionStorage.getItem('eco.sono.offer_origem');
+    if (o === 'banner' || o === 'noite_bloqueada' || o === 'continuar_n2') return o;
+  } catch {
+    // sessionStorage indisponível — omite origem
+  }
+  return undefined;
+}
 
 function trackSonoGuestEvent(eventName: string, props: SonoGuestEventProps = {}): void {
   mixpanel.track(eventName, {
@@ -17,6 +37,7 @@ function trackSonoGuestEvent(eventName: string, props: SonoGuestEventProps = {})
     product_key: PRODUCT_KEY,
     ...(props.nightId ? { night_id: props.nightId } : {}),
     ...(props.context ? { context: props.context } : {}),
+    ...(props.origem ? { origem: props.origem } : {}),
   });
 }
 
@@ -101,11 +122,11 @@ export function trackSonoGuestContinueNight2(props?: SonoGuestEventProps): void 
 }
 
 export function trackSonoGuestOfferViewed(props?: SonoGuestEventProps): void {
-  trackSonoGuestEvent('Funil Protocolo · Oferta vista', props);
+  trackSonoGuestEvent('Funil Protocolo · Oferta vista', { ...props, origem: props?.origem ?? getOfferOrigem() });
 }
 
 export function trackSonoGuestCheckoutClicked(props?: SonoGuestEventProps): void {
-  trackSonoGuestEvent('Funil Protocolo · Checkout clicado', props);
+  trackSonoGuestEvent('Funil Protocolo · Checkout clicado', { ...props, origem: props?.origem ?? getOfferOrigem() });
 }
 
 // ── Banner de oferta — acesso antecipado aos 150s da Noite 1 ─────────────────
@@ -125,6 +146,38 @@ const OFFER_ACCESS_VARIANT = 'banner_150s';
 export function registerSonoOfferAccessVariant(): void {
   try {
     mixpanel.register({ offer_access_variant: OFFER_ACCESS_VARIANT });
+  } catch {
+    // analytics — silencia erros
+  }
+}
+
+/** Super property do teste "paywall focado" (KISS #4) — registrada no mount da
+ *  experiência pra que TODOS os eventos do funil confirmem o estado do rollout. */
+export function registerPaywallFoco(): void {
+  try {
+    mixpanel.register({ paywall_foco: isPaywallFoco() });
+  } catch {
+    // analytics — silencia erros
+  }
+}
+
+/** Super property do teste "entrada sem modal" — registrada no mount da experiência
+ *  pra que "Contexto pré-áudio visto" e "Noite 1 iniciada" carreguem o estado do
+ *  rollout e dê pra ler o efeito na transição Sessão → Noite 1 iniciada. */
+export function registerEntradaSemModal(): void {
+  try {
+    mixpanel.register({ entrada_sem_modal: isEntradaSemModal() });
+  } catch {
+    // analytics — silencia erros
+  }
+}
+
+/** Super property do bônus EcoDream na oferta — registrada no mount da experiência
+ *  pra que "Oferta vista" (e demais eventos) confirmem se o value-stack estava
+ *  exibido, permitindo ler o efeito vs baseline. */
+export function registerOfertaBonus(): void {
+  try {
+    mixpanel.register({ oferta_bonus_ecodream: isOfertaBonus() });
   } catch {
     // analytics — silencia erros
   }
@@ -152,7 +205,7 @@ export function trackSonoGuestOfferBannerClicked(props?: SonoGuestEventProps): v
 
 /** QR/código Pix gerado e exibido — passo entre "Checkout clicado" e "Pix aprovado". */
 export function trackSonoGuestPixGerado(props?: SonoGuestEventProps): void {
-  trackSonoGuestEvent('Funil Protocolo · Pix gerado', props);
+  trackSonoGuestEvent('Funil Protocolo · Pix gerado', { ...props, origem: props?.origem ?? getOfferOrigem() });
 }
 
 export function trackSonoGuestOfferDismissed(props?: SonoGuestEventProps): void {
@@ -230,6 +283,18 @@ export function trackGuestProtocolViewed(): void {
 
 export function trackGuestUnlockClicked(nightId: string): void {
   mixpanel.track('Funil Protocolo · Desbloquear clicado', { source: SRC, night_id: nightId });
+}
+
+/** KISS #4 — tocar numa Noite bloqueada (2–7) abre a oferta focada. `noite` = 2..7.
+ *  `paywall_foco` vem por super property (registrada no mount da experiência). */
+export function trackSonoGuestLockedNightClicked(p: { noite: number }): void {
+  mixpanel.track('Funil Protocolo · Noite bloqueada clicada', {
+    source: SRC,
+    guest_id: sessionStorage.getItem('eco.sono.guest_id') || localStorage.getItem('eco_guest_id') || 'guest',
+    product_key: PRODUCT_KEY,
+    noite: p.noite,
+    origem: 'noite_bloqueada',
+  });
 }
 
 /** @deprecated fluxo guest antigo (sono-guest screens) — fora do caminho ativo. */

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Heart, Lock, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Heart, Lock, Moon, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +19,8 @@ import {
 } from '@/lib/mixpanelSonoGuestEvents';
 import mixpanel from '@/lib/mixpanel';
 import { trackWithCAPI } from '@/lib/fbpixel';
+import { isPaywallFoco } from '@/lib/paywallFoco';
+import { isOfertaBonus } from '@/lib/ofertaBonus';
 import { getSonoGuestId } from '@/lib/sonoGuestId';
 import { useSonoCheckoutState, type SonoCheckoutStep } from './useSonoCheckoutState';
 import { SonoInlineSignup } from './SonoInlineSignup';
@@ -113,6 +115,10 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
 
   const [answer, setAnswer] = useState<ReflectionAnswer | null>(null);
   const [price, setPrice] = useState<number>(FALLBACK_SONO_PRICE);
+  // Gatilho que abriu a oferta (KISS #4). Define a proeminência: nos novos
+  // gatilhos (noite bloqueada / continuar n2) o card R$37 vai pro topo; no banner
+  // (baseline) a lista das 7 noites vem primeiro.
+  const [offerOrigem, setOfferOrigem] = useState<string | null>(null);
   const convertedTrackedRef = useRef(false);
   const funnelSourceRef = useRef(false);
   const appInviteShownRef = useRef(false);
@@ -158,7 +164,15 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   // "Oferta vista" — dispara quando o passo offer aparece, por qualquer caminho
   // (reflexão→oferta ou abertura direta via openAt='offer' vinda da landing).
   useEffect(() => {
-    if (step !== 'offer' || offerViewedRef.current) return;
+    if (step !== 'offer') return;
+    // Lê o gatilho (gravado no sessionStorage por quem abriu a oferta) pra decidir
+    // a proeminência do card. Reavalia toda vez que o passo vira 'offer'.
+    try {
+      setOfferOrigem(sessionStorage.getItem('eco.sono.offer_origem'));
+    } catch {
+      setOfferOrigem(null);
+    }
+    if (offerViewedRef.current) return;
     offerViewedRef.current = true;
     trackSonoGuestOfferViewed({ source: getSource(), guestId: getGuestId() });
     // Meta Pixel + CAPI: oferta das 7 noites exibida.
@@ -278,6 +292,9 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   };
 
   const goToOffer = () => {
+    // KISS #4 — "Continuar Noite 2" é um dos gatilhos do paywall focado: oferta
+    // com o card R$37 no topo.
+    sessionStorage.setItem('eco.sono.offer_origem', 'continuar_n2');
     trackSonoGuestContinueNight2({ source: getSource(), guestId: getGuestId() });
     goTo('offer');
     void upsertEvent({ reached_offer: true, max_step_reached: 6 });
@@ -339,6 +356,16 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   const canClose = step === 'reflection' || step === 'offer' || step === 'pix';
   // Resposta selecionada = mostra a tela de continuidade (concluiu Noite 1).
   const answered = answer !== null;
+
+  // Proeminência da oferta (KISS #4): nos gatilhos novos (noite bloqueada /
+  // continuar n2) com o kill-switch ON, o card R$37 sobe pro topo (flex order);
+  // o banner (baseline) mantém a lista das 7 noites primeiro.
+  const offerFocused =
+    isPaywallFoco() && (offerOrigem === 'noite_bloqueada' || offerOrigem === 'continuar_n2');
+
+  // Value-stack: EcoDream como bônus no card da oferta (+ CTA "+ bônus"). Flag ON
+  // por padrão; OFF volta o card/CTA originais.
+  const ofertaBonus = isOfertaBonus();
 
   // Reenquadramento da arte (retrato) para DESKTOP (paisagem). O mesmo `cover` num
   // viewport largo-baixo zooma demais e joga o emblema/relevo pro meio, colidindo
@@ -689,8 +716,9 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                   desacelerar mente e corpo.
                 </p>
 
-                {/* Lista das 7 noites — badges numerados, Noite 1 concluída */}
-                <div className="mb-6 w-full space-y-2">
+                {/* Lista das 7 noites — badges numerados, Noite 1 concluída.
+                    No paywall focado desce pra baixo do card (order); baseline = topo. */}
+                <div className="mb-6 w-full space-y-2" style={{ order: offerFocused ? 2 : 1 }}>
                   {PROTOCOL_NIGHTS.map((night) => {
                     const isDone = night.night === 1;
                     return (
@@ -788,6 +816,9 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                   })}
                 </div>
 
+                {/* Bloco do preço (card R$37 + CTA + selo). No paywall focado sobe
+                    pro topo (order:1); baseline = depois da lista (order:2). */}
+                <div className="flex w-full flex-col items-center" style={{ order: offerFocused ? 1 : 2 }}>
                 {/* Card de preço — Pix, pagamento único + bullets */}
                 <div
                   className="eco-glass-lg mb-5 w-full rounded-2xl p-4 text-left"
@@ -822,6 +853,30 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                       </div>
                     ))}
                   </div>
+
+                  {/* Bônus EcoDream — value-stack (tema noturno/lua dourada do EcoDream).
+                      Honesto como "incluído": o EcoDream vem com a conta criada pós-Pix. */}
+                  {ofertaBonus && (
+                    <div
+                      className="mt-3.5 flex items-center gap-3 border-t pt-3.5 text-left"
+                      style={{ borderColor: 'rgba(255,255,255,0.08)' }}
+                    >
+                      <span
+                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl"
+                        style={{ background: 'rgba(238,192,121,0.14)', border: '1px solid rgba(238,192,121,0.34)' }}
+                      >
+                        <Moon className="h-4 w-4" style={{ color: '#EEC079' }} fill="currentColor" />
+                      </span>
+                      <div className="flex min-w-0 flex-col">
+                        <span className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: '#EEC079' }}>
+                          Bônus · EcoDream
+                        </span>
+                        <span className="text-[13px] leading-snug" style={{ color: 'rgba(232,226,255,0.82)' }}>
+                          Interprete seus sonhos com a Eco
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* CTA */}
@@ -834,7 +889,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                   }}
                 >
                   <Sparkles className="h-4 w-4" />
-                  Liberar Noite 2 e as 7 noites
+                  {ofertaBonus ? 'Liberar as 7 noites + bônus' : 'Liberar Noite 2 e as 7 noites'}
                 </button>
 
                 {/* Rodapé */}
@@ -844,10 +899,11 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                     Pagamento via Pix · Liberação automática
                   </span>
                 </div>
+                </div>
                 <button
                   onClick={handleDismiss}
                   className="mt-3 text-[12px] transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                  style={{ color: 'rgba(255,255,255,0.3)', order: 3 }}
                 >
                   Agora não
                 </button>

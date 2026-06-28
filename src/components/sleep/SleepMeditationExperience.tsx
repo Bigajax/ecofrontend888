@@ -14,10 +14,17 @@ import {
   trackSonoGuestNight1Completed,
   trackSonoGuestNight1Started,
   trackSonoGuestPageViewed,
+  trackSonoGuestPreAudioView,
   trackSonoGuestAppInviteClicked,
   trackSonoGuestEarlyExit,
+  trackSonoGuestLockedNightClicked,
   registerSonoOfferAccessVariant,
+  registerPaywallFoco,
+  registerEntradaSemModal,
+  registerOfertaBonus,
 } from '@/lib/mixpanelSonoGuestEvents';
+import { isPaywallFoco } from '@/lib/paywallFoco';
+import { isEntradaSemModal } from '@/lib/entradaSemModal';
 import { fbqCustom } from '@/lib/fbpixel';
 import { GuestSonoPlayer } from '@/components/sono-guest/GuestSonoPlayer';
 import { LS_KEYS } from '@/components/sono-guest/types';
@@ -178,6 +185,11 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     // evento — assim todos herdam offer_access_variant, inclusive "Banner oferta
     // exibido" que sai aos 150s, antes do checkout abrir. Baseline = property ausente.
     registerSonoOfferAccessVariant();
+    // Estado dos rollouts (super properties): paywall focado (KISS #4) e entrada
+    // sem modal — pra confirmar o A/B sequencial nos dados de TODO o funil.
+    registerPaywallFoco();
+    registerEntradaSemModal();
+    registerOfertaBonus();
     const resolvedSource = source || 'sono_paid_traffic';
     const track = () => {
       // Evento canônico do passo "experiência vista" — ver mixpanelSonoGuestEvents
@@ -332,6 +344,8 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     setGuestPlayback(null);
     if (isPaid) return; // premium não vê oferta
     setOfferFromMeditation(true); // veio da meditação → permite voltar pra ela
+    // Baseline: o banner mantém o layout lista-primeiro (origem='banner').
+    sessionStorage.setItem('eco.sono.offer_origem', 'banner');
     setCheckoutEntry('offer');
   };
 
@@ -351,6 +365,16 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     const accessible = isNightAccessible(night, isPaid, isVipUser);
     if (!accessible) {
       trackGuestUnlockClicked(night.id);
+      // KISS #4 — paywall focado: tocar numa Noite bloqueada abre a oferta R$37
+      // como overlay focado (card no topo) em 1 toque, sem o gate de Noite 1 e sem
+      // o modal legado. Atrás do kill-switch paywall_foco.
+      if (isPaywallFoco()) {
+        sessionStorage.setItem('eco.sono.offer_origem', 'noite_bloqueada');
+        trackSonoGuestLockedNightClicked({ noite: night.night });
+        setOfferFromMeditation(false);
+        setCheckoutEntry('offer');
+        return;
+      }
       if (!night1IsCompleted) {
         setShowStartNightPrompt(true);
         return;
@@ -366,8 +390,13 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
       // muro. A conta só é pedida na oferta (pós-Noite 1), depois de sentir o
       // valor — o GuestSonoPlayer roda sem auth (estado em sessionStorage).
       // Antes do áudio, planta o contexto do protocolo (Noite 1 de 7, próximas
-      // pagas) num modal — exceto para quem já pagou (mensagem não se aplica).
+      // pagas). Com entrada_sem_modal ON o priming vira subtítulo inline no player
+      // e vamos DIRETO ao player (sem o modal bloqueante); o evento "Contexto
+      // pré-áudio visto" é reanexado aqui pra não abrir buraco no funil.
       if (isPaid) {
+        startGuestNight1Playback();
+      } else if (isEntradaSemModal()) {
+        trackSonoGuestPreAudioView({ source: source || 'sono_paid_traffic', guestId });
         startGuestNight1Playback();
       } else {
         setPreAudioOpen(true);
@@ -544,6 +573,10 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
           onEarlyExit={handleGuestNight1EarlyExit}
           offerBannerEnabled={!isPaid}
           onOfferBanner={handleGuestNight1OfferBanner}
+          // entrada_sem_modal: sem o modal, o priming vira subtítulo no player e o
+          // play exige 1 gesto (sem autoplay — política de webview/iOS).
+          autoPlay={!isEntradaSemModal()}
+          showPriming={isEntradaSemModal() && !isPaid}
         />
       ) : (
       <div

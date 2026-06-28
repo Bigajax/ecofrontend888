@@ -57,6 +57,13 @@ interface GuestSonoPlayerProps {
   /** Clique no banner → o pai abre o checkout em 'offer' (mesma rota do onEarlyExit;
    *  o áudio só para aqui, no clique — ao surgir aos 150s ele segue tocando). */
   onOfferBanner?: () => void;
+  /** Tenta tocar no mount (default `true`, comportamento legado). Com
+   *  entrada_sem_modal ON o pai passa `false`: o player carrega pronto e o áudio
+   *  só inicia no toque do play (autoplay quebra em webview/iOS). */
+  autoPlay?: boolean;
+  /** Mostra o priming do protocolo como subtítulo sob o título (substitui o modal
+   *  de entrada quando entrada_sem_modal ON). */
+  showPriming?: boolean;
 }
 
 function saveProgress(time: number): void {
@@ -78,6 +85,8 @@ export function GuestSonoPlayer({
   onEarlyExit,
   offerBannerEnabled = false,
   onOfferBanner,
+  autoPlay = true,
+  showPriming = false,
 }: GuestSonoPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const bgAudioRef = useRef<HTMLAudioElement>(null);
@@ -303,7 +312,9 @@ export function GuestSonoPlayer({
         .catch(() => { /* autoplay blocked */ });
     };
 
-    audio.addEventListener('canplay', tryPlay, { once: true });
+    // Autoplay só no comportamento legado. Com autoPlay=false (entrada_sem_modal)
+    // o player carrega pronto e o áudio aguarda o gesto do usuário no play.
+    if (autoPlay) audio.addEventListener('canplay', tryPlay, { once: true });
 
     saveIntervalRef.current = setInterval(() => {
       if (audio.currentTime > 0) saveProgress(audio.currentTime);
@@ -624,6 +635,14 @@ export function GuestSonoPlayer({
             >
               {night1.title}
             </h1>
+            {showPriming && (
+              <p
+                className="mx-auto mt-2 max-w-[300px] text-[13px] leading-snug sm:max-w-[360px]"
+                style={{ color: 'rgba(214,203,250,0.62)', textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}
+              >
+                Hoje você começa desligando o estado de alerta. As próximas noites continuam esse processo.
+              </p>
+            )}
             <p className="text-sm mt-1 font-medium" style={{ color: 'rgba(196,181,253,0.50)' }}>
               {displayDuration}
             </p>
