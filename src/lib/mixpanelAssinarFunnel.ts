@@ -94,7 +94,14 @@ export function trackLandingVista(): void {
   track('Landing vista');
 }
 
-export function trackCtaClicado(p: { plan: PlanId; placement: string }): void {
+export function trackCtaClicado(p: {
+  plan: PlanId;
+  placement: string;
+  // Posição do CTA na landing /sono. Distingue os 3 CTAs primários (herói,
+  // sticky no scroll, oferta no rodapé) que disparam a mesma ação. Topbar/
+  // drawer/banner não recebem `posicao` (mantêm só `placement`).
+  posicao?: 'heroi' | 'sticky' | 'rodape';
+}): void {
   // O clique é seguido de navegação imediata; o batching padrão (flush a cada
   // 5s) perdia parte dos eventos. sendBeacon + send_immediately garantem o
   // envio mesmo com a página saindo.

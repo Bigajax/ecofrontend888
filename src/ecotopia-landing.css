@@ -15880,3 +15880,81 @@ body.eco-no-scroll {
   -webkit-text-fill-color: #2A1A06;
   box-shadow: 0 14px 34px rgba(221, 162, 74, 0.42);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CTA STICKY NO SCROLL (/sono)
+   Fixo no rodapé da viewport, surge entre o CTA do herói e o da oferta —
+   mantém uma ação à mão no meio das ~15 telas. position:fixed → fora do
+   fluxo, sem layout shift (CLS). Reusa .lp-sono-hero-cta-primary pra herdar
+   label + cor do CTA do herói. Fica no fim do arquivo de propósito.
+   ═══════════════════════════════════════════════════════════════════════ */
+.ecotopia-lp .lp-sono-sticky-bar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+  pointer-events: none;
+}
+.ecotopia-lp .lp-sono-sticky-bar[data-visible='true'] {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* botão herda a classe do herói; aqui só ajusta forma/tamanho pra barra */
+.ecotopia-lp .lp-sono-sticky-bar .lp-sono-hero-cta-primary {
+  display: inline-flex;
+  width: auto;
+  padding: 15px 40px;
+  font-size: 15px;
+}
+
+/* ── deite_se (noturna): barra fosca navy + botão de vidro ──
+   O sticky NÃO está dentro de .lp-sono-hero--deite, então não herda o override
+   de vidro do herói; replicamos aqui pra ele ficar legível sobre o navy. */
+.ecotopia-lp .lp-sono-sticky-bar--night {
+  background: rgba(14, 10, 38, 0.72);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 -8px 28px rgba(8, 6, 24, 0.4);
+}
+.ecotopia-lp .lp-sono-sticky-bar--night .lp-sono-hero-cta-primary {
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(2px) saturate(130%);
+  backdrop-filter: blur(2px) saturate(130%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF;
+  text-shadow: 0 2px 10px rgba(8, 6, 24, 0.7);
+  box-shadow: 0 10px 26px rgba(8, 6, 24, 0.3);
+}
+.ecotopia-lp .lp-sono-sticky-bar--night .lp-sono-hero-cta-primary:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* mobile: botão ocupa a largura confortável da barra */
+@media (max-width: 767px) {
+  .ecotopia-lp .lp-sono-sticky-bar .lp-sono-hero-cta-primary {
+    width: 100%;
+    max-width: 440px;
+    padding: 16px 22px;
+    border-radius: 16px;
+  }
+}
+
+/* reduced motion: sem deslize, só fade */
+@media (prefers-reduced-motion: reduce) {
+  .ecotopia-lp .lp-sono-sticky-bar,
+  .ecotopia-lp .lp-sono-sticky-bar[data-visible='true'] {
+    transform: none;
+    transition: opacity 0.28s ease;
+  }
+}

@@ -7,8 +7,10 @@ import MethodMarquee from '@/components/landing/MethodMarquee';
 import SonoDorSection from '@/components/landing/SonoDorSection';
 import SonoFaqSection from '@/components/landing/SonoFaqSection';
 import { useScrollReveal } from '@/components/landing/useScrollReveal';
+import SonoStickyCta from '@/components/sono/SonoStickyCta';
 import { useSonoHeroVariant } from '@/hooks/useSonoHeroVariant';
 import { useSonoSectionInView } from '@/hooks/useSonoSectionInView';
+import { useStickyCtaVisibility } from '@/hooks/useStickyCtaVisibility';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { trackLandingVista, trackCtaClicado } from '@/lib/mixpanelAssinarFunnel';
 import { fbq, trackWithCAPI } from '@/lib/fbpixel';
@@ -272,8 +274,12 @@ export default function EcotopiaSonoPage() {
   // Meta Pixel + CAPI: clique em qualquer CTA "7 dias grátis" = intenção de
   // iniciar o trial. Dispara antes da navegação (SPA) do <Link> para /assinar,
   // então o fetch do CAPI não é cancelado por unload.
-  const trackTrialCta = (plan: 'annual' | 'monthly', from: string) => {
-    trackCtaClicado({ plan, placement: from });
+  const trackTrialCta = (
+    plan: 'annual' | 'monthly',
+    from: string,
+    posicao?: 'heroi' | 'sticky' | 'rodape',
+  ) => {
+    trackCtaClicado({ plan, placement: from, posicao });
     void trackWithCAPI('InitiateCheckout', {
       value: planValue(plan),
       currency: PRICE.currency,
@@ -309,10 +315,22 @@ export default function EcotopiaSonoPage() {
     isConviteHero
       ? `/sono/experiencia?source=${from}`
       : `/assinar?step=plan&plan=${plan}&from=${from}`;
-  const sonoCtaClick = (from: string, plan: 'monthly' | 'annual' = 'monthly') => () =>
-    isConviteHero
-      ? trackCtaClicado({ plan, placement: `${from}_experiencia` })
-      : trackTrialCta(plan, from);
+  const sonoCtaClick =
+    (
+      from: string,
+      plan: 'monthly' | 'annual' = 'monthly',
+      posicao?: 'heroi' | 'sticky' | 'rodape',
+    ) =>
+    () =>
+      isConviteHero
+        ? trackCtaClicado({ plan, placement: `${from}_experiencia`, posicao })
+        : trackTrialCta(plan, from, posicao);
+
+  // Refs nas âncoras (CTA do herói e da oferta) que controlam o sticky: ele
+  // aparece quando nenhuma das duas está visível.
+  const heroCtaRef = useRef<HTMLAnchorElement>(null);
+  const offerCtaRef = useRef<HTMLAnchorElement>(null);
+  const stickyVisible = useStickyCtaVisibility([heroCtaRef, offerCtaRef]);
 
   return (
     <div className="ecotopia-lp lp-sono">
@@ -374,9 +392,10 @@ export default function EcotopiaSonoPage() {
             </p>
 
             <Link
+              ref={heroCtaRef}
               to={sonoCtaTo('sono_hero')}
               className="lp-sono-hero-cta-primary scroll-reveal stagger-2"
-              onClick={sonoCtaClick('sono_hero')}
+              onClick={sonoCtaClick('sono_hero', 'monthly', 'heroi')}
             >
               {isConviteHero && (
                 <svg className="lp-sono-cta-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -1411,9 +1430,10 @@ export default function EcotopiaSonoPage() {
                 como o resto da landing. Nas variantes de venda, segue pro /assinar
                 (trial) — sonoCtaTo/sonoCtaClick resolvem o destino e o tracking. */}
             <Link
+              ref={offerCtaRef}
               to={sonoCtaTo('sono_oferta_cta', selectedOfferPlan)}
               className="lp-sono-offer-cta scroll-reveal stagger-4"
-              onClick={sonoCtaClick('sono_oferta_cta', selectedOfferPlan)}
+              onClick={sonoCtaClick('sono_oferta_cta', selectedOfferPlan, 'rodape')}
             >
               {isConviteHero ? 'Começar meu ritual' : CTA_LABEL}
             </Link>
@@ -1501,6 +1521,16 @@ export default function EcotopiaSonoPage() {
       )}
 
       <EcotopiaFooter night={isConviteHero} />
+
+      {/* CTA fixo no scroll: mesmo destino/label do herói, surge entre o herói
+          e a oferta. posicao='sticky' no tracking. */}
+      <SonoStickyCta
+        to={sonoCtaTo('sono_sticky')}
+        label={hero.cta}
+        onClick={sonoCtaClick('sono_sticky', 'monthly', 'sticky')}
+        visible={stickyVisible}
+        night={isConviteHero}
+      />
     </div>
   );
 }
