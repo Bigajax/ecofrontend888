@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Heart, Lock, Moon, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Heart, Lock, Moon, Plus, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,6 +16,7 @@ import {
   trackSonoGuestPostNight1Response,
   trackSonoGuestPostNight1QuestionView,
   trackSonoGuestContinueNight2,
+  trackSonoGuestBonusInfoOpened,
 } from '@/lib/mixpanelSonoGuestEvents';
 import mixpanel from '@/lib/mixpanel';
 import { trackWithCAPI } from '@/lib/fbpixel';
@@ -25,6 +26,7 @@ import { getSonoGuestId } from '@/lib/sonoGuestId';
 import { useSonoCheckoutState, type SonoCheckoutStep } from './useSonoCheckoutState';
 import { SonoInlineSignup } from './SonoInlineSignup';
 import { SonoInlinePix } from './SonoInlinePix';
+import { SonoEcoDreamBonusModal } from './SonoEcoDreamBonusModal';
 import { readSonoLifetime } from './sonoLifetime';
 
 /**
@@ -119,6 +121,8 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   // gatilhos (noite bloqueada / continuar n2) o card R$37 vai pro topo; no banner
   // (baseline) a lista das 7 noites vem primeiro.
   const [offerOrigem, setOfferOrigem] = useState<string | null>(null);
+  // Modal explicativo do bônus EcoDream (abre ao tocar na linha do bônus).
+  const [bonusInfoOpen, setBonusInfoOpen] = useState(false);
   const convertedTrackedRef = useRef(false);
   const funnelSourceRef = useRef(false);
   const appInviteShownRef = useRef(false);
@@ -855,19 +859,26 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                   </div>
 
                   {/* Bônus EcoDream — value-stack (tema noturno/lua dourada do EcoDream).
-                      Honesto como "incluído": o EcoDream vem com a conta criada pós-Pix. */}
+                      Honesto como "incluído": o EcoDream vem com a conta criada pós-Pix.
+                      Tocável → abre o modal explicativo ("o que é isto?"). */}
                   {ofertaBonus && (
-                    <div
-                      className="mt-3.5 flex items-center gap-3 border-t pt-3.5 text-left"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBonusInfoOpen(true);
+                        trackSonoGuestBonusInfoOpened({ source: getSource(), guestId: getGuestId() });
+                      }}
+                      className="group mt-3.5 flex w-full items-center gap-3 border-t pt-3.5 text-left transition-colors"
                       style={{ borderColor: 'rgba(255,255,255,0.08)' }}
+                      aria-label="Saiba mais sobre o bônus EcoDream"
                     >
                       <span
-                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl"
+                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-colors"
                         style={{ background: 'rgba(238,192,121,0.14)', border: '1px solid rgba(238,192,121,0.34)' }}
                       >
                         <Moon className="h-4 w-4" style={{ color: '#EEC079' }} fill="currentColor" />
                       </span>
-                      <div className="flex min-w-0 flex-col">
+                      <div className="flex min-w-0 flex-1 flex-col">
                         <span className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: '#EEC079' }}>
                           Bônus · EcoDream
                         </span>
@@ -875,7 +886,15 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                           Interprete seus sonhos com a Eco
                         </span>
                       </div>
-                    </div>
+                      {/* Afundância de "tocável": pílula discreta "o que é?" */}
+                      <span
+                        className="flex flex-shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10.5px] font-semibold transition-colors group-hover:brightness-110"
+                        style={{ background: 'rgba(238,192,121,0.12)', border: '1px solid rgba(238,192,121,0.28)', color: '#EEC079' }}
+                      >
+                        <Plus className="h-3 w-3" />
+                        o que é?
+                      </span>
+                    </button>
                   )}
                 </div>
 
@@ -1112,6 +1131,9 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Modal explicativo do bônus EcoDream — sobe acima do overlay (z-[9999]). */}
+      <SonoEcoDreamBonusModal open={bonusInfoOpen} onClose={() => setBonusInfoOpen(false)} />
     </motion.div>
   );
 }

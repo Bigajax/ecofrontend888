@@ -33,6 +33,7 @@ import { SonoPostExperienceModal } from '@/components/sono/SonoPostExperienceMod
 import { SonoInlineCheckout } from '@/components/sono/SonoInlineCheckout';
 import { SonoExperienceHero } from '@/components/sono/SonoExperienceHero';
 import { SonoPreAudioModal } from '@/components/sono/SonoPreAudioModal';
+import { SonoEcoDreamEntryCard } from '@/components/sono/SonoEcoDreamEntryCard';
 import type { SonoCheckoutStep } from '@/components/sono/useSonoCheckoutState';
 import { markRitualNightCompleted, isRitualCompletedToday } from '@/hooks/useRitualProgress';
 import {
@@ -1094,6 +1095,12 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
             </motion.div>
           </section>
         )}
+
+        {/* ══════════════════════════════════════════════════════════
+            ECODREAM — porta do bônus prometido na oferta. Só logado/pago
+            (a feature exige conta); leva a /app/dream.
+            ══════════════════════════════════════════════════════════ */}
+        {!isGuestSono && isPaid && <SonoEcoDreamEntryCard />}
 
       </main>
 

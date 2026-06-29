@@ -183,6 +183,12 @@ export function registerOfertaBonus(): void {
   }
 }
 
+/** Linha "BÔNUS · EcoDream" do card da oferta tocada → abre o modal explicativo.
+ *  Mede quanto interesse o value-stack desperta (e se vale aprofundar a copy). */
+export function trackSonoGuestBonusInfoOpened(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Bônus EcoDream aberto', { ...props, origem: props?.origem ?? getOfferOrigem() });
+}
+
 /** Banner de oferta exibido (cruzou 150s da Noite 1; o áudio segue tocando). 1×/sessão. */
 export function trackSonoGuestOfferBannerShown(props?: SonoGuestEventProps): void {
   mixpanel.track('Funil Protocolo · Banner oferta exibido', {
