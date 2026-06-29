@@ -26,8 +26,12 @@ const DREAM_STYLES = `
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
   }
-  .dream-textarea::placeholder { color: rgba(237,229,208,0.2); }
+  .dream-textarea::placeholder { color: rgba(237,229,208,0.34); }
   .dream-textarea { caret-color: #C9A55A; }
+  @keyframes sonhouGlow {
+    0%, 100% { filter: drop-shadow(0 2px 16px rgba(201,165,90,0.3)); }
+    50% { filter: drop-shadow(0 2px 22px rgba(245,224,154,0.45)); }
+  }
   .dream-prose h1,
   .dream-prose h2 { font-size: 18px; font-weight: 600; color: #EDE5D0; margin-top: 1.5em; margin-bottom: 0.5em; }
   .dream-prose h3,
@@ -62,10 +66,10 @@ function DreamHistoryItem({ dream }: { dream: DreamRow }) {
 
   return (
     <div
-      className="rounded-2xl overflow-hidden"
+      className="rounded-2xl overflow-hidden transition-colors"
       style={{
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        background: 'rgba(255,255,255,0.045)',
+        border: '1px solid rgba(255,255,255,0.1)',
       }}
     >
       <button
@@ -74,19 +78,19 @@ function DreamHistoryItem({ dream }: { dream: DreamRow }) {
       >
         <div className="flex-1 min-w-0">
           <p
-            className="text-[11px] mb-1 tracking-wide"
-            style={{ color: 'rgba(201,165,90,0.55)' }}
+            className="text-[11px] font-semibold mb-1.5 tracking-[0.04em] uppercase"
+            style={{ color: 'rgba(214,178,104,0.78)' }}
           >
             {formatDate(dream.created_at)}
           </p>
           <p
             className="text-[14px] leading-snug line-clamp-2"
-            style={{ color: 'rgba(237,229,208,0.7)' }}
+            style={{ color: 'rgba(237,229,208,0.85)' }}
           >
             {dream.dream_text}
           </p>
         </div>
-        <span className="mt-0.5 shrink-0" style={{ color: 'rgba(201,165,90,0.4)' }}>
+        <span className="mt-0.5 shrink-0" style={{ color: 'rgba(201,165,90,0.6)' }}>
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </span>
       </button>
@@ -104,10 +108,10 @@ function DreamHistoryItem({ dream }: { dream: DreamRow }) {
               className="dream-prose px-4 pb-4 pt-3"
               style={{
                 borderTop: '1px solid rgba(255,255,255,0.06)',
-                fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
+                fontFamily: 'var(--font-serif)',
                 fontSize: '14px',
                 lineHeight: '1.8',
-                color: 'rgba(237,229,208,0.78)',
+                color: 'rgba(237,229,208,0.82)',
               }}
             >
               <ReactMarkdown>{dream.interpretation}</ReactMarkdown>
@@ -182,11 +186,8 @@ function MoonOrb() {
       </div>
 
       <p
-        className="text-[12px] tracking-[0.22em] uppercase"
-        style={{
-          color: 'rgba(201,165,90,0.5)',
-          fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
-        }}
+        className="text-[11px] font-bold tracking-[0.22em] uppercase"
+        style={{ color: 'rgba(214,178,104,0.7)' }}
       >
         decifrando seu sonho
       </p>
@@ -209,18 +210,6 @@ export default function EcoDreamPage() {
     resetar,
     history,
   } = useEcoDream();
-
-  // Load Cormorant Garamond for this page only
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href =
-      'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap';
-    document.head.appendChild(link);
-    return () => {
-      if (document.head.contains(link)) document.head.removeChild(link);
-    };
-  }, []);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -311,32 +300,42 @@ export default function EcoDreamPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.08 }}
-                    className="text-[11px] tracking-[0.24em] uppercase mb-3"
-                    style={{ color: 'rgba(201,165,90,0.6)' }}
+                    className="flex items-center gap-2.5 text-[11px] font-bold tracking-[0.2em] uppercase mb-3"
+                    style={{ color: 'rgba(214,178,104,0.85)' }}
                   >
+                    <span aria-hidden className="inline-block h-px w-6" style={{ background: 'linear-gradient(90deg, transparent, rgba(214,178,104,0.7))' }} />
                     Portal dos Sonhos
                   </motion.p>
                   <motion.h2
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.14 }}
-                    className="font-light leading-tight"
+                    className="font-display font-bold leading-[1.05]"
                     style={{
-                      fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
-                      fontSize: 'clamp(28px, 8vw, 36px)',
-                      color: '#EDE5D0',
-                      letterSpacing: '-0.01em',
+                      fontSize: 'clamp(32px, 8vw, 44px)',
+                      color: '#F4EEDD',
+                      letterSpacing: '-0.02em',
                     }}
                   >
                     O que você<br />
-                    <em style={{ color: 'rgba(201,165,90,0.9)', fontStyle: 'italic' }}>sonhou?</em>
+                    <span
+                      style={{
+                        background: 'linear-gradient(102deg, #F8E7A6 0%, #E2BE6E 48%, #C9A55A 100%)',
+                        WebkitBackgroundClip: 'text',
+                        backgroundClip: 'text',
+                        color: 'transparent',
+                        animation: 'sonhouGlow 5s ease-in-out infinite',
+                      }}
+                    >
+                      sonhou?
+                    </span>
                   </motion.h2>
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="mt-2.5 text-[13px] leading-relaxed"
-                    style={{ color: 'rgba(237,229,208,0.4)' }}
+                    className="eco-subtitle mt-3.5 text-[16px] leading-relaxed"
+                    style={{ color: 'rgba(237,229,208,0.7)' }}
                   >
                     Descreva com detalhes. Eco interpreta pelo olhar de Freud e Jung.
                   </motion.p>
@@ -360,12 +359,11 @@ export default function EcoDreamPage() {
                 >
                   <textarea
                     ref={textareaRef}
-                    className="dream-textarea w-full resize-none bg-transparent px-5 py-5 outline-none min-h-[160px] leading-relaxed"
+                    className="dream-textarea w-full resize-none bg-transparent px-5 py-5 outline-none min-h-[160px] leading-relaxed font-sans"
                     style={{
                       color: '#EDE5D0',
-                      fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
-                      fontSize: '16px',
-                      lineHeight: '1.75',
+                      fontSize: '15px',
+                      lineHeight: '1.7',
                     }}
                     value={dreamText}
                     onChange={(e) => setDreamText(e.target.value)}
@@ -379,7 +377,7 @@ export default function EcoDreamPage() {
                     className="flex items-center justify-between px-5 py-3"
                     style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
                   >
-                    <span className="text-[11px]" style={{ color: 'rgba(237,229,208,0.22)' }}>
+                    <span className="text-[11px] tabular-nums" style={{ color: 'rgba(237,229,208,0.42)' }}>
                       {dreamText.length}/2000
                     </span>
                     <motion.button
@@ -391,7 +389,7 @@ export default function EcoDreamPage() {
                         background: canInterpret
                           ? 'linear-gradient(135deg, #C9A55A 0%, #A07530 100%)'
                           : 'rgba(255,255,255,0.05)',
-                        color: canInterpret ? '#07091A' : 'rgba(237,229,208,0.25)',
+                        color: canInterpret ? '#07091A' : 'rgba(237,229,208,0.4)',
                         cursor: canInterpret ? 'pointer' : 'not-allowed',
                         letterSpacing: '0.025em',
                         boxShadow: canInterpret ? '0 2px 12px rgba(201,165,90,0.3)' : 'none',
@@ -425,16 +423,16 @@ export default function EcoDreamPage() {
                   }}
                 >
                   <p
-                    className="text-[11px] tracking-[0.22em] uppercase mb-2"
-                    style={{ color: 'rgba(201,165,90,0.5)' }}
+                    className="text-[11px] font-semibold tracking-[0.22em] uppercase mb-2"
+                    style={{ color: 'rgba(214,178,104,0.7)' }}
                   >
                     Seu sonho
                   </p>
                   <p
                     className="leading-relaxed italic"
                     style={{
-                      color: 'rgba(237,229,208,0.6)',
-                      fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
+                      color: 'rgba(237,229,208,0.75)',
+                      fontFamily: 'var(--font-serif)',
                       fontSize: '15px',
                       lineHeight: '1.7',
                     }}
@@ -468,7 +466,7 @@ export default function EcoDreamPage() {
                     <div
                       className="dream-prose"
                       style={{
-                        fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
+                        fontFamily: 'var(--font-serif)',
                         fontSize: '16px',
                         lineHeight: '1.9',
                         color: 'rgba(237,229,208,0.88)',
@@ -544,8 +542,8 @@ export default function EcoDreamPage() {
                   style={{ background: 'rgba(255,255,255,0.06)' }}
                 />
                 <p
-                  className="text-[11px] tracking-[0.2em] uppercase shrink-0"
-                  style={{ color: 'rgba(237,229,208,0.28)' }}
+                  className="text-[11px] font-medium tracking-[0.22em] uppercase shrink-0"
+                  style={{ color: 'rgba(237,229,208,0.5)' }}
                 >
                   Sonhos anteriores
                 </p>
