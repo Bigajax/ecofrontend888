@@ -16,6 +16,7 @@ type SonoGuestEventProps = {
   nightId?: string;
   context?: string;
   origem?: OfferOrigem;
+  ctaConclusaoVariant?: string;
 };
 
 /** Lê o gatilho da oferta gravado em sessionStorage no momento da abertura
@@ -38,6 +39,7 @@ function trackSonoGuestEvent(eventName: string, props: SonoGuestEventProps = {})
     ...(props.nightId ? { night_id: props.nightId } : {}),
     ...(props.context ? { context: props.context } : {}),
     ...(props.origem ? { origem: props.origem } : {}),
+    ...(props.ctaConclusaoVariant ? { cta_conclusao_variant: props.ctaConclusaoVariant } : {}),
   });
 }
 

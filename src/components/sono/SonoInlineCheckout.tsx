@@ -299,7 +299,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
     // KISS #4 — "Continuar Noite 2" é um dos gatilhos do paywall focado: oferta
     // com o card R$37 no topo.
     sessionStorage.setItem('eco.sono.offer_origem', 'continuar_n2');
-    trackSonoGuestContinueNight2({ source: getSource(), guestId: getGuestId() });
+    trackSonoGuestContinueNight2({ source: getSource(), guestId: getGuestId(), ctaConclusaoVariant: 'liberar_6_noites' });
     goTo('offer');
     void upsertEvent({ reached_offer: true, max_step_reached: 6 });
   };
@@ -677,9 +677,20 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                       }}
                     >
                       <Sparkles className="h-4 w-4" />
-                      Continuar para a Noite 2
+                      Liberar as próximas 6 noites
                       <ArrowRight className="h-4 w-4" />
                     </motion.button>
+
+                    {/* Fine-print — deixa claro ANTES do clique que o próximo passo é pago */}
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.56 }}
+                      className="mt-3 text-center text-[12px] leading-snug"
+                      style={{ color: 'rgba(199,184,240,0.55)' }}
+                    >
+                      As 6 noites restantes + EcoDream · R$37 no Pix · pagamento único, sem assinatura
+                    </motion.p>
                   </>
                 )}
               </motion.div>
