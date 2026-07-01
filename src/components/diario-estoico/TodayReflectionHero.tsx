@@ -3,6 +3,7 @@ import { Volume2, Loader2, BookOpen, Pause, ChevronDown } from 'lucide-react';
 import { useReflectionAudio } from '@/hooks/useReflectionAudio';
 import { DIARIO_GUEST } from '@/constants/diarioGuestCopy';
 import type { DailyMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
+import { buildReflectionSpeech } from '@/utils/diarioEstoico/reflectionSpeech';
 
 interface TodayReflectionHeroProps {
   maxim: DailyMaxim;
@@ -56,15 +57,15 @@ const TodayReflectionHero: React.FC<TodayReflectionHeroProps> = ({
   const commentBudget = Math.max(0, budget - quote.length);
   const commentPreview = commentBudget > 0 ? cutAtWord(comment, commentBudget) : '';
   const hasMoreForGuest = quoteShown.length < quote.length || commentPreview.length < comment.length;
-  // Texto que o áudio lê no modo guest (apenas a prévia).
-  const guestAudioText = [
-    stripQuotes(maxim.title),
-    quoteShown,
-    maxim.author + (maxim.source ? `, ${maxim.source}` : ''),
-    commentPreview,
-  ]
-    .filter(Boolean)
-    .join('. ');
+  // Texto que o áudio lê no modo guest (apenas a prévia) — normalizado p/ TTS
+  // com as mesmas pausas e limpeza da reflexão completa.
+  const guestAudioText = buildReflectionSpeech({
+    title: maxim.title,
+    text: quoteShown,
+    author: maxim.author,
+    source: maxim.source,
+    comment: commentPreview,
+  });
 
   // ── Expandir citação (apenas logado) ────────────────────────────────────────
   const [expanded, setExpanded] = useState(false);

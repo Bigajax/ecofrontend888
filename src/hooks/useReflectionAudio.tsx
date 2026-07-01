@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import AudioPlayerOverlay from '@/components/AudioPlayerOverlay';
 import { prepareAudioStreamUrl, gerarAudioDaMensagem, warmupVoiceBackend } from '@/api/voiceApi';
 import type { DailyMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
+import { buildReflectionSpeechFromMaxim } from '@/utils/diarioEstoico/reflectionSpeech';
 import mixpanel from '@/lib/mixpanel';
 
 type AudioOverlayState = {
@@ -11,21 +12,6 @@ type AudioOverlayState = {
   audio: HTMLAudioElement;
   needsManualStart: boolean;
 };
-
-/** Tira aspas tipográficas das pontas para a leitura em voz alta soar natural. */
-const stripQuotes = (s: string) =>
-  String(s ?? '').replace(/^[\s"“”'']+/, '').replace(/[\s"“”'']+$/, '').trim();
-
-/** Monta o texto lido: título + citação + autor/fonte + comentário. */
-const buildReflectionText = (maxim: DailyMaxim): string =>
-  [
-    stripQuotes(maxim.title),
-    stripQuotes(maxim.text),
-    maxim.author + (maxim.source ? `, ${maxim.source}` : ''),
-    maxim.comment ? stripQuotes(maxim.comment) : '',
-  ]
-    .filter(Boolean)
-    .join('. ');
 
 /**
  * Hook reutilizável para tocar uma reflexão do Diário em áudio (TTS — mesma voz da ECO
@@ -81,7 +67,7 @@ export function useReflectionAudio(source = 'diario') {
 
     try {
       // textOverride: usado para ler só uma prévia (ex.: 40% no modo guest).
-      const texto = textOverride && textOverride.trim() ? textOverride.trim() : buildReflectionText(maxim);
+      const texto = textOverride && textOverride.trim() ? textOverride.trim() : buildReflectionSpeechFromMaxim(maxim);
 
       // Streaming progressivo; cai para o buffered (data URL) se o prepare/stream falhar.
       let mediaUrl: string;
