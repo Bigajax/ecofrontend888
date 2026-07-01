@@ -68,12 +68,12 @@ describe('SonoInlineCheckout · proeminência da oferta (KISS #4)', () => {
     expect(orderOf(nightsLabel)).toBe('2');
   });
 
-  it('banner (baseline): lista das 7 noites primeiro, card depois', async () => {
+  it('banner: agora também price-first (o Pix não fica mais enterrado)', async () => {
     renderOfferAt('banner');
     const cta = await screen.findByText(/Liberar.*7 noites/);
     const nightsLabel = await screen.findByText('Noite 7');
-    await waitFor(() => expect(orderOf(nightsLabel)).toBe('1'));
-    expect(orderOf(cta)).toBe('2');
+    await waitFor(() => expect(orderOf(cta)).toBe('1'));
+    expect(orderOf(nightsLabel)).toBe('2');
   });
 
   it('kill-switch OFF: mantém baseline mesmo vindo de noite_bloqueada', async () => {

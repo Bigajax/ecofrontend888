@@ -13,8 +13,8 @@ import { useSonoSectionInView } from '@/hooks/useSonoSectionInView';
 import { useStickyCtaVisibility } from '@/hooks/useStickyCtaVisibility';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { trackLandingVista, trackCtaClicado } from '@/lib/mixpanelAssinarFunnel';
-import { fbq, trackWithCAPI } from '@/lib/fbpixel';
-import { OFFER, PRICE, planValue, SONO_PIX_PRICE_LABEL } from '@/constants/offerCopy';
+import { fbq } from '@/lib/fbpixel';
+import { OFFER, SONO_PIX_PRICE_LABEL } from '@/constants/offerCopy';
 
 // ─── Dados das seções ────────────────────────────────────────────────
 
@@ -271,24 +271,6 @@ export default function EcotopiaSonoPage() {
     });
   }, []);
 
-  // Meta Pixel + CAPI: clique em qualquer CTA "7 dias grátis" = intenção de
-  // iniciar o trial. Dispara antes da navegação (SPA) do <Link> para /assinar,
-  // então o fetch do CAPI não é cancelado por unload.
-  const trackTrialCta = (
-    plan: 'annual' | 'monthly',
-    from: string,
-    posicao?: 'heroi' | 'sticky' | 'rodape',
-  ) => {
-    trackCtaClicado({ plan, placement: from, posicao });
-    void trackWithCAPI('InitiateCheckout', {
-      value: planValue(plan),
-      currency: PRICE.currency,
-      contentName: 'Protocolo do Sono',
-      contentCategory: 'sono',
-      pixelExtra: { plan, source: from },
-    });
-  };
-
   const [activeTab, setActiveTab] = useState<string>(TABS[0].id);
   const activeTabData = TABS.find((t) => t.id === activeTab) ?? TABS[0];
 
@@ -306,15 +288,12 @@ export default function EcotopiaSonoPage() {
   }, []);
   const heroNight = PROTOCOL_NIGHTS[heroNightIndex];
 
-  // Variante "convite" (deite_se): TODOS os CTAs da landing levam pra experiência
-  // guest (ouvir a Noite 1) em vez do /assinar — a página inteira funila pra
-  // experimentar primeiro, e a venda acontece no checkout inline da experiência.
-  // Nas outras 3 variantes (venda), nada muda: seguem pro /assinar com trial.
+  // `isConviteHero` segue controlando o VISUAL/copy da landing por variante de
+  // herói (não mexemos no criativo). Mas o ROTEAMENTO do pagamento agora é único:
+  // TODO CTA (qualquer variante) leva pra experiência guest (Noite 1 grátis → Pix),
+  // desligando o caminho de cartão/assinatura (/assinar) pro tráfego pago.
   const isConviteHero = hero.variant === 'deite_se';
-  const sonoCtaTo = (from: string, plan: 'monthly' | 'annual' = 'monthly') =>
-    isConviteHero
-      ? `/sono/experiencia?source=${from}`
-      : `/assinar?step=plan&plan=${plan}&from=${from}`;
+  const sonoCtaTo = (from: string) => `/sono/experiencia?source=${from}`;
   const sonoCtaClick =
     (
       from: string,
@@ -322,9 +301,7 @@ export default function EcotopiaSonoPage() {
       posicao?: 'heroi' | 'sticky' | 'rodape',
     ) =>
     () =>
-      isConviteHero
-        ? trackCtaClicado({ plan, placement: `${from}_experiencia`, posicao })
-        : trackTrialCta(plan, from, posicao);
+      trackCtaClicado({ plan, placement: `${from}_experiencia`, posicao });
 
   // Refs nas âncoras (CTA do herói e da oferta) que controlam o sticky: ele
   // aparece quando nenhuma das duas está visível.
@@ -1431,7 +1408,7 @@ export default function EcotopiaSonoPage() {
                 (trial) — sonoCtaTo/sonoCtaClick resolvem o destino e o tracking. */}
             <Link
               ref={offerCtaRef}
-              to={sonoCtaTo('sono_oferta_cta', selectedOfferPlan)}
+              to={sonoCtaTo('sono_oferta_cta')}
               className="lp-sono-offer-cta scroll-reveal stagger-4"
               onClick={sonoCtaClick('sono_oferta_cta', selectedOfferPlan, 'rodape')}
             >

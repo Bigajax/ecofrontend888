@@ -9,7 +9,12 @@ import {
   resolveFbc,
 } from '@/lib/fbpixel';
 import { LIFETIME_LS_KEY } from './sonoLifetime';
-import { trackSonoGuestPixGerado } from '@/lib/mixpanelSonoGuestEvents';
+import {
+  trackSonoGuestPixGerado,
+  trackSonoGuestPixCopiado,
+  trackSonoGuestPixTelaSaiu,
+  trackSonoGuestPixTelaVoltou,
+} from '@/lib/mixpanelSonoGuestEvents';
 
 /**
  * Passo do Pix inline do funil do sono (substitui o cartão). Pagamento único,
@@ -175,7 +180,15 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
     pollTimerRef.current = setTimeout(tick, POLL_INTERVAL_MS);
 
     const onVisible = () => {
-      if (document.visibilityState === 'visible' && !approvedRef.current) void checkStatus();
+      if (approvedRef.current) return;
+      // Mede a travessia pro app do banco: saiu da tela (hidden) e voltou (visible).
+      if (document.visibilityState === 'hidden') {
+        trackSonoGuestPixTelaSaiu({ guestId });
+        return;
+      }
+      // De volta ao foco — reavalia o status (usuário pode ter pago no banco).
+      trackSonoGuestPixTelaVoltou({ guestId });
+      void checkStatus();
     };
     document.addEventListener('visibilitychange', onVisible);
 
@@ -184,7 +197,7 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
       if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [status, pix, checkStatus]);
+  }, [status, pix, checkStatus, guestId]);
 
   // Countdown de 15 min: reinicia a cada Pix novo e decrementa enquanto espera.
   useEffect(() => {
@@ -218,9 +231,11 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
       try { document.execCommand('copy'); } catch { /* ignore */ }
       document.body.removeChild(ta);
     }
+    // Passo da travessia: copiou o código, provável saída pro app do banco a seguir.
+    trackSonoGuestPixCopiado({ guestId });
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
-  }, [pix]);
+  }, [pix, guestId]);
 
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
   const ss = String(secondsLeft % 60).padStart(2, '0');
@@ -254,7 +269,7 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
           Copie o código Pix e pague no seu banco.
         </p>
         <p className="mt-2 text-[12.5px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.55)' }}>
-          Depois do pagamento, suas 7 noites são liberadas automaticamente. Não feche esta tela.
+          Pode sair pra pagar no app do banco e voltar — suas 7 noites são liberadas automaticamente.
         </p>
       </div>
 
@@ -322,6 +337,42 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
             {copied ? 'Código copiado!' : 'Copiar código Pix'}
           </button>
 
+          {/* Passos da travessia — reduz a ansiedade de sair pro app do banco.
+              É uma sequência real, por isso os marcadores numerados. */}
+          <ol
+            className="eco-glass-lg w-full rounded-2xl p-4"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.16)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
+            }}
+          >
+            {[
+              'Copie o código',
+              'Abra o app do seu banco',
+              'Cole em "Pix Copia e Cola"',
+              'Volte aqui — a liberação é automática',
+            ].map((step, i) => (
+              <li key={step} className={`flex items-center gap-3${i > 0 ? ' mt-2.5' : ''}`}>
+                <span
+                  className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-bold tabular-nums"
+                  style={{
+                    background: 'rgba(167,139,250,0.16)',
+                    border: '1px solid rgba(167,139,250,0.45)',
+                    color: '#C4B5FD',
+                  }}
+                >
+                  {i + 1}
+                </span>
+                <span className="text-[13px] leading-snug" style={{ color: 'rgba(232,226,255,0.85)' }}>
+                  {step}
+                </span>
+              </li>
+            ))}
+          </ol>
+
           {/* Card de preço + bullets */}
           <div
             className="eco-glass-lg w-full rounded-2xl p-4"
@@ -348,6 +399,12 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
               </div>
             </div>
           </div>
+
+          {/* Reassurance da travessia — sem promessa de estorno; aponta pro caminho
+              de verificação que já existe. */}
+          <p className="text-center text-[11.5px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.62)' }}>
+            Não liberou em até 5 min? É só tocar em “Já paguei, verificar” — a confirmação chega sozinha.
+          </p>
 
           {/* Timer (15 min) ou expirado */}
           {status === 'waiting' ? (

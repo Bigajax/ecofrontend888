@@ -361,11 +361,12 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   // Resposta selecionada = mostra a tela de continuidade (concluiu Noite 1).
   const answered = answer !== null;
 
-  // Proeminência da oferta (KISS #4): nos gatilhos novos (noite bloqueada /
-  // continuar n2) com o kill-switch ON, o card R$37 sobe pro topo (flex order);
-  // o banner (baseline) mantém a lista das 7 noites primeiro.
-  const offerFocused =
-    isPaywallFoco() && (offerOrigem === 'noite_bloqueada' || offerOrigem === 'continuar_n2');
+  // Proeminência da oferta (KISS #4): com o kill-switch ON (default), o card
+  // R$37 + CTA sobem pro topo (flex order) em TODAS as origens — antes o banner
+  // caía no baseline e enterrava o Pix embaixo da lista das 7 noites. VITE_PAYWALL_FOCO
+  // ='false' reverte pro layout com a lista primeiro.
+  const offerFocused = isPaywallFoco();
+  void offerOrigem;
 
   // Value-stack: EcoDream como bônus no card da oferta (+ CTA "+ bônus"). Flag ON
   // por padrão; OFF volta o card/CTA originais.
@@ -725,10 +726,11 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                   <span style={{ color: '#C4B5FD' }}>Noite 2.</span>
                 </h2>
 
-                {/* Corpo */}
-                <p className="mb-7 text-[14px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.7)' }}>
-                  Você começou o protocolo. As próximas 6 noites continuam o processo de
-                  desacelerar mente e corpo.
+                {/* Corpo — tira o foco da lista longa e leva direto pra oferta:
+                    o card R$37 agora vem logo abaixo (offerFocused). */}
+                <p className="mb-6 text-[14px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.72)' }}>
+                  Você deu o primeiro passo. Desbloqueie as 6 noites que faltam e leve o corpo
+                  até o fim do protocolo — <span className="font-semibold text-white">uma vez só, sem assinatura</span>.
                 </p>
 
                 {/* Lista das 7 noites — badges numerados, Noite 1 concluída.

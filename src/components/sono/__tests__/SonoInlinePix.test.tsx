@@ -13,9 +13,22 @@ vi.mock("@/lib/fbpixel", () => ({
   resolveFbc: vi.fn(() => "fbc.1"),
 }));
 
+// Eventos do funil (travessia do Pix) — mockados pra inspecionar as chamadas.
+vi.mock("@/lib/mixpanelSonoGuestEvents", () => ({
+  trackSonoGuestPixGerado: vi.fn(),
+  trackSonoGuestPixCopiado: vi.fn(),
+  trackSonoGuestPixTelaSaiu: vi.fn(),
+  trackSonoGuestPixTelaVoltou: vi.fn(),
+}));
+
 import { SonoInlinePix } from "../SonoInlinePix";
 import { readSonoLifetime, LIFETIME_LS_KEY } from "../sonoLifetime";
 import { trackWithCAPI } from "@/lib/fbpixel";
+import {
+  trackSonoGuestPixCopiado,
+  trackSonoGuestPixTelaSaiu,
+  trackSonoGuestPixTelaVoltou,
+} from "@/lib/mixpanelSonoGuestEvents";
 
 const PIX_RESPONSE = {
   id: "123456",
@@ -85,6 +98,57 @@ describe("SonoInlinePix", () => {
       "Purchase",
       expect.objectContaining({ value: 37, currency: "BRL" }),
       "evt_purchase_1",
+    );
+  });
+
+  it("mostra os passos numerados da travessia", async () => {
+    const fetchMock = mockFetchSequence({ status: "pending" });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SonoInlinePix price={37} guestId="guest_abc" onPaid={vi.fn()} />);
+
+    expect(await screen.findByText("Copie o código")).toBeTruthy();
+    expect(screen.getByText("Abra o app do seu banco")).toBeTruthy();
+    expect(screen.getByText('Cole em "Pix Copia e Cola"')).toBeTruthy();
+    expect(screen.getByText("Volte aqui — a liberação é automática")).toBeTruthy();
+  });
+
+  it("dispara 'Pix copiado' com o guest_id ao copiar o código", async () => {
+    const fetchMock = mockFetchSequence({ status: "pending" });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SonoInlinePix price={37} guestId="guest_abc" onPaid={vi.fn()} />);
+
+    fireEvent.click(await screen.findByText("Copiar código Pix"));
+
+    await waitFor(() =>
+      expect(trackSonoGuestPixCopiado).toHaveBeenCalledWith({ guestId: "guest_abc" }),
+    );
+  });
+
+  it("instrumenta a travessia (tela saiu/voltou) no visibilitychange", async () => {
+    const fetchMock = mockFetchSequence({ status: "pending" });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SonoInlinePix price={37} guestId="guest_abc" onPaid={vi.fn()} />);
+    await screen.findByText("Copiar código Pix");
+
+    const setVisibility = (state: DocumentVisibilityState) => {
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        get: () => state,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    };
+
+    setVisibility("hidden");
+    await waitFor(() =>
+      expect(trackSonoGuestPixTelaSaiu).toHaveBeenCalledWith({ guestId: "guest_abc" }),
+    );
+
+    setVisibility("visible");
+    await waitFor(() =>
+      expect(trackSonoGuestPixTelaVoltou).toHaveBeenCalledWith({ guestId: "guest_abc" }),
     );
   });
 });

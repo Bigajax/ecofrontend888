@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isInAppBrowser } from '../isInAppBrowser';
+import { isInAppBrowser, classifyBrowserEnv } from '../isInAppBrowser';
 
 // UAs reais (encurtados) dos navegadores embarcados que mais aparecem no tráfego pago.
 const UA = {
@@ -42,5 +42,29 @@ describe('isInAppBrowser', () => {
   it('é seguro com UA vazio/indefinido', () => {
     expect(isInAppBrowser('')).toBe(false);
     expect(isInAppBrowser(undefined)).toBe(false);
+  });
+});
+
+describe('classifyBrowserEnv', () => {
+  it('classifica o in-app do Instagram', () => {
+    expect(classifyBrowserEnv(UA.instagram)).toBe('inapp_instagram');
+  });
+
+  it('classifica o in-app do Facebook (iOS e Android)', () => {
+    expect(classifyBrowserEnv(UA.facebookIOS)).toBe('inapp_facebook');
+    expect(classifyBrowserEnv(UA.facebookAndroid)).toBe('inapp_facebook');
+  });
+
+  it('trata navegadores normais como browser_normal', () => {
+    expect(classifyBrowserEnv(UA.chromeAndroid)).toBe('browser_normal');
+    expect(classifyBrowserEnv(UA.safariIOS)).toBe('browser_normal');
+    expect(classifyBrowserEnv(UA.desktopChrome)).toBe('browser_normal');
+    // WebView genérico não é IG nem FB → normal (não temos como atribuir).
+    expect(classifyBrowserEnv(UA.androidWebView)).toBe('browser_normal');
+  });
+
+  it('é seguro com UA vazio/indefinido', () => {
+    expect(classifyBrowserEnv('')).toBe('browser_normal');
+    expect(classifyBrowserEnv(undefined)).toBe('browser_normal');
   });
 });

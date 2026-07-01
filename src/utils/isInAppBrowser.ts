@@ -21,3 +21,19 @@ export function isInAppBrowser(
   if (!ua) return false;
   return IN_APP_PATTERNS.some((re) => re.test(ua));
 }
+
+/** Ambiente do navegador, para instrumentar o funil pago (tráfego frio vem
+ *  quase todo de in-app do Instagram/Facebook, onde a travessia pro app do
+ *  banco é o ponto que mais quebra a conversão). Valores em snake_case pra
+ *  virar super property `browser_env` no Mixpanel. */
+export type BrowserEnv = 'inapp_instagram' | 'inapp_facebook' | 'browser_normal';
+
+export function classifyBrowserEnv(
+  ua: string | undefined = typeof navigator !== 'undefined' ? navigator.userAgent : '',
+): BrowserEnv {
+  if (ua) {
+    if (/Instagram/i.test(ua)) return 'inapp_instagram';
+    if (/FBAN|FBAV|FB_IAB/i.test(ua)) return 'inapp_facebook';
+  }
+  return 'browser_normal';
+}

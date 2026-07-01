@@ -2,6 +2,15 @@ import mixpanel from './mixpanel';
 import { isPaywallFoco } from './paywallFoco';
 import { isEntradaSemModal } from './entradaSemModal';
 import { isOfertaBonus } from './ofertaBonus';
+import { classifyBrowserEnv } from '@/utils/isInAppBrowser';
+
+/** Opções de envio imediato (sendBeacon) — pra eventos que precedem a saída da
+ *  página (copiar o Pix, ir pro app do banco), quando o batch normal pode não
+ *  chegar a dar flush. Mesmo padrão usado em mixpanelAssinarFunnel.ts. */
+const BEACON: { transport: 'sendBeacon'; send_immediately: true } = {
+  transport: 'sendBeacon',
+  send_immediately: true,
+};
 
 const SRC = 'sono_noite_1';
 const PRODUCT_KEY = 'protocolo_sono_7_noites';
@@ -214,6 +223,52 @@ export function trackSonoGuestOfferBannerClicked(props?: SonoGuestEventProps): v
 /** QR/código Pix gerado e exibido — passo entre "Checkout clicado" e "Pix aprovado". */
 export function trackSonoGuestPixGerado(props?: SonoGuestEventProps): void {
   trackSonoGuestEvent('Funil Protocolo · Pix gerado', { ...props, origem: props?.origem ?? getOfferOrigem() });
+}
+
+// ── Travessia do Pix ─────────────────────────────────────────────────────────
+// O funil morre entre "Pix gerado" e "Pix aprovado": a pessoa sai pro app do
+// banco e não volta / não paga. Estes três eventos medem exatamente essa
+// travessia (copiou o código? saiu da tela? voltou?). Os que precedem a saída
+// usam sendBeacon pra não se perderem no background.
+
+function pixCrossingProps(props?: SonoGuestEventProps): Record<string, unknown> {
+  return {
+    source: props?.source || SRC,
+    guest_id:
+      props?.guestId ||
+      sessionStorage.getItem('eco.sono.guest_id') ||
+      localStorage.getItem('eco_guest_id') ||
+      'guest',
+    product_key: PRODUCT_KEY,
+  };
+}
+
+/** Tocou "Copiar código Pix" — o gesto imediatamente anterior à travessia. */
+export function trackSonoGuestPixCopiado(props?: SonoGuestEventProps): void {
+  mixpanel.track('Funil Protocolo · Pix copiado', pixCrossingProps(props), BEACON);
+}
+
+/** Tela do Pix foi pro background (visibilitychange → hidden) — provável saída
+ *  pro app do banco. sendBeacon porque a página está sumindo. */
+export function trackSonoGuestPixTelaSaiu(props?: SonoGuestEventProps): void {
+  mixpanel.track('Funil Protocolo · Pix tela saiu', pixCrossingProps(props), BEACON);
+}
+
+/** Tela do Pix voltou ao foco (visibilitychange → visible) — a pessoa retornou
+ *  do app do banco. Cruzado com "tela saiu" mede quem completa a ida-e-volta. */
+export function trackSonoGuestPixTelaVoltou(props?: SonoGuestEventProps): void {
+  mixpanel.track('Funil Protocolo · Pix tela voltou', pixCrossingProps(props));
+}
+
+/** Super property `browser_env` (inapp_instagram / inapp_facebook / browser_normal).
+ *  Registrada no mount da experiência pra que TODO evento do funil carregue o
+ *  ambiente — o in-app do IG/FB é onde a travessia pro banco mais quebra. */
+export function registerBrowserEnv(): void {
+  try {
+    mixpanel.register({ browser_env: classifyBrowserEnv() });
+  } catch {
+    // analytics — silencia erros
+  }
 }
 
 export function trackSonoGuestOfferDismissed(props?: SonoGuestEventProps): void {
