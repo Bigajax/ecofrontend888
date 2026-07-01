@@ -43,6 +43,9 @@ interface PixData {
 type PixStatus = 'creating' | 'waiting' | 'approved' | 'expired' | 'error';
 
 const POLL_INTERVAL_MS = 4000;
+// A contagem regressiva só aparece nos últimos 3 min (antes disso o timer é
+// calmo, sem número correndo) — urgência briga com o tom do produto (desacelerar).
+const COUNTDOWN_REVEAL_S = 3 * 60;
 
 export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
   const [pix, setPix] = useState<PixData | null>(null);
@@ -406,22 +409,25 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
             Não liberou em até 5 min? É só tocar em “Já paguei, verificar” — a confirmação chega sozinha.
           </p>
 
-          {/* Timer (15 min) ou expirado */}
+          {/* Timer — calmo por padrão; a contagem só surge nos últimos minutos.
+              O relógio âmbar era o único elemento ansioso numa tela que acalma;
+              o Pix expira de verdade, mas sem urgência que empurre a pessoa pra fora. */}
           {status === 'waiting' ? (
             <div className="flex flex-col items-center gap-2">
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-semibold"
-                style={{ background: 'rgba(34,24,8,0.85)', border: '1px solid rgba(251,191,36,0.45)', color: '#FBBF24' }}
-              >
-                <Clock className="h-3.5 w-3.5" />
-                Este Pix expira em{' '}
-                <span className="font-mono text-[13px] font-bold tabular-nums" style={{ color: '#FDE68A' }}>
-                  {mm}:{ss}
-                </span>{' '}
-                min
-              </span>
-              <p className="text-center text-[11px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.62)' }}>
-                Se o pagamento não for identificado em até 15 minutos, um novo será gerado.
+              {secondsLeft <= COUNTDOWN_REVEAL_S && (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-medium"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(196,181,253,0.28)', color: 'rgba(214,203,250,0.78)' }}
+                >
+                  <Clock className="h-3.5 w-3.5" style={{ color: 'rgba(196,181,253,0.7)' }} />
+                  Este código expira em{' '}
+                  <span className="font-mono text-[12.5px] font-semibold tabular-nums" style={{ color: '#C4B5FD' }}>
+                    {mm}:{ss}
+                  </span>
+                </span>
+              )}
+              <p className="text-center text-[11px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.5)' }}>
+                Sem pressa — se o código expirar, a gente gera outro na hora.
               </p>
             </div>
           ) : (
