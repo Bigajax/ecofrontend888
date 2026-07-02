@@ -492,9 +492,11 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
     void upsertEvent({ reached_offer: true, max_step_reached: 6 });
   };
 
-  const startCheckout = () => {
+  // `context` distingue de onde veio o clique (ex.: 'preview_noite_2' = mini-CTA
+  // que aparece quando a prévia termina) — mesma jornada, atribuição separada.
+  const startCheckout = (context?: string) => {
     void upsertEvent({ cta_clicked: true });
-    trackSonoGuestCheckoutClicked({ source: getSource(), guestId: getGuestId() });
+    trackSonoGuestCheckoutClicked({ source: getSource(), guestId: getGuestId(), context });
     // Pagamento PRIMEIRO (Pix), conta depois — sem cadastro antes de pagar.
     goTo('pix');
   };
@@ -1142,8 +1144,17 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                         className="relative flex items-center gap-3.5 overflow-hidden rounded-2xl p-3"
                         style={{
                           background: isDone ? 'rgba(167,139,250,0.14)' : 'rgba(255,255,255,0.04)',
-                          border: isDone ? '1px solid rgba(167,139,250,0.40)' : '1px solid rgba(167,139,250,0.22)',
-                          boxShadow: isDone ? '0 0 22px rgba(124,58,237,0.18)' : 'none',
+                          border: isDone
+                            ? '1px solid rgba(167,139,250,0.40)'
+                            : isNext && preview.done
+                              ? '1px solid rgba(167,139,250,0.5)'
+                              : '1px solid rgba(167,139,250,0.22)',
+                          // Prévia concluída acende o card — o "progresso" é visível.
+                          boxShadow: isDone
+                            ? '0 0 22px rgba(124,58,237,0.18)'
+                            : isNext && preview.done
+                              ? '0 0 22px rgba(124,58,237,0.22)'
+                              : 'none',
                         }}
                       >
                         {/* Progresso da prévia — linha fina colada na base do card */}
@@ -1211,19 +1222,38 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                           >
                             {night.title}
                           </span>
-                          {/* Prévia da Noite 2: affordance parada → tocando → gancho
-                              pós-corte (o CTA da oferta está logo acima). */}
-                          {isNext && (
+                          {/* Estado da prévia: tocando → linha; concluída → gancho +
+                              mini-CTA de PROGRESSÃO (vai direto pro Pix, com contexto
+                              próprio no evento — o momento de maior desejo). */}
+                          {isNext && preview.playing && (
                             <span
                               className="mt-1 block text-[11.5px] italic leading-snug"
                               style={{ color: 'rgba(196,181,253,0.7)' }}
                             >
-                              {preview.done
-                                ? 'Gostou do começo? A noite completa tem 6 min.'
-                                : preview.playing
-                                  ? 'Tocando a prévia…'
-                                  : 'Toque no play para ouvir uma prévia.'}
+                              Tocando a prévia…
                             </span>
+                          )}
+                          {isNext && preview.done && !preview.playing && (
+                            <>
+                              <span
+                                className="mt-1 block text-[11.5px] italic leading-snug"
+                                style={{ color: 'rgba(196,181,253,0.8)' }}
+                              >
+                                Você ouviu o começo — o resto te espera esta noite.
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => startCheckout('preview_noite_2')}
+                                className="mt-2 flex w-fit items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
+                                style={{
+                                  background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
+                                  boxShadow: '0 6px 20px rgba(124,58,237,0.45)',
+                                }}
+                              >
+                                Continuar a Noite 2 agora
+                                <ArrowRight className="h-3.5 w-3.5" />
+                              </button>
+                            </>
                           )}
                         </div>
 
@@ -1242,13 +1272,13 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                             <Check className="h-3.5 w-3.5" strokeWidth={3} style={{ color: '#C4B5FD' }} />
                           </span>
                         ) : (
-                          // Play da prévia da Noite 2 — no lugar do cadeado: a noite
-                          // não está só trancada, está DEMONSTRÁVEL.
+                          // Prévia da Noite 2 — pill COM RÓTULO (ícone sozinho não
+                          // convidava): a noite não está só trancada, está demonstrável.
                           <button
                             type="button"
                             onClick={handlePreviewToggle}
                             aria-label={preview.playing ? 'Pausar prévia da Noite 2' : 'Ouvir prévia da Noite 2'}
-                            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-all hover:scale-105 active:scale-95"
+                            className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-2 transition-all hover:scale-105 active:scale-95"
                             style={{
                               background: 'rgba(167,139,250,0.14)',
                               backdropFilter: 'blur(8px)',
@@ -1260,8 +1290,11 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                             {preview.playing ? (
                               <Pause className="h-3.5 w-3.5" style={{ color: '#E9DEFF' }} fill="currentColor" />
                             ) : (
-                              <Play className="ml-0.5 h-3.5 w-3.5" style={{ color: '#E9DEFF' }} fill="currentColor" />
+                              <Play className="h-3.5 w-3.5" style={{ color: '#E9DEFF' }} fill="currentColor" />
                             )}
+                            <span className="text-[11.5px] font-bold" style={{ color: '#E9DEFF' }}>
+                              {preview.playing ? 'Pausar' : 'Prévia'}
+                            </span>
                           </button>
                         )}
                       </div>
@@ -1375,7 +1408,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
 
                 {/* CTA */}
                 <button
-                  onClick={startCheckout}
+                  onClick={() => startCheckout()}
                   className="mb-3 flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
                   style={{
                     background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
