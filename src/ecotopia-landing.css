@@ -16193,3 +16193,19 @@ body.eco-no-scroll {
 .ecotopia-lp .lp-sono-n7-free {
   box-shadow: 0 2px 8px rgba(221, 162, 74, 0.25);
 }
+
+/* ── CTAs âmbar: mata o text-shadow herdado do botão de vidro (era pra texto
+   branco sobre foto; no âmbar vira borrão atrás do rótulo escuro) e reduz a
+   sombra externa ao mínimo de assentamento. ── */
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-cta-primary,
+.ecotopia-lp .lp-sono-sticky-bar--night .lp-sono-hero-cta-primary,
+.ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-cta {
+  text-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 2px 8px rgba(8, 6, 24, 0.22);
+}
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-cta-primary:hover,
+.ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-cta:hover {
+  box-shadow: 0 3px 10px rgba(8, 6, 24, 0.26);
+}
