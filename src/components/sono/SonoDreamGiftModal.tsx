@@ -57,22 +57,22 @@ function saveDreamGift(record: DreamGiftRecord): void {
   }
 }
 
-/** Lua dourada — mesma assinatura visual do SonoEcoDreamBonusModal. */
-function MoonOrb() {
+/** Logo do EcoDream (mascote) — tile branco estilo ícone de app, moldura dourada. */
+function EcoDreamLogo({ size = 48 }: { size?: number }) {
   return (
-    <svg width="42" height="42" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-      <defs>
-        <radialGradient id="sonoDreamGiftMoon" cx="38%" cy="30%" r="68%">
-          <stop offset="0%" stopColor="#F5E09A" />
-          <stop offset="45%" stopColor="#C9A55A" />
-          <stop offset="100%" stopColor="#7A5520" />
-        </radialGradient>
-      </defs>
-      <circle cx="32" cy="32" r="26" fill="url(#sonoDreamGiftMoon)" />
-      <circle cx="25" cy="23" r="4" fill="rgba(0,0,0,0.13)" />
-      <circle cx="38" cy="38" r="2.5" fill="rgba(0,0,0,0.1)" />
-      <circle cx="22" cy="38" r="1.8" fill="rgba(0,0,0,0.08)" />
-    </svg>
+    <span
+      aria-hidden="true"
+      className="flex items-center justify-center overflow-hidden rounded-2xl"
+      style={{
+        width: size,
+        height: size,
+        background: '#FFFFFF',
+        border: '1px solid rgba(238,192,121,0.4)',
+        boxShadow: '0 6px 22px rgba(238,192,121,0.18)',
+      }}
+    >
+      <img src="/images/eco-dream-icon.webp" alt="" className="h-full w-full object-cover" />
+    </span>
   );
 }
 
@@ -191,7 +191,7 @@ export function SonoDreamGiftModal({ open, onClose }: SonoDreamGiftModalProps) {
 
             {/* Header */}
             <div className="flex flex-col items-center text-center">
-              <MoonOrb />
+              <EcoDreamLogo />
               <p
                 className="mt-3 text-[10.5px] font-bold uppercase tracking-[0.2em]"
                 style={{ color: '#EEC079' }}

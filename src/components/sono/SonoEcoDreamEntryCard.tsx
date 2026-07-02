@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Moon } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import mixpanel from '@/lib/mixpanel';
 
 /**
@@ -50,12 +50,12 @@ export function SonoEcoDreamEntryCard() {
         />
 
         <div className="relative flex items-center gap-4">
-          {/* Chip da lua dourada */}
+          {/* Logo do EcoDream — tile branco estilo ícone de app */}
           <span
-            className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl"
-            style={{ background: 'rgba(238,192,121,0.15)', border: '1px solid rgba(238,192,121,0.36)' }}
+            className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl"
+            style={{ background: '#FFFFFF', border: '1px solid rgba(238,192,121,0.4)' }}
           >
-            <Moon className="h-5 w-5" style={{ color: '#EEC079' }} fill="currentColor" />
+            <img src="/images/eco-dream-icon.webp" alt="" className="h-full w-full object-cover" />
           </span>
 
           <div className="min-w-0 flex-1">

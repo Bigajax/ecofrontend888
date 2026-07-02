@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, ChevronLeft, Heart, Lock, Moon, Pause, Play, Plus, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronLeft, Heart, Lock, Pause, Play, Plus, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -979,10 +979,10 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                         }}
                       >
                         <span
-                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
-                          style={{ background: 'rgba(238,192,121,0.14)', border: '1px solid rgba(238,192,121,0.34)' }}
+                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl"
+                          style={{ background: '#FFFFFF', border: '1px solid rgba(238,192,121,0.4)' }}
                         >
-                          <Moon className="h-[18px] w-[18px]" style={{ color: '#EEC079' }} fill="currentColor" />
+                          <img src="/images/eco-dream-icon.webp" alt="" className="h-full w-full object-cover" />
                         </span>
                         <span className="flex min-w-0 flex-1 flex-col">
                           <span className="text-[10.5px] font-bold uppercase tracking-[0.16em]" style={{ color: '#EEC079' }}>
@@ -1381,10 +1381,10 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                       aria-label="Saiba mais sobre o bônus EcoDream"
                     >
                       <span
-                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-colors"
-                        style={{ background: 'rgba(238,192,121,0.14)', border: '1px solid rgba(238,192,121,0.34)' }}
+                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl transition-colors"
+                        style={{ background: '#FFFFFF', border: '1px solid rgba(238,192,121,0.4)' }}
                       >
-                        <Moon className="h-4 w-4" style={{ color: '#EEC079' }} fill="currentColor" />
+                        <img src="/images/eco-dream-icon.webp" alt="" className="h-full w-full object-cover" />
                       </span>
                       <div className="flex min-w-0 flex-1 flex-col">
                         <span className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: '#EEC079' }}>
