@@ -78,6 +78,17 @@ function formatTime(seconds: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
+// Grafo WebAudio por elemento: createMediaElementSource só pode ser chamado UMA
+// vez por <audio> na vida do elemento, e o StrictMode (dev) roda o efeito de
+// mount 2× (mount → cleanup → mount). Sem o cache, o cleanup fechava o ctx e o
+// elemento ficava roteado num contexto MORTO → play() "tocava" com currentTime
+// congelado em 0. O remount reaproveita o grafo daqui; o close só acontece em
+// unmount real (elemento fora do DOM — ver cleanup).
+const mediaGraphCache = new WeakMap<
+  HTMLMediaElement,
+  { ctx: AudioContext; gain: GainNode; bgGain: GainNode | null }
+>();
+
 export function GuestSonoPlayer({
   startTime,
   onComplete,
@@ -188,6 +199,18 @@ export function GuestSonoPlayer({
     // tocando em background sem AudioContext — priorizamos isso sobre o ganho 2×.
     if (/iPad|iPhone|iPod/.test(navigator.userAgent)) return;
 
+    // Remount (StrictMode/dev): o elemento já tem um grafo — reaproveita em vez
+    // de tentar criar outro MediaElementSource (o 2º createMediaElementSource
+    // no mesmo elemento lança InvalidStateError).
+    const cached = mediaGraphCache.get(el);
+    if (cached) {
+      audioCtxRef.current = cached.ctx;
+      gainRef.current = cached.gain;
+      bgGainRef.current = cached.bgGain;
+      if (cached.ctx.state === 'suspended') await cached.ctx.resume();
+      return;
+    }
+
     try {
       const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctx) return;
@@ -214,6 +237,7 @@ export function GuestSonoPlayer({
 
       audioCtxRef.current = ctx;
       gainRef.current = gain;
+      mediaGraphCache.set(el, { ctx, gain, bgGain: bgGainRef.current });
       if (ctx.state === 'suspended') await ctx.resume();
     } catch {
       // fallback: sem amplificação
@@ -312,9 +336,30 @@ export function GuestSonoPlayer({
         .catch(() => { /* autoplay blocked */ });
     };
 
-    // Autoplay só no comportamento legado. Com autoPlay=false (entrada_sem_modal)
-    // o player carrega pronto e o áudio aguarda o gesto do usuário no play.
-    if (autoPlay) audio.addEventListener('canplay', tryPlay, { once: true });
+    // Tenta tocar IMEDIATAMENTE no mount: o player monta a partir do toque em
+    // "Ouvir a Noite 1", ainda dentro da janela de ativação do gesto — play()
+    // antes do canplay é válido (o browser inicia assim que houver dados) e
+    // preserva a permissão de autoplay. Esperar o canplay (comportamento antigo)
+    // perdia a ativação e o play era bloqueado em iOS/webview — foi por isso que
+    // o autoplay chegou a ser desligado no entrada_sem_modal. Se ainda assim o
+    // browser bloquear, tenta de novo no canplay; falhou de novo, o botão de
+    // play fica como fallback manual.
+    if (autoPlay) {
+      const immediate = audio.play();
+      void initAudioGain(); // depois do play() pra não gastar a ativação num await
+      immediate
+        .then(() => {
+          if (!hasPlayedOnce.current) {
+            hasPlayedOnce.current = true;
+            scheduleLockTip();
+          }
+          setIsPlaying(true);
+          bgAudioRef.current?.play().catch(() => {});
+        })
+        .catch(() => {
+          audio.addEventListener('canplay', tryPlay, { once: true });
+        });
+    }
 
     saveIntervalRef.current = setInterval(() => {
       if (audio.currentTime > 0) saveProgress(audio.currentTime);
@@ -337,8 +382,20 @@ export function GuestSonoPlayer({
       if (lockTipTimerRef.current) clearTimeout(lockTipTimerRef.current);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('beforeunload', onBeforeUnload);
-      // Cleanup Web Audio
-      audioCtxRef.current?.close();
+      // Cleanup Web Audio — close ADIADO: no StrictMode (dev) o cleanup roda
+      // entre os dois mounts e fechar o ctx aqui matava o elemento (roteado num
+      // contexto fechado, currentTime congela). Só fecha se, daqui a pouco, o
+      // elemento estiver fora do DOM (unmount real); no remount o initAudioGain
+      // re-reivindica o grafo do mediaGraphCache antes deste timer.
+      const ctx = audioCtxRef.current;
+      if (ctx) {
+        window.setTimeout(() => {
+          if (!audio.isConnected) {
+            void ctx.close();
+            mediaGraphCache.delete(audio);
+          }
+        }, 1000);
+      }
       audioCtxRef.current = null;
       gainRef.current = null;
       bgGainRef.current = null;
