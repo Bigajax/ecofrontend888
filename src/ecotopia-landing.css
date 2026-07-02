@@ -16175,3 +16175,21 @@ body.eco-no-scroll {
       #0E0A26 url('/images/sono-hero-cama.webp') 75% center / cover no-repeat;
   }
 }
+
+/* ── Sombras dos CTAs âmbar: o glow largo virava mancha laranja sob o botão.
+   Sombra curta e discreta — o âmbar sólido já faz o trabalho de destaque. ── */
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-cta-primary {
+  box-shadow: 0 4px 14px rgba(221, 162, 74, 0.26);
+}
+.ecotopia-lp .lp-sono-sticky-bar--night .lp-sono-hero-cta-primary {
+  box-shadow: 0 4px 14px rgba(221, 162, 74, 0.26);
+}
+.ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-cta {
+  box-shadow: 0 4px 14px rgba(221, 162, 74, 0.26);
+}
+.ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-cta:hover {
+  box-shadow: 0 6px 18px rgba(221, 162, 74, 0.32);
+}
+.ecotopia-lp .lp-sono-n7-free {
+  box-shadow: 0 2px 8px rgba(221, 162, 74, 0.25);
+}
