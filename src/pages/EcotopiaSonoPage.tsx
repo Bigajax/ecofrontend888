@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import '@/ecotopia-landing.css';
 import EcotopiaTopbar from '@/components/landing/EcotopiaTopbar';
 import EcotopiaFooter from '@/components/landing/EcotopiaFooter';
+import { supabase } from '@/lib/supabaseClient';
 import MethodMarquee from '@/components/landing/MethodMarquee';
 import SonoDorSection from '@/components/landing/SonoDorSection';
 import SonoFaqSection from '@/components/landing/SonoFaqSection';
@@ -293,6 +294,23 @@ export default function EcotopiaSonoPage() {
   // TODO CTA (qualquer variante) leva pra experiência guest (Noite 1 grátis → Pix),
   // desligando o caminho de cartão/assinatura (/assinar) pro tráfego pago.
   const isConviteHero = hero.variant === 'deite_se';
+
+  // Prova social REAL nos depoimentos — mesma rpc agregada da oferta do funil
+  // (supabase/sono_social_proof.sql). Piso de 25 no render: contagem baixa é
+  // anti-prova. Falha silenciosa: a linha simplesmente não aparece.
+  const [socialProof, setSocialProof] = useState<number | null>(null);
+  useEffect(() => {
+    if (!isConviteHero) return;
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc('sono_social_proof_count');
+        if (!error && typeof data === 'number') setSocialProof(data);
+      } catch {
+        // opcional — sem o dado, sem a linha
+      }
+    })();
+  }, [isConviteHero]);
+
   const sonoCtaTo = (from: string) => `/sono/experiencia?source=${from}`;
   const sonoCtaClick =
     (
@@ -946,6 +964,13 @@ export default function EcotopiaSonoPage() {
               Histórias reais de noites que mudaram.
             </p>
 
+            {/* Prova social viva — número REAL da rpc, com piso de 25. */}
+            {socialProof !== null && socialProof >= 25 && (
+              <p className="lp-sono-stories-proof scroll-reveal stagger-1">
+                {socialProof} pessoas concluíram a Noite 1 nos últimos 7 dias.
+              </p>
+            )}
+
             <div
               className="lp-sono-stories-grid"
               ref={storiesTrackRef}
@@ -1425,6 +1450,14 @@ export default function EcotopiaSonoPage() {
             >
               {isConviteHero ? 'Começar meu ritual' : CTA_LABEL}
             </Link>
+
+            {/* Convite: a oferta final fecha o loop do preço — quem rolou até
+                aqui não precisa voltar ao herói pra lembrar a condição. */}
+            {isConviteHero && (
+              <p className="lp-sono-offer-micro-deite scroll-reveal stagger-4">
+                Noite 1 grátis · depois {SONO_PIX_PRICE_LABEL} no Pix · pagamento único, sem assinatura
+              </p>
+            )}
           </div>
         </div>
       </section>

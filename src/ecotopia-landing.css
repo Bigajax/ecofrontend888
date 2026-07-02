@@ -16209,3 +16209,57 @@ body.eco-no-scroll {
 .ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-cta:hover {
   box-shadow: 0 3px 10px rgba(8, 6, 24, 0.26);
 }
+
+/* ── Acabamento de conversão (rodada 2) ── */
+
+/* Depoimentos: peek no carrossel mobile (mesma affordance do Ritual) */
+@media (max-width: 760px) {
+  .ecotopia-lp .lp-sono-story { flex: 0 0 88%; }
+}
+
+/* Prova social real sob o lead dos depoimentos. Desktop = creme (texto
+   escuro); mobile = fundo navy (texto lilás claro). */
+.ecotopia-lp .lp-sono-stories-proof {
+  margin: -4px 0 10px;
+  font-family: var(--lp-sans);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  color: #5A47A8;
+}
+@media (max-width: 767px) {
+  .ecotopia-lp .lp-sono-stories-proof { color: #CBBFF2; }
+}
+
+/* Oferta final (convite): o preço fecha o loop sob o CTA âmbar */
+.ecotopia-lp .lp-sono-offer-micro-deite {
+  margin: 14px auto 0;
+  max-width: 30rem;
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: center;
+  color: rgba(232, 226, 255, 0.62);
+}
+
+/* Rodapé night no vocabulário da página: o azul elétrico "Entrar" vira
+   outline lilás discreto; o "Inscrever-se" branco vira violeta da marca.
+   O âmbar segue reservado pra ação de conversão. */
+.ecotopia-lp .lp-footer--night .lp-footer-login {
+  background: transparent;
+  border: 1px solid rgba(142, 123, 230, 0.55);
+  color: #CBBFF2 !important;
+  -webkit-text-fill-color: #CBBFF2;
+  box-shadow: none;
+}
+.ecotopia-lp .lp-footer--night .lp-footer-login:hover {
+  background: rgba(142, 123, 230, 0.14);
+}
+.ecotopia-lp .lp-footer--night .lp-footer-subscribe {
+  background: linear-gradient(150deg, #8E7BE6, #6E5CC4);
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF;
+}
+.ecotopia-lp .lp-footer--night .lp-footer-subscribe:hover {
+  background: linear-gradient(150deg, #9D8BEE, #7A68D0);
+}
