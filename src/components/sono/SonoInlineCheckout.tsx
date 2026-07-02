@@ -64,6 +64,9 @@ type ReflectionAnswer = 'yes' | 'little' | 'no';
 
 const RETURN_TO = '/sono/experiencia?checkout=save_account';
 
+/** Prova social só aparece a partir deste piso — "3 pessoas" é anti-prova. */
+const SOCIAL_PROOF_MIN = 25;
+
 /** Preço de fallback (exibição) caso o /config do backend não responda. */
 const FALLBACK_SONO_PRICE = 37;
 
@@ -179,6 +182,10 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   // próximas noites). Não dispara nas outras origens (noite bloqueada, banner,
   // lembrete) — sem conquista, confete soa falso.
   const [confettiOn, setConfettiOn] = useState(false);
+  // Prova social REAL: rpc agregada (guests que passaram da Noite 1 em 7 dias).
+  // null = sem dado; só exibimos a partir de SOCIAL_PROOF_MIN (número baixo é
+  // anti-prova). Falha é silenciosa — a linha simplesmente não aparece.
+  const [socialProof, setSocialProof] = useState<number | null>(null);
   const convertedTrackedRef = useRef(false);
   const funnelSourceRef = useRef(false);
   const appInviteShownRef = useRef(false);
@@ -247,6 +254,22 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
       contentCategory: 'sono',
     });
   }, [step, answer]);
+
+  // Prova social — busca 1x quando a oferta abre (rpc agregada, sem SELECT na
+  // tabela; ver supabase/sono_social_proof.sql). Falha silenciosa: linha opcional.
+  const socialProofFetchedRef = useRef(false);
+  useEffect(() => {
+    if (step !== 'offer' || socialProofFetchedRef.current) return;
+    socialProofFetchedRef.current = true;
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc('sono_social_proof_count');
+        if (!error && typeof data === 'number') setSocialProof(data);
+      } catch {
+        // sem o dado, sem a linha
+      }
+    })();
+  }, [step]);
 
   // "Convite app exibido" — ponte pro app quando o free autenticado desiste.
   useEffect(() => {
@@ -805,6 +828,18 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                       A Noite 2 continua esse processo: soltar o controle da mente.
                     </motion.p>
 
+                    {/* Identidade/consistência: quem se vê como alguém que começou
+                        tende a completar. Custo zero, sem cara de venda. */}
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3, duration: 0.5 }}
+                      className="-mt-5 mb-8 text-[13.5px] italic leading-relaxed"
+                      style={{ color: 'rgba(196,181,253,0.75)' }}
+                    >
+                      A parte mais difícil era começar. Você já fez.
+                    </motion.p>
+
                     {/* Card de progresso — 1 de 7 noites concluídas */}
                     <motion.div
                       initial={{ opacity: 0, y: 12 }}
@@ -970,6 +1005,14 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                     — Mariana
                   </figcaption>
                 </figure>
+
+                {/* Prova social viva — número REAL da rpc, nunca inventado; o piso
+                    SOCIAL_PROOF_MIN evita exibir contagem baixa (anti-prova). */}
+                {socialProof !== null && socialProof >= SOCIAL_PROOF_MIN && (
+                  <p className="-mt-3 mb-6 text-[12px]" style={{ color: 'rgba(196,181,253,0.65)' }}>
+                    {socialProof} pessoas concluíram a Noite 1 nos últimos 7 dias.
+                  </p>
+                )}
 
                 {/* Lista das 7 noites — hierarquia "feito → próxima → o resto":
                     Noite 1 (✓) e Noite 2 ("A seguir") ganham card cheio; Noites 3–7

@@ -54,6 +54,18 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
   const [erro, setErro] = useState<string | null>(null);
   // Timer de 15 min (só UI). Reseta a cada Pix novo; ao zerar, gera outro.
   const [secondsLeft, setSecondsLeft] = useState(15 * 60);
+  // Travessia otimista: copiou o código e VOLTOU do app do banco → mostra
+  // "Confirmando seu pagamento…" por uma janela (~5 polls) em vez da tela
+  // parada — o pânico do "será que foi?" mata conversão no último metro.
+  const [confirmandoVolta, setConfirmandoVolta] = useState(false);
+  const copiedOnceRef = useRef(false);
+  const confirmandoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (confirmandoTimerRef.current) clearTimeout(confirmandoTimerRef.current);
+    },
+    [],
+  );
 
   const createStartedRef = useRef(false);
   const initiateCheckoutFiredRef = useRef(false);
@@ -191,6 +203,13 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
       }
       // De volta ao foco — reavalia o status (usuário pode ter pago no banco).
       trackSonoGuestPixTelaVoltou({ guestId });
+      // Se já copiou o código, a volta provavelmente é pós-pagamento: assume o
+      // melhor e mostra o estado de confirmação enquanto o polling corre.
+      if (copiedOnceRef.current) {
+        setConfirmandoVolta(true);
+        if (confirmandoTimerRef.current) clearTimeout(confirmandoTimerRef.current);
+        confirmandoTimerRef.current = setTimeout(() => setConfirmandoVolta(false), 20_000);
+      }
       void checkStatus();
     };
     document.addEventListener('visibilitychange', onVisible);
@@ -236,6 +255,7 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
     }
     // Passo da travessia: copiou o código, provável saída pro app do banco a seguir.
     trackSonoGuestPixCopiado({ guestId });
+    copiedOnceRef.current = true; // arma o "Confirmando…" pra quando voltar do banco
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   }, [pix, guestId]);
@@ -300,6 +320,20 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
 
       {(status === 'waiting' || status === 'expired') && pix && (
         <>
+          {/* Confirmação otimista: voltou do banco com o código copiado —
+              provavelmente pagou; o polling confirma em segundos. */}
+          {confirmandoVolta && status === 'waiting' && (
+            <div
+              className="flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3"
+              style={{ background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.35)' }}
+            >
+              <Loader2 className="h-4 w-4 animate-spin" style={{ color: '#C4B5FD' }} />
+              <span className="text-[13px] font-semibold" style={{ color: 'rgba(232,226,255,0.9)' }}>
+                Confirmando seu pagamento — leva só alguns segundos.
+              </span>
+            </div>
+          )}
+
           {/* Pill — pagamento via Pix */}
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.16em]"
