@@ -16280,3 +16280,76 @@ body.eco-no-scroll {
   background: linear-gradient(135deg, #F2CB8C 0%, #E2AC55 100%);
   border: none;
 }
+
+/* ── Amostra de 30s da Noite 1 (seção "Como usar"): a landing demonstra o
+   produto. Card navy com play âmbar — o mesmo vocabulário de ação. ── */
+.ecotopia-lp .lp-sono-sample {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 560px;
+  margin: 26px auto 18px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(20, 15, 52, 0.94);
+  border: 1px solid rgba(142, 123, 230, 0.35);
+  box-shadow: 0 14px 34px rgba(20, 15, 52, 0.3);
+  text-align: left;
+}
+.ecotopia-lp .lp-sono-sample-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #EEC079 0%, #DDA24A 100%);
+  color: #2A1A06;
+  box-shadow: 0 2px 8px rgba(8, 6, 24, 0.22);
+  transition: transform 0.2s ease;
+}
+.ecotopia-lp .lp-sono-sample-btn:hover { transform: scale(1.05); }
+.ecotopia-lp .lp-sono-sample-btn:active { transform: scale(0.96); }
+.ecotopia-lp .lp-sono-sample-btn svg { width: 22px; height: 22px; }
+.ecotopia-lp .lp-sono-sample-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+.ecotopia-lp .lp-sono-sample-title {
+  font-family: var(--lp-sans);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+.ecotopia-lp .lp-sono-sample-sub {
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: rgba(232, 226, 255, 0.62);
+}
+.ecotopia-lp .lp-sono-sample-track {
+  margin-top: 6px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.ecotopia-lp .lp-sono-sample-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #EEC079, #DDA24A);
+  transition: width 0.3s linear;
+}
+
+/* Chevron do FAQ: aponta pra baixo fechado, gira 180° aberto (a rotação de
+   90° era da seta "→" antiga). */
+.ecotopia-lp .lp-sono-faq2-item.is-open .lp-sono-faq2-arrow {
+  transform: rotate(180deg);
+}

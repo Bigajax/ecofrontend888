@@ -41,7 +41,9 @@ const FAQ = [
   },
 ];
 
-// Versão noturna (variante deite_se): acordeão (mesmas perguntas, sem ícone).
+// Versão noturna (variante deite_se): acordeão. As 3 últimas são os
+// mata-objeções adaptados ao modelo Pix único (sem trial/assinatura — a
+// garantia é a mesma do checklist da oferta: 7 dias).
 const FAQ_NIGHT: { q: string; a: string }[] = [
   {
     q: 'Preciso saber meditar para funcionar?',
@@ -62,6 +64,18 @@ const FAQ_NIGHT: { q: string; a: string }[] = [
   {
     q: 'Posso usar deitado?',
     a: 'Sim. O ritual foi feito para ser usado na cama, com fones.',
+  },
+  {
+    q: 'Quanto tempo leva pra funcionar?',
+    a: 'A maioria sente o corpo mais solto já na primeira noite. O sono mais consistente costuma aparecer entre a 3ª e a 5ª noite — por isso o ritual são 7 noites em sequência.',
+  },
+  {
+    q: 'Já tentei de tudo. É diferente?',
+    a: 'Não é um som de chuva aleatório. É uma sequência que trabalha o estado de alerta em camadas: do corpo tenso aos pensamentos que não param. Cada noite prepara a próxima.',
+  },
+  {
+    q: 'E se não funcionar pra mim?',
+    a: 'A primeira noite é grátis — você sente antes de pagar qualquer coisa. E se liberar as 7 noites e não ajudar, devolvemos em até 7 dias.',
   },
 ];
 
@@ -100,10 +114,11 @@ export default function SonoFaqSection({ conviteMode = false }: SonoFaqSectionPr
                     onClick={() => setOpen(isOpen ? null : i)}
                   >
                     <span className="lp-sono-faq2-q-text">{q}</span>
+                    {/* Chevron pra baixo (gira 180° via .is-open no CSS): a seta
+                        "→" antiga sinalizava navegação, não acordeão. */}
                     <span className="lp-sono-faq2-arrow" aria-hidden>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14" />
-                        <path d="M12 5l7 7-7 7" />
+                        <path d="M6 9l6 6 6-6" />
                       </svg>
                     </span>
                   </button>

@@ -13,7 +13,13 @@ import { useSonoHeroVariant } from '@/hooks/useSonoHeroVariant';
 import { useSonoSectionInView } from '@/hooks/useSonoSectionInView';
 import { useStickyCtaVisibility } from '@/hooks/useStickyCtaVisibility';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
-import { trackLandingVista, trackCtaClicado } from '@/lib/mixpanelAssinarFunnel';
+import {
+  trackLandingVista,
+  trackCtaClicado,
+  trackAmostraAudioTocada,
+  trackAmostraAudioConcluida,
+} from '@/lib/mixpanelAssinarFunnel';
+import { useAudioPreview } from '@/hooks/useAudioPreview';
 import { fbq } from '@/lib/fbpixel';
 import { OFFER, SONO_PIX_PRICE_LABEL } from '@/constants/offerCopy';
 
@@ -310,6 +316,46 @@ export default function EcotopiaSonoPage() {
       }
     })();
   }, [isConviteHero]);
+
+  // Amostra de 30s da Noite 1 (seção "Como usar") — a landing DEMONSTRA o
+  // produto em vez de descrever. Mesmo hook do preview da oferta do funil.
+  const sample = useAudioPreview(NIGHT_ONE?.audioUrl ?? '', 30);
+  const samplePlayedRef = useRef(false);
+  const sampleDoneRef = useRef(false);
+  useEffect(() => {
+    if (!sample.done || sampleDoneRef.current) return;
+    sampleDoneRef.current = true;
+    trackAmostraAudioConcluida();
+  }, [sample.done]);
+  const handleSampleToggle = () => {
+    if (!sample.playing && !samplePlayedRef.current) {
+      samplePlayedRef.current = true;
+      trackAmostraAudioTocada();
+    }
+    sample.toggle();
+  };
+
+  // Preload do fundo do herói (LCP): é background-image em CSS, que o browser
+  // só descobre depois do CSS — o preload adianta a maior pintura da página.
+  useEffect(() => {
+    if (!isConviteHero) return;
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = '/images/sono-hero-cama.webp';
+    (link as HTMLLinkElement & { fetchPriority?: string }).fetchPriority = 'high';
+    document.head.appendChild(link);
+    return () => {
+      if (document.head.contains(link)) document.head.removeChild(link);
+    };
+  }, [isConviteHero]);
+
+  // Scroll-depth por seção ("Funil Sono · Seção vista") — onde a rolagem morre.
+  const stepsViewRef = useSonoSectionInView<HTMLElement>('como_usar');
+  const ritualViewRef = useSonoSectionInView<HTMLElement>('ritual');
+  const n7ViewRef = useSonoSectionInView<HTMLElement>('sete_noites');
+  const storiesViewRef = useSonoSectionInView<HTMLElement>('depoimentos');
+  const faqOfferViewRef = useSonoSectionInView<HTMLElement>('oferta_final');
 
   const sonoCtaTo = (from: string) => `/sono/experiencia?source=${from}`;
   const sonoCtaClick =
@@ -650,7 +696,7 @@ export default function EcotopiaSonoPage() {
 
       {/* ─── Como usar hoje à noite · 4 passos (só deite_se) ─── */}
       {isConviteHero && (
-        <section className="lp-sono-steps" aria-label="Como usar hoje à noite">
+        <section ref={stepsViewRef} className="lp-sono-steps" aria-label="Como usar hoje à noite">
           {/* Costura: o navy do herói escorre pra dentro do creme (fim do corte seco) */}
           <div className="lp-sono-seam lp-sono-seam--from-hero" aria-hidden />
           <div className="lp-sono-steps-inner">
@@ -706,6 +752,40 @@ export default function EcotopiaSonoPage() {
               </div>
             </div>
 
+            {/* Amostra REAL: 30s da voz da Noite 1 — a página demonstra em vez
+                de descrever. É o "test drive" mais barato do funil. */}
+            <div className="lp-sono-sample scroll-reveal">
+              <button
+                type="button"
+                onClick={handleSampleToggle}
+                className="lp-sono-sample-btn"
+                aria-label={sample.playing ? 'Pausar amostra' : 'Ouvir 30 segundos da Noite 1'}
+              >
+                {sample.playing ? (
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path d="M7 5h4v14H7zM13 5h4v14h-4z" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                )}
+              </button>
+              <span className="lp-sono-sample-meta">
+                <span className="lp-sono-sample-title">Ouça 30 segundos da Noite 1</span>
+                <span className="lp-sono-sample-sub">
+                  {sample.done
+                    ? 'Essa voz conduz as 7 noites. A primeira é grátis.'
+                    : sample.playing
+                      ? 'A voz que conduz você hoje à noite…'
+                      : 'Aperte o play e sinta por que funciona.'}
+                </span>
+                <span className="lp-sono-sample-track" aria-hidden>
+                  <span className="lp-sono-sample-fill" style={{ width: `${sample.progress * 100}%` }} />
+                </span>
+              </span>
+            </div>
+
             <p className="lp-sono-steps-foot scroll-reveal">
               Menos esforço, mais presença. Você não aperta nada: seu corpo e sua mente encontram o caminho de volta ao descanso profundo.
             </p>
@@ -718,7 +798,7 @@ export default function EcotopiaSonoPage() {
 
       {/* ─── Seu Ritual Boa Noite · resumo em 3 passos (só deite_se) ─── */}
       {isConviteHero && (
-        <section className="lp-sono-ritual" aria-label="Seu Ritual Boa Noite">
+        <section ref={ritualViewRef} className="lp-sono-ritual" aria-label="Seu Ritual Boa Noite">
           <div className="lp-sono-seam lp-sono-seam--from-dor" aria-hidden />
           <div className="lp-sono-ritual-inner">
             <p className="lp-sono-ritual-eyebrow scroll-reveal">Seu caminho para noites leves</p>
@@ -808,7 +888,7 @@ export default function EcotopiaSonoPage() {
           deite_se: grade noturna "As 7 noites" (igual à referência).
           Demais variantes: layout editorial (Noite 1 destaque + lista/grade). */}
       {isConviteHero ? (
-        <section className="lp-sono-n7" aria-label="As 7 noites">
+        <section ref={n7ViewRef} className="lp-sono-n7" aria-label="As 7 noites">
           <div className="lp-sono-seam lp-sono-seam--from-creme" aria-hidden />
           <div className="lp-sono-n7-inner">
             <p className="lp-sono-n7-eyebrow scroll-reveal">Ritual completo</p>
@@ -934,7 +1014,7 @@ export default function EcotopiaSonoPage() {
       {/* ─── Depoimentos ───
           deite_se: versão noturna (igual à referência). Demais: versão atual. */}
       {isConviteHero ? (
-        <section className="lp-sono-stories" aria-label="Depoimentos">
+        <section ref={storiesViewRef} className="lp-sono-stories" aria-label="Depoimentos">
           <div className="lp-sono-seam lp-sono-seam--from-n7" aria-hidden />
           <div className="lp-sono-stories-inner">
             <p className="lp-sono-stories-eyebrow scroll-reveal">Quem já usa, sente</p>
@@ -1282,7 +1362,7 @@ export default function EcotopiaSonoPage() {
       <SonoFaqSection conviteMode={isConviteHero} />
 
       {/* ─── Oferta · navy ─── */}
-      <section className={`lp-sono-offer${isConviteHero ? ' lp-sono-offer--deite' : ''}`}>
+      <section ref={faqOfferViewRef} className={`lp-sono-offer${isConviteHero ? ' lp-sono-offer--deite' : ''}`}>
         <div className="lp-sono-offer-bg" aria-hidden />
 
         <div className="lp-sono-offer-inner">

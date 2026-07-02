@@ -94,6 +94,17 @@ export function trackLandingVista(): void {
   track('Landing vista');
 }
 
+/** Amostra de 30s da Noite 1 na landing (a página demonstra o produto).
+ *  Cruzar com "CTA clicado" mede se OUVIR a voz empurra o clique. */
+export function trackAmostraAudioTocada(): void {
+  track('Amostra de áudio tocada');
+}
+
+/** Amostra ouvida até o corte (~30s). */
+export function trackAmostraAudioConcluida(): void {
+  track('Amostra de áudio concluída');
+}
+
 export function trackCtaClicado(p: {
   plan: PlanId;
   placement: string;
