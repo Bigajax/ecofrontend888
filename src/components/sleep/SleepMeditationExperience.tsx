@@ -18,6 +18,7 @@ import {
   trackSonoGuestAppInviteClicked,
   trackSonoGuestEarlyExit,
   trackSonoGuestLockedNightClicked,
+  trackSonoGuestOfferOpenedViaReminder,
   registerSonoOfferAccessVariant,
   registerPaywallFoco,
   registerEntradaSemModal,
@@ -163,7 +164,8 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   const isGuestSono = mode === 'guest';
 
   const guestId = useMemo(() => {
-    const fromUrl = searchParams.get('guest_id');
+    // `g` é a forma curta usada no deep link do lembrete manual (?oferta=1&g=).
+    const fromUrl = searchParams.get('guest_id') || searchParams.get('g');
     const fromStorage = localStorage.getItem('eco_guest_id');
     if (fromUrl) { localStorage.setItem('eco_guest_id', fromUrl); return fromUrl; }
     if (fromStorage) return fromStorage;
@@ -303,6 +305,28 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
       if (p.has('checkout')) { p.delete('checkout'); setSearchParams(p, { replace: true }); }
     }
   }, [isGuestSono, isPaid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Deep link do lembrete manual (?oferta=1&g={guest_id}): abre a oferta direto,
+  // com o contexto do guest que já concluiu a Noite 1 ontem (o guest_id veio no
+  // `g` e já foi persistido pelo useMemo acima). Se um pago abrir o link, o
+  // safety-net acima limpa o passo assim que o entitlement resolver.
+  useEffect(() => {
+    if (!isGuestSono || isPaid) return;
+    if (searchParams.get('oferta') !== '1') return;
+    // Limpa oferta/g da URL primeiro (evita reabrir num remount); a persistência
+    // do overlay passa a ser do ?checkout= (useSonoCheckoutState).
+    const p = new URLSearchParams(searchParams);
+    p.delete('oferta');
+    p.delete('g');
+    setSearchParams(p, { replace: true });
+    // Contexto "Noite 1 concluída" — o lembrete só é enviado pra quem concluiu.
+    markGuestNight1Completed();
+    setCompletedNights(prev => new Set([...prev, 1]));
+    sessionStorage.setItem('eco.sono.offer_origem', 'lembrete');
+    setOfferFromMeditation(false);
+    setCheckoutEntry('offer');
+    trackSonoGuestOfferOpenedViaReminder({ source: source || 'sono_paid_traffic', guestId });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
@@ -578,9 +602,11 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
           onEarlyExit={handleGuestNight1EarlyExit}
           offerBannerEnabled={!isPaid}
           onOfferBanner={handleGuestNight1OfferBanner}
-          // entrada_sem_modal: sem o modal, o priming vira subtítulo no player e o
-          // play exige 1 gesto (sem autoplay — política de webview/iOS).
-          autoPlay={!isEntradaSemModal()}
+          // Autoplay SEMPRE: o mount vem do toque em "Ouvir a Noite 1" e o player
+          // agora chama play() imediatamente (dentro da ativação do gesto), o que
+          // funciona inclusive em webview/iOS — o bloqueio antigo era do play
+          // adiado pro canplay. Se o browser ainda bloquear, o botão fica de fallback.
+          autoPlay
           showPriming={isEntradaSemModal() && !isPaid}
         />
       ) : (

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Heart, Lock, Moon, Plus, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronLeft, Heart, Lock, Moon, Plus, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,16 +17,23 @@ import {
   trackSonoGuestPostNight1QuestionView,
   trackSonoGuestContinueNight2,
   trackSonoGuestBonusInfoOpened,
+  trackSonoGuestDecideTomorrowClicked,
+  trackSonoGuestReminderSubmitted,
+  trackSonoGuestReminderFailed,
+  trackSonoGuestOfferExitViaBack,
 } from '@/lib/mixpanelSonoGuestEvents';
 import mixpanel from '@/lib/mixpanel';
 import { trackWithCAPI } from '@/lib/fbpixel';
 import { isPaywallFoco } from '@/lib/paywallFoco';
 import { isOfertaBonus } from '@/lib/ofertaBonus';
+import { OFFER } from '@/constants/offerCopy';
 import { getSonoGuestId } from '@/lib/sonoGuestId';
+import { LS_KEYS } from '@/components/sono-guest/types';
 import { useSonoCheckoutState, type SonoCheckoutStep } from './useSonoCheckoutState';
 import { SonoInlineSignup } from './SonoInlineSignup';
 import { SonoInlinePix } from './SonoInlinePix';
 import { SonoEcoDreamBonusModal } from './SonoEcoDreamBonusModal';
+import { SonoConfettiBurst } from './SonoConfettiBurst';
 import { readSonoLifetime } from './sonoLifetime';
 
 /**
@@ -62,6 +69,42 @@ const FALLBACK_SONO_PRICE = 37;
 
 function priceLabel(price: number): string {
   return Number.isInteger(price) ? `R$${price}` : `R$${price.toFixed(2).replace('.', ',')}`;
+}
+
+/** Âncora honesta por noite (preço ÷ 7), arredondada pra CIMA no centavo —
+ *  nunca subestima. R$37 → "R$5,29". */
+function perNightLabel(price: number): string {
+  return `R$${(Math.ceil((price / 7) * 100) / 100).toFixed(2).replace('.', ',')}`;
+}
+
+/** Resposta da reflexão persistida em sessionStorage — sobrevive ao remount do
+ *  RootProviders (o state `answer` se perde), pra oferta manter a headline
+ *  personalizada. Gravada em selectAnswer. */
+function getPersistedReflectionAnswer(): ReflectionAnswer | null {
+  try {
+    const s = sessionStorage.getItem('eco.sono.reflection_answer');
+    return s === 'yes' || s === 'little' || s === 'no' ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Noite 1 concluída (chave gravada por markGuestNight1Completed no pai). */
+function isNight1Completed(): boolean {
+  try {
+    return localStorage.getItem(LS_KEYS.completed) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/** Variante da headline da oferta → prop headline_variant no "Oferta vista". */
+function resolveHeadlineVariant(answer: ReflectionAnswer | null): string {
+  const a = answer ?? getPersistedReflectionAnswer();
+  if (a === 'yes') return 'corpo_soltou';
+  if (a === 'little') return 'comecou_desacelerar';
+  if (a === 'no' || isNight1Completed()) return 'alerta_de_anos';
+  return 'continue_noite_2';
 }
 
 
@@ -116,6 +159,10 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   const { step, open, goTo, close } = useSonoCheckoutState();
 
   const [answer, setAnswer] = useState<ReflectionAnswer | null>(null);
+  // Resposta tocada aguardando a transição (~280ms): o radio acende e o card
+  // ganha glow ANTES de trocar de tela — sem isso o toque não "registra" e os
+  // cards não se leem como pergunta de 1 toque (affordance de quiz).
+  const [pendingAnswer, setPendingAnswer] = useState<ReflectionAnswer | null>(null);
   const [price, setPrice] = useState<number>(FALLBACK_SONO_PRICE);
   // Gatilho que abriu a oferta (KISS #4). Define a proeminência: nos novos
   // gatilhos (noite bloqueada / continuar n2) o card R$37 vai pro topo; no banner
@@ -123,6 +170,15 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   const [offerOrigem, setOfferOrigem] = useState<string | null>(null);
   // Modal explicativo do bônus EcoDream (abre ao tocar na linha do bônus).
   const [bonusInfoOpen, setBonusInfoOpen] = useState(false);
+  // "Decidir amanhã" (guest): expande captura de contato inline; o lembrete é
+  // enviado MANUALMENTE no dia seguinte via deep link ?oferta=1&g={guest_id}.
+  const [reminderOpen, setReminderOpen] = useState(false);
+  const [reminderContact, setReminderContact] = useState('');
+  const [reminderState, setReminderState] = useState<'idle' | 'sending' | 'done'>('idle');
+  // Confete na chegada à oferta VINDA da conquista (Continuar Noite 2 / Ver as
+  // próximas noites). Não dispara nas outras origens (noite bloqueada, banner,
+  // lembrete) — sem conquista, confete soa falso.
+  const [confettiOn, setConfettiOn] = useState(false);
   const convertedTrackedRef = useRef(false);
   const funnelSourceRef = useRef(false);
   const appInviteShownRef = useRef(false);
@@ -178,13 +234,19 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
     }
     if (offerViewedRef.current) return;
     offerViewedRef.current = true;
-    trackSonoGuestOfferViewed({ source: getSource(), guestId: getGuestId() });
+    trackSonoGuestOfferViewed({
+      source: getSource(),
+      guestId: getGuestId(),
+      // Qual headline esta pessoa viu (personalizada pela resposta da reflexão) —
+      // permite comparar a conversão de cada variante no Mixpanel.
+      headlineVariant: resolveHeadlineVariant(answer),
+    });
     // Meta Pixel + CAPI: oferta das 7 noites exibida.
     void trackWithCAPI('ViewContent', {
       contentName: 'Oferta 7 Noites',
       contentCategory: 'sono',
     });
-  }, [step]);
+  }, [step, answer]);
 
   // "Convite app exibido" — ponte pro app quando o free autenticado desiste.
   useEffect(() => {
@@ -207,6 +269,49 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   useEffect(() => {
     if (openAt && step === null) open(openAt);
   }, [openAt, step, open]);
+
+  // Voltar (gesto/botão) com a oferta aberta: fecha o overlay e mantém o usuário
+  // na página do protocolo — antes, o back saía da /sono/experiencia (landing).
+  // Ao abrir, empurramos UMA entrada extra no history (mesma URL) que absorve o
+  // gesto; o popstate então fecha o overlay em vez de navegar. Trade-off aceito:
+  // se o overlay fechar por outro caminho, a entrada duplicada fica — o 1º back
+  // seguinte é um no-op visual e o 2º sai da página. Inofensivo e simples.
+  const pushedHistoryRef = useRef(false);
+  useEffect(() => {
+    if (step === null) {
+      pushedHistoryRef.current = false;
+      return;
+    }
+    if (!pushedHistoryRef.current) {
+      pushedHistoryRef.current = true;
+      window.history.pushState({ sonoCheckout: true }, '', window.location.href);
+    }
+  }, [step]);
+
+  // Listener só age nos passos PRÉ-pagamento (reflection/offer/pix) — depois de
+  // pagar (unlocked/save_account) e no app_invite o back não fecha nada à força.
+  //
+  // Anexado UMA vez, lendo step/onDismiss por refs: com deps [step, onDismiss] o
+  // efeito re-anexava a cada render — e no back real o Router processa o pop
+  // primeiro, o pai re-renderiza e o remove/re-add acontecia NO MEIO do dispatch
+  // do popstate (listener removido é pulado; re-adicionado não roda pro evento em
+  // voo) → o handler nunca via o back. Refs mantêm o listener estável.
+  const stepRef = useRef(step);
+  stepRef.current = step;
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+  useEffect(() => {
+    const onPopState = () => {
+      const s = stepRef.current;
+      if (s !== 'reflection' && s !== 'offer' && s !== 'pix') return;
+      // Evento ANTES de sair da oferta (brief item 6).
+      trackSonoGuestOfferExitViaBack({ source: getSource(), guestId: getGuestId() });
+      close();
+      onDismissRef.current();
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [close]);
 
   // Conversão (uma vez) ao destravar — fecha o funil no Mixpanel. Pagamento ÚNICO
   // (não-assinatura), por isso evento dedicado em vez dos helpers de subscription.
@@ -286,6 +391,12 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
 
   const selectAnswer = (a: ReflectionAnswer) => {
     setAnswer(a);
+    // Persiste pra headline personalizada da oferta sobreviver ao remount.
+    try {
+      sessionStorage.setItem('eco.sono.reflection_answer', a);
+    } catch {
+      // storage indisponível — a oferta cai na headline neutra
+    }
     // max_step_reached é INT (1-6) na tabela sono_guest_flow_events — mandar
     // string ('reflection') fazia o upsert inteiro falhar e a resposta não salvar.
     void upsertEvent({ reflection_answer: a, max_step_reached: 2 });
@@ -295,11 +406,22 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
     });
   };
 
+  // Toque numa resposta: mostra a seleção (radio aceso + glow) por um instante e
+  // só então transiciona — o guard impede toque duplo em cards diferentes.
+  const handleAnswerTap = (a: ReflectionAnswer) => {
+    if (pendingAnswer) return;
+    setPendingAnswer(a);
+    window.setTimeout(() => selectAnswer(a), 280);
+  };
+
   const goToOffer = () => {
     // KISS #4 — "Continuar Noite 2" é um dos gatilhos do paywall focado: oferta
     // com o card R$37 no topo.
     sessionStorage.setItem('eco.sono.offer_origem', 'continuar_n2');
-    trackSonoGuestContinueNight2({ source: getSource(), guestId: getGuestId(), ctaConclusaoVariant: 'liberar_6_noites' });
+    // Variante do CTA da tela de continuidade — bumpar ao trocar a copy do botão
+    // (era 'liberar_6_noites'; virou gramática de continuidade em jul/2026).
+    trackSonoGuestContinueNight2({ source: getSource(), guestId: getGuestId(), ctaConclusaoVariant: 'continuar_noite_2' });
+    setConfettiOn(true); // celebração na chegada à oferta (veio da conquista)
     goTo('offer');
     void upsertEvent({ reached_offer: true, max_step_reached: 6 });
   };
@@ -309,6 +431,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   // — "Oferta vista" dispara pelo efeito — sem o evento de continuidade (não houve
   // resposta), pra não conflar a leitura do funil.
   const skipToOffer = () => {
+    setConfettiOn(true); // também veio da Noite 1 concluída (reflexão)
     goTo('offer');
     void upsertEvent({ reached_offer: true, max_step_reached: 6 });
   };
@@ -336,6 +459,36 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   const handleStayInSono = () => {
     close();
     onDismiss();
+  };
+
+  // "Decidir amanhã" (guest, substitui o "Agora não"): expande a captura de
+  // contato inline — sem rota nova, sem cadastro/senha.
+  const handleDecideTomorrow = () => {
+    trackSonoGuestDecideTomorrowClicked({ source: getSource(), guestId: getGuestId() });
+    setReminderOpen(true);
+  };
+
+  // Grava o contato em offer_reminders (INSERT anônimo, RLS só de INSERT).
+  // 1 retry; na falha dupla loga + evento e MESMO ASSIM mostra sucesso — a
+  // promessa do lembrete nunca trava o fluxo de quem já decidiu sair.
+  const submitReminder = async () => {
+    const contact = reminderContact.trim();
+    if (!contact || reminderState !== 'idle') return;
+    setReminderState('sending');
+    const insert = () =>
+      supabase.from('offer_reminders').insert({ guest_id: getGuestId(), contact });
+    let { error } = await insert();
+    if (error) ({ error } = await insert()); // 1 retry
+    if (error) {
+      console.error('[offer_reminders] insert falhou', error);
+      trackSonoGuestReminderFailed({ source: getSource(), guestId: getGuestId() });
+    } else {
+      trackSonoGuestReminderSubmitted(contact.includes('@') ? 'email' : 'whatsapp', {
+        source: getSource(),
+        guestId: getGuestId(),
+      });
+    }
+    setReminderState('done');
   };
 
   // "<" do passo offer: volta pra Noite 1 no ponto salvo. Fecha o overlay (limpa
@@ -371,6 +524,11 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   // Value-stack: EcoDream como bônus no card da oferta (+ CTA "+ bônus"). Flag ON
   // por padrão; OFF volta o card/CTA originais.
   const ofertaBonus = isOfertaBonus();
+
+  // Personalização da oferta: resposta da reflexão (state ou sessionStorage,
+  // pós-remount) + conquista da Noite 1 — decidem headline/eyebrow/subtítulo.
+  const offerAnswer = answer ?? getPersistedReflectionAnswer();
+  const night1Done = isNight1Completed();
 
   // Reenquadramento da arte (retrato) para DESKTOP (paisagem). O mesmo `cover` num
   // viewport largo-baixo zooma demais e joga o emblema/relevo pro meio, colidindo
@@ -507,7 +665,9 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
       {/* Conteúdo. `my-auto` (não justify-center no pai) centraliza quando cabe e
           permite rolar quando o passo transborda — sem isso o cartão trava o scroll. */}
       <div className="relative z-10 flex flex-1 flex-col items-center overflow-y-auto px-6 pb-12">
-        <div className={`flex w-full max-w-[340px] flex-col py-4 md:max-w-[480px] ${step === 'reflection' ? 'mt-[18vh]' : 'my-auto'}`}>
+        {/* reflection: 12vh (não 18) — vão menor entre eyebrow e pergunta pra que
+            pergunta + respostas se leiam como uma unidade só (affordance de quiz). */}
+        <div className={`flex w-full max-w-[340px] flex-col py-4 md:max-w-[480px] ${step === 'reflection' ? 'mt-[12vh]' : 'my-auto'}`}>
           <AnimatePresence mode="wait">
 
             {/* ── reflection (pergunta + validação numa só batida) ── */}
@@ -532,40 +692,60 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                       <br />
                       <em style={{ color: '#C4B5FD', fontStyle: 'italic' }}>está agora?</em>
                     </h2>
-                    <p className="mb-7 mt-3 text-[13px] leading-relaxed" style={{ color: 'rgba(199,184,240,0.6)' }}>
-                      Escolha o que mais parece com este momento.
+                    <p className="mb-5 mt-3 text-[13px] leading-relaxed" style={{ color: 'rgba(199,184,240,0.72)' }}>
+                      Toque na que mais parece com você agora.
                     </p>
 
-                    {/* Cards de resposta — ícone + microcopy + seta */}
+                    {/* Cards de resposta — quiz de 1 toque: radio à direita (não
+                        chevron, que dizia "navegação"), borda lilás e feedback de
+                        seleção (glow + check) antes de transicionar. */}
                     <div className="flex w-full flex-col gap-2.5">
-                      {REFLECTION_OPTIONS.map(({ key, img, title, desc }) => (
-                        <button
-                          key={key}
-                          onClick={() => selectAnswer(key)}
-                          className="eco-glass-lg group flex w-full items-center gap-3.5 rounded-2xl p-3.5 text-left transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
-                          style={{
-                            background: 'rgba(255,255,255,0.07)',
-                            backdropFilter: 'blur(10px)',
-                            WebkitBackdropFilter: 'blur(10px)',
-                            border: '1px solid rgba(255,255,255,0.18)',
-                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 26px rgba(8,5,24,0.30)',
-                          }}
-                        >
-                          <span className="-my-1 h-[58px] w-[58px] flex-shrink-0 overflow-hidden rounded-full">
-                            <img src={img} alt="" className="h-full w-full object-cover" />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-[15px] font-bold text-white">{title}</span>
-                            <span className="mt-0.5 block text-[12px] leading-snug" style={{ color: 'rgba(199,184,240,0.55)' }}>
-                              {desc}
+                      {REFLECTION_OPTIONS.map(({ key, img, title, desc }) => {
+                        const selected = pendingAnswer === key;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => handleAnswerTap(key)}
+                            className="eco-glass-lg group flex w-full items-center gap-3.5 rounded-2xl p-3.5 text-left transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
+                            style={{
+                              background: selected ? 'rgba(167,139,250,0.16)' : 'rgba(255,255,255,0.07)',
+                              backdropFilter: 'blur(10px)',
+                              WebkitBackdropFilter: 'blur(10px)',
+                              border: selected
+                                ? '1px solid rgba(167,139,250,0.85)'
+                                : '1px solid rgba(167,139,250,0.28)',
+                              boxShadow: selected
+                                ? '0 0 26px rgba(124,58,237,0.45), inset 0 1px 0 rgba(255,255,255,0.14)'
+                                : 'inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 26px rgba(8,5,24,0.30)',
+                              opacity: pendingAnswer && !selected ? 0.55 : 1,
+                            }}
+                          >
+                            <span className="-my-1 h-[58px] w-[58px] flex-shrink-0 overflow-hidden rounded-full">
+                              <img src={img} alt="" className="h-full w-full object-cover" />
                             </span>
-                          </span>
-                          <ChevronRight
-                            className="h-4 w-4 flex-shrink-0 transition-transform group-hover:translate-x-0.5"
-                            style={{ color: 'rgba(196,181,253,0.45)' }}
-                          />
-                        </button>
-                      ))}
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-[15px] font-bold text-white">{title}</span>
+                              <span className="mt-0.5 block text-[12px] leading-snug" style={{ color: 'rgba(199,184,240,0.55)' }}>
+                                {desc}
+                              </span>
+                            </span>
+                            {/* Radio de seleção — a gramática visual de "escolha uma" */}
+                            <span
+                              aria-hidden="true"
+                              className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200"
+                              style={{
+                                border: selected
+                                  ? '1.5px solid rgba(196,181,253,0.95)'
+                                  : '1.5px solid rgba(196,181,253,0.45)',
+                                background: selected ? 'rgba(167,139,250,0.35)' : 'rgba(255,255,255,0.04)',
+                                boxShadow: selected ? '0 0 12px rgba(167,139,250,0.6)' : 'none',
+                              }}
+                            >
+                              {selected && <Check className="h-3.5 w-3.5" strokeWidth={3} style={{ color: '#E9DEFF' }} />}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
 
                     {/* Rodapé tranquilizador — coração centralizado acima */}
@@ -651,25 +831,40 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                         </span>
                       </div>
                       <div className="mt-3 flex gap-1.5">
-                        {Array.from({ length: 7 }).map((_, i) => (
-                          <span
-                            key={i}
-                            className="h-1.5 flex-1 rounded-full"
-                            style={
-                              i === 0
-                                ? { background: 'linear-gradient(90deg, #C4B5FD, #7C3AED)', boxShadow: '0 0 8px rgba(167,139,250,0.55)' }
-                                : { background: 'rgba(255,255,255,0.10)' }
-                            }
-                          />
-                        ))}
+                        {Array.from({ length: 7 }).map((_, i) =>
+                          i === 0 ? (
+                            // Celebração: o segmento da Noite 1 PREENCHE na entrada
+                            // (0→100% + glow) — meio segundo de recompensa antes do
+                            // CTA aparecer. É o beat emocional da conquista.
+                            <motion.span
+                              key={i}
+                              className="h-1.5 flex-1 rounded-full"
+                              style={{
+                                background: 'linear-gradient(90deg, #C4B5FD, #7C3AED)',
+                                transformOrigin: 'left',
+                              }}
+                              initial={{ scaleX: 0, boxShadow: '0 0 0px rgba(167,139,250,0)' }}
+                              animate={{ scaleX: 1, boxShadow: '0 0 12px rgba(167,139,250,0.7)' }}
+                              transition={{ delay: 0.45, duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                            />
+                          ) : (
+                            <span
+                              key={i}
+                              className="h-1.5 flex-1 rounded-full"
+                              style={{ background: 'rgba(255,255,255,0.10)' }}
+                            />
+                          ),
+                        )}
                       </div>
                     </motion.div>
 
-                    {/* CTA roxo */}
+                    {/* CTA roxo — gramática de CONTINUIDADE ("Continuar para a Noite 2"),
+                        não de inventário: consistente com a headline da oferta que abre
+                        em seguida. Entra DEPOIS do beat da barra preenchendo. */}
                     <motion.button
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.48 }}
+                      transition={{ delay: 0.85 }}
                       onClick={goToOffer}
                       className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
                       style={{
@@ -678,19 +873,21 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                       }}
                     >
                       <Sparkles className="h-4 w-4" />
-                      Liberar as próximas 6 noites
+                      Continuar para a Noite 2
                       <ArrowRight className="h-4 w-4" />
                     </motion.button>
 
-                    {/* Fine-print — deixa claro ANTES do clique que o próximo passo é pago */}
+                    {/* Fine-print — só o essencial ANTES do clique (o próximo passo é
+                        pago); o detalhamento (bônus, Pix, sem assinatura) fica na
+                        oferta price-first que abre em seguida. */}
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.56 }}
+                      transition={{ delay: 1.0 }}
                       className="mt-3 text-center text-[12px] leading-snug"
                       style={{ color: 'rgba(199,184,240,0.55)' }}
                     >
-                      As 6 noites restantes + EcoDream · R$37 no Pix · pagamento único, sem assinatura
+                      {priceLabel(price)} · pagamento único
                     </motion.p>
                   </>
                 )}
@@ -706,49 +903,136 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                className="flex flex-col items-center text-center"
+                className="relative flex flex-col items-center text-center"
               >
-                {/* Eyebrow ✦ */}
+                {/* Confete de chegada — só quando a oferta abriu vinda da conquista
+                    da Noite 1 (goToOffer/skipToOffer setam confettiOn). */}
+                {confettiOn && <SonoConfettiBurst onDone={() => setConfettiOn(false)} />}
+
+                {/* Eyebrow ✦ — conquista quando a Noite 1 foi concluída; catálogo
+                    neutro pra quem chegou por noite bloqueada/banner sem concluir. */}
                 <div className="mb-3 flex items-center justify-center gap-2">
                   <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
                   <p className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(196,181,253,0.6)' }}>
-                    Ritual Boa Noite · 7 noites
+                    {night1Done ? 'Noite 1 concluída' : 'Ritual Boa Noite · 7 noites'}
                   </p>
                   <Sparkles className="h-3 w-3" style={{ color: 'rgba(196,181,253,0.5)' }} />
                 </div>
 
-                {/* Headline — foco em continuar a sequência */}
+                {/* Headline — personalizada pela resposta da reflexão (a pessoa acabou
+                    de nos dizer como o corpo dela está; a página usa isso a favor).
+                    Variante medida no "Oferta vista" via headline_variant. */}
                 <h2
                   className="mb-3 font-display text-[27px] font-bold leading-tight text-white"
                   style={{ textShadow: '0 2px 18px rgba(0,0,0,0.6)' }}
                 >
-                  Continue para a{' '}
-                  <span style={{ color: '#C4B5FD' }}>Noite 2.</span>
+                  {offerAnswer === 'yes' ? (
+                    <>
+                      Sentiu o corpo soltar?{' '}
+                      <span style={{ color: '#C4B5FD' }}>Isso foi só a Noite 1.</span>
+                    </>
+                  ) : offerAnswer === 'little' ? (
+                    <>
+                      Seu corpo começou a desacelerar.{' '}
+                      <span style={{ color: '#C4B5FD' }}>As Noites 2–7 terminam o trabalho.</span>
+                    </>
+                  ) : offerAnswer === 'no' || night1Done ? (
+                    <>
+                      Uma noite não desliga um alerta de anos.{' '}
+                      <span style={{ color: '#C4B5FD' }}>Sete noites, sim.</span>
+                    </>
+                  ) : (
+                    <>
+                      Continue para a <span style={{ color: '#C4B5FD' }}>Noite 2.</span>
+                    </>
+                  )}
                 </h2>
 
-                {/* Corpo — tira o foco da lista longa e leva direto pra oferta:
-                    o card R$37 agora vem logo abaixo (offerFocused). */}
-                <p className="mb-6 text-[14px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.72)' }}>
-                  Você deu o primeiro passo. Desbloqueie as 6 noites que faltam e leve o corpo
-                  até o fim do protocolo — <span className="font-semibold text-white">uma vez só, sem assinatura</span>.
+                {/* Corpo — RESULTADO, não processo: o que o corpo ganha nas próximas
+                    noites. O preço/condições ficam no card logo abaixo. */}
+                <p className="mb-5 text-[14px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.72)' }}>
+                  {night1Done ? 'Nas próximas 6 noites, seu' : 'Em 7 noites, seu'} corpo aprende a{' '}
+                  <span className="font-semibold text-white">apagar sozinho</span> — sem remédio,
+                  direto no seu fone.
                 </p>
 
-                {/* Lista das 7 noites — badges numerados, Noite 1 concluída.
+                {/* Prova social — depoimento REAL da landing /sono (projeto não usa
+                    fotos em depoimentos). Voz humana antes do preço. */}
+                <figure
+                  className="mb-6 w-full rounded-2xl px-4 py-3.5 text-left"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}
+                >
+                  <blockquote className="text-[13px] italic leading-relaxed" style={{ color: 'rgba(232,226,255,0.85)' }}>
+                    “Eu demorava mais de uma hora para dormir. Depois de alguns dias usando o
+                    protocolo comecei a pegar no sono muito mais rápido.”
+                  </blockquote>
+                  <figcaption className="mt-1.5 text-[11.5px] font-semibold" style={{ color: 'rgba(196,181,253,0.7)' }}>
+                    — Mariana
+                  </figcaption>
+                </figure>
+
+                {/* Lista das 7 noites — hierarquia "feito → próxima → o resto":
+                    Noite 1 (✓) e Noite 2 ("A seguir") ganham card cheio; Noites 3–7
+                    viram linhas compactas (a lista mostra o VOLUME do protocolo, não
+                    precisa repetir o bloqueio 6×). Um cadeado só por linha.
                     No paywall focado desce pra baixo do card (order); baseline = topo. */}
                 <div className="mb-6 w-full space-y-2" style={{ order: offerFocused ? 2 : 1 }}>
                   {PROTOCOL_NIGHTS.map((night) => {
                     const isDone = night.night === 1;
+                    const isNext = night.night === 2;
+
+                    // Noites 3–7 — linha compacta de meia altura.
+                    if (!isDone && !isNext) {
+                      return (
+                        <div
+                          key={night.id}
+                          className="flex items-center gap-3 rounded-xl px-3 py-2"
+                          style={{
+                            background: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.06)',
+                          }}
+                        >
+                          <div
+                            className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-lg"
+                            style={{ border: '1px solid rgba(255,255,255,0.10)' }}
+                          >
+                            {night.imageUrl ? (
+                              <img
+                                src={night.imageUrl}
+                                alt=""
+                                loading="lazy"
+                                className="h-full w-full object-cover"
+                                style={{ filter: 'brightness(0.5) saturate(0.8)' }}
+                              />
+                            ) : (
+                              <div className="h-full w-full" style={{ background: night.gradient }} />
+                            )}
+                          </div>
+                          <div className="flex min-w-0 flex-1 items-baseline gap-1.5 text-left">
+                            <span className="flex-shrink-0 text-[13px] font-bold" style={{ color: 'rgba(196,181,253,0.85)' }}>
+                              Noite {night.night}
+                            </span>
+                            <span className="truncate text-[12px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                              {night.title}
+                            </span>
+                          </div>
+                          <Lock className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'rgba(196,181,253,0.55)' }} />
+                        </div>
+                      );
+                    }
+
+                    // Noite 1 (concluída) e Noite 2 (a seguir) — card cheio.
                     return (
                       <div
                         key={night.id}
                         className="flex items-center gap-3.5 rounded-2xl p-3"
                         style={{
-                          background: isDone ? 'rgba(167,139,250,0.14)' : 'rgba(255,255,255,0.03)',
-                          border: isDone ? '1px solid rgba(167,139,250,0.40)' : '1px solid rgba(255,255,255,0.06)',
+                          background: isDone ? 'rgba(167,139,250,0.14)' : 'rgba(255,255,255,0.04)',
+                          border: isDone ? '1px solid rgba(167,139,250,0.40)' : '1px solid rgba(167,139,250,0.22)',
                           boxShadow: isDone ? '0 0 22px rgba(124,58,237,0.18)' : 'none',
                         }}
                       >
-                        {/* Miniatura grande — número no canto + cadeado interno quando bloqueada */}
+                        {/* Miniatura grande — número no canto */}
                         <div
                           className="relative h-[62px] w-[62px] flex-shrink-0 overflow-hidden rounded-xl"
                           style={{ border: isDone ? '1px solid rgba(196,181,253,0.45)' : '1px solid rgba(255,255,255,0.10)' }}
@@ -776,25 +1060,28 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                           >
                             {night.night}
                           </span>
-                          {/* Cadeado amarelo no canto inferior direito (bloqueadas) */}
-                          {!isDone && (
-                            <span
-                              className="absolute bottom-1 right-1 flex h-[18px] w-[18px] items-center justify-center rounded-full"
-                              style={{ background: 'rgba(8,5,24,0.72)', border: '1px solid rgba(251,191,36,0.45)', backdropFilter: 'blur(4px)' }}
-                            >
-                              <Lock className="h-2.5 w-2.5" style={{ color: '#FBBF24' }} />
-                            </span>
-                          )}
                         </div>
 
                         {/* Texto — "Noite N" maior/lilás forte + título quebrando */}
                         <div className="flex min-w-0 flex-1 flex-col text-left">
-                          <span className="text-[15px] font-bold leading-tight" style={{ color: '#C4B5FD' }}>
+                          <span className="flex items-center gap-2 text-[15px] font-bold leading-tight" style={{ color: '#C4B5FD' }}>
                             Noite {night.night}
+                            {isNext && (
+                              <span
+                                className="flex-shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.1em]"
+                                style={{
+                                  background: 'rgba(167,139,250,0.16)',
+                                  border: '1px solid rgba(167,139,250,0.4)',
+                                  color: '#C4B5FD',
+                                }}
+                              >
+                                A seguir
+                              </span>
+                            )}
                           </span>
                           <span
                             className="mt-0.5 text-[13px] font-medium leading-snug"
-                            style={{ color: isDone ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.62)' }}
+                            style={{ color: isDone ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.72)' }}
                           >
                             {night.title}
                           </span>
@@ -847,6 +1134,20 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
                   }}
                 >
+                  {/* Preço de lançamento — âncora de tempo HONESTA (este é o preço
+                      de entrada e vai subir; quando subir, o riscado "de R$X"
+                      passa a ser legítimo). Dourado = único acento quente do card. */}
+                  <span
+                    className="mb-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]"
+                    style={{
+                      background: 'rgba(238,192,121,0.12)',
+                      border: '1px solid rgba(238,192,121,0.35)',
+                      color: '#EEC079',
+                    }}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Preço de lançamento
+                  </span>
                   <div className="flex items-center gap-3">
                     <span
                       className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl"
@@ -859,11 +1160,23 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                         {priceLabel(price)}{' '}
                         <span className="text-[14px] font-semibold" style={{ color: 'rgba(214,203,250,0.7)' }}>no Pix</span>
                       </span>
-                      <span className="mt-1 text-[12px]" style={{ color: 'rgba(214,203,250,0.55)' }}>pagamento único</span>
+                      {/* Âncora por noite: R$37 vira "R$5,29 por noite" — o número
+                          que a pessoa compara com o custo de não dormir. */}
+                      <span className="mt-1 text-[12px]" style={{ color: 'rgba(214,203,250,0.55)' }}>
+                        pagamento único · {perNightLabel(price)} por noite
+                      </span>
                     </div>
                   </div>
+                  {/* Checklist: o 1º item carrega a âncora de valor REAL (assinatura
+                      R$ 15,90/mês vem de offerCopy, fonte canônica) — funde o que
+                      antes eram linha solta + check duplicado de "pagamento único". */}
                   <div className="mt-3.5 space-y-2 border-t pt-3.5" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                    {['Sem assinatura', 'Sem cobrança mensal', 'Acesso às 7 noites para usar quando quiser', 'Liberação automática após o pagamento'].map((b) => (
+                    {[
+                      `Seu pra sempre — menos que 3 meses da assinatura (${OFFER.priceMonthly})`,
+                      'Leva menos de 1 minuto no Pix',
+                      'Liberação na hora — Noite 2 pronta pra sua próxima noite',
+                      'Não ajudou? Devolvemos em até 7 dias',
+                    ].map((b) => (
                       <div key={b} className="flex items-center gap-2.5">
                         <Check className="h-4 w-4 flex-shrink-0" strokeWidth={2.5} style={{ color: '#A78BFA' }} />
                         <span className="text-[13px]" style={{ color: 'rgba(232,226,255,0.82)' }}>{b}</span>
@@ -928,17 +1241,112 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                 <div className="flex items-center justify-center gap-1.5">
                   <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'rgba(196,181,253,0.4)' }} />
                   <span className="text-[11px]" style={{ color: 'rgba(214,203,250,0.45)' }}>
-                    Pagamento via Pix · Liberação automática
+                    Pix · menos de 1 minuto · liberação automática
                   </span>
                 </div>
+
+                {/* Urgência HONESTA (sem timer): o protocolo funciona melhor em
+                    noites seguidas — liberar agora faz a Noite 2 valer hoje. */}
+                <p className="mt-2.5 text-center text-[12px] leading-snug" style={{ color: 'rgba(214,203,250,0.68)' }}>
+                  Libere antes de deitar — a Noite 2 já conta pra esta noite.
+                </p>
                 </div>
-                <button
-                  onClick={handleDismiss}
-                  className="mt-3 text-[12px] transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.3)', order: 3 }}
-                >
-                  Agora não
-                </button>
+                {/* Saída secundária. Guest: "Decidir amanhã" com captura de contato
+                    (o lembrete é manual, via ?oferta=1&g=). Free logado: mantém o
+                    "Agora não" → app_invite (2ª conversão existente). */}
+                {user ? (
+                  <button
+                    onClick={handleDismiss}
+                    className="mt-3 text-[12px] transition-colors"
+                    style={{ color: 'rgba(255,255,255,0.3)', order: 3 }}
+                  >
+                    Agora não
+                  </button>
+                ) : (
+                  <div className="mt-3 w-full" style={{ order: 3 }}>
+                    {!reminderOpen ? (
+                      <button
+                        onClick={handleDecideTomorrow}
+                        className="mx-auto block text-[12px] transition-colors"
+                        style={{ color: 'rgba(255,255,255,0.3)' }}
+                      >
+                        Decidir amanhã
+                      </button>
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div
+                          className="rounded-2xl p-4 text-left"
+                          style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                          }}
+                        >
+                          {reminderState === 'done' ? (
+                            <div className="text-center">
+                              <p className="text-[14px] leading-relaxed text-white">
+                                Combinado. Amanhã de manhã te lembramos. Boa noite.
+                              </p>
+                              <button
+                                onClick={handleStayInSono}
+                                className="mt-3.5 w-full rounded-full py-3 text-[14px] font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98]"
+                                style={{
+                                  background: 'rgba(167,139,250,0.18)',
+                                  border: '1px solid rgba(167,139,250,0.4)',
+                                }}
+                              >
+                                Voltar ao protocolo
+                              </button>
+                            </div>
+                          ) : (
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                void submitReminder();
+                              }}
+                            >
+                              <p className="text-[14px] font-semibold text-white">
+                                Sem pressa. Te lembramos amanhã de manhã.
+                              </p>
+                              <input
+                                type="text"
+                                value={reminderContact}
+                                onChange={(e) => setReminderContact(e.target.value)}
+                                placeholder="Seu WhatsApp ou e-mail"
+                                autoComplete="on"
+                                className="mt-3 w-full rounded-xl px-3.5 py-3 text-[14px] text-white outline-none placeholder:text-white/30 focus:border-white/40"
+                                style={{
+                                  background: 'rgba(255,255,255,0.06)',
+                                  border: '1px solid rgba(255,255,255,0.16)',
+                                }}
+                              />
+                              <button
+                                type="submit"
+                                disabled={reminderState === 'sending' || !reminderContact.trim()}
+                                className="mt-3 w-full rounded-full py-3 text-[14px] font-bold text-white transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+                                style={{
+                                  background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
+                                }}
+                              >
+                                Me lembra amanhã
+                              </button>
+                              <p
+                                className="mt-2 text-center text-[11px]"
+                                style={{ color: 'rgba(214,203,250,0.45)' }}
+                              >
+                                Uma mensagem só. Nada de spam.
+                              </p>
+                            </form>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -964,7 +1372,10 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
               </motion.div>
             )}
 
-            {/* ── save_account (opcional, pós-pagamento) ── */}
+            {/* ── save_account (pós-pagamento, SEM pular): a conta é o que entrega
+                o acesso de forma durável — o entitlement por guest_id se perde ao
+                limpar o navegador ou trocar de aparelho. Quem pagou precisa criar
+                a conta pra receber as meditações direito. ── */}
             {step === 'save_account' && (
               <motion.div
                 key="save_account"
@@ -1008,17 +1419,19 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                         Suas 7 noites são suas <span style={{ color: '#C4B5FD' }}>pra sempre.</span>
                       </>
                     }
-                    subtitle="Salve seu acesso pra entrar de qualquer aparelho."
+                    subtitle="Último passo: crie sua conta pra receber suas meditações e entrar de qualquer aparelho."
                     submitLabel="Salvar meu acesso"
                   />
                 </div>
-                <button
-                  onClick={handleStayInSono}
-                  className="mx-auto mt-4 text-[12.5px] transition-colors hover:text-white/60"
-                  style={{ color: 'rgba(255,255,255,0.4)' }}
-                >
-                  Pular
-                </button>
+                {/* Reasseguramento no lugar do antigo "Pular": o pagamento já está
+                    garantido — a conta é só a entrega. Sem rota de fuga: sem conta
+                    não conseguimos disponibilizar as meditações direito. */}
+                <div className="mx-auto mt-4 flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} style={{ color: 'rgba(167,139,250,0.8)' }} />
+                  <span className="text-[12px]" style={{ color: 'rgba(214,203,250,0.6)' }}>
+                    Pagamento confirmado — suas noites ficam guardadas nesta conta.
+                  </span>
+                </div>
               </motion.div>
             )}
 

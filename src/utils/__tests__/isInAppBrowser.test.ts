@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isInAppBrowser, classifyBrowserEnv } from '../isInAppBrowser';
+import { isInAppBrowser, isMetaInAppBrowser, classifyBrowserEnv } from '../isInAppBrowser';
 
 // UAs reais (encurtados) dos navegadores embarcados que mais aparecem no tráfego pago.
 const UA = {
@@ -42,6 +42,26 @@ describe('isInAppBrowser', () => {
   it('é seguro com UA vazio/indefinido', () => {
     expect(isInAppBrowser('')).toBe(false);
     expect(isInAppBrowser(undefined)).toBe(false);
+  });
+});
+
+describe('isMetaInAppBrowser', () => {
+  it('detecta Instagram e Facebook (FBAN/FBAV)', () => {
+    expect(isMetaInAppBrowser(UA.instagram)).toBe(true);
+    expect(isMetaInAppBrowser(UA.facebookIOS)).toBe(true);
+    expect(isMetaInAppBrowser(UA.facebookAndroid)).toBe(true);
+  });
+
+  it('NÃO marca WebView genérico nem navegadores normais (mais estrito que isInAppBrowser)', () => {
+    expect(isMetaInAppBrowser(UA.androidWebView)).toBe(false);
+    expect(isMetaInAppBrowser(UA.chromeAndroid)).toBe(false);
+    expect(isMetaInAppBrowser(UA.safariIOS)).toBe(false);
+    expect(isMetaInAppBrowser(UA.desktopChrome)).toBe(false);
+  });
+
+  it('é seguro com UA vazio/indefinido', () => {
+    expect(isMetaInAppBrowser('')).toBe(false);
+    expect(isMetaInAppBrowser(undefined)).toBe(false);
   });
 });
 

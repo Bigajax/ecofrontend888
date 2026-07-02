@@ -28,6 +28,16 @@ export function isInAppBrowser(
  *  virar super property `browser_env` no Mixpanel. */
 export type BrowserEnv = 'inapp_instagram' | 'inapp_facebook' | 'browser_normal';
 
+/** In-app browser da Meta (Instagram/Facebook) especificamente — a definição do
+ *  boolean `in_app_browser` enviado como super property em TODOS os eventos do
+ *  Mixpanel. Mais estrita que `isInAppBrowser` (não inclui Line/Messenger/wv). */
+export function isMetaInAppBrowser(
+  ua: string | undefined = typeof navigator !== 'undefined' ? navigator.userAgent : '',
+): boolean {
+  if (!ua) return false;
+  return /Instagram|FBAN|FBAV/i.test(ua);
+}
+
 export function classifyBrowserEnv(
   ua: string | undefined = typeof navigator !== 'undefined' ? navigator.userAgent : '',
 ): BrowserEnv {

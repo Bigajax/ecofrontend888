@@ -1,4 +1,5 @@
 import mixpanel from 'mixpanel-browser';
+import { isMetaInAppBrowser } from '@/utils/isInAppBrowser';
 
 const PROD_HOST = 'ecofrontend888.vercel.app';
 
@@ -41,6 +42,15 @@ mixpanel.init(import.meta.env.VITE_MIXPANEL_TOKEN || '', {
 if (!analyticsEnabled()) {
   // Preview/localhost: desarma todo tracking (mixpanel.* viram no-op).
   mixpanel.disable();
+}
+
+// Super property global: TODOS os eventos carregam se a sessão roda no in-app
+// browser da Meta (Instagram/FBAN/FBAV) — onde OAuth e travessia pro banco mais
+// quebram. Complementa o `browser_env` (string) registrado só no funil do sono.
+try {
+  mixpanel.register({ in_app_browser: isMetaInAppBrowser() });
+} catch {
+  // analytics — silencia erros
 }
 
 if (!import.meta.env.VITE_MIXPANEL_TOKEN) {

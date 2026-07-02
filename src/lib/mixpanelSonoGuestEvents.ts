@@ -16,8 +16,9 @@ const SRC = 'sono_noite_1';
 const PRODUCT_KEY = 'protocolo_sono_7_noites';
 
 /** Gatilho que abriu a oferta (KISS #4). Separa a conversão do banner (baseline)
- *  da do paywall focado nos eventos Oferta vista / Checkout clicado / Pix gerado. */
-export type OfferOrigem = 'banner' | 'noite_bloqueada' | 'continuar_n2';
+ *  da do paywall focado nos eventos Oferta vista / Checkout clicado / Pix gerado.
+ *  'lembrete' = deep link do lembrete manual (?oferta=1&g=). */
+export type OfferOrigem = 'banner' | 'noite_bloqueada' | 'continuar_n2' | 'lembrete';
 
 type SonoGuestEventProps = {
   guestId?: string;
@@ -26,6 +27,10 @@ type SonoGuestEventProps = {
   context?: string;
   origem?: OfferOrigem;
   ctaConclusaoVariant?: string;
+  /** Canal do contato do lembrete ("Decidir amanhã"): contém "@" → email. */
+  canal?: 'email' | 'whatsapp';
+  /** Variante da headline da oferta (personalizada pela resposta da reflexão). */
+  headlineVariant?: string;
 };
 
 /** Lê o gatilho da oferta gravado em sessionStorage no momento da abertura
@@ -33,7 +38,7 @@ type SonoGuestEventProps = {
 function getOfferOrigem(): OfferOrigem | undefined {
   try {
     const o = sessionStorage.getItem('eco.sono.offer_origem');
-    if (o === 'banner' || o === 'noite_bloqueada' || o === 'continuar_n2') return o;
+    if (o === 'banner' || o === 'noite_bloqueada' || o === 'continuar_n2' || o === 'lembrete') return o;
   } catch {
     // sessionStorage indisponível — omite origem
   }
@@ -49,6 +54,8 @@ function trackSonoGuestEvent(eventName: string, props: SonoGuestEventProps = {})
     ...(props.context ? { context: props.context } : {}),
     ...(props.origem ? { origem: props.origem } : {}),
     ...(props.ctaConclusaoVariant ? { cta_conclusao_variant: props.ctaConclusaoVariant } : {}),
+    ...(props.canal ? { canal: props.canal } : {}),
+    ...(props.headlineVariant ? { headline_variant: props.headlineVariant } : {}),
   });
 }
 
@@ -273,6 +280,38 @@ export function registerBrowserEnv(): void {
 
 export function trackSonoGuestOfferDismissed(props?: SonoGuestEventProps): void {
   trackSonoGuestEvent('Funil Protocolo · Oferta dispensada', props);
+}
+
+// ── "Decidir amanhã" — saída com captura de contato (substitui o "Agora não"
+// do guest). O lembrete é enviado MANUALMENTE no dia seguinte, via deep link
+// ?oferta=1&g={guest_id} (ver "Oferta aberta via lembrete").
+
+/** Guest tocou "Decidir amanhã" na oferta → expande o form de contato inline. */
+export function trackSonoGuestDecideTomorrowClicked(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Decidir amanhã clicado', { ...props, origem: props?.origem ?? getOfferOrigem() });
+}
+
+/** Contato do lembrete gravado em offer_reminders. `canal` derivado do conteúdo
+ *  (contém "@" → email, senão whatsapp). */
+export function trackSonoGuestReminderSubmitted(canal: 'email' | 'whatsapp', props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Contato lembrete enviado', { ...props, canal });
+}
+
+/** INSERT em offer_reminders falhou (após 1 retry). A UI mostra sucesso mesmo
+ *  assim (nunca trava o fluxo) — este evento é o que denuncia a perda. */
+export function trackSonoGuestReminderFailed(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Contato lembrete falhou', props);
+}
+
+/** Gesto/botão voltar com a oferta aberta → fecha o overlay e fica na página do
+ *  protocolo (antes, o back saía da /sono/experiencia). Disparado no popstate. */
+export function trackSonoGuestOfferExitViaBack(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Oferta saída via voltar', { ...props, origem: props?.origem ?? getOfferOrigem() });
+}
+
+/** Oferta aberta pelo deep link do lembrete manual (?oferta=1&g={guest_id}). */
+export function trackSonoGuestOfferOpenedViaReminder(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Oferta aberta via lembrete', props);
 }
 
 /** Ponte pro app: free autenticado dispensou o checkout e viu o convite pro /app. */
