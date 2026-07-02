@@ -23,6 +23,7 @@ import {
   registerPaywallFoco,
   registerEntradaSemModal,
   registerOfertaBonus,
+  registerPresenteSonho,
   registerBrowserEnv,
 } from '@/lib/mixpanelSonoGuestEvents';
 import { isPaywallFoco } from '@/lib/paywallFoco';
@@ -194,6 +195,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     registerPaywallFoco();
     registerEntradaSemModal();
     registerOfertaBonus();
+    registerPresenteSonho();
     // Ambiente do navegador (in-app IG/FB vs normal) — a travessia pro banco
     // quebra mais no in-app; todo evento do funil herda `browser_env`.
     registerBrowserEnv();

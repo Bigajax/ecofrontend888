@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, ChevronLeft, Heart, Lock, Moon, Plus, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronLeft, Heart, Lock, Moon, Pause, Play, Plus, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,6 +21,9 @@ import {
   trackSonoGuestReminderSubmitted,
   trackSonoGuestReminderFailed,
   trackSonoGuestOfferExitViaBack,
+  trackSonoGuestPreviewNight2Played,
+  trackSonoGuestPreviewNight2Completed,
+  trackSonoGuestDreamGiftOpened,
 } from '@/lib/mixpanelSonoGuestEvents';
 import mixpanel from '@/lib/mixpanel';
 import { trackWithCAPI } from '@/lib/fbpixel';
@@ -34,6 +37,9 @@ import { SonoInlineSignup } from './SonoInlineSignup';
 import { SonoInlinePix } from './SonoInlinePix';
 import { SonoEcoDreamBonusModal } from './SonoEcoDreamBonusModal';
 import { SonoConfettiBurst } from './SonoConfettiBurst';
+import { SonoDreamGiftModal, readDreamGift } from './SonoDreamGiftModal';
+import { useAudioPreview } from '@/hooks/useAudioPreview';
+import { isPresenteSonho } from '@/lib/presenteSonho';
 import { readSonoLifetime } from './sonoLifetime';
 
 /**
@@ -186,6 +192,33 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   // null = sem dado; só exibimos a partir de SOCIAL_PROOF_MIN (número baixo é
   // anti-prova). Falha é silenciosa — a linha simplesmente não aparece.
   const [socialProof, setSocialProof] = useState<number | null>(null);
+  // Presente da Noite 1 (1 interpretação de sonho) — modal aberto pelo card
+  // dourado da tela de continuidade.
+  const [dreamGiftOpen, setDreamGiftOpen] = useState(false);
+
+  // Preview da Noite 2 (75s com fade) no card "A seguir" da oferta — provar o
+  // produto vende mais que descrever. O hook vive no componente (que persiste
+  // entre passos), então paramos explicitamente ao sair do passo offer.
+  const night2 = PROTOCOL_NIGHTS[1];
+  const preview = useAudioPreview(night2?.audioUrl ?? '', 75);
+  const { stop: stopPreview } = preview;
+  const previewPlayedRef = useRef(false);
+  const previewCompletedRef = useRef(false);
+  useEffect(() => {
+    if (step !== 'offer') stopPreview();
+  }, [step, stopPreview]);
+  useEffect(() => {
+    if (!preview.done || previewCompletedRef.current) return;
+    previewCompletedRef.current = true;
+    trackSonoGuestPreviewNight2Completed({ source: getSource(), guestId: getGuestId() });
+  }, [preview.done]);
+  const handlePreviewToggle = () => {
+    if (!preview.playing && !previewPlayedRef.current) {
+      previewPlayedRef.current = true;
+      trackSonoGuestPreviewNight2Played({ source: getSource(), guestId: getGuestId() });
+    }
+    preview.toggle();
+  };
   const convertedTrackedRef = useRef(false);
   const funnelSourceRef = useRef(false);
   const appInviteShownRef = useRef(false);
@@ -924,6 +957,44 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                     >
                       {priceLabel(price)} · pagamento único
                     </motion.p>
+
+                    {/* Presente da Noite 1 — reciprocidade ANTES da oferta: 1
+                        interpretação de sonho da Eco (degustação do bônus
+                        EcoDream). Entra por último, como um P.S. dourado. */}
+                    {isPresenteSonho() && (
+                      <motion.button
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1.15, duration: 0.5 }}
+                        onClick={() => {
+                          trackSonoGuestDreamGiftOpened({ source: getSource(), guestId: getGuestId() });
+                          setDreamGiftOpen(true);
+                        }}
+                        className="mt-6 flex w-full items-center gap-3 rounded-2xl p-3.5 text-left transition-all hover:brightness-110 active:scale-[0.99]"
+                        style={{
+                          background: 'rgba(238,192,121,0.08)',
+                          border: '1px solid rgba(238,192,121,0.28)',
+                        }}
+                      >
+                        <span
+                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
+                          style={{ background: 'rgba(238,192,121,0.14)', border: '1px solid rgba(238,192,121,0.34)' }}
+                        >
+                          <Moon className="h-[18px] w-[18px]" style={{ color: '#EEC079' }} fill="currentColor" />
+                        </span>
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="text-[10.5px] font-bold uppercase tracking-[0.16em]" style={{ color: '#EEC079' }}>
+                            Presente da Noite 1
+                          </span>
+                          <span className="mt-0.5 text-[13px] leading-snug" style={{ color: 'rgba(240,232,255,0.85)' }}>
+                            {readDreamGift()
+                              ? 'Seu sonho interpretado — toque para reler.'
+                              : 'Interprete um sonho com a Eco — por nossa conta.'}
+                          </span>
+                        </span>
+                        <ArrowRight className="h-4 w-4 flex-shrink-0" style={{ color: 'rgba(238,192,121,0.6)' }} />
+                      </motion.button>
+                    )}
                   </>
                 )}
               </motion.div>
@@ -1064,17 +1135,29 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                       );
                     }
 
-                    // Noite 1 (concluída) e Noite 2 (a seguir) — card cheio.
+                    // Noite 1 (concluída) e Noite 2 (a seguir, com PRÉVIA) — card cheio.
                     return (
                       <div
                         key={night.id}
-                        className="flex items-center gap-3.5 rounded-2xl p-3"
+                        className="relative flex items-center gap-3.5 overflow-hidden rounded-2xl p-3"
                         style={{
                           background: isDone ? 'rgba(167,139,250,0.14)' : 'rgba(255,255,255,0.04)',
                           border: isDone ? '1px solid rgba(167,139,250,0.40)' : '1px solid rgba(167,139,250,0.22)',
                           boxShadow: isDone ? '0 0 22px rgba(124,58,237,0.18)' : 'none',
                         }}
                       >
+                        {/* Progresso da prévia — linha fina colada na base do card */}
+                        {isNext && preview.progress > 0 && !preview.done && (
+                          <span
+                            aria-hidden="true"
+                            className="absolute bottom-0 left-0 h-[2px] rounded-full transition-[width] duration-300"
+                            style={{
+                              width: `${preview.progress * 100}%`,
+                              background: 'linear-gradient(90deg, #C4B5FD, #7C3AED)',
+                              boxShadow: '0 0 8px rgba(167,139,250,0.6)',
+                            }}
+                          />
+                        )}
                         {/* Miniatura grande — número no canto */}
                         <div
                           className="relative h-[62px] w-[62px] flex-shrink-0 overflow-hidden rounded-xl"
@@ -1128,9 +1211,23 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                           >
                             {night.title}
                           </span>
+                          {/* Prévia da Noite 2: affordance parada → tocando → gancho
+                              pós-corte (o CTA da oferta está logo acima). */}
+                          {isNext && (
+                            <span
+                              className="mt-1 block text-[11.5px] italic leading-snug"
+                              style={{ color: 'rgba(196,181,253,0.7)' }}
+                            >
+                              {preview.done
+                                ? 'Gostou do começo? A noite completa tem 6 min.'
+                                : preview.playing
+                                  ? 'Tocando a prévia…'
+                                  : 'Toque no play para ouvir uma prévia.'}
+                            </span>
+                          )}
                         </div>
 
-                        {/* Direita: check de vidro (concluída) ou cadeado (fora) */}
+                        {/* Direita: check (concluída) ou play da prévia (Noite 2) */}
                         {isDone ? (
                           <span
                             className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full"
@@ -1145,18 +1242,27 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                             <Check className="h-3.5 w-3.5" strokeWidth={3} style={{ color: '#C4B5FD' }} />
                           </span>
                         ) : (
-                          <span
-                            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full"
+                          // Play da prévia da Noite 2 — no lugar do cadeado: a noite
+                          // não está só trancada, está DEMONSTRÁVEL.
+                          <button
+                            type="button"
+                            onClick={handlePreviewToggle}
+                            aria-label={preview.playing ? 'Pausar prévia da Noite 2' : 'Ouvir prévia da Noite 2'}
+                            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-all hover:scale-105 active:scale-95"
                             style={{
-                              background: 'rgba(167,139,250,0.10)',
+                              background: 'rgba(167,139,250,0.14)',
                               backdropFilter: 'blur(8px)',
                               WebkitBackdropFilter: 'blur(8px)',
-                              border: '1.5px solid rgba(167,139,250,0.6)',
-                              boxShadow: '0 0 10px rgba(167,139,250,0.35), inset 0 0 8px rgba(167,139,250,0.18)',
+                              border: '1.5px solid rgba(167,139,250,0.85)',
+                              boxShadow: '0 0 14px rgba(167,139,250,0.5), inset 0 0 8px rgba(167,139,250,0.2)',
                             }}
                           >
-                            <Lock className="h-3.5 w-3.5" style={{ color: '#C4B5FD' }} />
-                          </span>
+                            {preview.playing ? (
+                              <Pause className="h-3.5 w-3.5" style={{ color: '#E9DEFF' }} fill="currentColor" />
+                            ) : (
+                              <Play className="ml-0.5 h-3.5 w-3.5" style={{ color: '#E9DEFF' }} fill="currentColor" />
+                            )}
+                          </button>
                         )}
                       </div>
                     );
@@ -1603,6 +1709,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
 
       {/* Modal explicativo do bônus EcoDream — sobe acima do overlay (z-[9999]). */}
       <SonoEcoDreamBonusModal open={bonusInfoOpen} onClose={() => setBonusInfoOpen(false)} />
+      <SonoDreamGiftModal open={dreamGiftOpen} onClose={() => setDreamGiftOpen(false)} />
     </motion.div>
   );
 }

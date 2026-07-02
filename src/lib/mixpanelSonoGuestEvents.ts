@@ -2,6 +2,7 @@ import mixpanel from './mixpanel';
 import { isPaywallFoco } from './paywallFoco';
 import { isEntradaSemModal } from './entradaSemModal';
 import { isOfertaBonus } from './ofertaBonus';
+import { isPresenteSonho } from './presenteSonho';
 import { classifyBrowserEnv } from '@/utils/isInAppBrowser';
 
 /** Opções de envio imediato (sendBeacon) — pra eventos que precedem a saída da
@@ -205,6 +206,49 @@ export function registerOfertaBonus(): void {
  *  Mede quanto interesse o value-stack desperta (e se vale aprofundar a copy). */
 export function trackSonoGuestBonusInfoOpened(props?: SonoGuestEventProps): void {
   trackSonoGuestEvent('Funil Protocolo · Bônus EcoDream aberto', { ...props, origem: props?.origem ?? getOfferOrigem() });
+}
+
+// ── Preview da Noite 2 (card "A seguir" da oferta) ───────────────────────────
+// Provar o produto: play de 75s da Noite 2 dentro da oferta. Cruzar com
+// "Checkout clicado" mede se ouvir a prévia empurra a conversão.
+
+/** Primeiro play da prévia da Noite 2 (1×/sessão — ref-guard no componente). */
+export function trackSonoGuestPreviewNight2Played(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Preview Noite 2 tocado', { ...props, origem: props?.origem ?? getOfferOrigem() });
+}
+
+/** Prévia atingiu o corte (~75s) — ouviu até o fim do trecho. */
+export function trackSonoGuestPreviewNight2Completed(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Preview Noite 2 concluído', { ...props, origem: props?.origem ?? getOfferOrigem() });
+}
+
+// ── Presente da Noite 1 (1 interpretação de sonho, tela de continuidade) ─────
+// Reciprocidade: presente ANTES da oferta. Também planta o valor do bônus
+// EcoDream vendido no card R$37.
+
+/** Card-presente tocado → modal do sonho aberto. */
+export function trackSonoGuestDreamGiftOpened(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Presente sonho aberto', props);
+}
+
+/** Sonho enviado pra interpretação (POST /api/dream/interpret). */
+export function trackSonoGuestDreamGiftSubmitted(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Presente sonho enviado', props);
+}
+
+/** Interpretação concluída (SSE done) — presente consumido. */
+export function trackSonoGuestDreamGiftCompleted(props?: SonoGuestEventProps): void {
+  trackSonoGuestEvent('Funil Protocolo · Presente sonho concluído', props);
+}
+
+/** Super property do rollout do presente — registrada no mount da experiência
+ *  pra todo evento do funil confirmar o estado do switch. */
+export function registerPresenteSonho(): void {
+  try {
+    mixpanel.register({ presente_sonho: isPresenteSonho() });
+  } catch {
+    // analytics — silencia erros
+  }
 }
 
 /** Banner de oferta exibido (cruzou 150s da Noite 1; o áudio segue tocando). 1×/sessão. */
