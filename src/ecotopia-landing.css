@@ -16119,3 +16119,41 @@ body.eco-no-scroll {
   box-shadow: 0 4px 14px rgba(221, 162, 74, 0.4);
   z-index: 1;
 }
+
+/* ── Afinação das costuras (feedback: viravam "névoa" nas fronteiras com
+   imagem de fundo). Mais baixas, começando a 88% e com parada intermediária
+   pra queda suave — sussurro, não banco de neblina. ── */
+.ecotopia-lp .lp-sono-seam { height: 96px; }
+.ecotopia-lp .lp-sono-seam--from-hero {
+  background: linear-gradient(180deg, rgba(14, 10, 38, 0.88) 0%, rgba(14, 10, 38, 0.38) 52%, rgba(14, 10, 38, 0) 100%);
+}
+.ecotopia-lp .lp-sono-seam--from-dor {
+  background: linear-gradient(180deg, rgba(13, 10, 36, 0.88) 0%, rgba(13, 10, 36, 0.38) 52%, rgba(13, 10, 36, 0) 100%);
+}
+.ecotopia-lp .lp-sono-seam--from-n7 {
+  background: linear-gradient(180deg, rgba(11, 8, 32, 0.88) 0%, rgba(11, 8, 32, 0.38) 52%, rgba(11, 8, 32, 0) 100%);
+}
+.ecotopia-lp .lp-sono-seam--from-creme {
+  background: linear-gradient(180deg, rgba(239, 231, 214, 0.88) 0%, rgba(239, 231, 214, 0.38) 52%, rgba(239, 231, 214, 0) 100%);
+}
+@media (max-width: 767px) {
+  .ecotopia-lp .lp-sono-seam { height: 64px; }
+}
+
+/* ── CTA do herói em âmbar: UMA cor de ação na página inteira (herói,
+   sticky, oferta). O primeiro CTA volta a ser o mais forte. ── */
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-cta-primary {
+  background: linear-gradient(135deg, #EEC079 0%, #DDA24A 100%);
+  border: none;
+  color: #2A1A06;
+  -webkit-text-fill-color: #2A1A06;
+  font-weight: 700;
+  box-shadow: 0 12px 32px rgba(221, 162, 74, 0.45);
+}
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-hero-cta-primary:hover {
+  background: linear-gradient(135deg, #F2CB8C 0%, #E2AC55 100%);
+  border: none;
+}
+.ecotopia-lp .lp-sono-hero--deite .lp-sono-cta-play {
+  color: #2A1A06;
+}
