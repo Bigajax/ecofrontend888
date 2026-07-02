@@ -16157,3 +16157,21 @@ body.eco-no-scroll {
 .ecotopia-lp .lp-sono-hero--deite .lp-sono-cta-play {
   color: #2A1A06;
 }
+
+/* ── Véu do herói (mobile): banda média um tom mais escura pra o CTA âmbar
+   assentar sobre o brilho do abajur sem competir com ele. Topo (título) e
+   base (ovelha) inalterados. ── */
+@media (max-width: 767px) {
+  .ecotopia-lp .lp-sono-hero--deite {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(14, 10, 38, 0.9) 0%,
+        rgba(14, 10, 38, 0.62) 24%,
+        rgba(14, 10, 38, 0.34) 46%,
+        rgba(14, 10, 38, 0.24) 72%,
+        rgba(13, 10, 36, 0.12) 100%
+      ),
+      #0E0A26 url('/images/sono-hero-cama.webp') 75% center / cover no-repeat;
+  }
+}
