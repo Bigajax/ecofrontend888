@@ -96,6 +96,8 @@ export default function SonoDorSection({ conviteMode = false }: SonoDorSectionPr
   if (conviteMode) {
     return (
       <section className="lp-sono-dor lp-sono-dor--night">
+        {/* Costura: o creme da seção anterior esmaece pra dentro do navy */}
+        <div className="lp-sono-seam lp-sono-seam--from-creme" aria-hidden />
         <div className="lp-sono-dor-night-inner">
           <div className="lp-sono-dor-night-text">
             <h2 className="lp-sono-dor-night-title scroll-reveal">

@@ -650,6 +650,8 @@ export default function EcotopiaSonoPage() {
       {/* ─── Como usar hoje à noite · 4 passos (só deite_se) ─── */}
       {isConviteHero && (
         <section className="lp-sono-steps" aria-label="Como usar hoje à noite">
+          {/* Costura: o navy do herói escorre pra dentro do creme (fim do corte seco) */}
+          <div className="lp-sono-seam lp-sono-seam--from-hero" aria-hidden />
           <div className="lp-sono-steps-inner">
             <p className="lp-sono-steps-eyebrow scroll-reveal">Ritual · Boa noite Ecotopia</p>
             <h2 className="lp-sono-steps-title scroll-reveal">
@@ -716,6 +718,7 @@ export default function EcotopiaSonoPage() {
       {/* ─── Seu Ritual Boa Noite · resumo em 3 passos (só deite_se) ─── */}
       {isConviteHero && (
         <section className="lp-sono-ritual" aria-label="Seu Ritual Boa Noite">
+          <div className="lp-sono-seam lp-sono-seam--from-dor" aria-hidden />
           <div className="lp-sono-ritual-inner">
             <p className="lp-sono-ritual-eyebrow scroll-reveal">Seu caminho para noites leves</p>
             <h2 className="lp-sono-ritual-title scroll-reveal">
@@ -805,6 +808,7 @@ export default function EcotopiaSonoPage() {
           Demais variantes: layout editorial (Noite 1 destaque + lista/grade). */}
       {isConviteHero ? (
         <section className="lp-sono-n7" aria-label="As 7 noites">
+          <div className="lp-sono-seam lp-sono-seam--from-creme" aria-hidden />
           <div className="lp-sono-n7-inner">
             <p className="lp-sono-n7-eyebrow scroll-reveal">Ritual completo</p>
             <h2 className="lp-sono-n7-title scroll-reveal">As <span className="lp-sono-n7-accent">7 noites</span></h2>
@@ -815,8 +819,13 @@ export default function EcotopiaSonoPage() {
 
             <div className="lp-sono-n7-grid">
               {PROTOCOL_NIGHTS.map((n, i) => (
-                <div className={`lp-sono-n7-card scroll-reveal stagger-${(i % 4) + 1}`} key={n.id}>
+                <div
+                  className={`lp-sono-n7-card${n.night === 1 ? ' lp-sono-n7-card--free' : ''} scroll-reveal stagger-${(i % 4) + 1}`}
+                  key={n.id}
+                >
                   <span className="lp-sono-n7-num">{n.night}</span>
+                  {/* Porta de entrada gratuita visível na vitrine — amarra a seção ao CTA */}
+                  {n.night === 1 && <span className="lp-sono-n7-free">Grátis</span>}
                   <span className="lp-sono-n7-thumb">
                     <img src={n.imageUrl} alt="" loading="lazy" decoding="async" />
                   </span>
@@ -925,6 +934,7 @@ export default function EcotopiaSonoPage() {
           deite_se: versão noturna (igual à referência). Demais: versão atual. */}
       {isConviteHero ? (
         <section className="lp-sono-stories" aria-label="Depoimentos">
+          <div className="lp-sono-seam lp-sono-seam--from-n7" aria-hidden />
           <div className="lp-sono-stories-inner">
             <p className="lp-sono-stories-eyebrow scroll-reveal">Quem já usa, sente</p>
             <h2 className="lp-sono-stories-title scroll-reveal">
@@ -1048,6 +1058,7 @@ export default function EcotopiaSonoPage() {
           deite_se: versão noturna (cards numerados). Demais: versão atual. */}
       {isConviteHero ? (
         <section ref={diferencialRef} className="lp-sono-diff2" aria-label="Não é uma biblioteca de meditações">
+          <div className="lp-sono-seam lp-sono-seam--from-creme" aria-hidden />
           <div className="lp-sono-diff2-inner">
             <p className="lp-sono-diff2-eyebrow scroll-reveal">Feito para noites reais</p>
             <h2 className="lp-sono-diff2-title scroll-reveal">

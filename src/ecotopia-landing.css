@@ -15958,3 +15958,164 @@ body.eco-no-scroll {
     transition: opacity 0.28s ease;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   /sono · RETOQUES DE CONVERSÃO (jul/2026, mobile-first)
+   Overrides intencionais: este bloco vive no FIM do arquivo pra vencer os
+   empates de especificidade (convenção do bloco /sono).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · Costuras entre seções (fim do corte seco navy↔creme) ──
+   Faixa de gradiente no TOPO da seção seguinte esmaecendo a cor-base da
+   anterior — a noite "escorre" pra próxima cena. Div (não ::before, que as
+   seções já usam pra véu), pointer-events none, atrás do conteúdo. */
+.ecotopia-lp .lp-sono-steps,
+.ecotopia-lp .lp-sono-dor--night,
+.ecotopia-lp .lp-sono-ritual,
+.ecotopia-lp .lp-sono-n7,
+.ecotopia-lp .lp-sono-stories,
+.ecotopia-lp .lp-sono-diff2 {
+  position: relative;
+}
+.ecotopia-lp .lp-sono-steps-inner,
+.ecotopia-lp .lp-sono-dor-night-inner,
+.ecotopia-lp .lp-sono-ritual-inner,
+.ecotopia-lp .lp-sono-n7-inner,
+.ecotopia-lp .lp-sono-stories-inner,
+.ecotopia-lp .lp-sono-diff2-inner {
+  position: relative;
+  z-index: 2;
+}
+.ecotopia-lp .lp-sono-seam {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 110px;
+  pointer-events: none;
+  z-index: 1;
+}
+.ecotopia-lp .lp-sono-seam--from-hero {
+  background: linear-gradient(180deg, #0E0A26 0%, rgba(14, 10, 38, 0) 100%);
+}
+.ecotopia-lp .lp-sono-seam--from-dor {
+  background: linear-gradient(180deg, #0D0A24 0%, rgba(13, 10, 36, 0) 100%);
+}
+.ecotopia-lp .lp-sono-seam--from-n7 {
+  background: linear-gradient(180deg, #0B0820 0%, rgba(11, 8, 32, 0) 100%);
+}
+.ecotopia-lp .lp-sono-seam--from-creme {
+  background: linear-gradient(180deg, #EFE7D6 0%, rgba(239, 231, 214, 0) 100%);
+}
+@media (max-width: 767px) {
+  .ecotopia-lp .lp-sono-seam { height: 84px; }
+}
+
+/* ── 2 · "Como usar hoje à noite": passos acesos ──
+   Badge de vidro pálido → sólido violeta (mesmo gradiente da marca) e texto
+   secundário dos cards um tom mais firme sobre o creme. */
+.ecotopia-lp .lp-sono-step-num {
+  color: #FFFFFF;
+  background: linear-gradient(150deg, #8E7BE6, #6E5CC4);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 6px 16px rgba(110, 92, 196, 0.38);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.ecotopia-lp .lp-sono-step-desc {
+  color: #3A3260;
+}
+@media (max-width: 767px) {
+  .ecotopia-lp .lp-sono-step-desc { font-size: 14px; }
+}
+
+/* ── 3 · Callout "Menos esforço, mais presença…": sussurro de noite ──
+   Vidro branco + texto lavanda sobre foto era ilegível; vira card navy
+   sólido com texto creme — contraste real, mesmo conceito. */
+.ecotopia-lp .lp-sono-steps-foot {
+  background: rgba(20, 15, 52, 0.94);
+  color: #EFE9FF;
+  font-size: 14.5px;
+  border: 1px solid rgba(142, 123, 230, 0.35);
+  box-shadow: 0 14px 34px rgba(20, 15, 52, 0.35);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ── 4 · "Você conhece essa cena": timeline conectada ──
+   A cena é uma narrativa em 4 tempos — a linha vertical liga os chips e os
+   unifica (mesmo fundo/borda lilás). */
+.ecotopia-lp .lp-sono-dor-night-item {
+  position: relative;
+}
+.ecotopia-lp .lp-sono-dor-night-item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 44px;
+  bottom: -18px;
+  width: 1px;
+  background: linear-gradient(180deg, rgba(142, 123, 230, 0.45), rgba(142, 123, 230, 0.12));
+  pointer-events: none;
+}
+.ecotopia-lp .lp-sono-dor-night-ico {
+  position: relative;
+  z-index: 1;
+  background: rgba(142, 123, 230, 0.16);
+  border: 1px solid rgba(142, 123, 230, 0.45);
+  color: #CBBFF2;
+}
+
+/* ── 5 · Sticky CTA: o botão mais forte da tela ──
+   Vidro translúcido → âmbar sólido (mesmo gradiente do "Começar meu ritual"
+   da oferta). É a ação onipresente do mobile; precisa vencer qualquer fundo. */
+.ecotopia-lp .lp-sono-sticky-bar--night .lp-sono-hero-cta-primary {
+  background: linear-gradient(135deg, #EEC079 0%, #DDA24A 100%);
+  border: none;
+  color: #2A1A06;
+  -webkit-text-fill-color: #2A1A06;
+  font-weight: 700;
+  box-shadow: 0 8px 28px rgba(221, 162, 74, 0.4);
+}
+.ecotopia-lp .lp-sono-sticky-bar--night .lp-sono-hero-cta-primary:hover {
+  background: linear-gradient(135deg, #F2CB8C 0%, #E2AC55 100%);
+  border: none;
+}
+.ecotopia-lp .lp-sono-sticky-bar--night .lp-sono-cta-play {
+  color: #2A1A06;
+}
+
+/* ── 6a · "Seu Ritual Boa Noite": cards legíveis + peek no carrossel ── */
+.ecotopia-lp .lp-sono-ritual-card {
+  background: rgba(255, 255, 255, 0.78);
+}
+.ecotopia-lp .lp-sono-ritual-card-desc {
+  color: #3A3260;
+}
+@media (max-width: 760px) {
+  /* o próximo card espreita = affordance de swipe (o dot sozinho não bastava) */
+  .ecotopia-lp .lp-sono-ritual-card {
+    flex: 0 0 88%;
+  }
+}
+
+/* ── 6b · "As 7 noites": a porta gratuita visível na vitrine ── */
+.ecotopia-lp .lp-sono-n7-card--free {
+  border-color: rgba(142, 123, 250, 0.55);
+  box-shadow: 0 0 26px rgba(110, 92, 196, 0.3);
+}
+.ecotopia-lp .lp-sono-n7-free {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--lp-sans);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2A1A06;
+  background: linear-gradient(135deg, #EEC079 0%, #DDA24A 100%);
+  box-shadow: 0 4px 14px rgba(221, 162, 74, 0.4);
+  z-index: 1;
+}
