@@ -367,11 +367,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isGuest = !user && guestUser !== null;
 
-  const initGuestSession = (source = 'landing'): GuestUser => {
+  // Memoizado + bail-out por id: sem isso, TODO render criava uma função nova e
+  // o efeito do SonoGuestShell (deps [initGuestSession]) re-rodava; como
+  // createGuestSession devolve um OBJETO novo a cada chamada (JSON.parse do
+  // localStorage), o setGuestUser sempre re-renderizava → loop infinito de
+  // renders ("Maximum update depth exceeded") em toda a /sono/experiencia.
+  const initGuestSession = useCallback((source = 'landing'): GuestUser => {
     const guest = createGuestSession(source);
-    setGuestUser(guest);
+    setGuestUser((prev) => (prev && prev.id === guest.id ? prev : guest));
     return guest;
-  };
+  }, []);
 
   // Guest mode state - persisted in localStorage
   const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
