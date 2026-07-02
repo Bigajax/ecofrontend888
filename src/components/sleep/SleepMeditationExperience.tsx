@@ -348,6 +348,19 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     });
   };
 
+  // ?play=1 (CTAs da landing): abre DIRETO o player da Noite 1 — uma decisão a
+  // menos entre o anúncio e o valor. A navegação consome a ativação do gesto,
+  // então o autoplay pode ser bloqueado; ainda assim o player abre pronto (o
+  // botão de play é o fallback). Guest sem pagamento; pago cai na lista normal.
+  useEffect(() => {
+    if (!isGuestSono || isPaid) return;
+    if (searchParams.get('play') !== '1') return;
+    const p = new URLSearchParams(searchParams);
+    p.delete('play');
+    setSearchParams(p, { replace: true });
+    startGuestNight1Playback();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Saída antecipada da Noite 1 (sheet do player → "ver outras noites"): abre a
   // oferta direto, sem a reflexão (que afirmaria "Noite 1 concluída").
   const handleGuestNight1EarlyExit = (progressPct: number) => {

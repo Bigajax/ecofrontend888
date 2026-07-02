@@ -16392,3 +16392,32 @@ body.eco-no-scroll {
 .ecotopia-lp.lp-sono .cta-primary.lp-drawer-cta:hover {
   background: linear-gradient(135deg, #F2CB8C 0%, #E2AC55 100%);
 }
+
+/* ── Prova social na primeira tela do herói: número real + ponto "vivo" ── */
+.ecotopia-lp .lp-sono-hero-proof {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  font-family: var(--lp-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(203, 191, 242, 0.85);
+  text-shadow: 0 1px 8px rgba(8, 6, 24, 0.6);
+}
+.ecotopia-lp .lp-sono-hero-proof-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #EEC079;
+  box-shadow: 0 0 8px rgba(238, 192, 121, 0.7);
+  animation: sonoProofPulse 2.6s ease-in-out infinite;
+}
+@keyframes sonoProofPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ecotopia-lp .lp-sono-hero-proof-dot { animation: none; }
+}

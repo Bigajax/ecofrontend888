@@ -357,7 +357,9 @@ export default function EcotopiaSonoPage() {
   const storiesViewRef = useSonoSectionInView<HTMLElement>('depoimentos');
   const faqOfferViewRef = useSonoSectionInView<HTMLElement>('oferta_final');
 
-  const sonoCtaTo = (from: string) => `/sono/experiencia?source=${from}`;
+  // `play=1`: a experiência abre DIRETO no player da Noite 1 (uma decisão a
+  // menos entre o anúncio e o valor). O `source` segue distinguindo os CTAs.
+  const sonoCtaTo = (from: string) => `/sono/experiencia?source=${from}&play=1`;
   const sonoCtaClick =
     (
       from: string,
@@ -491,6 +493,15 @@ export default function EcotopiaSonoPage() {
                 </svg>
                 Noite 1 gratuita. Depois, continue o protocolo completo por{' '}
                 {SONO_PIX_PRICE_LABEL} no Pix. Pagamento único, sem assinatura.
+              </p>
+            )}
+
+            {/* Prova social REAL na primeira tela (mesma rpc dos depoimentos;
+                piso de 25) — confiança no momento da primeira decisão. */}
+            {isConviteHero && socialProof !== null && socialProof >= 25 && (
+              <p className="lp-sono-hero-proof scroll-reveal stagger-3">
+                <span className="lp-sono-hero-proof-dot" aria-hidden />
+                {socialProof} pessoas concluíram a Noite 1 nos últimos 7 dias
               </p>
             )}
 
