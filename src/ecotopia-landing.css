@@ -16263,3 +16263,20 @@ body.eco-no-scroll {
 .ecotopia-lp .lp-footer--night .lp-footer-subscribe:hover {
   background: linear-gradient(150deg, #9D8BEE, #7A68D0);
 }
+
+/* ── Pill "Ouça grátis" do header em âmbar — escopado à /sono (o root da
+   página é .ecotopia-lp.lp-sono; outras landings mantêm o CTA padrão).
+   Era lavanda sobre lavanda: o elemento de ação do header sumia. ── */
+.ecotopia-lp.lp-sono .cta-primary {
+  background: linear-gradient(135deg, #EEC079 0%, #DDA24A 100%);
+  border: none;
+  color: #2A1A06 !important;
+  -webkit-text-fill-color: #2A1A06;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(8, 6, 24, 0.18);
+  text-shadow: none;
+}
+.ecotopia-lp.lp-sono .cta-primary:hover {
+  background: linear-gradient(135deg, #F2CB8C 0%, #E2AC55 100%);
+  border: none;
+}
