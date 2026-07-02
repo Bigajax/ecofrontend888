@@ -16353,3 +16353,42 @@ body.eco-no-scroll {
 .ecotopia-lp .lp-sono-faq2-item.is-open .lp-sono-faq2-arrow {
   transform: rotate(180deg);
 }
+
+/* ── Correções pós-review (4 pontos) ── */
+
+/* 1. Microcopy da oferta final: leve e claro (herdava peso/cor erradas) */
+.ecotopia-lp .lp-sono-offer--deite .lp-sono-offer-micro-deite {
+  font-family: var(--lp-sans);
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(232, 226, 255, 0.58);
+  padding-inline: 12px;
+}
+
+/* 2. Prova social dos depoimentos: o fundo mobile é claro (não navy) —
+   o lilás claro sumia. Texto escuro em todos os tamanhos. */
+@media (max-width: 767px) {
+  .ecotopia-lp .lp-sono-stories-proof { color: #5A47A8; }
+}
+
+/* 3. Cards do Ritual: de volta ao vidro (o branco 78% tapava a cena).
+   Transparente com blur — legível e etéreo. */
+.ecotopia-lp .lp-sono-ritual-card {
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+
+/* 4. CTA do drawer mobile: o override de cor do .cta-primary chegou sem o
+   fundo (o .lp-drawer-cta tem fundo próprio) → texto escuro sobre navy.
+   Âmbar completo, como os demais CTAs da página. */
+.ecotopia-lp.lp-sono .cta-primary.lp-drawer-cta {
+  background: linear-gradient(135deg, #EEC079 0%, #DDA24A 100%);
+  border: none;
+  color: #2A1A06 !important;
+  -webkit-text-fill-color: #2A1A06;
+  box-shadow: 0 2px 8px rgba(8, 6, 24, 0.18);
+}
+.ecotopia-lp.lp-sono .cta-primary.lp-drawer-cta:hover {
+  background: linear-gradient(135deg, #F2CB8C 0%, #E2AC55 100%);
+}
