@@ -31,7 +31,7 @@ function MoonOrb() {
         boxShadow: '0 6px 22px rgba(238,192,121,0.18)',
       }}
     >
-      <img src="/images/eco-dream-icon.webp" alt="" className="h-full w-full object-cover" />
+      <img src="/images/eco-mascote.webp" alt="" className="h-full w-full object-contain p-1.5" />
     </span>
   );
 }

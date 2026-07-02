@@ -55,7 +55,7 @@ export function SonoEcoDreamEntryCard() {
             className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl"
             style={{ background: '#FFFFFF', border: '1px solid rgba(238,192,121,0.4)' }}
           >
-            <img src="/images/eco-dream-icon.webp" alt="" className="h-full w-full object-cover" />
+            <img src="/images/eco-mascote.webp" alt="" className="h-full w-full object-contain p-1.5" />
           </span>
 
           <div className="min-w-0 flex-1">

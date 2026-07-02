@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, ChevronLeft, Heart, Lock, Pause, Play, Plus, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronLeft, Gift, Heart, Lock, Pause, Play, Plus, QrCode, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { PROTOCOL_NIGHTS } from '@/data/protocolNights';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -193,8 +193,16 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   // anti-prova). Falha é silenciosa — a linha simplesmente não aparece.
   const [socialProof, setSocialProof] = useState<number | null>(null);
   // Presente da Noite 1 (1 interpretação de sonho) — modal aberto pelo card
-  // dourado da tela de continuidade.
+  // dourado da tela de continuidade. O card nasce FECHADO (ritual de
+  // desembrulhar aumenta o valor percebido); quem já usou vê direto o aberto.
   const [dreamGiftOpen, setDreamGiftOpen] = useState(false);
+  const [giftRevealed, setGiftRevealed] = useState(false);
+  const handleGiftUnwrap = () => {
+    trackSonoGuestDreamGiftOpened({ source: getSource(), guestId: getGuestId() });
+    setGiftRevealed(true);
+    // Deixa a animação de abrir respirar antes do modal entrar.
+    window.setTimeout(() => setDreamGiftOpen(true), 750);
+  };
 
   // Preview da Noite 2 (75s com fade) no card "A seguir" da oferta — provar o
   // produto vende mais que descrever. O hook vive no componente (que persiste
@@ -962,40 +970,88 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
 
                     {/* Presente da Noite 1 — reciprocidade ANTES da oferta: 1
                         interpretação de sonho da Eco (degustação do bônus
-                        EcoDream). Entra por último, como um P.S. dourado. */}
+                        EcoDream). Nasce FECHADO — o ritual de desembrulhar
+                        aumenta o valor percebido; quem já usou vê o aberto. */}
                     {isPresenteSonho() && (
-                      <motion.button
+                      <motion.div
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 1.15, duration: 0.5 }}
-                        onClick={() => {
-                          trackSonoGuestDreamGiftOpened({ source: getSource(), guestId: getGuestId() });
-                          setDreamGiftOpen(true);
-                        }}
-                        className="mt-6 flex w-full items-center gap-3 rounded-2xl p-3.5 text-left transition-all hover:brightness-110 active:scale-[0.99]"
-                        style={{
-                          background: 'rgba(238,192,121,0.08)',
-                          border: '1px solid rgba(238,192,121,0.28)',
-                        }}
+                        className="mt-6 w-full"
                       >
-                        <span
-                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl"
-                          style={{ background: '#FFFFFF', border: '1px solid rgba(238,192,121,0.4)' }}
-                        >
-                          <img src="/images/eco-dream-icon.webp" alt="" className="h-full w-full object-cover" />
-                        </span>
-                        <span className="flex min-w-0 flex-1 flex-col">
-                          <span className="text-[10.5px] font-bold uppercase tracking-[0.16em]" style={{ color: '#EEC079' }}>
-                            Presente da Noite 1
-                          </span>
-                          <span className="mt-0.5 text-[13px] leading-snug" style={{ color: 'rgba(240,232,255,0.85)' }}>
-                            {readDreamGift()
-                              ? 'Seu sonho interpretado — toque para reler.'
-                              : 'Interprete um sonho com a Eco — por nossa conta.'}
-                          </span>
-                        </span>
-                        <ArrowRight className="h-4 w-4 flex-shrink-0" style={{ color: 'rgba(238,192,121,0.6)' }} />
-                      </motion.button>
+                        <AnimatePresence mode="wait" initial={false}>
+                          {!giftRevealed && !readDreamGift() ? (
+                            <motion.button
+                              key="gift-closed"
+                              exit={{ opacity: 0, scale: 0.92 }}
+                              transition={{ duration: 0.2 }}
+                              onClick={handleGiftUnwrap}
+                              className="flex w-full items-center justify-center gap-3 rounded-2xl p-4 transition-all hover:brightness-110 active:scale-[0.98]"
+                              style={{
+                                background: 'rgba(238,192,121,0.08)',
+                                border: '1px solid rgba(238,192,121,0.35)',
+                              }}
+                            >
+                              {/* Pulso lento e discreto — convite, não cassino. */}
+                              <motion.span
+                                animate={{ scale: [1, 1.06, 1] }}
+                                transition={{ repeat: Infinity, duration: 2.6, ease: 'easeInOut' }}
+                                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
+                                style={{
+                                  background: 'rgba(238,192,121,0.14)',
+                                  border: '1px solid rgba(238,192,121,0.4)',
+                                  boxShadow: '0 0 16px rgba(238,192,121,0.3)',
+                                }}
+                              >
+                                <Gift className="h-[18px] w-[18px]" style={{ color: '#EEC079' }} />
+                              </motion.span>
+                              <span className="flex min-w-0 flex-col text-left">
+                                <span className="text-[10.5px] font-bold uppercase tracking-[0.16em]" style={{ color: '#EEC079' }}>
+                                  Presente da Noite 1
+                                </span>
+                                <span className="mt-0.5 text-[13px] leading-snug" style={{ color: 'rgba(240,232,255,0.85)' }}>
+                                  Toque para abrir seu presente.
+                                </span>
+                              </span>
+                            </motion.button>
+                          ) : (
+                            <motion.button
+                              key="gift-open"
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ type: 'spring', stiffness: 220, damping: 18 }}
+                              onClick={() => {
+                                trackSonoGuestDreamGiftOpened({ source: getSource(), guestId: getGuestId() });
+                                setDreamGiftOpen(true);
+                              }}
+                              className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left transition-all hover:brightness-110 active:scale-[0.99]"
+                              style={{
+                                background: 'rgba(238,192,121,0.08)',
+                                border: '1px solid rgba(238,192,121,0.28)',
+                                boxShadow: '0 0 24px rgba(238,192,121,0.16)',
+                              }}
+                            >
+                              <span
+                                className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl"
+                                style={{ background: '#FFFFFF', border: '1px solid rgba(238,192,121,0.4)' }}
+                              >
+                                <img src="/images/eco-mascote.webp" alt="" className="h-full w-full object-contain p-1" />
+                              </span>
+                              <span className="flex min-w-0 flex-1 flex-col">
+                                <span className="text-[10.5px] font-bold uppercase tracking-[0.16em]" style={{ color: '#EEC079' }}>
+                                  Presente da Noite 1
+                                </span>
+                                <span className="mt-0.5 text-[13px] leading-snug" style={{ color: 'rgba(240,232,255,0.85)' }}>
+                                  {readDreamGift()
+                                    ? 'Seu sonho interpretado — toque para reler.'
+                                    : 'Interprete um sonho com a Eco — por nossa conta.'}
+                                </span>
+                              </span>
+                              <ArrowRight className="h-4 w-4 flex-shrink-0" style={{ color: 'rgba(238,192,121,0.6)' }} />
+                            </motion.button>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
                     )}
                   </>
                 )}
@@ -1384,7 +1440,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                         className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl transition-colors"
                         style={{ background: '#FFFFFF', border: '1px solid rgba(238,192,121,0.4)' }}
                       >
-                        <img src="/images/eco-dream-icon.webp" alt="" className="h-full w-full object-cover" />
+                        <img src="/images/eco-mascote.webp" alt="" className="h-full w-full object-contain p-1" />
                       </span>
                       <div className="flex min-w-0 flex-1 flex-col">
                         <span className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: '#EEC079' }}>
