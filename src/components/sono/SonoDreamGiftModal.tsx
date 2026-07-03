@@ -29,6 +29,34 @@ interface SonoDreamGiftModalProps {
 const SERIF = "'Cormorant Garamond', Georgia, serif";
 const GIFT_LS_KEY = 'eco.sono.dream_gift.v1';
 
+/**
+ * Overrides do markdown DENTRO do painel escuro. O design-system global
+ * (eco-design-system.css) força `h1..h6 { color: var(--eco-text) }` — cor
+ * escura de tema claro — que vence a cor herdada do container e deixava a
+ * leitura invisível no fundo navy. Aqui forçamos `color: inherit` + tamanhos
+ * sãos pra que headings e parágrafos usem a cor clara do container.
+ */
+const READING_MD_COMPONENTS = {
+  h1: ({ node, ...props }: any) => (
+    <h1 {...props} style={{ color: 'inherit', fontFamily: SERIF, fontSize: '20px', fontWeight: 600, lineHeight: 1.3, margin: '0 0 8px' }} />
+  ),
+  h2: ({ node, ...props }: any) => (
+    <h2 {...props} style={{ color: 'inherit', fontFamily: SERIF, fontSize: '17px', fontWeight: 600, lineHeight: 1.3, margin: '14px 0 6px' }} />
+  ),
+  h3: ({ node, ...props }: any) => (
+    <h3 {...props} style={{ color: 'inherit', fontFamily: SERIF, fontSize: '15.5px', fontWeight: 600, lineHeight: 1.3, margin: '12px 0 6px' }} />
+  ),
+  p: ({ node, ...props }: any) => (
+    <p {...props} style={{ color: 'inherit', margin: '0 0 10px' }} />
+  ),
+  li: ({ node, ...props }: any) => (
+    <li {...props} style={{ color: 'inherit', margin: '0 0 4px' }} />
+  ),
+  strong: ({ node, ...props }: any) => (
+    <strong {...props} style={{ color: 'inherit', fontWeight: 700 }} />
+  ),
+} as const;
+
 export interface DreamGiftRecord {
   dream: string;
   interpretation: string;
@@ -260,7 +288,7 @@ export function SonoDreamGiftModal({ open, onClose }: SonoDreamGiftModalProps) {
                     fontSize: '15.5px',
                   }}
                 >
-                  <ReactMarkdown>{readingText}</ReactMarkdown>
+                  <ReactMarkdown components={READING_MD_COMPONENTS}>{readingText}</ReactMarkdown>
                   {status === 'loading' && (
                     <Loader2 className="mt-2 h-4 w-4 animate-spin" style={{ color: '#EEC079' }} />
                   )}
