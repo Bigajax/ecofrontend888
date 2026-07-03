@@ -90,6 +90,7 @@ const EcotopiaLandingPage = lazyWithReload(() => import("@/pages/EcotopiaLanding
 const EcotopiaPrecosPage = lazyWithReload(() => import("@/pages/EcotopiaPrecosPage"));
 const EcotopiaMeditacaoPage = lazyWithReload(() => import("@/pages/EcotopiaMeditacaoPage"));
 const EcotopiaSonoPage = lazyWithReload(() => import("@/pages/EcotopiaSonoPage"));
+const SonoObrigadoPage = lazyWithReload(() => import("@/pages/SonoObrigadoPage"));
 const EcotopiaEcoIAPage = lazyWithReload(() => import("@/pages/EcotopiaEcoIAPage"));
 const EcotopiaDiarioPage = lazyWithReload(() => import("@/pages/EcotopiaDiarioPage"));
 const EcotopiaAneisPage = lazyWithReload(() => import("@/pages/EcotopiaAneisPage"));
@@ -295,6 +296,7 @@ function AppRoutes() {
         <Route path="precos" element={renderWithSuspense(<EcotopiaPrecosPage />)} />
         <Route path="meditacao" element={renderWithSuspense(<EcotopiaMeditacaoPage />)} />
         <Route path="sono" element={renderWithSuspense(<EcotopiaSonoPage />)} />
+        <Route path="sono/obrigado" element={renderWithSuspense(<SonoObrigadoPage />)} />
         <Route path="eco-ia" element={renderWithSuspense(<EcotopiaEcoIAPage />)} />
         <Route path="estoicismo" element={renderWithSuspense(<EcotopiaDiarioPage />)} />
         <Route path="disciplina" element={renderWithSuspense(<EcotopiaAneisPage />)} />

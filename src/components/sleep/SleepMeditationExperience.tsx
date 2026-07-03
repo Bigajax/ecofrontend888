@@ -148,6 +148,9 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
   // Oferta foi aberta a partir da meditação em andamento (banner 150s ou saída
   // antecipada)? Se sim, o checkout mostra "<" pra voltar à Noite 1 no ponto salvo.
   const [offerFromMeditation, setOfferFromMeditation] = useState(false);
+  // save_account reaberto como recuperação (pagante voltou sem conta) → ganha uma
+  // rota de saída. Falso = passo pós-pagamento ao vivo (sem saída, por design).
+  const [saveAccountRecovery, setSaveAccountRecovery] = useState(false);
   const isPaid =
     isVipUser || isPremiumUser || isTrialActive || hasSonoEntitlement || justSubscribed;
   const openCheckout = useCallback((opts?: { origin?: string }) => {
@@ -307,6 +310,27 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
       if (p.has('checkout')) { p.delete('checkout'); setSearchParams(p, { replace: true }); }
     }
   }, [isGuestSono, isPaid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Recuperação do pagante órfão: quem pagou o Pix (entitlement por guest_id) mas
+  // fechou a aba antes de criar conta volta com o acesso preso a ESTE aparelho e
+  // sem e-mail nosso — se limpar o navegador ou trocar de device, perde tudo e não
+  // temos como reentregar. No retorno (guest, pago, sem conta) reabrimos o
+  // save_account — agora com rota de saída — pra vincular o acesso a uma conta e
+  // capturar o e-mail. Guardas: não interromper um checkout ao vivo/restaurado
+  // (?checkout= / sessionStorage), respeitar a dispensa, não reabrir se já há passo.
+  useEffect(() => {
+    if (!isGuestSono || user) return;
+    if (!hasSonoEntitlement) return;
+    if (checkoutEntry) return;
+    if (sessionStorage.getItem('eco.sono.checkout.step')) return;
+    try {
+      if (localStorage.getItem('eco.sono.save_account.dismissed')) return;
+    } catch {
+      // localStorage indisponível — segue e tenta reabrir
+    }
+    setSaveAccountRecovery(true);
+    setCheckoutEntry('save_account');
+  }, [isGuestSono, user, hasSonoEntitlement, checkoutEntry]);
 
   // Deep link do lembrete manual (?oferta=1&g={guest_id}): abre a oferta direto,
   // com o contexto do guest que já concluiu a Noite 1 ontem (o guest_id veio no
@@ -1227,6 +1251,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
       {isGuestSono && (
         <SonoInlineCheckout
           openAt={checkoutEntry}
+          saveAccountRecovery={saveAccountRecovery}
           onUnlocked={() => {
             setJustSubscribed(true);
             setOfferFromMeditation(false);
@@ -1234,6 +1259,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
           }}
           onDismiss={() => {
             setOfferFromMeditation(false);
+            setSaveAccountRecovery(false);
             setCheckoutEntry(null);
           }}
           onBackToMeditation={offerFromMeditation ? handleResumeMeditation : undefined}

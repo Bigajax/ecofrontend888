@@ -45,6 +45,9 @@ function mockFetchSequence(statusBody: { status: string }) {
     if (url.startsWith("/api/payments/status/")) {
       return Promise.resolve({ ok: true, json: () => Promise.resolve(statusBody) });
     }
+    if (url === "/api/leads/sono-gate") {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    }
     return Promise.reject(new Error(`unexpected fetch: ${url}`));
   });
 }
@@ -52,6 +55,10 @@ function mockFetchSequence(statusBody: { status: string }) {
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
+  sessionStorage.clear();
+  // A maioria dos testes exercita a tela do Pix em si — pré-semeia o e-mail pra
+  // pular o gate (o gate tem teste próprio abaixo).
+  sessionStorage.setItem("eco.sono.email", "known@test.com");
 });
 
 describe("SonoInlinePix", () => {
@@ -67,12 +74,43 @@ describe("SonoInlinePix", () => {
     expect(createCall).toBeTruthy();
     const body = JSON.parse((createCall![1] as RequestInit).body as string);
     expect(body.guest_id).toBe("guest_abc");
+    expect(body.email).toBe("known@test.com");
     expect(body.purchaseEventId).toBe("evt_purchase_1");
 
     expect(trackWithCAPI).toHaveBeenCalledWith(
       "InitiateCheckout",
       expect.objectContaining({ value: 37, currency: "BRL" }),
     );
+  });
+
+  it("gate de e-mail: sem e-mail conhecido, coleta antes de gerar o Pix e salva o lead", async () => {
+    sessionStorage.removeItem("eco.sono.email");
+    const fetchMock = mockFetchSequence({ status: "pending" });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SonoInlinePix price={37} guestId="guest_abc" onPaid={vi.fn()} />);
+
+    // Nada de Pix ainda — a tela pede o e-mail primeiro.
+    expect(await screen.findByText("Pra onde enviamos seu acesso?")).toBeTruthy();
+    expect(fetchMock.mock.calls.find((c) => c[0] === "/api/payments/sono-pix")).toBeFalsy();
+
+    fireEvent.change(screen.getByLabelText("Seu e-mail"), {
+      target: { value: "Nova@Pessoa.com" },
+    });
+    fireEvent.click(screen.getByText("Ir para o pagamento"));
+
+    // Agora o Pix é gerado, com o e-mail normalizado no corpo.
+    expect(await screen.findByText("Copiar código Pix")).toBeTruthy();
+    const createCall = fetchMock.mock.calls.find((c) => c[0] === "/api/payments/sono-pix");
+    const body = JSON.parse((createCall![1] as RequestInit).body as string);
+    expect(body.email).toBe("nova@pessoa.com");
+
+    // Lead salvo (email↔guest_id) ANTES do pagamento.
+    const leadCall = fetchMock.mock.calls.find((c) => c[0] === "/api/leads/sono-gate");
+    expect(leadCall).toBeTruthy();
+    const leadBody = JSON.parse((leadCall![1] as RequestInit).body as string);
+    expect(leadBody.email).toBe("nova@pessoa.com");
+    expect(leadBody.source).toBe("sono_pix_gate");
   });
 
   it("ao aprovar, grava o cache vitalício e chama onPaid (1×)", async () => {

@@ -70,7 +70,15 @@ export function SonoInlineSignup({
   submitLabel,
 }: SonoInlineSignupProps) {
   const { register, signIn, signInWithGoogle, signInWithGoogleIdToken } = useAuth();
-  const [email, setEmail] = useState('');
+  // Pré-preenche com o e-mail do gate do Pix (quem pagou já digitou lá) — menos
+  // fricção pra salvar a conta e fechar o loop email↔acesso.
+  const [email, setEmail] = useState(() => {
+    try {
+      return sessionStorage.getItem('eco.sono.email') || '';
+    } catch {
+      return '';
+    }
+  });
   const [senha, setSenha] = useState('');
   // Quando o e-mail já tem conta e o auto-login falha, oferecemos o link "Entrar".
   const [contaExistente, setContaExistente] = useState(false);

@@ -9,12 +9,25 @@ import {
   resolveFbc,
 } from '@/lib/fbpixel';
 import { LIFETIME_LS_KEY } from './sonoLifetime';
+import { captureLead } from '@/api/leadCapture';
 import {
   trackSonoGuestPixGerado,
   trackSonoGuestPixCopiado,
   trackSonoGuestPixTelaSaiu,
   trackSonoGuestPixTelaVoltou,
 } from '@/lib/mixpanelSonoGuestEvents';
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const EMAIL_LS_KEY = 'eco.sono.email';
+
+/** E-mail já conhecido (gate anterior / lead) — pula o gate quando válido. */
+function readStoredEmail(): string {
+  try {
+    return sessionStorage.getItem(EMAIL_LS_KEY) || '';
+  } catch {
+    return '';
+  }
+}
 
 /**
  * Passo do Pix inline do funil do sono (substitui o cartão). Pagamento único,
@@ -40,7 +53,7 @@ interface PixData {
   externalReference: string;
 }
 
-type PixStatus = 'creating' | 'waiting' | 'approved' | 'expired' | 'error';
+type PixStatus = 'email' | 'creating' | 'waiting' | 'approved' | 'expired' | 'error';
 
 const POLL_INTERVAL_MS = 4000;
 // A contagem regressiva só aparece nos últimos 3 min (antes disso o timer é
@@ -49,7 +62,15 @@ const COUNTDOWN_REVEAL_S = 3 * 60;
 
 export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
   const [pix, setPix] = useState<PixData | null>(null);
-  const [status, setStatus] = useState<PixStatus>('creating');
+  // Começa no gate de e-mail: "pra onde enviamos seu acesso?". Captura o e-mail
+  // ANTES de gerar o Pix pra fechar o buraco do pagante órfão — quem paga e nunca
+  // volta continua recuperável pelo par email↔guest_id (sono_leads). Se já
+  // conhecemos o e-mail (gate anterior/lead), o mount pula direto pro Pix.
+  const [status, setStatus] = useState<PixStatus>('email');
+  const [email, setEmail] = useState(() => readStoredEmail());
+  const [emailErr, setEmailErr] = useState<string | null>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const emailForPixRef = useRef('');
   const [copied, setCopied] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   // Timer de 15 min (só UI). Reseta a cada Pix novo; ao zerar, gera outro.
@@ -83,6 +104,10 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           guest_id: guestId,
+          // E-mail do gate: o backend pode usá-lo como payer do Mercado Pago e
+          // associar o pagamento pra entrega. Omitido se, por algum caminho, ainda
+          // não tivermos (o lead em sono_leads já cobre a captura).
+          email: emailForPixRef.current || undefined,
           purchaseEventId: ensurePurchaseEventId(),
           fbp: getFbp(),
           fbc: resolveFbc(),
@@ -115,11 +140,42 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
     }
   }, [guestId]);
 
+  // Confirma o e-mail do gate: persiste (pra pré-preencher o cadastro depois),
+  // salva o lead ANTES do pagamento (email↔guest_id em sono_leads — recuperável
+  // mesmo se a pessoa nunca criar conta) e então gera o Pix.
+  const proceedWithEmail = useCallback((rawEmail: string) => {
+    const clean = rawEmail.trim().toLowerCase();
+    emailForPixRef.current = clean;
+    try {
+      sessionStorage.setItem(EMAIL_LS_KEY, clean);
+    } catch {
+      /* storage indisponível — segue; o lead no backend ainda cobre a captura */
+    }
+    // Fire-and-forget resiliente (replay no próximo boot se a rede cair).
+    void captureLead({ email: clean, source: 'sono_pix_gate', provider: 'email' });
+    void createPix();
+  }, [createPix]);
+
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Fonte da verdade no DOM (autofill de webview não dispara onChange), com o
+    // state como fallback — mesmo padrão do SonoInlineSignup.
+    const clean = (emailRef.current?.value ?? email).trim().toLowerCase();
+    if (!EMAIL_RE.test(clean)) {
+      setEmailErr('Digite um e-mail válido.');
+      return;
+    }
+    setEmailErr(null);
+    setEmail(clean);
+    proceedWithEmail(clean);
+  };
+
   useEffect(() => {
     if (createStartedRef.current) return;
     createStartedRef.current = true;
     // InitiateCheckout (Pixel + CAPI) 1×: a campanha otimiza por IC e o cartão que
-    // disparava IC saiu — este é o novo ponto de IC do funil.
+    // disparava IC saiu — este é o novo ponto de IC do funil. Dispara ao CHEGAR no
+    // checkout (gate de e-mail), não depende de gerar o Pix.
     if (!initiateCheckoutFiredRef.current) {
       initiateCheckoutFiredRef.current = true;
       void trackWithCAPI('InitiateCheckout', {
@@ -129,8 +185,10 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
         contentCategory: 'sono',
       });
     }
-    void createPix();
-  }, [createPix, price]);
+    // Já temos e-mail (gate anterior/lead)? Pula o gate e gera o Pix direto.
+    const known = readStoredEmail();
+    if (known && EMAIL_RE.test(known)) proceedWithEmail(known);
+  }, [price, proceedWithEmail]);
 
   const markApproved = useCallback(() => {
     if (approvedRef.current) return;
@@ -288,13 +346,67 @@ export function SonoInlinePix({ price, guestId, onPaid }: SonoInlinePixProps) {
         >
           Quase lá.
         </h2>
-        <p className="mt-1.5 text-[15px] font-medium" style={{ color: '#C4B5FD' }}>
-          Copie o código Pix e pague no seu banco.
-        </p>
-        <p className="mt-2 text-[12.5px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.55)' }}>
-          Pode sair pra pagar no app do banco e voltar — suas 7 noites são liberadas automaticamente.
-        </p>
+        {status !== 'email' && (
+          <>
+            <p className="mt-1.5 text-[15px] font-medium" style={{ color: '#C4B5FD' }}>
+              Copie o código Pix e pague no seu banco.
+            </p>
+            <p className="mt-2 text-[12.5px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.55)' }}>
+              Pode sair pra pagar no app do banco e voltar — suas 7 noites são liberadas automaticamente.
+            </p>
+          </>
+        )}
       </div>
+
+      {/* Gate de e-mail (antes do Pix): "pra onde enviamos seu acesso?". É a rede
+          de segurança do pagante — se pagar e fechar a aba sem criar conta, o
+          acesso ainda é entregável/recuperável pelo email↔guest_id. */}
+      {status === 'email' && (
+        <form onSubmit={handleEmailSubmit} className="flex w-full flex-col gap-4" noValidate>
+          <div className="text-center">
+            <p className="text-[15px] font-medium" style={{ color: '#C4B5FD' }}>
+              Pra onde enviamos seu acesso?
+            </p>
+            <p className="mt-2 text-[12.5px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.55)' }}>
+              Suas 7 noites ficam guardadas neste e-mail — você recebe o acesso mesmo se fechar a página.
+            </p>
+          </div>
+          <input
+            ref={emailRef}
+            aria-label="Seu e-mail"
+            type="email"
+            name="email"
+            placeholder="Seu melhor e-mail"
+            autoComplete="email"
+            inputMode="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-2xl border px-4 py-3.5 text-[15px] text-white outline-none placeholder:text-white/40 transition-colors focus:border-[rgba(196,181,253,0.7)]"
+            style={{ background: 'rgba(199,184,240,0.07)', borderColor: 'rgba(199,184,240,0.20)' }}
+          />
+          {emailErr && (
+            <p role="alert" className="text-[13px]" style={{ color: '#F8B4B4' }}>
+              {emailErr}
+            </p>
+          )}
+          <button
+            type="submit"
+            className="flex w-full items-center justify-center gap-2 rounded-full py-4 text-[15px] font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+            style={{
+              background: 'linear-gradient(135deg, #A78BFA 0%, #5A3DB0 100%)',
+              boxShadow: '0 10px 36px rgba(124,58,237,0.5), inset 0 1px 0 rgba(255,255,255,0.22)',
+            }}
+          >
+            Ir para o pagamento
+          </button>
+          <p className="text-center text-[11px] leading-relaxed" style={{ color: 'rgba(214,203,250,0.45)' }}>
+            Pagamento único via Pix · acesso vitalício
+          </p>
+        </form>
+      )}
 
       {status === 'creating' && (
         <div className="flex min-h-[180px] items-center justify-center gap-2 text-[13px] text-white/45">

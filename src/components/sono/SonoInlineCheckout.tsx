@@ -64,6 +64,12 @@ interface SonoInlineCheckoutProps {
   /** Quando definido, o passo `offer` mostra um "<" pra voltar à meditação no ponto
    *  salvo (só quando a oferta foi aberta a partir da Noite 1 em andamento). */
   onBackToMeditation?: () => void;
+  /**
+   * `save_account` reaberto como RECUPERAÇÃO do pagante órfão (voltou pago mas sem
+   * conta), não como passo pós-pagamento ao vivo. Nesse modo o `save_account`
+   * ganha uma rota de saída ("Agora não") — no fluxo ao vivo ele segue sem saída.
+   */
+  saveAccountRecovery?: boolean;
 }
 
 type ReflectionAnswer = 'yes' | 'little' | 'no';
@@ -162,7 +168,7 @@ async function upsertEvent(patch: Record<string, unknown>) {
   }
 }
 
-export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMeditation }: SonoInlineCheckoutProps) {
+export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMeditation, saveAccountRecovery = false }: SonoInlineCheckoutProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { step, open, goTo, close } = useSonoCheckoutState();
@@ -232,6 +238,7 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
   const appInviteShownRef = useRef(false);
   const offerViewedRef = useRef(false);
   const questionViewRef = useRef(false);
+  const saveAccountViewRef = useRef(false);
 
   // Preço do Pix vem do backend (env), pra mudar sem rebuild do front. Buscado uma
   // vez quando o overlay abre; cai no fallback se o /config falhar.
@@ -318,6 +325,19 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
     appInviteShownRef.current = true;
     trackSonoGuestAppInviteShown({ source: getSource(), guestId: getGuestId() });
   }, [step]);
+
+  // "Salvar conta vista" — preenche o gap de analytics do fim do funil: até então
+  // não dava pra medir a queda entre pagar e criar a conta. `recovery` distingue o
+  // save_account reaberto no retorno (pagante órfão) do pós-pagamento ao vivo.
+  useEffect(() => {
+    if (step !== 'save_account' || saveAccountViewRef.current) return;
+    saveAccountViewRef.current = true;
+    mixpanel.track('Funil Sono · Salvar conta vista', {
+      source: getSource(),
+      guest_id: getGuestId(),
+      recovery: saveAccountRecovery,
+    });
+  }, [step, saveAccountRecovery]);
 
   // "Pergunta pós-noite 1 vista" — dispara quando a pergunta ("Como seu corpo
   // está agora?") aparece, antes de qualquer resposta. Fecha o gap entre Noite 1
@@ -1670,6 +1690,30 @@ export function SonoInlineCheckout({ openAt, onUnlocked, onDismiss, onBackToMedi
                     Pagamento confirmado — suas noites ficam guardadas nesta conta.
                   </span>
                 </div>
+
+                {/* Rota de saída SÓ na recuperação (pagante que voltou sem conta):
+                    prender quem só quer ouvir seria dark pattern, e o acesso já vale
+                    por guest_id neste aparelho. Marca a dispensa pra não reabrir todo
+                    retorno; o próximo visita ainda pode ser reconvidado após limpar a
+                    flag. No fluxo ao vivo pós-pagamento o save_account segue sem saída. */}
+                {saveAccountRecovery && (
+                  <button
+                    onClick={() => {
+                      try { localStorage.setItem('eco.sono.save_account.dismissed', '1'); } catch { /* noop */ }
+                      mixpanel.track('Funil Sono · Salvar conta dispensada', {
+                        source: getSource(),
+                        guest_id: getGuestId(),
+                        recovery: true,
+                      });
+                      close();
+                      onDismiss();
+                    }}
+                    className="mx-auto mt-4 text-[13px] underline underline-offset-4 transition-opacity hover:opacity-100"
+                    style={{ color: 'rgba(214,203,250,0.62)' }}
+                  >
+                    Agora não — continuar ouvindo
+                  </button>
+                )}
               </motion.div>
             )}
 
