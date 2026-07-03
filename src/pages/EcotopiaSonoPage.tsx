@@ -9,6 +9,7 @@ import SonoDorSection from '@/components/landing/SonoDorSection';
 import SonoFaqSection from '@/components/landing/SonoFaqSection';
 import { useScrollReveal } from '@/components/landing/useScrollReveal';
 import SonoStickyCta from '@/components/sono/SonoStickyCta';
+import SonoHeroMiniPlayer from '@/components/sono/SonoHeroMiniPlayer';
 import { useSonoHeroVariant } from '@/hooks/useSonoHeroVariant';
 import { useSonoSectionInView } from '@/hooks/useSonoSectionInView';
 import { useStickyCtaVisibility } from '@/hooks/useStickyCtaVisibility';
@@ -20,7 +21,7 @@ import {
   trackAmostraAudioConcluida,
 } from '@/lib/mixpanelAssinarFunnel';
 import { useAudioPreview } from '@/hooks/useAudioPreview';
-import { fbq } from '@/lib/fbpixel';
+import { fbq, fbqCustom } from '@/lib/fbpixel';
 import { OFFER, SONO_PIX_PRICE_LABEL } from '@/constants/offerCopy';
 
 // ─── Dados das seções ────────────────────────────────────────────────
@@ -283,17 +284,9 @@ export default function EcotopiaSonoPage() {
 
   const [selectedOfferPlan, setSelectedOfferPlan] = useState<'annual' | 'monthly'>('monthly');
 
-  // iPhone do hero rotaciona pelas 7 noites (mesma config do AppIcon da
-  // landing Protocolo-Sono-v2): troca a cada 2,8s com crossfade de 700ms
-  // na arte e flip do rótulo/título.
-  const [heroNightIndex, setHeroNightIndex] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setHeroNightIndex((prev) => (prev + 1) % PROTOCOL_NIGHTS.length);
-    }, 2800);
-    return () => clearInterval(interval);
-  }, []);
-  const heroNight = PROTOCOL_NIGHTS[heroNightIndex];
+  // O mini-player rotativo do herói (troca as 7 noites a cada 2,8s) foi extraído
+  // para <SonoHeroMiniPlayer/> (memoizado): o setInterval dele re-renderizava a
+  // página inteira a cada 2,8s. Agora só aquela subárvore reconcilia.
 
   // `isConviteHero` segue controlando o VISUAL/copy da landing por variante de
   // herói (não mexemos no criativo). Mas o ROTEAMENTO do pagamento agora é único:
@@ -366,8 +359,18 @@ export default function EcotopiaSonoPage() {
       plan: 'monthly' | 'annual' = 'monthly',
       posicao?: 'heroi' | 'sticky' | 'rodape',
     ) =>
-    () =>
+    () => {
       trackCtaClicado({ plan, placement: `${from}_experiencia`, posicao });
+      // Meta Pixel: micro-sinal de intenção no clique do CTA da landing — antes
+      // só havia ViewContent (mount) e InitiateCheckout (Pix), então o algoritmo
+      // não recebia nada de quem clicava aqui. Evento custom (fora do catálogo
+      // padrão) que vira evento de otimização próprio no Ads. Não-fatal.
+      try {
+        fbqCustom('SonoCtaClique', { placement: from, plan, posicao });
+      } catch {
+        // Pixel nunca deve travar a navegação do CTA
+      }
+    };
 
   // Refs nas âncoras (CTA do herói e da oferta) que controlam o sticky: ele
   // aparece quando nenhuma das duas está visível.
@@ -573,84 +576,7 @@ export default function EcotopiaSonoPage() {
                   </span>
                 </div>
 
-                <div className="lp-sono-mini-player">
-              <p
-                key={`eyebrow-${heroNightIndex}`}
-                className="lp-sono-mini-player-eyebrow lp-sono-label-flip"
-              >
-                Noite {heroNight.night} de 7
-              </p>
-
-              <div className="lp-sono-mini-player-art">
-                {PROTOCOL_NIGHTS.map((night, i) => (
-                  <img
-                    key={night.id}
-                    src={night.imageUrl}
-                    alt=""
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    decoding="async"
-                    style={{ opacity: i === heroNightIndex ? 1 : 0 }}
-                  />
-                ))}
-              </div>
-
-              <div className="lp-sono-mini-player-meta">
-                <p
-                  key={`title-${heroNightIndex}`}
-                  className="lp-sono-mini-player-title lp-sono-label-flip"
-                >
-                  {heroNight.title}
-                </p>
-                <p
-                  key={`duration-${heroNightIndex}`}
-                  className="lp-sono-mini-player-duration lp-sono-label-flip"
-                >
-                  {heroNight.duration}
-                </p>
-              </div>
-
-              <div className="lp-sono-mini-player-dots">
-                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                  <span
-                    key={n}
-                    className={`lp-sono-mini-player-dot ${n === heroNight.night ? 'is-current' : ''}`}
-                  />
-                ))}
-              </div>
-
-              <div className="lp-sono-mini-player-controls">
-                <span className="lp-sono-mini-player-skip">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="11 17 6 12 11 7" />
-                    <path d="M18 18a6 6 0 0 0-6-6H6" />
-                  </svg>
-                  <span>15</span>
-                </span>
-
-                <span className="lp-sono-mini-player-play">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7 5.5v13a1 1 0 0 0 1.55.83l10-6.5a1 1 0 0 0 0-1.66l-10-6.5A1 1 0 0 0 7 5.5z" />
-                  </svg>
-                </span>
-
-                <span className="lp-sono-mini-player-skip">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="13 17 18 12 13 7" />
-                    <path d="M6 18a6 6 0 0 1 6-6h6" />
-                  </svg>
-                  <span>15</span>
-                </span>
-              </div>
-
-              <div className="lp-sono-mini-player-progress">
-                <span className="lp-sono-mini-player-time">0:00</span>
-                <div className="lp-sono-mini-player-bar">
-                  <span className="lp-sono-mini-player-fill" />
-                  <span className="lp-sono-mini-player-thumb" />
-                </div>
-                  <span key={`end-${heroNightIndex}`} className="lp-sono-mini-player-time is-end lp-sono-label-flip">{heroNight.duration}</span>
-                  </div>
-                </div>
+                <SonoHeroMiniPlayer />
 
                 <span className="lp-sono-iphone-homebar" />
               </div>
