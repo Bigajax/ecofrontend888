@@ -65,7 +65,7 @@ export default function EcoAIModal({
                   width="56"
                   height="56"
                   className="h-14 w-14 flex-shrink-0 object-contain"
-                  style={{ filter: 'drop-shadow(0 4px 10px rgba(110, 200, 255, 0.35))' }}
+                  style={{ filter: 'drop-shadow(0 4px 10px rgba(28,35,80, 0.35))' }}
                 />
                 <p className="truncate text-[18px] font-bold text-gray-900">
                   Oi {firstName}, que bom te ver! 👋
@@ -105,7 +105,7 @@ export default function EcoAIModal({
                     onClick={onSugerirConteudo}
                     media={
                       <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-blue-100">
-                        <Play size={26} className="text-[#6EC8FF]" fill="#6EC8FF" />
+                        <Play size={26} className="text-[#1C2350]" fill="#1C2350" />
                       </div>
                     }
                     title="Sugerir conteúdo"
@@ -126,7 +126,6 @@ export default function EcoAIModal({
                         onClick={() => onSuggestionClick(s.label)}
                         className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-50"
                       >
-                        <span className="text-[20px] leading-none">{s.icon}</span>
                         <p className="flex-1 text-[15px] leading-snug text-gray-700">{s.label}</p>
                         <ChevronRight size={18} className="flex-shrink-0 text-gray-300" />
                       </button>
@@ -166,7 +165,7 @@ export default function EcoAIModal({
                   <EvolutionCard
                     onClick={onPerfilEmocional}
                     image="/images/perfil-emocional-ilustracao.webp"
-                    gradient="from-[#6EC8FF] to-[#4BA8E0]"
+                    gradient="from-[#1C2350] to-[#1C2350]"
                     title="Perfil Emocional"
                     description="Descubra suas emoções mais frequentes, temas recorrentes e padrões únicos."
                   />

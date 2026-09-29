@@ -66,10 +66,10 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
       className={clsx(
         'group relative flex flex-col rounded-2xl bg-white overflow-hidden',
         'transition-all duration-300',
-        'border border-black/[0.07] shadow-[0_4px_24px_rgba(13,52,97,0.06)]',
-        'hover:shadow-[0_8px_40px_rgba(13,52,97,0.12)] hover:-translate-y-0.5',
-        'focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#1A4FB5]/40',
-        isFavorite && 'ring-1 ring-[#1A4FB5]/30',
+        'border border-black/[0.07] shadow-[0_4px_24px_rgba(28,35,80,0.06)]',
+        'hover:shadow-[0_8px_40px_rgba(28,35,80,0.12)] hover:-translate-y-0.5',
+        'focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#1C2350]/40',
+        isFavorite && 'ring-1 ring-[#1C2350]/30',
       )}
     >
       {/* Emotion accent strip — left edge */}
@@ -87,7 +87,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
         <EmotionOrb emotion={mem.emocao} size={44} className="shrink-0 mt-0.5" />
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-display text-[17px] font-normal text-[#0D3461] leading-snug break-words">
+          <h3 className="font-display text-[17px] font-normal text-[#1C2350] leading-snug break-words">
             {mem.titulo || mem.emocao}
           </h3>
           <p className="mt-1.5 text-[11px] text-[#5A8AAD] font-primary flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -116,8 +116,8 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
           className={clsx(
             'shrink-0 mt-0.5 rounded-full p-1.5 text-[#5A8AAD]',
             'transition-all duration-300',
-            'hover:bg-[#EDF4FF] hover:text-[#0D3461]',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A4FB5]/40',
+            'hover:bg-[#EDF4FF] hover:text-[#1C2350]',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C2350]/40',
           )}
         >
           <ChevronDown
@@ -136,7 +136,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
           >
             Intensidade
           </label>
-          <span id={intensityLabelId} className="text-[12px] font-primary font-semibold text-[#0D3461]">
+          <span id={intensityLabelId} className="text-[12px] font-primary font-semibold text-[#1C2350]">
             {intensityLabel}
           </span>
         </div>
@@ -254,7 +254,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
           <motion.div
             key="details"
             id={detailsId}
-            initial={{ opacity: 0, height: 0 }}
+            initial={false}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -316,7 +316,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
                   'flex-1 px-4 py-2.5 rounded-xl text-[12.5px] font-primary font-semibold',
                   'transition-all duration-200',
                   'hover:-translate-y-0.5',
-                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A4FB5]/40',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C2350]/40',
                 )}
                 style={{
                   backgroundColor: `${gradStart}14`,
@@ -334,7 +334,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
                   'flex-1 px-4 py-2.5 rounded-xl text-[12.5px] font-primary font-semibold',
                   'transition-all duration-200',
                   'hover:-translate-y-0.5',
-                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A4FB5]/40',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C2350]/40',
                 )}
                 style={
                   isFavorite
@@ -354,7 +354,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ mem, onOpenChat, onToggleFavori
                     'border border-black/[0.07] bg-white text-[#5A8AAD]',
                     'transition-all duration-200',
                     'hover:bg-[#EDF4FF] hover:-translate-y-0.5',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A4FB5]/40',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C2350]/40',
                   )}
                   aria-label="Editar tags"
                 >

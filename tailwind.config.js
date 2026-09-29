@@ -90,17 +90,19 @@ export default {
         'bubble-eco': tokens.colors.bubble.eco,
         'bubble-user': tokens.colors.bubble.user,
         'line': tokens.colors.line,
+        // Canais RGB em variáveis: fora do app valem os azuis originais (definidos em
+        // reino-app.css no :root); dentro do /app logado o reino repinta de anil/papel.
         eco: {
           bg: '#FFFFFF',
           line: 'rgba(110, 200, 255, 0.25)',
-          text: '#0D1B2A',
-          muted: '#6B8099',
-          user: '#6EC8FF',
-          bubble: '#EBF6FF',
+          text: 'rgb(var(--tw-eco-text) / <alpha-value>)',
+          muted: 'rgb(var(--tw-eco-muted) / <alpha-value>)',
+          user: 'rgb(var(--tw-eco-user) / <alpha-value>)',
+          bubble: 'rgb(var(--tw-eco-bubble) / <alpha-value>)',
           accent: '#1E2A44',
-          baby: '#6EC8FF',
-          babyDark: '#36A8E8',
-          babySoft: '#EBF6FF',
+          baby: 'rgb(var(--tw-eco-baby) / <alpha-value>)',
+          babyDark: 'rgb(var(--tw-eco-baby-dark) / <alpha-value>)',
+          babySoft: 'rgb(var(--tw-eco-baby-soft) / <alpha-value>)',
         },
         ecotopia: {
           'bg':     'var(--bg-primary)',

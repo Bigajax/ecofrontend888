@@ -71,7 +71,7 @@ export const DEFAULT_SUGGESTIONS: Suggestion[] = [
   {
     id: "stoic_reflection",
     icon: "🏛️",
-    label: "Reflexão estoica — o que depende de você?",
+    label: "Reflexão estoica: o que depende de você?",
     modules: ["eco_presenca_racional", "eco_identificacao_mente", "eco_fim_do_sofrimento"],
     systemHint:
       "Use o olhar estoico para distinguir o que depende ou não de si. Conduza 3 perguntas curtas (controle, julgamento, ação mínima) e encerre com um compromisso simples e realista.",
@@ -128,7 +128,7 @@ export const DEFAULT_ROTATING: Suggestion[] = [
 
 /* === Tipografia (clean) === */
 const labelBase =
-  "text-center text-slate-900/95 tracking-[-0.005em] antialiased";
+  "text-center text-[#1C2350] tracking-[-0.005em] antialiased";
 const labelHero = "text-fluid-base leading-[1.35] font-normal";
 const labelFooter = "text-fluid-sm leading-[1.35] font-normal";
 
@@ -152,7 +152,7 @@ function QuickSuggestionsComp({
   const emitPick = (s: Suggestion, meta?: SuggestionPickMeta) => {
     if (disabled) return;
     if (onPickSuggestion) return onPickSuggestion(s, meta);
-    if (onPick) return onPick(`${s.icon ? s.icon + " " : ""}${s.label}`);
+    if (onPick) return onPick(s.label);
   };
 
   return (
@@ -199,15 +199,12 @@ function QuickSuggestionsComp({
             onClick={() => emitPick(s, { source: "pill", index })}
             className={clsx(
               "inline-flex shrink-0 snap-center items-center justify-center gap-2",
-              "rounded-2xl border",
-              "bg-white border-eco-baby/50",
-              "text-slate-700",
-              "shadow-ecoSm",
-              "transition-all duration-300 ease-out",
-              "hover:bg-eco-baby/5 hover:border-eco-baby/70 hover:shadow-ecoHover",
-              "hover:-translate-y-0.5",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-eco-baby/40",
-              "active:translate-y-0",
+              "rounded-full border",
+              "bg-[#F4F1E8] border-[#1C2350]/20",
+              "text-[#1C2350]",
+              "transition-colors duration-200",
+              "hover:border-[#1C2350]/45",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EDB85A]",
               isFooter
                 ? "min-h-11 min-w-[11rem] px-fluid-sm py-fluid-xs"
                 : "min-h-12 min-w-[14rem] px-fluid-md py-fluid-sm",
@@ -220,17 +217,7 @@ function QuickSuggestionsComp({
             disabled={disabled}
             role="listitem"
           >
-            {s.icon && (
-              <span
-                className={clsx(
-                  "leading-none opacity-80",
-                  isFooter ? "text-fluid-sm" : "text-fluid-base md:text-fluid-lg"
-                )}
-                aria-hidden
-              >
-                {s.icon}
-              </span>
-            )}
+
             <span className={labelCls}>{s.label}</span>
           </button>
         ))}

@@ -1,0 +1,148 @@
+/*
+ * Pele do reino para todo o /app. A classe .reino-app vai no <html> enquanto o
+ * MainLayout está montado, então vale também para modais em portal. O funil
+ * público (/sono, /assinar, landing) não passa pelo MainLayout e fica intocado.
+ *
+ * Especificidade: :root.reino-app:is(...) = (0,3,0), acima de
+ * :root[data-theme="light"] e :root:not([data-theme]) (0,2,0) do index.css.
+ */
+/* Cores eco-* do Tailwind: azuis originais em todo lugar (landing, funil)... */
+:root {
+  --tw-eco-baby: 110 200 255;
+  --tw-eco-baby-dark: 54 168 232;
+  --tw-eco-baby-soft: 235 246 255;
+  --tw-eco-user: 110 200 255;
+  --tw-eco-bubble: 235 246 255;
+  --tw-eco-text: 13 27 42;
+  --tw-eco-muted: 107 128 153;
+}
+
+:root.reino-app:is([data-theme], :not([data-theme])) {
+  /* ...e anil/papel dentro do app logado */
+  --tw-eco-baby: 28 35 80;
+  --tw-eco-baby-dark: 16 21 58;
+  --tw-eco-baby-soft: 244 241 232;
+  --tw-eco-user: 28 35 80;
+  --tw-eco-bubble: 244 241 232;
+  --tw-eco-text: 28 35 80;
+  --tw-eco-muted: 91 96 128;
+
+  --bg-primary: #e9e6dc;
+  --bg-secondary: #f4f1e8;
+  --bg-tertiary: #efeadf;
+  --bg-overlay: rgba(244, 241, 232, 0.97);
+
+  --text-primary: #1c2350;
+  --text-secondary: #2a3060;
+  --text-muted: #5b6080;
+
+  --accent: #1c2350;
+  --accent-dark: #10153a;
+  --accent-warm: #1c2350;
+  --accent-gold: #edb85a;
+
+  --neutral-border: rgba(28, 35, 80, 0.18);
+  --neutral-hover: rgba(28, 35, 80, 0.06);
+
+  --surface-glass: #f4f1e8;
+  --surface-card: #f4f1e8;
+
+  /* no reino não há sombra: o que separa é um traço fino */
+  --shadow-card: 0 0 0 1px rgba(28, 35, 80, 0.12);
+  --shadow-float: 0 0 0 1px rgba(28, 35, 80, 0.16);
+  --shadow-minimal: none;
+  --shadow-subtle: none;
+  --shadow-glow: none;
+  --shadow-glass: none;
+  --shadow-floating: none;
+
+  --nav-bg: #e9e6dc;
+
+  --color-bg-base: #e9e6dc;
+  --color-bg-surface: #f4f1e8;
+  --color-glass-tint: #f4f1e8;
+  --color-glass-stroke: rgba(28, 35, 80, 0.18);
+  --color-text-primary: #1c2350;
+  --color-text-muted: #5b6080;
+  --color-accent: #1c2350;
+
+  --eco-bg: #e9e6dc;
+  --eco-text: #1c2350;
+  --eco-muted: #5b6080;
+  --eco-user: #1c2350;
+  --eco-bubble: #f4f1e8;
+  --eco-line: rgba(28, 35, 80, 0.16);
+  --eco-accent: #1c2350;
+  --hairline: rgba(28, 35, 80, 0.12);
+  --hairline-strong: rgba(28, 35, 80, 0.24);
+  --bubble-eco-bg: #f4f1e8;
+  --bubble-user-bg: #1c2350;
+  --orb-a: none;
+  --orb-b: none;
+  --orb-c: none;
+
+  /* três vozes */
+  --font-sans: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --font-primary: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Young Serif', 'Iowan Old Style', Georgia, serif;
+  --font-serif-display: 'Young Serif', 'Iowan Old Style', Georgia, serif;
+  --font-subtitle: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary);
+}
+:root.reino-app body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Títulos em Young Serif. Ela só tem um peso: forçar 400 evita negrito falso. */
+/* (0,1,1): vence os h1..h6 globais e o .font-bold do Tailwind, perde para as classes do reino (0,2,0) */
+:where(:root).reino-app :is(h1, h2, h3, h4, h5, h6),
+:where(:root).reino-app .font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+:root.reino-app .font-sans,
+:root.reino-app .font-primary {
+  font-family: var(--font-sans);
+}
+/* a linha descritiva deixa de ser itálico falso */
+:root.reino-app .eco-subtitle {
+  font-family: var(--font-sans);
+  font-style: normal;
+  color: var(--text-muted);
+}
+
+/* balões do chat: o texto de dentro herda a cor do balão, não a regra global de p/span/div */
+.reino-bolha :where(p, span, div, li, strong, em, a, code) {
+  color: inherit;
+}
+
+/* Nada se mexe sozinho: sem entrada em fade/slide e sem ambiente em loop.
+   (breathe/wave ficam: podem guiar respiração.) */
+:root.reino-app :is(
+  .animate-fade-in,
+  .animate-slide-up-fade,
+  .animate-slide-left-fade,
+  .animate-slide-right-fade,
+  .animate-slide-down,
+  .animate-float,
+  .animate-ken-burns,
+  .animate-eco-shimmer,
+  .animate-eco-pulse
+) {
+  animation: none !important;
+}
+
+/* As Memórias têm um tema próprio (fundo branco, azul): dentro do reino, papel e anil. */
+:root.reino-app .memory-home-theme {
+  --eco-bg: #e9e6dc;
+  --eco-bubble: #f4f1e8;
+  --eco-text: #1c2350;
+  --eco-muted: #5b6080;
+  --eco-line: rgba(28, 35, 80, 0.16);
+  --eco-user: #1c2350;
+  --eco-accent: #1c2350;
+}

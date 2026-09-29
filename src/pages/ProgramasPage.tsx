@@ -133,7 +133,7 @@ export default function ProgramasPage() {
       audioUrl: '/audio/introducao-meditacao.mp3',
       image: 'url("/images/meditacao-introducao.webp")',
       imagePosition: 'center 32%',
-      gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #5AB3D9 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
+      gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #1C2350 20%, #4AA5CE 40%, #3B96C3 60%, #2D88B8 80%, #1F7BAD 100%)',
       isPremium: false,
       category: 'Introdução',
     },
@@ -299,14 +299,14 @@ export default function ProgramasPage() {
         {/* ── Page Header ── */}
         <motion.div
           className="mb-10"
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 70, damping: 20 }}
         >
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-2" style={{ color: '#0A6BBF' }}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-2" style={{ color: '#4B5070' }}>
             Biblioteca
           </p>
-          <h1 className="font-display text-[38px] sm:text-[48px] font-bold leading-tight" style={{ color: '#0D3461' }}>
+          <h1 className="font-display text-[38px] sm:text-[48px] font-bold leading-tight" style={{ color: '#1C2350' }}>
             Explorar
           </h1>
           <p className="eco-subtitle mt-2 text-[16px]" style={{ color: 'var(--text-muted)' }}>
@@ -318,16 +318,16 @@ export default function ProgramasPage() {
         {(tier === 'free' || tier === 'essentials') && lockedMeditations > 0 && (
           <motion.div
             className="mb-10 relative overflow-hidden rounded-3xl"
-            initial={{ opacity: 0, y: 16 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, type: 'spring', stiffness: 70, damping: 20 }}
             style={{
-              background: 'linear-gradient(135deg, #07192E 0%, #0D2E4F 40%, #103A62 70%, #0F4476 100%)',
-              boxShadow: '0 16px 48px rgba(7,25,46,0.35), 0 4px 16px rgba(110,200,255,0.10)',
+              background: 'linear-gradient(135deg, #10153A 0%, #1C2350 40%, #1C2350 70%, #1C2350 100%)',
+              boxShadow: '0 16px 48px rgba(7,25,46,0.35), 0 4px 16px rgba(28,35,80,0.10)',
             }}
           >
             {/* Glow orb */}
-            <div className="pointer-events-none absolute" style={{ top: '-50px', right: '-30px', width: '200px', height: '200px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(110,200,255,0.16) 0%, transparent 65%)' }} />
+            <div className="pointer-events-none absolute" style={{ top: '-50px', right: '-30px', width: '200px', height: '200px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(28,35,80,0.16) 0%, transparent 65%)' }} />
             <div className="relative z-10 flex flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:gap-6 md:px-8">
               <div className="flex-1">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-[#A8DEFF]/80 mb-1.5">
@@ -348,13 +348,13 @@ export default function ProgramasPage() {
                   requestUpgrade('meditation_library_banner');
                 }}
                 className="flex-shrink-0 inline-flex items-center gap-2 rounded-full px-5 py-3 text-[14px] font-bold transition-all duration-200 hover:scale-105 active:scale-95"
-                style={{ background: 'rgba(110,200,255,0.20)', border: '1px solid rgba(110,200,255,0.38)', color: '#E8F7FF', backdropFilter: 'blur(8px)' }}
+                style={{ background: 'rgba(28,35,80,0.20)', border: '1px solid rgba(28,35,80,0.38)', color: '#E8F7FF', backdropFilter: 'blur(8px)' }}
               >
                 {tier === 'free' ? 'Ver Planos' : 'Upgrade Premium'}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </button>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(110,200,255,0.28), transparent)' }} />
+            <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(28,35,80,0.28), transparent)' }} />
           </motion.div>
         )}
 
@@ -364,15 +364,14 @@ export default function ProgramasPage() {
             {/* Section header */}
             <motion.div
               className="mb-5 flex items-end justify-between"
-              initial={{ opacity: 0, x: -12 }}
+              initial={false}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ type: 'spring', stiffness: 80, damping: 20, delay: sectionIdx * 0.04 }}
             >
               <div className="flex items-start gap-3">
-                <div className="mt-1.5 w-1 h-6 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(180deg, #1A4FB5, #0D3461)' }} />
                 <div>
-                  <h2 className="font-display text-[22px] font-bold leading-tight" style={{ color: '#0D3461' }}>
+                  <h2 className="font-display text-[22px] font-bold leading-tight" style={{ color: '#1C2350' }}>
                     {section.title}
                   </h2>
                   <p className="mt-0.5 text-[13px]" style={{ color: 'var(--text-muted)' }}>
@@ -483,7 +482,7 @@ export default function ProgramasPage() {
                         >
                           {isLocked
                             ? <Lock size={16} className="text-white" />
-                            : <Play size={18} className="fill-[#0D3461] text-[#0D3461] ml-0.5" />
+                            : <Play size={18} className="fill-[#1C2350] text-[#1C2350] ml-0.5" />
                           }
                         </div>
                       </div>
@@ -499,20 +498,20 @@ export default function ProgramasPage() {
         {(tier === 'free' || tier === 'essentials') && (
           <motion.div
             className="mt-4 relative overflow-hidden rounded-3xl"
-            initial={{ opacity: 0, y: 24 }}
+            initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ type: 'spring', stiffness: 70, damping: 20 }}
             style={{
-              background: 'linear-gradient(135deg, #07192E 0%, #0D2E4F 40%, #103A62 70%, #0F4476 100%)',
-              boxShadow: '0 20px 60px rgba(7,25,46,0.40), 0 4px 16px rgba(110,200,255,0.10)',
+              background: 'linear-gradient(135deg, #10153A 0%, #1C2350 40%, #1C2350 70%, #1C2350 100%)',
+              boxShadow: '0 20px 60px rgba(7,25,46,0.40), 0 4px 16px rgba(28,35,80,0.10)',
             }}
           >
-            <div className="pointer-events-none absolute" style={{ top: '-60px', right: '-40px', width: '260px', height: '260px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(110,200,255,0.16) 0%, transparent 65%)' }} />
-            <div className="pointer-events-none absolute" style={{ bottom: '-60px', left: '-20px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(75,174,232,0.10) 0%, transparent 65%)' }} />
+            <div className="pointer-events-none absolute" style={{ top: '-60px', right: '-40px', width: '260px', height: '260px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(28,35,80,0.16) 0%, transparent 65%)' }} />
+            <div className="pointer-events-none absolute" style={{ bottom: '-60px', left: '-20px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(28,35,80,0.10) 0%, transparent 65%)' }} />
 
             <div className="relative z-10 px-6 py-8 md:px-8 md:py-10 flex flex-col items-center text-center gap-4">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6EC8FF]/70">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#EDB85A]">
                 Acesso Completo
               </p>
               <h3 className="font-display text-[24px] sm:text-[28px] font-bold text-white leading-snug max-w-sm">
@@ -533,7 +532,7 @@ export default function ProgramasPage() {
                     className="h-full rounded-full transition-all duration-700"
                     style={{
                       width: `${(accessibleMeditations / totalMeditations) * 100}%`,
-                      background: 'linear-gradient(90deg, #6EC8FF, #4BAEE8)',
+                      background: 'linear-gradient(90deg, #1C2350, #1C2350)',
                     }}
                   />
                 </div>
@@ -544,15 +543,15 @@ export default function ProgramasPage() {
                   mixpanel.track('Meditação · Footer upgrade clicado', { user_tier: tier, user_id: user?.id });
                   requestUpgrade('meditation_library_footer');
                 }}
-                className="inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 text-[15px] font-bold text-[#07192E] transition-all duration-200 hover:scale-105 active:scale-95 mt-1"
-                style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #1A4FB5 100%)', boxShadow: '0 6px 24px rgba(26,79,181,0.30)' }}
+                className="inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 text-[15px] font-bold text-[#10153A] transition-all duration-200 hover:scale-105 active:scale-95 mt-1"
+                style={{ background: 'linear-gradient(135deg, #C4B5FD 0%, #1C2350 100%)', boxShadow: '0 6px 24px rgba(26,79,181,0.30)' }}
               >
                 <Lock size={16} />
                 Desbloquear tudo
               </button>
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(110,200,255,0.28), transparent)' }} />
+            <div className="absolute bottom-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(28,35,80,0.28), transparent)' }} />
           </motion.div>
         )}
       </div>

@@ -60,7 +60,7 @@ export default function MemoryPageGuestTeaser() {
 
         {/* Header Section */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="mb-12 space-y-4 pt-16 md:pt-4"
@@ -82,7 +82,7 @@ export default function MemoryPageGuestTeaser() {
 
         {/* Chart Previews Grid */}
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
           className="mb-12 grid gap-6 md:grid-cols-2"
@@ -111,7 +111,7 @@ export default function MemoryPageGuestTeaser() {
 
         {/* Feature List + CTA */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.5 }}
           className="rounded-2xl border-2 border-eco-accent/30 bg-gradient-to-br from-eco-accent/5 to-eco-user/5 p-8 shadow-lg"
@@ -198,7 +198,7 @@ export default function MemoryPageGuestTeaser() {
 
         {/* Additional Context */}
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.5 }}
           className="mt-8 text-center"

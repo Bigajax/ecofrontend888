@@ -38,10 +38,10 @@ const MemoriesFilterBar: React.FC<MemoriesFilterBarProps> = ({
         value={filters.query}
         onChange={(e) => onQueryChange(e.target.value)}
         placeholder="Buscar reflexões, tags, domínios…"
-        className="w-full h-11 rounded-2xl pl-10 pr-10 text-[14px] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[#1A4FB5]/20"
+        className="w-full h-11 rounded-2xl pl-10 pr-10 text-[14px] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[#1C2350]/20"
         style={{
           border: '1px solid rgba(0,0,0,0.08)',
-          color: '#0D3461',
+          color: '#1C2350',
           backgroundColor: '#FFFFFF',
           boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
         }}
@@ -73,7 +73,7 @@ const MemoriesFilterBar: React.FC<MemoriesFilterBarProps> = ({
           style={
             filters.emotion === 'all'
               ? {
-                  background: 'linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)',
+                  background: 'linear-gradient(135deg, #1C2350 0%, #1C2350 100%)',
                   color: 'white',
                   boxShadow: '0 2px 8px rgba(26,79,181,0.28)',
                 }
@@ -129,7 +129,7 @@ const MemoriesFilterBar: React.FC<MemoriesFilterBarProps> = ({
         {filtersActive && (
           <motion.button
             type="button"
-            initial={{ opacity: 0, scale: 0.85 }}
+            initial={false}
             animate={{ opacity: 1, scale: 1 }}
             onClick={onReset}
             className="shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-medium ml-1 transition-all duration-150"

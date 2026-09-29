@@ -3,12 +3,34 @@
  * Tokens escopados em .reino-hero[data-mood] para não vazar no resto do app
  * enquanto a migração é por partes. Sem gradiente liso, sem card, sem sombra.
  */
-.reino-hero {
+:is(.reino-app, .reino-hero, .reino-corpo) {
   --r-display: 'Young Serif', 'Iowan Old Style', Georgia, serif;
   --r-ui: 'Figtree', 'Segoe UI', system-ui, sans-serif;
   --r-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
   --r-ocre: #edb85a;
+  --r-anil: #1c2350;
+  --r-linho: #e9e6dc;
+  --r-papel: #f4f1e8;
+  --r-musgo: #4e6b4a;
+  --r-rosa: #c98e86;
+}
 
+/* papel de linho: o chão das páginas de dia */
+.reino-corpo {
+  --r-bg: var(--r-linho);
+  --r-fg: var(--r-anil);
+  --r-fg2: #4b5070;
+  --r-trilho: rgba(28, 35, 80, 0.2);
+  --r-traco: var(--r-musgo);
+  --r-placa-bg: var(--r-anil);
+  --r-placa-fg: var(--r-papel);
+
+  background: var(--r-bg);
+  color: var(--r-fg);
+  font-family: var(--r-ui);
+}
+
+.reino-hero {
   /* noite é o padrão */
   --r-bg: #10153a;
   --r-fg: #f4f1e8;
@@ -27,7 +49,7 @@
 }
 /* o app pinta p/span/div com --eco-text e fonte própria; aqui dentro, herda do humor.
    Especificidade igual à das classes abaixo, que vêm depois e ganham. */
-.reino-hero :where(p, span, div, li, button, h1, h2) {
+:is(.reino-hero, .reino-corpo) :where(p, span, div, li, button, h1, h2, h3) {
   color: inherit;
   font-family: inherit;
 }
@@ -118,7 +140,7 @@
 .reino-hero__texto {
   min-width: 0;
 }
-.reino-rotulo {
+:is(.reino-hero, .reino-corpo) .reino-rotulo {
   margin: 0;
   font: 500 11.5px/1.3 var(--r-mono);
   letter-spacing: 0.08em;
@@ -275,7 +297,7 @@
   color: var(--r-fg2);
 }
 
-.reino-hero button:focus-visible {
+:is(.reino-hero, .reino-corpo) :is(button, a):focus-visible {
   outline: 2px solid var(--r-ocre);
   outline-offset: 3px;
 }
@@ -284,4 +306,520 @@
   .reino-placa::before {
     transition: none;
   }
+}
+
+/* ===================== corpo da home (papel de linho) ===================== */
+.reino-corpo__coluna {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 36px 16px 120px;
+  display: grid;
+  gap: 64px;
+}
+@media (min-width: 768px) {
+  .reino-corpo__coluna {
+    padding: 56px 32px 96px;
+    gap: 88px;
+  }
+}
+.reino-corpo__secao {
+  min-width: 0;
+}
+.reino-corpo__titulo {
+  margin: 6px 0 0;
+  font: 400 clamp(28px, 3.6vw, 40px) / 1.08 var(--r-display);
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+.reino-corpo__sobre {
+  margin: 8px 0 0;
+  max-width: 34em;
+  color: var(--r-fg2);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* em andamento: etiquetas de herbário, levemente tortas */
+.reino-andamento {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+}
+.reino-andamento li:nth-child(odd) .reino-etiqueta {
+  rotate: -0.7deg;
+}
+.reino-andamento li:nth-child(even) .reino-etiqueta {
+  rotate: 0.6deg;
+}
+.reino-etiqueta {
+  width: 100%;
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px 14px;
+  border: 1px solid var(--r-fg);
+  background: var(--r-papel);
+  color: var(--r-fg);
+  text-align: left;
+  cursor: pointer;
+}
+.reino-etiqueta__nome {
+  font: 400 19px/1.15 var(--r-display);
+}
+.reino-etiqueta__meta {
+  font: 400 11.5px var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-etiqueta__pincel {
+  width: 100%;
+  height: 12px;
+}
+.reino-etiqueta__acao {
+  font: 600 12.5px var(--r-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* filtros: palavras sublinhadas, não pílulas */
+.reino-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin-top: 18px;
+}
+.reino-filtro {
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--r-fg2);
+  font: 500 15px var(--r-ui);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+.reino-filtro:hover {
+  color: var(--r-fg);
+}
+.reino-filtro[aria-pressed='true'] {
+  color: var(--r-fg);
+  text-decoration-color: var(--r-ocre);
+}
+
+/* estante de capas */
+.reino-estante {
+  list-style: none;
+  margin: 18px -16px 0;
+  padding: 4px 16px 8px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(168px, 44%);
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+@media (min-width: 768px) {
+  .reino-estante {
+    margin: 22px 0 0;
+    padding: 4px 0 10px;
+    grid-auto-columns: minmax(200px, calc((100% - 64px) / 5));
+  }
+}
+.reino-estante li {
+  scroll-snap-align: start;
+}
+.reino-capa {
+  width: 100%;
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-capa img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+.reino-capa__meta {
+  margin-top: 4px;
+  font: 400 11px var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-capa__titulo {
+  font: 400 18px/1.2 var(--r-display);
+}
+.reino-capa:hover .reino-capa__titulo {
+  text-decoration: underline;
+  text-decoration-color: var(--r-trilho);
+  text-underline-offset: 4px;
+}
+.reino-capa__pincel {
+  width: 100%;
+  height: 12px;
+}
+
+/* programas: sumário com miniatura */
+.reino-percursos {
+  margin-top: 16px;
+  max-width: 44rem;
+}
+.reino-percurso {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 64px 26px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-percurso img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  display: block;
+}
+.reino-percurso__texto {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.reino-percurso__sobre {
+  color: var(--r-fg2);
+  font-size: 14.5px;
+}
+.reino-percurso:hover .reino-sumario__t {
+  text-decoration: underline;
+  text-decoration-color: var(--r-trilho);
+  text-underline-offset: 4px;
+}
+
+/* biblioteca: fichas de livro */
+.reino-biblioteca {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0 32px;
+}
+.reino-livro {
+  width: 100%;
+  display: grid;
+  gap: 6px;
+  padding: 18px 0 18px 16px;
+  border: 0;
+  border-left: 3px solid var(--r-rosa);
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-livro__titulo {
+  font: 400 20px/1.2 var(--r-display);
+  text-wrap: balance;
+}
+.reino-livro__sobre {
+  color: var(--r-fg2);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.reino-livro__acao {
+  margin-top: 4px;
+  font: 600 12.5px var(--r-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* convite de assinatura: uma placa, sem gritar */
+.reino-convite {
+  padding-top: 36px;
+  border-top: 1px dashed var(--r-trilho);
+  max-width: 40rem;
+}
+
+/* ===================== cabeçalho ===================== */
+.reino-cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px dashed var(--r-trilho);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.reino-cabecalho__linha {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+}
+@media (min-width: 768px) {
+  .reino-cabecalho__linha {
+    padding: 16px 32px;
+  }
+}
+.reino-cabecalho__marca {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--r-fg);
+  font: 400 21px/1 var(--r-display);
+  cursor: pointer;
+}
+.reino-cabecalho__astro {
+  width: 24px;
+  height: 24px;
+}
+.reino-cabecalho__nav {
+  display: none;
+  gap: 36px;
+}
+@media (min-width: 768px) {
+  .reino-cabecalho__nav {
+    display: flex;
+  }
+}
+.reino-cabecalho__link {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  color: var(--r-fg2);
+  font: 500 15px var(--r-ui);
+  text-decoration: none;
+}
+.reino-cabecalho__link:hover,
+.reino-cabecalho__link.active {
+  color: var(--r-fg);
+}
+.reino-cabecalho__marcador {
+  width: 13px;
+  height: 13px;
+  visibility: hidden;
+}
+.reino-cabecalho__marcador.is-ativo {
+  visibility: visible;
+}
+.reino-cabecalho__direita {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.reino-cabecalho__feedback {
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--r-fg);
+  font: 500 14.5px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--r-trilho);
+  text-underline-offset: 5px;
+  cursor: pointer;
+}
+.reino-cabecalho__feedback:hover {
+  text-decoration-color: var(--r-ocre);
+}
+.reino-cabecalho__avatar {
+  display: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--r-fg);
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--r-papel);
+  color: var(--r-fg);
+  font: 400 16px/1 var(--r-display);
+  cursor: pointer;
+  place-items: center;
+}
+@media (min-width: 768px) {
+  .reino-cabecalho__avatar {
+    display: grid;
+  }
+}
+.reino-cabecalho__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ===================== barra de baixo (celular) ===================== */
+.reino-barra {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* a borda de cima é rasgada, como o topo da home */
+  clip-path: polygon(0 6px, 12% 1px, 27% 7px, 43% 2px, 58% 6px, 74% 0, 88% 5px, 100% 2px, 100% 100%, 0 100%);
+  box-shadow: none;
+}
+.reino-barra__lista {
+  list-style: none;
+  margin: 0;
+  padding: 10px 6px 8px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+.reino-barra__item {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 4px 0;
+  min-height: 44px;
+  color: var(--r-fg2);
+  font: 400 15px/1.1 var(--r-display);
+  text-decoration: none;
+}
+.reino-barra__item.active {
+  color: var(--r-fg);
+}
+.reino-barra__astro {
+  width: 12px;
+  height: 12px;
+  visibility: hidden;
+}
+.reino-barra__astro.is-ativo {
+  visibility: visible;
+}
+
+/* ===================== o mapa ===================== */
+.reino-mapa {
+  min-height: 100dvh;
+}
+.reino-mapa__abertura {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 32px 16px 20px;
+}
+@media (min-width: 768px) {
+  .reino-mapa__abertura {
+    padding: 48px 32px 28px;
+  }
+}
+.reino-mapa__titulo {
+  margin: 6px 0 0;
+  font: 400 clamp(40px, 6vw, 72px) / 1 var(--r-display);
+}
+.reino-mapa__rolo {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.reino-mapa__quadro {
+  position: relative;
+  min-width: 900px;
+}
+.reino-mapa__quadro img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.reino-mapa__pino {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: grid;
+  gap: 1px;
+  padding: 6px 10px 7px;
+  border: 1px solid var(--r-anil);
+  background: var(--r-papel);
+  color: var(--r-anil);
+  text-align: left;
+  white-space: nowrap;
+  box-shadow: 3px 3px 0 rgba(16, 21, 58, 0.55);
+  cursor: pointer;
+}
+.reino-mapa__pino b {
+  font: 400 15px/1.2 var(--r-display);
+}
+.reino-mapa__pino span {
+  font: 400 11px var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-mapa__pino:last-child {
+  transform: translate(-75%, -100%);
+}
+.reino-mapa__atlas {
+  list-style: none;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 56px 16px 120px;
+  display: grid;
+  gap: 72px;
+}
+@media (min-width: 768px) {
+  .reino-mapa__atlas {
+    padding: 80px 32px 96px;
+    gap: 96px;
+  }
+}
+.reino-mapa__regiao {
+  display: grid;
+  gap: 22px;
+  scroll-margin-top: 90px;
+}
+@media (min-width: 768px) {
+  .reino-mapa__regiao {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 48px;
+    align-items: start;
+  }
+  .reino-mapa__regiao:nth-child(even) .reino-mapa__imagem {
+    order: 2;
+  }
+}
+.reino-mapa__imagem > * {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+.reino-mapa__texto {
+  min-width: 0;
+}
+.reino-mapa__destinos {
+  margin-top: 18px;
+}
+
+/* ===================== ritual boa noite (app) ===================== */
+.reino-sono__pincel {
+  display: block;
+  width: 100%;
+  height: 12px;
+  margin-top: 10px;
+}
+.reino-sono__contagem {
+  margin: 6px 0 4px;
+  font: 400 11.5px var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-sono__trancada .reino-sumario__t {
+  color: var(--r-fg2);
+}
+.reino-sono__baixo {
+  padding-top: 40px;
+}
+.reino-placa:disabled {
+  opacity: 0.6;
+  cursor: default;
 }

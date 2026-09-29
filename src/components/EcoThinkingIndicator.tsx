@@ -79,7 +79,7 @@ const EcoThinkingIndicator: React.FC<Props> = ({
           "var(--font-subtitle, var(--font-serif, 'Lora', Georgia, serif))",
         fontStyle: "italic",
         backgroundImage:
-          "linear-gradient(110deg, #6B8099 35%, #6EC8FF 50%, #6B8099 75%)",
+          "linear-gradient(110deg, #6B8099 35%, #1C2350 50%, #6B8099 75%)",
         backgroundSize: "200% 100%",
         WebkitBackgroundClip: "text",
         backgroundClip: "text",

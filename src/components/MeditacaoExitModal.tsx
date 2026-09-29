@@ -83,7 +83,7 @@ const MeditacaoExitModal: React.FC<MeditacaoExitModalProps> = ({
           <button
             onClick={onSignup}
             className="bg-[var(--eco-user)] text-white px-6 py-3 rounded-lg font-primary font-medium text-base
-                       hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(110,200,255,0.3)]
+                       hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(28,35,80,0.3)]
                        active:translate-y-0 transition-all duration-300 ease-out"
           >
             Criar conta grátis

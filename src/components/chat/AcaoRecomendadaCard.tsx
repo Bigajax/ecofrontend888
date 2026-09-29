@@ -20,7 +20,7 @@ import { useSubscriptionTier, usePremiumContent } from "../../hooks/usePremiumCo
 import { canAccessMeditation } from "../../constants/meditationTiers";
 
 /** Azul-bebê da marca — mesma cor do feedback do nav (`--accent`/eco-baby). Abre a recomendação. */
-const ECO_BABY = "#6EC8FF";
+const ECO_BABY = "#1C2350";
 
 /** Grão fractal sutil para dar textura/profundidade ao vidro (data URI, sem rede). */
 const GRAIN =
@@ -58,7 +58,7 @@ interface CatalogEntry {
 }
 
 export const CATALOG: Record<string, CatalogEntry> = {
-  meditacao: { kind: "programa", rota: "/app/introducao-meditacao", cover: "/images/introducao-meditacao-hero.webp", kicker: "RESPIRAR", accent: "#36A8E8", glyph: "play" },
+  meditacao: { kind: "programa", rota: "/app/introducao-meditacao", cover: "/images/introducao-meditacao-hero.webp", kicker: "RESPIRAR", accent: "#1C2350", glyph: "play" },
   sono: { kind: "programa", rota: "/app/meditacoes-sono", cover: "/images/meditacoes-sono-hero.webp", kicker: "DESCANSAR", accent: "#6E63B0", glyph: "play" },
   estoicismo: { kind: "programa", rota: "/app/diario-estoico", cover: "/images/diario-marco-aurelio.webp", kicker: "REFLETIR", accent: "#B5895E", glyph: "play" },
   diario: { kind: "programa", rota: "/app/diario-estoico", cover: "/images/diario-estoico.webp", kicker: "ESCREVER", accent: "#5C9A78", glyph: "play" },

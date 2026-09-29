@@ -113,20 +113,20 @@ export default function SonsPage() {
 
         {/* Page Header */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="mb-8"
         >
           <p
             className="text-[11px] font-bold uppercase tracking-[0.2em] mb-2"
-            style={{ color: '#0A6BBF' }}
+            style={{ color: '#4B5070' }}
           >
             BIBLIOTECA
           </p>
           <h1
             className="font-display text-[48px] sm:text-[56px] font-bold leading-none mb-3"
-            style={{ color: '#0D3461' }}
+            style={{ color: '#1C2350' }}
           >
             Sons
           </h1>
@@ -137,7 +137,7 @@ export default function SonsPage() {
 
         {/* Category Pills */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.12 }}
           className="flex gap-2.5 mb-10 overflow-x-auto pb-2"
@@ -152,9 +152,9 @@ export default function SonsPage() {
                 onClick={() => setSelectedPill(pill.id)}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-medium whitespace-nowrap transition-all duration-200 active:scale-95 flex-shrink-0"
                 style={isActive ? {
-                  background: 'linear-gradient(135deg, #1A4FB5, #0D3461)',
+                  background: 'linear-gradient(135deg, #1C2350, #1C2350)',
                   color: 'white',
-                  boxShadow: '0 4px 16px rgba(13,52,97,0.28)',
+                  boxShadow: '0 4px 16px rgba(28,35,80,0.28)',
                   border: '1px solid transparent',
                 } : {
                   backgroundColor: 'var(--surface-card)',
@@ -175,27 +175,23 @@ export default function SonsPage() {
           {filteredCategories.map((category, catIndex) => (
             <motion.div
               key={category.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.18 + catIndex * 0.08 }}
             >
               {/* Section Header */}
               <div className="flex items-center justify-between mb-5 px-0.5">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-1 h-6 rounded-full flex-shrink-0"
-                    style={{ background: 'linear-gradient(180deg, #1A4FB5, #0D3461)' }}
-                  />
                   <h2
                     className="font-display text-[22px] font-bold"
-                    style={{ color: '#0D3461' }}
+                    style={{ color: '#1C2350' }}
                   >
                     {category.title}
                   </h2>
                 </div>
                 <button
                   className="text-[13px] font-semibold transition-opacity hover:opacity-70"
-                  style={{ color: '#0A6BBF' }}
+                  style={{ color: '#4B5070' }}
                 >
                   Ver todos
                 </button>
@@ -210,7 +206,7 @@ export default function SonsPage() {
                   <motion.div
                     key={sound.id}
                     className="flex-none w-[185px] sm:w-[210px]"
-                    initial={{ opacity: 0, y: 16 }}
+                    initial={false}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: '-20px' }}
                     transition={{ type: 'spring', stiffness: 80, damping: 20, delay: soundIndex * 0.06 }}
@@ -344,7 +340,7 @@ interface DurationModalProps {
 function DurationModal({ sound, duration, onDurationChange, onClose, onStart }: DurationModalProps) {
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={false}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
@@ -353,7 +349,7 @@ function DurationModal({ sound, duration, onDurationChange, onClose, onStart }: 
       onClick={onClose}
     >
       <motion.div
-        initial={{ opacity: 0, y: 40, scale: 0.96 }}
+        initial={false}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 30, scale: 0.96 }}
         transition={{ type: 'spring', stiffness: 320, damping: 32 }}
@@ -364,16 +360,16 @@ function DurationModal({ sound, duration, onDurationChange, onClose, onStart }: 
         {/* Hero header */}
         <div
           className="relative h-36 flex items-end p-6 overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #07192E 0%, #0D2E4F 40%, #0F4476 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #10153A 0%, #1C2350 40%, #1C2350 100%)' }}
         >
           {/* Orbs */}
           <div
             className="absolute top-[-40px] right-[-40px] w-48 h-48 rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(110,200,255,0.20) 0%, transparent 70%)' }}
+            style={{ background: 'radial-gradient(circle, rgba(28,35,80,0.20) 0%, transparent 70%)' }}
           />
           <div
             className="absolute bottom-[-30px] left-[-20px] w-36 h-36 rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(75,174,232,0.14) 0%, transparent 70%)' }}
+            style={{ background: 'radial-gradient(circle, rgba(28,35,80,0.14) 0%, transparent 70%)' }}
           />
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/50 mb-1">
@@ -394,8 +390,8 @@ function DurationModal({ sound, duration, onDurationChange, onClose, onStart }: 
                 onClick={() => onDurationChange(mins)}
                 className="flex flex-col items-center justify-center w-[88px] h-[88px] rounded-2xl transition-all duration-200 active:scale-95"
                 style={duration === mins ? {
-                  background: 'linear-gradient(135deg, #1A4FB5, #0D3461)',
-                  boxShadow: '0 6px 20px rgba(13,52,97,0.30)',
+                  background: 'linear-gradient(135deg, #1C2350, #1C2350)',
+                  boxShadow: '0 6px 20px rgba(28,35,80,0.30)',
                   transform: 'scale(1.06)',
                 } : {
                   backgroundColor: 'var(--bg-primary)',
@@ -430,8 +426,8 @@ function DurationModal({ sound, duration, onDurationChange, onClose, onStart }: 
             onClick={onStart}
             className="w-full py-4 rounded-2xl font-semibold text-[15px] text-white transition-all duration-200 active:scale-[0.98] hover:opacity-90 mb-3"
             style={{
-              background: 'linear-gradient(135deg, #1A4FB5, #0D3461)',
-              boxShadow: '0 6px 20px rgba(13,52,97,0.28)',
+              background: 'linear-gradient(135deg, #1C2350, #1C2350)',
+              boxShadow: '0 6px 20px rgba(28,35,80,0.28)',
             }}
           >
             Iniciar sessão →

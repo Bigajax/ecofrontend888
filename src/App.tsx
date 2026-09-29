@@ -17,6 +17,7 @@ import {
 } from "react-router-dom";
 
 import { lazyWithReload } from "@/utils/lazyWithReload";
+import "@/components/reino/reino-app.css";
 import { replayPendingLeads } from "@/api/leadCapture";
 import { RootProviders } from "@/providers/RootProviders";
 import RequireAuth from "@/components/RequireAuth";
@@ -74,6 +75,7 @@ const SleepMeditationsPage = lazyWithReload(() => import("@/pages/sleep/SleepMed
 const SleepGuestExperiencePage = lazyWithReload(() => import("@/pages/sleep/SleepGuestExperiencePage"));
 const CodigoDaAbundanciaPage = lazyWithReload(() => import("@/pages/CodigoDaAbundanciaPage"));
 const ProgramasPage = lazyWithReload(() => import("@/pages/ProgramasPage"));
+const MapaPage = lazyWithReload(() => import("@/pages/MapaPage"));
 const CaleidoscopioMindMovieProgramPage = lazyWithReload(() => import("@/pages/CaleidoscopioMindMovieProgramPage"));
 const ManifestacaoSaudePage = lazyWithReload(() => import("@/pages/ManifestacaoSaudePage"));
 const ManifestacaoDinheiroPage = lazyWithReload(() => import("@/pages/ManifestacaoDinheiroPage"));
@@ -235,6 +237,11 @@ function AppProtectedShell() {
 }
 
 function AppProtectedShellNoLayout() {
+  // Mesmo sem o MainLayout, as telas do app logado usam a pele do reino.
+  useEffect(() => {
+    document.documentElement.classList.add('reino-app');
+    return () => document.documentElement.classList.remove('reino-app');
+  }, []);
   return <Outlet />;
 }
 
@@ -364,6 +371,7 @@ function AppRoutes() {
         <Route path="articles/good-night-sleep" element={renderWithSuspense(<GoodNightSleepArticle />)} />
         <Route path="diario-estoico" element={renderWithBoundary(<DiarioEstoicoPage />)} />
         <Route path="programas" element={renderWithSuspense(<ProgramasPage />)} />
+        <Route path="mapa" element={renderWithSuspense(<MapaPage />)} />
         <Route path="sons" element={renderWithSuspense(<SonsPage />)} />
         <Route path="configuracoes" element={renderWithSuspense(<ConfiguracoesPage />)} />
         <Route path="admin/conversion" element={renderWithSuspense(<ConversionDashboard />)} />

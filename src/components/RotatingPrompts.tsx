@@ -84,20 +84,15 @@ const RotatingPrompts = ({
         className="
           group inline-flex items-center gap-2
           h-10 px-3.5 rounded-full
-          bg-white/85 backdrop-blur-md
-          border border-black/10
-          hover:bg-white focus:outline-none
+          bg-[#F4F1E8]
+          border border-[#1C2350]/20
+          hover:border-[#1C2350]/45 focus:outline-none
           focus-visible:ring-2 focus-visible:ring-black/10
           active:translate-y-[1px] transition
         "
         aria-label={s.label}
         disabled={disabled}
       >
-        {s.icon && (
-          <span className="text-[16px] leading-none" aria-hidden>
-            {s.icon}
-          </span>
-        )}
         <span className={labelClassName}>{s.label}</span>
 
         {/* indicador sutil de “rotativo” */}
@@ -105,7 +100,6 @@ const RotatingPrompts = ({
           className="
             ml-1 inline-block h-1.5 w-1.5 rounded-full bg-slate-400/70
             group-hover:bg-slate-500/80
-            animate-[pulse_1.4s_ease-in-out_infinite]
           "
           aria-hidden
         />

@@ -465,7 +465,7 @@ const MemoryLayout: React.FC = () => {
   if (loading) {
     return (
       <MemoryDataContext.Provider value={LOGGED_OUT_CONTEXT}>
-        <div className="memory-home-theme flex h-screen overflow-hidden bg-white">
+        <div className="memory-home-theme flex h-screen overflow-hidden bg-[#E9E6DC]">
           <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleLogout} />
           <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
 
@@ -486,7 +486,7 @@ const MemoryLayout: React.FC = () => {
   if (!userId) {
     return (
       <MemoryDataContext.Provider value={LOGGED_OUT_CONTEXT}>
-        <div className="memory-home-theme flex h-screen overflow-hidden bg-white">
+        <div className="memory-home-theme flex h-screen overflow-hidden bg-[#E9E6DC]">
           <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleLogout} />
           <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
 
@@ -515,11 +515,11 @@ const MemoryLayout: React.FC = () => {
 
   return (
     <MemoryDataContext.Provider value={contextValue}>
-      <div className="memory-home-theme flex h-screen overflow-hidden bg-white">
+      <div className="memory-home-theme flex h-screen overflow-hidden bg-[#E9E6DC]">
         <Sidebar variant="desktop" isGuest={isGuest} onLogout={handleLogout} />
         <Sidebar variant="bottom" isGuest={isGuest} onLogout={handleLogout} />
 
-        <div className="flex flex-col flex-1 min-w-0 bg-white">
+        <div className="flex flex-col flex-1 min-w-0 bg-[#E9E6DC]">
           {/* Top Bar - APENAS DESKTOP */}
           <div className="hidden lg:block">
             <TopBar onMenuClick={() => setSidebarOpen(true)} showMenuButton={false} />

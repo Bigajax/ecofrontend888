@@ -198,8 +198,8 @@ const ChatInput = forwardRef<ChatInputHandle, Props>(
       >
         <div
           className={clsx(
-            "flex w-full flex-col gap-1.5 rounded-[28px] border border-eco-line/60 bg-white/70 px-4 py-3 backdrop-blur-md transition-all duration-200 shadow-ecoSm",
-            "focus-within:border-eco-baby focus-within:ring-2 focus-within:ring-eco-baby/30",
+            "flex w-full flex-col gap-1.5 rounded-[22px] border border-[#1C2350]/25 bg-[#F4F1E8] px-4 py-3 transition-colors duration-200",
+            "focus-within:border-[#1C2350]/60 focus-within:ring-2 focus-within:ring-[#EDB85A]/60",
             "hover:border-eco-line",
             isBusy ? "opacity-90" : "",
           )}

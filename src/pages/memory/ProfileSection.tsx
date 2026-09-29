@@ -43,7 +43,7 @@ const Card: FC<PropsWithChildren<{ title: string; subtitle?: string; id?: string
     style={{
       backgroundColor: '#FFFFFF',
       border: '1px solid rgba(0,0,0,0.07)',
-      boxShadow: '0 4px 24px rgba(13,52,97,0.06)',
+      boxShadow: '0 4px 24px rgba(28,35,80,0.06)',
     }}
     role="region"
     aria-label={title}
@@ -213,7 +213,7 @@ const SegmentedControl: FC<{ value: Period; onChange: (p: Period)=>void }> = ({ 
           style={
             value === p
               ? {
-                  background: 'linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)',
+                  background: 'linear-gradient(135deg, #1C2350 0%, #1C2350 100%)',
                   color: 'white',
                 }
               : {
@@ -262,8 +262,8 @@ const NarrativePortrait: FC<{ text?: string | null; loading?: boolean; updatedAt
       aria-label="Retrato emocional"
       style={{
         background: 'linear-gradient(135deg, #FBFDFF 0%, #F4F8FE 55%, #EEF4FD 100%)',
-        border: '1px solid rgba(110,200,255,0.28)',
-        boxShadow: '0 10px 40px rgba(13,52,97,0.10), inset 0 1px 0 rgba(255,255,255,0.6)',
+        border: '1px solid rgba(28,35,80,0.28)',
+        boxShadow: '0 10px 40px rgba(28,35,80,0.10), inset 0 1px 0 rgba(255,255,255,0.6)',
       }}
     >
       <style>{PORTRAIT_STYLE}</style>
@@ -277,7 +277,7 @@ const NarrativePortrait: FC<{ text?: string | null; loading?: boolean; updatedAt
       <div
         aria-hidden
         className="eco-portrait__aura eco-portrait__aura--2 pointer-events-none absolute -bottom-20 -left-12 h-64 w-64 rounded-full blur-3xl"
-        style={{ background: 'radial-gradient(circle, rgba(110,200,255,0.22) 0%, rgba(110,200,255,0) 70%)' }}
+        style={{ background: 'radial-gradient(circle, rgba(28,35,80,0.22) 0%, rgba(28,35,80,0) 70%)' }}
       />
 
       {/* glifo de aspas decorativo */}
@@ -299,11 +299,11 @@ const NarrativePortrait: FC<{ text?: string | null; loading?: boolean; updatedAt
         <div className="mb-4 flex items-center gap-3">
           <span
             className="h-px w-7"
-            style={{ background: 'linear-gradient(90deg, #1A4FB5, rgba(26,79,181,0))' }}
+            style={{ background: 'linear-gradient(90deg, #1C2350, rgba(26,79,181,0))' }}
           />
           <span
             className="text-[11px] font-semibold uppercase"
-            style={{ letterSpacing: '0.22em', color: '#1A4FB5' }}
+            style={{ letterSpacing: '0.22em', color: '#1C2350' }}
           >
             Retrato emocional
           </span>
@@ -315,7 +315,7 @@ const NarrativePortrait: FC<{ text?: string | null; loading?: boolean; updatedAt
               <div
                 key={i}
                 className="h-4 rounded-full animate-pulse"
-                style={{ width: w, background: 'rgba(13,52,97,0.08)' }}
+                style={{ width: w, background: 'rgba(28,35,80,0.08)' }}
               />
             ))}
           </div>
@@ -346,7 +346,7 @@ const NarrativePortrait: FC<{ text?: string | null; loading?: boolean; updatedAt
             className="mt-6 flex items-center gap-2 text-[12px]"
             style={{ color: 'var(--eco-muted, #6B8099)' }}
           >
-            <span aria-hidden style={{ color: '#1A4FB5' }}>
+            <span aria-hidden style={{ color: '#1C2350' }}>
               ✦
             </span>
             <span>
@@ -542,7 +542,7 @@ const ProfileSection: FC = () => {
               <div
                 className="text-[34px] leading-none font-semibold"
                 style={{
-                  color: '#1A4FB5',
+                  color: '#1C2350',
                   fontFamily: 'var(--font-display, Playfair Display, Georgia, serif)',
                 }}
               >
@@ -589,8 +589,8 @@ const ProfileSection: FC = () => {
                       >
                         <defs>
                           <linearGradient id="sparkGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#1A4FB5" stopOpacity={0.22} />
-                            <stop offset="100%" stopColor="#1A4FB5" stopOpacity={0.01} />
+                            <stop offset="0%" stopColor="#1C2350" stopOpacity={0.22} />
+                            <stop offset="100%" stopColor="#1C2350" stopOpacity={0.01} />
                           </linearGradient>
                         </defs>
                         <XAxis dataKey="x" hide />
@@ -615,7 +615,7 @@ const ProfileSection: FC = () => {
                         <Area
                           type="monotone"
                           dataKey="y"
-                          stroke="#1A4FB5"
+                          stroke="#1C2350"
                           strokeWidth={2}
                           dot={false}
                           fill="url(#sparkGradient)"

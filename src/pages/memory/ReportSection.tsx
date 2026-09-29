@@ -78,7 +78,7 @@ const Card: React.FC<{ title: string; right?: React.ReactNode; children: React.R
     style={{
       backgroundColor: '#FFFFFF',
       border: '1px solid rgba(0,0,0,0.07)',
-      boxShadow: '0 4px 24px rgba(13,52,97,0.06)',
+      boxShadow: '0 4px 24px rgba(28,35,80,0.06)',
     }}
   >
     <div className="flex items-start justify-between mb-3">
@@ -255,7 +255,7 @@ const RelatorioPremiumTeaser: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade
       <button
         onClick={onUpgrade}
         className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-        style={{ background: 'linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #1C2350 0%, #1C2350 100%)' }}
       >
         <Lock size={14} />
         Desbloquear Relatório
@@ -417,9 +417,9 @@ const ReportSection: React.FC = () => {
                   style={
                     heatmapRange === v
                       ? {
-                          background: 'linear-gradient(135deg, #1A4FB5 0%, #0D3461 100%)',
+                          background: 'linear-gradient(135deg, #1C2350 0%, #1C2350 100%)',
                           color: 'white',
-                          borderColor: '#1A4FB5',
+                          borderColor: '#1C2350',
                           boxShadow: '0 2px 12px rgba(26,79,181,0.20)',
                         }
                       : {

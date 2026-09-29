@@ -46,7 +46,7 @@ export default function SubscriptionManagement() {
 
   const getPlanColor = () => {
     if (isPremiumUser || isTrialActive) {
-      return 'from-[#6EC8FF] to-[#5AB3D9]';
+      return 'from-[#1C2350] to-[#1C2350]';
     }
     return 'from-gray-400 to-gray-500';
   };
@@ -233,7 +233,7 @@ export default function SubscriptionManagement() {
 
           {/* Badge */}
           {(isPremiumUser || isTrialActive) && (
-            <div className="px-3 py-1 bg-gradient-to-r from-[#6EC8FF] to-[#5AB3D9] rounded-full">
+            <div className="px-3 py-1 bg-gradient-to-r from-[#1C2350] to-[#1C2350] rounded-full">
               <span className="text-xs font-semibold text-white uppercase tracking-wide">
                 Premium
               </span>
@@ -243,9 +243,9 @@ export default function SubscriptionManagement() {
 
         {/* Trial Info */}
         {isTrialActive && (
-          <div className="mb-4 p-4 bg-[#6EC8FF]/10 border border-[#6EC8FF]/30 rounded-xl">
+          <div className="mb-4 p-4 bg-[#1C2350]/10 border border-[#1C2350]/30 rounded-xl">
             <div className="flex items-start gap-2">
-              <Calendar className="w-5 h-5 text-[#6EC8FF] mt-0.5 flex-shrink-0" />
+              <Calendar className="w-5 h-5 text-[#1C2350] mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-[var(--eco-text)]">
                   {trialDaysRemaining === 1
@@ -397,8 +397,8 @@ export default function SubscriptionManagement() {
               'Novos conteúdos semanais',
             ].map((feature, index) => (
               <div key={index} className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-[#6EC8FF]/10 flex items-center justify-center flex-shrink-0">
-                  <Check className="w-3 h-3 text-[#6EC8FF]" strokeWidth={3} />
+                <div className="w-5 h-5 rounded-full bg-[#1C2350]/10 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3 h-3 text-[#1C2350]" strokeWidth={3} />
                 </div>
                 <p className="text-sm text-[var(--eco-text)]">{feature}</p>
               </div>
@@ -412,7 +412,7 @@ export default function SubscriptionManagement() {
         {showCancelModal && (
           <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={false}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
@@ -439,7 +439,7 @@ export default function SubscriptionManagement() {
                           onClick={() => setSelectedReason(reason.id)}
                           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left text-sm font-medium transition-all duration-200 ${
                             active
-                              ? 'border-[#6EC8FF] bg-[#6EC8FF]/10 text-[var(--eco-text)]'
+                              ? 'border-[#1C2350] bg-[#1C2350]/10 text-[var(--eco-text)]'
                               : 'border-[var(--eco-line)] text-[var(--eco-text)] hover:bg-gray-50'
                           }`}
                         >
@@ -457,7 +457,7 @@ export default function SubscriptionManagement() {
                         value={otherReason}
                         onChange={(e) => setOtherReason(e.target.value)}
                         placeholder="Conta um pouco mais (opcional)…"
-                        className="w-full px-4 py-3 border border-[var(--eco-line)] rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#6EC8FF] focus:border-transparent"
+                        className="w-full px-4 py-3 border border-[var(--eco-line)] rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#1C2350] focus:border-transparent"
                         rows={3}
                       />
                     </div>

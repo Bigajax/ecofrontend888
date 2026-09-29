@@ -39,7 +39,7 @@ const EcoBubbleLoading: React.FC<Props> = ({
             width: halo,
             height: halo,
             background:
-              "radial-gradient(60% 60% at 38% 35%, rgba(110,200,255,0.22) 0%, rgba(26,79,181,0) 70%)",
+              "radial-gradient(60% 60% at 38% 35%, rgba(28,35,80,0.22) 0%, rgba(26,79,181,0) 70%)",
           }}
         />
 
@@ -50,8 +50,8 @@ const EcoBubbleLoading: React.FC<Props> = ({
           style={{
             width: size,
             height: size,
-            border: "1px solid rgba(110,200,255,0.45)",
-            boxShadow: "inset 0 0 24px rgba(110,200,255,0.10)",
+            border: "1px solid rgba(28,35,80,0.45)",
+            boxShadow: "inset 0 0 24px rgba(28,35,80,0.10)",
           }}
           animate={reduce ? undefined : { scale: [1, 1.04, 1], opacity: [0.7, 1, 0.7] }}
           transition={{ duration: breathingSec, repeat: Infinity, ease: "easeInOut" }}

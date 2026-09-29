@@ -64,17 +64,13 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
             disabled={disabled}
             data-suggestion-id={suggestion.id}
             className={clsx(
-              'inline-flex h-10 shrink-0 items-center gap-2 rounded-pill bg-eco-babySoft text-[#1F6F9B] border border-eco-baby/30 px-3 text-left transition-all duration-200 shadow-ecoSm',
-              'hover:bg-eco-baby/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eco-baby/40',
+              'inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#F4F1E8] text-[#1C2350] border border-[#1C2350]/20 px-3.5 text-left transition-colors duration-200',
+              'hover:border-[#1C2350]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EDB85A]',
               disabled ? 'cursor-not-allowed opacity-60' : 'active:translate-y-[1px]'
             )}
             style={{ scrollSnapAlign: 'start' }}
           >
-            {suggestion.icon && (
-              <span className="text-[16px] leading-none" aria-hidden>
-                {suggestion.icon}
-              </span>
-            )}
+
             <span className={labelClass}>{suggestion.label}</span>
           </button>
         ))}

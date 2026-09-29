@@ -26,6 +26,12 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Só o item mais específico fica ativo (/app/memory/profile não acende também /app/memory).
+  const activePath = navItems
+    .map((item) => item.path)
+    .filter((path) => location.pathname === path || location.pathname.startsWith(`${path}/`))
+    .sort((a, b) => b.length - a.length)[0];
+
   const handleNavigate = (path: string) => {
     navigate(path);
     if (variant === 'mobile' && onClose) {
@@ -57,7 +63,7 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
         {/* Mobile Drawer */}
         <aside
           className={clsx(
-            'fixed top-0 left-0 bottom-0 z-50 w-72 bg-white/95 backdrop-blur-xl border-r border-black/5 shadow-2xl lg:hidden',
+            'fixed top-0 left-0 bottom-0 z-50 w-72 bg-[#E9E6DC] border-r border-[#1C2350]/15 lg:hidden',
             'transform transition-transform duration-300 ease-out',
             isOpen ? 'translate-x-0' : '-translate-x-full'
           )}
@@ -78,8 +84,7 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
           <nav className="flex flex-col gap-1 p-4">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path ||
-                (item.path !== '/app' && location.pathname.startsWith(item.path));
+              const isActive = item.path === activePath;
 
               return (
                 <button
@@ -137,12 +142,11 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
       'relative flex flex-col items-center justify-center gap-0.5 px-2.5 py-1.5 rounded-2xl min-w-[56px] transition-colors duration-200';
 
     return (
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-black/[0.06] shadow-[0_2px_20px_rgba(13,52,97,0.06)] lg:hidden">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#E9E6DC] border-b border-dashed border-[#1C2350]/20 lg:hidden">
         <div className="flex items-center justify-around h-14 px-1.5 pt-safe">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path ||
-              (item.path !== '/app' && location.pathname.startsWith(item.path));
+            const isActive = item.path === activePath;
 
             return (
               <button
@@ -157,8 +161,8 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
                     aria-hidden
                     className="absolute inset-0 rounded-2xl"
                     style={{
-                      background: '#6EC8FF',
-                      boxShadow: '0 4px 14px rgba(110,200,255,0.40)',
+                      background: '#F4F1E8',
+                      boxShadow: 'inset 0 0 0 1px rgba(28,35,80,0.35)',
                     }}
                     transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                   />
@@ -166,11 +170,11 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
                 <Icon
                   size={19}
                   strokeWidth={isActive ? 2.4 : 1.6}
-                  className={clsx('relative z-10 transition-colors duration-200', isActive ? 'text-[#0D2E4F]' : 'text-gray-500')}
+                  className={clsx('relative z-10 transition-colors duration-200', isActive ? 'text-[#1C2350]' : 'text-[#5B6080]')}
                 />
                 <span className={clsx(
                   'relative z-10 text-[10px] leading-none text-center transition-colors duration-200',
-                  isActive ? 'font-semibold text-[#0D2E4F]' : 'font-medium text-gray-500'
+                  isActive ? 'font-semibold text-[#1C2350]' : 'font-medium text-[#5B6080]'
                 )}>
                   {item.label}
                 </span>
@@ -195,12 +199,11 @@ export default function Sidebar({ isOpen = false, onClose, variant = 'desktop', 
 
   // Desktop Sidebar
   return (
-    <aside className="hidden lg:flex flex-col w-20 xl:w-24 bg-white/50 backdrop-blur-xl border-r border-black/5 shrink-0">
+    <aside className="hidden lg:flex flex-col w-20 xl:w-24 bg-[#E9E6DC] border-r border-dashed border-[#1C2350]/20 shrink-0">
       <nav className="flex flex-col items-center gap-2 p-3 pt-6 flex-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path ||
-            (item.path !== '/app' && location.pathname.startsWith(item.path));
+          const isActive = item.path === activePath;
 
           return (
             <button

@@ -37,6 +37,7 @@ import { SonoInlineCheckout } from '@/components/sono/SonoInlineCheckout';
 import { SonoExperienceHero } from '@/components/sono/SonoExperienceHero';
 import { SonoPreAudioModal } from '@/components/sono/SonoPreAudioModal';
 import { SonoEcoDreamEntryCard } from '@/components/sono/SonoEcoDreamEntryCard';
+import SonoReinoApp from '@/components/sleep/SonoReinoApp';
 import type { SonoCheckoutStep } from '@/components/sono/useSonoCheckoutState';
 import { markRitualNightCompleted, isRitualCompletedToday } from '@/hooks/useRitualProgress';
 import {
@@ -528,7 +529,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
         return {
           l1: 'Continue', l2: 'seu ritual.',
           sub: 'Volte de onde parou e siga sua sequência de descanso.',
-          cta: `Continuar — Noite ${nextNight}`,
+          cta: `Continuar a Noite ${nextNight}`,
         };
       case 'completed_today':
         return {
@@ -630,6 +631,69 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     );
   }
 
+  // Noite bloqueada no app logado: o checkout focado só existe no modo convidado,
+  // então aqui o toque leva à assinatura (o evento de clique é o mesmo).
+  const handleAppNightClick = (night: ProtocolNight) => {
+    handleNightClick(night);
+    if (!isNightAccessible(night, isPaid, isVipUser) && isPaywallFoco()) openCheckout();
+  };
+
+  const startNightPrompt = (
+      <AnimatePresence>
+        {showStartNightPrompt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex items-end justify-center p-4 sm:items-center"
+            style={{ background: 'rgba(3,6,18,0.72)', backdropFilter: 'blur(12px)' }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.97 }}
+              transition={{ duration: 0.22 }}
+              className="w-full max-w-sm rounded-3xl px-6 py-7 text-center"
+              style={{
+                background: 'linear-gradient(160deg, #070B1D 0%, #050817 58%, #101733 100%)',
+                border: '1px solid rgba(196,181,253,0.18)',
+                boxShadow: '0 24px 80px rgba(0,0,0,0.62)',
+              }}
+            >
+              <h2 className="font-display mb-3 text-[24px] font-bold leading-tight text-white">
+                Comece pela Noite 1 gratuita.
+              </h2>
+              <p className="mb-6 text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.54)' }}>
+                Ela prepara seu corpo para as próximas etapas.
+              </p>
+              <button
+                onClick={() => {
+                  setShowStartNightPrompt(false);
+                  handleStartNight1();
+                }}
+                className="mb-3 w-full rounded-full py-4 text-[15px] font-bold text-white transition-transform active:scale-[0.98]"
+                style={{
+                  background: `linear-gradient(135deg, ${P.light} 0%, ${P.deep} 100%)`,
+                  boxShadow: `0 10px 32px ${P.glow}0.42)`,
+                }}
+              >
+                Iniciar Noite 1
+              </button>
+              <button
+                onClick={() => setShowStartNightPrompt(false)}
+                className="w-full py-2 text-[13px]"
+                style={{ color: 'rgba(255,255,255,0.36)' }}
+              >
+                Agora não
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+  );
+
   // ── Main Page ──────────────────────────────────────────────────
   return (
     <MotionConfig reducedMotion="user">
@@ -648,6 +712,22 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
           autoPlay
           showPriming={isEntradaSemModal() && !isPaid}
         />
+      ) : !isGuestSono ? (
+        <>
+          <SonoReinoApp
+            ritualCopy={ritualCopy}
+            completedCount={completedCount}
+            nextNight={nextNight}
+            completedNights={completedNights}
+            isPaid={isPaid}
+            night1IsCompleted={night1IsCompleted}
+            checkoutLoading={checkoutLoading}
+            onRitual={handleRitualHeroClick}
+            onNight={handleAppNightClick}
+            onCheckout={() => openCheckout()}
+          />
+          {startNightPrompt}
+        </>
       ) : (
       <div
         className="font-primary"
@@ -1173,59 +1253,7 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
 
       </main>
 
-      <AnimatePresence>
-        {showStartNightPrompt && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] flex items-end justify-center p-4 sm:items-center"
-            style={{ background: 'rgba(3,6,18,0.72)', backdropFilter: 'blur(12px)' }}
-            role="dialog"
-            aria-modal="true"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 18, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 18, scale: 0.97 }}
-              transition={{ duration: 0.22 }}
-              className="w-full max-w-sm rounded-3xl px-6 py-7 text-center"
-              style={{
-                background: 'linear-gradient(160deg, #070B1D 0%, #050817 58%, #101733 100%)',
-                border: '1px solid rgba(196,181,253,0.18)',
-                boxShadow: '0 24px 80px rgba(0,0,0,0.62)',
-              }}
-            >
-              <h2 className="font-display mb-3 text-[24px] font-bold leading-tight text-white">
-                Comece pela Noite 1 gratuita.
-              </h2>
-              <p className="mb-6 text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.54)' }}>
-                Ela prepara seu corpo para as próximas etapas.
-              </p>
-              <button
-                onClick={() => {
-                  setShowStartNightPrompt(false);
-                  handleStartNight1();
-                }}
-                className="mb-3 w-full rounded-full py-4 text-[15px] font-bold text-white transition-transform active:scale-[0.98]"
-                style={{
-                  background: `linear-gradient(135deg, ${P.light} 0%, ${P.deep} 100%)`,
-                  boxShadow: `0 10px 32px ${P.glow}0.42)`,
-                }}
-              >
-                Iniciar Noite 1
-              </button>
-              <button
-                onClick={() => setShowStartNightPrompt(false)}
-                className="w-full py-2 text-[13px]"
-                style={{ color: 'rgba(255,255,255,0.36)' }}
-              >
-                Agora não
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {startNightPrompt}
 
     </div>
       )}

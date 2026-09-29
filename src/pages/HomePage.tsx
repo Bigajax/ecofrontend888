@@ -3,15 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram } from '@/contexts/ProgramContext';
 import HomeHeader from '@/components/home/HomeHeader';
-import DailyRecommendationsSection from '@/components/home/DailyRecommendationsSection';
-import ContinueProgramSection from '@/components/home/ContinueProgramSection';
-import EnergyBlessingsSection from '@/components/home/EnergyBlessingsSection';
-import EcoAIGuidanceCard from '@/components/home/EcoAIGuidanceCard';
-import EcoDreamGuidanceCard from '@/components/home/EcoDreamGuidanceCard';
-import LearnExploreSection from '@/components/home/LearnExploreSection';
 import HomeReinoHero from '@/components/home/HomeReinoHero';
-import SelfAssessmentSection from '@/components/home/SelfAssessmentSection';
-import PromoSection from '@/components/home/PromoSection';
+import HomeReinoCorpo from '@/components/home/HomeReinoCorpo';
 import ContentSkeletonLoader from '@/components/ContentSkeletonLoader';
 import EcoAIModal from '@/components/EcoAIModal';
 import HomePageTour from '@/components/HomePageTour';
@@ -28,7 +21,6 @@ export default function HomePage() {
   const { checkAccess, requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const navigate = useNavigate();
   const location = useLocation();
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [showEcoAIModal, setShowEcoAIModal] = useState(false);
 
@@ -93,50 +85,8 @@ export default function HomePage() {
   const previewMood =
     humorParam === 'amanhecer' || humorParam === 'entardecer' || humorParam === 'noite' ? humorParam : undefined;
 
-  // Sem nome (convidado) fica vazio: a home nunca mostra "Convidado(a)".
-  const displayName = capitalizeNames(userName || '');
-
-  const handleLogout = async () => {
-    navigate('/');
-  };
-
-  // Recomendações Diárias
-  const dailyRecommendations = useMemo(
-    () => [
-      {
-        id: 'rec_1',
-        title: 'Rotina matinal',
-        description: 'Comece bem o seu dia',
-        duration: '8 min',
-        image: 'url("/images/introducao-meditacao-hero.webp")',
-        imagePosition: 'center center',
-        isPremium: false,
-        categoryType: 'programa' as const,
-        progress: programProgressList.find(p => p.programId === 'intro')?.progress ?? 0,
-      },
-      {
-        id: 'rec_2',
-        title: 'Solte a ansiedade',
-        description: 'Meditação do dia',
-        duration: '7 min',
-        image: 'url("/images/acolhendo-respiracao.webp")',
-        imagePosition: 'center center',
-        isPremium: false,
-        categoryType: 'meditacao' as const,
-      },
-      {
-        id: 'rec_3',
-        title: 'Ritual Boa Noite',
-        description: 'Desacelere o corpo antes de dormir',
-        duration: '10 min',
-        image: 'url("/images/sono-noite-01.webp")',
-        imagePosition: 'center center',
-        isPremium: false,
-        categoryType: 'programa' as const,
-      },
-    ],
-    [programProgressList],
-  );
+  // Quem já assina não vê o convite de 50% OFF.
+  const isPremiumUser = checkAccess(true).hasAccess;
 
   // Meditações - Dr. Joe unificado + outras categorias
   const energyBlessings = useMemo(
@@ -254,21 +204,6 @@ export default function HomePage() {
     [],
   );
 
-  const categories = useMemo(
-    () => [
-      { id: 'all', label: 'Nossas Escolhas' },
-      { id: 'wellbeing', label: 'Bem-estar Mental' },
-    ],
-    [],
-  );
-
-  const filteredContent = useMemo(() => {
-    if (selectedCategory === 'all') {
-      return contentItems;
-    }
-    return contentItems.filter((item) => item.category === selectedCategory);
-  }, [selectedCategory, contentItems]);
-
   const handleStartChat = () => {
     setShowEcoAIModal(true);
   };
@@ -314,11 +249,7 @@ export default function HomePage() {
     } else if (contentId === 'content_sleep_tips') {
       navigate('/app/articles/good-night-sleep');
     } else if (contentId === 'content_diario_estoico') {
-      // Encontrar posição do card na lista filtrada
-      const filteredItems = selectedCategory === 'all'
-        ? contentItems
-        : contentItems.filter((item) => item.category === selectedCategory);
-      const position = filteredItems.findIndex((item) => item.id === contentId);
+      const position = contentItems.findIndex((item) => item.id === contentId);
 
       trackDiarioEnteredFromExplore({
         explore_position: position >= 0 ? position : 0,
@@ -359,6 +290,37 @@ export default function HomePage() {
       navigate('/app/meditacoes-sono');
     } else {
       console.log('Recomendação clicada:', recId);
+    }
+  };
+
+  const handleProgramClick = (id: string) => {
+    sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
+    if (id === 'prog_rings') {
+      startProgram({
+        id: 'blessing_1',
+        title: '5 Anéis da Disciplina',
+        description: 'Construa sua estrutura pessoal',
+        currentLesson: 'Aula 1: Introdução aos 5 Anéis',
+        progress: 0,
+        duration: '12 min',
+        startedAt: new Date().toISOString(),
+        lastAccessedAt: new Date().toISOString(),
+      });
+      navigate('/app/rings');
+    } else if (id === 'prog_riqueza') {
+      startProgram({
+        id: 'rec_2',
+        title: 'Quem Pensa Enriquece',
+        description: 'Transforme seu mindset financeiro',
+        currentLesson: 'Passo 1: Onde você está',
+        progress: 0,
+        duration: '25 min',
+        startedAt: new Date().toISOString(),
+        lastAccessedAt: new Date().toISOString(),
+      });
+      navigate('/app/riqueza-mental');
+    } else if (id === 'prog_diario') {
+      navigate('/app/diario-estoico');
     }
   };
 
@@ -467,15 +429,15 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen font-primary" style={{ backgroundColor: 'var(--bg-primary)', minHeight: '100dvh' }}>
+    <div className="min-h-screen font-primary" style={{ backgroundColor: '#E9E6DC', minHeight: '100dvh' }}>
       {/* Header - Always render first */}
-      <HomeHeader onLogout={handleLogout} />
+      <HomeHeader />
 
       {/* Main Content - Show skeleton or real content */}
       {isLoading ? (
         <ContentSkeletonLoader />
       ) : (
-        <main className="md:pt-0 page-with-nav" style={{ backgroundColor: 'var(--bg-primary)' }}>
+        <main className="reino-corpo md:pt-0 page-with-nav">
         {/* Trial Onboarding - Show for trial users */}
         <div className="mx-auto max-w-6xl md:px-8">
           <TrialOnboarding />
@@ -490,102 +452,18 @@ export default function HomePage() {
           onBlessing={handleEnergyBlessingClick}
         />
 
-        {/* Continue o seu programa — só aparece se houver programa em andamento */}
-        {programProgressList.some((p) => p.status === 'in_progress') && (
-          <section id="continue-program-section">
-            <ContinueProgramSection
-              programs={programProgressList}
-              onContinue={handleContinueProgram}
-            />
-          </section>
-        )}
-
-        {/* Daily Recommendations Section */}
-        <section id="daily-recommendations-section">
-          <DailyRecommendationsSection
-            recommendations={dailyRecommendations}
-            onRecommendationClick={handleDailyRecommendationClick}
-          />
-        </section>
-
-        {/* Energy Blessings Section */}
-        <section id="energy-blessings-section">
-          <EnergyBlessingsSection
-            blessings={energyBlessings}
-            onBlessingClick={handleEnergyBlessingClick}
-          />
-        </section>
-
-        {/* Programas Section */}
-        <section id="self-assessment-section">
-          <SelfAssessmentSection
-            programProgress={programProgressMap}
-            onProgramClick={(id) => {
-              sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
-              if (id === 'prog_rings') {
-                startProgram({
-                  id: 'blessing_1',
-                  title: '5 Anéis da Disciplina',
-                  description: 'Construa sua estrutura pessoal',
-                  currentLesson: 'Aula 1: Introdução aos 5 Anéis',
-                  progress: 0,
-                  duration: '12 min',
-                  startedAt: new Date().toISOString(),
-                  lastAccessedAt: new Date().toISOString(),
-                });
-                navigate('/app/rings');
-              } else if (id === 'prog_riqueza') {
-                startProgram({
-                  id: 'rec_2',
-                  title: 'Quem Pensa Enriquece',
-                  description: 'Transforme seu mindset financeiro',
-                  currentLesson: 'Passo 1: Onde você está',
-                  progress: 0,
-                  duration: '25 min',
-                  startedAt: new Date().toISOString(),
-                  lastAccessedAt: new Date().toISOString(),
-                });
-                navigate('/app/riqueza-mental');
-              } else if (id === 'prog_diario') {
-                navigate('/app/diario-estoico');
-              }
-            }}
-          />
-        </section>
-
-        {/* ECO AI Guidance Card Section */}
-        <section id="eco-ai-guidance">
-          <EcoAIGuidanceCard
-            userName={displayName}
-            totalSessions={programProgressList.reduce((acc, p) => acc + p.completedSessions, 0)}
-            onStartChat={handleStartChat}
-          />
-        </section>
-
-        {/* Eco Dream Guidance Card Section */}
-        <section id="eco-dream-guidance">
-          <EcoDreamGuidanceCard />
-        </section>
-
-        {/* Learn & Explore Section */}
-        <section id="learn-explore-section">
-          <LearnExploreSection
-            categories={categories}
-            contentItems={filteredContent}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            onContentClick={handleContentClick}
-          />
-        </section>
-
-        {/* Promo 50% OFF */}
-        <section id="promo-section">
-          <PromoSection onUpgradeClick={() => requestUpgrade('home_promo_50off')} />
-        </section>
-
-
-        {/* Footer spacing */}
-        <div className="h-20" />
+        {/* Corpo do reino: em andamento, trilhas, programas, biblioteca */}
+        <HomeReinoCorpo
+          emAndamento={programProgressList.filter((p) => p.status === 'in_progress' && p.programId !== 'sono_protocol')}
+          onContinuar={handleContinueProgram}
+          jornadas={energyBlessings}
+          onJornada={handleEnergyBlessingClick}
+          percursoProgress={programProgressMap}
+          onPercurso={handleProgramClick}
+          leituras={contentItems}
+          onLeitura={handleContentClick}
+          onAssinar={isPremiumUser ? null : () => requestUpgrade('home_promo_50off')}
+        />
         </main>
       )}
 

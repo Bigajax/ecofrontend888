@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRitualProgress, type RitualProgress } from '@/hooks/useRitualProgress';
 import { trackRitualCardClicked, trackRitualCardViewed } from '@/lib/mixpanelRitualEvents';
 import { getTodayMaxim } from '@/utils/diarioEstoico/getTodayMaxim';
-import { Astro, PincelProgresso, ReinoPintura, ReinoScene, type ReinoCrop, type ReinoRegiao } from '@/components/reino/ReinoScene';
+import { PincelProgresso, ReinoPintura, ReinoScene, type ReinoCrop, type ReinoRegiao } from '@/components/reino/ReinoScene';
 import { formatHojeLabel, getFirstName, getReinoMood, type ReinoMood } from '@/components/reino/reinoMood';
 import '@/components/reino/reino.css';
 
@@ -196,10 +196,7 @@ export default function HomeReinoHero({
       <div className="reino-hero__grade">
         <div className="reino-hero__cena reino-rasgo-a">
           <ReinoPintura regiao={CENA[mood].regiao} foco={CENA[mood].foco} />
-          <p className="reino-hero__marca">
-            <Astro className="reino-astro" />
-            Ecotopia
-          </p>
+
         </div>
 
         <div className="reino-hero__texto">

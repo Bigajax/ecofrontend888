@@ -1,5 +1,6 @@
 // src/layouts/MainLayout.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
+import '@/components/reino/reino-app.css';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
@@ -13,6 +14,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const navigate = useNavigate();
   const { signOut, user, isGuestMode } = useAuth();
   const { clearMessages } = useChat();
+
+  // Pele do reino no <html> enquanto o app logado está aberto (cobre modais em portal).
+  useEffect(() => {
+    document.documentElement.classList.add('reino-app');
+    return () => document.documentElement.classList.remove('reino-app');
+  }, []);
 
   // Guest gate para controlar limite de mensagens
   const isGuest = !user;
@@ -38,7 +45,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   };
 
   // Mostrar header antigo apenas em páginas específicas (NÃO na HomePage, ChatPage, Rings, Memórias, etc.)
-  const isHomePage = location.pathname === '/app' || location.pathname === '/app/' || location.pathname === '/app/home';
+  const isHomePage =
+    location.pathname === '/app' ||
+    location.pathname === '/app/' ||
+    location.pathname === '/app/home' ||
+    location.pathname.startsWith('/app/mapa'); // o Mapa tem cabeçalho próprio, como a home
   const isChatPage = location.pathname.startsWith('/app/chat'); // Nova sidebar/topbar já implementada
   const isMemoryPage = location.pathname.startsWith('/app/memory'); // Memórias, Perfil Emocional, Relatórios
   const isVoicePage = location.pathname.startsWith('/app/voice'); // Página de voz

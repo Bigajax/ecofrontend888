@@ -548,7 +548,7 @@ function ChatPage() {
       (s.modules?.length || s.systemHint)
         ? `${s.modules?.length ? `Ative módulos: ${s.modules.join(', ')}.` : ''}${s.systemHint ? ` ${s.systemHint}` : ''}`.trim()
         : '';
-    const userText = `${s.icon ? s.icon + ' ' : ''}${s.label}`;
+    const userText = s.label;
     await sendWithGuards(userText, hint);
   };
 
@@ -932,14 +932,14 @@ function ChatPage() {
                 {isEmptyState && (
                   <motion.div
                     className="w-full pt-16 pb-8"
-                    initial={{ opacity: 0, y: 16 }}
+                    initial={false}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <div className="flex flex-col items-center text-center gap-5">
                       {/* Olho ECO */}
                       <motion.div
-                        initial={{ opacity: 0, scale: 0.85 }}
+                        initial={false}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.4, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
                       >
@@ -949,12 +949,12 @@ function ChatPage() {
                       {/* Saudação */}
                       <motion.div
                         className="space-y-2"
-                        initial={{ opacity: 0, y: 8 }}
+                        initial={false}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.35, delay: 0.18 }}
                       >
-                        <h1 className="font-display text-[28px] sm:text-[34px] font-bold leading-tight" style={{ color: '#0D3461' }}>
-                          {saudacao}, {displayName || rawUserName}
+                        <h1 className="font-display text-[28px] sm:text-[34px] font-bold leading-tight" style={{ color: '#1C2350' }}>
+                          {saudacao}{displayName && rawUserName !== 'Usuário' ? `, ${displayName}` : ''}
                         </h1>
                         <p className="eco-subtitle text-[15px] max-w-xs mx-auto leading-relaxed" style={{ color: 'var(--text-muted)' }} data-testid="chat-hero-subtitle">
                           {heroSubtitle || OPENING_VARIATIONS[0] || ''}

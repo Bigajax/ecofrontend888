@@ -120,7 +120,7 @@ export default function ConfiguracoesPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              {user?.user_metadata?.full_name || (isGuestMode ? 'Convidado' : 'Usuário')}
+              {user?.user_metadata?.full_name || (isGuestMode ? 'Visitante' : 'Sua conta')}
             </h1>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
               {isGuestMode ? 'Modo convidado' : user?.email?.split('@')[0] || '@usuario'}

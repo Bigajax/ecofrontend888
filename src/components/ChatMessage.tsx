@@ -183,10 +183,11 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, isEcoTyping
     "text-[15px]",
     "max-w-[min(65ch,85vw)]",
     "whitespace-pre-wrap break-words overflow-wrap-anywhere",
-    "transition-all duration-200",
+    // Reino: quem escreve usa a tinta anil; a Eco responde no papel, com traço fino.
+    "reino-bolha",
     isUser
-      ? "bg-gradient-to-br from-eco-baby to-eco-babyDark text-white shadow-md hover:shadow-lg"
-      : "bg-white/90 text-gray-900 border border-gray-200/60 shadow-sm backdrop-blur-sm"
+      ? "bg-[#1C2350] text-[#F4F1E8]"
+      : "bg-[#F4F1E8] text-[#1C2350] border border-[#1C2350]/15"
   );
 
   const wrapperClass = clsx(

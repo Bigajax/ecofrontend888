@@ -39,7 +39,7 @@ export const ROTATING_ITEMS: Suggestion[] = [
   {
     id: 'rot_regressao_media',
     icon: '📉',
-    label: 'Talvez ontem foi exceção — quero revisar expectativas',
+    label: 'Talvez ontem foi exceção: quero revisar expectativas',
     modules: ['eco_heuristica_regressao_media', 'eco_heuristica_certeza_emocional'],
     systemHint:
       'Explique regressão à média e convide a recalibrar expectativas com 1 evidência observável para hoje.',
