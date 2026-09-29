@@ -36,9 +36,6 @@ export default function HomeHeader() {
   const mood = getReinoMood();
   const lugar = lugarDaRota(pathname);
 
-  const inicial =
-    user?.user_metadata?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || '·';
-
   return (
     <>
       <header className="reino-corpo reino-cabecalho" data-mood={mood}>
@@ -80,17 +77,13 @@ export default function HomeHeader() {
               <span className="reino-cabecalho__feedback-texto">Feedback</span>
             </button>
             {user && (
+              // No celular a conta fica no "Perfil" da barra de baixo; aqui é o caminho no desktop.
               <button
                 type="button"
-                className="reino-cabecalho__avatar"
+                className="reino-cabecalho__feedback reino-cabecalho__conta"
                 onClick={() => navigate('/app/configuracoes')}
-                aria-label="Perfil e configurações"
               >
-                {user.user_metadata?.avatar_url ? (
-                  <img src={user.user_metadata.avatar_url} alt="" />
-                ) : (
-                  <span aria-hidden="true">{inicial}</span>
-                )}
+                <span className="reino-cabecalho__feedback-texto">Sua conta</span>
               </button>
             )}
           </div>
