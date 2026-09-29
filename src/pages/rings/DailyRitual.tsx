@@ -10,6 +10,7 @@ import {
   DIAS_DA_JORNADA,
   PERGUNTA_DE_FECHAMENTO,
   DICA_DO_ANEL,
+  DIAS_GRATIS,
   diasConcluidos,
   lerInicioDoCiclo,
   pontoDaJornada,
@@ -38,13 +39,13 @@ export default function DailyRitual() {
   const isGuest = isGuestMode && !user && !isVipUser;
   const uid = user?.id ?? null;
   const feitosAntes = useMemo(() => diasConcluidos(allRituals).length, [allRituals]);
-  // O primeiro passo é de todos (set/2026): o plano grátis faz o dia 1 inteiro;
-  // a assinatura entra do dia 2 em diante. Antes o grátis era bloqueado já na
-  // entrada, sem ver uma pergunta.
+  // O Anel da Terra é de todos (set/2026): o plano grátis faz os 6 primeiros
+  // dias; a assinatura entra no Anel da Água. Antes o grátis era bloqueado já
+  // na entrada, sem ver uma pergunta.
   const hojeFeito = currentRitual?.status === 'completed';
   // Só quando tenta um dia novo: revendo o dia de hoje (já feito) não há o que pedir.
   const isFreeBlocked =
-    Boolean(user) && !isGuest && !canAccess('rings_daily', tier) && feitosAntes >= 1 && !hojeFeito;
+    Boolean(user) && !isGuest && !canAccess('rings_daily', tier) && feitosAntes >= DIAS_GRATIS && !hojeFeito;
   // O ponto é calculado sem contar o dia de hoje, para a tela mostrar o dia que se está fechando.
   const ponto = pontoDaJornada(hojeFeito ? feitosAntes - 1 : feitosAntes, lerInicioDoCiclo(uid));
   const anel = RINGS[ponto.anel];
@@ -86,7 +87,7 @@ export default function DailyRitual() {
   useEffect(() => {
     if (isFreeBlocked) {
       mixpanel.track('Assinatura · Limite free bloqueado', { limit_type: 'rings_premium', user_id: user?.id, tier });
-      requestUpgrade('rings_dia2');
+      requestUpgrade('rings_agua');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFreeBlocked]);
@@ -106,9 +107,11 @@ export default function DailyRitual() {
           <button type="button" className="reino-chegada__voltar" onClick={() => navigate('/app/rings')}>
             <span aria-hidden="true">←</span> Voltar
           </button>
-          <h1 className="reino-ritual__chegada">O dia {ponto.dia} abre com a assinatura.</h1>
-          <p className="reino-ritual__amanha">O primeiro dia foi seu. Os outros 29 seguem com todas as portas abertas.</p>
-          <button type="button" className="reino-placa" onClick={() => requestUpgrade('rings_dia2')}>
+          <h1 className="reino-ritual__chegada">Você atravessou o Anel da Terra.</h1>
+          <p className="reino-ritual__amanha">
+            Os seis primeiros dias foram seus. O Anel da Água e os outros três seguem com a assinatura.
+          </p>
+          <button type="button" className="reino-placa" onClick={() => requestUpgrade('rings_agua')}>
             Ver como seguir <span aria-hidden="true">→</span>
           </button>
         </div>

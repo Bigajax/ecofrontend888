@@ -26,7 +26,8 @@ export default function RitualGuestGate({ open, currentDay, completedRings, onBa
       completed_rings: completedRings,
       blocked_at: 'dia_2',
     });
-    navigate('/assinar?step=signup&plan=monthly&from=aneis_dia2');
+    // Conta grátis (sem cartão): o Anel da Terra inteiro segue sem pagar.
+    navigate('/register?returnTo=' + encodeURIComponent('/app/rings'));
   };
 
   const voltar = () => {
@@ -42,13 +43,13 @@ export default function RitualGuestGate({ open, currentDay, completedRings, onBa
           O primeiro dia foi seu.
         </h2>
         <p className="reino-gate__texto">
-          O caminho tem 30 dias, um anel de cada vez. Crie a conta para abrir o dia {currentDay} e guardar o que você já
-          escreveu.
+          Crie a sua conta grátis para abrir o dia {currentDay} e seguir o Anel da Terra inteiro, seis dias, guardando o que
+          você já escreveu.
         </p>
-        <p className="reino-gate__nota">Sete dias com tudo aberto. Nada é cobrado hoje.</p>
+        <p className="reino-gate__nota">Conta grátis, sem cartão.</p>
         <div className="reino-gate__acoes">
           <button type="button" className="reino-placa" onClick={seguir}>
-            Criar conta e seguir <span aria-hidden="true">→</span>
+            Criar conta grátis <span aria-hidden="true">→</span>
           </button>
           <button type="button" className="reino-gate__depois" onClick={voltar}>
             Agora não

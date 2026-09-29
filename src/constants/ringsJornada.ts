@@ -15,6 +15,13 @@ import type { DailyRitual, RingType } from '@/types/rings';
 export const DIAS_DA_JORNADA = 30;
 export const DIAS_POR_ANEL = 6;
 
+/**
+ * Sem assinatura (set/2026): o Anel da Terra inteiro. Um anel completo, com
+ * o Selo no fim, antes do pedido; a assinatura abre do Anel da Água em diante.
+ * Visitante sem conta faz o dia 1; a conta grátis libera o resto da Terra.
+ */
+export const DIAS_GRATIS = DIAS_POR_ANEL;
+
 export const ORDEM_DOS_ANEIS: RingType[] = ['earth', 'water', 'fire', 'wind', 'void'];
 
 export const PERGUNTA_DE_FECHAMENTO = 'Em uma frase: qual é o seu passo de amanhã?';

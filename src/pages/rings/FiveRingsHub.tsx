@@ -1,3 +1,5 @@
+import { useSubscriptionTier } from '@/hooks/usePremiumContent';
+import { canAccess } from '@/constants/meditationTiers';
 import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRings } from '@/contexts/RingsContext';
@@ -31,6 +33,7 @@ export default function FiveRingsHub() {
   const { user, isGuestMode, isVipUser } = useAuth();
   const uid = user?.id ?? null;
   const isGuest = isGuestMode && !user && !isVipUser;
+  const semAssinatura = !canAccess('rings_daily', useSubscriptionTier());
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -98,9 +101,9 @@ export default function FiveRingsHub() {
           <button
             type="button"
             className="reino-placa"
-            onClick={() => navigate('/assinar?step=signup&plan=monthly&from=aneis_hub')}
+            onClick={() => navigate('/register?returnTo=' + encodeURIComponent('/app/rings'))}
           >
-            Criar conta e seguir para o dia 2 <span aria-hidden="true">→</span>
+            Criar conta grátis e seguir a Terra <span aria-hidden="true">→</span>
           </button>
         ) : hojeFeito ? (
           <p className="reino-nota" style={{ marginTop: 18 }}>
@@ -116,7 +119,13 @@ export default function FiveRingsHub() {
       <div className="reino-pagina">
         {isGuest && !convidadoTravado && (
           <div className="reino-nota">
-            <p>Sem conta, você faz o primeiro dia inteiro. Os outros 29 ficam com a conta.</p>
+            <p>Sem conta, você faz o primeiro dia. Com a conta grátis, o Anel da Terra inteiro: seis dias.</p>
+          </div>
+        )}
+
+        {!isGuest && semAssinatura && (
+          <div className="reino-nota">
+            <p>O Anel da Terra é seu, sem pagar. Os outros quatro abrem com a assinatura.</p>
           </div>
         )}
 

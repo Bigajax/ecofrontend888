@@ -1,3 +1,5 @@
+import { useSubscriptionTier, usePremiumContent } from '@/hooks/usePremiumContent';
+import { canAccess } from '@/constants/meditationTiers';
 import { useNavigate } from 'react-router-dom';
 import { useRings } from '@/contexts/RingsContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -5,6 +7,7 @@ import { RINGS } from '@/constants/rings';
 import {
   DIAS_DA_JORNADA,
   DIAS_POR_ANEL,
+  DIAS_GRATIS,
   anelDoDia,
   comecarNovoCiclo,
   diasConcluidos,
@@ -32,6 +35,9 @@ export default function RitualCompletion({ onBackHome }: RitualCompletionProps) 
   const { user, isGuestMode } = useAuth();
   const uid = user?.id ?? null;
   const isGuest = isGuestMode && !user;
+  const tier = useSubscriptionTier();
+  const { requestUpgrade } = usePremiumContent();
+  const semAssinatura = !canAccess('rings_daily', tier);
 
   const total = diasConcluidos(allRituals).length;
   const inicio = lerInicioDoCiclo(uid);
@@ -50,7 +56,7 @@ export default function RitualCompletion({ onBackHome }: RitualCompletionProps) 
   const amanha = travessia
     ? 'Trinta dias de prática. O caminho pode ser percorrido de novo, com o que você é agora.'
     : isGuest
-      ? `Amanhã é o dia ${proximo.dia}, no ${RINGS[proximo.anel].titlePt}. Para seguir os 30 dias, crie a sua conta.`
+      ? `Amanhã é o dia ${proximo.dia}, no ${RINGS[proximo.anel].titlePt}. Crie a sua conta grátis para seguir o Anel da Terra.`
       : `Amanhã abre o dia ${proximo.dia}${fechouAnel ? `, e com ele o ${RINGS[proximo.anel].titlePt}` : `, no ${RINGS[proximo.anel].titlePt}`}.`;
 
   return (
@@ -69,15 +75,26 @@ export default function RitualCompletion({ onBackHome }: RitualCompletionProps) 
 
         {(fechouAnel || travessia) && <SeloDoAnel anel={anelFeito} rituais={allRituals} />}
         {travessia && !isGuest && <ProximoCaminho atual="aneis" />}
+        {/* Plano grátis ao fechar a Terra: o convite para o Anel da Água, no auge do investimento */}
+        {semAssinatura && !isGuest && diaFeito === DIAS_GRATIS && (
+          <div className="reino-proximo">
+            <p className="reino-rotulo">O próximo anel</p>
+            <p className="reino-proximo__nome">O Anel da Água abre com a assinatura.</p>
+            <p className="reino-proximo__sobre">Os seis dias da Terra foram seus. Os outros quatro anéis seguem daqui.</p>
+            <button type="button" className="reino-placa" onClick={() => requestUpgrade('rings_agua')}>
+              Ver como seguir <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        )}
 
         <div className="reino-ritual__acoes">
           {isGuest ? (
             <button
               type="button"
               className="reino-placa"
-              onClick={() => navigate('/assinar?step=signup&plan=monthly&from=aneis_dia1')}
+              onClick={() => navigate('/register?returnTo=' + encodeURIComponent('/app/rings'))}
             >
-              Criar conta e seguir <span aria-hidden="true">→</span>
+              Criar conta grátis <span aria-hidden="true">→</span>
             </button>
           ) : travessia ? (
             <button
