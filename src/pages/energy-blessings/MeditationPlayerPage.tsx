@@ -1202,6 +1202,8 @@ export default function MeditationPlayerPage() {
             onFavorite={handleFavoriteToggle}
             volume={meditationVolume}
             onVolume={setMeditationVolume}
+            volumeFundo={backgroundVolume}
+            onVolumeFundo={setBackgroundVolume}
             avisoTopo={
               showResumePrompt && savedProgress !== null ? (
                 <p className="reino-player__linha" role="status">

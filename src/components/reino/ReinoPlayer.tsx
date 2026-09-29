@@ -1,5 +1,5 @@
-import type { ChangeEvent, ReactNode } from 'react';
-import { PincelProgresso, ReinoScene } from './ReinoScene';
+import type { ChangeEvent, CSSProperties, ReactNode } from 'react';
+import { PincelProgresso } from './ReinoScene';
 import './reino.css';
 
 /**
@@ -33,6 +33,9 @@ interface ReinoPlayerProps {
   onFavorite?: () => void;
   volume: number;
   onVolume: (v: number) => void;
+  /** volume do som de fundo (0 a 100); sem ele, a linha mostra só a escolha do som */
+  volumeFundo?: number;
+  onVolumeFundo?: (v: number) => void;
   /** aviso acima da pintura (ex.: continuar de onde parou): no fluxo, nunca por cima */
   avisoTopo?: ReactNode;
   /** aviso abaixo dos controles (ex.: pode bloquear a tela) */
@@ -60,6 +63,8 @@ export default function ReinoPlayer({
   onFavorite,
   volume,
   onVolume,
+  volumeFundo,
+  onVolumeFundo,
   avisoTopo,
   avisoBase,
 }: ReinoPlayerProps) {
@@ -104,7 +109,6 @@ export default function ReinoPlayer({
             {etapa ? `${etapa} · ${duracaoRotulo}` : duracaoRotulo}
           </p>
           {jornada !== undefined && <PincelProgresso value={jornada} className="reino-player__jornada" />}
-          <p className="reino-player__convite">Feche os olhos quando quiser. A voz conduz o resto.</p>
         </div>
 
         <div className="reino-player__controles">
@@ -152,33 +156,56 @@ export default function ReinoPlayer({
           <span className="reino-player__tempo">{formatTime(duration)}</span>
         </div>
 
-        <div className="reino-player__rodape">
-          {onSomDeFundo ? (
-            <button type="button" className="reino-player__som" onClick={onSomDeFundo}>
-              <span className="reino-player__som-rotulo">Som de fundo</span>
-              <span className="reino-player__som-nome">{somDeFundo}</span>
-            </button>
-          ) : (
-            <span />
-          )}
-          <label className="reino-player__volume">
-            <span className="reino-player__som-rotulo">Voz</span>
+        {/* O painel de som (set/2026): função antes de enfeite. Voz e som de fundo
+            lado a lado, com o volume de cada um à mão; o do som de fundo antes
+            só existia escondido dentro do modal. */}
+        <div className="reino-player__mixer">
+          <label className="reino-player__canal">
+            <span className="reino-player__canal-nome">Voz</span>
             <input
               type="range"
               min="0"
               max="100"
               value={volume}
               onChange={(e) => onVolume(parseFloat(e.target.value))}
-              aria-label="Volume da meditação"
+              aria-label="Volume da voz"
               aria-valuetext={`${Math.round(volume)}%`}
+              className="reino-player__faixa"
+              style={{ '--v': `${volume}%` } as CSSProperties}
             />
+            <span className="reino-player__canal-valor">{Math.round(volume)}%</span>
           </label>
+
+          {onSomDeFundo && (
+            <div className="reino-player__canal">
+              <button type="button" className="reino-player__canal-nome is-escolha" onClick={onSomDeFundo}>
+                Som de fundo
+                <span className="reino-player__canal-som">
+                  {somDeFundo && somDeFundo !== 'Nenhum' ? somDeFundo : 'escolher'} ›
+                </span>
+              </button>
+              {somDeFundo && somDeFundo !== 'Nenhum' && onVolumeFundo && volumeFundo !== undefined ? (
+                <>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={volumeFundo}
+                    onChange={(e) => onVolumeFundo(parseFloat(e.target.value))}
+                    aria-label="Volume do som de fundo"
+                    aria-valuetext={`${Math.round(volumeFundo)}%`}
+                    className="reino-player__faixa"
+                    style={{ '--v': `${volumeFundo}%` } as CSSProperties}
+                  />
+                  <span className="reino-player__canal-valor">{Math.round(volumeFundo)}%</span>
+                </>
+              ) : (
+                <span className="reino-player__canal-vazio">Nenhum tocando. Escolha um para tocar junto com a voz.</span>
+              )}
+            </div>
+          )}
         </div>
         {avisoBase && <div className="reino-player__aviso">{avisoBase}</div>}
-      </div>
-      {/* o horizonte do reino na base da tela: os morros e o lago do panorama */}
-      <div className="reino-player__horizonte" aria-hidden="true">
-        <ReinoScene crop={[0, 470, 2172, 254]} />
       </div>
     </div>
   );
