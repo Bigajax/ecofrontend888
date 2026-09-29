@@ -472,7 +472,7 @@ export default function HomePage() {
         isOpen={showEcoAIModal}
         onClose={() => setShowEcoAIModal(false)}
         onEnter={handleEnterChat}
-        userName={capitalizeNames(userName || 'Usuário')}
+        userName={userName ? capitalizeNames(userName) : ''}
         onStartSentimentos={handleModalSentimentos}
         onSugerirConteudo={handleModalSugerir}
         onSuggestionClick={handleModalSuggestion}

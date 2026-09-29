@@ -2243,3 +2243,151 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* ===================== A porta da Casa da Eco (modal da home) ===================== */
+.reino-casa-porta {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-top: calc(env(safe-area-inset-top) + 24px);
+  background: rgba(16, 21, 58, 0.72);
+}
+@media (min-width: 768px) {
+  .reino-casa-porta {
+    align-items: center;
+    padding: 32px;
+  }
+}
+.reino-casa-porta__folha {
+  width: min(100%, 40rem);
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--r-papel);
+  color: var(--r-anil);
+  --r-bg: var(--r-papel);
+  box-shadow: 0 -2px 0 rgba(28, 35, 80, 0.08);
+}
+@media (min-width: 768px) {
+  .reino-casa-porta__folha {
+    max-height: min(100%, 52rem);
+  }
+}
+.reino-casa-porta__pintura {
+  position: relative;
+  height: 168px;
+  overflow: hidden;
+}
+.reino-casa-porta__pintura > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 40%;
+  display: block;
+}
+.reino-casa-porta__fechar {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 8px 14px;
+  border: 0;
+  background: var(--r-papel);
+  color: var(--r-anil);
+  font: 500 13px var(--r-ui);
+  cursor: pointer;
+}
+.reino-casa-porta__miolo {
+  display: grid;
+  gap: 30px;
+  padding: 22px 20px 34px;
+}
+@media (min-width: 768px) {
+  .reino-casa-porta__miolo {
+    padding: 26px 36px 40px;
+  }
+}
+.reino-casa-porta__cabeca {
+  display: grid;
+  gap: 6px;
+}
+.reino-casa-porta__titulo {
+  font: 400 clamp(28px, 5vw, 36px) / 1.1 var(--r-display);
+  color: var(--r-anil);
+}
+.reino-casa-porta__sobre {
+  font: 400 16px/1.5 var(--r-ui);
+  color: var(--r-fg2);
+}
+.reino-casa-porta__lista {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--r-trilho);
+}
+.reino-casa-porta__lista > li {
+  border-bottom: 1px dashed var(--r-trilho);
+}
+.reino-casa-porta__porta {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 16px;
+  padding: 16px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-casa-porta__porta-titulo {
+  font: 400 19px/1.25 var(--r-display);
+}
+.reino-casa-porta__porta-sobre {
+  grid-column: 1;
+  font: 400 14px/1.5 var(--r-ui);
+  color: var(--r-fg2);
+}
+.reino-casa-porta__porta .reino-diario__abrir {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+.reino-casa-porta__pergunta {
+  width: 100%;
+  padding: 13px 0;
+  border: 0;
+  background: none;
+  color: var(--r-anil);
+  font: 400 15.5px/1.45 var(--r-ui);
+  text-align: left;
+  cursor: pointer;
+}
+.reino-casa-porta__pergunta:hover,
+.reino-casa-porta__porta:hover .reino-casa-porta__porta-titulo {
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.reino-casa-porta__anteriores {
+  margin-top: 16px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--r-anil);
+  font: 500 14px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.reino-casa-porta .reino-nota {
+  margin: 0;
+}
+/* só a borda de baixo rasgada (pintura no topo de uma folha) */
+.reino-rasgo-baixo {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 93%, 91% 97%, 79% 94.5%, 66% 98%, 52% 95%, 38% 98.5%, 24% 95.5%, 11% 98.2%, 0% 95%);
+}
