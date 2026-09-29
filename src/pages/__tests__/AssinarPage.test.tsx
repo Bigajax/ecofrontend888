@@ -57,20 +57,20 @@ beforeEach(() => {
 describe("AssinarPage", () => {
   it("starts on the plan step (monthly) with the $0-today timeline and trial CTA", () => {
     renderAt("/assinar?step=plan");
-    expect(screen.getAllByText(/R\$ 0/).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /comece seu teste gratuito/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/nada é cobrado hoje/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /começar os 7 dias/i })).toBeInTheDocument();
   });
 
   it("reads ?plan=annual and shows the annual timeline + annual CTA", () => {
     renderAt("/assinar?plan=annual&step=plan");
     expect(screen.getAllByText(/R\$ 142,80/).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /comece seu teste gratuito/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /começar os 7 dias/i })).toBeInTheDocument();
   });
 
   it("advances to the signup step when the trial CTA is clicked (logged out)", () => {
     renderAt("/assinar?step=plan");
-    fireEvent.click(screen.getByRole("button", { name: /comece seu teste gratuito/i }));
-    expect(screen.getByText(/Falta pouco pra sua primeira noite/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /começar os 7 dias/i }));
+    expect(screen.getByRole("heading", { name: /crie a sua conta/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /continuar com google/i })).toBeInTheDocument();
   });
 
@@ -81,7 +81,7 @@ describe("AssinarPage", () => {
     authState.user = { id: "user-123" };
     renderAt("/assinar?step=signup");
     await waitFor(() => {
-      expect(screen.getByText(/Confirme seu teste gratuito/i)).toBeInTheDocument();
+      expect(screen.getByText(/confirme seu teste/i)).toBeInTheDocument();
     });
   });
 
@@ -94,7 +94,7 @@ describe("AssinarPage", () => {
     await waitFor(() => {
       expect(navigate).toHaveBeenCalledWith("/app", { replace: true });
     });
-    expect(screen.queryByText(/Confirme seu teste gratuito/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/confirme seu teste/i)).not.toBeInTheDocument();
   });
 });
 
@@ -109,7 +109,7 @@ describe("AssinarPage onboarding flow", () => {
   test("?step=card mantém shortcut do OAuth return", async () => {
     renderAt("/assinar?plan=monthly&step=card");
     await waitFor(() => {
-      expect(screen.getByText(/Confirme seu teste gratuito/i)).toBeInTheDocument();
+      expect(screen.getByText(/confirme seu teste/i)).toBeInTheDocument();
     });
   });
 
@@ -126,7 +126,7 @@ describe("AssinarPage onboarding flow", () => {
     renderAt("/assinar?plan=monthly");
     fireEvent.click(screen.getByRole("button", { name: /^Pular$/i }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Comece seu teste gratuito/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /começar os 7 dias/i })).toBeInTheDocument();
     });
   });
 
@@ -134,7 +134,7 @@ describe("AssinarPage onboarding flow", () => {
     renderAt("/assinar?plan=monthly&step=validation");
     fireEvent.click(screen.getByRole("button", { name: /Experimente por \$0/i }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Comece seu teste gratuito/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /começar os 7 dias/i })).toBeInTheDocument();
     });
   });
 
@@ -176,18 +176,15 @@ describe("AssinarPage · visual do reino (quem vem de dentro do app)", () => {
     authState.user = { id: "user-123" };
     renderAt("/assinar?step=plan&from=upgrade_modal");
     expect(screen.getByRole("heading", { name: /abra todas as portas/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /comece seu teste gratuito/i })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /começar os 7 dias/i }));
     expect(screen.getByRole("heading", { name: /confirme seu teste/i })).toBeInTheDocument();
     expect(screen.getByText("brick")).toBeInTheDocument();
   });
 
-  it("visitante que acabou de se cadastrar continua no visual das landings", async () => {
-    sessionStorage.setItem("eco.assinar.visual", "landing");
-    authState.user = { id: "user-123" };
-    renderAt("/assinar?step=signup");
-    await waitFor(() => {
-      expect(screen.getByText(/Confirme seu teste gratuito/i)).toBeInTheDocument();
-    });
+  it("visitante vindo de uma landing também vê o reino, e o voltar leva à landing", () => {
+    renderAt("/assinar?step=plan&from=eco_ia_hero");
+    expect(screen.getByRole("heading", { name: /abra todas as portas/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^voltar$/i }));
+    expect(navigate).toHaveBeenCalledWith("/");
   });
 });

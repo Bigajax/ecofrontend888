@@ -23,16 +23,12 @@ interface SignupStepProps {
 }
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-const fieldCls =
-  "w-full rounded-lg border px-4 py-4 text-[15px] text-[#0D3461] outline-none placeholder:text-[#8a93a3] focus:border-[#1554F0]";
-const fieldStyle = { borderColor: "rgba(13,52,97,0.18)" } as const;
 
 export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupStepProps) {
   const { register, signInWithGoogle, signInWithGoogleIdToken } = useAuth();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [showSenha, setShowSenha] = useState(false);
-  const [dicas, setDicas] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
@@ -77,7 +73,7 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
 
     setLoading(true);
     const submitStartedAt = Date.now();
-    trackCadastroEnviado({ method: "email", opted_newsletter: dicas });
+    trackCadastroEnviado({ method: "email", opted_newsletter: false });
     markCadastroPendente("email");
     try {
       // Nome não é mais pedido no funil (fricção); o backend exige um nome,
@@ -178,15 +174,10 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
     }
   };
 
+  // Visual da entrada do reino (set/2026). A caixa de "dicas de sono por e-mail"
+  // saiu: não havia lista de e-mail por trás, era só fricção.
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-      <h2 className="text-center font-display text-[26px] font-bold leading-tight" style={{ color: "#0D3461" }}>
-        Falta pouco pra sua primeira noite
-      </h2>
-      <p className="eco-subtitle -mt-2 text-center text-[15px] leading-snug" style={{ color: "#5A8AAD" }}>
-        Crie sua conta para liberar os 7 dias grátis.
-      </p>
-
+    <form onSubmit={submit} className="reino-entrada__form" noValidate>
       {/* Botão oficial do Google (popup, sem redirect). O container precisa
           ficar sempre montado e mensurável (h-0, não display:none) pro GIS
           renderizar nele. 'loading' → placeholder neutro (nunca o redirect, que
@@ -197,101 +188,84 @@ export function SignupStep({ onCreated, funnelReturnTo, loginReturnTo }: SignupS
         aria-hidden={googleBtnStatus !== "ready"}
       />
       {googleBtnStatus === "loading" && (
-        <div
-          aria-hidden
-          className="flex w-full items-center justify-center rounded-full py-4 text-[15px] font-medium"
-          style={{ border: "1px solid rgba(13,52,97,0.12)", color: "#5A8AAD" }}
-        >
+        <div aria-hidden className="reino-entrada__google">
           Carregando…
         </div>
       )}
       {googleBtnStatus === "failed" && (
-        <button
-          type="button"
-          onClick={googleFallback}
-          className="w-full rounded-full bg-[#1554F0] py-4 text-[16px] font-bold text-white transition-all hover:-translate-y-[1px] hover:bg-[#1148D6]"
-        >
+        <button type="button" onClick={googleFallback} className="reino-entrada__google">
           Continuar com Google
         </button>
       )}
 
-      <div className="flex items-center gap-3" aria-hidden>
-        <span className="h-px flex-1" style={{ background: "rgba(13,52,97,0.12)" }} />
-        <span className="text-[13px]" style={{ color: "#5A8AAD" }}>ou cadastre-se com e-mail</span>
-        <span className="h-px flex-1" style={{ background: "rgba(13,52,97,0.12)" }} />
-      </div>
-
-      <input
-        ref={emailRef}
-        aria-label="Endereço de email"
-        type="email"
-        name="email"
-        placeholder="Endereço de email *"
-        autoComplete="email"
-        inputMode="email"
-        autoCapitalize="none"
-        autoCorrect="off"
-        spellCheck={false}
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className={fieldCls}
-        style={fieldStyle}
-      />
-      <div className="relative">
-        <input
-          ref={senhaRef}
-          aria-label="Senha (8+ caracteres)"
-          type={showSenha ? "text" : "password"}
-          name="password"
-          placeholder="Senha (8+ caracteres) *"
-          autoComplete="new-password"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          className={`${fieldCls} pr-12`}
-          style={fieldStyle}
-        />
-        <button
-          type="button"
-          aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
-          onClick={() => setShowSenha((v) => !v)}
-          className="absolute right-4 top-1/2 -translate-y-1/2"
-          style={{ color: "#5A8AAD" }}
-        >
-          {showSenha ? <EyeOff size={20} /> : <Eye size={20} />}
-        </button>
-      </div>
-
-      <label className="flex items-center gap-2.5 text-[13px]" style={{ color: "#5A8AAD" }}>
-        <input
-          type="checkbox"
-          checked={dicas}
-          onChange={(e) => setDicas(e.target.checked)}
-          className="h-4 w-4"
-          style={{ accentColor: "#1554F0" }}
-        />
-        Quero receber dicas de sono por e-mail
-      </label>
-
-      {erro && <p role="alert" className="text-[13px]" style={{ color: "#B43C3C" }}>{erro}</p>}
-      {info && <p className="text-[13px]" style={{ color: "#1A4FB5" }}>{info}</p>}
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-full bg-[#1554F0] py-4 text-[16px] font-bold text-white transition-all hover:-translate-y-[1px] hover:bg-[#1148D6] disabled:opacity-70"
-      >
-        {loading ? "Criando…" : "Continuar"}
-      </button>
-
-      <p className="text-center text-[12px] leading-relaxed" style={{ color: "#5A8AAD" }}>
-        Ao continuar, você concorda com os{" "}
-        <a href={LEGAL_LINKS.termos} className="underline" style={{ color: "#1554F0" }}>Termos</a> e a{" "}
-        <a href={LEGAL_LINKS.privacidade} className="underline" style={{ color: "#1554F0" }}>Política de Privacidade</a>.
+      <p className="reino-entrada__ou" aria-hidden="true">
+        ou com e-mail
       </p>
 
-      <p className="text-center text-[14px] leading-snug" style={{ color: "#5A8AAD" }}>
-        Já tem uma conta?{" "}
-        <a href={loginReturnTo} className="font-semibold underline" style={{ color: "#1554F0" }}>Conecte-se</a>
+      <label className="reino-entrada__campo">
+        <span className="reino-entrada__rotulo">E-mail</span>
+        <input
+          ref={emailRef}
+          aria-label="Endereço de email"
+          type="email"
+          name="email"
+          placeholder="Seu email"
+          autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+      </label>
+      <div className="reino-entrada__campo">
+        <label className="reino-entrada__rotulo" htmlFor="assinar-senha">
+          Senha
+        </label>
+        <span className="reino-entrada__senha">
+          <input
+            id="assinar-senha"
+            ref={senhaRef}
+            aria-label="Senha (8+ caracteres)"
+            type={showSenha ? "text" : "password"}
+            name="password"
+            placeholder="8 caracteres ou mais"
+            autoComplete="new-password"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+          />
+          <button
+            type="button"
+            className="reino-entrada__olho"
+            aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
+            aria-pressed={showSenha}
+            onClick={() => setShowSenha((v) => !v)}
+          >
+            {showSenha ? <EyeOff size={17} /> : <Eye size={17} />}
+          </button>
+        </span>
+      </div>
+
+      <div className="reino-entrada__retorno">
+        {erro && (
+          <p role="alert" className="is-erro">
+            {erro}
+          </p>
+        )}
+        {info && <p className="is-ok">{info}</p>}
+      </div>
+
+      <button type="submit" disabled={loading} className="reino-placa reino-entrada__entrar">
+        {loading ? "Criando…" : "Continuar"} <span aria-hidden="true">→</span>
+      </button>
+
+      <p className="reino-assinar__miudo">
+        Ao continuar, você concorda com os <a href={LEGAL_LINKS.termos}>Termos</a> e a{" "}
+        <a href={LEGAL_LINKS.privacidade}>Política de Privacidade</a>.
+      </p>
+      <p className="reino-assinar__miudo">
+        Já tem conta? <a href={loginReturnTo}>Entrar</a>
       </p>
     </form>
   );

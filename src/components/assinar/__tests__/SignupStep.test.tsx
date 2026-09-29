@@ -70,10 +70,8 @@ describe("SignupStep", () => {
     expect(screen.getByLabelText(/senha \(8/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/primeiro nome/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/sobrenome/i)).not.toBeInTheDocument();
-    // Único checkbox é a newsletter, opcional e desmarcada.
-    const checkboxes = screen.getAllByRole("checkbox");
-    expect(checkboxes).toHaveLength(1);
-    expect(checkboxes[0]).not.toBeChecked();
+    // Sem caixa de newsletter (saiu em set/2026: não havia lista por trás).
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
   });
 
   it("blocks submit with invalid email or short password", () => {

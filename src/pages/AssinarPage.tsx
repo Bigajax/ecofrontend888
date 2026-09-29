@@ -3,13 +3,12 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiUrl } from "@/config/apiBase";
 import { supabase } from "@/lib/supabaseClient";
-import { PlanStep } from "@/components/assinar/PlanStep";
 import { SignupStep } from "@/components/assinar/SignupStep";
 import { MpCardForm } from "@/components/assinar/MpCardForm";
 import { GoalsStep } from "@/components/assinar/GoalsStep";
 import { ValidationStep } from "@/components/assinar/ValidationStep";
 import { LegalFooter } from "@/components/assinar/LegalFooter";
-import { PlanoReino, CartaoReino } from "@/components/assinar/AssinarReino";
+import { PlanoReino, CartaoReino, CadastroReino } from "@/components/assinar/AssinarReino";
 import type { PlanId } from "@/components/assinar/types";
 import type { GoalId } from "@/components/assinar/goalsData";
 import { saveObjetivos, linkUserToObjetivos } from "@/api/onboardingObjetivos";
@@ -78,13 +77,6 @@ function originLanding(from: string | null | undefined): string {
 // porque o ref morre junto no remount.
 let lastAssinaturaIniciadaAt = 0;
 
-// Visual do /assinar: quem entra já logado (vem de dentro do app) vê o reino;
-// quem chega das landings vê a versão azul. Decidido na entrada e guardado na
-// sessão, porque o cadastro remonta a página já logado (RootProviders por
-// userId) e o visitante não pode trocar de visual no meio do funil.
-const VISUAL_KEY = "eco.assinar.visual";
-type Visual = "reino" | "landing";
-
 export default function AssinarPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -100,26 +92,6 @@ export default function AssinarPage() {
   const [verificandoConta, setVerificandoConta] = useState(
     () => Boolean(user) && parseStep(params.get("step")) === "signup",
   );
-
-  const [visual, setVisual] = useState<Visual | null>(() => {
-    const entrada = parseStep(params.get("step"));
-    // Cadastro e cartão como porta de entrada são continuação do funil das
-    // landings (remount pós-cadastro, volta do OAuth): sem visual salvo, azul.
-    if (entrada === "signup" || entrada === "card") {
-      const salvo = sessionStorage.getItem(VISUAL_KEY);
-      return salvo === "reino" ? "reino" : "landing";
-    }
-    if (!authLoading) return user ? "reino" : "landing";
-    return null;
-  });
-  useEffect(() => {
-    if (visual) {
-      sessionStorage.setItem(VISUAL_KEY, visual);
-      return;
-    }
-    if (!authLoading) setVisual(user ? "reino" : "landing");
-  }, [visual, authLoading, user]);
-  const reino = visual === "reino";
 
   // Quando o step "card" passou a ser exibido — base do elapsed_ms do "Cartão pronto".
   const cardShownAtRef = useRef<number | null>(null);
@@ -355,7 +327,7 @@ export default function AssinarPage() {
   // Espera a sessão resolver antes de montar: a initialization (payer.email)
   // precisa estar estável no mount, porque o brick do MP não tolera ser recriado.
   const formularioCartao = authLoading ? (
-    <p className="py-6 text-center text-[13px]" style={{ color: reino ? "#4B5070" : "#5A8AAD" }}>
+    <p className="py-6 text-center text-[13px]" style={{ color: "#4B5070" }}>
       Carregando…
     </p>
   ) : (
@@ -363,28 +335,45 @@ export default function AssinarPage() {
       amount={plan === "monthly" ? 15.9 : 142.8}
       maxInstallments={1}
       payerEmail={user?.email ?? ""}
-      appearance={reino ? "papel" : "light"}
+      appearance="papel"
       onToken={handleToken}
       onReady={handleBrickReady}
       onError={handleBrickError}
     />
   );
 
-  if (reino && step === "plan") {
+  // Plano, cadastro e cartão no reino, para quem vem do app e para quem vem das
+  // landings. O "voltar" do plano leva de volta para onde a pessoa estava.
+  if (step === "plan") {
+    const destino = user ? "/app" : backTo;
     return (
       <PlanoReino
         plan={plan}
         onSelectPlan={selectPlan}
         onContinue={continueFromPlan}
+        voltarRotulo={user ? "Voltar ao reino" : "Voltar"}
         onVoltar={() => {
-          trackFunilAbandonado({ step, destino: "/app" });
+          trackFunilAbandonado({ step, destino });
           marcarSaidaIntencionalDoFunil();
-          navigate("/app");
+          navigate(destino);
         }}
       />
     );
   }
-  if (reino && step === "card") {
+  if (step === "signup") {
+    return (
+      <CadastroReino onVoltar={() => setStep("plan")}>
+        {verificandoConta ? (
+          <p aria-live="polite" className="reino-assinar__miudo">
+            Verificando sua conta…
+          </p>
+        ) : (
+          <SignupStep onCreated={() => setStep("card")} funnelReturnTo={funnelReturnTo} loginReturnTo={loginReturnTo} />
+        )}
+      </CadastroReino>
+    );
+  }
+  if (step === "card") {
     return (
       <CartaoReino
         plan={plan}
@@ -396,10 +385,9 @@ export default function AssinarPage() {
     );
   }
 
-  const stepMaxWidthMd =
-    step === "validation" ? "md:max-w-[760px]"
-    : step === "goals" ? "md:max-w-[460px]"
-    : "md:max-w-[460px]";
+  // Daqui para baixo, só objetivos e validação (legado: as landings entram
+  // direto no plano).
+  const stepMaxWidthMd = step === "validation" ? "md:max-w-[760px]" : "md:max-w-[460px]";
 
   return (
     <div className="relative flex min-h-screen flex-col bg-white md:bg-[#1554F0]">
@@ -445,112 +433,6 @@ export default function AssinarPage() {
           <ValidationStep onContinue={() => setStep("plan")} onBack={() => setStep("goals")} />
         )}
 
-        {step === "plan" && (
-          <div className="px-5 md:rounded-3xl md:bg-white md:px-8 md:py-10 md:shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
-            <PlanStep selectedPlan={plan} onSelectPlan={selectPlan} onContinue={continueFromPlan} />
-          </div>
-        )}
-
-        {step === "signup" && (
-          <div className="px-5 md:rounded-3xl md:bg-white md:px-8 md:py-10 md:shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
-            {verificandoConta ? (
-              <p aria-live="polite" className="py-10 text-center text-[15px]" style={{ color: "#5A8AAD" }}>
-                Verificando sua conta…
-              </p>
-            ) : (
-              <SignupStep onCreated={() => setStep("card")} funnelReturnTo={funnelReturnTo} loginReturnTo={loginReturnTo} />
-            )}
-          </div>
-        )}
-
-        {step === "card" && (
-          <div className="flex flex-col gap-5 px-5 pb-8 md:rounded-3xl md:bg-white md:px-8 md:pb-10 md:pt-10 md:shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
-            <h2 className="text-center font-display text-[24px] font-bold leading-tight" style={{ color: "#0D3461" }}>
-              Confirme seu teste gratuito
-            </h2>
-            <p className="eco-subtitle -mt-3 text-center text-[15px] leading-snug" style={{ color: "#5A8AAD" }}>
-              R$ 0 hoje · primeira cobrança só em 7 dias.
-            </p>
-
-            {/* Plan summary */}
-            <div
-              className="flex items-center justify-between rounded-2xl px-4 py-4"
-              style={{ background: "#F3F4F6" }}
-            >
-              <div>
-                <p className="font-display text-[17px] font-bold" style={{ color: "#0D3461" }}>
-                  {plan === "monthly" ? "Mensal" : "Anual"}
-                </p>
-                <p className="text-[13px]" style={{ color: "#5A8AAD" }}>
-                  {plan === "monthly" ? "R$ 15,90/mês" : "R$ 142,80/ano"}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="font-display text-[20px] font-bold" style={{ color: "#1A8A4A" }}>
-                  R$ 0,00
-                </p>
-                <p className="text-[13px] font-semibold" style={{ color: "#1A8A4A" }}>
-                  por 7 dias
-                </p>
-              </div>
-            </div>
-
-            {/* Benefits */}
-            <ul className="flex flex-col gap-3">
-              {[
-                "As 7 noites do Protocolo do Sono, liberadas hoje.",
-                "Meditações, sons e respirações para adormecer mais rápido.",
-                "Lembrete por e-mail 2 dias antes de qualquer cobrança.",
-              ].map((text, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-[14px] leading-snug" style={{ color: "#0D3461" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A8A4A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0" aria-hidden>
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  <span>{text}</span>
-                </li>
-              ))}
-            </ul>
-
-            {/* Card section header with brand icons */}
-            <div className="flex items-center justify-between border-t pt-5" style={{ borderColor: "rgba(13,52,97,0.1)" }}>
-              <h3 className="font-display text-[16px] font-bold" style={{ color: "#0D3461" }}>
-                Cartão de crédito ou débito
-              </h3>
-              <div className="flex items-center gap-1.5" aria-label="Bandeiras aceitas">
-                <span className="rounded border border-[#E5E7EB] px-1.5 py-0.5 text-[9px] font-bold text-[#1A1F71]">VISA</span>
-                <span className="rounded border border-[#E5E7EB] px-1 py-0.5 text-[9px] font-bold text-[#EB001B]">MC</span>
-                <span className="rounded border border-[#E5E7EB] px-1 py-0.5 text-[9px] font-bold text-[#006FCF]">AMEX</span>
-                <span className="rounded border border-[#E5E7EB] px-1 py-0.5 text-[9px] font-bold text-[#FF6000]">ELO</span>
-              </div>
-            </div>
-
-            {formularioCartao}
-
-            {processing && (
-              <p aria-live="polite" className="text-center text-[13px]" style={{ color: "#5A8AAD" }}>
-                Processando…
-              </p>
-            )}
-            {erro && (
-              <p role="alert" className="text-center text-[13px]" style={{ color: "#B43C3C" }}>
-                {erro}
-              </p>
-            )}
-
-            {/* Fine print */}
-            <div className="text-center text-[11.5px] leading-relaxed" style={{ color: "#5A8AAD" }}>
-              <Link
-                to="/cancelar-assinatura"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 inline-block underline underline-offset-2"
-                style={{ color: "#1554F0" }}
-              >
-                Cancele a qualquer momento.
-              </Link>
-            </div>
-          </div>
-        )}
       </main>
 
       <LegalFooter />

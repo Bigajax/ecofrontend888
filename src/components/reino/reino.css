@@ -3463,3 +3463,45 @@
   text-underline-offset: 4px;
   cursor: pointer;
 }
+
+/* /assinar: cadastro na folha e títulos das seções (set/2026) */
+.reino-assinar__titulo {
+  margin: 0 0 18px;
+  font-size: clamp(24px, 3vw, 30px);
+}
+.reino-assinar__cadastro {
+  max-width: 26rem;
+  margin-top: 22px;
+  /* o botão do Google é um iframe e herda o esquema de cor: aqui ele é claro */
+  color-scheme: light;
+}
+.reino-assinar__cadastro .reino-entrada__olho {
+  color: #4b5070;
+}
+.reino-assinar__cadastro .reino-entrada__google {
+  width: 100%;
+}
+.reino-assinar__cadastro .reino-entrada__entrar {
+  margin-top: 0;
+  justify-self: start;
+}
+.reino-assinar__cadastro .reino-entrada__entrar:disabled {
+  opacity: 0.55;
+}
+.reino-assinar__cadastro .reino-assinar__miudo {
+  margin: 0;
+}
+/* o botão do Google herda a cor do texto da coluna escura: fixa a cor dele */
+.reino-assinar__cadastro .reino-entrada__form > div:first-child {
+  color: #1f1f1f;
+}
+/* o cartão do Mercado Pago é escrito em anil: vai numa folha de papel sobre a chegada */
+.reino-hero .reino-assinar__cartao {
+  margin-top: 20px;
+  max-width: 30rem;
+  padding: 18px 16px 8px;
+  background: #f4f1e8;
+  color-scheme: light;
+  border-radius: 3px 8px 4px 9px;
+  box-shadow: 0 3px 0 -1px rgba(237, 184, 90, 0.9);
+}

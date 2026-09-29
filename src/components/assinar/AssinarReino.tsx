@@ -8,10 +8,10 @@ import type { PlanId } from "./types";
 import "@/components/reino/reino.css";
 
 /**
- * O /assinar de quem já está dentro do app: a mesma assinatura, contada como
- * continuação do reino (pintura, papel, placa de caminho) e não como a página
- * azul das landings. Só apresentação; plano, cartão e eventos seguem na
- * AssinarPage. Visitante vindo de fora continua vendo a versão das landings.
+ * O /assinar no reino: plano, cadastro e cartão como continuação do reino
+ * (pintura, papel, placa de caminho). Vale para quem já está no app e para
+ * quem chega das landings (set/2026: a versão azul saiu junto com as landings
+ * antigas). Só apresentação; plano, cartão e eventos seguem na AssinarPage.
  */
 
 const IMAGEM = "/images/reino/panorama-1200.webp";
@@ -43,19 +43,21 @@ interface PlanoReinoProps {
   onSelectPlan: (plan: PlanId) => void;
   onContinue: () => void;
   onVoltar: () => void;
+  /** "Voltar ao reino" para quem está no app; "Voltar" para quem veio de uma landing */
+  voltarRotulo?: string;
 }
 
-export function PlanoReino({ plan, onSelectPlan, onContinue, onVoltar }: PlanoReinoProps) {
+export function PlanoReino({ plan, onSelectPlan, onContinue, onVoltar, voltarRotulo = "Voltar ao reino" }: PlanoReinoProps) {
   return (
     <div className="reino-assinar">
       <ReinoChegada
         mood={getReinoMood()}
         imagem={IMAGEM}
         foco="50% 60%"
-        lugar="Ecotopia · o reino inteiro"
+        lugar="Ecotopia"
         titulo="Abra todas as portas"
-        sobre="Sete dias com tudo aberto, sem pagar nada hoje. Se não fizer sentido, você cancela antes."
-        voltar={{ rotulo: "Voltar ao reino", onClick: onVoltar }}
+        sobre="Sete dias com tudo aberto. Nada é cobrado hoje."
+        voltar={{ rotulo: voltarRotulo, onClick: onVoltar }}
       >
         <div className="reino-assinar__planos" role="radiogroup" aria-label="Escolha o plano">
           {PLANOS.map((p) => {
@@ -88,12 +90,12 @@ export function PlanoReino({ plan, onSelectPlan, onContinue, onVoltar }: PlanoRe
       </ReinoChegada>
 
       <section className="reino-corpo reino-assinar__corpo" aria-labelledby="assinar-caminho">
-        <p id="assinar-caminho" className="reino-rotulo">
+        <h2 id="assinar-caminho" className="reino-corpo__titulo reino-assinar__titulo">
           Como correm os 7 dias
-        </p>
+        </h2>
         <ol className="reino-assinar__caminho">
           <Marco quando="Hoje" titulo="Tudo se abre">
-            O Protocolo do Sono completo, as meditações, os sons para dormir e a conversa com a Eco.
+            A Eco, o Protocolo do Sono, as meditações e o Diário.
           </Marco>
           <Marco quando="Dia 5" titulo="Um lembrete">
             Mandamos um e-mail avisando que o teste está terminando.
@@ -104,6 +106,32 @@ export function PlanoReino({ plan, onSelectPlan, onContinue, onVoltar }: PlanoRe
         </ol>
       </section>
 
+      <RodapeReino />
+    </div>
+  );
+}
+
+interface CadastroReinoProps {
+  onVoltar: () => void;
+  children: ReactNode;
+}
+
+/** O cadastro do funil: a mesma chegada, com o formulário na folha. */
+export function CadastroReino({ onVoltar, children }: CadastroReinoProps) {
+  return (
+    <div className="reino-assinar">
+      <ReinoChegada
+        mood={getReinoMood()}
+        imagem={IMAGEM}
+        foco="50% 60%"
+        lugar="Ecotopia"
+        titulo="Crie a sua conta"
+        sobre="Depois vem o cartão. Nada é cobrado hoje."
+        voltar={{ rotulo: "Trocar o plano", onClick: onVoltar }}
+      >
+        {/* o formulário fica na chegada, ao lado da pintura: sem rolar para achar os campos */}
+        <div className="reino-assinar__cadastro">{children}</div>
+      </ReinoChegada>
       <RodapeReino />
     </div>
   );
@@ -137,7 +165,7 @@ export function CartaoReino({ plan, onTrocarPlano, formulario, processando, erro
         mood={getReinoMood()}
         imagem={IMAGEM}
         foco="50% 60%"
-        lugar="Ecotopia · o reino inteiro"
+        lugar="Ecotopia"
         titulo="Confirme seu teste"
         sobre="Nada é cobrado hoje. A primeira cobrança só vem no sétimo dia."
         voltar={{ rotulo: "Trocar o plano", onClick: onTrocarPlano }}
@@ -152,12 +180,7 @@ export function CartaoReino({ plan, onTrocarPlano, formulario, processando, erro
             <dd>R$ 0,00 por 7 dias</dd>
           </div>
         </dl>
-      </ReinoChegada>
-
-      <section className="reino-corpo reino-assinar__corpo" aria-labelledby="assinar-cartao">
-        <p id="assinar-cartao" className="reino-rotulo">
-          Último passo
-        </p>
+        {/* o cartão fica na chegada, ao lado da pintura: o último passo não se esconde abaixo da dobra */}
         <div className="reino-assinar__cartao">{formulario}</div>
         {processando && (
           <p aria-live="polite" className="reino-assinar__miudo">
@@ -175,7 +198,7 @@ export function CartaoReino({ plan, onTrocarPlano, formulario, processando, erro
             Cancele a qualquer momento.
           </Link>
         </p>
-      </section>
+      </ReinoChegada>
 
       <RodapeReino />
     </div>
