@@ -40,6 +40,7 @@ import { SonoExperienceHero } from '@/components/sono/SonoExperienceHero';
 import { SonoPreAudioModal } from '@/components/sono/SonoPreAudioModal';
 import { SonoEcoDreamEntryCard } from '@/components/sono/SonoEcoDreamEntryCard';
 import SonoReinoApp from '@/components/sleep/SonoReinoApp';
+import { abrirPorta } from '@/utils/porta';
 import type { SonoCheckoutStep } from '@/components/sono/useSonoCheckoutState';
 import { markRitualNightCompleted, isRitualCompletedToday } from '@/hooks/useRitualProgress';
 import {
@@ -590,12 +591,53 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
     );
   }
 
-  // Noite bloqueada no app logado: o checkout focado só existe no modo convidado,
-  // então aqui o toque leva à assinatura (o evento de clique é o mesmo).
+  // Noite bloqueada no app logado (set/2026): abre a Porta do reino, igual aos
+  // outros programas; antes da Noite 1, a folha que convida a começar por ela.
+  // O checkout focado e o modal de oferta são só do funil de visitante.
   const handleAppNightClick = (night: ProtocolNight) => {
-    handleNightClick(night);
-    if (!isNightAccessible(night, isPaid, isVipUser) && isPaywallFoco()) openCheckout();
+    if (isNightAccessible(night, isPaid, isVipUser)) {
+      handleNightClick(night);
+      return;
+    }
+    trackGuestUnlockClicked(night.id);
+    if (!night1IsCompleted) setShowStartNightPrompt(true);
+    else abrirPorta('sono_noite_bloqueada');
   };
+
+  const startNightFolha = showStartNightPrompt && (
+    <div
+      className="reino-gate"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="sono-noite1-titulo"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) setShowStartNightPrompt(false);
+      }}
+    >
+      <div className="reino-gate__folha reino-corpo">
+        <Astro className="reino-gate__astro" mood="noite" />
+        <h2 id="sono-noite1-titulo" className="reino-gate__titulo">
+          Comece pela Noite 1.
+        </h2>
+        <p className="reino-gate__texto">Ela é sua, sem pagar, e prepara o corpo para as noites seguintes.</p>
+        <div className="reino-gate__acoes">
+          <button
+            type="button"
+            className="reino-placa"
+            onClick={() => {
+              setShowStartNightPrompt(false);
+              handleStartNight1();
+            }}
+          >
+            Ouvir a Noite 1 <span aria-hidden="true">→</span>
+          </button>
+          <button type="button" className="reino-gate__depois" onClick={() => setShowStartNightPrompt(false)}>
+            Agora não
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   const startNightPrompt = (
       <AnimatePresence>
@@ -683,9 +725,9 @@ export function SleepMeditationExperience({ mode }: SleepMeditationExperiencePro
             checkoutLoading={checkoutLoading}
             onRitual={handleRitualHeroClick}
             onNight={handleAppNightClick}
-            onCheckout={() => openCheckout()}
+            onCheckout={() => abrirPorta('sono')}
           />
-          {startNightPrompt}
+          {startNightFolha}
         </>
       ) : (
       <div
