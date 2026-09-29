@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import AnimatedSection from '@/components/AnimatedSection';
 import HomeHeader from '@/components/home/HomeHeader';
+import ReinoChegada from '@/components/reino/ReinoChegada';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsPremium, useSubscriptionTier } from '@/hooks/usePremiumContent';
 import DiarioExitModal from '@/components/DiarioExitModal';
@@ -774,6 +775,22 @@ export default function DiarioEstoicoPage() {
         {/* Banner de conversão — guest na rota pública (PublicShell não usa MainLayout) */}
         {!user && <GuestModeBanner returnTo={DIARIO_GUEST.returnTo} />}
 
+        {user ? (
+          <ReinoChegada
+            mood="amanhecer"
+            imagem="/images/reino/portico-800.webp"
+            foco="80% 55%"
+            lugar="STO.05 · O Pórtico · Ano I"
+            titulo="Diário Estoico"
+            sobre="366 lições de sabedoria, perseverança e a arte de viver. Os estoicos têm esse nome por causa do pórtico pintado de Atenas onde Zenão ensinava."
+            voltar={{ rotulo: 'Voltar', onClick: handleBackClick }}
+            progresso={
+              availableMaxims.length > 0 && readDays.size > 0
+                ? { valor: readDays.size / availableMaxims.length, legenda: `${readDays.size} de ${availableMaxims.length} reflexões lidas` }
+                : undefined
+            }
+          />
+        ) : (<>
         {/* Navegação */}
         <div className="w-full px-4 pt-6 md:px-8" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
           <div className="mx-auto max-w-3xl flex items-center justify-between">
@@ -841,6 +858,7 @@ export default function DiarioEstoicoPage() {
             )}
           </div>
         </div>
+        </>)}
 
         {/* Reflexão em destaque (hoje) — com player de áudio */}
         {featuredMaxim && (
