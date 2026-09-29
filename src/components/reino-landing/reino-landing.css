@@ -170,7 +170,17 @@
   padding: 0;
   display: grid;
   gap: 28px 20px;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 480px) {
+  .rl-dentro {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (min-width: 900px) {
+  .rl-dentro {
+    grid-template-columns: repeat(var(--rl-cols, 3), minmax(0, 1fr));
+  }
 }
 .rl-dentro li {
   display: grid;
@@ -477,4 +487,16 @@
   .rl-barra {
     transition: none;
   }
+}
+
+/* índice dos meses (Diário) */
+.rl-meses li {
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  align-items: baseline;
+}
+.rl-meses__mes {
+  font: 400 12px 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--r-fg2);
 }

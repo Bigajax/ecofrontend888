@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import ReinoChegada from '@/components/reino/ReinoChegada';
 import { Astro, ReinoScene, type ReinoCrop } from '@/components/reino/ReinoScene';
@@ -68,7 +68,10 @@ const CENA: Record<ReinoMood, { src: string; foco: string }> = {
   noite: { src: '/images/reino/vale.webp', foco: '45% 50%' },
 };
 
-const precoDoPlano = (plano: Plano) => (plano === 'annual' ? 'R$ 142,80/ano' : OFFER.priceMonthly);
+// 4 itens em 4 colunas, 5 em 5; o resto em 3 (6 vira 3 + 3): nunca sobra um item sozinho.
+const colunasPara = (n: number) => (n === 4 ? 4 : n === 5 ? 5 : 3);
+
+const precoDoPlano =(plano: Plano) => (plano === 'annual' ? 'R$ 142,80/ano' : OFFER.priceMonthly);
 
 export default function ReinoLanding({ config }: { config: LandingConfig }) {
   const mood = config.mood ?? getReinoMood();
@@ -164,7 +167,10 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
               {config.dentro.titulo}
             </h2>
             {config.dentro.sobre && <p className="rl-sobre">{config.dentro.sobre}</p>}
-            <ul className="rl-dentro">
+            <ul
+              className="rl-dentro"
+              style={{ '--rl-cols': colunasPara(config.dentro.itens.length) } as CSSProperties}
+            >
               {config.dentro.itens.map((item, i) => (
                 <li key={item.titulo}>
                   {item.imagem && (
