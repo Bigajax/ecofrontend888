@@ -35,11 +35,13 @@ export const VALIDATION_CARDS = [
 ] as const;
 
 // URLs reais virão de produto/legal. Manter "#" garante render sem 404.
+// Páginas legais reais (/termos e /privacidade). Os três últimos não têm página
+// própria: apontam para a seção certa da política de privacidade.
 export const LEGAL_LINKS = {
-  termos: "#",
-  cookies: "#",
-  avisoCalifornia: "#",
-  privacidade: "#",
-  opcoesPrivacidade: "#",
-  dadosSaude: "#",
+  termos: "/termos",
+  cookies: "/privacidade#cookies",
+  avisoCalifornia: "/privacidade",
+  privacidade: "/privacidade",
+  opcoesPrivacidade: "/privacidade",
+  dadosSaude: "/privacidade",
 };

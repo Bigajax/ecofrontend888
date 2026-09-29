@@ -722,3 +722,28 @@
 .rl-sono-oferta .rl-destaques li {
   color: var(--r-anil);
 }
+
+/* documentos legais */
+.rl-legal__cabeca {
+  padding-bottom: 0;
+}
+.rl-legal__data {
+  margin: 14px 0 0;
+  font: 400 12px 'IBM Plex Mono', ui-monospace, monospace;
+  color: var(--r-fg2);
+}
+.reino-corpo .rl-legal {
+  padding-top: 24px;
+}
+.reino-corpo .rl-legal a {
+  color: var(--r-anil);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-underline-offset: 3px;
+}
+/* o cabeçalho do documento na mesma coluna do texto */
+.rl-secao.rl-legal__cabeca {
+  max-width: 40rem;
+  padding-left: 16px;
+  padding-right: 16px;
+}

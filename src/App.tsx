@@ -92,6 +92,8 @@ const MemoryPageGuestTeaser = lazyWithReload(() => import("@/pages/memory/Memory
 const UpgradeModalTest = lazyWithReload(() => import("@/pages/UpgradeModalTest"));
 const EcotopiaLandingPage = lazyWithReload(() => import("@/pages/EcotopiaLandingPage"));
 const EcotopiaPrecosPage = lazyWithReload(() => import("@/pages/EcotopiaPrecosPage"));
+const TermosPage = lazyWithReload(() => import("@/pages/legal/TermosPage"));
+const PrivacidadePage = lazyWithReload(() => import("@/pages/legal/PrivacidadePage"));
 const EcotopiaMeditacaoPage = lazyWithReload(() => import("@/pages/EcotopiaMeditacaoPage"));
 const EcotopiaSonoPage = lazyWithReload(() => import("@/pages/EcotopiaSonoPage"));
 const SonoObrigadoPage = lazyWithReload(() => import("@/pages/SonoObrigadoPage"));
@@ -311,6 +313,8 @@ function AppRoutes() {
         <Route path="cancelar-assinatura" element={renderWithSuspense(<CancelarAssinaturaPage />)} />
         <Route path="reset-senha" element={renderWithSuspense(<ResetSenha />)} />
         <Route path="precos" element={renderWithSuspense(<EcotopiaPrecosPage />)} />
+        <Route path="termos" element={renderWithSuspense(<TermosPage />)} />
+        <Route path="privacidade" element={renderWithSuspense(<PrivacidadePage />)} />
         <Route path="meditacao" element={renderWithSuspense(<EcotopiaMeditacaoPage />)} />
         <Route path="sono" element={renderWithSuspense(<EcotopiaSonoPage />)} />
         <Route path="sono/obrigado" element={renderWithSuspense(<SonoObrigadoPage />)} />

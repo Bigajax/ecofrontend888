@@ -401,6 +401,8 @@ export default function EcotopiaSonoPage() {
           <div>
             <p className="reino-rotulo">Ajuda</p>
             <Link to="/cancelar-assinatura">Como cancelar</Link>
+            <Link to="/termos">Termos de uso</Link>
+            <Link to="/privacidade">Política de privacidade</Link>
             <a href="tel:188">CVV 188</a>
           </div>
         </div>

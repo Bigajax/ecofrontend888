@@ -329,6 +329,8 @@ export default function ReinoLanding({ config }: { config: LandingConfig }) {
               Começar 7 dias gratuitos
             </Link>
             <Link to="/cancelar-assinatura">Como cancelar</Link>
+            <Link to="/termos">Termos de uso</Link>
+            <Link to="/privacidade">Política de privacidade</Link>
           </div>
         </div>
         <p className="rl-rodape__fim">© 2026 Ecotopia</p>
