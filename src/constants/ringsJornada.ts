@@ -62,6 +62,15 @@ export const PERGUNTAS: Record<RingType, string[]> = {
   ],
 };
 
+/** Um jeito de responder, no tom de cada anel (fica sob a pergunta). */
+export const DICA_DO_ANEL: Record<RingType, string> = {
+  earth: 'Sem enfeitar. O que foi, foi.',
+  water: 'Pequeno de propósito. O menor ajuste é o que acontece.',
+  fire: 'Dê nome à emoção antes de julgar se ela é boa ou ruim.',
+  wind: 'Aprendizado pequeno também conta.',
+  void: 'Escreva como quem vai reler daqui a um ano.',
+};
+
 /** Dias distintos com ritual concluído (um por data). */
 export function diasConcluidos(rituais: DailyRitual[]): string[] {
   return Array.from(new Set(rituais.filter((r) => r.status === 'completed').map((r) => r.date))).sort();

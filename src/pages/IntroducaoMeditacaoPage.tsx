@@ -1,8 +1,9 @@
+import TrilhaDeEstacoes from '@/components/reino/TrilhaDeEstacoes';
 import ProximoCaminho from '@/components/reino/ProximoCaminho';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import HomeHeader from '@/components/home/HomeHeader';
-import ReinoChegada, { ReinoSessoes, type ReinoSessao } from '@/components/reino/ReinoChegada';
+import ReinoChegada, { type ReinoSessao } from '@/components/reino/ReinoChegada';
 import { useAuth } from '@/contexts/AuthContext';
 import ReinoCarregando from '@/components/reino/ReinoCarregando';
 import { usePremiumContent } from '@/hooks/usePremiumContent';
@@ -237,7 +238,7 @@ export default function IntroducaoMeditacaoPage() {
   const handleModalSignup = () => {
     mixpanel.track('Meditação · Exit modal signup');
     setShowExitModal(false);
-    navigate('/register?returnTo=' + encodeURIComponent('/app/introducao-meditacao'));
+    navigate('/assinar?step=signup&plan=monthly&from=intro_saida');
   };
 
   const handleModalStay = () => {
@@ -328,8 +329,12 @@ export default function IntroducaoMeditacaoPage() {
             voltar={{ rotulo: user ? 'Voltar para Hoje' : 'Voltar', onClick: handleBackClick }}
             extra={
               !user ? (
-                <button type="button" className="reino-chegada__voltar" onClick={() => navigate('/register')}>
-                  Criar conta grátis
+                <button
+                  type="button"
+                  className="reino-chegada__voltar"
+                  onClick={() => navigate('/assinar?step=signup&plan=monthly&from=intro_topo')}
+                >
+                  Criar conta
                 </button>
               ) : undefined
             }
@@ -354,32 +359,42 @@ export default function IntroducaoMeditacaoPage() {
               </div>
             )}
 
-            <p className="reino-rotulo">As cinco sessões</p>
-            <ReinoSessoes
-              sessoes={sessoes}
+            {/* As cinco sessões como pedras de travessia, com a pintura de cada uma
+                (set/2026); o caminho vai sendo pintado até onde a pessoa chegou. */}
+            <h2 className="reino-corpo__titulo">A travessia</h2>
+            <p className="reino-corpo__sobre">Cinco pedras, uma de cada vez. Cada uma leva poucos minutos.</p>
+            <TrilhaDeEstacoes
+              rotulo="As cinco sessões"
+              estacoes={sessoes.map((sessao, i) => ({
+                id: sessao.id,
+                titulo: sessao.titulo,
+                meta: sessao.meta,
+                estado:
+                  sessao.estado === 'feita'
+                    ? 'feita'
+                    : sessao.estado === 'proxima'
+                      ? 'agora'
+                      : sessao.estado === 'trancada'
+                        ? 'fechada'
+                        : 'livre',
+                imagem: meditations[i]?.image?.match(/url\("?([^")]+)"?\)/)?.[1],
+              }))}
               onEscolher={(id) => {
                 const m = meditations.find((x) => x.id === id);
                 if (m) handleMeditationClick(m);
               }}
-              depoisDe={
-                !isVipUser
-                  ? {
-                      indice: 0,
-                      conteudo: (
-                        <div className="reino-convite">
-                          <h2 className="reino-corpo__titulo" style={{ fontSize: 24 }}>
-                            Você deu o primeiro passo.
-                          </h2>
-                          <p className="reino-corpo__sobre">Continue com as 4 práticas seguintes e forme o hábito.</p>
-                          <button type="button" className="reino-placa" onClick={() => requestUpgrade('introducao_list_cta')}>
-                            Desbloquear sessões <span aria-hidden="true">→</span>
-                          </button>
-                        </div>
-                      ),
-                    }
-                  : undefined
-              }
             />
+            {sessoes.some((sessao) => sessao.estado === 'trancada') && (
+              <div className="reino-convite" style={{ marginTop: 32 }}>
+                <h2 className="reino-corpo__titulo" style={{ fontSize: 24 }}>
+                  {completedCount > 0 ? 'Você já atravessou a primeira pedra.' : 'As duas primeiras pedras são suas.'}
+                </h2>
+                <p className="reino-corpo__sobre">As outras três ficam abertas com a assinatura, e o hábito se forma nelas.</p>
+                <button type="button" className="reino-placa" onClick={() => requestUpgrade('introducao_list_cta')}>
+                  Abrir as cinco <span aria-hidden="true">→</span>
+                </button>
+              </div>
+            )}
           </div>
         </main>
       )}

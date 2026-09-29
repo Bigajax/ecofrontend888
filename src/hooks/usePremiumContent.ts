@@ -1,3 +1,4 @@
+import { isVipUser as checkIsVip } from '@/constants/vipUsers';
 // src/hooks/usePremiumContent.ts
 // Hook para validar acesso a conteúdo premium e gerenciar modal de upgrade
 
@@ -7,14 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import mixpanel from '../lib/mixpanel';
 import type { AccessValidation } from '../types/subscription';
 
-/**
- * Lista VIP de emails com acesso premium gratuito
- * Essas contas têm acesso total sem precisar de assinatura
- */
-const VIP_EMAILS = [
-  'rafaelrazeira@hotmail.com',
-  // Adicione mais emails VIP aqui conforme necessário
-];
+// VIP: a lista central de constants/vipUsers (antes havia uma cópia menor aqui).
 
 /**
  * Hook para gerenciar acesso a conteúdo premium
@@ -68,7 +62,7 @@ export function usePremiumContent() {
 
       // ⭐ VIP CHECK: Verificar se o email está na lista VIP
       const userEmail = user?.email?.toLowerCase();
-      if (userEmail && VIP_EMAILS.includes(userEmail)) {
+      if (userEmail && checkIsVip(userEmail)) {
         return {
           hasAccess: true,
           plan: 'vip',
@@ -183,7 +177,7 @@ export function useSubscriptionTier(): SubscriptionTier {
 
   // VIP CHECK
   const userEmail = user?.email?.toLowerCase();
-  const isVip = userEmail ? VIP_EMAILS.includes(userEmail) : false;
+  const isVip = userEmail ? checkIsVip(userEmail) : false;
   if (isVip) return 'vip';
 
   // Trial ativo = premium temporário

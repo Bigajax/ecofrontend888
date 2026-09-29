@@ -14,7 +14,10 @@ import {
   pontoDaJornada,
 } from '@/constants/ringsJornada';
 import HomeHeader from '@/components/home/HomeHeader';
-import ReinoChegada, { ReinoSessoes, type ReinoSessao } from '@/components/reino/ReinoChegada';
+import ReinoChegada from '@/components/reino/ReinoChegada';
+import TrilhaDeEstacoes, { type Estacao } from '@/components/reino/TrilhaDeEstacoes';
+import RingIcon from '@/components/rings/RingIcon';
+import { DIAS_POR_ANEL } from '@/constants/ringsJornada';
 
 /**
  * Os Cinco Anéis como caminho de 30 dias (set/2026): "Dia 8 de 30 · Anel da
@@ -43,24 +46,21 @@ export default function FiveRingsHub() {
     ? `${DIAS_DA_JORNADA} de ${DIAS_DA_JORNADA} dias · os cinco anéis`
     : `Dia ${ponto.dia} de ${DIAS_DA_JORNADA} · ${anelAgora.titlePt}`;
 
-  const etapas: ReinoSessao[] = ORDEM_DOS_ANEIS.map((id) => {
+  const estacoes: Estacao[] = ORDEM_DOS_ANEIS.map((id) => {
     const ring = RINGS[id];
     const [de, ate] = diasDoAnel(id);
     const estado = estadoDoAnel(id, ponto);
     return {
       id,
-      titulo: ring.titlePt,
-      descricao: ring.subtitlePt,
-      meta:
-        estado === 'feito'
-          ? 'atravessado'
-          : estado === 'agora'
-            ? `agora · dia ${ponto.diaNoAnel} de 6`
-            : `dias ${de} a ${ate}`,
-      estado: estado === 'feito' ? 'feita' : estado === 'agora' ? 'proxima' : 'trancada',
-      detalhe: <p>{ring.descriptionPt}</p>,
+      titulo: ring.titlePt.replace(/^Anel d[aoe] /, ''),
+      sub: ring.subtitlePt,
+      meta: estado === 'feito' ? 'atravessado' : `dias ${de} a ${ate}`,
+      estado: estado === 'feito' ? 'feita' : estado === 'agora' ? 'agora' : 'fechada',
+      marca: <RingIcon ringId={id} size={36} />,
     };
   });
+  // Dias já feitos dentro do anel de agora (0 a 6), para as pedrinhas do bloco.
+  const feitosNoAnel = ponto.completo ? DIAS_POR_ANEL : ponto.diaNoAnel - 1;
 
   const convidadoTravado = isGuest && total >= 1;
 
@@ -123,7 +123,32 @@ export default function FiveRingsHub() {
         <h2 className="reino-corpo__titulo" style={{ marginTop: 28 }}>
           O caminho
         </h2>
-        <ReinoSessoes sessoes={etapas} onEscolher={(id) => navigate(`/app/rings/detail/${id}`)} />
+        <TrilhaDeEstacoes
+          rotulo="Os cinco anéis"
+          estacoes={estacoes}
+          onEscolher={(id) => navigate(`/app/rings/detail/${id}`)}
+        />
+
+        {!ponto.completo && (
+          <section className="reino-anel-agora" aria-label={`Você está no ${anelAgora.titlePt}`}>
+            <span className="reino-anel-agora__selo" aria-hidden="true">
+              <RingIcon ringId={ponto.anel} size={40} />
+            </span>
+            <div>
+              <p className="reino-rotulo">Você está no {anelAgora.titlePt}</p>
+              <p className="reino-anel-agora__nome">{anelAgora.subtitlePt}</p>
+              <p className="reino-anel-agora__frase">{anelAgora.impactPhrase}</p>
+              <div className="reino-anel-agora__dias" aria-label={`${feitosNoAnel} de 6 dias feitos neste anel`}>
+                {Array.from({ length: DIAS_POR_ANEL }).map((_, i) => (
+                  <span key={i} className={i < feitosNoAnel ? 'is-feito' : i === feitosNoAnel ? 'is-hoje' : undefined} />
+                ))}
+                <span className="reino-anel-agora__conta">
+                  {feitosNoAnel} de 6 dias neste anel
+                </span>
+              </div>
+            </div>
+          </section>
+        )}
 
         {total > 0 && (
           <ul className="reino-biblioteca" style={{ marginTop: 32 }}>

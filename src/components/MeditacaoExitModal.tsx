@@ -1,5 +1,8 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { Astro } from './reino/ReinoScene';
+import { getReinoMood } from './reino/reinoMood';
+import './reino/reino.css';
 
 interface MeditacaoExitModalProps {
   open: boolean;
@@ -8,112 +11,54 @@ interface MeditacaoExitModalProps {
   onLeaveAnyway: () => void;
 }
 
-const MeditacaoExitModal: React.FC<MeditacaoExitModalProps> = ({
-  open,
-  onClose,
-  onSignup,
-  onLeaveAnyway
-}) => {
-  // Handle ESC key
+/**
+ * Quando o visitante vai sair da trilha Primeiros passos (set/2026): a folha do
+ * reino, com o que ele leva se criar a conta. Antes: card branco, "conta
+ * gratuita", "100% gratuito" e "chat ilimitado", que não são verdade.
+ */
+const MeditacaoExitModal: React.FC<MeditacaoExitModalProps> = ({ open, onClose, onSignup, onLeaveAnyway }) => {
   useEffect(() => {
     if (!open) return;
-
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+      if (e.key === 'Escape') onClose();
     };
-
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+      className="reino-gate"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="exit-modal-title"
+      aria-labelledby="saida-titulo"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div className="rounded-3xl border border-[var(--eco-line)] bg-white shadow-[0_4px_30px_rgba(0,0,0,0.08)] p-8 max-w-md w-full text-center transition-all duration-300">
-        <h2
-          id="exit-modal-title"
-          className="text-3xl font-display font-normal text-[var(--eco-text)] mb-4"
-        >
-          Gostou dos Primeiros Passos?
+      <div className="reino-gate__folha reino-corpo">
+        <Astro className="reino-gate__astro" mood={getReinoMood()} />
+        <h2 id="saida-titulo" className="reino-gate__titulo">
+          Guarde a sua travessia.
         </h2>
-
-        <p className="text-base font-primary text-[var(--eco-text)] leading-relaxed mb-6">
-          Crie sua conta gratuita e desbloqueie acesso completo à experiência ECO.
+        <p className="reino-gate__texto">
+          Com a conta, a trilha lembra de onde você parou e as cinco pedras ficam abertas. Junto vem o reino inteiro:
+          a Eco, o Protocolo do Sono, o Diário e os Cinco Anéis.
         </p>
-
-        {/* Benefícios */}
-        <div className="space-y-2 mb-6 text-left">
-          <div className="flex items-start gap-2">
-            <span className="text-eco-500 font-bold mt-0.5">✓</span>
-            <p className="text-sm font-primary text-[var(--eco-text)]">
-              Chat ilimitado com a ECO IA emocional
-            </p>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="text-eco-500 font-bold mt-0.5">✓</span>
-            <p className="text-sm font-primary text-[var(--eco-text)]">
-              Meditações guiadas e sons terapêuticos
-            </p>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="text-eco-500 font-bold mt-0.5">✓</span>
-            <p className="text-sm font-primary text-[var(--eco-text)]">
-              Perfil emocional e memórias afetivas
-            </p>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="text-eco-500 font-bold mt-0.5">✓</span>
-            <p className="text-sm font-primary text-[var(--eco-text)]">
-              5 Anéis: rituais diários personalizados
-            </p>
-          </div>
-        </div>
-
-        {/* Botões (3 opções) */}
-        <div className="flex flex-col gap-3">
-          {/* Botão primário: Criar conta */}
-          <button
-            onClick={onSignup}
-            className="bg-[var(--eco-user)] text-white px-6 py-3 rounded-lg font-primary font-medium text-base
-                       hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(28,35,80,0.3)]
-                       active:translate-y-0 transition-all duration-300 ease-out"
-          >
-            Criar conta grátis
+        <p className="reino-gate__nota">Sete dias com tudo aberto. Nada é cobrado hoje.</p>
+        <div className="reino-gate__acoes">
+          <button type="button" className="reino-placa" onClick={onSignup}>
+            Criar conta e seguir <span aria-hidden="true">→</span>
           </button>
-
-          {/* Botão secundário: Continuar meditando */}
-          <button
-            onClick={onClose}
-            className="border border-[var(--eco-line)] bg-white
-                       text-[var(--eco-text)] px-6 py-3 rounded-lg font-primary font-medium text-base
-                       hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.04)]
-                       active:translate-y-0 transition-all duration-300 ease-out"
-          >
+          <button type="button" className="reino-gate__depois" onClick={onClose}>
             Continuar meditando
           </button>
-
-          {/* Botão terciário: Sair */}
-          <button
-            onClick={onLeaveAnyway}
-            className="text-[var(--eco-muted)] px-6 py-2 font-primary font-medium text-sm
-                       hover:text-[var(--eco-text)] transition-colors duration-200"
-          >
-            Sair
-          </button>
         </div>
-
-        {/* Fine print */}
-        <p className="text-xs font-primary text-[var(--eco-muted)] mt-6">
-          100% gratuito. Cancele quando quiser.
-        </p>
+        <button type="button" className="reino-gate__depois reino-saida__sair" onClick={onLeaveAnyway}>
+          Sair mesmo assim
+        </button>
       </div>
     </div>,
     document.body

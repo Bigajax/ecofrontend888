@@ -23,6 +23,18 @@ export const VIP_EMAILS = [
 export function isVipUser(email: string | null | undefined): boolean {
   if (!email) return false;
 
+  // Só em desenvolvimento (npm run dev): qualquer conta logada tem acesso
+  // completo, para ver o trabalho sem esbarrar no pagamento. Para testar o
+  // bloqueio: localStorage.setItem('eco.dev.plano', 'free'). Em produção,
+  // import.meta.env.DEV é false e isto não existe.
+  if (import.meta.env.DEV && !import.meta.env.VITEST) {
+    try {
+      if (localStorage.getItem('eco.dev.plano') !== 'free') return true;
+    } catch {
+      return true;
+    }
+  }
+
   const normalizedEmail = email.toLowerCase().trim();
   return VIP_EMAILS.some(vipEmail => vipEmail.toLowerCase() === normalizedEmail);
 }

@@ -9,6 +9,7 @@ import { RINGS } from '@/constants/rings';
 import {
   DIAS_DA_JORNADA,
   PERGUNTA_DE_FECHAMENTO,
+  DICA_DO_ANEL,
   diasConcluidos,
   lerInicioDoCiclo,
   pontoDaJornada,
@@ -125,6 +126,9 @@ export default function DailyRitual() {
     }
   };
 
+  // O dia como uma página de caderno (set/2026): a pintura de Musashi rasgada
+  // no topo, a folha com o selo do anel carimbado, a pergunta grande e o papel
+  // pautado para escrever.
   return (
     <div className="reino-corpo reino-ritual">
       <div className="reino-ritual__miolo">
@@ -132,55 +136,65 @@ export default function DailyRitual() {
           <span aria-hidden="true">←</span> Voltar
         </button>
 
-        <div className="reino-ritual__onde">
-          <RingIcon ringId={ponto.anel} size={30} />
-          <p className="reino-rotulo">
+        <div className="reino-ritual__faixa reino-rasgo-a" aria-hidden="true">
+          <img src="/images/reino/capa-cinco-aneis.webp" alt="" decoding="async" />
+        </div>
+
+        <div className="reino-ritual__folha">
+          <span className="reino-ritual__carimbo" aria-hidden="true">
+            <RingIcon ringId={ponto.anel} size={34} />
+          </span>
+
+          <p className="reino-rotulo reino-ritual__dia">
             Dia {ponto.dia} de {DIAS_DA_JORNADA} · {anel.titlePt}
           </p>
-        </div>
-        <PincelProgresso value={ponto.feitos / DIAS_DA_JORNADA} className="reino-ritual__pincel" />
+          <PincelProgresso value={ponto.feitos / DIAS_DA_JORNADA} className="reino-ritual__pincel" />
 
-        {ponto.diaNoAnel === 1 && (
-          <blockquote className="reino-ritual__abertura">
-            <p>
-              Começa o {anel.titlePt}: {anel.subtitlePt}.
+          {ponto.diaNoAnel === 1 && (
+            <blockquote className="reino-ritual__abertura">
+              <p>
+                Hoje começa o {anel.titlePt}: {anel.subtitlePt}.
+              </p>
+              <p>{anel.impactPhrase}</p>
+            </blockquote>
+          )}
+
+          <label className="reino-ritual__pergunta">
+            <span className="reino-ritual__enunciado">{ponto.pergunta}</span>
+            <span className="reino-ritual__dica">{DICA_DO_ANEL[ponto.anel]}</span>
+            <textarea
+              className="reino-ritual__pautado"
+              value={resposta}
+              onChange={(e) => setResposta(e.target.value)}
+              rows={5}
+              placeholder="Escreva do seu jeito. Uma linha já vale."
+              disabled={fechando}
+            />
+          </label>
+
+          <label className="reino-ritual__pergunta is-fechamento">
+            <span className="reino-rotulo">Para fechar o dia</span>
+            <span className="reino-ritual__enunciado is-menor">{PERGUNTA_DE_FECHAMENTO}</span>
+            <textarea
+              className="reino-ritual__pautado"
+              value={fechamento}
+              onChange={(e) => setFechamento(e.target.value)}
+              rows={2}
+              placeholder="Opcional"
+              disabled={fechando}
+            />
+          </label>
+
+          {erro && (
+            <p role="alert" className="reino-ritual__erro">
+              {erro}
             </p>
-            <p>{anel.impactPhrase}</p>
-          </blockquote>
-        )}
+          )}
 
-        <label className="reino-ritual__pergunta">
-          <span className="reino-ritual__enunciado">{ponto.pergunta}</span>
-          <textarea
-            value={resposta}
-            onChange={(e) => setResposta(e.target.value)}
-            rows={5}
-            placeholder="Escreva do seu jeito. Uma linha já vale."
-            disabled={fechando}
-          />
-        </label>
-
-        <label className="reino-ritual__pergunta is-fechamento">
-          <span className="reino-rotulo">Para fechar o dia</span>
-          <span className="reino-ritual__enunciado is-menor">{PERGUNTA_DE_FECHAMENTO}</span>
-          <textarea
-            value={fechamento}
-            onChange={(e) => setFechamento(e.target.value)}
-            rows={2}
-            placeholder="Opcional"
-            disabled={fechando}
-          />
-        </label>
-
-        {erro && (
-          <p role="alert" className="reino-ritual__erro">
-            {erro}
-          </p>
-        )}
-
-        <button type="button" className="reino-placa" onClick={fecharODia} disabled={!podeFechar}>
-          {fechando ? 'Fechando…' : `Fechar o dia ${ponto.dia}`} <span aria-hidden="true">→</span>
-        </button>
+          <button type="button" className="reino-placa" onClick={fecharODia} disabled={!podeFechar}>
+            {fechando ? 'Fechando…' : `Fechar o dia ${ponto.dia}`} <span aria-hidden="true">→</span>
+          </button>
+        </div>
       </div>
 
       <UpgradeModal
