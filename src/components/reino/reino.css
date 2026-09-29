@@ -2765,3 +2765,202 @@
 .reino-carregando[data-mood='entardecer'] .reino-carregando__astro {
   margin-bottom: -48px;
 }
+
+/* ===================== Login: a entrada do reino =====================
+   Celular: a pintura da hora em cima (borda rasgada), a folha embaixo.
+   Desktop: pintura à esquerda, folha à direita. */
+.reino-entrada {
+  --r-display: 'Young Serif', 'Iowan Old Style', Georgia, serif;
+  --r-ui: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --r-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  --entrada-ceu: #f1e8d6;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: var(--entrada-ceu);
+}
+.reino-entrada[data-mood='entardecer'] {
+  --entrada-ceu: #4a1f2e;
+}
+.reino-entrada[data-mood='noite'] {
+  --entrada-ceu: #10153a;
+}
+.reino-entrada__pintura {
+  height: clamp(200px, 32vh, 300px);
+  overflow: hidden;
+}
+.reino-entrada__pintura > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reino-entrada__folha {
+  display: flex;
+  justify-content: center;
+  padding: 28px 20px calc(32px + env(safe-area-inset-bottom));
+}
+.reino-entrada__miolo {
+  width: 100%;
+  max-width: 24rem;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.reino-entrada__titulo {
+  margin: 0;
+  font: 400 clamp(28px, 6vw, 36px) / 1.1 var(--r-display);
+  color: var(--r-anil);
+}
+.reino-entrada__sobre {
+  margin: 0 0 8px;
+  font: 400 16px/1.5 var(--r-ui);
+  color: var(--r-fg2);
+}
+.reino-entrada__google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  border: 1.5px solid rgba(28, 35, 80, 0.35);
+  border-radius: 6px;
+  background: #fbf9f3;
+  color: var(--r-anil);
+  font: 500 15px var(--r-ui);
+  cursor: pointer;
+}
+.reino-entrada__google:hover {
+  border-color: var(--r-anil);
+}
+.reino-entrada__ou {
+  margin: 4px 0 0;
+  text-align: center;
+  font: 400 11.5px var(--r-mono);
+  letter-spacing: 0.06em;
+  color: var(--r-fg2);
+}
+.reino-entrada__form {
+  display: grid;
+  gap: 12px;
+}
+.reino-entrada__campo {
+  display: grid;
+  gap: 6px;
+}
+.reino-entrada__linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.reino-entrada__rotulo {
+  font: 400 11.5px var(--r-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--r-fg2);
+}
+.reino-entrada__campo input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid rgba(28, 35, 80, 0.35);
+  border-radius: 6px;
+  background: #fbf9f3;
+  color: var(--r-anil);
+  font: 400 16px var(--r-ui);
+  box-shadow: 0 3px 0 -1px rgba(28, 35, 80, 0.1);
+}
+.reino-entrada__campo input:focus {
+  outline: none;
+  border-color: var(--r-anil);
+  box-shadow: 0 3px 0 -1px var(--r-ocre);
+}
+.reino-entrada__senha {
+  position: relative;
+  display: block;
+}
+.reino-entrada__senha input {
+  padding-right: 46px;
+}
+.reino-entrada__olho {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: var(--r-fg2);
+  cursor: pointer;
+}
+.reino-entrada__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--r-anil);
+  font: 500 13px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.reino-entrada__retorno {
+  min-height: 18px;
+  font: 400 13px/1.45 var(--r-ui);
+}
+.reino-entrada__retorno p {
+  margin: 0;
+}
+.reino-entrada__retorno .is-erro {
+  color: #9b3b2f;
+}
+.reino-entrada__retorno .is-ok {
+  color: var(--r-musgo);
+}
+.reino-entrada .reino-entrada__entrar {
+  margin-top: 0;
+  justify-self: start;
+}
+.reino-entrada__entrar:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.reino-entrada__pe {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  margin-top: 14px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--r-trilho);
+}
+.reino-entrada__criar {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--r-fg2);
+  font: 400 14.5px var(--r-ui);
+  cursor: pointer;
+}
+.reino-entrada__criar span {
+  color: var(--r-anil);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+@media (min-width: 900px) {
+  .reino-entrada {
+    grid-template-rows: none;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+  .reino-entrada__pintura {
+    height: auto;
+    margin: 28px 0 28px 28px;
+  }
+  .reino-entrada__folha {
+    align-items: center;
+    padding: 40px;
+  }
+}
