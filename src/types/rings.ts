@@ -90,10 +90,20 @@ export type RingResponse =
 /**
  * Individual answer to a ring's daily question
  */
+/**
+ * Dados da jornada de 30 dias (set/2026): em que dia a resposta foi dada, a
+ * pergunta que estava valendo e a resposta de fechamento.
+ */
+export interface JornadaMeta {
+  dia?: number;
+  pergunta?: string;
+  fechamento?: string;
+}
+
 export interface RingAnswer {
   ringId: RingType;
   answer: string; // Main text answer
-  metadata: RingResponse; // Structured metadata specific to this ring
+  metadata: RingResponse & JornadaMeta; // Structured metadata specific to this ring
   timestamp: string; // ISO timestamp
 }
 
@@ -166,7 +176,8 @@ export interface RingsContextType {
   currentRitual: DailyRitual | null;
   startRitual: () => void;
   saveRingAnswer: (ringId: RingType, answer: string, metadata: RingResponse) => void;
-  completeRitual: () => Promise<void>;
+  /** Fecha o dia. `resposta` entra no ritual antes de concluir (jornada de 30 dias). */
+  completeRitual: (resposta?: { ringId: RingType; answer: string; metadata: RingResponse & JornadaMeta }) => Promise<void>;
   getRitualForDate: (date: string) => DailyRitual | undefined;
 
   // Timeline/History

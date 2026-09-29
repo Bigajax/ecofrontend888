@@ -1,243 +1,188 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import { useRings } from '@/contexts/RingsContext';
-import { useProgram } from '@/contexts/ProgramContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscriptionTier, usePremiumContent } from '@/hooks/usePremiumContent';
 import { canAccess } from '@/constants/meditationTiers';
-import { useGuestExperience } from '@/contexts/GuestExperienceContext';
-import { useGuestConversionTriggers, ConversionSignals } from '@/hooks/useGuestConversionTriggers';
 import mixpanel from '@/lib/mixpanel';
-import { RINGS_ARRAY } from '@/constants/rings';
-import RitualStep from '@/components/rings/RitualStep';
+import { RINGS } from '@/constants/rings';
+import {
+  DIAS_DA_JORNADA,
+  PERGUNTA_DE_FECHAMENTO,
+  diasConcluidos,
+  lerInicioDoCiclo,
+  pontoDaJornada,
+} from '@/constants/ringsJornada';
 import RitualCompletion from '@/components/rings/RitualCompletion';
 import RingIcon from '@/components/rings/RingIcon';
 import RitualGuestGate from '@/components/rings/RitualGuestGate';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
-import type { RingType, RingResponse } from '@/types/rings';
+import { PincelProgresso } from '@/components/reino/ReinoScene';
+import '@/components/reino/reino.css';
 
+/**
+ * O dia da jornada (set/2026): uma tela, duas perguntas. A do anel da vez muda
+ * a cada dia; a de fechamento é sempre a mesma. Antes eram 5 passos com 5
+ * respostas obrigatórias, as mesmas todos os dias.
+ *
+ * Visitante faz o dia 1 inteiro; do dia 2 em diante, a conta. Plano free
+ * (logado sem assinatura) segue bloqueado como antes.
+ */
 export default function DailyRitual() {
   const navigate = useNavigate();
-  const { currentRitual, startRitual, saveRingAnswer, completeRitual } = useRings();
-  const { ongoingProgram, updateProgress } = useProgram();
+  const { currentRitual, startRitual, completeRitual, allRituals } = useRings();
   const { user, isGuestMode, isVipUser } = useAuth();
   const tier = useSubscriptionTier();
   const { requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
-  const { trackInteraction } = useGuestExperience();
-  const { checkTrigger } = useGuestConversionTriggers();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isCompleting, setIsCompleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Guest mode state (VIP users bypass all gates)
   const isGuest = isGuestMode && !user && !isVipUser;
-  const GUEST_RING_LIMIT = 2; // Guests podem completar apenas 2 anéis (Earth e Water)
-  const [showGuestGate, setShowGuestGate] = useState(false);
+  const isFreeBlocked = Boolean(user) && !isGuest && !canAccess('rings_daily', tier);
 
-  // FREE TIER: bloqueio completo (sem acesso semanal)
-  const isFreeBlocked = user && !isGuest && !canAccess('rings_daily', tier);
+  const uid = user?.id ?? null;
+  const feitosAntes = useMemo(() => diasConcluidos(allRituals).length, [allRituals]);
+  const hojeFeito = currentRitual?.status === 'completed';
+  // O ponto é calculado sem contar o dia de hoje, para a tela mostrar o dia que se está fechando.
+  const ponto = pontoDaJornada(hojeFeito ? feitosAntes - 1 : feitosAntes, lerInicioDoCiclo(uid));
+  const anel = RINGS[ponto.anel];
+
+  const chaveRascunho = `eco.rings.v1.rascunho.${uid || 'anon'}.${currentRitual?.date ?? ''}`;
+  const [resposta, setResposta] = useState('');
+  const [fechamento, setFechamento] = useState('');
+  const [fechando, setFechando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [concluido, setConcluido] = useState(false);
 
   useEffect(() => {
-    // Ensure ritual exists
-    if (!currentRitual) {
-      startRitual();
-    }
+    if (!currentRitual) startRitual();
   }, [currentRitual, startRitual]);
 
-  // FREE TIER: show upgrade gate immediately on mount
+  // Rascunho: sair no meio não perde o que foi escrito.
+  useEffect(() => {
+    if (!currentRitual) return;
+    try {
+      const salvo = JSON.parse(localStorage.getItem(chaveRascunho) || 'null');
+      if (salvo) {
+        setResposta(salvo.resposta || '');
+        setFechamento(salvo.fechamento || '');
+      }
+    } catch {
+      // rascunho ilegível: começa em branco
+    }
+  }, [chaveRascunho, currentRitual]);
+
+  useEffect(() => {
+    if (!currentRitual || hojeFeito) return;
+    try {
+      localStorage.setItem(chaveRascunho, JSON.stringify({ resposta, fechamento }));
+    } catch {
+      // sem storage, sem rascunho
+    }
+  }, [resposta, fechamento, chaveRascunho, currentRitual, hojeFeito]);
+
   useEffect(() => {
     if (isFreeBlocked) {
-      mixpanel.track('Assinatura · Limite free bloqueado', {
-        limit_type: 'rings_premium',
-        user_id: user?.id,
-        tier,
-      });
+      mixpanel.track('Assinatura · Limite free bloqueado', { limit_type: 'rings_premium', user_id: user?.id, tier });
       requestUpgrade('rings_free_blocked');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFreeBlocked]);
 
-  useEffect(() => {
-    // Update program progress as user moves through rings
-    if (ongoingProgram?.id === 'rec_1' && currentStep >= 0) {
-      const progressPercentage = Math.round(((currentStep + 1) / RINGS_ARRAY.length) * 100);
-      const ringName = RINGS_ARRAY[currentStep]?.displayName || `Anel ${currentStep + 1}`;
-      updateProgress(progressPercentage, `${ringName} em andamento`);
-    }
-  }, [currentStep, ongoingProgram?.id, updateProgress]);
+  if (!currentRitual) return null;
 
-  if (!currentRitual) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="text-center">
-          <p className="text-[var(--eco-muted)]">Carregando ritual...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const ring = RINGS_ARRAY[currentStep];
-  const isLastStep = currentStep === RINGS_ARRAY.length - 1;
-  const answeredCount = currentRitual.answers.length;
-
-  const handleAnswerSaved = (ringId: RingType, answer: string, metadata: RingResponse) => {
-    saveRingAnswer(ringId, answer, metadata);
-
-    // NOVO: Guest mode - bloquear após completar 2 anéis (antes de chegar no Anel 3/Fire)
-    if (isGuest && currentStep >= GUEST_RING_LIMIT - 1) {
-      // Guest completou 2 anéis (Earth + Water)
-      // Próximo passo seria Fire (index 2), mas bloqueamos
-
-      // Track completion
-      trackInteraction('page_view', {
-        page: '/rings/ritual',
-        rings_completed: currentStep + 1,
-      });
-
-      // Trigger conversão
-      checkTrigger(ConversionSignals.ringsCompleted(currentStep + 1));
-
-      // Mostrar gate
-      setShowGuestGate(true);
-      return;
-    }
-
-    if (isLastStep) {
-      // Complete the ritual
-      setIsCompleting(true);
-      completeRitual()
-        .then(() => {
-          // Show completion screen with animation
-          setCurrentStep(RINGS_ARRAY.length); // Trigger completion view
-        })
-        .catch((err) => {
-          setError(String(err));
-          setIsCompleting(false);
-        });
-    } else {
-      // Move to next step
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  // Completion screen
-  if (currentStep === RINGS_ARRAY.length) {
+  // Já fechou o dia de hoje (voltou para esta tela): mostra a chegada.
+  if (concluido || hojeFeito) {
     return <RitualCompletion onBackHome={() => navigate('/app/rings')} />;
   }
 
+  // Visitante que já fez o dia 1: o resto é com a conta.
+  if (isGuest && feitosAntes >= 1) {
+    return <RitualGuestGate open currentDay={ponto.dia} completedRings={1} onBack={() => navigate('/app/rings')} />;
+  }
+
+  const podeFechar = resposta.trim().length > 0 && !fechando;
+
+  const fecharODia = async () => {
+    if (!podeFechar) return;
+    setFechando(true);
+    setErro(null);
+    try {
+      await completeRitual({
+        ringId: ponto.anel,
+        answer: resposta.trim(),
+        metadata: { dia: ponto.dia, pergunta: ponto.pergunta, fechamento: fechamento.trim() || undefined },
+      });
+      try {
+        localStorage.removeItem(chaveRascunho);
+      } catch {
+        // nada a limpar
+      }
+      mixpanel.track('Anéis · Dia fechado', { dia: ponto.dia, anel: ponto.anel, com_fechamento: Boolean(fechamento.trim()) });
+      setConcluido(true);
+    } catch {
+      setErro('Não deu para fechar o dia agora. O que você escreveu está guardado; tente de novo.');
+    } finally {
+      setFechando(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white font-primary">
-      <div className="mx-auto max-w-2xl px-4 py-8 md:px-8 md:py-12">
-        {/* Back Button - Top left no flow normal */}
-        <div className="mb-8">
-          <button
-            onClick={() => {
-              // Save current progress before leaving
-              if (ongoingProgram?.id === 'rec_1' && currentStep > 0) {
-                const progressPercentage = Math.round(((currentStep + 1) / RINGS_ARRAY.length) * 100);
-                const ringName = RINGS_ARRAY[currentStep]?.displayName || `Anel ${currentStep + 1}`;
-                updateProgress(progressPercentage, `Ritual Pausado no ${ringName}`);
-              }
+    <div className="reino-corpo reino-ritual">
+      <div className="reino-ritual__miolo">
+        <button type="button" className="reino-chegada__voltar" onClick={() => navigate('/app/rings')}>
+          <span aria-hidden="true">←</span> Voltar
+        </button>
 
-              if (currentStep > 0) {
-                setCurrentStep(currentStep - 1);
-              } else {
-                navigate('/app/rings');
-              }
-            }}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--eco-text)] shadow-md border border-[var(--eco-line)] transition-all hover:bg-gray-50 hover:shadow-lg active:scale-95"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Progress bar */}
-        <div className="mb-12">
-          <div className="flex gap-2">
-            {RINGS_ARRAY.map((_, index) => (
-              <div
-                key={index}
-                className={`h-2 flex-1 rounded-full transition-colors duration-300 ${
-                  index <= currentStep ? 'bg-[var(--eco-user)]' : 'bg-gray-200'
-                }`}
-              />
-            ))}
-          </div>
-          <p className="mt-2 text-sm text-[var(--eco-muted)]">
-            Passo {currentStep + 1} de {RINGS_ARRAY.length}
+        <div className="reino-ritual__onde">
+          <RingIcon ringId={ponto.anel} size={30} />
+          <p className="reino-rotulo">
+            Dia {ponto.dia} de {DIAS_DA_JORNADA} · {anel.titlePt}
           </p>
         </div>
+        <PincelProgresso value={ponto.feitos / DIAS_DA_JORNADA} className="reino-ritual__pincel" />
 
-        {/* Header */}
-        <div className="mb-12">
-          <div className="flex items-start gap-6">
-            <div className="text-[var(--eco-text)]">
-              <RingIcon ringId={ring.id as any} size={56} />
-            </div>
-            <div>
-              <h1 className="font-display text-3xl font-normal text-[var(--eco-text)]">
-                {ring.titlePt}
-              </h1>
-              <p className="mt-2 italic text-[var(--eco-muted)]">"{ring.impactPhrase}"</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error}
-          </div>
+        {ponto.diaNoAnel === 1 && (
+          <blockquote className="reino-ritual__abertura">
+            <p>
+              Começa o {anel.titlePt}: {anel.subtitlePt}.
+            </p>
+            <p>{anel.impactPhrase}</p>
+          </blockquote>
         )}
 
-        {/* Step content */}
-        <RitualStep
-          ring={ring}
-          onSave={handleAnswerSaved}
-          isLoading={isCompleting}
-          existingAnswer={currentRitual.answers.find((a) => a.ringId === ring.id)}
-        />
+        <label className="reino-ritual__pergunta">
+          <span className="reino-ritual__enunciado">{ponto.pergunta}</span>
+          <textarea
+            value={resposta}
+            onChange={(e) => setResposta(e.target.value)}
+            rows={5}
+            placeholder="Escreva do seu jeito. Uma linha já vale."
+            disabled={fechando}
+          />
+        </label>
 
-        {/* Progress indicator at bottom */}
-        <div className="mt-12 flex justify-center gap-2">
-          {RINGS_ARRAY.map((ring, index) => (
-            <button
-              key={ring.id}
-              onClick={() => setCurrentStep(index)}
-              disabled={index > currentStep || (isGuest && index >= GUEST_RING_LIMIT)}
-              className={`flex h-10 w-10 items-center justify-center rounded-full font-semibold transition-all duration-300 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
-                index === currentStep
-                  ? 'bg-[var(--eco-user)] text-white shadow-[0_4px_20px_rgba(167,132,108,0.25)]'
-                  : index < currentStep
-                    ? 'bg-green-500 text-white shadow-[0_2px_12px_rgba(34,197,94,0.15)]'
-                    : 'border border-[var(--eco-line)] bg-white text-[var(--eco-text)] shadow-[0_2px_12px_rgba(0,0,0,0.04)]'
-              }`}
-              title={ring.titlePt}
-            >
-              {index < currentStep ? (
-                <span className="text-sm">✓</span>
-              ) : (
-                <span className="text-[12px]">
-                  <RingIcon ringId={ring.id as any} size={16} strokeWidth={2} />
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+        <label className="reino-ritual__pergunta is-fechamento">
+          <span className="reino-rotulo">Para fechar o dia</span>
+          <span className="reino-ritual__enunciado is-menor">{PERGUNTA_DE_FECHAMENTO}</span>
+          <textarea
+            value={fechamento}
+            onChange={(e) => setFechamento(e.target.value)}
+            rows={2}
+            placeholder="Opcional"
+            disabled={fechando}
+          />
+        </label>
+
+        {erro && (
+          <p role="alert" className="reino-ritual__erro">
+            {erro}
+          </p>
+        )}
+
+        <button type="button" className="reino-placa" onClick={fecharODia} disabled={!podeFechar}>
+          {fechando ? 'Fechando…' : `Fechar o dia ${ponto.dia}`} <span aria-hidden="true">→</span>
+        </button>
       </div>
 
-      {/* NOVO: Guest Gate (bloqueio no Anel 3/Fire) */}
-      {isGuest && (
-        <RitualGuestGate
-          open={showGuestGate}
-          currentDay={currentRitual?.day || 1}
-          completedRings={currentStep + 1}
-          onBack={() => navigate('/app/rings')}
-        />
-      )}
-
-      {/* FREE TIER: gate completo — upgrade modal */}
       <UpgradeModal
         open={showUpgradeModal}
         onClose={() => {

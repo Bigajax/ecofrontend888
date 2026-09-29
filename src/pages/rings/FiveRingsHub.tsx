@@ -1,166 +1,140 @@
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import { useRings } from '@/contexts/RingsContext';
-import { useProgram } from '@/contexts/ProgramContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { RINGS_ARRAY } from '@/constants/rings';
-import OnboardingModal from '@/components/rings/OnboardingModal';
+import { RINGS } from '@/constants/rings';
+import {
+  DIAS_DA_JORNADA,
+  ORDEM_DOS_ANEIS,
+  comecarNovoCiclo,
+  diasConcluidos,
+  diasDoAnel,
+  estadoDoAnel,
+  lerInicioDoCiclo,
+  pontoDaJornada,
+} from '@/constants/ringsJornada';
 import HomeHeader from '@/components/home/HomeHeader';
-import RingsHistory from '@/components/rings/RingsHistory';
 import ReinoChegada, { ReinoSessoes, type ReinoSessao } from '@/components/reino/ReinoChegada';
 
+/**
+ * Os Cinco Anéis como caminho de 30 dias (set/2026): "Dia 8 de 30 · Anel da
+ * Água" na chegada, os cinco anéis como etapas (atravessado, o de agora,
+ * fechado) e o Selo de cada anel já atravessado. Antes: as mesmas 5 perguntas
+ * todo dia, sem saber onde se estava nem para onde ia.
+ */
 export default function FiveRingsHub() {
   const navigate = useNavigate();
-  const { showOnboarding, completeOnboarding, dismissOnboarding, currentRitual, progress } =
-    useRings();
-  const { ongoingProgram, updateProgress, resumeProgram } = useProgram();
+  const { currentRitual, allRituals } = useRings();
   const { user, isGuestMode, isVipUser } = useAuth();
-
-  const ritualCompleted = currentRitual?.status === 'completed';
-  // VIP users bypass all guest gates
+  const uid = user?.id ?? null;
   const isGuest = isGuestMode && !user && !isVipUser;
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'ritual' | 'history'>('ritual');
-
-  // Scroll to top on page load
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Resume program when page loads
-  useEffect(() => {
-    if (ongoingProgram?.id === 'rec_1') {
-      resumeProgram();
-    }
-  }, [ongoingProgram?.id, resumeProgram]);
+  const total = useMemo(() => diasConcluidos(allRituals).length, [allRituals]);
+  const inicio = lerInicioDoCiclo(uid);
+  const hojeFeito = currentRitual?.status === 'completed';
+  const ponto = pontoDaJornada(total, inicio);
+  const anelAgora = RINGS[ponto.anel];
 
-  // Update program progress continuously and handle completion
-  useEffect(() => {
-    if (ongoingProgram?.id === 'rec_1' && currentRitual) {
-      // Calculate completion percentage based on current ritual responses
-      const totalRings = RINGS_ARRAY.length;
-      const ringResponses = currentRitual.responses?.length || 0;
-      const completionPercentage = Math.round((ringResponses / totalRings) * 100);
+  const legenda = ponto.completo
+    ? `${DIAS_DA_JORNADA} de ${DIAS_DA_JORNADA} dias · os cinco anéis`
+    : `Dia ${ponto.dia} de ${DIAS_DA_JORNADA} · ${anelAgora.titlePt}`;
 
-      // Update progress with current state
-      if (ritualCompleted) {
-        // When ritual is 100% complete, mark as finished
-        updateProgress(100, 'Ritual completo');
-        // Note: completeProgram() will be called automatically when user returns to home
-        // or on next mount detection
-      } else if (ringResponses > 0) {
-        // While in progress, update with current percentage
-        const currentRing = RINGS_ARRAY[ringResponses - 1];
-        updateProgress(completionPercentage, `${currentRing?.displayName || `Anel ${ringResponses}`} Completado`);
-      }
-    }
-  }, [ongoingProgram?.id, currentRitual, ritualCompleted, updateProgress]);
+  const etapas: ReinoSessao[] = ORDEM_DOS_ANEIS.map((id) => {
+    const ring = RINGS[id];
+    const [de, ate] = diasDoAnel(id);
+    const estado = estadoDoAnel(id, ponto);
+    return {
+      id,
+      titulo: ring.titlePt,
+      descricao: ring.subtitlePt,
+      meta:
+        estado === 'feito'
+          ? 'atravessado'
+          : estado === 'agora'
+            ? `agora · dia ${ponto.diaNoAnel} de 6`
+            : `dias ${de} a ${ate}`,
+      estado: estado === 'feito' ? 'feita' : estado === 'agora' ? 'proxima' : 'trancada',
+      detalhe: <p>{ring.descriptionPt}</p>,
+    };
+  });
 
-  const aneis: ReinoSessao[] = RINGS_ARRAY.map((ring) => ({
-    id: ring.id,
-    titulo: ring.titlePt,
-    descricao: ring.descriptionPt,
-    meta: ring.subtitlePt,
-    estado: 'livre',
-    detalhe: (
-      <>
-        <p>
-          <strong>A pergunta do dia.</strong> {ring.question}
-        </p>
-        {ring.impactPhrase && <p className="reino-sessao__nota">{ring.impactPhrase}</p>}
-      </>
-    ),
-  }));
+  const convidadoTravado = isGuest && total >= 1;
 
   return (
     <div className="reino-corpo page-with-nav" style={{ minHeight: '100dvh' }}>
       <HomeHeader />
 
-      {showOnboarding && <OnboardingModal onComplete={completeOnboarding} onDismiss={dismissOnboarding} />}
-
       <ReinoChegada
         mood="amanhecer"
         imagem="/images/reino/capa-cinco-aneis.webp"
         foco="center 60%"
-        lugar="TRI.04 · As Trilhas · Miyamoto Musashi"
+        lugar="As Trilhas · Miyamoto Musashi"
         titulo="Cinco Anéis da Disciplina"
-        sobre="Um ritual diário de 2 a 3 minutos para organizar foco, emoção e disciplina: terra, água, fogo, vento e vazio."
+        sobre="Trinta dias, um anel de cada vez. Duas perguntas por dia, poucos minutos."
         voltar={{ rotulo: 'Voltar para Hoje', onClick: () => navigate('/app') }}
+        progresso={{ valor: ponto.feitos / DIAS_DA_JORNADA, legenda }}
       >
-        {ritualCompleted ? (
-          <div className="reino-nota" style={{ marginTop: 18, marginBottom: 0 }}>
-            <p>
-              Ritual de hoje feito.{' '}
-              {isGuest ? 'Crie sua conta para continuar a jornada de 30 dias.' : 'Volte amanhã para manter a disciplina.'}
+        {ponto.completo ? (
+          <>
+            <p className="reino-nota" style={{ marginTop: 18 }}>
+              Você atravessou os cinco anéis.
             </p>
-          </div>
+            <button
+              type="button"
+              className="reino-placa"
+              onClick={() => {
+                comecarNovoCiclo(uid, total);
+                navigate(0);
+              }}
+            >
+              Percorrer de novo <span aria-hidden="true">→</span>
+            </button>
+          </>
+        ) : convidadoTravado ? (
+          <button
+            type="button"
+            className="reino-placa"
+            onClick={() => navigate('/assinar?step=signup&plan=monthly&from=aneis_hub')}
+          >
+            Criar conta e seguir para o dia 2 <span aria-hidden="true">→</span>
+          </button>
+        ) : hojeFeito ? (
+          <p className="reino-nota" style={{ marginTop: 18 }}>
+            Dia {ponto.feitos} feito. O dia {ponto.dia} abre amanhã.
+          </p>
         ) : (
           <button type="button" className="reino-placa" onClick={() => navigate('/app/rings/ritual')}>
-            Começar o ritual de hoje <span aria-hidden="true">→</span>
-          </button>
-        )}
-        {ritualCompleted && isGuest && (
-          <button type="button" className="reino-placa" onClick={() => navigate('/register?returnTo=/app/rings')}>
-            Criar conta <span aria-hidden="true">→</span>
+            Fazer o dia {ponto.dia} <span aria-hidden="true">→</span>
           </button>
         )}
       </ReinoChegada>
 
       <div className="reino-pagina">
-        {isGuest && (
+        {isGuest && !convidadoTravado && (
           <div className="reino-nota">
-            <p>
-              Como convidado, você experimenta os primeiros 2 dias com os 5 anéis. Os outros 28 dias ficam com a conta.
-            </p>
+            <p>Sem conta, você faz o primeiro dia inteiro. Os outros 29 ficam com a conta.</p>
           </div>
         )}
 
-        <div className="reino-filtros" role="tablist" aria-label="Cinco Anéis">
-          <button type="button" role="tab" className="reino-filtro" aria-pressed={activeTab === 'ritual'} aria-selected={activeTab === 'ritual'} onClick={() => setActiveTab('ritual')}>
-            Ritual de hoje
-          </button>
-          <button type="button" role="tab" className="reino-filtro" aria-pressed={activeTab === 'history'} aria-selected={activeTab === 'history'} onClick={() => setActiveTab('history')}>
-            Minhas sessões
-          </button>
-        </div>
+        <h2 className="reino-corpo__titulo" style={{ marginTop: 28 }}>
+          O caminho
+        </h2>
+        <ReinoSessoes sessoes={etapas} onEscolher={(id) => navigate(`/app/rings/detail/${id}`)} />
 
-        {activeTab === 'ritual' ? (
-          <>
-            <p className="reino-rotulo" style={{ marginTop: 28 }}>
-              Os cinco anéis
-            </p>
-            <ReinoSessoes sessoes={aneis} onEscolher={(id) => navigate(`/app/rings/detail/${id}`)} />
-
-            <ul className="reino-biblioteca" style={{ marginTop: 32 }}>
-              <li>
-                <button type="button" className="reino-livro" onClick={() => navigate('/app/rings/timeline')}>
-                  <span className="reino-livro__titulo">Linha do tempo</span>
-                  <span className="reino-livro__sobre">Cada dia de ritual, em ordem.</span>
-                  <span className="reino-livro__acao">Abrir →</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" className="reino-livro" onClick={() => navigate('/app/rings/progress')}>
-                  <span className="reino-livro__titulo">Progresso</span>
-                  <span className="reino-livro__sobre">Como cada anel evoluiu com você.</span>
-                  <span className="reino-livro__acao">Abrir →</span>
-                </button>
-              </li>
-            </ul>
-
-            {progress && (
-              <div className="reino-nota" style={{ marginTop: 32 }}>
-                <p>
-                  {progress.currentStreak} {progress.currentStreak === 1 ? 'dia seguido' : 'dias seguidos'} de disciplina.
-                </p>
-              </div>
-            )}
-          </>
-        ) : (
-          <div style={{ marginTop: 24 }}>
-            <RingsHistory />
-          </div>
+        {total > 0 && (
+          <ul className="reino-biblioteca" style={{ marginTop: 32 }}>
+            <li>
+              <button type="button" className="reino-livro" onClick={() => navigate('/app/rings/timeline')}>
+                <span className="reino-livro__titulo">Tudo o que você escreveu</span>
+                <span className="reino-livro__sobre">Cada dia do caminho, em ordem.</span>
+                <span className="reino-livro__acao">Abrir →</span>
+              </button>
+            </li>
+          </ul>
         )}
       </div>
     </div>

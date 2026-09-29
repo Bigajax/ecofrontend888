@@ -3644,3 +3644,210 @@
   opacity: 0.5;
   cursor: default;
 }
+
+/* ── Cinco Anéis: o dia, a chegada, o selo e a página do anel (set/2026) ── */
+.reino-ritual {
+  min-height: 100dvh;
+  background: var(--r-linho);
+}
+.reino-ritual__miolo {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: clamp(24px, 5vw, 56px) 16px 64px;
+}
+.reino-ritual__onde {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 26px;
+  color: var(--r-anil);
+}
+.reino-ritual__onde .reino-rotulo {
+  margin: 0;
+}
+.reino-ritual__pincel {
+  display: block;
+  width: 100%;
+  height: 12px;
+  margin-top: 10px;
+}
+.reino-ritual__abertura {
+  margin: 22px 0 0;
+  padding: 2px 0 2px 16px;
+  border-left: 3px solid var(--r-ocre);
+  color: var(--r-fg2);
+  font: 400 15px/1.55 var(--r-ui);
+}
+.reino-ritual__abertura p {
+  margin: 0;
+}
+.reino-ritual__abertura p + p {
+  margin-top: 6px;
+  font-style: italic;
+}
+.reino-ritual__pergunta {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+}
+.reino-ritual__pergunta.is-fechamento {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px dashed var(--r-trilho);
+  gap: 6px;
+}
+.reino-ritual__enunciado {
+  font: 400 clamp(24px, 4.2vw, 32px) / 1.15 var(--r-display);
+  color: var(--r-anil);
+  text-wrap: balance;
+}
+.reino-ritual__enunciado.is-menor {
+  font-size: 19px;
+}
+.reino-ritual__pergunta textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid rgba(28, 35, 80, 0.35);
+  border-radius: 6px;
+  background: #fbf9f3;
+  color: var(--r-anil);
+  font: 400 16px/1.5 var(--r-ui);
+  resize: vertical;
+  box-shadow: 0 3px 0 -1px rgba(28, 35, 80, 0.1);
+}
+.reino-ritual__pergunta textarea:focus {
+  outline: none;
+  border-color: var(--r-anil);
+  box-shadow: 0 3px 0 -1px var(--r-ocre);
+}
+.reino-ritual .reino-placa:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.reino-ritual__erro {
+  margin: 14px 0 0;
+  font: 500 14px/1.45 var(--r-ui);
+  color: #9b3b2f;
+}
+.reino-ritual__astro {
+  width: 64px;
+  height: auto;
+  color: var(--r-anil);
+}
+.reino-ritual__chegada {
+  margin: 12px 0 0;
+  font: 400 clamp(32px, 6vw, 48px) / 1.05 var(--r-display);
+  color: var(--r-anil);
+  text-wrap: balance;
+}
+.reino-ritual__amanha {
+  margin: 12px 0 0;
+  max-width: 34em;
+  color: var(--r-fg2);
+  font: 400 17px/1.5 var(--r-ui);
+}
+.reino-ritual__trilha {
+  display: grid;
+  gap: 6px;
+  margin-top: 22px;
+}
+.reino-ritual__trilha svg {
+  width: 100%;
+  height: 12px;
+}
+.reino-ritual__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 22px;
+  margin-top: 8px;
+}
+.reino-ritual__link {
+  margin-top: 20px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--r-anil);
+  font: 500 14px var(--r-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.reino-selo {
+  margin-top: 30px;
+  padding: 22px 20px;
+  background: var(--r-papel);
+  border-radius: 4px 9px 5px 10px;
+  box-shadow: 0 4px 0 -1px var(--r-ocre);
+}
+.reino-selo__topo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--r-anil);
+}
+.reino-selo__topo .reino-rotulo {
+  margin: 0;
+}
+.reino-selo__sub {
+  margin: 2px 0 0;
+  color: var(--r-fg2);
+  font: 400 14px var(--r-ui);
+}
+.reino-selo__lista {
+  display: grid;
+  gap: 16px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.reino-selo__lista li {
+  display: grid;
+  gap: 4px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--r-trilho);
+}
+.reino-selo__dia {
+  font: 400 12px var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-selo__pergunta {
+  font: 400 15px/1.4 var(--r-display);
+  color: var(--r-anil);
+}
+.reino-selo__resposta {
+  font: 400 16px/1.5 var(--r-ui);
+  color: var(--r-anil);
+  white-space: pre-wrap;
+}
+.reino-selo__passo {
+  font: 400 14px/1.45 var(--r-ui);
+  color: var(--r-fg2);
+}
+.reino-anel__topo {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 22px;
+  color: var(--r-anil);
+}
+.reino-anel__topo .reino-rotulo {
+  margin: 0;
+}
+.reino-anel__sub {
+  margin: 4px 0 0;
+  color: var(--r-fg2);
+  font: 400 17px var(--r-ui);
+}
+.reino-anel__texto {
+  max-width: 36em;
+  margin: 20px 0 0;
+  color: var(--r-anil);
+  font: 400 16px/1.6 var(--r-ui);
+}
+.reino-anel__nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 36px;
+}

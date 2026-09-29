@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import * as ringsApi from '@/api/ringsApi';
 import { getTodayDate, diasEntre } from '@/utils/dataLocal';
 import type {
+  JornadaMeta,
   DailyRitual,
   OnboardingState,
   RingAnswer,
@@ -93,6 +94,16 @@ function saveRituals(rituals: DailyRitual[], userId?: string | null): void {
   }
 }
 
+/** Une rituais do backend e do aparelho por data; um concluído vence um em andamento. */
+function juntarRituais(doBackend: DailyRitual[], doAparelho: DailyRitual[]): DailyRitual[] {
+  const porData = new Map<string, DailyRitual>();
+  for (const r of [...doBackend, ...doAparelho]) {
+    const atual = porData.get(r.date);
+    if (!atual || (atual.status !== 'completed' && r.status === 'completed')) porData.set(r.date, r);
+  }
+  return Array.from(porData.values());
+}
+
 /**
  * Initialize progress from rituals
  */
@@ -176,7 +187,10 @@ export function RingsProvider({ children }: { children: ReactNode }) {
         if (user) {
           try {
             const response = await ringsApi.getRitualHistory({ limit: 100, includeAnswers: true });
-            rituals = response.rituals || [];
+            // Junta com o que está no aparelho em vez de substituir: um dia
+            // concluído aqui que o backend não tenha registrado (ex.: formato da
+            // jornada de 30 dias recusado) não pode sumir do progresso.
+            rituals = juntarRituais(response.rituals || [], [...loadRituals(userId), ...loadRituals(null)]);
             console.log('[RingsContext] Loaded rituals from backend:', rituals.length);
 
             // Cache in localStorage
@@ -184,7 +198,15 @@ export function RingsProvider({ children }: { children: ReactNode }) {
           } catch (error) {
             console.error('[RingsContext] Failed to load from backend, using localStorage:', error);
             // Fallback to localStorage
-            rituals = loadRituals(userId);
+            rituals = juntarRituais(loadRituals(userId), loadRituals(null));
+            saveRituals(rituals, userId);
+          }
+          // O dia feito como visitante fica na chave "anon"; a migração do
+          // cadastro procura pelo guestId e não achava. Já foi juntado acima.
+          try {
+            localStorage.removeItem(keyForRituals(null));
+          } catch {
+            // nada a limpar
           }
         } else {
           // Guest: use localStorage only
@@ -303,18 +325,34 @@ export function RingsProvider({ children }: { children: ReactNode }) {
   );
 
   // Complete ritual (with backend integration)
-  const completeRitual = useCallback(async () => {
+  const completeRitual = useCallback(async (resposta?: { ringId: RingType; answer: string; metadata: RingResponse & JornadaMeta }) => {
     if (!currentRitual) {
       throw new Error('No current ritual');
     }
 
-    // All 5 rings must be answered
-    if (currentRitual.answers.length !== 5) {
-      throw new Error('All 5 rings must be answered');
+    // A resposta do dia entra junto: salvar e concluir no mesmo clique, sem
+    // depender do estado já ter atualizado.
+    let base = currentRitual;
+    if (resposta) {
+      const nova: RingAnswer = { ...resposta, timestamp: new Date().toISOString() };
+      base = { ...currentRitual, answers: [...currentRitual.answers.filter((a) => a.ringId !== nova.ringId), nova] };
+      if (user) {
+        try {
+          await ringsApi.saveRingAnswer(currentRitual.id, { ringId: nova.ringId, answer: nova.answer, metadata: nova.metadata });
+        } catch (erroResposta) {
+          console.error('[RingsContext] Failed to save answer to backend:', erroResposta);
+        }
+      }
+    }
+
+    // Jornada de 30 dias: o dia fecha com a resposta do anel da vez (antes
+    // eram obrigatórias as 5).
+    if (base.answers.length === 0) {
+      throw new Error('O dia precisa de pelo menos uma resposta');
     }
 
     const completed = {
-      ...currentRitual,
+      ...base,
       status: 'completed' as const,
       completedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
