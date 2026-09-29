@@ -170,3 +170,24 @@ describe("AssinarPage onboarding flow", () => {
     resolveSave({ id: "uuid-late" });
   });
 });
+
+describe("AssinarPage · visual do reino (quem vem de dentro do app)", () => {
+  it("logado entrando pelo plano vê o reino, e o CTA leva direto ao cartão", () => {
+    authState.user = { id: "user-123" };
+    renderAt("/assinar?step=plan&from=upgrade_modal");
+    expect(screen.getByRole("heading", { name: /abra todas as portas/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /comece seu teste gratuito/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /começar os 7 dias/i }));
+    expect(screen.getByRole("heading", { name: /confirme seu teste/i })).toBeInTheDocument();
+    expect(screen.getByText("brick")).toBeInTheDocument();
+  });
+
+  it("visitante que acabou de se cadastrar continua no visual das landings", async () => {
+    sessionStorage.setItem("eco.assinar.visual", "landing");
+    authState.user = { id: "user-123" };
+    renderAt("/assinar?step=signup");
+    await waitFor(() => {
+      expect(screen.getByText(/Confirme seu teste gratuito/i)).toBeInTheDocument();
+    });
+  });
+});

@@ -20,7 +20,7 @@ export const PLAN_COPY: Record<PlanId, {
     timeline: [
       { label: "Hoje", description: "Desbloqueie o Protocolo do Sono completo + meditações, sons para dormir e Eco IA." },
       { label: "Em 5 dias", description: "Enviaremos um e-mail lembrando que seu teste gratuito está terminando em breve." },
-      { label: "Em 7 dias", description: "Será cobrada a mensalidade de R$ 15,90 — cancele antes e não pague nada." },
+      { label: "Em 7 dias", description: "Será cobrada a mensalidade de R$ 15,90. Cancele antes e não pague nada." },
     ],
   },
   annual: {
@@ -32,7 +32,7 @@ export const PLAN_COPY: Record<PlanId, {
     timeline: [
       { label: "Hoje", description: "Desbloqueie o Protocolo do Sono completo + meditações, sons para dormir e Eco IA." },
       { label: "Em 5 dias", description: "Enviaremos um e-mail lembrando que seu teste gratuito está terminando em breve." },
-      { label: "Em 7 dias", description: "Será cobrado R$ 142,80 pelo primeiro ano — cancele antes para não pagar nada." },
+      { label: "Em 7 dias", description: "Será cobrado R$ 142,80 pelo primeiro ano. Cancele antes para não pagar nada." },
     ],
   },
 };

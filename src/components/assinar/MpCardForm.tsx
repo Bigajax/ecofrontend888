@@ -20,7 +20,7 @@ interface MpCardFormProps {
    * /assinar, fundo branco). 'dark' = tema escuro + variáveis pra integrar ao
    * checkout inline do sono (fundo navy/violeta).
    */
-  appearance?: "light" | "dark";
+  appearance?: "light" | "dark" | "papel";
   /** Texto do botão de submit do brick. Default = padrão do /assinar. */
   submitLabel?: string;
   onToken: (formData: Record<string, unknown>) => Promise<void> | void;
@@ -49,6 +49,24 @@ const DARK_VISUAL = {
   },
 };
 
+// Tema papel (reino, quem assina de dentro do app): tinta anil sobre papel.
+const PAPEL_VISUAL = {
+  customVariables: {
+    baseColor: "#1C2350",
+    baseColorFirstVariant: "#2A3268",
+    baseColorSecondVariant: "#141A3E",
+    formBackgroundColor: "transparent",
+    inputBackgroundColor: "#FBF9F3",
+    textPrimaryColor: "#1C2350",
+    textSecondaryColor: "#4B5070",
+    outlinePrimaryColor: "rgba(28,35,80,0.35)",
+    buttonTextColor: "#F4F1E8",
+    borderRadiusMedium: "6px",
+    borderRadiusLarge: "8px",
+    borderRadiusFull: "6px",
+  },
+};
+
 function MpCardFormImpl({ amount, maxInstallments, payerEmail, appearance = "light", submitLabel = "Começar meus 7 dias grátis", onToken, onReady, onError }: MpCardFormProps) {
   ensureMpInit();
   const initialization = useMemo(
@@ -60,7 +78,7 @@ function MpCardFormImpl({ amount, maxInstallments, payerEmail, appearance = "lig
       paymentMethods: { minInstallments: 1, maxInstallments },
       visual: {
         texts: { formSubmit: submitLabel },
-        ...(appearance === "dark" ? { style: DARK_VISUAL } : {}),
+        ...(appearance === "dark" ? { style: DARK_VISUAL } : appearance === "papel" ? { style: PAPEL_VISUAL } : {}),
       },
     }),
     [maxInstallments, appearance, submitLabel]

@@ -2090,3 +2090,156 @@
   font: 400 12px var(--r-mono);
   color: var(--r-musgo);
 }
+
+/* ===================== Assinar (quem vem de dentro do app) ===================== */
+.reino-assinar {
+  min-height: 100dvh;
+  background: #e9e6dc;
+  display: flex;
+  flex-direction: column;
+}
+.reino-assinar__planos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 22px;
+  max-width: 26rem;
+}
+.reino-assinar__plano {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: 14px 14px 15px;
+  border: 1px solid var(--r-trilho);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-assinar__plano.is-ativo {
+  border: 2px solid var(--r-fg);
+  padding: 13px 13px 14px;
+  box-shadow: 3px 3px 0 var(--r-ocre);
+}
+.reino-assinar__plano-nome {
+  font: 400 11.5px var(--r-mono);
+  letter-spacing: 0.06em;
+  color: var(--r-fg2);
+}
+.reino-assinar__plano-preco {
+  font: 400 clamp(17px, 4.6vw, 21px)/1.15 var(--r-display);
+  white-space: nowrap;
+}
+.reino-assinar__plano-nota {
+  font: 400 12px/1.4 var(--r-ui);
+  color: var(--r-fg2);
+}
+.reino-assinar__miudo {
+  margin-top: 14px;
+  font: 400 12.5px/1.55 var(--r-ui);
+  color: var(--r-fg2);
+}
+.reino-assinar__miudo a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-underline-offset: 3px;
+}
+.reino-assinar__erro {
+  margin-top: 12px;
+  font: 500 14px/1.5 var(--r-ui);
+  color: #9b3b2f;
+}
+.reino-assinar__corpo {
+  flex: 1;
+  width: 100%;
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 36px 16px 56px;
+}
+.reino-assinar__caminho {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  border-left: 2px solid var(--r-fg);
+}
+.reino-assinar__marco {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 14px;
+  padding: 0 0 26px 18px;
+  position: relative;
+}
+.reino-assinar__marco::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 48% 52% 45% 55%;
+  background: var(--r-trilho);
+}
+.reino-assinar__marco:first-child::before {
+  background: var(--r-ocre);
+}
+.reino-assinar__marco:last-child {
+  padding-bottom: 4px;
+}
+.reino-assinar__quando {
+  font: 400 12px/1.6 var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-assinar__marco-texto {
+  display: grid;
+  gap: 4px;
+}
+.reino-assinar__marco-titulo {
+  font: 400 19px/1.25 var(--r-display);
+}
+.reino-assinar__marco-sobre {
+  font: 400 15px/1.6 var(--r-ui);
+  color: var(--r-fg2);
+  max-width: 32rem;
+}
+.reino-assinar__resumo {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0 0;
+  max-width: 26rem;
+}
+.reino-assinar__resumo > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--r-trilho);
+}
+.reino-assinar__resumo dt {
+  font: 400 12px var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-assinar__resumo dd {
+  margin: 0;
+  font: 500 15px var(--r-ui);
+}
+.reino-assinar__cartao {
+  margin-top: 14px;
+  max-width: 30rem;
+}
+.reino-assinar__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  padding: 22px 16px 28px;
+  border-top: 1px solid rgba(28, 35, 80, 0.2);
+  font: 400 12px 'IBM Plex Mono', ui-monospace, monospace;
+  color: #4b5070;
+}
+.reino-assinar__rodape a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

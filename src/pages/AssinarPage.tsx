@@ -9,6 +9,7 @@ import { MpCardForm } from "@/components/assinar/MpCardForm";
 import { GoalsStep } from "@/components/assinar/GoalsStep";
 import { ValidationStep } from "@/components/assinar/ValidationStep";
 import { LegalFooter } from "@/components/assinar/LegalFooter";
+import { PlanoReino, CartaoReino } from "@/components/assinar/AssinarReino";
 import type { PlanId } from "@/components/assinar/types";
 import type { GoalId } from "@/components/assinar/goalsData";
 import { saveObjetivos, linkUserToObjetivos } from "@/api/onboardingObjetivos";
@@ -77,6 +78,13 @@ function originLanding(from: string | null | undefined): string {
 // porque o ref morre junto no remount.
 let lastAssinaturaIniciadaAt = 0;
 
+// Visual do /assinar: quem entra já logado (vem de dentro do app) vê o reino;
+// quem chega das landings vê a versão azul. Decidido na entrada e guardado na
+// sessão, porque o cadastro remonta a página já logado (RootProviders por
+// userId) e o visitante não pode trocar de visual no meio do funil.
+const VISUAL_KEY = "eco.assinar.visual";
+type Visual = "reino" | "landing";
+
 export default function AssinarPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -92,6 +100,26 @@ export default function AssinarPage() {
   const [verificandoConta, setVerificandoConta] = useState(
     () => Boolean(user) && parseStep(params.get("step")) === "signup",
   );
+
+  const [visual, setVisual] = useState<Visual | null>(() => {
+    const entrada = parseStep(params.get("step"));
+    // Cadastro e cartão como porta de entrada são continuação do funil das
+    // landings (remount pós-cadastro, volta do OAuth): sem visual salvo, azul.
+    if (entrada === "signup" || entrada === "card") {
+      const salvo = sessionStorage.getItem(VISUAL_KEY);
+      return salvo === "reino" ? "reino" : "landing";
+    }
+    if (!authLoading) return user ? "reino" : "landing";
+    return null;
+  });
+  useEffect(() => {
+    if (visual) {
+      sessionStorage.setItem(VISUAL_KEY, visual);
+      return;
+    }
+    if (!authLoading) setVisual(user ? "reino" : "landing");
+  }, [visual, authLoading, user]);
+  const reino = visual === "reino";
 
   // Quando o step "card" passou a ser exibido — base do elapsed_ms do "Cartão pronto".
   const cardShownAtRef = useRef<number | null>(null);
@@ -323,6 +351,51 @@ export default function AssinarPage() {
   const loginReturnTo = `/login?returnTo=${encodeURIComponent(funnelReturnTo)}`;
 
   // Larguras alvo por step no desktop. Validação ganha mais espaço pro grid 2-col.
+  // O brick do cartão, o mesmo nos dois visuais (props estáveis, ver MpCardForm).
+  // Espera a sessão resolver antes de montar: a initialization (payer.email)
+  // precisa estar estável no mount, porque o brick do MP não tolera ser recriado.
+  const formularioCartao = authLoading ? (
+    <p className="py-6 text-center text-[13px]" style={{ color: reino ? "#4B5070" : "#5A8AAD" }}>
+      Carregando…
+    </p>
+  ) : (
+    <MpCardForm
+      amount={plan === "monthly" ? 15.9 : 142.8}
+      maxInstallments={1}
+      payerEmail={user?.email ?? ""}
+      appearance={reino ? "papel" : "light"}
+      onToken={handleToken}
+      onReady={handleBrickReady}
+      onError={handleBrickError}
+    />
+  );
+
+  if (reino && step === "plan") {
+    return (
+      <PlanoReino
+        plan={plan}
+        onSelectPlan={selectPlan}
+        onContinue={continueFromPlan}
+        onVoltar={() => {
+          trackFunilAbandonado({ step, destino: "/app" });
+          marcarSaidaIntencionalDoFunil();
+          navigate("/app");
+        }}
+      />
+    );
+  }
+  if (reino && step === "card") {
+    return (
+      <CartaoReino
+        plan={plan}
+        onTrocarPlano={() => setStep("plan")}
+        formulario={formularioCartao}
+        processando={processing}
+        erro={erro}
+      />
+    );
+  }
+
   const stepMaxWidthMd =
     step === "validation" ? "md:max-w-[760px]"
     : step === "goals" ? "md:max-w-[460px]"
@@ -451,23 +524,7 @@ export default function AssinarPage() {
               </div>
             </div>
 
-            {/* Espera a sessão resolver antes de montar o brick: a initialization
-                (payer.email) precisa estar estável no mount — o brick do MP não
-                tolera ser recriado (ver React.memo em MpCardForm). */}
-            {authLoading ? (
-              <p className="py-6 text-center text-[13px]" style={{ color: "#5A8AAD" }}>
-                Carregando…
-              </p>
-            ) : (
-              <MpCardForm
-                amount={plan === "monthly" ? 15.9 : 142.8}
-                maxInstallments={1}
-                payerEmail={user?.email ?? ""}
-                onToken={handleToken}
-                onReady={handleBrickReady}
-                onError={handleBrickError}
-              />
-            )}
+            {formularioCartao}
 
             {processing && (
               <p aria-live="polite" className="text-center text-[13px]" style={{ color: "#5A8AAD" }}>
