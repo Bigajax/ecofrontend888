@@ -62,13 +62,12 @@ function tituloPara(origem: string): string {
   if (origem.startsWith('voice')) return 'A conversa por voz com a Eco.';
   if (origem.startsWith('chat')) return 'A conversa não precisa parar.';
   if (origem.startsWith('memory') || origem.startsWith('relatorio')) return 'O seu perfil emocional inteiro.';
+  if (origem.startsWith('diario')) return 'Todas as reflexões do Diário.';
+  if (origem.startsWith('meditation')) return 'Esta meditação e todas as outras.';
   return 'Abra todas as portas do reino.';
 }
 
 export default function PortaDoReino() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const uid = user?.id ?? null;
   const [origem, setOrigem] = useState<string | null>(null);
 
   useEffect(() => {
@@ -80,21 +79,31 @@ export default function PortaDoReino() {
     return () => window.removeEventListener(EVENTO_PORTA, abrir);
   }, []);
 
+  if (!origem) return null;
+  return <FolhaDaPorta origem={origem} onFechar={() => setOrigem(null)} />;
+}
+
+/** A folha da Porta: o caminho da pessoa até aqui e o convite. */
+export function FolhaDaPorta({ origem, onFechar }: { origem: string; onFechar: () => void }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const uid = user?.id ?? null;
+
   useEffect(() => {
-    if (!origem) return;
     try {
       mixpanel.track('Porta · Vista', { origem });
     } catch {
       // medir nunca quebra a tela
     }
+  }, [origem]);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOrigem(null);
+      if (e.key === 'Escape') onFechar();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [origem]);
-
-  if (!origem) return null;
+  }, [onFechar]);
 
   const caminho = estadoDoCaminho(lerDiasDePratica(uid).length);
   const feitos = conquistas(uid);
@@ -107,7 +116,7 @@ export default function PortaDoReino() {
       // idem
     }
     const destino = origem;
-    setOrigem(null);
+    onFechar();
     navigate(`/assinar?step=plan&plan=monthly&from=${encodeURIComponent(destino)}`);
   };
 
@@ -118,7 +127,7 @@ export default function PortaDoReino() {
       aria-modal="true"
       aria-labelledby="porta-titulo"
       onClick={(e) => {
-        if (e.target === e.currentTarget) setOrigem(null);
+        if (e.target === e.currentTarget) onFechar();
       }}
     >
       <div className="reino-gate__folha reino-corpo">
@@ -160,7 +169,7 @@ export default function PortaDoReino() {
           <button type="button" className="reino-placa" onClick={abrirPortas}>
             Abrir todas as portas <span aria-hidden="true">→</span>
           </button>
-          <button type="button" className="reino-gate__depois" onClick={() => setOrigem(null)}>
+          <button type="button" className="reino-gate__depois" onClick={() => onFechar()}>
             Agora não
           </button>
         </div>
