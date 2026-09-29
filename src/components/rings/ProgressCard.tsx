@@ -1,3 +1,4 @@
+import { rotuloDaOpcao } from '@/constants/rings';
 import type { Ring, DailyRitual } from '@/types/rings';
 import { RINGS } from '@/constants/rings';
 import RingIcon from './RingIcon';
@@ -34,7 +35,7 @@ export default function ProgressCard({ ring, allRituals }: ProgressCardProps) {
     if (sorted.length > 0) {
       topTheme = sorted[0][0];
       const percentage = ((sorted[0][1] / totalResponses) * 100).toFixed(0);
-      insight = `"${topTheme}" apareceu em ${percentage}% dos seus dias de distração.`;
+      insight = `"${rotuloDaOpcao(topTheme)}" apareceu em ${percentage}% dos seus dias de distração.`;
     }
     metricLabel = 'Respostas';
     metricValue = String(totalResponses);
@@ -50,7 +51,7 @@ export default function ProgressCard({ ring, allRituals }: ProgressCardProps) {
     const sorted = Array.from(adjustmentTypes.entries()).sort((a, b) => b[1] - a[1]);
     if (sorted.length > 0) {
       topTheme = sorted[0][0];
-      insight = `Você planejou ${totalResponses} ajustes. O mais comum foi: "${topTheme}".`;
+      insight = `Você planejou ${totalResponses} ajustes. O mais comum foi: "${rotuloDaOpcao(topTheme)}".`;
     }
     metricLabel = 'Ajustes';
     metricValue = String(totalResponses);
@@ -72,7 +73,7 @@ export default function ProgressCard({ ring, allRituals }: ProgressCardProps) {
     const sorted = Array.from(emotions.entries()).sort((a, b) => b[1] - a[1]);
     if (sorted.length > 0) {
       topTheme = sorted[0][0];
-      insight = `"${topTheme}" foi a emoção mais frequente. Intensidade média: ${avgIntensity}/10.`;
+      insight = `"${rotuloDaOpcao(topTheme)}" foi a emoção mais frequente. Intensidade média: ${avgIntensity}/10.`;
     }
     metricLabel = 'Emoções Processadas';
     metricValue = String(totalResponses);
@@ -88,7 +89,7 @@ export default function ProgressCard({ ring, allRituals }: ProgressCardProps) {
     const sorted = Array.from(sources.entries()).sort((a, b) => b[1] - a[1]);
     if (sorted.length > 0) {
       topTheme = sorted[0][0];
-      insight = `Você registrou aprendizado em ${totalResponses} dias. Origem mais comum: "${topTheme}".`;
+      insight = `Você registrou aprendizado em ${totalResponses} dias. Origem mais comum: "${rotuloDaOpcao(topTheme)}".`;
     }
     metricLabel = 'Aprendizados';
     metricValue = String(totalResponses);
@@ -104,7 +105,7 @@ export default function ProgressCard({ ring, allRituals }: ProgressCardProps) {
     const sorted = Array.from(keywords.entries()).sort((a, b) => b[1] - a[1]);
     if (sorted.length > 0) {
       topTheme = sorted[0][0];
-      insight = `Identidade mais reforçada: "${topTheme}" (${sorted[0][1]} vezes).`;
+      insight = `Identidade mais reforçada: "${rotuloDaOpcao(topTheme)}" (${sorted[0][1]} vezes).`;
     }
     metricLabel = 'Reflexões';
     metricValue = String(totalResponses);

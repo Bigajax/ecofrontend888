@@ -2,10 +2,19 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Play, Pause, Check, Volume2, VolumeX, Maximize } from 'lucide-react';
 import { VIDEO_CALEIDOSCOPIO_DINHEIRO } from '@/config/videos';
+import { useAuth } from '@/contexts/AuthContext';
+import { markCaleidoscopioEpisodeCompleted } from '@/utils/caleidoscopioProgress';
 
 export default function ManifestacaoDinheiroPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState(2);
+
+  // Chegar às afirmações (última tela, "jornada concluída") conta o episódio como feito.
+  // O "ended" do áudio não serve: o vídeo roda em loop e o listener nasce antes do <audio> existir.
+  useEffect(() => {
+    if (step === 5) markCaleidoscopioEpisodeCompleted(user?.id || 'guest', 'manifestacao_dinheiro');
+  }, [step, user?.id]);
 
   // TELA 2 - Setup
   const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);

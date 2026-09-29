@@ -1,3 +1,4 @@
+import { getTodayDate } from '@/utils/dataLocal';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRings } from '@/contexts/RingsContext';
@@ -23,7 +24,7 @@ export default function Progress() {
   }
 
   // Calculate some stats
-  const completedToday = allRituals.some((r) => r.date === new Date().toISOString().split('T')[0] && r.status === 'completed');
+  const completedToday = allRituals.some((r) => r.date === getTodayDate() && r.status === 'completed');
 
   return (
     <div className="min-h-screen bg-[var(--eco-bg)] font-primary">
@@ -43,15 +44,7 @@ export default function Progress() {
         </div>
 
         {/* Overall stats */}
-        <div className="mb-8 grid gap-4 md:grid-cols-4">
-          {/* Compliance */}
-          <div className="rounded-xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-            <p className="text-sm text-[var(--eco-muted)]">Taxa de Conclusão</p>
-            <p className="mt-2 font-display text-3xl font-normal text-[var(--eco-user)]">
-              {Math.round(progress.complianceRate)}%
-            </p>
-          </div>
-
+        <div className="mb-8 grid gap-4 md:grid-cols-3">
           {/* Total days */}
           <div className="rounded-xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
             <p className="text-sm text-[var(--eco-muted)]">Dias Completados</p>
@@ -64,7 +57,7 @@ export default function Progress() {
           <div className="rounded-xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
             <p className="text-sm text-[var(--eco-muted)]">Sequência Atual</p>
             <p className="mt-2 font-display text-3xl font-normal text-orange-500">
-              {progress.currentStreak} 🔥
+              {progress.currentStreak}
             </p>
           </div>
 

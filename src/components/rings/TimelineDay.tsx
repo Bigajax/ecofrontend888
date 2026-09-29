@@ -20,7 +20,7 @@ export default function TimelineDay({ ritual, dateFormatted, rings }: TimelineDa
       <div className="rounded-xl border border-[var(--eco-line)] bg-white/60 backdrop-blur-md p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
         <p className="mb-3 font-medium text-[var(--eco-text)]">
           {dateFormatted && <span className="text-[var(--eco-muted)]">{dateFormatted}</span>}
-          {ritual.status === 'completed' && <span className="ml-2">✅</span>}
+          {ritual.status === 'completed' && <span className="ml-2 text-xs">feito</span>}
         </p>
 
         {/* Ring tags summary */}

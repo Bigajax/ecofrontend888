@@ -2,6 +2,8 @@
  * RitualHistoryCard - Compact card showing a completed ritual
  */
 
+import RingIcon from './RingIcon';
+import { parseLocalDate } from '@/utils/dataLocal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronRight } from 'lucide-react';
@@ -14,7 +16,7 @@ interface RitualHistoryCardProps {
 }
 
 export default function RitualHistoryCard({ ritual, onViewDetails }: RitualHistoryCardProps) {
-  const dateFormatted = format(new Date(ritual.date), "d 'de' MMMM, yyyy", { locale: ptBR });
+  const dateFormatted = format(parseLocalDate(ritual.date), "d 'de' MMMM, yyyy", { locale: ptBR });
 
   // Count answered rings
   const answeredCount = ritual.answers?.length || 0;
@@ -33,10 +35,10 @@ export default function RitualHistoryCard({ ritual, onViewDetails }: RitualHisto
               return (
                 <span
                   key={ring.id}
-                  className={`text-xl ${isAnswered ? 'opacity-100' : 'opacity-20'}`}
+                  className={isAnswered ? 'opacity-100' : 'opacity-20'}
                   title={ring.titlePt}
                 >
-                  {ring.icon}
+                  <RingIcon ringId={ring.id} size={22} />
                 </span>
               );
             })}

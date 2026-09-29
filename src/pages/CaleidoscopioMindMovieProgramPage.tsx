@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import HomeHeader from '@/components/home/HomeHeader';
 import ReinoChegada, { ReinoSessoes, type ReinoSessao } from '@/components/reino/ReinoChegada';
 import { useAuth } from '@/contexts/AuthContext';
+import { readCaleidoscopioCompleted } from '@/utils/caleidoscopioProgress';
 
 interface Episode {
   id: string;
@@ -37,29 +38,17 @@ export default function CaleidoscopioMindMovieProgramPage() {
   // TODO: No futuro, pode verificar localStorage para não mostrar novamente
   const [showIntroModal, setShowIntroModal] = useState(true);
 
-  // Load progress from localStorage
-  const [completedEpisodes, setCompletedEpisodes] = useState<Set<string>>(() => {
-    const storageKey = `eco.caleidoscopio.completed.v1.${user?.id || 'guest'}`;
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      try {
-        return new Set(JSON.parse(saved));
-      } catch {
-        return new Set();
-      }
-    }
-    return new Set();
-  });
+  // Quem grava são os episódios (ao chegar na última tela); aqui só se lê.
+  // Não escrever de volta: com a sessão chegando depois, o conjunto vazio do visitante
+  // era gravado por cima do progresso do usuário.
+  const uid = user?.id || 'guest';
+  const [completedEpisodes, setCompletedEpisodes] = useState<Set<string>>(() =>
+    readCaleidoscopioCompleted(uid)
+  );
 
-  // Save to localStorage whenever progress changes
   useEffect(() => {
-    const uid = user?.id || 'guest';
-    const storageKey = `eco.caleidoscopio.completed.v1.${uid}`;
-    localStorage.setItem(storageKey, JSON.stringify([...completedEpisodes]));
-    if (completedEpisodes.size > 0) {
-      localStorage.setItem(`eco.program.lastActive.caleidoscopio.${uid}`, new Date().toISOString());
-    }
-  }, [completedEpisodes, user?.id]);
+    setCompletedEpisodes(readCaleidoscopioCompleted(uid));
+  }, [uid]);
 
   const completedCount = completedEpisodes.size;
   const totalCount = INITIAL_EPISODES.length;

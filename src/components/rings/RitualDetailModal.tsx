@@ -2,6 +2,9 @@
  * RitualDetailModal - Full-screen modal showing all ritual answers
  */
 
+import RingIcon from './RingIcon';
+import { rotuloDaOpcao } from '@/constants/rings';
+import { parseLocalDate } from '@/utils/dataLocal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { X } from 'lucide-react';
@@ -14,7 +17,7 @@ interface RitualDetailModalProps {
 }
 
 export default function RitualDetailModal({ ritual, onClose }: RitualDetailModalProps) {
-  const dateFormatted = format(new Date(ritual.date), "d 'de' MMMM", { locale: ptBR });
+  const dateFormatted = format(parseLocalDate(ritual.date), "d 'de' MMMM", { locale: ptBR });
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -53,7 +56,7 @@ export default function RitualDetailModal({ ritual, onClose }: RitualDetailModal
                 >
                   {/* Ring header */}
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-2xl">{ring.icon}</span>
+                    <RingIcon ringId={ring.id} size={28} />
                     <div>
                       <h3 className="font-semibold text-eco-text">{ring.titlePt}</h3>
                       <p className="text-xs text-eco-muted">{ring.subtitlePt}</p>
@@ -72,7 +75,7 @@ export default function RitualDetailModal({ ritual, onClose }: RitualDetailModal
                       {/* Focus score (Earth) */}
                       {answer.ringId === 'earth' && typeof answer.metadata.focusScore === 'number' && (
                         <span className="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800">
-                          Foco: {answer.metadata.focusScore}/10
+                          Foco afetado: {answer.metadata.focusScore}/10
                         </span>
                       )}
 
@@ -87,7 +90,7 @@ export default function RitualDetailModal({ ritual, onClose }: RitualDetailModal
                       {answer.ringId === 'earth' && Array.isArray(answer.metadata.focusReasons) && (
                         answer.metadata.focusReasons.map((reason: string) => (
                           <span key={reason} className="text-xs px-2 py-1 rounded bg-eco-accent/10 text-eco-text">
-                            {reason.replace(/_/g, ' ')}
+                            {rotuloDaOpcao(reason)}
                           </span>
                         ))
                       )}
@@ -96,7 +99,7 @@ export default function RitualDetailModal({ ritual, onClose }: RitualDetailModal
                       {answer.ringId === 'water' && Array.isArray(answer.metadata.adjustmentType) && (
                         answer.metadata.adjustmentType.map((type: string) => (
                           <span key={type} className="text-xs px-2 py-1 rounded bg-eco-accent/10 text-eco-text">
-                            {type.replace(/_/g, ' ')}
+                            {rotuloDaOpcao(type)}
                           </span>
                         ))
                       )}
@@ -105,7 +108,7 @@ export default function RitualDetailModal({ ritual, onClose }: RitualDetailModal
                       {answer.ringId === 'fire' && Array.isArray(answer.metadata.emotionType) && (
                         answer.metadata.emotionType.map((type: string) => (
                           <span key={type} className="text-xs px-2 py-1 rounded bg-eco-accent/10 text-eco-text">
-                            {type.replace(/_/g, ' ')}
+                            {rotuloDaOpcao(type)}
                           </span>
                         ))
                       )}
@@ -114,7 +117,7 @@ export default function RitualDetailModal({ ritual, onClose }: RitualDetailModal
                       {answer.ringId === 'wind' && Array.isArray(answer.metadata.learningSource) && (
                         answer.metadata.learningSource.map((source: string) => (
                           <span key={source} className="text-xs px-2 py-1 rounded bg-eco-accent/10 text-eco-text">
-                            {source.replace(/_/g, ' ')}
+                            {rotuloDaOpcao(source)}
                           </span>
                         ))
                       )}
@@ -123,7 +126,7 @@ export default function RitualDetailModal({ ritual, onClose }: RitualDetailModal
                       {answer.ringId === 'void' && Array.isArray(answer.metadata.identityKeyword) && (
                         answer.metadata.identityKeyword.map((keyword: string) => (
                           <span key={keyword} className="text-xs px-2 py-1 rounded bg-eco-accent/10 text-eco-text">
-                            {keyword.replace(/_/g, ' ')}
+                            {rotuloDaOpcao(keyword)}
                           </span>
                         ))
                       )}

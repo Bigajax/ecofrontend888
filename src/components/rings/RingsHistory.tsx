@@ -3,6 +3,7 @@
  * Similar to RiquezaMentalHistory.tsx
  */
 
+import { toLocalDateKey } from '@/utils/dataLocal';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import * as ringsApi from '@/api/ringsApi';
@@ -33,7 +34,7 @@ export default function RingsHistory() {
       try {
         const days = dateRange === '7' ? 7 : dateRange === '30' ? 30 : undefined;
         const startDate = days
-          ? new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          ? toLocalDateKey(new Date(Date.now() - days * 24 * 60 * 60 * 1000))
           : undefined;
 
         const response = await ringsApi.getRitualHistory({

@@ -22,7 +22,7 @@ export default function RitualStep({ ring, onSave, isLoading = false, existingAn
     existingAnswer?.metadata?.focusReasons || existingAnswer?.metadata?.adjustmentType || existingAnswer?.metadata?.emotionType || existingAnswer?.metadata?.learningSource || existingAnswer?.metadata?.identityKeyword || []
   );
   const [score, setScore] = useState<number | undefined>(
-    existingAnswer?.metadata?.focusScore || existingAnswer?.metadata?.emotionIntensity
+    existingAnswer?.metadata?.focusScore ?? existingAnswer?.metadata?.emotionIntensity ?? 5
   );
 
   // Reset form state when ring changes
@@ -168,13 +168,13 @@ export default function RitualStep({ ring, onSave, isLoading = false, existingAn
               type="range"
               min="0"
               max="10"
-              value={score || 5}
+              value={score ?? 5}
               onChange={(e) => setScore(Number(e.target.value))}
               className="flex-1"
               disabled={isLoading}
             />
             <span className="min-w-12 rounded-lg bg-[var(--eco-user)] px-3 py-1 text-center font-semibold text-white">
-              {score || 5}/10
+              {score ?? 5}/10
             </span>
           </div>
         </div>

@@ -18,6 +18,15 @@ interface StepAnswers {
   [key: string]: string | string[];
 }
 
+const TOTAL_STEPS = 6;
+
+// Inverso do percentual que o próprio programa grava (passo k => (k+1)/6).
+// O currentStep do backend é arredondado para baixo e não serve para voltar ao passo certo.
+function stepFromProgress(progress: number): number {
+  const step = Math.round((progress / 100) * TOTAL_STEPS) - 1;
+  return Math.min(TOTAL_STEPS - 1, Math.max(0, step));
+}
+
 export default function RiquezaMentalProgram() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -30,8 +39,16 @@ export default function RiquezaMentalProgram() {
   const [activeTab, setActiveTab] = useState<'program' | 'history'>('program');
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
   const lastReportedProgressRef = useRef<{ progress: number; lesson: string } | null>(null);
+  // Enquanto o passo salvo não volta, nada de relatar progresso: o passo 0 do mount
+  // sobrescrevia o progresso guardado (e o backend) antes da retomada.
+  const [stepRestored, setStepRestored] = useState(false);
 
-  const TOTAL_STEPS = 6;
+  // Retomada local (vale para visitante também): o passo sai do progresso já salvo.
+  useEffect(() => {
+    if (stepRestored || ongoingProgram?.id !== 'rec_2') return;
+    setCurrentStep(stepFromProgress(ongoingProgram.progress));
+    setStepRestored(true);
+  }, [stepRestored, ongoingProgram?.id, ongoingProgram?.progress]);
 
   // Load progress from backend on mount (if authenticated)
   useEffect(() => {
@@ -41,8 +58,10 @@ export default function RiquezaMentalProgram() {
       try {
         const data = await programsApi.getEnrollment(ongoingProgram.enrollmentId);
 
-        // Restore progress
-        setCurrentStep(data.currentStep);
+        // Restore progress (pelo percentual; o currentStep do backend perde o passo)
+        setCurrentStep(
+          typeof data.progress === 'number' ? stepFromProgress(data.progress) : data.currentStep
+        );
 
         // Restore answers (convert from object with numeric keys to StepAnswers)
         if (data.answers && Object.keys(data.answers).length > 0) {
@@ -100,7 +119,7 @@ export default function RiquezaMentalProgram() {
   }, [currentStep]);
 
   useEffect(() => {
-    if (ongoingProgram?.id !== 'rec_2') return;
+    if (ongoingProgram?.id !== 'rec_2' || !stepRestored) return;
 
     const progressPercentage = Math.round(((currentStep + 1) / TOTAL_STEPS) * 100);
     const stepName = [
@@ -121,7 +140,7 @@ export default function RiquezaMentalProgram() {
 
     lastReportedProgressRef.current = { progress: progressPercentage, lesson: lessonLabel };
     updateProgress(progressPercentage, lessonLabel);
-  }, [currentStep, ongoingProgram?.id, updateProgress]);
+  }, [currentStep, ongoingProgram?.id, stepRestored, updateProgress]);
 
   const handleAnswerChange = (key: string, value: string | string[]) => {
     setAnswers(prev => ({

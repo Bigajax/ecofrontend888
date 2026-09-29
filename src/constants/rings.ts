@@ -116,3 +116,16 @@ export const IDENTITY_KEYWORDS = [
   { id: 'menos_impulsivo', label: 'Menos Impulsivo' },
   { id: 'outro', label: 'Outro' },
 ];
+
+const TODAS_AS_OPCOES = [
+  ...FOCUS_REASON_OPTIONS,
+  ...ADJUSTMENT_TYPE_OPTIONS,
+  ...EMOTION_OPTIONS,
+  ...LEARNING_SOURCE_OPTIONS,
+  ...IDENTITY_KEYWORDS,
+];
+
+/** Rótulo de uma opção pelo id ("redes_sociais" vira "Redes Sociais"). */
+export function rotuloDaOpcao(id: string): string {
+  return TODAS_AS_OPCOES.find((o) => o.id === id)?.label ?? id.replace(/_/g, ' ');
+}

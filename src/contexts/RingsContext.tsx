@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import * as ringsApi from '@/api/ringsApi';
+import { getTodayDate, diasEntre } from '@/utils/dataLocal';
 import type {
   DailyRitual,
   OnboardingState,
@@ -31,13 +32,6 @@ function generateUUID(): string {
   });
 }
 
-/**
- * Get today's date in YYYY-MM-DD format
- */
-function getTodayDate(): string {
-  const today = new Date();
-  return today.toISOString().split('T')[0];
-}
 
 /**
  * Load onboarding state from localStorage
@@ -106,43 +100,23 @@ function calculateProgress(rituals: DailyRitual[], userId?: string | null): Ring
   const completed = rituals.filter((r) => r.status === 'completed');
   const uniqueDates = new Set(completed.map((r) => r.date));
 
-  // Calculate streak
-  let currentStreak = 0;
-  let longestStreak = 0;
-  let tempStreak = 0;
-
+  // Sequência atual (termina hoje ou ontem) e a maior de todas. Antes a
+  // "maior" era sempre igual à atual.
   const sorted = Array.from(uniqueDates).sort().reverse();
   const today = getTodayDate();
 
-  for (let i = 0; i < sorted.length; i++) {
-    const date = sorted[i];
-    const prevDate = sorted[i + 1];
-
-    const dateObj = new Date(date);
-    const prevDateObj = prevDate ? new Date(prevDate) : null;
-
-    const diffDays = prevDateObj
-      ? Math.floor((dateObj.getTime() - prevDateObj.getTime()) / (1000 * 60 * 60 * 24))
-      : -1;
-
-    if (i === 0) {
-      // Check if today or yesterday
-      const todayObj = new Date(today);
-      const days = Math.floor((todayObj.getTime() - dateObj.getTime()) / (1000 * 60 * 60 * 24));
-      if (days <= 1) {
-        tempStreak = 1;
-      } else {
-        break;
-      }
-    } else if (diffDays === 1) {
-      tempStreak++;
-    } else {
-      break;
-    }
+  let currentStreak = 0;
+  if (sorted.length > 0 && diasEntre(today, sorted[0]) <= 1) {
+    currentStreak = 1;
+    for (let i = 1; i < sorted.length && diasEntre(sorted[i - 1], sorted[i]) === 1; i++) currentStreak++;
   }
 
-  currentStreak = tempStreak;
-  longestStreak = Math.max(currentStreak, tempStreak);
+  let longestStreak = 0;
+  let corrida = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    corrida = i > 0 && diasEntre(sorted[i - 1], sorted[i]) === 1 ? corrida + 1 : 1;
+    longestStreak = Math.max(longestStreak, corrida);
+  }
 
   // Ring stats (simplified for now)
   const ringStats = {
@@ -272,6 +246,7 @@ export function RingsProvider({ children }: { children: ReactNode }) {
     let ritual = currentRitual;
 
     if (!ritual || ritual.date !== today) {
+      // Um dia novo (ou nenhum ritual carregado): começa em branco.
       ritual = {
         id: generateUUID(),
         userId: userId || 'anonymous',
@@ -355,7 +330,10 @@ export function RingsProvider({ children }: { children: ReactNode }) {
     }
 
     setAllRituals(updated);
-    setCurrentRitual(null);
+    // O ritual de hoje continua existindo, agora concluído. Antes virava null, a
+    // tela do ritual criava outro em branco na hora e o hub voltava a mostrar
+    // "Começar o ritual de hoje" até recarregar.
+    setCurrentRitual(completed);
     saveRituals(updated, userId);
 
     // Recalculate progress (optimistic)

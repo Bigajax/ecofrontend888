@@ -15,9 +15,20 @@ import { usePremiumContent } from '@/hooks/usePremiumContent';
 import UpgradeModal from '@/components/subscription/UpgradeModal';
 import { trackDiarioEnteredFromExplore } from '@/lib/mixpanelDiarioEvents';
 
+const PERCURSO_KEY: Partial<Record<ProgramProgressData['programId'], string>> = {
+  intro: 'prog_intro',
+  caleidoscopio: 'prog_caleidoscopio',
+  riqueza: 'prog_riqueza',
+  sono_protocol: 'prog_sono',
+  drjoe: 'prog_drjoe',
+};
+
+// Id do Quem Pensa Enriquece no ProgramContext e no backend.
+const RIQUEZA_PROGRAM_ID = 'rec_2';
+
 export default function HomePage() {
   const { userName, isGuestMode, user } = useAuth();
-  const { startProgram } = useProgram();
+  const { startProgram, ongoingProgram, resumeProgram } = useProgram();
   const { checkAccess, requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,24 +37,24 @@ export default function HomePage() {
 
   // Program progress
   const programProgressList = useProgramProgress();
+  // Cada programa na sua própria chave: o "senão" antigo jogava o Sono em cima do Caleidoscópio.
   const programProgressMap = Object.fromEntries(
-    programProgressList.map(p => [
-      p.programId === 'riqueza'
-        ? 'prog_riqueza'
-        : p.programId === 'intro'
-        ? 'prog_intro'
-        : p.programId === 'drjoe'
-        ? 'prog_drjoe'
-        : 'prog_caleidoscopio',
-      {
-        progress: p.progress,
-        isInactive: p.isInactive,
-        isNearComplete: p.isNearComplete,
-        completedSessions: p.completedSessions,
-        totalSessions: p.totalSessions,
-        status: p.status,
-      },
-    ])
+    programProgressList.flatMap(p => {
+      const key = PERCURSO_KEY[p.programId];
+      // Programa sem chave conhecida fica de fora, em vez de cair em outro.
+      if (!key) return [];
+      return [[
+        key,
+        {
+          progress: p.progress,
+          isInactive: p.isInactive,
+          isNearComplete: p.isNearComplete,
+          completedSessions: p.completedSessions,
+          totalSessions: p.totalSessions,
+          status: p.status,
+        },
+      ]];
+    })
   );
 
   // Tour hook
@@ -304,6 +315,26 @@ export default function HomePage() {
     }
   };
 
+  // Quem já está no meio do programa retoma; só quem não tem um em andamento começa do zero.
+  // Chamar startProgram de novo zerava o progresso e abria outra inscrição no backend.
+  const openRiqueza = () => {
+    if (ongoingProgram?.id === RIQUEZA_PROGRAM_ID) {
+      resumeProgram();
+    } else {
+      startProgram({
+        id: RIQUEZA_PROGRAM_ID,
+        title: 'Quem Pensa Enriquece',
+        description: 'Transforme seu mindset financeiro',
+        currentLesson: 'Passo 1: Onde você está',
+        progress: 0,
+        duration: '25 min',
+        startedAt: new Date().toISOString(),
+        lastAccessedAt: new Date().toISOString(),
+      });
+    }
+    navigate('/app/riqueza-mental');
+  };
+
   const handleProgramClick = (id: string) => {
     sessionStorage.setItem('homePageScrollPosition', window.scrollY.toString());
     if (id === 'prog_rings') {
@@ -319,17 +350,7 @@ export default function HomePage() {
       });
       navigate('/app/rings');
     } else if (id === 'prog_riqueza') {
-      startProgram({
-        id: 'rec_2',
-        title: 'Quem Pensa Enriquece',
-        description: 'Transforme seu mindset financeiro',
-        currentLesson: 'Passo 1: Onde você está',
-        progress: 0,
-        duration: '25 min',
-        startedAt: new Date().toISOString(),
-        lastAccessedAt: new Date().toISOString(),
-      });
-      navigate('/app/riqueza-mental');
+      openRiqueza();
     } else if (id === 'prog_diario') {
       navigate('/app/diario-estoico');
     }
@@ -378,17 +399,7 @@ export default function HomePage() {
 
     // Quem Pensa Enriquece - navega para sua própria página (GRATUITO)
     if (blessingId === 'blessing_9') {
-      startProgram({
-        id: 'rec_2', // ✅ ID CORRETO para sync com backend
-        title: 'Quem Pensa Enriquece',
-        description: 'Transforme seu mindset financeiro',
-        currentLesson: 'Passo 1: Onde você está',
-        progress: 0,
-        duration: '25 min',
-        startedAt: new Date().toISOString(),
-        lastAccessedAt: new Date().toISOString(),
-      });
-      navigate('/app/riqueza-mental');
+      openRiqueza();
       return;
     }
 

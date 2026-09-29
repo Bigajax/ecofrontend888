@@ -1,3 +1,4 @@
+import { parseLocalDate } from '@/utils/dataLocal';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRings } from '@/contexts/RingsContext';
@@ -12,23 +13,23 @@ export default function Timeline() {
   const [dateRange, setDateRange] = useState<DateRange>('7');
 
   const filteredRituals = useMemo(() => {
-    let filtered = [...allRituals].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    let filtered = [...allRituals].sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime());
 
     if (dateRange === '7') {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      filtered = filtered.filter((r) => new Date(r.date) >= sevenDaysAgo);
+      filtered = filtered.filter((r) => parseLocalDate(r.date) >= sevenDaysAgo);
     } else if (dateRange === '30') {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      filtered = filtered.filter((r) => new Date(r.date) >= thirtyDaysAgo);
+      filtered = filtered.filter((r) => parseLocalDate(r.date) >= thirtyDaysAgo);
     }
 
     return filtered;
   }, [allRituals, dateRange]);
 
   const getFormatDatePt = (dateStr: string): string => {
-    const date = new Date(dateStr);
+    const date = parseLocalDate(dateStr);
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);

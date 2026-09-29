@@ -32,7 +32,7 @@ interface Meditation {
 export default function ProgramasPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { startProgram } = useProgram();
+  const { startProgram, ongoingProgram, resumeProgram } = useProgram();
   const { requestUpgrade, showUpgradeModal, setShowUpgradeModal } = usePremiumContent();
   const tier = useSubscriptionTier();
 
@@ -241,16 +241,21 @@ export default function ProgramasPage() {
     });
 
     if (meditationId === 'blessing_9') {
-      startProgram({
-        id: 'rec_2',
-        title: 'Quem Pensa Enriquece',
-        description: 'Transforme seu mindset financeiro',
-        currentLesson: 'Passo 1: Onde você está',
-        progress: 0,
-        duration: '25 min',
-        startedAt: new Date().toISOString(),
-        lastAccessedAt: new Date().toISOString(),
-      });
+      // Em andamento, só retoma: startProgram zerava o progresso e abria outra inscrição.
+      if (ongoingProgram?.id === 'rec_2') {
+        resumeProgram();
+      } else {
+        startProgram({
+          id: 'rec_2',
+          title: 'Quem Pensa Enriquece',
+          description: 'Transforme seu mindset financeiro',
+          currentLesson: 'Passo 1: Onde você está',
+          progress: 0,
+          duration: '25 min',
+          startedAt: new Date().toISOString(),
+          lastAccessedAt: new Date().toISOString(),
+        });
+      }
       navigate('/app/riqueza-mental');
       return;
     }
