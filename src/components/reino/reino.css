@@ -550,27 +550,56 @@
   max-width: 40rem;
 }
 
-/* ===================== cabeçalho ===================== */
+/* ===================== cabeçalho: a faixa do céu da hora ===================== */
 .reino-cabecalho {
   position: sticky;
   top: 0;
   z-index: 40;
-  border-bottom: 1px dashed var(--r-trilho);
   padding-top: env(safe-area-inset-top, 0px);
+  /* noite é o padrão */
+  --r-bg: #10153a;
+  --r-fg: #f4f1e8;
+  --r-fg2: rgba(244, 241, 232, 0.66);
+  --r-horizonte: var(--r-ocre);
+}
+.reino-cabecalho[data-mood='amanhecer'] {
+  --r-bg: #f1e8d6;
+  --r-fg: #2a2238;
+  --r-fg2: #6e5a5e;
+  --r-horizonte: #c98e86;
+}
+.reino-cabecalho[data-mood='entardecer'] {
+  --r-bg: #4a1f2e;
+  --r-fg: #f4e7de;
+  --r-fg2: #c9b8dd;
+  --r-horizonte: var(--r-ocre);
 }
 .reino-cabecalho__linha {
   max-width: 72rem;
   margin: 0 auto;
-  padding: 12px 16px;
+  padding: 10px 16px 12px;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 @media (min-width: 768px) {
   .reino-cabecalho__linha {
-    padding: 16px 32px;
+    grid-template-columns: 1fr auto 1fr;
+    padding: 14px 32px 16px;
+    gap: 16px;
   }
+}
+.reino-cabecalho__horizonte {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin-top: -4px;
+  fill: none;
+  stroke: var(--r-horizonte);
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.85;
 }
 .reino-cabecalho__marca {
   justify-self: start;
@@ -590,7 +619,7 @@
 }
 .reino-cabecalho__nav {
   display: none;
-  gap: 36px;
+  gap: 32px;
 }
 @media (min-width: 768px) {
   .reino-cabecalho__nav {
@@ -598,44 +627,79 @@
   }
 }
 .reino-cabecalho__link {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 2px;
   color: var(--r-fg2);
-  font: 500 15px var(--r-ui);
+  font: 400 17px/1 var(--r-display);
   text-decoration: none;
+  border-bottom: 2px solid transparent;
 }
-.reino-cabecalho__link:hover,
-.reino-cabecalho__link.active {
+.reino-cabecalho__link:hover {
   color: var(--r-fg);
 }
-.reino-cabecalho__marcador {
-  width: 13px;
-  height: 13px;
-  visibility: hidden;
+.reino-cabecalho__link.active {
+  color: var(--r-fg);
+  border-bottom-color: var(--r-horizonte);
 }
-.reino-cabecalho__marcador.is-ativo {
-  visibility: visible;
+.reino-cabecalho__glifo {
+  width: 24px;
+  height: 24px;
 }
 .reino-cabecalho__direita {
   justify-self: end;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+  min-width: 0;
+}
+/* cabeçalho corrente: onde você está no reino */
+.reino-cabecalho__lugar {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--r-fg2);
+  font: 400 11.5px/1.2 var(--r-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.reino-cabecalho__codigo {
+  color: var(--r-fg);
+  margin-right: 0.6em;
 }
 .reino-cabecalho__feedback {
-  padding: 6px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 4px 2px;
   border: 0;
   background: none;
   color: var(--r-fg);
   font: 500 14.5px var(--r-ui);
-  text-decoration: underline;
-  text-decoration-color: var(--r-trilho);
-  text-underline-offset: 5px;
   cursor: pointer;
 }
-.reino-cabecalho__feedback:hover {
-  text-decoration-color: var(--r-ocre);
+.reino-cabecalho__pena {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+.reino-cabecalho__feedback-texto {
+  display: none;
+  text-decoration: underline;
+  text-decoration-color: var(--r-fg2);
+  text-underline-offset: 5px;
+}
+@media (min-width: 768px) {
+  .reino-cabecalho__feedback-texto {
+    display: inline;
+  }
+}
+.reino-cabecalho__feedback:hover .reino-cabecalho__feedback-texto {
+  text-decoration-color: var(--r-horizonte);
 }
 .reino-cabecalho__avatar {
   display: none;
@@ -645,7 +709,7 @@
   border: 1px solid var(--r-fg);
   border-radius: 50%;
   overflow: hidden;
-  background: var(--r-papel);
+  background: transparent;
   color: var(--r-fg);
   font: 400 16px/1 var(--r-display);
   cursor: pointer;
@@ -677,29 +741,37 @@
 .reino-barra__lista {
   list-style: none;
   margin: 0;
-  padding: 10px 6px 8px;
+  padding: 10px 4px 6px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
 }
 .reino-barra__item {
   display: grid;
   justify-items: center;
-  gap: 1px;
-  padding: 4px 0;
-  min-height: 44px;
-  color: var(--r-fg2);
-  font: 400 15px/1.1 var(--r-display);
+  gap: 2px;
+  padding: 2px 0 0;
+  min-height: 48px;
+  color: rgba(28, 35, 80, 0.5);
   text-decoration: none;
 }
 .reino-barra__item.active {
-  color: var(--r-fg);
+  color: var(--r-anil);
 }
-.reino-barra__astro {
-  width: 12px;
-  height: 12px;
+.reino-barra__glifo {
+  width: 26px;
+  height: 26px;
+}
+.reino-barra__rotulo {
+  font: 400 13.5px/1.1 var(--r-display);
+}
+/* a aba ativa ganha uma pincelada ocre embaixo do nome */
+.reino-barra__pincel {
+  width: 30px;
+  height: 5px;
+  fill: var(--r-ocre);
   visibility: hidden;
 }
-.reino-barra__astro.is-ativo {
+.reino-barra__item.active .reino-barra__pincel {
   visibility: visible;
 }
 
@@ -822,4 +894,605 @@
 .reino-placa:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+/* ===================== chegada nas páginas internas ===================== */
+.reino-chegada__topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.reino-chegada__voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--r-fg2);
+  font: 500 14px var(--r-ui);
+  cursor: pointer;
+}
+.reino-chegada__voltar:hover {
+  color: var(--r-fg);
+}
+.reino-chegada__progresso {
+  margin-top: 24px;
+  max-width: 28rem;
+}
+.reino-pagina {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 28px 16px 120px;
+}
+@media (min-width: 768px) {
+  .reino-pagina {
+    padding: 44px 32px 96px;
+  }
+}
+
+/* sessões de um programa: sumário com descrição */
+.reino-sessoes {
+  margin-top: 8px;
+}
+.reino-sessao {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: baseline;
+  padding: 16px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-sessao__texto {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.reino-sessao__descricao {
+  color: var(--r-fg2);
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+.reino-sessao:hover .reino-sumario__t {
+  text-decoration: underline;
+  text-decoration-color: var(--r-trilho);
+  text-underline-offset: 4px;
+}
+.reino-sessoes li.is-feita .reino-sumario__n {
+  color: var(--r-musgo);
+}
+.reino-sessoes li.is-feita .reino-sumario__t,
+.reino-sessoes li.is-trancada .reino-sumario__t {
+  color: var(--r-fg2);
+}
+.reino-sessoes li.is-proxima .reino-sumario__m {
+  color: var(--r-fg);
+  text-decoration: underline;
+  text-decoration-color: var(--r-ocre);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+.reino-sessoes__entre {
+  padding: 6px 0 22px;
+}
+/* nota de margem: o registro do que aconteceu */
+.reino-nota {
+  display: grid;
+  grid-template-columns: 3px 1fr;
+  gap: 12px;
+  margin: 0 0 22px;
+  color: var(--r-fg2);
+}
+.reino-nota::before {
+  content: '';
+  background: var(--r-ocre);
+  border-radius: 2px;
+}
+.reino-nota p {
+  margin: 0;
+  font: 400 13px/1.55 var(--r-mono);
+}
+
+/* ===================== Lago dos Sonhos (Eco Dream) ===================== */
+.reino-sonho {
+  --r-bg: #10153a;
+  --r-fg: #f4f1e8;
+  --r-fg2: rgba(244, 241, 232, 0.68);
+  --r-trilho: rgba(244, 241, 232, 0.2);
+  --r-placa-bg: var(--r-ocre);
+  --r-placa-fg: #10153a;
+}
+.reino-sonho__corpo {
+  display: grid;
+  gap: 28px;
+}
+/* a caderneta: folha pautada onde o sonho é escrito */
+.reino-sonho__caderneta {
+  margin-bottom: 20px;
+  padding: 18px 20px 12px;
+  background-color: var(--r-papel);
+  color: var(--r-anil);
+  rotate: -0.4deg;
+}
+.reino-sonho__registro {
+  margin: 0 0 8px;
+  font: 400 12px/1.4 var(--r-mono);
+  letter-spacing: 0.04em;
+  color: #5b6080;
+}
+.reino-sonho__texto {
+  display: block;
+  width: 100%;
+  min-height: 160px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  /* pauta presa ao texto: cada linha escrita cai sobre uma linha da folha */
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    rgba(28, 35, 80, 0.16) 31px,
+    rgba(28, 35, 80, 0.16) 32px
+  );
+  background-attachment: local;
+  color: var(--r-anil);
+  font: 400 17px/32px var(--r-ui);
+  caret-color: #b07d1c;
+}
+.reino-sonho__texto::placeholder {
+  color: rgba(28, 35, 80, 0.4);
+}
+.reino-sonho__caderneta:focus-within {
+  outline: 2px solid var(--r-ocre);
+  outline-offset: 4px;
+}
+.reino-sonho__contador {
+  margin: 6px 0 0;
+  text-align: right;
+  font: 400 11px var(--r-mono);
+  color: #5b6080;
+}
+.reino-sonho__dica {
+  margin: 12px 0 0;
+  color: var(--r-fg2);
+  font-size: 14px;
+}
+.reino-sonho__eco {
+  display: block;
+  margin-top: 4px;
+  font: 400 15px/1.6 var(--r-ui);
+  font-style: italic;
+  color: var(--r-fg);
+}
+.reino-sonho__lendo {
+  margin: 0 0 20px;
+  font: 400 13px/1.5 var(--r-mono);
+  color: var(--r-fg2);
+}
+/* a leitura: uma página arrancada do livro, sobre a noite */
+.reino-sonho__pagina {
+  margin: 0 0 24px;
+  padding: 28px 24px 30px;
+  background: var(--r-papel);
+  color: var(--r-anil);
+}
+@media (min-width: 768px) {
+  .reino-sonho__pagina {
+    padding: 36px 40px 40px;
+  }
+}
+.reino-sonho__pagina .reino-rotulo {
+  color: #5b6080;
+  margin-bottom: 10px;
+}
+.reino-sonho__prosa {
+  font: 400 16.5px/1.75 var(--r-ui);
+  color: var(--r-anil);
+}
+.reino-sonho__prosa :where(p, li, span, div, strong, em) {
+  color: inherit;
+  font-family: inherit;
+}
+.reino-sonho__prosa p {
+  margin: 0 0 1em;
+}
+.reino-sonho__prosa :is(h1, h2, h3, h4) {
+  margin: 1.3em 0 0.4em;
+  font: 400 21px/1.2 var(--r-display);
+  color: var(--r-anil);
+}
+.reino-sonho__prosa :is(h1, h2, h3, h4):first-child {
+  margin-top: 0;
+}
+.reino-sonho__prosa strong {
+  font-weight: 600;
+}
+.reino-sonho__prosa em {
+  color: var(--r-musgo);
+}
+.reino-sonho__prosa blockquote {
+  margin: 1em 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--r-rosa);
+  color: #4b5070;
+}
+.reino-sonho__prosa hr {
+  border: 0;
+  border-top: 1px dashed rgba(28, 35, 80, 0.25);
+  margin: 1.4em 0;
+}
+.reino-sonho__cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: #b07d1c;
+  animation: reino-cursor 0.9s steps(1) infinite;
+}
+@keyframes reino-cursor {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reino-sonho__cursor {
+    animation: none;
+  }
+}
+.reino-sonho__erro::before {
+  background: var(--r-rosa);
+}
+/* diário do lago: sonhos anteriores */
+.reino-sonho__historico {
+  margin-top: 36px;
+}
+.reino-sonho__lista {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+}
+.reino-sonho__entrada {
+  border-bottom: 1px dashed var(--r-trilho);
+}
+.reino-sonho__entrada-botao {
+  width: 100%;
+  display: grid;
+  gap: 6px;
+  padding: 16px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-sonho__data {
+  font: 400 11.5px var(--r-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--r-ocre);
+}
+.reino-sonho__resumo {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 15.5px;
+  line-height: 1.5;
+  color: var(--r-fg);
+}
+.reino-sonho__abrir {
+  font: 500 13px var(--r-ui);
+  color: var(--r-fg2);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.reino-sonho__entrada .reino-sonho__pagina {
+  margin-top: 4px;
+}
+
+/* ===================== o player ===================== */
+.reino-player {
+  --r-bg: #10153a;
+  --r-fg: #f4f1e8;
+  --r-fg2: rgba(244, 241, 232, 0.66);
+  --r-trilho: rgba(244, 241, 232, 0.24);
+  --r-traco: var(--r-ocre);
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--r-bg);
+  color: var(--r-fg);
+}
+.reino-player__topo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: max(12px, env(safe-area-inset-top)) 16px 4px;
+}
+.reino-player__lugar {
+  margin: 0;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: 400 11px/1.2 var(--r-mono);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--r-fg2);
+}
+.reino-player__guardar {
+  min-height: 36px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--r-fg2);
+  font: 500 14px var(--r-ui);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  text-decoration-color: var(--r-trilho);
+  cursor: pointer;
+}
+.reino-player__guardar[aria-pressed='true'] {
+  color: var(--r-ocre);
+  text-decoration-color: var(--r-ocre);
+}
+.reino-player__centro {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 8px 20px max(20px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.reino-player__arte {
+  width: min(64vw, 300px, 34dvh);
+  aspect-ratio: 4 / 5;
+  flex: none;
+}
+.reino-player__arte img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reino-player__titulos {
+  text-align: center;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+.reino-player__titulo {
+  margin: 0;
+  font: 400 clamp(26px, 5vw, 36px) / 1.1 var(--r-display);
+  text-wrap: balance;
+  color: var(--r-fg);
+}
+.reino-player__meta {
+  margin: 0;
+  font: 400 12px var(--r-mono);
+  letter-spacing: 0.05em;
+  color: var(--r-fg2);
+}
+.reino-player__jornada {
+  width: 160px;
+  height: 10px;
+}
+.reino-player__controles {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.reino-player__pular {
+  min-width: 52px;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: var(--r-fg2);
+  font: 500 14px var(--r-mono);
+  cursor: pointer;
+}
+.reino-player__pular:hover {
+  color: var(--r-fg);
+}
+/* o botão de tocar é o astro: um sol ocre, pintado */
+.reino-player__tocar {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  padding: 0;
+  border: 0;
+  border-radius: 48% 52% 50% 50% / 52% 48% 52% 48%;
+  background: var(--r-ocre);
+  color: var(--r-noite, #10153a);
+  cursor: pointer;
+  transition: transform 150ms ease-out;
+}
+.reino-player__tocar:active {
+  transform: scale(0.96);
+}
+.reino-player__tocar svg {
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: #10153a;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+.reino-player__tocar svg.is-play {
+  fill: #10153a;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+.reino-player__progresso {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+.reino-player__tempo {
+  font: 400 11.5px var(--r-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--r-fg2);
+}
+.reino-player__trilha {
+  position: relative;
+  height: 24px;
+  display: grid;
+  align-items: center;
+}
+.reino-player__pincel {
+  width: 100%;
+  height: 12px;
+}
+.reino-player__range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+  touch-action: none;
+}
+.reino-player__rodape {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--r-trilho);
+}
+.reino-player__som {
+  display: grid;
+  gap: 2px;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.reino-player__som-rotulo {
+  font: 400 10.5px var(--r-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--r-fg2);
+}
+.reino-player__som-nome {
+  font: 400 16px/1.2 var(--r-display);
+  text-decoration: underline;
+  text-decoration-color: var(--r-trilho);
+  text-underline-offset: 4px;
+}
+.reino-player__volume {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+}
+.reino-player__volume input {
+  width: 120px;
+  accent-color: var(--r-ocre);
+}
+.reino-player :is(button, input):focus-visible {
+  outline: 2px solid var(--r-ocre);
+  outline-offset: 3px;
+}
+/* avisos do player como nota de margem sobre a noite */
+.reino-player-aviso {
+  display: grid;
+  grid-template-columns: 3px 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding: 12px 14px;
+  background: #f4f1e8;
+  color: #1c2350;
+}
+.reino-player-aviso::before {
+  content: '';
+  align-self: stretch;
+  background: #edb85a;
+  border-radius: 2px;
+}
+.reino-player-aviso p {
+  margin: 0;
+  font: 400 14px/1.45 'Figtree', system-ui, sans-serif;
+  color: #1c2350;
+}
+.reino-player-aviso small {
+  display: block;
+  margin-top: 2px;
+  font: 400 11.5px/1.4 'IBM Plex Mono', monospace;
+  color: #5b6080;
+}
+.reino-player-aviso button {
+  border: 0;
+  background: none;
+  color: #5b6080;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.reino-player-aviso__acoes {
+  --r-placa-bg: #1c2350;
+  --r-placa-fg: #f4f1e8;
+  --r-fg: #1c2350;
+  --r-fg2: #5b6080;
+  --r-ui: 'Figtree', system-ui, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 14px 14px 29px;
+  background: #f4f1e8;
+}
+.reino-player-aviso__acoes .reino-placa {
+  margin-top: 0;
+}
+/* volume da voz: trilho de tinta e um ponto ocre, no lugar do controle azul do sistema */
+.reino-player__volume input {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--r-trilho);
+}
+.reino-player__volume input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--r-ocre);
+  border: 0;
+}
+.reino-player__volume input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--r-ocre);
+  border: 0;
 }

@@ -58,21 +58,21 @@ interface CatalogEntry {
 }
 
 export const CATALOG: Record<string, CatalogEntry> = {
-  meditacao: { kind: "programa", rota: "/app/introducao-meditacao", cover: "/images/introducao-meditacao-hero.webp", kicker: "RESPIRAR", accent: "#1C2350", glyph: "play" },
-  sono: { kind: "programa", rota: "/app/meditacoes-sono", cover: "/images/meditacoes-sono-hero.webp", kicker: "DESCANSAR", accent: "#6E63B0", glyph: "play" },
+  meditacao: { kind: "programa", rota: "/app/introducao-meditacao", cover: "/images/reino/capa-primeiros-passos.webp", kicker: "RESPIRAR", accent: "#1C2350", glyph: "play" },
+  sono: { kind: "programa", rota: "/app/meditacoes-sono", cover: "/images/reino/capa-adormeca.webp", kicker: "DESCANSAR", accent: "#6E63B0", glyph: "play" },
   estoicismo: { kind: "programa", rota: "/app/diario-estoico", cover: "/images/diario-marco-aurelio.webp", kicker: "REFLETIR", accent: "#B5895E", glyph: "play" },
   diario: { kind: "programa", rota: "/app/diario-estoico", cover: "/images/diario-estoico.webp", kicker: "ESCREVER", accent: "#5C9A78", glyph: "play" },
   relatorio: { kind: "programa", rota: "/app/memory/report", cover: "/images/relatorio-emocional-ilustracao.webp", kicker: "OBSERVAR", accent: "#2E6FB0", glyph: "open" },
   aneis: { kind: "programa", rota: "/app/rings", cover: "/images/5-aneis-hero.webp", kicker: "PERSISTIR", accent: "#B07C3F", glyph: "open" },
-  riqueza_mental: { kind: "programa", rota: "/app/riqueza-mental", cover: "/images/quem-pensa-enriquece.webp", kicker: "PROSPERAR", accent: "#3B6BA5", glyph: "open" },
+  riqueza_mental: { kind: "programa", rota: "/app/riqueza-mental", cover: "/images/reino/capa-quem-pensa.webp", kicker: "PROSPERAR", accent: "#3B6BA5", glyph: "open" },
   energy_blessings: { kind: "programa", rota: "/app/energy-blessings", cover: "/images/meditacao-bencao-energia.webp", kicker: "ENERGIZAR", accent: "#E67E3C", glyph: "open" },
   liberar_estresse: {
     kind: "meditacao", rota: "/app/meditation-player",
-    cover: "/images/liberando-estresse.webp", kicker: "LIBERAR", accent: "#8855C4", glyph: "play",
+    cover: "/images/reino/capa-solte.webp", kicker: "LIBERAR", accent: "#8855C4", glyph: "play",
     premiumId: "blessing_11",
     meditationState: {
       title: "Liberando o Estresse", duration: "5 min",
-      audioUrl: "/audio/liberando-estresse.mp3", imageUrl: "/images/liberando-estresse.webp",
+      audioUrl: "/audio/liberando-estresse.mp3", imageUrl: "/images/reino/capa-solte.webp",
       gradient: "linear-gradient(to bottom, #C4A0E8 0%, #A877D6 20%, #8855C4 40%, #6B40A8 60%, #4F2B8C 80%, #341870 100%)",
     },
   },

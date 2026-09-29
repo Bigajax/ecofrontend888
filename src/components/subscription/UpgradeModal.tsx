@@ -26,9 +26,9 @@ type ModalState = 'idle' | 'loading' | 'error';
 
 const PROGRAM_EXAMPLES = [
   { image: '/images/meditacao-caleidoscopio.webp', title: 'Caleidoscópio Mind Movie' },
-  { image: '/images/quem-pensa-enriquece.webp',    title: 'Quem Pensa Enriquece' },
+  { image: '/images/reino/capa-quem-pensa.webp',    title: 'Quem Pensa Enriquece' },
   { image: '/images/meditacao-sono.webp',           title: 'Meditação do Sono' },
-  { image: '/images/five-rings-visual.webp',        title: 'Five Rings' },
+  { image: '/images/reino/capa-cinco-aneis.webp',        title: 'Five Rings' },
   { image: '/images/diario-estoico.webp',           title: 'Diário Estoico' },
 ];
 

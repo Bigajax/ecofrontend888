@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Play, Pause, SkipBack, SkipForward, Heart, Music, Volume2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import HomeHeader from '@/components/home/HomeHeader';
+import ReinoPlayer from '@/components/reino/ReinoPlayer';
 import BackgroundSoundsModal from '@/components/BackgroundSoundsModal';
 import MeditationCompletion from '@/components/meditation/MeditationCompletion';
 import AbundanciaCompletion from '@/components/meditation/AbundanciaCompletion';
@@ -1166,6 +1167,37 @@ export default function MeditationPlayerPage() {
       onMouseMove={resetAmbientTimer}
       onClick={resetAmbientTimer}
     >
+      {!sonoGuestMode ? (
+        <>
+          <div className="hidden md:block relative z-10">
+            <HomeHeader />
+          </div>
+          <ReinoPlayer
+            titulo={meditationData.title}
+            duracaoRotulo={meditationData.duration}
+            imagem={meditationData.imageUrl}
+            lugar={isSono ? 'SOM.02 · Vale do Sono' : 'TRI.04 · As Trilhas'}
+            etapa={isSono && nightNumber !== null ? `Noite ${nightNumber} de 7` : undefined}
+            jornada={isSono && nightNumber !== null ? sonoCompletedNights.size / 7 : undefined}
+            isPlaying={isPlaying}
+            currentTime={currentTime}
+            duration={duration}
+            formatTime={formatTime}
+            onBack={handleBack}
+            onPlayPause={handlePlayPause}
+            onSkip={handleSkip}
+            onProgressChange={handleProgressChange}
+            onProgressChangeEnd={handleProgressChangeEnd}
+            somDeFundo={selectedBackgroundSound?.title || 'Nenhum'}
+            onSomDeFundo={handleOpenBackgroundModal}
+            isFavorite={isFavorite}
+            onFavorite={handleFavoriteToggle}
+            volume={meditationVolume}
+            onVolume={setMeditationVolume}
+          />
+        </>
+      ) : (
+      <>
       {/* ── Background ── */}
       <div
         className="absolute inset-0 bg-cover bg-center"
@@ -1692,6 +1724,7 @@ export default function MeditationPlayerPage() {
           </div>
         </motion.div>
       </div>
+      </>)}
 
 
       {/* Hidden Audio Element */}
@@ -1716,7 +1749,20 @@ export default function MeditationPlayerPage() {
       />
 
       {/* Dica de tela bloqueada — aparece uma vez após o áudio iniciar */}
-      {showLockTip && (
+      {showLockTip && !sonoGuestMode && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm">
+          <div className="reino-player-aviso" role="status">
+            <p>
+              Pode bloquear a tela.
+              <small>A voz e o som de fundo continuam tocando.</small>
+            </p>
+            <button type="button" onClick={() => setShowLockTip(false)} aria-label="Fechar aviso">
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+      {showLockTip && sonoGuestMode && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm animate-slide-down">
           <div
             className="flex items-center gap-3 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-md border"
@@ -1771,7 +1817,34 @@ export default function MeditationPlayerPage() {
       )}
 
       {/* Resume Progress Prompt */}
-      {showResumePrompt && savedProgress !== null && (
+      {showResumePrompt && savedProgress !== null && !sonoGuestMode && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm">
+          <div className="reino-player-aviso" role="dialog" aria-label="Continuar de onde parou">
+            <p>
+              Continuar de onde parou?
+              <small>Você tinha chegado em {formatTime(savedProgress)}.</small>
+            </p>
+            <span />
+          </div>
+          <div className="reino-player-aviso__acoes">
+            <button
+              type="button"
+              className="reino-placa"
+              onClick={() => {
+                if (audioRef.current) audioRef.current.currentTime = savedProgress;
+                setCurrentTime(savedProgress);
+                setShowResumePrompt(false);
+              }}
+            >
+              Continuar
+            </button>
+            <button type="button" className="reino-chegada__voltar" onClick={() => setShowResumePrompt(false)}>
+              Começar do início
+            </button>
+          </div>
+        </div>
+      )}
+      {showResumePrompt && savedProgress !== null && sonoGuestMode && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-sm animate-slide-down">
           <div
             className="backdrop-blur-md rounded-2xl shadow-2xl px-4 py-3 flex items-center justify-between gap-3 border"

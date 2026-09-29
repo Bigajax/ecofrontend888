@@ -43,8 +43,8 @@ const TITULO_PROGRAMA: Record<ProgramProgressData['programId'], string> = {
 };
 
 const PERCURSOS = [
-  { id: 'prog_rings', titulo: '5 Anéis da Disciplina', sobre: 'Construa hábitos que duram', imagem: '/images/five-rings-visual.webp' },
-  { id: 'prog_riqueza', titulo: 'Quem Pensa Enriquece', sobre: 'Reprograme sua mente financeira', imagem: '/images/quem-pensa-enriquece.webp' },
+  { id: 'prog_rings', titulo: '5 Anéis da Disciplina', sobre: 'Construa hábitos que duram', imagem: '/images/reino/capa-cinco-aneis.webp' },
+  { id: 'prog_riqueza', titulo: 'Quem Pensa Enriquece', sobre: 'Reprograme sua mente financeira', imagem: '/images/reino/capa-quem-pensa.webp' },
   { id: 'prog_diario', titulo: 'Diário Estoico', sobre: 'Sabedoria estoica diária', imagem: '/images/reino/portico-800.webp' },
 ];
 

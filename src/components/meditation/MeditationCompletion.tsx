@@ -41,7 +41,7 @@ const RELATED_BY_CATEGORY: Record<string, RelatedMeditation[]> = {
     { id: 'night_1', title: 'Desligando o Estado de Alerta', duration: '5 min', imageUrl: '/images/desligando-estado-alerta.webp', audioUrl: '/audio/desligando-estado-alerta-calmo.mp3', gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #14172E 100%)', isPremium: false, category: 'sono', returnTo: '/app/meditacoes-sono' },
     { id: 'night_2', title: 'Respiração que Induz o Sono', duration: '5 min', imageUrl: '/images/respiracao-induz-sono.webp', audioUrl: '/audio/respiracao-induz-sono-calmo.mp3', gradient: 'linear-gradient(to bottom, #6B5B95 0%, #251A45 100%)', isPremium: false, category: 'sono', returnTo: '/app/meditacoes-sono' },
     { id: 'night_3', title: 'Esvaziando Pensamentos Repetitivos', duration: '5 min', imageUrl: '/images/esvaziando-pensamentos.webp', audioUrl: '/audio/esvaziando-pensamentos-calmo.mp3', gradient: 'linear-gradient(to bottom, #5B6B95 0%, #1A2545 100%)', isPremium: false, category: 'sono', returnTo: '/app/meditacoes-sono' },
-    { id: 'blessing_8', title: 'Meditação do Sono', duration: '15 min', imageUrl: '/images/meditacoes-sono-hero.webp', audioUrl: '/audio/meditacao-sono.mp3', gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #14172E 100%)', isPremium: true, category: 'sono', returnTo: '/app/programas' },
+    { id: 'blessing_8', title: 'Meditação do Sono', duration: '15 min', imageUrl: '/images/reino/capa-adormeca.webp', audioUrl: '/audio/meditacao-sono.mp3', gradient: 'linear-gradient(to bottom, #4A4E8A 0%, #14172E 100%)', isPremium: true, category: 'sono', returnTo: '/app/programas' },
   ],
   dr_joe_dispenza: [
     { id: 'blessing_2', title: 'Sintonize Novos Potenciais', duration: '5 min', imageUrl: '/images/meditacao-novos-potenciais.webp', audioUrl: '/audio/sintonizar-novos-potenciais-v3.mp3', gradient: 'linear-gradient(to bottom, #4A7FCC 0%, #182864 100%)', isPremium: true, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza', dayLabel: 'Dia 1' },
@@ -52,8 +52,8 @@ const RELATED_BY_CATEGORY: Record<string, RelatedMeditation[]> = {
   ],
   default: [
     { id: 'blessing_7', title: 'Introdução à Meditação', duration: '8 min', imageUrl: '/images/meditacao-introducao.webp', audioUrl: '/audio/introducao-meditacao.mp3', gradient: 'linear-gradient(to bottom, #6EC1E4 0%, #1F7BAD 100%)', isPremium: false, category: 'intro', returnTo: '/app/programas' },
-    { id: 'blessing_10', title: 'Acolhendo sua respiração', duration: '7 min', imageUrl: '/images/acolhendo-respiracao.webp', audioUrl: '/audio/acolhendo-respiracao.mp3', gradient: 'linear-gradient(to bottom, #7BBFB5 0%, #084D42 100%)', isPremium: false, category: 'respiracao', returnTo: '/app/programas' },
-    { id: 'blessing_11', title: 'Liberando o Estresse', duration: '5 min', imageUrl: '/images/liberando-estresse.webp', audioUrl: '/audio/liberando-estresse.mp3', gradient: 'linear-gradient(to bottom, #C4A0E8 0%, #341870 100%)', isPremium: false, category: 'relaxamento', returnTo: '/app/programas' },
+    { id: 'blessing_10', title: 'Acolhendo sua respiração', duration: '7 min', imageUrl: '/images/reino/capa-respire.webp', audioUrl: '/audio/acolhendo-respiracao.mp3', gradient: 'linear-gradient(to bottom, #7BBFB5 0%, #084D42 100%)', isPremium: false, category: 'respiracao', returnTo: '/app/programas' },
+    { id: 'blessing_11', title: 'Liberando o Estresse', duration: '5 min', imageUrl: '/images/reino/capa-solte.webp', audioUrl: '/audio/liberando-estresse.mp3', gradient: 'linear-gradient(to bottom, #C4A0E8 0%, #341870 100%)', isPremium: false, category: 'relaxamento', returnTo: '/app/programas' },
     { id: 'blessing_1', title: 'Bênção dos Centros de Energia', duration: '7 min', imageUrl: '/images/meditacao-bencao-energia.webp', audioUrl: '/audio/bencao-centros-energia.mp3', gradient: 'linear-gradient(to bottom, #F5C563 0%, #A63428 100%)', isPremium: false, category: 'dr_joe_dispenza', returnTo: '/app/dr-joe-dispenza' },
   ],
 };

@@ -237,7 +237,7 @@ export default function CaleidoscopioMindMovieProgramPage() {
             className="absolute inset-0"
             style={{
               backgroundColor: '#9B7AC8',
-              backgroundImage: 'url("/images/caleidoscopio-mind-movie.webp")',
+              backgroundImage: 'url("/images/reino/capa-visualize.webp")',
               backgroundSize: 'cover',
               backgroundPosition: 'center center',
               backgroundRepeat: 'no-repeat',
