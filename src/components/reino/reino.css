@@ -1816,3 +1816,38 @@
   padding-right: 0;
   grid-auto-columns: minmax(150px, 42%);
 }
+
+/* ===================== Sons do vale ===================== */
+.reino-som__capa {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+}
+.reino-som__duracoes {
+  display: flex;
+  gap: 22px;
+  margin: 10px 0 14px;
+}
+.reino-som__duracao {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 64px;
+  padding: 6px 4px 8px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: #5b6080;
+  cursor: pointer;
+}
+.reino-som__duracao[aria-checked='true'] {
+  color: #1c2350;
+  border-bottom-color: #edb85a;
+}
+.reino-som__minutos {
+  font: 400 34px/1 'Young Serif', Georgia, serif;
+}
+.reino-som__unidade {
+  font: 400 11.5px 'IBM Plex Mono', monospace;
+  letter-spacing: 0.06em;
+}
