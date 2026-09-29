@@ -35,7 +35,14 @@ export default function HomePage() {
         : p.programId === 'drjoe'
         ? 'prog_drjoe'
         : 'prog_caleidoscopio',
-      { progress: p.progress, isInactive: p.isInactive, isNearComplete: p.isNearComplete },
+      {
+        progress: p.progress,
+        isInactive: p.isInactive,
+        isNearComplete: p.isNearComplete,
+        completedSessions: p.completedSessions,
+        totalSessions: p.totalSessions,
+        status: p.status,
+      },
     ])
   );
 

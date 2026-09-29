@@ -2598,3 +2598,90 @@
     justify-self: start;
   }
 }
+
+/* ===== Programas: os de vários dias, sem numeração (não é sequência) =====
+   Celular: lista. Desktop: dois lado a lado, com a capa maior. */
+.reino-programas {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: grid;
+  border-top: 1px solid var(--r-trilho);
+}
+.reino-programas > li {
+  border-bottom: 1px dashed var(--r-trilho);
+}
+.reino-programa {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding: 16px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reino-programa img {
+  display: block;
+  width: 76px;
+  height: 76px;
+  object-fit: cover;
+}
+.reino-programa__texto {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.reino-programa__titulo {
+  font: 400 20px/1.2 var(--r-display);
+}
+.reino-programa__sobre {
+  font: 400 15px/1.5 var(--r-ui);
+  color: var(--r-fg2);
+}
+.reino-programa__pincel {
+  display: block;
+  width: 100%;
+  max-width: 16rem;
+  height: 10px;
+  margin-top: 4px;
+}
+.reino-programa__pe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin-top: 6px;
+}
+.reino-programa__estado {
+  font: 400 12px var(--r-mono);
+  color: var(--r-fg2);
+}
+.reino-programa:hover .reino-programa__titulo {
+  text-decoration: underline;
+  text-decoration-color: var(--r-trilho);
+  text-underline-offset: 4px;
+}
+@media (min-width: 900px) {
+  .reino-programas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
+    border-top: 0;
+  }
+  .reino-programas > li {
+    border-bottom: 0;
+  }
+  .reino-programa {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 0;
+  }
+  .reino-programa img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 21 / 9;
+  }
+}
