@@ -19,6 +19,8 @@ export interface Leitura {
   id: string;
   title: string;
   description: string;
+  /** ex.: "leitura de 2 min" */
+  leitura?: string;
 }
 
 interface HomeReinoCorpoProps {
@@ -193,13 +195,17 @@ export default function HomeReinoCorpo({
           <section className="reino-corpo__secao" aria-labelledby="reino-biblioteca">
             <p className="reino-rotulo">Para quem quer entender, não só sentir</p>
             <h2 id="reino-biblioteca" className="reino-corpo__titulo">Biblioteca</h2>
+            <p className="reino-corpo__sobre">Leituras curtas sobre o sono.</p>
             <ul className="reino-biblioteca">
               {leituras.map((l) => (
                 <li key={l.id}>
                   <button type="button" className="reino-livro" onClick={() => onLeitura(l.id)}>
                     <span className="reino-livro__titulo">{l.title}</span>
                     <span className="reino-livro__sobre">{l.description}</span>
-                    <span className="reino-livro__acao">Ler o artigo →</span>
+                    <span className="reino-livro__pe">
+                      {l.leitura && <span className="reino-programa__estado">{l.leitura}</span>}
+                      <span className="reino-indice__entrar">ler</span>
+                    </span>
                   </button>
                 </li>
               ))}

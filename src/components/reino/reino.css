@@ -2685,3 +2685,10 @@
     aspect-ratio: 21 / 9;
   }
 }
+.reino-livro__pe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin-top: 4px;
+}

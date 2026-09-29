@@ -191,8 +191,10 @@ export default function HomePage() {
     () => [
       {
         id: 'content_wellbeing',
-        title: 'O que é bem-estar mental de verdade?',
-        description: 'Você dorme 8h e ainda acorda cansado? Isso pode explicar.',
+        // Título fiel ao artigo (/app/articles/sleep): pressão do sono, fases, quanto é o suficiente.
+        title: 'Como funciona o seu sono',
+        description: 'Por que o cansaço aumenta ao longo do dia, as fases da noite e como saber se você dormiu o suficiente.',
+        leitura: 'leitura de 2 min',
         category: 'wellbeing',
         image: 'url("/images/wellbeing-mental.webp")', // 🚀 OPT#7: JPG→WebP (-22.72 KB)
         icon: '',
@@ -200,8 +202,10 @@ export default function HomePage() {
       },
       {
         id: 'content_sleep_tips',
-        title: 'O ritual de sono que mudou a vida de 1 em cada 3 usuários',
-        description: '5 práticas simples. Comece hoje à noite.',
+        // Sem número sem fonte: o artigo (/app/articles/good-night-sleep) tem 3 partes.
+        title: 'Como ter uma boa noite de sono',
+        description: 'O que ajustar durante o dia, na hora de dormir e quando o sono sai do horário.',
+        leitura: 'leitura de 2 min',
         category: 'wellbeing',
         image: 'url("/images/good-night-sleep.webp")', // 🚀 OPT#7: JPG→WebP (-20.48 KB)
         icon: '',
